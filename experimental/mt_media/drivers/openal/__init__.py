@@ -51,18 +51,6 @@ import lib_alc as alc
 class OpenALException(mt_media.MediaException):
     pass
 
-# From Python Cookbook, 2nd ed.
-class PriorityQueue(Queue.Queue):
-    def _init(self, maxsize):
-        self.maxsize = maxsize
-        self.queue = []
-
-    def _put(self, item):
-        heapq.heappush(self.queue, item)
-
-    def _get(self):
-        return heapq.heappop(self.queue)
-
 # TODO move functions into context/driver?
 
 def _split_nul_strings(s):
@@ -408,8 +396,34 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
         self.unlock()
 
+class TimedWorkerThread(mt_media.WorkerThread):
+    def run_jobs(self):
+        while True:
+            job = self.get_job()
+            if not job:
+                break
+            target_time, job = job
+            wait_time = target_time - time.time()
+            if wait_time > 0:
+                if _debug:
+                    print 'worker sleep', wait_time
+                self.sleep(wait_time)
+            if _debug:
+                print 'worker job', job
+            job()
+        if _debug:
+            print 'worker exit'
+
+    def _get(self):
+        return heapq.heappop(self._jobs)
+
+    def _put(self, job):
+        heapq.heappush(self._jobs, job)
+
 class OpenALDriver(mt_media.AbstractAudioDriver):
     def __init__(self, device_name=None):
+        super(OpenALDriver, self).__init__()
+
         # TODO devices must be enumerated on Windows, otherwise 1.0 context is
         # returned.
 
@@ -425,15 +439,15 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
         self._lock = threading.Lock()
 
         # Start worker thread
-        self._work_queue = PriorityQueue()
-        self._worker_thread = threading.Thread(target=self._worker_thread_func)
+        self._worker_thread = TimedWorkerThread()
+        self._worker_thread.setDaemon(True)
         self._worker_thread.start()
 
     def create_audio_player(self, source_group, player):
         return OpenALAudioPlayer(source_group, player)
 
     def delete(self):
-        pass
+        self._worker_thread.stop()
 
     def lock(self):
         self._lock.acquire()
@@ -442,8 +456,9 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
         self._lock.release()
 
     def post_job(self, delay, job):
-        self._work_queue.put((delay + time.time(), job))
+        self._worker_thread.put_job((delay + time.time(), job))
 
+    '''
     def _worker_thread_func(self):
         while True:
             target_time, job = self._work_queue.get()
@@ -457,10 +472,9 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
             if _debug:
                 print 'worker job', job
             job()
-            if pyglet.app.event_loop.has_exit:
-                break
         if _debug:
             print 'worker exit'
+    '''
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()

@@ -72,8 +72,10 @@ of players, and so played many times simultaneously.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: __init__.py 2005 2008-04-13 01:03:03Z Alex.Holkner $'
 
+import atexit
 import ctypes
 import sys
+import threading
 import time
 import StringIO
 
@@ -89,6 +91,96 @@ class MediaFormatException(MediaException):
 
 class CannotSeekException(MediaException):
     pass
+
+class WorkerThread(threading.Thread):
+    _threads = set()
+    _threads_lock = threading.Lock()
+
+    def __init__(self, target=None):
+        super(WorkerThread, self).__init__()
+        self.setDaemon(True)
+
+        if target is not None:
+            self.run = target
+
+        self._condition = threading.Condition()
+        self._jobs = []
+        self._stopped = False
+
+    @classmethod
+    def _atexit(cls):
+        cls._threads_lock.acquire()
+        threads = list(cls._threads)
+        cls._threads_lock.release()
+        for thread in threads:
+            thread.stop()
+
+    # XXX override, this, not run!
+    # TODO composition with Thread instead of inheritance, to avoid confusion
+    def run_jobs(self):
+        while True:
+            job = self.get_job()
+            if not job:
+                break
+            job()
+
+    def run(self):
+        self._threads_lock.acquire()
+        self._threads.add(self)
+        self._threads_lock.release()
+        self.run_jobs()
+        self._threads_lock.acquire()
+        self._threads.remove(self)
+        self._threads_lock.release()
+
+    def stop(self):
+        self._condition.acquire()
+        self._clear()
+        self._stopped = True
+        self._condition.notify()
+        self._condition.release()
+        self.join()
+
+    def sleep(self, timeout):
+        self._condition.acquire()
+        self._condition.wait(timeout)
+        self._condition.release()
+        
+    def get_job(self):
+        self._condition.acquire()
+        while self._empty() and not self._stopped:
+            self._condition.wait()
+        if self._stopped:
+            result = None
+        else:
+            result = self._get()
+        self._condition.release()
+        return result
+        
+    def put_job(self, job):
+        self._condition.acquire()
+        self._put(job)
+        self._condition.notify()
+        self._condition.release()
+
+    def clear_jobs(self):
+        self._condition.acquire()
+        self._clear()
+        self._condition.release()
+
+    def _empty(self):
+        return not self._jobs
+
+    def _get(self):
+        return self._jobs.pop(0)
+
+    def _put(self, job):
+        self._jobs.append(job)
+
+    def _clear(self):
+        del self._jobs[:]
+
+atexit.register(WorkerThread._atexit)
 
 class AudioFormat(object):
     '''Audio details.
