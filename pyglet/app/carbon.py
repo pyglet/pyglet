@@ -45,24 +45,10 @@ from pyglet import app
 from pyglet.app.base import EventLoop
 from pyglet.window.carbon import carbon, types, constants, _oscheck
 
-EventHandlerProcPtr = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, 
-                                       ctypes.c_void_p, ctypes.c_void_p)
 EventLoopTimerProc = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
-
-carbon.CreateEvent.argtypes = (ctypes.c_void_p,
-                               ctypes.c_uint32, ctypes.c_uint32,
-                               ctypes.c_double,
-                               ctypes.c_int, ctypes.c_void_p)
 
 kEventDurationForever = ctypes.c_double(constants.kEventDurationForever)
 kEventPriorityStandard = 1
-kEventAttributeNone = 0
-kEventAttributeUserEvent = 1
-kEventParamPostTarget = constants._name('ptrg')
-typeEventTargetRef = constants._name('etrg')
-
-POST_EVENT_CLASS = constants._name('PYGL')
-POST_EVENT_KIND = 0
 
 class CarbonEventLoop(EventLoop):
     _running = False
@@ -72,55 +58,16 @@ class CarbonEventLoop(EventLoop):
         super(CarbonEventLoop, self).__init__()
 
     def post_event(self, dispatcher, event, *args):
+        # TODO consolidate to base class
         self._post_event_queue.put((dispatcher, event, args))
 
         if not self._running:
             return
 
-        event_class = POST_EVENT_CLASS
-        event_kind = POST_EVENT_KIND
-        event_ref = ctypes.c_void_p()
-        _oscheck(
-            carbon.CreateEvent(None, 
-                               event_class, event_kind, 0,
-                               kEventAttributeUserEvent,
-                               ctypes.byref(event_ref))
-        )
-        _oscheck(
-            carbon.SetEventParameter(event_ref, 
-                                     kEventParamPostTarget,
-                                     typeEventTargetRef,
-                                     ctypes.sizeof(ctypes.c_void_p),
-                                     ctypes.byref(self._post_event_target))
-        )
-        _oscheck(
-            carbon.PostEventToQueue(self._event_queue, event_ref, 
-                                    kEventPriorityStandard)
-        )
-        carbon.ReleaseEvent(event_ref)
+        carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
 
-    def _setup_post_event_handler(self):
-        # Handler for PYGL events (interrupt from post_event)
-        # TODO remove later?
-        application_target = carbon.GetApplicationEventTarget()
-        self._post_event_target = ctypes.c_void_p(application_target)
-        proc = EventHandlerProcPtr(self._post_event_handler)
-        self._proc = proc
-        upp = carbon.NewEventHandlerUPP(proc)
-        event_types = types.EventTypeSpec()
-        event_types.eventClass = POST_EVENT_CLASS
-        event_types.eventKind = POST_EVENT_KIND
-        handler_ref = types.EventHandlerRef()
-        _oscheck(
-            carbon.InstallEventHandler(application_target,
-                                       upp,
-                                       1,
-                                       ctypes.byref(event_types),
-                                       ctypes.c_void_p(),
-                                       ctypes.byref(handler_ref))
-        )
-
-    def _post_event_handler(self, next_handler, ev, data):
+    # TODO consolidate to base class
+    def process_posted_events(self):
         while True:
             try:
                 dispatcher, event, args = self._post_event_queue.get(False)
@@ -128,8 +75,6 @@ class CarbonEventLoop(EventLoop):
                 break
 
             dispatcher.dispatch_event(event, *args)
-
-        return constants.noErr
 
     def run(self):
         self._setup()
@@ -149,9 +94,6 @@ class CarbonEventLoop(EventLoop):
                                      None,
                                      ctypes.byref(timer))
 
-        # TODO only once
-        self._setup_post_event_handler()
-
         self._force_idle = False
         self._allow_polling = True
 
@@ -159,7 +101,7 @@ class CarbonEventLoop(EventLoop):
 
         # Dispatch events posted before entered run looop
         self._running = True #XXX consolidate
-        self._post_event_handler(None, None, None)
+        self.process_posted_events()
 
         try:
             while not self.has_exit:
@@ -194,6 +136,8 @@ class CarbonEventLoop(EventLoop):
         self._allow_polling = True
 
     def _timer_proc(self, timer, data, in_events=True):
+        self.process_posted_events()
+
         allow_polling = True
 
         for window in app.windows:
