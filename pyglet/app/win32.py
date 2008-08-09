@@ -39,10 +39,11 @@ __version__ = '$Id: $'
 import ctypes
 import time
 
-from pyglet.app import windows, BaseEventLoop
+from pyglet import app
+from pyglet.app.base import EventLoop
 from pyglet.window.win32 import _user32, types, constants
 
-class Win32EventLoop(BaseEventLoop):
+class Win32EventLoop(EventLoop):
     def run(self):
         self._setup()
 

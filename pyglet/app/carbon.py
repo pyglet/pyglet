@@ -41,7 +41,8 @@ __version__ = '$Id: $'
 import ctypes
 import Queue
 
-from pyglet.app import windows, BaseEventLoop
+from pyglet import app
+from pyglet.app.base import EventLoop
 from pyglet.window.carbon import carbon, types, constants, _oscheck
 
 EventHandlerProcPtr = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, 
@@ -63,10 +64,7 @@ typeEventTargetRef = constants._name('etrg')
 POST_EVENT_CLASS = constants._name('PYGL')
 POST_EVENT_KIND = 0
 
-# TODO when no windows are open Ctrl+C doesn't kill event loop.  Install a sig
-# handler?
-
-class CarbonEventLoop(BaseEventLoop):
+class CarbonEventLoop(EventLoop):
     _running = False
 
     def __init__(self):
@@ -198,7 +196,7 @@ class CarbonEventLoop(BaseEventLoop):
     def _timer_proc(self, timer, data, in_events=True):
         allow_polling = True
 
-        for window in windows:
+        for window in app.windows:
             # Check for live resizing
             if window._resizing is not None:
                 allow_polling = False

@@ -41,10 +41,11 @@ __version__ = '$Id$'
 import select
 import weakref
 
-from pyglet.app import displays, windows, BaseEventLoop
+from pyglet import app
+from pyglet.app.base import EventLoop
 from pyglet.window.xlib import xlib
 
-class XlibEventLoop(BaseEventLoop):
+class XlibEventLoop(EventLoop):
     def run(self):
         self._setup()
 
@@ -56,7 +57,7 @@ class XlibEventLoop(BaseEventLoop):
 
         while not self.has_exit:
             # Check for already pending events
-            for display in displays:
+            for display in app.displays:
                 if xlib.XPending(display._display):
                     pending_displays = (display,)
                     break
@@ -83,7 +84,7 @@ class XlibEventLoop(BaseEventLoop):
                     window.dispatch_platform_event(e)
 
             # Dispatch resize events
-            for window in windows:
+            for window in app.windows:
                 if window._needs_resize:
                     window.switch_to()
                     window.dispatch_event('on_resize', 
@@ -96,4 +97,4 @@ class XlibEventLoop(BaseEventLoop):
         self.dispatch_event('on_exit')
 
     def get_select_files(self):
-        return list(displays)
+        return list(app.displays)

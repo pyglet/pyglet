@@ -300,6 +300,7 @@ class _ModuleProxy(object):
         self.__dict__['_module_name'] = name
 
     def __getattr__(self, name):
+        _import_lock.acquire()
         try:
             return getattr(self._module, name)
         except AttributeError:
@@ -307,20 +308,19 @@ class _ModuleProxy(object):
                 raise
 
             import_name = 'pyglet.%s' % self._module_name
-
-            _import_lock.acquire()
             __import__(import_name)
-            _import_lock.release()
-
             module = sys.modules[import_name]
             object.__setattr__(self, '_module', module)
             globals()[self._module_name] = module
             return getattr(module, name)
+        finally:
+            _import_lock.release()
 
     def __setattr__(self, name, value):
-       try:
+        _import_lock.acquire()
+        try:
             setattr(self._module, name, value)
-       except AttributeError:
+        except AttributeError:
             if self._module is not None:
                 raise
 
@@ -330,6 +330,8 @@ class _ModuleProxy(object):
             object.__setattr__(self, '_module', module)
             globals()[self._module_name] = module
             setattr(module, name, value) 
+        finally:
+            _import_lock.release()
 
 if not _is_epydoc:
     app = _ModuleProxy('app')
