@@ -617,11 +617,11 @@ class Clock(_ClockBase):
         # Now remove matching items from both schedule lists.
         self._schedule_items = \
             [item for item in self._schedule_items \
-                  if item.func != func]
+                  if item.func is not _dummy_schedule_func]
 
         self._schedule_interval_items = \
             [item for item in self._schedule_interval_items \
-                  if item.func != func]
+                  if item.func is not _dummy_schedule_func]
 
 # Default clock.
 _default = Clock()
