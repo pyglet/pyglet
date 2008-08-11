@@ -321,6 +321,10 @@ class MediaEvent(object):
             pyglet.app.event_loop.post_event(player, self.event, *self.args)
         # TODO sync with media.dispatch_events
 
+    def __repr__(self):
+        return '%s(%r, %r, %r)' % (self.__class__.__name__,
+            self.timestamp, self.event, self.args)
+
 class Source(object):
     '''An audio and/or video source.
 
@@ -854,10 +858,14 @@ class Player(pyglet.event.EventDispatcher):
         if not self.source:
             return
 
+        if _debug:
+            print 'get_texture', self._video_frame_dirty
         # TODO recreate texture
         video_format = self.source.video_format
         if video_format:
             if not self._texture:
+                if _debug:
+                    print 'create texture'
                 self._texture = pyglet.image.Texture.create(
                     video_format.width, video_format.height, rectangle=True)
         if self._video_frame_dirty:
@@ -865,11 +873,17 @@ class Player(pyglet.event.EventDispatcher):
         return self._texture
 
     def update_texture(self):
+        if _debug:
+            print 'update_texture'
         image = self.source.get_video_frame(self._video_frame_id)
+        self._video_frame_dirty = False
         if image:
             # TODO avoid get_texture
+            if _debug:
+                print 'blit_into'
             self.get_texture().blit_into(image, 0, 0, 0)
-        self._video_frame_dirty = False
+        if _debug:
+            print 'update_texture -> void (dirty = %r)' % self._video_frame_dirty, self
 
     def on_player_eos(self):
         '''The player ran out of sources.

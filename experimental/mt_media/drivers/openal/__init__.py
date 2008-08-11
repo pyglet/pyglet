@@ -318,14 +318,15 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         if not self._events:
             return
 
-        time = self.get_time()
+        current_time = self.get_time()
 
         event = self._events[0]
         try:
-            while time >= event.timestamp:
+            while current_time >= event.timestamp:
                 if _debug:
                     print 'dispatch event', event
                 event._sync_dispatch_to_player(self.player)
+                time.sleep(0)
                 del self._events[0]
                 event = self._events[0]
         except IndexError:
