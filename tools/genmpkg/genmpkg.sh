@@ -5,6 +5,8 @@ ROOT=`dirname $0`/../..
 RES=`dirname $0`/res
 VERSION=`grep 'VERSION =' $ROOT/setup.py | cut -d "'" -f2`
 
+rm -rf $ROOT/build
+
 # Create AVbin files
 mkdir -p $ROOT/build/avbin
 rsync -a /usr/local/lib/libavbin.dylib $ROOT/build/avbin/
