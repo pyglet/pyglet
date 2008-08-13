@@ -1019,6 +1019,6 @@ if sys.platform == 'linux2':
 elif sys.platform == 'darwin':
     pass # in trunk
 elif sys.platform == 'win32':
-    import mt_app_win32
+    pass # in trunk
 else:
     raise NotImplementedError('TODO')

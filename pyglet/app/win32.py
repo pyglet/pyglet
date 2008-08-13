@@ -38,13 +38,51 @@ __version__ = '$Id: $'
 
 import ctypes
 import time
+import Queue
 
 from pyglet import app
 from pyglet.app.base import EventLoop
-from pyglet.window.win32 import _user32, types, constants
+from pyglet.window.win32 import _kernel32, _user32, types, constants
 
 class Win32EventLoop(EventLoop):
+    def __init__(self):
+        super(Win32EventLoop, self).__init__()
+
+        # Force immediate creation of an event queue on this thread -- note
+        # that since event loop is created on pyglet.app import, whatever
+        # imports pyglet.app _must_ own the main run loop.
+        msg = types.MSG()
+        _user32.PeekMessageW(ctypes.byref(msg), 0,
+                             constants.WM_USER, constants.WM_USER, 
+                             constants.PM_NOREMOVE)
+
+        self._event_thread = _kernel32.GetCurrentThreadId()
+        self._post_event_queue = Queue.Queue()
+
+    def post_event(self, dispatcher, event, *args):
+        self._post_event_queue.put((dispatcher, event, args))
+
+        # Nudge the event loop with a message it will discard.  Note that only
+        # user events are actually posted.  The posted event will not
+        # interrupt the window move/size drag loop -- it seems there's no way
+        # to do this.
+        _user32.PostThreadMessageW(self._event_thread, constants.WM_USER, 0, 0)
+
+    def _dispatch_posted_events(self):
+        # Dispatch (synchronised) queued events
+        while True:
+            try:
+                dispatcher, event, args = self._post_event_queue.get(False)
+            except Queue.Empty:
+                break
+
+            dispatcher.dispatch_event(event, *args)
+
     def run(self):
+        if _kernel32.GetCurrentThreadId() != self._event_thread:
+            raise RuntimeError('EventLoop.run() must be called from the same ' +
+                               'thread that imports pyglet.app')
+
         self._setup()
 
         self._timer_proc = types.TIMERPROC(self._timer_func)
@@ -54,6 +92,8 @@ class Win32EventLoop(EventLoop):
         msg = types.MSG()
         
         self.dispatch_event('on_enter')
+
+        self._dispatch_posted_events()
 
         while not self.has_exit:
             if self._polling:
@@ -73,6 +113,8 @@ class Win32EventLoop(EventLoop):
                 if (msg.message != constants.WM_TIMER and
                     not msg_types & ~(constants.QS_TIMER<<16)):
                     self._timer_func(0, 0, timer, 0)
+
+            self._dispatch_posted_events()
 
         self.dispatch_event('on_exit')
 
