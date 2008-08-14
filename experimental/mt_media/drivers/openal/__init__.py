@@ -397,30 +397,6 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
         self.unlock()
 
-class TimedWorkerThread(mt_media.WorkerThread):
-    def run_jobs(self):
-        while True:
-            job = self.get_job()
-            if not job:
-                break
-            target_time, job = job
-            wait_time = target_time - time.time()
-            if wait_time > 0:
-                if _debug:
-                    print 'worker sleep', wait_time
-                self.sleep(wait_time)
-            if _debug:
-                print 'worker job', job
-            job()
-        if _debug:
-            print 'worker exit'
-
-    def _get(self):
-        return heapq.heappop(self._jobs)
-
-    def _put(self, job):
-        heapq.heappush(self._jobs, job)
-
 class OpenALDriver(mt_media.AbstractAudioDriver):
     def __init__(self, device_name=None):
         super(OpenALDriver, self).__init__()
@@ -440,7 +416,7 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
         self._lock = threading.Lock()
 
         # Start worker thread
-        self._worker_thread = TimedWorkerThread()
+        self._worker_thread = mt_media.TimedWorkerThread()
         self._worker_thread.setDaemon(True)
         self._worker_thread.start()
 

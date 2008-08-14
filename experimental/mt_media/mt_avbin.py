@@ -265,7 +265,9 @@ class AVbinSource(StreamingSource):
             raise AVbinException('Could not open "%s"' % filename)
 
         self._video_stream = None
+        self._video_stream_index = -1
         self._audio_stream = None
+        self._audio_stream_index = -1
 
         file_info = AVbinFileInfo()
         file_info.structure_size = ctypes.sizeof(file_info)
@@ -377,7 +379,8 @@ class AVbinSource(StreamingSource):
 
         # Keep reading packets until we have an audio packet and all the
         # associated video packets have been enqueued on the decoder thread.
-        while not audio_data or self._video_timestamp < audio_data_timeend:
+        while not audio_data or (
+            self._video_stream and self._video_timestamp < audio_data_timeend):
             if not self._get_packet():
                 break
 
@@ -425,6 +428,11 @@ class AVbinSource(StreamingSource):
             # Give decoder thread a chance to run before we return this audio
             # data.
             time.sleep(0)
+
+        if not audio_data:
+            if _debug:
+                print '_get_audio_data returning None'
+            return None
 
         audio_data.events = \
             [e for e in self._events \
