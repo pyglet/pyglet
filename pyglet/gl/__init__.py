@@ -239,7 +239,7 @@ class Config(object):
         :rtype: `Context`
         :return: The new context.
         '''
-        return ConfigException(
+        raise ConfigException(
             'This config is not complete.  Use Screen.get_matching_configs')
 
     def is_complete(self):
@@ -413,6 +413,9 @@ class Context(object):
             self.object_space._doomed_buffers.append(buffer_id)
 
 class ContextException(Exception):
+    pass
+
+class ConfigException(Exception):
     pass
 
 import pyglet as _pyglet
