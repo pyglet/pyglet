@@ -28,7 +28,7 @@ class DirectSoundWorker(mt_media.MediaThread):
     _min_write_size = 9600
 
     # Time to wait if there are players, but they're all full.
-    _nap_time = 0.02
+    _nap_time = 0.05
 
     # Time to wait if there are no players.
     _sleep_time = None
@@ -40,13 +40,16 @@ class DirectSoundWorker(mt_media.MediaThread):
     def run(self):
         while True:
             self.condition.acquire()
-            players = list(self.players)
-            self.condition.release()
 
-            if players:
+            if self.stopped:
+                self.condition.release()
+                break
+            sleep_time = -1
+
+            if self.players:
                 player = None
                 write_size = 0
-                for p in players:
+                for p in self.players:
                     s = p.get_write_size()
                     if s > write_size:
                         player = p
@@ -55,9 +58,14 @@ class DirectSoundWorker(mt_media.MediaThread):
                 if write_size > self._min_write_size:
                     player.refill(write_size)
                 else:
-                    self.sleep(self._nap_time)
+                    sleep_time = self._nap_time
             else:
-                self.sleep(self._sleep_time)
+                sleep_time = self._sleep_time
+
+            self.condition.release()
+
+            if sleep_time != -1:
+                self.sleep(sleep_time)
 
     def add(self, player):
         self.condition.acquire()
@@ -72,14 +80,13 @@ class DirectSoundWorker(mt_media.MediaThread):
         self.condition.release()
 
 class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
+    # How many bytes the ring buffer should be
     _buffer_size = 44800 * 1
-    _update_buffer_size = _buffer_size // 4
-    _buffer_size_secs = None
 
+    # Need to cache these because pyglet API allows update separately, but
+    # DSound requires both to be set at once.
     _cone_inner_angle = 360
     _cone_outer_angle = 360
-
-    UPDATE_PERIOD = 0.05
 
     def __init__(self, source_group, player):
         super(DirectSoundAudioPlayer, self).__init__(source_group, player)
@@ -91,20 +98,38 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         # 3d vars) do not need to be locked.
         self._lock = threading.RLock()
 
-        audio_format = source_group.audio_format
-
+        # Desired play state (may be actually paused due to underrun -- not
+        # implemented yet).
         self._playing = False
-        self._timestamp = 0.
 
-        self._buffer = None
-        self._buffer_playing = False
-        self._data_size = 0     # amount of buffer filled by this player
-        self._play_cursor = 0
-        self._buffer_time = 0.  # ts of buffer at buffer_time_pos
-        self._buffer_time_pos = 0
+        # Up to one audio data may be buffered if too much data was received
+        # from the source that could not be written immediately into the
+        # buffer.  See refill().
+        self._next_audio_data = None
+
+        # Last known timestamp, or paused timestamp (not yet implemented).
+        self._timestamp = 0.0
+
+        # Theoretical write and play cursors for an infinite buffer.  play
+        # cursor is always <= write cursor (when equal, underrun is
+        # happening).
         self._write_cursor = 0
-        self._timestamps = []
-        self._eos_count = 0
+        self._play_cursor = 0
+
+        # Cursor position of end of data.  Silence is written after
+        # eos for one buffer size.
+        self._eos_cursor = None
+
+        # Indexes into DSound circular buffer.  Complications ensue wrt each
+        # other to avoid writing over the play cursor.  See get_write_size and
+        # write().
+        self._play_cursor_ring = 0
+        self._write_cursor_ring = 0
+
+        # List of (play_cursor, MediaEvent), in sort order
+        self._events = []
+
+        audio_format = source_group.audio_format
 
         wfx = lib.WAVEFORMATEX()
         wfx.wFormatTag = lib.WAVE_FORMAT_PCM
@@ -125,8 +150,11 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         dsbdesc.dwBufferBytes = self._buffer_size
         dsbdesc.lpwfxFormat = ctypes.pointer(wfx)
 
+        # DSound buffer
         self._buffer = lib.IDirectSoundBuffer()
-        driver._dsound.CreateSoundBuffer(dsbdesc, ctypes.byref(self._buffer), None)
+        driver._dsound.CreateSoundBuffer(dsbdesc, 
+                                         ctypes.byref(self._buffer), 
+                                         None)
 
         if audio_format.channels == 1:
             self._buffer3d = lib.IDirectSound3DBuffer()
@@ -135,8 +163,6 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         else:
             self._buffer3d = None
         
-        self._buffer_size_secs = \
-            self._buffer_size / float(audio_format.bytes_per_second)
         self._buffer.SetCurrentPosition(0)
 
         self.refill(self._buffer_size)
@@ -148,10 +174,10 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             pass
 
     def delete(self):
-        self.lock()
-
         if driver and driver.worker:
             driver.worker.remove(self)
+
+        self.lock()
 
         self._buffer.Stop()
         self._buffer.Release()
@@ -174,7 +200,6 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             self._playing = True
 
             self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
-            self._buffer_playing = True 
             driver.worker.add(self)
         self.unlock()
 
@@ -184,76 +209,83 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             self._playing = False
 
             self._buffer.Stop()
-            self._buffer_playing = False
             driver.worker.remove(self)
         self.unlock()
 
     def clear(self):
         self.lock()
-        self._write_cursor = 0
+        self._write_cursor_ring = 0
         self._buffer.SetCurrentPosition(0)
-        self._data_size = 0
+        self._write_cursor = 0
         self.unlock()
 
     def refill(self, write_size):
         self.lock()
         while write_size > 0:
-            audio_data = self.source_group.get_audio_data(write_size)
-            # TODO if audio_data is longer than write_size, buffer remaining
-            # audio_data.
+            if _debug:
+                print 'refill, write_size =', write_size
+            # Get next audio packet (or remains of last one)
+            if self._next_audio_data:
+                audio_data = self._next_audio_data
+                self._next_audio_data = None
+            else:
+                audio_data = self.source_group.get_audio_data(write_size)
+
+            # Write it, or silence if there are no more packets
             if audio_data:
-                length = audio_data.length
+                if _debug:
+                    print 'write', audio_data.length
+                length = min(write_size, audio_data.length)
                 self.write(audio_data, length)
                 if audio_data.length:
-                    print 'ERROR: losing audio data.'
-                # XXX write_size -= length - audio_data.length
+                    self._next_audio_data = audio_data
                 write_size -= length
             else:
-                self.write(None, write_size)
+                if self._eos_cursor is None:
+                    self._eos_cursor = self._write_cursor
+                    self._events.append(
+                        (self._eos_cursor, 
+                         mt_media.MediaEvent(0, 'on_source_group_eos')))
+                    self._events.sort()
+                if self._write_cursor > self._eos_cursor + self._buffer_size:
+                    self.stop()
+                else:
+                    self.write(None, write_size)
                 write_size = 0
-            
 
         self.unlock()
 
+    def update_play_cursor(self):
+        self.lock()
+        play_cursor_ring = lib.DWORD()
+        self._buffer.GetCurrentPosition(play_cursor_ring, None)
+        if play_cursor_ring.value < self._play_cursor_ring:
+            # Wrapped around
+            self._play_cursor += self._buffer_size - self._play_cursor_ring
+            self._play_cursor_ring = 0
+        self._play_cursor += play_cursor_ring.value - self._play_cursor_ring
+        self._play_cursor_ring = play_cursor_ring.value
+
+        # Dispatch pending events
+        pending_events = []
+        while self._events and self._events[0][0] <= self._play_cursor:
+            _, event = self._events.pop(0)
+            pending_events.append(event)
+
+        self.unlock()
+
+        for event in pending_events:
+            event._sync_dispatch_to_player(self.player)
+            
     def get_write_size(self):
-        # Also incidentaly updates play cursor.
+        self.update_play_cursor()
 
         self.lock()
-
-        # Update play cursor, check for wraparound and EOS markers XXX
-        play_cursor = lib.DWORD()
-        self._buffer.GetCurrentPosition(play_cursor, None)
-        if play_cursor.value < self._play_cursor:
-            # Wrapped around
-            self._buffer_time_pos -= self._buffer_size
-            self._timestamps = \
-                [(a - self._buffer_size, t) for a, t in self._timestamps]
-
-        play_cursor = self._play_cursor = play_cursor.value
+        play_cursor = self._play_cursor
         write_cursor = self._write_cursor
-        data_size = self._data_size
-        playing = self._playing
-        buffer_playing = self._buffer_playing # XXX
-
         self.unlock()
 
-        if self._data_size < self._buffer_size:
-            return self._buffer_size - self._data_size
-
-        if write_cursor == play_cursor and buffer_playing:
-            # Polling too fast, no play cursor movement
-            return 0
-        elif write_cursor == play_cursor and not playing:
-            # Paused and up-to-date
-            return 0
-        elif write_cursor < play_cursor:
-            # Play cursor ahead of write cursor
-            write_size = play_cursor - write_cursor
-        else:
-            # Play cursor behind write cursor, wraps around
-            write_size = self._buffer_size - write_cursor + play_cursor
-
-        return write_size
+        return self._buffer_size - (write_cursor - play_cursor)
 
     def write(self, audio_data, length):
         # Pass audio_data=None to write silence
@@ -261,26 +293,16 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             return 0
 
         self.lock()
-        #assert length <= self.get_write_size()
-
-        if self._data_size < self._buffer_size:
-            self._data_size = min(self._data_size + length, self._buffer_size)
 
         p1 = ctypes.c_void_p()
         l1 = lib.DWORD()
         p2 = ctypes.c_void_p()
         l2 = lib.DWORD()
-        self._buffer.Lock(self._write_cursor, length, 
+        self._buffer.Lock(self._write_cursor_ring, length, 
             ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
         assert length == l1.value + l2.value
 
         if audio_data:
-            if self._write_cursor >= self._play_cursor:
-                wc = self._write_cursor
-            else:
-                wc = self._write_cursor + self._buffer_size
-            self._timestamps.append((wc, audio_data.timestamp))
-            
             ctypes.memmove(p1, audio_data.data, l1.value)
             audio_data.consume(l1.value, self.source_group.audio_format)
             if l2.value:
@@ -290,11 +312,11 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             ctypes.memset(p1, 0, l1.value)
             if l2.value:
                 ctypes.memset(p2, 0, l2.value)
-                pass
         self._buffer.Unlock(p1, l1, p2, l2)
 
         self._write_cursor += length
-        self._write_cursor %= self._buffer_size
+        self._write_cursor_ring += length
+        self._write_cursor_ring %= self._buffer_size
         self.unlock()
 
     def get_time(self):
