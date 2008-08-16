@@ -186,6 +186,9 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         # List of currently queued buffer sizes (in bytes)
         self._buffer_sizes = []
 
+        # List of currently queued buffer timestamps
+        self._buffer_timestamps = []
+
         # List of (cursor, MediaEvent)
         self._events = []
 
@@ -294,6 +297,7 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         if processed:
             self._buffer_cursor += sum(self._buffer_sizes[:processed])
             del self._buffer_sizes[:processed]
+            del self._buffer_timestamps[:processed]
 
             if not context.have_1_1:
                 self._buffer_system_time = time.time()
@@ -368,6 +372,7 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
 
             self._write_cursor += audio_data.length
             self._buffer_sizes.append(audio_data.length)
+            self._buffer_timestamps.append(audio_data.timestamp)
             write_size -= audio_data.length
 
 
@@ -386,23 +391,12 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         self._lock.release()
 
     def get_time(self):
-        TODO
-        # Assumes pump has been called recently.
-        state = al.ALint()
-        context.lock()
-        al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
-        context.unlock()
+        if not self._buffer_timestamps:
+            return 0.0
 
-        if not self._playing:
-            return self._pause_timestamp
-
-        try:
-            ts, _ = self._timestamps[0]
-        except IndexError:
-            return self._pause_timestamp
-
-        current_buffer_time = self._get_current_buffer_time()
-        return ts + current_buffer_time
+        return self._buffer_timestamps[0] + \
+            (self._play_cursor - self._buffer_cursor) / \
+                float(self.source_group.audio_format.bytes_per_second)
 
     def set_volume(self, volume):
         self.lock()
