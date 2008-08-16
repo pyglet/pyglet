@@ -39,6 +39,10 @@ class DirectSoundWorker(mt_media.MediaThread):
 
     def run(self):
         while True:
+            # This is a big lock, but ensures a player is not deleted while
+            # we're processing it -- this saves on extra checks in the
+            # player's methods that would otherwise have to check that it's
+            # still alive.
             self.condition.acquire()
 
             if self.stopped:
@@ -233,6 +237,10 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
 
             # Write it, or silence if there are no more packets
             if audio_data:
+                for event in audio_data.events:
+                    event_cursor = self._write_cursor + event.timestamp * \
+                        self.source_group.audio_format.bytes_per_second
+                    self._events.append((event_cursor, event))
                 if _debug:
                     print 'write', audio_data.length
                 length = min(write_size, audio_data.length)
@@ -243,6 +251,9 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             else:
                 if self._eos_cursor is None:
                     self._eos_cursor = self._write_cursor
+                    self._events.append(
+                        (self._eos_cursor, 
+                         mt_media.MediaEvent(0, 'on_eos')))
                     self._events.append(
                         (self._eos_cursor, 
                          mt_media.MediaEvent(0, 'on_source_group_eos')))
@@ -271,6 +282,9 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         while self._events and self._events[0][0] <= self._play_cursor:
             _, event = self._events.pop(0)
             pending_events.append(event)
+        if _debug:
+            print 'Dispatching pending events:', pending_events
+            print 'Remaining events:', self._events
 
         self.unlock()
 

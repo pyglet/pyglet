@@ -434,11 +434,12 @@ class AVbinSource(StreamingSource):
                 print '_get_audio_data returning None'
             return None
 
-        audio_data.events = \
-            [e for e in self._events \
-               if audio_data.timestamp <= e.timestamp <= audio_data_timeend]
-        self._events = \
-            [e for e in self._events if e.timestamp > audio_data_timeend]
+        while self._events and self._events[0].timestamp <= audio_data_timeend:
+            event = self._events.pop(0)
+            if event.timestamp >= audio_data.timestamp:
+                event.timestamp -= audio_data.timestamp
+                audio_data.events.append(event)
+
         if _debug:
             print '_get_audio_data returning ts %f with events' % \
                 audio_data.timestamp, audio_data.events

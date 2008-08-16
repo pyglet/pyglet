@@ -435,24 +435,6 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
     def post_job(self, delay, job):
         self._worker_thread.put_job((delay + time.time(), job))
 
-    '''
-    def _worker_thread_func(self):
-        while True:
-            target_time, job = self._work_queue.get()
-            wait_time = target_time - time.time()
-            while wait_time > 0:
-                if _debug:
-                    print 'worker sleep', wait_time
-                if pyglet.app.event_loop.sleep(wait_time):
-                    break
-                wait_time = target_time - time.time()
-            if _debug:
-                print 'worker job', job
-            job()
-        if _debug:
-            print 'worker exit'
-    '''
-
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()
 

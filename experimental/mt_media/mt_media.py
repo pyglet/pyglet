@@ -329,10 +329,9 @@ class AudioData(object):
             Time of the first sample, in seconds.
         `duration` : float
             Total data duration, in seconds.
-        `events` : sequence of (float, str)
-            List of events contained within this packet.  Each event is
-            a pair giving the timestamp and name of the event (either
-            ``'eos'`` or ``'video_frame'``).
+        `events` : list of MediaEvent
+            List of events contained within this packet.  Events are
+            timestamped relative to this audio packet.
 
     '''
     def __init__(self, data, length, timestamp, duration, events):
@@ -379,6 +378,8 @@ class AudioData(object):
 
 class MediaEvent(object):
     def __init__(self, timestamp, event, *args):
+        # Meaning of timestamp is dependent on context; and not seen by
+        # application.
         self.timestamp = timestamp
         self.event = event
         self.args = args
@@ -717,12 +718,10 @@ class SourceGroup(object):
             data = self._sources[0]._get_audio_data(bytes) # TODO method rename
 
         data.timestamp += self._timestamp_offset
-        # XXX HACK TEMP
-        if not hasattr(data, 'events'):
-            data.events = []
         if eos:
-            # TODO events are supposed to be sorted
-            data.events.append(MediaEvent(data.timestamp, 'on_eos'))
+            if _debug:
+                print 'adding on_eos event to audio data'
+            data.events.append(MediaEvent(0, 'on_eos'))
         return data
 
     def translate_timestamp(self, timestamp):
