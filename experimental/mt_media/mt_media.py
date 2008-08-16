@@ -802,6 +802,7 @@ class Player(pyglet.event.EventDispatcher):
     _texture = None
     _video_frame_id = -1
     _video_frame_dirty = False
+    _video_frame_required = True
 
     def __init__(self):
         # List of queued source groups
@@ -866,6 +867,10 @@ class Player(pyglet.event.EventDispatcher):
         self._video_frame_dirty = True
         self._paused_time = time
         self.source.seek(time)
+        if self.source.video_format:
+            self._video_frame_required = True
+            self._video_frame_dirty = True
+            self._video_frame_id = self.source.get_next_video_frame_id()
 
     def _create_audio_player(self):
         assert not self._audio_player
