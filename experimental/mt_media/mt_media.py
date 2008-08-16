@@ -360,6 +360,7 @@ class MediaEvent(object):
 
     def _sync_dispatch_to_player(self, player):
         pyglet.app.event_loop.post_event(player, self.event, *self.args)
+        time.sleep(0)
         # TODO sync with media.dispatch_events
 
     def __repr__(self):
@@ -744,7 +745,7 @@ class AbstractAudioPlayer(object):
         raise NotImplementedError('abstract')
 
     def get_time(self):
-        '''Return best guess of current playback time within current source.
+        '''Return approximation of current playback time within current source.
 
         :rtype: float
         :return: current play cursor time, in seconds.
@@ -1013,8 +1014,8 @@ def get_audio_driver():
 
     # TODO  options
     #driver_names = ('silent',)
-    #driver_names = ('directsound',) # 'pulse', 'openal')
-    driver_names = ('openal',)
+    driver_names = ('directsound',) # 'pulse', 'openal')
+    #driver_names = ('openal',)
 
     for driver_name in driver_names:
         try:

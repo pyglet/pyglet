@@ -111,9 +111,6 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         # buffer.  See refill().
         self._next_audio_data = None
 
-        # Last known timestamp, or paused timestamp (not yet implemented).
-        self._timestamp = 0.0
-
         # Theoretical write and play cursors for an infinite buffer.  play
         # cursor is always <= write cursor (when equal, underrun is
         # happening).
@@ -132,6 +129,10 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
 
         # List of (play_cursor, MediaEvent), in sort order
         self._events = []
+
+        # List of (cursor, timestamp), in sort order (cursor gives expiry
+        # place of the timestamp)
+        self._timestamps = []
 
         audio_format = source_group.audio_format
 
@@ -237,10 +238,18 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
 
             # Write it, or silence if there are no more packets
             if audio_data:
+                # Add events
                 for event in audio_data.events:
                     event_cursor = self._write_cursor + event.timestamp * \
                         self.source_group.audio_format.bytes_per_second
                     self._events.append((event_cursor, event))
+
+                # Add timestamp (at end of this data packet)
+                ts_cursor = self._write_cursor + audio_data.length
+                self._timestamps.append(
+                    (ts_cursor, audio_data.timestamp + audio_data.duration))
+
+                # Write data
                 if _debug:
                     print 'write', audio_data.length
                 length = min(write_size, audio_data.length)
@@ -249,6 +258,7 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
                     self._next_audio_data = audio_data
                 write_size -= length
             else:
+                # Write silence
                 if self._eos_cursor is None:
                     self._eos_cursor = self._write_cursor
                     self._events.append(
@@ -285,6 +295,10 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         if _debug:
             print 'Dispatching pending events:', pending_events
             print 'Remaining events:', self._events
+
+        # Remove expired timestamps
+        while self._timestamps and self._timestamps[0][0] < self._play_cursor:
+            del self._timestamps[0]
 
         self.unlock()
 
@@ -334,13 +348,16 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         self.unlock()
 
     def get_time(self):
-        # Will be accurate to within driver.worker._nap_time secs (0.02).
-        # XXX Could provide another method that gets a more accurate time, at
-        # more expense.
         self.lock()
-        t = self._timestamp
+        if self._timestamps:
+            cursor, ts = self._timestamps[0]
+            result = ts + (self._play_cursor - cursor) / \
+                self.source_group.audio_format.bytes_per_second
+        else:
+            result = 0.
         self.unlock()
-        return t
+
+        return result
         
     def set_volume(self, volume):
         volume = _db(volume)
