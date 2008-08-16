@@ -351,8 +351,12 @@ class AVbinSource(StreamingSource):
         self._decode_thread.stop()
 
     def seek(self, timestamp):
+        if _debug:
+            print 'AVbin seek', timestamp
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
 
+        if _debug:
+            print 'clear jobs'
         self._decode_thread.clear_jobs()
 
         self._audio_packet_size = 0

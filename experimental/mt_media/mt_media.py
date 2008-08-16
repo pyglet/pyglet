@@ -147,6 +147,8 @@ class MediaThread(object):
         notified.  It is the responsibility of the `run` method to check
         the value of `stop` after each sleep or wait and to return if set.
         '''
+        if _debug:
+            print 'MediaThread.stop()'
         self.condition.acquire()
         self.stopped = True
         self.condition.notify()
@@ -161,6 +163,8 @@ class MediaThread(object):
                 Time to wait, in seconds.
 
         '''
+        if _debug:
+            print 'MediaThread.sleep(%r)' % timeout
         self.condition.acquire()
         self.condition.wait(timeout)
         self.condition.release()
@@ -171,6 +175,8 @@ class MediaThread(object):
         If the thread is currently sleeping, it will be woken immediately,
         instead of waiting the full duration of the timeout.
         '''
+        if _debug:
+            print 'MediaThread.notify()'
         self.condition.acquire()
         self.condition.notify()
         self.condition.release()
@@ -678,7 +684,7 @@ class SourceGroup(object):
         while not data:
             eos = True
             if self._loop and not self._advance_after_eos:
-                self._sources[0].seek(0)
+                self._sources[0]._seek(0)
             else:
                 self._advance_after_eos = False
 

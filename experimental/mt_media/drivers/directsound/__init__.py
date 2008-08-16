@@ -43,7 +43,13 @@ class DirectSoundWorker(mt_media.MediaThread):
             # we're processing it -- this saves on extra checks in the
             # player's methods that would otherwise have to check that it's
             # still alive.
+            if _debug:
+                print 'DirectSoundWorker run attempt acquire'
+
             self.condition.acquire()
+
+            if _debug:
+                print 'DirectSoundWorker run acquire'
 
             if self.stopped:
                 self.condition.release()
@@ -67,21 +73,37 @@ class DirectSoundWorker(mt_media.MediaThread):
                 sleep_time = self._sleep_time
 
             self.condition.release()
+            if _debug:
+                print 'DirectSoundWorker run release'
 
             if sleep_time != -1:
                 self.sleep(sleep_time)
 
+        if _debug:
+            print 'DirectSoundWorker exiting'
+
     def add(self, player):
+        if _debug:
+            print 'DirectSoundWorker add', player
         self.condition.acquire()
         self.players.add(player)
         self.condition.notify()
         self.condition.release()
+        if _debug:
+            print 'return DirectSoundWorker add', player
 
     def remove(self, player):
+        if _debug:
+            print 'DirectSoundWorker remove', player
         self.condition.acquire()
-        self.players.remove(player)
+        try:
+            self.players.remove(player)
+        except KeyError:
+            pass
         self.condition.notify()
         self.condition.release()
+        if _debug:
+            print 'return DirectSoundWorker remove', player
 
 class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
     # How many bytes the ring buffer should be
@@ -200,28 +222,44 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         self._lock.release()
         
     def play(self):
+        if _debug:
+            print 'DirectSound play'
+        driver.worker.add(self)
+
         self.lock()
         if not self._playing:
             self._playing = True
 
             self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
-            driver.worker.add(self)
         self.unlock()
+        if _debug:
+            print 'return DirectSound play'
 
     def stop(self):
+        if _debug:
+            print 'DirectSound stop'
+        driver.worker.remove(self)
+
         self.lock()
         if self._playing:
             self._playing = False
 
             self._buffer.Stop()
-            driver.worker.remove(self)
         self.unlock()
+        if _debug:
+            print 'return DirectSound stop'
 
     def clear(self):
+        if _debug:
+            print 'DirectSound clear'
         self.lock()
         self._write_cursor_ring = 0
         self._buffer.SetCurrentPosition(0)
-        self._write_cursor = 0
+        self._play_cursor = self._write_cursor 
+        self._eos_cursor = None
+        self._next_audio_data = None
+        del self._events[:]
+        del self._timestamps[:]
         self.unlock()
 
     def refill(self, write_size):
