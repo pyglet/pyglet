@@ -915,6 +915,8 @@ class Player(pyglet.event.EventDispatcher):
                     print 'create texture'
                 self._texture = pyglet.image.Texture.create(
                     video_format.width, video_format.height, rectangle=True)
+                self._texture = self._texture.get_transform(flip_y=True)
+                self._texture.anchor_y = 0
         if self._video_frame_dirty:
             self.update_texture()
         return self._texture
