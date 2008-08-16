@@ -355,13 +355,16 @@ class AVbinSource(StreamingSource):
             print 'AVbin seek', timestamp
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
 
+        self._audio_packet_size = 0
+        self._force_next_video_image = True
+        self._video_timestamp = 0
+        self._requested_video_frame_id = -1
+        del self._events[:]
+        del self._buffered_audio_data[:]
+
         if _debug:
             print 'clear jobs'
         self._decode_thread.clear_jobs()
-
-        self._audio_packet_size = 0
-        self._force_next_video_image = True
-        self._last_video_timestamp = None
 
     def _get_packet(self):
         # Read a packet into self._packet.  Returns True if OK, False if no
@@ -387,6 +390,10 @@ class AVbinSource(StreamingSource):
             self._video_stream and self._video_timestamp < audio_data_timeend):
             if not self._get_packet():
                 break
+
+            if _debug:
+                print '_get_audio_data iter', self._packet.timestamp, \
+                    self._video_timestamp, audio_data_timeend 
 
             if self._packet.stream_index == self._video_stream_index:
                 if self._packet.timestamp < 0:

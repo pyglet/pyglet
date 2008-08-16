@@ -253,8 +253,8 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
         if _debug:
             print 'DirectSound clear'
         self.lock()
-        self._write_cursor_ring = 0
         self._buffer.SetCurrentPosition(0)
+        self._play_cursor_ring = self._write_cursor_ring = 0
         self._play_cursor = self._write_cursor 
         self._eos_cursor = None
         self._next_audio_data = None

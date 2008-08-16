@@ -862,9 +862,10 @@ class Player(pyglet.event.EventDispatcher):
         self.dispatch_event('on_player_eos')
 
     def seek(self, time):
-        self.source.seek(time)
         self._audio_player.clear()
+        self._video_frame_dirty = True
         self._paused_time = time
+        self.source.seek(time)
 
     def _create_audio_player(self):
         assert not self._audio_player
@@ -920,7 +921,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def update_texture(self):
         if _debug:
-            print 'update_texture'
+            print 'update_texture', self._video_frame_id
         image = self.source.get_video_frame(self._video_frame_id)
         self._video_frame_dirty = False
         if image:
