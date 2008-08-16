@@ -86,18 +86,73 @@ format_map = {
     (2, 16): al.AL_FORMAT_STEREO16,
 }
 
-class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
-    #: Seconds ahead to buffer audio.  Keep small for low latency, but large
-    #: enough to avoid underruns. (0.05 is the minimum for my 2.2 GHz Linux)
-    _update_buffer_time = 0.2
+class OpenALWorker(mt_media.MediaThread):
+    # Maximum time (secs) to buffer audio on a player
+    _max_slack = 0.5
 
-    #: Minimum size of an OpenAL buffer worth bothering with
+    # Time to wait if there are players, but they're all full.
+    _nap_time = 0.05
+
+    # Time to wait if there are no players.
+    _sleep_time = None
+
+    def __init__(self):
+        super(OpenALWorker, self).__init__()
+        self.players = set()
+
+    def run(self):
+        while True:
+            # This is a big lock, but ensures a player is not deleted while
+            # we're processing it -- this saves on extra checks in the
+            # player's methods that would otherwise have to check that it's
+            # still alive.
+            self.condition.acquire()
+
+            if self.stopped:
+                self.condition.release()
+                break
+            sleep_time = -1
+
+            # Refill player with least slack
+            if self.players:
+                player = None
+                slack = sys.maxint
+                for p in self.players:
+                    s = p.get_slack()
+                    if s < slack:
+                        player = p
+                        slack = s
+
+                if slack < self._max_slack:
+                    player.refill()
+                else:
+                    sleep_time = self._nap_time
+            else:
+                sleep_time = self._sleep_time
+
+            self.condition.release()
+
+            if sleep_time != -1:
+                self.sleep(sleep_time)
+
+    def add(self, player):
+        self.condition.acquire()
+        self.players.add(player)
+        self.condition.notify()
+        self.condition.release()
+
+    def remove(self, player):
+        self.condition.acquire()
+        self.players.remove(player)
+        self.condition.notify()
+        self.condition.release()
+
+class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
+    #: Minimum size of an OpenAL buffer worth bothering with, in bytes
     _min_buffer_size = 512
 
-    #: Maximum size of an OpenAL buffer, in bytes.  TODO: use OpenAL maximum
-    _max_buffer_size = 65536
-
-    UPDATE_PERIOD = 0.05
+    #: Aggregate (desired) buffer size, in bytes
+    _ideal_buffer_size = 44800
 
     def __init__(self, source_group, player):
         super(OpenALAudioPlayer, self).__init__(source_group, player)
@@ -112,27 +167,37 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         self._al_source = al.ALuint()
         al.alGenSources(1, self._al_source)
 
-        # Seconds of audio currently queued not processed (estimate)
-        self._buffered_time = 0.0
+        # Lock policy: lock all instance vars (except constants).  (AL calls
+        # are locked on context).
+        self._lock = threading.RLock()
 
-        # List of (timestamp, duration) corresponding to currently queued AL
-        # buffers
-        self._timestamps = []
+        # Cursor positions, like DSound and Pulse drivers, refer to a
+        # hypothetical infinite-length buffer.  Cursor units are in bytes.
+
+        # Cursor position of current (head) AL buffer
+        self._buffer_cursor = 0
+
+        # Estimated playback cursor position (last seen)
+        self._play_cursor = 0
+
+        # Cursor position of end of queued AL buffer.
+        self._write_cursor = 0
+
+        # List of currently queued buffer sizes (in samples)
+        self._buffer_sizes = []
+
+        # List of (cursor, MediaEvent)
         self._events = []
-
-        self._lock = threading.Lock()
-
-        # OpenAL 1.0 timestamp interpolation
-        if not context.have_1_1:
-            self._timestamp_system_time = time.time()
 
         # Desired play state (True even if stopped due to underrun)
         self._playing = False
 
-        # Timestamp when paused
-        self._pause_timestamp = 0.0
+        # OpenAL 1.0 timestamp interpolation: system time of current buffer
+        # playback (best guess)
+        if not context.have_1_1:
+            self._buffer_system_time = time.time()
 
-        self._pump()
+        self.refill()
 
     def __del__(self):
         try:
@@ -155,14 +220,13 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         self._playing = True
         self._al_play()
         if not context.have_1_1:
-            self._timestamp_system_time = time.time()
+            self._buffer_system_time = time.time()
+
+        context.worker.add(self)
 
     def _al_play(self):
-        if not self._timestamps:
-            return
-        state = al.ALint()
-
         context.lock()
+        state = al.ALint()
         al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
         if state.value != al.AL_PLAYING:
             al.alSourcePlay(self._al_source)
@@ -173,8 +237,12 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             return
 
         self._pause_timestamp = self.get_time()
+        context.lock()
         al.alSourcePause(self._al_source)
+        context.unlock()
         self._playing = False
+
+        context.worker.remove(self)
 
     def clear(self):
     
@@ -206,32 +274,12 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         context.unlock()
         self._lock.release()
 
-    def _get_current_buffer_time(self):
-        # Estimate how far into current buffer
-        if context.have_1_1:
-            samples = al.ALint()
-            context.lock()
-            al.alGetSourcei(self._al_source, al.AL_SAMPLE_OFFSET, samples)
-            context.unlock()
-            return samples.value / \
-                float(self.source_group.audio_format.sample_rate)
-        else:
-            # Interpolate system time past buffer timestamp
-            return time.time() - self._timestamp_system_time
-
-    def _pump(self):
-        if _debug:
-            print 'pump'
-
-        if not self._al_source:
-            # Deleted.
-            return
-
+    def _update_play_cursor(self):
         self._lock.acquire()
+        context.lock()
 
         # Release spent buffers
         processed = al.ALint()
-        context.lock()
         al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
         processed = processed.value
         if processed:
@@ -240,31 +288,66 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             al.alDeleteBuffers(len(buffers), buffers)
         context.unlock()
 
-        # Pop timestamps
-        while processed:
+        if processed:
+            self._buffer_cursor += sum(self._buffer_sizes[:processed])
+            del self._buffer_sizes[:processed]
+
             if not context.have_1_1:
-                self._timestamp_system_time = time.time()
-            _, duration = self._timestamps.pop(0)
-            self._buffered_time -= duration
-            processed -= 1
+                self._buffer_system_time = time.time()
 
-        current_buffer_time = self._get_current_buffer_time()
+        # Update play cursor using buffer cursor + estimate into current
+        # buffer
+        if context.have_1_1:
+            bytes = al.ALint()
+            context.lock()
+            al.alGetSourcei(self._al_source, al.AL_BYTE_OFFSET, bytes)
+            context.unlock()
+            if _debug:
+                print 'got bytes offset', bytes.value
+            self._play_cursor = self._buffer_cursor + bytes.value
+        else:
+            # Interpolate system time past buffer timestamp
+            self._play_cursor = \
+                self._buffer_cursor + \
+                (time.time() - self._buffer_system_time) * \
+                    self.source_group.audio_format.bytes_per_second
 
-        repump = True
+        # Process events
+        while self._events and self._events[0][0] < self._play_cursor:
+            event = self._events.pop(0)
+            event._sync_dispatch_to_player(self.player)
 
-        # Refill buffers
-        refill_time = \
-            self._update_buffer_time - self._buffered_time + \
-            current_buffer_time
-        refill_bytes = \
-            int(refill_time * self.source_group.audio_format.bytes_per_second)
+        self._lock.release()
+
+    def get_slack(self):
+        self._lock.acquire()
+        self._update_play_cursor()
+        slack = self._write_cursor - self._play_cursor
+        self._lock.release()
+
+        return slack
+
+    def refill(self):
+        if _debug:
+            print 'refill'
+
+        self._lock.acquire()
+
+        refill_bytes = self._ideal_buffer_size -  \
+            (self._write_cursor - self._play_cursor)
         while refill_bytes > self._min_buffer_size:
             audio_data = self.source_group.get_audio_data(refill_bytes)
             if not audio_data:
-                repump = False
+                self._events.append(
+                    (self._write_cursor, mt_media.MediaEvent(0, 'on_eos')))
+                self._events.append(
+                    (self._write_cursor, 
+                     mt_media.MediaEvent(0, 'on_source_group_eos')))
                 break
 
-            self._events.extend(audio_data.events)
+            for event in audio_data.events:
+                cursor = self._write_cursor + event.timestamp * self.sample_rate
+                self.events.append((cursor, event))
 
             buffer = al.ALuint()
             context.lock()
@@ -277,10 +360,13 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer)) 
             context.unlock()
 
-            self._buffered_time += audio_data.duration
-            self._timestamps.append((audio_data.timestamp, audio_data.duration))
+            self._write_cursor += audio_data.length
+            self._buffer_sizes.append(audio_data.length)
             refill_bytes -= audio_data.length
 
+
+        '''
+        TODO
         # Check for underrun stopping playback
         if self._playing:
             state = al.ALint()
@@ -289,28 +375,10 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             if state.value != al.AL_PLAYING:
                 al.alSourcePlay(self._al_source)
             context.unlock()
-
-        # Process events
-        self._process_events()
-
-        update_period = self.UPDATE_PERIOD
-        if self._events:
-            repump = True # ech, stupid flag
-            # XXX avoid call to get_time()
-            update_period = min(update_period, 
-                                self._events[0].timestamp - self.get_time())
-
-        # Schedule future pump
-        if repump:
-            context.post_job(update_period, self._pump)
-        else:
-            # End of source group XXX wrong, wait for underrun
-            mt_media.MediaEvent(0, 'on_eos')._sync_dispatch_to_player(
-                self.player)
-            mt_media.MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(
-                self.player)
+        '''
 
         self._lock.release()
+
 
     # TODO consolidate with other drivers
     # XXX not locked
@@ -416,24 +484,20 @@ class OpenALDriver(mt_media.AbstractAudioDriver):
         self._lock = threading.Lock()
 
         # Start worker thread
-        self._worker_thread = mt_media.TimedWorkerThread()
-        self._worker_thread.setDaemon(True)
-        self._worker_thread.start()
+        self.worker = OpenALWorker()
+        self.worker.start()
 
     def create_audio_player(self, source_group, player):
         return OpenALAudioPlayer(source_group, player)
 
     def delete(self):
-        self._worker_thread.stop()
+        self.worker.stop()
 
     def lock(self):
         self._lock.acquire()
 
     def unlock(self):
         self._lock.release()
-
-    def post_job(self, delay, job):
-        self._worker_thread.put_job((delay + time.time(), job))
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()

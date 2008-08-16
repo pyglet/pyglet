@@ -33,8 +33,8 @@ class DirectSoundWorker(mt_media.MediaThread):
     # Time to wait if there are no players.
     _sleep_time = None
 
-    def __init__(self, target=None):
-        super(DirectSoundWorker, self).__init__(target)
+    def __init__(self):
+        super(DirectSoundWorker, self).__init__()
         self.players = set()
 
     def run(self):

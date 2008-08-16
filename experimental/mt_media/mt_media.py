@@ -175,6 +175,8 @@ class MediaThread(object):
         self.condition.notify()
         self.condition.release()
 
+atexit.register(MediaThread._atexit)
+
 class WorkerThread(MediaThread):
     def __init__(self, target=None):
         super(WorkerThread, self).__init__(target)
@@ -220,34 +222,6 @@ class WorkerThread(MediaThread):
 
     def _clear(self):
         del self._jobs[:]
-
-atexit.register(WorkerThread._atexit)
-
-class TimedWorkerThread(WorkerThread):
-    def run(self):
-        while True:
-            job = self.get_job()
-            if not job:
-                break
-            target_time, job = job
-            wait_time = target_time - time.time()
-            if wait_time > 0:
-                if _debug:
-                    print 'worker sleep', wait_time
-                self.sleep(wait_time)
-            if _debug:
-                print 'worker job', job
-            job()
-        if _debug:
-            print 'worker exit'
-
-    def _get(self):
-        return heapq.heappop(self._jobs)
-
-    def _put(self, job):
-        # TODO should interrupt sleep now because min priority might have
-        # changed.
-        heapq.heappush(self._jobs, job)
 
 class AudioFormat(object):
     '''Audio details.
@@ -1040,7 +1014,8 @@ def get_audio_driver():
 
     # TODO  options
     #driver_names = ('silent',)
-    driver_names = ('directsound',) # 'pulse', 'openal')
+    #driver_names = ('directsound',) # 'pulse', 'openal')
+    driver_names = ('openal',)
 
     for driver_name in driver_names:
         try:
