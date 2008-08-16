@@ -87,8 +87,8 @@ format_map = {
 }
 
 class OpenALWorker(mt_media.MediaThread):
-    # Maximum time (secs) to buffer audio on a player
-    _max_slack = 0.5
+    # Minimum size to bother refilling (bytes)
+    _min_write_size = 512
 
     # Time to wait if there are players, but they're all full.
     _nap_time = 0.05
@@ -113,18 +113,18 @@ class OpenALWorker(mt_media.MediaThread):
                 break
             sleep_time = -1
 
-            # Refill player with least slack
+            # Refill player with least write_size
             if self.players:
                 player = None
-                slack = sys.maxint
+                write_size = 0
                 for p in self.players:
-                    s = p.get_slack()
-                    if s < slack:
+                    s = p.get_write_size()
+                    if s > write_size:
                         player = p
-                        slack = s
+                        write_size = s
 
-                if slack < self._max_slack:
-                    player.refill()
+                if write_size > self._min_write_size:
+                    player.refill(write_size)
                 else:
                     sleep_time = self._nap_time
             else:
@@ -183,7 +183,7 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         # Cursor position of end of queued AL buffer.
         self._write_cursor = 0
 
-        # List of currently queued buffer sizes (in samples)
+        # List of currently queued buffer sizes (in bytes)
         self._buffer_sizes = []
 
         # List of (cursor, MediaEvent)
@@ -192,12 +192,15 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         # Desired play state (True even if stopped due to underrun)
         self._playing = False
 
+        # Has source group EOS been seen (and hence, event added to queue)?
+        self._eos = False
+
         # OpenAL 1.0 timestamp interpolation: system time of current buffer
         # playback (best guess)
         if not context.have_1_1:
             self._buffer_system_time = time.time()
 
-        self.refill()
+        self.refill(self._ideal_buffer_size)
 
     def __del__(self):
         try:
@@ -308,36 +311,38 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         else:
             # Interpolate system time past buffer timestamp
             self._play_cursor = \
-                self._buffer_cursor + \
-                (time.time() - self._buffer_system_time) * \
-                    self.source_group.audio_format.bytes_per_second
+                self._buffer_cursor + int(
+                    (time.time() - self._buffer_system_time) * \
+                        self.source_group.audio_format.bytes_per_second)
 
         # Process events
         while self._events and self._events[0][0] < self._play_cursor:
-            event = self._events.pop(0)
+            _, event = self._events.pop(0)
             event._sync_dispatch_to_player(self.player)
 
         self._lock.release()
 
-    def get_slack(self):
+    def get_write_size(self):
         self._lock.acquire()
         self._update_play_cursor()
-        slack = self._write_cursor - self._play_cursor
+        write_size = self._ideal_buffer_size - \
+            (self._write_cursor - self._play_cursor)
+        if self._eos:
+            write_size = 0
         self._lock.release()
 
-        return slack
+        return write_size
 
-    def refill(self):
+    def refill(self, write_size):
         if _debug:
-            print 'refill'
+            print 'refill', write_size
 
         self._lock.acquire()
 
-        refill_bytes = self._ideal_buffer_size -  \
-            (self._write_cursor - self._play_cursor)
-        while refill_bytes > self._min_buffer_size:
-            audio_data = self.source_group.get_audio_data(refill_bytes)
+        while write_size > self._min_buffer_size:
+            audio_data = self.source_group.get_audio_data(write_size)
             if not audio_data:
+                self._eos = True
                 self._events.append(
                     (self._write_cursor, mt_media.MediaEvent(0, 'on_eos')))
                 self._events.append(
@@ -346,8 +351,9 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
                 break
 
             for event in audio_data.events:
-                cursor = self._write_cursor + event.timestamp * self.sample_rate
-                self.events.append((cursor, event))
+                cursor = self._write_cursor + event.timestamp * \
+                    self.source_group.audio_format.bytes_per_second
+                self._events.append((cursor, event))
 
             buffer = al.ALuint()
             context.lock()
@@ -362,7 +368,7 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
 
             self._write_cursor += audio_data.length
             self._buffer_sizes.append(audio_data.length)
-            refill_bytes -= audio_data.length
+            write_size -= audio_data.length
 
 
         '''
@@ -379,28 +385,8 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
 
         self._lock.release()
 
-
-    # TODO consolidate with other drivers
-    # XXX not locked
-    def _process_events(self):
-        if not self._events:
-            return
-
-        current_time = self.get_time()
-
-        event = self._events[0]
-        try:
-            while current_time >= event.timestamp:
-                if _debug:
-                    print 'dispatch event', event
-                event._sync_dispatch_to_player(self.player)
-                time.sleep(0)
-                del self._events[0]
-                event = self._events[0]
-        except IndexError:
-            pass
-
     def get_time(self):
+        TODO
         # Assumes pump has been called recently.
         state = al.ALint()
         context.lock()

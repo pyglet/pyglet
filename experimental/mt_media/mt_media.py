@@ -359,8 +359,7 @@ class MediaEvent(object):
         self.args = args
 
     def _sync_dispatch_to_player(self, player):
-        if pyglet.app.event_loop:
-            pyglet.app.event_loop.post_event(player, self.event, *self.args)
+        pyglet.app.event_loop.post_event(player, self.event, *self.args)
         # TODO sync with media.dispatch_events
 
     def __repr__(self):
