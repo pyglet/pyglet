@@ -189,6 +189,10 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         # List of currently queued buffer timestamps
         self._buffer_timestamps = []
 
+        # Timestamp at end of last written buffer (timestamp to return in case
+        # of underrun)
+        self._underrun_timestamp = None
+
         # List of (cursor, MediaEvent)
         self._events = []
 
@@ -295,6 +299,12 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         context.unlock()
 
         if processed:
+            if len(self._buffer_timestamps) == processed:
+                # Underrun, take note of timestamp
+                self._underrun_timestamp = \
+                    self._buffer_timestamps[-1] + \
+                    self._buffer_sizes[-1] / \
+                        float(self.source_group.audio_format.bytes_per_second)
             self._buffer_cursor += sum(self._buffer_sizes[:processed])
             del self._buffer_sizes[:processed]
             del self._buffer_timestamps[:processed]
@@ -375,24 +385,22 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
             self._buffer_timestamps.append(audio_data.timestamp)
             write_size -= audio_data.length
 
-
-        '''
-        TODO
         # Check for underrun stopping playback
         if self._playing:
             state = al.ALint()
             context.lock()
             al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
             if state.value != al.AL_PLAYING:
+                if _debug:
+                    print 'underrun'
                 al.alSourcePlay(self._al_source)
             context.unlock()
-        '''
 
         self._lock.release()
 
     def get_time(self):
         if not self._buffer_timestamps:
-            return 0.0
+            return self._underrun_timestamp
 
         return self._buffer_timestamps[0] + \
             (self._play_cursor - self._buffer_cursor) / \
