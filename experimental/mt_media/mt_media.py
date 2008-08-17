@@ -836,7 +836,9 @@ class Player(pyglet.event.EventDispatcher):
 
     def pause(self):
         if self._audio_player:
-            self._paused_time = self._audio_player.get_time()
+            time = self._audio_player.get_time()
+            if time is not None:
+                self._paused_time = time
             self._audio_player.stop()
 
         self._playing = False
@@ -899,10 +901,14 @@ class Player(pyglet.event.EventDispatcher):
     playing = property(lambda self: self._playing)
 
     def _get_time(self):
+        time = None
         if self._playing and self._audio_player:
-            return self._audio_player.get_time()
-        else:
+            time = self._audio_player.get_time()
+
+        if time is None:
             return self._paused_time
+        else:
+            return time
 
     time = property(_get_time)
 

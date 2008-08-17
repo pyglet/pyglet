@@ -392,7 +392,7 @@ class DirectSoundAudioPlayer(mt_media.AbstractAudioPlayer):
             result = ts + (self._play_cursor - cursor) / \
                 float(self.source_group.audio_format.bytes_per_second)
         else:
-            result = 0.
+            result = None
         self.unlock()
 
         return result
