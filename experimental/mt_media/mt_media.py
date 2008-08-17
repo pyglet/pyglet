@@ -753,6 +753,9 @@ class AbstractAudioPlayer(object):
     def get_time(self):
         '''Return approximation of current playback time within current source.
 
+        Returns ``None`` if the audio player does not know what the playback
+        time is (for example, before any valid audio data has been read).
+
         :rtype: float
         :return: current play cursor time, in seconds.
         '''
