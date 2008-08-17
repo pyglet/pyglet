@@ -255,7 +255,6 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         context.worker.remove(self)
 
     def clear(self):
-    
         self._lock.acquire()
         context.lock()
 
@@ -263,24 +262,9 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         self._playing = False
 
         del self._events[:]
+        self._underrun_timestamp = None
+        self._buffer_timestamps = [None for _ in self._buffer_timestamps]
 
-        '''
-        # XXX what's the point of this?  need to dequeue unprocessed buffers
-        # as well as processed ones.  clearing timestamps list confuses pump,
-        # serves no purpose.
-
-        processed = al.ALint()
-        al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
-        if processed.value:
-            buffers = (al.ALuint * processed.value)()
-            al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
-            al.alDeleteBuffers(len(buffers), buffers)
-
-
-        self._pause_timestamp = 0.0
-        self._buffered_time = 0.0
-        self._timestamps = []
-        '''
         context.unlock()
         self._lock.release()
 
@@ -399,10 +383,15 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
         self._lock.release()
 
     def get_time(self):
-        if not self._buffer_timestamps:
+        try:
+            buffer_timestamp = self._buffer_timestamps[0]
+        except IndexError:
             return self._underrun_timestamp
 
-        return self._buffer_timestamps[0] + \
+        if buffer_timestamp is None:
+            return None
+
+        return buffer_timestamp + \
             (self._play_cursor - self._buffer_cursor) / \
                 float(self.source_group.audio_format.bytes_per_second)
 
