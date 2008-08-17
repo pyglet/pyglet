@@ -93,7 +93,7 @@ if getattr(sys, 'frozen', None):
 #:     order of preference.  Valid driver names are:
 #:
 #:     * directsound, the Windows DirectSound audio module (Windows only)
-#:     * alsa, the ALSA audio module (Linux only) 
+#:     * pulse, the PulseAudio module (Linux only)
 #:     * openal, the OpenAL audio module
 #:     * silent, no audio
 #: debug_lib
@@ -130,7 +130,7 @@ if getattr(sys, 'frozen', None):
 #:     **Since:** pyglet 1.1
 #:
 options = {
-    'audio': ('directsound', 'openal', 'alsa', 'silent'),
+    'audio': ('directsound', 'pulse', 'openal', 'silent'),
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
     'debug_font': False,
     'debug_gl': not _enable_optimisations,

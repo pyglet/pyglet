@@ -1,158 +1,163 @@
-# ----------------------------------------------------------------------------
-# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
-# All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-#  * Neither the name of pyglet nor the names of its
-#    contributors may be used to endorse or promote products
-#    derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
+#!/usr/bin/env python
 
-'''Fallback driver producing no audio.
+'''
 '''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import threading
 import time
 
-from pyglet.media import AudioPlayer, Listener, AudioData
-from pyglet.media import MediaException
+from pyglet.media import AbstractAudioPlayer, AbstractAudioDriver
 
-class SilentAudioPlayer(AudioPlayer):
-    UPDATE_PERIOD = 0.1
-    
-    def __init__(self, audio_format):
-        super(SilentAudioPlayer, self).__init__(audio_format)
+import pyglet
+_debug = pyglet.options['debug_media']
 
+class SilentAudioPlayer(AbstractAudioPlayer):
+    # When playing video, length of audio (in secs) to buffer ahead.
+    _buffer_time = 0.4
+
+    # Minimum number of bytes to request from source
+    _min_update_bytes = 1024
+
+    def __init__(self, source_group, player):
+        super(SilentAudioPlayer, self).__init__(source_group, player)
+
+        # Reference timestamp
+        self._timestamp = 0.
+
+        # System time of reference timestamp to interpolate from
+        self._timestamp_time = time.time()
+
+        # Last timestamp recorded by worker thread
+        self._worker_timestamp = 0.
+
+        # Queued events (used by worked exclusively except for clear).
+        self._events = []
+
+        # Lock required for changes to timestamp and events variables above.
+        self._lock = threading.Lock()
+
+        # Actual play state.
         self._playing = False
-        self._eos_count = 0
 
-        self._audio_data_list = []
-        self._head_time = 0.0
-        self._head_timestamp = 0.0
-        self._head_system_time = time.time()
+        # Be nice to avoid creating this thread if user doesn't care about EOS
+        # events and there's no video format. XXX
+        # TODO use MediaThread
+        self._worker_thread = threading.Thread(target=self._worker_func)
+        self._worker_thread.setDaemon(True)
+        self._worker_thread.start()
 
-    def get_write_size(self):
-        bytes = int(self.audio_format.bytes_per_second * self.UPDATE_PERIOD)
-        return max(0, bytes - sum(
-            [a.length for a in self._audio_data_list if a is not None]))
-
-    def write(self, audio_data):
-        if not self._audio_data_list:
-            self._head_time = 0.0
-            self._head_timestamp = audio_data.timestamp
-            self._head_system_time = time.time()
-        self._audio_data_list.append(
-            AudioData(None, 
-                      audio_data.length, 
-                      audio_data.timestamp,
-                      audio_data.duration))
-        audio_data.consume(audio_data.length, self.audio_format)
-
-    def write_eos(self):
-        if self._audio_data_list:
-            self._audio_data_list.append(None)
-
-    def write_end(self):
+    def delete(self):
+        # TODO kill thread
         pass
 
     def play(self):
+        if self._playing:
+            return
+
         self._playing = True
-        self._head_system_time = time.time()
+        self._timestamp_time = time.time()
 
     def stop(self):
-        self._playing = False
-        self._head_time = time.time() - self._head_system_time
-
-    def clear(self):
-        self._audio_data_list = []
-        self._head_time = 0.0
-        self._head_system_time = time.time()
-        self._eos_count = 0
-
-    def pump(self):
         if not self._playing:
             return
-        system_time = time.time()
-        head_time = system_time - self._head_system_time
-        try:
-            while head_time >= self._audio_data_list[0].duration:
-                head_time -= self._audio_data_list[0].duration
-                self._audio_data_list.pop(0)
-                while self._audio_data_list[0] is None:
-                    self._eos_count += 1
-                    self._audio_data_list.pop(0)
-            self._head_timestamp = self._audio_data_list[0].timestamp
-            self._head_system_time = system_time - head_time
-        except IndexError:
-            pass
+
+        self._timestamp = self.get_time()
+        self._playing = False
+
+    def seek(self, timestamp):
+        self._lock.acquire()
+        self._timestamp = timestamp
+        self._worker_timestamp = timestamp
+        self._timestamp_time = time.time()
+        self._lock.release()
+
+    def clear(self):
+        self._lock.acquire()
+        self._events = []
+        self._lock.release()
 
     def get_time(self):
-        if not self._audio_data_list:
-            return time.time() - self._head_system_time + self._head_timestamp
-
         if self._playing:
-            system_time = time.time()
-            head_time = system_time - self._head_system_time
-            return head_time + self._audio_data_list[0].timestamp 
+            return self._timestamp + (time.time() - self._timestamp_time)
         else:
-            return self._audio_data_list[0].timestamp + self._head_time
+            return self._timestamp
 
-    def clear_eos(self):
-        if self._eos_count:
-            self._eos_count -= 1 
-            return True
-        return False
+    def _worker_func(self):
+        # Amount of audio data "buffered" (in secs)
+        buffered_time = 0.
 
-class SilentListener(Listener):
-    def _set_volume(self, volume):
-        self._volume = volume
+        self._lock.acquire()
+        self._worker_timestamp = 0.0
+        self._lock.release()
 
-    def _set_position(self, position):
-        self._position = position
+        while True:
+            self._lock.acquire()
 
-    def _set_velocity(self, velocity):
-        self._velocity = velocity
+            # Use up "buffered" audio based on amount of time passed.
+            timestamp = self.get_time()
+            buffered_time -= timestamp - self._worker_timestamp
+            self._worker_timestamp = timestamp
 
-    def _set_forward_orientation(self, orientation):
-        self._forward_orientation = orientation
+            if _debug:
+                print 'timestamp: %f' % timestamp
 
-    def _set_up_orientation(self, orientation):
-        self._up_orientation = orientation
+            # Dispatch events
+            events = self._events # local var ok within this lock
+            while events and events[0].timestamp <= timestamp:
+                events[0]._sync_dispatch_to_player(self.player)
+                del events[0]
 
-    def _set_doppler_factor(self, factor):
-        self._doppler_factor = factor
+            if events:
+                next_event_timestamp = events[0].timestamp
+            else:
+                next_event_timestamp = None
 
-    def _set_speed_of_sound(self, speed_of_sound):
-        self._speed_of_sound = speed_of_sound
+            self._lock.release()
 
-def driver_init():
-    pass
+            # Calculate how much data to request from source
+            secs = self._buffer_time - buffered_time
+            bytes = secs * self.source_group.audio_format.bytes_per_second
+            if _debug:
+                print 'need to get %d bytes (%f secs)' % (bytes, secs)
 
-driver_listener = SilentListener()
-driver_audio_player_class = SilentAudioPlayer
+            # No need to get data, sleep until next event or buffer update
+            # time instead.
+            if bytes < self._min_update_bytes:
+                sleep_time = buffered_time / 2
+                if next_event_timestamp is not None:
+                    sleep_time = min(sleep_time, 
+                                     next_event_timestamp - timestamp)
+                if _debug:
+                    print 'sleeping for %f' % sleep_time
+                time.sleep(sleep_time)
+                continue
+
+            # Pull audio data from source
+            audio_data = self.source_group.get_audio_data(int(bytes))
+            if not audio_data:
+                # TODO on_eos as well
+                event = MediaEvent(timestamp, 'on_source_group_eos')
+                event._sync_dispatch_to_player(self.player)
+                break
+
+            # Pretend to buffer audio data, collect events.
+            buffered_time += audio_data.duration
+            self._lock.acquire()
+            self._events.extend(audio_data.events)
+            self._lock.release()
+
+            if _debug:
+                print 'got %s secs of audio data' % audio_data.duration
+                print 'now buffered to %f' % buffered_time
+                print 'events: %r' % events
+
+class SilentAudioDriver(AbstractAudioDriver):
+    def create_audio_player(self, source_group, player):
+        return SilentAudioPlayer(source_group, player)
+
+def create_audio_driver():
+    return SilentAudioDriver()
+

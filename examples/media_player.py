@@ -158,7 +158,7 @@ class PlayerWindow(pyglet.window.Window):
                                            resizable=True)
         self.player = player
         self.player.push_handlers(self)
-        self.player.eos_action = self.player.EOS_PAUSE
+        # TODO compat #self.player.eos_action = self.player.EOS_PAUSE
 
         self.slider = Slider(self)
         self.slider.x = self.GUI_PADDING
@@ -313,6 +313,8 @@ if __name__ == '__main__':
         print 'Usage: media_player.py <filename> [<filename> ...]'
         sys.exit(1)
 
+    have_video = False
+
     for filename in sys.argv[1:]:
         player = pyglet.media.Player()
         window = PlayerWindow(player)
@@ -320,11 +322,16 @@ if __name__ == '__main__':
         source = pyglet.media.load(filename)
         player.queue(source)
 
+        have_video = have_video or bool(source.video_format)
+
         window.gui_update_source()
         window.set_default_video_size()
         window.set_visible(True)
 
         window.gui_update_state()
         player.play()
+
+    if not have_video:
+        pyglet.clock.schedule_interval(lambda dt: None, 0.2)
 
     pyglet.app.run()

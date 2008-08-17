@@ -64,12 +64,12 @@ class ProceduralSource(Source):
         duration = float(bytes) / self._bytes_per_second
         data = self._generate_data(bytes, self._offset)
         self._offset += bytes
-        is_eos = self._offset >= self._max_offset
 
         return AudioData(data,
                          bytes,
                          timestamp,
-                         duration)
+                         duration, 
+                         [])
 
     def _generate_data(self, bytes, offset):
         '''Generate `bytes` bytes of data.

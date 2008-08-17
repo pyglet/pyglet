@@ -38,16 +38,19 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from pyglet.media import (MediaFormatException, StreamingSource, 
-                          VideoFormat, AudioFormat, AudioData)
+import ctypes
+import Queue
+import threading
+import time
 
 import pyglet
 from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet import image
 import pyglet.lib
-
-import ctypes
+from pyglet.media import \
+    MediaFormatException, StreamingSource, VideoFormat, AudioFormat, \
+    AudioData, MediaEvent, WorkerThread
 
 av = pyglet.lib.load_library('avbin', 
                              darwin='/usr/local/lib/libavbin.dylib')
@@ -186,18 +189,83 @@ def timestamp_from_avbin(timestamp):
 def timestamp_to_avbin(timestamp):
     return int(timestamp * 1000000)
 
-class BufferedPacket(object):
+class VideoPacket(object):
+    _next_id = 0
+
     def __init__(self, packet):
-        self.timestamp = packet.timestamp
-        self.stream_index = packet.stream_index
+        self.timestamp = timestamp_from_avbin(packet.timestamp)
         self.data = (ctypes.c_uint8 * packet.size)()
         self.size = packet.size
         ctypes.memmove(self.data, packet.data, self.size)
 
+        self.id = self._next_id
+        self.__class__._next_id += 1
+
 class BufferedImage(object):
-    def __init__(self, image, timestamp):
+    def __init__(self, image, packet_id):
         self.image = image
-        self.timestamp = timestamp
+        self.id = packet_id
+
+    def __repr__(self):
+        return 'BufferedImage(%d)' % self.id
+
+class BufferedImageQueue(object):
+    def __init__(self):
+        self._queue = []
+        self._condition = threading.Condition()
+        self._interrupted = False
+
+    def put(self, image):
+        self._condition.acquire()
+        self._queue.append(image)
+        self._interrupted = False
+        self._condition.notify()
+        self._condition.release()
+
+    def get(self, id):
+        item = None
+
+        self._condition.acquire()
+        self._interrupted = False
+        while not self._interrupted:
+            if not self._queue:
+                self._condition.wait()
+
+            try:
+                if self._queue[0].id == id:
+                    # Matching frame at head of queue; return it
+                    item = self._queue.pop(0)
+                    break
+                elif self._queue[0].id > id:
+                    # Head of queue is beyond requested frame; requested
+                    # frame must have been corrupt or missing; return None
+                    break
+                elif self._queue[0].id < id:
+                    # Head of queue is older than requested frame; throw
+                    # it away and keep looking
+                    del self._queue[0]
+            except IndexError:
+                pass
+        self._condition.release()
+
+        return item
+
+    def get_first_id(self):
+        id = None
+
+        self._condition.acquire()
+        if self._queue:
+            id = self._queue[0].id
+        self._condition.release()
+        
+        return id
+
+    def clear(self):
+        self._condition.acquire()
+        self._queue[:] = []
+        self._interrupted = True
+        self._condition.notify()
+        self._condition.release()
 
 class AVbinSource(StreamingSource):
     def __init__(self, filename, file=None):
@@ -209,7 +277,9 @@ class AVbinSource(StreamingSource):
             raise AVbinException('Could not open "%s"' % filename)
 
         self._video_stream = None
+        self._video_stream_index = -1
         self._audio_stream = None
+        self._audio_stream_index = -1
 
         file_info = AVbinFileInfo()
         file_info.structure_size = ctypes.sizeof(file_info)
@@ -258,24 +328,27 @@ class AVbinSource(StreamingSource):
         self._packet = AVbinPacket()
         self._packet.structure_size = ctypes.sizeof(self._packet)
         self._packet.stream_index = -1
-        self._buffered_packets = []
 
-        self._buffer_streams = []
-        self._buffered_images = []
+        self._events = []
+        self._video_images = BufferedImageQueue()
+
+        # Timestamp of last video packet added to decoder queue.
+        self._video_timestamp = 0
+
         if self.audio_format:
-            self._audio_packet_ptr = 0
-            self._audio_packet_size = 0
-            self._audio_packet_timestamp = 0
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.avbin_get_audio_buffer_size())()
-            self._buffer_streams.append(self._audio_stream_index)
+            self._buffered_audio_data = []
             
         if self.video_format:
-            self._buffer_streams.append(self._video_stream_index)
-            self._force_next_video_image = True
-            self._last_video_timestamp = None
+            self._decode_thread = WorkerThread()
+            self._decode_thread.start()
+            self._requested_video_frame_id = -1
+            self._lock = threading.Lock()
 
     def __del__(self):
+        if _debug:
+            print 'del avbin source'
         try:
             if self._video_stream:
                 av.avbin_close_stream(self._video_stream)
@@ -285,106 +358,171 @@ class AVbinSource(StreamingSource):
         except:
             pass
 
-    def _seek(self, timestamp):
+    # XXX TODO call this / add to source api
+    def delete(self):
+        if self.video_format:
+            self._decode_thread.stop()
+
+    def seek(self, timestamp):
+        if _debug:
+            print 'AVbin seek', timestamp
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
-        self._buffered_packets = []
-        self._buffered_images = []
+
         self._audio_packet_size = 0
-        self._force_next_video_image = True
-        self._last_video_timestamp = None
+        del self._events[:]
+        del self._buffered_audio_data[:]
 
-    def _get_packet_for_stream(self, stream_index):
-        # See if a packet has already been buffered
-        for packet in self._buffered_packets:
-            if packet.stream_index == stream_index:
-                self._buffered_packets.remove(packet)
-                return packet
+        if self.video_format:
+            self._video_timestamp = 0
+            self._video_images.clear()
 
-        # XXX This is ugly and needs tuning per-codec.  Replace with an
-        # explicit API for disabling unused streams (e.g. for silent driver).
-        '''
-        # Make sure we're not buffering packets that are being ignored
-        for buffer in self._buffered_packets, self._buffered_images:
-            if len(buffer) > 20:
-                buffer.pop(0)
-        '''
+            self._lock.acquire()
+            self._requested_video_frame_id = -1
+            self._lock.release()
 
-        # Read more packets, buffering each interesting one until we get to 
-        # the one we want or reach end of file.
-        while True: 
-            if av.avbin_read(self._file, self._packet) != AVBIN_RESULT_OK:
-                return None
-            elif self._packet.stream_index == stream_index:
-                return self._packet
-            elif self._packet.stream_index == self._video_stream_index:
-                buffered_image = self._decode_video_packet(self._packet)
-                if buffered_image:
-                    self._buffered_images.append(buffered_image)
-            elif self._packet.stream_index in self._buffer_streams:
-                self._buffered_packets.append(BufferedPacket(self._packet))
+            self._decode_thread.clear_jobs()
+
+    def _queue_video_frame(self):
+        # Add the next video frame to the decode queue (may return without
+        # adding anything to the queue if eos)
+        if _debug:
+            print '_single_video_frame'
+        while True:
+            if not self._get_packet():
+                break
+
+            packet_type, packet = self._process_packet()
+            if packet_type == 'video':
+                return packet.id
+
+    def _get_packet(self):
+        # Read a packet into self._packet.  Returns True if OK, False if no
+        # more packets are in stream.
+        return av.avbin_read(self._file, self._packet) == AVBIN_RESULT_OK
+
+    def _process_packet(self):
+        # Returns (packet_type, packet), where packet_type = 'video' or
+        # 'audio'; and packet is VideoPacket or AudioData.  In either case,
+        # packet is buffered or queued for decoding; no further action is
+        # necessary.  Returns (None, None) if packet was neither type.
+
+        if self._packet.stream_index == self._video_stream_index:
+            if self._packet.timestamp < 0:
+                # XXX TODO
+                # AVbin needs hack to decode timestamp for B frames in
+                # some containers (OGG?).  See
+                # http://www.dranger.com/ffmpeg/tutorial05.html
+                # For now we just drop these frames.
+                return None, None
+
+            video_packet = VideoPacket(self._packet)
+
+            if _debug:
+                print 'Created and queued frame %d (%f)' % \
+                    (video_packet.id, video_packet.timestamp)
+
+            self._events.append(MediaEvent(video_packet.timestamp,
+                                           'on_video_frame',
+                                           video_packet.id))
+            self._video_timestamp = max(self._video_timestamp,
+                                        video_packet.timestamp)
+            self._decode_thread.put_job(
+                lambda: self._decode_video_frame(video_packet))
+
+            return 'video', video_packet
+
+        elif self._packet.stream_index == self._audio_stream_index:
+            audio_data = self._decode_audio_packet()
+            if _debug:
+                print 'Got an audio packet at', audio_data.timestamp
+            if audio_data:
+                self._buffered_audio_data.append(audio_data)
+                return 'audio', audio_data
+
+        return None, None
 
     def _get_audio_data(self, bytes):
-        # XXX bytes currently ignored
+        try:
+            audio_data = self._buffered_audio_data.pop(0)
+            audio_data_timeend = audio_data.timestamp + audio_data.duration
+        except IndexError:
+            audio_data = None
+            audio_data_timeend = self._video_timestamp + 1
+
+        if _debug:
+            print '_get_audio_data'
+
+        have_video_work = False
+
+        # Keep reading packets until we have an audio packet and all the
+        # associated video packets have been enqueued on the decoder thread.
+        while not audio_data or (
+            self._video_stream and self._video_timestamp < audio_data_timeend):
+            if not self._get_packet():
+                break
+
+            packet_type, packet = self._process_packet()
+
+            if packet_type == 'video':
+                have_video_work = True
+            elif not audio_data and packet_type == 'audio':
+                audio_data = self._buffered_audio_data.pop(0)
+                if _debug:
+                    print 'Got requested audio packet at', audio_data.timestamp
+                audio_data_timeend = audio_data.timestamp + audio_data.duration
+
+        if have_video_work:
+            # Give decoder thread a chance to run before we return this audio
+            # data.
+            time.sleep(0)
+
+        if not audio_data:
+            if _debug:
+                print '_get_audio_data returning None'
+            return None
+
+        while self._events and self._events[0].timestamp <= audio_data_timeend:
+            event = self._events.pop(0)
+            if event.timestamp >= audio_data.timestamp:
+                event.timestamp -= audio_data.timestamp
+                audio_data.events.append(event)
+
+        if _debug:
+            print '_get_audio_data returning ts %f with events' % \
+                audio_data.timestamp, audio_data.events
+            print 'remaining events are', self._events
+        return audio_data
+
+    def _decode_audio_packet(self):
+        packet = self._packet
+        size_out = ctypes.c_int(len(self._audio_buffer))
+
         while True:
-            while self._audio_packet_size > 0:
-                size_out = ctypes.c_int(len(self._audio_buffer))
+            audio_packet_ptr = ctypes.cast(packet.data, ctypes.c_void_p)
+            audio_packet_size = packet.size
 
-                #print self._audio_stream, self._audio_packet_ptr, self._audio_packet_size, self._audio_buffer, size_out
-                used = av.avbin_decode_audio(self._audio_stream,
-                    self._audio_packet_ptr, self._audio_packet_size,
-                    self._audio_buffer, size_out)
+            used = av.avbin_decode_audio(self._audio_stream,
+                audio_packet_ptr, audio_packet_size,
+                self._audio_buffer, size_out)
 
-                if used < 0:
-                    self._audio_packet_size = 0
-                    break
+            if used < 0:
+                self._audio_packet_size = 0
+                break
 
-                self._audio_packet_ptr.value += used
-                self._audio_packet_size -= used
+            audio_packet_ptr.value += used
+            audio_packet_size -= used
 
-                if size_out.value <= 0:
-                    continue
+            if size_out.value <= 0:
+                continue
 
-                buffer = ctypes.string_at(self._audio_buffer, size_out)
-                duration = \
-                    float(len(buffer)) / self.audio_format.bytes_per_second
-                timestamp = self._audio_packet_timestamp
-                self._audio_packet_timestamp += duration
-                return AudioData(buffer, len(buffer), timestamp, duration)
-
-            packet = self._get_packet_for_stream(self._audio_stream_index)
-            if not packet:
-                return None
-
+            buffer = ctypes.string_at(self._audio_buffer, size_out)
+            duration = float(len(buffer)) / self.audio_format.bytes_per_second
             self._audio_packet_timestamp = \
-                timestamp_from_avbin(packet.timestamp)
-            self._audio_packet = packet # keep from GC
-            self._audio_packet_ptr = ctypes.cast(packet.data,
-                                                 ctypes.c_void_p)
-            self._audio_packet_size = packet.size
-
-    def _init_texture(self, player):
-        if not self.video_format:
-            return
-
-        width = self.video_format.width
-        height = self.video_format.height
-        if gl_info.have_extension('GL_ARB_texture_rectangle'):
-            texture = image.Texture.create_for_size(
-                gl.GL_TEXTURE_RECTANGLE_ARB, width, height,
-                internalformat=gl.GL_RGB)
-        else:
-            texture = image.Texture.create_for_size(
-                gl.GL_TEXTURE_2D, width, height, internalformat=gl.GL_RGB)
-            if texture.width != width or texture.height != height:
-                texture = texture.get_region(0, 0, width, height)
-        player._texture = texture
-
-        # Flip texture coords (good enough for simple apps).
-        t = list(player._texture.tex_coords)
-        player._texture.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
+                timestamp = timestamp_from_avbin(packet.timestamp)
+            return AudioData(buffer, len(buffer), timestamp, duration, []) 
 
     def _decode_video_packet(self, packet):
-        timestamp = timestamp_from_avbin(packet.timestamp)
+        timestamp = packet.timestamp # XXX unused
 
         width = self.video_format.width
         height = self.video_format.height
@@ -394,23 +532,14 @@ class AVbinSource(StreamingSource):
                                        packet.data, packet.size, 
                                        buffer)
         if result < 0:
-            return None
-
-        return BufferedImage(
-            image.ImageData(width, height, 'RGB', buffer, pitch),
-            timestamp)
-
-    def _next_image(self):
-        img = None
-        while not img:
-            packet = self._get_packet_for_stream(self._video_stream_index)
-            if not packet:
-                return
-            img = self._decode_video_packet(packet)
-
-        return img
+            image_data = None
+        else:
+            image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
+            
+        return BufferedImage(image_data, packet.id)
 
     def get_next_video_timestamp(self):
+        raise TODO
         if not self.video_format:
             return
 
@@ -424,54 +553,59 @@ class AVbinSource(StreamingSource):
             return img.timestamp
 
     def get_next_video_frame(self):
+        # See caveat below regarding get_next_video_frame_id
+        id = self.get_next_video_frame_id()
+        return self.get_video_frame(id)
+
+    def get_next_video_frame_id(self):
+        id = self._video_images.get_first_id()
+        if id is not None:
+            return id
+
+        # Nothing already decoded, let's queue something now and return the
+        # id.  (Not perfect, because something might be queued... but we're
+        # handling the common case -- seeking)
+        id = self._queue_video_frame()
+        return id
+
+    def _decode_video_frame(self, packet):
+        if _debug:
+            print 'decoding video frame', packet.id
+
+        buffered_image = self._decode_video_packet(packet)
+
+        self._lock.acquire()
+        requested_video_frame_id = self._requested_video_frame_id
+        self._lock.release()
+
+        if packet.id >= requested_video_frame_id:
+            self._video_images.put(buffered_image)
+
+        if _debug:
+            print 'done decoding video frame', packet.id
+
+    def get_video_frame(self, id):
+        if _debug:
+            print 'get_video_frame', id
         if not self.video_format:
             return
 
-        try:
-            img = self._buffered_images.pop(0)
-        except IndexError:
-            img = self._next_image()
-
-        if img:
-            self._last_video_timestamp = img.timestamp
-            self._force_next_video_image = False
-            return img.image
-
-    def _update_texture(self, player, timestamp):
-        if not self.video_format:
+        if id <= self._requested_video_frame_id:
             return
 
-        if self._last_video_timestamp > timestamp:
-            return
-
-        img = None
-        i = 0
-        while (not img or 
-                (img.timestamp < timestamp and 
-                 not self._force_next_video_image) ):
-            if self._buffered_images:
-                img = self._buffered_images.pop(0)
-            else:
-                packet = self._get_packet_for_stream(self._video_stream_index)
-                if not packet:
-                    return
-                img = self._decode_video_packet(packet)
-
-            # Emergency loop exit when timestamps are bad
-            i += 1
-            if i > 60:
-                break
-
-        if img:
-            player._texture.blit_into(img.image, 0, 0, 0)
-            self._last_video_timestamp = img.timestamp
-            self._force_next_video_image = False
-
-    def _release_texture(self, player):
-        player._texture = None
+        self._lock.acquire()
+        self._requested_video_frame_id = id
+        self._lock.release()
+        buffered_image = self._video_images.get(id)
+        
+        if _debug:
+            print 'get_video_frame(%r) -> %r' % (id, buffered_image)
+        return buffered_image.image
 
 av.avbin_init()
 if pyglet.options['debug_media']:
+    _debug = True
     av.avbin_set_log_level(AVBIN_LOG_DEBUG)
 else:
+    _debug = False
     av.avbin_set_log_level(AVBIN_LOG_QUIET)
