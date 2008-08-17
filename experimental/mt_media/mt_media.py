@@ -1078,14 +1078,3 @@ def get_source_loader():
     return _source_loader
 
 _source_loader = None
-
-# XXX Hack in MTApp enhancements.
-import sys
-if sys.platform == 'linux2':
-    import mt_app_xlib
-elif sys.platform == 'darwin':
-    pass # in trunk
-elif sys.platform == 'win32':
-    pass # in trunk
-else:
-    raise NotImplementedError('TODO')

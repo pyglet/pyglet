@@ -38,18 +38,80 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import os
 import select
+import threading
 import weakref
 
 from pyglet import app
 from pyglet.app.base import EventLoop
-from pyglet.window.xlib import xlib
+
+class XlibSelectDevice(object):
+    def fileno(self):
+        '''Get the file handle for ``select()`` for this device.
+
+        :rtype: int
+        '''
+        raise NotImplementedError('abstract')
+
+    def select(self):
+        '''Perform event processing on the device.
+
+        Called when ``select()`` returns this device in its list of active
+        files.
+        '''
+        raise NotImplementedError('abstract')
+
+    def poll(self):
+        '''Check if the device has events ready to process.
+
+        :rtype: bool
+        :return: True if there are events to process, False otherwise.
+        '''
+        return False
+
+class SynchronizedEventQueue(XlibSelectDevice):
+    def __init__(self):
+        self._sync_file_read, self._sync_file_write = os.pipe()
+        self._events = []
+        self._lock = threading.Lock()
+
+    def fileno(self):
+        return self._sync_file_read
+
+    def post_event(self, dispatcher, event, *args):
+        self._lock.acquire()
+        self._events.append((dispatcher, event, args))
+        os.write(self._sync_file_write, '1')
+        self._lock.release()
+
+    def select(self):
+        self._lock.acquire()
+        for dispatcher, event, args in self._events:
+            dispatcher.dispatch_event(event, *args)
+        self._events = []
+        self._lock.release()
+
+    def poll(self):
+        self._lock.acquire()
+        result = bool(self._events)
+        self._lock.release()
+
+        return result
 
 class XlibEventLoop(EventLoop):
+    def __init__(self):
+        super(XlibEventLoop, self).__init__()
+        self._synchronized_event_queue = SynchronizedEventQueue()
+        self._select_devices = set()
+        self._select_devices.add(self._synchronized_event_queue)
+
+    def post_event(self, dispatcher, event, *args):
+        self._synchronized_event_queue.post_event(dispatcher, event, *args)
+
     def run(self):
         self._setup()
 
-        e = xlib.XEvent()
         t = 0
         sleep_time = 0.
 
@@ -57,31 +119,20 @@ class XlibEventLoop(EventLoop):
 
         while not self.has_exit:
             # Check for already pending events
-            for display in app.displays:
-                if xlib.XPending(display._display):
-                    pending_displays = (display,)
-                    break
-            else:
-                # None found; select on all file descriptors or timeout
-                iwtd = self.get_select_files()
+            pending_devices = []
+            for device in self._select_devices:
+                if device.poll():
+                    pending_devices.append(device)
+
+            # If nothing was immediately pending, block until there's activity
+            # on a device.
+            if not pending_devices:
+                iwtd = self._select_devices
                 pending_displays, _, _ = select.select(iwtd, (), (), sleep_time)
 
-            # Dispatch platform events
-            for display in pending_displays:
-                while xlib.XPending(display._display):
-                    xlib.XNextEvent(display._display, e)
-
-                    # Key events are filtered by the xlib window event
-                    # handler so they get a shot at the prefiltered event.
-                    if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
-                        if xlib.XFilterEvent(e, e.xany.window):
-                            continue
-                    try:
-                        window = display._window_map[e.xany.window]
-                    except KeyError:
-                        continue
-
-                    window.dispatch_platform_event(e)
+            # Dispatch activity on matching devices
+            for device in pending_devices:
+                device.select()
 
             # Dispatch resize events
             for window in app.windows:
@@ -95,6 +146,3 @@ class XlibEventLoop(EventLoop):
             sleep_time = self.idle()
 
         self.dispatch_event('on_exit')
-
-    def get_select_files(self):
-        return list(app.displays)

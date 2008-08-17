@@ -40,6 +40,7 @@ import unicodedata
 import warnings
 
 import pyglet
+from pyglet.app.xlib import XlibSelectDevice
 from pyglet.window import WindowException, NoSuchDisplayException, \
     MouseCursorException, Platform, Display, Screen, MouseCursor, \
     DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler
@@ -151,7 +152,7 @@ class XlibPlatform(Platform):
     def get_default_display(self):
         return self.get_display('')
 
-class XlibDisplayDevice(Display):
+class XlibDisplayDevice(XlibSelectDevice, Display):
     _display = None     # POINTER(xlib.Display)
 
     _x_im = None        # X input method
@@ -186,8 +187,8 @@ class XlibDisplayDevice(Display):
                                          byref(minor_version)):
                     self._enable_xsync = True
 
-    def fileno(self):
-        return self._fileno
+        # Add to event loop select list.  Assume we never go away.
+        pyglet.app.event_loop._select_devices.add(self)
 
     def get_screens(self):
         x_screen = xlib.XDefaultScreen(self._display)
@@ -224,6 +225,31 @@ class XlibDisplayDevice(Display):
             s = result.pop(x_screen)
             result.insert(0, s)
             return result
+
+    # XlibSelectDevice interface
+
+    def fileno(self):
+        return self._fileno
+
+    def select(self):
+        e = xlib.XEvent()
+        while xlib.XPending(self._display):
+            xlib.XNextEvent(self._display, e)
+
+            # Key events are filtered by the xlib window event
+            # handler so they get a shot at the prefiltered event.
+            if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
+                if xlib.XFilterEvent(e, e.xany.window):
+                    continue
+            try:
+                window = self._window_map[e.xany.window]
+            except KeyError:
+                continue
+
+            window.dispatch_platform_event(e)
+
+    def poll(self):
+        return xlib.XPending(self._display)
 
 class XlibScreen(Screen):
     def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
