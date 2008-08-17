@@ -204,9 +204,12 @@ class VideoPacket(object):
         self.__class__._next_id += 1
 
 class BufferedImage(object):
-    def __init__(self, image, packet):
+    def __init__(self, image, packet_id):
         self.image = image
-        self.id = packet.id
+        self.id = packet_id
+
+    def __repr__(self):
+        return 'BufferedImage(%d)' % self.id
 
 class BufferedImageQueue(object):
     def __init__(self):
@@ -343,6 +346,7 @@ class AVbinSource(StreamingSource):
             self._decode_thread = WorkerThread()
             self._decode_thread.start()
             self._requested_video_frame_id = -1
+            self._lock = threading.Lock()
 
     def __del__(self):
         if _debug:
@@ -358,7 +362,8 @@ class AVbinSource(StreamingSource):
 
     # XXX TODO call this / add to source api
     def delete(self):
-        self._decode_thread.stop()
+        if self.video_format:
+            self._decode_thread.stop()
 
     def seek(self, timestamp):
         if _debug:
@@ -366,15 +371,18 @@ class AVbinSource(StreamingSource):
         av.avbin_seek_file(self._file, timestamp_to_avbin(timestamp))
 
         self._audio_packet_size = 0
-        self._video_timestamp = 0
-        self._requested_video_frame_id = -1
-        self._video_images.clear()
         del self._events[:]
         del self._buffered_audio_data[:]
 
-        if _debug:
-            print 'clear jobs'
-        self._decode_thread.clear_jobs()
+        if self.video_format:
+            self._video_timestamp = 0
+            self._video_images.clear()
+
+            self._lock.acquire()
+            self._requested_video_frame_id = -1
+            self._lock.release()
+
+            self._decode_thread.clear_jobs()
 
     def _queue_video_frame(self):
         # Add the next video frame to the decode queue (may return without
@@ -525,11 +533,11 @@ class AVbinSource(StreamingSource):
                                        packet.data, packet.size, 
                                        buffer)
         if result < 0:
-            return None
-
-        return BufferedImage(
-            image.ImageData(width, height, 'RGB', buffer, pitch),
-            packet)
+            image_data = None
+        else:
+            image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
+            
+        return BufferedImage(image_data, packet.id)
 
     def get_next_video_timestamp(self):
         raise TODO
@@ -566,8 +574,12 @@ class AVbinSource(StreamingSource):
             print 'decoding video frame', packet.id
 
         buffered_image = self._decode_video_packet(packet)
-        # XXX requested_video_frame_id not locked
-        if buffered_image and packet.id >= self._requested_video_frame_id:
+
+        self._lock.acquire()
+        requested_video_frame_id = self._requested_video_frame_id
+        self._lock.release()
+
+        if packet.id >= requested_video_frame_id:
             self._video_images.put(buffered_image)
 
         if _debug:
@@ -582,17 +594,14 @@ class AVbinSource(StreamingSource):
         if id <= self._requested_video_frame_id:
             return
 
+        self._lock.acquire()
         self._requested_video_frame_id = id
+        self._lock.release()
         buffered_image = self._video_images.get(id)
         
-        if buffered_image:
-            image = buffered_image.image
-        else:
-            image = None
-
         if _debug:
-            print 'get_video_frame(%r) -> %r' % (id, image)
-        return image
+            print 'get_video_frame(%r) -> %r' % (id, buffered_image)
+        return buffered_image.image
 
 av.avbin_init()
 if pyglet.options['debug_media']:

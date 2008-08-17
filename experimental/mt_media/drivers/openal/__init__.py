@@ -396,51 +396,51 @@ class OpenALAudioPlayer(mt_media.AbstractAudioPlayer):
                 float(self.source_group.audio_format.bytes_per_second)
 
     def set_volume(self, volume):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
-        self.unlock()
+        context.unlock()
 
     def set_position(self, position):
         x, y, z = position
-        self.lock()
+        context.lock()
         al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)
-        self.unlock()
+        context.unlock()
 
     def set_min_distance(self, min_distance):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_REFERENCE_DISTANCE, min_distance)
-        self.unlock()
+        context.unlock()
 
     def set_max_distance(self, max_distance):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_MAX_DISTANCE, max_distance)
-        self.unlock()
+        context.unlock()
 
     def set_pitch(self, pitch):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
-        self.unlock()
+        context.unlock()
 
     def set_cone_orientation(self, cone_orientation):
         x, y, z = cone_orientation
-        self.lock()
+        context.lock()
         al.alSource3f(self._al_source, al.AL_DIRECTION, x, y, z)
-        self.unlock()
+        context.unlock()
 
     def set_cone_inner_angle(self, cone_inner_angle):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
-        self.unlock()
+        context.unlock()
 
     def set_cone_outer_angle(self, cone_outer_angle):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
-        self.unlock()
+        context.unlock()
 
     def set_cone_outer_gain(self, cone_outer_gain):
-        self.lock()
+        context.lock()
         al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
-        self.unlock()
+        context.unlock()
 
 class OpenALDriver(mt_media.AbstractAudioDriver):
     def __init__(self, device_name=None):
