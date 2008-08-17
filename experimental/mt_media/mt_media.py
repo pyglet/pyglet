@@ -1038,7 +1038,8 @@ def get_audio_driver():
     # TODO  options
     #driver_names = ('silent',)
     #driver_names = ('directsound',) # 'pulse', 'openal')
-    driver_names = ('openal',)
+    #driver_names = ('openal',)
+    driver_names = ('pulse',)
 
     for driver_name in driver_names:
         try:

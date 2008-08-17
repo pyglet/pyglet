@@ -286,7 +286,11 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
                 print 'packet', audio_data.timestamp
             if _debug and audio_data.events:
                 print 'events', audio_data.events
-            self._events.extend(audio_data.events)
+            for event in audio_data.events:
+                event_index = self._write_index + event.timestamp * \
+                    self.source_group.audio_format.bytes_per_second
+                self._events.append((event_index, event))
+
             consumption = min(bytes, audio_data.length)
             
             check(
@@ -356,18 +360,12 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
             return
 
         read_index = timing_info.contents.read_index
-        time = self.get_time(read_index)
 
-        event = self._events[0]
-        try:
-            while time >= event.timestamp:
-                if _debug:
-                    print 'dispatch event', event
-                event._sync_dispatch_to_player(self.player)
-                del self._events[0]
-                event = self._events[0]
-        except IndexError:
-            pass
+        while self._events and self._events[0][0] < read_index:
+            _, event = self._events.pop(0)
+            if _debug:
+                print 'dispatch event', event
+            event._sync_dispatch_to_player(self.player)
 
     def _sync_dispatch_player_event(self, event, *args):
         # TODO if EventLoop not being used, hook into
@@ -400,6 +398,7 @@ class PulseAudioPlayer(mt_media.AbstractAudioPlayer):
         self._clear_write = True
         self._write_index = self._get_read_index()
         self._timestamps = []
+        self._events = []
 
         context.lock()
         context.sync_operation(

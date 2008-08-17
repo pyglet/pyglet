@@ -437,8 +437,9 @@ class AVbinSource(StreamingSource):
             audio_data = self._decode_audio_packet()
             if _debug:
                 print 'Got an audio packet at', audio_data.timestamp
-            self._buffered_audio_data.append(audio_data)
-            return 'audio', audio_data
+            if audio_data:
+                self._buffered_audio_data.append(audio_data)
+                return 'audio', audio_data
 
         return None, None
 
