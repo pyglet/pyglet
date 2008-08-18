@@ -492,6 +492,17 @@ class Clock(_ClockBase):
 
         '''
         last_ts = self.last_ts or self.next_ts
+
+        # Schedule from now, unless now is sufficiently close to last_ts, in
+        # which case use last_ts.  This clusters together scheduled items that
+        # probably want to be scheduled together.  The old (pre 1.1.1)
+        # behaviour was to always use self.last_ts, and not look at ts.  The
+        # new behaviour is needed because clock ticks can now be quite
+        # irregular, and span several seconds.
+        ts = self.time()
+        if ts - last_ts > 0.2:
+            last_ts = ts
+
         next_ts = last_ts + interval
         self._schedule_item(func, last_ts, next_ts, interval, *args, **kwargs)
 
@@ -527,6 +538,12 @@ class Clock(_ClockBase):
 
         '''
         last_ts = self.last_ts or self.next_ts
+
+        # See schedule_interval
+        ts = self.time()
+        if ts - last_ts > 0.2:
+            last_ts = ts
+
         next_ts = self._get_soft_next_ts(last_ts, interval)
         last_ts = next_ts - interval
         self._schedule_item(func, last_ts, next_ts, interval, *args, **kwargs)
@@ -589,6 +606,12 @@ class Clock(_ClockBase):
                 The number of seconds to wait before the timer lapses.
         '''
         last_ts = self.last_ts or self.next_ts
+
+        # See schedule_interval
+        ts = self.time()
+        if ts - last_ts > 0.2:
+            last_ts = ts
+
         next_ts = last_ts + delay
         self._schedule_item(func, last_ts, next_ts, 0, *args, **kwargs)
 
