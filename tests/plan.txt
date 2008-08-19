@@ -19,6 +19,7 @@ graphics
     graphics.IMMEDIATE_INDEXED                  GENERIC
     graphics.RETAINED                           GENERIC
     graphics.RETAINED_INDEXED                   GENERIC
+    graphics.MULTITEXTURE                       GENERIC
 
 window
     window-basic

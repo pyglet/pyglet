@@ -121,8 +121,8 @@ form for the video driver as it requires less conversion.
           - ``"s[34][bBsSiIfd]"``
           - ``"s[34]B"``
         * - Texture coordinate
-          - ``"t[234][sifd]"``
-          - ``"t[234]f"``
+          - ``"[0-31]?t[234][sifd]"``
+          - ``"[0-31]?t[234]f"``
         * - Generic attribute
           - ``"[0-15]g(n)?[1234][bBsSiIfd]"``
           -
@@ -170,6 +170,12 @@ value.
 * Color
 * Secondary color
 * Generic attributes with the ``"n"`` format given.
+
+Texture coordinate attributes may optionally be preceded by a texture unit
+number.  If unspecified, texture unit 0 (``GL_TEXTURE0``) is implied.  It is
+the application's responsibility to ensure that the OpenGL version is adequate
+and that the specified texture unit is within the maximum allowed by the
+implementation.
 
 Up to 16 generic attributes can be specified per vertex, and can be used by
 shader programs for any purpose (they are ignored in the fixed-function
@@ -251,7 +257,7 @@ attribute names are given in the following table.
         * - Secondary color
           - ``secondary_colors``
         * - Texture coordinate
-          - ``tex_coords``
+          - ``tex_coords`` [#multitex]_
         * - Generic attribute
           - *Inaccessible*
 
@@ -323,6 +329,9 @@ Indexed vertex lists
 vertices.  Use `pyglet.graphics.vertex_list_indexed` to construct an indexed
 vertex list, and update the `IndexedVertexList.indices` sequence to change the
 indices.
+
+.. [#multitex] Only texture coordinates for texture unit 0 are accessible
+    through this attribute.
 
 Batched rendering
 -----------------

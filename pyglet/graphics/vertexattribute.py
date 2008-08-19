@@ -47,7 +47,7 @@ methods in the `pyglet.graphics` module.
 
 Format strings have the following (BNF) syntax::
 
-    attribute ::= ( name | index 'g' 'n'? ) count type
+    attribute ::= ( name | index 'g' 'n'? | texture 't' ) count type
 
 ``name`` describes the vertex attribute, and is one of the following
 constants for the predefined attributes:
@@ -73,6 +73,10 @@ example, ``0g`` specifies the generic vertex attribute with index 0.
 If the optional constant ``n`` is present after the ``g``, the
 attribute is normalised to the range ``[0, 1]`` or ``[-1, 1]`` within
 the range of the data type.
+
+Texture coordinates for multiple texture units can be specified with the 
+texture number before the constant 't'.  For example, ``1t`` gives the
+texture coordinate attribute for texture unit 1.
 
 ``count`` gives the number of data components in the attribute.  For
 example, a 3D vertex position has a count of 3.  Some attributes
@@ -122,6 +126,8 @@ Some examples follow:
 ``2gn4B``
     4-byte generic vertex attribute 2, normalized to [0, 1] (because
     the type is unsigned)
+``3t2f``
+    2-float texture coordinate for texture unit 3.
 
 '''
 
@@ -159,8 +165,8 @@ _gl_types = {
 _attribute_format_re = re.compile(r'''
     (?P<name>
        [cefnstv] | 
-       (?P<generic_index>[0-9]+) g
-       (?P<generic_normalized>n?))
+       (?P<generic_index>[0-9]+) g (?P<generic_normalized>n?) |
+       (?P<texcoord_texture>[0-9]+) t)
     (?P<count>[1234])
     (?P<type>[bBsSiIfd])
 ''', re.VERBOSE)
@@ -233,10 +239,14 @@ def create_attribute(format):
     count = int(match.group('count'))
     gl_type = _gl_types[match.group('type')]
     generic_index = match.group('generic_index')
+    texcoord_texture = match.group('texcoord_texture')
     if generic_index:
         normalized = match.group('generic_normalized')
         attr_class = GenericAttribute
         args = int(generic_index), normalized, count, gl_type
+    elif texcoord_texture:
+        attr_class = MultiTexCoordAttribute
+        args = int(texcoord_texture), count, gl_type
     else:
         name = match.group('name')
         attr_class = _attribute_classes[name]
@@ -460,6 +470,29 @@ class TexCoordAttribute(AbstractAttribute):
         glTexCoordPointer(self.count, self.gl_type, self.stride,
                        self.offset + pointer)
 
+    def convert_to_multi_tex_coord_attribute(self):
+        '''Changes the class of the attribute to `MultiTexCoordAttribute`.
+        '''
+        self.__class__ = MultiTexCoordAttribute
+        self.texture = 0
+
+class MultiTexCoordAttribute(AbstractAttribute):
+    '''Texture coordinate attribute.'''
+
+    def __init__(self, texture, count, gl_type):
+        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE), \
+            'Texture coord attribute must have non-byte signed type'
+        self.texture = texture
+        super(MultiTexCoordAttribute, self).__init__(count, gl_type)
+
+    def enable(self):
+        glClientActiveTexture(GL_TEXTURE0 + self.texture)
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+    
+    def set_pointer(self, pointer):
+        glTexCoordPointer(self.count, self.gl_type, self.stride,
+                       self.offset + pointer)
+
 class VertexAttribute(AbstractAttribute):
     '''Vertex coordinate attribute.'''
 
@@ -494,7 +527,6 @@ class GenericAttribute(AbstractAttribute):
         glVertexAttribPointer(self.index, self.count, self.gl_type,
                               self.normalized, self.stride, 
                               self.offset + pointer)
-
 _attribute_classes = {
     'c': ColorAttribute,
     'e': EdgeFlagAttribute,
