@@ -143,7 +143,8 @@ class Caret(object):
         self._layout.remove_handlers(self)
 
     def _blink(self, dt):
-        self._blink_visible = not self._blink_visible
+        if self.PERIOD:
+            self._blink_visible = not self._blink_visible
         if self._visible and self._active and self._blink_visible:
             alpha = 255
         else:
