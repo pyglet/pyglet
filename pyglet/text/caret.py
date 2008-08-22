@@ -473,7 +473,7 @@ class Caret(object):
             line = self.line
             if line < self._layout.get_line_count() - 1:
                 self._position = \
-                    self._layout.get_position_on_line(line + 1, 0) - 1
+                    self._layout.get_position_from_line(line + 1) - 1
                 self._update(line)
             else:
                 self.position = len(self._layout.document.text)
