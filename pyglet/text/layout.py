@@ -529,29 +529,40 @@ class TextLayoutGroup(graphics.Group):
 class ScrollableTextLayoutGroup(graphics.Group):
     '''Top-level rendering group for `ScrollableTextLayout`.
 
-    The group maintains internal state for setting the scissor region and
+    The group maintains internal state for setting the clipping planes and
     view transform for scrolling.  Because the group has internal state
     specific to the text layout, the group is never shared.
     '''
-    _scissor_x = 0
-    _scissor_y = 0
-    _scissor_width = 0
-    _scissor_height = 0
+    _clip_x = 0
+    _clip_y = 0
+    _clip_width = 0
+    _clip_height = 0
     _view_x = 0
     _view_y = 0
     translate_x = 0 # x - view_x
     translate_y = 0 # y - view_y
 
     def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT | GL_SCISSOR_BIT | GL_CURRENT_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        # Disable scissor to check culling.
-        glEnable(GL_SCISSOR_TEST)
-        glScissor(self._scissor_x - 1, 
-                  self._scissor_y - self._scissor_height, 
-                  self._scissor_width + 1, 
-                  self._scissor_height)
+        # Disable clipping planes to check culling.
+        glEnable(GL_CLIP_PLANE0)
+        glEnable(GL_CLIP_PLANE1)
+        glEnable(GL_CLIP_PLANE2)
+        glEnable(GL_CLIP_PLANE3)
+        # Left
+        glClipPlane(GL_CLIP_PLANE0, (GLdouble * 4)(
+                    1, 0, 0, -(self._clip_x - 1)))
+        # Top
+        glClipPlane(GL_CLIP_PLANE1, (GLdouble * 4)(
+                    0, -1, 0, self._clip_y))
+        # Right
+        glClipPlane(GL_CLIP_PLANE2, (GLdouble * 4)(
+                    -1, 0, 0, self._clip_x + self._clip_width + 1))
+        # Bottom
+        glClipPlane(GL_CLIP_PLANE3, (GLdouble * 4)(
+                    0, 1, 0, -(self._clip_y - self._clip_height)))
         glTranslatef(self.translate_x, self.translate_y, 0)
 
     def unset_state(self):
@@ -559,10 +570,10 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glPopAttrib()
 
     def _set_top(self, top):
-        self._scissor_y = top
-        self.translate_y = self._scissor_y - self._view_y
+        self._clip_y = top
+        self.translate_y = self._clip_y - self._view_y
 
-    top = property(lambda self: self._scissor_y, _set_top,
+    top = property(lambda self: self._clip_y, _set_top,
                    doc='''Top edge of the text layout (measured from the
     bottom of the graphics viewport).
 
@@ -570,26 +581,26 @@ class ScrollableTextLayoutGroup(graphics.Group):
     ''')
 
     def _set_left(self, left):
-        self._scissor_x = left
-        self.translate_x = self._scissor_x - self._view_x
+        self._clip_x = left
+        self.translate_x = self._clip_x - self._view_x
 
-    left = property(lambda self: self._scissor_x, _set_left,
+    left = property(lambda self: self._clip_x, _set_left,
                    doc='''Left edge of the text layout.
 
     :type: int
     ''')
 
     def _set_width(self, width):
-        self._scissor_width = width
+        self._clip_width = width
 
-    width = property(lambda self: self._scissor_width, _set_width,
+    width = property(lambda self: self._clip_width, _set_width,
                      doc='''Width of the text layout.
 
     :type: int
     ''')
 
     def _set_height(self, height):
-        self._scissor_height = height
+        self._clip_height = height
 
     height = property(lambda self: self._height, _set_height,
                    doc='''Height of the text layout.
@@ -599,7 +610,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
     def _set_view_x(self, view_x):
         self._view_x = view_x
-        self.translate_x = self._scissor_x - self._view_x
+        self.translate_x = self._clip_x - self._view_x
 
     view_x = property(lambda self: self._view_x, _set_view_x,
                    doc='''Horizontal scroll offset.
@@ -609,7 +620,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
     def _set_view_y(self, view_y):
         self._view_y = view_y
-        self.translate_y = self._scissor_y - self._view_y
+        self.translate_y = self._clip_y - self._view_y
 
     view_y = property(lambda self: self._view_y, _set_view_y,
                    doc='''Vertical scroll offset.
