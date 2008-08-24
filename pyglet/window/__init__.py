@@ -568,15 +568,11 @@ class BaseWindow(EventDispatcher):
         All parameters are optional, and reasonable defaults are assumed
         where they are not specified.
 
-        The `display` and `screen` parameters form a hierarchy of control:
-        there is no need to specify both of these.  If only a `screen` is
-        specified, the `display` can be inferred, and if only the `display` is
-        given, a default `screen` will be used.
-
-        The `display`, `config` and `context` parameters similarly form
+        The `display`, `screen`, `config` and `context` parameters form
         a hierarchy of control: there is no need to specify more than 
-        one of these.  For example, if you specify `config` the `display` will
-        be inferred, and a corresponding `context` will be created.
+        one of these.  For example, if you specify `screen` the `display`
+        will be inferred, and a default `config` and `context` will be
+        created.
 
         `config` is a special case; it can be a template created by the
         user specifying the attributes desired, or it can be a complete
@@ -650,13 +646,20 @@ class BaseWindow(EventDispatcher):
         if not context:
             context = config.create_context(gl.current_context)
 
+        # Set these in reverse order to above, to ensure we get user
+        # preference
+        self._context = context
+        self._config = self._context.config
+        self._screen = self._config.screen
+        self._display = self._screen.display
+
         if fullscreen:
             if width is not None or height is not None:
                 raise WindowException(
                     'Width and height cannot be specified with fullscreen.')
             self._windowed_size = self._default_width, self._default_height
-            width = screen.width
-            height = screen.height
+            width = self._screen.width
+            height = self._screen.height
         else:
             if width is None:
                 width = self._default_width
@@ -673,12 +676,6 @@ class BaseWindow(EventDispatcher):
         else:
             self._vsync = vsync
 
-        # Set these in reverse order to above, to ensure we get user
-        # preference
-        self._context = context
-        self._config = self._context.config
-        self._screen = self._config.screen
-        self._display = self._screen.display
 
         if caption is None:
             caption = sys.argv[0]
