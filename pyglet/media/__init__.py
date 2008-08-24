@@ -885,9 +885,9 @@ class Player(pyglet.event.EventDispatcher):
         audio_format = group.audio_format
         if audio_format:
             audio_driver = get_audio_driver()
-            self._audio_player = audio_driver.create_audio_player(group, self)
         else:
-            self._audio_player = create_silent_audio_player(group, self)
+            audio_driver = get_silent_audio_driver()
+        self._audio_player = audio_driver.create_audio_player(group, self)
 
         # TODO video texture create here.
 
@@ -1025,11 +1025,9 @@ def load(filename, file=None, streaming=True):
         source = StaticSource(source)
     return source
 
-def create_silent_audio_player():
-    raise NotImplementedError('TODO')
-
 def get_audio_driver():
     global _audio_driver
+
     if _audio_driver:
         return _audio_driver
 
@@ -1049,15 +1047,24 @@ def get_audio_driver():
                 from drivers import directsound
                 _audio_driver = directsound.create_audio_driver()
             elif driver_name == 'silent':
-                from drivers import silent
-                _audio_driver = silent.create_audio_driver()
+                _audio_driver = get_silent_audio_driver()
                 break
         except:
             if _debug:
                 print 'Error importing driver %s' % driver_name
     return _audio_driver
 
+def get_silent_audio_driver():
+    global _silent_audio_driver
+    
+    if not _silent_audio_driver:
+        from drivers import silent
+        _silent_audio_driver = silent.create_audio_driver()
+
+    return _silent_audio_driver
+
 _audio_driver = None
+_silent_audio_driver = None
 
 def get_source_loader():
     global _source_loader

@@ -374,11 +374,6 @@ class AVbinSource(StreamingSource):
 
         if self.video_format:
             self._video_timestamp = 0
-            self._video_images.clear()
-
-            self._lock.acquire()
-            self._requested_video_frame_id = -1
-            self._lock.release()
 
             self._decode_thread.clear_jobs()
 
@@ -600,7 +595,8 @@ class AVbinSource(StreamingSource):
         
         if _debug:
             print 'get_video_frame(%r) -> %r' % (id, buffered_image)
-        return buffered_image.image
+        if buffered_image:
+            return buffered_image.image
 
 av.avbin_init()
 if pyglet.options['debug_media']:

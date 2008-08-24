@@ -9,10 +9,20 @@ __version__ = '$Id$'
 import threading
 import time
 
-from pyglet.media import AbstractAudioPlayer, AbstractAudioDriver
+from pyglet.media import AbstractAudioPlayer, AbstractAudioDriver, \
+                         MediaThread, MediaEvent
 
 import pyglet
 _debug = pyglet.options['debug_media']
+
+class SilentAudioPacket(object):
+    def __init__(self, timestamp, duration):
+        self.timestamp = timestamp
+        self.duration = duration
+
+    def consume(self, dt):
+        self.timestamp += dt
+        self.duration -= dt
 
 class SilentAudioPlayer(AbstractAudioPlayer):
     # When playing video, length of audio (in secs) to buffer ahead.
@@ -21,138 +31,166 @@ class SilentAudioPlayer(AbstractAudioPlayer):
     # Minimum number of bytes to request from source
     _min_update_bytes = 1024
 
+    # Maximum sleep time
+    _sleep_time = 0.2
+
     def __init__(self, source_group, player):
         super(SilentAudioPlayer, self).__init__(source_group, player)
 
-        # Reference timestamp
-        self._timestamp = 0.
+        # System time of first timestamp
+        self._timestamp_time = None
 
-        # System time of reference timestamp to interpolate from
-        self._timestamp_time = time.time()
-
-        # Last timestamp recorded by worker thread
-        self._worker_timestamp = 0.
-
-        # Queued events (used by worked exclusively except for clear).
+        # List of buffered SilentAudioPacket
+        self._packets = []
+        self._packets_duration = 0
         self._events = []
-
-        # Lock required for changes to timestamp and events variables above.
-        self._lock = threading.Lock()
 
         # Actual play state.
         self._playing = False
 
         # Be nice to avoid creating this thread if user doesn't care about EOS
         # events and there's no video format. XXX
-        # TODO use MediaThread
-        self._worker_thread = threading.Thread(target=self._worker_func)
-        self._worker_thread.setDaemon(True)
-        self._worker_thread.start()
+        # Use thread.condition as lock for all instance vars used by worker
+        self._thread = MediaThread(target=self._worker_func)
+        self._thread.start()
 
     def delete(self):
-        # TODO kill thread
+        self._thread.stop()
         pass
 
     def play(self):
         if self._playing:
             return
 
+        if _debug: 
+            print 'play'
+        self._thread.condition.acquire()
         self._playing = True
         self._timestamp_time = time.time()
+        self._thread.condition.notify()
+        self._thread.condition.release()
 
     def stop(self):
         if not self._playing:
             return
 
-        self._timestamp = self.get_time()
-        self._playing = False
+        if _debug:
+            print 'stop'
 
-    def seek(self, timestamp):
-        self._lock.acquire()
-        self._timestamp = timestamp
-        self._worker_timestamp = timestamp
-        self._timestamp_time = time.time()
-        self._lock.release()
+        self._thread.condition.acquire()
+        timestamp = self.get_time()
+        if self._packets:
+            packet = self._packets[0]
+            self._packets_duration -= timestamp - packet.timestamp
+            packet.consume(timestamp - packet.timestamp)
+        self._playing = False
+        self._thread.condition.release()
 
     def clear(self):
-        self._lock.acquire()
-        self._events = []
-        self._lock.release()
+        if _debug:
+            print 'clear'
+
+        self._thread.condition.acquire()
+        del self._packets[:]
+        self._packets_duration = 0
+        del self._events[:]
+        self._thread.condition.release()
 
     def get_time(self):
+        self._thread.condition.acquire()
+
+        packets = self._packets
+
         if self._playing:
-            return self._timestamp + (time.time() - self._timestamp_time)
+            # Consume timestamps
+            result = None
+            offset = time.time() - self._timestamp_time
+            while packets:
+                packet = packets[0]
+                if offset > packet.duration:
+                    del packets[0]
+                    self._timestamp_time += packet.duration
+                    offset -= packet.duration
+                    self._packets_duration -= packet.duration
+                else:
+                    packet.consume(offset)
+                    self._packets_duration -= offset
+                    self._timestamp_time += offset
+                    result = packet.timestamp
+                    break
         else:
-            return self._timestamp
+            # Paused
+            if packets:
+                result = packets[0].timestamp
+            else:
+                result = None
 
+        self._thread.condition.release()
+
+        if _debug:
+            print 'SilentAudioPlayer.get_time() -> ', result
+        return result
+
+    # Worker func that consumes audio data and dispatches events
     def _worker_func(self):
-        # Amount of audio data "buffered" (in secs)
-        buffered_time = 0.
-
-        self._lock.acquire()
-        self._worker_timestamp = 0.0
-        self._lock.release()
+        thread = self._thread
+        buffered_time = 0
+        eos = False
+        events = self._events
 
         while True:
-            self._lock.acquire()
+            thread.condition.acquire()
+            if thread.stopped or (eos and not events):
+                thread.condition.release()
+                break
 
             # Use up "buffered" audio based on amount of time passed.
             timestamp = self.get_time()
-            buffered_time -= timestamp - self._worker_timestamp
-            self._worker_timestamp = timestamp
-
             if _debug:
-                print 'timestamp: %f' % timestamp
+                print 'timestamp: %r' % timestamp
 
             # Dispatch events
-            events = self._events # local var ok within this lock
             while events and events[0].timestamp <= timestamp:
                 events[0]._sync_dispatch_to_player(self.player)
                 del events[0]
 
-            if events:
-                next_event_timestamp = events[0].timestamp
-            else:
-                next_event_timestamp = None
-
-            self._lock.release()
-
             # Calculate how much data to request from source
-            secs = self._buffer_time - buffered_time
+            secs = self._buffer_time - self._packets_duration
             bytes = secs * self.source_group.audio_format.bytes_per_second
             if _debug:
-                print 'need to get %d bytes (%f secs)' % (bytes, secs)
+                print 'Trying to buffer %d bytes (%r secs)' % (bytes, secs)
 
-            # No need to get data, sleep until next event or buffer update
-            # time instead.
-            if bytes < self._min_update_bytes:
-                sleep_time = buffered_time / 2
-                if next_event_timestamp is not None:
-                    sleep_time = min(sleep_time, 
-                                     next_event_timestamp - timestamp)
-                if _debug:
-                    print 'sleeping for %f' % sleep_time
-                time.sleep(sleep_time)
-                continue
+            while bytes > self._min_update_bytes and not eos:
+                # Pull audio data from source
+                audio_data = self.source_group.get_audio_data(int(bytes))
+                if not audio_data and not eos:
+                    events.append(MediaEvent(timestamp, 'on_eos'))
+                    events.append(MediaEvent(timestamp, 'on_source_group_eos'))
+                    eos = True
+                    break
+    
+                # Pretend to buffer audio data, collect events.
+                if self._playing and not self._packets:
+                    self._timestamp_time = time.time()
+                self._packets.append(SilentAudioPacket(audio_data.timestamp,
+                                                       audio_data.duration))
+                self._packets_duration += audio_data.duration
+                for event in audio_data.events:
+                    event.timestamp += audio_data.timestamp
+                    events.append(event)
+                events.extend(audio_data.events)
+                bytes -= audio_data.length
 
-            # Pull audio data from source
-            audio_data = self.source_group.get_audio_data(int(bytes))
-            if not audio_data:
-                # TODO on_eos as well
-                event = MediaEvent(timestamp, 'on_source_group_eos')
-                event._sync_dispatch_to_player(self.player)
-                break
+            thread.condition.release()
 
-            # Pretend to buffer audio data, collect events.
-            buffered_time += audio_data.duration
-            self._lock.acquire()
-            self._events.extend(audio_data.events)
-            self._lock.release()
+            sleep_time = self._sleep_time
+            if not self._playing:
+                sleep_time = None
+            elif events and events[0].timestamp and timestamp:
+                sleep_time = min(sleep_time, events[0].timestamp - timestamp)
 
-            if _debug:
-                print 'got %s secs of audio data' % audio_data.duration
-                print 'now buffered to %f' % buffered_time
-                print 'events: %r' % events
+            thread.sleep(sleep_time)
+            
 
 class SilentAudioDriver(AbstractAudioDriver):
     def create_audio_player(self, source_group, player):
