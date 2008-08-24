@@ -129,6 +129,9 @@ class MediaThread(object):
         pass
 
     def _thread_run(self):
+        if pyglet.options['debug_trace']:
+            pyglet._install_trace()
+
         self._threads_lock.acquire()
         self._threads.add(self)
         self._threads_lock.release()
