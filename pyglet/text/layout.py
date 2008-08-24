@@ -1877,6 +1877,12 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
                 break
             line_index = i
 
+        # Flow from previous line; fixes issue with adding a space into
+        # overlong line (glyphs before space would then flow back onto
+        # previous line).  TODO Could optimise this by keeping track of where
+        # the overlong lines are.
+        line_index = max(0, line_index - 1)
+
         # (No need to find last invalid line; the update loop below stops
         # calling the flow generator when no more changes are necessary.)
 
