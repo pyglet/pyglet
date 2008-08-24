@@ -568,11 +568,15 @@ class BaseWindow(EventDispatcher):
         All parameters are optional, and reasonable defaults are assumed
         where they are not specified.
 
-        The `display`, `screen`, `config` and `context` parameters form
+        The `display` and `screen` parameters form a hierarchy of control:
+        there is no need to specify both of these.  If only a `screen` is
+        specified, the `display` can be inferred, and if only the `display` is
+        given, a default `screen` will be used.
+
+        The `display`, `config` and `context` parameters similarly form
         a hierarchy of control: there is no need to specify more than 
-        one of these.  For example, if you specify `screen` the `display`
-        will be inferred, and a default `config` and `context` will be
-        created.
+        one of these.  For example, if you specify `config` the `display` will
+        be inferred, and a corresponding `context` will be created.
 
         `config` is a special case; it can be a template created by the
         user specifying the attributes desired, or it can be a complete
