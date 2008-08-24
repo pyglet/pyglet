@@ -54,6 +54,10 @@ class OpenALException(MediaException):
 # TODO move functions into context/driver?
 
 def _split_nul_strings(s):
+    # Check for null pointer (seen on Vista/Creative)
+    if not ctypes.cast(s, ctypes.c_void_p).value:
+        return []
+
     # NUL-separated list of strings, double-NUL-terminated.
     nul = False
     i = 0
