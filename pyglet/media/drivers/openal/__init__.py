@@ -48,7 +48,7 @@ class OpenALException(MediaException):
 def _split_nul_strings(s):
     # Check for null pointer (seen on Vista/Creative)
     if not ctypes.cast(s, ctypes.c_void_p).value:
-        return ''
+        return []
 
     # NUL-separated list of strings, double-NUL-terminated.
     nul = False
