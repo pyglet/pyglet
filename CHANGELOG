@@ -1,3 +1,19 @@
+1.1.1
+    * examples: Fixed graphics.py triangle windings
+    * pyglet.clock: Fixed resource leak in Clock.unschedule
+    * pyglet.clock: Fixed schedule_* functions initial schedule time
+    * pyglet.gl: Fixed create_context exception
+    * pyglet.graphics: Fixed memory error with interleaved arrays
+    * pyglet.media: Fixed driver enumeration during driver init failure
+    * pyglet.media: Fixed parsing of OpenAL extensions list
+    * pyglet.text: Fixed TextLayout.delete not deleting inline boxes
+    * pyglet.text: Fixed caret blinking when period is 0
+    * pyglet.text: Fixed caret motion at end of line
+    * pyglet.text: Replaced scissor with clipping planes in
+      ScrollableTextLayout, fixing rendering under transform.
+    * pyglet.text: Fixed reflow of text above overlong lines
+    * pyglet.window: Fixed initial fullscreen screen selection
+
 1.1
     * docs: Various minor documentation fixes
     * docs: Fixed docstrings referring to pyglet.image.BufferManager as being
