@@ -1,4 +1,11 @@
 <news>
+  <item date="26-August-2008" author="Alex"
+        title="pyglet 1.1.1 released">
+    pyglet 1.1.1 includes several critical bug fixes.  We
+    recommend all users <a href="download.html">download</a> the latest
+    runtime or source package.  No changes have been made to the
+    documentation or API in this release.
+  </item>
   <item date="5-August-2008" author="Alex"
         title="pyglet 1.1 released">
     The <a href="download.html">final release</a> of pyglet 1.1 has been
