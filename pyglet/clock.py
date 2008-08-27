@@ -315,6 +315,10 @@ class Clock(_ClockBase):
                         # Missed by heaps, do a soft reschedule to avoid 
                         # lumping everything together.
                         item.next_ts = self._get_soft_next_ts(ts, item.interval)
+                        # Fake last_ts to avoid repeatedly over-scheduling in
+                        # future.  Unfortunately means the next reported dt is
+                        # incorrect (looks like interval but actually isn't).
+                        item.last_ts = item.next_ts - item.interval
                 need_resort = True
 
         # Remove finished one-shots.
