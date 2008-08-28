@@ -218,6 +218,7 @@ class WorkerThread(MediaThread):
     def clear_jobs(self):
         self.condition.acquire()
         self._clear()
+        self.condition.notify()
         self.condition.release()
 
     def _empty(self):
