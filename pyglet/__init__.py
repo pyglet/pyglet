@@ -212,7 +212,7 @@ def _trace_repr(value, size=40):
         value = value[:size//2-2] + '...' + value[-size//2-1:]
     return value
 
-def _trace_frame(frame, indent):
+def _trace_frame(thread, frame, indent):
     from pyglet import lib
     import os
     if frame.f_code is lib._TraceFunction.__call__.func_code:
@@ -247,7 +247,7 @@ def _trace_frame(frame, indent):
 
     if indent:
         name = 'Called from %s' % name
-    print '%s%s %s' % (indent, name, location)
+    print '[%d] %s%s %s' % (thread, indent, name, location)
 
     if _trace_args:
         if is_ctypes:
@@ -264,23 +264,28 @@ def _trace_frame(frame, indent):
     if _trace_flush:
         sys.stdout.flush()
 
-def _trace_func(frame, event, arg):
-    if event == 'call':
-        indent = ''
-        for i in range(_trace_depth):
-            _trace_frame(frame, indent)
-            indent += '  '
-            frame = frame.f_back
-            if not frame:
-                break
-            
-    elif event == 'exception':
-        (exception, value, traceback) = arg
-        print 'First chance exception raised:', repr(exception)
+def _thread_trace_func(thread):
+    def _trace_func(frame, event, arg):
+        if event == 'call':
+            indent = ''
+            for i in range(_trace_depth):
+                _trace_frame(thread, frame, indent)
+                indent += '  '
+                frame = frame.f_back
+                if not frame:
+                    break
+                
+        elif event == 'exception':
+            (exception, value, traceback) = arg
+            print 'First chance exception raised:', repr(exception)
+    return _trace_func
 
 def _install_trace():
-    sys.setprofile(_trace_func)
+    global _trace_thread_count
+    sys.setprofile(_thread_trace_func(_trace_thread_count))
+    _trace_thread_count += 1
 
+_trace_thread_count = 0
 _trace_args = options['debug_trace_args']
 _trace_depth = options['debug_trace_depth']
 _trace_flush = options['debug_trace_flush']
