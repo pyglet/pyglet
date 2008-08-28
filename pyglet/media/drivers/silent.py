@@ -55,40 +55,38 @@ class SilentAudioPlayer(AbstractAudioPlayer):
         self._thread.start()
 
     def delete(self):
+        if _debug:
+            print 'SilentAudioPlayer.delete'
         self._thread.stop()
-        pass
 
     def play(self):
-        if self._playing:
-            return
-
         if _debug: 
-            print 'play'
+            print 'SilentAudioPlayer.play'
+
         self._thread.condition.acquire()
-        self._playing = True
-        self._timestamp_time = time.time()
-        self._thread.condition.notify()
+        if not self._playing:
+            self._playing = True
+            self._timestamp_time = time.time()
+            self._thread.condition.notify()
         self._thread.condition.release()
 
     def stop(self):
-        if not self._playing:
-            return
-
         if _debug:
-            print 'stop'
+            print 'SilentAudioPlayer.stop'
 
         self._thread.condition.acquire()
-        timestamp = self.get_time()
-        if self._packets:
-            packet = self._packets[0]
-            self._packets_duration -= timestamp - packet.timestamp
-            packet.consume(timestamp - packet.timestamp)
-        self._playing = False
+        if self._playing:
+            timestamp = self.get_time()
+            if self._packets:
+                packet = self._packets[0]
+                self._packets_duration -= timestamp - packet.timestamp
+                packet.consume(timestamp - packet.timestamp)
+            self._playing = False
         self._thread.condition.release()
 
     def clear(self):
         if _debug:
-            print 'clear'
+            print 'SilentAudioPlayer.clear'
 
         self._thread.condition.acquire()
         del self._packets[:]
@@ -97,6 +95,8 @@ class SilentAudioPlayer(AbstractAudioPlayer):
         self._thread.condition.release()
 
     def get_time(self):
+        if _debug:
+            print 'SilentAudioPlayer.get_time()'
         self._thread.condition.acquire()
 
         packets = self._packets
@@ -181,16 +181,18 @@ class SilentAudioPlayer(AbstractAudioPlayer):
                 events.extend(audio_data.events)
                 bytes -= audio_data.length
 
-            thread.condition.release()
-
             sleep_time = self._sleep_time
             if not self._playing:
                 sleep_time = None
             elif events and events[0].timestamp and timestamp:
                 sleep_time = min(sleep_time, events[0].timestamp - timestamp)
 
+            if _debug:
+                print 'SilentAudioPlayer(Worker).sleep', sleep_time
             thread.sleep(sleep_time)
             
+            thread.condition.release()
+
 
 class SilentAudioDriver(AbstractAudioDriver):
     def create_audio_player(self, source_group, player):
