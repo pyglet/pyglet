@@ -177,6 +177,24 @@ av.avbin_decode_video.argtypes = [AVbinStreamP,
     ctypes.c_void_p, ctypes.c_size_t,
     ctypes.c_void_p]
 
+
+if True:
+    # XXX lock all avbin calls.  not clear from ffmpeg documentation if this
+    # is necessary.  leaving it on while debugging to rule out the possiblity
+    # of a problem.
+    def synchronize(func, lock):
+        def f(*args):
+            lock.acquire()
+            result = func(*args)
+            lock.release()
+            return result
+        return f 
+
+    _avbin_lock = threading.Lock()
+    for name in dir(av):
+        if name.startswith('avbin_'):
+            setattr(av, name, synchronize(getattr(av, name), _avbin_lock))
+
 def get_version():
     return av.avbin_get_version()
 
@@ -510,7 +528,15 @@ class AVbinSource(StreamingSource):
             if size_out.value <= 0:
                 continue
 
-            buffer = ctypes.string_at(self._audio_buffer, size_out)
+            # XXX how did this ever work?  replaced with copy below
+            # buffer = ctypes.string_at(self._audio_buffer, size_out)
+
+            # XXX to actually copy the data.. but it never used to crash, so
+            # maybe I'm  missing something
+            buffer = ctypes.create_string_buffer(size_out.value)
+            ctypes.memmove(buffer, self._audio_buffer, len(buffer))
+            buffer = buffer.raw
+
             duration = float(len(buffer)) / self.audio_format.bytes_per_second
             self._audio_packet_timestamp = \
                 timestamp = timestamp_from_avbin(packet.timestamp)
