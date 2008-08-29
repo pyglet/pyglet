@@ -40,9 +40,8 @@ import unicodedata
 import warnings
 
 import pyglet
-from pyglet.app.xlib import XlibSelectDevice
 from pyglet.window import WindowException, NoSuchDisplayException, \
-    MouseCursorException, Platform, Display, Screen, MouseCursor, \
+    MouseCursorException, Screen, MouseCursor, \
     DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler
 from pyglet.window import event
 from pyglet.window import key
@@ -55,18 +54,17 @@ from pyglet.gl import glu_info
 from pyglet.gl import glx
 from pyglet.gl import glxext_arb
 from pyglet.gl import glxext_mesa
-from pyglet.gl import glx_info
 
-import pyglet.window.xlib.xlib
-from pyglet.window.xlib import cursorfont
+from pyglet.libs.x11 import xlib
+from pyglet.libs.x11 import cursorfont
 try:
-    import pyglet.window.xlib.xinerama
+    from pyglet.libs.x11 import xinerama
     _have_xinerama = True
 except:
     _have_xinerama = False
 
 try:
-    import pyglet.window.xlib.xsync
+    from pyglet.libs.x11 import xsync
     _have_xsync = True
 except:
     _have_xsync = False
@@ -103,32 +101,6 @@ _motion_map = {
     (key.DELETE, False):    key.MOTION_DELETE,
 }
 
-# Set up error handler
-def _error_handler(display, event):
-    # By default, all errors are silently ignored: this has a better chance
-    # of working than the default behaviour of quitting ;-)
-    #
-    # We've actually never seen an error that was our fault; they're always
-    # driver bugs (and so the reports are useless).  Nevertheless, set
-    # environment variable PYGLET_DEBUG_X11 to 1 to get dumps of the error
-    # and a traceback (execution will continue).
-    if pyglet.options['debug_x11']:
-        event = event.contents
-        buf = c_buffer(1024)
-        xlib.XGetErrorText(display, event.error_code, buf, len(buf))
-        print 'X11 error:', buf.value
-        print '   serial:', event.serial
-        print '  request:', event.request_code
-        print '    minor:', event.minor_code
-        print ' resource:', event.resourceid
-
-        import traceback
-        print 'Python stack trace (innermost last):'
-        traceback.print_stack()
-    return 0
-_error_handler_ptr = xlib.XErrorHandler(_error_handler)
-xlib.XSetErrorHandler(_error_handler_ptr)
-
 class XlibException(WindowException):
     '''An X11-specific exception.  This exception is probably a programming
     error in pyglet.'''
@@ -140,114 +112,15 @@ class XlibMouseCursor(MouseCursor):
     def __init__(self, cursor):
         self.cursor = cursor
 
-class XlibDisplayDevice(XlibSelectDevice, Display):
-    _display = None     # POINTER(xlib.Display)
-
-    _x_im = None        # X input method
-                        # TODO close _x_im when display connection closed.
-    _enable_xsync = False
-
-    def __init__(self, name):
-        super(XlibDisplayDevice, self).__init__()
-
-        self._display = xlib.XOpenDisplay(name)
-        if not self._display:
-            raise NoSuchDisplayException('Cannot connect to "%s"' % name)
-        self.info = glx_info.GLXInfo(self._display)
-
-        # Also set the default GLX display for future info queries
-        glx_info.set_display(self._display.contents)
-
-        self._fileno = xlib.XConnectionNumber(self._display)
-        self._window_map = {}
-
-        # Initialise XSync
-        if _have_xsync:
-            event_base = c_int()
-            error_base = c_int()
-            if xsync.XSyncQueryExtension(self._display, 
-                                         byref(event_base),
-                                         byref(error_base)):
-                major_version = c_int()
-                minor_version = c_int()
-                if xsync.XSyncInitialize(self._display,
-                                         byref(major_version),
-                                         byref(minor_version)):
-                    self._enable_xsync = True
-
-        # Add to event loop select list.  Assume we never go away.
-        pyglet.app.event_loop._select_devices.add(self)
-
-    def get_screens(self):
-        x_screen = xlib.XDefaultScreen(self._display)
-        if _have_xinerama and xinerama.XineramaIsActive(self._display):
-            number = c_int()
-            infos = xinerama.XineramaQueryScreens(self._display, 
-                                                  byref(number))
-            infos = cast(infos, 
-                 POINTER(xinerama.XineramaScreenInfo * number.value)).contents
-            result = []
-            for info in infos:
-                result.append(XlibScreen(self,
-                                         x_screen,
-                                         info.x_org,
-                                         info.y_org,
-                                         info.width,
-                                         info.height,
-                                         True))
-            xlib.XFree(infos)
-            return result
-        else:
-            # No xinerama
-            screen_count = xlib.XScreenCount(self._display)
-            result = []
-            for i in range(screen_count):
-                screen = xlib.XScreenOfDisplay(self._display, i)
-                result.append(XlibScreen(self,
-                                         i, 
-                                         0, 0,
-                                         screen.contents.width,
-                                         screen.contents.height,
-                                         False))
-            # Move default screen to be first in list.
-            s = result.pop(x_screen)
-            result.insert(0, s)
-            return result
-
-    # XlibSelectDevice interface
-
-    def fileno(self):
-        return self._fileno
-
-    def select(self):
-        e = xlib.XEvent()
-        while xlib.XPending(self._display):
-            xlib.XNextEvent(self._display, e)
-
-            # Key events are filtered by the xlib window event
-            # handler so they get a shot at the prefiltered event.
-            if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
-                if xlib.XFilterEvent(e, e.xany.window):
-                    continue
-            try:
-                window = self._window_map[e.xany.window]
-            except KeyError:
-                continue
-
-            window.dispatch_platform_event(e)
-
-    def poll(self):
-        return xlib.XPending(self._display)
-
 class XlibScreen(Screen):
-    def __init__(self, display, x_screen_id, x, y, width, height, xinerama):
+    def __init__(self, display, x, y, width, height, xinerama):
         super(XlibScreen, self).__init__(x, y, width, height)
         self.display = display
-        self._x_screen_id = x_screen_id
         self._xinerama = xinerama
  
     def get_matching_configs(self, template):
         x_display = self.display._display
+        x_screen = self.display.x_screen
 
         have_13 = self.display.info.have_version(1, 3)
         if have_13:
@@ -278,7 +151,7 @@ class XlibScreen(Screen):
 
         if have_13:
             elements = c_int()
-            configs = glx.glXChooseFBConfig(x_display, self._x_screen_id,
+            configs = glx.glXChooseFBConfig(x_display, x_screen,
                 attrib_list, byref(elements))
             if not configs:
                 return []
@@ -300,10 +173,11 @@ class XlibScreen(Screen):
                 return []
 
     def __repr__(self):
-        return 'XlibScreen(screen=%d, x=%d, y=%d, ' \
+        return 'XlibScreen(display=%r, x=%d, y=%d, ' \
                'width=%d, height=%d, xinerama=%d)' % \
-            (self._x_screen_id, self.x, self.y, self.width, self.height,
+            (self.display, self.x, self.y, self.width, self.height,
              self._xinerama)
+
 
 class XlibGLConfig(gl.Config):
     attribute_ids = {
@@ -523,7 +397,7 @@ class XlibWindow(BaseWindow):
 
         self.context.window = self
         self._x_display = self.config._display
-        self._x_screen_id = self.screen._x_screen_id
+        self._x_screen_id = self.display.x_screen
         self._glx_context = self.context._context
 
         self._glx_1_3 = self.display.info.have_version(1, 3)

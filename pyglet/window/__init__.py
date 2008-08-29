@@ -140,6 +140,7 @@ class WindowException(Exception):
     '''The root exception for all window-related errors.'''
     pass
 
+#XXX
 class NoSuchDisplayException(WindowException):
     '''An exception indicating the requested display is not available.'''
     pass
@@ -152,92 +153,6 @@ class NoSuchConfigException(WindowException):
 class MouseCursorException(WindowException):
     '''The root exception for all mouse cursor-related errors.'''
     pass
-
-class Platform(object):
-    '''Operating-system-level functionality.
-
-    The platform instance can only be obtained with `get_platform`.  Use
-    the platform to obtain a `Display` instance.
-
-    :deprecated: Use `pyglet.app.Display`
-    '''
-    def get_display(self, name):
-        '''Get a display device by name.
-
-        This is meaningful only under X11, where the `name` is a
-        string including the host name and display number; for example
-        ``"localhost:1"``.
-
-        On platforms other than X11, `name` is ignored and the default
-        display is returned.  pyglet does not support multiple multiple
-        video devices on Windows or OS X.  If more than one device is
-        attached, they will appear as a single virtual device comprising
-        all the attached screens.
-
-        :deprecated: Use `pyglet.app.get_display`.
-
-        :Parameters:
-            `name` : str
-                The name of the display to connect to.
-
-        :rtype: `Display`
-        '''
-        for display in pyglet.app.displays:
-            if display.name == name:
-                return display
-        return pyglet.app.Display(name)
-
-    def get_default_display(self):
-        '''Get the default display device.
-
-        :deprecated: Use `pyglet.app.get_display`.
-
-        :rtype: `Display`
-        '''
-        return pyglet.app.get_display()
-
-if _is_epydoc:
-    class Display(object):
-        '''A display device supporting one or more screens.
-
-        Use `Platform.get_display` or `Platform.get_default_display` to obtain
-        an instance of this class.  Use a display to obtain `Screen` instances.
-
-        :deprecated: Use `pyglet.app.Display`.
-        '''
-        def __init__(self):
-            raise NotImplementedError('deprecated')
-
-        def get_screens(self):
-            '''Get the available screens.
-
-            A typical multi-monitor workstation comprises one `Display` with
-            multiple `Screen` s.  This method returns a list of screens which
-            can be enumerated to select one for full-screen display.
-
-            For the purposes of creating an OpenGL config, the default screen
-            will suffice.
-
-            :rtype: list of `Screen`
-            '''
-            raise NotImplementedError('deprecated')
-
-        def get_default_screen(self):
-            '''Get the default screen as specified by the user's operating system
-            preferences.
-
-            :rtype: `Screen`
-            '''
-            raise NotImplementedError('deprecated')
-
-        def get_windows(self):
-            '''Get the windows currently attached to this display.
-
-            :rtype: sequence of `Window`
-            '''
-            raise NotImplementedError('deprecated')
-else:
-    Display = pyglet.app.Display
 
 class Screen(object):
     '''A virtual monitor that supports fullscreen windows.
@@ -1657,16 +1572,6 @@ BaseWindow.register_event_type('on_context_lost')
 BaseWindow.register_event_type('on_context_state_lost')
 BaseWindow.register_event_type('on_draw')
 
-def get_platform():
-    '''Get an instance of the Platform most appropriate for this
-    system.
-
-    :deprecated: Use `pyglet.app.Display`.
-
-    :rtype: `Platform`
-    :return: The platform instance.
-    '''
-    return Platform()
 
 
 if _is_epydoc:
@@ -1686,6 +1591,107 @@ else:
         from pyglet.window.xlib import XlibWindow
         Window = XlibWindow
 
+
+# Deprecated API
+def get_platform():
+    '''Get an instance of the Platform most appropriate for this
+    system.
+
+    :deprecated: Use `pyglet.app.Display`.
+
+    :rtype: `Platform`
+    :return: The platform instance.
+    '''
+    return Platform()
+
+class Platform(object):
+    '''Operating-system-level functionality.
+
+    The platform instance can only be obtained with `get_platform`.  Use
+    the platform to obtain a `Display` instance.
+
+    :deprecated: Use `pyglet.app.Display`
+    '''
+    def get_display(self, name):
+        '''Get a display device by name.
+
+        This is meaningful only under X11, where the `name` is a
+        string including the host name and display number; for example
+        ``"localhost:1"``.
+
+        On platforms other than X11, `name` is ignored and the default
+        display is returned.  pyglet does not support multiple multiple
+        video devices on Windows or OS X.  If more than one device is
+        attached, they will appear as a single virtual device comprising
+        all the attached screens.
+
+        :deprecated: Use `pyglet.app.get_display`.
+
+        :Parameters:
+            `name` : str
+                The name of the display to connect to.
+
+        :rtype: `Display`
+        '''
+        for display in pyglet.app.displays:
+            if display.name == name:
+                return display
+        return pyglet.app.Display(name)
+
+    def get_default_display(self):
+        '''Get the default display device.
+
+        :deprecated: Use `pyglet.app.get_display`.
+
+        :rtype: `Display`
+        '''
+        return pyglet.app.get_display()
+
+if _is_epydoc:
+    class Display(object):
+        '''A display device supporting one or more screens.
+
+        Use `Platform.get_display` or `Platform.get_default_display` to obtain
+        an instance of this class.  Use a display to obtain `Screen` instances.
+
+        :deprecated: Use `pyglet.app.Display`.
+        '''
+        def __init__(self):
+            raise NotImplementedError('deprecated')
+
+        def get_screens(self):
+            '''Get the available screens.
+
+            A typical multi-monitor workstation comprises one `Display` with
+            multiple `Screen` s.  This method returns a list of screens which
+            can be enumerated to select one for full-screen display.
+
+            For the purposes of creating an OpenGL config, the default screen
+            will suffice.
+
+            :rtype: list of `Screen`
+            '''
+            raise NotImplementedError('deprecated')
+
+        def get_default_screen(self):
+            '''Get the default screen as specified by the user's operating system
+            preferences.
+
+            :rtype: `Screen`
+            '''
+            raise NotImplementedError('deprecated')
+
+        def get_windows(self):
+            '''Get the windows currently attached to this display.
+
+            :rtype: sequence of `Window`
+            '''
+            raise NotImplementedError('deprecated')
+else:
+    Display = pyglet.app.Display
+
+
+# XXX remove
 # Create shadow window. (trickery is for circular import)
 if not _is_epydoc:
     pyglet.window = sys.modules[__name__]

@@ -20,7 +20,7 @@ if __name__ == '__main__':
     if sys.platform == 'linux2':
         if 'xlib' in names:    
             wrap('tools/wraptypes/wrap.py',
-                 '-opyglet/window/xlib/xlib.py',
+                 '-opyglet/libs/x11/xlib.py',
                  '-lX11',
                  '-mpyglet.gl.glx',
                  '/usr/include/X11/Xlib.h',
@@ -28,10 +28,10 @@ if __name__ == '__main__':
                  '/usr/include/X11/Xutil.h')
         if 'xinerama' in names:
             wrap('tools/wraptypes/wrap.py',
-                 '-opyglet/window/xlib/xinerama.py',
+                 '-opyglet/libs/x11/xinerama.py',
                  '-lXinerama',
                  '-mpyglet.gl.glx',
-                 '-mpyglet.window.xlib.xlib',
+                 '-mpyglet.libs.x11.xlib',
                  '/usr/include/X11/extensions/Xinerama.h')
         if 'xsync' in names:
             print '------------------------------------'
@@ -39,9 +39,9 @@ if __name__ == '__main__':
             print ' ... copy over from current xsync.py'
             print '------------------------------------'
             wrap('tools/wraptypes/wrap.py',
-                 '-opyglet/window/xlib/xsync.py',
+                 '-opyglet/libs/x11/xsync.py',
                  '-lXext',
-                 '-mpyglet.window.xlib.xlib',
+                 '-mpyglet.libs.x11.xlib',
                  '-i/usr/include/X11/Xlib.h',
                  '-i/usr/include/X11/X.h',
                  '-i/usr/include/X11/Xdefs.h',
@@ -51,7 +51,7 @@ if __name__ == '__main__':
             wrap('tools/wraptypes/wrap.py',
                  '-oexperimental/input/lib_xinput.py',
                  '-lXi',
-                 '-mpyglet.window.xlib.xlib',
+                 '-mpyglet.libs.x11.xlib',
                  '-i/usr/include/X11/Xlib.h',
                  '-i/usr/include/X11/X.h',
                  '-i/usr/include/X11/Xdefs.h',
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             wrap('tools/wraptypes/wrap.py',
                  '-oexperimental/modeswitch/lib_xrandr.py',
                  '-lXrandr',
-                 '-mpyglet.window.xlib.xlib',
+                 '-mpyglet.libs.x11.xlib',
                  '-i/usr/include/X11/Xlib.h',
                  '-i/usr/include/X11/X.h',
                  '-i/usr/include/X11/Xdefs.h',
@@ -69,7 +69,7 @@ if __name__ == '__main__':
                  '/usr/include/X11/extensions/randr.h')
         if 'pulseaudio' in names:
             wrap('tools/wraptypes/wrap.py',
-                 '-oexperimental/pulse/lib_pulseaudio.py',
+                 '-opyglet/media/drivers/pulse/lib_pulseaudio.py',
                  '-lpulse',
                  '-i/usr/include/pulse/pulseaudio.h',
                  '/usr/include/pulse/mainloop-api.h',
