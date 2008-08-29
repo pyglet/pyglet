@@ -48,10 +48,8 @@ from sys import byteorder
 
 from pyglet.font import base
 import pyglet.image
-from pyglet.window.carbon import carbon, _oscheck
-from pyglet.window.carbon import _create_cfstring
-from pyglet.window.carbon.types import *
-
+from pyglet.libs.darwin import *
+from pyglet.libs.darwin import _oscheck
 
 class FixedPoint(Structure):
     _fields_ = [

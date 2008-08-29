@@ -140,18 +140,6 @@ class XlibMouseCursor(MouseCursor):
     def __init__(self, cursor):
         self.cursor = cursor
 
-class XlibPlatform(Platform):
-    def __init__(self):
-        self._displays = {}
-
-    def get_display(self, name):
-        if name not in self._displays:
-            self._displays[name] = XlibDisplayDevice(name)
-        return self._displays[name]
-
-    def get_default_display(self):
-        return self.get_display('')
-
 class XlibDisplayDevice(XlibSelectDevice, Display):
     _display = None     # POINTER(xlib.Display)
 

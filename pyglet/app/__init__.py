@@ -38,17 +38,16 @@ Most applications need only call `run` after creating one or more windows
 to begin processing events.  For example, a simple application consisting of
 one window is::
 
-    from pyglet import app
-    from pyglet import window
+    import pyglet
 
-    win = window.Window()
-    app.run()
+    win = pyglet.window.Window()
+    pyglet.app.run()
 
 To handle events on the main event loop, instantiate it manually.  The
 following example exits the application as soon as any window is closed (the
 default policy is to wait until all windows are closed)::
 
-    event_loop = app.EventLoop()
+    event_loop = pyglet.app.EventLoop()
 
     @event_loop.event
     def on_window_close(window):
@@ -64,6 +63,9 @@ import sys
 import weakref
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
+class AppException(Exception):
+    pass
 
 class WeakSet(object):
     '''Set of objects, referenced weakly.
@@ -90,6 +92,26 @@ class WeakSet(object):
 
     def __len__(self):
         return len(self._dict)
+
+def get_display():
+    '''Get the default display device.
+
+    If there is already a `Display` connection, that display will be returned.
+    Otherwise, a default `Display` is created and returned.  If multiple
+    display connections are active, an arbitrary one is returned.
+
+    :since: pyglet 1.2
+
+    :rtype: `Display`
+    '''
+    # If there's an existing display, return it (return arbitrary display if
+    # there are multiple).
+    for display in displays:
+        return display
+
+    # Otherwise, create a new display and return it.
+    return Display()
+
 
 #: Set of all open displays.  Instances of `Display` are automatically added
 #: to this set upon construction.  The set uses weak references, so displays
@@ -131,14 +153,17 @@ def exit():
     event_loop.exit()
 
 if _is_epydoc:
-    from pyglet.app.base import EventLoop
+    from pyglet.app.base import EventLoop, Display
 else:
     if sys.platform == 'darwin':
         from pyglet.app.carbon import CarbonEventLoop as EventLoop
+        from pyglet.app.carbon import CarbonDisplay as Display
     elif sys.platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as EventLoop
+        from pyglet.app.win32 import Win32Display as Display
     else:
         from pyglet.app.xlib import XlibEventLoop as EventLoop
+        from pyglet.app.xlib import XlibDisplay as Display
 
 #: The global event loop.  Applications can replace this with their own
 #: subclass of `pyglet.app.base.EventLoop`, but must take care to do so before

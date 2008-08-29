@@ -44,40 +44,21 @@ import unicodedata
 import warnings
 
 import pyglet
-from pyglet.window import WindowException, Platform, Display, Screen, \
+from pyglet.window import WindowException, Screen, \
     BaseWindow, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window import event
-from pyglet.window.carbon.constants import *
-from pyglet.window.carbon.types import *
-from pyglet.window.carbon.quartzkey import keymap
 
-import pyglet.lib
+from pyglet.libs.darwin import *
+from pyglet.libs.darwin import _oscheck, _aglcheck
+from pyglet.libs.darwin.quartzkey import keymap
+
 from pyglet import gl
 from pyglet.gl import agl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 from pyglet.event import EventDispatcher
-
-class CarbonException(WindowException):
-    pass
-
-carbon = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/Carbon.framework')
-quicktime = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/QuickTime.framework')
-
-carbon.GetEventDispatcherTarget.restype = EventTargetRef
-carbon.ReceiveNextEvent.argtypes = \
-    [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
-carbon.GetWindowPort.restype = agl.AGLDrawable
-EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
-carbon.NewEventHandlerUPP.restype = c_void_p
-carbon.GetCurrentKeyModifiers = c_uint32
-carbon.NewRgn.restype = RgnHandle
-carbon.CGDisplayBounds.argtypes = [c_void_p]
-carbon.CGDisplayBounds.restype = CGRect
 
 # Map symbol,modifiers -> motion
 # Determined by experiment with TextEdit.app
@@ -100,165 +81,7 @@ _motion_map = {
     (key.DELETE, False):                key.MOTION_DELETE,
 }
 
-class CarbonPlatform(Platform):
-    _display = None
 
-    def get_default_display(self):
-        if not self._display:
-            self._display = CarbonDisplay()
-        return self._display
-
-class CarbonDisplay(Display):
-    # TODO: CarbonDisplay could be per display device, which would make
-    # reporting of screens and available configs more accurate.  The number of
-    # Macs with more than one video card is probably small, though.
-    def __init__(self):
-        super(CarbonDisplay, self).__init__()
-
-        import MacOS
-        if not MacOS.WMAvailable():
-            raise CarbonException('Window manager is not available.  ' \
-                                  'Ensure you run "pythonw", not "python"')
-
-        self._install_application_event_handlers()
-        
-    def get_screens(self):
-        count = CGDisplayCount()
-        carbon.CGGetActiveDisplayList(0, None, byref(count))
-        displays = (CGDirectDisplayID * count.value)()
-        carbon.CGGetActiveDisplayList(count.value, displays, byref(count))
-        return [CarbonScreen(self, id) for id in displays]
-
-    def _install_application_event_handlers(self):
-        self._carbon_event_handlers = []
-        self._carbon_event_handler_refs = []
-
-        target = carbon.GetApplicationEventTarget()
-
-        # TODO something with a metaclass or hacky like CarbonWindow
-        # to make this list extensible
-        handlers = [
-            (self._on_mouse_down, kEventClassMouse, kEventMouseDown),
-            (self._on_apple_event, kEventClassAppleEvent, kEventAppleEvent),
-            (self._on_command, kEventClassCommand, kEventProcessCommand),
-        ]
-
-        ae_handlers = [
-            (self._on_ae_quit, kCoreEventClass, kAEQuitApplication),
-        ]
-
-        # Install the application-wide handlers
-        for method, cls, event in handlers:
-            proc = EventHandlerProcPtr(method)
-            self._carbon_event_handlers.append(proc)
-            upp = carbon.NewEventHandlerUPP(proc)
-            types = EventTypeSpec()
-            types.eventClass = cls
-            types.eventKind = event
-            handler_ref = EventHandlerRef()
-            carbon.InstallEventHandler(
-                target,
-                upp,
-                1,
-                byref(types),
-                c_void_p(),
-                byref(handler_ref))
-            self._carbon_event_handler_refs.append(handler_ref)
-
-        # Install Apple event handlers
-        for method, cls, event in ae_handlers:
-            proc = EventHandlerProcPtr(method)
-            self._carbon_event_handlers.append(proc)
-            upp = carbon.NewAEEventHandlerUPP(proc)
-            carbon.AEInstallEventHandler(
-                cls,
-                event,
-                upp,
-                0,
-                False)
-
-    def _on_command(self, next_handler, ev, data):
-        command = HICommand()
-        carbon.GetEventParameter(ev, kEventParamDirectObject,
-            typeHICommand, c_void_p(), sizeof(command), c_void_p(),
-            byref(command))
-
-        if command.commandID == kHICommandQuit:
-            self._on_quit()
-
-        return noErr
-
-    def _on_mouse_down(self, next_handler, ev, data):
-        # Check for menubar hit
-        position = Point()
-        carbon.GetEventParameter(ev, kEventParamMouseLocation,
-            typeQDPoint, c_void_p(), sizeof(position), c_void_p(),
-            byref(position))
-        if carbon.FindWindow(position, None) == inMenuBar:
-            # Mouse down in menu bar.  MenuSelect() takes care of all
-            # menu tracking and blocks until the menu is dismissed.
-            # Use command events to handle actual menu item invokations.
-
-            # This function blocks, so tell the event loop it needs to install
-            # a timer.
-            from pyglet import app
-            if app.event_loop is not None:
-                app.event_loop._enter_blocking()
-
-            carbon.MenuSelect(position)
-
-            if app.event_loop is not None:
-                app.event_loop._exit_blocking()
-
-            # Menu selection has now returned.  Remove highlight from the
-            # menubar.
-            carbon.HiliteMenu(0)
-
-        carbon.CallNextEventHandler(next_handler, ev)
-        return noErr
-
-    def _on_apple_event(self, next_handler, ev, data):
-        # Somewhat involved way of redispatching Apple event contained
-        # within a Carbon event, described in
-        # http://developer.apple.com/documentation/AppleScript/
-        #  Conceptual/AppleEvents/dispatch_aes_aepg/chapter_4_section_3.html
-
-        release = False
-        if carbon.IsEventInQueue(carbon.GetMainEventQueue(), ev):
-            carbon.RetainEvent(ev)
-            release = True
-            carbon.RemoveEventFromQueue(carbon.GetMainEventQueue(), ev)
-
-        ev_record = EventRecord()
-        carbon.ConvertEventRefToEventRecord(ev, byref(ev_record))
-        carbon.AEProcessAppleEvent(byref(ev_record))
-
-        if release:
-            carbon.ReleaseEvent(ev)
-        
-        return noErr
-
-    def _on_ae_quit(self, ae, reply, refcon):
-        self._on_quit()
-        return noErr
-
-    def _on_quit(self):
-        '''Called when the user tries to quit the application.
-
-        This is not an actual event handler, it is called in response
-        to Command+Q, the Quit menu item, and the Dock context menu's Quit
-        item.
-
-        The default implementation sets `has_exit` to true on all open
-        windows.  In pyglet 1.1 `has_exit` is set on `EventLoop` if it is
-        used instead of the windows.
-        '''
-        from pyglet import app
-        if app.event_loop is not None:
-            app.event_loop.exit()
-        else:
-            for window in self.get_windows():
-                window.has_exit = True
     
 class CarbonScreen(Screen):
     def __init__(self, display, id):
@@ -270,7 +93,7 @@ class CarbonScreen(Screen):
         self.id = id
 
         mode = carbon.CGDisplayCurrentMode(id)
-        kCGDisplayRefreshRate = _create_cfstring('RefreshRate')
+        kCGDisplayRefreshRate = create_cfstring('RefreshRate')
         number = carbon.CFDictionaryGetValue(mode, kCGDisplayRefreshRate)
         refresh = c_long()
         kCFNumberLongType = 10
@@ -666,7 +489,7 @@ class CarbonWindow(BaseWindow):
 
     def set_caption(self, caption):
         self._caption = caption
-        s = _create_cfstring(caption)
+        s = create_cfstring(caption)
         carbon.SetWindowTitleWithCFString(self._window, s)
         carbon.CFRelease(s)
 
@@ -842,7 +665,7 @@ class CarbonWindow(BaseWindow):
             self.CURSOR_WAIT_ARROW:      kThemeWatchCursor,
         }
         if name not in themes:
-            raise CarbonException('Unknown cursor name "%s"' % name)
+            raise RuntimeError('Unknown cursor name "%s"' % name)
         return CarbonMouseCursor(themes[name])
 
     def set_icon(self, *images):
@@ -1347,20 +1170,3 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
         
-
-       
-def _create_cfstring(text):
-    return carbon.CFStringCreateWithCString(c_void_p(), 
-                                            text.encode('utf8'),
-                                            kCFStringEncodingUTF8)
-
-def _oscheck(result):
-    if result != noErr:
-        raise 'Carbon error %d' % result
-    return result
-
-def _aglcheck():
-    err = agl.aglGetError()
-    if err != agl.AGL_NO_ERROR:
-        raise CarbonException(cast(agl.aglErrorString(err), c_char_p).value)
-

@@ -134,6 +134,8 @@ from pyglet.gl import gl_info
 from pyglet.event import EventDispatcher
 import pyglet.window.key
 
+_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
 class WindowException(Exception):
     '''The root exception for all window-related errors.'''
     pass
@@ -156,6 +158,8 @@ class Platform(object):
 
     The platform instance can only be obtained with `get_platform`.  Use
     the platform to obtain a `Display` instance.
+
+    :deprecated: Use `pyglet.app.Display`
     '''
     def get_display(self, name):
         '''Get a display device by name.
@@ -170,60 +174,70 @@ class Platform(object):
         attached, they will appear as a single virtual device comprising
         all the attached screens.
 
+        :deprecated: Use `pyglet.app.get_display`.
+
         :Parameters:
             `name` : str
                 The name of the display to connect to.
 
         :rtype: `Display`
         '''
-        return get_default_display()
+        for display in pyglet.app.displays:
+            if display.name == name:
+                return display
+        return pyglet.app.Display(name)
 
     def get_default_display(self):
         '''Get the default display device.
 
+        :deprecated: Use `pyglet.app.get_display`.
+
         :rtype: `Display`
         '''
-        raise NotImplementedError('abstract')
+        return pyglet.app.get_display()
 
-class Display(object):
-    '''A display device supporting one or more screens.
+if _is_epydoc:
+    class Display(object):
+        '''A display device supporting one or more screens.
 
-    Use `Platform.get_display` or `Platform.get_default_display` to obtain
-    an instance of this class.  Use a display to obtain `Screen` instances.
-    '''
-    def __init__(self):
-        from pyglet import app
-        app.displays.add(self)
+        Use `Platform.get_display` or `Platform.get_default_display` to obtain
+        an instance of this class.  Use a display to obtain `Screen` instances.
 
-    def get_screens(self):
-        '''Get the available screens.
-
-        A typical multi-monitor workstation comprises one `Display` with
-        multiple `Screen` s.  This method returns a list of screens which
-        can be enumerated to select one for full-screen display.
-
-        For the purposes of creating an OpenGL config, the default screen
-        will suffice.
-
-        :rtype: list of `Screen`
+        :deprecated: Use `pyglet.app.Display`.
         '''
-        raise NotImplementedError('abstract')    
+        def __init__(self):
+            raise NotImplementedError('deprecated')
 
-    def get_default_screen(self):
-        '''Get the default screen as specified by the user's operating system
-        preferences.
+        def get_screens(self):
+            '''Get the available screens.
 
-        :rtype: `Screen`
-        '''
-        return self.get_screens()[0]
+            A typical multi-monitor workstation comprises one `Display` with
+            multiple `Screen` s.  This method returns a list of screens which
+            can be enumerated to select one for full-screen display.
 
-    def get_windows(self):
-        '''Get the windows currently attached to this display.
+            For the purposes of creating an OpenGL config, the default screen
+            will suffice.
 
-        :rtype: sequence of `Window`
-        '''
-        from pyglet import app
-        return [window for window in app.windows if window.display is self]
+            :rtype: list of `Screen`
+            '''
+            raise NotImplementedError('deprecated')
+
+        def get_default_screen(self):
+            '''Get the default screen as specified by the user's operating system
+            preferences.
+
+            :rtype: `Screen`
+            '''
+            raise NotImplementedError('deprecated')
+
+        def get_windows(self):
+            '''Get the windows currently attached to this display.
+
+            :rtype: sequence of `Window`
+            '''
+            raise NotImplementedError('deprecated')
+else:
+    Display = pyglet.app.Display
 
 class Screen(object):
     '''A virtual monitor that supports fullscreen windows.
@@ -238,13 +252,9 @@ class Screen(object):
     location of the top-left corner of the screen.  This is useful for
     determining if screens arranged above or next to one another.  
     
-    You cannot always rely on the origin to give the placement of monitors.
-    For example, an X server with two displays without Xinerama enabled
-    will present two logically separate screens with no relation to each
-    other.
-
-    Use `Display.get_screens` or `Display.get_default_screen` to obtain an
-    instance of this class.
+    Use `pyglet.app.Display.get_screens` or
+    `pyglet.app.Display.get_default_screen` to obtain an instance of this
+    class.
 
     :Ivariables:
         `x` : int
@@ -1234,7 +1244,7 @@ class BaseWindow(EventDispatcher):
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
-    if hasattr(sys, 'is_epydoc') and sys.is_epydoc:
+    if _is_epydoc:
         def on_key_press(symbol, modifiers):
             '''A key on the keyboard was pressed (and held down).
 
@@ -1651,12 +1661,13 @@ def get_platform():
     '''Get an instance of the Platform most appropriate for this
     system.
 
+    :deprecated: Use `pyglet.app.Display`.
+
     :rtype: `Platform`
     :return: The platform instance.
     '''
-    return _platform
+    return Platform()
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 if _is_epydoc:
     # We are building documentation
@@ -1666,16 +1677,13 @@ if _is_epydoc:
 else:
     # Try to determine which platform to use.
     if sys.platform == 'darwin':
-        from pyglet.window.carbon import CarbonPlatform, CarbonWindow
-        _platform = CarbonPlatform()
+        from pyglet.window.carbon import CarbonWindow
         Window = CarbonWindow
     elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.window.win32 import Win32Platform, Win32Window
-        _platform = Win32Platform()
+        from pyglet.window.win32 import Win32Window
         Window = Win32Window
     else:
-        from pyglet.window.xlib import XlibPlatform, XlibWindow
-        _platform = XlibPlatform()
+        from pyglet.window.xlib import XlibWindow
         Window = XlibWindow
 
 # Create shadow window. (trickery is for circular import)

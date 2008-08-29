@@ -47,7 +47,7 @@ if sys.platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
 
 import pyglet
-from pyglet.window import Platform, Display, Screen, BaseWindow, \
+from pyglet.window import Display, Screen, BaseWindow, \
     WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.window import event
 from pyglet.event import EventDispatcher
@@ -133,15 +133,7 @@ _motion_map = {
 
 class Win32Exception(WindowException):
     pass
-
-class Win32Platform(Platform):
-    _display = None
-
-    def get_default_display(self):
-        if not self._display:
-            self._display = Win32Display()
-        return self._display
-    
+   
 class Win32Display(Display):
     def get_screens(self):
         screens = []
