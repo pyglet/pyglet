@@ -39,7 +39,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from pyglet.window import key
-from pyglet.window.win32.constants import *
+from constants import *
 
 keymap = {
     ord('A'): key.A,

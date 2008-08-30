@@ -47,15 +47,11 @@ if sys.platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
 
 import pyglet
-from pyglet.window import Display, Screen, BaseWindow, \
+from pyglet.window import Screen, BaseWindow, \
     WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
-from pyglet.window import event
 from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.window import mouse
-from pyglet.window.win32.constants import *
-from pyglet.window.win32.winkey import *
-from pyglet.window.win32.types import *
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -64,54 +60,10 @@ from pyglet.gl import wgl
 from pyglet.gl import wglext_arb
 from pyglet.gl import wgl_info
 
-_debug_win32 = pyglet.options['debug_win32']
-
-if _debug_win32:
-    import traceback
-    _GetLastError = windll.kernel32.GetLastError
-    _SetLastError = windll.kernel32.SetLastError
-    _FormatMessageA = windll.kernel32.FormatMessageA
-
-    _log_win32 = open('debug_win32.log', 'w')
-    
-    def format_error(err):
-        msg = create_string_buffer(256)
-        _FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
-                          c_void_p(),
-                          err,
-                          0,
-                          msg,
-                          len(msg),
-                          c_void_p())
-        return msg.value
-    
-    class DebugLibrary(object):
-        def __init__(self, lib):
-            self.lib = lib
-
-        def __getattr__(self, name):
-            fn = getattr(self.lib, name)
-            def f(*args):
-                _SetLastError(0)
-                result = fn(*args)
-                err = _GetLastError()
-                if err != 0:
-                    map(_log_win32.write,
-                        traceback.format_list(traceback.extract_stack()[:-1]))
-                    print >> _log_win32, format_error(err)
-                return result
-            return f
-else:
-    DebugLibrary = lambda lib: lib
-            
-_gdi32 = DebugLibrary(windll.gdi32)
-_kernel32 = DebugLibrary(windll.kernel32)
-_user32 = DebugLibrary(windll.user32)
-
-
-_user32.GetKeyState.restype = c_short
-_gdi32.CreateDIBitmap.argtypes = [HDC, POINTER(BITMAPINFOHEADER), DWORD,
-    c_void_p, POINTER(BITMAPINFO), c_uint]
+from pyglet.libs.win32 import _user32, _kernel32, _gdi32
+from pyglet.libs.win32.constants import *
+from pyglet.libs.win32.winkey import *
+from pyglet.libs.win32.types import *
 
 # symbol,ctrl -> motion mapping
 _motion_map = {
@@ -131,23 +83,6 @@ _motion_map = {
     (key.DELETE, False):    key.MOTION_DELETE,
 }
 
-class Win32Exception(WindowException):
-    pass
-   
-class Win32Display(Display):
-    def get_screens(self):
-        screens = []
-        def enum_proc(hMonitor, hdcMonitor, lprcMonitor, dwData):
-            r = lprcMonitor.contents
-            width = r.right - r.left
-            height = r.bottom - r.top
-            screens.append(
-                Win32Screen(self, hMonitor, r.left, r.top, width, height))
-            return True
-        enum_proc_type = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
-        enum_proc_ptr = enum_proc_type(enum_proc)
-        _user32.EnumDisplayMonitors(NULL, NULL, enum_proc_ptr, 0)
-        return screens
 
 class Win32Screen(Screen):
     def __init__(self, display, handle, x, y, width, height):
@@ -719,7 +654,7 @@ class Win32Window(BaseWindow):
             self.CURSOR_WAIT_ARROW:      IDC_APPSTARTING,
         }
         if name not in names:
-            raise Win32Exception('Unknown cursor name "%s"' % name)
+            raise RuntimeError('Unknown cursor name "%s"' % name)
         cursor = _user32.LoadCursorW(None, names[name])
         return Win32MouseCursor(cursor)
 

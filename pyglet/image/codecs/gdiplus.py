@@ -43,8 +43,8 @@ from ctypes import *
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
-from pyglet.window.win32.constants import *
-from pyglet.window.win32.types import *
+from pyglet.libs.win32.constants import *
+from pyglet.libs.win32.types import *
 
 ole32 = windll.ole32
 kernel32 = windll.kernel32

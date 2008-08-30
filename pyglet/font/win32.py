@@ -45,10 +45,10 @@ import math
 import pyglet
 from pyglet.font import base
 import pyglet.image
-from pyglet.window.win32.constants import *
-from pyglet.window.win32.types import *
-from pyglet.window.win32 import _gdi32 as gdi32, _user32 as user32
-from pyglet.window.win32 import _kernel32 as kernel32
+from pyglet.libs.win32.constants import *
+from pyglet.libs.win32.types import *
+from pyglet.libs.win32 import _gdi32 as gdi32, _user32 as user32
+from pyglet.libs.win32 import _kernel32 as kernel32
 
 _debug_font = pyglet.options['debug_font']
 
