@@ -93,29 +93,13 @@ class WeakSet(object):
     def __len__(self):
         return len(self._dict)
 
-def get_display():
-    '''Get the default display device.
-
-    If there is already a `Display` connection, that display will be returned.
-    Otherwise, a default `Display` is created and returned.  If multiple
-    display connections are active, an arbitrary one is returned.
-
-    :since: pyglet 1.2
-
-    :rtype: `Display`
-    '''
-    # If there's an existing display, return it (return arbitrary display if
-    # there are multiple).
-    for display in displays:
-        return display
-
-    # Otherwise, create a new display and return it.
-    return Display()
 
 
 #: Set of all open displays.  Instances of `Display` are automatically added
 #: to this set upon construction.  The set uses weak references, so displays
 #: are removed from the set when they are no longer referenced.
+#:
+#: :deprecated: Use `pyglet.canvas.get_display`.
 #:
 #: :type: `WeakSet`
 displays = WeakSet()
@@ -153,17 +137,14 @@ def exit():
     event_loop.exit()
 
 if _is_epydoc:
-    from pyglet.app.base import EventLoop, Display
+    from pyglet.app.base import EventLoop
 else:
     if sys.platform == 'darwin':
         from pyglet.app.carbon import CarbonEventLoop as EventLoop
-        from pyglet.app.carbon import CarbonDisplay as Display
     elif sys.platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as EventLoop
-        from pyglet.app.win32 import Win32Display as Display
     else:
         from pyglet.app.xlib import XlibEventLoop as EventLoop
-        from pyglet.app.xlib import XlibDisplay as Display
 
 #: The global event loop.  Applications can replace this with their own
 #: subclass of `pyglet.app.base.EventLoop`, but must take care to do so before

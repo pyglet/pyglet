@@ -47,11 +47,13 @@ if sys.platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
 
 import pyglet
-from pyglet.window import Screen, BaseWindow, \
+from pyglet.window import BaseWindow, \
     WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.window import mouse
+
+from pyglet.canvas.win32 import Win32Canvas
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -82,227 +84,6 @@ _motion_map = {
     (key.BACKSPACE, False): key.MOTION_BACKSPACE,
     (key.DELETE, False):    key.MOTION_DELETE,
 }
-
-
-class Win32Screen(Screen):
-    def __init__(self, display, handle, x, y, width, height):
-        super(Win32Screen, self).__init__(x, y, width, height)
-        self.display = display        
-        self._handle = handle
-
-    def get_matching_configs(self, template):
-        # Determine which technique should be used for finding matching configs.        
-        # Use the builtin PIXELFORMATDESCRIPTOR if possible, otherwise resort
-        # to the WGL_ARB_pixel_format extension.
-        need_pixel_format_arb = False
-        if template.sample_buffers or template.samples:
-            need_pixel_format_arb = True
-            
-        if need_pixel_format_arb:
-            # Need a GL context before we can query WGL extensions.
-            dummy_window = None
-            if not gl_info.have_context():
-                # Create a dummy context
-                config = self.get_best_config()
-                context = config.create_context(None)
-                dummy_window = Win32Window(visible=False, context=context)
-            
-            try:            
-                # Check for required extensions
-                if not wgl_info.have_extension('WGL_ARB_pixel_format'):
-                    return []
-                return self._get_arb_pixel_format_matching_configs(template)
-            finally:
-                if dummy_window:
-                    dummy_window.close()
-
-        return self._get_pixel_format_descriptor_matching_configs(template)
-
-    def _get_pixel_format_descriptor_matching_configs(self, template):
-        '''Get matching configs using standard PIXELFORMATDESCRIPTOR
-        technique.'''
-        pfd = PIXELFORMATDESCRIPTOR()
-        pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
-        pfd.nVersion = 1
-        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL
-
-        if template.double_buffer:
-            pfd.dwFlags |= PFD_DOUBLEBUFFER
-        else:
-            pfd.dwFlags |= PFD_DOUBLEBUFFER_DONTCARE
-
-        if template.stereo:
-            pfd.dwFlags |= PFD_STEREO
-        else:
-            pfd.dwFlags |= PFD_STEREO_DONTCARE
-
-        '''Not supported in pyglet API        
-        if attributes.get('swap_copy', False):
-            pfd.dwFlags |= PFD_SWAP_COPY
-        if attributes.get('swap_exchange', False):
-            pfd.dwFlags |= PFD_SWAP_EXCHANGE
-        '''
-
-        if not template.depth_size:
-            pfd.dwFlags |= PFD_DEPTH_DONTCARE
-
-        pfd.iPixelType = PFD_TYPE_RGBA
-        pfd.cColorBits = template.buffer_size or 0
-        pfd.cRedBits = template.red_size or 0
-        pfd.cGreenBits = template.green_size or 0
-        pfd.cBlueBits = template.blue_size or 0
-        pfd.cAlphaBits = template.alpha_size or 0
-        pfd.cAccumRedBits = template.accum_red_size or 0
-        pfd.cAccumGreenBits = template.accum_green_size or 0
-        pfd.cAccumBlueBits = template.accum_blue_size or 0
-        pfd.cAccumAlphaBits = template.accum_alpha_size or 0
-        pfd.cDepthBits = template.depth_size or 0
-        pfd.cStencilBits = template.stencil_size or 0
-        pfd.cAuxBuffers = template.aux_buffers or 0
-
-        # No window created yet, so lets create a config based on
-        # the DC of the entire screen.
-        hdc = _user32.GetDC(0)
-
-        pf = _gdi32.ChoosePixelFormat(hdc, byref(pfd))
-        if pf:
-            return [Win32Config(self, hdc, pf)]
-        else:
-            return []                    
-                    
-    def _get_arb_pixel_format_matching_configs(self, template):
-        '''Get configs using the WGL_ARB_pixel_format extension.
-        This method assumes a (dummy) GL context is already created.'''
-        
-        # Check for required extensions        
-        if template.sample_buffers or template.samples:
-            if not gl_info.have_extension('GL_ARB_multisample'):
-                return []
-
-        # Construct array of attributes
-        attrs = []
-        for name, value in template.get_gl_attributes():
-            attr = Win32ConfigARB.attribute_ids.get(name, None)
-            if attr and value is not None:
-                attrs.extend([attr, int(value)])
-        attrs.append(0)        
-        attrs = (c_int * len(attrs))(*attrs)
-
-        hdc = _user32.GetDC(0)     
-        
-        pformats = (c_int * 16)()
-        nformats = c_uint(16)
-        wglext_arb.wglChoosePixelFormatARB(hdc, attrs, None, 
-                                           nformats, pformats, nformats)
-
-        formats = [Win32ConfigARB(self, hdc, pf) \
-                   for pf in pformats[:nformats.value]]
-        return formats
-
-class Win32Config(gl.Config):
-    def __init__(self, screen, hdc, pf):
-        self.screen = screen
-        self._hdc = hdc
-        self._pf = pf
-        self._pfd = PIXELFORMATDESCRIPTOR()
-        _gdi32.DescribePixelFormat(self._hdc, 
-            self._pf, sizeof(PIXELFORMATDESCRIPTOR), byref(self._pfd))
-
-        self.double_buffer = bool(self._pfd.dwFlags & PFD_DOUBLEBUFFER)
-        self.sample_buffers = 0
-        self.samples = 0
-        self.stereo = bool(self._pfd.dwFlags & PFD_STEREO)
-        self.buffer_size = self._pfd.cColorBits
-        self.red_size = self._pfd.cRedBits
-        self.green_size = self._pfd.cGreenBits
-        self.blue_size = self._pfd.cBlueBits
-        self.alpha_size = self._pfd.cAlphaBits
-        self.accum_red_size = self._pfd.cAccumRedBits
-        self.accum_green_size = self._pfd.cAccumGreenBits
-        self.accum_blue_size = self._pfd.cAccumBlueBits
-        self.accum_alpha_size = self._pfd.cAccumAlphaBits
-        self.depth_size = self._pfd.cDepthBits
-        self.stencil_size = self._pfd.cStencilBits
-        self.aux_buffers = self._pfd.cAuxBuffers
-
-    def create_context(self, share):
-        # The context can't be created until we have the DC of the
-        # window.  It's _possible_ that this could screw things up
-        # (for example, destroying the share context before the new
-        # window is created), but these are unlikely and not in the
-        # ordinary workflow.
-        return Win32Context(self, share)
-
-    def is_complete(self):
-        return True
-
-class Win32ConfigARB(Win32Config):    
-    attribute_ids = {
-        'double_buffer': wglext_arb.WGL_DOUBLE_BUFFER_ARB,
-        'stereo': wglext_arb.WGL_STEREO_ARB,
-        'buffer_size': wglext_arb.WGL_COLOR_BITS_ARB,
-        'aux_buffers': wglext_arb.WGL_AUX_BUFFERS_ARB,
-        'sample_buffers': wglext_arb.WGL_SAMPLE_BUFFERS_ARB,
-        'samples': wglext_arb.WGL_SAMPLES_ARB,
-        'red_size': wglext_arb.WGL_RED_BITS_ARB,
-        'green_size': wglext_arb.WGL_GREEN_BITS_ARB,
-        'blue_size': wglext_arb.WGL_BLUE_BITS_ARB,
-        'alpha_size': wglext_arb.WGL_ALPHA_BITS_ARB,
-        'depth_size': wglext_arb.WGL_DEPTH_BITS_ARB,
-        'stencil_size': wglext_arb.WGL_STENCIL_BITS_ARB,
-        'accum_red_size': wglext_arb.WGL_ACCUM_RED_BITS_ARB,
-        'accum_green_size': wglext_arb.WGL_ACCUM_GREEN_BITS_ARB,
-        'accum_blue_size': wglext_arb.WGL_ACCUM_BLUE_BITS_ARB,
-        'accum_alpha_size': wglext_arb.WGL_ACCUM_ALPHA_BITS_ARB,
-    }
-    def __init__(self, screen, hdc, pf):
-        self.screen = screen
-        self._hdc = hdc
-        self._pf = pf
-        
-        names, attrs = map(None, *self.attribute_ids.items())
-        attrs = (c_int * len(attrs))(*attrs)
-        values = (c_int * len(attrs))()
-        
-        result = wglext_arb.wglGetPixelFormatAttribivARB(hdc,
-            pf, 0, len(attrs), attrs, values)
-
-        for name, value in zip(names, values):
-            setattr(self, name, value)
-
-    def create_context(self, share):
-        return Win32ContextARB(self, share)
-
-class Win32Context(gl.Context):
-    _context = None
-    def __init__(self, config, share):
-        super(Win32Context, self).__init__(share)
-        self.config = config
-        self._share = share
-
-    def _set_window(self, window):
-        assert self._context is None
-        _gdi32.SetPixelFormat(
-            window._dc, self.config._pf, byref(self.config._pfd))
-        self._context = wgl.wglCreateContext(window._dc)
-        if self._share:
-            assert self._share._context is not None
-            if not wgl.wglShareLists(self._share._context, self._context):
-                raise gl.ContextException('Unable to share contexts')
-
-    def destroy(self):
-        super(Win32Context, self).destroy()
-        wgl.wglDeleteContext(self._context)
-
-class Win32ContextARB(Win32Context):
-    def _set_window(self, window):
-        assert self._context is None
-        _gdi32.SetPixelFormat(window._dc, self.config._pf, None)
-        self._context = wgl.wglCreateContext(window._dc)
-        if self._share:
-            assert self._share._context is not None
-            if not wgl.wglShareLists(self._share._context, self._context):
-                raise gl.ContextException('Unable to share contexts')
 
 class Win32MouseCursor(MouseCursor):
     drawable = False
@@ -442,7 +223,8 @@ class Win32Window(BaseWindow):
 
         # Context must be created after window is created.
         if not self._wgl_context:
-            self.context._set_window(self)
+            self.canvas = Win32Canvas(self.display, self._hwnd, self._dc)
+            self.context.attach(self.canvas)
             self._wgl_context = self.context._context
 
         self.set_caption(self._caption)

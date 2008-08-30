@@ -41,27 +41,11 @@ import time
 import Queue
 
 from pyglet import app
-from pyglet.app.base import EventLoop, Display
-from pyglet.window.win32 import Win32Screen
+from base import EventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-
-class Win32Display(Display):
-    def get_screens(self):
-        screens = []
-        def enum_proc(hMonitor, hdcMonitor, lprcMonitor, dwData):
-            r = lprcMonitor.contents
-            width = r.right - r.left
-            height = r.bottom - r.top
-            screens.append(
-                Win32Screen(self, hMonitor, r.left, r.top, width, height))
-            return True
-        enum_proc_type = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
-        enum_proc_ptr = enum_proc_type(enum_proc)
-        _user32.EnumDisplayMonitors(NULL, NULL, enum_proc_ptr, 0)
-        return screens
 
 class Win32EventLoop(EventLoop):
     def __init__(self):

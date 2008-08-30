@@ -395,7 +395,6 @@ class XlibWindow(BaseWindow):
         if self._window and self._mapped:
             self._unmap()
 
-        self.context.window = self
         self._x_display = self.config._display
         self._x_screen_id = self.display.x_screen
         self._glx_context = self.context._context

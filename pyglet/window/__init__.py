@@ -154,83 +154,6 @@ class MouseCursorException(WindowException):
     '''The root exception for all mouse cursor-related errors.'''
     pass
 
-class Screen(object):
-    '''A virtual monitor that supports fullscreen windows.
-
-    Screens typically map onto a physical display such as a
-    monitor, television or projector.  Selecting a screen for a window
-    has no effect unless the window is made fullscreen, in which case
-    the window will fill only that particular virtual screen.
-
-    The `width` and `height` attributes of a screen give the current
-    resolution of the screen.  The `x` and `y` attributes give the global
-    location of the top-left corner of the screen.  This is useful for
-    determining if screens arranged above or next to one another.  
-    
-    Use `pyglet.app.Display.get_screens` or
-    `pyglet.app.Display.get_default_screen` to obtain an instance of this
-    class.
-
-    :Ivariables:
-        `x` : int
-            Left edge of the screen on the virtual desktop.
-        `y` : int
-            Top edge of the screen on the virtual desktop.
-        `width` : int
-            Width of the screen, in pixels.
-        `height` : int
-            Height of the screen, in pixels.
-
-    '''
-
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-    def __repr__(self):
-        return '%s(x=%d, y=%d, width=%d, height=%d)' % \
-            (self.__class__.__name__, self.x, self.y, self.width, self.height)
-
-    def get_best_config(self, template=None):
-        '''Get the best available GL config.
-
-        Any required attributes can be specified in `template`.  If
-        no configuration matches the template, `NoSuchConfigException` will
-        be raised.
-
-        :Parameters:
-            `template` : `pyglet.gl.Config`
-                A configuration with desired attributes filled in.
-
-        :rtype: `pyglet.gl.Config`
-        :return: A configuration supported by the platform that best
-            fulfils the needs described by the template.
-        '''
-        if template is None:
-            template = gl.Config()
-        configs = self.get_matching_configs(template)
-        if not configs:
-            raise NoSuchConfigException()
-        return configs[0]
-
-    def get_matching_configs(self, template):
-        '''Get a list of configs that match a specification.
-
-        Any attributes specified in `template` will have values equal
-        to or greater in each returned config.  If no configs satisfy
-        the template, an empty list is returned.
-
-        :Parameters:
-            `template` : `pyglet.gl.Config`
-                A configuration with desired attributes filled in.
-
-        :rtype: list of `pyglet.gl.Config`
-        :return: A list of matching configs.
-        '''
-        raise NotImplementedError('abstract')
-
 class MouseCursor(object):
     '''An abstract mouse cursor.'''
 
@@ -575,7 +498,12 @@ class BaseWindow(EventDispatcher):
         # preference
         self._context = context
         self._config = self._context.config
-        self._screen = self._config.screen
+        # XXX deprecate config's being screen-specific
+        if hasattr(self._config, 'screen'):
+            self._screen = self._config.screen
+        else:
+            display = self._config.canvas.display
+            self._screen = display.get_default_screen()
         self._display = self._screen.display
 
         if fullscreen:
@@ -1597,7 +1525,7 @@ def get_platform():
     '''Get an instance of the Platform most appropriate for this
     system.
 
-    :deprecated: Use `pyglet.app.Display`.
+    :deprecated: Use `pyglet.canvas.Display`.
 
     :rtype: `Platform`
     :return: The platform instance.
@@ -1610,7 +1538,7 @@ class Platform(object):
     The platform instance can only be obtained with `get_platform`.  Use
     the platform to obtain a `Display` instance.
 
-    :deprecated: Use `pyglet.app.Display`
+    :deprecated: Use `pyglet.canvas.Display`
     '''
     def get_display(self, name):
         '''Get a display device by name.
@@ -1625,7 +1553,7 @@ class Platform(object):
         attached, they will appear as a single virtual device comprising
         all the attached screens.
 
-        :deprecated: Use `pyglet.app.get_display`.
+        :deprecated: Use `pyglet.canvas.get_display`.
 
         :Parameters:
             `name` : str
@@ -1636,7 +1564,7 @@ class Platform(object):
         for display in pyglet.app.displays:
             if display.name == name:
                 return display
-        return pyglet.app.Display(name)
+        return pyglet.canvas.Display(name)
 
     def get_default_display(self):
         '''Get the default display device.
@@ -1645,7 +1573,7 @@ class Platform(object):
 
         :rtype: `Display`
         '''
-        return pyglet.app.get_display()
+        return pyglet.canvas.get_display()
 
 if _is_epydoc:
     class Display(object):
@@ -1654,7 +1582,7 @@ if _is_epydoc:
         Use `Platform.get_display` or `Platform.get_default_display` to obtain
         an instance of this class.  Use a display to obtain `Screen` instances.
 
-        :deprecated: Use `pyglet.app.Display`.
+        :deprecated: Use `pyglet.canvas.Display`.
         '''
         def __init__(self):
             raise NotImplementedError('deprecated')
@@ -1688,7 +1616,8 @@ if _is_epydoc:
             '''
             raise NotImplementedError('deprecated')
 else:
-    Display = pyglet.app.Display
+    Display = pyglet.canvas.Display
+    Screen = pyglet.canvas.Screen
 
 
 # XXX remove
