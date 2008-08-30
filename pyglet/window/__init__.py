@@ -1516,6 +1516,11 @@ else:
         from pyglet.window.win32 import Win32Window
         Window = Win32Window
     else:
+        # XXX HACK around circ problem, should be fixed after removal of
+        # shadow nonsense
+        pyglet.window = sys.modules[__name__]
+        import key, mouse
+
         from pyglet.window.xlib import XlibWindow
         Window = XlibWindow
 

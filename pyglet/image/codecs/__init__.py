@@ -53,6 +53,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import os.path
+import sys
 
 _decoders = []              # List of registered ImageDecoders
 _decoder_extensions = {}    # Map str -> list of matching ImageDecoders
@@ -191,12 +192,13 @@ def add_default_image_codecs():
         pass
 
     # Windows XP default: GDI+
-    try:
-        import pyglet.image.codecs.gdiplus
-        add_encoders(gdiplus)
-        add_decoders(gdiplus)
-    except ImportError:
-        pass
+    if sys.platform in ('win32', 'cygwin'):
+        try:
+            import pyglet.image.codecs.gdiplus
+            add_encoders(gdiplus)
+            add_decoders(gdiplus)
+        except ImportError:
+            pass
 
     # Linux default: GdkPixbuf 2.0
     try:

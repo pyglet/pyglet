@@ -41,12 +41,13 @@ import warnings
 
 import pyglet
 from pyglet.window import WindowException, NoSuchDisplayException, \
-    MouseCursorException, Screen, MouseCursor, \
+    MouseCursorException, MouseCursor, \
     DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler
-from pyglet.window import event
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
+
+from pyglet.canvas.xlib import XlibCanvas
 
 from pyglet import gl
 from pyglet.gl import gl_info
@@ -112,205 +113,6 @@ class XlibMouseCursor(MouseCursor):
     def __init__(self, cursor):
         self.cursor = cursor
 
-class XlibScreen(Screen):
-    def __init__(self, display, x, y, width, height, xinerama):
-        super(XlibScreen, self).__init__(x, y, width, height)
-        self.display = display
-        self._xinerama = xinerama
- 
-    def get_matching_configs(self, template):
-        x_display = self.display._display
-        x_screen = self.display.x_screen
-
-        have_13 = self.display.info.have_version(1, 3)
-        if have_13:
-            config_class = XlibGLConfig13
-        else:
-            if 'ATI' in self.display.info.get_client_vendor():
-                config_class = XlibGLConfig10ATI
-            else:
-                config_class = XlibGLConfig10
-        
-        # Construct array of attributes
-        attrs = []
-        for name, value in template.get_gl_attributes():
-            attr = config_class.attribute_ids.get(name, None)
-            if attr and value is not None:
-                attrs.extend([attr, int(value)])
-
-        if have_13:
-            attrs.extend([glx.GLX_X_RENDERABLE, True])
-        else:
-            attrs.extend([glx.GLX_RGBA, True])
-
-        if len(attrs):
-            attrs.extend([0, 0])
-            attrib_list = (c_int * len(attrs))(*attrs)
-        else:
-            attrib_list = None
-
-        if have_13:
-            elements = c_int()
-            configs = glx.glXChooseFBConfig(x_display, x_screen,
-                attrib_list, byref(elements))
-            if not configs:
-                return []
-
-            configs = cast(configs, 
-                           POINTER(glx.GLXFBConfig * elements.value)).contents
-
-            result = [config_class(self, c) for c in configs]
-
-            # Can't free array until all XlibGLConfig13's are GC'd.  Too much
-            # hassle, live with leak. XXX
-            #xlib.XFree(configs)
-
-            return result
-        else:
-            try:
-                return [config_class(self, attrib_list)]
-            except gl.ContextException:
-                return []
-
-    def __repr__(self):
-        return 'XlibScreen(display=%r, x=%d, y=%d, ' \
-               'width=%d, height=%d, xinerama=%d)' % \
-            (self.display, self.x, self.y, self.width, self.height,
-             self._xinerama)
-
-
-class XlibGLConfig(gl.Config):
-    attribute_ids = {
-        'buffer_size': glx.GLX_BUFFER_SIZE,
-        'level': glx.GLX_LEVEL,     # Not supported
-        'double_buffer': glx.GLX_DOUBLEBUFFER,
-        'stereo': glx.GLX_STEREO,
-        'aux_buffers': glx.GLX_AUX_BUFFERS,
-        'red_size': glx.GLX_RED_SIZE,
-        'green_size': glx.GLX_GREEN_SIZE,
-        'blue_size': glx.GLX_BLUE_SIZE,
-        'alpha_size': glx.GLX_ALPHA_SIZE,
-        'depth_size': glx.GLX_DEPTH_SIZE,
-        'stencil_size': glx.GLX_STENCIL_SIZE,
-        'accum_red_size': glx.GLX_ACCUM_RED_SIZE,
-        'accum_green_size': glx.GLX_ACCUM_GREEN_SIZE,
-        'accum_blue_size': glx.GLX_ACCUM_BLUE_SIZE,
-        'accum_alpha_size': glx.GLX_ACCUM_ALPHA_SIZE,
-    }
-
-    def create_context(self, share):
-        context = self._create_glx_context(share)
-
-        if context == glx.GLX_BAD_CONTEXT:
-            raise gl.ContextException('Invalid context share')
-        elif context == glx.GLXBadFBConfig:
-            raise gl.ContextException('Invalid GL configuration')
-        elif context < 0:
-            raise gl.ContextException('Could not create GL context') 
-
-        return XlibGLContext(self, context, share)
-
-    def _create_glx_context(self, share):
-        raise NotImplementedError('abstract')
-
-    def is_complete(self):
-        return True
-
-    def get_visual_info(self):
-        raise NotImplementedError('abstract')
-
-class XlibGLConfig10(XlibGLConfig):
-    def __init__(self, screen, attrib_list):
-        self.screen = screen
-        self._display = screen.display._display
-        self._visual_info = glx.glXChooseVisual(self._display,
-            screen._x_screen_id, attrib_list)
-        if not self._visual_info:
-            raise gl.ContextException('No conforming visual exists')
-
-        for name, attr in self.attribute_ids.items():
-            value = c_int()
-            result = glx.glXGetConfig(self._display,
-                self._visual_info, attr, byref(value))
-            if result >= 0:
-                setattr(self, name, value.value)
-        self.sample_buffers = 0
-        self.samples = 0
-
-    def get_visual_info(self):
-        return self._visual_info.contents
-
-    def _create_glx_context(self, share):
-        if share:
-            return glx.glXCreateContext(self._display, self._visual_info,
-                share._context, True)
-        else:
-            return glx.glXCreateContext(self._display, self._visual_info,
-                None, True)
-
-class XlibGLConfig10ATI(XlibGLConfig10):
-    attribute_ids = XlibGLConfig.attribute_ids.copy()
-    del attribute_ids['stereo']
-    stereo = False
-
-class XlibGLConfig13(XlibGLConfig):
-    attribute_ids = XlibGLConfig.attribute_ids.copy()
-    attribute_ids.update({
-        'sample_buffers': glx.GLX_SAMPLE_BUFFERS,
-        'samples': glx.GLX_SAMPLES,
-
-        # Not supported in current pyglet API:
-        'render_type': glx.GLX_RENDER_TYPE,
-        'config_caveat': glx.GLX_CONFIG_CAVEAT,
-        'transparent_type': glx.GLX_TRANSPARENT_TYPE,
-        'transparent_index_value': glx.GLX_TRANSPARENT_INDEX_VALUE,
-        'transparent_red_value': glx.GLX_TRANSPARENT_RED_VALUE,
-        'transparent_green_value': glx.GLX_TRANSPARENT_GREEN_VALUE,
-        'transparent_blue_value': glx.GLX_TRANSPARENT_BLUE_VALUE,
-        'transparent_alpha_value': glx.GLX_TRANSPARENT_ALPHA_VALUE,
-
-        # Used internally
-        'x_renderable': glx.GLX_X_RENDERABLE,
-    })
-
-    def __init__(self, screen, fbconfig):
-        super(XlibGLConfig13, self).__init__()
-        self.screen = screen
-        self._display = screen.display._display
-        self._fbconfig = fbconfig
-        for name, attr in self.attribute_ids.items():
-            value = c_int()
-            result = glx.glXGetFBConfigAttrib(
-                self._display, self._fbconfig, attr, byref(value))
-            if result >= 0:
-                setattr(self, name, value.value)
-
-    def get_visual_info(self):
-        return glx.glXGetVisualFromFBConfig(
-            self._display, self._fbconfig).contents
-
-    def _create_glx_context(self, share):
-        if share:
-            return glx.glXCreateNewContext(self._display, self._fbconfig,
-                glx.GLX_RGBA_TYPE, share._context, True)
-        else:
-            return glx.glXCreateNewContext(self._display, self._fbconfig,
-                glx.GLX_RGBA_TYPE, None, True)
-
-class XlibGLContext(gl.Context):
-    def __init__(self, config, context, share):
-        super(XlibGLContext, self).__init__(share)
-        self.config = config
-        self._context = context
-        self._x_display = config.screen.display._display
-
-    def destroy(self):
-        super(XlibGLContext, self).destroy()
-        glx.glXDestroyContext(self._x_display, self._context)
-
-    def is_direct(self):
-        return glx.glXIsDirect(self._x_display, self._context)
-
 # Platform event data is single item, so use platform event handler directly.
 XlibEventHandler = _PlatformEventHandler
 
@@ -318,8 +120,6 @@ class XlibWindow(BaseWindow):
     _x_display = None       # X display connection
     _x_screen_id = None     # X screen index
     _x_ic = None            # X input context
-    _glx_context = None     # GLX context handle
-    _glx_window = None      # GLX window handle
     _window = None          # Xlib window handle
     _minimum_size = None
     _maximum_size = None
@@ -374,11 +174,8 @@ class XlibWindow(BaseWindow):
             # clear out the GLX context
             self.switch_to()
             gl.glFlush()
-            glx.glXMakeCurrent(self._x_display, 0, None)
-            if self._glx_window:
-                glx.glXDestroyWindow(self._x_display, self._glx_window)
+            self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
-            self._glx_window = None
             del self.display._window_map[self._window]
             self._window = None 
             self._mapped = False
@@ -395,9 +192,8 @@ class XlibWindow(BaseWindow):
         if self._window and self._mapped:
             self._unmap()
 
-        self._x_display = self.config._display
+        self._x_display = self.display._display
         self._x_screen_id = self.display.x_screen
-        self._glx_context = self.context._context
 
         self._glx_1_3 = self.display.info.have_version(1, 3)
         self._have_SGI_video_sync = \
@@ -447,6 +243,9 @@ class XlibWindow(BaseWindow):
                 xlib.InputOutput, visual, mask,
                 byref(window_attributes))
             self.display._window_map[self._window] = self
+
+            # TODO
+            self.canvas = XlibCanvas(self.display, self._window)
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing (in theory).
@@ -636,14 +435,12 @@ class XlibWindow(BaseWindow):
             glx.glXMakeCurrent(self._x_display, 0, None)
 
         self._unmap()
-        if self._glx_window:
-            glx.glXDestroyWindow(self._x_display, self._glx_window)
+        self.context.detach()
         if self._window:
             xlib.XDestroyWindow(self._x_display, self._window)
 
         del self.display._window_map[self._window]
         self._window = None
-        self._glx_window = None
 
         if _have_utf8:
             xlib.XDestroyIC(self._x_ic)
@@ -652,15 +449,7 @@ class XlibWindow(BaseWindow):
         super(XlibWindow, self).close()
 
     def switch_to(self):
-        if self._glx_1_3:
-            if not self._glx_window:
-                self._glx_window = glx.glXCreateWindow(self._x_display,
-                    self._config._fbconfig, self._window, None)
-            glx.glXMakeContextCurrent(self._x_display,
-                self._glx_window, self._glx_window, self._glx_context)
-        else:
-            glx.glXMakeCurrent(self._x_display, self._window, self._glx_context)
-
+        self.context.attach(self.canvas)
         self.set_vsync(self._vsync)
 
         self._context.set_current()
@@ -670,19 +459,15 @@ class XlibWindow(BaseWindow):
     def flip(self):
         self.draw_mouse_cursor()
 
+        # TODO move to gl.Context
         if self._vsync and self._have_SGI_video_sync and self._use_video_sync:
             count = c_uint()
             glxext_arb.glXGetVideoSyncSGI(byref(count))
             glxext_arb.glXWaitVideoSyncSGI(
                 2, (count.value + 1) % 2, byref(count))
 
-        if self._glx_1_3:
-            if not self._glx_window:
-                self._glx_window = glx.glXCreateWindow(self._x_display,
-                    self._config._fbconfig, self._window, None)
-            glx.glXSwapBuffers(self._x_display, self._glx_window)
-        else:
-            glx.glXSwapBuffers(self._x_display, self._window)
+        # TODO canvas.flip
+        self.context.flip()
 
         self._sync_resize()
 

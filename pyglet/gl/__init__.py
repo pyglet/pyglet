@@ -214,10 +214,15 @@ def _create_shadow_window():
 from base import ObjectSpace, CanvasConfig, Context
 if _is_epydoc:
     from base import Config
-elif _sys.platform == 'win32':
+elif _sys.platform in ('win32', 'cygwin'):
     from win32 import Win32Config as Config
+elif _sys.platform == 'linux2':
+    from xlib import XlibConfig as Config
+elif _sys.platform == 'darwin':
+    from carbon import CarbonConfig as Config
 del base
 
+'''
 # XXX remove
 _shadow_window = None
 
@@ -229,3 +234,4 @@ if (not _is_epydoc and
     # trickery is for circular import 
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window
+'''
