@@ -80,8 +80,8 @@ class WGLFunctionProxy(object):
         if self.func:
             return self.func(*args, **kwargs)
 
-        from pyglet.gl import gl_info
-        if not gl_info.have_context():
+        from pyglet.gl import current_context
+        if not current_context:
             raise Exception(
                 'Call to function "%s" before GL context created' % self.name)
         address = wglGetProcAddress(self.name)
