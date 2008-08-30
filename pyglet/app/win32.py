@@ -67,6 +67,8 @@ class Win32EventLoop(EventLoop):
     def __init__(self):
         super(Win32EventLoop, self).__init__()
 
+        self._next_idle_time = None
+
         # Force immediate creation of an event queue on this thread -- note
         # that since event loop is created on pyglet.app import, whatever
         # imports pyglet.app _must_ own the main run loop.

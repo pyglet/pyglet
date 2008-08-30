@@ -995,9 +995,7 @@ class Win32Window(BaseWindow):
 
         Assumes window has GL context.
         '''
-        from pyglet import app
-        if app.event_loop is not None:
-            self.dispatch_event('on_draw')
+        if self.dispatch_event('on_draw'):
             self.flip()
 
     @Win32EventHandler(WM_PAINT)
@@ -1020,8 +1018,7 @@ class Win32Window(BaseWindow):
         self.dispatch_event('on_resize', width, height)
 
         from pyglet import app
-        if app.event_loop is not None:
-            app.event_loop._idle_chance()
+        app.event_loop._idle_chance()
         return 1
 
     @Win32EventHandler(WM_SIZE)
@@ -1052,9 +1049,8 @@ class Win32Window(BaseWindow):
         if wParam & 0xfff0 in (SC_MOVE, SC_SIZE):
             # Should be in WM_ENTERSIZEMOVE, but we never get that message.
             from pyglet import app
-            if app.event_loop is not None:
-                app.event_loop._allow_polling = False
-                app.event_loop._idle_chance()
+            app.event_loop._allow_polling = False
+            app.event_loop._idle_chance()
         return 0
 
     @Win32EventHandler(WM_MOVE)
