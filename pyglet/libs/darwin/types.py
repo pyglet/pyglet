@@ -40,15 +40,10 @@ __version__ = '$Id: $'
 
 from ctypes import *
 
-import pyglet.gl.agl
-agl = pyglet.gl.agl
-
 Boolean = c_ubyte           # actually an unsigned char
 Fixed = c_int32
 ItemCount = c_uint32
 ByteOffset = ByteCount = c_uint32
-
-GDHandle = agl.GDHandle
 
 class Rect(Structure):
     _fields_ = [

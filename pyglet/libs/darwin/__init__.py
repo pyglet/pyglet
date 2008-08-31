@@ -1,5 +1,4 @@
 import pyglet
-from pyglet.gl import agl # TODO
 
 from types import *
 from constants import *
@@ -12,7 +11,7 @@ quicktime = pyglet.lib.load_library(
 carbon.GetEventDispatcherTarget.restype = EventTargetRef
 carbon.ReceiveNextEvent.argtypes = \
     [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
-carbon.GetWindowPort.restype = agl.AGLDrawable
+#carbon.GetWindowPort.restype = agl.AGLDrawable
 EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
 carbon.NewEventHandlerUPP.restype = c_void_p
 carbon.GetCurrentKeyModifiers = c_uint32

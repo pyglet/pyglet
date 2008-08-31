@@ -44,20 +44,22 @@ import unicodedata
 import warnings
 
 import pyglet
-from pyglet.window import WindowException, Screen, \
+from pyglet.window import WindowException, \
     BaseWindow, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window import event
+from pyglet.canvas.carbon import CarbonCanvas
 
 from pyglet.libs.darwin import *
-from pyglet.libs.darwin import _oscheck, _aglcheck
+from pyglet.libs.darwin import _oscheck
 from pyglet.libs.darwin.quartzkey import keymap
 
 from pyglet import gl
 from pyglet.gl import agl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
+from pyglet.gl.carbon import _aglcheck
 from pyglet.event import EventDispatcher
 
 # Map symbol,modifiers -> motion
@@ -81,151 +83,6 @@ _motion_map = {
     (key.DELETE, False):                key.MOTION_DELETE,
 }
 
-
-    
-class CarbonScreen(Screen):
-    def __init__(self, display, id):
-        self.display = display
-        rect = carbon.CGDisplayBounds(id)
-        super(CarbonScreen, self).__init__(
-            int(rect.origin.x), int(rect.origin.y),
-            int(rect.size.width), int(rect.size.height))
-        self.id = id
-
-        mode = carbon.CGDisplayCurrentMode(id)
-        kCGDisplayRefreshRate = create_cfstring('RefreshRate')
-        number = carbon.CFDictionaryGetValue(mode, kCGDisplayRefreshRate)
-        refresh = c_long()
-        kCFNumberLongType = 10
-        carbon.CFNumberGetValue(number, kCFNumberLongType, byref(refresh))
-        self._refresh_rate = refresh.value
-
-    def get_gdevice(self):
-        gdevice = GDHandle()
-        r = carbon.DMGetGDeviceByDisplayID(self.id, byref(gdevice), False)
-        _oscheck(r)
-        return gdevice
-
-    def get_matching_configs(self, template):
-        # Construct array of attributes for aglChoosePixelFormat
-        attrs = []
-        for name, value in template.get_gl_attributes():
-            attr = CarbonGLConfig._attribute_ids.get(name, None)
-            if not attr or not value:
-                continue
-            attrs.append(attr)
-            if attr not in CarbonGLConfig._boolean_attributes:
-                attrs.append(int(value))
-
-        # Support for RAGE-II, which is not compliant
-        attrs.append(agl.AGL_ALL_RENDERERS)
-
-        # Force selection policy and RGBA
-        attrs.append(agl.AGL_MAXIMUM_POLICY)
-        attrs.append(agl.AGL_RGBA)
-
-        # In 10.3 and later, AGL_FULLSCREEN is specified so the window can
-        # be toggled to/from fullscreen without losing context.  pyglet
-        # no longer supports earlier versions of OS X, so we always supply it.
-        attrs.append(agl.AGL_FULLSCREEN)
-
-        # Terminate the list.
-        attrs.append(agl.AGL_NONE)
-        attrib_list = (c_int * len(attrs))(*attrs)
-
-        device = self.get_gdevice()
-        pformat = agl.aglChoosePixelFormat(device, 1, attrib_list)
-        _aglcheck()
-
-        if not pformat:
-            return []
-        else:
-            return [CarbonGLConfig(self, pformat)]
-
-class CarbonGLConfig(gl.Config):
-    # Valid names for GL attributes, and their corresponding AGL constant. 
-    _attribute_ids = {
-        'double_buffer': agl.AGL_DOUBLEBUFFER,
-        'stereo': agl.AGL_STEREO,
-        'buffer_size': agl.AGL_BUFFER_SIZE, 
-        'sample_buffers': agl.AGL_SAMPLE_BUFFERS_ARB,
-        'samples': agl.AGL_SAMPLES_ARB,
-        'aux_buffers': agl.AGL_AUX_BUFFERS,
-        'red_size': agl.AGL_RED_SIZE,
-        'green_size': agl.AGL_GREEN_SIZE,
-        'blue_size': agl.AGL_BLUE_SIZE,
-        'alpha_size': agl.AGL_ALPHA_SIZE,
-        'depth_size': agl.AGL_DEPTH_SIZE,
-        'stencil_size': agl.AGL_STENCIL_SIZE,
-        'accum_red_size': agl.AGL_ACCUM_RED_SIZE,
-        'accum_green_size': agl.AGL_ACCUM_GREEN_SIZE,
-        'accum_blue_size': agl.AGL_ACCUM_BLUE_SIZE,
-        'accum_alpha_size': agl.AGL_ACCUM_ALPHA_SIZE,
-
-        # Not exposed by pyglet API (set internally)
-        'all_renderers': agl.AGL_ALL_RENDERERS,
-        'rgba': agl.AGL_RGBA,
-        'fullscreen': agl.AGL_FULLSCREEN,
-        'minimum_policy': agl.AGL_MINIMUM_POLICY,
-        'maximum_policy': agl.AGL_MAXIMUM_POLICY,
-
-        # Not supported in current pyglet API
-        'level': agl.AGL_LEVEL, 
-        'pixel_size': agl.AGL_PIXEL_SIZE,   # == buffer_size
-        'aux_depth_stencil': agl.AGL_AUX_DEPTH_STENCIL,
-        'color_float': agl.AGL_COLOR_FLOAT,
-        'offscreen': agl.AGL_OFFSCREEN,
-        'sample_alpha': agl.AGL_SAMPLE_ALPHA,
-        'multisample': agl.AGL_MULTISAMPLE,
-        'supersample': agl.AGL_SUPERSAMPLE,
-    }
-
-    # AGL constants which do not require a value.
-    _boolean_attributes = \
-        (agl.AGL_ALL_RENDERERS, 
-         agl.AGL_RGBA,
-         agl.AGL_DOUBLEBUFFER,
-         agl.AGL_STEREO,
-         agl.AGL_MINIMUM_POLICY,
-         agl.AGL_MAXIMUM_POLICY,
-         agl.AGL_OFFSCREEN,
-         agl.AGL_FULLSCREEN,
-         agl.AGL_AUX_DEPTH_STENCIL,
-         agl.AGL_COLOR_FLOAT,
-         agl.AGL_MULTISAMPLE,
-         agl.AGL_SUPERSAMPLE,
-         agl.AGL_SAMPLE_ALPHA)
-
-    def __init__(self, screen, pformat):
-        super(CarbonGLConfig, self).__init__()
-        self.screen = screen
-        self._pformat = pformat
-        self._attributes = {}
-
-        for name, attr in self._attribute_ids.items():
-            value = c_int()
-            result = agl.aglDescribePixelFormat(pformat, attr, byref(value))
-            if result:
-                setattr(self, name, value.value)
- 
-    def create_context(self, share):
-        if share:
-            context = agl.aglCreateContext(self._pformat, share._context)
-        else:
-            context = agl.aglCreateContext(self._pformat, None)
-        _aglcheck()
-        return CarbonGLContext(self, context, share, self._pformat)
-
-class CarbonGLContext(gl.Context):
-    def __init__(self, config, context, share, pixelformat):
-        super(CarbonGLContext, self).__init__(share)
-        self.config = config
-        self._context = context
-        self._pixelformat = pixelformat
-
-    def destroy(self):
-        super(CarbonGLContext, self).destroy()
-        agl.aglDestroyContext(self._context)
 
 class CarbonMouseCursor(MouseCursor):
     drawable = False
@@ -269,7 +126,8 @@ class CarbonWindow(BaseWindow):
         self._recreate_deferred = None
 
         if ('context' in changes):
-            agl.aglSetDrawable(self._agl_context, None)
+            self.context.detach()
+            #agl.aglSetDrawable(self._agl_context, None)
 
         if ('fullscreen' in changes and
             not self._fullscreen and
@@ -278,7 +136,8 @@ class CarbonWindow(BaseWindow):
             # Leaving fullscreen -- destroy everything before the window.
             self._remove_track_region()
             self._remove_event_handlers()
-            agl.aglSetDrawable(self._agl_context, None)
+            self.context.detach()
+            #agl.aglSetDrawable(self._agl_context, None)
             # EndFullScreen disposes _window.
             quicktime.EndFullScreen(self._fullscreen_restore, 0)
             self._window = None
@@ -293,7 +152,8 @@ class CarbonWindow(BaseWindow):
             # associated with the old window, then the window itself.
             self._remove_track_region()
             self._remove_event_handlers()
-            agl.aglSetDrawable(self._agl_context, None)
+            #agl.aglSetDrawable(self._agl_context, None)
+            self.context.detach()
             carbon.DisposeWindow(self._window)
             self._window = None
 
@@ -366,8 +226,9 @@ class CarbonWindow(BaseWindow):
                 carbon.RepositionWindow(self._window, c_void_p(),
                     kWindowCascadeOnMainScreen)
 
-            agl.aglSetDrawable(self._agl_context,
-                carbon.GetWindowPort(self._window))
+            self.canvas = CarbonCanvas(self.display, self.screen,
+                                       carbon.GetWindowPort(self._window))
+            self.context.attach(self.canvas)
 
         _aglcheck()
 
