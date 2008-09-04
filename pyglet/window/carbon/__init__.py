@@ -49,17 +49,12 @@ from pyglet.window import WindowException, \
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window import event
-from pyglet.canvas.carbon import CarbonCanvas
+from pyglet.canvas.carbon import CarbonCanvas, CarbonFullScreenCanvas
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
 from pyglet.libs.darwin.quartzkey import keymap
 
-from pyglet import gl
-from pyglet.gl import agl
-from pyglet.gl import gl_info
-from pyglet.gl import glu_info
-from pyglet.gl.carbon import _aglcheck
 from pyglet.event import EventDispatcher
 
 # Map symbol,modifiers -> motion
@@ -94,7 +89,6 @@ def CarbonEventHandler(event_class, event_kind):
 
 class CarbonWindow(BaseWindow):
     _window = None                  # Carbon WindowRef
-    _agl_context = None             # AGL context ID
     _recreate_deferred = None
 
     # Window properties
@@ -127,7 +121,6 @@ class CarbonWindow(BaseWindow):
 
         if ('context' in changes):
             self.context.detach()
-            #agl.aglSetDrawable(self._agl_context, None)
 
         if ('fullscreen' in changes and
             not self._fullscreen and
@@ -137,7 +130,6 @@ class CarbonWindow(BaseWindow):
             self._remove_track_region()
             self._remove_event_handlers()
             self.context.detach()
-            #agl.aglSetDrawable(self._agl_context, None)
             # EndFullScreen disposes _window.
             quicktime.EndFullScreen(self._fullscreen_restore, 0)
             self._window = None
@@ -145,15 +137,13 @@ class CarbonWindow(BaseWindow):
         self._create()
 
     def _create(self):
-        self._agl_context = self.context._context
-
         if self._window:
             # The window is about to be recreated; destroy everything
             # associated with the old window, then the window itself.
             self._remove_track_region()
             self._remove_event_handlers()
-            #agl.aglSetDrawable(self._agl_context, None)
             self.context.detach()
+            self.canvas = None
             carbon.DisposeWindow(self._window)
             self._window = None
 
@@ -171,20 +161,14 @@ class CarbonWindow(BaseWindow):
                                       byref(self._window),
                                       None,
                                       0)
-            # the following may be used for debugging if you have a second
-            # monitor - only the main monitor will go fullscreen
-            agl.aglEnable(self._agl_context, agl.AGL_FS_CAPTURE_SINGLE)
             self._width = fs_width.value
             self._height = fs_height.value
-            #self._width = self.screen.width
-            #self._height = self.screen.height
-            agl.aglSetFullScreen(self._agl_context, 
-                                 self._width, self._height,
-                                 self.screen._refresh_rate, 0)
             self._mouse_in_window = True
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')
             self.dispatch_event('on_expose')
+            self.canvas = CarbonFullScreenCanvas(self.display, self.screen,
+                                                 self._width, self._height)
         else:
             # Create floating window
             rect = Rect()
@@ -228,9 +212,7 @@ class CarbonWindow(BaseWindow):
 
             self.canvas = CarbonCanvas(self.display, self.screen,
                                        carbon.GetWindowPort(self._window))
-            self.context.attach(self.canvas)
-
-        _aglcheck()
+        self.context.attach(self.canvas)
 
         self.set_caption(self._caption)
 
@@ -244,7 +226,7 @@ class CarbonWindow(BaseWindow):
 
         self._create_track_region()
 
-        self.switch_to()
+        self.switch_to() # XXX
         self.set_vsync(self._vsync)
 
         if self._visible:
@@ -274,9 +256,6 @@ class CarbonWindow(BaseWindow):
 
     def close(self):
         super(CarbonWindow, self).close()
-        if not self._agl_context:
-            return
-        self._agl_context = None
         self._remove_event_handlers()
         self._remove_track_region()
 
@@ -291,29 +270,33 @@ class CarbonWindow(BaseWindow):
         self._window = None
 
     def switch_to(self):
+        self.context.set_current()
+        '''
         agl.aglSetCurrentContext(self._agl_context)
         self._context.set_current()
         _aglcheck()
+        # XXX TODO transpose gl[u]_info to gl.Context.attach
         gl_info.set_active_context()
         glu_info.set_active_context()
+        '''
 
     def flip(self):
         self.draw_mouse_cursor()
-        agl.aglSwapBuffers(self._agl_context)
-        _aglcheck()
+        if self.context:
+            self.context.flip()
 
     def _get_vsync(self):
-        swap = c_long()
-        agl.aglGetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
-        return bool(swap.value)
+        if self.context:
+            return self.context.get_vsync()
+        return self._vsync
     vsync = property(_get_vsync) # overrides BaseWindow property
 
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
         self._vsync = vsync # _recreate depends on this
-        swap = c_long(int(vsync))
-        agl.aglSetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
+        if self.context:
+            self.context.set_vsync(vsync)
 
     def dispatch_events(self):
         self._allow_dispatch_event = True
@@ -565,13 +548,8 @@ class CarbonWindow(BaseWindow):
     # Non-public utilities
 
     def _update_drawable(self):
-        # We can get there after context has been disposed, in which case
-        # just do nothing.
-        if not self._agl_context:
-            return
-
-        agl.aglUpdateContext(self._agl_context)
-        _aglcheck()
+        if self.context:
+            self.context.update_geometry()
 
         # Need a redraw
         self.dispatch_event('on_expose')
@@ -1010,7 +988,7 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassWindow, kEventWindowShown)
     @CarbonEventHandler(kEventClassWindow, kEventWindowExpanded)
     def _on_window_shown(self, next_handler, ev, data):
-        self._update_drawable()
+        self._update_drawable() # XXX not needed here according to apple docs
         self.dispatch_event('on_show')
 
         carbon.CallNextEventHandler(next_handler, ev)

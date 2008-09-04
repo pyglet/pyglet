@@ -10,6 +10,7 @@ from pyglet import app
 from base import Display, Screen, Canvas
 
 from pyglet.libs.darwin import *
+from pyglet.libs.darwin import _oscheck
 
 class CarbonDisplay(Display):
     # TODO: CarbonDisplay could be per display device, which would make
@@ -169,6 +170,11 @@ class CarbonScreen(Screen):
         carbon.CFNumberGetValue(number, kCFNumberLongType, byref(refresh))
         self._refresh_rate = refresh.value
 
+    def get_gdevice(self):
+        gdevice = POINTER(None)()
+        _oscheck(carbon.DMGetGDeviceByDisplayID(self.id, byref(gdevice), False))
+        return gdevice
+
     def get_matching_configs(self, template):
         canvas = CarbonCanvas(self.display, self, None)
         configs = template.match(canvas)
@@ -182,3 +188,10 @@ class CarbonCanvas(Canvas):
         super(CarbonCanvas, self).__init__(display)
         self.screen = screen
         self.drawable = drawable
+
+class CarbonFullScreenCanvas(Canvas):
+    def __init__(self, display, screen, width, height):
+        super(CarbonFullScreenCanvas, self).__init__(display)
+        self.screen = screen
+        self.width = width
+        self.height = height

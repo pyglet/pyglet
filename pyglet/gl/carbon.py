@@ -12,7 +12,7 @@ from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
 from pyglet.gl import agl
 
-from pyglet.canvas.carbon import CarbonCanvas
+from pyglet.canvas.carbon import CarbonCanvas, CarbonFullScreenCanvas
 
 def _aglcheck():
     err = agl.aglGetError()
@@ -47,10 +47,7 @@ class CarbonConfig(Config):
         attrs.append(agl.AGL_NONE)
         attrib_list = (c_int * len(attrs))(*attrs)
 
-        gdevice = agl.GDHandle()
-        _oscheck(carbon.DMGetGDeviceByDisplayID(
-            canvas.screen.id, byref(gdevice), False))
-
+        gdevice = cast(canvas.screen.get_gdevice(), agl.GDHandle)
         pformat = agl.aglChoosePixelFormat(gdevice, 1, attrib_list)
         _aglcheck()
 
@@ -134,8 +131,8 @@ class CarbonCanvasConfig(CanvasConfig):
         return CarbonContext(self, context, share, self._pformat)
 
     def compatible(self, canvas):
-        # TODO more
-        return isinstance(canvas, CarbonCanvas)
+        return isinstance(canvas, CarbonCanvas) or \
+               isinstance(canvas, CarbonFullScreenCanvas)
 
 class CarbonContext(Context):
     def __init__(self, config, context, share, pixelformat):
@@ -146,13 +143,43 @@ class CarbonContext(Context):
 
     def attach(self, canvas):
         super(CarbonContext, self).attach(canvas)
-        agl.aglSetDrawable(self._context, 
-                           cast(canvas.drawable, agl.AGLDrawable))
+        if isinstance(canvas, CarbonFullScreenCanvas):
+            agl.aglEnable(self._context, agl.AGL_FS_CAPTURE_SINGLE)
+            agl.aglSetFullScreen(self._context, canvas.width, canvas.height,
+                                 canvas.screen._refresh_rate, 0)
+        else:
+            agl.aglSetDrawable(self._context, 
+                               cast(canvas.drawable, agl.AGLDrawable))
+        agl.aglSetCurrentContext(self._context)
+        _aglcheck()
+
+        self.set_current()
 
     def detach(self):
         super(CarbonContext, self).detach()
         agl.aglSetDrawable(self._context, None)
+        _aglcheck()
+
+    def update_geometry(self):
+        agl.aglUpdateContext(self._context)
+        _aglcheck()
 
     def destroy(self):
         super(CarbonContext, self).destroy()
         agl.aglDestroyContext(self._context)
+
+    def set_vsync(self, vsync=True):
+        swap = c_long(int(vsync))
+        agl.aglSetInteger(self._context, agl.AGL_SWAP_INTERVAL, byref(swap))
+        _aglcheck()
+
+    def get_vsync(self):
+        swap = c_long()
+        agl.aglGetInteger(self._context, agl.AGL_SWAP_INTERVAL, byref(swap))
+        _aglcheck()
+        return bool(swap.value)
+
+    def flip(self):
+        agl.aglSwapBuffers(self._context)
+        _aglcheck()
+

@@ -29,8 +29,3 @@ def _oscheck(result):
         raise RuntimeError('Carbon error %d' % result)
     return result
 
-def _aglcheck():
-    err = agl.aglGetError()
-    if err != agl.AGL_NO_ERROR:
-        raise RuntimeError(cast(agl.aglErrorString(err), c_char_p).value)
-

@@ -262,7 +262,13 @@ class Context(object):
         if not self.canvas:
             raise RuntimeError('Canvas has not been attached')
 
+        # XXX not per-thread
         gl.current_context = self
+
+        # XXX
+        import gl_info, glu_info
+        gl_info.set_active_context()
+        glu_info.set_active_context()
 
         # Implement workarounds
         if not self._info:

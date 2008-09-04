@@ -51,9 +51,6 @@ from math import pi, sin, cos
 from pyglet.gl import *
 import pyglet
 
-# XXX HACK work around circ import bug for now
-import pyglet.window
-
 try:
     # Try and create a window with multisampling (antialiasing)
     config = Config(sample_buffers=1, samples=4, 
