@@ -33,20 +33,19 @@ class c_void(Structure):
     _fields_ = [('dummy', c_int)]
 
 
-import pyglet.gl.glx
 
 XlibSpecificationRelease = 6 	# /usr/include/X11/Xlib.h:39
 X_PROTOCOL = 11 	# /usr/include/X11/X.h:58
 X_PROTOCOL_REVISION = 0 	# /usr/include/X11/X.h:59
-XID = pyglet.gl.glx.XID
+XID = c_ulong 	# /usr/include/X11/X.h:71
 Mask = c_ulong 	# /usr/include/X11/X.h:75
 Atom = c_ulong 	# /usr/include/X11/X.h:79
-VisualID = pyglet.gl.glx.VisualID
+VisualID = c_ulong 	# /usr/include/X11/X.h:81
 Time = c_ulong 	# /usr/include/X11/X.h:82
-Window = pyglet.gl.glx.Window
+Window = XID 	# /usr/include/X11/X.h:101
 Drawable = XID 	# /usr/include/X11/X.h:102
-Font = pyglet.gl.glx.Font
-Pixmap = pyglet.gl.glx.Pixmap
+Font = XID 	# /usr/include/X11/X.h:105
+Pixmap = XID 	# /usr/include/X11/X.h:107
 Cursor = XID 	# /usr/include/X11/X.h:108
 Colormap = XID 	# /usr/include/X11/X.h:109
 GContext = XID 	# /usr/include/X11/X.h:110
@@ -401,7 +400,7 @@ _Xmblen.restype = c_int
 _Xmblen.argtypes = [c_char_p, c_int]
 
 X_HAVE_UTF8_STRING = 1 	# /usr/include/X11/Xlib.h:106
-XPointer = pyglet.gl.glx.XPointer
+XPointer = c_char_p 	# /usr/include/X11/Xlib.h:108
 Bool = c_int 	# /usr/include/X11/Xlib.h:110
 Status = c_int 	# /usr/include/X11/Xlib.h:111
 True = 1 	# /usr/include/X11/Xlib.h:112
@@ -409,7 +408,21 @@ False = 0 	# /usr/include/X11/Xlib.h:113
 QueuedAlready = 0 	# /usr/include/X11/Xlib.h:115
 QueuedAfterReading = 1 	# /usr/include/X11/Xlib.h:116
 QueuedAfterFlush = 2 	# /usr/include/X11/Xlib.h:117
-XExtData = pyglet.gl.glx.XExtData
+class struct__XExtData(Structure):
+    __slots__ = [
+        'number',
+        'next',
+        'free_private',
+        'private_data',
+    ]
+struct__XExtData._fields_ = [
+    ('number', c_int),
+    ('next', POINTER(struct__XExtData)),
+    ('free_private', POINTER(CFUNCTYPE(c_int, POINTER(struct__XExtData)))),
+    ('private_data', XPointer),
+]
+
+XExtData = struct__XExtData 	# /usr/include/X11/Xlib.h:187
 class struct_anon_15(Structure):
     __slots__ = [
         'extension',
@@ -506,7 +519,29 @@ struct__XGC._fields_ = [
 ]
 
 GC = POINTER(struct__XGC) 	# /usr/include/X11/Xlib.h:254
-Visual = pyglet.gl.glx.Visual
+class struct_anon_18(Structure):
+    __slots__ = [
+        'ext_data',
+        'visualid',
+        'class',
+        'red_mask',
+        'green_mask',
+        'blue_mask',
+        'bits_per_rgb',
+        'map_entries',
+    ]
+struct_anon_18._fields_ = [
+    ('ext_data', POINTER(XExtData)),
+    ('visualid', VisualID),
+    ('class', c_int),
+    ('red_mask', c_ulong),
+    ('green_mask', c_ulong),
+    ('blue_mask', c_ulong),
+    ('bits_per_rgb', c_int),
+    ('map_entries', c_int),
+]
+
+Visual = struct_anon_18 	# /usr/include/X11/Xlib.h:270
 class struct_anon_19(Structure):
     __slots__ = [
         'depth',
@@ -941,7 +976,21 @@ struct_anon_35._fields_ = [
 ]
 
 XModifierKeymap = struct_anon_35 	# /usr/include/X11/Xlib.h:510
-Display = pyglet.gl.glx.Display
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+class struct__XDisplay(Structure):
+    __slots__ = [
+    ]
+struct__XDisplay._fields_ = [
+    ('_opaque_struct', c_int)
+]
+
+Display = struct__XDisplay 	# /usr/include/X11/Xlib.h:519
 class struct_anon_36(Structure):
     __slots__ = [
         'ext_data',
@@ -2052,7 +2101,7 @@ struct_anon_73._fields_ = [
     ('byte2', c_ubyte),
 ]
 
-XChar2b = struct_anon_73 	# /usr/include/X11/Xlib.h:1070
+XChar2b = struct_anon_73 	# /usr/include/X11/Xlib.h:1074
 class struct_anon_74(Structure):
     __slots__ = [
         'chars',
@@ -2067,7 +2116,7 @@ struct_anon_74._fields_ = [
     ('font', Font),
 ]
 
-XTextItem16 = struct_anon_74 	# /usr/include/X11/Xlib.h:1077
+XTextItem16 = struct_anon_74 	# /usr/include/X11/Xlib.h:1082
 class struct_anon_75(Union):
     __slots__ = [
         'display',
@@ -2086,7 +2135,7 @@ struct_anon_75._fields_ = [
     ('font', POINTER(XFontStruct)),
 ]
 
-XEDataObject = struct_anon_75 	# /usr/include/X11/Xlib.h:1085
+XEDataObject = struct_anon_75 	# /usr/include/X11/Xlib.h:1090
 class struct_anon_76(Structure):
     __slots__ = [
         'max_ink_extent',
@@ -2097,7 +2146,7 @@ struct_anon_76._fields_ = [
     ('max_logical_extent', XRectangle),
 ]
 
-XFontSetExtents = struct_anon_76 	# /usr/include/X11/Xlib.h:1090
+XFontSetExtents = struct_anon_76 	# /usr/include/X11/Xlib.h:1095
 class struct__XOM(Structure):
     __slots__ = [
     ]
@@ -2112,7 +2161,7 @@ struct__XOM._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-XOM = POINTER(struct__XOM) 	# /usr/include/X11/Xlib.h:1096
+XOM = POINTER(struct__XOM) 	# /usr/include/X11/Xlib.h:1101
 class struct__XOC(Structure):
     __slots__ = [
     ]
@@ -2127,7 +2176,7 @@ struct__XOC._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-XOC = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1097
+XOC = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1102
 class struct__XOC(Structure):
     __slots__ = [
     ]
@@ -2142,7 +2191,7 @@ struct__XOC._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-XFontSet = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1097
+XFontSet = POINTER(struct__XOC) 	# /usr/include/X11/Xlib.h:1102
 class struct_anon_77(Structure):
     __slots__ = [
         'chars',
@@ -2157,7 +2206,7 @@ struct_anon_77._fields_ = [
     ('font_set', XFontSet),
 ]
 
-XmbTextItem = struct_anon_77 	# /usr/include/X11/Xlib.h:1104
+XmbTextItem = struct_anon_77 	# /usr/include/X11/Xlib.h:1109
 class struct_anon_78(Structure):
     __slots__ = [
         'chars',
@@ -2172,7 +2221,7 @@ struct_anon_78._fields_ = [
     ('font_set', XFontSet),
 ]
 
-XwcTextItem = struct_anon_78 	# /usr/include/X11/Xlib.h:1111
+XwcTextItem = struct_anon_78 	# /usr/include/X11/Xlib.h:1116
 class struct_anon_79(Structure):
     __slots__ = [
         'charset_count',
@@ -2183,14 +2232,14 @@ struct_anon_79._fields_ = [
     ('charset_list', POINTER(c_char_p)),
 ]
 
-XOMCharSetList = struct_anon_79 	# /usr/include/X11/Xlib.h:1127
+XOMCharSetList = struct_anon_79 	# /usr/include/X11/Xlib.h:1132
 enum_anon_80 = c_int
 XOMOrientation_LTR_TTB = 0
 XOMOrientation_RTL_TTB = 1
 XOMOrientation_TTB_LTR = 2
 XOMOrientation_TTB_RTL = 3
 XOMOrientation_Context = 4
-XOrientation = enum_anon_80 	# /usr/include/X11/Xlib.h:1135
+XOrientation = enum_anon_80 	# /usr/include/X11/Xlib.h:1140
 class struct_anon_81(Structure):
     __slots__ = [
         'num_orientation',
@@ -2201,7 +2250,7 @@ struct_anon_81._fields_ = [
     ('orientation', POINTER(XOrientation)),
 ]
 
-XOMOrientation = struct_anon_81 	# /usr/include/X11/Xlib.h:1140
+XOMOrientation = struct_anon_81 	# /usr/include/X11/Xlib.h:1145
 class struct_anon_82(Structure):
     __slots__ = [
         'num_font',
@@ -2214,7 +2263,7 @@ struct_anon_82._fields_ = [
     ('font_name_list', POINTER(c_char_p)),
 ]
 
-XOMFontInfo = struct_anon_82 	# /usr/include/X11/Xlib.h:1146
+XOMFontInfo = struct_anon_82 	# /usr/include/X11/Xlib.h:1151
 class struct__XIM(Structure):
     __slots__ = [
     ]
@@ -2229,7 +2278,7 @@ struct__XIM._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-XIM = POINTER(struct__XIM) 	# /usr/include/X11/Xlib.h:1148
+XIM = POINTER(struct__XIM) 	# /usr/include/X11/Xlib.h:1153
 class struct__XIC(Structure):
     __slots__ = [
     ]
@@ -2244,11 +2293,11 @@ struct__XIC._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-XIC = POINTER(struct__XIC) 	# /usr/include/X11/Xlib.h:1149
-XIMProc = CFUNCTYPE(None, XIM, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1151
-XICProc = CFUNCTYPE(c_int, XIC, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1157
-XIDProc = CFUNCTYPE(None, POINTER(Display), XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1163
-XIMStyle = c_ulong 	# /usr/include/X11/Xlib.h:1169
+XIC = POINTER(struct__XIC) 	# /usr/include/X11/Xlib.h:1154
+XIMProc = CFUNCTYPE(None, XIM, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1156
+XICProc = CFUNCTYPE(c_int, XIC, XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1162
+XIDProc = CFUNCTYPE(None, POINTER(Display), XPointer, XPointer) 	# /usr/include/X11/Xlib.h:1168
+XIMStyle = c_ulong 	# /usr/include/X11/Xlib.h:1174
 class struct_anon_83(Structure):
     __slots__ = [
         'count_styles',
@@ -2259,22 +2308,22 @@ struct_anon_83._fields_ = [
     ('supported_styles', POINTER(XIMStyle)),
 ]
 
-XIMStyles = struct_anon_83 	# /usr/include/X11/Xlib.h:1174
-XIMPreeditArea = 1 	# /usr/include/X11/Xlib.h:1176
-XIMPreeditCallbacks = 2 	# /usr/include/X11/Xlib.h:1177
-XIMPreeditPosition = 4 	# /usr/include/X11/Xlib.h:1178
-XIMPreeditNothing = 8 	# /usr/include/X11/Xlib.h:1179
-XIMPreeditNone = 16 	# /usr/include/X11/Xlib.h:1180
-XIMStatusArea = 256 	# /usr/include/X11/Xlib.h:1181
-XIMStatusCallbacks = 512 	# /usr/include/X11/Xlib.h:1182
-XIMStatusNothing = 1024 	# /usr/include/X11/Xlib.h:1183
-XIMStatusNone = 2048 	# /usr/include/X11/Xlib.h:1184
-XBufferOverflow = -1 	# /usr/include/X11/Xlib.h:1230
-XLookupNone = 1 	# /usr/include/X11/Xlib.h:1231
-XLookupChars = 2 	# /usr/include/X11/Xlib.h:1232
-XLookupKeySym = 3 	# /usr/include/X11/Xlib.h:1233
-XLookupBoth = 4 	# /usr/include/X11/Xlib.h:1234
-XVaNestedList = POINTER(None) 	# /usr/include/X11/Xlib.h:1236
+XIMStyles = struct_anon_83 	# /usr/include/X11/Xlib.h:1179
+XIMPreeditArea = 1 	# /usr/include/X11/Xlib.h:1181
+XIMPreeditCallbacks = 2 	# /usr/include/X11/Xlib.h:1182
+XIMPreeditPosition = 4 	# /usr/include/X11/Xlib.h:1183
+XIMPreeditNothing = 8 	# /usr/include/X11/Xlib.h:1184
+XIMPreeditNone = 16 	# /usr/include/X11/Xlib.h:1185
+XIMStatusArea = 256 	# /usr/include/X11/Xlib.h:1186
+XIMStatusCallbacks = 512 	# /usr/include/X11/Xlib.h:1187
+XIMStatusNothing = 1024 	# /usr/include/X11/Xlib.h:1188
+XIMStatusNone = 2048 	# /usr/include/X11/Xlib.h:1189
+XBufferOverflow = -1 	# /usr/include/X11/Xlib.h:1235
+XLookupNone = 1 	# /usr/include/X11/Xlib.h:1236
+XLookupChars = 2 	# /usr/include/X11/Xlib.h:1237
+XLookupKeySym = 3 	# /usr/include/X11/Xlib.h:1238
+XLookupBoth = 4 	# /usr/include/X11/Xlib.h:1239
+XVaNestedList = POINTER(None) 	# /usr/include/X11/Xlib.h:1241
 class struct_anon_84(Structure):
     __slots__ = [
         'client_data',
@@ -2285,7 +2334,7 @@ struct_anon_84._fields_ = [
     ('callback', XIMProc),
 ]
 
-XIMCallback = struct_anon_84 	# /usr/include/X11/Xlib.h:1241
+XIMCallback = struct_anon_84 	# /usr/include/X11/Xlib.h:1246
 class struct_anon_85(Structure):
     __slots__ = [
         'client_data',
@@ -2296,17 +2345,17 @@ struct_anon_85._fields_ = [
     ('callback', XICProc),
 ]
 
-XICCallback = struct_anon_85 	# /usr/include/X11/Xlib.h:1246
-XIMFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1248
-XIMReverse = 1 	# /usr/include/X11/Xlib.h:1250
-XIMUnderline = 2 	# /usr/include/X11/Xlib.h:1251
-XIMHighlight = 4 	# /usr/include/X11/Xlib.h:1252
-XIMPrimary = 32 	# /usr/include/X11/Xlib.h:1253
-XIMSecondary = 64 	# /usr/include/X11/Xlib.h:1254
-XIMTertiary = 128 	# /usr/include/X11/Xlib.h:1255
-XIMVisibleToForward = 256 	# /usr/include/X11/Xlib.h:1256
-XIMVisibleToBackword = 512 	# /usr/include/X11/Xlib.h:1257
-XIMVisibleToCenter = 1024 	# /usr/include/X11/Xlib.h:1258
+XICCallback = struct_anon_85 	# /usr/include/X11/Xlib.h:1251
+XIMFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1253
+XIMReverse = 1 	# /usr/include/X11/Xlib.h:1255
+XIMUnderline = 2 	# /usr/include/X11/Xlib.h:1256
+XIMHighlight = 4 	# /usr/include/X11/Xlib.h:1257
+XIMPrimary = 32 	# /usr/include/X11/Xlib.h:1258
+XIMSecondary = 64 	# /usr/include/X11/Xlib.h:1259
+XIMTertiary = 128 	# /usr/include/X11/Xlib.h:1260
+XIMVisibleToForward = 256 	# /usr/include/X11/Xlib.h:1261
+XIMVisibleToBackword = 512 	# /usr/include/X11/Xlib.h:1262
+XIMVisibleToCenter = 1024 	# /usr/include/X11/Xlib.h:1263
 class struct__XIMText(Structure):
     __slots__ = [
         'length',
@@ -2331,11 +2380,11 @@ struct__XIMText._fields_ = [
     ('string', struct_anon_86),
 ]
 
-XIMText = struct__XIMText 	# /usr/include/X11/Xlib.h:1268
-XIMPreeditState = c_ulong 	# /usr/include/X11/Xlib.h:1270
-XIMPreeditUnKnown = 0 	# /usr/include/X11/Xlib.h:1272
-XIMPreeditEnable = 1 	# /usr/include/X11/Xlib.h:1273
-XIMPreeditDisable = 2 	# /usr/include/X11/Xlib.h:1274
+XIMText = struct__XIMText 	# /usr/include/X11/Xlib.h:1273
+XIMPreeditState = c_ulong 	# /usr/include/X11/Xlib.h:1275
+XIMPreeditUnKnown = 0 	# /usr/include/X11/Xlib.h:1277
+XIMPreeditEnable = 1 	# /usr/include/X11/Xlib.h:1278
+XIMPreeditDisable = 2 	# /usr/include/X11/Xlib.h:1279
 class struct__XIMPreeditStateNotifyCallbackStruct(Structure):
     __slots__ = [
         'state',
@@ -2344,17 +2393,17 @@ struct__XIMPreeditStateNotifyCallbackStruct._fields_ = [
     ('state', XIMPreeditState),
 ]
 
-XIMPreeditStateNotifyCallbackStruct = struct__XIMPreeditStateNotifyCallbackStruct 	# /usr/include/X11/Xlib.h:1278
-XIMResetState = c_ulong 	# /usr/include/X11/Xlib.h:1280
-XIMInitialState = 1 	# /usr/include/X11/Xlib.h:1282
-XIMPreserveState = 2 	# /usr/include/X11/Xlib.h:1283
-XIMStringConversionFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1285
-XIMStringConversionLeftEdge = 1 	# /usr/include/X11/Xlib.h:1287
-XIMStringConversionRightEdge = 2 	# /usr/include/X11/Xlib.h:1288
-XIMStringConversionTopEdge = 4 	# /usr/include/X11/Xlib.h:1289
-XIMStringConversionBottomEdge = 8 	# /usr/include/X11/Xlib.h:1290
-XIMStringConversionConcealed = 16 	# /usr/include/X11/Xlib.h:1291
-XIMStringConversionWrapped = 32 	# /usr/include/X11/Xlib.h:1292
+XIMPreeditStateNotifyCallbackStruct = struct__XIMPreeditStateNotifyCallbackStruct 	# /usr/include/X11/Xlib.h:1283
+XIMResetState = c_ulong 	# /usr/include/X11/Xlib.h:1285
+XIMInitialState = 1 	# /usr/include/X11/Xlib.h:1287
+XIMPreserveState = 2 	# /usr/include/X11/Xlib.h:1288
+XIMStringConversionFeedback = c_ulong 	# /usr/include/X11/Xlib.h:1290
+XIMStringConversionLeftEdge = 1 	# /usr/include/X11/Xlib.h:1292
+XIMStringConversionRightEdge = 2 	# /usr/include/X11/Xlib.h:1293
+XIMStringConversionTopEdge = 4 	# /usr/include/X11/Xlib.h:1294
+XIMStringConversionBottomEdge = 8 	# /usr/include/X11/Xlib.h:1295
+XIMStringConversionConcealed = 16 	# /usr/include/X11/Xlib.h:1296
+XIMStringConversionWrapped = 32 	# /usr/include/X11/Xlib.h:1297
 class struct__XIMStringConversionText(Structure):
     __slots__ = [
         'length',
@@ -2379,16 +2428,16 @@ struct__XIMStringConversionText._fields_ = [
     ('string', struct_anon_87),
 ]
 
-XIMStringConversionText = struct__XIMStringConversionText 	# /usr/include/X11/Xlib.h:1302
-XIMStringConversionPosition = c_ushort 	# /usr/include/X11/Xlib.h:1304
-XIMStringConversionType = c_ushort 	# /usr/include/X11/Xlib.h:1306
-XIMStringConversionBuffer = 1 	# /usr/include/X11/Xlib.h:1308
-XIMStringConversionLine = 2 	# /usr/include/X11/Xlib.h:1309
-XIMStringConversionWord = 3 	# /usr/include/X11/Xlib.h:1310
-XIMStringConversionChar = 4 	# /usr/include/X11/Xlib.h:1311
-XIMStringConversionOperation = c_ushort 	# /usr/include/X11/Xlib.h:1313
-XIMStringConversionSubstitution = 1 	# /usr/include/X11/Xlib.h:1315
-XIMStringConversionRetrieval = 2 	# /usr/include/X11/Xlib.h:1316
+XIMStringConversionText = struct__XIMStringConversionText 	# /usr/include/X11/Xlib.h:1307
+XIMStringConversionPosition = c_ushort 	# /usr/include/X11/Xlib.h:1309
+XIMStringConversionType = c_ushort 	# /usr/include/X11/Xlib.h:1311
+XIMStringConversionBuffer = 1 	# /usr/include/X11/Xlib.h:1313
+XIMStringConversionLine = 2 	# /usr/include/X11/Xlib.h:1314
+XIMStringConversionWord = 3 	# /usr/include/X11/Xlib.h:1315
+XIMStringConversionChar = 4 	# /usr/include/X11/Xlib.h:1316
+XIMStringConversionOperation = c_ushort 	# /usr/include/X11/Xlib.h:1318
+XIMStringConversionSubstitution = 1 	# /usr/include/X11/Xlib.h:1320
+XIMStringConversionRetrieval = 2 	# /usr/include/X11/Xlib.h:1321
 enum_anon_88 = c_int
 XIMForwardChar = 0
 XIMBackwardChar = 1
@@ -2402,7 +2451,7 @@ XIMLineStart = 8
 XIMLineEnd = 9
 XIMAbsolutePosition = 10
 XIMDontChange = 11
-XIMCaretDirection = enum_anon_88 	# /usr/include/X11/Xlib.h:1326
+XIMCaretDirection = enum_anon_88 	# /usr/include/X11/Xlib.h:1331
 class struct__XIMStringConversionCallbackStruct(Structure):
     __slots__ = [
         'position',
@@ -2419,7 +2468,7 @@ struct__XIMStringConversionCallbackStruct._fields_ = [
     ('text', POINTER(XIMStringConversionText)),
 ]
 
-XIMStringConversionCallbackStruct = struct__XIMStringConversionCallbackStruct 	# /usr/include/X11/Xlib.h:1334
+XIMStringConversionCallbackStruct = struct__XIMStringConversionCallbackStruct 	# /usr/include/X11/Xlib.h:1339
 class struct__XIMPreeditDrawCallbackStruct(Structure):
     __slots__ = [
         'caret',
@@ -2434,12 +2483,12 @@ struct__XIMPreeditDrawCallbackStruct._fields_ = [
     ('text', POINTER(XIMText)),
 ]
 
-XIMPreeditDrawCallbackStruct = struct__XIMPreeditDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1341
+XIMPreeditDrawCallbackStruct = struct__XIMPreeditDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1346
 enum_anon_89 = c_int
 XIMIsInvisible = 0
 XIMIsPrimary = 1
 XIMIsSecondary = 2
-XIMCaretStyle = enum_anon_89 	# /usr/include/X11/Xlib.h:1347
+XIMCaretStyle = enum_anon_89 	# /usr/include/X11/Xlib.h:1352
 class struct__XIMPreeditCaretCallbackStruct(Structure):
     __slots__ = [
         'position',
@@ -2452,11 +2501,11 @@ struct__XIMPreeditCaretCallbackStruct._fields_ = [
     ('style', XIMCaretStyle),
 ]
 
-XIMPreeditCaretCallbackStruct = struct__XIMPreeditCaretCallbackStruct 	# /usr/include/X11/Xlib.h:1353
+XIMPreeditCaretCallbackStruct = struct__XIMPreeditCaretCallbackStruct 	# /usr/include/X11/Xlib.h:1358
 enum_anon_90 = c_int
 XIMTextType = 0
 XIMBitmapType = 1
-XIMStatusDataType = enum_anon_90 	# /usr/include/X11/Xlib.h:1358
+XIMStatusDataType = enum_anon_90 	# /usr/include/X11/Xlib.h:1363
 class struct__XIMStatusDrawCallbackStruct(Structure):
     __slots__ = [
         'type',
@@ -2477,7 +2526,7 @@ struct__XIMStatusDrawCallbackStruct._fields_ = [
     ('data', struct_anon_91),
 ]
 
-XIMStatusDrawCallbackStruct = struct__XIMStatusDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1366
+XIMStatusDrawCallbackStruct = struct__XIMStatusDrawCallbackStruct 	# /usr/include/X11/Xlib.h:1371
 class struct__XIMHotKeyTrigger(Structure):
     __slots__ = [
         'keysym',
@@ -2490,7 +2539,7 @@ struct__XIMHotKeyTrigger._fields_ = [
     ('modifier_mask', c_int),
 ]
 
-XIMHotKeyTrigger = struct__XIMHotKeyTrigger 	# /usr/include/X11/Xlib.h:1372
+XIMHotKeyTrigger = struct__XIMHotKeyTrigger 	# /usr/include/X11/Xlib.h:1377
 class struct__XIMHotKeyTriggers(Structure):
     __slots__ = [
         'num_hot_key',
@@ -2501,10 +2550,10 @@ struct__XIMHotKeyTriggers._fields_ = [
     ('key', POINTER(XIMHotKeyTrigger)),
 ]
 
-XIMHotKeyTriggers = struct__XIMHotKeyTriggers 	# /usr/include/X11/Xlib.h:1377
-XIMHotKeyState = c_ulong 	# /usr/include/X11/Xlib.h:1379
-XIMHotKeyStateON = 1 	# /usr/include/X11/Xlib.h:1381
-XIMHotKeyStateOFF = 2 	# /usr/include/X11/Xlib.h:1382
+XIMHotKeyTriggers = struct__XIMHotKeyTriggers 	# /usr/include/X11/Xlib.h:1382
+XIMHotKeyState = c_ulong 	# /usr/include/X11/Xlib.h:1384
+XIMHotKeyStateON = 1 	# /usr/include/X11/Xlib.h:1386
+XIMHotKeyStateOFF = 2 	# /usr/include/X11/Xlib.h:1387
 class struct_anon_92(Structure):
     __slots__ = [
         'count_values',
@@ -2515,1717 +2564,1710 @@ struct_anon_92._fields_ = [
     ('supported_values', POINTER(c_char_p)),
 ]
 
-XIMValuesList = struct_anon_92 	# /usr/include/X11/Xlib.h:1387
-# /usr/include/X11/Xlib.h:1397
+XIMValuesList = struct_anon_92 	# /usr/include/X11/Xlib.h:1392
+# /usr/include/X11/Xlib.h:1402
 XLoadQueryFont = _lib.XLoadQueryFont
 XLoadQueryFont.restype = POINTER(XFontStruct)
 XLoadQueryFont.argtypes = [POINTER(Display), c_char_p]
 
-# /usr/include/X11/Xlib.h:1402
+# /usr/include/X11/Xlib.h:1407
 XQueryFont = _lib.XQueryFont
 XQueryFont.restype = POINTER(XFontStruct)
 XQueryFont.argtypes = [POINTER(Display), XID]
 
-# /usr/include/X11/Xlib.h:1408
+# /usr/include/X11/Xlib.h:1413
 XGetMotionEvents = _lib.XGetMotionEvents
 XGetMotionEvents.restype = POINTER(XTimeCoord)
 XGetMotionEvents.argtypes = [POINTER(Display), Window, Time, Time, POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1416
+# /usr/include/X11/Xlib.h:1421
 XDeleteModifiermapEntry = _lib.XDeleteModifiermapEntry
 XDeleteModifiermapEntry.restype = POINTER(XModifierKeymap)
 XDeleteModifiermapEntry.argtypes = [POINTER(XModifierKeymap), KeyCode, c_int]
 
-# /usr/include/X11/Xlib.h:1426
+# /usr/include/X11/Xlib.h:1431
 XGetModifierMapping = _lib.XGetModifierMapping
 XGetModifierMapping.restype = POINTER(XModifierKeymap)
 XGetModifierMapping.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1430
+# /usr/include/X11/Xlib.h:1435
 XInsertModifiermapEntry = _lib.XInsertModifiermapEntry
 XInsertModifiermapEntry.restype = POINTER(XModifierKeymap)
 XInsertModifiermapEntry.argtypes = [POINTER(XModifierKeymap), KeyCode, c_int]
 
-# /usr/include/X11/Xlib.h:1440
+# /usr/include/X11/Xlib.h:1445
 XNewModifiermap = _lib.XNewModifiermap
 XNewModifiermap.restype = POINTER(XModifierKeymap)
 XNewModifiermap.argtypes = [c_int]
 
-# /usr/include/X11/Xlib.h:1444
+# /usr/include/X11/Xlib.h:1449
 XCreateImage = _lib.XCreateImage
 XCreateImage.restype = POINTER(XImage)
 XCreateImage.argtypes = [POINTER(Display), POINTER(Visual), c_uint, c_int, c_int, c_char_p, c_uint, c_uint, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:1456
+# /usr/include/X11/Xlib.h:1461
 XInitImage = _lib.XInitImage
 XInitImage.restype = c_int
 XInitImage.argtypes = [POINTER(XImage)]
 
-# /usr/include/X11/Xlib.h:1459
+# /usr/include/X11/Xlib.h:1464
 XGetImage = _lib.XGetImage
 XGetImage.restype = POINTER(XImage)
 XGetImage.argtypes = [POINTER(Display), Drawable, c_int, c_int, c_uint, c_uint, c_ulong, c_int]
 
-# /usr/include/X11/Xlib.h:1469
+# /usr/include/X11/Xlib.h:1474
 XGetSubImage = _lib.XGetSubImage
 XGetSubImage.restype = POINTER(XImage)
 XGetSubImage.argtypes = [POINTER(Display), Drawable, c_int, c_int, c_uint, c_uint, c_ulong, c_int, POINTER(XImage), c_int, c_int]
 
-# /usr/include/X11/Xlib.h:1486
+# /usr/include/X11/Xlib.h:1491
 XOpenDisplay = _lib.XOpenDisplay
 XOpenDisplay.restype = POINTER(Display)
 XOpenDisplay.argtypes = [c_char_p]
 
-# /usr/include/X11/Xlib.h:1490
+# /usr/include/X11/Xlib.h:1495
 XrmInitialize = _lib.XrmInitialize
 XrmInitialize.restype = None
 XrmInitialize.argtypes = []
 
-# /usr/include/X11/Xlib.h:1494
+# /usr/include/X11/Xlib.h:1499
 XFetchBytes = _lib.XFetchBytes
 XFetchBytes.restype = c_char_p
 XFetchBytes.argtypes = [POINTER(Display), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1498
+# /usr/include/X11/Xlib.h:1503
 XFetchBuffer = _lib.XFetchBuffer
 XFetchBuffer.restype = c_char_p
 XFetchBuffer.argtypes = [POINTER(Display), POINTER(c_int), c_int]
 
-# /usr/include/X11/Xlib.h:1503
+# /usr/include/X11/Xlib.h:1508
 XGetAtomName = _lib.XGetAtomName
 XGetAtomName.restype = c_char_p
 XGetAtomName.argtypes = [POINTER(Display), Atom]
 
-# /usr/include/X11/Xlib.h:1507
+# /usr/include/X11/Xlib.h:1512
 XGetAtomNames = _lib.XGetAtomNames
 XGetAtomNames.restype = c_int
 XGetAtomNames.argtypes = [POINTER(Display), POINTER(Atom), c_int, POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:1513
+# /usr/include/X11/Xlib.h:1518
 XGetDefault = _lib.XGetDefault
 XGetDefault.restype = c_char_p
 XGetDefault.argtypes = [POINTER(Display), c_char_p, c_char_p]
 
-# /usr/include/X11/Xlib.h:1518
+# /usr/include/X11/Xlib.h:1523
 XDisplayName = _lib.XDisplayName
 XDisplayName.restype = c_char_p
 XDisplayName.argtypes = [c_char_p]
 
-# /usr/include/X11/Xlib.h:1521
+# /usr/include/X11/Xlib.h:1526
 XKeysymToString = _lib.XKeysymToString
 XKeysymToString.restype = c_char_p
 XKeysymToString.argtypes = [KeySym]
 
-# /usr/include/X11/Xlib.h:1525
+# /usr/include/X11/Xlib.h:1530
 XSynchronize = _lib.XSynchronize
 XSynchronize.restype = POINTER(CFUNCTYPE(c_int, POINTER(Display)))
 XSynchronize.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1531
+# /usr/include/X11/Xlib.h:1536
 XSetAfterFunction = _lib.XSetAfterFunction
 XSetAfterFunction.restype = POINTER(CFUNCTYPE(c_int, POINTER(Display)))
 XSetAfterFunction.argtypes = [POINTER(Display), CFUNCTYPE(c_int, POINTER(Display))]
 
-# /usr/include/X11/Xlib.h:1539
+# /usr/include/X11/Xlib.h:1544
 XInternAtom = _lib.XInternAtom
 XInternAtom.restype = Atom
 XInternAtom.argtypes = [POINTER(Display), c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:1544
+# /usr/include/X11/Xlib.h:1549
 XInternAtoms = _lib.XInternAtoms
 XInternAtoms.restype = c_int
 XInternAtoms.argtypes = [POINTER(Display), POINTER(c_char_p), c_int, c_int, POINTER(Atom)]
 
-# /usr/include/X11/Xlib.h:1551
+# /usr/include/X11/Xlib.h:1556
 XCopyColormapAndFree = _lib.XCopyColormapAndFree
 XCopyColormapAndFree.restype = Colormap
 XCopyColormapAndFree.argtypes = [POINTER(Display), Colormap]
 
-# /usr/include/X11/Xlib.h:1555
+# /usr/include/X11/Xlib.h:1560
 XCreateColormap = _lib.XCreateColormap
 XCreateColormap.restype = Colormap
 XCreateColormap.argtypes = [POINTER(Display), Window, POINTER(Visual), c_int]
 
-# /usr/include/X11/Xlib.h:1561
+# /usr/include/X11/Xlib.h:1566
 XCreatePixmapCursor = _lib.XCreatePixmapCursor
 XCreatePixmapCursor.restype = Cursor
 XCreatePixmapCursor.argtypes = [POINTER(Display), Pixmap, Pixmap, POINTER(XColor), POINTER(XColor), c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:1570
+# /usr/include/X11/Xlib.h:1575
 XCreateGlyphCursor = _lib.XCreateGlyphCursor
 XCreateGlyphCursor.restype = Cursor
 XCreateGlyphCursor.argtypes = [POINTER(Display), Font, Font, c_uint, c_uint, POINTER(XColor), POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:1579
+# /usr/include/X11/Xlib.h:1584
 XCreateFontCursor = _lib.XCreateFontCursor
 XCreateFontCursor.restype = Cursor
 XCreateFontCursor.argtypes = [POINTER(Display), c_uint]
 
-# /usr/include/X11/Xlib.h:1583
+# /usr/include/X11/Xlib.h:1588
 XLoadFont = _lib.XLoadFont
 XLoadFont.restype = Font
 XLoadFont.argtypes = [POINTER(Display), c_char_p]
 
-# /usr/include/X11/Xlib.h:1587
+# /usr/include/X11/Xlib.h:1592
 XCreateGC = _lib.XCreateGC
 XCreateGC.restype = GC
 XCreateGC.argtypes = [POINTER(Display), Drawable, c_ulong, POINTER(XGCValues)]
 
-# /usr/include/X11/Xlib.h:1593
+# /usr/include/X11/Xlib.h:1598
 XGContextFromGC = _lib.XGContextFromGC
 XGContextFromGC.restype = GContext
 XGContextFromGC.argtypes = [GC]
 
-# /usr/include/X11/Xlib.h:1596
+# /usr/include/X11/Xlib.h:1601
 XFlushGC = _lib.XFlushGC
 XFlushGC.restype = None
 XFlushGC.argtypes = [POINTER(Display), GC]
 
-# /usr/include/X11/Xlib.h:1600
+# /usr/include/X11/Xlib.h:1605
 XCreatePixmap = _lib.XCreatePixmap
 XCreatePixmap.restype = Pixmap
 XCreatePixmap.argtypes = [POINTER(Display), Drawable, c_uint, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:1607
+# /usr/include/X11/Xlib.h:1612
 XCreateBitmapFromData = _lib.XCreateBitmapFromData
 XCreateBitmapFromData.restype = Pixmap
 XCreateBitmapFromData.argtypes = [POINTER(Display), Drawable, c_char_p, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:1614
+# /usr/include/X11/Xlib.h:1619
 XCreatePixmapFromBitmapData = _lib.XCreatePixmapFromBitmapData
 XCreatePixmapFromBitmapData.restype = Pixmap
 XCreatePixmapFromBitmapData.argtypes = [POINTER(Display), Drawable, c_char_p, c_uint, c_uint, c_ulong, c_ulong, c_uint]
 
-# /usr/include/X11/Xlib.h:1624
+# /usr/include/X11/Xlib.h:1629
 XCreateSimpleWindow = _lib.XCreateSimpleWindow
 XCreateSimpleWindow.restype = Window
 XCreateSimpleWindow.argtypes = [POINTER(Display), Window, c_int, c_int, c_uint, c_uint, c_uint, c_ulong, c_ulong]
 
-# /usr/include/X11/Xlib.h:1635
+# /usr/include/X11/Xlib.h:1640
 XGetSelectionOwner = _lib.XGetSelectionOwner
 XGetSelectionOwner.restype = Window
 XGetSelectionOwner.argtypes = [POINTER(Display), Atom]
 
-# /usr/include/X11/Xlib.h:1639
+# /usr/include/X11/Xlib.h:1644
 XCreateWindow = _lib.XCreateWindow
 XCreateWindow.restype = Window
 XCreateWindow.argtypes = [POINTER(Display), Window, c_int, c_int, c_uint, c_uint, c_uint, c_int, c_uint, POINTER(Visual), c_ulong, POINTER(XSetWindowAttributes)]
 
-# /usr/include/X11/Xlib.h:1653
+# /usr/include/X11/Xlib.h:1658
 XListInstalledColormaps = _lib.XListInstalledColormaps
 XListInstalledColormaps.restype = POINTER(Colormap)
 XListInstalledColormaps.argtypes = [POINTER(Display), Window, POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1658
+# /usr/include/X11/Xlib.h:1663
 XListFonts = _lib.XListFonts
 XListFonts.restype = POINTER(c_char_p)
 XListFonts.argtypes = [POINTER(Display), c_char_p, c_int, POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1664
+# /usr/include/X11/Xlib.h:1669
 XListFontsWithInfo = _lib.XListFontsWithInfo
 XListFontsWithInfo.restype = POINTER(c_char_p)
 XListFontsWithInfo.argtypes = [POINTER(Display), c_char_p, c_int, POINTER(c_int), POINTER(POINTER(XFontStruct))]
 
-# /usr/include/X11/Xlib.h:1671
+# /usr/include/X11/Xlib.h:1676
 XGetFontPath = _lib.XGetFontPath
 XGetFontPath.restype = POINTER(c_char_p)
 XGetFontPath.argtypes = [POINTER(Display), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1675
+# /usr/include/X11/Xlib.h:1680
 XListExtensions = _lib.XListExtensions
 XListExtensions.restype = POINTER(c_char_p)
 XListExtensions.argtypes = [POINTER(Display), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1679
+# /usr/include/X11/Xlib.h:1684
 XListProperties = _lib.XListProperties
 XListProperties.restype = POINTER(Atom)
 XListProperties.argtypes = [POINTER(Display), Window, POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1684
+# /usr/include/X11/Xlib.h:1689
 XListHosts = _lib.XListHosts
 XListHosts.restype = POINTER(XHostAddress)
 XListHosts.argtypes = [POINTER(Display), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1689
+# /usr/include/X11/Xlib.h:1694
 XKeycodeToKeysym = _lib.XKeycodeToKeysym
 XKeycodeToKeysym.restype = KeySym
 XKeycodeToKeysym.argtypes = [POINTER(Display), KeyCode, c_int]
 
-# /usr/include/X11/Xlib.h:1698
+# /usr/include/X11/Xlib.h:1703
 XLookupKeysym = _lib.XLookupKeysym
 XLookupKeysym.restype = KeySym
 XLookupKeysym.argtypes = [POINTER(XKeyEvent), c_int]
 
-# /usr/include/X11/Xlib.h:1702
+# /usr/include/X11/Xlib.h:1707
 XGetKeyboardMapping = _lib.XGetKeyboardMapping
 XGetKeyboardMapping.restype = POINTER(KeySym)
 XGetKeyboardMapping.argtypes = [POINTER(Display), KeyCode, c_int, POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1712
+# /usr/include/X11/Xlib.h:1717
 XStringToKeysym = _lib.XStringToKeysym
 XStringToKeysym.restype = KeySym
 XStringToKeysym.argtypes = [c_char_p]
 
-# /usr/include/X11/Xlib.h:1715
+# /usr/include/X11/Xlib.h:1720
 XMaxRequestSize = _lib.XMaxRequestSize
 XMaxRequestSize.restype = c_long
 XMaxRequestSize.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1718
+# /usr/include/X11/Xlib.h:1723
 XExtendedMaxRequestSize = _lib.XExtendedMaxRequestSize
 XExtendedMaxRequestSize.restype = c_long
 XExtendedMaxRequestSize.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1721
+# /usr/include/X11/Xlib.h:1726
 XResourceManagerString = _lib.XResourceManagerString
 XResourceManagerString.restype = c_char_p
 XResourceManagerString.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1724
+# /usr/include/X11/Xlib.h:1729
 XScreenResourceString = _lib.XScreenResourceString
 XScreenResourceString.restype = c_char_p
 XScreenResourceString.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1727
+# /usr/include/X11/Xlib.h:1732
 XDisplayMotionBufferSize = _lib.XDisplayMotionBufferSize
 XDisplayMotionBufferSize.restype = c_ulong
 XDisplayMotionBufferSize.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1730
+# /usr/include/X11/Xlib.h:1735
 XVisualIDFromVisual = _lib.XVisualIDFromVisual
 XVisualIDFromVisual.restype = VisualID
 XVisualIDFromVisual.argtypes = [POINTER(Visual)]
 
-# /usr/include/X11/Xlib.h:1736
+# /usr/include/X11/Xlib.h:1741
 XInitThreads = _lib.XInitThreads
 XInitThreads.restype = c_int
 XInitThreads.argtypes = []
 
-# /usr/include/X11/Xlib.h:1740
+# /usr/include/X11/Xlib.h:1745
 XLockDisplay = _lib.XLockDisplay
 XLockDisplay.restype = None
 XLockDisplay.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1744
+# /usr/include/X11/Xlib.h:1749
 XUnlockDisplay = _lib.XUnlockDisplay
 XUnlockDisplay.restype = None
 XUnlockDisplay.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1750
+# /usr/include/X11/Xlib.h:1755
 XInitExtension = _lib.XInitExtension
 XInitExtension.restype = POINTER(XExtCodes)
 XInitExtension.argtypes = [POINTER(Display), c_char_p]
 
-# /usr/include/X11/Xlib.h:1755
+# /usr/include/X11/Xlib.h:1760
 XAddExtension = _lib.XAddExtension
 XAddExtension.restype = POINTER(XExtCodes)
 XAddExtension.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1758
+# /usr/include/X11/Xlib.h:1763
 XFindOnExtensionList = _lib.XFindOnExtensionList
 XFindOnExtensionList.restype = POINTER(XExtData)
 XFindOnExtensionList.argtypes = [POINTER(POINTER(XExtData)), c_int]
 
-# /usr/include/X11/Xlib.h:1762
+# /usr/include/X11/Xlib.h:1767
 XEHeadOfExtensionList = _lib.XEHeadOfExtensionList
 XEHeadOfExtensionList.restype = POINTER(POINTER(XExtData))
 XEHeadOfExtensionList.argtypes = [XEDataObject]
 
-# /usr/include/X11/Xlib.h:1767
+# /usr/include/X11/Xlib.h:1772
 XRootWindow = _lib.XRootWindow
 XRootWindow.restype = Window
 XRootWindow.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1771
+# /usr/include/X11/Xlib.h:1776
 XDefaultRootWindow = _lib.XDefaultRootWindow
 XDefaultRootWindow.restype = Window
 XDefaultRootWindow.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1774
+# /usr/include/X11/Xlib.h:1779
 XRootWindowOfScreen = _lib.XRootWindowOfScreen
 XRootWindowOfScreen.restype = Window
 XRootWindowOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1777
+# /usr/include/X11/Xlib.h:1782
 XDefaultVisual = _lib.XDefaultVisual
 XDefaultVisual.restype = POINTER(Visual)
 XDefaultVisual.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1781
+# /usr/include/X11/Xlib.h:1786
 XDefaultVisualOfScreen = _lib.XDefaultVisualOfScreen
 XDefaultVisualOfScreen.restype = POINTER(Visual)
 XDefaultVisualOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1784
+# /usr/include/X11/Xlib.h:1789
 XDefaultGC = _lib.XDefaultGC
 XDefaultGC.restype = GC
 XDefaultGC.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1788
+# /usr/include/X11/Xlib.h:1793
 XDefaultGCOfScreen = _lib.XDefaultGCOfScreen
 XDefaultGCOfScreen.restype = GC
 XDefaultGCOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1791
+# /usr/include/X11/Xlib.h:1796
 XBlackPixel = _lib.XBlackPixel
 XBlackPixel.restype = c_ulong
 XBlackPixel.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1795
+# /usr/include/X11/Xlib.h:1800
 XWhitePixel = _lib.XWhitePixel
 XWhitePixel.restype = c_ulong
 XWhitePixel.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1799
+# /usr/include/X11/Xlib.h:1804
 XAllPlanes = _lib.XAllPlanes
 XAllPlanes.restype = c_ulong
 XAllPlanes.argtypes = []
 
-# /usr/include/X11/Xlib.h:1802
+# /usr/include/X11/Xlib.h:1807
 XBlackPixelOfScreen = _lib.XBlackPixelOfScreen
 XBlackPixelOfScreen.restype = c_ulong
 XBlackPixelOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1805
+# /usr/include/X11/Xlib.h:1810
 XWhitePixelOfScreen = _lib.XWhitePixelOfScreen
 XWhitePixelOfScreen.restype = c_ulong
 XWhitePixelOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1808
+# /usr/include/X11/Xlib.h:1813
 XNextRequest = _lib.XNextRequest
 XNextRequest.restype = c_ulong
 XNextRequest.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1811
+# /usr/include/X11/Xlib.h:1816
 XLastKnownRequestProcessed = _lib.XLastKnownRequestProcessed
 XLastKnownRequestProcessed.restype = c_ulong
 XLastKnownRequestProcessed.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1814
+# /usr/include/X11/Xlib.h:1819
 XServerVendor = _lib.XServerVendor
 XServerVendor.restype = c_char_p
 XServerVendor.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1817
+# /usr/include/X11/Xlib.h:1822
 XDisplayString = _lib.XDisplayString
 XDisplayString.restype = c_char_p
 XDisplayString.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1820
+# /usr/include/X11/Xlib.h:1825
 XDefaultColormap = _lib.XDefaultColormap
 XDefaultColormap.restype = Colormap
 XDefaultColormap.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1824
+# /usr/include/X11/Xlib.h:1829
 XDefaultColormapOfScreen = _lib.XDefaultColormapOfScreen
 XDefaultColormapOfScreen.restype = Colormap
 XDefaultColormapOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1827
+# /usr/include/X11/Xlib.h:1832
 XDisplayOfScreen = _lib.XDisplayOfScreen
 XDisplayOfScreen.restype = POINTER(Display)
 XDisplayOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1830
+# /usr/include/X11/Xlib.h:1835
 XScreenOfDisplay = _lib.XScreenOfDisplay
 XScreenOfDisplay.restype = POINTER(Screen)
 XScreenOfDisplay.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:1834
+# /usr/include/X11/Xlib.h:1839
 XDefaultScreenOfDisplay = _lib.XDefaultScreenOfDisplay
 XDefaultScreenOfDisplay.restype = POINTER(Screen)
 XDefaultScreenOfDisplay.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1837
+# /usr/include/X11/Xlib.h:1842
 XEventMaskOfScreen = _lib.XEventMaskOfScreen
 XEventMaskOfScreen.restype = c_long
 XEventMaskOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:1841
+# /usr/include/X11/Xlib.h:1846
 XScreenNumberOfScreen = _lib.XScreenNumberOfScreen
 XScreenNumberOfScreen.restype = c_int
 XScreenNumberOfScreen.argtypes = [POINTER(Screen)]
 
-XErrorHandler = CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent)) 	# /usr/include/X11/Xlib.h:1845
-# /usr/include/X11/Xlib.h:1850
+XErrorHandler = CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent)) 	# /usr/include/X11/Xlib.h:1850
+# /usr/include/X11/Xlib.h:1855
 XSetErrorHandler = _lib.XSetErrorHandler
 XSetErrorHandler.restype = XErrorHandler
 XSetErrorHandler.argtypes = [XErrorHandler]
 
-XIOErrorHandler = CFUNCTYPE(c_int, POINTER(Display)) 	# /usr/include/X11/Xlib.h:1855
-# /usr/include/X11/Xlib.h:1859
+XIOErrorHandler = CFUNCTYPE(c_int, POINTER(Display)) 	# /usr/include/X11/Xlib.h:1860
+# /usr/include/X11/Xlib.h:1864
 XSetIOErrorHandler = _lib.XSetIOErrorHandler
 XSetIOErrorHandler.restype = XIOErrorHandler
 XSetIOErrorHandler.argtypes = [XIOErrorHandler]
 
-# /usr/include/X11/Xlib.h:1864
+# /usr/include/X11/Xlib.h:1869
 XListPixmapFormats = _lib.XListPixmapFormats
 XListPixmapFormats.restype = POINTER(XPixmapFormatValues)
 XListPixmapFormats.argtypes = [POINTER(Display), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1868
+# /usr/include/X11/Xlib.h:1873
 XListDepths = _lib.XListDepths
 XListDepths.restype = POINTER(c_int)
 XListDepths.argtypes = [POINTER(Display), c_int, POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1876
+# /usr/include/X11/Xlib.h:1881
 XReconfigureWMWindow = _lib.XReconfigureWMWindow
 XReconfigureWMWindow.restype = c_int
 XReconfigureWMWindow.argtypes = [POINTER(Display), Window, c_int, c_uint, POINTER(XWindowChanges)]
 
-# /usr/include/X11/Xlib.h:1884
+# /usr/include/X11/Xlib.h:1889
 XGetWMProtocols = _lib.XGetWMProtocols
 XGetWMProtocols.restype = c_int
 XGetWMProtocols.argtypes = [POINTER(Display), Window, POINTER(POINTER(Atom)), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1890
+# /usr/include/X11/Xlib.h:1895
 XSetWMProtocols = _lib.XSetWMProtocols
 XSetWMProtocols.restype = c_int
 XSetWMProtocols.argtypes = [POINTER(Display), Window, POINTER(Atom), c_int]
 
-# /usr/include/X11/Xlib.h:1896
+# /usr/include/X11/Xlib.h:1901
 XIconifyWindow = _lib.XIconifyWindow
 XIconifyWindow.restype = c_int
 XIconifyWindow.argtypes = [POINTER(Display), Window, c_int]
 
-# /usr/include/X11/Xlib.h:1901
+# /usr/include/X11/Xlib.h:1906
 XWithdrawWindow = _lib.XWithdrawWindow
 XWithdrawWindow.restype = c_int
 XWithdrawWindow.argtypes = [POINTER(Display), Window, c_int]
 
-# /usr/include/X11/Xlib.h:1906
+# /usr/include/X11/Xlib.h:1911
 XGetCommand = _lib.XGetCommand
 XGetCommand.restype = c_int
 XGetCommand.argtypes = [POINTER(Display), Window, POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1912
+# /usr/include/X11/Xlib.h:1917
 XGetWMColormapWindows = _lib.XGetWMColormapWindows
 XGetWMColormapWindows.restype = c_int
 XGetWMColormapWindows.argtypes = [POINTER(Display), Window, POINTER(POINTER(Window)), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:1918
+# /usr/include/X11/Xlib.h:1923
 XSetWMColormapWindows = _lib.XSetWMColormapWindows
 XSetWMColormapWindows.restype = c_int
 XSetWMColormapWindows.argtypes = [POINTER(Display), Window, POINTER(Window), c_int]
 
-# /usr/include/X11/Xlib.h:1924
+# /usr/include/X11/Xlib.h:1929
 XFreeStringList = _lib.XFreeStringList
 XFreeStringList.restype = None
 XFreeStringList.argtypes = [POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:1927
+# /usr/include/X11/Xlib.h:1932
 XSetTransientForHint = _lib.XSetTransientForHint
 XSetTransientForHint.restype = c_int
 XSetTransientForHint.argtypes = [POINTER(Display), Window, Window]
 
-# /usr/include/X11/Xlib.h:1935
+# /usr/include/X11/Xlib.h:1940
 XActivateScreenSaver = _lib.XActivateScreenSaver
 XActivateScreenSaver.restype = c_int
 XActivateScreenSaver.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:1939
+# /usr/include/X11/Xlib.h:1944
 XAddHost = _lib.XAddHost
 XAddHost.restype = c_int
 XAddHost.argtypes = [POINTER(Display), POINTER(XHostAddress)]
 
-# /usr/include/X11/Xlib.h:1944
+# /usr/include/X11/Xlib.h:1949
 XAddHosts = _lib.XAddHosts
 XAddHosts.restype = c_int
 XAddHosts.argtypes = [POINTER(Display), POINTER(XHostAddress), c_int]
 
-class struct__XExtData(Structure):
-    __slots__ = [
-    ]
-struct__XExtData._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-# /usr/include/X11/Xlib.h:1950
+# /usr/include/X11/Xlib.h:1955
 XAddToExtensionList = _lib.XAddToExtensionList
 XAddToExtensionList.restype = c_int
 XAddToExtensionList.argtypes = [POINTER(POINTER(struct__XExtData)), POINTER(XExtData)]
 
-# /usr/include/X11/Xlib.h:1955
+# /usr/include/X11/Xlib.h:1960
 XAddToSaveSet = _lib.XAddToSaveSet
 XAddToSaveSet.restype = c_int
 XAddToSaveSet.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:1960
+# /usr/include/X11/Xlib.h:1965
 XAllocColor = _lib.XAllocColor
 XAllocColor.restype = c_int
 XAllocColor.argtypes = [POINTER(Display), Colormap, POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:1966
+# /usr/include/X11/Xlib.h:1971
 XAllocColorCells = _lib.XAllocColorCells
 XAllocColorCells.restype = c_int
 XAllocColorCells.argtypes = [POINTER(Display), Colormap, c_int, POINTER(c_ulong), c_uint, POINTER(c_ulong), c_uint]
 
-# /usr/include/X11/Xlib.h:1976
+# /usr/include/X11/Xlib.h:1981
 XAllocColorPlanes = _lib.XAllocColorPlanes
 XAllocColorPlanes.restype = c_int
 XAllocColorPlanes.argtypes = [POINTER(Display), Colormap, c_int, POINTER(c_ulong), c_int, c_int, c_int, c_int, POINTER(c_ulong), POINTER(c_ulong), POINTER(c_ulong)]
 
-# /usr/include/X11/Xlib.h:1990
+# /usr/include/X11/Xlib.h:1995
 XAllocNamedColor = _lib.XAllocNamedColor
 XAllocNamedColor.restype = c_int
 XAllocNamedColor.argtypes = [POINTER(Display), Colormap, c_char_p, POINTER(XColor), POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:1998
+# /usr/include/X11/Xlib.h:2003
 XAllowEvents = _lib.XAllowEvents
 XAllowEvents.restype = c_int
 XAllowEvents.argtypes = [POINTER(Display), c_int, Time]
 
-# /usr/include/X11/Xlib.h:2004
+# /usr/include/X11/Xlib.h:2009
 XAutoRepeatOff = _lib.XAutoRepeatOff
 XAutoRepeatOff.restype = c_int
 XAutoRepeatOff.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2008
+# /usr/include/X11/Xlib.h:2013
 XAutoRepeatOn = _lib.XAutoRepeatOn
 XAutoRepeatOn.restype = c_int
 XAutoRepeatOn.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2012
+# /usr/include/X11/Xlib.h:2017
 XBell = _lib.XBell
 XBell.restype = c_int
 XBell.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2017
+# /usr/include/X11/Xlib.h:2022
 XBitmapBitOrder = _lib.XBitmapBitOrder
 XBitmapBitOrder.restype = c_int
 XBitmapBitOrder.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2021
+# /usr/include/X11/Xlib.h:2026
 XBitmapPad = _lib.XBitmapPad
 XBitmapPad.restype = c_int
 XBitmapPad.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2025
+# /usr/include/X11/Xlib.h:2030
 XBitmapUnit = _lib.XBitmapUnit
 XBitmapUnit.restype = c_int
 XBitmapUnit.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2029
+# /usr/include/X11/Xlib.h:2034
 XCellsOfScreen = _lib.XCellsOfScreen
 XCellsOfScreen.restype = c_int
 XCellsOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2033
+# /usr/include/X11/Xlib.h:2038
 XChangeActivePointerGrab = _lib.XChangeActivePointerGrab
 XChangeActivePointerGrab.restype = c_int
 XChangeActivePointerGrab.argtypes = [POINTER(Display), c_uint, Cursor, Time]
 
-# /usr/include/X11/Xlib.h:2040
+# /usr/include/X11/Xlib.h:2045
 XChangeGC = _lib.XChangeGC
 XChangeGC.restype = c_int
 XChangeGC.argtypes = [POINTER(Display), GC, c_ulong, POINTER(XGCValues)]
 
-# /usr/include/X11/Xlib.h:2047
+# /usr/include/X11/Xlib.h:2052
 XChangeKeyboardControl = _lib.XChangeKeyboardControl
 XChangeKeyboardControl.restype = c_int
 XChangeKeyboardControl.argtypes = [POINTER(Display), c_ulong, POINTER(XKeyboardControl)]
 
-# /usr/include/X11/Xlib.h:2053
+# /usr/include/X11/Xlib.h:2058
 XChangeKeyboardMapping = _lib.XChangeKeyboardMapping
 XChangeKeyboardMapping.restype = c_int
 XChangeKeyboardMapping.argtypes = [POINTER(Display), c_int, c_int, POINTER(KeySym), c_int]
 
-# /usr/include/X11/Xlib.h:2061
+# /usr/include/X11/Xlib.h:2066
 XChangePointerControl = _lib.XChangePointerControl
 XChangePointerControl.restype = c_int
 XChangePointerControl.argtypes = [POINTER(Display), c_int, c_int, c_int, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2070
+# /usr/include/X11/Xlib.h:2075
 XChangeProperty = _lib.XChangeProperty
 XChangeProperty.restype = c_int
 XChangeProperty.argtypes = [POINTER(Display), Window, Atom, Atom, c_int, c_int, POINTER(c_ubyte), c_int]
 
-# /usr/include/X11/Xlib.h:2081
+# /usr/include/X11/Xlib.h:2086
 XChangeSaveSet = _lib.XChangeSaveSet
 XChangeSaveSet.restype = c_int
 XChangeSaveSet.argtypes = [POINTER(Display), Window, c_int]
 
-# /usr/include/X11/Xlib.h:2087
+# /usr/include/X11/Xlib.h:2092
 XChangeWindowAttributes = _lib.XChangeWindowAttributes
 XChangeWindowAttributes.restype = c_int
 XChangeWindowAttributes.argtypes = [POINTER(Display), Window, c_ulong, POINTER(XSetWindowAttributes)]
 
-# /usr/include/X11/Xlib.h:2094
+# /usr/include/X11/Xlib.h:2099
 XCheckIfEvent = _lib.XCheckIfEvent
 XCheckIfEvent.restype = c_int
 XCheckIfEvent.argtypes = [POINTER(Display), POINTER(XEvent), CFUNCTYPE(c_int, POINTER(Display), POINTER(XEvent), XPointer), XPointer]
 
-# /usr/include/X11/Xlib.h:2105
+# /usr/include/X11/Xlib.h:2110
 XCheckMaskEvent = _lib.XCheckMaskEvent
 XCheckMaskEvent.restype = c_int
 XCheckMaskEvent.argtypes = [POINTER(Display), c_long, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2111
+# /usr/include/X11/Xlib.h:2116
 XCheckTypedEvent = _lib.XCheckTypedEvent
 XCheckTypedEvent.restype = c_int
 XCheckTypedEvent.argtypes = [POINTER(Display), c_int, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2117
+# /usr/include/X11/Xlib.h:2122
 XCheckTypedWindowEvent = _lib.XCheckTypedWindowEvent
 XCheckTypedWindowEvent.restype = c_int
 XCheckTypedWindowEvent.argtypes = [POINTER(Display), Window, c_int, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2124
+# /usr/include/X11/Xlib.h:2129
 XCheckWindowEvent = _lib.XCheckWindowEvent
 XCheckWindowEvent.restype = c_int
 XCheckWindowEvent.argtypes = [POINTER(Display), Window, c_long, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2131
+# /usr/include/X11/Xlib.h:2136
 XCirculateSubwindows = _lib.XCirculateSubwindows
 XCirculateSubwindows.restype = c_int
 XCirculateSubwindows.argtypes = [POINTER(Display), Window, c_int]
 
-# /usr/include/X11/Xlib.h:2137
+# /usr/include/X11/Xlib.h:2142
 XCirculateSubwindowsDown = _lib.XCirculateSubwindowsDown
 XCirculateSubwindowsDown.restype = c_int
 XCirculateSubwindowsDown.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2142
+# /usr/include/X11/Xlib.h:2147
 XCirculateSubwindowsUp = _lib.XCirculateSubwindowsUp
 XCirculateSubwindowsUp.restype = c_int
 XCirculateSubwindowsUp.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2147
+# /usr/include/X11/Xlib.h:2152
 XClearArea = _lib.XClearArea
 XClearArea.restype = c_int
 XClearArea.argtypes = [POINTER(Display), Window, c_int, c_int, c_uint, c_uint, c_int]
 
-# /usr/include/X11/Xlib.h:2157
+# /usr/include/X11/Xlib.h:2162
 XClearWindow = _lib.XClearWindow
 XClearWindow.restype = c_int
 XClearWindow.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2162
+# /usr/include/X11/Xlib.h:2167
 XCloseDisplay = _lib.XCloseDisplay
 XCloseDisplay.restype = c_int
 XCloseDisplay.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2166
+# /usr/include/X11/Xlib.h:2171
 XConfigureWindow = _lib.XConfigureWindow
 XConfigureWindow.restype = c_int
 XConfigureWindow.argtypes = [POINTER(Display), Window, c_uint, POINTER(XWindowChanges)]
 
-# /usr/include/X11/Xlib.h:2173
+# /usr/include/X11/Xlib.h:2178
 XConnectionNumber = _lib.XConnectionNumber
 XConnectionNumber.restype = c_int
 XConnectionNumber.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2177
+# /usr/include/X11/Xlib.h:2182
 XConvertSelection = _lib.XConvertSelection
 XConvertSelection.restype = c_int
 XConvertSelection.argtypes = [POINTER(Display), Atom, Atom, Atom, Window, Time]
 
-# /usr/include/X11/Xlib.h:2186
+# /usr/include/X11/Xlib.h:2191
 XCopyArea = _lib.XCopyArea
 XCopyArea.restype = c_int
 XCopyArea.argtypes = [POINTER(Display), Drawable, Drawable, GC, c_int, c_int, c_uint, c_uint, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2199
+# /usr/include/X11/Xlib.h:2204
 XCopyGC = _lib.XCopyGC
 XCopyGC.restype = c_int
 XCopyGC.argtypes = [POINTER(Display), GC, c_ulong, GC]
 
-# /usr/include/X11/Xlib.h:2206
+# /usr/include/X11/Xlib.h:2211
 XCopyPlane = _lib.XCopyPlane
 XCopyPlane.restype = c_int
 XCopyPlane.argtypes = [POINTER(Display), Drawable, Drawable, GC, c_int, c_int, c_uint, c_uint, c_int, c_int, c_ulong]
 
-# /usr/include/X11/Xlib.h:2220
+# /usr/include/X11/Xlib.h:2225
 XDefaultDepth = _lib.XDefaultDepth
 XDefaultDepth.restype = c_int
 XDefaultDepth.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2225
+# /usr/include/X11/Xlib.h:2230
 XDefaultDepthOfScreen = _lib.XDefaultDepthOfScreen
 XDefaultDepthOfScreen.restype = c_int
 XDefaultDepthOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2229
+# /usr/include/X11/Xlib.h:2234
 XDefaultScreen = _lib.XDefaultScreen
 XDefaultScreen.restype = c_int
 XDefaultScreen.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2233
+# /usr/include/X11/Xlib.h:2238
 XDefineCursor = _lib.XDefineCursor
 XDefineCursor.restype = c_int
 XDefineCursor.argtypes = [POINTER(Display), Window, Cursor]
 
-# /usr/include/X11/Xlib.h:2239
+# /usr/include/X11/Xlib.h:2244
 XDeleteProperty = _lib.XDeleteProperty
 XDeleteProperty.restype = c_int
 XDeleteProperty.argtypes = [POINTER(Display), Window, Atom]
 
-# /usr/include/X11/Xlib.h:2245
+# /usr/include/X11/Xlib.h:2250
 XDestroyWindow = _lib.XDestroyWindow
 XDestroyWindow.restype = c_int
 XDestroyWindow.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2250
+# /usr/include/X11/Xlib.h:2255
 XDestroySubwindows = _lib.XDestroySubwindows
 XDestroySubwindows.restype = c_int
 XDestroySubwindows.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2255
+# /usr/include/X11/Xlib.h:2260
 XDoesBackingStore = _lib.XDoesBackingStore
 XDoesBackingStore.restype = c_int
 XDoesBackingStore.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2259
+# /usr/include/X11/Xlib.h:2264
 XDoesSaveUnders = _lib.XDoesSaveUnders
 XDoesSaveUnders.restype = c_int
 XDoesSaveUnders.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2263
+# /usr/include/X11/Xlib.h:2268
 XDisableAccessControl = _lib.XDisableAccessControl
 XDisableAccessControl.restype = c_int
 XDisableAccessControl.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2268
+# /usr/include/X11/Xlib.h:2273
 XDisplayCells = _lib.XDisplayCells
 XDisplayCells.restype = c_int
 XDisplayCells.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2273
+# /usr/include/X11/Xlib.h:2278
 XDisplayHeight = _lib.XDisplayHeight
 XDisplayHeight.restype = c_int
 XDisplayHeight.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2278
+# /usr/include/X11/Xlib.h:2283
 XDisplayHeightMM = _lib.XDisplayHeightMM
 XDisplayHeightMM.restype = c_int
 XDisplayHeightMM.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2283
+# /usr/include/X11/Xlib.h:2288
 XDisplayKeycodes = _lib.XDisplayKeycodes
 XDisplayKeycodes.restype = c_int
 XDisplayKeycodes.argtypes = [POINTER(Display), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:2289
+# /usr/include/X11/Xlib.h:2294
 XDisplayPlanes = _lib.XDisplayPlanes
 XDisplayPlanes.restype = c_int
 XDisplayPlanes.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2294
+# /usr/include/X11/Xlib.h:2299
 XDisplayWidth = _lib.XDisplayWidth
 XDisplayWidth.restype = c_int
 XDisplayWidth.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2299
+# /usr/include/X11/Xlib.h:2304
 XDisplayWidthMM = _lib.XDisplayWidthMM
 XDisplayWidthMM.restype = c_int
 XDisplayWidthMM.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2304
+# /usr/include/X11/Xlib.h:2309
 XDrawArc = _lib.XDrawArc
 XDrawArc.restype = c_int
 XDrawArc.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_uint, c_uint, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2316
+# /usr/include/X11/Xlib.h:2321
 XDrawArcs = _lib.XDrawArcs
 XDrawArcs.restype = c_int
 XDrawArcs.argtypes = [POINTER(Display), Drawable, GC, POINTER(XArc), c_int]
 
-# /usr/include/X11/Xlib.h:2324
+# /usr/include/X11/Xlib.h:2329
 XDrawImageString = _lib.XDrawImageString
 XDrawImageString.restype = c_int
 XDrawImageString.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:2334
+# /usr/include/X11/Xlib.h:2339
 XDrawImageString16 = _lib.XDrawImageString16
 XDrawImageString16.restype = c_int
 XDrawImageString16.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XChar2b), c_int]
 
-# /usr/include/X11/Xlib.h:2344
+# /usr/include/X11/Xlib.h:2349
 XDrawLine = _lib.XDrawLine
 XDrawLine.restype = c_int
 XDrawLine.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2354
+# /usr/include/X11/Xlib.h:2359
 XDrawLines = _lib.XDrawLines
 XDrawLines.restype = c_int
 XDrawLines.argtypes = [POINTER(Display), Drawable, GC, POINTER(XPoint), c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2363
+# /usr/include/X11/Xlib.h:2368
 XDrawPoint = _lib.XDrawPoint
 XDrawPoint.restype = c_int
 XDrawPoint.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2371
+# /usr/include/X11/Xlib.h:2376
 XDrawPoints = _lib.XDrawPoints
 XDrawPoints.restype = c_int
 XDrawPoints.argtypes = [POINTER(Display), Drawable, GC, POINTER(XPoint), c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2380
+# /usr/include/X11/Xlib.h:2385
 XDrawRectangle = _lib.XDrawRectangle
 XDrawRectangle.restype = c_int
 XDrawRectangle.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:2390
+# /usr/include/X11/Xlib.h:2395
 XDrawRectangles = _lib.XDrawRectangles
 XDrawRectangles.restype = c_int
 XDrawRectangles.argtypes = [POINTER(Display), Drawable, GC, POINTER(XRectangle), c_int]
 
-# /usr/include/X11/Xlib.h:2398
+# /usr/include/X11/Xlib.h:2403
 XDrawSegments = _lib.XDrawSegments
 XDrawSegments.restype = c_int
 XDrawSegments.argtypes = [POINTER(Display), Drawable, GC, POINTER(XSegment), c_int]
 
-# /usr/include/X11/Xlib.h:2406
+# /usr/include/X11/Xlib.h:2411
 XDrawString = _lib.XDrawString
 XDrawString.restype = c_int
 XDrawString.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:2416
+# /usr/include/X11/Xlib.h:2421
 XDrawString16 = _lib.XDrawString16
 XDrawString16.restype = c_int
 XDrawString16.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XChar2b), c_int]
 
-# /usr/include/X11/Xlib.h:2426
+# /usr/include/X11/Xlib.h:2431
 XDrawText = _lib.XDrawText
 XDrawText.restype = c_int
 XDrawText.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XTextItem), c_int]
 
-# /usr/include/X11/Xlib.h:2436
+# /usr/include/X11/Xlib.h:2441
 XDrawText16 = _lib.XDrawText16
 XDrawText16.restype = c_int
 XDrawText16.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XTextItem16), c_int]
 
-# /usr/include/X11/Xlib.h:2446
+# /usr/include/X11/Xlib.h:2451
 XEnableAccessControl = _lib.XEnableAccessControl
 XEnableAccessControl.restype = c_int
 XEnableAccessControl.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2450
+# /usr/include/X11/Xlib.h:2455
 XEventsQueued = _lib.XEventsQueued
 XEventsQueued.restype = c_int
 XEventsQueued.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2455
+# /usr/include/X11/Xlib.h:2460
 XFetchName = _lib.XFetchName
 XFetchName.restype = c_int
 XFetchName.argtypes = [POINTER(Display), Window, POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:2461
+# /usr/include/X11/Xlib.h:2466
 XFillArc = _lib.XFillArc
 XFillArc.restype = c_int
 XFillArc.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_uint, c_uint, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2473
+# /usr/include/X11/Xlib.h:2478
 XFillArcs = _lib.XFillArcs
 XFillArcs.restype = c_int
 XFillArcs.argtypes = [POINTER(Display), Drawable, GC, POINTER(XArc), c_int]
 
-# /usr/include/X11/Xlib.h:2481
+# /usr/include/X11/Xlib.h:2486
 XFillPolygon = _lib.XFillPolygon
 XFillPolygon.restype = c_int
 XFillPolygon.argtypes = [POINTER(Display), Drawable, GC, POINTER(XPoint), c_int, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2491
+# /usr/include/X11/Xlib.h:2496
 XFillRectangle = _lib.XFillRectangle
 XFillRectangle.restype = c_int
 XFillRectangle.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:2501
+# /usr/include/X11/Xlib.h:2506
 XFillRectangles = _lib.XFillRectangles
 XFillRectangles.restype = c_int
 XFillRectangles.argtypes = [POINTER(Display), Drawable, GC, POINTER(XRectangle), c_int]
 
-# /usr/include/X11/Xlib.h:2509
+# /usr/include/X11/Xlib.h:2514
 XFlush = _lib.XFlush
 XFlush.restype = c_int
 XFlush.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2513
+# /usr/include/X11/Xlib.h:2518
 XForceScreenSaver = _lib.XForceScreenSaver
 XForceScreenSaver.restype = c_int
 XForceScreenSaver.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:2518
+# /usr/include/X11/Xlib.h:2523
 XFree = _lib.XFree
 XFree.restype = c_int
 XFree.argtypes = [POINTER(None)]
 
-# /usr/include/X11/Xlib.h:2522
+# /usr/include/X11/Xlib.h:2527
 XFreeColormap = _lib.XFreeColormap
 XFreeColormap.restype = c_int
 XFreeColormap.argtypes = [POINTER(Display), Colormap]
 
-# /usr/include/X11/Xlib.h:2527
+# /usr/include/X11/Xlib.h:2532
 XFreeColors = _lib.XFreeColors
 XFreeColors.restype = c_int
 XFreeColors.argtypes = [POINTER(Display), Colormap, POINTER(c_ulong), c_int, c_ulong]
 
-# /usr/include/X11/Xlib.h:2535
+# /usr/include/X11/Xlib.h:2540
 XFreeCursor = _lib.XFreeCursor
 XFreeCursor.restype = c_int
 XFreeCursor.argtypes = [POINTER(Display), Cursor]
 
-# /usr/include/X11/Xlib.h:2540
+# /usr/include/X11/Xlib.h:2545
 XFreeExtensionList = _lib.XFreeExtensionList
 XFreeExtensionList.restype = c_int
 XFreeExtensionList.argtypes = [POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:2544
+# /usr/include/X11/Xlib.h:2549
 XFreeFont = _lib.XFreeFont
 XFreeFont.restype = c_int
 XFreeFont.argtypes = [POINTER(Display), POINTER(XFontStruct)]
 
-# /usr/include/X11/Xlib.h:2549
+# /usr/include/X11/Xlib.h:2554
 XFreeFontInfo = _lib.XFreeFontInfo
 XFreeFontInfo.restype = c_int
 XFreeFontInfo.argtypes = [POINTER(c_char_p), POINTER(XFontStruct), c_int]
 
-# /usr/include/X11/Xlib.h:2555
+# /usr/include/X11/Xlib.h:2560
 XFreeFontNames = _lib.XFreeFontNames
 XFreeFontNames.restype = c_int
 XFreeFontNames.argtypes = [POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:2559
+# /usr/include/X11/Xlib.h:2564
 XFreeFontPath = _lib.XFreeFontPath
 XFreeFontPath.restype = c_int
 XFreeFontPath.argtypes = [POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:2563
+# /usr/include/X11/Xlib.h:2568
 XFreeGC = _lib.XFreeGC
 XFreeGC.restype = c_int
 XFreeGC.argtypes = [POINTER(Display), GC]
 
-# /usr/include/X11/Xlib.h:2568
+# /usr/include/X11/Xlib.h:2573
 XFreeModifiermap = _lib.XFreeModifiermap
 XFreeModifiermap.restype = c_int
 XFreeModifiermap.argtypes = [POINTER(XModifierKeymap)]
 
-# /usr/include/X11/Xlib.h:2572
+# /usr/include/X11/Xlib.h:2577
 XFreePixmap = _lib.XFreePixmap
 XFreePixmap.restype = c_int
 XFreePixmap.argtypes = [POINTER(Display), Pixmap]
 
-# /usr/include/X11/Xlib.h:2577
+# /usr/include/X11/Xlib.h:2582
 XGeometry = _lib.XGeometry
 XGeometry.restype = c_int
 XGeometry.argtypes = [POINTER(Display), c_int, c_char_p, c_char_p, c_uint, c_uint, c_uint, c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:2593
+# /usr/include/X11/Xlib.h:2598
 XGetErrorDatabaseText = _lib.XGetErrorDatabaseText
 XGetErrorDatabaseText.restype = c_int
 XGetErrorDatabaseText.argtypes = [POINTER(Display), c_char_p, c_char_p, c_char_p, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:2602
+# /usr/include/X11/Xlib.h:2607
 XGetErrorText = _lib.XGetErrorText
 XGetErrorText.restype = c_int
 XGetErrorText.argtypes = [POINTER(Display), c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:2609
+# /usr/include/X11/Xlib.h:2614
 XGetFontProperty = _lib.XGetFontProperty
 XGetFontProperty.restype = c_int
 XGetFontProperty.argtypes = [POINTER(XFontStruct), Atom, POINTER(c_ulong)]
 
-# /usr/include/X11/Xlib.h:2615
+# /usr/include/X11/Xlib.h:2620
 XGetGCValues = _lib.XGetGCValues
 XGetGCValues.restype = c_int
 XGetGCValues.argtypes = [POINTER(Display), GC, c_ulong, POINTER(XGCValues)]
 
-# /usr/include/X11/Xlib.h:2622
+# /usr/include/X11/Xlib.h:2627
 XGetGeometry = _lib.XGetGeometry
 XGetGeometry.restype = c_int
 XGetGeometry.argtypes = [POINTER(Display), Drawable, POINTER(Window), POINTER(c_int), POINTER(c_int), POINTER(c_uint), POINTER(c_uint), POINTER(c_uint), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2634
+# /usr/include/X11/Xlib.h:2639
 XGetIconName = _lib.XGetIconName
 XGetIconName.restype = c_int
 XGetIconName.argtypes = [POINTER(Display), Window, POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:2640
+# /usr/include/X11/Xlib.h:2645
 XGetInputFocus = _lib.XGetInputFocus
 XGetInputFocus.restype = c_int
 XGetInputFocus.argtypes = [POINTER(Display), POINTER(Window), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:2646
+# /usr/include/X11/Xlib.h:2651
 XGetKeyboardControl = _lib.XGetKeyboardControl
 XGetKeyboardControl.restype = c_int
 XGetKeyboardControl.argtypes = [POINTER(Display), POINTER(XKeyboardState)]
 
-# /usr/include/X11/Xlib.h:2651
+# /usr/include/X11/Xlib.h:2656
 XGetPointerControl = _lib.XGetPointerControl
 XGetPointerControl.restype = c_int
 XGetPointerControl.argtypes = [POINTER(Display), POINTER(c_int), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:2658
+# /usr/include/X11/Xlib.h:2663
 XGetPointerMapping = _lib.XGetPointerMapping
 XGetPointerMapping.restype = c_int
 XGetPointerMapping.argtypes = [POINTER(Display), POINTER(c_ubyte), c_int]
 
-# /usr/include/X11/Xlib.h:2664
+# /usr/include/X11/Xlib.h:2669
 XGetScreenSaver = _lib.XGetScreenSaver
 XGetScreenSaver.restype = c_int
 XGetScreenSaver.argtypes = [POINTER(Display), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:2672
+# /usr/include/X11/Xlib.h:2677
 XGetTransientForHint = _lib.XGetTransientForHint
 XGetTransientForHint.restype = c_int
 XGetTransientForHint.argtypes = [POINTER(Display), Window, POINTER(Window)]
 
-# /usr/include/X11/Xlib.h:2678
+# /usr/include/X11/Xlib.h:2683
 XGetWindowProperty = _lib.XGetWindowProperty
 XGetWindowProperty.restype = c_int
 XGetWindowProperty.argtypes = [POINTER(Display), Window, Atom, c_long, c_long, c_int, Atom, POINTER(Atom), POINTER(c_int), POINTER(c_ulong), POINTER(c_ulong), POINTER(POINTER(c_ubyte))]
 
-# /usr/include/X11/Xlib.h:2693
+# /usr/include/X11/Xlib.h:2698
 XGetWindowAttributes = _lib.XGetWindowAttributes
 XGetWindowAttributes.restype = c_int
 XGetWindowAttributes.argtypes = [POINTER(Display), Window, POINTER(XWindowAttributes)]
 
-# /usr/include/X11/Xlib.h:2699
+# /usr/include/X11/Xlib.h:2704
 XGrabButton = _lib.XGrabButton
 XGrabButton.restype = c_int
 XGrabButton.argtypes = [POINTER(Display), c_uint, c_uint, Window, c_int, c_uint, c_int, c_int, Window, Cursor]
 
-# /usr/include/X11/Xlib.h:2712
+# /usr/include/X11/Xlib.h:2717
 XGrabKey = _lib.XGrabKey
 XGrabKey.restype = c_int
 XGrabKey.argtypes = [POINTER(Display), c_int, c_uint, Window, c_int, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2722
+# /usr/include/X11/Xlib.h:2727
 XGrabKeyboard = _lib.XGrabKeyboard
 XGrabKeyboard.restype = c_int
 XGrabKeyboard.argtypes = [POINTER(Display), Window, c_int, c_int, c_int, Time]
 
-# /usr/include/X11/Xlib.h:2731
+# /usr/include/X11/Xlib.h:2736
 XGrabPointer = _lib.XGrabPointer
 XGrabPointer.restype = c_int
 XGrabPointer.argtypes = [POINTER(Display), Window, c_int, c_uint, c_int, c_int, Window, Cursor, Time]
 
-# /usr/include/X11/Xlib.h:2743
+# /usr/include/X11/Xlib.h:2748
 XGrabServer = _lib.XGrabServer
 XGrabServer.restype = c_int
 XGrabServer.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2747
+# /usr/include/X11/Xlib.h:2752
 XHeightMMOfScreen = _lib.XHeightMMOfScreen
 XHeightMMOfScreen.restype = c_int
 XHeightMMOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2751
+# /usr/include/X11/Xlib.h:2756
 XHeightOfScreen = _lib.XHeightOfScreen
 XHeightOfScreen.restype = c_int
 XHeightOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2755
+# /usr/include/X11/Xlib.h:2760
 XIfEvent = _lib.XIfEvent
 XIfEvent.restype = c_int
 XIfEvent.argtypes = [POINTER(Display), POINTER(XEvent), CFUNCTYPE(c_int, POINTER(Display), POINTER(XEvent), XPointer), XPointer]
 
-# /usr/include/X11/Xlib.h:2766
+# /usr/include/X11/Xlib.h:2771
 XImageByteOrder = _lib.XImageByteOrder
 XImageByteOrder.restype = c_int
 XImageByteOrder.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2770
+# /usr/include/X11/Xlib.h:2775
 XInstallColormap = _lib.XInstallColormap
 XInstallColormap.restype = c_int
 XInstallColormap.argtypes = [POINTER(Display), Colormap]
 
-# /usr/include/X11/Xlib.h:2775
+# /usr/include/X11/Xlib.h:2780
 XKeysymToKeycode = _lib.XKeysymToKeycode
 XKeysymToKeycode.restype = KeyCode
 XKeysymToKeycode.argtypes = [POINTER(Display), KeySym]
 
-# /usr/include/X11/Xlib.h:2780
+# /usr/include/X11/Xlib.h:2785
 XKillClient = _lib.XKillClient
 XKillClient.restype = c_int
 XKillClient.argtypes = [POINTER(Display), XID]
 
-# /usr/include/X11/Xlib.h:2785
+# /usr/include/X11/Xlib.h:2790
 XLookupColor = _lib.XLookupColor
 XLookupColor.restype = c_int
 XLookupColor.argtypes = [POINTER(Display), Colormap, c_char_p, POINTER(XColor), POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:2793
+# /usr/include/X11/Xlib.h:2798
 XLowerWindow = _lib.XLowerWindow
 XLowerWindow.restype = c_int
 XLowerWindow.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2798
+# /usr/include/X11/Xlib.h:2803
 XMapRaised = _lib.XMapRaised
 XMapRaised.restype = c_int
 XMapRaised.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2803
+# /usr/include/X11/Xlib.h:2808
 XMapSubwindows = _lib.XMapSubwindows
 XMapSubwindows.restype = c_int
 XMapSubwindows.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2808
+# /usr/include/X11/Xlib.h:2813
 XMapWindow = _lib.XMapWindow
 XMapWindow.restype = c_int
 XMapWindow.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:2813
+# /usr/include/X11/Xlib.h:2818
 XMaskEvent = _lib.XMaskEvent
 XMaskEvent.restype = c_int
 XMaskEvent.argtypes = [POINTER(Display), c_long, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2819
+# /usr/include/X11/Xlib.h:2824
 XMaxCmapsOfScreen = _lib.XMaxCmapsOfScreen
 XMaxCmapsOfScreen.restype = c_int
 XMaxCmapsOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2823
+# /usr/include/X11/Xlib.h:2828
 XMinCmapsOfScreen = _lib.XMinCmapsOfScreen
 XMinCmapsOfScreen.restype = c_int
 XMinCmapsOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2827
+# /usr/include/X11/Xlib.h:2832
 XMoveResizeWindow = _lib.XMoveResizeWindow
 XMoveResizeWindow.restype = c_int
 XMoveResizeWindow.argtypes = [POINTER(Display), Window, c_int, c_int, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:2836
+# /usr/include/X11/Xlib.h:2841
 XMoveWindow = _lib.XMoveWindow
 XMoveWindow.restype = c_int
 XMoveWindow.argtypes = [POINTER(Display), Window, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:2843
+# /usr/include/X11/Xlib.h:2848
 XNextEvent = _lib.XNextEvent
 XNextEvent.restype = c_int
 XNextEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2848
+# /usr/include/X11/Xlib.h:2853
 XNoOp = _lib.XNoOp
 XNoOp.restype = c_int
 XNoOp.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2852
+# /usr/include/X11/Xlib.h:2857
 XParseColor = _lib.XParseColor
 XParseColor.restype = c_int
 XParseColor.argtypes = [POINTER(Display), Colormap, c_char_p, POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:2859
+# /usr/include/X11/Xlib.h:2864
 XParseGeometry = _lib.XParseGeometry
 XParseGeometry.restype = c_int
 XParseGeometry.argtypes = [c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_uint), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2867
+# /usr/include/X11/Xlib.h:2872
 XPeekEvent = _lib.XPeekEvent
 XPeekEvent.restype = c_int
 XPeekEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2872
+# /usr/include/X11/Xlib.h:2877
 XPeekIfEvent = _lib.XPeekIfEvent
 XPeekIfEvent.restype = c_int
 XPeekIfEvent.argtypes = [POINTER(Display), POINTER(XEvent), CFUNCTYPE(c_int, POINTER(Display), POINTER(XEvent), XPointer), XPointer]
 
-# /usr/include/X11/Xlib.h:2883
+# /usr/include/X11/Xlib.h:2888
 XPending = _lib.XPending
 XPending.restype = c_int
 XPending.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2887
+# /usr/include/X11/Xlib.h:2892
 XPlanesOfScreen = _lib.XPlanesOfScreen
 XPlanesOfScreen.restype = c_int
 XPlanesOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:2891
+# /usr/include/X11/Xlib.h:2896
 XProtocolRevision = _lib.XProtocolRevision
 XProtocolRevision.restype = c_int
 XProtocolRevision.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2895
+# /usr/include/X11/Xlib.h:2900
 XProtocolVersion = _lib.XProtocolVersion
 XProtocolVersion.restype = c_int
 XProtocolVersion.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2900
+# /usr/include/X11/Xlib.h:2905
 XPutBackEvent = _lib.XPutBackEvent
 XPutBackEvent.restype = c_int
 XPutBackEvent.argtypes = [POINTER(Display), POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:2905
+# /usr/include/X11/Xlib.h:2910
 XPutImage = _lib.XPutImage
 XPutImage.restype = c_int
 XPutImage.argtypes = [POINTER(Display), Drawable, GC, POINTER(XImage), c_int, c_int, c_int, c_int, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:2918
+# /usr/include/X11/Xlib.h:2923
 XQLength = _lib.XQLength
 XQLength.restype = c_int
 XQLength.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:2922
+# /usr/include/X11/Xlib.h:2927
 XQueryBestCursor = _lib.XQueryBestCursor
 XQueryBestCursor.restype = c_int
 XQueryBestCursor.argtypes = [POINTER(Display), Drawable, c_uint, c_uint, POINTER(c_uint), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2931
+# /usr/include/X11/Xlib.h:2936
 XQueryBestSize = _lib.XQueryBestSize
 XQueryBestSize.restype = c_int
 XQueryBestSize.argtypes = [POINTER(Display), c_int, Drawable, c_uint, c_uint, POINTER(c_uint), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2941
+# /usr/include/X11/Xlib.h:2946
 XQueryBestStipple = _lib.XQueryBestStipple
 XQueryBestStipple.restype = c_int
 XQueryBestStipple.argtypes = [POINTER(Display), Drawable, c_uint, c_uint, POINTER(c_uint), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2950
+# /usr/include/X11/Xlib.h:2955
 XQueryBestTile = _lib.XQueryBestTile
 XQueryBestTile.restype = c_int
 XQueryBestTile.argtypes = [POINTER(Display), Drawable, c_uint, c_uint, POINTER(c_uint), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2959
+# /usr/include/X11/Xlib.h:2964
 XQueryColor = _lib.XQueryColor
 XQueryColor.restype = c_int
 XQueryColor.argtypes = [POINTER(Display), Colormap, POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:2965
+# /usr/include/X11/Xlib.h:2970
 XQueryColors = _lib.XQueryColors
 XQueryColors.restype = c_int
 XQueryColors.argtypes = [POINTER(Display), Colormap, POINTER(XColor), c_int]
 
-# /usr/include/X11/Xlib.h:2972
+# /usr/include/X11/Xlib.h:2977
 XQueryExtension = _lib.XQueryExtension
 XQueryExtension.restype = c_int
 XQueryExtension.argtypes = [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:2980
+# /usr/include/X11/Xlib.h:2985
 XQueryKeymap = _lib.XQueryKeymap
 XQueryKeymap.restype = c_int
 XQueryKeymap.argtypes = [POINTER(Display), c_char * 32]
 
-# /usr/include/X11/Xlib.h:2985
+# /usr/include/X11/Xlib.h:2990
 XQueryPointer = _lib.XQueryPointer
 XQueryPointer.restype = c_int
 XQueryPointer.argtypes = [POINTER(Display), Window, POINTER(Window), POINTER(Window), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:2997
+# /usr/include/X11/Xlib.h:3002
 XQueryTextExtents = _lib.XQueryTextExtents
 XQueryTextExtents.restype = c_int
 XQueryTextExtents.argtypes = [POINTER(Display), XID, c_char_p, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(XCharStruct)]
 
-# /usr/include/X11/Xlib.h:3008
+# /usr/include/X11/Xlib.h:3013
 XQueryTextExtents16 = _lib.XQueryTextExtents16
 XQueryTextExtents16.restype = c_int
 XQueryTextExtents16.argtypes = [POINTER(Display), XID, POINTER(XChar2b), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(XCharStruct)]
 
-# /usr/include/X11/Xlib.h:3019
+# /usr/include/X11/Xlib.h:3024
 XQueryTree = _lib.XQueryTree
 XQueryTree.restype = c_int
 XQueryTree.argtypes = [POINTER(Display), Window, POINTER(Window), POINTER(Window), POINTER(POINTER(Window)), POINTER(c_uint)]
 
-# /usr/include/X11/Xlib.h:3028
+# /usr/include/X11/Xlib.h:3033
 XRaiseWindow = _lib.XRaiseWindow
 XRaiseWindow.restype = c_int
 XRaiseWindow.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:3033
+# /usr/include/X11/Xlib.h:3038
 XReadBitmapFile = _lib.XReadBitmapFile
 XReadBitmapFile.restype = c_int
 XReadBitmapFile.argtypes = [POINTER(Display), Drawable, c_char_p, POINTER(c_uint), POINTER(c_uint), POINTER(Pixmap), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:3044
+# /usr/include/X11/Xlib.h:3049
 XReadBitmapFileData = _lib.XReadBitmapFileData
 XReadBitmapFileData.restype = c_int
 XReadBitmapFileData.argtypes = [c_char_p, POINTER(c_uint), POINTER(c_uint), POINTER(POINTER(c_ubyte)), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:3053
+# /usr/include/X11/Xlib.h:3058
 XRebindKeysym = _lib.XRebindKeysym
 XRebindKeysym.restype = c_int
 XRebindKeysym.argtypes = [POINTER(Display), KeySym, POINTER(KeySym), c_int, POINTER(c_ubyte), c_int]
 
-# /usr/include/X11/Xlib.h:3062
+# /usr/include/X11/Xlib.h:3067
 XRecolorCursor = _lib.XRecolorCursor
 XRecolorCursor.restype = c_int
 XRecolorCursor.argtypes = [POINTER(Display), Cursor, POINTER(XColor), POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:3069
+# /usr/include/X11/Xlib.h:3074
 XRefreshKeyboardMapping = _lib.XRefreshKeyboardMapping
 XRefreshKeyboardMapping.restype = c_int
 XRefreshKeyboardMapping.argtypes = [POINTER(XMappingEvent)]
 
-# /usr/include/X11/Xlib.h:3073
+# /usr/include/X11/Xlib.h:3078
 XRemoveFromSaveSet = _lib.XRemoveFromSaveSet
 XRemoveFromSaveSet.restype = c_int
 XRemoveFromSaveSet.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:3078
+# /usr/include/X11/Xlib.h:3083
 XRemoveHost = _lib.XRemoveHost
 XRemoveHost.restype = c_int
 XRemoveHost.argtypes = [POINTER(Display), POINTER(XHostAddress)]
 
-# /usr/include/X11/Xlib.h:3083
+# /usr/include/X11/Xlib.h:3088
 XRemoveHosts = _lib.XRemoveHosts
 XRemoveHosts.restype = c_int
 XRemoveHosts.argtypes = [POINTER(Display), POINTER(XHostAddress), c_int]
 
-# /usr/include/X11/Xlib.h:3089
+# /usr/include/X11/Xlib.h:3094
 XReparentWindow = _lib.XReparentWindow
 XReparentWindow.restype = c_int
 XReparentWindow.argtypes = [POINTER(Display), Window, Window, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3097
+# /usr/include/X11/Xlib.h:3102
 XResetScreenSaver = _lib.XResetScreenSaver
 XResetScreenSaver.restype = c_int
 XResetScreenSaver.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:3101
+# /usr/include/X11/Xlib.h:3106
 XResizeWindow = _lib.XResizeWindow
 XResizeWindow.restype = c_int
 XResizeWindow.argtypes = [POINTER(Display), Window, c_uint, c_uint]
 
-# /usr/include/X11/Xlib.h:3108
+# /usr/include/X11/Xlib.h:3113
 XRestackWindows = _lib.XRestackWindows
 XRestackWindows.restype = c_int
 XRestackWindows.argtypes = [POINTER(Display), POINTER(Window), c_int]
 
-# /usr/include/X11/Xlib.h:3114
+# /usr/include/X11/Xlib.h:3119
 XRotateBuffers = _lib.XRotateBuffers
 XRotateBuffers.restype = c_int
 XRotateBuffers.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:3119
+# /usr/include/X11/Xlib.h:3124
 XRotateWindowProperties = _lib.XRotateWindowProperties
 XRotateWindowProperties.restype = c_int
 XRotateWindowProperties.argtypes = [POINTER(Display), Window, POINTER(Atom), c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3127
+# /usr/include/X11/Xlib.h:3132
 XScreenCount = _lib.XScreenCount
 XScreenCount.restype = c_int
 XScreenCount.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:3131
+# /usr/include/X11/Xlib.h:3136
 XSelectInput = _lib.XSelectInput
 XSelectInput.restype = c_int
 XSelectInput.argtypes = [POINTER(Display), Window, c_long]
 
-# /usr/include/X11/Xlib.h:3137
+# /usr/include/X11/Xlib.h:3142
 XSendEvent = _lib.XSendEvent
 XSendEvent.restype = c_int
 XSendEvent.argtypes = [POINTER(Display), Window, c_int, c_long, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:3145
+# /usr/include/X11/Xlib.h:3150
 XSetAccessControl = _lib.XSetAccessControl
 XSetAccessControl.restype = c_int
 XSetAccessControl.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:3150
+# /usr/include/X11/Xlib.h:3155
 XSetArcMode = _lib.XSetArcMode
 XSetArcMode.restype = c_int
 XSetArcMode.argtypes = [POINTER(Display), GC, c_int]
 
-# /usr/include/X11/Xlib.h:3156
+# /usr/include/X11/Xlib.h:3161
 XSetBackground = _lib.XSetBackground
 XSetBackground.restype = c_int
 XSetBackground.argtypes = [POINTER(Display), GC, c_ulong]
 
-# /usr/include/X11/Xlib.h:3162
+# /usr/include/X11/Xlib.h:3167
 XSetClipMask = _lib.XSetClipMask
 XSetClipMask.restype = c_int
 XSetClipMask.argtypes = [POINTER(Display), GC, Pixmap]
 
-# /usr/include/X11/Xlib.h:3168
+# /usr/include/X11/Xlib.h:3173
 XSetClipOrigin = _lib.XSetClipOrigin
 XSetClipOrigin.restype = c_int
 XSetClipOrigin.argtypes = [POINTER(Display), GC, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3175
+# /usr/include/X11/Xlib.h:3180
 XSetClipRectangles = _lib.XSetClipRectangles
 XSetClipRectangles.restype = c_int
 XSetClipRectangles.argtypes = [POINTER(Display), GC, c_int, c_int, POINTER(XRectangle), c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3185
+# /usr/include/X11/Xlib.h:3190
 XSetCloseDownMode = _lib.XSetCloseDownMode
 XSetCloseDownMode.restype = c_int
 XSetCloseDownMode.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:3190
+# /usr/include/X11/Xlib.h:3195
 XSetCommand = _lib.XSetCommand
 XSetCommand.restype = c_int
 XSetCommand.argtypes = [POINTER(Display), Window, POINTER(c_char_p), c_int]
 
-# /usr/include/X11/Xlib.h:3197
+# /usr/include/X11/Xlib.h:3202
 XSetDashes = _lib.XSetDashes
 XSetDashes.restype = c_int
 XSetDashes.argtypes = [POINTER(Display), GC, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3205
+# /usr/include/X11/Xlib.h:3210
 XSetFillRule = _lib.XSetFillRule
 XSetFillRule.restype = c_int
 XSetFillRule.argtypes = [POINTER(Display), GC, c_int]
 
-# /usr/include/X11/Xlib.h:3211
+# /usr/include/X11/Xlib.h:3216
 XSetFillStyle = _lib.XSetFillStyle
 XSetFillStyle.restype = c_int
 XSetFillStyle.argtypes = [POINTER(Display), GC, c_int]
 
-# /usr/include/X11/Xlib.h:3217
+# /usr/include/X11/Xlib.h:3222
 XSetFont = _lib.XSetFont
 XSetFont.restype = c_int
 XSetFont.argtypes = [POINTER(Display), GC, Font]
 
-# /usr/include/X11/Xlib.h:3223
+# /usr/include/X11/Xlib.h:3228
 XSetFontPath = _lib.XSetFontPath
 XSetFontPath.restype = c_int
 XSetFontPath.argtypes = [POINTER(Display), POINTER(c_char_p), c_int]
 
-# /usr/include/X11/Xlib.h:3229
+# /usr/include/X11/Xlib.h:3234
 XSetForeground = _lib.XSetForeground
 XSetForeground.restype = c_int
 XSetForeground.argtypes = [POINTER(Display), GC, c_ulong]
 
-# /usr/include/X11/Xlib.h:3235
+# /usr/include/X11/Xlib.h:3240
 XSetFunction = _lib.XSetFunction
 XSetFunction.restype = c_int
 XSetFunction.argtypes = [POINTER(Display), GC, c_int]
 
-# /usr/include/X11/Xlib.h:3241
+# /usr/include/X11/Xlib.h:3246
 XSetGraphicsExposures = _lib.XSetGraphicsExposures
 XSetGraphicsExposures.restype = c_int
 XSetGraphicsExposures.argtypes = [POINTER(Display), GC, c_int]
 
-# /usr/include/X11/Xlib.h:3247
+# /usr/include/X11/Xlib.h:3252
 XSetIconName = _lib.XSetIconName
 XSetIconName.restype = c_int
 XSetIconName.argtypes = [POINTER(Display), Window, c_char_p]
 
-# /usr/include/X11/Xlib.h:3253
+# /usr/include/X11/Xlib.h:3258
 XSetInputFocus = _lib.XSetInputFocus
 XSetInputFocus.restype = c_int
 XSetInputFocus.argtypes = [POINTER(Display), Window, c_int, Time]
 
-# /usr/include/X11/Xlib.h:3260
+# /usr/include/X11/Xlib.h:3265
 XSetLineAttributes = _lib.XSetLineAttributes
 XSetLineAttributes.restype = c_int
 XSetLineAttributes.argtypes = [POINTER(Display), GC, c_uint, c_int, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3269
+# /usr/include/X11/Xlib.h:3274
 XSetModifierMapping = _lib.XSetModifierMapping
 XSetModifierMapping.restype = c_int
 XSetModifierMapping.argtypes = [POINTER(Display), POINTER(XModifierKeymap)]
 
-# /usr/include/X11/Xlib.h:3274
+# /usr/include/X11/Xlib.h:3279
 XSetPlaneMask = _lib.XSetPlaneMask
 XSetPlaneMask.restype = c_int
 XSetPlaneMask.argtypes = [POINTER(Display), GC, c_ulong]
 
-# /usr/include/X11/Xlib.h:3280
+# /usr/include/X11/Xlib.h:3285
 XSetPointerMapping = _lib.XSetPointerMapping
 XSetPointerMapping.restype = c_int
 XSetPointerMapping.argtypes = [POINTER(Display), POINTER(c_ubyte), c_int]
 
-# /usr/include/X11/Xlib.h:3286
+# /usr/include/X11/Xlib.h:3291
 XSetScreenSaver = _lib.XSetScreenSaver
 XSetScreenSaver.restype = c_int
 XSetScreenSaver.argtypes = [POINTER(Display), c_int, c_int, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3294
+# /usr/include/X11/Xlib.h:3299
 XSetSelectionOwner = _lib.XSetSelectionOwner
 XSetSelectionOwner.restype = c_int
 XSetSelectionOwner.argtypes = [POINTER(Display), Atom, Window, Time]
 
-# /usr/include/X11/Xlib.h:3301
+# /usr/include/X11/Xlib.h:3306
 XSetState = _lib.XSetState
 XSetState.restype = c_int
 XSetState.argtypes = [POINTER(Display), GC, c_ulong, c_ulong, c_int, c_ulong]
 
-# /usr/include/X11/Xlib.h:3310
+# /usr/include/X11/Xlib.h:3315
 XSetStipple = _lib.XSetStipple
 XSetStipple.restype = c_int
 XSetStipple.argtypes = [POINTER(Display), GC, Pixmap]
 
-# /usr/include/X11/Xlib.h:3316
+# /usr/include/X11/Xlib.h:3321
 XSetSubwindowMode = _lib.XSetSubwindowMode
 XSetSubwindowMode.restype = c_int
 XSetSubwindowMode.argtypes = [POINTER(Display), GC, c_int]
 
-# /usr/include/X11/Xlib.h:3322
+# /usr/include/X11/Xlib.h:3327
 XSetTSOrigin = _lib.XSetTSOrigin
 XSetTSOrigin.restype = c_int
 XSetTSOrigin.argtypes = [POINTER(Display), GC, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3329
+# /usr/include/X11/Xlib.h:3334
 XSetTile = _lib.XSetTile
 XSetTile.restype = c_int
 XSetTile.argtypes = [POINTER(Display), GC, Pixmap]
 
-# /usr/include/X11/Xlib.h:3335
+# /usr/include/X11/Xlib.h:3340
 XSetWindowBackground = _lib.XSetWindowBackground
 XSetWindowBackground.restype = c_int
 XSetWindowBackground.argtypes = [POINTER(Display), Window, c_ulong]
 
-# /usr/include/X11/Xlib.h:3341
+# /usr/include/X11/Xlib.h:3346
 XSetWindowBackgroundPixmap = _lib.XSetWindowBackgroundPixmap
 XSetWindowBackgroundPixmap.restype = c_int
 XSetWindowBackgroundPixmap.argtypes = [POINTER(Display), Window, Pixmap]
 
-# /usr/include/X11/Xlib.h:3347
+# /usr/include/X11/Xlib.h:3352
 XSetWindowBorder = _lib.XSetWindowBorder
 XSetWindowBorder.restype = c_int
 XSetWindowBorder.argtypes = [POINTER(Display), Window, c_ulong]
 
-# /usr/include/X11/Xlib.h:3353
+# /usr/include/X11/Xlib.h:3358
 XSetWindowBorderPixmap = _lib.XSetWindowBorderPixmap
 XSetWindowBorderPixmap.restype = c_int
 XSetWindowBorderPixmap.argtypes = [POINTER(Display), Window, Pixmap]
 
-# /usr/include/X11/Xlib.h:3359
+# /usr/include/X11/Xlib.h:3364
 XSetWindowBorderWidth = _lib.XSetWindowBorderWidth
 XSetWindowBorderWidth.restype = c_int
 XSetWindowBorderWidth.argtypes = [POINTER(Display), Window, c_uint]
 
-# /usr/include/X11/Xlib.h:3365
+# /usr/include/X11/Xlib.h:3370
 XSetWindowColormap = _lib.XSetWindowColormap
 XSetWindowColormap.restype = c_int
 XSetWindowColormap.argtypes = [POINTER(Display), Window, Colormap]
 
-# /usr/include/X11/Xlib.h:3371
+# /usr/include/X11/Xlib.h:3376
 XStoreBuffer = _lib.XStoreBuffer
 XStoreBuffer.restype = c_int
 XStoreBuffer.argtypes = [POINTER(Display), c_char_p, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3378
+# /usr/include/X11/Xlib.h:3383
 XStoreBytes = _lib.XStoreBytes
 XStoreBytes.restype = c_int
 XStoreBytes.argtypes = [POINTER(Display), c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3384
+# /usr/include/X11/Xlib.h:3389
 XStoreColor = _lib.XStoreColor
 XStoreColor.restype = c_int
 XStoreColor.argtypes = [POINTER(Display), Colormap, POINTER(XColor)]
 
-# /usr/include/X11/Xlib.h:3390
+# /usr/include/X11/Xlib.h:3395
 XStoreColors = _lib.XStoreColors
 XStoreColors.restype = c_int
 XStoreColors.argtypes = [POINTER(Display), Colormap, POINTER(XColor), c_int]
 
-# /usr/include/X11/Xlib.h:3397
+# /usr/include/X11/Xlib.h:3402
 XStoreName = _lib.XStoreName
 XStoreName.restype = c_int
 XStoreName.argtypes = [POINTER(Display), Window, c_char_p]
 
-# /usr/include/X11/Xlib.h:3403
+# /usr/include/X11/Xlib.h:3408
 XStoreNamedColor = _lib.XStoreNamedColor
 XStoreNamedColor.restype = c_int
 XStoreNamedColor.argtypes = [POINTER(Display), Colormap, c_char_p, c_ulong, c_int]
 
-# /usr/include/X11/Xlib.h:3411
+# /usr/include/X11/Xlib.h:3416
 XSync = _lib.XSync
 XSync.restype = c_int
 XSync.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:3416
+# /usr/include/X11/Xlib.h:3421
 XTextExtents = _lib.XTextExtents
 XTextExtents.restype = c_int
 XTextExtents.argtypes = [POINTER(XFontStruct), c_char_p, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(XCharStruct)]
 
-# /usr/include/X11/Xlib.h:3426
+# /usr/include/X11/Xlib.h:3431
 XTextExtents16 = _lib.XTextExtents16
 XTextExtents16.restype = c_int
 XTextExtents16.argtypes = [POINTER(XFontStruct), POINTER(XChar2b), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(XCharStruct)]
 
-# /usr/include/X11/Xlib.h:3436
+# /usr/include/X11/Xlib.h:3441
 XTextWidth = _lib.XTextWidth
 XTextWidth.restype = c_int
 XTextWidth.argtypes = [POINTER(XFontStruct), c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3442
+# /usr/include/X11/Xlib.h:3447
 XTextWidth16 = _lib.XTextWidth16
 XTextWidth16.restype = c_int
 XTextWidth16.argtypes = [POINTER(XFontStruct), POINTER(XChar2b), c_int]
 
-# /usr/include/X11/Xlib.h:3448
+# /usr/include/X11/Xlib.h:3453
 XTranslateCoordinates = _lib.XTranslateCoordinates
 XTranslateCoordinates.restype = c_int
 XTranslateCoordinates.argtypes = [POINTER(Display), Window, Window, c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(Window)]
 
-# /usr/include/X11/Xlib.h:3459
+# /usr/include/X11/Xlib.h:3464
 XUndefineCursor = _lib.XUndefineCursor
 XUndefineCursor.restype = c_int
 XUndefineCursor.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:3464
+# /usr/include/X11/Xlib.h:3469
 XUngrabButton = _lib.XUngrabButton
 XUngrabButton.restype = c_int
 XUngrabButton.argtypes = [POINTER(Display), c_uint, c_uint, Window]
 
-# /usr/include/X11/Xlib.h:3471
+# /usr/include/X11/Xlib.h:3476
 XUngrabKey = _lib.XUngrabKey
 XUngrabKey.restype = c_int
 XUngrabKey.argtypes = [POINTER(Display), c_int, c_uint, Window]
 
-# /usr/include/X11/Xlib.h:3478
+# /usr/include/X11/Xlib.h:3483
 XUngrabKeyboard = _lib.XUngrabKeyboard
 XUngrabKeyboard.restype = c_int
 XUngrabKeyboard.argtypes = [POINTER(Display), Time]
 
-# /usr/include/X11/Xlib.h:3483
+# /usr/include/X11/Xlib.h:3488
 XUngrabPointer = _lib.XUngrabPointer
 XUngrabPointer.restype = c_int
 XUngrabPointer.argtypes = [POINTER(Display), Time]
 
-# /usr/include/X11/Xlib.h:3488
+# /usr/include/X11/Xlib.h:3493
 XUngrabServer = _lib.XUngrabServer
 XUngrabServer.restype = c_int
 XUngrabServer.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:3492
+# /usr/include/X11/Xlib.h:3497
 XUninstallColormap = _lib.XUninstallColormap
 XUninstallColormap.restype = c_int
 XUninstallColormap.argtypes = [POINTER(Display), Colormap]
 
-# /usr/include/X11/Xlib.h:3497
+# /usr/include/X11/Xlib.h:3502
 XUnloadFont = _lib.XUnloadFont
 XUnloadFont.restype = c_int
 XUnloadFont.argtypes = [POINTER(Display), Font]
 
-# /usr/include/X11/Xlib.h:3502
+# /usr/include/X11/Xlib.h:3507
 XUnmapSubwindows = _lib.XUnmapSubwindows
 XUnmapSubwindows.restype = c_int
 XUnmapSubwindows.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:3507
+# /usr/include/X11/Xlib.h:3512
 XUnmapWindow = _lib.XUnmapWindow
 XUnmapWindow.restype = c_int
 XUnmapWindow.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xlib.h:3512
+# /usr/include/X11/Xlib.h:3517
 XVendorRelease = _lib.XVendorRelease
 XVendorRelease.restype = c_int
 XVendorRelease.argtypes = [POINTER(Display)]
 
-# /usr/include/X11/Xlib.h:3516
+# /usr/include/X11/Xlib.h:3521
 XWarpPointer = _lib.XWarpPointer
 XWarpPointer.restype = c_int
 XWarpPointer.argtypes = [POINTER(Display), Window, Window, c_int, c_int, c_uint, c_uint, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3528
+# /usr/include/X11/Xlib.h:3533
 XWidthMMOfScreen = _lib.XWidthMMOfScreen
 XWidthMMOfScreen.restype = c_int
 XWidthMMOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:3532
+# /usr/include/X11/Xlib.h:3537
 XWidthOfScreen = _lib.XWidthOfScreen
 XWidthOfScreen.restype = c_int
 XWidthOfScreen.argtypes = [POINTER(Screen)]
 
-# /usr/include/X11/Xlib.h:3536
+# /usr/include/X11/Xlib.h:3541
 XWindowEvent = _lib.XWindowEvent
 XWindowEvent.restype = c_int
 XWindowEvent.argtypes = [POINTER(Display), Window, c_long, POINTER(XEvent)]
 
-# /usr/include/X11/Xlib.h:3543
+# /usr/include/X11/Xlib.h:3548
 XWriteBitmapFile = _lib.XWriteBitmapFile
 XWriteBitmapFile.restype = c_int
 XWriteBitmapFile.argtypes = [POINTER(Display), c_char_p, Pixmap, c_uint, c_uint, c_int, c_int]
 
-# /usr/include/X11/Xlib.h:3553
+# /usr/include/X11/Xlib.h:3558
 XSupportsLocale = _lib.XSupportsLocale
 XSupportsLocale.restype = c_int
 XSupportsLocale.argtypes = []
 
-# /usr/include/X11/Xlib.h:3555
+# /usr/include/X11/Xlib.h:3560
 XSetLocaleModifiers = _lib.XSetLocaleModifiers
 XSetLocaleModifiers.restype = c_char_p
 XSetLocaleModifiers.argtypes = [c_char_p]
@@ -4237,192 +4279,192 @@ struct__XrmHashBucketRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-# /usr/include/X11/Xlib.h:3559
+# /usr/include/X11/Xlib.h:3564
 XOpenOM = _lib.XOpenOM
 XOpenOM.restype = XOM
 XOpenOM.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p]
 
-# /usr/include/X11/Xlib.h:3566
+# /usr/include/X11/Xlib.h:3571
 XCloseOM = _lib.XCloseOM
 XCloseOM.restype = c_int
 XCloseOM.argtypes = [XOM]
 
-# /usr/include/X11/Xlib.h:3570
+# /usr/include/X11/Xlib.h:3575
 XSetOMValues = _lib.XSetOMValues
 XSetOMValues.restype = c_char_p
 XSetOMValues.argtypes = [XOM]
 
-# /usr/include/X11/Xlib.h:3575
+# /usr/include/X11/Xlib.h:3580
 XGetOMValues = _lib.XGetOMValues
 XGetOMValues.restype = c_char_p
 XGetOMValues.argtypes = [XOM]
 
-# /usr/include/X11/Xlib.h:3580
+# /usr/include/X11/Xlib.h:3585
 XDisplayOfOM = _lib.XDisplayOfOM
 XDisplayOfOM.restype = POINTER(Display)
 XDisplayOfOM.argtypes = [XOM]
 
-# /usr/include/X11/Xlib.h:3584
+# /usr/include/X11/Xlib.h:3589
 XLocaleOfOM = _lib.XLocaleOfOM
 XLocaleOfOM.restype = c_char_p
 XLocaleOfOM.argtypes = [XOM]
 
-# /usr/include/X11/Xlib.h:3588
+# /usr/include/X11/Xlib.h:3593
 XCreateOC = _lib.XCreateOC
 XCreateOC.restype = XOC
 XCreateOC.argtypes = [XOM]
 
-# /usr/include/X11/Xlib.h:3593
+# /usr/include/X11/Xlib.h:3598
 XDestroyOC = _lib.XDestroyOC
 XDestroyOC.restype = None
 XDestroyOC.argtypes = [XOC]
 
-# /usr/include/X11/Xlib.h:3597
+# /usr/include/X11/Xlib.h:3602
 XOMOfOC = _lib.XOMOfOC
 XOMOfOC.restype = XOM
 XOMOfOC.argtypes = [XOC]
 
-# /usr/include/X11/Xlib.h:3601
+# /usr/include/X11/Xlib.h:3606
 XSetOCValues = _lib.XSetOCValues
 XSetOCValues.restype = c_char_p
 XSetOCValues.argtypes = [XOC]
 
-# /usr/include/X11/Xlib.h:3606
+# /usr/include/X11/Xlib.h:3611
 XGetOCValues = _lib.XGetOCValues
 XGetOCValues.restype = c_char_p
 XGetOCValues.argtypes = [XOC]
 
-# /usr/include/X11/Xlib.h:3611
+# /usr/include/X11/Xlib.h:3616
 XCreateFontSet = _lib.XCreateFontSet
 XCreateFontSet.restype = XFontSet
 XCreateFontSet.argtypes = [POINTER(Display), c_char_p, POINTER(POINTER(c_char_p)), POINTER(c_int), POINTER(c_char_p)]
 
-# /usr/include/X11/Xlib.h:3619
+# /usr/include/X11/Xlib.h:3624
 XFreeFontSet = _lib.XFreeFontSet
 XFreeFontSet.restype = None
 XFreeFontSet.argtypes = [POINTER(Display), XFontSet]
 
-# /usr/include/X11/Xlib.h:3624
+# /usr/include/X11/Xlib.h:3629
 XFontsOfFontSet = _lib.XFontsOfFontSet
 XFontsOfFontSet.restype = c_int
 XFontsOfFontSet.argtypes = [XFontSet, POINTER(POINTER(POINTER(XFontStruct))), POINTER(POINTER(c_char_p))]
 
-# /usr/include/X11/Xlib.h:3630
+# /usr/include/X11/Xlib.h:3635
 XBaseFontNameListOfFontSet = _lib.XBaseFontNameListOfFontSet
 XBaseFontNameListOfFontSet.restype = c_char_p
 XBaseFontNameListOfFontSet.argtypes = [XFontSet]
 
-# /usr/include/X11/Xlib.h:3634
+# /usr/include/X11/Xlib.h:3639
 XLocaleOfFontSet = _lib.XLocaleOfFontSet
 XLocaleOfFontSet.restype = c_char_p
 XLocaleOfFontSet.argtypes = [XFontSet]
 
-# /usr/include/X11/Xlib.h:3638
+# /usr/include/X11/Xlib.h:3643
 XContextDependentDrawing = _lib.XContextDependentDrawing
 XContextDependentDrawing.restype = c_int
 XContextDependentDrawing.argtypes = [XFontSet]
 
-# /usr/include/X11/Xlib.h:3642
+# /usr/include/X11/Xlib.h:3647
 XDirectionalDependentDrawing = _lib.XDirectionalDependentDrawing
 XDirectionalDependentDrawing.restype = c_int
 XDirectionalDependentDrawing.argtypes = [XFontSet]
 
-# /usr/include/X11/Xlib.h:3646
+# /usr/include/X11/Xlib.h:3651
 XContextualDrawing = _lib.XContextualDrawing
 XContextualDrawing.restype = c_int
 XContextualDrawing.argtypes = [XFontSet]
 
-# /usr/include/X11/Xlib.h:3650
+# /usr/include/X11/Xlib.h:3655
 XExtentsOfFontSet = _lib.XExtentsOfFontSet
 XExtentsOfFontSet.restype = POINTER(XFontSetExtents)
 XExtentsOfFontSet.argtypes = [XFontSet]
 
-# /usr/include/X11/Xlib.h:3654
+# /usr/include/X11/Xlib.h:3659
 XmbTextEscapement = _lib.XmbTextEscapement
 XmbTextEscapement.restype = c_int
 XmbTextEscapement.argtypes = [XFontSet, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3660
+# /usr/include/X11/Xlib.h:3665
 XwcTextEscapement = _lib.XwcTextEscapement
 XwcTextEscapement.restype = c_int
 XwcTextEscapement.argtypes = [XFontSet, c_wchar_p, c_int]
 
-# /usr/include/X11/Xlib.h:3666
+# /usr/include/X11/Xlib.h:3671
 Xutf8TextEscapement = _lib.Xutf8TextEscapement
 Xutf8TextEscapement.restype = c_int
 Xutf8TextEscapement.argtypes = [XFontSet, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3672
+# /usr/include/X11/Xlib.h:3677
 XmbTextExtents = _lib.XmbTextExtents
 XmbTextExtents.restype = c_int
 XmbTextExtents.argtypes = [XFontSet, c_char_p, c_int, POINTER(XRectangle), POINTER(XRectangle)]
 
-# /usr/include/X11/Xlib.h:3680
+# /usr/include/X11/Xlib.h:3685
 XwcTextExtents = _lib.XwcTextExtents
 XwcTextExtents.restype = c_int
 XwcTextExtents.argtypes = [XFontSet, c_wchar_p, c_int, POINTER(XRectangle), POINTER(XRectangle)]
 
-# /usr/include/X11/Xlib.h:3688
+# /usr/include/X11/Xlib.h:3693
 Xutf8TextExtents = _lib.Xutf8TextExtents
 Xutf8TextExtents.restype = c_int
 Xutf8TextExtents.argtypes = [XFontSet, c_char_p, c_int, POINTER(XRectangle), POINTER(XRectangle)]
 
-# /usr/include/X11/Xlib.h:3696
+# /usr/include/X11/Xlib.h:3701
 XmbTextPerCharExtents = _lib.XmbTextPerCharExtents
 XmbTextPerCharExtents.restype = c_int
 XmbTextPerCharExtents.argtypes = [XFontSet, c_char_p, c_int, POINTER(XRectangle), POINTER(XRectangle), c_int, POINTER(c_int), POINTER(XRectangle), POINTER(XRectangle)]
 
-# /usr/include/X11/Xlib.h:3708
+# /usr/include/X11/Xlib.h:3713
 XwcTextPerCharExtents = _lib.XwcTextPerCharExtents
 XwcTextPerCharExtents.restype = c_int
 XwcTextPerCharExtents.argtypes = [XFontSet, c_wchar_p, c_int, POINTER(XRectangle), POINTER(XRectangle), c_int, POINTER(c_int), POINTER(XRectangle), POINTER(XRectangle)]
 
-# /usr/include/X11/Xlib.h:3720
+# /usr/include/X11/Xlib.h:3725
 Xutf8TextPerCharExtents = _lib.Xutf8TextPerCharExtents
 Xutf8TextPerCharExtents.restype = c_int
 Xutf8TextPerCharExtents.argtypes = [XFontSet, c_char_p, c_int, POINTER(XRectangle), POINTER(XRectangle), c_int, POINTER(c_int), POINTER(XRectangle), POINTER(XRectangle)]
 
-# /usr/include/X11/Xlib.h:3732
+# /usr/include/X11/Xlib.h:3737
 XmbDrawText = _lib.XmbDrawText
 XmbDrawText.restype = None
 XmbDrawText.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XmbTextItem), c_int]
 
-# /usr/include/X11/Xlib.h:3742
+# /usr/include/X11/Xlib.h:3747
 XwcDrawText = _lib.XwcDrawText
 XwcDrawText.restype = None
 XwcDrawText.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XwcTextItem), c_int]
 
-# /usr/include/X11/Xlib.h:3752
+# /usr/include/X11/Xlib.h:3757
 Xutf8DrawText = _lib.Xutf8DrawText
 Xutf8DrawText.restype = None
 Xutf8DrawText.argtypes = [POINTER(Display), Drawable, GC, c_int, c_int, POINTER(XmbTextItem), c_int]
 
-# /usr/include/X11/Xlib.h:3762
+# /usr/include/X11/Xlib.h:3767
 XmbDrawString = _lib.XmbDrawString
 XmbDrawString.restype = None
 XmbDrawString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3773
+# /usr/include/X11/Xlib.h:3778
 XwcDrawString = _lib.XwcDrawString
 XwcDrawString.restype = None
 XwcDrawString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_wchar_p, c_int]
 
-# /usr/include/X11/Xlib.h:3784
+# /usr/include/X11/Xlib.h:3789
 Xutf8DrawString = _lib.Xutf8DrawString
 Xutf8DrawString.restype = None
 Xutf8DrawString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3795
+# /usr/include/X11/Xlib.h:3800
 XmbDrawImageString = _lib.XmbDrawImageString
 XmbDrawImageString.restype = None
 XmbDrawImageString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3806
+# /usr/include/X11/Xlib.h:3811
 XwcDrawImageString = _lib.XwcDrawImageString
 XwcDrawImageString.restype = None
 XwcDrawImageString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_wchar_p, c_int]
 
-# /usr/include/X11/Xlib.h:3817
+# /usr/include/X11/Xlib.h:3822
 Xutf8DrawImageString = _lib.Xutf8DrawImageString
 Xutf8DrawImageString.restype = None
 Xutf8DrawImageString.argtypes = [POINTER(Display), Drawable, XFontSet, GC, c_int, c_int, c_char_p, c_int]
@@ -4434,107 +4476,107 @@ struct__XrmHashBucketRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-# /usr/include/X11/Xlib.h:3828
+# /usr/include/X11/Xlib.h:3833
 XOpenIM = _lib.XOpenIM
 XOpenIM.restype = XIM
 XOpenIM.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p]
 
-# /usr/include/X11/Xlib.h:3835
+# /usr/include/X11/Xlib.h:3840
 XCloseIM = _lib.XCloseIM
 XCloseIM.restype = c_int
 XCloseIM.argtypes = [XIM]
 
-# /usr/include/X11/Xlib.h:3839
+# /usr/include/X11/Xlib.h:3844
 XGetIMValues = _lib.XGetIMValues
 XGetIMValues.restype = c_char_p
 XGetIMValues.argtypes = [XIM]
 
-# /usr/include/X11/Xlib.h:3843
+# /usr/include/X11/Xlib.h:3848
 XSetIMValues = _lib.XSetIMValues
 XSetIMValues.restype = c_char_p
 XSetIMValues.argtypes = [XIM]
 
-# /usr/include/X11/Xlib.h:3847
+# /usr/include/X11/Xlib.h:3852
 XDisplayOfIM = _lib.XDisplayOfIM
 XDisplayOfIM.restype = POINTER(Display)
 XDisplayOfIM.argtypes = [XIM]
 
-# /usr/include/X11/Xlib.h:3851
+# /usr/include/X11/Xlib.h:3856
 XLocaleOfIM = _lib.XLocaleOfIM
 XLocaleOfIM.restype = c_char_p
 XLocaleOfIM.argtypes = [XIM]
 
-# /usr/include/X11/Xlib.h:3855
+# /usr/include/X11/Xlib.h:3860
 XCreateIC = _lib.XCreateIC
 XCreateIC.restype = XIC
 XCreateIC.argtypes = [XIM]
 
-# /usr/include/X11/Xlib.h:3859
+# /usr/include/X11/Xlib.h:3864
 XDestroyIC = _lib.XDestroyIC
 XDestroyIC.restype = None
 XDestroyIC.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3863
+# /usr/include/X11/Xlib.h:3868
 XSetICFocus = _lib.XSetICFocus
 XSetICFocus.restype = None
 XSetICFocus.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3867
+# /usr/include/X11/Xlib.h:3872
 XUnsetICFocus = _lib.XUnsetICFocus
 XUnsetICFocus.restype = None
 XUnsetICFocus.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3871
+# /usr/include/X11/Xlib.h:3876
 XwcResetIC = _lib.XwcResetIC
 XwcResetIC.restype = c_wchar_p
 XwcResetIC.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3875
+# /usr/include/X11/Xlib.h:3880
 XmbResetIC = _lib.XmbResetIC
 XmbResetIC.restype = c_char_p
 XmbResetIC.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3879
+# /usr/include/X11/Xlib.h:3884
 Xutf8ResetIC = _lib.Xutf8ResetIC
 Xutf8ResetIC.restype = c_char_p
 Xutf8ResetIC.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3883
+# /usr/include/X11/Xlib.h:3888
 XSetICValues = _lib.XSetICValues
 XSetICValues.restype = c_char_p
 XSetICValues.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3887
+# /usr/include/X11/Xlib.h:3892
 XGetICValues = _lib.XGetICValues
 XGetICValues.restype = c_char_p
 XGetICValues.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3891
+# /usr/include/X11/Xlib.h:3896
 XIMOfIC = _lib.XIMOfIC
 XIMOfIC.restype = XIM
 XIMOfIC.argtypes = [XIC]
 
-# /usr/include/X11/Xlib.h:3895
+# /usr/include/X11/Xlib.h:3900
 XFilterEvent = _lib.XFilterEvent
 XFilterEvent.restype = c_int
 XFilterEvent.argtypes = [POINTER(XEvent), Window]
 
-# /usr/include/X11/Xlib.h:3900
+# /usr/include/X11/Xlib.h:3905
 XmbLookupString = _lib.XmbLookupString
 XmbLookupString.restype = c_int
 XmbLookupString.argtypes = [XIC, POINTER(XKeyPressedEvent), c_char_p, c_int, POINTER(KeySym), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:3909
+# /usr/include/X11/Xlib.h:3914
 XwcLookupString = _lib.XwcLookupString
 XwcLookupString.restype = c_int
 XwcLookupString.argtypes = [XIC, POINTER(XKeyPressedEvent), c_wchar_p, c_int, POINTER(KeySym), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:3918
+# /usr/include/X11/Xlib.h:3923
 Xutf8LookupString = _lib.Xutf8LookupString
 Xutf8LookupString.restype = c_int
 Xutf8LookupString.argtypes = [XIC, POINTER(XKeyPressedEvent), c_char_p, c_int, POINTER(KeySym), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:3927
+# /usr/include/X11/Xlib.h:3932
 XVaCreateNestedList = _lib.XVaCreateNestedList
 XVaCreateNestedList.restype = XVaNestedList
 XVaCreateNestedList.argtypes = [c_int]
@@ -4546,7 +4588,7 @@ struct__XrmHashBucketRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-# /usr/include/X11/Xlib.h:3933
+# /usr/include/X11/Xlib.h:3938
 XRegisterIMInstantiateCallback = _lib.XRegisterIMInstantiateCallback
 XRegisterIMInstantiateCallback.restype = c_int
 XRegisterIMInstantiateCallback.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p, XIDProc, XPointer]
@@ -4558,55 +4600,55 @@ struct__XrmHashBucketRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-# /usr/include/X11/Xlib.h:3942
+# /usr/include/X11/Xlib.h:3947
 XUnregisterIMInstantiateCallback = _lib.XUnregisterIMInstantiateCallback
 XUnregisterIMInstantiateCallback.restype = c_int
 XUnregisterIMInstantiateCallback.argtypes = [POINTER(Display), POINTER(struct__XrmHashBucketRec), c_char_p, c_char_p, XIDProc, XPointer]
 
-XConnectionWatchProc = CFUNCTYPE(None, POINTER(Display), XPointer, c_int, c_int, POINTER(XPointer)) 	# /usr/include/X11/Xlib.h:3951
-# /usr/include/X11/Xlib.h:3960
+XConnectionWatchProc = CFUNCTYPE(None, POINTER(Display), XPointer, c_int, c_int, POINTER(XPointer)) 	# /usr/include/X11/Xlib.h:3956
+# /usr/include/X11/Xlib.h:3965
 XInternalConnectionNumbers = _lib.XInternalConnectionNumbers
 XInternalConnectionNumbers.restype = c_int
 XInternalConnectionNumbers.argtypes = [POINTER(Display), POINTER(POINTER(c_int)), POINTER(c_int)]
 
-# /usr/include/X11/Xlib.h:3966
+# /usr/include/X11/Xlib.h:3971
 XProcessInternalConnection = _lib.XProcessInternalConnection
 XProcessInternalConnection.restype = None
 XProcessInternalConnection.argtypes = [POINTER(Display), c_int]
 
-# /usr/include/X11/Xlib.h:3971
+# /usr/include/X11/Xlib.h:3976
 XAddConnectionWatch = _lib.XAddConnectionWatch
 XAddConnectionWatch.restype = c_int
 XAddConnectionWatch.argtypes = [POINTER(Display), XConnectionWatchProc, XPointer]
 
-# /usr/include/X11/Xlib.h:3977
+# /usr/include/X11/Xlib.h:3982
 XRemoveConnectionWatch = _lib.XRemoveConnectionWatch
 XRemoveConnectionWatch.restype = None
 XRemoveConnectionWatch.argtypes = [POINTER(Display), XConnectionWatchProc, XPointer]
 
-# /usr/include/X11/Xlib.h:3983
+# /usr/include/X11/Xlib.h:3988
 XSetAuthorization = _lib.XSetAuthorization
 XSetAuthorization.restype = None
 XSetAuthorization.argtypes = [c_char_p, c_int, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:3990
+# /usr/include/X11/Xlib.h:3995
 _Xmbtowc = _lib._Xmbtowc
 _Xmbtowc.restype = c_int
 _Xmbtowc.argtypes = [c_wchar_p, c_char_p, c_int]
 
-# /usr/include/X11/Xlib.h:4001
+# /usr/include/X11/Xlib.h:4006
 _Xwctomb = _lib._Xwctomb
 _Xwctomb.restype = c_int
 _Xwctomb.argtypes = [c_char_p, c_wchar]
 
-NoValue = 0 	# /usr/include/X11/Xutil.h:4791
-XValue = 1 	# /usr/include/X11/Xutil.h:4792
-YValue = 2 	# /usr/include/X11/Xutil.h:4793
-WidthValue = 4 	# /usr/include/X11/Xutil.h:4794
-HeightValue = 8 	# /usr/include/X11/Xutil.h:4795
-AllValues = 15 	# /usr/include/X11/Xutil.h:4796
-XNegative = 16 	# /usr/include/X11/Xutil.h:4797
-YNegative = 32 	# /usr/include/X11/Xutil.h:4798
+NoValue = 0 	# /usr/include/X11/Xutil.h:4796
+XValue = 1 	# /usr/include/X11/Xutil.h:4797
+YValue = 2 	# /usr/include/X11/Xutil.h:4798
+WidthValue = 4 	# /usr/include/X11/Xutil.h:4799
+HeightValue = 8 	# /usr/include/X11/Xutil.h:4800
+AllValues = 15 	# /usr/include/X11/Xutil.h:4801
+XNegative = 16 	# /usr/include/X11/Xutil.h:4802
+YNegative = 32 	# /usr/include/X11/Xutil.h:4803
 class struct_anon_93(Structure):
     __slots__ = [
         'flags',
@@ -4665,18 +4707,18 @@ struct_anon_93._fields_ = [
     ('win_gravity', c_int),
 ]
 
-XSizeHints = struct_anon_93 	# /usr/include/X11/Xutil.h:4817
-USPosition = 1 	# /usr/include/X11/Xutil.h:4825
-USSize = 2 	# /usr/include/X11/Xutil.h:4826
-PPosition = 4 	# /usr/include/X11/Xutil.h:4828
-PSize = 8 	# /usr/include/X11/Xutil.h:4829
-PMinSize = 16 	# /usr/include/X11/Xutil.h:4830
-PMaxSize = 32 	# /usr/include/X11/Xutil.h:4831
-PResizeInc = 64 	# /usr/include/X11/Xutil.h:4832
-PAspect = 128 	# /usr/include/X11/Xutil.h:4833
-PBaseSize = 256 	# /usr/include/X11/Xutil.h:4834
-PWinGravity = 512 	# /usr/include/X11/Xutil.h:4835
-PAllHints = 252 	# /usr/include/X11/Xutil.h:4838
+XSizeHints = struct_anon_93 	# /usr/include/X11/Xutil.h:4822
+USPosition = 1 	# /usr/include/X11/Xutil.h:4830
+USSize = 2 	# /usr/include/X11/Xutil.h:4831
+PPosition = 4 	# /usr/include/X11/Xutil.h:4833
+PSize = 8 	# /usr/include/X11/Xutil.h:4834
+PMinSize = 16 	# /usr/include/X11/Xutil.h:4835
+PMaxSize = 32 	# /usr/include/X11/Xutil.h:4836
+PResizeInc = 64 	# /usr/include/X11/Xutil.h:4837
+PAspect = 128 	# /usr/include/X11/Xutil.h:4838
+PBaseSize = 256 	# /usr/include/X11/Xutil.h:4839
+PWinGravity = 512 	# /usr/include/X11/Xutil.h:4840
+PAllHints = 252 	# /usr/include/X11/Xutil.h:4843
 class struct_anon_96(Structure):
     __slots__ = [
         'flags',
@@ -4701,22 +4743,22 @@ struct_anon_96._fields_ = [
     ('window_group', XID),
 ]
 
-XWMHints = struct_anon_96 	# /usr/include/X11/Xutil.h:4853
-InputHint = 1 	# /usr/include/X11/Xutil.h:4857
-StateHint = 2 	# /usr/include/X11/Xutil.h:4858
-IconPixmapHint = 4 	# /usr/include/X11/Xutil.h:4859
-IconWindowHint = 8 	# /usr/include/X11/Xutil.h:4860
-IconPositionHint = 16 	# /usr/include/X11/Xutil.h:4861
-IconMaskHint = 32 	# /usr/include/X11/Xutil.h:4862
-WindowGroupHint = 64 	# /usr/include/X11/Xutil.h:4863
-AllHints = 127 	# /usr/include/X11/Xutil.h:4864
-XUrgencyHint = 256 	# /usr/include/X11/Xutil.h:4866
-WithdrawnState = 0 	# /usr/include/X11/Xutil.h:4869
-NormalState = 1 	# /usr/include/X11/Xutil.h:4870
-IconicState = 3 	# /usr/include/X11/Xutil.h:4871
-DontCareState = 0 	# /usr/include/X11/Xutil.h:4876
-ZoomState = 2 	# /usr/include/X11/Xutil.h:4877
-InactiveState = 4 	# /usr/include/X11/Xutil.h:4878
+XWMHints = struct_anon_96 	# /usr/include/X11/Xutil.h:4858
+InputHint = 1 	# /usr/include/X11/Xutil.h:4862
+StateHint = 2 	# /usr/include/X11/Xutil.h:4863
+IconPixmapHint = 4 	# /usr/include/X11/Xutil.h:4864
+IconWindowHint = 8 	# /usr/include/X11/Xutil.h:4865
+IconPositionHint = 16 	# /usr/include/X11/Xutil.h:4866
+IconMaskHint = 32 	# /usr/include/X11/Xutil.h:4867
+WindowGroupHint = 64 	# /usr/include/X11/Xutil.h:4868
+AllHints = 127 	# /usr/include/X11/Xutil.h:4869
+XUrgencyHint = 256 	# /usr/include/X11/Xutil.h:4871
+WithdrawnState = 0 	# /usr/include/X11/Xutil.h:4874
+NormalState = 1 	# /usr/include/X11/Xutil.h:4875
+IconicState = 3 	# /usr/include/X11/Xutil.h:4876
+DontCareState = 0 	# /usr/include/X11/Xutil.h:4881
+ZoomState = 2 	# /usr/include/X11/Xutil.h:4882
+InactiveState = 4 	# /usr/include/X11/Xutil.h:4883
 class struct_anon_97(Structure):
     __slots__ = [
         'value',
@@ -4731,17 +4773,17 @@ struct_anon_97._fields_ = [
     ('nitems', c_ulong),
 ]
 
-XTextProperty = struct_anon_97 	# /usr/include/X11/Xutil.h:4891
-XNoMemory = -1 	# /usr/include/X11/Xutil.h:4893
-XLocaleNotSupported = -2 	# /usr/include/X11/Xutil.h:4894
-XConverterNotFound = -3 	# /usr/include/X11/Xutil.h:4895
+XTextProperty = struct_anon_97 	# /usr/include/X11/Xutil.h:4896
+XNoMemory = -1 	# /usr/include/X11/Xutil.h:4898
+XLocaleNotSupported = -2 	# /usr/include/X11/Xutil.h:4899
+XConverterNotFound = -3 	# /usr/include/X11/Xutil.h:4900
 enum_anon_98 = c_int
 XStringStyle = 0
 XCompoundTextStyle = 1
 XTextStyle = 2
 XStdICCTextStyle = 3
 XUTF8StringStyle = 4
-XICCEncodingStyle = enum_anon_98 	# /usr/include/X11/Xutil.h:4904
+XICCEncodingStyle = enum_anon_98 	# /usr/include/X11/Xutil.h:4909
 class struct_anon_99(Structure):
     __slots__ = [
         'min_width',
@@ -4760,7 +4802,7 @@ struct_anon_99._fields_ = [
     ('height_inc', c_int),
 ]
 
-XIconSize = struct_anon_99 	# /usr/include/X11/Xutil.h:4910
+XIconSize = struct_anon_99 	# /usr/include/X11/Xutil.h:4915
 class struct_anon_100(Structure):
     __slots__ = [
         'res_name',
@@ -4771,7 +4813,7 @@ struct_anon_100._fields_ = [
     ('res_class', c_char_p),
 ]
 
-XClassHint = struct_anon_100 	# /usr/include/X11/Xutil.h:4915
+XClassHint = struct_anon_100 	# /usr/include/X11/Xutil.h:4920
 class struct__XComposeStatus(Structure):
     __slots__ = [
         'compose_ptr',
@@ -4782,7 +4824,7 @@ struct__XComposeStatus._fields_ = [
     ('chars_matched', c_int),
 ]
 
-XComposeStatus = struct__XComposeStatus 	# /usr/include/X11/Xutil.h:4957
+XComposeStatus = struct__XComposeStatus 	# /usr/include/X11/Xutil.h:4962
 class struct__XRegion(Structure):
     __slots__ = [
     ]
@@ -4797,22 +4839,48 @@ struct__XRegion._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-Region = POINTER(struct__XRegion) 	# /usr/include/X11/Xutil.h:4996
-RectangleOut = 0 	# /usr/include/X11/Xutil.h:5000
-RectangleIn = 1 	# /usr/include/X11/Xutil.h:5001
-RectanglePart = 2 	# /usr/include/X11/Xutil.h:5002
-XVisualInfo = pyglet.gl.glx.XVisualInfo
-VisualNoMask = 0 	# /usr/include/X11/Xutil.h:5027
-VisualIDMask = 1 	# /usr/include/X11/Xutil.h:5028
-VisualScreenMask = 2 	# /usr/include/X11/Xutil.h:5029
-VisualDepthMask = 4 	# /usr/include/X11/Xutil.h:5030
-VisualClassMask = 8 	# /usr/include/X11/Xutil.h:5031
-VisualRedMaskMask = 16 	# /usr/include/X11/Xutil.h:5032
-VisualGreenMaskMask = 32 	# /usr/include/X11/Xutil.h:5033
-VisualBlueMaskMask = 64 	# /usr/include/X11/Xutil.h:5034
-VisualColormapSizeMask = 128 	# /usr/include/X11/Xutil.h:5035
-VisualBitsPerRGBMask = 256 	# /usr/include/X11/Xutil.h:5036
-VisualAllMask = 511 	# /usr/include/X11/Xutil.h:5037
+Region = POINTER(struct__XRegion) 	# /usr/include/X11/Xutil.h:5001
+RectangleOut = 0 	# /usr/include/X11/Xutil.h:5005
+RectangleIn = 1 	# /usr/include/X11/Xutil.h:5006
+RectanglePart = 2 	# /usr/include/X11/Xutil.h:5007
+class struct_anon_101(Structure):
+    __slots__ = [
+        'visual',
+        'visualid',
+        'screen',
+        'depth',
+        'class',
+        'red_mask',
+        'green_mask',
+        'blue_mask',
+        'colormap_size',
+        'bits_per_rgb',
+    ]
+struct_anon_101._fields_ = [
+    ('visual', POINTER(Visual)),
+    ('visualid', VisualID),
+    ('screen', c_int),
+    ('depth', c_int),
+    ('class', c_int),
+    ('red_mask', c_ulong),
+    ('green_mask', c_ulong),
+    ('blue_mask', c_ulong),
+    ('colormap_size', c_int),
+    ('bits_per_rgb', c_int),
+]
+
+XVisualInfo = struct_anon_101 	# /usr/include/X11/Xutil.h:5030
+VisualNoMask = 0 	# /usr/include/X11/Xutil.h:5032
+VisualIDMask = 1 	# /usr/include/X11/Xutil.h:5033
+VisualScreenMask = 2 	# /usr/include/X11/Xutil.h:5034
+VisualDepthMask = 4 	# /usr/include/X11/Xutil.h:5035
+VisualClassMask = 8 	# /usr/include/X11/Xutil.h:5036
+VisualRedMaskMask = 16 	# /usr/include/X11/Xutil.h:5037
+VisualGreenMaskMask = 32 	# /usr/include/X11/Xutil.h:5038
+VisualBlueMaskMask = 64 	# /usr/include/X11/Xutil.h:5039
+VisualColormapSizeMask = 128 	# /usr/include/X11/Xutil.h:5040
+VisualBitsPerRGBMask = 256 	# /usr/include/X11/Xutil.h:5041
+VisualAllMask = 511 	# /usr/include/X11/Xutil.h:5042
 class struct_anon_102(Structure):
     __slots__ = [
         'colormap',
@@ -4839,366 +4907,366 @@ struct_anon_102._fields_ = [
     ('killid', XID),
 ]
 
-XStandardColormap = struct_anon_102 	# /usr/include/X11/Xutil.h:5054
-BitmapSuccess = 0 	# /usr/include/X11/Xutil.h:5062
-BitmapOpenFailed = 1 	# /usr/include/X11/Xutil.h:5063
-BitmapFileInvalid = 2 	# /usr/include/X11/Xutil.h:5064
-BitmapNoMemory = 3 	# /usr/include/X11/Xutil.h:5065
-XCSUCCESS = 0 	# /usr/include/X11/Xutil.h:5076
-XCNOMEM = 1 	# /usr/include/X11/Xutil.h:5077
-XCNOENT = 2 	# /usr/include/X11/Xutil.h:5078
-XContext = c_int 	# /usr/include/X11/Xutil.h:5080
-# /usr/include/X11/Xutil.h:5089
+XStandardColormap = struct_anon_102 	# /usr/include/X11/Xutil.h:5059
+BitmapSuccess = 0 	# /usr/include/X11/Xutil.h:5067
+BitmapOpenFailed = 1 	# /usr/include/X11/Xutil.h:5068
+BitmapFileInvalid = 2 	# /usr/include/X11/Xutil.h:5069
+BitmapNoMemory = 3 	# /usr/include/X11/Xutil.h:5070
+XCSUCCESS = 0 	# /usr/include/X11/Xutil.h:5081
+XCNOMEM = 1 	# /usr/include/X11/Xutil.h:5082
+XCNOENT = 2 	# /usr/include/X11/Xutil.h:5083
+XContext = c_int 	# /usr/include/X11/Xutil.h:5085
+# /usr/include/X11/Xutil.h:5094
 XAllocClassHint = _lib.XAllocClassHint
 XAllocClassHint.restype = POINTER(XClassHint)
 XAllocClassHint.argtypes = []
 
-# /usr/include/X11/Xutil.h:5093
+# /usr/include/X11/Xutil.h:5098
 XAllocIconSize = _lib.XAllocIconSize
 XAllocIconSize.restype = POINTER(XIconSize)
 XAllocIconSize.argtypes = []
 
-# /usr/include/X11/Xutil.h:5097
+# /usr/include/X11/Xutil.h:5102
 XAllocSizeHints = _lib.XAllocSizeHints
 XAllocSizeHints.restype = POINTER(XSizeHints)
 XAllocSizeHints.argtypes = []
 
-# /usr/include/X11/Xutil.h:5101
+# /usr/include/X11/Xutil.h:5106
 XAllocStandardColormap = _lib.XAllocStandardColormap
 XAllocStandardColormap.restype = POINTER(XStandardColormap)
 XAllocStandardColormap.argtypes = []
 
-# /usr/include/X11/Xutil.h:5105
+# /usr/include/X11/Xutil.h:5110
 XAllocWMHints = _lib.XAllocWMHints
 XAllocWMHints.restype = POINTER(XWMHints)
 XAllocWMHints.argtypes = []
 
-# /usr/include/X11/Xutil.h:5109
+# /usr/include/X11/Xutil.h:5114
 XClipBox = _lib.XClipBox
 XClipBox.restype = c_int
 XClipBox.argtypes = [Region, POINTER(XRectangle)]
 
-# /usr/include/X11/Xutil.h:5114
+# /usr/include/X11/Xutil.h:5119
 XCreateRegion = _lib.XCreateRegion
 XCreateRegion.restype = Region
 XCreateRegion.argtypes = []
 
-# /usr/include/X11/Xutil.h:5118
+# /usr/include/X11/Xutil.h:5123
 XDefaultString = _lib.XDefaultString
 XDefaultString.restype = c_char_p
 XDefaultString.argtypes = []
 
-# /usr/include/X11/Xutil.h:5120
+# /usr/include/X11/Xutil.h:5125
 XDeleteContext = _lib.XDeleteContext
 XDeleteContext.restype = c_int
 XDeleteContext.argtypes = [POINTER(Display), XID, XContext]
 
-# /usr/include/X11/Xutil.h:5126
+# /usr/include/X11/Xutil.h:5131
 XDestroyRegion = _lib.XDestroyRegion
 XDestroyRegion.restype = c_int
 XDestroyRegion.argtypes = [Region]
 
-# /usr/include/X11/Xutil.h:5130
+# /usr/include/X11/Xutil.h:5135
 XEmptyRegion = _lib.XEmptyRegion
 XEmptyRegion.restype = c_int
 XEmptyRegion.argtypes = [Region]
 
-# /usr/include/X11/Xutil.h:5134
+# /usr/include/X11/Xutil.h:5139
 XEqualRegion = _lib.XEqualRegion
 XEqualRegion.restype = c_int
 XEqualRegion.argtypes = [Region, Region]
 
-# /usr/include/X11/Xutil.h:5139
+# /usr/include/X11/Xutil.h:5144
 XFindContext = _lib.XFindContext
 XFindContext.restype = c_int
 XFindContext.argtypes = [POINTER(Display), XID, XContext, POINTER(XPointer)]
 
-# /usr/include/X11/Xutil.h:5146
+# /usr/include/X11/Xutil.h:5151
 XGetClassHint = _lib.XGetClassHint
 XGetClassHint.restype = c_int
 XGetClassHint.argtypes = [POINTER(Display), Window, POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:5152
+# /usr/include/X11/Xutil.h:5157
 XGetIconSizes = _lib.XGetIconSizes
 XGetIconSizes.restype = c_int
 XGetIconSizes.argtypes = [POINTER(Display), Window, POINTER(POINTER(XIconSize)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5159
+# /usr/include/X11/Xutil.h:5164
 XGetNormalHints = _lib.XGetNormalHints
 XGetNormalHints.restype = c_int
 XGetNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:5165
+# /usr/include/X11/Xutil.h:5170
 XGetRGBColormaps = _lib.XGetRGBColormaps
 XGetRGBColormaps.restype = c_int
 XGetRGBColormaps.argtypes = [POINTER(Display), Window, POINTER(POINTER(XStandardColormap)), POINTER(c_int), Atom]
 
-# /usr/include/X11/Xutil.h:5173
+# /usr/include/X11/Xutil.h:5178
 XGetSizeHints = _lib.XGetSizeHints
 XGetSizeHints.restype = c_int
 XGetSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), Atom]
 
-# /usr/include/X11/Xutil.h:5180
+# /usr/include/X11/Xutil.h:5185
 XGetStandardColormap = _lib.XGetStandardColormap
 XGetStandardColormap.restype = c_int
 XGetStandardColormap.argtypes = [POINTER(Display), Window, POINTER(XStandardColormap), Atom]
 
-# /usr/include/X11/Xutil.h:5187
+# /usr/include/X11/Xutil.h:5192
 XGetTextProperty = _lib.XGetTextProperty
 XGetTextProperty.restype = c_int
 XGetTextProperty.argtypes = [POINTER(Display), Window, POINTER(XTextProperty), Atom]
 
-# /usr/include/X11/Xutil.h:5194
+# /usr/include/X11/Xutil.h:5199
 XGetVisualInfo = _lib.XGetVisualInfo
 XGetVisualInfo.restype = POINTER(XVisualInfo)
 XGetVisualInfo.argtypes = [POINTER(Display), c_long, POINTER(XVisualInfo), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5201
+# /usr/include/X11/Xutil.h:5206
 XGetWMClientMachine = _lib.XGetWMClientMachine
 XGetWMClientMachine.restype = c_int
 XGetWMClientMachine.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5207
+# /usr/include/X11/Xutil.h:5212
 XGetWMHints = _lib.XGetWMHints
 XGetWMHints.restype = POINTER(XWMHints)
 XGetWMHints.argtypes = [POINTER(Display), Window]
 
-# /usr/include/X11/Xutil.h:5212
+# /usr/include/X11/Xutil.h:5217
 XGetWMIconName = _lib.XGetWMIconName
 XGetWMIconName.restype = c_int
 XGetWMIconName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5218
+# /usr/include/X11/Xutil.h:5223
 XGetWMName = _lib.XGetWMName
 XGetWMName.restype = c_int
 XGetWMName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5224
+# /usr/include/X11/Xutil.h:5229
 XGetWMNormalHints = _lib.XGetWMNormalHints
 XGetWMNormalHints.restype = c_int
 XGetWMNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), POINTER(c_long)]
 
-# /usr/include/X11/Xutil.h:5231
+# /usr/include/X11/Xutil.h:5236
 XGetWMSizeHints = _lib.XGetWMSizeHints
 XGetWMSizeHints.restype = c_int
 XGetWMSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), POINTER(c_long), Atom]
 
-# /usr/include/X11/Xutil.h:5239
+# /usr/include/X11/Xutil.h:5244
 XGetZoomHints = _lib.XGetZoomHints
 XGetZoomHints.restype = c_int
 XGetZoomHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:5245
+# /usr/include/X11/Xutil.h:5250
 XIntersectRegion = _lib.XIntersectRegion
 XIntersectRegion.restype = c_int
 XIntersectRegion.argtypes = [Region, Region, Region]
 
-# /usr/include/X11/Xutil.h:5251
+# /usr/include/X11/Xutil.h:5256
 XConvertCase = _lib.XConvertCase
 XConvertCase.restype = None
 XConvertCase.argtypes = [KeySym, POINTER(KeySym), POINTER(KeySym)]
 
-# /usr/include/X11/Xutil.h:5257
+# /usr/include/X11/Xutil.h:5262
 XLookupString = _lib.XLookupString
 XLookupString.restype = c_int
 XLookupString.argtypes = [POINTER(XKeyEvent), c_char_p, c_int, POINTER(KeySym), POINTER(XComposeStatus)]
 
-# /usr/include/X11/Xutil.h:5265
+# /usr/include/X11/Xutil.h:5270
 XMatchVisualInfo = _lib.XMatchVisualInfo
 XMatchVisualInfo.restype = c_int
 XMatchVisualInfo.argtypes = [POINTER(Display), c_int, c_int, c_int, POINTER(XVisualInfo)]
 
-# /usr/include/X11/Xutil.h:5273
+# /usr/include/X11/Xutil.h:5278
 XOffsetRegion = _lib.XOffsetRegion
 XOffsetRegion.restype = c_int
 XOffsetRegion.argtypes = [Region, c_int, c_int]
 
-# /usr/include/X11/Xutil.h:5279
+# /usr/include/X11/Xutil.h:5284
 XPointInRegion = _lib.XPointInRegion
 XPointInRegion.restype = c_int
 XPointInRegion.argtypes = [Region, c_int, c_int]
 
-# /usr/include/X11/Xutil.h:5285
+# /usr/include/X11/Xutil.h:5290
 XPolygonRegion = _lib.XPolygonRegion
 XPolygonRegion.restype = Region
 XPolygonRegion.argtypes = [POINTER(XPoint), c_int, c_int]
 
-# /usr/include/X11/Xutil.h:5291
+# /usr/include/X11/Xutil.h:5296
 XRectInRegion = _lib.XRectInRegion
 XRectInRegion.restype = c_int
 XRectInRegion.argtypes = [Region, c_int, c_int, c_uint, c_uint]
 
-# /usr/include/X11/Xutil.h:5299
+# /usr/include/X11/Xutil.h:5304
 XSaveContext = _lib.XSaveContext
 XSaveContext.restype = c_int
 XSaveContext.argtypes = [POINTER(Display), XID, XContext, c_char_p]
 
-# /usr/include/X11/Xutil.h:5306
+# /usr/include/X11/Xutil.h:5311
 XSetClassHint = _lib.XSetClassHint
 XSetClassHint.restype = c_int
 XSetClassHint.argtypes = [POINTER(Display), Window, POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:5312
+# /usr/include/X11/Xutil.h:5317
 XSetIconSizes = _lib.XSetIconSizes
 XSetIconSizes.restype = c_int
 XSetIconSizes.argtypes = [POINTER(Display), Window, POINTER(XIconSize), c_int]
 
-# /usr/include/X11/Xutil.h:5319
+# /usr/include/X11/Xutil.h:5324
 XSetNormalHints = _lib.XSetNormalHints
 XSetNormalHints.restype = c_int
 XSetNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:5325
+# /usr/include/X11/Xutil.h:5330
 XSetRGBColormaps = _lib.XSetRGBColormaps
 XSetRGBColormaps.restype = None
 XSetRGBColormaps.argtypes = [POINTER(Display), Window, POINTER(XStandardColormap), c_int, Atom]
 
-# /usr/include/X11/Xutil.h:5333
+# /usr/include/X11/Xutil.h:5338
 XSetSizeHints = _lib.XSetSizeHints
 XSetSizeHints.restype = c_int
 XSetSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), Atom]
 
-# /usr/include/X11/Xutil.h:5340
+# /usr/include/X11/Xutil.h:5345
 XSetStandardProperties = _lib.XSetStandardProperties
 XSetStandardProperties.restype = c_int
 XSetStandardProperties.argtypes = [POINTER(Display), Window, c_char_p, c_char_p, Pixmap, POINTER(c_char_p), c_int, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:5351
+# /usr/include/X11/Xutil.h:5356
 XSetTextProperty = _lib.XSetTextProperty
 XSetTextProperty.restype = None
 XSetTextProperty.argtypes = [POINTER(Display), Window, POINTER(XTextProperty), Atom]
 
-# /usr/include/X11/Xutil.h:5358
+# /usr/include/X11/Xutil.h:5363
 XSetWMClientMachine = _lib.XSetWMClientMachine
 XSetWMClientMachine.restype = None
 XSetWMClientMachine.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5364
+# /usr/include/X11/Xutil.h:5369
 XSetWMHints = _lib.XSetWMHints
 XSetWMHints.restype = c_int
 XSetWMHints.argtypes = [POINTER(Display), Window, POINTER(XWMHints)]
 
-# /usr/include/X11/Xutil.h:5370
+# /usr/include/X11/Xutil.h:5375
 XSetWMIconName = _lib.XSetWMIconName
 XSetWMIconName.restype = None
 XSetWMIconName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5376
+# /usr/include/X11/Xutil.h:5381
 XSetWMName = _lib.XSetWMName
 XSetWMName.restype = None
 XSetWMName.argtypes = [POINTER(Display), Window, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5382
+# /usr/include/X11/Xutil.h:5387
 XSetWMNormalHints = _lib.XSetWMNormalHints
 XSetWMNormalHints.restype = None
 XSetWMNormalHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:5388
+# /usr/include/X11/Xutil.h:5393
 XSetWMProperties = _lib.XSetWMProperties
 XSetWMProperties.restype = None
 XSetWMProperties.argtypes = [POINTER(Display), Window, POINTER(XTextProperty), POINTER(XTextProperty), POINTER(c_char_p), c_int, POINTER(XSizeHints), POINTER(XWMHints), POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:5400
+# /usr/include/X11/Xutil.h:5405
 XmbSetWMProperties = _lib.XmbSetWMProperties
 XmbSetWMProperties.restype = None
 XmbSetWMProperties.argtypes = [POINTER(Display), Window, c_char_p, c_char_p, POINTER(c_char_p), c_int, POINTER(XSizeHints), POINTER(XWMHints), POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:5412
+# /usr/include/X11/Xutil.h:5417
 Xutf8SetWMProperties = _lib.Xutf8SetWMProperties
 Xutf8SetWMProperties.restype = None
 Xutf8SetWMProperties.argtypes = [POINTER(Display), Window, c_char_p, c_char_p, POINTER(c_char_p), c_int, POINTER(XSizeHints), POINTER(XWMHints), POINTER(XClassHint)]
 
-# /usr/include/X11/Xutil.h:5424
+# /usr/include/X11/Xutil.h:5429
 XSetWMSizeHints = _lib.XSetWMSizeHints
 XSetWMSizeHints.restype = None
 XSetWMSizeHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints), Atom]
 
-# /usr/include/X11/Xutil.h:5431
+# /usr/include/X11/Xutil.h:5436
 XSetRegion = _lib.XSetRegion
 XSetRegion.restype = c_int
 XSetRegion.argtypes = [POINTER(Display), GC, Region]
 
-# /usr/include/X11/Xutil.h:5437
+# /usr/include/X11/Xutil.h:5442
 XSetStandardColormap = _lib.XSetStandardColormap
 XSetStandardColormap.restype = None
 XSetStandardColormap.argtypes = [POINTER(Display), Window, POINTER(XStandardColormap), Atom]
 
-# /usr/include/X11/Xutil.h:5444
+# /usr/include/X11/Xutil.h:5449
 XSetZoomHints = _lib.XSetZoomHints
 XSetZoomHints.restype = c_int
 XSetZoomHints.argtypes = [POINTER(Display), Window, POINTER(XSizeHints)]
 
-# /usr/include/X11/Xutil.h:5450
+# /usr/include/X11/Xutil.h:5455
 XShrinkRegion = _lib.XShrinkRegion
 XShrinkRegion.restype = c_int
 XShrinkRegion.argtypes = [Region, c_int, c_int]
 
-# /usr/include/X11/Xutil.h:5456
+# /usr/include/X11/Xutil.h:5461
 XStringListToTextProperty = _lib.XStringListToTextProperty
 XStringListToTextProperty.restype = c_int
 XStringListToTextProperty.argtypes = [POINTER(c_char_p), c_int, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5462
+# /usr/include/X11/Xutil.h:5467
 XSubtractRegion = _lib.XSubtractRegion
 XSubtractRegion.restype = c_int
 XSubtractRegion.argtypes = [Region, Region, Region]
 
-# /usr/include/X11/Xutil.h:5468
+# /usr/include/X11/Xutil.h:5473
 XmbTextListToTextProperty = _lib.XmbTextListToTextProperty
 XmbTextListToTextProperty.restype = c_int
 XmbTextListToTextProperty.argtypes = [POINTER(Display), POINTER(c_char_p), c_int, XICCEncodingStyle, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5476
+# /usr/include/X11/Xutil.h:5481
 XwcTextListToTextProperty = _lib.XwcTextListToTextProperty
 XwcTextListToTextProperty.restype = c_int
 XwcTextListToTextProperty.argtypes = [POINTER(Display), POINTER(c_wchar_p), c_int, XICCEncodingStyle, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5484
+# /usr/include/X11/Xutil.h:5489
 Xutf8TextListToTextProperty = _lib.Xutf8TextListToTextProperty
 Xutf8TextListToTextProperty.restype = c_int
 Xutf8TextListToTextProperty.argtypes = [POINTER(Display), POINTER(c_char_p), c_int, XICCEncodingStyle, POINTER(XTextProperty)]
 
-# /usr/include/X11/Xutil.h:5492
+# /usr/include/X11/Xutil.h:5497
 XwcFreeStringList = _lib.XwcFreeStringList
 XwcFreeStringList.restype = None
 XwcFreeStringList.argtypes = [POINTER(c_wchar_p)]
 
-# /usr/include/X11/Xutil.h:5496
+# /usr/include/X11/Xutil.h:5501
 XTextPropertyToStringList = _lib.XTextPropertyToStringList
 XTextPropertyToStringList.restype = c_int
 XTextPropertyToStringList.argtypes = [POINTER(XTextProperty), POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5502
+# /usr/include/X11/Xutil.h:5507
 XmbTextPropertyToTextList = _lib.XmbTextPropertyToTextList
 XmbTextPropertyToTextList.restype = c_int
 XmbTextPropertyToTextList.argtypes = [POINTER(Display), POINTER(XTextProperty), POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5509
+# /usr/include/X11/Xutil.h:5514
 XwcTextPropertyToTextList = _lib.XwcTextPropertyToTextList
 XwcTextPropertyToTextList.restype = c_int
 XwcTextPropertyToTextList.argtypes = [POINTER(Display), POINTER(XTextProperty), POINTER(POINTER(c_wchar_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5516
+# /usr/include/X11/Xutil.h:5521
 Xutf8TextPropertyToTextList = _lib.Xutf8TextPropertyToTextList
 Xutf8TextPropertyToTextList.restype = c_int
 Xutf8TextPropertyToTextList.argtypes = [POINTER(Display), POINTER(XTextProperty), POINTER(POINTER(c_char_p)), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5523
+# /usr/include/X11/Xutil.h:5528
 XUnionRectWithRegion = _lib.XUnionRectWithRegion
 XUnionRectWithRegion.restype = c_int
 XUnionRectWithRegion.argtypes = [POINTER(XRectangle), Region, Region]
 
-# /usr/include/X11/Xutil.h:5529
+# /usr/include/X11/Xutil.h:5534
 XUnionRegion = _lib.XUnionRegion
 XUnionRegion.restype = c_int
 XUnionRegion.argtypes = [Region, Region, Region]
 
-# /usr/include/X11/Xutil.h:5535
+# /usr/include/X11/Xutil.h:5540
 XWMGeometry = _lib.XWMGeometry
 XWMGeometry.restype = c_int
 XWMGeometry.argtypes = [POINTER(Display), c_int, c_char_p, c_char_p, c_uint, POINTER(XSizeHints), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)]
 
-# /usr/include/X11/Xutil.h:5549
+# /usr/include/X11/Xutil.h:5554
 XXorRegion = _lib.XXorRegion
 XXorRegion.restype = c_int
 XXorRegion.argtypes = [Region, Region, Region]

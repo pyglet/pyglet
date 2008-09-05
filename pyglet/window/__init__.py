@@ -1518,8 +1518,8 @@ else:
     else:
         # XXX HACK around circ problem, should be fixed after removal of
         # shadow nonsense
-        pyglet.window = sys.modules[__name__]
-        import key, mouse
+        #pyglet.window = sys.modules[__name__]
+        #import key, mouse
 
         from pyglet.window.xlib import XlibWindow
         Window = XlibWindow

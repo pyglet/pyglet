@@ -81,14 +81,6 @@ class XlibDisplay(XlibSelectDevice, Display):
         self.name = name
         self.x_screen = x_screen
 
-        # XXX
-        from pyglet.gl import glx_info
-        self.info = glx_info.GLXInfo(self._display)
-
-        # Also set the default GLX display for future info queries
-        # XXX
-        glx_info.set_display(self._display.contents)
-
         self._fileno = xlib.XConnectionNumber(self._display)
         self._window_map = {}
 

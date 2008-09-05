@@ -22,7 +22,6 @@ if __name__ == '__main__':
             wrap('tools/wraptypes/wrap.py',
                  '-opyglet/libs/x11/xlib.py',
                  '-lX11',
-                 '-mpyglet.gl.glx',
                  '/usr/include/X11/Xlib.h',
                  '/usr/include/X11/X.h',
                  '/usr/include/X11/Xutil.h')
@@ -30,7 +29,6 @@ if __name__ == '__main__':
             wrap('tools/wraptypes/wrap.py',
                  '-opyglet/libs/x11/xinerama.py',
                  '-lXinerama',
-                 '-mpyglet.gl.glx',
                  '-mpyglet.libs.x11.xlib',
                  '/usr/include/X11/extensions/Xinerama.h')
         if 'xsync' in names:

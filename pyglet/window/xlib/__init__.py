@@ -49,13 +49,6 @@ from pyglet.event import EventDispatcher
 
 from pyglet.canvas.xlib import XlibCanvas
 
-from pyglet import gl
-from pyglet.gl import gl_info
-from pyglet.gl import glu_info
-from pyglet.gl import glx
-from pyglet.gl import glxext_arb
-from pyglet.gl import glxext_mesa
-
 from pyglet.libs.x11 import xlib
 from pyglet.libs.x11 import cursorfont
 try:
@@ -172,8 +165,6 @@ class XlibWindow(BaseWindow):
         # WM.
         if 'fullscreen' in changes or 'resizable' in changes:
             # clear out the GLX context
-            self.switch_to()
-            gl.glFlush()
             self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
             del self.display._window_map[self._window]
@@ -195,22 +186,6 @@ class XlibWindow(BaseWindow):
         self._x_display = self.display._display
         self._x_screen_id = self.display.x_screen
 
-        self._glx_1_3 = self.display.info.have_version(1, 3)
-        self._have_SGI_video_sync = \
-            self.display.info.have_extension('GLX_SGI_video_sync')
-        self._have_SGI_swap_control = \
-            self.display.info.have_extension('GLX_SGI_swap_control')
-        self._have_MESA_swap_control = \
-            self.display.info.have_extension('GLX_MESA_swap_control')
-
-        # In order of preference:
-        # 1. GLX_MESA_swap_control (more likely to work where video_sync will
-        #    not)
-        # 2. GLX_SGI_video_sync (does not work on Intel 945GM, but that has
-        #    MESA)
-        # 3. GLX_SGI_swap_control (cannot be disabled once enabled).
-        self._use_video_sync = (self._have_SGI_video_sync and 
-                                not self._have_MESA_swap_control)
 
         # Create X window if not already existing.
         if not self._window:
@@ -246,6 +221,8 @@ class XlibWindow(BaseWindow):
 
             # TODO
             self.canvas = XlibCanvas(self.display, self._window)
+            self.context.attach(self.canvas)
+            self.context.set_vsync(self._vsync) # XXX ?
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing (in theory).
@@ -422,20 +399,8 @@ class XlibWindow(BaseWindow):
         if not self._window:
             return
 
-        # clear out the GLX context.  Can fail if current context already
-        # destroyed (on exit, say).
-        try:
-            gl.glFlush()
-        except gl.GLException:
-            pass
-
-        if self._glx_1_3:
-            glx.glXMakeContextCurrent(self._x_display, 0, 0, None)
-        else:
-            glx.glXMakeCurrent(self._x_display, 0, None)
-
+        self.context.destroy()
         self._unmap()
-        self.context.detach()
         if self._window:
             xlib.XDestroyWindow(self._x_display, self._window)
 
@@ -449,24 +414,12 @@ class XlibWindow(BaseWindow):
         super(XlibWindow, self).close()
 
     def switch_to(self):
-        self.context.attach(self.canvas)
-        self.set_vsync(self._vsync)
-
-        self._context.set_current()
-        gl_info.set_active_context()
-        glu_info.set_active_context()
+        self.context.set_current()
 
     def flip(self):
         self.draw_mouse_cursor()
 
-        # TODO move to gl.Context
-        if self._vsync and self._have_SGI_video_sync and self._use_video_sync:
-            count = c_uint()
-            glxext_arb.glXGetVideoSyncSGI(byref(count))
-            glxext_arb.glXWaitVideoSyncSGI(
-                2, (count.value + 1) % 2, byref(count))
-
-        # TODO canvas.flip
+        # TODO canvas.flip?
         self.context.flip()
 
         self._sync_resize()
@@ -475,13 +428,7 @@ class XlibWindow(BaseWindow):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
         self._vsync = vsync
-        if not self._use_video_sync:
-            interval = vsync and 1 or 0
-            if self._have_MESA_swap_control:
-                glxext_mesa.glXSwapIntervalMESA(interval)
-            elif self._have_SGI_swap_control and interval:
-                # SGI_swap_control interval cannot be set to 0
-                glxext_arb.glXSwapIntervalSGI(interval)
+        self.context.set_vsync(vsync)
 
     def set_caption(self, caption):
         if caption is None:

@@ -106,12 +106,14 @@ marker_end = '# END GENERATED CONTENT (do not edit above this line)\n'
 
 class ModuleWrapper(object):
     def __init__(self, header, filename,
-                 prologue='', requires_prefix=None, system_header=None):
+                 prologue='', requires_prefix=None, system_header=None,
+                 link_modules=()):
         self.header = header
         self.filename = filename
         self.prologue = prologue
         self.requires_prefix = requires_prefix
         self.system_header = system_header
+        self.link_modules = link_modules
 
     def wrap(self, dir):
         progress('Updating %s...' % self.filename)
@@ -150,6 +152,7 @@ class ModuleWrapper(object):
         header_name = self.system_header or self.header
         wrapper.begin_output(outfile, 
                              library=None,
+                             link_modules=self.link_modules,
                              emit_filenames=(header_name,))
         wrapper.requires_prefix = self.requires_prefix
         source = self.prologue + source
@@ -172,15 +175,18 @@ modules = {
             prologue='#define GL_GLEXT_PROTOTYPES\n#include <GL/gl.h>\n'),
     'glx': 
         ModuleWrapper(GLX_H, 'glx.py', 
-            requires_prefix='GLX_'),
+            requires_prefix='GLX_',
+            link_modules=('pyglet.libs.x11.xlib',)),
     'glxext_arb': 
         ModuleWrapper(GLXEXT_ABI_H, 'glxext_arb.py', requires_prefix='GLX_',
             system_header='GL/glxext.h',
-            prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n'),
+            prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n',
+            link_modules=('pyglet.libs.x11.xlib',)),
     'glxext_nv': 
         ModuleWrapper(GLXEXT_NV_H, 'glxext_nv.py', requires_prefix='GLX_',
             system_header='GL/glxext.h',
-            prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n'),
+            prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n',
+            link_modules=('pyglet.libs.x11.xlib',)),
     'agl':
         ModuleWrapper(AGL_H, 'agl.py'),
     'wgl':
