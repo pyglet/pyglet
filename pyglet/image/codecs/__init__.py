@@ -184,12 +184,13 @@ def add_default_image_codecs():
         pass
 
     # Mac OS X default: QuickTime
-    try:
-        import pyglet.image.codecs.quicktime
-        add_encoders(quicktime)
-        add_decoders(quicktime)
-    except ImportError:
-        pass
+    if sys.platform == 'darwin':
+        try:
+            import pyglet.image.codecs.quicktime
+            add_encoders(quicktime)
+            add_decoders(quicktime)
+        except ImportError:
+            pass
 
     # Windows XP default: GDI+
     if sys.platform in ('win32', 'cygwin'):
@@ -201,12 +202,13 @@ def add_default_image_codecs():
             pass
 
     # Linux default: GdkPixbuf 2.0
-    try:
-        import pyglet.image.codecs.gdkpixbuf2
-        add_encoders(gdkpixbuf2)
-        add_decoders(gdkpixbuf2)
-    except ImportError:
-        pass
+    if sys.platform == 'linux2':
+        try:
+            import pyglet.image.codecs.gdkpixbuf2
+            add_encoders(gdkpixbuf2)
+            add_decoders(gdkpixbuf2)
+        except ImportError:
+            pass
 
     # Fallback: PIL
     try:

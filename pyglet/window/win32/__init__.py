@@ -55,13 +55,6 @@ from pyglet.window import mouse
 
 from pyglet.canvas.win32 import Win32Canvas
 
-from pyglet import gl
-from pyglet.gl import gl_info
-from pyglet.gl import glu_info
-from pyglet.gl import wgl
-from pyglet.gl import wglext_arb
-from pyglet.gl import wgl_info
-
 from pyglet.libs.win32 import _user32, _kernel32, _gdi32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.winkey import *
@@ -248,27 +241,20 @@ class Win32Window(BaseWindow):
         self._wgl_context = None
 
     def _get_vsync(self):
-        if wgl_info.have_extension('WGL_EXT_swap_control'):
-            return bool(wglext_arb.wglGetSwapIntervalEXT())
+        return self.context.get_vsync()
     vsync = property(_get_vsync) # overrides BaseWindow property
 
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
-        if wgl_info.have_extension('WGL_EXT_swap_control'):
-            wglext_arb.wglSwapIntervalEXT(int(vsync))
-        else:
-            warnings.warn('Could not set vsync; unsupported extension.')
+        self.context.set_vsync(vsync)
 
     def switch_to(self):
-        wgl.wglMakeCurrent(self._dc, self._wgl_context)
-        self._context.set_current()
-        gl_info.set_active_context()
-        glu_info.set_active_context()
+        self.context.set_current()
 
     def flip(self):
         self.draw_mouse_cursor()
-        wgl.wglSwapLayerBuffers(self._dc, wgl.WGL_SWAP_MAIN_PLANE)
+        self.context.flip()
 
     def set_location(self, x, y):
         x, y = self._client_to_window_pos(x, y)

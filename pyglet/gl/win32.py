@@ -203,9 +203,25 @@ class Win32Context(Context):
             if not wgl.wglShareLists(share._context, self._context):
                 raise gl.ContextException('Unable to share contexts')
 
+    def set_current(self):
+        wgl.wglMakeCurrent(self.canvas.hdc, self._context)
+        super(Win32Context, self).set_current()
+
     def detach(self):
         if self.canvas:
             wgl.wglDeleteContext(self._context)
             self._context = None
         super(Win32Context, self).detach()
+
+    def flip(self):
+        wgl.wglSwapLayerBuffers(self.canvas.hdc, wgl.WGL_SWAP_MAIN_PLANE)
+
+    def get_vsync(self):
+        if wgl_info.have_extension('WGL_EXT_swap_control'):
+            return bool(wglext_arb.wglGetSwapIntervalEXT())
+
+    def set_vsync(self, vsync):
+        if wgl_info.have_extension('WGL_EXT_swap_control'):
+            wglext_arb.wglSwapIntervalEXT(int(vsync))
+
 
