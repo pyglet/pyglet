@@ -12,7 +12,7 @@ import input
 devices = input.get_devices()
 show_all = True
 
-window = pyglet.window.Window()
+window = pyglet.window.Window(1024, 768)
 batch = pyglet.graphics.Batch()
 
 class TrackedElement(object):
@@ -20,7 +20,7 @@ class TrackedElement(object):
         self.element = element
         self.label = pyglet.text.Label(element.name, 
             font_size=8,
-            x=x, y=y, valign='top', batch=batch)
+            x=x, y=y, anchor_y='top', batch=batch)
 
     def update(self):
         self.label.text = '%s: %s' % (self.element.name, 
@@ -30,7 +30,7 @@ x = 0
 tracked_elements = []
 for device in devices:
     y = window.height
-    label = pyglet.text.Label(device.name or '', x=x, y=y, valign='top', batch=batch)
+    label = pyglet.text.Label(device.name or '', x=x, y=y, anchor_y='top', batch=batch)
     y -= label.content_height
 
     try:
@@ -46,7 +46,7 @@ for device in devices:
                 break
     except input.InputDeviceExclusiveException:
         msg = '(Device is exclusive)'
-        label = pyglet.text.Label(msg, x=x, y=y, valign='top', batch=batch)
+        label = pyglet.text.Label(msg, x=x, y=y, anchor_y='top', batch=batch)
         y -= label.content_height
 
     x += window.width / len(devices)

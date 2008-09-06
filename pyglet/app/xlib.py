@@ -129,7 +129,7 @@ class XlibEventLoop(EventLoop):
             # on a device.
             if not pending_devices:
                 iwtd = self._select_devices
-                pending_displays, _, _ = select.select(iwtd, (), (), sleep_time)
+                pending_devices, _, _ = select.select(iwtd, (), (), sleep_time)
 
             # Dispatch activity on matching devices
             for device in pending_devices:

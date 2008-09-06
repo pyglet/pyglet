@@ -33,7 +33,7 @@ class c_void(Structure):
     _fields_ = [('dummy', c_int)]
 
 
-import pyglet.window.xlib.xlib
+import pyglet.libs.x11.xlib
 
 sz_xGetExtensionVersionReq = 8 	# /usr/include/X11/extensions/XI.h:56
 sz_xGetExtensionVersionReply = 32 	# /usr/include/X11/extensions/XI.h:57

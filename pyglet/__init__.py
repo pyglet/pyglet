@@ -331,6 +331,7 @@ class _ModuleProxy(object):
 
 if not _is_epydoc:
     app = _ModuleProxy('app')
+    canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
     com = _ModuleProxy('com')
     event = _ModuleProxy('event')
@@ -338,6 +339,7 @@ if not _is_epydoc:
     gl = _ModuleProxy('gl')
     graphics = _ModuleProxy('graphics')
     image = _ModuleProxy('image')
+    input = _ModuleProxy('input')
     lib = _ModuleProxy('lib')
     media = _ModuleProxy('media')
     resource = _ModuleProxy('resource')
@@ -349,12 +351,14 @@ if not _is_epydoc:
 # lazy loading)
 if False:
     import app
+    import canvas
     import clock
     import com
     import event
     import font
     import gl
     import graphics
+    import input
     import image
     import lib
     import media
