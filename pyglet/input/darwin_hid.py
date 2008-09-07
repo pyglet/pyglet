@@ -12,8 +12,10 @@ import pyglet
 from pyglet.libs.darwin import carbon, _oscheck, create_cfstring
 from pyglet.libs.darwin.constants import *
 
-import input
-import usage
+from base import Device, Control, Button, Joystick
+from base import DeviceExclusiveException
+
+import usb_hid
 
 # non-broken c_void_p
 void_p = ctypes.POINTER(ctypes.c_int)
@@ -28,6 +30,7 @@ IOReturn = ctypes.c_uint
 CFDictionaryRef = void_p
 CFMutableDictionaryRef = void_p
 CFArrayRef = void_p
+CFStringRef = void_p
 CFUUIDRef = ctypes.POINTER(CFUUIDBytes)
 AbsoluteTime = ctypes.c_double
 HRESULT = ctypes.c_int
@@ -65,6 +68,10 @@ kIOHIDDeviceInterfaceID = carbon.CFUUIDGetConstantUUIDWithBytes(None,
     0x78, 0xBD, 0x42, 0x0C, 0x6F, 0x14, 0x11, 0xD4,
     0x94, 0x74, 0x00, 0x05, 0x02, 0x8F, 0x18, 0xD5)
 
+IOHIDCallbackFunction = ctypes.CFUNCTYPE(None,
+    void_p, IOReturn, ctypes.c_void_p, ctypes.c_void_p)
+CFRunLoopSourceRef = ctypes.c_void_p
+
 class IOHIDEventStruct(ctypes.Structure):
     _fields_ = (
         ('type', IOHIDElementType),
@@ -92,7 +99,8 @@ class IUnknown(ctypes.Structure):
 # bothered.
 class IOHIDQueueInterface(ctypes.Structure):
     _fields_ = IUnknown._fields_ + (
-        ('createAsyncEventSource', ctypes.c_void_p),
+        ('createAsyncEventSource', ctypes.CFUNCTYPE(IOReturn,
+            Self, ctypes.POINTER(CFRunLoopSourceRef))),
         ('getAsyncEventSource', ctypes.c_void_p),
         ('createAsyncPort', ctypes.c_void_p),
         ('getAsyncPort', ctypes.c_void_p),
@@ -111,7 +119,8 @@ class IOHIDQueueInterface(ctypes.Structure):
         ('getNextEvent', ctypes.CFUNCTYPE(IOReturn,
             Self, ctypes.POINTER(IOHIDEventStruct), AbsoluteTime,
             ctypes.c_uint32)),
-        ('setEventCallout', ctypes.c_void_p),
+        ('setEventCallout', ctypes.CFUNCTYPE(IOReturn,
+            Self, IOHIDCallbackFunction, ctypes.c_void_p, ctypes.c_void_p)),
         ('getEventCallout', ctypes.c_void_p),
     )
 
@@ -157,7 +166,7 @@ def get_matching_dictionary():
     matching_dictionary = carbon.IOServiceMatching(kIOHIDDeviceKey)
     return matching_dictionary
 
-def get_existing_devices(master_port, matching_dictionary):
+def get_matching_services(master_port, matching_dictionary):
     # Consumes reference to matching_dictionary
     iterator = io_iterator_t()
     _oscheck(
@@ -165,14 +174,14 @@ def get_existing_devices(master_port, matching_dictionary):
                                             matching_dictionary,
                                             ctypes.byref(iterator))
     )
-    devices = []
+    services = []
     while carbon.IOIteratorIsValid(iterator):
-        device = carbon.IOIteratorNext(iterator)
-        if not device:
+        service = carbon.IOIteratorNext(iterator)
+        if not service:
             break
-        devices.append(Device(device))
+        services.append(service)
     carbon.IOObjectRelease(iterator)
-    return devices
+    return services
 
 def cfstring_to_string(value_string):
     value_length = carbon.CFStringGetLength(value_string)
@@ -226,23 +235,18 @@ def dump_properties(properties):
     carbon.CFDictionaryApplyFunction(properties,
         CFDictionaryApplierFunction(func), None)
 
-class Device(object):
+class DarwinHIDDevice(Device):
     '''
     :IVariables:
         `name` : str
         `manufacturer` : str
 
     '''
-    def __init__(self, generic_device):
-        self._init_properties(generic_device)
+    def __init__(self, display, generic_device):
+        super(DarwinHIDDevice, self).__init__(display, name=None)
+
         self._device = self._get_device_interface(generic_device)
-        self.elements = self._get_elements()
-
-        self._open = False
-        self._queue = None
-        self._queue_depth = 8 # Number of events queue can buffer
-
-    def _init_properties(self, generic_device):
+        
         properties = CFMutableDictionaryRef()
         _oscheck(
             carbon.IORegistryEntryCreateCFProperties(generic_device,
@@ -254,6 +258,12 @@ class Device(object):
         self.manufacturer = get_property(properties, "Manufacturer")
 
         carbon.CFRelease(properties)
+
+        self._controls = self._init_controls()
+
+        self._open = False
+        self._queue = None
+        self._queue_depth = 8 # Number of events queue can buffer
 
     def _get_device_interface(self, generic_device):
         plug_in_interface = \
@@ -282,7 +292,7 @@ class Device(object):
         
         return hid_device_interface
 
-    def _get_elements(self):
+    def _init_controls(self):
         elements_array = CFArrayRef()
         _oscheck(
             self._device.contents.contents.copyMatchingElements(self._device,
@@ -294,7 +304,7 @@ class Device(object):
         n_elements = carbon.CFArrayGetCount(elements_array)
         for i in range(n_elements):
             properties = carbon.CFArrayGetValueAtIndex(elements_array, i)
-            element = DeviceElement(self, properties)
+            element = DarwinHIDControl(properties)
             elements.append(element)
             self._element_cookies[element._cookie] = element
 
@@ -302,11 +312,9 @@ class Device(object):
 
         return elements
 
-    def __repr__(self):
-        return '%s(name=%r, manufacturer=%r)' % (
-            self.__class__.__name__, self.product, self.manufacturer)
+    def open(self, window=None, exclusive=False):
+        super(DarwinHIDDevice, self).open(window, exclusive)
 
-    def open(self, exclusive=False):
         flags = 0
         if exclusive:
             flags |= kIOHIDOptionsTypeSeizeDevice
@@ -314,7 +322,7 @@ class Device(object):
         if result == 0:
             self._open = True
         elif result == kIOReturnExclusiveAccess:
-            raise input.InputDeviceExclusiveException()
+            raise DeviceExclusiveException()
 
         # Create event queue
         self._queue = self._device.contents.contents.allocQueue(self._device)
@@ -322,27 +330,46 @@ class Device(object):
             self._queue.contents.contents.create(self._queue, 
                                                  0, self._queue_depth)
         )
-        # Add all elements into queue
+        # Add all controls into queue
         # TODO: only "interesting/known" elements?
-        for element in self.elements:
+        for control in self._controls:
             r = self._queue.contents.contents.addElement(self._queue,
-                                                         element._cookie, 0)
+                                                         control._cookie, 0)
             if r != 0:
-                print 'error adding %r' % element
+                print 'error adding %r' % control
+
+        self._event_source = CFRunLoopSourceRef()
+        self._queue_callback_func = IOHIDCallbackFunction(self._queue_callback)
+
+        _oscheck(
+            self._queue.contents.contents.createAsyncEventSource(self._queue,
+                                            ctypes.byref(self._event_source))
+        )
+
+        _oscheck(
+            self._queue.contents.contents.setEventCallout(self._queue,
+                self._queue_callback_func, None, None)
+        )
+
+        event_loop = pyglet.app.event_loop._event_loop
+        carbon.GetCFRunLoopFromEventLoop.restype = void_p
+        run_loop = carbon.GetCFRunLoopFromEventLoop(event_loop)
+        kCFRunLoopDefaultMode = \
+            CFStringRef.in_dll(carbon, 'kCFRunLoopDefaultMode')
+        carbon.CFRunLoopAddSource(run_loop,
+                                  self._event_source, 
+                                  kCFRunLoopDefaultMode)
 
         _oscheck(
             self._queue.contents.contents.start(self._queue)
         )
 
-        # HACK XXX
-        pyglet.clock.schedule(self.dispatch_events)
-
     def close(self):
+        super(DarwinHIDDevice, self).close()
+
         if not self._open:
             return
 
-        # HACK XXX
-        pyglet.clock.unschedule(self.dispatch_events)
 
         _oscheck(
             self._queue.contents.contents.stop(self._queue)
@@ -357,39 +384,37 @@ class Device(object):
         )
         self._open = False
 
-    # XXX TEMP/HACK
-    def dispatch_events(self, dt=None):
+    def get_controls(self):
+        return self._controls
+
+    def _queue_callback(self, target, result, refcon, sender):
         if not self._open:
             return
 
         event = IOHIDEventStruct()
         r = self._queue.contents.contents.getNextEvent(self._queue,
                 ctypes.byref(event), 0, 0)
-        if r != 0:
-            # Undocumented behaviour?  returns 3758097127L when no events are
-            # in queue (is documented to block)
-            return
+        while r == 0:
+            try:
+                control = self._element_cookies[event.elementCookie]
+                control._set_value(event.value)
+            except KeyError:
+                pass
 
-        try:
-            element = self._element_cookies[event.elementCookie]
-            element.value = event.value
-        except KeyError:
-            pass
+            r = self._queue.contents.contents.getNextEvent(self._queue,
+                    ctypes.byref(event), 0, 0)
 
-class DeviceElement(object):
-    def __init__(self, device, properties):
-        self.device = device
+class DarwinHIDControl(Control):
+    def __init__(self, properties):
+        super(DarwinHIDControl, self).__init__(name=None)
 
         self._cookie = get_property(properties, 'ElementCookie')
         _usage = get_property(properties, 'Usage')
         usage_page = get_property(properties, 'UsagePage')
 
-        self.name = usage.get_element_usage_name(usage_page, _usage)
-        self.known = usage.get_element_usage_known(usage_page, _usage)
-        self.value = None
+        self.name = usb_hid.get_element_usage_name(usage_page, _usage)
+        self.known = usb_hid.get_element_usage_known(usage_page, _usage)
 
-    def get_value(self):
-        return self.value
 
     '''
     def get_value(self):
@@ -399,6 +424,8 @@ class DeviceElement(object):
         return event.value
     '''
 
-def get_devices():
-    return get_existing_devices(get_master_port(), get_matching_dictionary())
-
+def get_devices(display=None):
+    services = get_matching_services(get_master_port(), 
+                                     get_matching_dictionary()) 
+        
+    return [DarwinHIDDevice(display, service) for service in services]

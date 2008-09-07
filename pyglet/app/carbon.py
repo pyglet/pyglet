@@ -54,6 +54,7 @@ class CarbonEventLoop(EventLoop):
 
     def __init__(self):
         self._post_event_queue = Queue.Queue()
+        self._event_loop = carbon.GetMainEventLoop()
         self._timer = ctypes.c_void_p()
         super(CarbonEventLoop, self).__init__()
 
@@ -81,7 +82,7 @@ class CarbonEventLoop(EventLoop):
 
         e = ctypes.c_void_p()
         event_dispatcher = carbon.GetEventDispatcherTarget()
-        self._event_loop = event_loop = carbon.GetMainEventLoop()
+        event_loop = self._event_loop
         self._event_queue = carbon.GetMainEventQueue()
 
         # Create timer

@@ -25,8 +25,9 @@ class Device(object):
     is_open = False
 
     def __init__(self, display, name):
-        self.name = name
         self.display = display
+        self.name = name
+        self.manufacturer = None
 
     def open(self, window=None, exclusive=False):
         if self.is_open:
