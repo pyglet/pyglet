@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # $Id:$
 
+import sys as _sys
+
 from pyglet import gl
 from pyglet.gl import gl_info
 
