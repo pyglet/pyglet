@@ -230,7 +230,7 @@ class Clock(_ClockBase):
         :Parameters:
             `fps_limit` : float
                 If not None, the maximum allowable framerate.  Defaults
-                to None.
+                to None.  Deprecated in pyglet 1.2.
             `time_function` : function
                 Function to return the elapsed time of the application, 
                 in seconds.  Defaults to time.time, but can be replaced
@@ -729,6 +729,7 @@ def set_fps_limit(fps_limit):
             Maximum frames per second allowed, or None to disable
             limiting.
 
+    :deprecated: Use `pyglet.app.run` and `schedule_interval` instead.
     '''
     _default.set_fps_limit(fps_limit)
 
