@@ -2279,7 +2279,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                     row2 = index.stop / self.columns
                     col2 = index.stop % self.columns
                 assert row2 >= 0 and col2 >= 0 and \
-                       row2 < self.rows and col2 < self.columns
+                       row2 <= self.rows and col2 <= self.columns
 
                 result = []
                 i = row1 * self.columns
