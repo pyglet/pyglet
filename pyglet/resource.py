@@ -358,7 +358,6 @@ class Loader(object):
                             self._index_file(zip_name, location)
 
     def _index_file(self, name, location):
-        print name, location
         if name not in self._index:
             self._index[name] = location
 
