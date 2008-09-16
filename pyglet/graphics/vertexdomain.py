@@ -401,7 +401,7 @@ class VertexList(object):
         assert domain.attribute_names.keys() == \
             self.domain.attribute_names.keys(), 'Domain attributes must match.'
 
-        new_start = domain.allocator.alloc(self.count)
+        new_start = domain._safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
             old = old_attribute.get_region(old_attribute.buffer,
                                            self.start, self.count)
