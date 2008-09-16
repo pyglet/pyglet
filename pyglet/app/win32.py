@@ -49,7 +49,7 @@ class Win32EventLoop(BaseEventLoop):
         self._timer_proc = types.TIMERPROC(self._timer_func)
         self._timer = timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
         self._polling = False
-        self._allow_polling = False
+        self._allow_polling = True
         msg = types.MSG()
         
         self.dispatch_event('on_enter')
