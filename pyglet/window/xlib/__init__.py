@@ -347,6 +347,8 @@ class XlibWindow(BaseWindow):
         if self._visible:
             self.set_visible(True)
 
+        self.set_mouse_platform_visible()
+
     def _map(self):
         if self._mapped:
             return
