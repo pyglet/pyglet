@@ -326,13 +326,16 @@ class Loader(object):
 
             if os.path.isdir(path):
                 # Filesystem directory
-                path = path.rstrip('/')
+                path = path.rstrip(os.path.pathsep)
                 location = FileLocation(path)
                 for dirpath, dirnames, filenames in os.walk(path):
                     dirpath = dirpath[len(path) + 1:]
                     for filename in filenames:
-                        self._index_file(os.path.join(dirpath, filename), 
-                                         location)
+                        if dirpath:
+                            index_name = dirpath + '/' + filename
+                        else:
+                            index_name = filename
+                        self._index_file(index_name, location)
             else:
                 # Find path component that is the ZIP file.
                 dir = ''
