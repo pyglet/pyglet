@@ -36,8 +36,12 @@
 Generated with:
 ../tools/wraptypes/wrap.py /usr/include/AL/al.h -lopenal -olib_openal.py
 
-.. Hacked to remove non-existant library functions.  TODO add alGetError
-check.
+.. Hacked to remove non-existant library functions.  
+
+TODO add alGetError check.
+
+.. alListener3i and alListeneriv are present in my OS X 10.4 but not another
+10.4 user's installation.  They've also been removed for compatibility.
 '''
 
 __docformat__ =  'restructuredtext'
@@ -254,14 +258,14 @@ alListeneri.restype = None
 alListeneri.argtypes = [ALenum, ALint]
 
 # /usr/include/AL/al.h:458
-alListener3i = _lib.alListener3i
-alListener3i.restype = None
-alListener3i.argtypes = [ALenum, ALint, ALint, ALint]
+#alListener3i = _lib.alListener3i
+#alListener3i.restype = None
+#alListener3i.argtypes = [ALenum, ALint, ALint, ALint]
 
 # /usr/include/AL/al.h:460
-alListeneriv = _lib.alListeneriv
-alListeneriv.restype = None
-alListeneriv.argtypes = [ALenum, POINTER(ALint)]
+#alListeneriv = _lib.alListeneriv
+#alListeneriv.restype = None
+#alListeneriv.argtypes = [ALenum, POINTER(ALint)]
 
 # /usr/include/AL/al.h:465
 alGetListenerf = _lib.alGetListenerf

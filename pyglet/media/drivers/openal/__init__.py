@@ -54,10 +54,6 @@ class OpenALException(MediaException):
 # TODO move functions into context/driver?
 
 def _split_nul_strings(s):
-    # Check for null pointer (seen on Vista/Creative)
-    if not ctypes.cast(s, ctypes.c_void_p).value:
-        return []
-
     # NUL-separated list of strings, double-NUL-terminated.
     nul = False
     i = 0
@@ -75,6 +71,11 @@ def _split_nul_strings(s):
 
 def get_extensions():
     extensions = alc.alcGetString(context._device, alc.ALC_EXTENSIONS)
+
+    # Check for null pointer
+    if not ctypes.cast(extensions, ctypes.c_void_p).value:
+        return []
+
     if sys.platform == 'darwin':
         return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
     else:
