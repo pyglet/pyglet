@@ -22,7 +22,7 @@ from pyglet.text import layout
 from pyglet import window
 from pyglet.window import key, mouse
 
-doctext += '''PLAIN.py test document.
+doctext = '''PLAIN.py test document.
 
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Maecenas aliquet quam sit amet enim. Donec iaculis, magna vitae imperdiet convallis, lectus sem ultricies nulla, non fringilla quam felis tempus velit. Etiam et velit. Integer euismod. Aliquam a diam. Donec sed ante. Mauris enim pede, dapibus sed, dapibus vitae, consectetuer in, est. Donec aliquam risus eu ipsum. Integer et tortor. Ut accumsan risus sed ante.
 
