@@ -237,7 +237,7 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
     def render(self, text):
         # Convert text to UCS2
         text_len = len(text)
-        text = str_ucs2(text)
+        text_ucs2 = str_ucs2(text)
 
         # Create layout override handler to extract device advance value.
         override_spec = ATSULayoutOperationOverrideSpecifier()
@@ -253,7 +253,7 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
             kATSUCGContextTag: self._bitmap_context,
             kATSULayoutOperationOverrideTag: override_spec})
         carbon.ATSUSetTextPointerLocation(layout,
-            text,
+            text_ucs2,
             kATSUFromTextBeginning,
             kATSUToTextEnd,
             text_len)
@@ -304,7 +304,11 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
         # similar (programmatically) to Win32 and FreeType.  Still, worth
         # messing around with (comment out next line) if you're interested.
         advance = int(round(advance))
-        
+
+        # Fix advance for zero-width space
+        if text == u'\u200b':
+            advance = 0
+
         # A negative pitch is required, but it is much faster to load the
         # glyph upside-down and flip the tex_coords.  Note region used
         # to start at top of glyph image.
