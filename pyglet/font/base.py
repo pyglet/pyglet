@@ -42,9 +42,101 @@ classes as a documented interface to the concrete classes.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import unicodedata
 
 from pyglet.gl import *
 from pyglet import image
+
+_other_grapheme_extend = \
+    map(unichr, [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
+                 0x0cd5, 0x0cd6, 0x0d3e, 0x0d57, 0x0dcf, 0x0ddf, 0x200c,
+                 0x200d, 0xff9e, 0xff9f]) # skip codepoints above U+10000
+_logical_order_exception = \
+    map(unichr, range(0xe40, 0xe45) + range(0xec0, 0xec4))
+
+_grapheme_extend = lambda c, cc: \
+    cc in ('Me', 'Mn') or c in _other_grapheme_extend
+
+_CR = u'\u000d'
+_LF = u'\u000a'
+_control = lambda c, cc: cc in ('ZI', 'Zp', 'Cc', 'Cf') and not \
+    c in map(unichr, [0x000d, 0x000a, 0x200c, 0x200d])
+_extend = lambda c, cc: _grapheme_extend(c, cc) or \
+    c in map(unichr, [0xe30, 0xe32, 0xe33, 0xe45, 0xeb0, 0xeb2, 0xeb3])
+_prepend = lambda c, cc: c in _logical_order_exception
+_spacing_mark = lambda c, cc: cc == 'Mc' and c not in _other_grapheme_extend
+
+def _grapheme_break(left, right):
+    # GB1
+    if left is None:
+        return True
+
+    # GB2 not required, see end of get_grapheme_clusters
+
+    # GB3
+    if left == _CR and right == LF:
+        return False
+    
+    left_cc = unicodedata.category(left)
+
+    # GB4
+    if _control(left, left_cc):
+        return True
+
+    right_cc = unicodedata.category(right)
+
+    # GB5
+    if _control(right, right_cc):
+        return True
+
+    # GB6, GB7, GB8 not implemented
+
+    # GB9
+    if _extend(right, right_cc):
+        return False
+
+    # GB9a
+    if _spacing_mark(right, right_cc):
+        return False
+
+    # GB9b
+    if _prepend(left, left_cc):
+        return False
+    
+    # GB10
+    return True
+
+def get_grapheme_clusters(text):
+    '''Implements Table 2 of UAX #29: Grapheme Cluster Boundaries.
+
+    Does not currently implement Hangul syllable rules.
+    
+    :Parameters:
+        `text` : unicode
+            String to cluster.
+
+    :since: pyglet 1.1.2
+
+    :rtype: List of `unicode`
+    :return: List of Unicode grapheme clusters
+    '''
+    clusters = []
+    cluster = ''
+    left = None
+    for right in text:
+        if cluster and _grapheme_break(left, right):
+            clusters.append(cluster)
+            cluster = ''
+        elif cluster:
+            # Add a zero-width space to keep len(clusters) == len(text)
+            clusters.append(u'\u200b')
+        cluster += right
+        left = right
+
+    # GB2
+    if cluster:
+        clusters.append(cluster)
+    return clusters
 
 class Glyph(image.TextureRegion):
     '''A single glyph located within a larger texture.
@@ -148,8 +240,9 @@ class GlyphTextureAtlas(image.Texture):
         self.line_height = max(self.line_height, image.height)
         region = self.get_region(
             self.x, self.y, image.width, image.height)
-        region.blit_into(image, 0, 0, 0)
-        self.x += image.width + 1
+        if image.width > 0:
+            region.blit_into(image, 0, 0, 0)
+            self.x += image.width + 1
         return region
 
 class GlyphRenderer(object):
@@ -274,7 +367,7 @@ class Font(object):
         '''
         glyph_renderer = None
         glyphs = []         # glyphs that are committed.
-        for c in text:
+        for c in get_grapheme_clusters(text):
             # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
             # boxes)
             if c == '\t':

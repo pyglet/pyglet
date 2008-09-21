@@ -431,7 +431,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
 
     def render(self, text):
         
-        ch = ctypes.c_wchar(text)
+        ch = ctypes.create_unicode_buffer(text)
 
         # Layout rectangle; not clipped against so not terribly important.
         width = 10000
@@ -452,7 +452,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
                  StringFormatFlagsNoClip | 
                  StringFormatFlagsNoFitBlackBox)
         gdiplus.GdipSetStringFormatFlags(format, flags)
-        gdiplus.GdipMeasureString(self._graphics, ctypes.byref(ch), 1,
+        gdiplus.GdipMeasureString(self._graphics, ch, len(ch),
             self.font._gdipfont, ctypes.byref(rect), format,
             ctypes.byref(bbox), 0, 0)
 
@@ -484,7 +484,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # Draw character to bitmap
         
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
-        gdiplus.GdipDrawString(self._graphics, ctypes.byref(ch), 1,
+        gdiplus.GdipDrawString(self._graphics, ch, len(ch),
             self.font._gdipfont, ctypes.byref(rect), format,
             self._brush)
         gdiplus.GdipFlush(self._graphics, 1)
