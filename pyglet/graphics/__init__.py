@@ -180,6 +180,7 @@ def draw(size, mode, *data):
     '''
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
+    buffers = []
     for format, array in data:
         attribute = vertexattribute.create_attribute(format)
         assert size == len(array) // attribute.count, \
@@ -190,8 +191,10 @@ def draw(size, mode, *data):
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
+        buffers.append(buffer)
 
     glDrawArrays(mode, 0, size)
+    glFlush()
         
     glPopClientAttrib()
 
@@ -211,6 +214,7 @@ def draw_indexed(size, mode, indices, *data):
     '''
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
+    buffers = []
     for format, array in data:
         attribute = vertexattribute.create_attribute(format)
         assert size == len(array) // attribute.count, \
@@ -221,6 +225,7 @@ def draw_indexed(size, mode, indices, *data):
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
+        buffers.append(buffer)
 
     if size <= 0xff:
         index_type = GL_UNSIGNED_BYTE
@@ -234,6 +239,7 @@ def draw_indexed(size, mode, indices, *data):
 
     index_array = (index_c_type * len(indices))(*indices)
     glDrawElements(mode, len(indices), index_type, index_array)
+    glFlush()
     
     glPopClientAttrib()
 
