@@ -177,6 +177,7 @@ class VertexDomain(object):
             if usage == GL_STATIC_DRAW:
                 # Group attributes for interleaved buffer
                 static_attributes.append(attribute)
+                attributes.append(attribute)
             else:
                 # Create non-interleaved buffer
                 attributes.append(attribute)
