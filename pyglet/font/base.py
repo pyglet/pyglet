@@ -367,7 +367,7 @@ class Font(object):
         '''
         glyph_renderer = None
         glyphs = []         # glyphs that are committed.
-        for c in get_grapheme_clusters(text):
+        for c in get_grapheme_clusters(unicode(text)):
             # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
             # boxes)
             if c == '\t':
