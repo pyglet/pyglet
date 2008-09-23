@@ -564,10 +564,13 @@ class StaticSource(Source):
             data.write(audio_data.get_string_data())
         self._data = data.getvalue()
 
+        self._duration = len(self._data) / \
+                float(self.audio_format.bytes_per_second)
+
     def _get_queue_source(self):
         return StaticMemorySource(self._data, self.audio_format)
 
-    def get_audio_data(self, bytes):
+    def _get_audio_data(self, bytes):
         raise RuntimeError('StaticSource cannot be queued.')
 
 class StaticMemorySource(StaticSource):
@@ -593,7 +596,7 @@ class StaticMemorySource(StaticSource):
 
         self._file.seek(offset)
 
-    def get_audio_data(self, bytes):
+    def _get_audio_data(self, bytes):
         offset = self._file.tell()
         timestamp = float(offset) / self.audio_format.bytes_per_second
 
@@ -637,6 +640,7 @@ class SourceGroup(object):
             self._sources[0]._seek(time)
 
     def queue(self, source):
+        source = source._get_queue_source()
         assert(source.audio_format == self.audio_format)
         self._sources.append(source)
         self.duration += source.duration
@@ -657,7 +661,8 @@ class SourceGroup(object):
     def _advance(self):
         if self._sources:
             self._timestamp_offset += self._sources[0].duration
-            self._sources.pop(0)
+            old_source = self._sources.pop(0)
+            self.duration -= old_source.duration
 
     def _get_loop(self):
         return self._loop
@@ -746,6 +751,18 @@ class AbstractAudioPlayer(object):
     def delete(self):
         '''Stop playing and clean up all resources used by player.'''
         raise NotImplementedError('abstract')
+   
+    def _play_group(self, audio_players):
+        '''Begin simultaneous playback on a list of audio players.'''
+        # This should be overridden by subclasses for better synchrony.
+        for player in audio_players:
+            player.play()
+
+    def _stop_group(self, audio_players):
+        '''Stop simultaneous playback on a list of audio players.'''
+        # This should be overridden by subclasses for better synchrony.
+        for player in audio_players:
+            player.play()
 
     def clear(self):
         '''Clear all buffered data and prepare for replacement data.
@@ -994,9 +1011,148 @@ Player.register_event_type('on_player_eos')
 Player.register_event_type('on_source_group_eos')
 Player.register_event_type('on_video_frame')
 
+class PlayerGroup(object):
+    '''Group of players that can be played and paused simultaneously.
+
+    :Ivariables:
+        `players` : list of `Player`
+            Players in this group.
+
+    '''
+
+    def __init__(self, players):
+        '''Create a player group for the given set of players.
+
+        All players in the group must currently not belong to any other
+        group.
+
+        :Parameters:
+            `players` : Sequence of `Player`
+                Players to add to this group.
+
+        '''
+        self.players = list(players)
+
+    def play(self):
+        '''Begin playing all players in the group simultaneously.
+        '''
+        audio_players = [p._audio_player \
+                         for p in self.players if p._audio_player]
+        if audio_players:
+            audio_players[0]._play_group(audio_players)
+        for player in self.players:
+            player.play()
+
+    def pause(self):
+        '''Pause all players in the group simultaneously.
+        '''
+        audio_players = [p._audio_player \
+                         for p in self.players if p._audio_player]
+        if audio_players:
+            audio_players[0]._stop_group(audio_players)
+        for player in self.players:
+            player.pause()
+
 class AbstractAudioDriver(object):
     def create_audio_player(self, source_group, player):
         raise NotImplementedError('abstract')
+
+    def get_listener(self):
+        raise NotImplementedError('abstract')
+
+class AbstractListener(object):
+    '''The listener properties for positional audio.
+
+    You can obtain the singleton instance of this class by calling
+    `AbstractAudioDriver.get_listener`.
+    '''
+    _volume = 1.0
+    _position = (0, 0, 0)
+    _forward_orientation = (0, 0, -1)
+    _up_orientation = (0, 1, 0)
+
+    def _set_volume(self, volume):
+        raise NotImplementedError('abstract')
+
+    volume = property(lambda self: self._volume,
+                      lambda self, volume: self._set_volume(volume),
+                      doc='''The master volume for sound playback.
+
+        All sound volumes are multiplied by this master volume before being
+        played.  A value of 0 will silence playback (but still consume
+        resources).  The nominal volume is 1.0.
+        
+        :type: float
+        ''')
+
+    def _set_position(self, position):
+        raise NotImplementedError('abstract')
+
+    position = property(lambda self: self._position,
+                        lambda self, position: self._set_position(position),
+                        doc='''The position of the listener in 3D space.
+
+        The position is given as a tuple of floats (x, y, z).  The unit
+        defaults to meters, but can be modified with the listener
+        properties.
+        
+        :type: 3-tuple of float
+        ''')
+
+    def _set_forward_orientation(self, orientation):
+        raise NotImplementedError('abstract')
+
+    forward_orientation = property(lambda self: self._forward_orientation,
+                               lambda self, o: self._set_forward_orientation(o),
+                               doc='''A vector giving the direction the
+        listener is facing.
+
+        The orientation is given as a tuple of floats (x, y, z), and has
+        no unit.  The forward orientation should be orthagonal to the
+        up orientation.
+        
+        :type: 3-tuple of float
+        ''')
+
+    def _set_up_orientation(self, orientation):
+        raise NotImplementedError('abstract')
+
+    up_orientation = property(lambda self: self._up_orientation,
+                              lambda self, o: self._set_up_orientation(o),
+                              doc='''A vector giving the "up" orientation
+        of the listener.
+
+        The orientation is given as a tuple of floats (x, y, z), and has
+        no unit.  The up orientation should be orthagonal to the
+        forward orientation.
+        
+        :type: 3-tuple of float
+        ''')
+
+class _LegacyListener(AbstractListener):
+    def _set_volume(self, volume):
+        get_audio_driver().get_listener().volume = volume
+        self._volume = volume
+
+    def _set_position(self, position):
+        get_audio_driver().get_listener().position = position
+        self._position = position
+
+    def _set_forward_orientation(self, forward_orientation):
+        get_audio_driver().get_listener().forward_orientation = \
+            forward_orientation
+        self._forward_orientation = forward_orientation
+
+    def _set_up_orientation(self, up_orientation):
+        get_audio_driver().get_listener().up_orientation = up_orientation
+        self._up_orientation = up_orientation
+
+#: The singleton `AbstractListener` object.
+#:
+#: :deprecated: Use `AbstractAudioDriver.get_listener`
+#:
+#: :type: `AbstractListener`
+listener = _LegacyListener()
 
 class AbstractSourceLoader(object):
     def load(self, filename, file):

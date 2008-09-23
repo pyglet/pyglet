@@ -43,7 +43,7 @@ import Queue
 import lib_openal as al
 import lib_alc as alc
 from pyglet.media import MediaException, MediaEvent, AbstractAudioPlayer, \
-    AbstractAudioDriver, MediaThread
+    AbstractAudioDriver, AbstractListener, MediaThread
 
 import pyglet
 _debug = pyglet.options['debug_media']
@@ -447,6 +447,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         context.unlock()
 
 class OpenALDriver(AbstractAudioDriver):
+    _forward_orientation = (0, 0, -1)
+    _up_orientation = (0, 1, 0)
+
     def __init__(self, device_name=None):
         super(OpenALDriver, self).__init__()
 
@@ -463,6 +466,8 @@ class OpenALDriver(AbstractAudioDriver):
         self.have_1_1 = self.have_version(1, 1) and False
 
         self._lock = threading.Lock()
+
+        self._listener = OpenALListener(self)
 
         # Start worker thread
         self.worker = OpenALWorker()
@@ -492,34 +497,38 @@ class OpenALDriver(AbstractAudioDriver):
                            ctypes.sizeof(minor), minor)
         return major.value, minor.value
 
+    def get_listener(self):
+        return self._listener
 
-    # Listener API
+class OpenALListener(AbstractListener):
+    def __init__(self, driver):
+        self._driver = driver
 
     def _set_volume(self, volume):
-        self.lock()
+        self._driver.lock()
         al.alListenerf(al.AL_GAIN, volume)
         self.unlock()
         self._volume = volume
 
     def _set_position(self, position):
         x, y, z = position
-        self.lock()
+        self._driver.lock()
         al.alListener3f(al.AL_POSITION, x, y, z)
-        self.unlock()
+        self._driver.unlock()
         self._position = position 
 
     def _set_forward_orientation(self, orientation):
         val = (al.ALfloat * 6)(*(orientation + self._up_orientation))
-        self.lock()
+        self._driver.lock()
         al.alListenerfv(al.AL_ORIENTATION, val)
-        self.unlock()
+        self._driver.unlock()
         self._forward_orientation = orientation
 
     def _set_up_orientation(self, orientation):
         val = (al.ALfloat * 6)(*(self._forward_orientation + orientation))
-        self.lock()
+        self._driver.lock()
         al.alListenerfv(al.AL_ORIENTATION, val)
-        self.unlock()
+        self._driver.unlock()
         self._up_orientation = orientation
 
 context = None
