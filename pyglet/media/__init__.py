@@ -726,7 +726,7 @@ class SourceGroup(object):
 class AbstractAudioPlayer(object):
     '''Base class for driver audio players.
     '''
-    
+
     def __init__(self, source_group, player):
         '''Create a new audio player.
 
@@ -828,6 +828,31 @@ class Player(pyglet.event.EventDispatcher):
     _video_frame_dirty = False
     _video_frame_required = True
 
+    #: The player will pause when it reaches the end of the stream.
+    #:
+    #: :deprecated: Use `SourceGroup.advance_after_eos`
+    EOS_PAUSE = 'pause'
+
+    #: The player will loop the current stream continuosly.
+    #:
+    #: :deprecated: Use `SourceGroup.loop`
+    EOS_LOOP = 'loop'
+
+    #: The player will move on to the next queued stream when it reaches the
+    #: end of the current source.  If there is no source queued, the player
+    #: will pause.
+    #:
+    #: :deprecated: Use `SourceGroup.advance_after_eos`
+    EOS_NEXT = 'next'
+
+    #: The player will stop entirely; valid only for ManagedSoundPlayer.
+    #: 
+    #: :deprecated: Use `SourceGroup.advance_after_eos`
+    EOS_STOP = 'stop'
+
+    #: :deprecated:
+    _eos_action = EOS_NEXT
+
     def __init__(self):
         # List of queued source groups
         self._groups = []
@@ -848,6 +873,7 @@ class Player(pyglet.event.EventDispatcher):
             group = SourceGroup(source.audio_format, source.video_format)
             group.queue(source)
             self._groups.append(group)
+            self._set_eos_action(self._eos_action)
 
         if not self._audio_player:
             self._create_audio_player()
@@ -882,6 +908,7 @@ class Player(pyglet.event.EventDispatcher):
 
         del self._groups[0]
         if self._groups:
+            self._set_eos_action(self._eos_action)
             self._create_audio_player()
             return
 
@@ -968,6 +995,27 @@ class Player(pyglet.event.EventDispatcher):
             self.get_texture().blit_into(image, 0, 0, 0)
         if _debug:
             print 'update_texture -> void (dirty = %r)' % self._video_frame_dirty, self
+
+    def _set_eos_action(self, eos_action):
+        ''':deprecated:'''
+        assert eos_action in (self.EOS_NEXT, self.EOS_STOP, self.EOS_PAUSE, self.EOS_LOOP)
+        self._eos_action = eos_action
+        for group in self._groups:
+            group.loop = eos_action == self.EOS_LOOP
+            group.advance_after_eos = eos_action == self.EOS_NEXT
+
+    eos_action = property(lambda self: self._eos_action,
+                          _set_eos_action,
+                          doc='''Set the behaviour of the player when it
+        reaches the end of the current source.
+
+        This must be one of the constants `EOS_NEXT`, `EOS_PAUSE`, `EOS_STOP` or
+        `EOS_LOOP`.
+
+        :deprecated: Use `SourceGroup.loop` and `SourceGroup.advance_after_eos`
+
+        :type: str
+        ''')
 
     def on_player_eos(self):
         '''The player ran out of sources.
