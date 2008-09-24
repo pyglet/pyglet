@@ -570,7 +570,7 @@ class StaticSource(Source):
     def _get_queue_source(self):
         return StaticMemorySource(self._data, self.audio_format)
 
-    def _get_audio_data(self, bytes):
+    def get_audio_data(self, bytes):
         raise RuntimeError('StaticSource cannot be queued.')
 
 class StaticMemorySource(StaticSource):
@@ -596,7 +596,7 @@ class StaticMemorySource(StaticSource):
 
         self._file.seek(offset)
 
-    def _get_audio_data(self, bytes):
+    def get_audio_data(self, bytes):
         offset = self._file.tell()
         timestamp = float(offset) / self.audio_format.bytes_per_second
 
@@ -611,7 +611,7 @@ class StaticMemorySource(StaticSource):
             return None
 
         duration = float(len(data)) / self.audio_format.bytes_per_second
-        return AudioData(data, len(data), timestamp, duration)
+        return AudioData(data, len(data), timestamp, duration, [])
 
 class SourceGroup(object):
     '''Read data from a queue of sources, with support for looping.  All
@@ -688,7 +688,7 @@ class SourceGroup(object):
         :return: Audio data, or None if there is no more data.
         '''
 
-        data = self._sources[0]._get_audio_data(bytes) # TODO method rename
+        data = self._sources[0].get_audio_data(bytes)
         eos = False
         while not data:
             eos = True
@@ -704,7 +704,7 @@ class SourceGroup(object):
                 else:
                     return None
                 
-            data = self._sources[0]._get_audio_data(bytes) # TODO method rename
+            data = self._sources[0].get_audio_data(bytes) # TODO method rename
 
         data.timestamp += self._timestamp_offset
         if eos:

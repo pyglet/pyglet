@@ -221,6 +221,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             pass
 
     def delete(self):
+        if _debug:
+            print 'OpenALAudioPlayer.delete()'
         return
         # XXX TODO crashes
         context.lock()
@@ -232,6 +234,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if self._playing:
             return
 
+        if _debug:
+            print 'OpenALAudioPlayer.play()'
         self._playing = True
         self._al_play()
         if not context.have_1_1:
@@ -240,6 +244,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         context.worker.add(self)
 
     def _al_play(self):
+        if _debug:
+            print 'OpenALAudioPlayer._al_play()'
         context.lock()
         state = al.ALint()
         al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
@@ -251,6 +257,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if not self._playing:
             return
 
+        if _debug:
+            print 'OpenALAudioPlayer.stop()'
         self._pause_timestamp = self.get_time()
         context.lock()
         al.alSourcePause(self._al_source)
@@ -260,6 +268,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         context.worker.remove(self)
 
     def clear(self):
+        if _debug:
+            print 'OpenALAudioPlayer.clear()'
+
         self._lock.acquire()
         context.lock()
 

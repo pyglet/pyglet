@@ -446,15 +446,15 @@ class AVbinSource(StreamingSource):
 
         elif self._packet.stream_index == self._audio_stream_index:
             audio_data = self._decode_audio_packet()
-            if _debug:
-                print 'Got an audio packet at', audio_data.timestamp
             if audio_data:
+                if _debug:
+                    print 'Got an audio packet at', audio_data.timestamp
                 self._buffered_audio_data.append(audio_data)
                 return 'audio', audio_data
 
         return None, None
 
-    def _get_audio_data(self, bytes):
+    def get_audio_data(self, bytes):
         try:
             audio_data = self._buffered_audio_data.pop(0)
             audio_data_timeend = audio_data.timestamp + audio_data.duration
@@ -463,7 +463,7 @@ class AVbinSource(StreamingSource):
             audio_data_timeend = self._video_timestamp + 1
 
         if _debug:
-            print '_get_audio_data'
+            print 'get_audio_data'
 
         have_video_work = False
 
@@ -491,7 +491,7 @@ class AVbinSource(StreamingSource):
 
         if not audio_data:
             if _debug:
-                print '_get_audio_data returning None'
+                print 'get_audio_data returning None'
             return None
 
         while self._events and self._events[0].timestamp <= audio_data_timeend:
@@ -501,7 +501,7 @@ class AVbinSource(StreamingSource):
                 audio_data.events.append(event)
 
         if _debug:
-            print '_get_audio_data returning ts %f with events' % \
+            print 'get_audio_data returning ts %f with events' % \
                 audio_data.timestamp, audio_data.events
             print 'remaining events are', self._events
         return audio_data
