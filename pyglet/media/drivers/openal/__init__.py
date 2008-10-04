@@ -513,7 +513,7 @@ class OpenALListener(AbstractListener):
     def _set_volume(self, volume):
         self._driver.lock()
         al.alListenerf(al.AL_GAIN, volume)
-        self.unlock()
+        self._driver.unlock()
         self._volume = volume
 
     def _set_position(self, position):

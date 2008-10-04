@@ -828,6 +828,19 @@ class Player(pyglet.event.EventDispatcher):
     _video_frame_dirty = False
     _video_frame_required = True
 
+    # Spacialisation attributes, preserved between audio players
+    _volume = 1.0
+    _min_distance = 1.0
+    _max_distance = 100000000.
+
+    _position = (0, 0, 0)
+    _pitch = 1.0
+
+    _cone_orientation = (0, 0, 1)
+    _cone_inner_angle = 360.
+    _cone_outer_angle = 360.
+    _cone_outer_gain = 1.
+
     #: The player will pause when it reaches the end of the stream.
     #:
     #: :deprecated: Use `SourceGroup.advance_after_eos`
@@ -937,6 +950,22 @@ class Player(pyglet.event.EventDispatcher):
             audio_driver = get_silent_audio_driver()
         self._audio_player = audio_driver.create_audio_player(group, self)
 
+        _class = self.__class__
+        def _set(name):
+            private_name = '_' + name
+            value = getattr(self, private_name) 
+            if value != getattr(_class, private_name):
+                getattr(self._audio_player, 'set_' + name)(value)
+        _set('volume')
+        _set('min_distance')
+        _set('max_distance')
+        _set('position')
+        _set('pitch')
+        _set('cone_orientation')
+        _set('cone_inner_angle')
+        _set('cone_outer_angle')
+        _set('cone_outer_gain')
+
         # TODO video texture create here.
 
         if self._playing:
@@ -994,11 +1023,13 @@ class Player(pyglet.event.EventDispatcher):
                 print 'blit_into'
             self.get_texture().blit_into(image, 0, 0, 0)
         if _debug:
-            print 'update_texture -> void (dirty = %r)' % self._video_frame_dirty, self
+            print 'update_texture -> void (dirty = %r)' % \
+                self._video_frame_dirty, self
 
     def _set_eos_action(self, eos_action):
         ''':deprecated:'''
-        assert eos_action in (self.EOS_NEXT, self.EOS_STOP, self.EOS_PAUSE, self.EOS_LOOP)
+        assert eos_action in (self.EOS_NEXT, self.EOS_STOP, 
+                              self.EOS_PAUSE, self.EOS_LOOP)
         self._eos_action = eos_action
         for group in self._groups:
             group.loop = eos_action == self.EOS_LOOP
@@ -1016,6 +1047,32 @@ class Player(pyglet.event.EventDispatcher):
 
         :type: str
         ''')
+
+    def _player_property(name, doc=None):
+        private_name = '_' + name
+        set_name = 'set_' + name
+        def _player_property_set(self, value):
+            setattr(self, private_name, value)
+            if self._audio_player:
+                getattr(self._audio_player, set_name)(value)
+
+        def _player_property_get(self):
+            return getattr(self, private_name)
+
+        return property(_player_property_get, _player_property_set, doc=doc)
+
+    # TODO docstrings for these...
+    volume = _player_property('volume')
+    min_distance = _player_property('min_distance')
+    max_distance = _player_property('max_distance')
+    position = _player_property('position')
+    pitch = _player_property('pitch')
+    cone_orientation = _player_property('cone_orientation')
+    cone_inner_angle = _player_property('cone_inner_angle')
+    cone_outer_angle = _player_property('cone_outer_angle')
+    cone_outer_gain = _player_property('cone_outer_gain')
+
+    # Events
 
     def on_player_eos(self):
         '''The player ran out of sources.
