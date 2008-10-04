@@ -64,10 +64,14 @@ class GLXInfoException(Exception):
 
 class GLXInfo(object):
     def __init__(self, display=None):
+        # Set default display if not set
+        if display and not _glx_info.display:
+            _glx_info.set_display(display)
+
         self.display = display
 
     def set_display(self, display):
-        self.display = cast(pointer(display), POINTER(Display))
+        self.display = display
 
     def check_display(self):
         if not self.display:

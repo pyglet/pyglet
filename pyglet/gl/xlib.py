@@ -217,7 +217,7 @@ class BaseXlibContext(Context):
         self._vsync = True
 
     def is_direct(self):
-        return glx.glXIsDirect(self.config.display._display, self.glx_context)
+        return glx.glXIsDirect(self.x_display, self.glx_context)
 
     def set_vsync(self, vsync=True):
         self._vsync = vsync

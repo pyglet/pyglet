@@ -142,7 +142,7 @@ def dump_glx():
 def dump_media():
     '''Dump pyglet.media info.'''
     import pyglet.media
-    print 'driver:', pyglet.media.driver.__name__
+    print 'audio driver:', pyglet.media.get_audio_driver()
 
 def dump_avbin():
     '''Dump AVbin info.'''
@@ -159,13 +159,16 @@ def dump_al():
     '''Dump OpenAL info.'''
     try:
         from pyglet.media.drivers import openal
-        print 'Library:', openal.al._lib
-        print 'Version:', openal.get_version()
-        print 'Extensions:'
-        for extension in openal.get_extensions():
-            print '  ', extension
     except:
         print 'OpenAL not available.'
+        return
+    print 'Library:', openal.al._lib
+
+    driver = openal.create_audio_driver()
+    print 'Version:', driver.get_version()
+    print 'Extensions:'
+    for extension in driver.get_extensions():
+        print '  ', extension
 
 def _try_dump(heading, func):
     _heading(heading)

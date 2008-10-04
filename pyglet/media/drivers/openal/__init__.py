@@ -67,22 +67,7 @@ def _split_nul_strings(s):
             nul = False
         i += 1
     s = s[:i - 1]
-    return s.split('\0')
-
-def get_extensions():
-    extensions = alc.alcGetString(context._device, alc.ALC_EXTENSIONS)
-
-    # Check for null pointer
-    if not ctypes.cast(extensions, ctypes.c_void_p).value:
-        return []
-
-    if sys.platform == 'darwin':
-        return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
-    else:
-        return _split_nul_strings(extensions)
-
-def have_extension(extension):
-    return extension in get_extensions()
+    return filter(None, [ss.strip() for ss in s.split('\0')])
 
 format_map = {
     (1,  8): al.AL_FORMAT_MONO8,
@@ -507,6 +492,16 @@ class OpenALDriver(AbstractAudioDriver):
         alc.alcGetIntegerv(self._device, alc.ALC_MINOR_VERSION, 
                            ctypes.sizeof(minor), minor)
         return major.value, minor.value
+
+    def get_extensions(self):
+        extensions = alc.alcGetString(self._device, alc.ALC_EXTENSIONS)
+        if sys.platform in ('darwin', 'linux2'):
+            return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
+        else:
+            return _split_nul_strings(extensions)
+    
+    def have_extension(extension):
+        return extension in get_extensions()
 
     def get_listener(self):
         return self._listener
