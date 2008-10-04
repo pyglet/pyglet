@@ -1,3 +1,26 @@
+1.1.2
+    * pyglet.clock: Fixed schedule_interval_soft after large delta
+    * pyglet.clock: Deprecated set_fps_limit
+    * pyglet.font: Fixed rendering of glyphs requiring Unicode combiners
+      and extenders
+    * pyglet.graphics: Fixed memory error in vertex list migration
+    * pyglet.graphics: Fixed early garbage collection of buffers in draw()
+    * pyglet.graphics: Fixed vertex domains mixing static and stream
+      attributes
+    * pyglet.image: Fixed bounds assertion on ImageGrid.__getitem__
+    * pyglet.media: Fixed OpenGL extension string splitting when extension
+      string is not available
+    * pyglet.media: Removed OpenGL functions alListener3i and alListeneriv,
+      not available on some OpenGL implementations
+    * pyglet.resource: Fixed path separator for indexed paths: '/' is now
+      used even on Windows.
+    * pyglet.window: Fixed mouse pointer visibility after fullscreen switching
+    * OS X: Fixed metrics of zero-width space
+    * OS X: Installer now looks for Python 2.6 installation
+    * Win32: Fixed context checking during initialisation
+    * Win32: Fixed run loop polling state
+    * Win32: Installer now looks for Python 2.6 installation
+
 1.1.1
     * examples: Fixed graphics.py triangle windings
     * pyglet.clock: Fixed resource leak in Clock.unschedule

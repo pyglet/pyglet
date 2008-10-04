@@ -24,8 +24,10 @@ class PythonVersion(object):
 PYTHON_VERSIONS = (
     PythonVersion('2.4', 'HKLM', 'Python 2.4'),
     PythonVersion('2.5', 'HKLM', 'Python 2.5'),
+    PythonVersion('2.6', 'HKLM', 'Python 2.6'),
     PythonVersion('2.4', 'HKCU', 'Python 2.4 (current user only)'),
     PythonVersion('2.5', 'HKCU', 'Python 2.5 (current user only)'),
+    PythonVersion('2.6', 'HKCU', 'Python 2.6 (current user only)'),
 )
 MISSING_PYTHON_MESSAGE = 'pyglet requires Python 2.4 or later.  The ' \
                          'installation will be aborted.'
