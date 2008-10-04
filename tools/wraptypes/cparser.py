@@ -360,7 +360,12 @@ def p_constant(p):
     '''constant : CONSTANT
                 | CHARACTER_CONSTANT
     '''
-    p[0] = ConstantExpressionNode(p[1])
+    value = p[1]
+    try:
+        value = int(value)
+    except ValueError:
+        pass
+    p[0] = ConstantExpressionNode(value)
 
 def p_string_literal(p):
     '''string_literal : STRING_LITERAL'''
