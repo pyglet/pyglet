@@ -48,11 +48,17 @@ class SilentAudioPlayer(AbstractAudioPlayer):
         # Actual play state.
         self._playing = False
 
-        # Be nice to avoid creating this thread if user doesn't care about EOS
-        # events and there's no video format. XXX
-        # Use thread.condition as lock for all instance vars used by worker
+        # TODO Be nice to avoid creating this thread if user doesn't care
+        #      about EOS events and there's no video format.
+        # TODO If there's video with no audio (or the audio can't be decoded,
+        #      it'd be nice to fire off video frame events from a sleeping
+        #      thread.  SourceGroup doesn't currently export video frame
+        #      information though, so this would be tricky to get out of
+        #      AVbin.
+        # NOTE Use thread.condition as lock for all instance vars used by worker
         self._thread = MediaThread(target=self._worker_func)
-        self._thread.start()
+        if source_group.audio_format:
+            self._thread.start()
 
     def delete(self):
         if _debug:
