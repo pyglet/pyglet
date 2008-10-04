@@ -1059,6 +1059,10 @@ Player.register_event_type('on_player_eos')
 Player.register_event_type('on_source_group_eos')
 Player.register_event_type('on_video_frame')
 
+class ManagedSoundPlayer(Player):
+    ''':deprecated: Use `Player`'''
+    pass
+
 class PlayerGroup(object):
     '''Group of players that can be played and paused simultaneously.
 
