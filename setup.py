@@ -214,6 +214,11 @@ elif 'bdist_mpkg' in sys.argv:
                 '2.5', 'pyglet-syspy2.5',
                 'pyglet for Python 2.5 in /System/Library')
             add_package(
+                '/System/Library/Frameworks/Python.framework/Versions/2.6',
+                '/Library/Python/2.6/site-packages', 
+                '2.6', 'pyglet-syspy2.6',
+                'pyglet for Python 2.6 in /System/Library')
+            add_package(
                 '/Library/Frameworks/Python.framework/Versions/2.4',
                 '/Library/Frameworks/Python.framework/Versions/2.4' \
                     '/lib/python2.4/site-packages',
@@ -226,6 +231,12 @@ elif 'bdist_mpkg' in sys.argv:
                 '2.5', 'pyglet-py2.5',
                 'pyglet for Python 2.5 in /Library')
             add_package(
+                '/Library/Frameworks/Python.framework/Versions/2.6',
+                '/Library/Frameworks/Python.framework/Versions/2.6' \
+                    '/lib/python2.6/site-packages',
+                '2.6', 'pyglet-py2.6',
+                'pyglet for Python 2.6 in /Library')
+            add_package(
                 '/opt/local/',
                 '/opt/local/lib/python2.4/site-packages',
                 '2.4', 'pyglet-macports-py2.4',
@@ -235,6 +246,11 @@ elif 'bdist_mpkg' in sys.argv:
                 '/opt/local/lib/python2.5/site-packages',
                 '2.5', 'pyglet-macports-py2.5',
                 'pyglet for MacPorts Python 2.5 in /opt/local')
+            add_package(
+                '/opt/local/',
+                '/opt/local/lib/python2.6/site-packages',
+                '2.6', 'pyglet-macports-py2.6',
+                'pyglet for MacPorts Python 2.6 in /opt/local')
  
         # Don't build to an absolute path, assume within site-packages (makes
         # it easier to symlink the same archive for all packages)
