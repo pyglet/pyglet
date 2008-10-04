@@ -1,4 +1,9 @@
 <news>
+  <item date="4-October-2008" author="Alex"
+        title="pyglet 1.1.2 released">
+    <a href="download.html">pyglet 1.1.2</a> has been released, including
+    several important bug fixes and installation support for Python 2.6.
+  </item>
   <item date="26-August-2008" author="Alex"
         title="pyglet 1.1.1 released">
     pyglet 1.1.1 includes several critical bug fixes.  We

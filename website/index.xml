@@ -5,7 +5,7 @@
   </p>
 
   <h2>news</h2>
-  <news items="2" />
+  <news items="3" />
 
   <p>
     <a href="news.html">Older news...</a>

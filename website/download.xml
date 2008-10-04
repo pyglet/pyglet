@@ -1,6 +1,6 @@
 <div>
   <p>
-    The current stable version of pyglet is <strong>1.1.1</strong>.
+    The current stable version of pyglet is <strong>1.1.2</strong>.
     <!--See below for the latest <a href="#unstable">development
     release</a>.-->
   </p>
@@ -28,10 +28,10 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.1.msi">pyglet-1.1.1.msi</a>: Windows
+    href="http://pyglet.googlecode.com/files/pyglet-1.1.2.msi">pyglet-1.1.2.msi</a>: Windows
     installer, includes AVbin-5</li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.1.dmg">pyglet-1.1.1.dmg</a>: Mac OS X
+    href="http://pyglet.googlecode.com/files/pyglet-1.1.2.dmg">pyglet-1.1.2.dmg</a>: Mac OS X
     disk image, includes AVbin-5</li>
   </ul>
 
@@ -42,7 +42,7 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.1-docs.zip">pyglet-1.1.1-docs.zip</a></li>
+    href="http://pyglet.googlecode.com/files/pyglet-1.1.2-docs.zip">pyglet-1.1.2-docs.zip</a></li>
   </ul>
 
   <h3>source distributions</h3>
@@ -59,9 +59,9 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.1.tar.gz">pyglet-1.1.1.tar.gz</a></li>
+    href="http://pyglet.googlecode.com/files/pyglet-1.1.2.tar.gz">pyglet-1.1.2.tar.gz</a></li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.1.zip">pyglet-1.1.1.zip</a></li>
+    href="http://pyglet.googlecode.com/files/pyglet-1.1.2.zip">pyglet-1.1.2.zip</a></li>
   </ul>
 
   <!--
