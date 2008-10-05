@@ -64,6 +64,9 @@ class Win32EventLoop(EventLoop):
         self._event_thread = _kernel32.GetCurrentThreadId()
         self._post_event_queue = Queue.Queue()
 
+        self._wait_objects = []
+        self._wait_objects_array = None
+
     def post_event(self, dispatcher, event, *args):
         self._post_event_queue.put((dispatcher, event, args))
 
@@ -72,6 +75,26 @@ class Win32EventLoop(EventLoop):
         # interrupt the window move/size drag loop -- it seems there's no way
         # to do this.
         _user32.PostThreadMessageW(self._event_thread, constants.WM_USER, 0, 0)
+
+    def add_wait_object(self, object, func):
+        self._wait_objects.append((object, func))
+        self._recreate_wait_objects_array()
+
+    def remove_wait_object(self, object):
+        for i, (_object, _) in enumerate(self._wait_objects):
+            if object == _object:
+                del self._wait_objects[i]
+                break
+        self._recreate_wait_objects_array()
+
+    def _recreate_wait_objects_array(self):
+        if not self._wait_objects:
+            self._wait_objects = None
+            return
+
+        self._wait_objects_n = len(self._wait_objects)
+        self._wait_objects_array = \
+            (HANDLE * self._wait_objects_n)(*[o for o, f in self._wait_objects])
 
     def _dispatch_posted_events(self):
         # Dispatch (synchronised) queued events
@@ -107,6 +130,26 @@ class Win32EventLoop(EventLoop):
                     _user32.TranslateMessage(ctypes.byref(msg))
                     _user32.DispatchMessageW(ctypes.byref(msg))
                 self._timer_func(0, 0, timer, 0)
+
+            elif self._wait_objects_array:
+                result = _user32.MsgWaitForMultipleObjects(
+                    self._wait_objects_n,
+                    self._wait_objects_array,
+                    False,
+                    constants.INFINITE,
+                    constants.QS_ALLINPUT)
+                result -= constants.WAIT_OBJECT_0
+                if 0 <= result < self._wait_objects_n:
+                    object, func = self._wait_objects[result]
+                    func()
+                elif result == self._wait_objects_n:
+                    while _user32.PeekMessageW(ctypes.byref(msg),
+                                               0, 0, 0, constants.PM_REMOVE):
+                        _user32.TranslateMessage(ctypes.byref(msg))
+                        _user32.DispatchMessageW(ctypes.byref(msg))
+
+                # TODO timer/idle?
+
             else:
                 _user32.GetMessageW(ctypes.byref(msg), 0, 0, 0)
                 _user32.TranslateMessage(ctypes.byref(msg))

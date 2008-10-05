@@ -4984,3 +4984,6 @@ MAPVK_VK_TO_CHAR = 2
 MAPVK_VSC_TO_VK_EX = 3
 
 USER_TIMER_MAXIMUM = 0x7fffffff
+
+# From WinBase.h
+INFINITE = 0xffffffff
