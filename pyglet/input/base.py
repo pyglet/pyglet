@@ -108,15 +108,22 @@ class Button(Control):
 Button.register_event_type('on_press')
 Button.register_event_type('on_release')
 
-class Joystick(Device):
-    def __init__(self, display, name):
-        super(Joystick, self).__init__(display, name)
+class Joystick(object):
+    def __init__(self, device):
+        self.device = device
 
-        # Default controls... provide default values as well?
-        self.x = Control('x')
-        self.y = Control('y')
-        self.z = Control('z')
-        self.ry = Control('ry')
-        self.hat_x = Control('hat_x')
-        self.hat_y = Control('hat_y')
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.rz = 0
+        self.hat_x = 0
+        self.hat_y = 0
         self.buttons = []
+
+        self.x_control = None
+        self.y_control = None
+        self.z_control = None
+        self.rz_control = None
+        self.hat_x_control = None
+        self.hat_y_control = None
+        self.button_controls = []

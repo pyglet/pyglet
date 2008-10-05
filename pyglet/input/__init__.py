@@ -35,3 +35,4 @@ else:
         from directinput import get_devices
     elif sys.platform == 'darwin':
         from darwin_hid import get_devices
+        from darwin_hid import get_joysticks

@@ -437,8 +437,37 @@ def _create_control(properties):
         return event.value
     '''
 
+def _create_joystick(device):
+    if '5-axis' not in device.name.lower(): # XXX TEMP
+        return
+
+    axes = ('x', 'y', 'z', 'rz')
+
+    joystick = Joystick(device)
+    for control in device.get_controls():
+        if control.name in axes:
+            name = control.name
+            scale = 2.0 / (control.max - control.min)
+            bias = -1.0 - control.min * scale
+            @control.event
+            def on_change(value, name=name, scale=scale, bias=bias):
+                setattr(joystick, name, value * scale + bias)
+            setattr(joystick, control.name + '_control', control)
+        elif isinstance(control, Button):
+            i = len(joystick.buttons)
+            joystick.buttons.append(False)
+            joystick.button_controls.append(control)
+            @control.event
+            def on_change(value, i=i):
+                joystick.buttons[i] = bool(value)
+
+    return joystick
+
 def get_devices(display=None):
     services = get_matching_services(get_master_port(), 
                                      get_matching_dictionary()) 
         
     return [DarwinHIDDevice(display, service) for service in services]
+
+def get_joysticks():
+    return filter(None, [_create_joystick(device) for device in get_devices()])
