@@ -16,6 +16,15 @@ def watch_control(device, control):
     def on_change(value):
         print '%r: %r.on_change(%r)' % (device, control, value)
 
+    if isinstance(control, pyglet.input.base.Button):
+        @control.event
+        def on_press():
+            print '%r: %r.on_press()' % (device, control)
+
+        @control.event
+        def on_release():
+            print '%r: %r.on_release()' % (device, control)
+
 print 'Devices:'
 for device in devices:
     print '  ', device.name,

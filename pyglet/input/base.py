@@ -45,15 +45,23 @@ class Device(object):
         return '%s(name=%s)' % (self.__class__.__name__, self.name)
 
 class Control(EventDispatcher):
+    '''
+    Note that `min` and `max` properties are reported as provided by the
+    device; in some cases the control's value will be outside this range.
+    '''
     _value = None
 
-    def __init__(self, name):
+    def __init__(self, name, min, max):
         self.name = name
+        self.min = min
+        self.max = max
 
     def _get_value(self):
         return self._value
 
     def _set_value(self, value):
+        if value == self._value:
+            return
         self._value = value
         self.dispatch_event('on_change', value)
 
@@ -75,6 +83,8 @@ class Button(Control):
         return self._value
 
     def _set_value(self, value):
+        if value == self._value:
+            return
         self._value = value
         self.dispatch_event('on_change', value)
         if value:

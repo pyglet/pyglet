@@ -304,9 +304,10 @@ class DarwinHIDDevice(Device):
         n_elements = carbon.CFArrayGetCount(elements_array)
         for i in range(n_elements):
             properties = carbon.CFArrayGetValueAtIndex(elements_array, i)
-            element = DarwinHIDControl(properties)
-            elements.append(element)
-            self._element_cookies[element._cookie] = element
+            element = _create_control(properties)
+            if element:
+                elements.append(element)
+                self._element_cookies[element._cookie] = element
 
         carbon.CFRelease(elements_array)
 
@@ -331,7 +332,6 @@ class DarwinHIDDevice(Device):
                                                  0, self._queue_depth)
         )
         # Add all controls into queue
-        # TODO: only "interesting/known" elements?
         for control in self._controls:
             r = self._queue.contents.contents.addElement(self._queue,
                                                          control._cookie, 0)
@@ -404,16 +404,29 @@ class DarwinHIDDevice(Device):
             r = self._queue.contents.contents.getNextEvent(self._queue,
                     ctypes.byref(event), 0, 0)
 
-class DarwinHIDControl(Control):
-    def __init__(self, properties):
-        super(DarwinHIDControl, self).__init__(name=None)
+def _create_control(properties):
+    cookie = get_property(properties, 'ElementCookie')
+    usage = get_property(properties, 'Usage')
+    usage_page = get_property(properties, 'UsagePage')
 
-        self._cookie = get_property(properties, 'ElementCookie')
-        _usage = get_property(properties, 'Usage')
-        usage_page = get_property(properties, 'UsagePage')
+    known = usb_hid.get_element_usage_known(usage_page, usage)
+    if not known:
+        return
 
-        self.name = usb_hid.get_element_usage_name(usage_page, _usage)
-        self.known = usb_hid.get_element_usage_known(usage_page, _usage)
+    name = usb_hid.get_element_usage_name(usage_page, usage)
+
+    min = get_property(properties, 'Min')
+    max = get_property(properties, 'Max')
+
+    # Try to guess type of control and return most appropriate subclass
+    if min == 0 and max == 1:
+        control = Button(name, min, max)
+    else:
+        control = Control(name, min, max)
+
+    control._cookie = cookie
+    return control
+
 
 
     '''
