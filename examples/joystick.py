@@ -21,6 +21,8 @@ def on_draw():
     z = joystick.z
     angle = joystick.rz * 180
 
+    # Axes
+
     glClear(GL_COLOR_BUFFER_BIT)
     glColor3f(1, 0, 0)
     glLoadIdentity()
@@ -33,6 +35,8 @@ def on_draw():
     glVertex2f(10, 0)
     glEnd()
 
+    # Buttons
+
     glLoadIdentity()
     x = 10
     y = 10
@@ -44,6 +48,14 @@ def on_draw():
         x += 20
     glEnd()
 
-pyglet.clock.schedule(lambda dt: None)
+    # Hat
 
+    glColor3f(0, 0, 1)
+    x = window.width / 2
+    y = window.height / 2
+    glBegin(GL_POINTS)
+    glVertex2f(x + joystick.hat_x * 50, y + joystick.hat_y * 50)
+    glEnd()
+
+pyglet.clock.schedule(lambda dt: None)
 pyglet.app.run()

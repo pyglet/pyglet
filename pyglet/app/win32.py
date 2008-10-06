@@ -124,7 +124,7 @@ class Win32EventLoop(EventLoop):
         self._dispatch_posted_events()
 
         while not self.has_exit:
-            if self._polling:
+            if not self._wait_objects_array and self._polling:
                 while _user32.PeekMessageW(ctypes.byref(msg), 
                                            0, 0, 0, constants.PM_REMOVE):
                     _user32.TranslateMessage(ctypes.byref(msg))
@@ -132,11 +132,15 @@ class Win32EventLoop(EventLoop):
                 self._timer_func(0, 0, timer, 0)
 
             elif self._wait_objects_array:
+                if self._polling:#TODO UNHACK THIS
+                    timeout = 0 
+                else:
+                    timeout = constants.INFINITE
                 result = _user32.MsgWaitForMultipleObjects(
                     self._wait_objects_n,
                     self._wait_objects_array,
                     False,
-                    constants.INFINITE,
+                    timeout,
                     constants.QS_ALLINPUT)
                 result -= constants.WAIT_OBJECT_0
                 if 0 <= result < self._wait_objects_n:
@@ -148,7 +152,8 @@ class Win32EventLoop(EventLoop):
                         _user32.TranslateMessage(ctypes.byref(msg))
                         _user32.DispatchMessageW(ctypes.byref(msg))
 
-                # TODO timer/idle?
+               # Manual idle event XXX HACK
+                self._timer_func(0, 0, timer, 0)
 
             else:
                 _user32.GetMessageW(ctypes.byref(msg), 0, 0, 0)

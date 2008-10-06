@@ -128,6 +128,9 @@ DIDC_ALIAS = 0x00010000
 DIDC_PHANTOM = 0x00020000
 DIDC_HIDDEN = 0x00040000
 
+def DIDFT_GETINSTANCE(n):
+    return (n >> 8) & 0xffff
+
 DIDFT_ALL = 0x00000000
 
 DIDFT_RELAXIS = 0x00000001
@@ -205,6 +208,10 @@ DISCL_BACKGROUND = 0x00000008
 DISCL_NOWINKEY = 0x00000010
 
 DIPROP_BUFFERSIZE = 1
+
+GUID_XAxis = \
+    com.GUID(0xA36D02E0,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00)
+
 
 class DIDEVICEINSTANCE(ctypes.Structure):
     _fields_ = (
@@ -387,5 +394,4 @@ DIRECTINPUT_VERSION = 0x0800
 DirectInput8Create = lib.DirectInput8Create
 DirectInput8Create.argtypes = \
     (ctypes.c_void_p, DWORD, com.LPGUID, ctypes.c_void_p, ctypes.c_void_p)
-
 

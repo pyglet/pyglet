@@ -32,7 +32,6 @@ else:
         '''
         from evdev import get_devices
     elif sys.platform in ('cygwin', 'win32'):
-        from directinput import get_devices
+        from directinput import get_devices, get_joysticks
     elif sys.platform == 'darwin':
-        from darwin_hid import get_devices
-        from darwin_hid import get_joysticks
+        from darwin_hid import get_devices, get_joysticks

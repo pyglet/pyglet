@@ -89,6 +89,11 @@ class GUID(ctypes.Structure):
         self.Data3 = w2
         self.Data4[:] = (b1, b2, b3, b4, b5, b6, b7, b8)
 
+    def __repr__(self):
+        b1, b2, b3, b4, b5, b6, b7, b8 = self.Data4
+        return 'GUID(%x, %x, %x, %x, %x, %x, %x, %x, %x, %x, %x)' % (
+            self.Data1, self.Data2, self.Data3, b1, b2, b3, b4, b5, b6, b7, b8)
+
 LPGUID = ctypes.POINTER(GUID)
 IID = GUID
 REFIID = ctypes.POINTER(IID)

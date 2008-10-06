@@ -9,29 +9,31 @@ from pyglet.libs import win32
 from pyglet.libs.win32 import dinput
 from pyglet.libs.win32 import _kernel32
 
+def _create_control(object_instance):
+    name = object_instance.tszName
+    type = object_instance.dwType
 
-class DirectInputControl(base.Control):
-    value = None
-    def __init__(self, object_instance):
-        self._flags = object_instance.dwFlags
-        self._guid = object_instance.guidType
-        self._type = object_instance.dwType
+    if type & dinput.DIDFT_NODATA:
+        return
+    elif type & dinput.DIDFT_BUTTON:
+        control = base.Button(name, 0, 0x8000)
+    else:
+        control = base.Control(name, 0, 0xffff)
 
-        # TODO map name to well-known set
-        name = object_instance.tszName
-        super(DirectInputControl, self).__init__(name)
-
-    def get_value(self):
-        return self.value
+    control._flags = object_instance.dwFlags
+    control._guid = object_instance.guidType # useless
+    control._type = object_instance.dwType
+    control._usage_page = object_instance.wUsagePage
+    control._usage = object_instance.wUsage
+    return control
         
 class DirectInputDevice(base.Device):
     def __init__(self, display, device, device_instance):
         name = device_instance.tszInstanceName
         super(DirectInputDevice, self).__init__(display, name)
 
-        #print self.name, hex(device_instance.dwDevType & 0xff), \
-        #                hex(device_instance.dwDevType & 0xff00)
-        #print hex(device_instance.wUsagePage), hex(device_instance.wUsage)
+        self._type = device_instance.dwDevType & 0xff
+        self._subtype = device_instance.dwDevType & 0xff00
 
         self._device = device
         self._init_controls()
@@ -44,13 +46,9 @@ class DirectInputDevice(base.Device):
             None, dinput.DIDFT_ALL)
 
     def _object_enum(self, object_instance, arg):
-        type = object_instance.contents.dwType
-        flags = object_instance.contents.dwFlags
-        if type & dinput.DIDFT_NODATA:
-            return dinput.DIENUM_CONTINUE
-
-        control = DirectInputControl(object_instance.contents)
-        self.controls.append(control)        
+        control = _create_control(object_instance.contents)
+        if control:
+            self.controls.append(control)        
         return dinput.DIENUM_CONTINUE
 
     def _set_format(self):
@@ -137,6 +135,86 @@ class DirectInputDevice(base.Device):
             index = event.dwOfs // 4
             self.controls[index]._set_value(event.dwData)
 
+def _create_joystick(device):
+    if device._type not in (dinput.DI8DEVTYPE_JOYSTICK, 
+                            dinput.DI8DEVTYPE_GAMEPAD):
+        return
+
+    joystick = base.Joystick(device)
+
+    def add_control(name, control):
+        scale = 2.0 / (control.max - control.min)
+        bias = -1.0 - control.min * scale
+        @control.event
+        def on_change(value):
+            setattr(joystick, name, value * scale + bias)
+        setattr(joystick, name + '_control', control)
+
+    def add_button(i, control):
+        nn = i + 1 - len(joystick.buttons)
+        if nn > 0:
+            joystick.buttons.extend([False] * nn)
+            joystick.button_controls.extend([None] * nn)
+        joystick.button_controls[i] = control
+        @control.event
+        def on_change(value):
+            joystick.buttons[i] = bool(value)
+
+    def add_hat(control):
+        joystick.hat_x_control = control
+        joystick.hat_y_control = control
+        @control.event
+        def on_change(value):
+            if value & 0xffff == 0xffff:
+                joystick.hat_x = joystick.hat_y = 0
+            else:
+                value //= 0xfff
+                if 0 <= value < 8:
+                    joystick.hat_x, joystick.hat_y = (
+                        ( 0,  1),
+                        ( 1,  1),
+                        ( 1,  0),
+                        ( 1, -1),
+                        ( 0, -1),
+                        (-1, -1),
+                        (-1,  0),
+                        (-1,  1),
+                    )[value]
+                else:
+                    # Out of range
+                    joystick.hat_x = joystick.hat_y = 0
+
+    for control in device.get_controls():
+        type = control._type
+        instance = dinput.DIDFT_GETINSTANCE(type)
+        if type & dinput.DIDFT_ABSAXIS and instance == 0:
+            add_control('x', control)
+        elif type & dinput.DIDFT_ABSAXIS and instance == 1:
+            add_control('y', control)
+        elif type & dinput.DIDFT_ABSAXIS and instance == 2:
+            add_control('z', control)
+        elif type & dinput.DIDFT_ABSAXIS and instance == 5:
+            add_control('rz', control)
+        elif type & dinput.DIDFT_POV:
+            add_hat(control)
+        elif type & dinput.DIDFT_BUTTON:
+            add_button(instance, control) 
+
+    return joystick
+
+_i_dinput = None
+
+def _init_directinput():
+    global _i_dinput
+    if _i_dinput:
+        return
+    
+    _i_dinput = dinput.IDirectInput8()
+    module = _kernel32.GetModuleHandleW(None)
+    dinput.DirectInput8Create(module, dinput.DIRECTINPUT_VERSION,
+                              dinput.IID_IDirectInput8W, 
+                              ctypes.byref(_i_dinput), None)
+
 def get_devices(display=None):
     _init_directinput()
     _devices = []
@@ -156,16 +234,5 @@ def get_devices(display=None):
                           None, dinput.DIEDFL_ATTACHEDONLY)
     return _devices
 
-_i_dinput = None
-
-def _init_directinput():
-    global _i_dinput
-    if _i_dinput:
-        return
-    
-    _i_dinput = dinput.IDirectInput8()
-    module = _kernel32.GetModuleHandleW(None)
-    dinput.DirectInput8Create(module, dinput.DIRECTINPUT_VERSION,
-                              dinput.IID_IDirectInput8W, 
-                              ctypes.byref(_i_dinput), None)
-
+def get_joysticks(display=None):
+    return filter(None, [_create_joystick(d) for d in get_devices(display)])
