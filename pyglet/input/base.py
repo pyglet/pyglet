@@ -187,3 +187,9 @@ class Joystick(object):
                         
             elif isinstance(control, Button):
                 add_button(control)
+
+    def open(self, window=None, exclusive=False):
+        self.device.open(window, exclusive)
+
+    def close(self):
+        self.device.close()

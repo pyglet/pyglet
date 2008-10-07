@@ -12,7 +12,7 @@ from pyglet.gl import *
 window = pyglet.window.Window()
 
 joystick = pyglet.input.get_joysticks()[0]
-joystick.device.open()
+joystick.open()
 
 @window.event
 def on_draw():
