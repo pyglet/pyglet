@@ -30,7 +30,7 @@ else:
             return (evdev_get_devices(display) +
                     xinput_get_devices(display))
         '''
-        from evdev import get_devices
+        from evdev import get_devices, get_joysticks
     elif sys.platform in ('cygwin', 'win32'):
         from directinput import get_devices, get_joysticks
     elif sys.platform == 'darwin':

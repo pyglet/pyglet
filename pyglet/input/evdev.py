@@ -128,38 +128,87 @@ def get_set_bits(bytes):
         j += 8
     return bits
 
-class EvdevControl(Control):
-    value = None
-
-    def __init__(self, fileno, event_type, event_code):
-        self.event_type = event_type
-        self.event_code = event_code
-
-        # TODO map name to well-known set
-        name = '(%x, %x)' % (event_type, event_code)
-        super(EvdevControl, self).__init__(name)
-
-    def get_value(self):
-        return self.value
-
-# TODO AbsoluteControl?
-class EvdevAbsoluteControl(EvdevControl):
-    def __init__(self, fileno, event_type, event_code):
-        super(EvdevAbsoluteControl, self).__init__(
-            fileno, event_type, event_code)
-
+def _create_control(fileno, event_type, event_code):
+    # TODO map name to well-known set
+    name = '(%x, %x)' % (event_type, event_code)
+    if event_type == EV_ABS:
         absinfo = EVIOCGABS(fileno, event_code)
-        self.value = absinfo.value
-        self.minimum = absinfo.minimum
-        self.maximum = absinfo.maximum
+        value = absinfo.value
+        min = absinfo.minimum
+        max = absinfo.maximum
+        control = Control(name, min, max)
+        control._set_value(value)
+    elif event_type == EV_KEY:
+        control = Button(name, 0, 1)
+    else:
+        value = min = max = 0 # TODO
+        return None
+    control._event_type = event_type
+    control._event_code = event_code
+    return control
+
+def _create_joystick(device):
+    # Look for something with an ABS X and ABS Y axis, and a joystick 0 button
+    have_x = False
+    have_y = False
+    have_button = False
+    for control in device.controls:
+        if control._event_type == EV_ABS and control._event_code == ABS_X:
+            have_x = True
+        elif control._event_type == EV_ABS and control._event_code == ABS_Y:
+            have_y = True
+        elif control._event_type == EV_KEY and \
+             control._event_code == BTN_JOYSTICK:
+            have_button = True
+    if not (have_x and have_y and have_button):
+        return
+
+    joystick = Joystick(device)
+    def add_control(name, control):
+        scale = 2.0 / (control.max - control.min)
+        bias = -1.0 - control.min * scale
+        @control.event
+        def on_change(value):
+            setattr(joystick, name, value * scale + bias)
+        setattr(joystick, name + '_control', control)
+        
+    def add_button(i, control):
+        nn = i + 1 - len(joystick.buttons)
+        if nn > 0:
+            joystick.buttons.extend([False] * nn)
+            joystick.button_controls.extend([None] * nn)
+        joystick.button_controls[i] = control
+        @control.event
+        def on_change(value):
+            joystick.buttons[i] = bool(value)
+
+    for control in device.controls:
+        if control._event_type == EV_ABS:
+            if control._event_code == ABS_X:
+                add_control('x', control)
+            elif control._event_code == ABS_Y:
+                add_control('y', control)
+            elif control._event_code == ABS_Z:
+                add_control('z', control)
+            elif control._event_code == ABS_RZ:
+                add_control('rz', control)
+            elif control._event_code == ABS_HAT0X:
+                add_control('hat_x', control)
+            elif control._event_code == ABS_HAT0Y:
+                add_control('hat_y', control)
+        elif control._event_type == EV_KEY:
+            if BTN_JOYSTICK <= control._event_code <= BTN_DEAD:
+                add_button(control._event_code - BTN_JOYSTICK, control)
+
+    return joystick
 
 event_types = {
-    EV_KEY: (KEY_MAX, EvdevControl),
-    EV_REL: (REL_MAX, EvdevControl),
-    EV_ABS: (ABS_MAX, EvdevAbsoluteControl),
-    EV_MSC: (MSC_MAX, EvdevControl),
-    EV_LED: (LED_MAX, EvdevControl),
-    EV_SND: (SND_MAX, EvdevControl),
+    EV_KEY: KEY_MAX,
+    EV_REL: REL_MAX,
+    EV_ABS: ABS_MAX,
+    EV_MSC: MSC_MAX,
+    EV_LED: LED_MAX,
+    EV_SND: SND_MAX,
 }
 
 class EvdevDevice(XlibSelectDevice, Device):
@@ -195,14 +244,15 @@ class EvdevDevice(XlibSelectDevice, Device):
         for event_type in get_set_bits(event_types_bits):
             if event_type not in event_types:
                 continue
-            max_code, control_class = event_types[event_type]
+            max_code = event_types[event_type]
             nbytes = max_code // 8 + 1
             event_codes_bits = (ctypes.c_byte * nbytes)()
             EVIOCGBIT(fileno, event_type, event_codes_bits)
             for event_code in get_set_bits(event_codes_bits):
-                control = control_class(fileno, event_type, event_code)
-                self.control_map[(event_type, event_code)] = control 
-                self.controls.append(control)
+                control = _create_control(fileno, event_type, event_code)
+                if control:
+                    self.control_map[(event_type, event_code)] = control 
+                    self.controls.append(control)
 
         os.close(fileno)
 
@@ -272,3 +322,6 @@ def get_devices(display=None):
                 pass 
 
     return _devices.values()
+
+def get_joysticks(display=None):
+    return filter(None, [_create_joystick(d) for d in get_devices(display)])
