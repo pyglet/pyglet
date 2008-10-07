@@ -51,10 +51,12 @@ class Control(EventDispatcher):
     '''
     _value = None
 
-    def __init__(self, name, min, max):
+    def __init__(self, name, min, max, raw_name=None):
         self.name = name
         self.min = min
         self.max = max
+        self.raw_name = raw_name
+        self.inverted = False
 
     def _get_value(self):
         return self._value
@@ -68,7 +70,10 @@ class Control(EventDispatcher):
     value = property(_get_value)
 
     def __repr__(self):
-        return '%s(name=%s)' % (self.__class__.__name__, self.name)
+        if self.name:
+            return '%s(name=%s)' % (self.__class__.__name__, self.name)
+        else:
+            return '%s(raw_name=%s)' % (self.__class__.__name__, self.raw_name)
 
     if _is_epydoc:
         def on_change(self, value):
@@ -78,15 +83,35 @@ class Control(EventDispatcher):
 
 Control.register_event_type('on_change')
 
+class RelativeAxis(Control):
+    X = 'x'
+    Y = 'y'
+    Z = 'z'
+    RX = 'rx'
+    RY = 'ry'
+    RZ = 'rz'
+    WHEEL = 'wheel'
+
+class AbsoluteAxis(Control):
+    X = 'x'
+    Y = 'y'
+    Z = 'z'
+    RX = 'rx'
+    RY = 'ry'
+    RZ = 'rz'
+    HAT = 'hat'
+    HAT_X = 'hat_x'
+    HAT_Y = 'hat_y'
+
 class Button(Control):
     def _get_value(self):
-        return self._value
+        return bool(self._value)
 
     def _set_value(self, value):
         if value == self._value:
             return
         self._value = value
-        self.dispatch_event('on_change', value)
+        self.dispatch_event('on_change', bool(value))
         if value:
             self.dispatch_event('on_press')
         else:
@@ -115,6 +140,8 @@ class Joystick(object):
         self.x = 0
         self.y = 0
         self.z = 0
+        self.rx = 0
+        self.ry = 0
         self.rz = 0
         self.hat_x = 0
         self.hat_y = 0
@@ -123,7 +150,40 @@ class Joystick(object):
         self.x_control = None
         self.y_control = None
         self.z_control = None
+        self.rx_control = None
+        self.ry_control = None
         self.rz_control = None
         self.hat_x_control = None
         self.hat_y_control = None
         self.button_controls = []
+
+        def add_axis(control):
+            name = control.name
+            scale = 2.0 / (control.max - control.min)
+            bias = -1.0 - control.min * scale
+            if control.inverted:
+                scale = -scale
+                bias = -bias
+            setattr(self, name + '_control', control)
+
+            @control.event
+            def on_change(value):
+                setattr(self, name, value * scale + bias)
+
+        def add_button(control):
+            i = len(self.buttons)
+            self.buttons.append(False)
+            self.button_controls.append(control)
+
+            @control.event
+            def on_change(value):
+                self.buttons[i] = value
+
+        for control in device.get_controls():
+            if isinstance(control, AbsoluteAxis):
+                if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz', 
+                                    'hat_x', 'hat_y'):
+                    add_axis(control)
+                        
+            elif isinstance(control, Button):
+                add_button(control)

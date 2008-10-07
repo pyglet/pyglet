@@ -529,3 +529,13 @@ FF_STATUS_STOPPED = 0x00
 FF_STATUS_PLAYING = 0x01
 FF_STATUS_MAX = 0x01
 
+_rel_raw_names = {}
+_abs_raw_names = {}
+_key_raw_names = {}
+for _name, _val in locals().items():
+    if _name.startswith('REL_'):
+        _rel_raw_names[_val] = _name
+    elif _name.startswith('ABS_'):
+        _abs_raw_names[_val] = _name
+    elif _name.startswith('KEY_') or _name.startswith('BTN_'):
+        _key_raw_names[_val] = _name

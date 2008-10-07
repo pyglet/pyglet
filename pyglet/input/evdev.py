@@ -16,9 +16,10 @@ import sys
 
 import pyglet
 from pyglet.app.xlib import XlibSelectDevice
-from base import Device, Control, Button, Joystick
+from base import Device, Control, RelativeAxis, AbsoluteAxis, Button, Joystick
 from base import DeviceOpenException
 from evdev_constants import *
+from evdev_constants import _rel_raw_names, _abs_raw_names, _key_raw_names
 
 c = pyglet.lib.load_library('c')
 
@@ -128,18 +129,48 @@ def get_set_bits(bytes):
         j += 8
     return bits
 
+_abs_names = {
+    ABS_X: AbsoluteAxis.X,
+    ABS_Y: AbsoluteAxis.Y,
+    ABS_Z: AbsoluteAxis.Z,
+    ABS_RX: AbsoluteAxis.RX,
+    ABS_RY: AbsoluteAxis.RY,
+    ABS_RZ: AbsoluteAxis.RZ,
+    ABS_HAT0X: AbsoluteAxis.HAT_X,
+    ABS_HAT0Y: AbsoluteAxis.HAT_Y,
+}
+
+_rel_names = {
+    REL_X: RelativeAxis.X,
+    REL_Y: RelativeAxis.Y,
+    REL_Z: RelativeAxis.Z,
+    REL_RX: RelativeAxis.RX,
+    REL_RY: RelativeAxis.RY,
+    REL_RZ: RelativeAxis.RZ,
+    REL_WHEEL: RelativeAxis.WHEEL,
+}
 def _create_control(fileno, event_type, event_code):
-    # TODO map name to well-known set
-    name = '(%x, %x)' % (event_type, event_code)
     if event_type == EV_ABS:
+        raw_name = _abs_raw_names.get(event_code, 'EV_ABS(%x)' % event_code)
+        name = _abs_names.get(event_code)
         absinfo = EVIOCGABS(fileno, event_code)
         value = absinfo.value
         min = absinfo.minimum
         max = absinfo.maximum
-        control = Control(name, min, max)
+        control = AbsoluteAxis(name, min, max, raw_name)
         control._set_value(value)
+
+        if name == 'hat_y':
+            control.inverted = True
+    elif event_type == EV_REL:
+        raw_name = _rel_raw_names.get(event_code, 'EV_REL(%x)' % event_code)
+        name = _rel_names.get(event_code)
+        # TODO min/max?
+        control = RelativeAxis(name, 0, 0, raw_name)
     elif event_type == EV_KEY:
-        control = Button(name, 0, 1)
+        raw_name = _key_raw_names.get(event_code, 'EV_KEY(%x)' % event_code)
+        name = None
+        control = Button(name, 0, 1, raw_name)
     else:
         value = min = max = 0 # TODO
         return None
@@ -163,44 +194,7 @@ def _create_joystick(device):
     if not (have_x and have_y and have_button):
         return
 
-    joystick = Joystick(device)
-    def add_control(name, control):
-        scale = 2.0 / (control.max - control.min)
-        bias = -1.0 - control.min * scale
-        @control.event
-        def on_change(value):
-            setattr(joystick, name, value * scale + bias)
-        setattr(joystick, name + '_control', control)
-        
-    def add_button(i, control):
-        nn = i + 1 - len(joystick.buttons)
-        if nn > 0:
-            joystick.buttons.extend([False] * nn)
-            joystick.button_controls.extend([None] * nn)
-        joystick.button_controls[i] = control
-        @control.event
-        def on_change(value):
-            joystick.buttons[i] = bool(value)
-
-    for control in device.controls:
-        if control._event_type == EV_ABS:
-            if control._event_code == ABS_X:
-                add_control('x', control)
-            elif control._event_code == ABS_Y:
-                add_control('y', control)
-            elif control._event_code == ABS_Z:
-                add_control('z', control)
-            elif control._event_code == ABS_RZ:
-                add_control('rz', control)
-            elif control._event_code == ABS_HAT0X:
-                add_control('hat_x', control)
-            elif control._event_code == ABS_HAT0Y:
-                add_control('hat_y', control)
-        elif control._event_type == EV_KEY:
-            if BTN_JOYSTICK <= control._event_code <= BTN_DEAD:
-                add_button(control._event_code - BTN_JOYSTICK, control)
-
-    return joystick
+    return Joystick(device)
 
 event_types = {
     EV_KEY: KEY_MAX,
