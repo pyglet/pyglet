@@ -382,7 +382,13 @@ class VertexList(object):
                 new.invalidate()
         self.start = new_start
         self.count = count
+
         self._colors_cache_version = None
+        self._fog_coords_cache_version = None
+        self._edge_flags_cache_version = None
+        self._normals_cache_version = None
+        self._secondary_colors_cache_version = None
+        self._tex_coords_cache_version = None
         self._vertices_cache_version = None
 
     def delete(self):
