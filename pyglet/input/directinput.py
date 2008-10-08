@@ -9,22 +9,46 @@ from pyglet.libs import win32
 from pyglet.libs.win32 import dinput
 from pyglet.libs.win32 import _kernel32
 
+_abs_instance_names = {
+    0: 'x',
+    1: 'y',
+    2: 'z',
+    3: 'rx', 
+    4: 'ry',
+    5: 'rz',
+}
+
+_rel_instance_names = {
+    0: 'x',
+    1: 'y',
+    2: 'z',
+    3: 'rx', 
+    4: 'ry',
+    5: 'rz', 
+}
+
+_btn_instance_names = {}
+
 def _create_control(object_instance):
-    name = object_instance.tszName
+    raw_name = object_instance.tszName
     type = object_instance.dwType
+    instance = dinput.DIDFT_GETINSTANCE(type)
 
-    if type & dinput.DIDFT_NODATA:
-        return
+    if type & dinput.DIDFT_ABSAXIS:
+        name = _abs_instance_names.get(instance)
+        control = base.AbsoluteAxis(name, 0, 0xffff, raw_name)
+    elif type & dinput.DIDFT_RELAXIS:
+        name = _rel_instance_names.get(instance)
+        control = base.RelativeAxis(name, 0, 0xffff, raw_name)
     elif type & dinput.DIDFT_BUTTON:
-        control = base.Button(name, 0, 0x8000)
+        name = _btn_instance_names.get(instance)
+        control = base.Button(name, 0, 0x8000, raw_name)
+    elif type & dinput.DIDFT_POV:
+        control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 0xffff, raw_name)
     else:
-        control = base.Control(name, 0, 0xffff)
+        return
 
-    control._flags = object_instance.dwFlags
-    control._guid = object_instance.guidType # useless
     control._type = object_instance.dwType
-    control._usage_page = object_instance.wUsagePage
-    control._usage = object_instance.wUsage
     return control
         
 class DirectInputDevice(base.Device):
@@ -135,73 +159,6 @@ class DirectInputDevice(base.Device):
             index = event.dwOfs // 4
             self.controls[index]._set_value(event.dwData)
 
-def _create_joystick(device):
-    if device._type not in (dinput.DI8DEVTYPE_JOYSTICK, 
-                            dinput.DI8DEVTYPE_GAMEPAD):
-        return
-
-    joystick = base.Joystick(device)
-
-    def add_control(name, control):
-        scale = 2.0 / (control.max - control.min)
-        bias = -1.0 - control.min * scale
-        @control.event
-        def on_change(value):
-            setattr(joystick, name, value * scale + bias)
-        setattr(joystick, name + '_control', control)
-
-    def add_button(i, control):
-        nn = i + 1 - len(joystick.buttons)
-        if nn > 0:
-            joystick.buttons.extend([False] * nn)
-            joystick.button_controls.extend([None] * nn)
-        joystick.button_controls[i] = control
-        @control.event
-        def on_change(value):
-            joystick.buttons[i] = bool(value)
-
-    def add_hat(control):
-        joystick.hat_x_control = control
-        joystick.hat_y_control = control
-        @control.event
-        def on_change(value):
-            if value & 0xffff == 0xffff:
-                joystick.hat_x = joystick.hat_y = 0
-            else:
-                value //= 0xfff
-                if 0 <= value < 8:
-                    joystick.hat_x, joystick.hat_y = (
-                        ( 0,  1),
-                        ( 1,  1),
-                        ( 1,  0),
-                        ( 1, -1),
-                        ( 0, -1),
-                        (-1, -1),
-                        (-1,  0),
-                        (-1,  1),
-                    )[value]
-                else:
-                    # Out of range
-                    joystick.hat_x = joystick.hat_y = 0
-
-    for control in device.get_controls():
-        type = control._type
-        instance = dinput.DIDFT_GETINSTANCE(type)
-        if type & dinput.DIDFT_ABSAXIS and instance == 0:
-            add_control('x', control)
-        elif type & dinput.DIDFT_ABSAXIS and instance == 1:
-            add_control('y', control)
-        elif type & dinput.DIDFT_ABSAXIS and instance == 2:
-            add_control('z', control)
-        elif type & dinput.DIDFT_ABSAXIS and instance == 5:
-            add_control('rz', control)
-        elif type & dinput.DIDFT_POV:
-            add_hat(control)
-        elif type & dinput.DIDFT_BUTTON:
-            add_button(instance, control) 
-
-    return joystick
-
 _i_dinput = None
 
 def _init_directinput():
@@ -233,6 +190,11 @@ def get_devices(display=None):
                           dinput.LPDIENUMDEVICESCALLBACK(_device_enum), 
                           None, dinput.DIEDFL_ATTACHEDONLY)
     return _devices
+
+def _create_joystick(device):
+    if device._type in (dinput.DI8DEVTYPE_JOYSTICK, 
+                        dinput.DI8DEVTYPE_GAMEPAD):
+        return base.Joystick(device)
 
 def get_joysticks(display=None):
     return filter(None, [_create_joystick(d) for d in get_devices(display)])

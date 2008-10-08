@@ -179,12 +179,39 @@ class Joystick(object):
             def on_change(value):
                 self.buttons[i] = value
 
+        def add_hat(control):
+            # 8-directional hat encoded as a single control (Windows/Mac)
+            self.hat_x_control = control
+            self.hat_y_control = control
+            
+            @control.event
+            def on_change(value):
+                if value & 0xffff == 0xffff:
+                    self.hat_x = self.hat_y = 0
+                else:
+                    value //= 0xfff
+                    if 0 <= value < 8:
+                        self.hat_x, self.hat_y = (
+                            ( 0,  1),
+                            ( 1,  1),
+                            ( 1,  0),
+                            ( 1, -1),
+                            ( 0, -1),
+                            (-1, -1),
+                            (-1,  0),
+                            (-1,  1),
+                        )[value]
+                    else:
+                        # Out of range
+                        self.hat_x = self.hat_y = 0
+
         for control in device.get_controls():
             if isinstance(control, AbsoluteAxis):
                 if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz', 
                                     'hat_x', 'hat_y'):
                     add_axis(control)
-                        
+                elif control.name == 'hat':
+                    add_hat(control)
             elif isinstance(control, Button):
                 add_button(control)
 
