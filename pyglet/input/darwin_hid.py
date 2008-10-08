@@ -45,6 +45,14 @@ kIOHIDElementTypeCollection        = 513
 
 IOHIDElementCookie = ctypes.c_void_p
 
+# Full list in IOHIDUsageTables.h
+kHIDPage_GenericDesktop = 0x01
+kHIDUsage_GD_Joystick	= 0x04
+kHIDUsage_GD_GamePad	= 0x05
+kHIDUsage_GD_Keyboard	= 0x06
+kHIDUsage_GD_Keypad	= 0x07
+kHIDUsage_GD_MultiAxisController	= 0x08
+
 MACH_PORT_NULL = 0
 kIOHIDDeviceKey = "IOHIDDevice"
 kIOServicePlane = "IOService"
@@ -259,6 +267,8 @@ class DarwinHIDDevice(Device):
 
         self.name = get_property(properties, "Product")
         self.manufacturer = get_property(properties, "Manufacturer")
+        self.usage_page = get_property(properties, 'PrimaryUsagePage')
+        self.usage = get_property(properties, 'PrimaryUsage')
 
         carbon.CFRelease(properties)
 
@@ -267,6 +277,7 @@ class DarwinHIDDevice(Device):
         self._open = False
         self._queue = None
         self._queue_depth = 8 # Number of events queue can buffer
+
 
     def _get_device_interface(self, generic_device):
         plug_in_interface = \
@@ -453,9 +464,14 @@ def _create_control(properties):
     return control
 
 def _create_joystick(device):
-    if '5-axis' not in device.name.lower(): # XXX TEMP
+    # Ignore desktop devices that are not joysticks, gamepads or m-a controllers
+    if device.usage_page == kHIDPage_GenericDesktop and \
+       device.usage not in (kHIDUsage_GD_Joystick,
+                            kHIDUsage_GD_GamePad,
+                            kHIDUsage_GD_MultiAxisController):
         return
 
+    # Anything else is interesting enough to be a joystick?
     return Joystick(device)
 
 def get_devices(display=None):
