@@ -194,7 +194,8 @@ class Joystick(object):
                 if value & 0xffff == 0xffff:
                     self.hat_x = self.hat_y = 0
                 else:
-                    value //= 0xfff
+                    if control.max > 8: # DirectInput: scale value
+                        value //= 0xfff
                     if 0 <= value < 8:
                         self.hat_x, self.hat_y = (
                             ( 0,  1),

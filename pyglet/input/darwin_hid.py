@@ -12,10 +12,8 @@ import pyglet
 from pyglet.libs.darwin import carbon, _oscheck, create_cfstring
 from pyglet.libs.darwin.constants import *
 
-from base import Device, Control, Button, Joystick
+from base import Device, Control, AbsoluteAxis, RelativeAxis, Button, Joystick
 from base import DeviceExclusiveException
-
-import usb_hid
 
 # non-broken c_void_p
 void_p = ctypes.POINTER(ctypes.c_int)
@@ -201,6 +199,9 @@ def cfnumber_to_int(value):
     carbon.CFNumberGetValue(value, kCFNumberIntType, ctypes.byref(result))
     return result.value
 
+def cfboolean_to_bool(value):
+    return bool(carbon.CFBooleanGetValue(value))
+
 def cfvalue_to_value(value):
     if not value:
         return None
@@ -209,6 +210,8 @@ def cfvalue_to_value(value):
         return cfstring_to_string(value)
     elif value_type == carbon.CFNumberGetTypeID():
         return cfnumber_to_int(value)
+    elif value_type == carbon.CFBooleanGetTypeID():
+        return cfboolean_to_bool(value)
     else:
         return None
 
@@ -299,19 +302,19 @@ class DarwinHIDDevice(Device):
                 None, ctypes.byref(elements_array))
         )
 
-        self._element_cookies = {}
-        elements = []
+        self._control_cookies = {}
+        controls = []
         n_elements = carbon.CFArrayGetCount(elements_array)
         for i in range(n_elements):
             properties = carbon.CFArrayGetValueAtIndex(elements_array, i)
-            element = _create_control(properties)
-            if element:
-                elements.append(element)
-                self._element_cookies[element._cookie] = element
+            control = _create_control(properties)
+            if control:
+                controls.append(control)
+                self._control_cookies[control._cookie] = control
 
         carbon.CFRelease(elements_array)
 
-        return elements
+        return controls
 
     def open(self, window=None, exclusive=False):
         super(DarwinHIDDevice, self).open(window, exclusive)
@@ -396,7 +399,7 @@ class DarwinHIDDevice(Device):
                 ctypes.byref(event), 0, 0)
         while r == 0:
             try:
-                control = self._element_cookies[event.elementCookie]
+                control = self._control_cookies[event.elementCookie]
                 control._set_value(event.value)
             except KeyError:
                 pass
@@ -404,64 +407,56 @@ class DarwinHIDDevice(Device):
             r = self._queue.contents.contents.getNextEvent(self._queue,
                     ctypes.byref(event), 0, 0)
 
-def _create_control(properties):
-    cookie = get_property(properties, 'ElementCookie')
-    usage = get_property(properties, 'Usage')
-    usage_page = get_property(properties, 'UsagePage')
+_axis_names = {
+    (0x01, 0x30): 'x',
+    (0x01, 0x31): 'y',
+    (0x01, 0x32): 'z',
+    (0x01, 0x33): 'rx',
+    (0x01, 0x34): 'ry',
+    (0x01, 0x35): 'rz',
+    (0x01, 0x38): 'wheel',
+    (0x01, 0x39): 'hat',
+}
 
-    known = usb_hid.get_element_usage_known(usage_page, usage)
-    if not known:
+_button_names = {}
+
+def _create_control(properties):
+    type = get_property(properties, 'Type')
+    if type not in (kIOHIDElementTypeInput_Misc,
+                    kIOHIDElementTypeInput_Axis, 
+                    kIOHIDElementTypeInput_Button):
         return
 
-    name = usb_hid.get_element_usage_name(usage_page, usage)
+    cookie = get_property(properties, 'ElementCookie')
+    usage_page = get_property(properties, 'UsagePage')
+    usage = get_property(properties, 'Usage')
+    raw_name = get_property(properties, 'Name')
+    if not raw_name:
+        raw_name = '%d:%d' % (usage_page, usage)
 
-    min = get_property(properties, 'Min')
-    max = get_property(properties, 'Max')
-
-    # Try to guess type of control and return most appropriate subclass
-    if min == 0 and max == 1:
-        control = Button(name, min, max)
+    if type in (kIOHIDElementTypeInput_Misc, kIOHIDElementTypeInput_Axis):
+        name = _axis_names.get((usage_page, usage))
+        relative = get_property(properties, 'IsRelative')
+        if relative:
+            control = RelativeAxis(name, raw_name)
+        else:
+            min = get_property(properties, 'Min')
+            max = get_property(properties, 'Max')
+            control = AbsoluteAxis(name, min, max, raw_name)
+    elif type == kIOHIDElementTypeInput_Button:
+        name = _button_names.get((usage_page, usage))
+        control = Button(name, raw_name)
     else:
-        control = Control(name, min, max)
+        return
 
     control._cookie = cookie
     return control
-
-
-
-    '''
-    def get_value(self):
-        event = IOHIDEventStruct()
-        self.device._device.contents.contents.getElementValue(
-            self.device._device, self._cookie, ctypes.byref(event))
-        return event.value
-    '''
 
 def _create_joystick(device):
     if '5-axis' not in device.name.lower(): # XXX TEMP
         return
 
-    axes = ('x', 'y', 'z', 'rz')
-
-    joystick = Joystick(device)
-    for control in device.get_controls():
-        if control.name in axes:
-            name = control.name
-            scale = 2.0 / (control.max - control.min)
-            bias = -1.0 - control.min * scale
-            @control.event
-            def on_change(value, name=name, scale=scale, bias=bias):
-                setattr(joystick, name, value * scale + bias)
-            setattr(joystick, control.name + '_control', control)
-        elif isinstance(control, Button):
-            i = len(joystick.buttons)
-            joystick.buttons.append(False)
-            joystick.button_controls.append(control)
-            @control.event
-            def on_change(value, i=i):
-                joystick.buttons[i] = bool(value)
-
-    return joystick
+    return Joystick(device)
 
 def get_devices(display=None):
     services = get_matching_services(get_master_port(), 
