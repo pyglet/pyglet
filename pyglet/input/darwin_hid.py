@@ -12,7 +12,8 @@ import pyglet
 from pyglet.libs.darwin import carbon, _oscheck, create_cfstring
 from pyglet.libs.darwin.constants import *
 
-from base import Device, Control, AbsoluteAxis, RelativeAxis, Button, Joystick
+from base import Device, Control, AbsoluteAxis, RelativeAxis, Button
+from base import Joystick, AppleRemote
 from base import DeviceExclusiveException
 
 # non-broken c_void_p
@@ -52,6 +53,13 @@ kHIDUsage_GD_GamePad	= 0x05
 kHIDUsage_GD_Keyboard	= 0x06
 kHIDUsage_GD_Keypad	= 0x07
 kHIDUsage_GD_MultiAxisController	= 0x08
+
+kHIDUsage_GD_SystemAppMenu = 0x86
+kHIDUsage_GD_SystemMenu	= 0x89
+kHIDUsage_GD_SystemMenuRight	= 0x8A
+kHIDUsage_GD_SystemMenuLeft	= 0x8B
+kHIDUsage_GD_SystemMenuUp	= 0x8C
+kHIDUsage_GD_SystemMenuDown	= 0x8D
 
 MACH_PORT_NULL = 0
 kIOHIDDeviceKey = "IOHIDDevice"
@@ -429,7 +437,14 @@ _axis_names = {
     (0x01, 0x39): 'hat',
 }
 
-_button_names = {}
+_button_names = {
+    (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemAppMenu): 'menu',
+    (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenu): 'select',
+    (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuRight): 'right',
+    (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuLeft): 'left',
+    (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuUp): 'up',
+    (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuDown): 'down',
+}
 
 def _create_control(properties):
     type = get_property(properties, 'Type')
@@ -480,5 +495,11 @@ def get_devices(display=None):
         
     return [DarwinHIDDevice(display, service) for service in services]
 
-def get_joysticks():
-    return filter(None, [_create_joystick(device) for device in get_devices()])
+def get_joysticks(display=None):
+    return filter(None, 
+        [_create_joystick(device) for device in get_devices(display)])
+
+def get_apple_remote(display=None):
+    for device in get_devices(display):
+        if device.name == 'Apple IR':
+            return AppleRemote(device)

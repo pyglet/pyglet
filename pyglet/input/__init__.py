@@ -8,10 +8,13 @@ __version__ = '$Id: $'
 
 import sys
 
-from base import Device, Control, Button, Joystick
+from base import Device, Control, Button, Joystick, AppleRemote
 from base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
+def get_apple_remote(display=None):
+    return None
 
 if _is_epydoc:
     def get_devices(display=None):
@@ -34,4 +37,4 @@ else:
     elif sys.platform in ('cygwin', 'win32'):
         from directinput import get_devices, get_joysticks
     elif sys.platform == 'darwin':
-        from darwin_hid import get_devices, get_joysticks
+        from darwin_hid import get_devices, get_joysticks, get_apple_remote

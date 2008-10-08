@@ -226,3 +226,20 @@ class Joystick(object):
 
     def close(self):
         self.device.close()
+
+class AppleRemote(object):
+    def __init__(self, device):
+        self.device = device
+    
+        for control in device.get_controls():
+            if control.name in ('left', 'right', 'up', 'down', 
+                                'menu', 'select'):
+                setattr(self, control.name + '_control', control)
+
+    def open(self, window=None, exclusive=False):
+        self.device.open(window, exclusive)
+
+    def close(self):
+        self.device.close()
+
+
