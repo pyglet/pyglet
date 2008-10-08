@@ -9,6 +9,10 @@ from pyglet.libs import win32
 from pyglet.libs.win32 import dinput
 from pyglet.libs.win32 import _kernel32
 
+# These instance names are not defined anywhere, obtained by experiment.  The
+# GUID names (which seem to be ideally what are needed) are wrong/missing for
+# most of my devices.
+
 _abs_instance_names = {
     0: 'x',
     1: 'y',
@@ -21,10 +25,7 @@ _abs_instance_names = {
 _rel_instance_names = {
     0: 'x',
     1: 'y',
-    2: 'z',
-    3: 'rx', 
-    4: 'ry',
-    5: 'rz', 
+    2: 'wheel',
 }
 
 _btn_instance_names = {}
@@ -39,12 +40,13 @@ def _create_control(object_instance):
         control = base.AbsoluteAxis(name, 0, 0xffff, raw_name)
     elif type & dinput.DIDFT_RELAXIS:
         name = _rel_instance_names.get(instance)
-        control = base.RelativeAxis(name, 0, 0xffff, raw_name)
+        control = base.RelativeAxis(name, raw_name)
     elif type & dinput.DIDFT_BUTTON:
         name = _btn_instance_names.get(instance)
-        control = base.Button(name, 0, 0x8000, raw_name)
+        control = base.Button(name, raw_name)
     elif type & dinput.DIDFT_POV:
-        control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 0xffff, raw_name)
+        control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 
+                                    0, 0xffffffff, raw_name)
     else:
         return
 

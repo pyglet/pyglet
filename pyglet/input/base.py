@@ -51,10 +51,8 @@ class Control(EventDispatcher):
     '''
     _value = None
 
-    def __init__(self, name, min, max, raw_name=None):
+    def __init__(self, name, raw_name=None):
         self.name = name
-        self.min = min
-        self.max = max
         self.raw_name = raw_name
         self.inverted = False
 
@@ -71,7 +69,8 @@ class Control(EventDispatcher):
 
     def __repr__(self):
         if self.name:
-            return '%s(name=%s)' % (self.__class__.__name__, self.name)
+            return '%s(name=%s, raw_name=%s)' % (
+                self.__class__.__name__, self.name, self.raw_name)
         else:
             return '%s(raw_name=%s)' % (self.__class__.__name__, self.raw_name)
 
@@ -102,6 +101,12 @@ class AbsoluteAxis(Control):
     HAT = 'hat'
     HAT_X = 'hat_x'
     HAT_Y = 'hat_y'
+
+    def __init__(self, name, min, max, raw_name=None):
+        super(AbsoluteAxis, self).__init__(name, raw_name)
+        
+        self.min = min
+        self.max = max
 
 class Button(Control):
     def _get_value(self):
