@@ -140,7 +140,12 @@ entire paragraph, otherwise results are undefined.
     the text layout.  Defaults to the empty list.  When the tab stops
     are exhausted, they implicitly continue at 50 pixel intervals.
 ``wrap``
-    Boolean.  If True (the default), text wraps within the width of the layout.
+    ``char``, ``word``, True (default) or False.  The boundaries at which to
+    wrap text to prevent it overflowing a line.  With ``char``, the line
+    wraps anywhere in the text; with ``word`` or True, the line wraps at
+    appropriate boundaries between words; with False the line does not wrap,
+    and may overflow the layout width.  ``char`` and ``word`` styles are
+    since pyglet 1.2.
 
 Other attributes can be used to store additional style information within the
 document; they will be ignored by the built-in text classes.
@@ -1036,7 +1041,7 @@ class TextLayout(object):
         else:
             wrap_iterator = runlist.FilteredRunIterator(
                 self._document.get_style_runs('wrap'),
-                lambda value: value in (True, False),
+                lambda value: value in (True, False, 'char', 'word'),
                 True)
         margin_left_iterator = runlist.FilteredRunIterator(
             self._document.get_style_runs('margin_left'), 
@@ -1111,7 +1116,7 @@ class TextLayout(object):
                 else:
                     kern = self._parse_distance(kerning_iterator[index])
 
-                if text in u'\u0020\u200b\t':
+                if wrap != 'char' and text in u'\u0020\u200b\t':
                     # Whitespace: commit pending runs to this line.
                     for run in run_accum:
                         line.add_box(run)
@@ -1157,9 +1162,9 @@ class TextLayout(object):
                         # line width or a newline was encountered.  Either
                         # way, the current line must be flushed.
 
-                        if new_line:
-                            # Forced newline.  Commit everything pending
-                            # without exception.
+                        if new_line or wrap == 'char':
+                            # Forced newline or char-level wrapping.  Commit
+                            # everything pending without exception.
                             for run in run_accum:
                                 line.add_box(run)
                             run_accum = []
@@ -1170,7 +1175,9 @@ class TextLayout(object):
                             owner_accum_width = 0
 
                             line.length += 1
-                            next_start = index + 1
+                            next_start = index
+                            if new_line:
+                                next_start += 1
 
                         # Create the _GlyphBox for the committed glyphs in the
                         # current owner.
