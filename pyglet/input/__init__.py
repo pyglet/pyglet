@@ -8,7 +8,8 @@ __version__ = '$Id: $'
 
 import sys
 
-from base import Device, Control, Button, Joystick, AppleRemote
+from base import Device, Control, RelativeAxis, AbsoluteAxis, \
+                 Button, Joystick, AppleRemote
 from base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
