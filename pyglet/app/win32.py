@@ -89,7 +89,7 @@ class Win32EventLoop(EventLoop):
 
     def _recreate_wait_objects_array(self):
         if not self._wait_objects:
-            self._wait_objects = None
+            self._wait_objects_array = None
             return
 
         self._wait_objects_n = len(self._wait_objects)

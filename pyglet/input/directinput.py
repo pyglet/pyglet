@@ -138,8 +138,8 @@ class DirectInputDevice(base.Device):
 
         pyglet.app.event_loop.remove_wait_object(self._wait_object)
 
-        self._device.SetEventNotification(None)
         self._device.Unacquire()
+        self._device.SetEventNotification(None)
 
         _kernel32.CloseHandle(self._wait_object)
 
