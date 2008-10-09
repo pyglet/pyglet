@@ -166,11 +166,11 @@ def _create_control(fileno, event_type, event_code):
         raw_name = _rel_raw_names.get(event_code, 'EV_REL(%x)' % event_code)
         name = _rel_names.get(event_code)
         # TODO min/max?
-        control = RelativeAxis(name, 0, 0, raw_name)
+        control = RelativeAxis(name, raw_name)
     elif event_type == EV_KEY:
         raw_name = _key_raw_names.get(event_code, 'EV_KEY(%x)' % event_code)
         name = None
-        control = Button(name, 0, 1, raw_name)
+        control = Button(name, raw_name)
     else:
         value = min = max = 0 # TODO
         return None
