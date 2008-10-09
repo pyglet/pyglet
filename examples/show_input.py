@@ -160,6 +160,10 @@ class DevicePanel(object):
             else:
                 widget = ControlWidget(control, batch, group=text_group)
             self.widgets.append(widget)
+
+        if not self.widgets:
+            self.widgets.append(NoControlsWidget(batch, group=text_group))
+
         self.widgets.append(None)
         window.set_mouse_cursor(None)
 
@@ -300,6 +304,28 @@ class ButtonWidget(ControlWidget):
         if not self.value and self.fade > 200:
             self.fade = max(200, self.fade - 10)
             changed_widgets.add(self)
+
+class NoControlsWidget(object):
+    CONTENT_MARGIN = 4
+
+    def __init__(self, batch, group):
+        self.label = pyglet.text.Label('No controls on this device.',
+            font_size=10,
+            color=(0, 0, 0, 255),
+            anchor_y='bottom',
+            batch=batch,
+            group=group)
+
+        self.min_width = self.label.content_width + self.CONTENT_MARGIN * 2
+        self.min_height = self.label.content_height + self.CONTENT_MARGIN * 2
+
+    def set_bounds(self, x1, y1, x2, y2):
+        self.label.x = x1 + ControlWidget.CONTENT_MARGIN
+        self.label.y = y1 + ControlWidget.CONTENT_MARGIN
+
+    def delete(self):
+        self.label.delete()
+
 
 window = pyglet.window.Window(caption='Input Devices', resizable=True)
 batch = pyglet.graphics.Batch()
