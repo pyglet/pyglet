@@ -89,7 +89,6 @@ def CarbonEventHandler(event_class, event_kind):
 
 class CarbonWindow(BaseWindow):
     _window = None                  # Carbon WindowRef
-    _recreate_deferred = None
 
     # Window properties
     _minimum_size = None
@@ -112,13 +111,12 @@ class CarbonWindow(BaseWindow):
         # otherwise the (OS X) event dispatcher gets lost and segfaults.
         #
         # Defer actual recreation until dispatch_events next finishes.
-        self._recreate_deferred = changes
+        from pyglet import app
+        app.platform_event_loop.post_event(self, 
+                                           'on_recreate_immediate', changes)
 
-    def _recreate_immediate(self):
+    def on_recreate_immediate(self, changes):
         # The actual _recreate function.
-        changes = self._recreate_deferred
-        self._recreate_deferred = None
-
         if ('context' in changes):
             self.context.detach()
 
@@ -299,6 +297,9 @@ class CarbonWindow(BaseWindow):
             self.context.set_vsync(vsync)
 
     def dispatch_events(self):
+        from pyglet import app
+        app.platform_event_loop.dispatch_posted_events()
+
         self._allow_dispatch_event = True
         while self._event_queue:
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
@@ -309,8 +310,6 @@ class CarbonWindow(BaseWindow):
             carbon.SendEventToEventTarget(e, self._event_dispatcher)
             carbon.ReleaseEvent(e)
 
-            if self._recreate_deferred:
-                self._recreate_immediate()
             result = carbon.ReceiveNextEvent(0, c_void_p(), 0, True, byref(e))
 
         self._allow_dispatch_event = False
@@ -327,9 +326,6 @@ class CarbonWindow(BaseWindow):
     def dispatch_pending_events(self):
         while self._event_queue:
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
-
-        if self._recreate_deferred:
-            self._recreate_immediate()
 
     def set_caption(self, caption):
         self._caption = caption
@@ -886,22 +882,20 @@ class CarbonWindow(BaseWindow):
         #carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
-    _resizing = None
-
     @CarbonEventHandler(kEventClassWindow, kEventWindowResizeStarted)
     def _on_window_resize_started(self, next_handler, ev, data):
-        self._resizing = (self.width, self.height)
-
         from pyglet import app
         if app.event_loop is not None:
-            app.event_loop._stop_polling()
+            app.event_loop.enter_blocking()
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowResizeCompleted)
     def _on_window_resize_completed(self, next_handler, ev, data):
-        self._resizing = None
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop.exit_blocking()
 
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
@@ -923,7 +917,7 @@ class CarbonWindow(BaseWindow):
 
         from pyglet import app
         if app.event_loop is not None:
-            app.event_loop._stop_polling()
+            app.event_loop.enter_blocking()
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
@@ -931,6 +925,10 @@ class CarbonWindow(BaseWindow):
     @CarbonEventHandler(kEventClassWindow, kEventWindowDragCompleted)
     def _on_window_drag_completed(self, next_handler, ev, data):
         self._dragging = False
+
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop.exit_blocking()
 
         rect = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
@@ -942,18 +940,30 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanging)
     def _on_window_bounds_changing(self, next_handler, ev, data):
-        from pyglet import app
-        if app.event_loop is not None:
-            carbon.SetEventLoopTimerNextFireTime(app.event_loop._timer,
-                                                 c_double(0.0))
-
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
 
     @CarbonEventHandler(kEventClassWindow, kEventWindowBoundsChanged)
     def _on_window_bounds_change(self, next_handler, ev, data):
         self._update_track_region()
-        self._update_drawable()
+
+        rect = Rect()
+        carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+        width = rect.right - rect.left
+        height = rect.bottom - rect.top
+        if width != self._width or height != self._height:
+            self._update_drawable()
+            self.switch_to()
+            self.dispatch_event('on_resize', width, height)
+            
+            from pyglet import app
+            if app.event_loop is not None:
+                app.event_loop.enter_blocking()
+
+            self._width = width
+            self._height = height
+        else:
+            self.dispatch_event('on_move', rect.left, rect.top)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
@@ -1009,3 +1019,4 @@ class CarbonWindow(BaseWindow):
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
         
+CarbonWindow.register_event_type('on_recreate_immediate')

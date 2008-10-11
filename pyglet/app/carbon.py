@@ -42,102 +42,67 @@ import ctypes
 import Queue
 
 from pyglet import app
-from pyglet.app.base import EventLoop
+from pyglet.app.base import PlatformEventLoop
 
 from pyglet.libs.darwin import *
 
 EventLoopTimerProc = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
 
 
-class CarbonEventLoop(EventLoop):
-    _running = False
-
+class CarbonEventLoop(PlatformEventLoop):
     def __init__(self):
-        self._post_event_queue = Queue.Queue()
         self._event_loop = carbon.GetMainEventLoop()
         self._timer = ctypes.c_void_p()
+        self._timer_func = None
         super(CarbonEventLoop, self).__init__()
 
-    def post_event(self, dispatcher, event, *args):
-        # TODO consolidate to base class
-        self._post_event_queue.put((dispatcher, event, args))
+    def notify(self):
+        return
+        carbon.SetEventLoopTimerNextFireTime(
+            self._timer, ctypes.c_double(0.0))
 
-        if not self._running:
-            return
-
-        carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
-
-    # TODO consolidate to base class
-    def process_posted_events(self):
-        while True:
-            try:
-                dispatcher, event, args = self._post_event_queue.get(False)
-            except Queue.Empty:
-                break
-
-            dispatcher.dispatch_event(event, *args)
-
-    def run(self):
-        self._setup()
-
-        e = ctypes.c_void_p()
-        event_dispatcher = carbon.GetEventDispatcherTarget()
-        event_loop = self._event_loop
-        self._event_queue = carbon.GetMainEventQueue()
-
+    def start(self):
         # Create timer
         timer = self._timer
         idle_event_proc = EventLoopTimerProc(self._timer_proc)
-        carbon.InstallEventLoopTimer(event_loop,
+        carbon.InstallEventLoopTimer(self._event_loop,
                                      ctypes.c_double(0.1), #?
                                      ctypes.c_double(kEventDurationForever),
                                      idle_event_proc,
                                      None,
                                      ctypes.byref(timer))
 
-        self._force_idle = False
-        self._allow_polling = True
-
-        self.dispatch_event('on_enter')
-
-        # Dispatch events posted before entered run looop
-        self._running = True #XXX consolidate
-        self.process_posted_events()
-
-        try:
-            while not self.has_exit:
-                if self._force_idle:
-                    duration = 0
-                else:
-                    duration = kEventDurationForever
-                if carbon.ReceiveNextEvent(0, None, ctypes.c_double(duration),
-                                           True, ctypes.byref(e)) == 0:
-                    carbon.SendEventToEventTarget(e, event_dispatcher)
-                    carbon.ReleaseEvent(e)
-
-                # Manual idle event 
-                if (carbon.GetNumEventsInQueue(self._event_queue) == 0 or 
-                    self._force_idle):
-                    self._force_idle = False
-                    self._timer_proc(timer, None, False)
-        except KeyboardInterrupt:
-            self.exit()
-
+    def stop(self):
         carbon.RemoveEventLoopTimer(self._timer)
-        self.dispatch_event('on_exit')
 
-    def _stop_polling(self):
-        carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
+    def step(self, timeout=None):
+        self.dispatch_posted_events()
 
-    def _enter_blocking(self):
-        carbon.SetEventLoopTimerNextFireTime(self._timer, ctypes.c_double(0.0))
-        self._allow_polling = False
+        event_dispatcher = carbon.GetEventDispatcherTarget()
+        e = ctypes.c_void_p()
+        if timeout is None:
+            timeout = kEventDurationForever
+        self._is_running.set()
+        if carbon.ReceiveNextEvent(0, None, ctypes.c_double(timeout),
+                                   True, ctypes.byref(e)) == 0:
+            carbon.SendEventToEventTarget(e, event_dispatcher)
+            carbon.ReleaseEvent(e)
+        self._is_running.clear()
 
-    def _exit_blocking(self):
-        self._allow_polling = True
+    def set_timer(self, func, interval):
+        if interval is None or func is None:
+            interval = kEventDurationForever
 
-    def _timer_proc(self, timer, data, in_events=True):
-        self.process_posted_events()
+        self._timer_func = func
+        carbon.SetEventLoopTimerNextFireTime(self._timer,
+                                             ctypes.c_double(interval))
+
+    def _timer_proc(self, timer, data):
+        if self._timer_func:
+            self._timer_func()
+        
+        '''
+        self.dispatch_posted_events()
 
         allow_polling = True
 
@@ -163,14 +128,10 @@ class CarbonEventLoop(EventLoop):
 
             # Check for deferred recreate
             if window._recreate_deferred:
-                if in_events:
-                    # Break out of ReceiveNextEvent so it can be processed
-                    # in next iteration.
-                    carbon.QuitEventLoop(self._event_loop)
-                    self._force_idle = True
-                else:
-                    # Do it now.
-                    window._recreate_immediate()
+                # Break out of ReceiveNextEvent so it can be processed
+                # in next iteration.
+                carbon.QuitEventLoop(self._event_loop)
+                self._force_idle = True
 
         sleep_time = self.idle()
 
@@ -178,8 +139,8 @@ class CarbonEventLoop(EventLoop):
             sleep_time = kEventDurationForever
         elif sleep_time < 0.01 and allow_polling and self._allow_polling:
             # Switch event loop to polling.
-            if in_events:
-                carbon.QuitEventLoop(self._event_loop)
+            carbon.QuitEventLoop(self._event_loop)
             self._force_idle = True
             sleep_time = kEventDurationForever
         carbon.SetEventLoopTimerNextFireTime(timer, ctypes.c_double(sleep_time))
+        '''

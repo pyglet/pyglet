@@ -136,20 +136,29 @@ def exit():
     '''
     event_loop.exit()
 
+from pyglet.app.base import EventLoop
 if _is_epydoc:
-    from pyglet.app.base import EventLoop
+    from pyglet.app.base import PlatformEventLoop
 else:
     if sys.platform == 'darwin':
-        from pyglet.app.carbon import CarbonEventLoop as EventLoop
+        from pyglet.app.carbon import CarbonEventLoop as PlatformEventLoop
     elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.app.win32 import Win32EventLoop as EventLoop
+        from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:
-        from pyglet.app.xlib import XlibEventLoop as EventLoop
+        from pyglet.app.xlib import XlibEventLoop as PlatformEventLoop
 
 #: The global event loop.  Applications can replace this with their own
-#: subclass of `pyglet.app.base.EventLoop`, but must take care to do so before
-#: any pyglet.app function is called, and before any other pyglet threads
-#: are started (for example, via media playback).
+#: subclass of `pyglet.app.base.EventLoop` before calling `EventLoop.run`.
+#:
+#: :since: pyglet 1.1
 #:
 #: :type: `EventLoop`
 event_loop = EventLoop()
+
+#: The platform-dependent event loop.  Applications must not subclass or
+#: replace this object.
+#:
+#: :since: pyglet 1.2
+#:
+#: :type: `PlatformEventLoop`
+platform_event_loop = PlatformEventLoop()

@@ -105,9 +105,9 @@ class CarbonDisplay(Display):
 
             # This function blocks, so tell the event loop it needs to install
             # a timer.
-            app.event_loop._enter_blocking()
+            app.event_loop.enter_blocking()
             carbon.MenuSelect(position)
-            app.event_loop._exit_blocking()
+            app.event_loop.exit_blocking()
 
             # Menu selection has now returned.  Remove highlight from the
             # menubar.

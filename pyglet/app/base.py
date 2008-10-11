@@ -8,6 +8,7 @@ __version__ = '$Id: $'
 
 import sys
 import threading
+import Queue
 
 from pyglet import app
 from pyglet import clock
@@ -15,38 +16,22 @@ from pyglet import event
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
-class EventLoop(event.EventDispatcher):
-    '''The main run loop of the application.
-
-    Calling `run` begins the application event loop, which processes
-    operating system events, calls `pyglet.clock.tick` to call scheduled
-    functions and calls `pyglet.window.Window.on_draw` and
-    `pyglet.window.Window.flip` to update window contents.
-
-    Applications can subclass `EventLoop` and override certain methods
-    to integrate another framework's run loop, or to customise processing
-    in some other way.  You should not in general override `run`, as
-    this method contains platform-specific code that ensures the application
-    remains responsive to the user while keeping CPU usage to a minimum.
+class PlatformEventLoop(object):
     '''
-
-    _exit_functions = None
-    _has_exit_condition = None
-    _has_exit = False
-
+    :since: pyglet 1.2
+    '''
     def __init__(self):
-        self._has_exit_condition = threading.Condition()
-        self._exit_functions = []
+        self._event_queue = Queue.Queue()
+        self._is_running = threading.Event()
+        self._is_running.clear()
 
-    def run(self):
-        '''Begin processing events, scheduled functions and window updates.
+    def is_running(self):  
+        '''Return True if the event loop is currently processing, or False
+        if it is blocked or not activated.
 
-        This method returns when `has_exit` is set to True.
-
-        Developers are discouraged from overriding this method, as the
-        implementation is platform-specific.
+        :rtype: bool
         '''
-        raise NotImplementedError('abstract')
+        return self._is_running.is_set()
 
     def post_event(self, dispatcher, event, *args):
         '''Post an event into the main application thread.
@@ -69,12 +54,86 @@ class EventLoop(event.EventDispatcher):
                 Arguments to pass to the event handlers.
 
         '''
+        self._event_queue.put((dispatcher, event, args))
+        self.notify()
+
+    def dispatch_posted_events(self):
+        '''Immediately dispatch all pending events.
+
+        Normally this is called automatically by the runloop iteration.
+        '''
+        while True:
+            try:
+                dispatcher, event, args = self._event_queue.get(False)
+            except Queue.Empty:
+                break
+
+            dispatcher.dispatch_event(event, *args)
+
+    def notify(self):
+        '''Notify the event loop that something needs processing.
+
+        If the event loop is blocked, it will unblock and perform an iteration
+        immediately.  If the event loop is running, another iteration is
+        scheduled for immediate execution afterwards.
+        '''
         raise NotImplementedError('abstract')
 
-    def _setup(self):
-        global event_loop
-        event_loop = self
+    def start(self):
+        pass
 
+    def step(self, timeout=None):
+        raise NotImplementedError('abstract')
+
+    def set_timer(self, func, interval):
+        raise NotImplementedError('abstract')
+
+    def stop(self):
+        pass
+
+class EventLoop(event.EventDispatcher):
+    '''The main run loop of the application.
+
+    Calling `run` begins the application event loop, which processes
+    operating system events, calls `pyglet.clock.tick` to call scheduled
+    functions and calls `pyglet.window.Window.on_draw` and
+    `pyglet.window.Window.flip` to update window contents.
+
+    Applications can subclass `EventLoop` and override certain methods
+    to integrate another framework's run loop, or to customise processing
+    in some other way.  You should not in general override `run`, as
+    this method contains platform-specific code that ensures the application
+    remains responsive to the user while keeping CPU usage to a minimum.
+    '''
+
+    _has_exit_condition = None
+    _has_exit = False
+
+    def __init__(self):
+        self._has_exit_condition = threading.Condition()
+
+    def run(self):
+        '''Begin processing events, scheduled functions and window updates.
+
+        This method returns when `has_exit` is set to True.
+
+        Developers are discouraged from overriding this method, as the
+        implementation is platform-specific.
+        '''
+        self._legacy_setup()
+
+        platform_event_loop = app.platform_event_loop
+        platform_event_loop.start()
+        self.dispatch_event('on_enter')
+
+        while not self.has_exit:
+            timeout = self.idle()
+            platform_event_loop.step(timeout)
+            
+        self.dispatch_event('on_exit')
+        platform_event_loop.stop()
+
+    def _legacy_setup(self):
         # Disable event queuing for dispatch_events
         from pyglet.window import Window
         Window._enable_event_queue = False
@@ -84,12 +143,32 @@ class EventLoop(event.EventDispatcher):
             window.switch_to()
             window.dispatch_pending_events()
 
-    def _idle_chance(self):
-        '''If timeout has expired, manually force an idle loop.
+    def enter_blocking(self):
+        '''Called by pyglet internal processes when the operating system
+        is about to block due to a user interaction.  For example, this
+        is common when the user begins resizing or moving a window.
 
-        Called by window that have blocked the event loop (e.g. during
-        resizing).
+        This method provides the event loop with an opportunity to set up
+        an OS timer on the platform event loop, which will continue to
+        be invoked during the blocking operation.
+
+        The default implementation ensures that `idle` continues to be called
+        as documented.
+
+        :since: pyglet 1.2
         '''
+        timeout = self.idle()
+        app.platform_event_loop.set_timer(self._blocking_timer, timeout)
+
+    def exit_blocking(self):
+        '''Called by pyglet internal processes when the blocking operation
+        completes.  See `enter_blocking`.
+        '''
+        app.platform_event_loop.set_timer(None, None)
+
+    def _blocking_timer(self):
+        timeout = self.idle()
+        app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
     def idle(self):
         '''Called during each iteration of the event loop.
@@ -159,7 +238,7 @@ class EventLoop(event.EventDispatcher):
         `sleep`).
         '''
         self._set_has_exit(True)
-        self.post_event(None, None) # XXX
+        app.platform_event_loop.notify()
 
     def sleep(self, timeout):
         '''Wait for some amount of time, or until the `has_exit` flag is
