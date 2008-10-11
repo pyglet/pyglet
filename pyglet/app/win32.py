@@ -38,16 +38,15 @@ __version__ = '$Id: $'
 
 import ctypes
 import time
-import Queue
 
 from pyglet import app
-from base import EventLoop
+from base import PlatformEventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 
-class Win32EventLoop(EventLoop):
+class Win32EventLoop(PlatformEventLoop):
     def __init__(self):
         super(Win32EventLoop, self).__init__()
 
@@ -62,19 +61,9 @@ class Win32EventLoop(EventLoop):
                              constants.PM_NOREMOVE)
 
         self._event_thread = _kernel32.GetCurrentThreadId()
-        self._post_event_queue = Queue.Queue()
 
         self._wait_objects = []
-        self._wait_objects_array = None
-
-    def post_event(self, dispatcher, event, *args):
-        self._post_event_queue.put((dispatcher, event, args))
-
-        # Nudge the event loop with a message it will discard.  Note that only
-        # user events are actually posted.  The posted event will not
-        # interrupt the window move/size drag loop -- it seems there's no way
-        # to do this.
-        _user32.PostThreadMessageW(self._event_thread, constants.WM_USER, 0, 0)
+        self._recreate_wait_objects_array()
 
     def add_wait_object(self, object, func):
         self._wait_objects.append((object, func))
@@ -89,6 +78,7 @@ class Win32EventLoop(EventLoop):
 
     def _recreate_wait_objects_array(self):
         if not self._wait_objects:
+            self._wait_objects_n = 0
             self._wait_objects_array = None
             return
 
@@ -96,107 +86,59 @@ class Win32EventLoop(EventLoop):
         self._wait_objects_array = \
             (HANDLE * self._wait_objects_n)(*[o for o, f in self._wait_objects])
 
-    def _dispatch_posted_events(self):
-        # Dispatch (synchronised) queued events
-        while True:
-            try:
-                dispatcher, event, args = self._post_event_queue.get(False)
-            except Queue.Empty:
-                break
-
-            dispatcher.dispatch_event(event, *args)
-
-    def run(self):
+    def start(self):
         if _kernel32.GetCurrentThreadId() != self._event_thread:
             raise RuntimeError('EventLoop.run() must be called from the same ' +
                                'thread that imports pyglet.app')
 
-        self._setup()
-
         self._timer_proc = types.TIMERPROC(self._timer_func)
-        self._timer = timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
+        self._timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
+        self._timer_func = None
         self._polling = False
         self._allow_polling = True
+
+    def step(self, timeout=None):
+        self.dispatch_posted_events()
+
         msg = types.MSG()
-        
-        self.dispatch_event('on_enter')
+        if timeout is None:
+            timeout = constants.INFINITE
+        else:
+            timeout = int(timeout * 1000) # milliseconds
 
-        self._dispatch_posted_events()
+        result = _user32.MsgWaitForMultipleObjects(
+            self._wait_objects_n,
+            self._wait_objects_array,
+            False,
+            timeout,
+            constants.QS_ALLINPUT)
+        result -= constants.WAIT_OBJECT_0
 
-        while not self.has_exit:
-            if not self._wait_objects_array and self._polling:
-                while _user32.PeekMessageW(ctypes.byref(msg), 
-                                           0, 0, 0, constants.PM_REMOVE):
-                    _user32.TranslateMessage(ctypes.byref(msg))
-                    _user32.DispatchMessageW(ctypes.byref(msg))
-                self._timer_func(0, 0, timer, 0)
-
-            elif self._wait_objects_array:
-                if self._polling:#TODO UNHACK THIS
-                    timeout = 0 
-                else:
-                    timeout = constants.INFINITE
-                result = _user32.MsgWaitForMultipleObjects(
-                    self._wait_objects_n,
-                    self._wait_objects_array,
-                    False,
-                    timeout,
-                    constants.QS_ALLINPUT)
-                result -= constants.WAIT_OBJECT_0
-                if 0 <= result < self._wait_objects_n:
-                    object, func = self._wait_objects[result]
-                    func()
-                elif result == self._wait_objects_n:
-                    while _user32.PeekMessageW(ctypes.byref(msg),
-                                               0, 0, 0, constants.PM_REMOVE):
-                        _user32.TranslateMessage(ctypes.byref(msg))
-                        _user32.DispatchMessageW(ctypes.byref(msg))
-
-               # Manual idle event XXX HACK
-                self._timer_func(0, 0, timer, 0)
-
-            else:
-                _user32.GetMessageW(ctypes.byref(msg), 0, 0, 0)
+        if 0 <= result < self._wait_objects_n:
+            object, func = self._wait_objects[result]
+            func()
+        elif result == self._wait_objects_n:
+            while _user32.PeekMessageW(ctypes.byref(msg),
+                                       0, 0, 0, constants.PM_REMOVE):
                 _user32.TranslateMessage(ctypes.byref(msg))
                 _user32.DispatchMessageW(ctypes.byref(msg))
-            
-                # Manual idle event
-                msg_types = \
-                    _user32.GetQueueStatus(constants.QS_ALLINPUT) & 0xffff0000
-                if (msg.message != constants.WM_TIMER and
-                    not msg_types & ~(constants.QS_TIMER<<16)):
-                    self._timer_func(0, 0, timer, 0)
 
-            self._dispatch_posted_events()
+    def notify(self):
+        # Nudge the event loop with a message it will discard.  Note that only
+        # user events are actually posted.  The posted event will not
+        # interrupt the window move/size drag loop -- it seems there's no way
+        # to do this.
+        _user32.PostThreadMessageW(self._event_thread, constants.WM_USER, 0, 0)
 
-        self.dispatch_event('on_exit')
-
-    def _idle_chance(self):
-        if (self._next_idle_time is not None and 
-            self._next_idle_time <= time.time()):
-            self._timer_func(0, 0, self._timer, 0)
-
-    def _timer_func(self, hwnd, msg, timer, t):
-        sleep_time = self.idle()
-
-        if sleep_time is None:
-            # Block indefinitely
-            millis = constants.USER_TIMER_MAXIMUM
-            self._next_idle_time = None
-            self._polling = False
-            _user32.SetTimer(0, timer, millis, self._timer_proc)
-        elif sleep_time < 0.01 and self._allow_polling:
-            # Degenerate to polling
-            millis = constants.USER_TIMER_MAXIMUM
-            self._next_idle_time = 0.
-            if not self._polling:
-                self._polling = True
-                _user32.SetTimer(0, timer, millis, self._timer_proc)
+    def set_timer(self, func, interval):
+        if func is None or interval is None:
+            interval = constants.USER_TIMER_MAXIMUM
         else:
-            # Block until timer
-            # XXX hack to avoid oversleep; needs to be api
-            sleep_time = max(sleep_time - 0.01, 0) 
-            millis = int(sleep_time * 1000)
-            self._next_idle_time = time.time() + sleep_time
-            self._polling = False
-            _user32.SetTimer(0, timer, millis, self._timer_proc)
+            interval = int(interval * 1000) # milliseconds
+        
+        self._timer_func = func
+        _user32.SetTimer(0, self._timer, interval, self._timer_proc)
+     
+    def _timer_func(self, hwnd, msg, timer, t):
+        if self._timer_func:
+            self._timer_func()

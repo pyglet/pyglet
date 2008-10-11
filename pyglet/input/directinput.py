@@ -126,8 +126,8 @@ class DirectInputDevice(base.Device):
         
         self._wait_object = _kernel32.CreateEventW(None, False, False, None)
         self._device.SetEventNotification(self._wait_object)
-        pyglet.app.event_loop.add_wait_object(self._wait_object, 
-                                              self._dispatch_events)
+        pyglet.app.platform_event_loop.add_wait_object(self._wait_object, 
+                                                       self._dispatch_events)
 
         self._device.SetCooperativeLevel(window._hwnd, flags)
         self._device.Acquire()
@@ -136,7 +136,7 @@ class DirectInputDevice(base.Device):
         if not self.controls:
             return
 
-        pyglet.app.event_loop.remove_wait_object(self._wait_object)
+        pyglet.app.platform_event_loop.remove_wait_object(self._wait_object)
 
         self._device.Unacquire()
         self._device.SetEventNotification(None)

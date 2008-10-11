@@ -758,21 +758,10 @@ class Win32Window(BaseWindow):
         self.dispatch_event('on_close')
         return 0
 
-    def _immediate_redraw(self):
-        '''If using EventLoop, redraw and flip the window immediately.
-
-        Assumes window has GL context.
-        '''
-        if self.dispatch_event('on_draw'):
-            self.flip()
-
     @Win32EventHandler(WM_PAINT)
     def _event_paint(self, msg, wParam, lParam):
         self.dispatch_event('on_expose')
 
-        self.switch_to()
-        self._immediate_redraw()
-        
         # Validating the window using ValidateRect or ValidateRgn
         # doesn't clear the paint message when more than one window
         # is open [why?]; defer to DefWindowProc instead.
@@ -782,11 +771,10 @@ class Win32Window(BaseWindow):
     def _event_sizing(self, msg, wParam, lParam):
         rect = cast(lParam, POINTER(RECT)).contents
         width, height = self.get_size()
-        self.switch_to()
-        self.dispatch_event('on_resize', width, height)
 
         from pyglet import app
-        app.event_loop._idle_chance()
+        if app.event_loop is not None:
+            app.event_loop.enter_blocking()
         return 1
 
     @Win32EventHandler(WM_SIZE)
@@ -809,7 +797,6 @@ class Win32Window(BaseWindow):
         self._reset_exclusive_mouse_screen()
         self.switch_to()
         self.dispatch_event('on_resize', w, h)
-        self._immediate_redraw()
         return 0
 
     @Win32EventHandler(WM_SYSCOMMAND)
@@ -817,8 +804,8 @@ class Win32Window(BaseWindow):
         if wParam & 0xfff0 in (SC_MOVE, SC_SIZE):
             # Should be in WM_ENTERSIZEMOVE, but we never get that message.
             from pyglet import app
-            app.event_loop._allow_polling = False
-            app.event_loop._idle_chance()
+            if app.event_loop is not None:
+                app.event_loop.enter_blocking()
         return 0
 
     @Win32EventHandler(WM_MOVE)
@@ -832,7 +819,7 @@ class Win32Window(BaseWindow):
     def _event_entersizemove(self, msg, wParam, lParam):
         from pyglet import app
         if app.event_loop is not None:
-            app.event_loop._allow_polling = True
+            app.event_loop.exit_blocking()
         return 0
 
     '''
