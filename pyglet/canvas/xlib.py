@@ -99,7 +99,7 @@ class XlibDisplay(XlibSelectDevice, Display):
                     self._enable_xsync = True
 
         # Add to event loop select list.  Assume we never go away.
-        app.event_loop._select_devices.add(self)
+        app.platform_event_loop._select_devices.add(self)
 
     def get_screens(self):
         if _have_xinerama and xinerama.XineramaIsActive(self._display):

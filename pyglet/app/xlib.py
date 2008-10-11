@@ -45,7 +45,7 @@ import weakref
 from ctypes import *
 
 from pyglet import app
-from pyglet.app.base import EventLoop
+from pyglet.app.base import PlatformEventLoop
 
 class XlibSelectDevice(object):
     def fileno(self):
@@ -71,79 +71,58 @@ class XlibSelectDevice(object):
         '''
         return False
 
-class SynchronizedEventQueue(XlibSelectDevice):
+class NotificationDevice(XlibSelectDevice):
     def __init__(self):
         self._sync_file_read, self._sync_file_write = os.pipe()
-        self._events = []
-        self._lock = threading.Lock()
+        self._event = threading.Event()
 
     def fileno(self):
         return self._sync_file_read
 
-    def post_event(self, dispatcher, event, *args):
-        self._lock.acquire()
-        self._events.append((dispatcher, event, args))
+    def set(self):
+        self._event.set()
         os.write(self._sync_file_write, '1')
-        self._lock.release()
 
     def select(self):
-        self._lock.acquire()
-        for dispatcher, event, args in self._events:
-            dispatcher.dispatch_event(event, *args)
-        self._events = []
-        self._lock.release()
+        self._event.clear()
+        app.platform_event_loop.dispatch_posted_events()
 
     def poll(self):
-        self._lock.acquire()
-        result = bool(self._events)
-        self._lock.release()
+        return self._event.isSet()
 
-        return result
-
-class XlibEventLoop(EventLoop):
+class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
         super(XlibEventLoop, self).__init__()
-        self._synchronized_event_queue = SynchronizedEventQueue()
+        self._notification_device = NotificationDevice()
         self._select_devices = set()
-        self._select_devices.add(self._synchronized_event_queue)
+        self._select_devices.add(self._notification_device)
 
-    def post_event(self, dispatcher, event, *args):
-        self._synchronized_event_queue.post_event(dispatcher, event, *args)
+    def notify(self):
+        self._notification_device.set()
 
-    def run(self):
-        self._setup()
+    def step(self, timeout=None):
+        pending_devices = []
 
-        t = 0
-        sleep_time = 0.
+        # Check for already pending events
+        for device in self._select_devices:
+            if device.poll():
+                pending_devices.append(device)
 
-        self.dispatch_event('on_enter')
+        # If nothing was immediately pending, block until there's activity
+        # on a device.
+        if not pending_devices and (timeout is None or not timeout):
+            iwtd = self._select_devices
+            pending_devices, _, _ = select.select(iwtd, (), (), timeout)
 
-        while not self.has_exit:
-            # Check for already pending events
-            pending_devices = []
-            for device in self._select_devices:
-                if device.poll():
-                    pending_devices.append(device)
+        # Dispatch activity on matching devices
+        for device in pending_devices:
+            device.select()
 
-            # If nothing was immediately pending, block until there's activity
-            # on a device.
-            if not pending_devices:
-                iwtd = self._select_devices
-                pending_devices, _, _ = select.select(iwtd, (), (), sleep_time)
-
-            # Dispatch activity on matching devices
-            for device in pending_devices:
-                device.select()
-
-            # Dispatch resize events
-            for window in app.windows:
-                if window._needs_resize:
-                    window.switch_to()
-                    window.dispatch_event('on_resize', 
-                                          window._width, window._height)
-                    window.dispatch_event('on_expose')
-                    window._needs_resize = False
-
-            sleep_time = self.idle()
-
-        self.dispatch_event('on_exit')
+        # Dispatch resize events
+        for window in app.windows:
+            if window._needs_resize:
+                window.switch_to()
+                window.dispatch_event('on_resize', 
+                                      window._width, window._height)
+                window.dispatch_event('on_expose')
+                window._needs_resize = False

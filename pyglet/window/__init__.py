@@ -133,6 +133,7 @@ from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.event import EventDispatcher
 import pyglet.window.key
+import pyglet.window.event
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 

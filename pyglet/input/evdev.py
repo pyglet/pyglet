@@ -260,7 +260,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         except OSError, e:
             raise DeviceOpenException(e)
 
-        pyglet.app.event_loop._select_devices.add(self)
+        pyglet.app.platform_event_loop._select_devices.add(self)
 
     def close(self):
         super(EvdevDevice, self).close()
@@ -268,7 +268,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         if not self._fileno:
             return
 
-        pyglet.app.event_loop._select_devices.remove(self)
+        pyglet.app.platform_event_loop._select_devices.remove(self)
         os.close(self._fileno)
         self._fileno = None
 
