@@ -323,9 +323,10 @@ class EventDispatcher(object):
         `EventDispatcher` implementors; applications should call
         the ``dispatch_events`` method.
 
-        Since pyglet 1.2, the method returns ``True`` if an event handler
-        returned `EVENT_HANDLED`.  If no matching event handlers are in the
-        stack, or if none returned `EVENT_HANDLED`, ``False`` is returned.
+        Since pyglet 1.2, the method returns `EVENT_HANDLED` if an event
+        handler returned `EVENT_HANDLED` or `EVENT_UNHANDLED` if all events
+        returned `EVENT_UNHANDLED`.  If no matching event handlers are in the
+        stack, ``False`` is returned.
 
         :Parameters:
             `event_type` : str
@@ -333,21 +334,26 @@ class EventDispatcher(object):
             `args` : sequence
                 Arguments to pass to the event handler.
 
-        :rtype: bool
-        :return: (Since pyglet 1.2) ``True`` if an event handler was invoked and
-            it returned `EVENT_HANDLED`; otherwise ``False``.  In pyglet 1.1
-            and earler, the return value is always ``None``.
+        :rtype: bool or None
+        :return: (Since pyglet 1.2) `EVENT_HANDLED` if an event handler 
+            returned `EVENT_HANDLED`; `EVENT_UNHANDLED` if one or more event
+            handlers were invoked but returned only `EVENT_UNHANDLED`;
+            otherwise ``False``.  In pyglet 1.1 and earler, the return value
+            is always ``None``.
 
         '''
         assert event_type in self.event_types
+
+        invoked = False
 
         # Search handler stack for matching event handlers
         for frame in list(self._event_stack):
             handler = frame.get(event_type, None)
             if handler:
                 try:
+                    invoked = True
                     if handler(*args):
-                        return True
+                        return EVENT_HANDLED
                 except TypeError:
                     self._raise_dispatch_exception(event_type, args, handler)
 
@@ -355,11 +361,15 @@ class EventDispatcher(object):
         # Check instance for an event handler
         if hasattr(self, event_type):
             try:
+                invoked = True
                 if getattr(self, event_type)(*args):
-                    return True
+                    return EVENT_HANDLED
             except TypeError:
                 self._raise_dispatch_exception(
                     event_type, args, getattr(self, event_type))
+
+        if invoked:
+            return EVENT_UNHANDLED
 
         return False
 

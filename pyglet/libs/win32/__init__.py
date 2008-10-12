@@ -54,3 +54,6 @@ _user32 = DebugLibrary(windll.user32)
 _user32.GetKeyState.restype = c_short
 _gdi32.CreateDIBitmap.argtypes = [HDC, POINTER(BITMAPINFOHEADER), DWORD,
     c_void_p, POINTER(BITMAPINFO), c_uint]
+_user32.MsgWaitForMultipleObjects.argtypes = \
+    [DWORD, POINTER(HANDLE), BOOL, DWORD, DWORD]
+_user32.MsgWaitForMultipleObjects.restype = DWORD

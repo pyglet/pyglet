@@ -250,34 +250,18 @@ class Clock(_ClockBase):
         self._schedule_items = []
         self._schedule_interval_items = []
 
-    def tick(self, poll=False):
-        '''Signify that one frame has passed.
+    def update_time(self):
+        '''Get the elapsed time since the last call to `update_time`.
 
-        This will call any scheduled functions that have elapsed.
+        This updates the clock's internal measure of time and returns
+        the difference since the last update (or since the clock was created).
 
-        :Parameters:
-            `poll` : bool
-                If True, the function will call any scheduled functions
-                but will not sleep or busy-wait for any reason.  Recommended
-                for advanced applications managing their own sleep timers
-                only.
-                
-                Since pyglet 1.1.
+        :since: pyglet 1.2
 
         :rtype: float
-        :return: The number of seconds since the last "tick", or 0 if this was
-            the first frame.
+        :return: The number of seconds since the last `update_time`, or 0
+            if this was the first time it was called.
         '''
-        if poll:
-            if self.period_limit:
-                self.next_ts = self.next_ts + self.period_limit
-        else:
-            if self.period_limit:
-                self._limit()
-
-            if self._force_sleep:
-                self.sleep(0)
-
         ts = self.time()
         if self.last_ts is None: 
             delta_t = 0
@@ -289,9 +273,29 @@ class Clock(_ClockBase):
         self.cumulative_time += delta_t
         self.last_ts = ts
 
+        return delta_t
+
+    def call_scheduled_functions(self, dt):
+        '''Call scheduled functions that elapsed on the last `update_time`.
+
+        :since: pyglet 1.2
+
+        :Parameters:
+            dt : float
+                The elapsed time since the last update to pass to each
+                scheduled function.  This is *not* used to calculate which
+                functions have elapsed.
+
+        :rtype: bool
+        :return: True if any functions were called, otherwise False.
+        '''
+        ts = self.last_ts
+        result = False
+
         # Call functions scheduled for every frame  
         # Dupe list just in case one of the items unchedules itself
         for item in list(self._schedule_items):
+            result = True
             item.func(delta_t, *item.args, **item.kwargs)
 
         # Call all scheduled interval functions and reschedule for future.
@@ -300,6 +304,7 @@ class Clock(_ClockBase):
         for item in list(self._schedule_interval_items):
             if item.next_ts > ts:
                 break
+            result = True
             item.func(ts - item.last_ts, *item.args, **item.kwargs)
             if item.interval:
                 # Try to keep timing regular, even if overslept this time;
@@ -332,6 +337,38 @@ class Clock(_ClockBase):
             # TODO bubble up changed items might be faster
             self._schedule_interval_items.sort(key=lambda a: a.next_ts)
 
+        return result
+
+    def tick(self, poll=False):
+        '''Signify that one frame has passed.
+
+        This will call any scheduled functions that have elapsed.
+
+        :Parameters:
+            `poll` : bool
+                If True, the function will call any scheduled functions
+                but will not sleep or busy-wait for any reason.  Recommended
+                for advanced applications managing their own sleep timers
+                only.
+                
+                Since pyglet 1.1.
+
+        :rtype: float
+        :return: The number of seconds since the last "tick", or 0 if this was
+            the first frame.
+        '''
+        if poll:
+            if self.period_limit:
+                self.next_ts = self.next_ts + self.period_limit
+        else:
+            if self.period_limit:
+                self._limit()
+
+            if self._force_sleep:
+                self.sleep(0)
+
+        delta_t = self.update_time()
+        self.call_scheduled_functions(delta_t)
         return delta_t
 
     def _limit(self):

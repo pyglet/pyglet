@@ -364,6 +364,11 @@ class BaseWindow(EventDispatcher):
     #: :since: pyglet 1.1
     invalid = True
 
+    #: Legacy invalidation flag introduced in pyglet 1.2: set by all event
+    #: dispatches that go to non-empty handlers.  The default 1.2 event loop
+    #: will therefore redraw after any handled event or scheduled function.
+    _legacy_invalid = True
+
     # Instance variables accessible only via properties
 
     _width = None
@@ -1070,7 +1075,8 @@ class BaseWindow(EventDispatcher):
     
     def dispatch_event(self, *args):
         if not self._enable_event_queue or self._allow_dispatch_event:
-            EventDispatcher.dispatch_event(self, *args)
+            if EventDispatcher.dispatch_event(self, *args) != False:
+                self._legacy_invalid = True
         else:
             self._event_queue.append(args)
 

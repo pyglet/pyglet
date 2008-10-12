@@ -92,7 +92,8 @@ class Win32EventLoop(PlatformEventLoop):
                                'thread that imports pyglet.app')
 
         self._timer_proc = types.TIMERPROC(self._timer_func)
-        self._timer = _user32.SetTimer(0, 0, 0, self._timer_proc)
+        self._timer = _user32.SetTimer(
+            0, 0, constants.USER_TIMER_MAXIMUM, self._timer_proc)
         self._timer_func = None
         self._polling = False
         self._allow_polling = True
@@ -114,14 +115,14 @@ class Win32EventLoop(PlatformEventLoop):
             constants.QS_ALLINPUT)
         result -= constants.WAIT_OBJECT_0
 
-        if 0 <= result < self._wait_objects_n:
-            object, func = self._wait_objects[result]
-            func()
-        elif result == self._wait_objects_n:
+        if result == self._wait_objects_n:
             while _user32.PeekMessageW(ctypes.byref(msg),
                                        0, 0, 0, constants.PM_REMOVE):
                 _user32.TranslateMessage(ctypes.byref(msg))
                 _user32.DispatchMessageW(ctypes.byref(msg))
+        elif 0 <= result < self._wait_objects_n:
+            object, func = self._wait_objects[result]
+            func()
 
     def notify(self):
         # Nudge the event loop with a message it will discard.  Note that only

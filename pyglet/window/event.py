@@ -175,3 +175,5 @@ class WindowEventLogger(object):
     def on_context_state_lost(self):
         print >> self.file, 'on_context_state_lost()'
 
+    def on_draw(self):
+        print >> self.file, 'on_draw()'

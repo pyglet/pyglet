@@ -111,6 +111,7 @@ class EventLoop(event.EventDispatcher):
 
     def __init__(self):
         self._has_exit_condition = threading.Condition()
+        self.clock = clock.get_default()
 
     def run(self):
         '''Begin processing events, scheduled functions and window updates.
@@ -195,17 +196,19 @@ class EventLoop(event.EventDispatcher):
         :return: The number of seconds before the idle method should
             be called again, or `None` to block for user input.
         '''
-        dt = clock.tick(True)
+        dt = self.clock.update_time()
+        redraw_all = self.clock.call_scheduled_functions(dt)
 
         # Redraw all windows
         for window in app.windows:
-            if window.invalid:
+            if redraw_all or (window._legacy_invalid and window.invalid):
                 window.switch_to()
                 window.dispatch_event('on_draw')
                 window.flip()
+                window._legacy_invalid = False
 
         # Update timout
-        return clock.get_sleep_time(True)
+        return self.clock.get_sleep_time(True)
 
     def _get_has_exit(self):
         self._has_exit_condition.acquire()
