@@ -296,7 +296,7 @@ class Clock(_ClockBase):
         # Dupe list just in case one of the items unchedules itself
         for item in list(self._schedule_items):
             result = True
-            item.func(delta_t, *item.args, **item.kwargs)
+            item.func(dt, *item.args, **item.kwargs)
 
         # Call all scheduled interval functions and reschedule for future.
         need_resort = False
