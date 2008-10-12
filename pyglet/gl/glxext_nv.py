@@ -381,35 +381,7 @@ glXCreateGLXPixmapWithConfigSGIX = _link_function('glXCreateGLXPixmapWithConfigS
 # GL/glxext.h:461
 glXCreateContextWithConfigSGIX = _link_function('glXCreateContextWithConfigSGIX', GLXContext, [POINTER(Display), GLXFBConfigSGIX, c_int, GLXContext, c_int], 'SGIX_fbconfig')
 
-class struct_anon_101(Structure):
-    __slots__ = [
-        'visual',
-        'visualid',
-        'screen',
-        'depth',
-        'class',
-        'red_mask',
-        'green_mask',
-        'blue_mask',
-        'colormap_size',
-        'bits_per_rgb',
-    ]
-Visual = pyglet.libs.x11.xlib.Visual
-VisualID = pyglet.libs.x11.xlib.VisualID
-struct_anon_101._fields_ = [
-    ('visual', POINTER(Visual)),
-    ('visualid', VisualID),
-    ('screen', c_int),
-    ('depth', c_int),
-    ('class', c_int),
-    ('red_mask', c_ulong),
-    ('green_mask', c_ulong),
-    ('blue_mask', c_ulong),
-    ('colormap_size', c_int),
-    ('bits_per_rgb', c_int),
-]
-
-XVisualInfo = struct_anon_101 	# /usr/include/X11/Xutil.h:296
+XVisualInfo = pyglet.libs.x11.xlib.XVisualInfo
 # GL/glxext.h:462
 glXGetVisualFromFBConfigSGIX = _link_function('glXGetVisualFromFBConfigSGIX', POINTER(XVisualInfo), [POINTER(Display), GLXFBConfigSGIX], 'SGIX_fbconfig')
 
@@ -864,6 +836,7 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'PFNGLXGETVIDEOINFONVPROC', 'glXBindTexImageEXT', 'glXReleaseTextImageEXT',
 'PFNGLXBINDTEXIMAGEEXTPROC', 'PFNGLXRELEASETEXIMAGEEXTPROC']
 # END GENERATED CONTENT (do not edit above this line)
+
 
 
 

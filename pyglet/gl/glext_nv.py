@@ -50,7 +50,7 @@ from pyglet.gl.lib import c_ptrdiff_t
 # Wrapper for http://developer.download.nvidia.com/opengl/includes/glext.h
 
 
-# GLEXT_LEGACY (/usr/include/GL/gl.h:70)
+# GLEXT_LEGACY (/usr/include/GL/gl.h:1629)
 GL_GLEXT_VERSION = 28 	# GL/glext.h:74
 # VERSION_1_2 (GL/glext.h:76)
 GL_UNSIGNED_BYTE_3_3_2 = 32818 	# GL/glext.h:77
@@ -1624,12 +1624,12 @@ GL_TEXTURE_LOD_BIAS_EXT = 34049 	# GL/glext.h:1960
 GL_TEXTURE_MAX_ANISOTROPY_EXT = 34046 	# GL/glext.h:1964
 GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 34047 	# GL/glext.h:1965
 # EXT_vertex_weighting (GL/glext.h:1968)
-GL_MODELVIEW0_STACK_DEPTH_EXT = 0 	# GL/glext.h:1969
+GL_MODELVIEW0_STACK_DEPTH_EXT = 2979 	# GL/glext.h:1969
 GL_MODELVIEW1_STACK_DEPTH_EXT = 34050 	# GL/glext.h:1970
-GL_MODELVIEW0_MATRIX_EXT = 0 	# GL/glext.h:1971
+GL_MODELVIEW0_MATRIX_EXT = 2982 	# GL/glext.h:1971
 GL_MODELVIEW1_MATRIX_EXT = 34054 	# GL/glext.h:1972
 GL_VERTEX_WEIGHTING_EXT = 34057 	# GL/glext.h:1973
-GL_MODELVIEW0_EXT = 0 	# GL/glext.h:1974
+GL_MODELVIEW0_EXT = 5888 	# GL/glext.h:1974
 GL_MODELVIEW1_EXT = 34058 	# GL/glext.h:1975
 GL_CURRENT_VERTEX_WEIGHT_EXT = 34059 	# GL/glext.h:1976
 GL_VERTEX_WEIGHT_ARRAY_EXT = 34060 	# GL/glext.h:1977
@@ -8072,7 +8072,6 @@ PFNGLDRAWARRAYSINSTANCEDEXTPROC = CFUNCTYPE(None, GLenum, GLint, GLsizei, GLsize
 PFNGLDRAWELEMENTSINSTANCEDEXTPROC = CFUNCTYPE(None, GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei) 	# GL/glext.h:7114
 # EXT_texture_compression_rgtc (GL/glext.h:7117)
 GL_EXT_texture_compression_rgtc = 1 	# GL/glext.h:7118
-# GLEXT_LEGACY (/usr/include/GL/gl.h:1633)
 
 __all__ = ['GL_GLEXT_VERSION', 'GL_UNSIGNED_BYTE_3_3_2',
 'GL_UNSIGNED_SHORT_4_4_4_4', 'GL_UNSIGNED_SHORT_5_5_5_1',
@@ -10235,6 +10234,7 @@ __all__ = ['GL_GLEXT_VERSION', 'GL_UNSIGNED_BYTE_3_3_2',
 'PFNGLDRAWARRAYSINSTANCEDEXTPROC', 'PFNGLDRAWELEMENTSINSTANCEDEXTPROC',
 'GL_EXT_texture_compression_rgtc']
 # END GENERATED CONTENT (do not edit above this line)
+
 
 
 
