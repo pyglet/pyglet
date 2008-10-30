@@ -91,7 +91,7 @@ class Win32EventLoop(PlatformEventLoop):
             raise RuntimeError('EventLoop.run() must be called from the same ' +
                                'thread that imports pyglet.app')
 
-        self._timer_proc = types.TIMERPROC(self._timer_func)
+        self._timer_proc = types.TIMERPROC(self._timer_proc_func)
         self._timer = _user32.SetTimer(
             0, 0, constants.USER_TIMER_MAXIMUM, self._timer_proc)
         self._timer_func = None
@@ -140,6 +140,6 @@ class Win32EventLoop(PlatformEventLoop):
         self._timer_func = func
         _user32.SetTimer(0, self._timer, interval, self._timer_proc)
      
-    def _timer_func(self, hwnd, msg, timer, t):
+    def _timer_proc_func(self, hwnd, msg, timer, t):
         if self._timer_func:
             self._timer_func()
