@@ -27,24 +27,24 @@ class EVENT_LOOP(unittest.TestCase):
             if sleep_time:
                 sleep(sleep_time)
 
+        event_loop = pyglet.app.event_loop
+        platform_event_loop = pyglet.app.platform_event_loop
+        platform_event_loop.start()
+
         # Reset last clock time; a bit of a hack, because pyglet isn't really
         # designed to be run twice from the same process.
         pyglet.clock.tick()
         self.last_t = time()
-
-        event_loop = pyglet.app.event_loop
-        platform_event_loop = pyglet.app.platform_event_loop
-
         pyglet.clock.schedule_interval(f, interval)
 
         # Run app.run() for a short time only.
-        platform_event_loop.start()
-        while self.timer_count < iterations:
-            timeout = event_loop.idle()
-            platform_event_loop.step(timeout)
-        platform_event_loop.stop()
-
-        pyglet.clock.unschedule(f)
+        try:
+            while self.timer_count < iterations:
+                timeout = event_loop.idle()
+                platform_event_loop.step(timeout)
+            platform_event_loop.stop()
+        finally:
+            pyglet.clock.unschedule(f)
 
     def test_1_5(self):
         self.t_scheduled(1, 5, 0)
