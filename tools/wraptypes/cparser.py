@@ -360,9 +360,17 @@ def p_constant(p):
     '''constant : CONSTANT
                 | CHARACTER_CONSTANT
     '''
+    def _to_int(s):
+        if s.startswith('0x'):
+            return int(s, base=16)
+        elif s.startswith('0'):
+            return int(s, base=8)
+        else:
+            return int(s)
+
     value = p[1]
     try:
-        value = int(value)
+        value = _to_int(value)
     except ValueError:
         pass
     p[0] = ConstantExpressionNode(value)
