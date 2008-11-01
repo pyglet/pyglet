@@ -98,7 +98,7 @@ class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
     def __init__(self, name):
         message = ('Resource "%s" was not found on the path.  '
-            'Ensure that the filename has the correct captialisation.') % name
+            'Ensure that the filename has the correct capitalisation.') % name
         Exception.__init__(self, message)
 
 def get_script_home():
