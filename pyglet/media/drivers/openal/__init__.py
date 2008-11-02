@@ -133,7 +133,8 @@ class OpenALWorker(MediaThread):
 
     def remove(self, player):
         self.condition.acquire()
-        self.players.remove(player)
+        if player in self.players:
+            self.players.remove(player)
         self.condition.notify()
         self.condition.release()
 
@@ -208,12 +209,20 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def delete(self):
         if _debug:
             print 'OpenALAudioPlayer.delete()'
-        return
-        # XXX TODO crashes
+
+        if not self._al_source:
+            return
+
+        self._lock.acquire()
+
         context.lock()
         al.alDeleteSources(1, self._al_source)
         context.unlock()
         self._al_source = None
+
+        self._lock.release()
+
+        context.worker.remove(self)
 
     def play(self):
         if self._playing:
