@@ -1315,6 +1315,7 @@ def get_audio_driver():
             elif driver_name == 'directsound':
                 from drivers import directsound
                 _audio_driver = directsound.create_audio_driver()
+                break
             elif driver_name == 'silent':
                 _audio_driver = get_silent_audio_driver()
                 break
