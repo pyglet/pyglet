@@ -601,7 +601,9 @@ class Clock(_ClockBase):
             scheduled nearby.
             '''
             for item in self._schedule_interval_items:
-                if abs(item.next_ts - ts) <= e:
+                if item.next_ts is None:
+                    pass
+                elif abs(item.next_ts - ts) <= e:
                     return True
                 elif item.next_ts > ts + e:
                     return False
