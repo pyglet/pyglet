@@ -875,6 +875,10 @@ class ClockDisplay(object):
         `label` : `pyglet.font.Text`
             The label which is displayed.
 
+    :deprecated: This class presents values that are often misleading, as
+        they reflect the rate of clock ticks, not displayed framerate.  Use
+        pyglet.window.FPSDisplay instead.
+
     '''
     
     def __init__(self, 

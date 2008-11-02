@@ -822,7 +822,7 @@ score_text = pyglet.text.Label('',
                                anchor_x='right',
                                anchor_y='top')
 
-fps_display = pyglet.clock.ClockDisplay(font=pyglet.font.load(FONT_NAME, 24))
+fps_display = pyglet.window.FPSDisplay(win)
 
 bullets = []
 animations = []
