@@ -349,7 +349,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         write_cursor = self._write_cursor
         self.unlock()
 
-        return self._buffer_size - (write_cursor - play_cursor)
+        return self._buffer_size - max(write_cursor - play_cursor, 0)
 
     def write(self, audio_data, length):
         # Pass audio_data=None to write silence
@@ -362,6 +362,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         l1 = lib.DWORD()
         p2 = ctypes.c_void_p()
         l2 = lib.DWORD()
+        assert 0 < length <= self._buffer_size
         self._buffer.Lock(self._write_cursor_ring, length, 
             ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
         assert length == l1.value + l2.value
