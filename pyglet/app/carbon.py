@@ -54,6 +54,7 @@ class CarbonEventLoop(PlatformEventLoop):
         self._event_loop = carbon.GetMainEventLoop()
         self._timer = ctypes.c_void_p()
         self._timer_func = None
+        self._timer_func_proc = EventLoopTimerProc(self._timer_proc)
         super(CarbonEventLoop, self).__init__()
 
     def notify(self):
@@ -63,11 +64,10 @@ class CarbonEventLoop(PlatformEventLoop):
     def start(self):
         # Create timer
         timer = self._timer
-        idle_event_proc = EventLoopTimerProc(self._timer_proc)
         carbon.InstallEventLoopTimer(self._event_loop,
                                      ctypes.c_double(0.1), #?
                                      ctypes.c_double(kEventDurationForever),
-                                     idle_event_proc,
+                                     self._timer_func_proc,
                                      None,
                                      ctypes.byref(timer))
 
