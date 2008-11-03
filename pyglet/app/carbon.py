@@ -57,7 +57,6 @@ class CarbonEventLoop(PlatformEventLoop):
         super(CarbonEventLoop, self).__init__()
 
     def notify(self):
-        return
         carbon.SetEventLoopTimerNextFireTime(
             self._timer, ctypes.c_double(0.0))
 

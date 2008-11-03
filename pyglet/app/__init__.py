@@ -150,8 +150,6 @@ else:
 #: The global event loop.  Applications can replace this with their own
 #: subclass of `pyglet.app.base.EventLoop` before calling `EventLoop.run`.
 #:
-#: :since: pyglet 1.1
-#:
 #: :type: `EventLoop`
 event_loop = EventLoop()
 
