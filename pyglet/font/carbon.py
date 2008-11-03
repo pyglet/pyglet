@@ -215,6 +215,9 @@ class CarbonGlyphRenderer(base.GlyphRenderer):
             pass
 
     def _layout_callback(self, operation, line, ref, extra, callback_status):
+        if not line:
+            return 0
+
         records = c_void_p()
         n_records = c_uint()
 
