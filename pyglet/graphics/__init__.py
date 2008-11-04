@@ -673,7 +673,7 @@ class TextureGroup(Group):
         return (self.__class__ is other.__class__ and
             self.texture.target == other.texture.target and
             self.texture.id == other.texture.id and
-            self.parent == self.parent)
+            self.parent == other.parent)
 
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
