@@ -235,7 +235,10 @@ class VertexDomain(object):
         # Break circular refs that Python GC seems to miss even when forced
         # collection.
         for attribute in self.attributes:
-            del attribute.buffer
+            try:
+                del attribute.buffer
+            except AttributeError:
+                pass
 
     def _safe_alloc(self, count):
         '''Allocate vertices, resizing the buffers if necessary.'''
