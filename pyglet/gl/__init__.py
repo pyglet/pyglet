@@ -222,7 +222,6 @@ elif _sys.platform == 'darwin':
     from carbon import CarbonConfig as Config
 del base
 
-'''
 # XXX remove
 _shadow_window = None
 
@@ -234,4 +233,3 @@ if (not _is_epydoc and
     # trickery is for circular import 
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window
-'''
