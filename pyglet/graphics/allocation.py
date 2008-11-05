@@ -142,7 +142,10 @@ class Allocator(object):
         :rtype: int
         :return: Starting index of the allocated region.
         '''
-        assert size > 0
+        assert size >= 0
+
+        if size == 0:
+            return 0
 
         # return start
         # or raise AllocatorMemoryException
@@ -204,8 +207,15 @@ class Allocator(object):
                 New size of the region.
 
         '''
-        assert size > 0 and new_size > 0
+        assert size >= 0 and new_size >= 0
         
+        if new_size == 0:
+            if size != 0:
+                self.dealloc(start, size)
+            return 0
+        elif size == 0:
+            return self.alloc(new_size)
+
         # return start
         # or raise AllocatorMemoryException
 
@@ -275,7 +285,11 @@ class Allocator(object):
                 Size of the region.
 
         '''
-        assert size > 0
+        assert size >= 0
+
+        if size == 0:
+            return
+
         assert self.starts
         
         # Find which block needs to be split

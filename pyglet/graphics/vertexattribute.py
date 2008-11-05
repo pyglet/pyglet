@@ -330,7 +330,7 @@ class AbstractAttribute(object):
         byte_start = self.stride * start
         byte_size = self.stride * count
         array_count = self.count * count
-        if self.stride == self.size:
+        if self.stride == self.size or not array_count:
             # non-interleaved
             ptr_type = ctypes.POINTER(self.c_type * array_count)
             return buffer.get_region(byte_start, byte_size, ptr_type)
