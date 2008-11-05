@@ -29,7 +29,7 @@ class XlibConfig(Config):
         if have_13:
             config_class = XlibCanvasConfig13
         else:
-            if 'ATI' in canvas.display.info.get_client_vendor():
+            if 'ATI' in info.get_client_vendor():
                 config_class = XlibCanvasConfig10ATI
             else:
                 config_class = XlibCanvasConfig10
@@ -120,7 +120,7 @@ class XlibCanvasConfig10(BaseXlibCanvasConfig):
         x_screen = canvas.display.x_screen
 
         self._visual_info = glx.glXChooseVisual(
-            x_display, x_screen_id, attrib_list)
+            x_display, x_screen, attrib_list)
         if not self._visual_info:
             raise gl.ContextException('No conforming visual exists')
 
@@ -263,10 +263,13 @@ class XlibContext10(BaseXlibContext):
         super(XlibContext10, self).set_current()
 
     def detach(self):
-        super(XlibContext10, self).detach()
+        if not self.canvas:
+            return
+
         self.set_current()
         gl.glFlush()
         glx.glXMakeCurrent(self.x_display, 0, None)
+        super(XlibContext10, self).detach()
 
     def destroy(self):
         super(XlibContext10, self).destroy()
