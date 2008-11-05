@@ -872,7 +872,12 @@ class XlibWindow(BaseWindow):
         # need to map the keysymbol.  For keysyms outside the pyglet set, map
         # raw key code to a user key.
         if symbol and symbol not in key._key_names and ev.xkey.keycode:
-            symbol = key.user_key(ev.xkey.keycode)
+            # Issue 353: Symbol is uppercase when shift key held down.
+            symbol = ord(unichr(symbol).lower())
+
+            # If still not recognised, use the keycode
+            if symbol not in key._key_names:
+                symbol = key.user_key(ev.xkey.keycode)
 
         if filtered:
             # The event was filtered, text must be ignored, but the symbol is
