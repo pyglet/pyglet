@@ -393,7 +393,7 @@ class BaseWindow(EventDispatcher):
     _mouse_y = 0
     _mouse_visible = True
     _mouse_exclusive = False
-    _mouse_in_window = True
+    _mouse_in_window = False
 
     _event_queue = None
     _enable_event_queue = True    # overridden by EventLoop.

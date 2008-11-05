@@ -956,8 +956,11 @@ class XlibWindow(BaseWindow):
         x = ev.xmotion.x
         y = self.height - ev.xmotion.y
 
-        dx = x - self._mouse_x
-        dy = y - self._mouse_y
+        if self._mouse_in_window:
+            dx = x - self._mouse_x
+            dy = y - self._mouse_y
+        else:
+            dx = dy = 0
 
         if self._applied_mouse_exclusive and \
            (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
