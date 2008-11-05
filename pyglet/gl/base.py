@@ -224,9 +224,12 @@ class Context(object):
         ('_workaround_unpack_row_length',
          lambda info: info.get_renderer() == 'GDI Generic'),
 
-        # Reportedly segfaults in text_input.py example.
+        # Reportedly segfaults in text_input.py example with
+        #   "ATI Radeon X1600 OpenGL Engine"
+        # glGenBuffers not exported by
+        #   "ATI Radeon X1270 x86/MMX/3DNow!/SSE2"
         ('_workaround_vbo',
-         lambda info: info.get_renderer() == 'ATI Radeon X1600 OpenGL Engine'),
+         lambda info: info.get_renderer().startswith('ATI Radeon X')),
 
         # Some ATI cards on OS X start drawing from a VBO before it's written
         # to.  In these cases pyglet needs to call glFinish() to flush the
