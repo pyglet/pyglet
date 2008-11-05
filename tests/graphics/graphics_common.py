@@ -59,4 +59,7 @@ def get_feedback(func):
             del buffer[:12]
     return vertices, colors, tex_coords
 
-
+import sys
+print >> sys.stderr, 'Note: Graphics tests fail with recent nvidia drivers'
+print >> sys.stderr, '      due to reordering and optimisation of vertices'
+print >> sys.stderr, '      before they are placed in the feedback queue.'
