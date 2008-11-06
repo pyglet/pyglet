@@ -45,6 +45,8 @@ DWORD = c_uint32
 BYTE = c_char
 LONG = c_long
 WORD = c_short
+WCHAR = c_wchar
+BCHAR = c_wchar
 
 HANDLE = c_void_p
 HWND = HANDLE
@@ -221,3 +223,54 @@ class ICONINFO(Structure):
         ('hbmMask', HBITMAP),
         ('hbmColor', HBITMAP)
     ]
+
+_CCHDEVICENAME = 32
+_CCHFORMNAME = 32
+
+class MONITORINFOEX(Structure):
+    _fields_ = (
+        ('cbSize', DWORD),
+        ('rcMonitor', RECT),
+        ('rcWork', RECT),
+        ('dwFlags', DWORD),
+        ('szDevice', WCHAR * _CCHDEVICENAME)
+    )
+
+class DEVMODE(Structure):
+    _fields_ = (
+        ('dmDeviceName', BCHAR * _CCHDEVICENAME),
+        ('dmSpecVersion', WORD),
+        ('dmDriverVersion', WORD),
+        ('dmSize', WORD),
+        ('dmDriverExtra', WORD),
+        ('dmFields', DWORD),
+        # Just using largest union member here
+        ('dmOrientation', c_short),
+        ('dmPaperSize', c_short),
+        ('dmPaperLength', c_short),
+        ('dmPaperWidth', c_short),
+        ('dmScale', c_short),
+        ('dmCopies', c_short),
+        ('dmDefaultSource', c_short),
+        ('dmPrintQuality', c_short),
+        # End union
+        ('dmColor', c_short),
+        ('dmDuplex', c_short),
+        ('dmYResolution', c_short),
+        ('dmTTOption', c_short),
+        ('dmCollate', c_short),
+        ('dmFormName', BCHAR * _CCHFORMNAME),
+        ('dmLogPixels', WORD),
+        ('dmBitsPerPel', DWORD),
+        ('dmPelsWidth', DWORD),
+        ('dmPelsHeight', DWORD),
+        ('dmDisplayFlags', DWORD), # union with dmNup
+        ('dmDisplayFrequency', DWORD),
+        ('dmICMMethod', DWORD),
+        ('dmICMIntent', DWORD),
+        ('dmDitherType', DWORD),
+        ('dmReserved1', DWORD),
+        ('dmReserved2', DWORD),
+        ('dmPanningWidth', DWORD),
+        ('dmPanningHeight', DWORD),
+    )

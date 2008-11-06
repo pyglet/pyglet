@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
-from base import Display, Screen, Canvas
+from base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
 from pyglet.libs.win32.constants import *
@@ -34,6 +34,35 @@ class Win32Screen(Screen):
         for config in configs:
             config.screen = self
         return configs
+
+    def get_modes(self):
+        info = MONITORINFOEX()
+        info.cbSize = sizeof(MONITORINFOEX)
+        _user32.GetMonitorInfoW(self._handle, byref(info))
+        device_name = info.szDevice
+
+        i = 0
+        modes = []
+        while True:
+            mode = DEVMODE()
+            mode.dmSize = sizeof(DEVMODE)
+            r = _user32.EnumDisplaySettingsW(device_name, i, byref(mode))
+            if not r:
+                break
+
+            modes.append(Win32ScreenMode(self, mode))
+            i += 1
+
+        return modes
+
+class Win32ScreenMode(ScreenMode):
+    def __init__(self, screen, mode):
+        super(Win32ScreenMode, self).__init__(screen)
+        self._mode = mode
+        self.width = mode.dmPelsWidth
+        self.height = mode.dmPelsHeight
+        self.depth = mode.dmBitsPerPel
+        self.rate = mode.dmDisplayFrequency
 
 class Win32Canvas(Canvas):
     def __init__(self, display, hwnd, hdc):
