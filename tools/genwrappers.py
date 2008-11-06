@@ -65,6 +65,15 @@ if __name__ == '__main__':
                  '-i/usr/include/X11/Xdefs.h',
                  '/usr/include/X11/extensions/Xrandr.h',
                  '/usr/include/X11/extensions/randr.h')
+        if 'xf86vmode' in names:
+            wrap('tools/wraptypes/wrap.py',
+                 '-opyglet/libs/x11/xf86vmode.py',
+                 '-lXxf86vm',
+                 '-mpyglet.libs.x11.xlib',
+                 '-i/usr/include/X11/Xlib.h',
+                 '-i/usr/include/X11/X.h',
+                 '-i/usr/include/X11/Xdefs.h',
+                 '/usr/include/X11/extensions/xf86vmode.h')
         if 'pulseaudio' in names:
             wrap('tools/wraptypes/wrap.py',
                  '-opyglet/media/drivers/pulse/lib_pulseaudio.py',

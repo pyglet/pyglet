@@ -7,10 +7,11 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from ctypes import *
+import ctypes
 
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
-from base import Display, Screen, Canvas
+from base import Display, Screen, ScreenMode, Canvas
 
 # XXX
 #from pyglet.window import NoSuchDisplayException
@@ -29,6 +30,12 @@ try:
     _have_xsync = True
 except:
     _have_xsync = False
+
+try:
+    from pyglet.libs.x11 import xf86vmode
+    _have_xf86vmode = True
+except:
+    _have_xf86vmode = False
 
 # Set up error handler
 def _error_handler(display, event):
@@ -166,11 +173,49 @@ class XlibScreen(Screen):
             config.screen = self
         return configs
 
+    def get_modes(self):
+        if not _have_xf86vmode:
+            return []
+
+        if self._xinerama:
+            # If Xinerama/TwinView is enabled, xf86vidmode's modelines
+            # correspond to metamodes, which don't distinguish one screen from
+            # another.  XRandR (broken) or NV (complicated) extensions needed.
+            return []
+
+        count = ctypes.c_int()
+        info_array = \
+            ctypes.POINTER(ctypes.POINTER(xf86vmode.XF86VidModeModeInfo))()
+        xf86vmode.XF86VidModeGetAllModeLines(
+            self.display._display, self.display.x_screen, count, info_array)
+
+        # Copy modes out of list and free list
+        modes = []
+        for i in range(count.value):
+            info = xf86vmode.XF86VidModeModeInfo()
+            ctypes.memmove(ctypes.byref(info), 
+                           ctypes.byref(info_array.contents[i]), 
+                           ctypes.sizeof(info))
+            modes.append(XlibScreenMode(self, info))
+            if info.privsize:
+                xlib.XFree(info.private)
+        xlib.XFree(info_array)
+
+        return modes
+
     def __repr__(self):
         return 'XlibScreen(display=%r, x=%d, y=%d, ' \
                'width=%d, height=%d, xinerama=%d)' % \
             (self.display, self.x, self.y, self.width, self.height,
              self._xinerama)
+
+class XlibScreenMode(ScreenMode):
+    def __init__(self, screen, info):
+        super(XlibScreenMode, self).__init__(screen)
+        self.width = info.hdisplay
+        self.height = info.vdisplay
+        self.rate = info.dotclock
+        self.depth = None
 
 class XlibCanvas(Canvas):
     def __init__(self, display, x_window):
