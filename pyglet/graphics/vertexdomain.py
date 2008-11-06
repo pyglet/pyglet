@@ -212,7 +212,7 @@ class VertexDomain(object):
                 # TODO create a name and use it (e.g. 'generic3')   
                 # XXX this won't migrate; not documented.
                 if 'generic' not in self.attribute_names:
-                    self.attributes['generic'] = {}
+                    self.attribute_names['generic'] = {}
                 assert index not in self.attribute_names['generic'], \
                     'More than one generic attribute with index %d' % index
                 self.attribute_names['generic'][index] = attribute
