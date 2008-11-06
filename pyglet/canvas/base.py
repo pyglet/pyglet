@@ -156,6 +156,29 @@ class Screen(object):
         '''
         raise NotImplementedError('abstract')
 
+    def get_modes(self):
+        '''
+        TODO doc
+        '''
+        raise NotImplementedError('abstract')
+
+class ScreenMode(object):
+    '''TODO doc
+    '''
+
+    width = None
+    height = None
+    depth = None
+    rate = None
+
+    def __init__(self, screen):
+        self.screen = screen
+
+    def __repr__(self):
+        return '%s(width=%r, height=%r, depth=%r, rate=%r)' % (
+            self.__class__.__name__, 
+            self.width, self.height, self.depth, self.rate)
+
 class Canvas(object):
     '''TODO doc
 

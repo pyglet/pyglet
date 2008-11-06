@@ -7,7 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from pyglet import app
-from base import Display, Screen, Canvas
+from base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
@@ -182,7 +182,37 @@ class CarbonScreen(Screen):
         for config in configs:
             config.screen = self
         return configs
- 
+
+    def get_modes(self):
+        modes_array = carbon.CGDisplayAvailableModes(self.id)
+        n_modes_array = carbon.CFArrayGetCount(modes_array)
+
+        modes = []
+        for i in range(n_modes_array):
+            mode = carbon.CFArrayGetValueAtIndex(modes_array, i)
+            modes.append(CarbonScreenMode(self, mode))
+
+        return modes
+
+class CarbonScreenMode(ScreenMode):
+    def __init__(self, screen, mode):
+        super(CarbonScreenMode, self).__init__(mode)
+        self.mode = mode
+        self.width = self._get_long('Width')
+        self.height = self._get_long('Height')
+        self.depth = self._get_long('BitsPerPixel')
+        self.rate = self._get_long('RefreshRate')
+
+    def _get_long(self, key):
+        kCFNumberLongType = 10
+        cfkey = create_cfstring(key)
+        number = carbon.CFDictionaryGetValue(self.mode, cfkey)
+        if not number:
+            return None
+        value = c_long()
+        carbon.CFNumberGetValue(number, kCFNumberLongType, byref(value))
+        return value.value 
+
 class CarbonCanvas(Canvas):
     def __init__(self, display, screen, drawable):
         super(CarbonCanvas, self).__init__(display)
