@@ -197,8 +197,8 @@ class VertexDomain(object):
             if isinstance(attribute, vertexattribute.GenericAttribute):
                 index = attribute.index
                 if 'generic' not in self.attributes:
-                    self.attributes['generic'] = {}
-                assert index not in self.attributes['generic'], \
+                    self.attribute_names['generic'] = {}
+                assert index not in self.attribute_names['generic'], \
                     'More than one generic attribute with index %d' % index
                 self.attribute_names['generic'][index] = attribute
             else:
