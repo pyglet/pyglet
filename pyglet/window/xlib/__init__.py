@@ -137,7 +137,8 @@ class XlibWindow(BaseWindow):
 
     _default_event_mask = (0x1ffffff 
         & ~xlib.PointerMotionHintMask
-        & ~xlib.ResizeRedirectMask)
+        & ~xlib.ResizeRedirectMask
+        & ~xlib.SubstructureNotifyMask)
 
     def __init__(self, *args, **kwargs):
         # Bind event handlers
