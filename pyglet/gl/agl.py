@@ -389,7 +389,6 @@ aglGetCGLContext = _link_function('aglGetCGLContext', GLboolean, [AGLContext, PO
 # /System/Library/Frameworks/AGL.framework/Headers/agl.h:369
 aglGetCGLPixelFormat = _link_function('aglGetCGLPixelFormat', GLboolean, [AGLPixelFormat, POINTER(POINTER(None))], None)
 
-
 __all__ = ['AGL_VERSION_2_0', 'AGLDevice', 'AGLDrawable', 'AGLRendererInfo',
 'AGLPixelFormat', 'AGLContext', 'AGLPbuffer', 'AGL_NONE', 'AGL_ALL_RENDERERS',
 'AGL_BUFFER_SIZE', 'AGL_LEVEL', 'AGL_RGBA', 'AGL_DOUBLEBUFFER', 'AGL_STEREO',

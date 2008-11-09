@@ -10,6 +10,7 @@ from base import Config, CanvasConfig, Context
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
+from pyglet.gl import gl
 from pyglet.gl import agl
 
 from pyglet.canvas.carbon import CarbonCanvas, CarbonFullScreenCanvas
@@ -144,6 +145,7 @@ class CarbonContext(Context):
     def attach(self, canvas):
         super(CarbonContext, self).attach(canvas)
         if isinstance(canvas, CarbonFullScreenCanvas):
+            # XXX not used any more (cannot use AGL_BUFFER_RECT)   
             agl.aglEnable(self._context, agl.AGL_FS_CAPTURE_SINGLE)
             agl.aglSetFullScreen(self._context, canvas.width, canvas.height,
                                  canvas.screen._refresh_rate, 0)
@@ -151,6 +153,12 @@ class CarbonContext(Context):
             agl.aglSetDrawable(self._context, 
                                cast(canvas.drawable, agl.AGLDrawable))
         agl.aglSetCurrentContext(self._context)
+        if canvas.bounds is not None:
+            bounds = (gl.GLint * 4)(*canvas.bounds)
+            agl.aglSetInteger(self._context, agl.AGL_BUFFER_RECT, bounds)
+            agl.aglEnable(self._context, agl.AGL_BUFFER_RECT)
+        else:
+            agl.aglDisable(self._context, agl.AGL_BUFFER_RECT)
         _aglcheck()
 
         self.set_current()

@@ -214,12 +214,15 @@ class CarbonScreenMode(ScreenMode):
         return value.value 
 
 class CarbonCanvas(Canvas):
+    bounds = None
+
     def __init__(self, display, screen, drawable):
         super(CarbonCanvas, self).__init__(display)
         self.screen = screen
         self.drawable = drawable
 
 class CarbonFullScreenCanvas(Canvas):
+    # XXX not used any more.
     def __init__(self, display, screen, width, height):
         super(CarbonFullScreenCanvas, self).__init__(display)
         self.screen = screen

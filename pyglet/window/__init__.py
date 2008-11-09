@@ -663,8 +663,11 @@ class BaseWindow(EventDispatcher):
 
         if not self._fullscreen and self._windowed_location:
             # Restore windowed location -- no effect on OS X because of
-            # deferred recreate.  Move into platform _create? XXX
-            self.set_location(*self._windowed_location)
+            # deferred recreate.  Move into platform _create? XXX 
+            # Not harmless on carbon because upsets _width and _height via
+            # _on_window_bounds_changed
+            if sys.platform != 'darwin':
+                self.set_location(*self._windowed_location)
 
     def on_resize(self, width, height):
         '''A default resize event handler.

@@ -131,6 +131,7 @@ class CarbonWindow(BaseWindow):
             # EndFullScreen disposes _window.
             quicktime.EndFullScreen(self._fullscreen_restore, 0)
             self._window = None
+            self._fullscreen_restore = None
 
         self._create()
 
@@ -159,14 +160,16 @@ class CarbonWindow(BaseWindow):
                                       byref(self._window),
                                       None,
                                       0)
-            self._width = fs_width.value
-            self._height = fs_height.value
             self._mouse_in_window = True
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')
             self.dispatch_event('on_expose')
-            self.canvas = CarbonFullScreenCanvas(self.display, self.screen,
-                                                 self._width, self._height)
+            self._view_x = (self.screen.width - self._width) // 2
+            self._view_y = (self.screen.height - self._height) // 2
+            self.canvas = CarbonCanvas(self.display, self.screen,
+                                       carbon.GetWindowPort(self._window))
+            self.canvas.bounds = (self._view_x, self._view_y, 
+                                  self._width, self._height)
         else:
             # Create floating window
             rect = Rect()
@@ -198,6 +201,8 @@ class CarbonWindow(BaseWindow):
                                       kWindowLiveResizeAttribute |
                                       kWindowResizableAttribute)
 
+            window_attributes |= kWindowCompositingAttribute
+
             r = carbon.CreateNewWindow(window_class,
                                        window_attributes,
                                        byref(rect),
@@ -210,6 +215,8 @@ class CarbonWindow(BaseWindow):
 
             self.canvas = CarbonCanvas(self.display, self.screen,
                                        carbon.GetWindowPort(self._window))
+            self._view_x = self._view_y = 0
+                
         self.context.attach(self.canvas)
 
         self.set_caption(self._caption)
@@ -240,10 +247,17 @@ class CarbonWindow(BaseWindow):
         track_id.id = 1
         self._track_ref = MouseTrackingRef()
         self._track_region = carbon.NewRgn()
-        carbon.GetWindowRegion(self._window, 
-            kWindowContentRgn, self._track_region)
+        if self._fullscreen:
+            carbon.SetRectRgn(self._track_region, 
+                self._view_x, self._view_y, 
+                self._view_x + self._width, self._view_y + self._height)
+            options = kMouseTrackingOptionsGlobalClip
+        else:
+            carbon.GetWindowRegion(self._window, 
+                kWindowContentRgn, self._track_region)
+            options = kMouseTrackingOptionsGlobalClip
         carbon.CreateMouseTrackingRegion(self._window,  
-            self._track_region, None, kMouseTrackingOptionsGlobalClip,
+            self._track_region, None, options,
             track_id, None, None,
             byref(self._track_ref))
 
@@ -261,8 +275,10 @@ class CarbonWindow(BaseWindow):
         self.set_mouse_platform_visible(True)
         self.set_exclusive_mouse(False)
 
-        if self._fullscreen:
+        if self._fullscreen and self._fullscreen_restore:
             quicktime.EndFullScreen(self._fullscreen_restore, 0)
+            self._fullscreen = False
+            self._fullscreen_restore = None
         else:
             carbon.DisposeWindow(self._window)
         self._window = None
@@ -411,6 +427,7 @@ class CarbonWindow(BaseWindow):
         if visible:
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
             carbon.ShowWindow(self._window)
         else:
             carbon.HideWindow(self._window)
@@ -551,10 +568,11 @@ class CarbonWindow(BaseWindow):
         self.dispatch_event('on_expose')
 
     def _update_track_region(self):
-        carbon.GetWindowRegion(self._window, 
-            kWindowContentRgn, self._track_region)
-        carbon.ChangeMouseTrackingRegion(self._track_ref,
-            self._track_region, None)
+        if not self._fullscreen:
+            carbon.GetWindowRegion(self._window, 
+                kWindowContentRgn, self._track_region)
+            carbon.ChangeMouseTrackingRegion(self._track_ref,
+                self._track_region, None)
 
     def _install_event_handlers(self):
         self._remove_event_handlers()
@@ -715,7 +733,8 @@ class CarbonWindow(BaseWindow):
 
         bounds = Rect()
         carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(bounds))
-        return int(position.x - bounds.left), int(position.y - bounds.top)
+        return (int(position.x - bounds.left - self._view_x), 
+                int(position.y - bounds.top - self._view_y))
 
     @staticmethod
     def _get_mouse_button_and_modifiers(ev):
@@ -740,20 +759,22 @@ class CarbonWindow(BaseWindow):
 
         return button, CarbonWindow._map_modifiers(modifiers.value)
 
-    @staticmethod
-    def _get_mouse_in_content(ev):
-        position = Point()
-        carbon.GetEventParameter(ev, kEventParamMouseLocation,
-            typeQDPoint, c_void_p(), sizeof(position), c_void_p(),
-            byref(position)) 
-        return carbon.FindWindow(position, None) == inContent 
+    def _get_mouse_in_content(self, ev, x, y):
+        if self._fullscreen:
+            return 0 <= x < self._width and 0 <= y < self._height
+        else:
+            position = Point()
+            carbon.GetEventParameter(ev, kEventParamMouseLocation,
+                typeQDPoint, c_void_p(), sizeof(position), c_void_p(),
+                byref(position)) 
+            return carbon.FindWindow(position, None) == inContent 
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseDown)
     def _on_mouse_down(self, next_handler, ev, data):
-        if self._fullscreen or self._get_mouse_in_content(ev):
+        x, y = self._get_mouse_position(ev)
+        if self._get_mouse_in_content(ev, x, y):
             button, modifiers = self._get_mouse_button_and_modifiers(ev)
             if button is not None:
-                x, y = self._get_mouse_position(ev)
                 y = self.height - y
                 self.dispatch_event('on_mouse_press', x, y, button, modifiers)
 
@@ -775,9 +796,9 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseMoved)
     def _on_mouse_moved(self, next_handler, ev, data):
-        if ((self._fullscreen or self._get_mouse_in_content(ev))
+        x, y = self._get_mouse_position(ev)
+        if (self._get_mouse_in_content(ev, x, y)
             and not self._mouse_ignore_motion):
-            x, y = self._get_mouse_position(ev)
             y = self.height - y
 
             self._mouse_x = x
@@ -835,14 +856,13 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseExited)
     def _on_mouse_exited(self, next_handler, ev, data):
-        if not self._fullscreen:
-            x, y = self._get_mouse_position(ev)
-            y = self.height - y
+        x, y = self._get_mouse_position(ev)
+        y = self.height - y
 
-            self._mouse_in_window = False
-            self.set_mouse_platform_visible()
+        self._mouse_in_window = False
+        self.set_mouse_platform_visible()
 
-            self.dispatch_event('on_mouse_leave', x, y)
+        self.dispatch_event('on_mouse_leave', x, y)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr
