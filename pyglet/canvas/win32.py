@@ -23,6 +23,8 @@ class Win32Display(Display):
         return screens
 
 class Win32Screen(Screen):
+    _initial_mode = None
+
     def __init__(self, display, handle, x, y, width, height):
         super(Win32Screen, self).__init__(display, x, y, width, height)
         self._handle = handle
@@ -35,12 +37,14 @@ class Win32Screen(Screen):
             config.screen = self
         return configs
 
-    def get_modes(self):
+    def get_device_name(self):
         info = MONITORINFOEX()
         info.cbSize = sizeof(MONITORINFOEX)
         _user32.GetMonitorInfoW(self._handle, byref(info))
-        device_name = info.szDevice
+        return info.szDevice
 
+    def get_modes(self):
+        device_name = self.get_device_name()
         i = 0
         modes = []
         while True:
@@ -54,6 +58,32 @@ class Win32Screen(Screen):
             i += 1
 
         return modes
+
+    def get_mode(self):
+        mode = DEVMODE()
+        mode.dmSize = sizeof(DEVMODE)
+        _user32.EnumDisplaySettingsW(self.get_device_name(),
+                                     ENUM_CURRENT_SETTINGS, 
+                                     byref(mode))
+        return Win32ScreenMode(self, mode)
+
+    def set_mode(self, mode):
+        assert mode.screen is self
+
+        if not self._initial_mode:
+            self._initial_mode = self.get_mode()
+        r = _user32.ChangeDisplaySettingsExW(self.get_device_name(),
+                                             byref(mode._mode),
+                                             None,
+                                             CDS_FULLSCREEN,
+                                             None)
+        if r == DISP_CHANGE_SUCCESSFUL:
+            self.width = mode.width
+            self.height = mode.height
+
+    def restore_mode(self):
+        if self._initial_mode:
+            self.set_mode(self._initial_mode)
 
 class Win32ScreenMode(ScreenMode):
     def __init__(self, screen, mode):
