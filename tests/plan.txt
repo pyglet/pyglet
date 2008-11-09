@@ -65,6 +65,7 @@ window
     window-fullscreen
         window.WINDOW_INITIAL_FULLSCREEN        X11 WIN OSX
         window.WINDOW_SET_FULLSCREEN            X11 WIN OSX
+        window.WINDOW_FULLSCREEN_SIZE           X11 WIN OSX
         window.MULTIPLE_SCREEN                  X11 WIN OSX
 
     window-event

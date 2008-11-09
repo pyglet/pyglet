@@ -513,12 +513,16 @@ class BaseWindow(EventDispatcher):
         self._display = self._screen.display
 
         if fullscreen:
-            if width is not None or height is not None:
-                raise WindowException(
-                    'Width and height cannot be specified with fullscreen.')
-            self._windowed_size = self._default_width, self._default_height
-            width = self._screen.width
-            height = self._screen.height
+            dwidth, dheight = self._default_width, self._default_height
+            if width is None:
+                width = self._screen.width
+            else:
+                dwidth = width
+            if height is None:
+                height = self._screen.height
+            else:
+                dheight = height
+            self._windowed_size = dwidth, dheight
         else:
             if width is None:
                 width = self._default_width
@@ -585,12 +589,19 @@ class BaseWindow(EventDispatcher):
         '''
         raise NotImplementedError('abstract')
 
-    def set_fullscreen(self, fullscreen=True, screen=None):
+    def set_fullscreen(self, fullscreen=True, screen=None, 
+                       width=None, height=None):
         '''Toggle to or from fullscreen.
 
         After toggling fullscreen, the GL context should have retained its
         state and objects, however the buffers will need to be cleared and
         redrawn.
+
+        If `width` and `height` are specified and `fullscreen` is True, the
+        screen may be switched to a different resolution that most closely
+        matches the given size.  If the resolution doesn't match exactly,
+        a higher resolution is selected and the window will be centered
+        within a black border covering the rest of the screen.
 
         :Parameters:
             `fullscreen` : bool
@@ -600,9 +611,23 @@ class BaseWindow(EventDispatcher):
                 If not None and fullscreen is True, the window is moved to the
                 given screen.  The screen must belong to the same display as
                 the window.
+            `width` : int
+                Optional width of the window.  If unspecified, defaults to the
+                previous window size when windowed, or the screen size if
+                fullscreen.
 
+                **Since:** pyglet 1.2
+            `height` : int
+                Optional height of the window.  If unspecified, defaults to
+                the previous window size when windowed, or the screen size if
+                fullscreen.
+
+                **Since:** pyglet 1.2
         '''
-        if fullscreen == self._fullscreen and screen is None:
+        if (fullscreen == self._fullscreen and 
+            (screen is None or screen is self._screen) and
+            (width is None or width == self._width) and
+            (height is None or height == self._height)):
             return
 
         if not self._fullscreen:
@@ -616,10 +641,19 @@ class BaseWindow(EventDispatcher):
 
         self._fullscreen = fullscreen
         if self._fullscreen:
-            self._width = self.screen.width
-            self._height = self.screen.height
+            # TODO mode switch
+            if width is None:
+                width = self.screen.width
+            if height is None:
+                height = self.screen.height
+            self._width = width
+            self._height = height
         else:
             self._width, self._height = self._windowed_size
+            if width is not None:
+                self._width = width
+            if height is not None:
+                self._height = height
 
         self._recreate(['fullscreen'])
 

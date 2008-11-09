@@ -221,3 +221,11 @@ class XlibCanvas(Canvas):
     def __init__(self, display, x_window):
         super(XlibCanvas, self).__init__(display)
         self.x_window = x_window
+
+class XlibSubWindowCanvas(XlibCanvas):
+    def __init__(self, display, parent, x, y, width, height):
+        x_window = xlib.XCreateSimpleWindow(display._display, parent, 
+            x, y, width, height, 0, 0, 0);
+        super(XlibSubWindowCanvas, self).__init__(display, x_window)
+
+        xlib.XMapWindow(display._display, x_window)

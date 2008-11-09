@@ -47,15 +47,10 @@ from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
 
-from pyglet.canvas.xlib import XlibCanvas
+from pyglet.canvas.xlib import XlibCanvas, XlibSubWindowCanvas
 
 from pyglet.libs.x11 import xlib
 from pyglet.libs.x11 import cursorfont
-try:
-    from pyglet.libs.x11 import xinerama
-    _have_xinerama = True
-except:
-    _have_xinerama = False
 
 try:
     from pyglet.libs.x11 import xsync
@@ -213,14 +208,24 @@ class XlibWindow(BaseWindow):
             #            unconditionally.
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
 
+            width, height = self._width, self._height
+            if self._fullscreen:
+                width, height = self.screen.width, self.screen.height
             self._window = xlib.XCreateWindow(self._x_display, root,
-                0, 0, self._width, self._height, 0, visual_info.depth,
+                0, 0, width, height, 0, visual_info.depth,
                 xlib.InputOutput, visual, mask,
                 byref(window_attributes))
             self.display._window_map[self._window] = self
 
-            # TODO
-            self.canvas = XlibCanvas(self.display, self._window)
+            # TODO expose canvas creation api
+            if width == self._width and height == self._height:
+                self.canvas = XlibCanvas(self.display, self._window)
+            else:
+                vx = (width - self._width) // 2
+                vy = (height - self._height) // 2
+                self.canvas = XlibSubWindowCanvas(self.display, self._window,
+                    vx, vy, self._width, self._height)
+
             self.context.attach(self.canvas)
             self.context.set_vsync(self._vsync) # XXX ?
 
@@ -416,13 +421,15 @@ class XlibWindow(BaseWindow):
         super(XlibWindow, self).close()
 
     def switch_to(self):
-        self.context.set_current()
+        if self.context:
+            self.context.set_current()
 
     def flip(self):
         self.draw_mouse_cursor()
 
         # TODO canvas.flip?
-        self.context.flip()
+        if self.context:
+            self.context.flip()
 
         self._sync_resize()
 
@@ -1094,6 +1101,9 @@ class XlibWindow(BaseWindow):
     def _event_configurenotify(self, ev):
         if self._enable_xsync and self._current_sync_value:
             self._current_sync_valid = True
+
+        if self._fullscreen:
+            return
 
         self.switch_to()
 
