@@ -149,17 +149,29 @@ class CarbonWindow(BaseWindow):
         self._window = WindowRef()
 
         if self._fullscreen:
-            # Switch to fullscreen mode with QuickTime
-            fs_width = c_short(0)
-            fs_height = c_short(0)
-            self._fullscreen_restore = c_void_p()
-            quicktime.BeginFullScreen(byref(self._fullscreen_restore),
-                                      self.screen.get_gdevice(),
-                                      byref(fs_width),
-                                      byref(fs_height),
-                                      byref(self._window),
-                                      None,
-                                      0)
+            rect = Rect()
+            rect.left = 0
+            rect.top = 0
+            rect.right = self.screen.width
+            rect.bottom = self.screen.height
+            r = carbon.CreateNewWindow(kSimpleWindowClass,
+                                       kWindowNoAttributes,
+                                       byref(rect),
+                                       byref(self._window))
+            _oscheck(r)
+
+            # Set window level to shield level
+            level = carbon.CGShieldingWindowLevel()
+            WindowGroupRef = c_void_p
+            group = WindowGroupRef()
+            _oscheck(carbon.CreateWindowGroup(0, byref(group)))
+            _oscheck(carbon.SetWindowGroup(self._window, group))
+            _oscheck(carbon.SetWindowGroupLevel(group, level))
+
+            # Set black background
+            color = RGBColor(0, 0, 0)
+            _oscheck(carbon.SetWindowContentColor(self._window, byref(color)))
+
             self._mouse_in_window = True
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_show')

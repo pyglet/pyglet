@@ -162,6 +162,64 @@ class Screen(object):
         '''
         raise NotImplementedError('abstract')
 
+    def get_mode(self):
+        '''Get the current display mode for this screen.
+
+        :rtype: `ScreenMode`
+        '''
+        raise NotImplementedError('abstract')
+
+    def get_closest_mode(self, width, height):
+        # Best mode is one with smallest resolution larger than width/height,
+        # with depth and refresh rate equal to current mode.
+        current = self.get_mode()
+
+        best = None
+        for mode in self.get_modes():
+            # Reject resolutions that are too small
+            if mode.width < width or mode.height < height:
+                continue
+
+            if best is None:
+                best = mode
+
+            # Must strictly dominate dimensions
+            if (mode.width <= best.width and mode.height <= best.height and
+                (mode.width < best.width or mode.height < best.height)):
+                best = mode
+
+            # Preferably match rate, then depth.
+            if mode.width == best.width and mode.height == best.height:
+                points = 0
+                if mode.rate == current.rate:
+                    points += 2
+                if best.rate == current.rate:
+                    points -= 2
+                if mode.depth == current.depth:
+                    points += 1
+                if best.depth == current.depth:
+                    points -= 1
+                if points > 0:
+                    best = mode
+        return best
+
+    def set_mode(self, mode):
+        '''Set the display mode for this screen.
+
+        The mode must be one previously returned by `get_mode` or `get_modes`.
+
+        :Parameters:
+            `mode` : `ScreenMode`
+                Screen mode to switch this screen to.
+
+        '''
+        raise NotImplementedError('abstract')
+
+    def restore_mode(self):
+        '''Restore the screen mode to the user's default.
+        '''
+        raise NotImplementedError('abstract')
+
 class ScreenMode(object):
     '''TODO doc
     '''

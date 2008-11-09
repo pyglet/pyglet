@@ -152,3 +152,10 @@ class EventRecord(Structure):
         ('where', Point),
         ('modifiers', c_uint16)
     ]
+
+class RGBColor(Structure):
+    _fields_ = [
+        ('red', c_ushort),
+        ('green', c_ushort),
+        ('blue', c_ushort)
+    ]

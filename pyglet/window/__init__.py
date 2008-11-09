@@ -151,6 +151,11 @@ class NoSuchConfigException(WindowException):
     available.'''
     pass
 
+class NoSuchScreenModeException(WindowException):
+    '''An exception indicating the requested screen resolution could not be
+    met.'''
+    pass
+
 class MouseCursorException(WindowException):
     '''The root exception for all mouse cursor-related errors.'''
     pass
@@ -517,16 +522,11 @@ class BaseWindow(EventDispatcher):
         self._display = self._screen.display
 
         if fullscreen:
-            dwidth, dheight = self._default_width, self._default_height
-            if width is None:
-                width = self._screen.width
-            else:
-                dwidth = width
-            if height is None:
-                height = self._screen.height
-            else:
-                dheight = height
-            self._windowed_size = dwidth, dheight
+            if width is None and height is None:
+                self._windowed_size = self._default_width, self._default_height
+            width, height = self._set_fullscreen_mode(width, height)
+            if not self._windowed_size:
+                self._windowed_size = width, height
         else:
             if width is None:
                 width = self._default_width
@@ -645,14 +645,11 @@ class BaseWindow(EventDispatcher):
 
         self._fullscreen = fullscreen
         if self._fullscreen:
-            # TODO mode switch
-            if width is None:
-                width = self.screen.width
-            if height is None:
-                height = self.screen.height
-            self._width = width
-            self._height = height
+            self._width, self._height = self._set_fullscreen_mode(
+                width, height)
         else:
+            self.screen.restore_mode()
+
             self._width, self._height = self._windowed_size
             if width is not None:
                 self._width = width
@@ -668,6 +665,23 @@ class BaseWindow(EventDispatcher):
             # _on_window_bounds_changed
             if sys.platform != 'darwin':
                 self.set_location(*self._windowed_location)
+
+    def _set_fullscreen_mode(self, width, height):
+        if width is not None or height is not None:
+            if width is None:
+                width = 0
+            if height is None:
+                height = 0
+            mode = self.screen.get_closest_mode(width, height)
+            if mode is None:
+                raise NoSuchScreenModeException(
+                    'No mode matching %dx%d' % (width, height))
+            print 'set mode', mode
+            self.screen.set_mode(mode)
+        else:
+            width = self.screen.width
+            height = self.screen.height
+        return width, height
 
     def on_resize(self, width, height):
         '''A default resize event handler.

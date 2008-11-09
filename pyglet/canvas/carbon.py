@@ -154,6 +154,8 @@ class CarbonDisplay(Display):
         app.event_loop.exit()
 
 class CarbonScreen(Screen):
+    _initial_mode = None
+
     def __init__(self, display, id):
         self.display = display
         rect = carbon.CGDisplayBounds(id)
@@ -194,9 +196,29 @@ class CarbonScreen(Screen):
 
         return modes
 
+    def get_mode(self):
+        mode = carbon.CGDisplayCurrentMode(self.id)
+        return CarbonScreenMode(self, mode)
+
+    def set_mode(self, mode):
+        assert mode.screen is self
+        if not self._initial_mode:
+            self._initial_mode = self.get_mode()
+
+        _oscheck(carbon.CGDisplayCapture(self.id))
+        _oscheck(carbon.CGDisplaySwitchToMode(self.id, mode.mode))
+        self.width = mode.width
+        self.height = mode.height
+
+    def restore_mode(self):
+        if self._initial_mode:
+            _oscheck(carbon.CGDisplaySwitchToMode(self.id, 
+                                                  self._initial_mode.mode))
+        _oscheck(carbon.CGDisplayRelease(self.id))
+
 class CarbonScreenMode(ScreenMode):
     def __init__(self, screen, mode):
-        super(CarbonScreenMode, self).__init__(mode)
+        super(CarbonScreenMode, self).__init__(screen)
         self.mode = mode
         self.width = self._get_long('Width')
         self.height = self._get_long('Height')
