@@ -49,7 +49,7 @@ from pyglet.window import WindowException, \
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.window import event
-from pyglet.canvas.carbon import CarbonCanvas, CarbonFullScreenCanvas
+from pyglet.canvas.carbon import CarbonCanvas
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
@@ -93,7 +93,6 @@ class CarbonWindow(BaseWindow):
     # Window properties
     _minimum_size = None
     _maximum_size = None
-    _fullscreen_restore = None
     _event_dispatcher = None
     _current_modifiers = 0
     _mapped_modifers = 0
@@ -119,19 +118,6 @@ class CarbonWindow(BaseWindow):
         # The actual _recreate function.
         if ('context' in changes):
             self.context.detach()
-
-        if ('fullscreen' in changes and
-            not self._fullscreen and
-            self._fullscreen_restore):
-
-            # Leaving fullscreen -- destroy everything before the window.
-            self._remove_track_region()
-            self._remove_event_handlers()
-            self.context.detach()
-            # EndFullScreen disposes _window.
-            quicktime.EndFullScreen(self._fullscreen_restore, 0)
-            self._window = None
-            self._fullscreen_restore = None
 
         self._create()
 
@@ -287,11 +273,7 @@ class CarbonWindow(BaseWindow):
         self.set_mouse_platform_visible(True)
         self.set_exclusive_mouse(False)
 
-        if self._fullscreen and self._fullscreen_restore:
-            quicktime.EndFullScreen(self._fullscreen_restore, 0)
-            self._fullscreen = False
-            self._fullscreen_restore = None
-        else:
+        if self._window:
             carbon.DisposeWindow(self._window)
         self._window = None
 
