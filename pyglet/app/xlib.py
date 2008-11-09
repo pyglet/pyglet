@@ -121,7 +121,6 @@ class XlibEventLoop(PlatformEventLoop):
         # Dispatch resize events
         for window in app.windows:
             if window._needs_resize:
-                window._update_view_size()
                 window.switch_to()
                 window.dispatch_event('on_resize', 
                                       window._width, window._height)
