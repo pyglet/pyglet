@@ -241,6 +241,10 @@ def _PlatformEventHandler(data):
         return f
     return _event_wrapper
 
+def _ViewEventHandler(f):
+    f._view = True
+    return f
+
 class _WindowMetaclass(type):
     '''Sets the _platform_event_names class variable on the window
     subclass.

@@ -42,12 +42,13 @@ import warnings
 import pyglet
 from pyglet.window import WindowException, NoSuchDisplayException, \
     MouseCursorException, MouseCursor, \
-    DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler
+    DefaultMouseCursor, ImageMouseCursor, BaseWindow, _PlatformEventHandler, \
+    _ViewEventHandler
 from pyglet.window import key
 from pyglet.window import mouse
 from pyglet.event import EventDispatcher
 
-from pyglet.canvas.xlib import XlibCanvas, XlibSubWindowCanvas
+from pyglet.canvas.xlib import XlibCanvas
 
 from pyglet.libs.x11 import xlib
 from pyglet.libs.x11 import cursorfont
@@ -103,6 +104,7 @@ class XlibMouseCursor(MouseCursor):
 
 # Platform event data is single item, so use platform event handler directly.
 XlibEventHandler = _PlatformEventHandler
+ViewEventHandler = _ViewEventHandler
 
 class XlibWindow(BaseWindow):
     _x_display = None       # X display connection
@@ -140,12 +142,16 @@ class XlibWindow(BaseWindow):
     def __init__(self, *args, **kwargs):
         # Bind event handlers
         self._event_handlers = {}
+        self._view_event_handlers = {}
         for name in self._platform_event_names:
             if not hasattr(self, name):
                 continue
             func = getattr(self, name)
             for message in func._platform_event_data:
-                self._event_handlers[message] = func 
+                if hasattr(func, '_view'):
+                    self._view_event_handlers[message] = func 
+                else:
+                    self._event_handlers[message] = func 
 
         super(XlibWindow, self).__init__(*args, **kwargs)
         
@@ -163,6 +169,7 @@ class XlibWindow(BaseWindow):
             self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
             del self.display._window_map[self._window]
+            del self.display._window_map[self._view]
             self._window = None 
             self._mapped = False
 
@@ -200,7 +207,7 @@ class XlibWindow(BaseWindow):
             else:
                 window_attributes.colormap = xlib.XDefaultColormap(
                     self._x_display, self._x_screen_id)
-            window_attributes.bit_gravity = xlib.NorthWestGravity
+            window_attributes.bit_gravity = xlib.StaticGravity
 
             # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration
             #            unless CWBackPixel is given in mask.  Should have
@@ -208,23 +215,33 @@ class XlibWindow(BaseWindow):
             #            unconditionally.
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
 
-            width, height = self._width, self._height
             if self._fullscreen:
                 width, height = self.screen.width, self.screen.height
+                self._view_x = (width - self._width) // 2
+                self._view_y = (height - self._height) // 2
+            else:
+                width, height = self._width, self._height
+                self._view_x = self._view_y = 0
+
             self._window = xlib.XCreateWindow(self._x_display, root,
                 0, 0, width, height, 0, visual_info.depth,
                 xlib.InputOutput, visual, mask,
                 byref(window_attributes))
-            self.display._window_map[self._window] = self
+            self._view = xlib.XCreateWindow(self._x_display, 
+                self._window, self._view_x, self._view_y, 
+                self._width, self._height, 0, visual_info.depth, 
+                xlib.InputOutput, visual, mask, 
+                byref(window_attributes));
+            xlib.XMapWindow(self._x_display, self._view)
+            xlib.XSelectInput(
+                self._x_display, self._view, self._default_event_mask)
 
-            # TODO expose canvas creation api
-            if width == self._width and height == self._height:
-                self.canvas = XlibCanvas(self.display, self._window)
-            else:
-                vx = (width - self._width) // 2
-                vy = (height - self._height) // 2
-                self.canvas = XlibSubWindowCanvas(self.display, self._window,
-                    vx, vy, self._width, self._height)
+            self.display._window_map[self._window] = \
+                self.dispatch_platform_event
+            self.display._window_map[self._view] = \
+                self.dispatch_platform_event_view
+
+            self.canvas = XlibCanvas(self.display, self._view)
 
             self.context.attach(self.canvas)
             self.context.set_vsync(self._vsync) # XXX ?
@@ -460,7 +477,12 @@ class XlibWindow(BaseWindow):
             self.set_minimum_size(width, height)
             self.set_maximum_size(width, height)
         xlib.XResizeWindow(self._x_display, self._window, width, height)
+        self._update_view_size()
         self.dispatch_event('on_resize', width, height)
+
+    def _update_view_size(self):
+        xlib.XResizeWindow(self._x_display, self._view, 
+                           self._width, self._height)
 
     def get_size(self):
         # XGetGeometry and XWindowAttributes seem to always return the
@@ -754,6 +776,7 @@ class XlibWindow(BaseWindow):
         # Cache these in case window is closed from an event handler
         _x_display = self._x_display
         _window = self._window
+        _view = self._view
 
         # Check for the events specific to this window
         while xlib.XCheckWindowEvent(_x_display, _window,
@@ -765,11 +788,21 @@ class XlibWindow(BaseWindow):
                     continue
             self.dispatch_platform_event(e)
 
+        # Check for the events specific to this view
+        while xlib.XCheckWindowEvent(_x_display, _view,
+                                     0x1ffffff, byref(e)):
+            # Key events are filtered by the xlib window event
+            # handler so they get a shot at the prefiltered event.
+            if e.xany.type not in (xlib.KeyPress, xlib.KeyRelease):
+                if xlib.XFilterEvent(e, 0):
+                    continue
+            self.dispatch_platform_event_view(e)
+
         # Generic events for this window (the window close event).
         while xlib.XCheckTypedWindowEvent(_x_display, _window, 
                 xlib.ClientMessage, byref(e)):
             self.dispatch_platform_event(e) 
-        
+ 
         if self._needs_resize:
             self.dispatch_event('on_resize', self._width, self._height)
             self.dispatch_event('on_expose')
@@ -791,6 +824,11 @@ class XlibWindow(BaseWindow):
 
     def dispatch_platform_event(self, e):
         event_handler = self._event_handlers.get(e.type)
+        if event_handler:
+            event_handler(e)
+
+    def dispatch_platform_event_view(self, e):
+        event_handler = self._view_event_handlers.get(e.type)
         if event_handler:
             event_handler(e)
 
@@ -899,9 +937,10 @@ class XlibWindow(BaseWindow):
         ctrl = modifiers & key.MOD_CTRL != 0
         return _motion_map.get((symbol, ctrl), None)
 
+    @ViewEventHandler
     @XlibEventHandler(xlib.KeyPress)
     @XlibEventHandler(xlib.KeyRelease)
-    def _event_key(self, ev):
+    def _event_key_view(self, ev):
         if ev.type == xlib.KeyRelease:
             # Look in the queue for a matching KeyPress with same timestamp,
             # indicating an auto-repeat rather than actual key event.
@@ -963,8 +1002,14 @@ class XlibWindow(BaseWindow):
             if symbol:
                 self.dispatch_event('on_key_release', symbol, modifiers)
 
+    @XlibEventHandler(xlib.KeyPress)
+    @XlibEventHandler(xlib.KeyRelease)
+    def _event_key(self, ev):
+        return self._event_key_view(ev)
+
+    @ViewEventHandler
     @XlibEventHandler(xlib.MotionNotify)
-    def _event_motionnotify(self, ev):
+    def _event_motionnotify_view(self, ev):
         x = ev.xmotion.x
         y = self.height - ev.xmotion.y
 
@@ -1012,6 +1057,35 @@ class XlibWindow(BaseWindow):
             # Motion event
             self.dispatch_event('on_mouse_motion', x, y, dx, dy)
 
+    @XlibEventHandler(xlib.MotionNotify)
+    def _event_motionnotify(self, ev):
+        # Window motion looks for drags that are outside the view but within
+        # the window.
+        buttons = 0
+        if ev.xmotion.state & xlib.Button1MotionMask:
+            buttons |= mouse.LEFT
+        if ev.xmotion.state & xlib.Button2MotionMask:
+            buttons |= mouse.MIDDLE
+        if ev.xmotion.state & xlib.Button3MotionMask:
+            buttons |= mouse.RIGHT
+
+        if buttons:
+            # Drag event
+            x = ev.xmotion.x - self._view_x
+            y = self._height - (ev.xmotion.y - self._view_y)
+
+            if self._mouse_in_window:
+                dx = x - self._mouse_x
+                dy = y - self._mouse_y
+            else:
+                dx = dy = 0
+            self._mouse_x = x
+            self._mouse_y = y
+
+            modifiers = self._translate_modifiers(ev.xmotion.state)
+            self.dispatch_event('on_mouse_drag',
+                x, y, dx, dy, buttons, modifiers)
+
     @XlibEventHandler(xlib.ClientMessage)
     def _event_clientmessage(self, ev):
         atom = ev.xclient.data.l[0]
@@ -1036,6 +1110,7 @@ class XlibWindow(BaseWindow):
             self._current_sync_value = None
             self._current_sync_valid = False
 
+    @ViewEventHandler
     @XlibEventHandler(xlib.ButtonPress)
     @XlibEventHandler(xlib.ButtonRelease)
     def _event_button(self, ev):
@@ -1063,6 +1138,7 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event('on_mouse_release', 
                     x, y, button, modifiers)
 
+    @ViewEventHandler
     @XlibEventHandler(xlib.Expose)
     def _event_expose(self, ev):
         # Ignore all expose events except the last one. We could be told
@@ -1071,6 +1147,7 @@ class XlibWindow(BaseWindow):
         if ev.xexpose.count > 0: return
         self.dispatch_event('on_expose')
 
+    @ViewEventHandler
     @XlibEventHandler(xlib.EnterNotify)
     def _event_enternotify(self, ev):
         # figure active mouse buttons
@@ -1090,6 +1167,7 @@ class XlibWindow(BaseWindow):
         # XXX there may be more we could do here
         self.dispatch_event('on_mouse_enter', x, y)
 
+    @ViewEventHandler
     @XlibEventHandler(xlib.LeaveNotify)
     def _event_leavenotify(self, ev):
         x = self._mouse_x = ev.xcrossing.x
@@ -1110,6 +1188,7 @@ class XlibWindow(BaseWindow):
         w, h = ev.xconfigure.width, ev.xconfigure.height
         x, y = ev.xconfigure.x, ev.xconfigure.y
         if self._width != w or self._height != h:
+            self._update_view_size()
             self._width = w
             self._height = h
             self._needs_resize = True

@@ -48,7 +48,8 @@ if sys.platform not in ('cygwin', 'win32'):
 
 import pyglet
 from pyglet.window import BaseWindow, \
-    WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
+    WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler, \
+    _ViewEventHandler
 from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.window import mouse
@@ -88,10 +89,7 @@ class Win32MouseCursor(MouseCursor):
 _win32_cursor_visible = True
 
 Win32EventHandler = _PlatformEventHandler
-
-def ViewEventHandler(f):
-    f._view = True
-    return f
+ViewEventHandler = _ViewEventHandler
 
 class Win32Window(BaseWindow):
     _window_class = None

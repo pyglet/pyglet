@@ -151,11 +151,11 @@ class XlibDisplay(XlibSelectDevice, Display):
                 if xlib.XFilterEvent(e, e.xany.window):
                     continue
             try:
-                window = self._window_map[e.xany.window]
+                dispatch = self._window_map[e.xany.window]
             except KeyError:
                 continue
 
-            window.dispatch_platform_event(e)
+            dispatch(e)
 
     def poll(self):
         return xlib.XPending(self._display)
@@ -221,11 +221,3 @@ class XlibCanvas(Canvas):
     def __init__(self, display, x_window):
         super(XlibCanvas, self).__init__(display)
         self.x_window = x_window
-
-class XlibSubWindowCanvas(XlibCanvas):
-    def __init__(self, display, parent, x, y, width, height):
-        x_window = xlib.XCreateSimpleWindow(display._display, parent, 
-            x, y, width, height, 0, 0, 0);
-        super(XlibSubWindowCanvas, self).__init__(display, x_window)
-
-        xlib.XMapWindow(display._display, x_window)
