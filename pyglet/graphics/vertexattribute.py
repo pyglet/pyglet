@@ -516,12 +516,12 @@ class GenericAttribute(AbstractAttribute):
     '''Generic vertex attribute, used by shader programs.'''
 
     def __init__(self, index, normalized, count, gl_type):
-        self.normalized = normalized
+        self.normalized = bool(normalized)
         self.index = index
         super(GenericAttribute, self).__init__(count, gl_type)
 
     def enable(self):
-        glEnableVertexAttribArray(self.generic_index)
+        glEnableVertexAttribArray(self.index)
 
     def set_pointer(self, pointer):
         glVertexAttribPointer(self.index, self.count, self.gl_type,
