@@ -673,11 +673,12 @@ class BaseWindow(EventDispatcher):
             if height is None:
                 height = 0
             mode = self.screen.get_closest_mode(width, height)
-            if mode is None:
+            if mode is not None:
+                self.screen.set_mode(mode)
+            elif self.screen.get_modes():
+                # Only raise exception if mode switching is at all possible.
                 raise NoSuchScreenModeException(
                     'No mode matching %dx%d' % (width, height))
-            print 'set mode', mode
-            self.screen.set_mode(mode)
         else:
             width = self.screen.width
             height = self.screen.height

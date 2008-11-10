@@ -113,6 +113,7 @@ class XlibWindow(BaseWindow):
     _window = None          # Xlib window handle
     _minimum_size = None
     _maximum_size = None
+    _override_redirect = False
 
     _x = 0
     _y = 0                  # Last known window position
@@ -157,15 +158,15 @@ class XlibWindow(BaseWindow):
         super(XlibWindow, self).__init__(*args, **kwargs)
         
     def _recreate(self, changes):
-        # If flipping to/from fullscreen and using override_redirect (we
-        # always are, _NET_WM_FULLSCREEN doesn't work), need to recreate the
-        # window.
+        # If flipping to/from fullscreen, need to recreate the window.  (This
+        # is the case with both override_redirect method and
+        # _NET_WM_STATE_FULLSCREEN).
         #
         # A possible improvement could be to just hide the top window,
         # destroy the GLX window, and reshow it again when leaving fullscreen.
         # This would prevent the floating window from being moved by the
         # WM.
-        if 'fullscreen' in changes or 'resizable' in changes:
+        if ('fullscreen' in changes or 'resizable' in changes):
             # clear out the GLX context
             self.context.detach()
             xlib.XDestroyWindow(self._x_display, self._window)
@@ -288,13 +289,16 @@ class XlibWindow(BaseWindow):
         attributes = xlib.XSetWindowAttributes()
         attributes_mask = 0
 
-        # Bypass the window manager in fullscreen.  This is the only reliable
-        # technique (over _NET_WM_STATE_FULLSCREEN, Motif, KDE and Gnome
-        # hints) that is pretty much guaranteed to work.  Unfortunately
-        # we run into window activation and focus problems that require
-        # attention.  Search for "override_redirect" for all occurences.
-        attributes.override_redirect = self._fullscreen
-        attributes_mask |= xlib.CWOverrideRedirect
+        self._override_redirect = False
+        if self._fullscreen:
+            if pyglet.options['xlib_fullscreen_override_redirect']:
+                # Try not to use this any more, it causes problems; disabled
+                # by default in favour of _NET_WM_STATE_FULLSCREEN.
+                attributes.override_redirect = self._fullscreen
+                attributes_mask |= xlib.CWOverrideRedirect
+                self._override_redirect = True
+            else:
+                self._set_wm_state('_NET_WM_STATE_FULLSCREEN')
 
         if self._fullscreen:
             xlib.XMoveResizeWindow(self._x_display, self._window, 
@@ -329,7 +333,7 @@ class XlibWindow(BaseWindow):
                 PROP_MWM_HINTS_ELEMENTS)
 
         # Set resizeable
-        if not self._resizable:
+        if not self._resizable and not self._fullscreen:
             self.set_minimum_size(self._width, self._height)
             self.set_maximum_size(self._width, self._height)
 
@@ -389,7 +393,7 @@ class XlibWindow(BaseWindow):
             self._x_display, self._window, self._default_event_mask)
         self._mapped = True
 
-        if self._fullscreen:
+        if self._override_redirect:
             # Possibly an override_redirect issue.
             self.activate()
 
@@ -1122,7 +1126,7 @@ class XlibWindow(BaseWindow):
         if ev.type == xlib.ButtonPress:
             # override_redirect issue: manually activate this window if
             # fullscreen.
-            if self._fullscreen and not self._active:
+            if self._override_redirect and not self._active:
                 self.activate()
 
             if ev.xbutton.button == 4:

@@ -150,6 +150,7 @@ options = {
     'shadow_window': True,
     'vsync': None,
     'xsync': True,
+    'xlib_fullscreen_override_redirect': False,
 }
 
 _option_types = {
@@ -173,6 +174,7 @@ _option_types = {
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
+    'xlib_fullscreen_override_redirect': bool,
 }
 
 def _read_environment():
