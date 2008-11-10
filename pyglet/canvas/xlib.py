@@ -13,6 +13,8 @@ from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
 from base import Display, Screen, ScreenMode, Canvas
 
+import xlib_vidmoderestore
+
 # XXX
 #from pyglet.window import NoSuchDisplayException
 class NoSuchDisplayException(Exception):
@@ -116,13 +118,14 @@ class XlibDisplay(XlibSelectDevice, Display):
             infos = cast(infos, 
                  POINTER(xinerama.XineramaScreenInfo * number.value)).contents
             result = []
+            using_xinerama = number.value > 1
             for info in infos:
                 result.append(XlibScreen(self,
                                          info.x_org,
                                          info.y_org,
                                          info.width,
                                          info.height,
-                                         True))
+                                         using_xinerama))
             xlib.XFree(infos)
             return result
         else:
@@ -161,6 +164,8 @@ class XlibDisplay(XlibSelectDevice, Display):
         return xlib.XPending(self._display)
 
 class XlibScreen(Screen):
+    _initial_mode = None
+
     def __init__(self, display, x, y, width, height, xinerama):
         super(XlibScreen, self).__init__(display, x, y, width, height)
         self._xinerama = xinerama
@@ -203,6 +208,30 @@ class XlibScreen(Screen):
 
         return modes
 
+    def get_mode(self):
+        modes = self.get_modes()
+        if modes:
+            return modes[0]
+        return None
+
+    def set_mode(self, mode):
+        assert mode.screen is self
+
+        if not self._initial_mode:
+            self._initial_mode = self.get_mode()
+            xlib_vidmoderestore.set_initial_mode(self._initial_mode)
+
+        xf86vmode.XF86VidModeSwitchToMode(self.display._display, 
+            self.display.x_screen, mode.info)
+        xlib.XFlush(self.display._display)
+
+        self.width = mode.width
+        self.height = mode.height
+
+    def restore_mode(self):
+        if self._initial_mode:
+            self.set_mode(self._initial_mode)
+
     def __repr__(self):
         return 'XlibScreen(display=%r, x=%d, y=%d, ' \
                'width=%d, height=%d, xinerama=%d)' % \
@@ -212,6 +241,7 @@ class XlibScreen(Screen):
 class XlibScreenMode(ScreenMode):
     def __init__(self, screen, info):
         super(XlibScreenMode, self).__init__(screen)
+        self.info = info
         self.width = info.hdisplay
         self.height = info.vdisplay
         self.rate = info.dotclock
