@@ -72,9 +72,13 @@ class WINDOW_SET_FULLSCREEN(unittest.TestCase):
         w.push_handlers(self)
         w.push_handlers(WindowEventLogger())
         self.on_expose()
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            while not w.has_exit:
+                w.dispatch_events()
+            w.close()
+        except SystemExit:
+            # Child process on linux calls sys.exit(0) when it's done.
+            pass
 
 if __name__ == '__main__':
     unittest.main()

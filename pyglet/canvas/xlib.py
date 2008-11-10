@@ -224,6 +224,9 @@ class XlibScreen(Screen):
         xf86vmode.XF86VidModeSwitchToMode(self.display._display, 
             self.display.x_screen, mode.info)
         xlib.XFlush(self.display._display)
+        xf86vmode.XF86VidModeSetViewPort(self.display._display,
+            self.display.x_screen, 0, 0)
+        xlib.XFlush(self.display._display)
 
         self.width = mode.width
         self.height = mode.height
