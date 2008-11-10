@@ -425,7 +425,8 @@ class BaseWindow(EventDispatcher):
                  display=None,
                  screen=None,
                  config=None,
-                 context=None):
+                 context=None,
+                 mode=None):
         '''Create a window.
 
         All parameters are optional, and reasonable defaults are assumed
@@ -446,11 +447,11 @@ class BaseWindow(EventDispatcher):
 
         :Parameters:
             `width` : int
-                Width of the window, in pixels.  Not valid if `fullscreen`
-                is True.  Defaults to 640.
+                Width of the window, in pixels.  Defaults to 640, or the
+                screen width if `fullscreen` is True.
             `height` : int
-                Height of the window, in pixels.  Not valid if `fullscreen`
-                is True.  Defaults to 480.
+                Height of the window, in pixels.  Defaults to 480, or the
+                screen height if `fullscreen` is True.
             `caption` : str or unicode
                 Initial caption (title) of the window.  Defaults to
                 ``sys.argv[0]``.
@@ -480,6 +481,10 @@ class BaseWindow(EventDispatcher):
             `context` : `pyglet.gl.Context`
                 The context to attach to this window.  The context must
                 not already be attached to another window.
+            `mode` : `ScreenMode`
+                The screen will be switched to this mode if `fullscreen` is
+                True.  If None, an appropriate mode is selected to accomodate
+                `width` and `height.`
 
         '''
         EventDispatcher.__init__(self)
@@ -524,7 +529,7 @@ class BaseWindow(EventDispatcher):
         if fullscreen:
             if width is None and height is None:
                 self._windowed_size = self._default_width, self._default_height
-            width, height = self._set_fullscreen_mode(width, height)
+            width, height = self._set_fullscreen_mode(mode, width, height)
             if not self._windowed_size:
                 self._windowed_size = width, height
         else:
@@ -593,7 +598,7 @@ class BaseWindow(EventDispatcher):
         '''
         raise NotImplementedError('abstract')
 
-    def set_fullscreen(self, fullscreen=True, screen=None, 
+    def set_fullscreen(self, fullscreen=True, screen=None, mode=None,
                        width=None, height=None):
         '''Toggle to or from fullscreen.
 
@@ -615,6 +620,11 @@ class BaseWindow(EventDispatcher):
                 If not None and fullscreen is True, the window is moved to the
                 given screen.  The screen must belong to the same display as
                 the window.
+            `mode` : `ScreenMode`
+                The screen will be switched to the given mode.  The mode must
+                have been obtained by enumerating `Screen.get_modes`.  If
+                None, an appropriate mode will be selected from the given
+                `width` and `height`.
             `width` : int
                 Optional width of the window.  If unspecified, defaults to the
                 previous window size when windowed, or the screen size if
@@ -646,7 +656,7 @@ class BaseWindow(EventDispatcher):
         self._fullscreen = fullscreen
         if self._fullscreen:
             self._width, self._height = self._set_fullscreen_mode(
-                width, height)
+                mode, width, height)
         else:
             self.screen.restore_mode()
 
@@ -666,8 +676,14 @@ class BaseWindow(EventDispatcher):
             if sys.platform != 'darwin':
                 self.set_location(*self._windowed_location)
 
-    def _set_fullscreen_mode(self, width, height):
-        if width is not None or height is not None:
+    def _set_fullscreen_mode(self, mode, width, height):
+        if mode is not None:
+            self.screen.set_mode(mode)
+            if width is None:
+                width = self.screen.width
+            if height is None:
+                height = self.screen.height
+        elif width is not None or height is not None:
             if width is None:
                 width = 0
             if height is None:

@@ -72,6 +72,7 @@ class XlibDisplay(XlibSelectDevice, Display):
     _x_im = None        # X input method
                         # TODO close _x_im when display connection closed.
     _enable_xsync = False
+    _screens = None     # Cache of get_screens()
 
     def __init__(self, name=None, x_screen=None):
         if x_screen is None:
@@ -111,23 +112,25 @@ class XlibDisplay(XlibSelectDevice, Display):
         app.platform_event_loop._select_devices.add(self)
 
     def get_screens(self):
+        if self._screens:
+            return self._screens
+
         if _have_xinerama and xinerama.XineramaIsActive(self._display):
             number = c_int()
             infos = xinerama.XineramaQueryScreens(self._display, 
                                                   byref(number))
             infos = cast(infos, 
                  POINTER(xinerama.XineramaScreenInfo * number.value)).contents
-            result = []
+            self._screens = []
             using_xinerama = number.value > 1
             for info in infos:
-                result.append(XlibScreen(self,
-                                         info.x_org,
-                                         info.y_org,
-                                         info.width,
-                                         info.height,
-                                         using_xinerama))
+                self._screens.append(XlibScreen(self,
+                                                info.x_org,
+                                                info.y_org,
+                                                info.width,
+                                                info.height,
+                                                using_xinerama))
             xlib.XFree(infos)
-            return result
         else:
             # No xinerama
             screen_info = xlib.XScreenOfDisplay(self._display, self.x_screen)
@@ -136,7 +139,8 @@ class XlibDisplay(XlibSelectDevice, Display):
                                 screen_info.contents.width,
                                 screen_info.contents.height,
                                 False)
-            return [screen]
+            self._screens = [screen]
+        return self._screens
 
     # XlibSelectDevice interface
 

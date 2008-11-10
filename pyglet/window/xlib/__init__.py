@@ -374,9 +374,9 @@ class XlibWindow(BaseWindow):
         if self._visible:
             self.set_visible(True)
 
+        self.set_mouse_platform_visible()
         self._applied_mouse_exclusive = None
         self._update_exclusivity()
-        #self.set_mouse_platform_visible()
 
     def _map(self):
         if self._mapped:
@@ -609,14 +609,18 @@ class XlibWindow(BaseWindow):
                     self._view,     # dst window
                     0, 0,           # src x, y
                     0, 0,           # src w, h
-                    self._width // 2, self._height // 2)
-                xlib.XGrabPointer(self._x_display, self._window,
+                    0, 0)
+                r = xlib.XGrabPointer(self._x_display, self._view,
                     True, 0,
                     xlib.GrabModeAsync,
                     xlib.GrabModeAsync,
                     self._view,
                     0,
                     xlib.CurrentTime)
+                if r:
+                    # Failed to grab, try again later
+                    self._applied_mouse_exclusive = None
+                    return
                 self.set_mouse_platform_visible()
             else:
                 # Unclip
@@ -846,6 +850,8 @@ class XlibWindow(BaseWindow):
             EventDispatcher.dispatch_event(self, 'on_context_state_lost')
 
     def dispatch_platform_event(self, e):
+        if self._applied_mouse_exclusive is None:
+            self._update_exclusivity()
         event_handler = self._event_handlers.get(e.type)
         if event_handler:
             event_handler(e)
@@ -1238,6 +1244,7 @@ class XlibWindow(BaseWindow):
     def _event_mapnotify(self, ev):
         self._mapped = True
         self.dispatch_event('on_show')
+        self._update_exclusivity()
 
     @XlibEventHandler(xlib.UnmapNotify)
     def _event_unmapnotify(self, ev):
