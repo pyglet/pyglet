@@ -374,7 +374,9 @@ class XlibWindow(BaseWindow):
         if self._visible:
             self.set_visible(True)
 
-        self.set_mouse_platform_visible()
+        self._applied_mouse_exclusive = None
+        self._update_exclusivity()
+        #self.set_mouse_platform_visible()
 
     def _map(self):
         if self._mapped:
@@ -600,6 +602,22 @@ class XlibWindow(BaseWindow):
                     0, 0,           # src x, y
                     0, 0,           # src w, h
                     x, y)
+            elif self._fullscreen and not self.screen._xinerama:
+                # Restrict to fullscreen area (prevent viewport scrolling)
+                xlib.XWarpPointer(self._x_display,
+                    0,              # src window
+                    self._view,     # dst window
+                    0, 0,           # src x, y
+                    0, 0,           # src w, h
+                    self._width // 2, self._height // 2)
+                xlib.XGrabPointer(self._x_display, self._window,
+                    True, 0,
+                    xlib.GrabModeAsync,
+                    xlib.GrabModeAsync,
+                    self._view,
+                    0,
+                    xlib.CurrentTime)
+                self.set_mouse_platform_visible()
             else:
                 # Unclip
                 xlib.XUngrabPointer(self._x_display, xlib.CurrentTime)
