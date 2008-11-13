@@ -166,6 +166,8 @@ from pyglet import graphics
 from pyglet.text import document
 from pyglet.text import runlist
 
+from pyglet.font.base import _grapheme_break
+
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 _distance_re = re.compile(r'([-0-9.]+)([a-zA-Z]+)')
@@ -1851,6 +1853,20 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         if invalid_end - invalid_start <= 0:
             return
+        
+        # Find grapheme breaks and extend glyph range to encompass.
+        from pyglet.font.base import _grapheme_break as _break
+        text = self.document.text
+        while invalid_start > 0:
+            if _grapheme_break(text[invalid_start - 1], text[invalid_start]):
+                break
+            invalid_start -= 1
+
+        len_text = len(text)
+        while invalid_end < len_text:
+            if _grapheme_break(text[invalid_end - 1], text[invalid_end]):
+                break
+            invalid_end += 1
 
         # Update glyphs
         runs = runlist.ZipRunIterator((
