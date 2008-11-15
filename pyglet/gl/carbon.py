@@ -10,6 +10,7 @@ from base import Config, CanvasConfig, Context
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
+from pyglet.gl import ContextException
 from pyglet.gl import gl
 from pyglet.gl import agl
 
@@ -143,6 +144,9 @@ class CarbonContext(Context):
         self._pixelformat = pixelformat
 
     def attach(self, canvas):
+        if self.config._requires_gl_3():
+            raise ContextException('AGL does not support OpenGL 3')
+
         super(CarbonContext, self).attach(canvas)
         if isinstance(canvas, CarbonFullScreenCanvas):
             # XXX not used any more (cannot use AGL_BUFFER_RECT)   
