@@ -82,11 +82,17 @@ class CarbonEventLoop(PlatformEventLoop):
         if timeout is None:
             timeout = kEventDurationForever
         self._is_running.set()
+        # XXX should spin on multiple events after first timeout
         if carbon.ReceiveNextEvent(0, None, ctypes.c_double(timeout),
                                    True, ctypes.byref(e)) == 0:
             carbon.SendEventToEventTarget(e, event_dispatcher)
             carbon.ReleaseEvent(e)
+            timed_out = False
+        else:
+            timed_out = True
         self._is_running.clear()
+
+        return not timed_out
 
     def set_timer(self, func, interval):
         if interval is None or func is None:

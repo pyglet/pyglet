@@ -114,6 +114,9 @@ class XlibEventLoop(PlatformEventLoop):
             iwtd = self._select_devices
             pending_devices, _, _ = select.select(iwtd, (), (), timeout)
 
+        if not pending_devices:
+            return False
+
         # Dispatch activity on matching devices
         for device in pending_devices:
             device.select()
@@ -126,3 +129,5 @@ class XlibEventLoop(PlatformEventLoop):
                                       window._width, window._height)
                 window.dispatch_event('on_expose')
                 window._needs_resize = False
+
+        return True
