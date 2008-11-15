@@ -49,6 +49,7 @@ from pyglet.gl.lib import c_ptrdiff_t
 # Wrapper for http://developer.download.nvidia.com/opengl/includes/glxext.h
 
 import pyglet.libs.x11.xlib
+import pyglet.gl.glx
 
 # VERSION_1_3 (/usr/include/GL/glx.h:73)
 # VERSION_1_4 (/usr/include/GL/glx.h:132)
@@ -204,7 +205,7 @@ struct___GLXFBConfigRec._fields_ = [
 GLXFBConfigSGIX = POINTER(struct___GLXFBConfigRec) 	# GL/glxext.h:262
 # SGIX_pbuffer (GL/glxext.h:265)
 GLXPbufferSGIX = XID 	# GL/glxext.h:266
-class struct_anon_104(Structure):
+class struct_anon_211(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -221,8 +222,8 @@ class struct_anon_104(Structure):
         'count',
     ]
 Display = pyglet.libs.x11.xlib.Display
-GLXDrawable = XID 	# /usr/include/GL/glx.h:146
-struct_anon_104._fields_ = [
+GLXDrawable = pyglet.gl.glx.GLXDrawable
+struct_anon_211._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -238,7 +239,7 @@ struct_anon_104._fields_ = [
     ('count', c_int),
 ]
 
-GLXBufferClobberEventSGIX = struct_anon_104 	# GL/glxext.h:279
+GLXBufferClobberEventSGIX = struct_anon_211 	# GL/glxext.h:279
 # NV_swap_group (GL/glxext.h:282)
 # NV_video_out (GL/glxext.h:285)
 GLXVideoDeviceNV = c_uint 	# GL/glxext.h:290
@@ -315,21 +316,7 @@ PFNGLXWAITVIDEOSYNCSGIPROC = CFUNCTYPE(c_int, c_int, c_int, POINTER(c_uint)) 	# 
 PFNGLXGETREFRESHRATESGIPROC = CFUNCTYPE(c_int, POINTER(c_uint)) 	# GL/glxext.h:410
 # SGI_make_current_read (GL/glxext.h:413)
 GLX_SGI_make_current_read = 1 	# GL/glxext.h:414
-class struct___GLXcontextRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXcontextRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct___GLXcontextRec(Structure):
-    __slots__ = [
-    ]
-struct___GLXcontextRec._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-GLXContext = POINTER(struct___GLXcontextRec) 	# /usr/include/GL/glx.h:154
+GLXContext = pyglet.gl.glx.GLXContext
 # GL/glxext.h:416
 glXMakeCurrentReadSGI = _link_function('glXMakeCurrentReadSGI', c_int, [POINTER(Display), GLXDrawable, GLXDrawable, GLXContext], 'SGI_make_current_read')
 
@@ -350,7 +337,7 @@ glXGetCurrentDisplayEXT = _link_function('glXGetCurrentDisplayEXT', POINTER(Disp
 # GL/glxext.h:443
 glXQueryContextInfoEXT = _link_function('glXQueryContextInfoEXT', c_int, [POINTER(Display), GLXContext, c_int, POINTER(c_int)], 'EXT_import_context')
 
-GLXContextID = XID 	# /usr/include/GL/glx.h:144
+GLXContextID = pyglet.gl.glx.GLXContextID
 # GL/glxext.h:444
 glXGetContextIDEXT = _link_function('glXGetContextIDEXT', GLXContextID, [GLXContext], 'EXT_import_context')
 
@@ -373,7 +360,7 @@ glXGetFBConfigAttribSGIX = _link_function('glXGetFBConfigAttribSGIX', c_int, [PO
 # GL/glxext.h:459
 glXChooseFBConfigSGIX = _link_function('glXChooseFBConfigSGIX', POINTER(GLXFBConfigSGIX), [POINTER(Display), c_int, POINTER(c_int), POINTER(c_int)], 'SGIX_fbconfig')
 
-GLXPixmap = XID 	# /usr/include/GL/glx.h:145
+GLXPixmap = pyglet.gl.glx.GLXPixmap
 Pixmap = pyglet.libs.x11.xlib.Pixmap
 # GL/glxext.h:460
 glXCreateGLXPixmapWithConfigSGIX = _link_function('glXCreateGLXPixmapWithConfigSGIX', GLXPixmap, [POINTER(Display), GLXFBConfigSGIX, Pixmap], 'SGIX_fbconfig')
@@ -525,33 +512,33 @@ PFNGLXWAITFORSBCOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int6
 GLX_NV_float_buffer = 1 	# GL/glxext.h:606
 # SGIX_hyperpipe (GL/glxext.h:609)
 GLX_SGIX_hyperpipe = 1 	# GL/glxext.h:610
-class struct_anon_105(Structure):
+class struct_anon_212(Structure):
     __slots__ = [
         'pipeName',
         'networkId',
     ]
-struct_anon_105._fields_ = [
+struct_anon_212._fields_ = [
     ('pipeName', c_char * 80),
     ('networkId', c_int),
 ]
 
-GLXHyperpipeNetworkSGIX = struct_anon_105 	# GL/glxext.h:615
-class struct_anon_106(Structure):
+GLXHyperpipeNetworkSGIX = struct_anon_212 	# GL/glxext.h:615
+class struct_anon_213(Structure):
     __slots__ = [
         'pipeName',
         'channel',
         'participationType',
         'timeSlice',
     ]
-struct_anon_106._fields_ = [
+struct_anon_213._fields_ = [
     ('pipeName', c_char * 80),
     ('channel', c_int),
     ('participationType', c_uint),
     ('timeSlice', c_int),
 ]
 
-GLXHyperpipeConfigSGIX = struct_anon_106 	# GL/glxext.h:623
-class struct_anon_107(Structure):
+GLXHyperpipeConfigSGIX = struct_anon_213 	# GL/glxext.h:623
+class struct_anon_214(Structure):
     __slots__ = [
         'pipeName',
         'srcXOrigin',
@@ -563,7 +550,7 @@ class struct_anon_107(Structure):
         'destWidth',
         'destHeight',
     ]
-struct_anon_107._fields_ = [
+struct_anon_214._fields_ = [
     ('pipeName', c_char * 80),
     ('srcXOrigin', c_int),
     ('srcYOrigin', c_int),
@@ -575,8 +562,8 @@ struct_anon_107._fields_ = [
     ('destHeight', c_int),
 ]
 
-GLXPipeRect = struct_anon_107 	# GL/glxext.h:629
-class struct_anon_108(Structure):
+GLXPipeRect = struct_anon_214 	# GL/glxext.h:629
+class struct_anon_215(Structure):
     __slots__ = [
         'pipeName',
         'XOrigin',
@@ -584,7 +571,7 @@ class struct_anon_108(Structure):
         'maxHeight',
         'maxWidth',
     ]
-struct_anon_108._fields_ = [
+struct_anon_215._fields_ = [
     ('pipeName', c_char * 80),
     ('XOrigin', c_int),
     ('YOrigin', c_int),
@@ -592,7 +579,7 @@ struct_anon_108._fields_ = [
     ('maxWidth', c_int),
 ]
 
-GLXPipeRectLimits = struct_anon_108 	# GL/glxext.h:634
+GLXPipeRectLimits = struct_anon_215 	# GL/glxext.h:634
 # GL/glxext.h:637
 glXQueryHyperpipeNetworkSGIX = _link_function('glXQueryHyperpipeNetworkSGIX', POINTER(GLXHyperpipeNetworkSGIX), [POINTER(Display), POINTER(c_int)], 'SGIX_hyperpipe')
 
@@ -679,7 +666,7 @@ glXGetVideoDeviceNV = _link_function('glXGetVideoDeviceNV', c_int, [POINTER(Disp
 # GL/glxext.h:732
 glXReleaseVideoDeviceNV = _link_function('glXReleaseVideoDeviceNV', c_int, [POINTER(Display), c_int, GLXVideoDeviceNV], 'NV_video_out')
 
-GLXPbuffer = XID 	# /usr/include/GL/glx.h:147
+GLXPbuffer = pyglet.gl.glx.GLXPbuffer
 # GL/glxext.h:735
 glXBindVideoImageNV = _link_function('glXBindVideoImageNV', c_int, [POINTER(Display), GLXVideoDeviceNV, GLXPbuffer, c_int], 'NV_video_out')
 
@@ -836,6 +823,8 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'PFNGLXGETVIDEOINFONVPROC', 'glXBindTexImageEXT', 'glXReleaseTextImageEXT',
 'PFNGLXBINDTEXIMAGEEXTPROC', 'PFNGLXRELEASETEXIMAGEEXTPROC']
 # END GENERATED CONTENT (do not edit above this line)
+
+
 
 
 

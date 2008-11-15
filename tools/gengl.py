@@ -181,12 +181,12 @@ modules = {
         ModuleWrapper(GLXEXT_ABI_H, 'glxext_arb.py', requires_prefix='GLX_',
             system_header='GL/glxext.h',
             prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n',
-            link_modules=('pyglet.libs.x11.xlib',)),
+            link_modules=('pyglet.libs.x11.xlib', 'pyglet.gl.glx')),
     'glxext_nv': 
         ModuleWrapper(GLXEXT_NV_H, 'glxext_nv.py', requires_prefix='GLX_',
             system_header='GL/glxext.h',
             prologue='#define GLX_GLXEXT_PROTOTYPES\n#include <GL/glx.h>\n',
-            link_modules=('pyglet.libs.x11.xlib',)),
+            link_modules=('pyglet.libs.x11.xlib', 'pyglet.gl.glx')),
     'agl':
         ModuleWrapper(AGL_H, 'agl.py'),
     'wgl':

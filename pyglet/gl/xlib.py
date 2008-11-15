@@ -164,8 +164,8 @@ class XlibCanvasConfig13(BaseXlibCanvasConfig):
         'x_renderable': glx.GLX_X_RENDERABLE,
     })
 
-    def __init__(self, canvas, glx_info, fbconfig):
-        super(XlibCanvasConfig13, self).__init__(canvas, glx_info)
+    def __init__(self, canvas, glx_info, fbconfig, config):
+        super(XlibCanvasConfig13, self).__init__(canvas, glx_info, config)
         x_display = canvas.display._display
 
         self._fbconfig = fbconfig
@@ -181,7 +181,10 @@ class XlibCanvasConfig13(BaseXlibCanvasConfig):
             self.canvas.display._display, self._fbconfig).contents
 
     def create_context(self, share):
-        return XlibContext13(self, share)
+        if self.glx_info.have_extension('GLX_ARB_create_context'):
+            return XlibContextARB(self, share)
+        else:
+            return XlibContext13(self, share)
 
 class BaseXlibContext(Context):
     def __init__(self, config, share):
@@ -244,6 +247,11 @@ class XlibContext10(BaseXlibContext):
         super(XlibContext10, self).__init__(config, share)
 
     def _create_glx_context(self, share):
+        if self.config._requires_gl_3():
+            raise gl.ContextException(
+                'Require GLX_ARB_create_context extension to create ' +
+                'OpenGL 3 contexts.')
+
         if share:
             share_context = share.glx_context
         else:
@@ -290,8 +298,12 @@ class XlibContext13(BaseXlibContext):
         super(XlibContext13, self).__init__(config, share)
         self.glx_window = None
 
-
     def _create_glx_context(self, share):
+        if self.config._requires_gl_3():
+            raise gl.ContextException(
+                'Require GLX_ARB_create_context extension to create ' +
+                'OpenGL 3 contexts.')
+
         if share:
             share_context = share.glx_context
         else:
@@ -345,3 +357,31 @@ class XlibContext13(BaseXlibContext):
         if self._vsync:
             self._wait_vsync()
         glx.glXSwapBuffers(self.x_display, self.glx_window)
+
+class XlibContextARB(XlibContext13):
+    def _create_glx_context(self, share):
+        if share:
+            share_context = share.glx_context
+        else:
+            share_context = None
+
+        attribs = []
+        if self.config.major_version is not None:
+            attribs.extend([glxext_arb.GLX_CONTEXT_MAJOR_VERSION_ARB,
+                            self.config.major_version])
+        if self.config.minor_version is not None:
+            attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB, 
+                            self.config.minor_version])
+        flags = 0
+        if self.config.forward_compatible:
+            flags |= glxext_arb.GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+        if self.config.debug:
+            flags |= glxext_arb.GLX_DEBUG_BIT_ARB
+        if flags:
+            attribs.extend([glxext_arb.GLX_CONTEXT_FLAGS_ARB, flags])
+        attribs.append(0)
+        attribs = (c_int * len(attribs))(*attribs) 
+
+        return glxext_arb.glXCreateContextAttribsARB(
+            self.config.canvas.display._display,
+            self.config._fbconfig, share_context, True, attribs)

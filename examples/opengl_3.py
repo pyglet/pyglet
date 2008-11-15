@@ -9,10 +9,15 @@ This example creates an OpenGL 3 context, prints the version string to stdout,
 and exits.
 
 At time of writing, only the beta nvidia driver on Windows and Linux support
-OpenGL 3, and requires an 8-series or higher.  On Windows, OpenGL 3 API must
-be explicitly enabled using the nvemulate tool [1].  Additionally, at time
-of writing the latest driver did not yet support forward compatible or
-debug contexts.
+OpenGL 3, and requires an 8-series or higher.  
+
+On Windows, OpenGL 3 API must be explicitly enabled using the nvemulate tool
+[1].  Additionally, at time of writing the latest driver did not yet support
+forward compatible or debug contexts.
+
+On Linux, the only driver that currently exposes the required GLX extensions
+is 177.61.02 -- later drivers (177.67, 177.68, 177.7*, 177.8*, 180.06) seem to
+be missing the extensions.
 
 [1] http://developer.nvidia.com/object/nvemulate.html
 ''' 
