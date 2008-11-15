@@ -50,10 +50,9 @@ from pyglet.gl.lib import c_ptrdiff_t, c_void
 # Wrapper for http://developer.download.nvidia.com/opengl/includes/wglext.h
 
 
-# H (C:\cygwin\home\Alex\pyglet\tools\wgl.h:7)
-# H (C:\cygwin\home\Alex\pyglet\tools\wgl.h:7)
+# H (C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:7)
+# H (C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:7)
 WIN32_LEAN_AND_MEAN = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:40
-GLAPI = 0 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:51
 WGL_WGLEXT_VERSION = 6 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:60
 # ARB_buffer_region (http://developer.download.nvidia.com/opengl/includes/wglext.h:62)
 WGL_FRONT_COLOR_BUFFER_BIT_ARB = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:63
@@ -83,8 +82,8 @@ WGL_TRANSPARENT_ALPHA_VALUE_ARB = 8250 	# http://developer.download.nvidia.com/o
 WGL_TRANSPARENT_INDEX_VALUE_ARB = 8251 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:93
 WGL_SHARE_DEPTH_ARB = 8204 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:94
 WGL_SHARE_STENCIL_ARB = 8205 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:95
-WGL_SHARE_ACCUM_ARB = 512 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:96
-WGL_SUPPORT_GDI_ARB = 512 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:97
+WGL_SHARE_ACCUM_ARB = 8206 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:96
+WGL_SUPPORT_GDI_ARB = 8207 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:97
 WGL_SUPPORT_OPENGL_ARB = 8208 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:98
 WGL_DOUBLE_BUFFER_ARB = 8209 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:99
 WGL_STEREO_ARB = 8210 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:100
@@ -99,8 +98,8 @@ WGL_BLUE_SHIFT_ARB = 8218 	# http://developer.download.nvidia.com/opengl/include
 WGL_ALPHA_BITS_ARB = 8219 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:109
 WGL_ALPHA_SHIFT_ARB = 8220 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:110
 WGL_ACCUM_BITS_ARB = 8221 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:111
-WGL_ACCUM_RED_BITS_ARB = 513 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:112
-WGL_ACCUM_GREEN_BITS_ARB = 513 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:113
+WGL_ACCUM_RED_BITS_ARB = 8222 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:112
+WGL_ACCUM_GREEN_BITS_ARB = 8223 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:113
 WGL_ACCUM_BLUE_BITS_ARB = 8224 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:114
 WGL_ACCUM_ALPHA_BITS_ARB = 8225 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:115
 WGL_DEPTH_BITS_ARB = 8226 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:116
@@ -119,8 +118,8 @@ ERROR_INVALID_PIXEL_TYPE_ARB = 8259 	# http://developer.download.nvidia.com/open
 ERROR_INCOMPATIBLE_DEVICE_CONTEXTS_ARB = 8276 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:131
 # ARB_pbuffer (http://developer.download.nvidia.com/opengl/includes/wglext.h:134)
 WGL_DRAW_TO_PBUFFER_ARB = 8237 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:135
-WGL_MAX_PBUFFER_PIXELS_ARB = 514 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:136
-WGL_MAX_PBUFFER_WIDTH_ARB = 514 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:137
+WGL_MAX_PBUFFER_PIXELS_ARB = 8238 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:136
+WGL_MAX_PBUFFER_WIDTH_ARB = 8239 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:137
 WGL_MAX_PBUFFER_HEIGHT_ARB = 8240 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:138
 WGL_PBUFFER_LARGEST_ARB = 8243 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:139
 WGL_PBUFFER_WIDTH_ARB = 8244 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:140
@@ -141,8 +140,8 @@ WGL_TEXTURE_2D_ARB = 8314 	# http://developer.download.nvidia.com/opengl/include
 WGL_MIPMAP_LEVEL_ARB = 8315 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:157
 WGL_CUBE_MAP_FACE_ARB = 8316 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:158
 WGL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB = 8317 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:159
-WGL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB = 519 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:160
-WGL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB = 519 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:161
+WGL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB = 8318 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:160
+WGL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB = 8319 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:161
 WGL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB = 8320 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:162
 WGL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB = 8321 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:163
 WGL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB = 8322 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:164
@@ -157,8 +156,8 @@ WGL_AUX3_ARB = 8330 	# http://developer.download.nvidia.com/opengl/includes/wgle
 WGL_AUX4_ARB = 8331 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:173
 WGL_AUX5_ARB = 8332 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:174
 WGL_AUX6_ARB = 8333 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:175
-WGL_AUX7_ARB = 520 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:176
-WGL_AUX8_ARB = 520 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:177
+WGL_AUX7_ARB = 8334 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:176
+WGL_AUX8_ARB = 8335 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:177
 WGL_AUX9_ARB = 8336 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:178
 # ARB_pixel_format_float (http://developer.download.nvidia.com/opengl/includes/wglext.h:181)
 WGL_TYPE_RGBA_FLOAT_ARB = 8608 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:182
@@ -179,8 +178,8 @@ WGL_TRANSPARENT_EXT = 8202 	# http://developer.download.nvidia.com/opengl/includ
 WGL_TRANSPARENT_VALUE_EXT = 8203 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:201
 WGL_SHARE_DEPTH_EXT = 8204 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:202
 WGL_SHARE_STENCIL_EXT = 8205 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:203
-WGL_SHARE_ACCUM_EXT = 512 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:204
-WGL_SUPPORT_GDI_EXT = 512 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:205
+WGL_SHARE_ACCUM_EXT = 8206 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:204
+WGL_SUPPORT_GDI_EXT = 8207 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:205
 WGL_SUPPORT_OPENGL_EXT = 8208 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:206
 WGL_DOUBLE_BUFFER_EXT = 8209 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:207
 WGL_STEREO_EXT = 8210 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:208
@@ -195,8 +194,8 @@ WGL_BLUE_SHIFT_EXT = 8218 	# http://developer.download.nvidia.com/opengl/include
 WGL_ALPHA_BITS_EXT = 8219 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:217
 WGL_ALPHA_SHIFT_EXT = 8220 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:218
 WGL_ACCUM_BITS_EXT = 8221 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:219
-WGL_ACCUM_RED_BITS_EXT = 513 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:220
-WGL_ACCUM_GREEN_BITS_EXT = 513 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:221
+WGL_ACCUM_RED_BITS_EXT = 8222 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:220
+WGL_ACCUM_GREEN_BITS_EXT = 8223 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:221
 WGL_ACCUM_BLUE_BITS_EXT = 8224 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:222
 WGL_ACCUM_ALPHA_BITS_EXT = 8225 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:223
 WGL_DEPTH_BITS_EXT = 8226 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:224
@@ -212,8 +211,8 @@ WGL_TYPE_RGBA_EXT = 8235 	# http://developer.download.nvidia.com/opengl/includes
 WGL_TYPE_COLORINDEX_EXT = 8236 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:234
 # EXT_pbuffer (http://developer.download.nvidia.com/opengl/includes/wglext.h:237)
 WGL_DRAW_TO_PBUFFER_EXT = 8237 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:238
-WGL_MAX_PBUFFER_PIXELS_EXT = 514 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:239
-WGL_MAX_PBUFFER_WIDTH_EXT = 514 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:240
+WGL_MAX_PBUFFER_PIXELS_EXT = 8238 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:239
+WGL_MAX_PBUFFER_WIDTH_EXT = 8239 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:240
 WGL_MAX_PBUFFER_HEIGHT_EXT = 8240 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:241
 WGL_OPTIMAL_PBUFFER_WIDTH_EXT = 8241 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:242
 WGL_OPTIMAL_PBUFFER_HEIGHT_EXT = 8242 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:243
@@ -234,8 +233,8 @@ WGL_DIGITAL_VIDEO_CURSOR_ALPHA_VALUE_I3D = 8273 	# http://developer.download.nvi
 WGL_DIGITAL_VIDEO_CURSOR_INCLUDED_I3D = 8274 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:266
 WGL_DIGITAL_VIDEO_GAMMA_CORRECTED_I3D = 8275 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:267
 # I3D_gamma (http://developer.download.nvidia.com/opengl/includes/wglext.h:270)
-WGL_GAMMA_TABLE_SIZE_I3D = 516 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:271
-WGL_GAMMA_EXCLUDE_DESKTOP_I3D = 516 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:272
+WGL_GAMMA_TABLE_SIZE_I3D = 8270 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:271
+WGL_GAMMA_EXCLUDE_DESKTOP_I3D = 8271 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:272
 # I3D_genlock (http://developer.download.nvidia.com/opengl/includes/wglext.h:275)
 WGL_GENLOCK_SOURCE_MULTIVIEW_I3D = 8260 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:276
 WGL_GENLOCK_SOURCE_EXTENAL_SYNC_I3D = 8261 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:277
@@ -279,7 +278,7 @@ WGL_TEXTURE_FLOAT_RGBA_NV = 8376 	# http://developer.download.nvidia.com/opengl/
 WGL_ERROR_INCOMPATIBLE_AFFINITY_MASKS_NV = 8400 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:331
 WGL_ERROR_MISSING_AFFINITY_MASK_NV = 8401 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:332
 # ARB_pbuffer (http://developer.download.nvidia.com/opengl/includes/wglext.h:338)
-HANDLE = POINTER(None) 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:58
+HANDLE = POINTER(None) 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:58
 HPBUFFERARB = HANDLE 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:339
 # EXT_pbuffer (http://developer.download.nvidia.com/opengl/includes/wglext.h:341)
 HPBUFFEREXT = HANDLE 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:342
@@ -293,8 +292,8 @@ class struct__GPU_DEVICE(Structure):
         'Flags',
         'rcVirtualScreen',
     ]
-DWORD = c_ulong 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:54
-CHAR = c_char 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:47
+DWORD = c_ulong 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:54
+CHAR = c_char 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:47
 class struct_tagRECT(Structure):
     __slots__ = [
         'left',
@@ -302,7 +301,7 @@ class struct_tagRECT(Structure):
         'right',
         'bottom',
     ]
-LONG = c_long 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:53
+LONG = c_long 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:53
 struct_tagRECT._fields_ = [
     ('left', LONG),
     ('top', LONG),
@@ -310,7 +309,7 @@ struct_tagRECT._fields_ = [
     ('bottom', LONG),
 ]
 
-RECT = struct_tagRECT 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:200
+RECT = struct_tagRECT 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:200
 struct__GPU_DEVICE._fields_ = [
     ('cb', DWORD),
     ('DeviceName', CHAR * 32),
@@ -323,16 +322,16 @@ GPU_DEVICE = struct__GPU_DEVICE 	# http://developer.download.nvidia.com/opengl/i
 PGPU_DEVICE = POINTER(struct__GPU_DEVICE) 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:353
 # ARB_buffer_region (http://developer.download.nvidia.com/opengl/includes/wglext.h:356)
 WGL_ARB_buffer_region = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:357
-HDC = HANDLE 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:61
-UINT = c_uint 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:50
+HDC = HANDLE 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:61
+UINT = c_uint 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:50
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:359
 wglCreateBufferRegionARB = _link_function('wglCreateBufferRegionARB', HANDLE, [HDC, c_int, UINT], 'ARB_buffer_region')
 
-VOID = None 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:45
+VOID = None 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:45
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:360
 wglDeleteBufferRegionARB = _link_function('wglDeleteBufferRegionARB', VOID, [HANDLE], 'ARB_buffer_region')
 
-BOOL = c_long 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:52
+BOOL = c_long 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:52
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:361
 wglSaveBufferRegionARB = _link_function('wglSaveBufferRegionARB', BOOL, [HANDLE, c_int, c_int, c_int, c_int], 'ARB_buffer_region')
 
@@ -356,7 +355,7 @@ WGL_ARB_pixel_format = 1 	# http://developer.download.nvidia.com/opengl/includes
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:385
 wglGetPixelFormatAttribivARB = _link_function('wglGetPixelFormatAttribivARB', BOOL, [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(c_int)], 'ARB_pixel_format')
 
-FLOAT = c_float 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:55
+FLOAT = c_float 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:55
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:386
 wglGetPixelFormatAttribfvARB = _link_function('wglGetPixelFormatAttribfvARB', BOOL, [HDC, c_int, c_int, UINT, POINTER(c_int), POINTER(FLOAT)], 'ARB_pixel_format')
 
@@ -368,7 +367,7 @@ PFNWGLGETPIXELFORMATATTRIBFVARBPROC = CFUNCTYPE(BOOL, HDC, c_int, c_int, UINT, P
 PFNWGLCHOOSEPIXELFORMATARBPROC = CFUNCTYPE(BOOL, HDC, POINTER(c_int), POINTER(FLOAT), UINT, POINTER(c_int), POINTER(UINT)) 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:391
 # ARB_make_current_read (http://developer.download.nvidia.com/opengl/includes/wglext.h:394)
 WGL_ARB_make_current_read = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:395
-HGLRC = HANDLE 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:60
+HGLRC = HANDLE 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:60
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:397
 wglMakeContextCurrentARB = _link_function('wglMakeContextCurrentARB', BOOL, [HDC, HDC, HGLRC], 'ARB_make_current_read')
 
@@ -417,12 +416,12 @@ PFNWGLSETPBUFFERATTRIBARBPROC = CFUNCTYPE(BOOL, HPBUFFERARB, POINTER(c_int)) 	# 
 WGL_ARB_pixel_format_float = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:433
 # EXT_display_color_table (http://developer.download.nvidia.com/opengl/includes/wglext.h:436)
 WGL_EXT_display_color_table = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:437
-GLboolean = c_ubyte 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:18
-GLushort = c_ushort 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:25
+GLboolean = c_ubyte 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:18
+GLushort = c_ushort 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:25
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:439
 wglCreateDisplayColorTableEXT = _link_function('wglCreateDisplayColorTableEXT', GLboolean, [GLushort], 'EXT_display_color_table')
 
-GLuint = c_uint 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:26
+GLuint = c_uint 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:26
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:440
 wglLoadDisplayColorTableEXT = _link_function('wglLoadDisplayColorTableEXT', GLboolean, [POINTER(GLushort), GLuint], 'EXT_display_color_table')
 
@@ -502,8 +501,8 @@ PFNWGLGETSWAPINTERVALEXTPROC = CFUNCTYPE(c_int) 	# http://developer.download.nvi
 WGL_EXT_depth_float = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:507
 # NV_vertex_array_range (http://developer.download.nvidia.com/opengl/includes/wglext.h:510)
 WGL_NV_vertex_array_range = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:511
-GLsizei = c_int 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:23
-GLfloat = c_float 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:27
+GLsizei = c_int 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:23
+GLfloat = c_float 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:27
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:513
 wglAllocateMemoryNV = _link_function('wglAllocateMemoryNV', POINTER(c_void), [GLsizei, GLfloat, GLfloat, GLfloat], 'NV_vertex_array_range')
 
@@ -518,11 +517,11 @@ WGL_3DFX_multisample = 1 	# http://developer.download.nvidia.com/opengl/includes
 WGL_EXT_multisample = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:525
 # OML_sync_control (http://developer.download.nvidia.com/opengl/includes/wglext.h:528)
 WGL_OML_sync_control = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:529
-INT64 = c_longlong 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:42
+INT64 = c_longlong 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:42
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:531
 wglGetSyncValuesOML = _link_function('wglGetSyncValuesOML', BOOL, [HDC, POINTER(INT64), POINTER(INT64), POINTER(INT64)], 'OML_sync_control')
 
-INT32 = c_int 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:35
+INT32 = c_int 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:35
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:532
 wglGetMscRateOML = _link_function('wglGetMscRateOML', BOOL, [HDC, POINTER(INT32), POINTER(INT32)], 'OML_sync_control')
 
@@ -562,7 +561,7 @@ wglGetGammaTableParametersI3D = _link_function('wglGetGammaTableParametersI3D', 
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:560
 wglSetGammaTableParametersI3D = _link_function('wglSetGammaTableParametersI3D', BOOL, [HDC, c_int, POINTER(c_int)], 'I3D_gamma')
 
-USHORT = c_ushort 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:49
+USHORT = c_ushort 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:49
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:561
 wglGetGammaTableI3D = _link_function('wglGetGammaTableI3D', BOOL, [HDC, c_int, POINTER(USHORT), POINTER(USHORT), POINTER(USHORT)], 'I3D_gamma')
 
@@ -625,7 +624,7 @@ PFNWGLGETGENLOCKSOURCEDELAYI3DPROC = CFUNCTYPE(BOOL, HDC, POINTER(UINT)) 	# http
 PFNWGLQUERYGENLOCKMAXSOURCEDELAYI3DPROC = CFUNCTYPE(BOOL, HDC, POINTER(UINT), POINTER(UINT)) 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:597
 # I3D_image_buffer (http://developer.download.nvidia.com/opengl/includes/wglext.h:600)
 WGL_I3D_image_buffer = 1 	# http://developer.download.nvidia.com/opengl/includes/wglext.h:601
-LPVOID = POINTER(None) 	# C:\cygwin\home\Alex\pyglet\tools\wgl.h:45
+LPVOID = POINTER(None) 	# C:\cygwin\home\alex\projects\pyglet\tools\wgl.h:45
 # http://developer.download.nvidia.com/opengl/includes/wglext.h:603
 wglCreateImageBufferI3D = _link_function('wglCreateImageBufferI3D', LPVOID, [HDC, DWORD, UINT], 'I3D_image_buffer')
 
@@ -730,7 +729,7 @@ wglEnumGpusFromAffinityDCNV = _link_function('wglEnumGpusFromAffinityDCNV', BOOL
 wglDeleteDCNV = _link_function('wglDeleteDCNV', BOOL, [HDC], 'NV_gpu_affinity')
 
 
-__all__ = ['WIN32_LEAN_AND_MEAN', 'GLAPI', 'WGL_WGLEXT_VERSION',
+__all__ = ['WIN32_LEAN_AND_MEAN', 'WGL_WGLEXT_VERSION',
 'WGL_FRONT_COLOR_BUFFER_BIT_ARB', 'WGL_BACK_COLOR_BUFFER_BIT_ARB',
 'WGL_DEPTH_BUFFER_BIT_ARB', 'WGL_STENCIL_BUFFER_BIT_ARB',
 'WGL_SAMPLE_BUFFERS_ARB', 'WGL_SAMPLES_ARB', 'WGL_NUMBER_PIXEL_FORMATS_ARB',
@@ -906,4 +905,5 @@ __all__ = ['WIN32_LEAN_AND_MEAN', 'GLAPI', 'WGL_WGLEXT_VERSION',
 'wglEnumGpuDevicesNV', 'wglCreateAffinityDCNV', 'wglEnumGpusFromAffinityDCNV',
 'wglDeleteDCNV']
 # END GENERATED CONTENT (do not edit above this line)
+
 
