@@ -16,33 +16,27 @@ from time import sleep
 
 class EVENT_LOOP(unittest.TestCase):
     def t_scheduled(self, interval, iterations, sleep_time=0):
+        warmup_iterations = iterations
+
         self.last_t = 0.
         self.timer_count = 0
         def f(dt):
             t = time()
-            self.assertAlmostEqual(dt, interval, 1)
-            self.assertAlmostEqual(t - self.last_t, interval, 2)
-            self.last_t = t
             self.timer_count += 1
+            tc = self.timer_count
+            if tc > warmup_iterations:
+                self.assertAlmostEqual(dt, interval, 2)
+                self.assertAlmostEqual(t - self.last_t, interval, 2)
+            self.last_t = t
+
+            if self.timer_count > iterations + warmup_iterations:
+                pyglet.app.exit()
             if sleep_time:
                 sleep(sleep_time)
 
-        event_loop = pyglet.app.event_loop
-        platform_event_loop = pyglet.app.platform_event_loop
-        platform_event_loop.start()
-
-        # Reset last clock time; a bit of a hack, because pyglet isn't really
-        # designed to be run twice from the same process.
-        pyglet.clock.tick()
-        self.last_t = time()
         pyglet.clock.schedule_interval(f, interval)
-
-        # Run app.run() for a short time only.
         try:
-            while self.timer_count < iterations:
-                timeout = event_loop.idle()
-                platform_event_loop.step(timeout)
-            platform_event_loop.stop()
+            pyglet.app.run()
         finally:
             pyglet.clock.unschedule(f)
 
@@ -71,4 +65,7 @@ class EVENT_LOOP(unittest.TestCase):
         self.t_scheduled(.01, 50)
 
 if __name__ == '__main__':
-    unittest.main()
+    if pyglet.version != '1.2dev':
+        print 'Wrong version of pyglet imported; please check your PYTHONPATH'
+    else:
+        unittest.main()

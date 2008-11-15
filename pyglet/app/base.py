@@ -8,6 +8,7 @@ __version__ = '$Id: $'
 
 import sys
 import threading
+import time
 import Queue
 
 from pyglet import app
@@ -83,6 +84,7 @@ class PlatformEventLoop(object):
         pass
 
     def step(self, timeout=None):
+        '''TODO in mac/linux: return True if didn't time out'''
         raise NotImplementedError('abstract')
 
     def set_timer(self, func, interval):
@@ -121,18 +123,78 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         '''
+        self.has_exit = False
         self._legacy_setup()
 
         platform_event_loop = app.platform_event_loop
         platform_event_loop.start()
         self.dispatch_event('on_enter')
 
-        while not self.has_exit:
-            timeout = self.idle()
-            platform_event_loop.step(timeout)
+        if True: # TODO runtime option.
+            self._run_estimated()
+        else:
+            self._run()
             
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
+
+    def _run(self):
+        '''The simplest standard run loop, using constant timeout.  Suitable
+        for well-behaving platforms (Mac, Linux and some Windows).
+        '''
+        platform_event_loop = app.platform_event_loop
+        while not self.has_exit:
+            timeout = self.idle()
+            platform_event_loop.step(timeout)
+
+    def _run_estimated(self):
+        '''Run-loop that continually estimates function mapping requested
+        timeout to measured timeout using a least-squares linear regression.
+        Suitable for oddball platforms (Windows).
+        '''
+        platform_event_loop = app.platform_event_loop
+
+        predictor = self._least_squares()
+        gradient, offset = predictor.next()
+
+        time = self.clock.time
+        while not self.has_exit:
+            timeout = self.idle()
+            estimate = max(gradient * timeout + offset, 0.0)
+            if False:
+                print 'Gradient = %f, Offset = %f' % (gradient, offset)
+                print 'Timeout = %f, Estimate = %f' % (timeout, estimate)
+
+            t = time()
+            if not platform_event_loop.step(estimate) and estimate != 0.0:
+                dt = time() - t
+                gradient, offset = predictor.send((dt, estimate))
+
+    @staticmethod
+    def _least_squares(gradient=1, offset=0):
+        X = 0
+        Y = 0
+        XX = 0
+        XY = 0
+        n = 0
+
+        x, y = yield gradient, offset
+        X += x
+        Y += y
+        XX += x * x
+        XY += x * y
+        n += 1
+
+        while True:
+            x, y = yield gradient, offset
+            X += x
+            Y += y
+            XX += x * x
+            XY += x * y
+            n += 1
+
+            gradient = (n * XY - X * Y) / (n * XX - X * X)
+            offset = (Y - gradient * X) / n
 
     def _legacy_setup(self):
         # Disable event queuing for dispatch_events

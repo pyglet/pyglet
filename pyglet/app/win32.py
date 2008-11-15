@@ -124,6 +124,9 @@ class Win32EventLoop(PlatformEventLoop):
             object, func = self._wait_objects[result]
             func()
 
+        # Return True if timeout was interrupted.
+        return result <= self._wait_objects_n
+
     def notify(self):
         # Nudge the event loop with a message it will discard.  Note that only
         # user events are actually posted.  The posted event will not
