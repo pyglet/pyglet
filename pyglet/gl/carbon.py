@@ -55,7 +55,7 @@ class CarbonConfig(Config):
         if not pformat:
             return []
         else:
-            return [CarbonCanvasConfig(canvas, self, pformat)]
+            return [CarbonCanvasConfig(canvas, self, pformat, self)]
 
 class CarbonCanvasConfig(CanvasConfig):
     # Valid names for GL attributes, and their corresponding AGL constant. 
@@ -111,8 +111,8 @@ class CarbonCanvasConfig(CanvasConfig):
          agl.AGL_SUPERSAMPLE,
          agl.AGL_SAMPLE_ALPHA)
 
-    def __init__(self, canvas, screen, pformat):
-        super(CarbonCanvasConfig, self).__init__(canvas)
+    def __init__(self, canvas, screen, pformat, config):
+        super(CarbonCanvasConfig, self).__init__(canvas, config)
         self.screen = screen
         self._pformat = pformat
         self._attributes = {}

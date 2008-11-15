@@ -73,7 +73,16 @@ class Config(object):
         'accum_green_size',
         'accum_blue_size',
         'accum_alpha_size',
+        'major_version',
+        'minor_version',
+        'forward_compatible',
+        'debug'
     ]
+
+    major_version = None
+    minor_version = None
+    forward_compatible = None
+    debug = None
 
     def __init__(self, **kwargs):
         '''Create a template config with the given attributes.
@@ -88,6 +97,13 @@ class Config(object):
                 setattr(self, name, kwargs[name])
             else:
                 setattr(self, name, None)
+
+    def _requires_gl_3(self):
+        if self.major_version is not None and self.major_version >= 3:
+            return True
+        if self.forward_compatible or self.debug:
+            return True
+        return False
 
     def get_gl_attributes(self):
         '''Return a list of attributes set on this config.
@@ -159,8 +175,13 @@ class CanvasConfig(Config):
             The canvas this config is valid on.
 
     '''
-    def __init__(self, canvas):
+    def __init__(self, canvas, base_config):
         self.canvas = canvas
+
+        self.major_version = base_config.major_version
+        self.minor_version = base_config.minor_version
+        self.forward_compatible = base_config.forward_compatible
+        self.debug = base_config.debug
 
     def compatible(self, canvas):
         raise NotImplementedError('abstract')
@@ -351,3 +372,11 @@ class Context(object):
         else:
             self.object_space._doomed_buffers.append(buffer_id)
 
+    def get_info(self):
+        '''Get the OpenGL information for this context.
+
+        :since: pyglet 1.2
+
+        :rtype: `GLInfo`
+        '''
+        return self._info

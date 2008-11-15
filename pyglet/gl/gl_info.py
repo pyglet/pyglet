@@ -98,6 +98,7 @@ class GLInfo(object):
 
     def remove_active_context(self):
         self.have_context = False
+        self._have_info = False
 
     def have_extension(self, extension):
         '''Determine if an OpenGL extension is available.

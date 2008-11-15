@@ -62,7 +62,7 @@ class XlibConfig(Config):
             configs = cast(configs, 
                            POINTER(glx.GLXFBConfig * elements.value)).contents
 
-            result = [config_class(canvas, info, c) for c in configs]
+            result = [config_class(canvas, info, c, self) for c in configs]
 
             # Can't free array until all XlibGLConfig13's are GC'd.  Too much
             # hassle, live with leak. XXX
@@ -71,7 +71,7 @@ class XlibConfig(Config):
             return result
         else:
             try:
-                return [config_class(canvas, info, attrib_list)]
+                return [config_class(canvas, info, attrib_list, self)]
             except gl.ContextException:
                 return []
 
@@ -96,8 +96,8 @@ class BaseXlibCanvasConfig(CanvasConfig):
         'accum_alpha_size': glx.GLX_ACCUM_ALPHA_SIZE,
     }
 
-    def __init__(self, canvas, glx_info):
-        super(BaseXlibCanvasConfig, self).__init__(canvas)
+    def __init__(self, canvas, glx_info, config):
+        super(BaseXlibCanvasConfig, self).__init__(canvas, config)
         self.glx_info = glx_info
 
     def compatible(self, canvas):
@@ -114,8 +114,8 @@ class BaseXlibCanvasConfig(CanvasConfig):
         raise NotImplementedError('abstract')
 
 class XlibCanvasConfig10(BaseXlibCanvasConfig):
-    def __init__(self, canvas, glx_info, attrib_list):
-        super(XlibCanvasConfig10, self).__init__(canvas, glx_info)
+    def __init__(self, canvas, glx_info, attrib_list, config):
+        super(XlibCanvasConfig10, self).__init__(canvas, glx_info, config)
         x_display = canvas.display._display
         x_screen = canvas.display.x_screen
 

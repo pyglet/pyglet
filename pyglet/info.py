@@ -73,7 +73,7 @@ def dump_pyglet():
         print "pyglet.options['%s'] = %r" % (key, value)
 
 def dump_window():
-    '''Dump display, windowm, screen and default config info.'''
+    '''Dump display, window, screen and default config info.'''
     import pyglet.window
     platform = pyglet.window.get_platform()
     print 'platform:', repr(platform)
@@ -86,16 +86,22 @@ def dump_window():
     for key, value in window.config.get_gl_attributes():
         print "config['%s'] = %r" % (key, value)
     print 'context:', repr(window.context)
+
+    _heading('window.context._info')
+    dump_gl(window.context)
     window.close()
 
-def dump_gl():
+def dump_gl(context=None):
     '''Dump GL info.'''
-    from pyglet.gl import gl_info
-    print 'gl_info.get_version():',  gl_info.get_version()
-    print 'gl_info.get_vendor():',  gl_info.get_vendor()
-    print 'gl_info.get_renderer():',  gl_info.get_renderer()
+    if context is not None:
+        info = context.get_info()
+    else:
+        from pyglet.gl import gl_info as info
+    print 'gl_info.get_version():',  info.get_version()
+    print 'gl_info.get_vendor():',  info.get_vendor()
+    print 'gl_info.get_renderer():',  info.get_renderer()
     print 'gl_info.get_extensions():'
-    extensions = list(gl_info.get_extensions())
+    extensions = list(info.get_extensions())
     extensions.sort()
     for name in extensions:
         print '  ', name
@@ -183,7 +189,6 @@ def dump():
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
-    _try_dump('pyglet.gl.gl_info', dump_gl)
     _try_dump('pyglet.gl.glu_info', dump_glu)
     _try_dump('pyglet.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
