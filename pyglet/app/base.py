@@ -160,7 +160,10 @@ class EventLoop(event.EventDispatcher):
         time = self.clock.time
         while not self.has_exit:
             timeout = self.idle()
-            estimate = max(gradient * timeout + offset, 0.0)
+            if timeout is None: 
+                estimate = None
+            else:
+                estimate = max(gradient * timeout + offset, 0.0)
             if False:
                 print 'Gradient = %f, Offset = %f' % (gradient, offset)
                 print 'Timeout = %f, Estimate = %f' % (timeout, estimate)

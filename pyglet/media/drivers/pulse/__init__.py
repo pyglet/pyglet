@@ -368,10 +368,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             event._sync_dispatch_to_player(self.player)
 
     def _sync_dispatch_player_event(self, event, *args):
-        # TODO if EventLoop not being used, hook into
-        #      pyglet.media.dispatch_events.
-        if pyglet.app.event_loop:
-            pyglet.app.event_loop.post_event(self.player, event, *args)
+        pyglet.app.platform_event_loop.post_event(self.player, event, *args)
 
     def __del__(self):
         try:
