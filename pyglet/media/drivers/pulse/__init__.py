@@ -10,7 +10,7 @@ import sys
 
 import lib_pulseaudio as pa
 from pyglet.media import AbstractAudioDriver, AbstractAudioPlayer, \
-    MediaException, MediaEvent
+    AbstractListener, MediaException, MediaEvent
 
 import pyglet
 _debug = pyglet.options['debug_media']
@@ -34,9 +34,13 @@ class PulseAudioDriver(AbstractAudioDriver):
         self.mainloop = pa.pa_threaded_mainloop_get_api(
             self.threaded_mainloop)
 
+        self._players = pyglet.app.WeakSet()
+        self._listener = PulseAudioListener(self)
 
     def create_audio_player(self, source_group, player):
-        return PulseAudioPlayer(source_group, player)
+        player = PulseAudioPlayer(source_group, player)
+        self._players.add(player)
+        return player
         
     def connect(self, server=None):
         '''Connect to pulseaudio server.
@@ -145,25 +149,30 @@ class PulseAudioDriver(AbstractAudioDriver):
         self.threaded_mainloop = None
         self.mainloop = None
 
-    # Listener API
+    def get_listener(self):
+        return self._listener
+
+class PulseAudioListener(AbstractListener):
+    def __init__(self, driver):
+        self.driver = driver
 
     def _set_volume(self, volume):
-        # TODO
-        pass
+        self._volume = volume
+        for player in self.driver._players:
+            player.set_volume(player._volume)
 
     def _set_position(self, position):
-        # TODO
-        pass
+        self._position = position
 
     def _set_forward_orientation(self, orientation):
-        # TODO
-        pass
+        self._forward_orientation = orientation
 
     def _set_up_orientation(self, orientation):
-        # TODO
-        pass
+        self._up_orientation = orientation
 
 class PulseAudioPlayer(AbstractAudioPlayer):
+    _volume = 1.0
+
     def __init__(self, source_group, player):
         super(PulseAudioPlayer, self).__init__(source_group, player)
 
@@ -205,6 +214,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
             # Callback trampoline for success operations
             self._success_cb_func = pa.pa_stream_success_cb_t(self._success_cb)
+            self._context_success_cb_func = \
+                pa.pa_context_success_cb_t(self._context_success_cb)
 
             # Callback for underflow (to detect EOS when expected pa_timestamp
             # does not get reached).
@@ -223,14 +234,14 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             buffer_attr = None
             flags = (pa.PA_STREAM_START_CORKED |
                      pa.PA_STREAM_INTERPOLATE_TIMING)
-            volume = None
+
             sync_stream = None  # TODO use this
             check(
                 pa.pa_stream_connect_playback(self.stream, 
                                               device,
                                               buffer_attr, 
                                               flags,
-                                              volume, 
+                                              None, 
                                               sync_stream)
             )
 
@@ -246,6 +257,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         finally:
             context.unlock()
 
+        self.set_volume(self._volume)
+
         if _debug:
             print 'stream ready'
 
@@ -253,6 +266,9 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         context.signal()
 
     def _success_cb(self, stream, success, data):
+        context.signal()
+
+    def _context_success_cb(self, ctxt, success, data):
         context.signal()
 
     def _write_cb(self, stream, bytes, data):
@@ -490,8 +506,29 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         return time
 
     def set_volume(self, volume):
-        # XXX TODO
-        pass
+        self._volume = volume
+
+        if not self.stream:
+            return
+
+        volume *= context._listener._volume
+
+        cvolume = pa.pa_cvolume()
+        volume = pa.pa_sw_volume_from_linear(volume)
+        pa.pa_cvolume_set(cvolume, 
+                          self.source_group.audio_format.channels, 
+                          volume)
+
+        context.lock()
+        idx = pa.pa_stream_get_index(self.stream)
+        context.sync_operation(
+            pa.pa_context_set_sink_input_volume(context._context,
+                 idx,
+                 cvolume,
+                 self._context_success_cb_func,
+                 None)
+        )
+        context.unlock()
 
     def set_pitch(self, pitch):
         # XXX TODO (pa_stream_update_sample_rate)
