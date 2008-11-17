@@ -1111,6 +1111,10 @@ class Player(pyglet.event.EventDispatcher):
         self._video_frame_id = id
         self._video_frame_dirty = True
 
+        # This really sucks
+        for window in pyglet.app.windows:
+            window._legacy_invalid = True
+
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_source_group_eos')
