@@ -279,6 +279,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._lock.release()
 
     def _update_play_cursor(self):
+        if not self._al_source:
+            return
+
         self._lock.acquire()
         context.lock()
 
