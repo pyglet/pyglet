@@ -131,17 +131,20 @@ def _install_restore_mode_child():
         packets = []
         buffer = ''
         while parent_wait_mutex.test():
-            data = os.read(mode_read_pipe, ModePacket.size)
-            buffer += data
-            # Decode packets
-            while len(buffer) >= ModePacket.size:
-                packet = ModePacket.decode(buffer[:ModePacket.size])
-                packets.append(packet)
-                buffer = buffer[ModePacket.size:]
+            try:
+                data = os.read(mode_read_pipe, ModePacket.size)
+                buffer += data
+                # Decode packets
+                while len(buffer) >= ModePacket.size:
+                    packet = ModePacket.decode(buffer[:ModePacket.size])
+                    packets.append(packet)
+                    buffer = buffer[ModePacket.size:]
+            except OSError:
+                pass # Interrupted system call
 
         for packet in packets:
             packet.set()
-        sys.exit(0)
+        os._exit(0)
         
     else:
         # Parent process.  Clean up pipe then continue running program as

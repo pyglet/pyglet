@@ -65,7 +65,7 @@ INITIAL_ASTEROIDS = [2, 3, 4, 5]
 ASTEROID_DEBRIS_COUNT = 3
 MAX_DIFFICULTY = len(INITIAL_ASTEROIDS) - 1
 
-ARENA_WIDTH = 480
+ARENA_WIDTH = 640
 ARENA_HEIGHT = 480
 
 KEY_FIRE = key.SPACE
@@ -282,7 +282,7 @@ class Starfield(object):
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
         
-        self.img.blit(0, 0, 0)
+        self.img.blit(0, 0, width=ARENA_WIDTH, height=ARENA_HEIGHT)
         
         glPopMatrix()
         glMatrixMode(GL_MODELVIEW)
@@ -341,13 +341,14 @@ class Menu(Overlay):
             self.selected_index += 1
         elif symbol == key.UP:
             self.selected_index -= 1
-        else:
-            self.items[self.selected_index].on_key_press(symbol, modifiers)
         self.selected_index = min(max(self.selected_index, 0), 
                                   len(self.items) - 1)
 
         if symbol in (key.DOWN, key.UP) and enable_sound:
             bullet_sound.play()
+
+    def on_key_release(self, symbol, modifiers):
+        self.items[self.selected_index].on_key_release(symbol, modifiers)
 
     def draw(self):
         self.title_text.draw()
@@ -396,7 +397,7 @@ class MenuItem(object):
                 self.pointer_color,
                 not self.inverted_pointers)
 
-    def on_key_press(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers):
         if symbol == key.ENTER and self.activate_func:
             self.activate_func()
             if enable_sound:
@@ -415,7 +416,7 @@ class ToggleMenuItem(MenuItem):
     def get_label(self):
         return self.label + (self.value and ': ON' or ': OFF')
 
-    def on_key_press(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers):
         if symbol == key.LEFT or symbol == key.RIGHT:
             self.value = not self.value
             self.text.text = self.get_label()
@@ -442,7 +443,7 @@ class DifficultyMenuItem(MenuItem):
         else:
             return 'DIFFICULTY: %d' % difficulty
 
-    def on_key_press(self, symbol, modifiers):
+    def on_key_release(self, symbol, modifiers):
         global difficulty
         if symbol == key.LEFT:
             difficulty -= 1
@@ -475,15 +476,20 @@ class OptionsMenu(Menu):
             enable_sound = value
         self.items.append(ToggleMenuItem('Sound', enable_sound, 240,
                                          set_enable_sound))
+
+        def set_enable_fullscreen(value):
+            win.set_fullscreen(value, width=ARENA_WIDTH, height=ARENA_HEIGHT)
+        self.items.append(ToggleMenuItem('Fullscreen', win.fullscreen, 200,
+                                         set_enable_fullscreen))
                                 
-        self.items.append(ToggleMenuItem('Vsync', win.vsync, 200, 
+        self.items.append(ToggleMenuItem('Vsync', win.vsync, 160, 
                                          win.set_vsync))
 
         def set_show_fps(value):
             global show_fps
             show_fps = value
-        self.items.append(ToggleMenuItem('FPS', show_fps, 160, set_show_fps))
-        self.items.append(MenuItem('Ok', 100, begin_main_menu))
+        self.items.append(ToggleMenuItem('FPS', show_fps, 120, set_show_fps))
+        self.items.append(MenuItem('Ok', 60, begin_main_menu))
         self.reset()
 
 class InstructionsMenu(Menu):
