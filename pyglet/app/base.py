@@ -196,8 +196,13 @@ class EventLoop(event.EventDispatcher):
             XY += x * y
             n += 1
 
-            gradient = (n * XY - X * Y) / (n * XX - X * X)
-            offset = (Y - gradient * X) / n
+            try:
+                gradient = (n * XY - X * Y) / (n * XX - X * X)
+                offset = (Y - gradient * X) / n
+            except ZeroDivisionError:
+                # Can happen in pathalogical case; keep current
+                # gradient/offset for now.
+                pass
 
     def _legacy_setup(self):
         # Disable event queuing for dispatch_events
