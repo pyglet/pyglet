@@ -336,7 +336,7 @@ class Loader(object):
                     dirpath = dirpath[len(path) + 1:]
                     # Force forward slashes for index
                     if dirpath:
-                        parts = filter(None, os.path.split(os.sep))
+                        parts = filter(None, dirpath.split(os.sep))
                         dirpath = '/'.join(parts)
                     for filename in filenames:
                         if dirpath:
