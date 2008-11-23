@@ -242,4 +242,37 @@ class AppleRemote(object):
     def close(self):
         self.device.close()
 
+class Tablet(object):
+    def open(self):
+        raise NotImplementedError('abstract')
 
+class TabletCanvas(EventDispatcher):
+    def __init__(self, window):
+        self.window = window
+
+    def close(self):
+        raise NotImplementedError('abstract')
+
+    if _is_epydoc:
+        def on_enter(self, cursor):
+            '''
+            :event:
+            '''
+
+        def on_leave(self, cursor):
+            '''
+            :event:
+            '''
+
+        def on_motion(self, cursor, x, y, pressure):
+            '''
+            :event:
+            '''
+
+TabletCanvas.register_event_type('on_enter')
+TabletCanvas.register_event_type('on_leave')
+TabletCanvas.register_event_type('on_motion')
+
+class TabletCursor(object):
+    def __init__(self, name):
+        self.name = name

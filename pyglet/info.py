@@ -176,6 +176,22 @@ def dump_al():
     for extension in driver.get_extensions():
         print '  ', extension
 
+def dump_wintab():
+    '''Dump WinTab info.'''
+    try:
+        from pyglet.input import wintab
+    except:
+        print 'WinTab not available.'
+        return
+
+    interface_name = wintab.get_interface_name()
+    inmplementation_version = wintab.get_implementation_version()
+    spec_version = wintab.get_spec_version()
+
+    print 'WinTab: %s %d.%d (Spec %d.%d)' % (interface_name,
+        impl_version >> 8, impl_version & 0xff,
+        spec_version >> 8, spec_version & 0xff)
+
 def _try_dump(heading, func):
     _heading(heading)
     try:
@@ -194,6 +210,7 @@ def dump():
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.avbin', dump_avbin)
     _try_dump('pyglet.media.drivers.openal', dump_al)
+    _try_dump('pyglet.input.wintab', dump_wintab)
 
 if __name__ == '__main__':
     dump()
