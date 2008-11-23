@@ -284,7 +284,7 @@ class Loader(object):
         if script_home is None:
             script_home = get_script_home()
         self._script_home = script_home
-        self.reindex()
+        self._index = None
 
         # Map name to image
         self._cached_textures = weakref.WeakValueDictionary()
@@ -293,6 +293,10 @@ class Loader(object):
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
+
+    def _require_index(self):
+        if self._index is None:
+            self.reindex()
 
     def reindex(self):
         '''Refresh the file index.
@@ -377,6 +381,7 @@ class Loader(object):
 
         :rtype: file object
         '''
+        self._require_index()
         try:
             location = self._index[name]
             return location.open(name, mode)
@@ -397,6 +402,7 @@ class Loader(object):
 
         :rtype: `Location`
         '''
+        self._require_index()
         try:
             return self._index[name]
         except KeyError:
@@ -418,6 +424,7 @@ class Loader(object):
                 Filename of the font resource to add.
 
         '''
+        self._require_index()
         from pyglet import font
         file = self.file(name)
         font.add_file(file)
@@ -476,6 +483,7 @@ class Loader(object):
         :return: A complete texture if the image is large, otherwise a
             `TextureRegion` of a texture atlas.
         '''
+        self._require_index()
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
@@ -505,6 +513,7 @@ class Loader(object):
 
         :rtype: `Animation`
         '''
+        self._require_index()
         try:
             identity = self._cached_animations[name]
         except KeyError:
@@ -529,6 +538,7 @@ class Loader(object):
         :rtype: list
         :return: List of str
         '''
+        self._require_index()
         return self._cached_images.keys()
 
     def get_cached_animation_names(self):
@@ -539,6 +549,7 @@ class Loader(object):
         :rtype: list
         :return: List of str
         '''
+        self._require_index()
         return self._cached_animations.keys()
 
     def get_texture_bins(self):
@@ -549,6 +560,7 @@ class Loader(object):
         :rtype: list
         :return: List of `TextureBin`
         '''
+        self._require_index()
         return self._texture_atlas_bins.values()
        
     def media(self, name, streaming=True):
@@ -567,6 +579,7 @@ class Loader(object):
 
         :rtype: `media.Source`
         '''
+        self._require_index()
         from pyglet import media
         try:
             location = self._index[name]
@@ -594,6 +607,7 @@ class Loader(object):
 
         :rtype: `Texture`
         '''
+        self._require_index()
         if name in self._cached_textures:
             return self._cached_textures[name]
 
@@ -611,6 +625,7 @@ class Loader(object):
 
         :rtype: `FormattedDocument`
         '''
+        self._require_index()
         file = self.file(name)
         return pyglet.text.decode_html(file.read(), self.location(name))
 
@@ -625,6 +640,7 @@ class Loader(object):
 
         :rtype: `FormattedDocument`
         '''
+        self._require_index()
         file = self.file(name)
         return pyglet.text.load(name, file, 'text/vnd.pyglet-attributed')
 
@@ -637,6 +653,7 @@ class Loader(object):
 
         :rtype: `UnformattedDocument`
         '''
+        self._require_index()
         file = self.file(name)
         return pyglet.text.load(name, file, 'text/plain')
 
@@ -645,6 +662,7 @@ class Loader(object):
 
         :rtype: list of str
         '''
+        self._require_index()
         return self._cached_textures.keys()
 
 #: Default resource search path.
