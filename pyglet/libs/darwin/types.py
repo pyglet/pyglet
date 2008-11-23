@@ -159,3 +159,35 @@ class RGBColor(Structure):
         ('green', c_ushort),
         ('blue', c_ushort)
     ]
+
+class TabletProximityRec(Structure):
+    _fields_ = (
+        ('vendorID', c_uint16),
+        ('tabletID', c_uint16),
+        ('pointerID', c_uint16),
+        ('deviceID', c_uint16),
+        ('systemTabletID', c_uint16),
+        ('vendorPointerType', c_uint16),
+        ('pointerSerialNumber', c_uint32),
+        ('uniqueID', c_uint64),
+        ('capabilityMask', c_uint32),
+        ('pointerType', c_uint8),
+        ('enterProximity', c_uint8),
+    )
+
+class TabletPointRec(Structure):
+    _fields_ = (
+        ('absX', c_int32),
+        ('absY', c_int32),
+        ('absZ', c_int32),
+        ('buttons', c_uint16),
+        ('pressure', c_uint16),
+        ('tiltX', c_int16),
+        ('tiltY', c_int16),
+        ('rotation', c_uint16),
+        ('tangentialPressure', c_int16),
+        ('deviceID', c_uint16),
+        ('vendor1', c_int16),
+        ('vendor2', c_int16),
+        ('vendor3', c_int16),
+    )

@@ -524,3 +524,11 @@ kCGImageAlphaFirst                  = 4
 kCGImageAlphaNoneSkipLast           = 5
 kCGImageAlphaNoneSkipFirst          = 6
 kCGImageAlphaOnly                   = 7
+
+# Tablet
+kEventTabletPoint = 1
+kEventTabletProximity = 2
+kEventParamTabletPointRec = _name('tbrc')
+kEventParamTabletProximityRec = _name('tbpx')
+typeTabletPointRec = _name('tbrc')
+typeTabletProximityRec = _name('tbpx')
