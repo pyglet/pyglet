@@ -199,8 +199,6 @@ class CarbonWindow(BaseWindow):
                                       kWindowLiveResizeAttribute |
                                       kWindowResizableAttribute)
 
-            window_attributes |= kWindowCompositingAttribute
-
             r = carbon.CreateNewWindow(window_class,
                                        window_attributes,
                                        byref(rect),
