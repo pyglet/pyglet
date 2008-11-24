@@ -51,3 +51,4 @@ else:
             pass
     elif sys.platform == 'darwin':
         from darwin_hid import get_devices, get_joysticks, get_apple_remote
+        from carbon_tablet import get_tablets

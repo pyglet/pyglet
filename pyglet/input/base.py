@@ -243,10 +243,21 @@ class AppleRemote(object):
         self.device.close()
 
 class Tablet(object):
+    # OS X: Multiple tablets all appear as the "system" tablet
+    # Windows: Multiple tablets can be distinguished, but only one opened.
+
+    # Multiple styluses on a tablet at one time are not supported (only
+    # pro-level tablets support this anyway).
     def open(self):
         raise NotImplementedError('abstract')
 
 class TabletCanvas(EventDispatcher):
+    # OS X: Active window receives tablet events only when cursor is in window
+    # Windows: Active window receives all tablet events
+    #
+    # Note that this means enter/leave pairs are not always consistent (normal
+    # usage).
+
     def __init__(self, window):
         self.window = window
 
@@ -276,3 +287,6 @@ TabletCanvas.register_event_type('on_motion')
 class TabletCursor(object):
     def __init__(self, name):
         self.name = name
+
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, self.name)

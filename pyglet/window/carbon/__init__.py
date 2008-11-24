@@ -583,23 +583,31 @@ class CarbonWindow(BaseWindow):
                 continue
 
             func = getattr(self, func_name)
-            for event_class, event_kind in func._platform_event_data:
-                # TODO: could just build up array of class/kind
-                proc = EventHandlerProcPtr(func)
-                self._carbon_event_handlers.append(proc)
-                upp = carbon.NewEventHandlerUPP(proc)
-                types = EventTypeSpec()
-                types.eventClass = event_class
-                types.eventKind = event_kind
-                handler_ref = EventHandlerRef()
-                carbon.InstallEventHandler(
-                    target,
-                    upp,
-                    1,
-                    byref(types),
-                    c_void_p(),
-                    byref(handler_ref))
-                self._carbon_event_handler_refs.append(handler_ref)
+            self._install_event_handler(func)
+
+    def _install_event_handler(self, func):
+        if self._fullscreen:
+            target = carbon.GetApplicationEventTarget()
+        else:
+            target = carbon.GetWindowEventTarget(self._window)
+
+        for event_class, event_kind in func._platform_event_data:
+            # TODO: could just build up array of class/kind
+            proc = EventHandlerProcPtr(func)
+            self._carbon_event_handlers.append(proc)
+            upp = carbon.NewEventHandlerUPP(proc)
+            types = EventTypeSpec()
+            types.eventClass = event_class
+            types.eventKind = event_kind
+            handler_ref = EventHandlerRef()
+            carbon.InstallEventHandler(
+                target,
+                upp,
+                1,
+                byref(types),
+                c_void_p(),
+                byref(handler_ref))
+            self._carbon_event_handler_refs.append(handler_ref) 
 
     def _remove_event_handlers(self):
         for ref in self._carbon_event_handler_refs:
