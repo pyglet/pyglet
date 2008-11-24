@@ -736,6 +736,7 @@ class TextLayout(object):
 
     _update_enabled = True
     _own_batch = False
+    _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
 
     def __init__(self, document, width=None, height=None,
                  multiline=False, dpi=None, batch=None, group=None):
@@ -902,8 +903,11 @@ class TextLayout(object):
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
-        left = self._get_left()
-        top = self._get_top(lines)
+        if self._origin_layout:
+            left = top = 0
+        else:
+            left = self._get_left()
+            top = self._get_top(lines)
         
         context = _StaticLayoutContext(self, self._document, 
                                        colors_iter, background_iter)
@@ -1589,10 +1593,14 @@ class ScrollableTextLayout(TextLayout):
 
     Use `view_x` and `view_y` to scroll the text within the viewport.
     '''
+    _origin_layout = True
+
     def __init__(self, document, width, height, multiline=False, dpi=None,
                  batch=None, group=None):
         super(ScrollableTextLayout, self).__init__(
             document, width, height, multiline, dpi, batch, group)
+        self.top_group.width = self._width
+        self.top_group.height = self._height
 
     def _init_groups(self, group):
         # Scrollable layout never shares group becauase of translation.   
@@ -1621,10 +1629,9 @@ class ScrollableTextLayout(TextLayout):
     y = property(_get_y, _set_y)
 
     def _set_width(self, width):
-        self._width = width
-        self.top_group.width = width
+        super(ScrollableTextLayout, self)._set_width(width)
         self.top_group.left = self._get_left()
-        self._update()
+        self.top_group.width = self._width
 
     def _get_width(self):
         return self._width
@@ -1632,9 +1639,9 @@ class ScrollableTextLayout(TextLayout):
     width = property(_get_width, _set_width)
 
     def _set_height(self, height):
-        self._height = height
-        self.top_group.height = height
+        super(ScrollableTextLayout, self)._set_height(height)
         self.top_group.top = self._get_top(self._get_lines())
+        self.top_group.height = self._height
 
     def _get_height(self):
         return self._height
