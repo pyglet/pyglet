@@ -42,6 +42,7 @@ class XInputDevice(Device):
 
             if cls_class == xi.KeyClass:
                 cp = ctypes.cast(ptr, ctypes.POINTER(xi.XKeyInfo))
+                self.min_keycode = cp.contents.min_keycode
                 num_keys = cp.contents.num_keys
                 for i in range(num_keys):
                     self.keys.append(Button('key%d' % i))
@@ -203,11 +204,21 @@ class XInputWindowEventDispatcher(object):
 
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_key_press(self, ev):
-        raise NotImplementedError('TODO')
+        e = ctypes.cast(ctypes.byref(ev),
+            ctypes.POINTER(xi.XDeviceKeyEvent)).contents
+
+        device = self._instances.get(e.deviceid)
+        if device is not None:
+            device.keys[e.keycode - device.min_keycode]._set_value(True)
 
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_key_release(self, ev):
-        raise NotImplementedError('TODO')
+        e = ctypes.cast(ctypes.byref(ev),
+            ctypes.POINTER(xi.XDeviceKeyEvent)).contents
+
+        device = self._instances.get(e.deviceid)
+        if device is not None:
+            device.keys[e.keycode - device.min_keycode]._set_value(False)
 
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_button_press(self, ev):
