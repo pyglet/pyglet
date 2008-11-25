@@ -47,7 +47,7 @@ if __name__ == '__main__':
                  '/usr/include/X11/extensions/sync.h')
         if 'xinput' in names:
             wrap('tools/wraptypes/wrap.py',
-                 '-oexperimental/input/lib_xinput.py',
+                 '-opyglet/libs/x11/xinput.py',
                  '-lXi',
                  '-mpyglet.libs.x11.xlib',
                  '-i/usr/include/X11/Xlib.h',

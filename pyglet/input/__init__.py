@@ -34,17 +34,15 @@ else:
         return []
 
     if sys.platform == 'linux2':
-        '''
         from x11_xinput import get_devices as xinput_get_devices
+        #from x11_xinput import get_tablets
         from evdev import get_devices as evdev_get_devices
+        from evdev import get_joysticks
         def get_devices(display=None):
             return (evdev_get_devices(display) +
                     xinput_get_devices(display))
-        '''
-        from evdev import get_devices, get_joysticks
     elif sys.platform in ('cygwin', 'win32'):
         from directinput import get_devices, get_joysticks
-        from wintab import get_tablets
         try:
             from wintab import get_tablets
         except:
