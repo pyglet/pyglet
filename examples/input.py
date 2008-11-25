@@ -29,7 +29,7 @@ print 'Devices:'
 for device in devices:
     print '  ', device.name,
     try:
-        device.open()
+        device.open(window=window)
         print 'OK'
 
         for control in device.get_controls():

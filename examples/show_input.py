@@ -150,8 +150,11 @@ class DevicePanel(object):
         try:
             self.device.open()
         except pyglet.input.DeviceException, e:
-            print e # TODO show error
-            return
+            try:
+                self.device.open(window)
+            except pyglet.input.DeviceException, e:
+                print e # TODO show error
+                return
 
         window.set_mouse_cursor(window.get_system_mouse_cursor('wait'))
         for control in self.device.get_controls():

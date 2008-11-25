@@ -91,6 +91,15 @@ class RelativeAxis(Control):
     RZ = 'rz'
     WHEEL = 'wheel'
 
+    def _get_value(self):
+        return self._value
+
+    def _set_value(self, value):
+        self._value = value
+        self.dispatch_event('on_change', value)
+
+    value = property(_get_value)
+
 class AbsoluteAxis(Control):
     X = 'x'
     Y = 'y'
