@@ -35,7 +35,7 @@ else:
 
     if sys.platform == 'linux2':
         from x11_xinput import get_devices as xinput_get_devices
-        #from x11_xinput import get_tablets
+        from x11_xinput_tablet import get_tablets
         from evdev import get_devices as evdev_get_devices
         from evdev import get_joysticks
         def get_devices(display=None):

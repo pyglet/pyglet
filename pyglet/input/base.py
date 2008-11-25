@@ -257,7 +257,7 @@ class Tablet(object):
 
     # Multiple styluses on a tablet at one time are not supported (only
     # pro-level tablets support this anyway).
-    def open(self):
+    def open(self, window):
         raise NotImplementedError('abstract')
 
 class TabletCanvas(EventDispatcher):
