@@ -63,7 +63,7 @@ class XInputTabletCanvas(DeviceResponder, TabletCanvas):
     def _motion(self, e):
         cursor = self._cursor_map.get(e.deviceid)
         x = e.x
-        y = e.y
+        y = self.window.height - e.y
         pressure = e.axis_data[2] / float(cursor.max_pressure)
         self.dispatch_event('on_motion', cursor, x, y, pressure)
 
