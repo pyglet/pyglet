@@ -102,15 +102,17 @@ class AVbinFileInfo(ctypes.Structure):
         ('genre', ctypes.c_char * 32),
     ]
 
-class _AVbinStreamInfoVideo(ctypes.Structure):
+class _AVbinStreamInfoVideo8(ctypes.Structure):
     _fields_ = [
         ('width', ctypes.c_uint),
         ('height', ctypes.c_uint),
-        ('sample_aspect_num', ctypes.c_int),
-        ('sample_aspect_den', ctypes.c_int),
+        ('sample_aspect_num', ctypes.c_uint),
+        ('sample_aspect_den', ctypes.c_uint),
+        ('frame_rate_num', ctypes.c_uint),
+        ('frame_rate_den', ctypes.c_uint),
     ]
 
-class _AVbinStreamInfoAudio(ctypes.Structure):
+class _AVbinStreamInfoAudio8(ctypes.Structure):
     _fields_ = [
         ('sample_format', ctypes.c_int),
         ('sample_rate', ctypes.c_uint),
@@ -118,17 +120,17 @@ class _AVbinStreamInfoAudio(ctypes.Structure):
         ('channels', ctypes.c_uint),
     ]
 
-class _AVbinStreamInfoUnion(ctypes.Union):
+class _AVbinStreamInfoUnion8(ctypes.Union):
     _fields_ = [
-        ('video', _AVbinStreamInfoVideo),
-        ('audio', _AVbinStreamInfoAudio),
+        ('video', _AVbinStreamInfoVideo8),
+        ('audio', _AVbinStreamInfoAudio8),
     ]
 
-class AVbinStreamInfo(ctypes.Structure):
+class AVbinStreamInfo8(ctypes.Structure):
     _fields_ = [
         ('structure_size', ctypes.c_size_t),
         ('type', ctypes.c_int),
-        ('u', _AVbinStreamInfoUnion)
+        ('u', _AVbinStreamInfoUnion8)
     ]
 
 class AVbinPacket(ctypes.Structure):
@@ -160,7 +162,7 @@ av.avbin_close_file.argtypes = [AVbinFileP]
 av.avbin_seek_file.argtypes = [AVbinFileP, Timestamp]
 av.avbin_file_info.argtypes = [AVbinFileP, ctypes.POINTER(AVbinFileInfo)]
 av.avbin_stream_info.argtypes = [AVbinFileP, ctypes.c_int,
-                                 ctypes.POINTER(AVbinStreamInfo)]
+                                 ctypes.POINTER(AVbinStreamInfo8)]
 
 av.avbin_open_stream.restype = ctypes.c_void_p
 av.avbin_open_stream.argtypes = [AVbinFileP, ctypes.c_int]
@@ -306,7 +308,7 @@ class AVbinSource(StreamingSource):
 
         # Pick the first video and audio streams found, ignore others.
         for i in range(file_info.n_streams):
-            info = AVbinStreamInfo()
+            info = AVbinStreamInfo8()
             info.structure_size = ctypes.sizeof(info)
             av.avbin_stream_info(self._file, i, info)
 
@@ -324,6 +326,10 @@ class AVbinSource(StreamingSource):
                     self.video_format.sample_aspect = (
                         float(info.u.video.sample_aspect_num) /
                             info.u.video.sample_aspect_den)
+                if _have_frame_rate:
+                    self.video_format.frame_rate = (
+                        float(info.u.video.frame_rate_num) / 
+                            info.u.video.frame_rate_den)
                 self._video_stream = stream
                 self._video_stream_index = i
 
@@ -631,3 +637,5 @@ if pyglet.options['debug_media']:
 else:
     _debug = False
     av.avbin_set_log_level(AVBIN_LOG_QUIET)
+
+_have_frame_rate = av.avbin_have_feature('frame_rate')

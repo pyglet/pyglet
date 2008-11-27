@@ -291,6 +291,13 @@ class VideoFormat(object):
             Height of video image, in pixels.
         `sample_aspect` : float
             Aspect ratio (width over height) of a single video pixel.
+        `frame_rate` : float
+            Frame rate (frames per second) of the video.
+
+            AVbin 8 or later is required, otherwise the frame rate will be
+            ``None``.
+
+            **Since:** pyglet 1.2.
 
     '''
     
@@ -298,6 +305,7 @@ class VideoFormat(object):
         self.width = width
         self.height = height
         self.sample_aspect = sample_aspect
+        self.frame_rate = None
 
 class AudioData(object):
     '''A single packet of audio data.
