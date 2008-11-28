@@ -385,6 +385,41 @@ class MediaEvent(object):
         return '%s(%r, %r, %r)' % (self.__class__.__name__,
             self.timestamp, self.event, self.args)
 
+class SourceInfo(object):
+    '''Source metadata information.
+
+    Fields are the empty string or zero if the information is not available.
+
+    :Ivariables:
+        `title` : str
+            Title
+        `author` : str
+            Author
+        `copyright` : str
+            Copyright statement
+        `comment` : str
+            Comment
+        `album` : str
+            Album name
+        `year` : int
+            Year
+        `track` : int
+            Track number
+        `genre` : str
+            Genre
+
+    :since: pyglet 1.2
+    '''
+
+    title = ''
+    author = ''
+    copyright = ''
+    comment = ''
+    album = ''
+    year = 0
+    track = 0
+    genre = ''
+
 class Source(object):
     '''An audio and/or video source.
 
@@ -395,12 +430,18 @@ class Source(object):
         `video_format` : `VideoFormat`
             Format of the video in this source, or None if there is no
             video.
+        `info` : `SourceInfo`
+            Source metadata such as title, artist, etc; or None if the
+            information is not available.
+
+            **Since:** pyglet 1.2
     '''
 
     _duration = None
     
     audio_format = None
     video_format = None
+    info = None
 
     def _get_duration(self):
         return self._duration

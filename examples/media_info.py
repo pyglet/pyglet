@@ -27,6 +27,24 @@ def print_avbin_info():
         print
 
 def print_source_info(source):
+    if source.info:
+        if source.info.title:
+            print 'Title: %s' % source.info.title
+        if source.info.album:
+            print 'Album: %s' % source.info.album
+        if source.info.author:
+            print 'Author: %s' % source.info.author
+        if source.info.year:
+            print 'Year: %d' % source.info.year
+        if source.info.track:
+            print 'Track: %d' % source.info.track
+        if source.info.genre:
+            print 'Genre: %s' % source.info.genre
+        if source.info.copyright:
+            print 'Copyright: %s' % source.info.copyright
+        if source.info.comment:
+            print 'Comment: %s' % source.info.comment
+
     if source.audio_format:
         af = source.audio_format
         print 'Audio: %d channel(s), %d bits, %.02f Hz' % (

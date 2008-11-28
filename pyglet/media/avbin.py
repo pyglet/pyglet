@@ -50,7 +50,7 @@ from pyglet import image
 import pyglet.lib
 from pyglet.media import \
     MediaFormatException, StreamingSource, VideoFormat, AudioFormat, \
-    AudioData, MediaEvent, WorkerThread
+    AudioData, MediaEvent, WorkerThread, SourceInfo
 
 av = pyglet.lib.load_library('avbin', 
                              darwin='/usr/local/lib/libavbin.dylib')
@@ -305,6 +305,16 @@ class AVbinSource(StreamingSource):
         file_info.structure_size = ctypes.sizeof(file_info)
         av.avbin_file_info(self._file, ctypes.byref(file_info))
         self._duration = timestamp_from_avbin(file_info.duration)
+
+        self.info = SourceInfo()
+        self.info.title = file_info.title
+        self.info.author = file_info.author
+        self.info.copyright = file_info.copyright
+        self.info.comment = file_info.comment
+        self.info.album = file_info.album
+        self.info.year = file_info.year
+        self.info.track = file_info.track
+        self.info.genre = file_info.genre
 
         # Pick the first video and audio streams found, ignore others.
         for i in range(file_info.n_streams):
