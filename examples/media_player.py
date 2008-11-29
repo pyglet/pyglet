@@ -328,8 +328,8 @@ if __name__ == '__main__':
         window.set_default_video_size()
         window.set_visible(True)
 
-        window.gui_update_state()
         player.play()
+        window.gui_update_state()
 
     if not have_video:
         pyglet.clock.schedule_interval(lambda dt: None, 0.2)
