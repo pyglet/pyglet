@@ -961,8 +961,7 @@ class Player(pyglet.event.EventDispatcher):
             if self._audio_player:
                 self._audio_player.stop()
 
-            if source.video_format:
-                pyglet.clock.unschedule(self.update_texture)
+            pyglet.clock.unschedule(self.update_texture)
 
     def play(self): 
         self._set_playing(True)
