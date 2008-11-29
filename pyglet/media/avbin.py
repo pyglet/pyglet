@@ -218,74 +218,11 @@ class VideoPacket(object):
         self.size = packet.size
         ctypes.memmove(self.data, packet.data, self.size)
 
+        # Decoded image.  0 == not decoded yet; None == Error or discarded
+        self.image = 0
+
         self.id = self._next_id
         self.__class__._next_id += 1
-
-class BufferedImage(object):
-    def __init__(self, image, packet_id):
-        self.image = image
-        self.id = packet_id
-
-    def __repr__(self):
-        return 'BufferedImage(%d)' % self.id
-
-class BufferedImageQueue(object):
-    def __init__(self):
-        self._queue = []
-        self._condition = threading.Condition()
-        self._interrupted = False
-
-    def put(self, image):
-        self._condition.acquire()
-        self._queue.append(image)
-        self._interrupted = False
-        self._condition.notify()
-        self._condition.release()
-
-    def get(self, id):
-        item = None
-
-        self._condition.acquire()
-        self._interrupted = False
-        while not self._interrupted:
-            if not self._queue:
-                self._condition.wait()
-
-            try:
-                if self._queue[0].id == id:
-                    # Matching frame at head of queue; return it
-                    item = self._queue.pop(0)
-                    break
-                elif self._queue[0].id > id:
-                    # Head of queue is beyond requested frame; requested
-                    # frame must have been corrupt or missing; return None
-                    break
-                elif self._queue[0].id < id:
-                    # Head of queue is older than requested frame; throw
-                    # it away and keep looking
-                    del self._queue[0]
-            except IndexError:
-                pass
-        self._condition.release()
-
-        return item
-
-    def get_first_id(self):
-        id = None
-
-        self._condition.acquire()
-        if self._queue:
-            id = self._queue[0].id
-        self._condition.release()
-        
-        return id
-
-    def clear(self):
-        self._condition.acquire()
-        self._queue[:] = []
-        self._interrupted = True
-        self._condition.notify()
-        self._condition.release()
 
 class AVbinSource(StreamingSource):
     def __init__(self, filename, file=None):
@@ -364,7 +301,6 @@ class AVbinSource(StreamingSource):
         self._packet.stream_index = -1
 
         self._events = []
-        self._video_images = BufferedImageQueue()
 
         # Timestamp of last video packet added to decoder queue.
         self._video_timestamp = 0
@@ -375,10 +311,10 @@ class AVbinSource(StreamingSource):
             self._buffered_audio_data = []
             
         if self.video_format:
+            self._video_packets = []
             self._decode_thread = WorkerThread()
             self._decode_thread.start()
-            self._requested_video_frame_id = -1
-            self._lock = threading.Lock()
+            self._condition = threading.Condition()
 
     def __del__(self):
         if _debug:
@@ -408,21 +344,13 @@ class AVbinSource(StreamingSource):
 
         if self.video_format:
             self._video_timestamp = 0
+            self._condition.acquire()
+            for packet in self._video_packets:
+                packet.image = None
+            self._condition.release()
+            del self._video_packets[:]
 
             self._decode_thread.clear_jobs()
-
-    def _queue_video_frame(self):
-        # Add the next video frame to the decode queue (may return without
-        # adding anything to the queue if eos)
-        if _debug:
-            print '_single_video_frame'
-        while True:
-            if not self._get_packet():
-                break
-
-            packet_type, packet = self._process_packet()
-            if packet_type == 'video':
-                return packet.id
 
     def _get_packet(self):
         # Read a packet into self._packet.  Returns True if OK, False if no
@@ -450,13 +378,11 @@ class AVbinSource(StreamingSource):
                 print 'Created and queued frame %d (%f)' % \
                     (video_packet.id, video_packet.timestamp)
 
-            self._events.append(MediaEvent(video_packet.timestamp,
-                                           'on_video_frame',
-                                           video_packet.id))
             self._video_timestamp = max(self._video_timestamp,
                                         video_packet.timestamp)
+            self._video_packets.append(video_packet)
             self._decode_thread.put_job(
-                lambda: self._decode_video_frame(video_packet))
+                lambda: self._decode_video_packet(video_packet))
 
             return 'video', video_packet
 
@@ -559,8 +485,6 @@ class AVbinSource(StreamingSource):
             return AudioData(buffer, len(buffer), timestamp, duration, []) 
 
     def _decode_video_packet(self, packet):
-        timestamp = packet.timestamp # XXX unused
-
         width = self.video_format.width
         height = self.video_format.height
         pitch = width * 3
@@ -573,72 +497,60 @@ class AVbinSource(StreamingSource):
         else:
             image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
             
-        return BufferedImage(image_data, packet.id)
+        packet.image = image_data
+
+        # Notify get_next_video_frame() that another one is ready.
+        self._condition.acquire()
+        self._condition.notify()
+        self._condition.release()
+
+    def _ensure_video_packets(self):
+        '''Process packets until a video packet has been queued (and begun
+        decoding).  Return False if EOS.
+        '''
+        if not self._video_packets:
+            if _debug:
+                print 'No video packets...'
+            # Read ahead until we have another video packet
+            self._get_packet()
+            packet_type, _ = self._process_packet()
+            while packet_type and packet_type != 'video':
+                self._get_packet()
+                packet_type, _ = self._process_packet()
+            if not packet_type:
+                return False
+
+            if _debug:
+                print 'Queued packet', _
+        return True
 
     def get_next_video_timestamp(self):
-        raise TODO
         if not self.video_format:
             return
 
-        try:
-            img = self._buffered_images[0]
-        except IndexError:
-            img = self._next_image()
-            self._buffered_images.append(img)
-        
-        if img:
-            return img.timestamp
+        if self._ensure_video_packets():
+            if _debug:
+                print 'Next video timestamp is', self._video_packets[0].timestamp
+            return self._video_packets[0].timestamp
 
     def get_next_video_frame(self):
-        # See caveat below regarding get_next_video_frame_id
-        id = self.get_next_video_frame_id()
-        return self.get_video_frame(id)
-
-    def get_next_video_frame_id(self):
-        id = self._video_images.get_first_id()
-        if id is not None:
-            return id
-
-        # Nothing already decoded, let's queue something now and return the
-        # id.  (Not perfect, because something might be queued... but we're
-        # handling the common case -- seeking)
-        id = self._queue_video_frame()
-        return id
-
-    def _decode_video_frame(self, packet):
-        if _debug:
-            print 'decoding video frame', packet.id
-
-        buffered_image = self._decode_video_packet(packet)
-
-        self._lock.acquire()
-        requested_video_frame_id = self._requested_video_frame_id
-        self._lock.release()
-
-        if packet.id >= requested_video_frame_id:
-            self._video_images.put(buffered_image)
-
-        if _debug:
-            print 'done decoding video frame', packet.id
-
-    def get_video_frame(self, id):
-        if _debug:
-            print 'get_video_frame', id
         if not self.video_format:
             return
 
-        if id <= self._requested_video_frame_id:
-            return
+        if self._ensure_video_packets():
+            packet = self._video_packets.pop(0)
+            if _debug:
+                print 'Waiting for', packet
 
-        self._lock.acquire()
-        self._requested_video_frame_id = id
-        self._lock.release()
-        buffered_image = self._video_images.get(id)
-        
-        if _debug:
-            print 'get_video_frame(%r) -> %r' % (id, buffered_image)
-        if buffered_image:
-            return buffered_image.image
+            # Block until decoding is complete
+            self._condition.acquire()
+            while packet.image == 0:
+                self._condition.wait()
+            self._condition.release()
+
+            if _debug:
+                print 'Returning', packet
+            return packet.image
 
 av.avbin_init()
 if pyglet.options['debug_media']:

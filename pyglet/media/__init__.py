@@ -489,16 +489,15 @@ class Source(object):
         if not self.video_format:
             return Animation([])
         else:
-            # Create a dummy player for the source to push its textures onto.
             frames = []
             last_ts = 0
             next_ts = self.get_next_video_timestamp()
             while next_ts is not None:
                 image = self.get_next_video_frame()
-                assert image is not None
-                delay = next_ts - last_ts
-                frames.append(AnimationFrame(image, delay))
-                last_ts = next_ts
+                if image is not None:
+                    delay = next_ts - last_ts
+                    frames.append(AnimationFrame(image, delay))
+                    last_ts = next_ts
                 next_ts = self.get_next_video_timestamp()
             return Animation(frames)
 
@@ -523,8 +522,8 @@ class Source(object):
         :since: pyglet 1.1
 
         :rtype: `pyglet.image.AbstractImage`
-        :return: The next video frame image, or ``None`` if there are no more
-            video frames.
+        :return: The next video frame image, or ``None`` if the video frame
+            could not be decoded or there are no more video frames.
         '''
         pass
 
@@ -872,10 +871,8 @@ class Player(pyglet.event.EventDispatcher):
     '''High-level sound and video player.
     '''
 
+    _last_video_timestamp = None
     _texture = None
-    _video_frame_id = -1
-    _video_frame_dirty = False
-    _video_frame_required = True
 
     # Spacialisation attributes, preserved between audio players
     _volume = 1.0
@@ -937,23 +934,47 @@ class Player(pyglet.event.EventDispatcher):
             self._groups.append(group)
             self._set_eos_action(self._eos_action)
 
-        if not self._audio_player:
-            self._create_audio_player()
+        self._set_playing(self._playing)
+
+    def _set_playing(self, playing):
+        stopping = self._playing and not playing
+        starting = not self._playing and playing
+
+        self._playing = playing
+        source = self.source
+
+        if playing and source:
+            if not self._audio_player:
+                self._create_audio_player()
+            self._audio_player.play()
+
+            if source.video_format:
+                if not self._texture:
+                    self._create_texture()
+
+                if self.source.video_format.frame_rate:
+                    period = 1. / self.source.video_format.frame_rate
+                else:
+                    period = 0.
+                pyglet.clock.schedule_interval(self.update_texture, period)
+        else:
+            if self._audio_player:
+                self._audio_player.stop()
+
+            if source.video_format:
+                pyglet.clock.unschedule(self.update_texture)
 
     def play(self): 
-        if self._audio_player:
-            self._audio_player.play()
-        
-        self._playing = True
+        self._set_playing(True)
 
     def pause(self):
+        self._set_playing(False)
+
         if self._audio_player:
             time = self._audio_player.get_time()
             if time is not None:
                 self._paused_time = time
             self._audio_player.stop()
-
-        self._playing = False
 
     def next(self):
         if not self._groups:
@@ -964,28 +985,29 @@ class Player(pyglet.event.EventDispatcher):
             group.next()
             return
 
+        if self.source.video_format:
+            self._texture = None
+            pyglet.clock.unschedule(self.update_texture)
+
         if self._audio_player:
             self._audio_player.delete()
             self._audio_player = None
 
         del self._groups[0]
         if self._groups:
-            self._set_eos_action(self._eos_action)
-            self._create_audio_player()
+            self._set_playing(self._playing)
             return
 
-        self._playing = False
+        self._set_playing(False)
         self.dispatch_event('on_player_eos')
 
     def seek(self, time):
         self._audio_player.clear()
-        self._video_frame_dirty = True
         self._paused_time = time
         self.source.seek(time)
         if self.source.video_format:
-            self._video_frame_required = True
-            self._video_frame_dirty = True
-            self._video_frame_id = self.source.get_next_video_frame_id()
+            self._last_video_timestamp = None
+            self.update_texture()
 
     def _create_audio_player(self):
         assert not self._audio_player
@@ -1015,11 +1037,6 @@ class Player(pyglet.event.EventDispatcher):
         _set('cone_outer_angle')
         _set('cone_outer_gain')
 
-        # TODO video texture create here.
-
-        if self._playing:
-            self._audio_player.play()
-
     def _get_source(self):
         if not self._groups:
             return None
@@ -1041,39 +1058,37 @@ class Player(pyglet.event.EventDispatcher):
 
     time = property(_get_time)
 
-    def get_texture(self):
-        if not self.source:
-            return
-
-        if _debug:
-            print 'get_texture', self._video_frame_dirty
-        # TODO recreate texture
+    def _create_texture(self):
         video_format = self.source.video_format
-        if video_format:
-            if not self._texture:
-                if _debug:
-                    print 'create texture'
-                self._texture = pyglet.image.Texture.create(
-                    video_format.width, video_format.height, rectangle=True)
-                self._texture = self._texture.get_transform(flip_y=True)
-                self._texture.anchor_y = 0
-        if self._video_frame_dirty:
-            self.update_texture()
+        self._texture = pyglet.image.Texture.create(
+            video_format.width, video_format.height, rectangle=True)
+        self._texture = self._texture.get_transform(flip_y=True)
+        self._texture.anchor_y = 0
+
+    def get_texture(self):
         return self._texture
 
-    def update_texture(self):
-        if _debug:
-            print 'update_texture', self._video_frame_id
-        image = self.source.get_video_frame(self._video_frame_id)
-        self._video_frame_dirty = False
-        if image:
-            # TODO avoid get_texture
-            if _debug:
-                print 'blit_into'
-            self.get_texture().blit_into(image, 0, 0, 0)
-        if _debug:
-            print 'update_texture -> void (dirty = %r)' % \
-                self._video_frame_dirty, self
+    def update_texture(self, dt=None):
+        time = self._get_time()
+        if time is None:
+            return
+
+        if (self._last_video_timestamp is not None and 
+            time <= self._last_video_timestamp):
+            return
+
+        ts = self.source.get_next_video_timestamp()
+        while ts is not None and ts < time:
+            self.source.get_next_video_frame() # Discard frames
+            ts = self.source.get_next_video_timestamp()
+
+        if ts is None:
+            return
+
+        image = self.source.get_next_video_frame()
+        if image is not None:
+            self._texture.blit_into(image, 0, 0, 0)
+            self._last_video_timestamp = ts
 
     def _set_eos_action(self, eos_action):
         ''':deprecated:'''
@@ -1151,23 +1166,9 @@ class Player(pyglet.event.EventDispatcher):
         if _debug:
             print 'Player.on_eos'
 
-    def on_video_frame(self, id):
-        if _debug:
-            print 'Player.on_video_frame', id
-            if self._video_frame_dirty:
-                print 'Skipping frame', self._video_frame_id
-        
-        self._video_frame_id = id
-        self._video_frame_dirty = True
-
-        # This really sucks
-        for window in pyglet.app.windows:
-            window._legacy_invalid = True
-
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_source_group_eos')
-Player.register_event_type('on_video_frame')
 
 class ManagedSoundPlayer(Player):
     ''':deprecated: Use `Player`'''

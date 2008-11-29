@@ -379,7 +379,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         while self._events and self._events[0][0] < read_index:
             _, event = self._events.pop(0)
-            if _debug:
+            if _debug or True:
                 print 'dispatch event', event
             event._sync_dispatch_to_player(self.player)
 
