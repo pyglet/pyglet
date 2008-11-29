@@ -179,6 +179,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         self._events = []
         self._timestamps = []  # List of (ref_time, timestamp)
         self._write_index = 0  # Current write index (tracked manually)
+        self._read_index_valid = False # True only if buffer has non-stale data
 
         self._clear_write = False
         self._buffered_audio_data = None
@@ -319,6 +320,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             )
 
             seek_flag = pa.PA_SEEK_RELATIVE
+            self._read_index_valid = True
             self._timestamps.append((self._write_index, audio_data.timestamp))
             self._write_index += consumption
             self._underflow_is_eos = False
@@ -414,6 +416,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         self._events = []
 
         context.lock()
+        self._read_index_valid = False
         context.sync_operation(
             pa.pa_stream_prebuf(self.stream, self._success_cb_func, None)
         )
@@ -482,9 +485,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             print '_get_write_index ->', write_index
         return write_index
 
-    def get_time(self, read_index=None):
-        if read_index is None:
-            read_index = self._get_read_index()
+    def get_time(self):
+        if not self._read_index_valid:
+            if _debug:
+                print 'get_time <_read_index_valid = False> -> None'
+            return
+
+        read_index = self._get_read_index()
 
         write_index = 0
         timestamp = 0.0

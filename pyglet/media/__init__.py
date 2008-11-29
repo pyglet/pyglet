@@ -1002,9 +1002,12 @@ class Player(pyglet.event.EventDispatcher):
         self.dispatch_event('on_player_eos')
 
     def seek(self, time):
-        self._audio_player.clear()
+        if _debug:
+            print 'Player.seek(%r)' % time
+
         self._paused_time = time
         self.source.seek(time)
+        self._audio_player.clear()
         if self.source.video_format:
             self._last_video_timestamp = None
             self.update_texture()
