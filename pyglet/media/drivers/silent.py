@@ -24,7 +24,7 @@ class SilentAudioPacket(object):
         self.timestamp += dt
         self.duration -= dt
 
-class SilentAudioPlayer(AbstractAudioPlayer):
+class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
     # When playing video, length of audio (in secs) to buffer ahead.
     _buffer_time = 0.4
 
@@ -50,11 +50,6 @@ class SilentAudioPlayer(AbstractAudioPlayer):
 
         # TODO Be nice to avoid creating this thread if user doesn't care
         #      about EOS events and there's no video format.
-        # TODO If there's video with no audio (or the audio can't be decoded,
-        #      it'd be nice to fire off video frame events from a sleeping
-        #      thread.  SourceGroup doesn't currently export video frame
-        #      information though, so this would be tricky to get out of
-        #      AVbin.
         # NOTE Use thread.condition as lock for all instance vars used by worker
         self._thread = MediaThread(target=self._worker_func)
         if source_group.audio_format:
@@ -199,10 +194,43 @@ class SilentAudioPlayer(AbstractAudioPlayer):
             
             thread.condition.release()
 
+class SilentTimeAudioPlayer(AbstractAudioPlayer):
+    # Note that when using this player (automatic if playing back video with
+    # unsupported audio codec) no events are dispatched (because they are
+    # normally encoded in the audio packet -- so no EOS events are delivered.
+    # This is a design flaw.
+    #
+    # Also, seeking is broken because the timestamps aren't synchronized with
+    # the source group.
+
+    _time = 0.0
+    _systime = None
+        
+    def play(self):
+        self._systime = time.time()
+
+    def stop(self):
+        self._time = self.get_time()
+        self._systime = None
+
+    def delete(self):
+        pass
+
+    def clear(self):
+        pass
+
+    def get_time(self):
+        if self._systime is None:
+            return self._time
+        else:
+            return time.time() - self._systime + self._time
 
 class SilentAudioDriver(AbstractAudioDriver):
     def create_audio_player(self, source_group, player):
-        return SilentAudioPlayer(source_group, player)
+        if source_group.audio_format:
+            return SilentPacketAudioPlayer(source_group, player)
+        else:
+            return SilentTimeAudioPlayer(source_group, player)
 
 def create_audio_driver():
     return SilentAudioDriver()

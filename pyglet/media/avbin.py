@@ -304,11 +304,11 @@ class AVbinSource(StreamingSource):
 
         # Timestamp of last video packet added to decoder queue.
         self._video_timestamp = 0
+        self._buffered_audio_data = []
 
         if self.audio_format:
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.avbin_get_audio_buffer_size())()
-            self._buffered_audio_data = []
             
         if self.video_format:
             self._video_packets = []
