@@ -955,7 +955,7 @@ class Player(pyglet.event.EventDispatcher):
                 if self.source.video_format.frame_rate:
                     period = 1. / self.source.video_format.frame_rate
                 else:
-                    period = 0.
+                    period = 1. / 30.
                 pyglet.clock.schedule_interval(self.update_texture, period)
         else:
             if self._audio_player:

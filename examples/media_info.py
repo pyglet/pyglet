@@ -52,14 +52,17 @@ def print_source_info(source):
 
     if source.video_format:
         vf = source.video_format
-        frame_rate = vf.frame_rate or 'unknown'
+        if vf.frame_rate:
+            frame_rate = '%.02f' % vf.frame_rate
+        else: 
+            frame_rate = 'unknown'
         if vf.sample_aspect >= 1:
             display_width = vf.sample_aspect * vf.width
             display_height = vf.height
         else:
             display_width = vf.width
             display_height = vf.sample_aspect / vf.height
-        print 'Video: %dx%d at aspect %r (displays at %dx%d), %.02f fps' % (
+        print 'Video: %dx%d at aspect %r (displays at %dx%d), %s fps' % (
             vf.width, vf.height, vf.sample_aspect,
             display_width, display_height, frame_rate)
 
