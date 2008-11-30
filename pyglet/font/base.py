@@ -232,7 +232,7 @@ class GlyphTextureAtlas(image.Texture):
         '''
         if self.x + image.width > self.width:
             self.x = 0
-            self.y += self.line_height
+            self.y += self.line_height + 1
             self.line_height = 0
         if self.y + image.height > self.height:
             return None
