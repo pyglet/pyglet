@@ -270,7 +270,7 @@ class AbstractDocument(event.EventDispatcher):
 
     def __init__(self, text=''):
         super(AbstractDocument, self).__init__()
-        self._text = ''
+        self._text = u''
         self._elements = []
         if text:
             self.insert_text(0, text)
@@ -425,7 +425,7 @@ class AbstractDocument(event.EventDispatcher):
         self.dispatch_event('on_insert_text', start, text)
 
     def _insert_text(self, start, text, attributes):
-        self._text = ''.join((self._text[:start], text, self._text[start:]))
+        self._text = u''.join((self._text[:start], text, self._text[start:]))
         len_text = len(text)
         for element in self._elements:
             if element._position >= start:
