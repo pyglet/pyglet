@@ -50,7 +50,7 @@ from pyglet.image import codecs
 from pyglet.image.codecs import s3tc
 
 class DDSException(codecs.ImageDecodeException):
-    pass
+    exception_priority = 0
 
 # dwFlags of DDSURFACEDESC2
 DDSD_CAPS           = 0x00000001

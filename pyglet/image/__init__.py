@@ -186,7 +186,9 @@ def load(filename, file=None, decoder=None):
                 image = decoder.decode(file, filename)
                 return image
             except codecs.ImageDecodeException, e:
-                first_exception = first_exception or e
+                if (not first_exception or 
+                    first_exception.exception_priority < e.exception_priority):
+                    first_exception = e
                 file.seek(0)
 
         if not first_exception:

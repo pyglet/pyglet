@@ -63,7 +63,7 @@ _encoders = []              # List of registered ImageEncoders
 _encoder_extensions = {}    # Map str -> list of matching ImageEncoders
 
 class ImageDecodeException(Exception):
-    pass
+    exception_priority = 10
 
 class ImageEncodeException(Exception):
     pass
