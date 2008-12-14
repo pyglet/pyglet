@@ -47,8 +47,8 @@ from pyglet.image import *
 from pyglet.image.codecs import *
 
 from pyglet.window.carbon import carbon, quicktime, _oscheck
-from pyglet.window.carbon.constants import _name
-from pyglet.window.carbon.types import *
+from pyglet.libs.darwin.constants import _name
+from pyglet.libs.darwin.types import *
 
 Handle = POINTER(POINTER(c_byte))
 
