@@ -150,7 +150,7 @@ class WintabTabletCanvas(TabletCanvas):
             self._set_current_cursor(packet.pkCursor)
 
         self.dispatch_event('on_motion', self._current_cursor,
-            x, y, pressure)
+            x, y, pressure, 0., 0.)
 
         print packet.pkButtons
 

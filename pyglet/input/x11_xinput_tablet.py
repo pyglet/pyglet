@@ -65,7 +65,7 @@ class XInputTabletCanvas(DeviceResponder, TabletCanvas):
         x = e.x
         y = self.window.height - e.y
         pressure = e.axis_data[2] / float(cursor.max_pressure)
-        self.dispatch_event('on_motion', cursor, x, y, pressure)
+        self.dispatch_event('on_motion', cursor, x, y, pressure, 0.0, 0.0)
 
     def _proximity_in(self, e):
         cursor = self._cursor_map.get(e.deviceid)

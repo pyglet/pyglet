@@ -105,7 +105,8 @@ class CarbonTabletCanvas(TabletCanvas):
             #point_rec.tiltY,
             #point_rec.rotation,
             #point_rec.tangentialPressure,
-            self.dispatch_event('on_motion', self._cursor, x, y, pressure)
+            self.dispatch_event('on_motion', self._cursor, x, y, pressure, 
+                0., 0.)
 
         carbon.CallNextEventHandler(next_handler, ev)
         return noErr

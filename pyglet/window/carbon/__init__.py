@@ -701,6 +701,7 @@ class CarbonWindow(BaseWindow):
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
         modifiers = modifiers.value
+        print modifiers
         deltas = modifiers ^ self._current_modifiers
         for mask, k in [
             (controlKey, key.LCTRL),

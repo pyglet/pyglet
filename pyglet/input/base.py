@@ -1,6 +1,40 @@
-#!/usr/bin/env python
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2008 Alex Holkner
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions 
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright 
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 
-'''
+'''Interface classes for `pyglet.input`.
+
+:since: pyglet 1.2
 '''
 
 __docformat__ = 'restructuredtext'
@@ -22,32 +56,82 @@ class DeviceExclusiveException(DeviceException):
     pass
 
 class Device(object):
-    is_open = False
+    '''Input device.
 
+    :Ivariables:
+        `display` : `Display`
+            Display this device is connected to.
+        `name` : str
+            Name of the device, as described by the device firmware.
+        `manufacturer` : str
+            Name of the device manufacturer, or ``None`` if the information is
+            not available.
+
+    '''
     def __init__(self, display, name):
         self.display = display
         self.name = name
         self.manufacturer = None
 
+        # TODO: make private 
+        self.is_open = False
+
     def open(self, window=None, exclusive=False):
+        '''Open the device to begin receiving input from it.
+
+        :Parameters:
+            `window` : Window
+                Optional window to associate with the device.  The behaviour
+                of this parameter is device and operating system dependant.
+                It can usually be omitted for most devices.
+            `exclusive` : bool
+                If ``True`` the device will be opened exclusively so that no
+                other application can use it.  The method will raise
+                `DeviceExclusiveException` if the device cannot be opened this
+                way (for example, because another application has already
+                opened it).
+
+        '''
         if self.is_open:
             raise DeviceOpenException('Device is already open.')
 
         self.is_open = True
 
     def close(self):
+        '''Close the device.
+        '''
         self.is_open = False
 
     def get_controls(self):
+        '''Get a list of controls provided by the device.
+
+        :rtype: list of `Control`
+        '''
         raise NotImplementedError('abstract')
 
     def __repr__(self):
         return '%s(name=%s)' % (self.__class__.__name__, self.name)
 
 class Control(EventDispatcher):
-    '''
-    Note that `min` and `max` properties are reported as provided by the
+    '''Single value input provided by a device.
+
+    A control's value can be queried when the device is open.  Event handlers
+    can be attached to the control to be called when the value changes.
+
+    The `min` and `max` properties are provided as advertised by the
     device; in some cases the control's value will be outside this range.
+
+    :Ivariables:
+        `name` : str
+            Name of the control, or ``None`` if unknown
+        `raw_name` : str
+            Unmodified name of the control, as presented by the operating
+            system; or ``None`` if unknown.
+        `inverted` : bool
+            If ``True``, the value reported is actually inverted from what the
+            device reported; usually this is to provide consistency across
+            operating systems.
+
     '''
     _value = None
 
@@ -65,7 +149,13 @@ class Control(EventDispatcher):
         self._value = value
         self.dispatch_event('on_change', value)
 
-    value = property(_get_value)
+    value = property(_get_value, doc='''Current value of the control.
+    
+    The range of the value is device-dependent; for absolute controls
+    the range is given by ``min`` and ``max`` (however the value may exceed
+    this range); for relative controls the range is undefined.
+    
+    :type: float''')
 
     def __repr__(self):
         if self.name:
@@ -76,19 +166,35 @@ class Control(EventDispatcher):
 
     if _is_epydoc:
         def on_change(self, value):
-            '''
+            '''The value changed.
+
+            :Parameters:
+                `value` : float
+                    Current value of the control.
+
             :event:
             '''
 
 Control.register_event_type('on_change')
 
 class RelativeAxis(Control):
+    '''An axis whose value represents a relative change from the previous
+    value.
+    '''
+
+    #: Name of the horizontal axis control
     X = 'x'
+    #: Name of the vertical axis control
     Y = 'y'
+    #: Name of the Z axis control.
     Z = 'z'
+    #: Name of the rotational-X axis control
     RX = 'rx'
+    #: Name of the rotational-Y axis control
     RY = 'ry'
+    #: Name of the rotational-Z axis control
     RZ = 'rz'
+    #: Name of the scroll wheel control
     WHEEL = 'wheel'
 
     def _get_value(self):
@@ -101,14 +207,38 @@ class RelativeAxis(Control):
     value = property(_get_value)
 
 class AbsoluteAxis(Control):
+    '''An axis whose value represents a physical measurement from the device.
+
+    The value is advertised to range over ``min`` and ``max``.
+
+    :Ivariables:
+        `min` : float
+            Minimum advertised value.
+        `max` : float 
+            Maximum advertised value.
+
+    '''
+
+    #: Name of the horizontal axis control
     X = 'x'
+    #: Name of the vertical axis control
     Y = 'y'
+    #: Name of the Z axis control.
     Z = 'z'
+    #: Name of the rotational-X axis control
     RX = 'rx'
+    #: Name of the rotational-Y axis control
     RY = 'ry'
+    #: Name of the rotational-Z axis control
     RZ = 'rz'
+    #: Name of the hat (POV) control, when a single control enumerates all of
+    #: the hat's positions.
     HAT = 'hat'
+    #: Name of the hat's (POV's) horizontal control, when the hat position is
+    #: described by two orthogonal controls.
     HAT_X = 'hat_x'
+    #: Name of the hat's (POV's) vertical control, when the hat position is
+    #: described by two orthogonal controls.
     HAT_Y = 'hat_y'
 
     def __init__(self, name, min, max, raw_name=None):
@@ -118,6 +248,9 @@ class AbsoluteAxis(Control):
         self.max = max
 
 class Button(Control):
+    '''A control whose value is boolean.
+
+    '''
     def _get_value(self):
         return bool(self._value)
 
@@ -135,12 +268,14 @@ class Button(Control):
  
     if _is_epydoc:
         def on_press(self):
-            '''
+            '''The button was pressed.
+
             :event:
             '''
 
         def on_release(self):
-            '''
+            '''The button was released.
+
             :event:
             '''
 
@@ -148,6 +283,71 @@ Button.register_event_type('on_press')
 Button.register_event_type('on_release')
 
 class Joystick(object):
+    '''High-level interface for joystick-like devices.  This includes analogue
+    and digital joysticks, gamepads, game controllers, and possibly even
+    steering wheels and other input devices.  There is unfortunately no way to
+    distinguish between these different device types.
+
+    To use a joystick, first call `open`, then in your game loop examine
+    the values of `x`, `y`, and so on.  These values are normalized to the
+    range [-1.0, 1.0]. Attach event handlers to the `button_controls` to
+    receive events when a button is pressed or released.
+
+    The device name can be queried to get the name of the joystick.
+
+    :Ivariables:
+        `device` : `Device`
+            The underlying device used by this joystick interface.
+        `x` : float
+            Current X (horizontal) value ranging from -1.0 (left) to 1.0
+            (right).
+        `y` : float
+            Current y (vertical) value ranging from -1.0 (bottom) to 1.0
+            (top).
+        `z` : float
+            Current Z value ranging from -1.0 to 1.0.  On joysticks the Z
+            value is usually the throttle control.  On game controllers the Z
+            value is usually the secondary thumb vertical axis.
+        `rx` : float
+            Current rotational X value ranging from -1.0 to 1.0.
+        `ry` : float
+            Current rotational Y value ranging from -1.0 to 1.0.
+        `rz` : float
+            Current rotational Z value ranging from -1.0 to 1.0.  On joysticks
+            the RZ value is usually the twist of the stick.  On game
+            controllers the RZ value is usually the secondary thumb horizontal
+            axis.
+        `hat_x` : int
+            Current hat (POV) horizontal position; one of -1 (left), 0
+            (centered) or 1 (right).
+        `hat_y` : int
+            Current hat (POV) vertical position; one of -1 (bottom), 0
+            (centered) or 1 (top).
+        `buttons` : list of bool
+            List of boolean values representing current states of the buttons.
+            These are in order, so that button 1 has value at ``buttons[0]``,
+            and so on.
+        `x_control` : `AbsoluteAxis`
+            Underlying control for `x` value, or ``None`` if not available.
+        `y_control` : `AbsoluteAxis`
+            Underlying control for `y` value, or ``None`` if not available.
+        `z_control` : `AbsoluteAxis`
+            Underlying control for `z` value, or ``None`` if not available.
+        `rx_control` : `AbsoluteAxis`
+            Underlying control for `rx` value, or ``None`` if not available.
+        `ry_control` : `AbsoluteAxis`
+            Underlying control for `ry` value, or ``None`` if not available.
+        `rz_control` : `AbsoluteAxis`
+            Underlying control for `rz` value, or ``None`` if not available.
+        `hat_x_control` : `AbsoluteAxis`
+            Underlying control for `hat_x` value, or ``None`` if not available.
+        `hat_y_control` : `AbsoluteAxis`
+            Underlying control for `hat_y` value, or ``None`` if not available.
+        `button_controls` : list of `Button`
+            Underlying controls for `buttons` values.
+
+    '''
+
     def __init__(self, device):
         self.device = device
 
@@ -231,12 +431,38 @@ class Joystick(object):
                 add_button(control)
 
     def open(self, window=None, exclusive=False):
+        '''Open the joystick device.  See `Device.open`.
+        '''
         self.device.open(window, exclusive)
 
     def close(self):
+        '''Close the joystick device.  See `Device.close`.
+        '''
         self.device.close()
 
 class AppleRemote(object):
+    '''High-level interface for Apple remote control.
+
+    This interface provides access to the 6 button controls on the remote.
+
+    :Ivariables:
+        `device` : `Device`
+            The underlying device used by this interface.
+        `left_control` : `Button`
+            Button control for the left (prev) button.
+        `right_control` : `Button`
+            Button control for the right (next) button.
+        `up_control` : `Button`
+            Button control for the up (volume increase) button.
+        `down_control` : `Button`
+            Button control for the down (volume decrease) button.
+        `select_control` : `Button`
+            Button control for the select (play/pause) button.
+        `menu_control` : `Button`
+            Button control for the menu button.
+
+    '''
+    
     def __init__(self, device):
         self.device = device
     
@@ -246,21 +472,52 @@ class AppleRemote(object):
                 setattr(self, control.name + '_control', control)
 
     def open(self, window=None, exclusive=False):
+        '''Open the device.  See `Device.open`.
+        '''
         self.device.open(window, exclusive)
 
     def close(self):
+        '''Close the device.  See `Device.close`.
+        '''
         self.device.close()
 
 class Tablet(object):
-    # OS X: Multiple tablets all appear as the "system" tablet
-    # Windows: Multiple tablets can be distinguished, but only one opened.
+    '''High-level interface to tablet devices.
 
-    # Multiple styluses on a tablet at one time are not supported (only
-    # pro-level tablets support this anyway).
+    Unlike other devices, tablets must be opened for a specific window,
+    and cannot be opened exclusively.  The `open` method returns a
+    `TabletCanvas` object, which supports the events provided by the tablet.
+
+    Currently only one tablet device can be used, though it can be opened on
+    multiple windows.  If more than one tablet is connected, the behaviour is
+    undefined.
+    '''
     def open(self, window):
+        '''Open a tablet device for a window.
+
+        :Parameters:
+            `window` : `Window`
+                The window on which the tablet will be used.
+
+        :rtype: `TabletCanvas`
+        '''
         raise NotImplementedError('abstract')
 
 class TabletCanvas(EventDispatcher):
+    '''Event dispatcher for tablets.
+
+    Use `Tablet.open` to obtain this object for a particular tablet device and
+    window.  Events may be generated even if the tablet stylus is outside of
+    the window; this is operating-system dependent.
+
+    The events each provide the `TabletCursor` that was used to generate the
+    event; for example, to distinguish between a stylus and an eraser.  Only
+    one cursor can be used at a time, otherwise the results are undefined.
+
+    :Ivariables:
+        `window` : Window
+            The window on which this tablet was opened.
+    '''
     # OS X: Active window receives tablet events only when cursor is in window
     # Windows: Active window receives all tablet events
     #
@@ -271,21 +528,64 @@ class TabletCanvas(EventDispatcher):
         self.window = window
 
     def close(self):
+        '''Close the tablet device for this window.
+        '''
         raise NotImplementedError('abstract')
 
     if _is_epydoc:
         def on_enter(self, cursor):
-            '''
+            '''A cursor entered the proximity of the window.  The cursor may
+            be hovering above the tablet surface, but outside of the window
+            bounds, or it may have entered the window bounds.
+
+            Note that you cannot rely on `on_enter` and `on_leave` events to
+            be generated in pairs; some events may be lost if the cursor was
+            out of the window bounds at the time.
+
+            :Parameters:
+                `cursor` : `TabletCursor`
+                    The cursor that entered proximity.
+
             :event:
             '''
 
         def on_leave(self, cursor):
-            '''
+            '''A cursor left the proximity of the window.  The cursor may have
+            moved too high above the tablet surface to be detected, or it may
+            have left the bounds of the window.
+
+            Note that you cannot rely on `on_enter` and `on_leave` events to
+            be generated in pairs; some events may be lost if the cursor was
+            out of the window bounds at the time.
+
+            :Parameters:
+                `cursor` : `TabletCursor`
+                    The cursor that left proximity.
+
             :event:
             '''
 
         def on_motion(self, cursor, x, y, pressure):
-            '''
+            '''The cursor moved on the tablet surface.
+
+            If `pressure` is 0, then the cursor is actually hovering above the
+            tablet surface, not in contact.
+
+            :Parameters:
+                `cursor` : `TabletCursor`
+                    The cursor that moved.
+                `x` : int
+                    The X position of the cursor, in window coordinates.
+                `y` : int
+                    The Y position of the cursor, in window coordinates.
+                `pressure` : float
+                    The pressure applied to the cursor, in range 0.0 (no
+                    pressure) to 1.0 (full pressure).
+                `tilt_x` : float
+                    Currently undefined.
+                `tilt_y` : float
+                    Currently undefined.
+
             :event:
             '''
 
@@ -294,6 +594,18 @@ TabletCanvas.register_event_type('on_leave')
 TabletCanvas.register_event_type('on_motion')
 
 class TabletCursor(object):
+    '''A distinct cursor used on a tablet.
+
+    Most tablets support at least a *stylus* and an *erasor* cursor; this
+    object is used to distinguish them when tablet events are generated.
+
+    :Ivariables:
+        `name` : str
+            Name of the cursor.
+
+    '''
+    # TODO well-defined names for stylus and eraser.
+
     def __init__(self, name):
         self.name = name
 

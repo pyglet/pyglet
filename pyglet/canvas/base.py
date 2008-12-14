@@ -157,8 +157,11 @@ class Screen(object):
         raise NotImplementedError('abstract')
 
     def get_modes(self):
-        '''
-        TODO doc
+        '''Get a list of screen modes supported by this screen.
+
+        :rtype: list of `ScreenMode`
+
+        :since: pyglet 1.2
         '''
         raise NotImplementedError('abstract')
 
@@ -166,10 +169,27 @@ class Screen(object):
         '''Get the current display mode for this screen.
 
         :rtype: `ScreenMode`
+
+        :since: pyglet 1.2
         '''
         raise NotImplementedError('abstract')
 
     def get_closest_mode(self, width, height):
+        '''Get the screen mode that best matches a given size.
+
+        If no supported mode exactly equals the requested size, a larger one
+        is returned; or ``None`` if no mode is large enough.
+
+        :Parameters:
+            `width` : int
+                Requested screen width.
+            `height` : int
+                Requested screen height.
+
+        :rtype: `ScreenMode`
+
+        :since: pyglet 1.2
+        '''
         # Best mode is one with smallest resolution larger than width/height,
         # with depth and refresh rate equal to current mode.
         current = self.get_mode()
@@ -221,7 +241,24 @@ class Screen(object):
         raise NotImplementedError('abstract')
 
 class ScreenMode(object):
-    '''TODO doc
+    '''Screen resolution and display settings.  Applications should not
+    construct `ScreenMode` instances themselves; see `Screen.get_modes`.
+
+    The `depth` and `rate` variables may be ``None`` if the operating system
+    does not provide relevant data.
+
+    :Ivariables:
+        `width` : int
+            Width of screen, in pixels.
+        `height` : int
+            Height of screen, in pixels.
+        `depth` : int
+            Pixel color depth, in bits per pixel.
+        `rate` : int
+            Screen refresh rate in Hz.
+
+    :since: pyglet 1.2
+
     '''
 
     width = None
@@ -238,10 +275,14 @@ class ScreenMode(object):
             self.width, self.height, self.depth, self.rate)
 
 class Canvas(object):
-    '''TODO doc
+    '''Abstract drawing area.
 
-    Canvas is an abstract base class.  Windows provide their drawing area as a
-    canvas, for example.
+    Canvases are used internally by pyglet to represent drawing areas --
+    either within a window or full-screen.
+
+    :Ivariables:
+        `display` : `Display`
+            Display this canvas was created on.
 
     :since: pyglet 1.2
     '''
