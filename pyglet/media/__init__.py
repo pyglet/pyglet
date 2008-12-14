@@ -529,7 +529,7 @@ class Source(object):
 
     # Internal methods that SourceGroup calls on the source:
 
-    def _seek(self, timestamp):
+    def seek(self, timestamp):
         '''Seek to given timestamp.'''
         raise CannotSeekException()
 
@@ -633,7 +633,7 @@ class StaticMemorySource(StaticSource):
         self.audio_format = audio_format
         self._duration = len(data) / float(audio_format.bytes_per_second)
 
-    def _seek(self, timestamp):
+    def seek(self, timestamp):
         offset = int(timestamp * self.audio_format.bytes_per_second)
 
         # Align to sample
@@ -681,11 +681,12 @@ class SourceGroup(object):
         self.video_format = video_format
         self.duration = 0.
         self._timestamp_offset = 0.
+        self._dequeued_durations = []
         self._sources = []
 
     def seek(self, time):
         if self._sources:
-            self._sources[0]._seek(time)
+            self._sources[0].seek(time)
 
     def queue(self, source):
         source = source._get_queue_source()
@@ -709,6 +710,7 @@ class SourceGroup(object):
     def _advance(self):
         if self._sources:
             self._timestamp_offset += self._sources[0].duration
+            self._dequeued_durations.insert(0, self._sources[0].duration)
             old_source = self._sources.pop(0)
             self.duration -= old_source.duration
 
@@ -741,7 +743,9 @@ class SourceGroup(object):
         while not data:
             eos = True
             if self._loop and not self._advance_after_eos:
-                self._sources[0]._seek(0)
+                self._timestamp_offset += self._sources[0].duration
+                self._dequeued_durations.insert(0, self._sources[0].duration)
+                self._sources[0].seek(0)
             else:
                 self._advance_after_eos = False
 
@@ -764,12 +768,44 @@ class SourceGroup(object):
     def translate_timestamp(self, timestamp):
         '''Get source-relative timestamp for the audio player's timestamp.'''
         # XXX 
+        if timestamp is None:
+            return None
+
         timestamp = timestamp - self._timestamp_offset
         if timestamp < 0:
-            # Timestamp is from an dequeued source... need to keep track of
-            # these.
-            raise NotImplementedError('TODO')
+            for duration in self._dequeued_durations[::-1]:
+                timestamp += duration
+                if timestamp > 0:
+                    break
+            assert timestamp >= 0, 'Timestamp beyond dequeued source memory'
         return timestamp
+
+    def get_next_video_timestamp(self):
+        '''Get the timestamp of the next video frame.
+
+        :rtype: float
+        :return: The next timestamp, or ``None`` if there are no more video
+            frames.
+        '''
+        # TODO track current video source independently from audio source for
+        # better prebuffering.
+        timestamp = self._sources[0].get_next_video_timestamp()
+        if timestamp is not None: 
+            timestamp += self._timestamp_offset
+        return timestamp
+
+    def get_next_video_frame(self):
+        '''Get the next video frame.
+
+        Video frames may share memory: the previous frame may be invalidated
+        or corrupted when this method is called unless the application has
+        made a copy of it.
+
+        :rtype: `pyglet.image.AbstractImage`
+        :return: The next video frame image, or ``None`` if the video frame
+            could not be decoded or there are no more video frames.
+        '''
+        return self._sources[0].get_next_video_frame()
 
 class AbstractAudioPlayer(object):
     '''Base class for driver audio players.
@@ -971,6 +1007,7 @@ class Player(pyglet.event.EventDispatcher):
 
         if self._audio_player:
             time = self._audio_player.get_time()
+            time = self._groups[0].translate_timestamp(time)
             if time is not None:
                 self._paused_time = time
             self._audio_player.stop()
@@ -1052,6 +1089,7 @@ class Player(pyglet.event.EventDispatcher):
         time = None
         if self._playing and self._audio_player:
             time = self._audio_player.get_time()
+            time = self._groups[0].translate_timestamp(time)
 
         if time is None:
             return self._paused_time
@@ -1071,7 +1109,7 @@ class Player(pyglet.event.EventDispatcher):
         return self._texture
 
     def update_texture(self, dt=None):
-        time = self._get_time()
+        time = self._audio_player.get_time()
         if time is None:
             return
 
@@ -1079,15 +1117,16 @@ class Player(pyglet.event.EventDispatcher):
             time <= self._last_video_timestamp):
             return
 
-        ts = self.source.get_next_video_timestamp()
+        ts = self._groups[0].get_next_video_timestamp()
         while ts is not None and ts < time:
-            self.source.get_next_video_frame() # Discard frames
-            ts = self.source.get_next_video_timestamp()
+            self._groups[0].get_next_video_frame() # Discard frame
+            ts = self._groups[0].get_next_video_timestamp()
 
         if ts is None:
+            self._last_video_timestamp = None
             return
 
-        image = self.source.get_next_video_frame()
+        image = self._groups[0].get_next_video_frame()
         if image is not None:
             self._texture.blit_into(image, 0, 0, 0)
             self._last_video_timestamp = ts

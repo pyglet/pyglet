@@ -347,6 +347,7 @@ class AVbinSource(StreamingSource):
             self._condition.acquire()
             for packet in self._video_packets:
                 packet.image = None
+            self._condition.notify()
             self._condition.release()
             del self._video_packets[:]
 

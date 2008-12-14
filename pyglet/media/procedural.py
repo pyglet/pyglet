@@ -78,7 +78,7 @@ class ProceduralSource(Source):
         '''
         raise NotImplementedError('abstract')
 
-    def _seek(self, timestamp):
+    def seek(self, timestamp):
         self._offset = int(timestamp * self._bytes_per_second)
 
         # Bound within duration
