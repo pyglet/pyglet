@@ -100,7 +100,8 @@ Keys on the number pad have separate symbols::
     key.NUM_ENTER
 
 Some modifier keys have separate symbols for their left and right sides
-(however they cannot all be distinguished on all platforms)::
+(however they cannot all be distinguished on all platforms, including Mac OS
+X)::
 
     key.LCTRL
     key.RCTRL
