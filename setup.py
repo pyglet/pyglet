@@ -248,7 +248,8 @@ elif 'bdist_mpkg' in sys.argv:
                 'pyglet for MacPorts Python 2.5 in /opt/local')
             add_package(
                 '/opt/local/',
-                '/opt/local/lib/python2.6/site-packages',
+                '/opt/local/Library/Frameworks/Python.framework/Versions/2.6' \
+                    '/lib/python2.6/site-packages',
                 '2.6', 'pyglet-macports-py2.6',
                 'pyglet for MacPorts Python 2.6 in /opt/local')
  
