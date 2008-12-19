@@ -249,8 +249,12 @@ class Context(object):
         #   "ATI Radeon X1600 OpenGL Engine"
         # glGenBuffers not exported by
         #   "ATI Radeon X1270 x86/MMX/3DNow!/SSE2"
+        # glGenBuffers not exported by
+        #   "Intel 965/963 Graphics Media Accelerator"
         ('_workaround_vbo',
-         lambda info: info.get_renderer().startswith('ATI Radeon X')),
+         lambda info: (info.get_renderer().startswith('ATI Radeon X')
+                       or info.get_renderer() == 
+                            'Intel 965/963 Graphics Media Accelerator'),
 
         # Some ATI cards on OS X start drawing from a VBO before it's written
         # to.  In these cases pyglet needs to call glFinish() to flush the
