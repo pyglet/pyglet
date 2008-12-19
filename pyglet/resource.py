@@ -219,7 +219,7 @@ class ZIPLocation(Location):
         self.dir = dir
         
     def open(self, filename, mode='rb'):
-        path = os.path.join(self.dir, filename)
+        path = self.dir + '/' + filename
         text = self.zip.read(path)
         return StringIO.StringIO(text)
         
