@@ -254,7 +254,7 @@ class Context(object):
         ('_workaround_vbo',
          lambda info: (info.get_renderer().startswith('ATI Radeon X')
                        or info.get_renderer() == 
-                            'Intel 965/963 Graphics Media Accelerator'),
+                            'Intel 965/963 Graphics Media Accelerator')),
 
         # Some ATI cards on OS X start drawing from a VBO before it's written
         # to.  In these cases pyglet needs to call glFinish() to flush the
