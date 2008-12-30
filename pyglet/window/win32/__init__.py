@@ -824,7 +824,6 @@ class Win32Window(BaseWindow):
         return self._event_mousebutton(
             'on_mouse_release', mouse.RIGHT, lParam)
 
-    @ViewEventHandler
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):
         delta = c_short(wParam >> 16).value
