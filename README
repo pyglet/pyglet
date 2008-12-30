@@ -22,7 +22,7 @@ pyglet requires one of the following operating systems:
 pyglet requires either:
 
 * Python 2.4 with ctypes installed
-* Python 2.5
+* Python 2.5 or 2.6
 
 Installation
 ------------
