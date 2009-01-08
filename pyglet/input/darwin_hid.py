@@ -373,7 +373,7 @@ class DarwinHIDDevice(Device):
                 self._queue_callback_func, None, None)
         )
 
-        event_loop = pyglet.app.event_loop._event_loop
+        event_loop = pyglet.app.platform_event_loop._event_loop
         carbon.GetCFRunLoopFromEventLoop.restype = void_p
         run_loop = carbon.GetCFRunLoopFromEventLoop(event_loop)
         kCFRunLoopDefaultMode = \
