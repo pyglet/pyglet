@@ -578,7 +578,7 @@ class Caret(object):
         The caret is hidden when the window is not active.
         '''
         self._active = True
-        self.visible = self.visible
+        self.visible = self._active
         return event.EVENT_HANDLED
 
     def on_deactivate(self):
@@ -587,5 +587,5 @@ class Caret(object):
         The caret is hidden when the window is not active.
         '''
         self._active = False
-        self.visible = self.visible
+        self.visible = self._active
         return event.EVENT_HANDLED
