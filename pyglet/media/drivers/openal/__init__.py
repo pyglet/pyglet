@@ -213,6 +213,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if not self._al_source:
             return
 
+        context.worker.remove(self)
+
         self._lock.acquire()
 
         context.lock()
@@ -221,8 +223,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._al_source = None
 
         self._lock.release()
-
-        context.worker.remove(self)
 
     def play(self):
         if self._playing:
