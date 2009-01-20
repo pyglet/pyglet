@@ -222,6 +222,14 @@ class EvdevDevice(XlibSelectDevice, Device):
 
         name = EVIOCGNAME(fileno)
         try:
+            name = name.decode('utf-8')
+        except UnicodeDecodeError:
+            try:
+                name = name.decode('latin-1')
+            except UnicodeDecodeError:
+                pass
+            
+        try:
             self.phys = EVIOCGPHYS(fileno)
         except OSError:
             self.phys = ''
