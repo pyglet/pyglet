@@ -71,7 +71,7 @@ class Display(object):
 
         :rtype: sequence of `Window`
         '''
-        return [window for window in windows if window.display is self]
+        return [window for window in app.windows if window.display is self]
 
 class Screen(object):
     '''A virtual monitor that supports fullscreen windows.

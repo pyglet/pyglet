@@ -35,7 +35,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
     _sleep_time = 0.2
 
     def __init__(self, source_group, player):
-        super(SilentAudioPlayer, self).__init__(source_group, player)
+        super(SilentAudioPlayerPacketConsumer, self).__init__(source_group, player)
 
         # System time of first timestamp
         self._timestamp_time = None
@@ -228,7 +228,7 @@ class SilentTimeAudioPlayer(AbstractAudioPlayer):
 class SilentAudioDriver(AbstractAudioDriver):
     def create_audio_player(self, source_group, player):
         if source_group.audio_format:
-            return SilentPacketAudioPlayer(source_group, player)
+            return SilentAudioPlayerPacketConsumer(source_group, player)
         else:
             return SilentTimeAudioPlayer(source_group, player)
 

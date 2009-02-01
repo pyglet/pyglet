@@ -592,7 +592,7 @@ class StaticSource(Source):
         '''
         source = source._get_queue_source()
         if source.video_format:
-            raise NotImplementedException(
+            raise NotImplementedError(
                 'Static sources not supported for video yet.')
 
         self.audio_format = source.audio_format

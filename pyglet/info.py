@@ -185,7 +185,7 @@ def dump_wintab():
         return
 
     interface_name = wintab.get_interface_name()
-    inmplementation_version = wintab.get_implementation_version()
+    impl_version = wintab.get_implementation_version()
     spec_version = wintab.get_spec_version()
 
     print 'WinTab: %s %d.%d (Spec %d.%d)' % (interface_name,
