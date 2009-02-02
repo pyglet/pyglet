@@ -42,7 +42,6 @@ __version__ = '$Id: $'
 import operator
 import parser
 import re
-import symbol
 import token
 
 import pyglet

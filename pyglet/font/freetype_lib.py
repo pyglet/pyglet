@@ -39,7 +39,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-
+from base import FontException
 import pyglet.lib
 
 _libfreetype = pyglet.lib.load_library('freetype')

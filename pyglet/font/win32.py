@@ -42,6 +42,7 @@ from ctypes import *
 import ctypes
 import math
 
+from sys import byteorder
 import pyglet
 from pyglet.font import base
 import pyglet.image

@@ -53,7 +53,6 @@ __version__ = '$Id: $'
 
 import HTMLParser
 import htmlentitydefs
-import os
 import re
 
 import pyglet
