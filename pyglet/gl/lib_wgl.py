@@ -101,7 +101,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         decorate_function(func, name)
         return func
-    except AttributeError, e:
+    except AttributeError:
         # Not in opengl32.dll. Try and get a pointer from WGL.
         try:
             fargs = (restype,) + tuple(argtypes)
@@ -129,7 +129,7 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         decorate_function(func, name)
         return func
-    except AttributeError, e:
+    except AttributeError:
         # Not in glu32.dll. Try and get a pointer from WGL.
         try:
             fargs = (restype,) + tuple(argtypes)

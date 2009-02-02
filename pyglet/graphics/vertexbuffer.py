@@ -52,7 +52,6 @@ import sys
 
 import pyglet
 from pyglet.gl import *
-from pyglet.gl import gl_info
 
 _enable_vbo = pyglet.options['graphics_vbo']
 

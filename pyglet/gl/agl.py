@@ -42,7 +42,6 @@ __version__ = '$Id: gengl.py 601 2007-02-04 05:36:59Z Alex.Holkner $'
 
 from ctypes import *
 from pyglet.gl.lib import link_AGL as _link_function
-from pyglet.gl.lib import c_ptrdiff_t
 
 if not _link_function:
     raise ImportError('AGL framework is not available.')

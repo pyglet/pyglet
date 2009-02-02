@@ -39,7 +39,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import ctypes
-import Queue
 import threading
 import time
 

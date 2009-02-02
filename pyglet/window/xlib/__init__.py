@@ -638,7 +638,7 @@ class XlibWindow(BaseWindow):
                     xlib.GrabModeAsync,
                     xlib.CurrentTime)
             else:
-                 xlib.XUngrabKeyboard(self._x_display, xlib.CurrentTime)
+                xlib.XUngrabKeyboard(self._x_display, xlib.CurrentTime)
             self._applied_keyboard_exclusive = keyboard_exclusive
 
     def set_exclusive_mouse(self, exclusive=True):

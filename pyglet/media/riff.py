@@ -49,7 +49,6 @@ __version__ = '$Id$'
 from pyglet.media import StreamingSource, AudioData, AudioFormat
 from pyglet.media import MediaFormatException
 
-import ctypes
 import struct
 import StringIO
 

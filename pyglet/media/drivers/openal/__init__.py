@@ -512,8 +512,8 @@ class OpenALDriver(AbstractAudioDriver):
         else:
             return _split_nul_strings(extensions)
     
-    def have_extension(extension):
-        return extension in get_extensions()
+    def have_extension(self, extension):
+        return extension in self.get_extensions()
 
     def get_listener(self):
         return self._listener

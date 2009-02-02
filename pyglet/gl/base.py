@@ -5,6 +5,7 @@ import sys as _sys
 
 from pyglet import gl
 from pyglet.gl import gl_info
+from pyglet.gl import glu_info
 
 class Config(object):
     '''Graphics configuration.
@@ -139,7 +140,7 @@ class Config(object):
         :rtype: `Context`
         :return: The new context.
         '''
-        raise ConfigException(
+        raise gl.ConfigException(
             'This config cannot be used to create contexts.  '
             'Use Config.match to created a CanvasConfig')
 
@@ -296,7 +297,6 @@ class Context(object):
         gl.current_context = self
 
         # XXX
-        import gl_info, glu_info
         gl_info.set_active_context()
         glu_info.set_active_context()
 

@@ -15,6 +15,7 @@ from pyglet import gl
 from pyglet.gl import glx
 from pyglet.gl import glxext_arb
 from pyglet.gl import glx_info
+from pyglet.gl import glxext_mesa
 
 class XlibConfig(Config):
     def match(self, canvas):
@@ -376,7 +377,7 @@ class XlibContextARB(XlibContext13):
         if self.config.forward_compatible:
             flags |= glxext_arb.GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
         if self.config.debug:
-            flags |= glxext_arb.GLX_DEBUG_BIT_ARB
+            flags |= glxext_arb.GLX_CONTEXT_DEBUG_BIT_ARB
         if flags:
             attribs.extend([glxext_arb.GLX_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)

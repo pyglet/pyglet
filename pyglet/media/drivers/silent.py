@@ -6,7 +6,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import threading
 import time
 
 from pyglet.media import AbstractAudioPlayer, AbstractAudioDriver, \
@@ -135,7 +134,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
     # Worker func that consumes audio data and dispatches events
     def _worker_func(self):
         thread = self._thread
-        buffered_time = 0
+        #buffered_time = 0
         eos = False
         events = self._events
 

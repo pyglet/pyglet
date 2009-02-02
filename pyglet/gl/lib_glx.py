@@ -65,7 +65,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         decorate_function(func, name)
         return func
-    except AttributeError, e:
+    except AttributeError:
         if _have_getprocaddress:
             # Fallback if implemented but not in ABI
             bname = cast(pointer(create_string_buffer(name)), POINTER(c_ubyte))
@@ -87,6 +87,6 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         decorate_function(func, name)
         return func
-    except AttributeError, e:
+    except AttributeError:
         return missing_function(name, requires, suggestions)
 

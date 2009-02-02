@@ -973,8 +973,8 @@ class Player(pyglet.event.EventDispatcher):
         self._set_playing(self._playing)
 
     def _set_playing(self, playing):
-        stopping = self._playing and not playing
-        starting = not self._playing and playing
+        #stopping = self._playing and not playing
+        #starting = not self._playing and playing
 
         self._playing = playing
         source = self.source

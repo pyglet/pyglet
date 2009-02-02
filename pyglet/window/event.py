@@ -92,7 +92,6 @@ class WindowEventLogger(object):
 
         '''
         if logfile is None:
-            import sys
             logfile = sys.stdout
         self.file = logfile
 

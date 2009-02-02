@@ -124,7 +124,6 @@ class PulseAudioDriver(AbstractAudioDriver):
     def get_app_name(self):
         '''Get the application name as advertised to the pulseaudio server.'''
         # TODO move app name into pyglet.app (also useful for OS X menu bar?).
-        import sys
         return sys.argv[0]
 
     def dump_debug_info(self):
@@ -455,7 +454,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         self._playing = False
 
     def _get_read_index(self):
-        time = pa.pa_usec_t()
+        #time = pa.pa_usec_t()
 
         context.lock()
         context.sync_operation(

@@ -57,7 +57,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         decorate_function(func, name)
         return func
-    except AttributeError, e:
+    except AttributeError:
         return missing_function(name, requires, suggestions)
 
 link_GLU = link_GL
@@ -69,6 +69,6 @@ def link_AGL(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         decorate_function(func, name)
         return func
-    except AttributeError, e:
+    except AttributeError:
         return missing_function(name, requires, suggestions)
 

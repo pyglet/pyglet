@@ -3,6 +3,7 @@
 
 from pyglet import app
 from pyglet import gl
+from pyglet import window
 
 class Display(object):
     '''A display device supporting one or more screens.
@@ -135,7 +136,7 @@ class Screen(object):
             template = gl.Config()
         configs = self.get_matching_configs(template)
         if not configs:
-            raise gl.NoSuchConfigException()
+            raise window.NoSuchConfigException()
         return configs[0]
 
     def get_matching_configs(self, template):

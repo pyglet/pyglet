@@ -18,7 +18,6 @@ import os
 import mutex
 import signal
 import struct
-import sys
 
 from pyglet.libs.x11 import xlib
 try:

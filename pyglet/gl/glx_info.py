@@ -57,7 +57,6 @@ __version__ = '$Id$'
 from ctypes import *
 
 from pyglet.gl.glx import *
-from pyglet.gl.glx import Display
 
 class GLXInfoException(Exception):
     pass

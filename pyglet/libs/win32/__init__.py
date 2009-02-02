@@ -4,7 +4,7 @@
 from ctypes import *
 
 import pyglet
-
+import constants
 from types import *
 
 _debug_win32 = pyglet.options['debug_win32']
@@ -19,7 +19,7 @@ if _debug_win32:
     
     def format_error(err):
         msg = create_string_buffer(256)
-        _FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+        _FormatMessageA(constants.FORMAT_MESSAGE_FROM_SYSTEM,
                           c_void_p(),
                           err,
                           0,
