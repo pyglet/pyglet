@@ -85,7 +85,6 @@ The default path is ``['.']``.  If you modify the path, you must call
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import operator
 import os
 import weakref
 import sys

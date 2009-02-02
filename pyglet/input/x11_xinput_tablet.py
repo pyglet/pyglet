@@ -6,7 +6,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import ctypes
 import pyglet
 from pyglet.input.base import \
     Tablet, TabletCanvas, TabletCursor, DeviceOpenException

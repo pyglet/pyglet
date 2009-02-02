@@ -41,7 +41,6 @@ __version__ = '$Id$'
 import os
 import select
 import threading
-import weakref
 from ctypes import *
 
 from pyglet import app

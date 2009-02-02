@@ -6,13 +6,9 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from fcntl import ioctl
-import array
 import ctypes
 import errno
 import os
-import struct
-import sys
 
 import pyglet
 from pyglet.app.xlib import XlibSelectDevice
@@ -212,7 +208,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         self._filename = filename
 
         fileno = os.open(filename, os.O_RDONLY)
-        event_version = EVIOCGVERSION(fileno).value
+        #event_version = EVIOCGVERSION(fileno).value
 
         id = EVIOCGID(fileno)
         self.id_bustype = id.bustype

@@ -8,7 +8,6 @@ __version__ = '$Id: $'
 
 import sys
 import threading
-import time
 import Queue
 
 from pyglet import app
@@ -341,7 +340,7 @@ class EventLoop(event.EventDispatcher):
             self.exit()
 
     if _is_epydoc:
-        def on_window_close(window):
+        def on_window_close(self, window):
             '''A window was closed.
 
             This event is dispatched when a window is closed.  It is not
@@ -355,7 +354,7 @@ class EventLoop(event.EventDispatcher):
             :event:
             '''
 
-        def on_enter():
+        def on_enter(self):
             '''The event loop is about to begin.
 
             This is dispatched when the event loop is prepared to enter
@@ -365,7 +364,7 @@ class EventLoop(event.EventDispatcher):
             :event:
             '''
 
-        def on_exit():
+        def on_exit(self):
             '''The event loop is about to exit.
 
             After dispatching this event, the `run` method returns (the

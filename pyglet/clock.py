@@ -143,9 +143,7 @@ __version__ = '$Id$'
 
 import time
 import sys
-import operator
 import ctypes
-import ctypes.util
 
 import pyglet.lib
 
@@ -945,7 +943,6 @@ class ClockDisplay(object):
         self.label.draw()
 
 def test_clock():
-    import sys
     import getopt
     test_seconds = 1 
     test_fps = 60

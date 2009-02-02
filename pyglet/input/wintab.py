@@ -54,7 +54,7 @@ class WintabTablet(Tablet):
         self.id = wtinfo_string(self._device, wintab.DVC_PNPID)
 
         hardware = wtinfo_uint(self._device, wintab.DVC_HARDWARE)
-        phys_cursors = hardware & wintab.HWC_PHYSID_CURSORS
+        #phys_cursors = hardware & wintab.HWC_PHYSID_CURSORS
         
         n_cursors = wtinfo_uint(self._device, wintab.DVC_NCSRTYPES)
         first_cursor = wtinfo_uint(self._device, wintab.DVC_FIRSTCSR)

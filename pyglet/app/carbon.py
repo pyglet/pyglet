@@ -39,7 +39,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes
-import Queue
 
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop

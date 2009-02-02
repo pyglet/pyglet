@@ -37,7 +37,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes
-import time
 
 from pyglet import app
 from base import PlatformEventLoop
