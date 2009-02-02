@@ -219,7 +219,7 @@ def create(width, height, pattern=None):
 
 class ImagePattern(object):
     '''Abstract image creation class.'''
-    def create_image(width, height):
+    def create_image(self, width, height):
         '''Create an image of the given size.
 
         :Parameters:
@@ -1776,8 +1776,8 @@ class Texture3D(Texture, UniformTextureSequence):
 
         texture = cls.create_for_size(GL_TEXTURE_3D, item_width, item_height)
         if images[0].anchor_x or images[0].anchor_y:
-            texture.anchor_x = self.anchor_x
-            texture.anchor_y = self.anchor_y
+            texture.anchor_x = images[0].anchor_x
+            texture.anchor_y = images[0].anchor_y
 
         texture.images = depth
         
@@ -1994,7 +1994,7 @@ class BufferManager(object):
             raise ImageException('No free stencil bits are available.')
 
         stencil_bit = self.free_stencil_bits.pop(0)
-        viewport = self.get_viewport()
+        x, y, width, height = self.get_viewport()
         buffer = BufferImageMask(x, y, width, height)
         buffer.stencil_bit = stencil_bit
 

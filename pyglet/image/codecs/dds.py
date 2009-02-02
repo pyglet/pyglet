@@ -44,7 +44,6 @@ from ctypes import *
 import struct
 
 from pyglet.gl import *
-from pyglet.gl import gl_info
 from pyglet.image import CompressedImageData
 from pyglet.image import codecs
 from pyglet.image.codecs import s3tc
@@ -166,20 +165,10 @@ class DDSImageDecoder(codecs.ImageDecoder):
 
         width = desc.dwWidth
         height = desc.dwHeight
-        compressed = False
-        volume = False
         mipmaps = 1
-
-        if desc.dwFlags & DDSD_PITCH:
-            pitch = desc.dwPitchOrLinearSize
-        elif desc.dwFlags & DDSD_LINEARSIZE:
-            image_size = desc.dwPitchOrLinearSize
-            compressed = True
 
         if desc.dwFlags & DDSD_DEPTH:
             raise DDSException('Volume DDS files unsupported')
-            volume = True
-            depth = desc.dwDepth
 
         if desc.dwFlags & DDSD_MIPMAPCOUNT:
             mipmaps = desc.dwMipMapCount
@@ -195,7 +184,6 @@ class DDSImageDecoder(codecs.ImageDecoder):
 
         has_alpha = desc.ddpfPixelFormat.dwRGBAlphaBitMask != 0
 
-        format = None
         format, decoder = _compression_formats.get(
             (desc.ddpfPixelFormat.dwFourCC, has_alpha), None)
         if not format:

@@ -92,7 +92,7 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         height = gdkpixbuf.gdk_pixbuf_get_height(pixbuf)
         channels = gdkpixbuf.gdk_pixbuf_get_n_channels(pixbuf)
         rowstride = gdkpixbuf.gdk_pixbuf_get_rowstride(pixbuf)
-        has_alpha = gdkpixbuf.gdk_pixbuf_get_has_alpha(pixbuf)
+        #has_alpha = gdkpixbuf.gdk_pixbuf_get_has_alpha(pixbuf)
         pixels = gdkpixbuf.gdk_pixbuf_get_pixels(pixbuf)
 
         # Copy pixel data.

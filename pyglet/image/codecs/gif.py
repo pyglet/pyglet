@@ -159,7 +159,7 @@ def read_graphic_control_extension(file, stream, graphics_scope):
      transparent_color_index,
      terminator) = unpack('BBHBB', file)
     if block_size != 4:
-        raise ImageFormatException('Incorrect block size')
+        raise ImageDecodeException('Incorrect block size')
     
     if delay_time:
         # Follow Firefox/Mac behaviour: use 100ms delay for any delay
