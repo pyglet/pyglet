@@ -44,11 +44,6 @@ provides a shortcut using the `event` decorator::
     def on_resize(width, height):
         pass
 
-This is not entirely equivalent to setting the event handler directly on the
-object.  If the object already had an event handler, using ``@event`` will add
-the handler to the object, rather than replacing it.  The next section
-describes this functionality in detail.
-
 As shown in `Subclassing Window`, you can also attach event handlers by
 subclassing the event dispatcher and adding the event handler as a method::
 
@@ -71,14 +66,6 @@ To push an event handler onto the stack, use the `push_handlers` method::
             fire_laser()
 
     window.push_handlers(on_key_press)
-
-As a convenience, the ``@event`` decorator can be used as an alternative to
-`push_handlers`::
-
-    @window.event
-    def on_key_press(symbol, modifiers):
-        if symbol == key.SPACE
-            fire_laser()
 
 One use for pushing handlers instead of setting them is to handle different
 parameterisations of events in different functions.  In the above example, if
