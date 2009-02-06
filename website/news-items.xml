@@ -1,4 +1,11 @@
 <news>
+  <item date="6-February-2009" author="Alex"
+        title="New pyglet.org hosting">
+    Thanks to the support of the good people at <a
+    href="http://tummy.com">tummy</a>, pyglet.org now has reliable, fast
+    hosting.  If you can read this, your DNS is pointing in the right
+    direction :-)
+  </item>
   <item date="4-October-2008" author="Alex"
         title="pyglet 1.1.2 released">
     <a href="download.html">pyglet 1.1.2</a> has been released, including

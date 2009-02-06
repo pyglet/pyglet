@@ -5,7 +5,7 @@
   </p>
 
   <h2>news</h2>
-  <news items="3" />
+  <news items="1" />
 
   <p>
     <a href="news.html">Older news...</a>
@@ -43,4 +43,7 @@
   <p>Please join us on the <a
   href="http://groups.google.com/group/pyglet-users">mailing list</a>, or
   <a href="download.html">download</a> the SDK today!</p>
+
+  <p><small>pyglet.org is generously hosted by <a
+  href="http://www.tummy.com">tummy.com</a>.</small></p>
 </div>
