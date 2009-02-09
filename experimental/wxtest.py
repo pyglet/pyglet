@@ -166,7 +166,7 @@ else:
 
 class TestCanvas(WxCanvas):
     label = pyglet.text.Label('Hello, world', font_size=48,
-                              valign='center', halign='center')
+                              anchor_x='center', anchor_y='center')
 
     def on_draw(self):
         width, height = self.GetClientSize()
