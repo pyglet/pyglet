@@ -153,8 +153,8 @@ class MachOLibraryLoader(LibraryLoader):
  
     def find_library(self, path):
         '''Implements the dylib search as specified in Apple documentation:
-        
-        http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/Articles/DynamicLibraryUsageGuidelines.html
+
+        http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
 
         Before commencing the standard search, the method first checks
         the bundle's ``Frameworks`` directory if the application is running
