@@ -230,7 +230,7 @@ class WaveSource(StreamingSource):
         timestamp = float(self._offset) / self.audio_format.bytes_per_second
         duration = float(bytes) / self.audio_format.bytes_per_second
 
-        return AudioData(data, len(data), timestamp, duration)
+        return AudioData(data, len(data), timestamp, duration, [])
 
     def seek(self, timestamp):
         offset = int(timestamp * self.audio_format.bytes_per_second)
