@@ -1367,6 +1367,11 @@ class AVbinSourceLoader(AbstractSourceLoader):
         import avbin
         return avbin.AVbinSource(filename, file)
 
+class RIFFSourceLoader(AbstractSourceLoader):
+    def load(self, filename, file):
+        import riff
+        return riff.WaveSource(filename, file)
+    
 def load(filename, file=None, streaming=True):
     '''Load a source from a file.
 
@@ -1441,7 +1446,7 @@ def get_source_loader():
         import avbin
         _source_loader = AVbinSourceLoader()
     except ImportError:
-        raise NotImplementedError('TODO: RIFFSourceLoader')
+        _source_loader = RIFFSourceLoader()
     return _source_loader
 
 _source_loader = None

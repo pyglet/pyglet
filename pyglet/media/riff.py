@@ -219,7 +219,7 @@ class WaveSource(StreamingSource):
         self._offset = 0
         self._file.seek(self._start_offset)
 
-    def _get_audio_data(self, bytes):
+    def get_audio_data(self, bytes):
         bytes = min(bytes, self._max_offset - self._offset)
         if not bytes:
             return None
