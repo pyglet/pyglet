@@ -335,7 +335,8 @@ class Sprite(event.EventDispatcher):
             self._frame_index = 0
             self._set_texture(img.frames[0].image.get_texture())
             self._next_dt = img.frames[0].duration
-            clock.schedule_once(self._animate, self._next_dt)
+            if self._next_dt:
+                clock.schedule_once(self._animate, self._next_dt)
         else:
             self._set_texture(img.get_texture())
         self._update_position()
