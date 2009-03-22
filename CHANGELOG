@@ -1,3 +1,15 @@
+1.1.3
+	* pyglet.clock: Fixed schedule_once with zero timeout
+	* pyglet.font: Fixed non-Unicode text rendering
+	* pyglet.graphics: Fixed cache invalidation in VertexList.resize
+	* pyglet.graphics: Fixed TextureGroup.__eq__
+	* pyglet.graphics: Fixed generic attributes
+	* pyglet.resource: Fixed resource indexing of deep directories
+	* pyglet.resource: Fixed path separator bug
+	* pyglet.text: Fixed IncrementalTextLayout with grapheme boundaries
+	* pyglet.text: Fixed ScrollableTextLayout
+	* Win32: Fixed glyph rendering of multi-character grapheme clusters
+
 1.1.2
     * pyglet.clock: Fixed schedule_interval_soft after large delta
     * pyglet.clock: Deprecated set_fps_limit
