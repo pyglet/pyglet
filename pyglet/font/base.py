@@ -74,7 +74,7 @@ def _grapheme_break(left, right):
     # GB2 not required, see end of get_grapheme_clusters
 
     # GB3
-    if left == _CR and right == LF:
+    if left == _CR and right == _LF:
         return False
     
     left_cc = unicodedata.category(left)
