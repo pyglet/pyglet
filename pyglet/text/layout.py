@@ -1765,6 +1765,10 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     def delete(self):
         for line in self.lines:
             line.delete(self)
+        self.batch = None
+        if self._document:
+            self._document.remove_handlers(self)
+        self._document = None
 
     def on_insert_text(self, start, text):
         len_text = len(text)
