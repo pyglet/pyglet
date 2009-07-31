@@ -75,6 +75,9 @@ k4IndexedGrayPixelFormat      = 0x00000024
 k8IndexedGrayPixelFormat      = 0x00000028
 kNativeEndianPixMap           = 1 << 8
 
+kGraphicsImporterDontDoGammaCorrection = 1 << 0
+kGraphicsImporterDontUseColorMatching = 1 << 3
+
 newMovieActive                = 1
 noErr                         = 0
 movieTrackMediaType = 1 << 0
@@ -166,7 +169,11 @@ class QuickTimeImageDecoder(ImageDecoder):
             byref(rect), c_void_p(), c_void_p(), 0, buffer,
             len(format) * width)
 
+        flags = (kGraphicsImporterDontUseColorMatching |
+                 kGraphicsImporterDontDoGammaCorrection)
+        quicktime.GraphicsImportSetFlags(importer, flags)
         quicktime.GraphicsImportSetGWorld(importer, world, c_void_p())
+        
         result = quicktime.GraphicsImportDraw(importer)
         quicktime.DisposeGWorld(world)
 
