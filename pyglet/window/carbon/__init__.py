@@ -738,26 +738,25 @@ class CarbonWindow(BaseWindow):
 
     @staticmethod
     def _get_mouse_button_and_modifiers(ev):
-        button = EventMouseButton()
-        carbon.GetEventParameter(ev, kEventParamMouseButton,
-            typeMouseButton, c_void_p(), sizeof(button), c_void_p(),
-            byref(button))
+        buttons = c_uint()
+        carbon.GetEventParameter(ev, kEventParamMouseChord,
+            typeMouseButton, c_void_p(), sizeof(buttons), c_void_p(),
+            byref(buttons))
         
-        if button.value == 1: 
-            button = mouse.LEFT
-        elif button.value == 2: 
-            button = mouse.RIGHT
-        elif button.value == 3: 
-            button = mouse.MIDDLE
-        else:
-            button = None
+        buttons_out = 0
+        if buttons.value & 1: 
+            buttons |= mouse.LEFT
+        if button.value & 2: 
+            buttons |= mouse.RIGHT
+        if button.value & 3: 
+            buttons |= mouse.MIDDLE
 
         modifiers = c_uint32()
         carbon.GetEventParameter(ev, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
-        return button, CarbonWindow._map_modifiers(modifiers.value)
+        return buttons_out, CarbonWindow._map_modifiers(modifiers.value)
 
     def _get_mouse_in_content(self, ev, x, y):
         if self._fullscreen:
