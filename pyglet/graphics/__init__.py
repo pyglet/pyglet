@@ -346,7 +346,6 @@ class Batch(object):
         '''
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, group, formats)
-        domain.__formats = formats
             
         # Create vertex list and initialize
         vlist = domain.create(count)
@@ -434,6 +433,7 @@ class Batch(object):
                 domain = vertexdomain.create_indexed_domain(*formats)
             else:
                 domain = vertexdomain.create_domain(*formats)
+            domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True 
 
