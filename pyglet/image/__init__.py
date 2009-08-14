@@ -1886,7 +1886,7 @@ class TileableTexture(Texture):
                           texture_height,
                           GL_UNSIGNED_BYTE,
                           newdata)
-            image = ImageData(texture_width, texture_height, image.format,
+            image = ImageData(texture_width, texture_height, 'RGBA',
                               newdata)
 
         image = image.get_image_data()
