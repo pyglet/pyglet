@@ -70,11 +70,13 @@ script home.  Some examples::
     path = ['res'] 
 
     # Search the directory containing the module `levels.level1`, followed
-    # by the `res` directory.
-    path = ['@levels.level1', 'res']
+    # by the `res/images` directory.
+    path = ['@levels.level1', 'res/images']
 
-Paths are always case-sensitive, even if the filesystem is not.  This
-avoids a common programmer error when porting applications between platforms.
+Paths are always case-sensitive and forward slashes are always used as path
+separators, even in cases when the filesystem or platform does not do this.
+This avoids a common programmer error when porting applications between
+platforms.
 
 The default path is ``['.']``.  If you modify the path, you must call
 `reindex`.

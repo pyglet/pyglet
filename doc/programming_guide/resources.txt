@@ -152,6 +152,9 @@ itself has subdirectories, these need to be specified explicitly::
     pyglet.resource.path = ['res', 'res/images', 'res/sounds', 'res/fonts']
     pyglet.resource.reindex()
 
+The entries in the resource path always use forward slash characters as path
+separators even when the operating systems using a different character.
+
 Specifying module names makes it easy to group code with its resources.  The
 following example uses the directory containing the hypothetical
 ``gui.skins.default`` for resources::
