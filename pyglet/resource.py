@@ -348,9 +348,15 @@ class Loader(object):
             else:
                 # Find path component that is the ZIP file.
                 dir = ''
+                old_path = None
                 while path and not os.path.isfile(path):
+                    old_path = path
                     path, tail_dir = os.path.split(path)
+                    if path == old_path:
+                        break
                     dir = '/'.join((tail_dir, dir))
+                if path == old_path:
+                    continue
                 dir = dir.rstrip('/')
 
                 # path is a ZIP file, dir resides within ZIP
