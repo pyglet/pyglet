@@ -131,7 +131,7 @@ change rapidly.
 All the layout classes can be constructed given a document and display
 dimensions::
 
-    layout = pyglet.text.TextLayout(document, width, height)
+    layout = pyglet.text.layout.TextLayout(document, width, height)
 
 Additional arguments to the constructor allow the specification of a graphics
 batch and group (recommended if many layouts are to be rendered), and the
