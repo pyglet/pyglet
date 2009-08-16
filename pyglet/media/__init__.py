@@ -1043,10 +1043,10 @@ class Player(pyglet.event.EventDispatcher):
 
         self._paused_time = time
         self.source.seek(time)
-        self._audio_player.clear()
+        if self._audio_player: self._audio_player.clear()
         if self.source.video_format:
             self._last_video_timestamp = None
-            self.update_texture()
+            self.update_texture(time=time)
 
     def _create_audio_player(self):
         assert not self._audio_player
@@ -1108,8 +1108,9 @@ class Player(pyglet.event.EventDispatcher):
     def get_texture(self):
         return self._texture
 
-    def update_texture(self, dt=None):
-        time = self._audio_player.get_time()
+    def update_texture(self, dt=None, time=None):
+        if time is None:
+            time = self._audio_player.get_time()
         if time is None:
             return
 
