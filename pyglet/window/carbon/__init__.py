@@ -664,6 +664,11 @@ class CarbonWindow(BaseWindow):
 
     @staticmethod
     def _get_symbol_and_modifiers(ev):
+        # This unicode char should help processing virtual keycodes problem
+        # (see issue 405)
+        #unicode = c_wchar()
+        #carbon.GetEventParameter(ev, kEventParamKeyUnicodes,
+        #    typeUnicodeText, c_void_p(), sizeof(unicode), c_void_p(), byref(unicode))
         sym = c_uint32()
         carbon.GetEventParameter(ev, kEventParamKeyCode,
             typeUInt32, c_void_p(), sizeof(sym), c_void_p(), byref(sym))
@@ -671,7 +676,6 @@ class CarbonWindow(BaseWindow):
         carbon.GetEventParameter(ev, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
-
         symbol = keymap.get(sym.value, None)
         if symbol is None:
             symbol = key.user_key(sym.value)
