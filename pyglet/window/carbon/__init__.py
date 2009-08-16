@@ -745,11 +745,11 @@ class CarbonWindow(BaseWindow):
         
         buttons_out = 0
         if buttons.value & 1: 
-            buttons |= mouse.LEFT
-        if button.value & 2: 
-            buttons |= mouse.RIGHT
-        if button.value & 3: 
-            buttons |= mouse.MIDDLE
+            buttons_out |= mouse.LEFT
+        if buttons.value & 2: 
+            buttons_out |= mouse.RIGHT
+        if buttons.value & 3: 
+            buttons_out |= mouse.MIDDLE
 
         modifiers = c_uint32()
         carbon.GetEventParameter(ev, kEventParamKeyModifiers,
