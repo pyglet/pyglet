@@ -171,7 +171,7 @@ class Location(object):
     from, and not necessarily have that path reside on the filesystem.
     '''
     def open(self, filename, mode='rb'):
-        '''Open a file at this locaiton.
+        '''Open a file at this location.
 
         :Parameters:
             `filename` : str
@@ -220,7 +220,10 @@ class ZIPLocation(Location):
         self.dir = dir
         
     def open(self, filename, mode='rb'):
-        path = self.dir + '/' + filename
+        if self.dir:
+            path = self.dir + '/' + filename
+        else:
+            path = filename
         text = self.zip.read(path)
         return StringIO.StringIO(text)
         
