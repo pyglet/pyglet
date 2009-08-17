@@ -273,7 +273,7 @@ charmap = {
     '!' : key.EXCLAMATION,
     '"' : key.DOUBLEQUOTE,
     '#' : key.HASH,
-    '£' : key.POUND,
+    '#' : key.POUND,
     '$' : key.DOLLAR,
     '%' : key.PERCENT,
     '&' : key.AMPERSAND,
