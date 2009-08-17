@@ -171,6 +171,11 @@ class CarbonContext(Context):
         super(CarbonContext, self).detach()
         agl.aglSetDrawable(self._context, None)
         _aglcheck()
+    
+    def set_current(self):
+        super(CarbonContext, self).set_current()
+        agl.aglSetCurrentContext(self._context)
+        _aglcheck()
 
     def update_geometry(self):
         agl.aglUpdateContext(self._context)
