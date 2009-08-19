@@ -439,10 +439,10 @@ class _readable:
         self.offset = 0
 
     def read(self, n):
-        r = buf[offset:offset+n]
+        r = self.buf[offset:offset+n]
         if isinstance(r, array):
             r = r.tostring()
-        offset += n
+        self.offset += n
         return r
 
 class Reader:

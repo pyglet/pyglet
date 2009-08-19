@@ -70,11 +70,13 @@ script home.  Some examples::
     path = ['res'] 
 
     # Search the directory containing the module `levels.level1`, followed
-    # by the `res` directory.
-    path = ['@levels.level1', 'res']
+    # by the `res/images` directory.
+    path = ['@levels.level1', 'res/images']
 
-Paths are always case-sensitive, even if the filesystem is not.  This
-avoids a common programmer error when porting applications between platforms.
+Paths are always case-sensitive and forward slashes are always used as path
+separators, even in cases when the filesystem or platform does not do this.
+This avoids a common programmer error when porting applications between
+platforms.
 
 The default path is ``['.']``.  If you modify the path, you must call
 `reindex`.
@@ -85,7 +87,6 @@ The default path is ``['.']``.  If you modify the path, you must call
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import operator
 import os
 import weakref
 import sys
@@ -98,7 +99,7 @@ class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
     def __init__(self, name):
         message = ('Resource "%s" was not found on the path.  '
-            'Ensure that the filename has the correct captialisation.') % name
+            'Ensure that the filename has the correct capitalisation.') % name
         Exception.__init__(self, message)
 
 def get_script_home():
@@ -170,7 +171,7 @@ class Location(object):
     from, and not necessarily have that path reside on the filesystem.
     '''
     def open(self, filename, mode='rb'):
-        '''Open a file at this locaiton.
+        '''Open a file at this location.
 
         :Parameters:
             `filename` : str
@@ -219,7 +220,10 @@ class ZIPLocation(Location):
         self.dir = dir
         
     def open(self, filename, mode='rb'):
-        path = os.path.join(self.dir, filename)
+        if self.dir:
+            path = self.dir + '/' + filename
+        else:
+            path = filename
         text = self.zip.read(path)
         return StringIO.StringIO(text)
         
@@ -343,9 +347,15 @@ class Loader(object):
             else:
                 # Find path component that is the ZIP file.
                 dir = ''
+                old_path = None
                 while path and not os.path.isfile(path):
+                    old_path = path
                     path, tail_dir = os.path.split(path)
+                    if path == old_path:
+                        break
                     dir = '/'.join((tail_dir, dir))
+                if path == old_path:
+                    continue
                 dir = dir.rstrip('/')
 
                 # path is a ZIP file, dir resides within ZIP

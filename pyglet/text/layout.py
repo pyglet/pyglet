@@ -151,14 +151,12 @@ document; they will be ignored by the built-in text classes.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import math
 import re
 import sys
 
 from pyglet.gl import *
 from pyglet import event
 from pyglet import graphics
-from pyglet.text import document
 from pyglet.text import runlist
 
 from pyglet.font.base import _grapheme_break
@@ -1283,7 +1281,6 @@ class TextLayout(object):
             lambda value: value is not None, 0)
 
         line = _Line(start)
-        x = 0
         font = font_iterator[0]
 
         for start, end, owner in owner_iterator:
@@ -1761,6 +1758,10 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     def delete(self):
         for line in self.lines:
             line.delete(self)
+        self.batch = None
+        if self._document:
+            self._document.remove_handlers(self)
+        self._document = None
 
     def on_insert_text(self, start, text):
         len_text = len(text)
@@ -1855,7 +1856,6 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             return
         
         # Find grapheme breaks and extend glyph range to encompass.
-        from pyglet.font.base import _grapheme_break as _break
         text = self.document.text
         while invalid_start > 0:
             if _grapheme_break(text[invalid_start - 1], text[invalid_start]):
@@ -2012,8 +2012,6 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         invalid_start, invalid_end = self.invalid_vertex_lines.validate()
         if invalid_end - invalid_start <= 0:
             return
-
-        batch = self.batch
 
         colors_iter = self.document.get_style_runs('color')
         background_iter = self.document.get_style_runs('background_color')
@@ -2380,7 +2378,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             self.view_x = x - self.width + 10 
 
     if _is_epydoc:
-        def on_layout_update():
+        def on_layout_update(self):
             '''Some or all of the layout text was reflowed.
 
             Text reflow is caused by document edits or changes to the layout's

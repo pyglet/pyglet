@@ -81,7 +81,7 @@ GET_READY_DELAY = 1.
 BEGIN_PLAY_DELAY = 2.
 LIFE_LOST_DELAY = 2.
 
-FONT_NAME = 'Saved By Zero'
+FONT_NAME = ('Verdana', 'Helvetica', 'Arial')
 
 INSTRUCTIONS = \
 '''Your ship is lost in a peculiar unchartered area of space-time infested with asteroids!  You have no chance for survival except to rack up the highest score possible.
@@ -432,15 +432,15 @@ class DifficultyMenuItem(MenuItem):
 
     def get_label(self):
         if difficulty == 0:
-            return 'DIFFICULTY: PEBBLES'
+            return 'Difficulty: Pebbles'
         elif difficulty == 1:
-            return 'DIFFICULTY: STONES'
+            return 'Difficulty: Stones'
         elif difficulty == 2:
-            return 'DIFFICULTY: ASTEROIDS'
+            return 'Difficulty: Asteroids'
         elif difficulty == 3:
-            return 'DIFFICULTY: METEORS'
+            return 'Difficulty: Meteors'
         else:
-            return 'DIFFICULTY: %d' % difficulty
+            return 'Difficulty: %d' % difficulty
 
     def on_key_press(self, symbol, modifiers):
         global difficulty

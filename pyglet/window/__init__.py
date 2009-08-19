@@ -539,7 +539,7 @@ class BaseWindow(EventDispatcher):
     _mouse_y = 0
     _mouse_visible = True
     _mouse_exclusive = False
-    _mouse_in_window = True
+    _mouse_in_window = False
 
     _event_queue = None
     _enable_event_queue = True    # overridden by EventLoop.
@@ -795,7 +795,9 @@ class BaseWindow(EventDispatcher):
 
     def on_key_press(self, symbol, modifiers):
         '''Default on_key_press handler.'''
-        if symbol == key.ESCAPE:
+        if symbol == key.ESCAPE and not (modifiers & ~(key.MOD_NUMLOCK |
+                                                                            key.MOD_CAPSLOCK |
+                                                                            key.MOD_SCROLLLOCK)):
             self.dispatch_event('on_close')
 
     def close(self):

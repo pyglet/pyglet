@@ -42,7 +42,6 @@ __version__ = '$Id: $'
 # independence?
 
 from ctypes import *
-import string
 import math
 from sys import byteorder
 

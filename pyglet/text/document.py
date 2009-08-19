@@ -527,7 +527,7 @@ class AbstractDocument(event.EventDispatcher):
         self.dispatch_event('on_style_text', start, end, attributes)
 
     if _is_epydoc:
-        def on_insert_text(start, text):
+        def on_insert_text(self, start, text):
             '''Text was inserted into the document.
 
             :Parameters:
@@ -539,7 +539,7 @@ class AbstractDocument(event.EventDispatcher):
             :event:
             '''
 
-        def on_delete_text(start, end):
+        def on_delete_text(self, start, end):
             '''Text was deleted from the document.
 
             :Parameters:
@@ -551,7 +551,7 @@ class AbstractDocument(event.EventDispatcher):
             :event:
             '''
 
-        def on_style_text(start, end, attributes):
+        def on_style_text(self, start, end, attributes):
             '''Text character style was modified.
 
             :Parameters:

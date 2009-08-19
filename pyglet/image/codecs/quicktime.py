@@ -169,6 +169,7 @@ class QuickTimeImageDecoder(ImageDecoder):
         quicktime.GraphicsImportSetGWorld(importer, world, c_void_p())
         result = quicktime.GraphicsImportDraw(importer)
         quicktime.DisposeGWorld(world)
+        quicktime.CloseComponent(importer)
 
         if result != 0:
             raise ImageDecodeException(filename or file)

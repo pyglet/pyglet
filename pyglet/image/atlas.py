@@ -165,7 +165,7 @@ class Allocator(object):
         # The total unused area in each compacted strip is summed.
         if not self.strips:
             return 0.
-        possible_area = self.strips[-1].y2 * width
+        possible_area = self.strips[-1].y2 * self.width
         return 1.0 - self.used_area / float(possible_area)
 
 class TextureAtlas(object):

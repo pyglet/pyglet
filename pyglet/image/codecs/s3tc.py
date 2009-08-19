@@ -40,7 +40,6 @@ http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture_compression_s3tc.txt
 
 import ctypes
 import re
-import sys
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -98,7 +97,6 @@ def decode_dxt1_rgb(data, width, height):
 
     # Read 8 bytes at a time
     image_offset = 0
-    col = 0
     for c0_lo, c0_hi, c1_lo, c1_hi, b0, b1, b2, b3 in split_8byte.findall(data):
         color0 = ord(c0_lo) | ord(c0_hi) << 8
         color1 = ord(c1_lo) | ord(c1_hi) << 8
@@ -157,7 +155,6 @@ def decode_dxt1_rgba(data, width, height):
 
     # Read 8 bytes at a time
     image_offset = 0
-    col = 0
     for c0_lo, c0_hi, c1_lo, c1_hi, b0, b1, b2, b3 in split_8byte.findall(data):
         color0 = ord(c0_lo) | ord(c0_hi) << 8
         color1 = ord(c1_lo) | ord(c1_hi) << 8
@@ -221,7 +218,6 @@ def decode_dxt3(data, width, height):
 
     # Read 16 bytes at a time
     image_offset = 0
-    col = 0
     for (a0, a1, a2, a3, a4, a5, a6, a7,
          c0_lo, c0_hi, c1_lo, c1_hi, 
          b0, b1, b2, b3) in split_16byte.findall(data):
@@ -289,7 +285,6 @@ def decode_dxt5(data, width, height):
 
     # Read 16 bytes at a time
     image_offset = 0
-    col = 0
     for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5, 
          c0_lo, c0_hi, c1_lo, c1_hi, 
          b0, b1, b2, b3) in split_16byte.findall(data):

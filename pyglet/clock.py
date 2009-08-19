@@ -143,9 +143,7 @@ __version__ = '$Id$'
 
 import time
 import sys
-import operator
 import ctypes
-import ctypes.util
 
 import pyglet.lib
 
@@ -560,7 +558,9 @@ class Clock(_ClockBase):
             scheduled nearby.
             '''
             for item in self._schedule_interval_items:
-                if abs(item.next_ts - ts) <= e:
+                if item.next_ts is None:
+                    pass
+                elif abs(item.next_ts - ts) <= e:
                     return True
                 elif item.next_ts > ts + e:
                     return False
@@ -898,7 +898,6 @@ class ClockDisplay(object):
         self.label.draw()
 
 def test_clock():
-    import sys
     import getopt
     test_seconds = 1 
     test_fps = 60

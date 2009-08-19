@@ -6,13 +6,9 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from fcntl import ioctl
-import array
 import ctypes
 import errno
 import os
-import struct
-import sys
 
 import pyglet
 
@@ -173,8 +169,6 @@ class Device(object):
     def _init_elements(self):
         fileno = os.open(self.filename, os.O_RDONLY)
 
-        event_version = EVIOCGVERSION(fileno).value
-
         id = EVIOCGID(fileno)
         self.id_bustype = id.bustype
         self.id_vendor = hex(id.vendor)
@@ -182,6 +176,14 @@ class Device(object):
         self.id_version = id.version
 
         self.name = EVIOCGNAME(fileno)
+        try:
+            self.name = self.name.decode('utf-8')
+        except UnicodeDecodeError:
+            try:
+                self.name = name.decode('latin-1')
+            except UnicodeDecodeError:
+                pass
+
         try:
             self.phys = EVIOCGPHYS(fileno)
         except OSError:

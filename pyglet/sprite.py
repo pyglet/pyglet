@@ -305,8 +305,8 @@ class Sprite(event.EventDispatcher):
                                   group)
 
         if self._batch is not None:
-           self._batch.migrate(self._vertex_list, GL_QUADS, self._group,
-                               self._batch)
+            self._batch.migrate(self._vertex_list, GL_QUADS, self._group,
+                                self._batch)
 
     def _get_group(self):
         return self._group.parent
@@ -555,7 +555,7 @@ class Sprite(event.EventDispatcher):
         self._group.unset_state_recursive()
 
     if _is_epydoc:
-        def on_animation_end():
+        def on_animation_end(self):
             '''The sprite animation reached the final frame.
 
             The event is triggered only if the sprite has an animation, not an

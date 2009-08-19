@@ -338,7 +338,7 @@ class FreeTypeFont(base.Font):
     def have_font(cls, name):
         value = FcValue()
         match = cls.get_fontconfig_match(name, 12, False, False)
-        result = fontconfig.FcPatternGet(match, FC_FAMILY, 0, byref(value))
+        #result = fontconfig.FcPatternGet(match, FC_FAMILY, 0, byref(value))
         if value.u.s == name:
             return True
         else:

@@ -180,7 +180,7 @@ def _read_environment():
     for key in options:
         env = 'PYGLET_%s' % key.upper()
         try:
-            value = os.environ['PYGLET_%s' % key.upper()]
+            value = os.environ[env]
             if _option_types[key] is tuple:
                 options[key] = value.split(',')
             elif _option_types[key] is bool:
@@ -214,7 +214,6 @@ def _trace_repr(value, size=40):
 
 def _trace_frame(frame, indent):
     from pyglet import lib
-    import os
     if frame.f_code is lib._TraceFunction.__call__.func_code:
         is_ctypes = True
         func = frame.f_locals['self']._func

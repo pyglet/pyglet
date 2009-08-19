@@ -39,7 +39,6 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import select
-import weakref
 
 from pyglet.app import displays, windows, BaseEventLoop
 from pyglet.window.xlib import xlib

@@ -688,7 +688,6 @@ def add_directory(dir):
             Directory that contains font files.
 
     '''
-    import os
     for file in os.listdir(dir):
         if file[-4:].lower() == '.ttf':
             add_file(os.path.join(dir, file))
