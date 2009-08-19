@@ -25,9 +25,10 @@ class TEST_CLASS(base_event_sequence.BaseEventSequence):
         win.push_handlers(self)
         win.set_fullscreen()
         self.check_sequence(0, 'begin')
-        while not win.has_exit and not self.finished:
+        while not self.finished:
             win.dispatch_events()
             self.check_timeout()
+        win.close()          
 
 if __name__ == '__main__':
     unittest.main()
