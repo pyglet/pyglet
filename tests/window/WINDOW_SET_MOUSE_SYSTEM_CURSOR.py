@@ -47,6 +47,8 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(unittest.TestCase):
             self.w.CURSOR_WAIT,
             self.w.CURSOR_WAIT_ARROW,
         ]
+        if symbol == key.ESCAPE:
+            self.w.on_close()
         if symbol == key.RIGHT:
             self.i = (self.i + 1) % len(names)
         elif symbol == key.LEFT:
