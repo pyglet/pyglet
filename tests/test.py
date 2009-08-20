@@ -205,6 +205,7 @@ class TestCase(object):
         if not options.capabilities.intersection(self.capabilities):
             return
 
+        print ("Running Test: %s" % self.name)
         options.log.info('Testing %s.', self)
         if options.pretend:
             return
