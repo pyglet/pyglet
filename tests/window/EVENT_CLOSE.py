@@ -24,9 +24,10 @@ class EVENT_CLOSE(unittest.TestCase):
         print 'Window close event.'
         return event.EVENT_HANDLED
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        global w
-        super(window.Window,w).on_close()
+    def on_key_press(self, symbol, mods):
+        if symbol == window.key.ESCAPE:
+            global w
+            super(window.Window, w).on_close()
 
     def test_close(self):
         global w
