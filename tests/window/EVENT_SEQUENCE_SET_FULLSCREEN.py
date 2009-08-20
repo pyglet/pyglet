@@ -25,7 +25,7 @@ class TEST_CLASS(base_event_sequence.BaseEventSequence):
         win.push_handlers(self)
         win.set_fullscreen()
         self.check_sequence(0, 'begin')
-        while not self.finished:
+        while not win.has_exit and not self.finished:
             win.dispatch_events()
             self.check_timeout()
         win.close()          
