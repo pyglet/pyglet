@@ -9,7 +9,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: ELEMENT.py 1764 2008-02-16 05:24:46Z Alex.Holkner $'
 
 import unittest
-
+import time
 import pyglet
 from pyglet.text import caret, document, layout
 
