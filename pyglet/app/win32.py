@@ -37,6 +37,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import ctypes
+import time
 
 from pyglet.app import windows, BaseEventLoop
 from pyglet.window.win32 import _user32, types, constants
