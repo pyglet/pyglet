@@ -1599,6 +1599,7 @@ class Texture(AbstractImage):
     def get_texture(self, rectangle=False, force_rectangle=False):
         if force_rectangle and not self._is_rectangle:
             raise ImageException('Texture is not a rectangle.')
+        return self
 
     # no implementation of blit_to_texture yet (could use aux buffer)
 
