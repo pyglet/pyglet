@@ -162,7 +162,8 @@ if sys.platform in ('win32', 'cygwin'):
             _kernel32.SetWaitableTimer(self._timer, ctypes.byref(delay), 
                 0, ctypes.c_void_p(), ctypes.c_void_p(), False)
             _kernel32.WaitForSingleObject(self._timer, 0xffffffff)
-
+    _default_time_function = time.clock
+    
 else:
     _c = pyglet.lib.load_library('c', darwin='/usr/lib/libc.dylib')
     _c.usleep.argtypes = [ctypes.c_ulong]
@@ -170,7 +171,8 @@ else:
     class _ClockBase(object):
         def sleep(self, microseconds):
             _c.usleep(int(microseconds))
-
+    _default_time_function = time.time
+    
 class _ScheduledItem(object):
     __slots__ = ['func', 'args', 'kwargs']
     def __init__(self, func, args, kwargs):
@@ -221,7 +223,7 @@ class Clock(_ClockBase):
     # If True, a sleep(0) is inserted on every tick.   
     _force_sleep = False
 
-    def __init__(self, fps_limit=None, time_function=time.time):
+    def __init__(self, fps_limit=None, time_function=_default_time_function):
         '''Initialise a Clock, with optional framerate limit and custom
         time function.
 
