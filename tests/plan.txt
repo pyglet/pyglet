@@ -104,7 +104,9 @@ clock
         clock.SCHEDULE                          X11 WIN OSX
         clock.SCHEDULE_INTERVAL                 X11 WIN OSX
         clock.SCHEDULE_ONCE                     X11 WIN OSX
-
+        
+    clock-multicore
+        clock.MULTICORE                         WIN
 image
     image-pattern
         image.CHECKERBOARD                      X11 WIN OSX
