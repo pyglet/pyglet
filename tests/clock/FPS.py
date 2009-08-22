@@ -18,6 +18,7 @@ class FPS(unittest.TestCase):
     def test_fps(self):
         clock.set_default(clock.Clock())
         self.assertTrue(clock.get_fps() == 0)
+        clock.tick()
         for i in range(10):
             time.sleep(0.2)
             clock.tick()
