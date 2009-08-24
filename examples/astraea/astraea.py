@@ -761,8 +761,6 @@ wrapping_batch = pyglet.graphics.Batch()
 resource.path.append('res')
 resource.reindex()
 
-resource.add_font('saved_by_zero.ttf')
-
 asteroid_sizes = [AsteroidSize('asteroid1.png', 100),
                   AsteroidSize('asteroid2.png', 50),
                   AsteroidSize('asteroid3.png', 10)]
