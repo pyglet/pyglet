@@ -530,6 +530,22 @@ class Vector3:
                        self.y - d * normal.y,
                        self.z - d * normal.z)
 
+class AffineVector3(Vector3):
+    w = 1
+    def __repr__(self):
+        return 'Vector3(%.2f, %.2f, %.2f, 1.00)' % (self.x,
+                                                    self.y,
+                                                    self.z)
+
+    def __len__(self):
+        return 4
+
+    def __getitem__(self, key):
+        return (self.x, self.y, self.z, 1)[key]
+
+    def __iter__(self):
+        return iter((self.x, self.y, self.z, 1))
+
 # a b c
 # e f g
 # i j k
@@ -825,6 +841,14 @@ class Matrix4:
             P.y = A.e * B.x + A.f * B.y + A.g * B.z + A.h
             P.z = A.i * B.x + A.j * B.y + A.k * B.z + A.l
             return P
+        elif isinstance(other, AffineVector3):
+            A = self
+            B = other
+            V = AffineVector3(0, 0, 0)
+            V.x = A.a * B.x + A.b * B.y + A.c * B.z + A.d * B.w
+            V.y = A.e * B.x + A.f * B.y + A.g * B.z + A.h * B.w
+            V.z = A.i * B.x + A.j * B.y + A.k * B.z + A.l * B.w
+            return V
         elif isinstance(other, Vector3):
             A = self
             B = other
