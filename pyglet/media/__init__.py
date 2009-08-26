@@ -1108,6 +1108,14 @@ class Player(pyglet.event.EventDispatcher):
     def get_texture(self):
         return self._texture
 
+    def seek_next_frame(self):
+        '''Step forwards one video frame in the current Source.
+        '''
+        time = self._groups[0].get_next_video_timestamp()
+        if time is None:
+            return
+        self.seek(time)
+
     def update_texture(self, dt=None, time=None):
         if time is None:
             time = self._audio_player.get_time()
@@ -1129,6 +1137,8 @@ class Player(pyglet.event.EventDispatcher):
 
         image = self._groups[0].get_next_video_frame()
         if image is not None:
+            if self._texture is None:
+                self._create_texture()
             self._texture.blit_into(image, 0, 0, 0)
             self._last_video_timestamp = ts
 
