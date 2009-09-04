@@ -342,7 +342,7 @@ class _GlyphBox(_AbstractBox):
                 v2 += x1
                 v1 += y + baseline
                 v3 += y + baseline
-                vertices.extend([v0, v1, v2, v1, v2, v3, v0, v3])
+                vertices.extend(map(int, [v0, v1, v2, v1, v2, v3, v0, v3]))
                 t = glyph.tex_coords
                 tex_coords.extend(t)
                 x1 += glyph.advance
@@ -1397,7 +1397,7 @@ class TextLayout(object):
             self._update()
         else:
             dx = x - self._x
-            l_dx = lambda x: x + dx
+            l_dx = lambda x: int(x + dx)
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.vertices[:]
                 vertices[::2] = map(l_dx, vertices[::2])
@@ -1422,7 +1422,7 @@ class TextLayout(object):
             self._update()
         else:
             dy = y - self._y
-            l_dy = lambda y: y + dy
+            l_dy = lambda y: int(y + dy)
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.vertices[:]
                 vertices[1::2] = map(l_dy, vertices[1::2])
