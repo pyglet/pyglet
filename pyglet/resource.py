@@ -330,7 +330,7 @@ class Loader(object):
 
             if os.path.isdir(path):
                 # Filesystem directory
-                path = path.rstrip(os.path.pathsep)
+                path = path.rstrip(os.path.sep)
                 location = FileLocation(path)
                 for dirpath, dirnames, filenames in os.walk(path):
                     dirpath = dirpath[len(path) + 1:]
