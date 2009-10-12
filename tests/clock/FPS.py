@@ -23,7 +23,6 @@ class FPS(unittest.TestCase):
             time.sleep(0.2)
             clock.tick()
         result = clock.get_fps()
-        print result
         self.assertTrue(abs(result - 5.0) < 0.05)
 
 if __name__ == '__main__':
