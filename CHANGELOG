@@ -1,14 +1,44 @@
+1.1.4
+    * Bugfix release http://code.google.com/p/pyglet/issues/list
+    * Issue 368: permission issues with some doc and example files
+    * Issue 381: Missing attribute in VertexDomain when changing the group attribute of a sprite multiple times
+    * Issue 382: evdev device name unicode problem
+    * Issue 390: Various typos and keyword errors in pyglet
+    * Issue 391: code cleanups for pyglet.image
+    * Issue 392: code cleanups for text and font
+    * Issue 393: code cleanup for input and app
+    * Issue 407: random crash with pyglet.clock.tick()
+    * Issue 408: IncrementalTextLayout, when deleted, still renders into its batch on document update
+    * Issue 410: typo in pyglet/font/base.py
+    * Issue 413: TileableTexture interchanges red and blue in some JPGs
+    * Issue 414: Carbon platform missing support for multiple mouse buttons during drag
+    * Issue 416: Endless loop in pyglet.resource.reindex()
+    * Issue 422: Documentation: pyglet.resource and pats
+    * Issue 423: glMultiDrawElements called with incorrect arguments in method IndexedVertexDomain.draw
+    * Issue 424: Small documentation error in document layout model page
+    * Issue 426: Attempt to load resource from zipfile with no internal directory structure fails
+    * Issue 436: QuickTimeImageDecoder leaks memory
+    * Issue 439: EVENT_CLOSE test can't be passed
+    * Issue 440: tests/window/WINDOW_SET_MOUSE_SYSTEM_CURSOR does not exit when escape is pressed
+    * Issue 443: after the test window.EVENT_SHOW_HIDE process must be killed
+    * Issue 444: tests/resources/RES_LOAD_IMAGE opens a slew of windows and doesn't close them	
+    * Issue 447: import time missing from pyglet.app.win32 (pyglet 1.1 maintenance branch)
+    * Issue 449: astraea example missing font
+    * Backport fix for RES_LOAD test15 from trunk
+    * Add tests/clock/MULTICORE.py
+    * improve clock test with pyglet.clock.tick
+
 1.1.3
-	* pyglet.clock: Fixed schedule_once with zero timeout
-	* pyglet.font: Fixed non-Unicode text rendering
-	* pyglet.graphics: Fixed cache invalidation in VertexList.resize
-	* pyglet.graphics: Fixed TextureGroup.__eq__
-	* pyglet.graphics: Fixed generic attributes
-	* pyglet.resource: Fixed resource indexing of deep directories
-	* pyglet.resource: Fixed path separator bug
-	* pyglet.text: Fixed IncrementalTextLayout with grapheme boundaries
-	* pyglet.text: Fixed ScrollableTextLayout
-	* Win32: Fixed glyph rendering of multi-character grapheme clusters
+    * pyglet.clock: Fixed schedule_once with zero timeout
+    * pyglet.font: Fixed non-Unicode text rendering
+    * pyglet.graphics: Fixed cache invalidation in VertexList.resize
+    * pyglet.graphics: Fixed TextureGroup.__eq__
+    * pyglet.graphics: Fixed generic attributes
+    * pyglet.resource: Fixed resource indexing of deep directories
+    * pyglet.resource: Fixed path separator bug
+    * pyglet.text: Fixed IncrementalTextLayout with grapheme boundaries
+    * pyglet.text: Fixed ScrollableTextLayout
+    * Win32: Fixed glyph rendering of multi-character grapheme clusters
 
 1.1.2
     * pyglet.clock: Fixed schedule_interval_soft after large delta
