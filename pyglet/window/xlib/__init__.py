@@ -1238,8 +1238,13 @@ class XlibWindow(BaseWindow):
                 text = buffer.value[:count].decode(encoding)
 
             # Don't treat Unicode command codepoints as text, except Return.
-            if text and unicodedata.category(text) == 'Cc' and text != '\r':
+            if not text:
                 text = None
+            else:
+                for char in text:
+                    if text and unicodedata.category(text) == 'Cc' and \
+                            text != '\r':
+                        text = None
 
         symbol = symbol.value
 
