@@ -14,14 +14,18 @@ Making a pyglet release
 
    Creates .dmg in dist/
 
-5. Windows release (requires WIX 3.0 UNSTABLE -- currently at 3.0.3022.0.  WIX
-   bin/ must be in PATH)::
+5. Windows release (requires WIX 3.0.  WIX bin/ must be in PATH)::
 
         python tools/genmsi/genmsi.py
   
    Creates .msi in dist/
 
-6. tools/gendoc.sh all
+6. Linux - You will need docutils, the docbook writer from the docutils sandbox, inkscape, fop, docbook-xsl, and perhaps more:
+
+   	tools/gendoc.sh all
+
+   Creates doc package in dist/
+
 7. Source, egg and doc releases:
 
         tools/gendist.sh
