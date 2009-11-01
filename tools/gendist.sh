@@ -12,6 +12,7 @@ python setup.py sdist --formats=gztar,zip
 # Eggs
 python2.4 setup.py bdist_egg --exclude-source-files
 python2.5 setup.py bdist_egg --exclude-source-files
+python2.6 setup.py bdist_egg --exclude-source-files
 
 # Build docs archive
 python setup.py sdist --manifest-only
