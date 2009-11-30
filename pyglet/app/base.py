@@ -160,7 +160,8 @@ class EventLoop(event.EventDispatcher):
         while not self.has_exit:
             timeout = self.idle()
             if timeout is None: 
-                estimate = None
+                # was None but that broke the _least_squares
+                estimate = 0
             else:
                 estimate = max(gradient * timeout + offset, 0.0)
             if False:
