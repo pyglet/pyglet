@@ -40,7 +40,7 @@ Measuring time
 The `tick` and `get_fps` functions can be used in conjunction to fulfil most
 games' basic requirements::
 
-    from pylet import clock
+    from pyglet import clock
     while True:
         dt = clock.tick()
         # ... update and render ...
@@ -90,7 +90,7 @@ in the future::
     clock.schedule_once(callback, 5)        # called in 5 seconds
 
 All of the `schedule` methods will pass on any additional args or keyword args
-you specify ot the callback function::
+you specify to the callback function::
 
     def animate(dt, velocity, sprite):
        sprite.position += dt * velocity
@@ -121,7 +121,7 @@ Using multiple clocks
 =====================
 
 The clock functions are all relayed to an instance of `Clock` which is
-initalised with the module.  You can get this instance to use directly::
+initialised with the module.  You can get this instance to use directly::
 
     clk = clock.get_default()
 
@@ -626,7 +626,7 @@ class Clock(_ClockBase):
     def unschedule(self, func):
         '''Remove a function from the schedule.  
         
-        If the function appears in the schedule more than once, all occurances
+        If the function appears in the schedule more than once, all occurrences
         are removed.  If the function was not scheduled, no error is raised.
 
         :Parameters:

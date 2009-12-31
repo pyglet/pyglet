@@ -73,7 +73,7 @@ def dump_pyglet():
         print "pyglet.options['%s'] = %r" % (key, value)
 
 def dump_window():
-    '''Dump display, windowm, screen and default config info.'''
+    '''Dump display, window, screen and default config info.'''
     import pyglet.window
     platform = pyglet.window.get_platform()
     print 'platform:', repr(platform)

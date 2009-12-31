@@ -207,7 +207,7 @@ def create(width, height, pattern=None):
             Height of image to create
         `pattern` : ImagePattern or None
             Pattern to fill image with.  If unspecified, the image will
-            intially be transparent.
+            initially be transparent.
 
     :rtype: AbstractImage
     '''
@@ -1942,7 +1942,7 @@ class BufferManager(object):
         return self.color_buffer
 
     def get_aux_buffer(self):
-        '''Get a free auxilliary buffer.
+        '''Get a free auxiliary buffer.
 
         If not aux buffers are available, `ImageException` is raised.  Buffers
         are released when they are garbage collected.
@@ -2065,7 +2065,7 @@ class ColorBufferImage(BufferImage):
     '''A color framebuffer.
 
     This class is used to wrap both the primary color buffer (i.e., the back
-    buffer) or any one of the auxilliary buffers.
+    buffer) or any one of the auxiliary buffers.
     '''
     gl_format = GL_RGBA
     format = 'RGBA'

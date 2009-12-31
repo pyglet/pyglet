@@ -99,7 +99,7 @@ class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
     def __init__(self, name):
         message = ('Resource "%s" was not found on the path.  '
-            'Ensure that the filename has the correct capitalisation.') % name
+            'Ensure that the filename has the correct captialisation.') % name
         Exception.__init__(self, message)
 
 def get_script_home():
@@ -480,7 +480,7 @@ class Loader(object):
                 If True, the returned image will be flipped vertically.
             `rotate` : int
                 The returned image will be rotated clockwise by the given
-                number of degrees (a mulitple of 90).
+                number of degrees (a multiple of 90).
 
         :rtype: `Texture`
         :return: A complete texture if the image is large, otherwise a
@@ -511,7 +511,7 @@ class Loader(object):
                 If True, the returned image will be flipped vertically.
             `rotate` : int
                 The returned image will be rotated clockwise by the given
-                number of degrees (a mulitple of 90).
+                number of degrees (a multiple of 90).
 
         :rtype: `Animation`
         '''

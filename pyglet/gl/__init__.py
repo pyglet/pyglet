@@ -138,8 +138,8 @@ class Config(object):
     '''Graphics configuration.
 
     A GLConfig stores the preferences for OpenGL attributes such as the
-    number of auxilliary buffers, size of the colour and depth buffers,
-    double buffering, stencilling, multi- and super-sampling, and so on.
+    number of auxiliary buffers, size of the colour and depth buffers,
+    double buffering, stenciling, multi- and super-sampling, and so on.
 
     Different platforms support a different set of attributes, so these
     are set with a string key and a value which is integer or boolean.
@@ -155,7 +155,7 @@ class Config(object):
         `buffer_size` : int
             Total bits per sample per color buffer.
         `aux_buffers` : int
-            The number of auxilliary color buffers.
+            The number of auxiliary color buffers.
         `sample_buffers` : int
             The number of multisample buffers.
         `samples` : int
@@ -230,7 +230,7 @@ class Config(object):
         return [(name, getattr(self, name)) for name in self._attribute_names]
 
     def create_context(self, share):
-        '''Create a GL context that satisifies this configuration.
+        '''Create a GL context that satisfies this configuration.
 
         :Parameters:
             `share` : `Context`
@@ -363,7 +363,7 @@ class Context(object):
     def destroy(self):
         '''Release the context.
 
-        The context will not be useable after being destroyed.  Each platform
+        The context will not be usable after being destroyed.  Each platform
         has its own convention for releasing the context and the buffer(s)
         that depend on it in the correct order; this should never be called
         by an application.

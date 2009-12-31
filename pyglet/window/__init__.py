@@ -773,7 +773,7 @@ class BaseWindow(EventDispatcher):
         '''A default resize event handler.
 
         This default handler updates the GL viewport to cover the entire
-        window and sets the ``GL_PROJECTION`` matrix to be orthagonal in
+        window and sets the ``GL_PROJECTION`` matrix to be orthogonal in
         window space.  The bottom-left corner is (0, 0) and the top-right
         corner is the width and height of the window in pixels.
 
@@ -863,7 +863,7 @@ class BaseWindow(EventDispatcher):
         :type: str
         ''')
     resizable = property(lambda self: self._resizable,
-        doc='''True if the window is resizeable.  Read-only.
+        doc='''True if the window is resizable.  Read-only.
 
         :type: bool
         ''')
@@ -1074,7 +1074,7 @@ class BaseWindow(EventDispatcher):
         primary display.  This can prevent "tearing" or flickering when
         the buffer is updated in the middle of a video scan.
 
-        Note that LCD monitors have an analagous time in which they are not
+        Note that LCD monitors have an analogous time in which they are not
         reading from the video buffer; while it does not correspond to
         a vertical retrace it has the same effect.
 

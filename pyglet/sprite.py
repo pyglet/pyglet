@@ -107,7 +107,7 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 class SpriteGroup(graphics.Group):
     '''Shared sprite rendering group.
 
-    The group is automatically coallesced with other sprite groups sharing the
+    The group is automatically coalesced with other sprite groups sharing the
     same parent group, texture and blend parameters.
     '''
     def __init__(self, texture, blend_src, blend_dest, parent=None):

@@ -71,7 +71,7 @@ class Caret(object):
     to be drawn explicitly.  Even if a different graphics batch is supplied,
     the caret will be correctly positioned and clipped within the layout.
 
-    Updates to the document (and so the layout) are automatically propogated
+    Updates to the document (and so the layout) are automatically propagated
     to the caret.  
 
     The caret object can be pushed onto a window event handler stack with

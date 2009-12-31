@@ -202,7 +202,7 @@ def serialize_attributes(count, attributes):
         `count` : int
             Number of vertices.
         `attributes` : sequence of `AbstractAttribute`
-            Attributes to serialze in-place.
+            Attributes to serialize in-place.
 
     '''
     offset = 0

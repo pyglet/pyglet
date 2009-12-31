@@ -44,7 +44,7 @@ policy is to double the buffer size when there is not enough room to fulfil an
 allocation.  The buffer is never resized smaller.
 
 The allocator maintains references to free space only; it is the caller's
-responsibility to mantain the allocated regions.
+responsibility to maintain the allocated regions.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -119,7 +119,7 @@ class Allocator(object):
     def set_capacity(self, size):
         '''Resize the maximum buffer size.
         
-        The capaity cannot be reduced.
+        The capacity cannot be reduced.
 
         :Parameters:
             `size` : int

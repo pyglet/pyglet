@@ -247,7 +247,7 @@ class InlineElement(object):
     def remove(self, layout):
         '''Remove this element from a layout.
 
-        The couterpart of `place`; called when the element is no longer
+        The counterpart of `place`; called when the element is no longer
         visible in the given layout.
 
         :Parameters:

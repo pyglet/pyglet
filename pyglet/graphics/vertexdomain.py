@@ -38,7 +38,7 @@
 A vertex "domain" consists of a set of attribute descriptions that together
 describe the layout of one or more vertex buffers which are used together to
 specify the vertices in a primitive.  Additionally, the domain manages the
-buffers used to store the data and will resize them as necessary to accomodate
+buffers used to store the data and will resize them as necessary to accommodate
 new vertices.
 
 Domains can optionally be indexed, in which case they also manage a buffer

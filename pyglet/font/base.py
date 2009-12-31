@@ -385,7 +385,7 @@ class Font(object):
         
         If the entire text is larger than 'width', as much as possible will be
         used while breaking after a space or zero-width space character.  If a
-        newline is enountered in text, only text up to that newline will be
+        newline is encountered in text, only text up to that newline will be
         used.  If no break opportunities (newlines or spaces) occur within
         `width`, the text up to the first break opportunity will be used (this
         will exceed `width`).  If there are no break opportunities, the entire

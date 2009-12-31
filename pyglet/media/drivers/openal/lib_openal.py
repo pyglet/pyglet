@@ -36,7 +36,7 @@
 Generated with:
 ../tools/wraptypes/wrap.py /usr/include/AL/al.h -lopenal -olib_openal.py
 
-.. Hacked to remove non-existant library functions.  
+.. Hacked to remove non-existent library functions.
 
 TODO add alGetError check.
 
