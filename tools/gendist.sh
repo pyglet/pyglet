@@ -10,7 +10,6 @@ VERSION=`grep 'VERSION =' setup.py | cut -d "'" -f2`
 python setup.py sdist --formats=gztar,zip
 
 # Eggs
-python2.4 setup.py bdist_egg --exclude-source-files
 python2.5 setup.py bdist_egg --exclude-source-files
 python2.6 setup.py bdist_egg --exclude-source-files
 
