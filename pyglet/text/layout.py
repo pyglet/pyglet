@@ -708,10 +708,10 @@ class TextLayout(object):
 
     :Ivariables:
         `content_width` : int
-            Calculuated width of the text in the layout.  This may overflow
+            Calculated width of the text in the layout.  This may overflow
             the desired width if word-wrapping failed.
         `content_height` : int
-            Calculuated height of the text in the layout.
+            Calculated height of the text in the layout.
         `top_group` : `Group`
             Top-level rendering group.
         `background_group` : `Group`

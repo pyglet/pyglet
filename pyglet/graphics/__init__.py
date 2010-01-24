@@ -104,7 +104,7 @@ to initialise that attribute.  Examples of common attribute formats are:
 ``"v3f"``
     Vertex position, specified as three floats.
 ``"c4B"``
-    Vertex color, specifed as four unsigned bytes.
+    Vertex color, specified as four unsigned bytes.
 ``"t2f"``
     Texture coordinate, specified as two floats.
 
@@ -136,7 +136,7 @@ state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot be used
 --- the results are undefined.
 
 When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
-must be taken to insert degenrate vertices at the beginning and end of each
+must be taken to insert degenerate vertices at the beginning and end of each
 vertex list.  For example, given the vertex list::
 
     A, B, C, D
@@ -147,7 +147,7 @@ the correct vertex list to provide the vertex list is::
 
 Alternatively, the ``NV_primitive_restart`` extension can be used if it is
 present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
-``GL_TRIANGLE_FAN``.   Unfortunatley the extension is not provided by older
+``GL_TRIANGLE_FAN``.   Unfortunately the extension is not provided by older
 video drivers, and requires indexed vertex lists.
 
 :since: pyglet 1.1

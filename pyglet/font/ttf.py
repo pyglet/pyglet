@@ -107,7 +107,7 @@ class TruetypeInfo:
     }
 
     def __init__(self, filename):
-        """Read the given truetype file.
+        """Read the given TrueType file.
 
         :Parameters:
             `filename`

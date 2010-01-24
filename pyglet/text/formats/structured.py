@@ -164,7 +164,7 @@ class OrderedListBuilder(ListBuilder):
         ``1``
             Decimal Arabic
         ``a``
-            Lowercase alphanumberic
+            Lowercase alphanumeric
         ``A``
             Uppercase alphanumeric
         ``i``

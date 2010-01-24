@@ -209,7 +209,7 @@ def create(width, height, pattern=None):
             Height of image to create
         `pattern` : ImagePattern or None
             Pattern to fill image with.  If unspecified, the image will
-            intially be transparent.
+            initially be transparent.
 
     :rtype: AbstractImage
     '''
@@ -360,8 +360,7 @@ class AbstractImage(object):
             `force_rectangle` : bool
                 True if the texture must be created as a rectangle.
 
-                **Since:** pyglet 1.2.
-
+                **Since:** pyglet 1.1.4.
         :rtype: `Texture`
 
         :since: pyglet 1.1
@@ -777,7 +776,7 @@ class ImageData(AbstractImage):
                 ``True`` if a rectangle must be created; see
                 `AbstractImage.get_texture`.
 
-                **Since:** pyglet 1.2
+                **Since:** pyglet 1.1.4
 
         :rtype: cls or cls.region_class
         '''
@@ -1444,7 +1443,7 @@ class Texture(AbstractImage):
                 ``True`` if a rectangular texture is required.  See
                 `AbstractImage.get_texture`.  
                 
-                **Since:** pyglet 1.2.
+                **Since:** pyglet 1.1.4.
 
         :rtype: `Texture`
         
@@ -1946,7 +1945,7 @@ class BufferManager(object):
         return self.color_buffer
 
     def get_aux_buffer(self):
-        '''Get a free auxilliary buffer.
+        '''Get a free auxiliary buffer.
 
         If not aux buffers are available, `ImageException` is raised.  Buffers
         are released when they are garbage collected.
@@ -2069,7 +2068,7 @@ class ColorBufferImage(BufferImage):
     '''A color framebuffer.
 
     This class is used to wrap both the primary color buffer (i.e., the back
-    buffer) or any one of the auxilliary buffers.
+    buffer) or any one of the auxiliary buffers.
     '''
     gl_format = GL_RGBA
     format = 'RGBA'

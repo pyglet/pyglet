@@ -212,7 +212,7 @@ class TextureBin(object):
     '''Collection of texture atlases.
 
     `TextureBin` maintains a collection of texture atlases, and creates new
-    ones as necessary to accomodate images added to the bin.
+    ones as necessary to accommodate images added to the bin.
     '''
     def __init__(self, texture_width=256, texture_height=256):
         '''Create a texture bin for holding atlases of the given size.

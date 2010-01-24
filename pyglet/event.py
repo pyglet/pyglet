@@ -82,7 +82,7 @@ There are two main use cases for "pushing" event handlers:
 * Temporarily intercepting the events coming from the dispatcher by pushing a
   custom set of handlers onto the dispatcher, then later "popping" them all
   off at once.
-* Creating "chains" of event handlers, where the event propogates from the
+* Creating "chains" of event handlers, where the event propagates from the
   top-most (most recently added) handler to the bottom, until a handler
   takes care of it.
 
@@ -99,7 +99,7 @@ keyword arguments::
 
 After an event handler has processed an event, it is passed on to the
 next-lowest event handler, unless the handler returns `EVENT_HANDLED`, which
-prevents further propogation.
+prevents further propagation.
 
 To remove all handlers on the top stack level, use
 `EventDispatcher.pop_handlers`.
@@ -124,7 +124,7 @@ It is up to the specific event dispatcher to queue relevant events until they
 can be dispatched, at which point the handlers are called in the order the
 events were originally generated.
 
-This implies that your application runs with a main loop that continously
+This implies that your application runs with a main loop that continuously
 updates the application state and checks for new events::
 
     while True:
@@ -318,7 +318,7 @@ class EventDispatcher(object):
     def dispatch_event(self, event_type, *args):
         '''Dispatch a single event to the attached handlers.
         
-        The event is propogated to all handlers from from the top of the stack
+        The event is propagated to all handlers from from the top of the stack
         until one returns `EVENT_HANDLED`.  This method should be used only by
         `EventDispatcher` implementors; applications should call
         the ``dispatch_events`` method.

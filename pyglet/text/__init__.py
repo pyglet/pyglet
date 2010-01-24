@@ -82,7 +82,7 @@ import pyglet
 from pyglet.text import layout, document, caret
 
 class DocumentDecodeException(Exception):
-    '''An error occured decoding document text.'''
+    '''An error occurred decoding document text.'''
     pass
 
 class DocumentDecoder(object):
