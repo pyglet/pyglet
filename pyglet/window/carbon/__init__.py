@@ -469,16 +469,22 @@ class CarbonWindow(BaseWindow):
             y = (rect.bottom + rect.top) / 2
             # Skip the next motion event, which would return a large delta.
             self._mouse_ignore_motion = True
-            self.set_mouse_position(x, y)
+            self.set_mouse_position(x, y, absolute=True)
             carbon.CGAssociateMouseAndMouseCursorPosition(False)
         else:
             carbon.CGAssociateMouseAndMouseCursorPosition(True)
         self.set_mouse_platform_visible()
 
-    def set_mouse_position(x, y):
+    def set_mouse_position(self, x, y, absolute=False):
         point = CGPoint()
-        point.x = x
-        point.y = y
+        if absolute:
+            point.x = x
+            point.y = y
+        else:
+            rect = Rect()
+            carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+            point.x = x + rect.left
+            point.y = rect.top + (rect.bottom - rect.top) - y
         carbon.CGWarpMouseCursorPosition(point)
 
     def set_exclusive_keyboard(self, exclusive=True):
