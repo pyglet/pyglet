@@ -1270,7 +1270,8 @@ class CompressedImageData(AbstractImage):
             texture.anchor_y = self.anchor_y
 
         glBindTexture(texture.target, texture.id)
-        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, self.min_filter)
+        glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, self.mag_filter)
 
         if self._have_extension():
             glCompressedTexImage2DARB(texture.target, texture.level,
@@ -1420,7 +1421,7 @@ class Texture(AbstractImage):
 
     @classmethod
     def create(cls, width, height, internalformat=GL_RGBA, 
-               rectangle=False, force_rectangle=False):
+               rectangle=False, force_rectangle=False, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
         '''Create an empty Texture.
 
         If `rectangle` is ``False`` or the appropriate driver extensions are
@@ -1444,6 +1445,10 @@ class Texture(AbstractImage):
                 `AbstractImage.get_texture`.  
                 
                 **Since:** pyglet 1.1.4.
+            `min_filter` : int
+                The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `mag_filter` : int
+                The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
 
         :rtype: `Texture`
         
@@ -1472,10 +1477,12 @@ class Texture(AbstractImage):
             texture_width = _nearest_pow2(width)
             texture_height = _nearest_pow2(height)
 
+
         id = GLuint()
         glGenTextures(1, byref(id))
         glBindTexture(target, id.value)
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         blank = (GLubyte * (texture_width * texture_height * 4))()
         glTexImage2D(target, 0,
@@ -1486,6 +1493,8 @@ class Texture(AbstractImage):
                      blank)
 
         texture = cls(texture_width, texture_height, target, id.value)
+        texture.min_filter = min_filter
+        texture.mag_filter = mag_filter
         if rectangle:
             texture._is_rectangle = True
             texture.tex_coords = (0., 0., 0., 
@@ -1502,7 +1511,7 @@ class Texture(AbstractImage):
 
     @classmethod
     def create_for_size(cls, target, min_width, min_height,
-                        internalformat=None):
+                        internalformat=None, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
         '''Create a Texture with dimensions at least min_width, min_height.
         On return, the texture will be bound.
 
@@ -1522,6 +1531,10 @@ class Texture(AbstractImage):
                 initialised (only the texture name will be created on the
                 instance).   If specified, the image will be initialised
                 to this format with zero'd data.
+            `min_filter` : int
+                The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `mag_filter` : int
+                The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
 
         :rtype: `Texture`
         '''
@@ -1539,7 +1552,8 @@ class Texture(AbstractImage):
         id = GLuint()
         glGenTextures(1, byref(id))
         glBindTexture(target, id.value)
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
         if internalformat is not None:
             blank = (GLubyte * (width * height * 4))()
@@ -1552,6 +1566,8 @@ class Texture(AbstractImage):
             glFlush()
                          
         texture = cls(width, height, target, id.value)
+        texture.min_filter = min_filter
+        texture.mag_filter = mag_filter
         texture.tex_coords = tex_coords
         return texture
 
