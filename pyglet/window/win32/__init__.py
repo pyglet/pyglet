@@ -421,7 +421,7 @@ class Win32Window(BaseWindow):
         if exclusive and self._has_focus:
             # Move mouse to the center of the window.
             self._reset_exclusive_mouse_screen()
-            self.set_mouse_position(*self._exclusive_mouse_screen)
+            self.set_mouse_position(*self._exclusive_mouse_screen, absolute=True)
 
             # Clip to client area, to prevent large mouse movements taking
             # it outside the client area.
@@ -438,7 +438,15 @@ class Win32Window(BaseWindow):
         self._exclusive_mouse_focus = self._has_focus
         self.set_mouse_platform_visible()
 
-    def set_mouse_position(self, x, y):
+    def set_mouse_position(self, x, y, absolute=False):
+        if not absolute:
+            rect = RECT()
+            _user32.GetClientRect(self._view_hwnd, byref(rect))
+            _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP, byref(rect), 2)
+            
+            x = x + rect.left
+            y = rect.top + (rect.bottom - rect.top) - y
+
         _user32.SetCursorPos(x, y)
 
     def set_exclusive_keyboard(self, exclusive=True):
@@ -721,7 +729,7 @@ class Win32Window(BaseWindow):
 
         if self._exclusive_mouse and self._has_focus:
             # Reset mouse position (so we don't hit the edge of the screen).
-            self.set_mouse_position(*self._exclusive_mouse_screen)
+            self.set_mouse_position(*self._exclusive_mouse_screen, absolute=True)
             
         dx = x - self._mouse_x
         dy = y - self._mouse_y
