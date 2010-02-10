@@ -574,6 +574,15 @@ class XlibWindow(BaseWindow):
             else:
                 xlib.XUndefineCursor(self._x_display, self._window)
 
+    def set_mouse_position(self, x, y):
+        xlib.XWarpPointer(self._x_display,
+            0,              # src window
+            self._window,   # dst window
+            0, 0,           # src x, y
+            0, 0,           # src w, h
+            x, self._height - y,
+        )
+
     def _update_exclusivity(self):
         mouse_exclusive = self._active and self._mouse_exclusive
         keyboard_exclusive = self._active and self._keyboard_exclusive
@@ -596,20 +605,10 @@ class XlibWindow(BaseWindow):
                 x = self._width / 2
                 y = self._height / 2
                 self._mouse_exclusive_client = x, y
-                xlib.XWarpPointer(self._x_display,
-                    0,              # src window
-                    self._window,   # dst window
-                    0, 0,           # src x, y
-                    0, 0,           # src w, h
-                    x, y)
+                self.set_mouse_position(x, y)
             elif self._fullscreen and not self.screen._xinerama:
                 # Restrict to fullscreen area (prevent viewport scrolling)
-                xlib.XWarpPointer(self._x_display,
-                    0,              # src window
-                    self._view,     # dst window
-                    0, 0,           # src x, y
-                    0, 0,           # src w, h
-                    0, 0)
+                self.set_mouse_position(0, 0)
                 r = xlib.XGrabPointer(self._x_display, self._view,
                     True, 0,
                     xlib.GrabModeAsync,

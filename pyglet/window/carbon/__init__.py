@@ -465,16 +465,21 @@ class CarbonWindow(BaseWindow):
             # Move mouse to center of window
             rect = Rect()
             carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
-            point = CGPoint()
-            point.x = (rect.right + rect.left) / 2
-            point.y = (rect.bottom + rect.top) / 2
+            x = (rect.right + rect.left) / 2
+            y = (rect.bottom + rect.top) / 2
             # Skip the next motion event, which would return a large delta.
             self._mouse_ignore_motion = True
-            carbon.CGWarpMouseCursorPosition(point)
+            self.set_mouse_position(x, y)
             carbon.CGAssociateMouseAndMouseCursorPosition(False)
         else:
             carbon.CGAssociateMouseAndMouseCursorPosition(True)
         self.set_mouse_platform_visible()
+
+    def set_mouse_position(x, y):
+        point = CGPoint()
+        point.x = x
+        point.y = y
+        carbon.CGWarpMouseCursorPosition(point)
 
     def set_exclusive_keyboard(self, exclusive=True):
         if exclusive:
