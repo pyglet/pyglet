@@ -1270,8 +1270,8 @@ class CompressedImageData(AbstractImage):
             texture.anchor_y = self.anchor_y
 
         glBindTexture(texture.target, texture.id)
-        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, self.min_filter)
-        glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, self.mag_filter)
+        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture.min_filter)
+        glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture.mag_filter)
 
         if self._have_extension():
             glCompressedTexImage2DARB(texture.target, texture.level,
