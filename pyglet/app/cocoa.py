@@ -70,9 +70,18 @@ class CocoaEventLoop(PlatformEventLoop):
         global pool
         pool.release()
         pool = NSAutoreleasePool.alloc().init()
-        # retrieve the next event
-        event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(NSAnyEventMask, NSDate.distantPast(), NSDefaultRunLoopMode, True)
-        # dispatch the event
+
+        # Determine the timeout date.
+        if timeout is None:
+            timeout_date = NSDate.distantFuture()
+        else:
+            timeout_date = NSDate.date().addTimeInterval_(timeout)
+
+        # Retrieve the next event (if any).
+        event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
+                NSAnyEventMask, timeout_date, NSDefaultRunLoopMode, True)
+
+        # Dispatch the event (if any).
         NSApp.sendEvent_(event)
         NSApp.updateWindows()
     
