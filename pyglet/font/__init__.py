@@ -564,8 +564,9 @@ class Text(object):
 
 if not getattr(sys, 'is_epydoc', False):
     if sys.platform == 'darwin':
-        from pyglet.font.carbon import CarbonFont
-        _font_class = CarbonFont
+        #from pyglet.font.carbon import CarbonFont
+        from pyglet.font.cocoa import CocoaFont
+        _font_class = CocoaFont
     elif sys.platform in ('win32', 'cygwin'):
         if pyglet.options['font'][0] == 'win32':
             from pyglet.font.win32 import Win32Font

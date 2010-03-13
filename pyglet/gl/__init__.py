@@ -219,7 +219,8 @@ elif _sys.platform in ('win32', 'cygwin'):
 elif _sys.platform == 'linux2':
     from xlib import XlibConfig as Config
 elif _sys.platform == 'darwin':
-    from carbon import CarbonConfig as Config
+    #from carbon import CarbonConfig as Config
+    from cocoa import CocoaConfig as Config
 del base
 
 # XXX remove

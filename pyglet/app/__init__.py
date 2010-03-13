@@ -141,7 +141,8 @@ if _is_epydoc:
     from pyglet.app.base import PlatformEventLoop
 else:
     if sys.platform == 'darwin':
-        from pyglet.app.carbon import CarbonEventLoop as PlatformEventLoop
+        #from pyglet.app.carbon import CarbonEventLoop as PlatformEventLoop
+        from pyglet.app.cocoa import CocoaEventLoop as PlatformEventLoop
     elif sys.platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:

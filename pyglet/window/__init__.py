@@ -1688,8 +1688,10 @@ if _is_epydoc:
 else:
     # Try to determine which platform to use.
     if sys.platform == 'darwin':
-        from pyglet.window.carbon import CarbonWindow
-        Window = CarbonWindow
+        #from pyglet.window.carbon import CarbonWindow
+        #Window = CarbonWindow
+        from pyglet.window.cocoa import CocoaWindow
+        Window = CocoaWindow
     elif sys.platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window
         Window = Win32Window
