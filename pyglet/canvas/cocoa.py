@@ -12,27 +12,34 @@ from base import Display, Screen, ScreenMode, Canvas
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
 
+from Cocoa import *
+from Foundation import *
+from Quartz import *
+
 class CocoaDisplay(Display):
-    # TODO: CarbonDisplay could be per display device, which would make
+    # TODO: CocoaDisplay could be per display device, which would make
     # reporting of screens and available configs more accurate.  The number of
     # Macs with more than one video card is probably small, though.
     def __init__(self):
         super(CocoaDisplay, self).__init__()
 
-        import MacOS
-        if not MacOS.WMAvailable():
-            raise app.AppException('Window manager is not available.  ' \
-                                   'Ensure you run "pythonw", not "python"')
+        #import MacOS
+        #if not MacOS.WMAvailable():
+        #    raise app.AppException('Window manager is not available.  ' \
+        #                           'Ensure you run "pythonw", not "python"')
 
-        self._install_application_event_handlers()
+        #self._install_application_event_handlers()
         
     def get_screens(self):
-        count = CGDisplayCount()
-        carbon.CGGetActiveDisplayList(0, None, byref(count))
-        displays = (CGDirectDisplayID * count.value)()
-        carbon.CGGetActiveDisplayList(count.value, displays, byref(count))
-        return [CocoaScreen(self, id) for id in displays]
+        err, ids, count = CGGetActiveDisplayList(10, None, None)
+        return [CocoaScreen(self, id) for id in ids]
+        #count = CGDisplayCount()
+        #CGGetActiveDisplayList(0, None, byref(count))
+        #displays = (CGDirectDisplayID * count.value)()
+        #CGGetActiveDisplayList(count.value, displays, byref(count))
+        #return [CocoaScreen(self, id) for id in displays]
 
+    """
     def _install_application_event_handlers(self):
         self._carbon_event_handlers = []
         self._carbon_event_handler_refs = []
@@ -152,30 +159,37 @@ class CocoaDisplay(Display):
         `pyglet.app.event_loop`.
         '''
         app.event_loop.exit()
+    """
 
 class CocoaScreen(Screen):
-    _initial_mode = None
+    #_initial_mode = None
 
     def __init__(self, display, id):
         self.display = display
-        rect = carbon.CGDisplayBounds(id)
+        rect = CGDisplayBounds(id)
         super(CocoaScreen, self).__init__(display,
             int(rect.origin.x), int(rect.origin.y),
             int(rect.size.width), int(rect.size.height))
         self.id = id
 
-        mode = carbon.CGDisplayCurrentMode(id)
-        kCGDisplayRefreshRate = create_cfstring('RefreshRate')
-        number = carbon.CFDictionaryGetValue(mode, kCGDisplayRefreshRate)
-        refresh = c_long()
-        kCFNumberLongType = 10
-        carbon.CFNumberGetValue(number, kCFNumberLongType, byref(refresh))
-        self._refresh_rate = refresh.value
+        mode = CGDisplayCurrentMode(id)
+        refresh = int( CFDictionaryGetValue(mode, kCGDisplayRefreshRate) )
+        self._refresh_rate = refresh
 
-    def get_gdevice(self):
-        gdevice = POINTER(None)()
-        _oscheck(carbon.DMGetGDeviceByDisplayID(self.id, byref(gdevice), False))
-        return gdevice
+        #self.display = display
+        #rect = carbon.CGDisplayBounds(id)
+        #super(CocoaScreen, self).__init__(display,
+        #    int(rect.origin.x), int(rect.origin.y),
+        #    int(rect.size.width), int(rect.size.height))
+        #self.id = id
+
+        #mode = carbon.CGDisplayCurrentMode(id)
+        #kCGDisplayRefreshRate = create_cfstring('RefreshRate')
+        #number = carbon.CFDictionaryGetValue(mode, kCGDisplayRefreshRate)
+        #refresh = c_long()
+        #kCFNumberLongType = 10
+        #carbon.CFNumberGetValue(number, kCFNumberLongType, byref(refresh))
+        #self._refresh_rate = refresh.value
 
     def get_matching_configs(self, template):
         canvas = CocoaCanvas(self.display, self, None)
@@ -186,16 +200,22 @@ class CocoaScreen(Screen):
         return configs
 
     def get_modes(self):
-        modes_array = carbon.CGDisplayAvailableModes(self.id)
-        n_modes_array = carbon.CFArrayGetCount(modes_array)
+        modes_array = CGDisplayAvailableModes(self.id)
+        n_modes_array = CFArrayGetCount(modes_array)
 
         modes = []
         for i in range(n_modes_array):
-            mode = carbon.CFArrayGetValueAtIndex(modes_array, i)
+            mode = CFArrayGetValueAtIndex(modes_array, i)
             modes.append(CocoaScreenMode(self, mode))
 
         return modes
 
+    def get_gdevice(self):
+        gdevice = POINTER(None)()
+        _oscheck(carbon.DMGetGDeviceByDisplayID(self.id, byref(gdevice), False))
+        return gdevice
+
+    """
     def get_mode(self):
         mode = carbon.CGDisplayCurrentMode(self.id)
         return CocoaScreenMode(self, mode)
@@ -215,6 +235,7 @@ class CocoaScreen(Screen):
             _oscheck(carbon.CGDisplaySwitchToMode(self.id, 
                                                   self._initial_mode.mode))
         _oscheck(carbon.CGDisplayRelease(self.id))
+    """
 
 class CocoaScreenMode(ScreenMode):
     def __init__(self, screen, mode):
@@ -228,11 +249,11 @@ class CocoaScreenMode(ScreenMode):
     def _get_long(self, key):
         kCFNumberLongType = 10
         cfkey = create_cfstring(key)
-        number = carbon.CFDictionaryGetValue(self.mode, cfkey)
+        number = CFDictionaryGetValue(self.mode, cfkey)
         if not number:
             return None
         value = c_long()
-        carbon.CFNumberGetValue(number, kCFNumberLongType, byref(value))
+        CFNumberGetValue(number, kCFNumberLongType, byref(value))
         return value.value 
 
 class CocoaCanvas(Canvas):

@@ -50,6 +50,100 @@ import pyglet.image
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
 
+from Cocoa import *
+
+class CocoaGlyphRenderer(base.GlyphRenderer):
+    def __init__(self, font):
+        super(CocoaGlyphRenderer, self).__init__(font)
+        self.font = font
+
+    def __del__(self):
+        pass
+
+    def render(self, text):
+        astr = NSAttributedString.alloc().initWithString_attributes_( text, {NSFontAttributeName: self.font._font} )
+        
+        size = astr.size()
+        
+        image = NSImage.alloc().initWithSize_(size)
+        
+        image.lockFocus()
+        NSGraphicsContext.currentContext().setShouldAntialias_(True)
+        
+        NSColor.blackColor().set()
+        astr.drawAtPoint_( NSMakePoint(0, 0) )
+        
+        bitmap = NSBitmapImageRep.alloc().initWithFocusedViewRect_( NSMakeRect(0,0, size.width, size.height) )
+        w, h = bitmap.pixelsWide(), bitmap.pixelsHigh()
+        
+        image.unlockFocus()
+        
+        pitch, channels = w*3, 'RGB'
+        if image.hasAlpha():
+            pitch, channels = w*4, 'RGBA'
+            
+        data = bitmap.bitmapData()
+        
+        pimage = pyglet.image.ImageData(w, h, channels, str(data), pitch)
+        
+        lsb = 0
+        advance = w
+        
+        glyph = self.font.create_glyph(pimage)
+        glyph.set_bearings(-self.font.descent, lsb, advance)
+        t = list(glyph.tex_coords)
+        glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
+        
+        #bitmap.release()
+        #image.release()
+        
+        return glyph
+
+class CocoaFont(base.Font):
+    glyph_renderer_class = CocoaGlyphRenderer
+
+    def __init__(self, name, size, bold=False, italic=False, dpi=None):
+        super(CocoaFont, self).__init__()
+
+        if not name:
+            name = 'Helvetica'
+
+        if dpi is None:
+            dpi = 96 # pyglet 1.1; in pyglet 1.0 this was 72.
+
+        # If application is not DPI-aware, DPI is fixed at 72.  Scale
+        # font size to emulate other DPI.  This will need to be fixed if issue
+        # #87 is implemented.
+        size = size * dpi / 72.
+        
+        manager = NSFontManager.sharedFontManager()
+        
+        traits = NSUnboldFontMask
+        
+        if bold:
+            traits = NSBoldFontMask
+        if italic:
+            traits |= NSItalicFontMask
+        
+        self._font = manager.fontWithFamily_traits_weight_size_(name, traits, 0, size)
+        
+        self.ascent = self._font.ascender()
+        self.descent = self._font.descender()
+
+    def __del__(self):
+        #self._font.release()
+        pass
+    
+    @classmethod
+    def have_font(cls, name):
+        fonts = list( NSFontManager.sharedFontManager().availableFontFamilies() )
+        return unicode(name) in fonts
+    
+    @classmethod
+    def add_font_data(cls, data):
+        pass
+
+"""
 class FixedPoint(Structure):
     _fields_ = [
         ('x', Fixed),
@@ -436,3 +530,4 @@ class CocoaFont(base.Font):
             kATSFontContextLocal, kATSFontFormatUnspecified, None, 0,
             byref(container))
         _oscheck(r)
+"""

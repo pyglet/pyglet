@@ -45,6 +45,45 @@ from pyglet.app.base import PlatformEventLoop
 
 from pyglet.libs.darwin import *
 
+from Cocoa import *
+
+#
+# Required reading:
+#   http://cocoawithlove.com/2009/01/demystifying-nsapplication-by.html
+#
+
+# create the NSApp singleton
+NSApplication.sharedApplication()
+
+# memory management
+pool = NSAutoreleasePool.alloc().init()
+
+# init menus, send launch notifications, etc.
+NSApp.finishLaunching()
+
+# sending -1 doesn't get through pyobjc
+NSAnyEventMask = 0xFFFFFFFFL
+
+class CocoaEventLoop(PlatformEventLoop):
+
+    def step(self, timeout=None):
+        global pool
+        pool.release()
+        pool = NSAutoreleasePool.alloc().init()
+        # retrieve the next event
+        event = NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(NSAnyEventMask, NSDate.distantPast(), NSDefaultRunLoopMode, True)
+        # dispatch the event
+        NSApp.sendEvent_(event)
+        NSApp.updateWindows()
+    
+    def stop(self):
+        NSApp.terminate_(None)
+        pool.release()
+
+    def notify(self):
+        pass
+
+"""
 EventLoopTimerProc = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
 
 
@@ -148,3 +187,4 @@ class CocoaEventLoop(PlatformEventLoop):
             sleep_time = kEventDurationForever
         carbon.SetEventLoopTimerNextFireTime(timer, ctypes.c_double(sleep_time))
         '''
+"""

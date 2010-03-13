@@ -55,7 +55,13 @@ from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
+from pyglet.gl import gl_info
+from pyglet.gl import glu_info
+
 from pyglet.event import EventDispatcher
+
+from Cocoa import *
+from Quartz import *
 
 # Map symbol,modifiers -> motion
 # Determined by experiment with TextEdit.app
@@ -84,9 +90,513 @@ class CocoaMouseCursor(MouseCursor):
     def __init__(self, theme):
         self.theme = theme
 
-def CocoaEventHandler(event_class, event_kind):
-    return _PlatformEventHandler((event_class, event_kind))
+class PygletWindow(NSWindow):
+	def canBecomeKeyWindow(self):
+		return True
 
+class PygletView(NSView):
+    def initWithDelegate_(self, delegate):
+        self = super(PygletView, self).init()
+        
+        self.delegate = delegate
+        
+        print 'pyglet view init'
+        
+        return self
+    
+    def canBecomeKeyView(self):
+        return True
+    
+    def keyDown_(self, nsevent):
+        symbol = keymap[ nsevent.keyCode() ]
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        self.delegate.dispatch_event('on_key_press', symbol, modifiers)
+    
+    def keyUp_(self, nsevent):
+        symbol = keymap[ nsevent.keyCode() ]
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        self.delegate.dispatch_event('on_key_release', symbol, modifiers)
+    
+    def mouseMoved_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        dx, dy = nsevent.deltaX(), nsevent.deltaY()
+        self.delegate.dispatch_event('on_mouse_motion', x, y, dx, dy)
+    
+    def scrollWheel_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        dx, dy = nsevent.deltaX(), nsevent.deltaY()
+        self.delegate.dispatch_event('on_mouse_scroll', x, y, dx, dy)
+    
+    def mouseDown_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.LEFT
+        self.delegate.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+    
+    def mouseDragged_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        dx, dy = nsevent.deltaX(), nsevent.deltaY()
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.LEFT
+        self.delegate.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+    
+    def mouseUp_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.LEFT
+        self.delegate.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+    
+    def rightMouseDown_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.RIGHT
+        self.delegate.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+    
+    def rightMouseDragged_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        dx, dy = nsevent.deltaX(), nsevent.deltaY()
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.RIGHT
+        self.delegate.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+    
+    def rightMouseUp_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.RIGHT
+        self.delegate.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+    
+    def otherMouseDown_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.MIDDLE
+        self.delegate.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+    
+    def otherMouseDragged_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        dx, dy = nsevent.deltaX(), nsevent.deltaY()
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.MIDDLE
+        self.delegate.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+    
+    def otherMouseUp_(self, nsevent):
+        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
+        x, y = p.x, p.y
+        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        buttons = mouse.MIDDLE
+        self.delegate.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+
+class CocoaWindow(BaseWindow):
+    _window = None 
+    _nscontext = None
+    
+    # Window properties
+    _minimum_size = None
+    _maximum_size = None
+    _event_dispatcher = None
+    _current_modifiers = 0
+    _mapped_modifers = 0
+    _track_ref = 0
+    _track_region = None
+
+    _mouse_exclusive = False
+    _mouse_platform_visible = True
+    _mouse_ignore_motion = False
+
+    def _recreate(self, changes):
+        if ('context' in changes):
+            self._nscontext.makeCurrentContext()
+        
+        if 'fullscreen' in changes:
+            if not self._fullscreen:
+                # Leaving fullscreen
+                self._nscontext.clearDrawable()
+                CGDisplayRelease( CGMainDisplayID() )
+        
+        self._create()
+
+    def _create(self):
+        self._nscontext = self.context._context
+
+        if self._window:
+            self._nscontext.clearDrawable()
+            self._window.orderOut_(None)
+            self._window.close()
+            self._window = None
+
+        if self._fullscreen:
+            self._width = CGDisplayPixelsWide( CGMainDisplayID() )
+            self._height = CGDisplayPixelsHigh( CGMainDisplayID() )
+            
+            # Switch to fullscreen mode with Quartz
+            CGDisplayCapture( CGMainDisplayID() )
+            #self._nscontext.setFullScreen()
+            #self._nscontext.update()
+            
+            self._mouse_in_window = True
+            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
+
+            self._view_x = (self.screen.width - self._width) // 2
+            self._view_y = (self.screen.height - self._height) // 2
+            self.canvas = CocoaCanvas(self.display, self.screen, 0)
+                                       #carbon.GetWindowPort(self._window))
+            self.canvas.bounds = (self._view_x, self._view_y, 
+                                  self._width, self._height)
+            
+            rect = NSMakeRect(0, 0, self._width, self._height)
+            
+            self._window = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+                                rect, NSBorderlessWindowMask, NSBackingStoreRetained, False)
+            
+            view = PygletView.alloc().initWithDelegate_(self)
+            
+            self._window.setLevel_( CGShieldingWindowLevel() )
+            
+            self._window.setContentView_( view )
+            self._window.makeFirstResponder_( view )
+            
+            self._window.setAcceptsMouseMovedEvents_(True)
+            
+            self._window.setBackgroundColor_( NSColor.blackColor() );
+            self._window.makeKeyAndOrderFront_(None)
+            
+            self._nscontext.setView_( view )
+            self._nscontext.update()
+        else:
+            styles = {
+                self.WINDOW_STYLE_DEFAULT:  NSTitledWindowMask |
+                                            NSClosableWindowMask |
+                                            NSMiniaturizableWindowMask,
+                self.WINDOW_STYLE_DIALOG:   NSTitledWindowMask |
+                                            NSClosableWindowMask,
+                self.WINDOW_STYLE_TOOL:     NSTitledWindowMask |
+                                            NSClosableWindowMask,
+                self.WINDOW_STYLE_BORDERLESS:   NSBorderlessWindowMask
+            }
+            style_mask = styles.get(self._style, NSTitledWindowMask | NSClosableWindowMask)
+
+            if self._resizable:
+                style_mask |= NSResizableWindowMask
+            
+            rect = NSMakeRect(10, 10, self._width, self._height)
+            
+            self._window = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+                                rect, style_mask, NSBackingStoreRetained, False)
+
+            self.canvas = CocoaCanvas(self.display, self.screen, 0)
+                                       #carbon.GetWindowPort(self._window))
+            self._view_x = self._view_y = 0
+            
+            view = PygletView.alloc().initWithDelegate_(self)
+            
+            self._window.setContentView_( view )
+            self._window.makeFirstResponder_( view )
+            
+            self._window.setAcceptsMouseMovedEvents_(True)
+            
+            self._window.center()
+            self._window.makeKeyAndOrderFront_(None)
+            
+            self._nscontext.setView_( view )
+            self._nscontext.update()
+
+        self.context.attach(self.canvas)
+
+        self.set_caption(self._caption)
+
+        # Get initial state
+        #self._current_modifiers = carbon.GetCurrentKeyModifiers().value
+        #self._mapped_modifiers = self._map_modifiers(self._current_modifiers)
+        
+        self.switch_to()
+        self.set_vsync(self._vsync)
+
+        if self._visible:
+            self.set_visible(True)
+
+    def close(self):
+        super(CocoaWindow, self).close()
+        if not self._nscontext:
+            return
+        
+        self._nscontext.clearDrawable()
+        self._nscontext = None
+
+        # Restore cursor visibility
+        self.set_mouse_platform_visible(True)
+        self.set_exclusive_mouse(False)
+
+        if self._fullscreen:
+            CGDisplayRelease( CGMainDisplayID() )
+        else:
+            self._window.close()
+            self._window = None
+
+    def switch_to(self):
+        self._nscontext.makeCurrentContext()
+        self._context.set_current()
+        gl_info.set_active_context()
+        glu_info.set_active_context()
+
+    def flip(self):
+        self.draw_mouse_cursor()
+        self._nscontext.flushBuffer()
+
+    #def _get_vsync(self):
+        #swap = c_long()
+        #agl.aglGetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
+        #return bool(swap.value)
+    #vsync = property(_get_vsync) # overrides BaseWindow property
+
+    def set_vsync(self, vsync):
+        #if pyglet.options['vsync'] is not None:
+        #    vsync = pyglet.options['vsync']
+        #self._vsync = vsync # _recreate depends on this
+        #swap = c_long(int(vsync))
+        #agl.aglSetInteger(self._agl_context, agl.AGL_SWAP_INTERVAL, byref(swap))
+        pass
+
+    def dispatch_events(self):
+        self.dispatch_pending_events()
+        
+        '''if self._window:
+            src = self._window
+        else:
+            src = NSApp
+        
+        # retrieve the next event
+        event = src.nextEventMatchingMask_untilDate_inMode_dequeue_(NSAnyEventMask, NSDate.distantPast(), NSDefaultRunLoopMode, True)
+        if event:
+            if event.type() == NSKeyDown:
+                symbol = keymap[ event.keyCode() ]
+                modifiers = self._translate_mods( event.modifierFlags() )
+                self.dispatch_event('on_key_press', symbol, modifiers)'''
+    
+    def _translate_mods(self, cocoa_mods):
+        mods = 0
+        
+        if cocoa_mods & NSAlphaShiftKeyMask:
+            mods |= key.MOD_CAPSLOCK
+        if cocoa_mods & NSShiftKeyMask:
+            mods |= key.MOD_SHIFT
+        if cocoa_mods & NSControlKeyMask:
+            mods |= key.MOD_CTRL
+        if cocoa_mods & NSAlternateKeyMask:
+            mods |= key.MOD_OPTION
+        if cocoa_mods & NSCommandKeyMask:
+            mods |= key.MOD_COMMAND
+        
+        return mods
+    
+    def dispatch_pending_events(self):
+        while self._event_queue:
+            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+
+    def set_caption(self, caption):
+        self._caption = caption
+        
+        if self._window:
+            self._window.setTitle_(caption)
+
+    def set_location(self, x, y):
+        if self._window:
+            self.window.setFrameOrigin( NSMakePoint(x, y) )
+
+    def get_location(self):
+        if self._window:
+            origin = self._window.frame().origin
+            return origin.x, origin.y
+        return 0, 0
+
+    def set_size(self, width, height):
+        if self._fullscreen:
+            raise WindowException('Cannot set size of fullscreen window.')
+        
+        if self._window:
+            loc = self._window.frame().origin
+            self._window.setFrame_display_( NSMakeRect(loc.x, loc.y, width, height), True )
+
+        self._width = width
+        self._height = height
+        self.dispatch_event('on_resize', width, height)
+        self.dispatch_event('on_expose')
+
+    def get_size(self):
+        if self._fullscreen:
+            return self._width, self._height
+        if self._window:
+            size = self._window.frame().size
+            return size.width, size.height
+        return 0, 0
+
+    def set_minimum_size(self, width, height):
+        self._minimum_size = (width, height)
+        if self._window:
+            self._window.setMinSize_( NSMakeSize(width, height) )
+
+    def set_maximum_size(self, width, height):
+        self._maximum_size = (width, height)
+        if self._window:
+            self._window.setMaxSize_( NSMakeSize(width, height) )
+
+    def activate(self):
+        NSApp.activateIgnoringOtherApps_(True)
+        if self._window:
+            self._window.makeKeyAndOrderFront_(None)
+
+    def set_visible(self, visible=True):
+        self._visible = visible
+        if visible:
+            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_show')
+            if self._window:
+                self._window.makeKeyAndOrderFront_(None)
+        else:
+            if self._window:
+                self._window.orderOut_(None)
+
+    def minimize(self):
+        self._mouse_in_window = False
+        self.set_mouse_platform_visible()
+        
+        if self._window:
+            self._window.minimize_(None)
+
+    def maximize(self):
+        if self._window:
+            self._window.zoom_(None)
+
+    def set_mouse_platform_visible(self, platform_visible=None):
+        '''if platform_visible is None:
+            platform_visible = self._mouse_visible and \
+                               not self._mouse_exclusive and \
+                               not self._mouse_cursor.drawable
+        if not self._mouse_in_window:
+            platform_visible = True
+
+        if self._mouse_in_window and \
+           isinstance(self._mouse_cursor, CarbonMouseCursor):
+            carbon.SetThemeCursor(self._mouse_cursor.theme)
+        else:
+            carbon.SetThemeCursor(kThemeArrowCursor)
+
+        if self._mouse_platform_visible == platform_visible:
+            return
+
+        if platform_visible:
+            carbon.ShowCursor()
+        else:
+            carbon.HideCursor()
+        self._mouse_platform_visible = platform_visible'''
+        pass
+
+    def set_exclusive_mouse(self, exclusive=True):
+        '''self._mouse_exclusive = exclusive
+        if exclusive:
+            # Move mouse to center of window
+            rect = Rect()
+            carbon.GetWindowBounds(self._window, kWindowContentRgn, byref(rect))
+            point = CGPoint()
+            point.x = (rect.right + rect.left) / 2
+            point.y = (rect.bottom + rect.top) / 2
+            # Skip the next motion event, which would return a large delta.
+            self._mouse_ignore_motion = True
+            carbon.CGWarpMouseCursorPosition(point)
+            carbon.CGAssociateMouseAndMouseCursorPosition(False)
+        else:
+            carbon.CGAssociateMouseAndMouseCursorPosition(True)
+        self.set_mouse_platform_visible()'''
+        pass
+
+    def set_exclusive_keyboard(self, exclusive=True):
+        '''if exclusive:
+            # Note: power switch can also be disabled, with
+            # kUIOptionDisableSessionTerminate.  That seems
+            # a little extreme though.
+            carbon.SetSystemUIMode(kUIModeAllHidden,
+                (kUIOptionDisableAppleMenu |
+                 kUIOptionDisableProcessSwitch |
+                 kUIOptionDisableForceQuit |
+                 kUIOptionDisableHide))
+        else:
+            carbon.SetSystemUIMode(kUIModeNormal, 0)'''
+        pass
+
+    def get_system_mouse_cursor(self, name):
+        '''if name == self.CURSOR_DEFAULT:
+            return DefaultMouseCursor()
+
+        themes = {
+            self.CURSOR_CROSSHAIR:       kThemeCrossCursor,
+            self.CURSOR_HAND:            kThemePointingHandCursor,
+            self.CURSOR_HELP:            kThemeArrowCursor,
+            self.CURSOR_NO:              kThemeNotAllowedCursor,
+            self.CURSOR_SIZE:            kThemeArrowCursor,
+            self.CURSOR_SIZE_UP:         kThemeResizeUpCursor,
+            self.CURSOR_SIZE_UP_RIGHT:   kThemeArrowCursor,
+            self.CURSOR_SIZE_RIGHT:      kThemeResizeRightCursor,
+            self.CURSOR_SIZE_DOWN_RIGHT: kThemeArrowCursor,
+            self.CURSOR_SIZE_DOWN:       kThemeResizeDownCursor,
+            self.CURSOR_SIZE_DOWN_LEFT:  kThemeArrowCursor,
+            self.CURSOR_SIZE_LEFT:       kThemeResizeLeftCursor,
+            self.CURSOR_SIZE_UP_LEFT:    kThemeArrowCursor,
+            self.CURSOR_SIZE_UP_DOWN:    kThemeResizeUpDownCursor,
+            self.CURSOR_SIZE_LEFT_RIGHT: kThemeResizeLeftRightCursor,
+            self.CURSOR_TEXT:            kThemeIBeamCursor,
+            self.CURSOR_WAIT:            kThemeWatchCursor,
+            self.CURSOR_WAIT_ARROW:      kThemeWatchCursor,
+        }
+        if name not in themes:
+            raise CarbonException('Unknown cursor name "%s"' % name)
+        return CarbonMouseCursor(themes[name])'''
+        pass
+
+    def set_icon(self, *images):
+        '''# Only use the biggest image
+        image = images[0]
+        size = image.width * image.height
+        for img in images:
+            if img.width * img.height > size:
+                size = img.width * img.height
+                image = img
+
+        image = image.get_image_data()
+        format = 'ARGB'
+        pitch = -len(format) * image.width
+
+        data = image.get_data(format, pitch)
+        provider = carbon.CGDataProviderCreateWithData(
+            None, data, len(data), None)
+
+        colorspace = carbon.CGColorSpaceCreateDeviceRGB()
+
+        cgi = carbon.CGImageCreate(
+            image.width, image.height, 8, 32, -pitch,
+            colorspace,
+            kCGImageAlphaFirst,
+            provider,
+            None,
+            True,
+            kCGRenderingIntentDefault)
+
+        carbon.SetApplicationDockTileImage(cgi)
+
+        carbon.CGDataProviderRelease(provider)
+        carbon.CGColorSpaceRelease(colorspace)'''
+        pass
+
+"""
 class CocoaWindow(BaseWindow):
     _window = None                  # Carbon WindowRef
 
@@ -1058,3 +1568,4 @@ class CocoaWindow(BaseWindow):
         return noErr
         
 CocoaWindow.register_event_type('on_recreate_immediate')
+"""
