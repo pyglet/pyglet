@@ -421,7 +421,8 @@ class Win32Window(BaseWindow):
         if exclusive and self._has_focus:
             # Move mouse to the center of the window.
             self._reset_exclusive_mouse_screen()
-            self.set_mouse_position(*self._exclusive_mouse_screen, absolute=True)
+            x, y = self._exclusive_mouse_screen
+            self.set_mouse_position(x, y, absolute=True)
 
             # Clip to client area, to prevent large mouse movements taking
             # it outside the client area.
@@ -729,7 +730,8 @@ class Win32Window(BaseWindow):
 
         if self._exclusive_mouse and self._has_focus:
             # Reset mouse position (so we don't hit the edge of the screen).
-            self.set_mouse_position(*self._exclusive_mouse_screen, absolute=True)
+            _x, _y = self._exclusive_mouse_screen
+            self.set_mouse_position(_x, _y, absolute=True)
             
         dx = x - self._mouse_x
         dy = y - self._mouse_y
