@@ -225,7 +225,7 @@ class CocoaWindow(BaseWindow):
         self._create()
 
     def _create(self):
-        self._nscontext = self.context._context
+        self._nscontext = self.context._ns_context
 
         if self._window:
             self._nscontext.clearDrawable()
@@ -249,15 +249,11 @@ class CocoaWindow(BaseWindow):
 
             self._view_x = (self.screen.width - self._width) // 2
             self._view_y = (self.screen.height - self._height) // 2
-            self.canvas = CocoaCanvas(self.display, self.screen, 0)
-                                       #carbon.GetWindowPort(self._window))
-            self.canvas.bounds = (self._view_x, self._view_y, 
-                                  self._width, self._height)
             
             rect = NSMakeRect(0, 0, self._width, self._height)
             
             self._window = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
-                                rect, NSBorderlessWindowMask, NSBackingStoreRetained, False)
+                                rect, NSBorderlessWindowMask, NSBackingStoreBuffered, False).retain()
             
             view = PygletView.alloc().initWithDelegate_(self)
             
@@ -292,11 +288,8 @@ class CocoaWindow(BaseWindow):
             rect = NSMakeRect(10, 10, self._width, self._height)
             
             self._window = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
-                                rect, style_mask, NSBackingStoreRetained, False)
+                                rect, style_mask, NSBackingStoreBuffered, False).retain()
 
-            self.canvas = CocoaCanvas(self.display, self.screen, 0)
-                                       #carbon.GetWindowPort(self._window))
-            self._view_x = self._view_y = 0
             
             view = PygletView.alloc().initWithDelegate_(self)
             
@@ -311,7 +304,7 @@ class CocoaWindow(BaseWindow):
             self._nscontext.setView_( view )
             self._nscontext.update()
 
-        self.context.attach(self.canvas)
+        self.context.attach(self.context.config.canvas)
 
         self.set_caption(self._caption)
 

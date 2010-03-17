@@ -3,6 +3,12 @@ import pyglet
 from types import *
 from constants import *
 
+from Foundation import *
+from Cocoa import *
+from Quartz import *
+
+NSAnyEventMask = 0xFFFFFFFFL
+
 carbon = pyglet.lib.load_library(
     framework='/System/Library/Frameworks/Carbon.framework')
 quicktime = pyglet.lib.load_library(
