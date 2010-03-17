@@ -141,94 +141,120 @@ class PygletView(NSView):
     
     def canBecomeKeyView(self):
         return True
+
+    ## Event data.
+
+    def getDelta_(self, nsEvent):
+        dx = nsEvent.deltaX()
+        dy = nsEvent.deltaY()
+        return int(dx), int(dy)
+
+    def getLocation_(self, nsEvent):
+        inWindow = nsEvent.locationInWindow()
+        x, y = self.convertPoint_fromView_(inWindow, None)
+        return int(x), int(y)
+
+    def getModifiers_(self, nsEvent):
+        modifiers = 0
+        modifierFlags = nsEvent.modifierFlags()
+        if modifierFlags & NSAlphaShiftKeyMask:
+            modifiers |= key.MOD_CAPSLOCK
+        if modifierFlags & NSShiftKeyMask:
+            modifiers |= key.MOD_SHIFT
+        if modifierFlags & NSControlKeyMask:
+            modifiers |= key.MOD_CTRL
+        if modifierFlags & NSAlternateKeyMask:
+            modifiers |= key.MOD_OPTION
+        if modifierFlags & NSCommandKeyMask:
+            modifiers |= key.MOD_COMMAND
+        return modifiers
     
-    def keyDown_(self, nsevent):
-        symbol = keymap[ nsevent.keyCode() ]
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def getSymbol_(self, nsEvent):
+        return keymap[nsEvent.keyCode()]
+
+    def keyDown_(self, nsEvent):
+        symbol = self.getSymbol_(nsEvent)
+        modifiers = self.getModifiers_(nsEvent)
         self._window.dispatch_event('on_key_press', symbol, modifiers)
     
-    def keyUp_(self, nsevent):
-        symbol = keymap[ nsevent.keyCode() ]
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def keyUp_(self, nsEvent):
+        symbol = self.getSymbol_(nsEvent)
+        modifiers = self.getModifiers_(nsEvent)
         self._window.dispatch_event('on_key_release', symbol, modifiers)
     
-    def mouseMoved_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        dx, dy = nsevent.deltaX(), nsevent.deltaY()
+    def mouseMoved_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
+        dx, dy = self.getDelta_(nsEvent)
         self._window.dispatch_event('on_mouse_motion', x, y, dx, dy)
     
-    def scrollWheel_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        self._window.dispatch_event('on_mouse_scroll', x, y, dx, dy)
+    def scrollWheel_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
+        scroll_x, scroll_y = self.getDelta_(nsEvent)
+        self._window.dispatch_event('on_mouse_scroll', x, y, scroll_x, scroll_y)
     
-    def mouseDown_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def mouseDown_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
         buttons = mouse.LEFT
+        modifiers = self.getModifiers_(nsEvent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
-    def mouseDragged_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def mouseDragged_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
+        dx, dy = self.getDelta_(nsEvent)
         buttons = mouse.LEFT
-        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        modifiers = self.getModifiers_(nsEvent)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons,
+                                    modifiers)
     
-    def mouseUp_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def mouseUp_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
         buttons = mouse.LEFT
-        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+        modifiers = self.getModifiers_(nsEvent)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons,
+                                    modifiers)
     
-    def rightMouseDown_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def rightMouseDown_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
         buttons = mouse.RIGHT
+        modifiers = self.getModifiers_(nsEvent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
-    def rightMouseDragged_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def rightMouseDragged_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
+        dx, dy = self.getDelta_(nsEvent)
         buttons = mouse.RIGHT
-        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        modifiers = self.getModifiers_(nsEvent)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons,
+                                    modifiers)
     
-    def rightMouseUp_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def rightMouseUp_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
         buttons = mouse.RIGHT
-        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+        modifiers = self.getModifiers_(nsEvent)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons,
+                                    modifiers)
     
-    def otherMouseDown_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def otherMouseDown_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
         buttons = mouse.MIDDLE
+        modifiers = self.getModifiers_(nsEvent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
-    def otherMouseDragged_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def otherMouseDragged_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
+        dx, dy = self.getDelta_(nsEvent)
         buttons = mouse.MIDDLE
-        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        modifiers = self.getModifiers_(nsEvent)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons,
+                                    modifiers)
     
-    def otherMouseUp_(self, nsevent):
-        p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
-        x, y = p.x, p.y
-        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+    def otherMouseUp_(self, nsEvent):
+        x, y = self.getLocation_(nsEvent)
         buttons = mouse.MIDDLE
-        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+        modifiers = self.getModifiers_(nsEvent)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons,
+                                    modifiers)
+
 
 class CocoaWindow(BaseWindow):
 
