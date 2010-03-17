@@ -74,8 +74,6 @@ class CocoaEventLoop(PlatformEventLoop):
         if event.type() != NSApplicationDefined:
             NSApp().sendEvent_(event)
         NSApp().updateWindows()
-
-        clean_autorelease_pools()
     
     def stop(self):
         self._pool.release()
