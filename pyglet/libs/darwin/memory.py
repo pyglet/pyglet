@@ -8,12 +8,14 @@ __all__ = ["enter_autorelease_pool",
            "exit_autorelease_pool",
            "autorelease"]
 
-# Pool directory and its lock.
+
+## Pool directory & lock.
+
 _autorelease_pool_lock = threading.Lock()
 _autorelease_pools = {}
 
 
-## Utiltiy.
+## Utility.
 
 def _create_pool():
     return NSAutoreleasePool.alloc().init()

@@ -48,7 +48,6 @@ from sys import byteorder
 from pyglet.font import base
 import pyglet.image
 from pyglet.libs.darwin import *
-from pyglet.libs.darwin import _oscheck
 
 from Cocoa import *
 
