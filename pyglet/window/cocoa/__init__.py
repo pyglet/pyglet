@@ -52,7 +52,6 @@ from pyglet.window import event
 from pyglet.canvas.cocoa import CocoaCanvas
 
 from pyglet.libs.darwin import *
-from pyglet.libs.darwin import _oscheck
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
 from pyglet.gl import gl_info
@@ -90,18 +89,54 @@ class CocoaMouseCursor(MouseCursor):
     def __init__(self, theme):
         self.theme = theme
 
+
+class PygletDelegate(NSObject):
+
+    # CocoaWindow object.
+    _window = None
+
+    # NSWindow object.
+    _nsWindow = None
+
+    # NSView object.
+    _nsView = None
+
+    def initWithWindow_nsWindow_nsView_(self, window, nsWindow, nsView):
+        self = super(PygletDelegate, self).init()
+        if self is not None:
+            self._window = window
+            self._nsWindow = nsWindow
+            self._nsView = nsView
+            nsWindow.setDelegate_(self)
+        return self
+
+    def windowWillClose_(self, notification):
+        self._window.dispatch_event("on_close")
+
+    def windowDidMove_(self, notification):
+        x, y = self._window.get_location()
+        self._window.dispatch_event("on_move", x, y)
+
+    def windowDidResize_(self, notification):
+        width, height = self._window.get_size()
+        self._window.dispatch_event("on_resize", width, height)
+
+
 class PygletWindow(NSWindow):
-	def canBecomeKeyWindow(self):
-		return True
+
+    def canBecomeKeyWindow(self):
+        return True
+
 
 class PygletView(NSView):
-    def initWithDelegate_(self, delegate):
+
+    # CocoaWindow object.
+    _window = None
+
+    def initWithWindow_(self, window):
         self = super(PygletView, self).init()
-        
-        self.delegate = delegate
-        
-        print 'pyglet view init'
-        
+        if self is not None:
+            self._window = window
         return self
     
     def canBecomeKeyView(self):
@@ -109,93 +144,94 @@ class PygletView(NSView):
     
     def keyDown_(self, nsevent):
         symbol = keymap[ nsevent.keyCode() ]
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
-        self.delegate.dispatch_event('on_key_press', symbol, modifiers)
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+        self._window.dispatch_event('on_key_press', symbol, modifiers)
     
     def keyUp_(self, nsevent):
         symbol = keymap[ nsevent.keyCode() ]
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
-        self.delegate.dispatch_event('on_key_release', symbol, modifiers)
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
+        self._window.dispatch_event('on_key_release', symbol, modifiers)
     
     def mouseMoved_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
         dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        self.delegate.dispatch_event('on_mouse_motion', x, y, dx, dy)
+        self._window.dispatch_event('on_mouse_motion', x, y, dx, dy)
     
     def scrollWheel_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
         dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        self.delegate.dispatch_event('on_mouse_scroll', x, y, dx, dy)
+        self._window.dispatch_event('on_mouse_scroll', x, y, dx, dy)
     
     def mouseDown_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.LEFT
-        self.delegate.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
     def mouseDragged_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
         dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.LEFT
-        self.delegate.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def mouseUp_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.LEFT
-        self.delegate.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
     
     def rightMouseDown_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.RIGHT
-        self.delegate.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
     def rightMouseDragged_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
         dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.RIGHT
-        self.delegate.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def rightMouseUp_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.RIGHT
-        self.delegate.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
     
     def otherMouseDown_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.MIDDLE
-        self.delegate.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
     def otherMouseDragged_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
         dx, dy = nsevent.deltaX(), nsevent.deltaY()
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.MIDDLE
-        self.delegate.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def otherMouseUp_(self, nsevent):
         p = self.convertPoint_fromView_(nsevent.locationInWindow(), None)
         x, y = p.x, p.y
-        modifiers = self.delegate._translate_mods( nsevent.modifierFlags() )
+        modifiers = self._window._translate_mods( nsevent.modifierFlags() )
         buttons = mouse.MIDDLE
-        self.delegate.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
 
 class CocoaWindow(BaseWindow):
+
     _window = None 
     _nscontext = None
     
@@ -255,7 +291,9 @@ class CocoaWindow(BaseWindow):
             self._window = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
                                 rect, NSBorderlessWindowMask, NSBackingStoreBuffered, False).retain()
             
-            view = PygletView.alloc().initWithDelegate_(self)
+            view = PygletView.alloc().initWithWindow_(self)
+            self._delegate = PygletDelegate.alloc().initWithWindow_nsWindow_nsView_(
+                    self, self._window, view)
             
             self._window.setLevel_( CGShieldingWindowLevel() )
             
@@ -291,7 +329,9 @@ class CocoaWindow(BaseWindow):
                                 rect, style_mask, NSBackingStoreBuffered, False).retain()
 
             
-            view = PygletView.alloc().initWithDelegate_(self)
+            view = PygletView.alloc().initWithWindow_(self)
+            self._delegate = PygletDelegate.alloc().initWithWindow_nsWindow_nsView_(
+                    self, self._window, view)
             
             self._window.setContentView_( view )
             self._window.makeFirstResponder_( view )
@@ -430,7 +470,7 @@ class CocoaWindow(BaseWindow):
             return self._width, self._height
         if self._window:
             size = self._window.frame().size
-            return size.width, size.height
+            return int(size.width), int(size.height)
         return 0, 0
 
     def set_minimum_size(self, width, height):
