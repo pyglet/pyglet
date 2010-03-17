@@ -45,6 +45,9 @@ from pyglet.libs.darwin import *
 NSApplication.sharedApplication()
 NSApp().finishLaunching()
 
+# Memory management.
+
+
 class CocoaEventLoop(PlatformEventLoop):
 
     def start(self):
@@ -63,11 +66,23 @@ class CocoaEventLoop(PlatformEventLoop):
                 NSAnyEventMask, timeout_date, NSDefaultRunLoopMode, True)
 
         # Dispatch the event (if any).
-        NSApp.sendEvent_(event)
-        NSApp.updateWindows()
+        if event.type() != NSApplicationDefined:
+            NSApp().sendEvent_(event)
+        NSApp().updateWindows()
     
     def stop(self):
         self._pool.drain()
 
     def notify(self):
-        pass
+        event = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                NSApplicationDefined, # type
+                NSPoint(0.0, 0.0),    # location
+                0,                    # modifierFlags
+                0,                    # timestamp
+                0,                    # windowNumber
+                None,                 # graphicsContext
+                0,                    # subtype
+                0,                    # data1
+                0,                    # data2
+                )
+        NSApp().postEvent_atStart_(event, False)

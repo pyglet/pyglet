@@ -160,8 +160,7 @@ class EventLoop(event.EventDispatcher):
         while not self.has_exit:
             timeout = self.idle()
             if timeout is None: 
-                # was None but that broke the _least_squares
-                estimate = 0
+                estimate = None
             else:
                 estimate = max(gradient * timeout + offset, 0.0)
             if False:
@@ -169,7 +168,8 @@ class EventLoop(event.EventDispatcher):
                 print 'Timeout = %f, Estimate = %f' % (timeout, estimate)
 
             t = time()
-            if not platform_event_loop.step(estimate) and estimate != 0.0:
+            if not platform_event_loop.step(estimate) and estimate != 0.0 and \
+                    estimate is not None:
                 dt = time() - t
                 gradient, offset = predictor.send((dt, estimate))
 
