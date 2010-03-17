@@ -34,6 +34,7 @@
 
 '''
 '''
+from __future__ import with_statement
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -55,6 +56,10 @@ class CocoaEventLoop(PlatformEventLoop):
 
     def step(self, timeout=None):
 
+        # Recycle the autorelease pool.
+        self._pool.release()
+        self._pool = NSAutoreleasePool.alloc().init()
+
         # Determine the timeout date.
         if timeout is None:
             timeout_date = NSDate.distantFuture()
@@ -69,20 +74,23 @@ class CocoaEventLoop(PlatformEventLoop):
         if event.type() != NSApplicationDefined:
             NSApp().sendEvent_(event)
         NSApp().updateWindows()
+
+        clean_autorelease_pools()
     
     def stop(self):
-        self._pool.drain()
+        self._pool.release()
 
     def notify(self):
-        event = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
-                NSApplicationDefined, # type
-                NSPoint(0.0, 0.0),    # location
-                0,                    # modifierFlags
-                0,                    # timestamp
-                0,                    # windowNumber
-                None,                 # graphicsContext
-                0,                    # subtype
-                0,                    # data1
-                0,                    # data2
-                )
-        NSApp().postEvent_atStart_(event, False)
+        with autorelease:
+            event = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                    NSApplicationDefined, # type
+                    NSPoint(0.0, 0.0),    # location
+                    0,                    # modifierFlags
+                    0,                    # timestamp
+                    0,                    # windowNumber
+                    None,                 # graphicsContext
+                    0,                    # subtype
+                    0,                    # data1
+                    0,                    # data2
+                    )
+            NSApp().postEvent_atStart_(event, False)

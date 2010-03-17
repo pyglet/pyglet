@@ -2,6 +2,7 @@ import pyglet
 
 from types import *
 from constants import *
+from memory import *
 
 from Foundation import *
 from Cocoa import *
