@@ -24,7 +24,14 @@ class CocoaScreen(Screen):
         super(CocoaScreen, self).__init__(display, int(x), int(y),
                                           int(width), int(height))
         self.ns_screen = ns_screen
+        self.cg_display_id = self._get_cg_display_id()
         self._default_mode = CocoaScreenMode(self)
+
+    def _get_cg_display_id(self):
+        description = self.ns_screen.deviceDescription()
+        screen_key = NSString.stringWithUTF8String_("NSScreenNumber")
+        nsnumber = description.objectForKey_(screen_key)
+        return nsnumber.unsignedIntValue()
 
     def get_matching_configs(self, template):
         canvas = CocoaCanvas(self.display, self)

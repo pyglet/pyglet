@@ -138,3 +138,7 @@ class CocoaContext(Context):
     def __init__(self, config, share, ns_context):
         super(CocoaContext, self).__init__(config, share)
         self._ns_context = ns_context
+
+    def set_current(self):
+        self._ns_context.makeCurrentContext()
+        super(CocoaContext, self).set_current()
