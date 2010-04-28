@@ -1,25 +1,19 @@
 #!/usr/bin/env python
 
 '''Test that an empty document doesn't break.
-
-Press ESC to exit the test.
 '''
 
 __docformat__ = 'restructuredtext'
-__version__ = '$Id: STYLE.py 1754 2008-02-10 13:26:52Z Alex.Holkner $'
 
 __noninteractive = True
 
 import unittest
 
-from pyglet import app
 from pyglet import gl
 from pyglet import graphics
-from pyglet.text import caret
 from pyglet.text import document
 from pyglet.text import layout
 from pyglet import window
-from pyglet.window import key, mouse
 
 class TestWindow(window.Window):
     def __init__(self, doctype, *args, **kwargs):
