@@ -84,7 +84,7 @@ http://unicode.org/reports/tr13/tr13-5.html.
 Document classes
 ================
 
-Any class implementing `AbstractDocument` provides a an interface to a
+Any class implementing `AbstractDocument` provides an interface to a
 document model as described above.  In theory a structured document such as
 HTML or XML could export this model, though the classes provided by pyglet
 implement only unstructured documents.

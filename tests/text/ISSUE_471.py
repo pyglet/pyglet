@@ -4,7 +4,7 @@
 (and related issues 241 and 429) don't have exceptions.
 
 (Most of them delete all text in a formatted document
-with some styles set; one of them (like the test in ERROR_BOLD.py)
+with some styles set; one of them (like the test in EMPTY_BOLD.py)
 sets style on a 0-length range of text in an empty document.)
 '''
 
