@@ -289,7 +289,8 @@ class RunIterator(AbstractRunIterator):
         self.start, self.end, self.value = self.next()
 
     def __getitem__(self, index):
-        while index >= self.end:
+        while index >= self.end and index > self.start:
+            # condition has special case for 0-length run (fixes issue 471)
             self.start, self.end, self.value = self.next()
         return self.value
 
