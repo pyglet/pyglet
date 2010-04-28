@@ -219,6 +219,8 @@ resource
 text
     text.RUNLIST                                GENERIC
     text.EMPTY                                  GENERIC
+    text.EMPTY_BOLD                             GENERIC
+    text.ISSUE_471                              GENERIC
     text.PLAIN                                  GENERIC
     text.CONTENT_VALIGN_BOTTOM                  GENERIC
     text.CONTENT_VALIGN_CENTER                  GENERIC
