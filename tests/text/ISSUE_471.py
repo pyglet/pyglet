@@ -18,6 +18,12 @@ import pyglet
 
 class TestCase(unittest.TestCase):
 
+    def test_issue471(self):
+        doc = pyglet.text.document.FormattedDocument()
+        layout = pyglet.text.layout.IncrementalTextLayout(doc, 100, 100)
+        doc.insert_text(0, "hello", {'bold': True})
+        doc.text = ""
+
     def test_issue471_comment2(self):
         doc2 = pyglet.text.decode_attributed('{bold True}a')
         layout = pyglet.text.layout.IncrementalTextLayout(doc2, 100, 10)
