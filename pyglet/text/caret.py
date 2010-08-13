@@ -100,7 +100,7 @@ class Caret(object):
 
     #: Pixels to scroll viewport per mouse scroll wheel movement.  Defaults
     #: to 12pt at 96dpi.
-    SCROLL_INCREMENT= 12 * 96 / 72
+    SCROLL_INCREMENT= 12 * 96 // 72
 
     def __init__(self, layout, batch=None, color=(0, 0, 0)):
         '''Create a caret for a layout.

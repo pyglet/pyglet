@@ -272,8 +272,8 @@ class CheckerImagePattern(ImagePattern):
         self.color2 = '%c%c%c%c' % color2
 
     def create_image(self, width, height):
-        hw = width/2
-        hh = height/2
+        hw = width // 2
+        hh = height // 2
         row1 = self.color1 * hw + self.color2 * hw
         row2 = self.color2 * hw + self.color1 * hw
         data = row1 * hh + row2 * hh
@@ -940,7 +940,7 @@ class ImageData(AbstractImage):
             alignment = 2
         else:
             alignment = 4
-        row_length = data_pitch / len(data_format)
+        row_length = data_pitch // len(data_format)
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
@@ -989,7 +989,7 @@ class ImageData(AbstractImage):
         data = self._current_data
         current_pitch = self._current_pitch
         current_format = self._current_format
-        sign_pitch = current_pitch / abs(current_pitch)
+        sign_pitch = current_pitch // abs(current_pitch)
         if format != self._current_format:
             # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to
             # ARGB
