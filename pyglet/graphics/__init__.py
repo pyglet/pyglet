@@ -595,6 +595,9 @@ class Group(object):
         '''
         self.parent = parent
 
+    def __lt__(self, other):
+        return hash(self) < hash(other)
+
     def set_state(self):
         '''Apply the OpenGL state change.  
         
@@ -704,10 +707,10 @@ class OrderedGroup(Group):
         super(OrderedGroup, self).__init__(parent)
         self.order = order
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         if isinstance(other, OrderedGroup):
-            return cmp(self.order, other.order)
-        return -1
+            return self.order < other.order
+        return super(OrderedGroup, self).__lt__(other)
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
