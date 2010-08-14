@@ -15,9 +15,9 @@ death with a Linux extension signal handler.
 
 import ctypes
 import os
-import mutex
 import signal
 import struct
+import threading
 
 from pyglet.libs.x11 import xlib
 try:
@@ -117,19 +117,19 @@ def _install_restore_mode_child():
                                ctypes.c_ulong, ctypes.c_ulong)
         libc.prctl(PR_SET_PDEATHSIG, signal.SIGHUP, 0, 0, 0)
 
-        # SIGHUP indicates the parent has died.  The child mutex is unlocked, it
+        # SIGHUP indicates the parent has died.  The child lock is unlocked, it
         # stops reading from the mode packet pipe and restores video modes on
         # all displays/screens it knows about.
         def _sighup(signum, frame):
-            parent_wait_mutex.unlock()
-        parent_wait_mutex = mutex.mutex()
-        parent_wait_mutex.lock(lambda arg: arg, None)
+            parent_wait_lock.release();
+        parent_wait_lock = threading.Lock();
+        parent_wait_lock.acquire()
         signal.signal(signal.SIGHUP, _sighup)
 
         # Wait for parent to die and read packets from parent pipe
         packets = []
         buffer = ''
-        while parent_wait_mutex.test():
+        while parent_wait_lock.locked():
             try:
                 data = os.read(mode_read_pipe, ModePacket.size)
                 buffer += data
