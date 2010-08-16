@@ -234,8 +234,8 @@ class _Line(object):
         self.width += box.advance
 
     def delete(self, layout):
-        for list in self.vertex_lists:
-            list.delete()
+        for vertex_list in self.vertex_lists:
+            vertex_list.delete()
         self.vertex_lists = []
 
         for box in self.boxes:
@@ -259,8 +259,8 @@ class _StaticLayoutContext(_LayoutContext):
         self.vertex_lists = layout._vertex_lists
         self.boxes = layout._boxes
 
-    def add_list(self, list):
-        self.vertex_lists.append(list)
+    def add_list(self, vertex_list):
+        self.vertex_lists.append(vertex_list)
 
     def add_box(self, box):
         self.boxes.append(box)
@@ -268,8 +268,8 @@ class _StaticLayoutContext(_LayoutContext):
 class _IncrementalLayoutContext(_LayoutContext):
     line = None
 
-    def add_list(self, list):
-        self.line.vertex_lists.append(list)
+    def add_list(self, vertex_list):
+        self.line.vertex_lists.append(vertex_list)
 
     def add_box(self, box):
         pass
@@ -354,11 +354,11 @@ class _GlyphBox(_AbstractBox):
                 color = (0, 0, 0, 255)
             colors.extend(color * ((end - start) * 4))
 
-        list = layout.batch.add(n_glyphs * 4, GL_QUADS, group, 
+        vertex_list = layout.batch.add(n_glyphs * 4, GL_QUADS, group, 
             ('v2f/dynamic', vertices),
             ('t3f/dynamic', tex_coords),
             ('c4B/dynamic', colors))
-        context.add_list(list)
+        context.add_list(vertex_list)
 
         # Decoration (background color and underline)
         #
