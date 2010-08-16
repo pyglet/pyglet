@@ -695,7 +695,7 @@ def _iter_elements(elements, length):
 
 class _ElementIterator(runlist.RunIterator):
     def __init__(self, elements, length):
-        self.next = _iter_elements(elements, length).next
+        self._run_list_iter = _iter_elements(elements, length)
         self.start, self.end, self.value = self.next()
 
 class _FontStyleRunsRangeIterator(object):
