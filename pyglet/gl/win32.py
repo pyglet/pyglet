@@ -159,7 +159,8 @@ class Win32CanvasConfigARB(CanvasConfig):
         super(Win32CanvasConfigARB, self).__init__(canvas, config)
         self._pf = pf
         
-        names, attrs = map(None, *self.attribute_ids.items())
+        names = self.attribute_ids.keys()
+        attrs = self.attribute_ids.values()
         attrs = (c_int * len(attrs))(*attrs)
         values = (c_int * len(attrs))()
         
