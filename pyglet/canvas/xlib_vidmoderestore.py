@@ -20,6 +20,7 @@ import struct
 import threading
 
 from pyglet.libs.x11 import xlib
+from pyglet.compat import asbytes
 try:
     from pyglet.libs.x11 import xf86vmode
 except:
@@ -56,7 +57,7 @@ class ModePacket(object):
     def decode(cls, data):
         display, screen, width, height, rate = \
             struct.unpack(cls.format, data)
-        return cls(display.strip('\0'), screen, width, height, rate)
+        return cls(display.strip(asbytes('\0')), screen, width, height, rate)
 
     def __repr__(self):
         return '%s(%r, %r, %r, %r, %r)' % (
@@ -128,7 +129,7 @@ def _install_restore_mode_child():
 
         # Wait for parent to die and read packets from parent pipe
         packets = []
-        buffer = ''
+        buffer = asbytes('')
         while parent_wait_lock.locked():
             try:
                 data = os.read(mode_read_pipe, ModePacket.size)

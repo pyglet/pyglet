@@ -57,6 +57,7 @@ __version__ = '$Id$'
 from ctypes import *
 
 from pyglet.gl.glx import *
+from pyglet.compat import asstr
 
 class GLXInfoException(Exception):
     pass
@@ -110,15 +111,15 @@ class GLXInfo(object):
 
     def get_client_vendor(self):
         self.check_display()
-        return glXGetClientString(self.display, GLX_VENDOR)
+        return asstr(glXGetClientString(self.display, GLX_VENDOR))
 
     def get_client_version(self):
         self.check_display()
-        return glXGetClientString(self.display, GLX_VERSION)
+        return asstr(glXGetClientString(self.display, GLX_VERSION))
 
     def get_client_extensions(self):
         self.check_display()
-        return glXGetClientString(self.display, GLX_EXTENSIONS).split()
+        return asstr(glXGetClientString(self.display, GLX_EXTENSIONS)).split()
 
     def get_extensions(self):
         self.check_display()

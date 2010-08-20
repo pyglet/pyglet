@@ -12,6 +12,7 @@ from pyglet.input.base import \
     Device, DeviceException, DeviceOpenException, \
     Control, Button, RelativeAxis, AbsoluteAxis
 from pyglet.libs.x11 import xlib
+from pyglet.compat import asstr
 
 try:
     from pyglet.libs.x11 import xinput as xi
@@ -47,7 +48,7 @@ class DeviceResponder(object):
 
 class XInputDevice(DeviceResponder, Device):
     def __init__(self, display, device_info):
-        super(XInputDevice, self).__init__(display, device_info.name)
+        super(XInputDevice, self).__init__(display, asstr(device_info.name))
 
         self._device_id = device_info.id
         self._device = None

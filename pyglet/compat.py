@@ -59,3 +59,18 @@ if sys.version_info[0] == 2 and sys.version_info[1] < 6:
             pass
 else:
     izip_longest = itertools.izip_longest
+
+
+if sys.version_info[0] >= 3:
+    def asbytes(s):
+        if isinstance(s, bytes):
+            return s
+        return s.encode("utf-8")
+    
+    def asstr(s):
+        if isinstance(s, str):
+            return s
+        return s.decode("utf-8")
+else:
+    asbytes = str
+    asstr = str

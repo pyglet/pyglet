@@ -147,6 +147,7 @@ from pyglet import graphics
 from pyglet.window import *
 
 from pyglet.image import atlas
+from pyglet.compat import asbytes
 
 class ImageException(Exception):
     pass
@@ -1043,9 +1044,9 @@ class ImageData(AbstractImage):
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
-                rows = re.findall('.' * abs(pitch), data, re.DOTALL)
+                rows = re.findall(asbytes('.') * abs(pitch), data, re.DOTALL)
                 rows.reverse()
-                data = ''.join(rows)
+                data = asbytes('').join(rows)
 
         return data
 
@@ -1158,9 +1159,10 @@ class ImageDataRegion(ImageData):
 
         self._ensure_string_data()
         data = self._convert(self._current_format, abs(self._current_pitch))
-        rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
+        rows = re.findall(asbytes('.') * abs(self._current_pitch), data,
+                          re.DOTALL)
         rows = [row[x1:x2] for row in rows[self.y:self.y+self.height]]
-        self._current_data = ''.join(rows)
+        self._current_data = asbytes('').join(rows)
         self._current_pitch = self.width * len(self._current_format)
         self._current_texture = None
         self.x = 0
