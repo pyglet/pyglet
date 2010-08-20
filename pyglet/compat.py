@@ -43,22 +43,26 @@ __version__ = '$Id$'
 import sys
 import itertools
 
-if sys.version_info[0] == 2 and sys.version_info[1] < 6:
-    # from http://docs.python.org/library/itertools.html#itertools.izip_longest
-    def izip_longest(*args, **kwds):
-        # izip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-        fillvalue = kwds.get('fillvalue')
-        def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
-            yield counter()         # yields the fillvalue, or raises IndexError
-        fillers = itertools.repeat(fillvalue)
-        iters = [itertools.chain(it, sentinel(), fillers) for it in args]
-        try:
-            for tup in itertools.izip(*iters):
-                yield tup
-        except IndexError:
-            pass
+if sys.version_info[0] == 2:
+    if sys.version_info[1] < 6:
+        #Pure Python implementation from
+        #http://docs.python.org/library/itertools.html#itertools.izip_longest
+        def izip_longest(*args, **kwds):
+            # izip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
+            fillvalue = kwds.get('fillvalue')
+            def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
+                yield counter()     # yields the fillvalue, or raises IndexError
+            fillers = itertools.repeat(fillvalue)
+            iters = [itertools.chain(it, sentinel(), fillers) for it in args]
+            try:
+                for tup in itertools.izip(*iters):
+                    yield tup
+            except IndexError:
+                pass
+    else:
+        izip_longest = itertools.izip_longest
 else:
-    izip_longest = itertools.izip_longest
+    izip_longest = itertools.zip_longest
 
 
 if sys.version_info[0] >= 3:
