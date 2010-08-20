@@ -36,7 +36,7 @@ ctypes_type_map = {
     ('ptrdiff_t',True,  0): 'c_ptrdiff_t',  # Requires definition in preamble
 }
 
-reserved_names = ['None']
+reserved_names = ['None', 'True', 'False']
 
 def get_ctypes_type(typ, declarator):
     signed = True
