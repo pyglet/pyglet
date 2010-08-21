@@ -133,10 +133,10 @@ def draw_scene():
 
     glLoadIdentity()
     w, h = target_resolution
-    glTranslatef(w/2, h/2, 0)
+    glTranslatef(w//2, h//2, 0)
     glRotatef(rotate, 0, 0, 1)
     glColor3f(1, 0, 0)
-    s = min(w, h) / 3
+    s = min(w, h) // 3
     glRectf(-s, -s, s, s)
 
 rotate = 0

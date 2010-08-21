@@ -117,7 +117,7 @@ class WrappingSprite(pyglet.sprite.Sprite):
 
     def __init__(self, img, x, y, batch=None):
         super(WrappingSprite, self).__init__(img, x, y, batch=batch)
-        self.collision_radius = self.image.width / COLLISION_RESOLUTION / 2 
+        self.collision_radius = self.image.width // COLLISION_RESOLUTION // 2 
 
     def update(self, dt):
         x = self.x + self.dx * dt
@@ -172,14 +172,14 @@ class Asteroid(WrappingSprite):
 
 class Player(WrappingSprite, key.KeyStateHandler):
     def __init__(self, img, batch=None):
-        super(Player, self).__init__(img, ARENA_WIDTH / 2, ARENA_HEIGHT / 2,
+        super(Player, self).__init__(img, ARENA_WIDTH // 2, ARENA_HEIGHT // 2,
             batch=batch)
         center_anchor(img)
         self.reset()
 
     def reset(self):
-        self.x = ARENA_WIDTH / 2
-        self.y = ARENA_HEIGHT / 2
+        self.x = ARENA_WIDTH // 2
+        self.y = ARENA_HEIGHT // 2
         self.dx = 0
         self.dy = 0
         self.rotation = 0
@@ -303,8 +303,8 @@ class Banner(Overlay):
         self.text = pyglet.text.Label(label,
                                       font_name=FONT_NAME,
                                       font_size=36,
-                                      x=ARENA_WIDTH / 2, 
-                                      y=ARENA_HEIGHT / 2,
+                                      x=ARENA_WIDTH // 2, 
+                                      y=ARENA_HEIGHT // 2,
                                       anchor_x='center',
                                       anchor_y='center')
 
@@ -385,14 +385,14 @@ class MenuItem(object):
 
         if selected:
             self.draw_pointer(
-                self.text.x - self.text.content_width / 2 - 
-                    pointer_image.width / 2,
+                self.text.x - self.text.content_width // 2 - 
+                    pointer_image.width // 2,
                 self.y, 
                 self.pointer_color,
                 self.inverted_pointers)
             self.draw_pointer(
-                self.text.x + self.text.content_width / 2 + 
-                    pointer_image.width / 2,
+                self.text.x + self.text.content_width // 2 + 
+                    pointer_image.width // 2,
                 self.y,
                 self.pointer_color,
                 not self.inverted_pointers)
@@ -770,7 +770,7 @@ resource.reindex()
 asteroid_sizes = [AsteroidSize('asteroid1.png', 100),
                   AsteroidSize('asteroid2.png', 50),
                   AsteroidSize('asteroid3.png', 10)]
-for small, big in map(None, asteroid_sizes[:-1], asteroid_sizes[1:]):
+for small, big in zip(asteroid_sizes[:-1], asteroid_sizes[1:]):
     big.next_size = small
 
 bullet_image = resource.image('bullet.png')
@@ -778,7 +778,8 @@ center_anchor(bullet_image)
 
 smoke_images_image = resource.image('smoke.png')
 smoke_images = pyglet.image.ImageGrid(smoke_images_image, 1, 8)
-map(center_anchor, smoke_images)
+for smoke_image in smoke_images:
+    center_anchor(smoke_image)
 smoke_animation = \
     pyglet.image.Animation.from_image_sequence(smoke_images,
                                                SMOKE_ANIMATION_PERIOD,
@@ -787,7 +788,8 @@ smoke_animation = \
 explosion_images_image = resource.image('explosion.png')
 explosion_images = pyglet.image.ImageGrid(explosion_images_image, 2, 8)
 explosion_images = explosion_images.get_texture_sequence()
-map(center_anchor, explosion_images)
+for explosion_image in explosion_images:
+    center_anchor(explosion_image)
 explosion_animation = \
     pyglet.image.Animation.from_image_sequence(explosion_images,
                                                EXPLOSION_ANIMATION_PERIOD,
