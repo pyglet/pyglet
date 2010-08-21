@@ -318,7 +318,8 @@ class TestPlan(TestSection):
                 continue
 
             indent = len(line) - len(line.lstrip())
-            while sections and sections[-1].indent > indent:
+            while (sections and sections[-1].indent and
+                   sections[-1].indent > indent):
                 sections.pop()
 
             if sections[-1].indent is None:
