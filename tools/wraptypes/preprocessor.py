@@ -192,6 +192,11 @@ def t_punctuator(t):
     t.type = punctuators[t.value][1]
     return t
 
+@TOKEN(CHARACTER_CONSTANT)
+def t_character_constant(t):
+    t.type = 'CHARACTER_CONSTANT'
+    return t
+
 @TOKEN(IDENTIFIER)
 def t_identifier(t):
     if t.value == 'defined':
@@ -206,11 +211,6 @@ def t_pp_number(t):
     t.type = 'PP_NUMBER'
     return t
     
-@TOKEN(CHARACTER_CONSTANT)
-def t_character_constant(t):
-    t.type = 'CHARACTER_CONSTANT'
-    return t
-
 @TOKEN(STRING_LITERAL)
 def t_string_literal(t):
     t.type = 'STRING_LITERAL'
@@ -793,6 +793,15 @@ class ConstantExpressionGrammar(Grammar):
         p[0] = p[1]
         p.parser.result = p[0]
 
+    def p_character_constant(self, p):
+        '''character_constant : CHARACTER_CONSTANT
+        '''
+        try:
+            value = ord(eval(p[1].lstrip('L')))
+        except StandardError:
+            value = 0
+        p[0] = ConstantExpressionNode(value)
+
     def p_constant(self, p):
         '''constant : PP_NUMBER
         '''
@@ -819,6 +828,7 @@ class ConstantExpressionGrammar(Grammar):
 
     def p_primary_expression(self, p):
         '''primary_expression : constant
+                              | character_constant
                               | identifier
                               | '(' expression ')'
                               | LPAREN expression ')'
