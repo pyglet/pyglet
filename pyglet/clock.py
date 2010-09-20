@@ -515,7 +515,7 @@ class Clock(_ClockBase):
 
         # Insert in sort order
         for i, other in enumerate(self._schedule_interval_items):
-            if other.next_ts > next_ts:
+            if other.next_ts is not None and other.next_ts > next_ts:
                 self._schedule_interval_items.insert(i, item)
                 break
         else:
