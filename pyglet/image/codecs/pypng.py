@@ -94,6 +94,7 @@ import struct
 import math
 from array import array
 
+from pyglet.compat import asbytes
 
 _adam7 = ((0, 0, 8, 8),
           (4, 0, 8, 8),
@@ -501,7 +502,13 @@ class Reader:
             raise ValueError('Chunk %s too short for checksum', tag)
         verify = zlib.crc32(tag)
         verify = zlib.crc32(data, verify)
-        verify = struct.pack('!i', verify)
+        # Whether the output from zlib.crc32 is signed or not varies
+        # according to hideous implementation details, see
+        # http://bugs.python.org/issue1202 .
+        # We coerce it to be positive here (in a way which works on
+        # Python 2.3 and older).
+        verify &= 2**32 - 1
+        verify = struct.pack('!I', verify)
         if checksum != verify:
             # print repr(checksum)
             (a,) = struct.unpack('!I', checksum)
@@ -729,11 +736,11 @@ class Reader:
                 raise Error('Chunk error: ' + e.args[0])
 
             # print >> sys.stderr, tag, len(data)
-            if tag == 'IHDR': # http://www.w3.org/TR/PNG/#11IHDR
+            if tag == asbytes('IHDR'): # http://www.w3.org/TR/PNG/#11IHDR
                 (width, height, bits_per_sample, color_type,
                  compression_method, filter_method,
                  interlaced) = struct.unpack("!2I5B", data)
-                bps = bits_per_sample / 8
+                bps = bits_per_sample // 8
                 if bps == 0:
                     raise Error("unsupported pixel depth")
                 if bps > 2 or bits_per_sample != (bps * 8):
@@ -766,24 +773,24 @@ class Reader:
                 self.width = width
                 self.height = height
                 self.row_bytes = width * self.psize
-            elif tag == 'IDAT': # http://www.w3.org/TR/PNG/#11IDAT
+            elif tag == asbytes('IDAT'): # http://www.w3.org/TR/PNG/#11IDAT
                 compressed.append(data)
-            elif tag == 'bKGD':
+            elif tag == asbytes('bKGD'):
                 if greyscale:
                     image_metadata["background"] = struct.unpack("!1H", data)
                 else:
                     image_metadata["background"] = struct.unpack("!3H", data)
-            elif tag == 'tRNS':
+            elif tag == asbytes('tRNS'):
                 if greyscale:
                     image_metadata["transparent"] = struct.unpack("!1H", data)
                 else:
                     image_metadata["transparent"] = struct.unpack("!3H", data)
-            elif tag == 'gAMA':
+            elif tag == asbytes('gAMA'):
                 image_metadata["gamma"] = (
                     struct.unpack("!L", data)[0]) / 100000.0
-            elif tag == 'IEND': # http://www.w3.org/TR/PNG/#11IEND
+            elif tag == asbytes('IEND'): # http://www.w3.org/TR/PNG/#11IEND
                 break
-        scanlines = array('B', zlib.decompress(''.join(compressed)))
+        scanlines = array('B', zlib.decompress(asbytes('').join(compressed)))
         if interlaced:
             pixels = self.deinterlace(scanlines)
         else:
