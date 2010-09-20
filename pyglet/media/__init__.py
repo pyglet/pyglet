@@ -78,9 +78,9 @@ import heapq
 import sys
 import threading
 import time
-import StringIO
 
 import pyglet
+from pyglet.compat import bytes_type, BytesIO
 
 _debug = pyglet.options['debug_media']
 
@@ -360,8 +360,8 @@ class AudioData(object):
         self.timestamp += bytes / float(audio_format.bytes_per_second)
 
     def get_string_data(self):
-        '''Return data as a string.'''
-        if type(self.data) is str:
+        '''Return data as a string. (Python 3: return as bytes)'''
+        if isinstance(self.data, bytes_type):
             return self.data
 
         buf = ctypes.create_string_buffer(self.length)
@@ -604,7 +604,7 @@ class StaticSource(Source):
 
         # Naive implementation.  Driver-specific implementations may override
         # to load static audio data into device (or at least driver) memory. 
-        data = StringIO.StringIO()
+        data = BytesIO()
         while True:
             audio_data = source.get_audio_data(buffer_size)
             if not audio_data:
@@ -628,7 +628,7 @@ class StaticMemorySource(StaticSource):
     def __init__(self, data, audio_format):
         '''Construct a memory source over the given data buffer.
         '''
-        self._file = StringIO.StringIO(data)
+        self._file = BytesIO(data)
         self._max_offset = len(data)
         self.audio_format = audio_format
         self._duration = len(data) / float(audio_format.bytes_per_second)

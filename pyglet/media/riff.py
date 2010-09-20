@@ -48,9 +48,9 @@ __version__ = '$Id$'
 
 from pyglet.media import StreamingSource, AudioData, AudioFormat
 from pyglet.media import MediaFormatException
+from pyglet.compat import BytesIO, asbytes
 
 import struct
-import StringIO
 
 WAVE_FORMAT_PCM = 0x0001
 IBM_FORMAT_MULAW = 0x0101
@@ -124,19 +124,19 @@ class RIFFType(RIFFChunk):
         
         self.file.seek(self.offset)
         form = self.file.read(4)
-        if form != 'WAVE':
+        if form != asbytes('WAVE'):
             raise RIFFFormatException('Unsupported RIFF form "%s"' % form)
 
         self.form = WaveForm(self.file, self.offset + 4)
 
 class RIFFFile(RIFFForm):
     _chunk_types = {
-        'RIFF': RIFFType,
+        asbytes('RIFF'): RIFFType,
     }
 
     def __init__(self, file):
         if not hasattr(file, 'seek'):
-            file = StringIO.StringIO(file.read())
+            file = BytesIO(file.read())
 
         super(RIFFFile, self).__init__(file, 0)
 
@@ -165,8 +165,8 @@ class WaveDataChunk(RIFFChunk):
 
 class WaveForm(RIFFForm):
     _chunk_types = {
-        'fmt ': WaveFormatChunk,
-        'data': WaveDataChunk
+        asbytes('fmt '): WaveFormatChunk,
+        asbytes('data'): WaveDataChunk
     }
 
     def get_format_chunk(self):

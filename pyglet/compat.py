@@ -66,6 +66,8 @@ else:
 
 
 if sys.version_info[0] >= 3:
+    import io
+    
     def asbytes(s):
         if isinstance(s, bytes):
             return s
@@ -75,6 +77,13 @@ if sys.version_info[0] >= 3:
         if isinstance(s, str):
             return s
         return s.decode("utf-8")
+    
+    bytes_type = bytes
+    BytesIO = io.BytesIO
 else:
+    import StringIO
+    
     asbytes = str
     asstr = str
+    bytes_type = str
+    BytesIO = StringIO.StringIO
