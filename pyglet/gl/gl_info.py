@@ -62,6 +62,7 @@ from ctypes import *
 import warnings
 
 from pyglet.gl.gl import *
+from pyglet.compat import asstr
 
 class GLInfo(object):
     '''Information interface for a single GL context.
@@ -88,12 +89,14 @@ class GLInfo(object):
         '''
         self.have_context = True
         if not self._have_info:
-            self.vendor = cast(glGetString(GL_VENDOR), c_char_p).value
-            self.renderer = cast(glGetString(GL_RENDERER), c_char_p).value
-            self.extensions = cast(glGetString(GL_EXTENSIONS), c_char_p).value
+            self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
+            self.renderer = asstr(cast(glGetString(GL_RENDERER),
+                                       c_char_p).value)
+            self.extensions = asstr(cast(glGetString(GL_EXTENSIONS),
+                                         c_char_p).value)
             if self.extensions:
                 self.extensions = set(self.extensions.split())
-            self.version = cast(glGetString(GL_VERSION), c_char_p).value
+            self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
             self._have_info = True
 
     def remove_active_context(self):

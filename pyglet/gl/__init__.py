@@ -66,8 +66,6 @@ so are available by importing ``pyglet.gl``):
     GLU
 ``pyglet.gl.gl.glext_arb``
     ARB registered OpenGL extension functions
-``pyglet.gl.gl.glext_missing``
-    ARB registered OpenGL extension functions not included in the ARB C header
 
 These subpackages are also available, but are not imported into this namespace
 by default:
@@ -100,7 +98,6 @@ from pyglet.gl.lib import GLException
 from pyglet.gl.gl import *
 from pyglet.gl.glu import *
 from pyglet.gl.glext_arb import *
-from pyglet.gl.glext_missing import *
 from pyglet.gl import gl_info
 
 import sys as _sys

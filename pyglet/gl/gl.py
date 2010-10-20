@@ -50,2107 +50,2660 @@ from pyglet.gl.lib import c_ptrdiff_t
 # Wrapper for /usr/include/GL/gl.h
 
 
-GLenum = c_uint 	# /usr/include/GL/gl.h:53
-GLboolean = c_ubyte 	# /usr/include/GL/gl.h:54
-GLbitfield = c_uint 	# /usr/include/GL/gl.h:55
-GLbyte = c_char 	# /usr/include/GL/gl.h:56
-GLshort = c_short 	# /usr/include/GL/gl.h:57
-GLint = c_int 	# /usr/include/GL/gl.h:58
-GLsizei = c_int 	# /usr/include/GL/gl.h:59
-GLubyte = c_ubyte 	# /usr/include/GL/gl.h:60
-GLushort = c_ushort 	# /usr/include/GL/gl.h:61
-GLuint = c_uint 	# /usr/include/GL/gl.h:62
-GLfloat = c_float 	# /usr/include/GL/gl.h:63
-GLclampf = c_float 	# /usr/include/GL/gl.h:64
-GLdouble = c_double 	# /usr/include/GL/gl.h:65
-GLclampd = c_double 	# /usr/include/GL/gl.h:66
-GLvoid = None 	# /usr/include/GL/gl.h:67
-GL_VERSION_1_1 = 1 	# /usr/include/GL/gl.h:77
-GL_CURRENT_BIT = 1 	# /usr/include/GL/gl.h:80
-GL_POINT_BIT = 2 	# /usr/include/GL/gl.h:81
-GL_LINE_BIT = 4 	# /usr/include/GL/gl.h:82
-GL_POLYGON_BIT = 8 	# /usr/include/GL/gl.h:83
-GL_POLYGON_STIPPLE_BIT = 16 	# /usr/include/GL/gl.h:84
-GL_PIXEL_MODE_BIT = 32 	# /usr/include/GL/gl.h:85
-GL_LIGHTING_BIT = 64 	# /usr/include/GL/gl.h:86
-GL_FOG_BIT = 128 	# /usr/include/GL/gl.h:87
-GL_DEPTH_BUFFER_BIT = 256 	# /usr/include/GL/gl.h:88
-GL_ACCUM_BUFFER_BIT = 512 	# /usr/include/GL/gl.h:89
-GL_STENCIL_BUFFER_BIT = 1024 	# /usr/include/GL/gl.h:90
-GL_VIEWPORT_BIT = 2048 	# /usr/include/GL/gl.h:91
-GL_TRANSFORM_BIT = 4096 	# /usr/include/GL/gl.h:92
-GL_ENABLE_BIT = 8192 	# /usr/include/GL/gl.h:93
-GL_COLOR_BUFFER_BIT = 16384 	# /usr/include/GL/gl.h:94
-GL_HINT_BIT = 32768 	# /usr/include/GL/gl.h:95
-GL_EVAL_BIT = 65536 	# /usr/include/GL/gl.h:96
-GL_LIST_BIT = 131072 	# /usr/include/GL/gl.h:97
-GL_TEXTURE_BIT = 262144 	# /usr/include/GL/gl.h:98
-GL_SCISSOR_BIT = 524288 	# /usr/include/GL/gl.h:99
-GL_ALL_ATTRIB_BITS = 4294967295 	# /usr/include/GL/gl.h:100
-GL_CLIENT_PIXEL_STORE_BIT = 1 	# /usr/include/GL/gl.h:109
-GL_CLIENT_VERTEX_ARRAY_BIT = 2 	# /usr/include/GL/gl.h:110
-GL_CLIENT_ALL_ATTRIB_BITS = 4294967295 	# /usr/include/GL/gl.h:111
-GL_FALSE = 0 	# /usr/include/GL/gl.h:114
-GL_TRUE = 1 	# /usr/include/GL/gl.h:115
-GL_POINTS = 0 	# /usr/include/GL/gl.h:118
-GL_LINES = 1 	# /usr/include/GL/gl.h:119
-GL_LINE_LOOP = 2 	# /usr/include/GL/gl.h:120
-GL_LINE_STRIP = 3 	# /usr/include/GL/gl.h:121
-GL_TRIANGLES = 4 	# /usr/include/GL/gl.h:122
-GL_TRIANGLE_STRIP = 5 	# /usr/include/GL/gl.h:123
-GL_TRIANGLE_FAN = 6 	# /usr/include/GL/gl.h:124
-GL_QUADS = 7 	# /usr/include/GL/gl.h:125
-GL_QUAD_STRIP = 8 	# /usr/include/GL/gl.h:126
-GL_POLYGON = 9 	# /usr/include/GL/gl.h:127
-GL_ACCUM = 256 	# /usr/include/GL/gl.h:130
-GL_LOAD = 257 	# /usr/include/GL/gl.h:131
-GL_RETURN = 258 	# /usr/include/GL/gl.h:132
-GL_MULT = 259 	# /usr/include/GL/gl.h:133
-GL_ADD = 260 	# /usr/include/GL/gl.h:134
-GL_NEVER = 512 	# /usr/include/GL/gl.h:137
-GL_LESS = 513 	# /usr/include/GL/gl.h:138
-GL_EQUAL = 514 	# /usr/include/GL/gl.h:139
-GL_LEQUAL = 515 	# /usr/include/GL/gl.h:140
-GL_GREATER = 516 	# /usr/include/GL/gl.h:141
-GL_NOTEQUAL = 517 	# /usr/include/GL/gl.h:142
-GL_GEQUAL = 518 	# /usr/include/GL/gl.h:143
-GL_ALWAYS = 519 	# /usr/include/GL/gl.h:144
-GL_ZERO = 0 	# /usr/include/GL/gl.h:147
-GL_ONE = 1 	# /usr/include/GL/gl.h:148
-GL_SRC_COLOR = 768 	# /usr/include/GL/gl.h:149
-GL_ONE_MINUS_SRC_COLOR = 769 	# /usr/include/GL/gl.h:150
-GL_SRC_ALPHA = 770 	# /usr/include/GL/gl.h:151
-GL_ONE_MINUS_SRC_ALPHA = 771 	# /usr/include/GL/gl.h:152
-GL_DST_ALPHA = 772 	# /usr/include/GL/gl.h:153
-GL_ONE_MINUS_DST_ALPHA = 773 	# /usr/include/GL/gl.h:154
-GL_DST_COLOR = 774 	# /usr/include/GL/gl.h:159
-GL_ONE_MINUS_DST_COLOR = 775 	# /usr/include/GL/gl.h:160
-GL_SRC_ALPHA_SATURATE = 776 	# /usr/include/GL/gl.h:161
-GL_NONE = 0 	# /usr/include/GL/gl.h:205
-GL_FRONT_LEFT = 1024 	# /usr/include/GL/gl.h:206
-GL_FRONT_RIGHT = 1025 	# /usr/include/GL/gl.h:207
-GL_BACK_LEFT = 1026 	# /usr/include/GL/gl.h:208
-GL_BACK_RIGHT = 1027 	# /usr/include/GL/gl.h:209
-GL_FRONT = 1028 	# /usr/include/GL/gl.h:210
-GL_BACK = 1029 	# /usr/include/GL/gl.h:211
-GL_LEFT = 1030 	# /usr/include/GL/gl.h:212
-GL_RIGHT = 1031 	# /usr/include/GL/gl.h:213
-GL_FRONT_AND_BACK = 1032 	# /usr/include/GL/gl.h:214
-GL_AUX0 = 1033 	# /usr/include/GL/gl.h:215
-GL_AUX1 = 1034 	# /usr/include/GL/gl.h:216
-GL_AUX2 = 1035 	# /usr/include/GL/gl.h:217
-GL_AUX3 = 1036 	# /usr/include/GL/gl.h:218
-GL_NO_ERROR = 0 	# /usr/include/GL/gl.h:289
-GL_INVALID_ENUM = 1280 	# /usr/include/GL/gl.h:290
-GL_INVALID_VALUE = 1281 	# /usr/include/GL/gl.h:291
-GL_INVALID_OPERATION = 1282 	# /usr/include/GL/gl.h:292
-GL_STACK_OVERFLOW = 1283 	# /usr/include/GL/gl.h:293
-GL_STACK_UNDERFLOW = 1284 	# /usr/include/GL/gl.h:294
-GL_OUT_OF_MEMORY = 1285 	# /usr/include/GL/gl.h:295
-GL_TABLE_TOO_LARGE = 32817 	# /usr/include/GL/gl.h:296
-GL_2D = 1536 	# /usr/include/GL/gl.h:299
-GL_3D = 1537 	# /usr/include/GL/gl.h:300
-GL_3D_COLOR = 1538 	# /usr/include/GL/gl.h:301
-GL_3D_COLOR_TEXTURE = 1539 	# /usr/include/GL/gl.h:302
-GL_4D_COLOR_TEXTURE = 1540 	# /usr/include/GL/gl.h:303
-GL_PASS_THROUGH_TOKEN = 1792 	# /usr/include/GL/gl.h:306
-GL_POINT_TOKEN = 1793 	# /usr/include/GL/gl.h:307
-GL_LINE_TOKEN = 1794 	# /usr/include/GL/gl.h:308
-GL_POLYGON_TOKEN = 1795 	# /usr/include/GL/gl.h:309
-GL_BITMAP_TOKEN = 1796 	# /usr/include/GL/gl.h:310
-GL_DRAW_PIXEL_TOKEN = 1797 	# /usr/include/GL/gl.h:311
-GL_COPY_PIXEL_TOKEN = 1798 	# /usr/include/GL/gl.h:312
-GL_LINE_RESET_TOKEN = 1799 	# /usr/include/GL/gl.h:313
-GL_EXP = 2048 	# /usr/include/GL/gl.h:317
-GL_EXP2 = 2049 	# /usr/include/GL/gl.h:318
-GL_CW = 2304 	# /usr/include/GL/gl.h:329
-GL_CCW = 2305 	# /usr/include/GL/gl.h:330
-GL_COEFF = 2560 	# /usr/include/GL/gl.h:333
-GL_ORDER = 2561 	# /usr/include/GL/gl.h:334
-GL_DOMAIN = 2562 	# /usr/include/GL/gl.h:335
-GL_PIXEL_MAP_I_TO_I = 3184 	# /usr/include/GL/gl.h:338
-GL_PIXEL_MAP_S_TO_S = 3185 	# /usr/include/GL/gl.h:339
-GL_PIXEL_MAP_I_TO_R = 3186 	# /usr/include/GL/gl.h:340
-GL_PIXEL_MAP_I_TO_G = 3187 	# /usr/include/GL/gl.h:341
-GL_PIXEL_MAP_I_TO_B = 3188 	# /usr/include/GL/gl.h:342
-GL_PIXEL_MAP_I_TO_A = 3189 	# /usr/include/GL/gl.h:343
-GL_PIXEL_MAP_R_TO_R = 3190 	# /usr/include/GL/gl.h:344
-GL_PIXEL_MAP_G_TO_G = 3191 	# /usr/include/GL/gl.h:345
-GL_PIXEL_MAP_B_TO_B = 3192 	# /usr/include/GL/gl.h:346
-GL_PIXEL_MAP_A_TO_A = 3193 	# /usr/include/GL/gl.h:347
-GL_VERTEX_ARRAY_POINTER = 32910 	# /usr/include/GL/gl.h:350
-GL_NORMAL_ARRAY_POINTER = 32911 	# /usr/include/GL/gl.h:351
-GL_COLOR_ARRAY_POINTER = 32912 	# /usr/include/GL/gl.h:352
-GL_INDEX_ARRAY_POINTER = 32913 	# /usr/include/GL/gl.h:353
-GL_TEXTURE_COORD_ARRAY_POINTER = 32914 	# /usr/include/GL/gl.h:354
-GL_EDGE_FLAG_ARRAY_POINTER = 32915 	# /usr/include/GL/gl.h:355
-GL_CURRENT_COLOR = 2816 	# /usr/include/GL/gl.h:358
-GL_CURRENT_INDEX = 2817 	# /usr/include/GL/gl.h:359
-GL_CURRENT_NORMAL = 2818 	# /usr/include/GL/gl.h:360
-GL_CURRENT_TEXTURE_COORDS = 2819 	# /usr/include/GL/gl.h:361
-GL_CURRENT_RASTER_COLOR = 2820 	# /usr/include/GL/gl.h:362
-GL_CURRENT_RASTER_INDEX = 2821 	# /usr/include/GL/gl.h:363
-GL_CURRENT_RASTER_TEXTURE_COORDS = 2822 	# /usr/include/GL/gl.h:364
-GL_CURRENT_RASTER_POSITION = 2823 	# /usr/include/GL/gl.h:365
-GL_CURRENT_RASTER_POSITION_VALID = 2824 	# /usr/include/GL/gl.h:366
-GL_CURRENT_RASTER_DISTANCE = 2825 	# /usr/include/GL/gl.h:367
-GL_POINT_SMOOTH = 2832 	# /usr/include/GL/gl.h:368
-GL_POINT_SIZE = 2833 	# /usr/include/GL/gl.h:369
-GL_SMOOTH_POINT_SIZE_RANGE = 2834 	# /usr/include/GL/gl.h:370
-GL_SMOOTH_POINT_SIZE_GRANULARITY = 2835 	# /usr/include/GL/gl.h:371
-GL_POINT_SIZE_RANGE = 2834 	# /usr/include/GL/gl.h:372
-GL_POINT_SIZE_GRANULARITY = 2835 	# /usr/include/GL/gl.h:373
-GL_LINE_SMOOTH = 2848 	# /usr/include/GL/gl.h:374
-GL_LINE_WIDTH = 2849 	# /usr/include/GL/gl.h:375
-GL_SMOOTH_LINE_WIDTH_RANGE = 2850 	# /usr/include/GL/gl.h:376
-GL_SMOOTH_LINE_WIDTH_GRANULARITY = 2851 	# /usr/include/GL/gl.h:377
-GL_LINE_WIDTH_RANGE = 2850 	# /usr/include/GL/gl.h:378
-GL_LINE_WIDTH_GRANULARITY = 2851 	# /usr/include/GL/gl.h:379
-GL_LINE_STIPPLE = 2852 	# /usr/include/GL/gl.h:380
-GL_LINE_STIPPLE_PATTERN = 2853 	# /usr/include/GL/gl.h:381
-GL_LINE_STIPPLE_REPEAT = 2854 	# /usr/include/GL/gl.h:382
-GL_LIST_MODE = 2864 	# /usr/include/GL/gl.h:383
-GL_MAX_LIST_NESTING = 2865 	# /usr/include/GL/gl.h:384
-GL_LIST_BASE = 2866 	# /usr/include/GL/gl.h:385
-GL_LIST_INDEX = 2867 	# /usr/include/GL/gl.h:386
-GL_POLYGON_MODE = 2880 	# /usr/include/GL/gl.h:387
-GL_POLYGON_SMOOTH = 2881 	# /usr/include/GL/gl.h:388
-GL_POLYGON_STIPPLE = 2882 	# /usr/include/GL/gl.h:389
-GL_EDGE_FLAG = 2883 	# /usr/include/GL/gl.h:390
-GL_CULL_FACE = 2884 	# /usr/include/GL/gl.h:391
-GL_CULL_FACE_MODE = 2885 	# /usr/include/GL/gl.h:392
-GL_FRONT_FACE = 2886 	# /usr/include/GL/gl.h:393
-GL_LIGHTING = 2896 	# /usr/include/GL/gl.h:394
-GL_LIGHT_MODEL_LOCAL_VIEWER = 2897 	# /usr/include/GL/gl.h:395
-GL_LIGHT_MODEL_TWO_SIDE = 2898 	# /usr/include/GL/gl.h:396
-GL_LIGHT_MODEL_AMBIENT = 2899 	# /usr/include/GL/gl.h:397
-GL_SHADE_MODEL = 2900 	# /usr/include/GL/gl.h:398
-GL_COLOR_MATERIAL_FACE = 2901 	# /usr/include/GL/gl.h:399
-GL_COLOR_MATERIAL_PARAMETER = 2902 	# /usr/include/GL/gl.h:400
-GL_COLOR_MATERIAL = 2903 	# /usr/include/GL/gl.h:401
-GL_FOG = 2912 	# /usr/include/GL/gl.h:402
-GL_FOG_INDEX = 2913 	# /usr/include/GL/gl.h:403
-GL_FOG_DENSITY = 2914 	# /usr/include/GL/gl.h:404
-GL_FOG_START = 2915 	# /usr/include/GL/gl.h:405
-GL_FOG_END = 2916 	# /usr/include/GL/gl.h:406
-GL_FOG_MODE = 2917 	# /usr/include/GL/gl.h:407
-GL_FOG_COLOR = 2918 	# /usr/include/GL/gl.h:408
-GL_DEPTH_RANGE = 2928 	# /usr/include/GL/gl.h:409
-GL_DEPTH_TEST = 2929 	# /usr/include/GL/gl.h:410
-GL_DEPTH_WRITEMASK = 2930 	# /usr/include/GL/gl.h:411
-GL_DEPTH_CLEAR_VALUE = 2931 	# /usr/include/GL/gl.h:412
-GL_DEPTH_FUNC = 2932 	# /usr/include/GL/gl.h:413
-GL_ACCUM_CLEAR_VALUE = 2944 	# /usr/include/GL/gl.h:414
-GL_STENCIL_TEST = 2960 	# /usr/include/GL/gl.h:415
-GL_STENCIL_CLEAR_VALUE = 2961 	# /usr/include/GL/gl.h:416
-GL_STENCIL_FUNC = 2962 	# /usr/include/GL/gl.h:417
-GL_STENCIL_VALUE_MASK = 2963 	# /usr/include/GL/gl.h:418
-GL_STENCIL_FAIL = 2964 	# /usr/include/GL/gl.h:419
-GL_STENCIL_PASS_DEPTH_FAIL = 2965 	# /usr/include/GL/gl.h:420
-GL_STENCIL_PASS_DEPTH_PASS = 2966 	# /usr/include/GL/gl.h:421
-GL_STENCIL_REF = 2967 	# /usr/include/GL/gl.h:422
-GL_STENCIL_WRITEMASK = 2968 	# /usr/include/GL/gl.h:423
-GL_MATRIX_MODE = 2976 	# /usr/include/GL/gl.h:424
-GL_NORMALIZE = 2977 	# /usr/include/GL/gl.h:425
-GL_VIEWPORT = 2978 	# /usr/include/GL/gl.h:426
-GL_MODELVIEW_STACK_DEPTH = 2979 	# /usr/include/GL/gl.h:427
-GL_PROJECTION_STACK_DEPTH = 2980 	# /usr/include/GL/gl.h:428
-GL_TEXTURE_STACK_DEPTH = 2981 	# /usr/include/GL/gl.h:429
-GL_MODELVIEW_MATRIX = 2982 	# /usr/include/GL/gl.h:430
-GL_PROJECTION_MATRIX = 2983 	# /usr/include/GL/gl.h:431
-GL_TEXTURE_MATRIX = 2984 	# /usr/include/GL/gl.h:432
-GL_ATTRIB_STACK_DEPTH = 2992 	# /usr/include/GL/gl.h:433
-GL_CLIENT_ATTRIB_STACK_DEPTH = 2993 	# /usr/include/GL/gl.h:434
-GL_ALPHA_TEST = 3008 	# /usr/include/GL/gl.h:435
-GL_ALPHA_TEST_FUNC = 3009 	# /usr/include/GL/gl.h:436
-GL_ALPHA_TEST_REF = 3010 	# /usr/include/GL/gl.h:437
-GL_DITHER = 3024 	# /usr/include/GL/gl.h:438
-GL_BLEND_DST = 3040 	# /usr/include/GL/gl.h:439
-GL_BLEND_SRC = 3041 	# /usr/include/GL/gl.h:440
-GL_BLEND = 3042 	# /usr/include/GL/gl.h:441
-GL_LOGIC_OP_MODE = 3056 	# /usr/include/GL/gl.h:442
-GL_INDEX_LOGIC_OP = 3057 	# /usr/include/GL/gl.h:443
-GL_LOGIC_OP = 3057 	# /usr/include/GL/gl.h:444
-GL_COLOR_LOGIC_OP = 3058 	# /usr/include/GL/gl.h:445
-GL_AUX_BUFFERS = 3072 	# /usr/include/GL/gl.h:446
-GL_DRAW_BUFFER = 3073 	# /usr/include/GL/gl.h:447
-GL_READ_BUFFER = 3074 	# /usr/include/GL/gl.h:448
-GL_SCISSOR_BOX = 3088 	# /usr/include/GL/gl.h:449
-GL_SCISSOR_TEST = 3089 	# /usr/include/GL/gl.h:450
-GL_INDEX_CLEAR_VALUE = 3104 	# /usr/include/GL/gl.h:451
-GL_INDEX_WRITEMASK = 3105 	# /usr/include/GL/gl.h:452
-GL_COLOR_CLEAR_VALUE = 3106 	# /usr/include/GL/gl.h:453
-GL_COLOR_WRITEMASK = 3107 	# /usr/include/GL/gl.h:454
-GL_INDEX_MODE = 3120 	# /usr/include/GL/gl.h:455
-GL_RGBA_MODE = 3121 	# /usr/include/GL/gl.h:456
-GL_DOUBLEBUFFER = 3122 	# /usr/include/GL/gl.h:457
-GL_STEREO = 3123 	# /usr/include/GL/gl.h:458
-GL_RENDER_MODE = 3136 	# /usr/include/GL/gl.h:459
-GL_PERSPECTIVE_CORRECTION_HINT = 3152 	# /usr/include/GL/gl.h:460
-GL_POINT_SMOOTH_HINT = 3153 	# /usr/include/GL/gl.h:461
-GL_LINE_SMOOTH_HINT = 3154 	# /usr/include/GL/gl.h:462
-GL_POLYGON_SMOOTH_HINT = 3155 	# /usr/include/GL/gl.h:463
-GL_FOG_HINT = 3156 	# /usr/include/GL/gl.h:464
-GL_TEXTURE_GEN_S = 3168 	# /usr/include/GL/gl.h:465
-GL_TEXTURE_GEN_T = 3169 	# /usr/include/GL/gl.h:466
-GL_TEXTURE_GEN_R = 3170 	# /usr/include/GL/gl.h:467
-GL_TEXTURE_GEN_Q = 3171 	# /usr/include/GL/gl.h:468
-GL_PIXEL_MAP_I_TO_I_SIZE = 3248 	# /usr/include/GL/gl.h:469
-GL_PIXEL_MAP_S_TO_S_SIZE = 3249 	# /usr/include/GL/gl.h:470
-GL_PIXEL_MAP_I_TO_R_SIZE = 3250 	# /usr/include/GL/gl.h:471
-GL_PIXEL_MAP_I_TO_G_SIZE = 3251 	# /usr/include/GL/gl.h:472
-GL_PIXEL_MAP_I_TO_B_SIZE = 3252 	# /usr/include/GL/gl.h:473
-GL_PIXEL_MAP_I_TO_A_SIZE = 3253 	# /usr/include/GL/gl.h:474
-GL_PIXEL_MAP_R_TO_R_SIZE = 3254 	# /usr/include/GL/gl.h:475
-GL_PIXEL_MAP_G_TO_G_SIZE = 3255 	# /usr/include/GL/gl.h:476
-GL_PIXEL_MAP_B_TO_B_SIZE = 3256 	# /usr/include/GL/gl.h:477
-GL_PIXEL_MAP_A_TO_A_SIZE = 3257 	# /usr/include/GL/gl.h:478
-GL_UNPACK_SWAP_BYTES = 3312 	# /usr/include/GL/gl.h:479
-GL_UNPACK_LSB_FIRST = 3313 	# /usr/include/GL/gl.h:480
-GL_UNPACK_ROW_LENGTH = 3314 	# /usr/include/GL/gl.h:481
-GL_UNPACK_SKIP_ROWS = 3315 	# /usr/include/GL/gl.h:482
-GL_UNPACK_SKIP_PIXELS = 3316 	# /usr/include/GL/gl.h:483
-GL_UNPACK_ALIGNMENT = 3317 	# /usr/include/GL/gl.h:484
-GL_PACK_SWAP_BYTES = 3328 	# /usr/include/GL/gl.h:485
-GL_PACK_LSB_FIRST = 3329 	# /usr/include/GL/gl.h:486
-GL_PACK_ROW_LENGTH = 3330 	# /usr/include/GL/gl.h:487
-GL_PACK_SKIP_ROWS = 3331 	# /usr/include/GL/gl.h:488
-GL_PACK_SKIP_PIXELS = 3332 	# /usr/include/GL/gl.h:489
-GL_PACK_ALIGNMENT = 3333 	# /usr/include/GL/gl.h:490
-GL_MAP_COLOR = 3344 	# /usr/include/GL/gl.h:491
-GL_MAP_STENCIL = 3345 	# /usr/include/GL/gl.h:492
-GL_INDEX_SHIFT = 3346 	# /usr/include/GL/gl.h:493
-GL_INDEX_OFFSET = 3347 	# /usr/include/GL/gl.h:494
-GL_RED_SCALE = 3348 	# /usr/include/GL/gl.h:495
-GL_RED_BIAS = 3349 	# /usr/include/GL/gl.h:496
-GL_ZOOM_X = 3350 	# /usr/include/GL/gl.h:497
-GL_ZOOM_Y = 3351 	# /usr/include/GL/gl.h:498
-GL_GREEN_SCALE = 3352 	# /usr/include/GL/gl.h:499
-GL_GREEN_BIAS = 3353 	# /usr/include/GL/gl.h:500
-GL_BLUE_SCALE = 3354 	# /usr/include/GL/gl.h:501
-GL_BLUE_BIAS = 3355 	# /usr/include/GL/gl.h:502
-GL_ALPHA_SCALE = 3356 	# /usr/include/GL/gl.h:503
-GL_ALPHA_BIAS = 3357 	# /usr/include/GL/gl.h:504
-GL_DEPTH_SCALE = 3358 	# /usr/include/GL/gl.h:505
-GL_DEPTH_BIAS = 3359 	# /usr/include/GL/gl.h:506
-GL_MAX_EVAL_ORDER = 3376 	# /usr/include/GL/gl.h:507
-GL_MAX_LIGHTS = 3377 	# /usr/include/GL/gl.h:508
-GL_MAX_CLIP_PLANES = 3378 	# /usr/include/GL/gl.h:509
-GL_MAX_TEXTURE_SIZE = 3379 	# /usr/include/GL/gl.h:510
-GL_MAX_PIXEL_MAP_TABLE = 3380 	# /usr/include/GL/gl.h:511
-GL_MAX_ATTRIB_STACK_DEPTH = 3381 	# /usr/include/GL/gl.h:512
-GL_MAX_MODELVIEW_STACK_DEPTH = 3382 	# /usr/include/GL/gl.h:513
-GL_MAX_NAME_STACK_DEPTH = 3383 	# /usr/include/GL/gl.h:514
-GL_MAX_PROJECTION_STACK_DEPTH = 3384 	# /usr/include/GL/gl.h:515
-GL_MAX_TEXTURE_STACK_DEPTH = 3385 	# /usr/include/GL/gl.h:516
-GL_MAX_VIEWPORT_DIMS = 3386 	# /usr/include/GL/gl.h:517
-GL_MAX_CLIENT_ATTRIB_STACK_DEPTH = 3387 	# /usr/include/GL/gl.h:518
-GL_SUBPIXEL_BITS = 3408 	# /usr/include/GL/gl.h:519
-GL_INDEX_BITS = 3409 	# /usr/include/GL/gl.h:520
-GL_RED_BITS = 3410 	# /usr/include/GL/gl.h:521
-GL_GREEN_BITS = 3411 	# /usr/include/GL/gl.h:522
-GL_BLUE_BITS = 3412 	# /usr/include/GL/gl.h:523
-GL_ALPHA_BITS = 3413 	# /usr/include/GL/gl.h:524
-GL_DEPTH_BITS = 3414 	# /usr/include/GL/gl.h:525
-GL_STENCIL_BITS = 3415 	# /usr/include/GL/gl.h:526
-GL_ACCUM_RED_BITS = 3416 	# /usr/include/GL/gl.h:527
-GL_ACCUM_GREEN_BITS = 3417 	# /usr/include/GL/gl.h:528
-GL_ACCUM_BLUE_BITS = 3418 	# /usr/include/GL/gl.h:529
-GL_ACCUM_ALPHA_BITS = 3419 	# /usr/include/GL/gl.h:530
-GL_NAME_STACK_DEPTH = 3440 	# /usr/include/GL/gl.h:531
-GL_AUTO_NORMAL = 3456 	# /usr/include/GL/gl.h:532
-GL_MAP1_COLOR_4 = 3472 	# /usr/include/GL/gl.h:533
-GL_MAP1_INDEX = 3473 	# /usr/include/GL/gl.h:534
-GL_MAP1_NORMAL = 3474 	# /usr/include/GL/gl.h:535
-GL_MAP1_TEXTURE_COORD_1 = 3475 	# /usr/include/GL/gl.h:536
-GL_MAP1_TEXTURE_COORD_2 = 3476 	# /usr/include/GL/gl.h:537
-GL_MAP1_TEXTURE_COORD_3 = 3477 	# /usr/include/GL/gl.h:538
-GL_MAP1_TEXTURE_COORD_4 = 3478 	# /usr/include/GL/gl.h:539
-GL_MAP1_VERTEX_3 = 3479 	# /usr/include/GL/gl.h:540
-GL_MAP1_VERTEX_4 = 3480 	# /usr/include/GL/gl.h:541
-GL_MAP2_COLOR_4 = 3504 	# /usr/include/GL/gl.h:542
-GL_MAP2_INDEX = 3505 	# /usr/include/GL/gl.h:543
-GL_MAP2_NORMAL = 3506 	# /usr/include/GL/gl.h:544
-GL_MAP2_TEXTURE_COORD_1 = 3507 	# /usr/include/GL/gl.h:545
-GL_MAP2_TEXTURE_COORD_2 = 3508 	# /usr/include/GL/gl.h:546
-GL_MAP2_TEXTURE_COORD_3 = 3509 	# /usr/include/GL/gl.h:547
-GL_MAP2_TEXTURE_COORD_4 = 3510 	# /usr/include/GL/gl.h:548
-GL_MAP2_VERTEX_3 = 3511 	# /usr/include/GL/gl.h:549
-GL_MAP2_VERTEX_4 = 3512 	# /usr/include/GL/gl.h:550
-GL_MAP1_GRID_DOMAIN = 3536 	# /usr/include/GL/gl.h:551
-GL_MAP1_GRID_SEGMENTS = 3537 	# /usr/include/GL/gl.h:552
-GL_MAP2_GRID_DOMAIN = 3538 	# /usr/include/GL/gl.h:553
-GL_MAP2_GRID_SEGMENTS = 3539 	# /usr/include/GL/gl.h:554
-GL_TEXTURE_1D = 3552 	# /usr/include/GL/gl.h:555
-GL_TEXTURE_2D = 3553 	# /usr/include/GL/gl.h:556
-GL_FEEDBACK_BUFFER_POINTER = 3568 	# /usr/include/GL/gl.h:557
-GL_FEEDBACK_BUFFER_SIZE = 3569 	# /usr/include/GL/gl.h:558
-GL_FEEDBACK_BUFFER_TYPE = 3570 	# /usr/include/GL/gl.h:559
-GL_SELECTION_BUFFER_POINTER = 3571 	# /usr/include/GL/gl.h:560
-GL_SELECTION_BUFFER_SIZE = 3572 	# /usr/include/GL/gl.h:561
-GL_POLYGON_OFFSET_UNITS = 10752 	# /usr/include/GL/gl.h:562
-GL_POLYGON_OFFSET_POINT = 10753 	# /usr/include/GL/gl.h:563
-GL_POLYGON_OFFSET_LINE = 10754 	# /usr/include/GL/gl.h:564
-GL_POLYGON_OFFSET_FILL = 32823 	# /usr/include/GL/gl.h:565
-GL_POLYGON_OFFSET_FACTOR = 32824 	# /usr/include/GL/gl.h:566
-GL_TEXTURE_BINDING_1D = 32872 	# /usr/include/GL/gl.h:567
-GL_TEXTURE_BINDING_2D = 32873 	# /usr/include/GL/gl.h:568
-GL_TEXTURE_BINDING_3D = 32874 	# /usr/include/GL/gl.h:569
-GL_VERTEX_ARRAY = 32884 	# /usr/include/GL/gl.h:570
-GL_NORMAL_ARRAY = 32885 	# /usr/include/GL/gl.h:571
-GL_COLOR_ARRAY = 32886 	# /usr/include/GL/gl.h:572
-GL_INDEX_ARRAY = 32887 	# /usr/include/GL/gl.h:573
-GL_TEXTURE_COORD_ARRAY = 32888 	# /usr/include/GL/gl.h:574
-GL_EDGE_FLAG_ARRAY = 32889 	# /usr/include/GL/gl.h:575
-GL_VERTEX_ARRAY_SIZE = 32890 	# /usr/include/GL/gl.h:576
-GL_VERTEX_ARRAY_TYPE = 32891 	# /usr/include/GL/gl.h:577
-GL_VERTEX_ARRAY_STRIDE = 32892 	# /usr/include/GL/gl.h:578
-GL_NORMAL_ARRAY_TYPE = 32894 	# /usr/include/GL/gl.h:579
-GL_NORMAL_ARRAY_STRIDE = 32895 	# /usr/include/GL/gl.h:580
-GL_COLOR_ARRAY_SIZE = 32897 	# /usr/include/GL/gl.h:581
-GL_COLOR_ARRAY_TYPE = 32898 	# /usr/include/GL/gl.h:582
-GL_COLOR_ARRAY_STRIDE = 32899 	# /usr/include/GL/gl.h:583
-GL_INDEX_ARRAY_TYPE = 32901 	# /usr/include/GL/gl.h:584
-GL_INDEX_ARRAY_STRIDE = 32902 	# /usr/include/GL/gl.h:585
-GL_TEXTURE_COORD_ARRAY_SIZE = 32904 	# /usr/include/GL/gl.h:586
-GL_TEXTURE_COORD_ARRAY_TYPE = 32905 	# /usr/include/GL/gl.h:587
-GL_TEXTURE_COORD_ARRAY_STRIDE = 32906 	# /usr/include/GL/gl.h:588
-GL_EDGE_FLAG_ARRAY_STRIDE = 32908 	# /usr/include/GL/gl.h:589
-GL_TEXTURE_WIDTH = 4096 	# /usr/include/GL/gl.h:602
-GL_TEXTURE_HEIGHT = 4097 	# /usr/include/GL/gl.h:603
-GL_TEXTURE_INTERNAL_FORMAT = 4099 	# /usr/include/GL/gl.h:604
-GL_TEXTURE_COMPONENTS = 4099 	# /usr/include/GL/gl.h:605
-GL_TEXTURE_BORDER_COLOR = 4100 	# /usr/include/GL/gl.h:606
-GL_TEXTURE_BORDER = 4101 	# /usr/include/GL/gl.h:607
-GL_TEXTURE_RED_SIZE = 32860 	# /usr/include/GL/gl.h:608
-GL_TEXTURE_GREEN_SIZE = 32861 	# /usr/include/GL/gl.h:609
-GL_TEXTURE_BLUE_SIZE = 32862 	# /usr/include/GL/gl.h:610
-GL_TEXTURE_ALPHA_SIZE = 32863 	# /usr/include/GL/gl.h:611
-GL_TEXTURE_LUMINANCE_SIZE = 32864 	# /usr/include/GL/gl.h:612
-GL_TEXTURE_INTENSITY_SIZE = 32865 	# /usr/include/GL/gl.h:613
-GL_TEXTURE_PRIORITY = 32870 	# /usr/include/GL/gl.h:614
-GL_TEXTURE_RESIDENT = 32871 	# /usr/include/GL/gl.h:615
-GL_DONT_CARE = 4352 	# /usr/include/GL/gl.h:618
-GL_FASTEST = 4353 	# /usr/include/GL/gl.h:619
-GL_NICEST = 4354 	# /usr/include/GL/gl.h:620
-GL_AMBIENT = 4608 	# /usr/include/GL/gl.h:654
-GL_DIFFUSE = 4609 	# /usr/include/GL/gl.h:655
-GL_SPECULAR = 4610 	# /usr/include/GL/gl.h:656
-GL_POSITION = 4611 	# /usr/include/GL/gl.h:657
-GL_SPOT_DIRECTION = 4612 	# /usr/include/GL/gl.h:658
-GL_SPOT_EXPONENT = 4613 	# /usr/include/GL/gl.h:659
-GL_SPOT_CUTOFF = 4614 	# /usr/include/GL/gl.h:660
-GL_CONSTANT_ATTENUATION = 4615 	# /usr/include/GL/gl.h:661
-GL_LINEAR_ATTENUATION = 4616 	# /usr/include/GL/gl.h:662
-GL_QUADRATIC_ATTENUATION = 4617 	# /usr/include/GL/gl.h:663
-GL_COMPILE = 4864 	# /usr/include/GL/gl.h:666
-GL_COMPILE_AND_EXECUTE = 4865 	# /usr/include/GL/gl.h:667
-GL_BYTE = 5120 	# /usr/include/GL/gl.h:670
-GL_UNSIGNED_BYTE = 5121 	# /usr/include/GL/gl.h:671
-GL_SHORT = 5122 	# /usr/include/GL/gl.h:672
-GL_UNSIGNED_SHORT = 5123 	# /usr/include/GL/gl.h:673
-GL_INT = 5124 	# /usr/include/GL/gl.h:674
-GL_UNSIGNED_INT = 5125 	# /usr/include/GL/gl.h:675
-GL_FLOAT = 5126 	# /usr/include/GL/gl.h:676
-GL_2_BYTES = 5127 	# /usr/include/GL/gl.h:677
-GL_3_BYTES = 5128 	# /usr/include/GL/gl.h:678
-GL_4_BYTES = 5129 	# /usr/include/GL/gl.h:679
-GL_DOUBLE = 5130 	# /usr/include/GL/gl.h:680
-GL_DOUBLE_EXT = 5130 	# /usr/include/GL/gl.h:681
-GL_CLEAR = 5376 	# /usr/include/GL/gl.h:696
-GL_AND = 5377 	# /usr/include/GL/gl.h:697
-GL_AND_REVERSE = 5378 	# /usr/include/GL/gl.h:698
-GL_COPY = 5379 	# /usr/include/GL/gl.h:699
-GL_AND_INVERTED = 5380 	# /usr/include/GL/gl.h:700
-GL_NOOP = 5381 	# /usr/include/GL/gl.h:701
-GL_XOR = 5382 	# /usr/include/GL/gl.h:702
-GL_OR = 5383 	# /usr/include/GL/gl.h:703
-GL_NOR = 5384 	# /usr/include/GL/gl.h:704
-GL_EQUIV = 5385 	# /usr/include/GL/gl.h:705
-GL_INVERT = 5386 	# /usr/include/GL/gl.h:706
-GL_OR_REVERSE = 5387 	# /usr/include/GL/gl.h:707
-GL_COPY_INVERTED = 5388 	# /usr/include/GL/gl.h:708
-GL_OR_INVERTED = 5389 	# /usr/include/GL/gl.h:709
-GL_NAND = 5390 	# /usr/include/GL/gl.h:710
-GL_SET = 5391 	# /usr/include/GL/gl.h:711
-GL_EMISSION = 5632 	# /usr/include/GL/gl.h:739
-GL_SHININESS = 5633 	# /usr/include/GL/gl.h:740
-GL_AMBIENT_AND_DIFFUSE = 5634 	# /usr/include/GL/gl.h:741
-GL_COLOR_INDEXES = 5635 	# /usr/include/GL/gl.h:742
-GL_MODELVIEW = 5888 	# /usr/include/GL/gl.h:748
-GL_PROJECTION = 5889 	# /usr/include/GL/gl.h:749
-GL_TEXTURE = 5890 	# /usr/include/GL/gl.h:750
-GL_COLOR = 6144 	# /usr/include/GL/gl.h:769
-GL_DEPTH = 6145 	# /usr/include/GL/gl.h:770
-GL_STENCIL = 6146 	# /usr/include/GL/gl.h:771
-GL_COLOR_INDEX = 6400 	# /usr/include/GL/gl.h:774
-GL_STENCIL_INDEX = 6401 	# /usr/include/GL/gl.h:775
-GL_DEPTH_COMPONENT = 6402 	# /usr/include/GL/gl.h:776
-GL_RED = 6403 	# /usr/include/GL/gl.h:777
-GL_GREEN = 6404 	# /usr/include/GL/gl.h:778
-GL_BLUE = 6405 	# /usr/include/GL/gl.h:779
-GL_ALPHA = 6406 	# /usr/include/GL/gl.h:780
-GL_RGB = 6407 	# /usr/include/GL/gl.h:781
-GL_RGBA = 6408 	# /usr/include/GL/gl.h:782
-GL_LUMINANCE = 6409 	# /usr/include/GL/gl.h:783
-GL_LUMINANCE_ALPHA = 6410 	# /usr/include/GL/gl.h:784
-GL_BITMAP = 6656 	# /usr/include/GL/gl.h:830
-GL_POINT = 6912 	# /usr/include/GL/gl.h:845
-GL_LINE = 6913 	# /usr/include/GL/gl.h:846
-GL_FILL = 6914 	# /usr/include/GL/gl.h:847
-GL_RENDER = 7168 	# /usr/include/GL/gl.h:864
-GL_FEEDBACK = 7169 	# /usr/include/GL/gl.h:865
-GL_SELECT = 7170 	# /usr/include/GL/gl.h:866
-GL_FLAT = 7424 	# /usr/include/GL/gl.h:869
-GL_SMOOTH = 7425 	# /usr/include/GL/gl.h:870
-GL_KEEP = 7680 	# /usr/include/GL/gl.h:884
-GL_REPLACE = 7681 	# /usr/include/GL/gl.h:885
-GL_INCR = 7682 	# /usr/include/GL/gl.h:886
-GL_DECR = 7683 	# /usr/include/GL/gl.h:887
-GL_VENDOR = 7936 	# /usr/include/GL/gl.h:891
-GL_RENDERER = 7937 	# /usr/include/GL/gl.h:892
-GL_VERSION = 7938 	# /usr/include/GL/gl.h:893
-GL_EXTENSIONS = 7939 	# /usr/include/GL/gl.h:894
-GL_S = 8192 	# /usr/include/GL/gl.h:903
-GL_T = 8193 	# /usr/include/GL/gl.h:904
-GL_R = 8194 	# /usr/include/GL/gl.h:905
-GL_Q = 8195 	# /usr/include/GL/gl.h:906
-GL_MODULATE = 8448 	# /usr/include/GL/gl.h:909
-GL_DECAL = 8449 	# /usr/include/GL/gl.h:910
-GL_TEXTURE_ENV_MODE = 8704 	# /usr/include/GL/gl.h:916
-GL_TEXTURE_ENV_COLOR = 8705 	# /usr/include/GL/gl.h:917
-GL_TEXTURE_ENV = 8960 	# /usr/include/GL/gl.h:920
-GL_EYE_LINEAR = 9216 	# /usr/include/GL/gl.h:923
-GL_OBJECT_LINEAR = 9217 	# /usr/include/GL/gl.h:924
-GL_SPHERE_MAP = 9218 	# /usr/include/GL/gl.h:925
-GL_TEXTURE_GEN_MODE = 9472 	# /usr/include/GL/gl.h:928
-GL_OBJECT_PLANE = 9473 	# /usr/include/GL/gl.h:929
-GL_EYE_PLANE = 9474 	# /usr/include/GL/gl.h:930
-GL_NEAREST = 9728 	# /usr/include/GL/gl.h:933
-GL_LINEAR = 9729 	# /usr/include/GL/gl.h:934
-GL_NEAREST_MIPMAP_NEAREST = 9984 	# /usr/include/GL/gl.h:939
-GL_LINEAR_MIPMAP_NEAREST = 9985 	# /usr/include/GL/gl.h:940
-GL_NEAREST_MIPMAP_LINEAR = 9986 	# /usr/include/GL/gl.h:941
-GL_LINEAR_MIPMAP_LINEAR = 9987 	# /usr/include/GL/gl.h:942
-GL_TEXTURE_MAG_FILTER = 10240 	# /usr/include/GL/gl.h:945
-GL_TEXTURE_MIN_FILTER = 10241 	# /usr/include/GL/gl.h:946
-GL_TEXTURE_WRAP_S = 10242 	# /usr/include/GL/gl.h:947
-GL_TEXTURE_WRAP_T = 10243 	# /usr/include/GL/gl.h:948
-GL_PROXY_TEXTURE_1D = 32867 	# /usr/include/GL/gl.h:955
-GL_PROXY_TEXTURE_2D = 32868 	# /usr/include/GL/gl.h:956
-GL_CLAMP = 10496 	# /usr/include/GL/gl.h:959
-GL_REPEAT = 10497 	# /usr/include/GL/gl.h:960
-GL_R3_G3_B2 = 10768 	# /usr/include/GL/gl.h:963
-GL_ALPHA4 = 32827 	# /usr/include/GL/gl.h:964
-GL_ALPHA8 = 32828 	# /usr/include/GL/gl.h:965
-GL_ALPHA12 = 32829 	# /usr/include/GL/gl.h:966
-GL_ALPHA16 = 32830 	# /usr/include/GL/gl.h:967
-GL_LUMINANCE4 = 32831 	# /usr/include/GL/gl.h:968
-GL_LUMINANCE8 = 32832 	# /usr/include/GL/gl.h:969
-GL_LUMINANCE12 = 32833 	# /usr/include/GL/gl.h:970
-GL_LUMINANCE16 = 32834 	# /usr/include/GL/gl.h:971
-GL_LUMINANCE4_ALPHA4 = 32835 	# /usr/include/GL/gl.h:972
-GL_LUMINANCE6_ALPHA2 = 32836 	# /usr/include/GL/gl.h:973
-GL_LUMINANCE8_ALPHA8 = 32837 	# /usr/include/GL/gl.h:974
-GL_LUMINANCE12_ALPHA4 = 32838 	# /usr/include/GL/gl.h:975
-GL_LUMINANCE12_ALPHA12 = 32839 	# /usr/include/GL/gl.h:976
-GL_LUMINANCE16_ALPHA16 = 32840 	# /usr/include/GL/gl.h:977
-GL_INTENSITY = 32841 	# /usr/include/GL/gl.h:978
-GL_INTENSITY4 = 32842 	# /usr/include/GL/gl.h:979
-GL_INTENSITY8 = 32843 	# /usr/include/GL/gl.h:980
-GL_INTENSITY12 = 32844 	# /usr/include/GL/gl.h:981
-GL_INTENSITY16 = 32845 	# /usr/include/GL/gl.h:982
-GL_RGB4 = 32847 	# /usr/include/GL/gl.h:983
-GL_RGB5 = 32848 	# /usr/include/GL/gl.h:984
-GL_RGB8 = 32849 	# /usr/include/GL/gl.h:985
-GL_RGB10 = 32850 	# /usr/include/GL/gl.h:986
-GL_RGB12 = 32851 	# /usr/include/GL/gl.h:987
-GL_RGB16 = 32852 	# /usr/include/GL/gl.h:988
-GL_RGBA2 = 32853 	# /usr/include/GL/gl.h:989
-GL_RGBA4 = 32854 	# /usr/include/GL/gl.h:990
-GL_RGB5_A1 = 32855 	# /usr/include/GL/gl.h:991
-GL_RGBA8 = 32856 	# /usr/include/GL/gl.h:992
-GL_RGB10_A2 = 32857 	# /usr/include/GL/gl.h:993
-GL_RGBA12 = 32858 	# /usr/include/GL/gl.h:994
-GL_RGBA16 = 32859 	# /usr/include/GL/gl.h:995
-GL_V2F = 10784 	# /usr/include/GL/gl.h:998
-GL_V3F = 10785 	# /usr/include/GL/gl.h:999
-GL_C4UB_V2F = 10786 	# /usr/include/GL/gl.h:1000
-GL_C4UB_V3F = 10787 	# /usr/include/GL/gl.h:1001
-GL_C3F_V3F = 10788 	# /usr/include/GL/gl.h:1002
-GL_N3F_V3F = 10789 	# /usr/include/GL/gl.h:1003
-GL_C4F_N3F_V3F = 10790 	# /usr/include/GL/gl.h:1004
-GL_T2F_V3F = 10791 	# /usr/include/GL/gl.h:1005
-GL_T4F_V4F = 10792 	# /usr/include/GL/gl.h:1006
-GL_T2F_C4UB_V3F = 10793 	# /usr/include/GL/gl.h:1007
-GL_T2F_C3F_V3F = 10794 	# /usr/include/GL/gl.h:1008
-GL_T2F_N3F_V3F = 10795 	# /usr/include/GL/gl.h:1009
-GL_T2F_C4F_N3F_V3F = 10796 	# /usr/include/GL/gl.h:1010
-GL_T4F_C4F_N3F_V4F = 10797 	# /usr/include/GL/gl.h:1011
-GL_CLIP_PLANE0 = 12288 	# /usr/include/GL/gl.h:1020
-GL_CLIP_PLANE1 = 12289 	# /usr/include/GL/gl.h:1021
-GL_CLIP_PLANE2 = 12290 	# /usr/include/GL/gl.h:1022
-GL_CLIP_PLANE3 = 12291 	# /usr/include/GL/gl.h:1023
-GL_CLIP_PLANE4 = 12292 	# /usr/include/GL/gl.h:1024
-GL_CLIP_PLANE5 = 12293 	# /usr/include/GL/gl.h:1025
-GL_LIGHT0 = 16384 	# /usr/include/GL/gl.h:1028
-GL_LIGHT1 = 16385 	# /usr/include/GL/gl.h:1029
-GL_LIGHT2 = 16386 	# /usr/include/GL/gl.h:1030
-GL_LIGHT3 = 16387 	# /usr/include/GL/gl.h:1031
-GL_LIGHT4 = 16388 	# /usr/include/GL/gl.h:1032
-GL_LIGHT5 = 16389 	# /usr/include/GL/gl.h:1033
-GL_LIGHT6 = 16390 	# /usr/include/GL/gl.h:1034
-GL_LIGHT7 = 16391 	# /usr/include/GL/gl.h:1035
-GL_ABGR_EXT = 32768 	# /usr/include/GL/gl.h:1038
-GL_FUNC_SUBTRACT_EXT = 32778 	# /usr/include/GL/gl.h:1041
-GL_FUNC_REVERSE_SUBTRACT_EXT = 32779 	# /usr/include/GL/gl.h:1042
-GL_UNSIGNED_BYTE_3_3_2_EXT = 32818 	# /usr/include/GL/gl.h:1045
-GL_UNSIGNED_SHORT_4_4_4_4_EXT = 32819 	# /usr/include/GL/gl.h:1046
-GL_UNSIGNED_SHORT_5_5_5_1_EXT = 32820 	# /usr/include/GL/gl.h:1047
-GL_UNSIGNED_INT_8_8_8_8_EXT = 32821 	# /usr/include/GL/gl.h:1048
-GL_UNSIGNED_INT_10_10_10_2_EXT = 32822 	# /usr/include/GL/gl.h:1049
-GL_PACK_SKIP_IMAGES = 32875 	# /usr/include/GL/gl.h:1052
-GL_PACK_IMAGE_HEIGHT = 32876 	# /usr/include/GL/gl.h:1053
-GL_UNPACK_SKIP_IMAGES = 32877 	# /usr/include/GL/gl.h:1054
-GL_UNPACK_IMAGE_HEIGHT = 32878 	# /usr/include/GL/gl.h:1055
-GL_TEXTURE_3D = 32879 	# /usr/include/GL/gl.h:1056
-GL_PROXY_TEXTURE_3D = 32880 	# /usr/include/GL/gl.h:1057
-GL_TEXTURE_DEPTH = 32881 	# /usr/include/GL/gl.h:1058
-GL_TEXTURE_WRAP_R = 32882 	# /usr/include/GL/gl.h:1059
-GL_MAX_3D_TEXTURE_SIZE = 32883 	# /usr/include/GL/gl.h:1060
-GL_BGR = 32992 	# /usr/include/GL/gl.h:1061
-GL_BGRA = 32993 	# /usr/include/GL/gl.h:1062
-GL_UNSIGNED_BYTE_3_3_2 = 32818 	# /usr/include/GL/gl.h:1063
-GL_UNSIGNED_BYTE_2_3_3_REV = 33634 	# /usr/include/GL/gl.h:1064
-GL_UNSIGNED_SHORT_5_6_5 = 33635 	# /usr/include/GL/gl.h:1065
-GL_UNSIGNED_SHORT_5_6_5_REV = 33636 	# /usr/include/GL/gl.h:1066
-GL_UNSIGNED_SHORT_4_4_4_4 = 32819 	# /usr/include/GL/gl.h:1067
-GL_UNSIGNED_SHORT_4_4_4_4_REV = 33637 	# /usr/include/GL/gl.h:1068
-GL_UNSIGNED_SHORT_5_5_5_1 = 32820 	# /usr/include/GL/gl.h:1069
-GL_UNSIGNED_SHORT_1_5_5_5_REV = 33638 	# /usr/include/GL/gl.h:1070
-GL_UNSIGNED_INT_8_8_8_8 = 32821 	# /usr/include/GL/gl.h:1071
-GL_UNSIGNED_INT_8_8_8_8_REV = 33639 	# /usr/include/GL/gl.h:1072
-GL_UNSIGNED_INT_10_10_10_2 = 32822 	# /usr/include/GL/gl.h:1073
-GL_UNSIGNED_INT_2_10_10_10_REV = 33640 	# /usr/include/GL/gl.h:1074
-GL_RESCALE_NORMAL = 32826 	# /usr/include/GL/gl.h:1075
-GL_LIGHT_MODEL_COLOR_CONTROL = 33272 	# /usr/include/GL/gl.h:1076
-GL_SINGLE_COLOR = 33273 	# /usr/include/GL/gl.h:1077
-GL_SEPARATE_SPECULAR_COLOR = 33274 	# /usr/include/GL/gl.h:1078
-GL_CLAMP_TO_EDGE = 33071 	# /usr/include/GL/gl.h:1079
-GL_TEXTURE_MIN_LOD = 33082 	# /usr/include/GL/gl.h:1080
-GL_TEXTURE_MAX_LOD = 33083 	# /usr/include/GL/gl.h:1081
-GL_TEXTURE_BASE_LEVEL = 33084 	# /usr/include/GL/gl.h:1082
-GL_TEXTURE_MAX_LEVEL = 33085 	# /usr/include/GL/gl.h:1083
-GL_MAX_ELEMENTS_VERTICES = 33000 	# /usr/include/GL/gl.h:1084
-GL_MAX_ELEMENTS_INDICES = 33001 	# /usr/include/GL/gl.h:1085
-GL_ALIASED_POINT_SIZE_RANGE = 33901 	# /usr/include/GL/gl.h:1086
-GL_ALIASED_LINE_WIDTH_RANGE = 33902 	# /usr/include/GL/gl.h:1087
-GL_ACTIVE_TEXTURE = 34016 	# /usr/include/GL/gl.h:1090
-GL_CLIENT_ACTIVE_TEXTURE = 34017 	# /usr/include/GL/gl.h:1091
-GL_MAX_TEXTURE_UNITS = 34018 	# /usr/include/GL/gl.h:1092
-GL_TEXTURE0 = 33984 	# /usr/include/GL/gl.h:1093
-GL_TEXTURE1 = 33985 	# /usr/include/GL/gl.h:1094
-GL_TEXTURE2 = 33986 	# /usr/include/GL/gl.h:1095
-GL_TEXTURE3 = 33987 	# /usr/include/GL/gl.h:1096
-GL_TEXTURE4 = 33988 	# /usr/include/GL/gl.h:1097
-GL_TEXTURE5 = 33989 	# /usr/include/GL/gl.h:1098
-GL_TEXTURE6 = 33990 	# /usr/include/GL/gl.h:1099
-GL_TEXTURE7 = 33991 	# /usr/include/GL/gl.h:1100
-GL_TEXTURE8 = 33992 	# /usr/include/GL/gl.h:1101
-GL_TEXTURE9 = 33993 	# /usr/include/GL/gl.h:1102
-GL_TEXTURE10 = 33994 	# /usr/include/GL/gl.h:1103
-GL_TEXTURE11 = 33995 	# /usr/include/GL/gl.h:1104
-GL_TEXTURE12 = 33996 	# /usr/include/GL/gl.h:1105
-GL_TEXTURE13 = 33997 	# /usr/include/GL/gl.h:1106
-GL_TEXTURE14 = 33998 	# /usr/include/GL/gl.h:1107
-GL_TEXTURE15 = 33999 	# /usr/include/GL/gl.h:1108
-GL_TEXTURE16 = 34000 	# /usr/include/GL/gl.h:1109
-GL_TEXTURE17 = 34001 	# /usr/include/GL/gl.h:1110
-GL_TEXTURE18 = 34002 	# /usr/include/GL/gl.h:1111
-GL_TEXTURE19 = 34003 	# /usr/include/GL/gl.h:1112
-GL_TEXTURE20 = 34004 	# /usr/include/GL/gl.h:1113
-GL_TEXTURE21 = 34005 	# /usr/include/GL/gl.h:1114
-GL_TEXTURE22 = 34006 	# /usr/include/GL/gl.h:1115
-GL_TEXTURE23 = 34007 	# /usr/include/GL/gl.h:1116
-GL_TEXTURE24 = 34008 	# /usr/include/GL/gl.h:1117
-GL_TEXTURE25 = 34009 	# /usr/include/GL/gl.h:1118
-GL_TEXTURE26 = 34010 	# /usr/include/GL/gl.h:1119
-GL_TEXTURE27 = 34011 	# /usr/include/GL/gl.h:1120
-GL_TEXTURE28 = 34012 	# /usr/include/GL/gl.h:1121
-GL_TEXTURE29 = 34013 	# /usr/include/GL/gl.h:1122
-GL_TEXTURE30 = 34014 	# /usr/include/GL/gl.h:1123
-GL_TEXTURE31 = 34015 	# /usr/include/GL/gl.h:1124
-GL_NORMAL_MAP = 34065 	# /usr/include/GL/gl.h:1125
-GL_REFLECTION_MAP = 34066 	# /usr/include/GL/gl.h:1126
-GL_TEXTURE_CUBE_MAP = 34067 	# /usr/include/GL/gl.h:1127
-GL_TEXTURE_BINDING_CUBE_MAP = 34068 	# /usr/include/GL/gl.h:1128
-GL_TEXTURE_CUBE_MAP_POSITIVE_X = 34069 	# /usr/include/GL/gl.h:1129
-GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 34070 	# /usr/include/GL/gl.h:1130
-GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 34071 	# /usr/include/GL/gl.h:1131
-GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 34072 	# /usr/include/GL/gl.h:1132
-GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 34073 	# /usr/include/GL/gl.h:1133
-GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 34074 	# /usr/include/GL/gl.h:1134
-GL_PROXY_TEXTURE_CUBE_MAP = 34075 	# /usr/include/GL/gl.h:1135
-GL_MAX_CUBE_MAP_TEXTURE_SIZE = 34076 	# /usr/include/GL/gl.h:1136
-GL_COMBINE = 34160 	# /usr/include/GL/gl.h:1137
-GL_COMBINE_RGB = 34161 	# /usr/include/GL/gl.h:1138
-GL_COMBINE_ALPHA = 34162 	# /usr/include/GL/gl.h:1139
-GL_RGB_SCALE = 34163 	# /usr/include/GL/gl.h:1140
-GL_ADD_SIGNED = 34164 	# /usr/include/GL/gl.h:1141
-GL_INTERPOLATE = 34165 	# /usr/include/GL/gl.h:1142
-GL_CONSTANT = 34166 	# /usr/include/GL/gl.h:1143
-GL_PRIMARY_COLOR = 34167 	# /usr/include/GL/gl.h:1144
-GL_PREVIOUS = 34168 	# /usr/include/GL/gl.h:1145
-GL_SOURCE0_RGB = 34176 	# /usr/include/GL/gl.h:1146
-GL_SOURCE1_RGB = 34177 	# /usr/include/GL/gl.h:1147
-GL_SOURCE2_RGB = 34178 	# /usr/include/GL/gl.h:1148
-GL_SOURCE0_ALPHA = 34184 	# /usr/include/GL/gl.h:1149
-GL_SOURCE1_ALPHA = 34185 	# /usr/include/GL/gl.h:1150
-GL_SOURCE2_ALPHA = 34186 	# /usr/include/GL/gl.h:1151
-GL_OPERAND0_RGB = 34192 	# /usr/include/GL/gl.h:1152
-GL_OPERAND1_RGB = 34193 	# /usr/include/GL/gl.h:1153
-GL_OPERAND2_RGB = 34194 	# /usr/include/GL/gl.h:1154
-GL_OPERAND0_ALPHA = 34200 	# /usr/include/GL/gl.h:1155
-GL_OPERAND1_ALPHA = 34201 	# /usr/include/GL/gl.h:1156
-GL_OPERAND2_ALPHA = 34202 	# /usr/include/GL/gl.h:1157
-GL_SUBTRACT = 34023 	# /usr/include/GL/gl.h:1158
-GL_TRANSPOSE_MODELVIEW_MATRIX = 34019 	# /usr/include/GL/gl.h:1159
-GL_TRANSPOSE_PROJECTION_MATRIX = 34020 	# /usr/include/GL/gl.h:1160
-GL_TRANSPOSE_TEXTURE_MATRIX = 34021 	# /usr/include/GL/gl.h:1161
-GL_TRANSPOSE_COLOR_MATRIX = 34022 	# /usr/include/GL/gl.h:1162
-GL_COMPRESSED_ALPHA = 34025 	# /usr/include/GL/gl.h:1163
-GL_COMPRESSED_LUMINANCE = 34026 	# /usr/include/GL/gl.h:1164
-GL_COMPRESSED_LUMINANCE_ALPHA = 34027 	# /usr/include/GL/gl.h:1165
-GL_COMPRESSED_INTENSITY = 34028 	# /usr/include/GL/gl.h:1166
-GL_COMPRESSED_RGB = 34029 	# /usr/include/GL/gl.h:1167
-GL_COMPRESSED_RGBA = 34030 	# /usr/include/GL/gl.h:1168
-GL_TEXTURE_COMPRESSION_HINT = 34031 	# /usr/include/GL/gl.h:1169
-GL_TEXTURE_COMPRESSED_IMAGE_SIZE = 34464 	# /usr/include/GL/gl.h:1170
-GL_TEXTURE_COMPRESSED = 34465 	# /usr/include/GL/gl.h:1171
-GL_NUM_COMPRESSED_TEXTURE_FORMATS = 34466 	# /usr/include/GL/gl.h:1172
-GL_COMPRESSED_TEXTURE_FORMATS = 34467 	# /usr/include/GL/gl.h:1173
-GL_DOT3_RGB = 34478 	# /usr/include/GL/gl.h:1174
-GL_DOT3_RGBA = 34479 	# /usr/include/GL/gl.h:1175
-GL_CLAMP_TO_BORDER = 33069 	# /usr/include/GL/gl.h:1176
-GL_MULTISAMPLE = 32925 	# /usr/include/GL/gl.h:1177
-GL_SAMPLE_ALPHA_TO_COVERAGE = 32926 	# /usr/include/GL/gl.h:1178
-GL_SAMPLE_ALPHA_TO_ONE = 32927 	# /usr/include/GL/gl.h:1179
-GL_SAMPLE_COVERAGE = 32928 	# /usr/include/GL/gl.h:1180
-GL_SAMPLE_BUFFERS = 32936 	# /usr/include/GL/gl.h:1181
-GL_SAMPLES = 32937 	# /usr/include/GL/gl.h:1182
-GL_SAMPLE_COVERAGE_VALUE = 32938 	# /usr/include/GL/gl.h:1183
-GL_SAMPLE_COVERAGE_INVERT = 32939 	# /usr/include/GL/gl.h:1184
-GL_MULTISAMPLE_BIT = 536870912 	# /usr/include/GL/gl.h:1185
-GL_VERTEX_ARRAY_EXT = 32884 	# /usr/include/GL/gl.h:1188
-GL_NORMAL_ARRAY_EXT = 32885 	# /usr/include/GL/gl.h:1189
-GL_COLOR_ARRAY_EXT = 32886 	# /usr/include/GL/gl.h:1190
-GL_INDEX_ARRAY_EXT = 32887 	# /usr/include/GL/gl.h:1191
-GL_TEXTURE_COORD_ARRAY_EXT = 32888 	# /usr/include/GL/gl.h:1192
-GL_EDGE_FLAG_ARRAY_EXT = 32889 	# /usr/include/GL/gl.h:1193
-GL_VERTEX_ARRAY_SIZE_EXT = 32890 	# /usr/include/GL/gl.h:1194
-GL_VERTEX_ARRAY_TYPE_EXT = 32891 	# /usr/include/GL/gl.h:1195
-GL_VERTEX_ARRAY_STRIDE_EXT = 32892 	# /usr/include/GL/gl.h:1196
-GL_VERTEX_ARRAY_COUNT_EXT = 32893 	# /usr/include/GL/gl.h:1197
-GL_NORMAL_ARRAY_TYPE_EXT = 32894 	# /usr/include/GL/gl.h:1198
-GL_NORMAL_ARRAY_STRIDE_EXT = 32895 	# /usr/include/GL/gl.h:1199
-GL_NORMAL_ARRAY_COUNT_EXT = 32896 	# /usr/include/GL/gl.h:1200
-GL_COLOR_ARRAY_SIZE_EXT = 32897 	# /usr/include/GL/gl.h:1201
-GL_COLOR_ARRAY_TYPE_EXT = 32898 	# /usr/include/GL/gl.h:1202
-GL_COLOR_ARRAY_STRIDE_EXT = 32899 	# /usr/include/GL/gl.h:1203
-GL_COLOR_ARRAY_COUNT_EXT = 32900 	# /usr/include/GL/gl.h:1204
-GL_INDEX_ARRAY_TYPE_EXT = 32901 	# /usr/include/GL/gl.h:1205
-GL_INDEX_ARRAY_STRIDE_EXT = 32902 	# /usr/include/GL/gl.h:1206
-GL_INDEX_ARRAY_COUNT_EXT = 32903 	# /usr/include/GL/gl.h:1207
-GL_TEXTURE_COORD_ARRAY_SIZE_EXT = 32904 	# /usr/include/GL/gl.h:1208
-GL_TEXTURE_COORD_ARRAY_TYPE_EXT = 32905 	# /usr/include/GL/gl.h:1209
-GL_TEXTURE_COORD_ARRAY_STRIDE_EXT = 32906 	# /usr/include/GL/gl.h:1210
-GL_TEXTURE_COORD_ARRAY_COUNT_EXT = 32907 	# /usr/include/GL/gl.h:1211
-GL_EDGE_FLAG_ARRAY_STRIDE_EXT = 32908 	# /usr/include/GL/gl.h:1212
-GL_EDGE_FLAG_ARRAY_COUNT_EXT = 32909 	# /usr/include/GL/gl.h:1213
-GL_VERTEX_ARRAY_POINTER_EXT = 32910 	# /usr/include/GL/gl.h:1214
-GL_NORMAL_ARRAY_POINTER_EXT = 32911 	# /usr/include/GL/gl.h:1215
-GL_COLOR_ARRAY_POINTER_EXT = 32912 	# /usr/include/GL/gl.h:1216
-GL_INDEX_ARRAY_POINTER_EXT = 32913 	# /usr/include/GL/gl.h:1217
-GL_TEXTURE_COORD_ARRAY_POINTER_EXT = 32914 	# /usr/include/GL/gl.h:1218
-GL_EDGE_FLAG_ARRAY_POINTER_EXT = 32915 	# /usr/include/GL/gl.h:1219
-GL_TEXTURE_MIN_LOD_SGIS = 33082 	# /usr/include/GL/gl.h:1222
-GL_TEXTURE_MAX_LOD_SGIS = 33083 	# /usr/include/GL/gl.h:1223
-GL_TEXTURE_BASE_LEVEL_SGIS = 33084 	# /usr/include/GL/gl.h:1224
-GL_TEXTURE_MAX_LEVEL_SGIS = 33085 	# /usr/include/GL/gl.h:1225
-GL_SHARED_TEXTURE_PALETTE_EXT = 33275 	# /usr/include/GL/gl.h:1228
-GL_RESCALE_NORMAL_EXT = 32826 	# /usr/include/GL/gl.h:1231
-GL_TEXTURE_COMPARE_SGIX = 33178 	# /usr/include/GL/gl.h:1234
-GL_TEXTURE_COMPARE_OPERATOR_SGIX = 33179 	# /usr/include/GL/gl.h:1235
-GL_TEXTURE_LEQUAL_R_SGIX = 33180 	# /usr/include/GL/gl.h:1236
-GL_TEXTURE_GEQUAL_R_SGIX = 33181 	# /usr/include/GL/gl.h:1237
-GL_DEPTH_COMPONENT16_SGIX = 33189 	# /usr/include/GL/gl.h:1240
-GL_DEPTH_COMPONENT24_SGIX = 33190 	# /usr/include/GL/gl.h:1241
-GL_DEPTH_COMPONENT32_SGIX = 33191 	# /usr/include/GL/gl.h:1242
-GL_GENERATE_MIPMAP_SGIS = 33169 	# /usr/include/GL/gl.h:1245
-GL_GENERATE_MIPMAP_HINT_SGIS = 33170 	# /usr/include/GL/gl.h:1246
-GL_POINT_SIZE_MIN = 33062 	# /usr/include/GL/gl.h:1249
-GL_POINT_SIZE_MAX = 33063 	# /usr/include/GL/gl.h:1250
-GL_POINT_FADE_THRESHOLD_SIZE = 33064 	# /usr/include/GL/gl.h:1251
-GL_POINT_DISTANCE_ATTENUATION = 33065 	# /usr/include/GL/gl.h:1252
-GL_FOG_COORDINATE_SOURCE = 33872 	# /usr/include/GL/gl.h:1253
-GL_FOG_COORDINATE = 33873 	# /usr/include/GL/gl.h:1254
-GL_FRAGMENT_DEPTH = 33874 	# /usr/include/GL/gl.h:1255
-GL_CURRENT_FOG_COORDINATE = 33875 	# /usr/include/GL/gl.h:1256
-GL_FOG_COORDINATE_ARRAY_TYPE = 33876 	# /usr/include/GL/gl.h:1257
-GL_FOG_COORDINATE_ARRAY_STRIDE = 33877 	# /usr/include/GL/gl.h:1258
-GL_FOG_COORDINATE_ARRAY_POINTER = 33878 	# /usr/include/GL/gl.h:1259
-GL_FOG_COORDINATE_ARRAY = 33879 	# /usr/include/GL/gl.h:1260
-GL_COLOR_SUM = 33880 	# /usr/include/GL/gl.h:1261
-GL_CURRENT_SECONDARY_COLOR = 33881 	# /usr/include/GL/gl.h:1262
-GL_SECONDARY_COLOR_ARRAY_SIZE = 33882 	# /usr/include/GL/gl.h:1263
-GL_SECONDARY_COLOR_ARRAY_TYPE = 33883 	# /usr/include/GL/gl.h:1264
-GL_SECONDARY_COLOR_ARRAY_STRIDE = 33884 	# /usr/include/GL/gl.h:1265
-GL_SECONDARY_COLOR_ARRAY_POINTER = 33885 	# /usr/include/GL/gl.h:1266
-GL_SECONDARY_COLOR_ARRAY = 33886 	# /usr/include/GL/gl.h:1267
-GL_INCR_WRAP = 34055 	# /usr/include/GL/gl.h:1268
-GL_DECR_WRAP = 34056 	# /usr/include/GL/gl.h:1269
-GL_MAX_TEXTURE_LOD_BIAS = 34045 	# /usr/include/GL/gl.h:1270
-GL_TEXTURE_FILTER_CONTROL = 34048 	# /usr/include/GL/gl.h:1271
-GL_TEXTURE_LOD_BIAS = 34049 	# /usr/include/GL/gl.h:1272
-GL_GENERATE_MIPMAP = 33169 	# /usr/include/GL/gl.h:1273
-GL_GENERATE_MIPMAP_HINT = 33170 	# /usr/include/GL/gl.h:1274
-GL_BLEND_DST_RGB = 32968 	# /usr/include/GL/gl.h:1275
-GL_BLEND_SRC_RGB = 32969 	# /usr/include/GL/gl.h:1276
-GL_BLEND_DST_ALPHA = 32970 	# /usr/include/GL/gl.h:1277
-GL_BLEND_SRC_ALPHA = 32971 	# /usr/include/GL/gl.h:1278
-GL_MIRRORED_REPEAT = 33648 	# /usr/include/GL/gl.h:1279
-GL_DEPTH_COMPONENT16 = 33189 	# /usr/include/GL/gl.h:1280
-GL_DEPTH_COMPONENT24 = 33190 	# /usr/include/GL/gl.h:1281
-GL_DEPTH_COMPONENT32 = 33191 	# /usr/include/GL/gl.h:1282
-GL_TEXTURE_DEPTH_SIZE = 34890 	# /usr/include/GL/gl.h:1283
-GL_DEPTH_TEXTURE_MODE = 34891 	# /usr/include/GL/gl.h:1284
-GL_TEXTURE_COMPARE_MODE = 34892 	# /usr/include/GL/gl.h:1285
-GL_TEXTURE_COMPARE_FUNC = 34893 	# /usr/include/GL/gl.h:1286
-GL_COMPARE_R_TO_TEXTURE = 34894 	# /usr/include/GL/gl.h:1287
-# /usr/include/GL/gl.h:1291
-glAccum = _link_function('glAccum', None, [GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1292
-glAlphaFunc = _link_function('glAlphaFunc', None, [GLenum, GLclampf], None)
-
-# /usr/include/GL/gl.h:1293
-glAreTexturesResident = _link_function('glAreTexturesResident', GLboolean, [GLsizei, POINTER(GLuint), POINTER(GLboolean)], None)
-
-# /usr/include/GL/gl.h:1294
-glArrayElement = _link_function('glArrayElement', None, [GLint], None)
-
-# /usr/include/GL/gl.h:1295
-glBegin = _link_function('glBegin', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1296
-glBindTexture = _link_function('glBindTexture', None, [GLenum, GLuint], None)
-
-# /usr/include/GL/gl.h:1297
-glBitmap = _link_function('glBitmap', None, [GLsizei, GLsizei, GLfloat, GLfloat, GLfloat, GLfloat, POINTER(GLubyte)], None)
-
-# /usr/include/GL/gl.h:1298
-glBlendFunc = _link_function('glBlendFunc', None, [GLenum, GLenum], None)
-
-# /usr/include/GL/gl.h:1299
-glCallList = _link_function('glCallList', None, [GLuint], None)
-
-# /usr/include/GL/gl.h:1300
-glCallLists = _link_function('glCallLists', None, [GLsizei, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1301
-glClear = _link_function('glClear', None, [GLbitfield], None)
-
-# /usr/include/GL/gl.h:1302
-glClearAccum = _link_function('glClearAccum', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1303
-glClearColor = _link_function('glClearColor', None, [GLclampf, GLclampf, GLclampf, GLclampf], None)
-
-# /usr/include/GL/gl.h:1304
-glClearDepth = _link_function('glClearDepth', None, [GLclampd], None)
-
-# /usr/include/GL/gl.h:1305
+GL_VERSION_1_1 = 1 	# /usr/include/GL/gl.h:144
+GL_VERSION_1_2 = 1 	# /usr/include/GL/gl.h:145
+GL_VERSION_1_3 = 1 	# /usr/include/GL/gl.h:146
+GL_ARB_imaging = 1 	# /usr/include/GL/gl.h:147
+GLenum = c_uint 	# /usr/include/GL/gl.h:153
+GLboolean = c_ubyte 	# /usr/include/GL/gl.h:154
+GLbitfield = c_uint 	# /usr/include/GL/gl.h:155
+GLvoid = None 	# /usr/include/GL/gl.h:156
+GLbyte = c_char 	# /usr/include/GL/gl.h:157
+GLshort = c_short 	# /usr/include/GL/gl.h:158
+GLint = c_int 	# /usr/include/GL/gl.h:159
+GLubyte = c_ubyte 	# /usr/include/GL/gl.h:160
+GLushort = c_ushort 	# /usr/include/GL/gl.h:161
+GLuint = c_uint 	# /usr/include/GL/gl.h:162
+GLsizei = c_int 	# /usr/include/GL/gl.h:163
+GLfloat = c_float 	# /usr/include/GL/gl.h:164
+GLclampf = c_float 	# /usr/include/GL/gl.h:165
+GLdouble = c_double 	# /usr/include/GL/gl.h:166
+GLclampd = c_double 	# /usr/include/GL/gl.h:167
+GL_FALSE = 0 	# /usr/include/GL/gl.h:176
+GL_TRUE = 1 	# /usr/include/GL/gl.h:177
+GL_BYTE = 5120 	# /usr/include/GL/gl.h:180
+GL_UNSIGNED_BYTE = 5121 	# /usr/include/GL/gl.h:181
+GL_SHORT = 5122 	# /usr/include/GL/gl.h:182
+GL_UNSIGNED_SHORT = 5123 	# /usr/include/GL/gl.h:183
+GL_INT = 5124 	# /usr/include/GL/gl.h:184
+GL_UNSIGNED_INT = 5125 	# /usr/include/GL/gl.h:185
+GL_FLOAT = 5126 	# /usr/include/GL/gl.h:186
+GL_2_BYTES = 5127 	# /usr/include/GL/gl.h:187
+GL_3_BYTES = 5128 	# /usr/include/GL/gl.h:188
+GL_4_BYTES = 5129 	# /usr/include/GL/gl.h:189
+GL_DOUBLE = 5130 	# /usr/include/GL/gl.h:190
+GL_POINTS = 0 	# /usr/include/GL/gl.h:193
+GL_LINES = 1 	# /usr/include/GL/gl.h:194
+GL_LINE_LOOP = 2 	# /usr/include/GL/gl.h:195
+GL_LINE_STRIP = 3 	# /usr/include/GL/gl.h:196
+GL_TRIANGLES = 4 	# /usr/include/GL/gl.h:197
+GL_TRIANGLE_STRIP = 5 	# /usr/include/GL/gl.h:198
+GL_TRIANGLE_FAN = 6 	# /usr/include/GL/gl.h:199
+GL_QUADS = 7 	# /usr/include/GL/gl.h:200
+GL_QUAD_STRIP = 8 	# /usr/include/GL/gl.h:201
+GL_POLYGON = 9 	# /usr/include/GL/gl.h:202
+GL_VERTEX_ARRAY = 32884 	# /usr/include/GL/gl.h:205
+GL_NORMAL_ARRAY = 32885 	# /usr/include/GL/gl.h:206
+GL_COLOR_ARRAY = 32886 	# /usr/include/GL/gl.h:207
+GL_INDEX_ARRAY = 32887 	# /usr/include/GL/gl.h:208
+GL_TEXTURE_COORD_ARRAY = 32888 	# /usr/include/GL/gl.h:209
+GL_EDGE_FLAG_ARRAY = 32889 	# /usr/include/GL/gl.h:210
+GL_VERTEX_ARRAY_SIZE = 32890 	# /usr/include/GL/gl.h:211
+GL_VERTEX_ARRAY_TYPE = 32891 	# /usr/include/GL/gl.h:212
+GL_VERTEX_ARRAY_STRIDE = 32892 	# /usr/include/GL/gl.h:213
+GL_NORMAL_ARRAY_TYPE = 32894 	# /usr/include/GL/gl.h:214
+GL_NORMAL_ARRAY_STRIDE = 32895 	# /usr/include/GL/gl.h:215
+GL_COLOR_ARRAY_SIZE = 32897 	# /usr/include/GL/gl.h:216
+GL_COLOR_ARRAY_TYPE = 32898 	# /usr/include/GL/gl.h:217
+GL_COLOR_ARRAY_STRIDE = 32899 	# /usr/include/GL/gl.h:218
+GL_INDEX_ARRAY_TYPE = 32901 	# /usr/include/GL/gl.h:219
+GL_INDEX_ARRAY_STRIDE = 32902 	# /usr/include/GL/gl.h:220
+GL_TEXTURE_COORD_ARRAY_SIZE = 32904 	# /usr/include/GL/gl.h:221
+GL_TEXTURE_COORD_ARRAY_TYPE = 32905 	# /usr/include/GL/gl.h:222
+GL_TEXTURE_COORD_ARRAY_STRIDE = 32906 	# /usr/include/GL/gl.h:223
+GL_EDGE_FLAG_ARRAY_STRIDE = 32908 	# /usr/include/GL/gl.h:224
+GL_VERTEX_ARRAY_POINTER = 32910 	# /usr/include/GL/gl.h:225
+GL_NORMAL_ARRAY_POINTER = 32911 	# /usr/include/GL/gl.h:226
+GL_COLOR_ARRAY_POINTER = 32912 	# /usr/include/GL/gl.h:227
+GL_INDEX_ARRAY_POINTER = 32913 	# /usr/include/GL/gl.h:228
+GL_TEXTURE_COORD_ARRAY_POINTER = 32914 	# /usr/include/GL/gl.h:229
+GL_EDGE_FLAG_ARRAY_POINTER = 32915 	# /usr/include/GL/gl.h:230
+GL_V2F = 10784 	# /usr/include/GL/gl.h:231
+GL_V3F = 10785 	# /usr/include/GL/gl.h:232
+GL_C4UB_V2F = 10786 	# /usr/include/GL/gl.h:233
+GL_C4UB_V3F = 10787 	# /usr/include/GL/gl.h:234
+GL_C3F_V3F = 10788 	# /usr/include/GL/gl.h:235
+GL_N3F_V3F = 10789 	# /usr/include/GL/gl.h:236
+GL_C4F_N3F_V3F = 10790 	# /usr/include/GL/gl.h:237
+GL_T2F_V3F = 10791 	# /usr/include/GL/gl.h:238
+GL_T4F_V4F = 10792 	# /usr/include/GL/gl.h:239
+GL_T2F_C4UB_V3F = 10793 	# /usr/include/GL/gl.h:240
+GL_T2F_C3F_V3F = 10794 	# /usr/include/GL/gl.h:241
+GL_T2F_N3F_V3F = 10795 	# /usr/include/GL/gl.h:242
+GL_T2F_C4F_N3F_V3F = 10796 	# /usr/include/GL/gl.h:243
+GL_T4F_C4F_N3F_V4F = 10797 	# /usr/include/GL/gl.h:244
+GL_MATRIX_MODE = 2976 	# /usr/include/GL/gl.h:247
+GL_MODELVIEW = 5888 	# /usr/include/GL/gl.h:248
+GL_PROJECTION = 5889 	# /usr/include/GL/gl.h:249
+GL_TEXTURE = 5890 	# /usr/include/GL/gl.h:250
+GL_POINT_SMOOTH = 2832 	# /usr/include/GL/gl.h:253
+GL_POINT_SIZE = 2833 	# /usr/include/GL/gl.h:254
+GL_POINT_SIZE_GRANULARITY = 2835 	# /usr/include/GL/gl.h:255
+GL_POINT_SIZE_RANGE = 2834 	# /usr/include/GL/gl.h:256
+GL_LINE_SMOOTH = 2848 	# /usr/include/GL/gl.h:259
+GL_LINE_STIPPLE = 2852 	# /usr/include/GL/gl.h:260
+GL_LINE_STIPPLE_PATTERN = 2853 	# /usr/include/GL/gl.h:261
+GL_LINE_STIPPLE_REPEAT = 2854 	# /usr/include/GL/gl.h:262
+GL_LINE_WIDTH = 2849 	# /usr/include/GL/gl.h:263
+GL_LINE_WIDTH_GRANULARITY = 2851 	# /usr/include/GL/gl.h:264
+GL_LINE_WIDTH_RANGE = 2850 	# /usr/include/GL/gl.h:265
+GL_POINT = 6912 	# /usr/include/GL/gl.h:268
+GL_LINE = 6913 	# /usr/include/GL/gl.h:269
+GL_FILL = 6914 	# /usr/include/GL/gl.h:270
+GL_CW = 2304 	# /usr/include/GL/gl.h:271
+GL_CCW = 2305 	# /usr/include/GL/gl.h:272
+GL_FRONT = 1028 	# /usr/include/GL/gl.h:273
+GL_BACK = 1029 	# /usr/include/GL/gl.h:274
+GL_POLYGON_MODE = 2880 	# /usr/include/GL/gl.h:275
+GL_POLYGON_SMOOTH = 2881 	# /usr/include/GL/gl.h:276
+GL_POLYGON_STIPPLE = 2882 	# /usr/include/GL/gl.h:277
+GL_EDGE_FLAG = 2883 	# /usr/include/GL/gl.h:278
+GL_CULL_FACE = 2884 	# /usr/include/GL/gl.h:279
+GL_CULL_FACE_MODE = 2885 	# /usr/include/GL/gl.h:280
+GL_FRONT_FACE = 2886 	# /usr/include/GL/gl.h:281
+GL_POLYGON_OFFSET_FACTOR = 32824 	# /usr/include/GL/gl.h:282
+GL_POLYGON_OFFSET_UNITS = 10752 	# /usr/include/GL/gl.h:283
+GL_POLYGON_OFFSET_POINT = 10753 	# /usr/include/GL/gl.h:284
+GL_POLYGON_OFFSET_LINE = 10754 	# /usr/include/GL/gl.h:285
+GL_POLYGON_OFFSET_FILL = 32823 	# /usr/include/GL/gl.h:286
+GL_COMPILE = 4864 	# /usr/include/GL/gl.h:289
+GL_COMPILE_AND_EXECUTE = 4865 	# /usr/include/GL/gl.h:290
+GL_LIST_BASE = 2866 	# /usr/include/GL/gl.h:291
+GL_LIST_INDEX = 2867 	# /usr/include/GL/gl.h:292
+GL_LIST_MODE = 2864 	# /usr/include/GL/gl.h:293
+GL_NEVER = 512 	# /usr/include/GL/gl.h:296
+GL_LESS = 513 	# /usr/include/GL/gl.h:297
+GL_EQUAL = 514 	# /usr/include/GL/gl.h:298
+GL_LEQUAL = 515 	# /usr/include/GL/gl.h:299
+GL_GREATER = 516 	# /usr/include/GL/gl.h:300
+GL_NOTEQUAL = 517 	# /usr/include/GL/gl.h:301
+GL_GEQUAL = 518 	# /usr/include/GL/gl.h:302
+GL_ALWAYS = 519 	# /usr/include/GL/gl.h:303
+GL_DEPTH_TEST = 2929 	# /usr/include/GL/gl.h:304
+GL_DEPTH_BITS = 3414 	# /usr/include/GL/gl.h:305
+GL_DEPTH_CLEAR_VALUE = 2931 	# /usr/include/GL/gl.h:306
+GL_DEPTH_FUNC = 2932 	# /usr/include/GL/gl.h:307
+GL_DEPTH_RANGE = 2928 	# /usr/include/GL/gl.h:308
+GL_DEPTH_WRITEMASK = 2930 	# /usr/include/GL/gl.h:309
+GL_DEPTH_COMPONENT = 6402 	# /usr/include/GL/gl.h:310
+GL_LIGHTING = 2896 	# /usr/include/GL/gl.h:313
+GL_LIGHT0 = 16384 	# /usr/include/GL/gl.h:314
+GL_LIGHT1 = 16385 	# /usr/include/GL/gl.h:315
+GL_LIGHT2 = 16386 	# /usr/include/GL/gl.h:316
+GL_LIGHT3 = 16387 	# /usr/include/GL/gl.h:317
+GL_LIGHT4 = 16388 	# /usr/include/GL/gl.h:318
+GL_LIGHT5 = 16389 	# /usr/include/GL/gl.h:319
+GL_LIGHT6 = 16390 	# /usr/include/GL/gl.h:320
+GL_LIGHT7 = 16391 	# /usr/include/GL/gl.h:321
+GL_SPOT_EXPONENT = 4613 	# /usr/include/GL/gl.h:322
+GL_SPOT_CUTOFF = 4614 	# /usr/include/GL/gl.h:323
+GL_CONSTANT_ATTENUATION = 4615 	# /usr/include/GL/gl.h:324
+GL_LINEAR_ATTENUATION = 4616 	# /usr/include/GL/gl.h:325
+GL_QUADRATIC_ATTENUATION = 4617 	# /usr/include/GL/gl.h:326
+GL_AMBIENT = 4608 	# /usr/include/GL/gl.h:327
+GL_DIFFUSE = 4609 	# /usr/include/GL/gl.h:328
+GL_SPECULAR = 4610 	# /usr/include/GL/gl.h:329
+GL_SHININESS = 5633 	# /usr/include/GL/gl.h:330
+GL_EMISSION = 5632 	# /usr/include/GL/gl.h:331
+GL_POSITION = 4611 	# /usr/include/GL/gl.h:332
+GL_SPOT_DIRECTION = 4612 	# /usr/include/GL/gl.h:333
+GL_AMBIENT_AND_DIFFUSE = 5634 	# /usr/include/GL/gl.h:334
+GL_COLOR_INDEXES = 5635 	# /usr/include/GL/gl.h:335
+GL_LIGHT_MODEL_TWO_SIDE = 2898 	# /usr/include/GL/gl.h:336
+GL_LIGHT_MODEL_LOCAL_VIEWER = 2897 	# /usr/include/GL/gl.h:337
+GL_LIGHT_MODEL_AMBIENT = 2899 	# /usr/include/GL/gl.h:338
+GL_FRONT_AND_BACK = 1032 	# /usr/include/GL/gl.h:339
+GL_SHADE_MODEL = 2900 	# /usr/include/GL/gl.h:340
+GL_FLAT = 7424 	# /usr/include/GL/gl.h:341
+GL_SMOOTH = 7425 	# /usr/include/GL/gl.h:342
+GL_COLOR_MATERIAL = 2903 	# /usr/include/GL/gl.h:343
+GL_COLOR_MATERIAL_FACE = 2901 	# /usr/include/GL/gl.h:344
+GL_COLOR_MATERIAL_PARAMETER = 2902 	# /usr/include/GL/gl.h:345
+GL_NORMALIZE = 2977 	# /usr/include/GL/gl.h:346
+GL_CLIP_PLANE0 = 12288 	# /usr/include/GL/gl.h:349
+GL_CLIP_PLANE1 = 12289 	# /usr/include/GL/gl.h:350
+GL_CLIP_PLANE2 = 12290 	# /usr/include/GL/gl.h:351
+GL_CLIP_PLANE3 = 12291 	# /usr/include/GL/gl.h:352
+GL_CLIP_PLANE4 = 12292 	# /usr/include/GL/gl.h:353
+GL_CLIP_PLANE5 = 12293 	# /usr/include/GL/gl.h:354
+GL_ACCUM_RED_BITS = 3416 	# /usr/include/GL/gl.h:357
+GL_ACCUM_GREEN_BITS = 3417 	# /usr/include/GL/gl.h:358
+GL_ACCUM_BLUE_BITS = 3418 	# /usr/include/GL/gl.h:359
+GL_ACCUM_ALPHA_BITS = 3419 	# /usr/include/GL/gl.h:360
+GL_ACCUM_CLEAR_VALUE = 2944 	# /usr/include/GL/gl.h:361
+GL_ACCUM = 256 	# /usr/include/GL/gl.h:362
+GL_ADD = 260 	# /usr/include/GL/gl.h:363
+GL_LOAD = 257 	# /usr/include/GL/gl.h:364
+GL_MULT = 259 	# /usr/include/GL/gl.h:365
+GL_RETURN = 258 	# /usr/include/GL/gl.h:366
+GL_ALPHA_TEST = 3008 	# /usr/include/GL/gl.h:369
+GL_ALPHA_TEST_REF = 3010 	# /usr/include/GL/gl.h:370
+GL_ALPHA_TEST_FUNC = 3009 	# /usr/include/GL/gl.h:371
+GL_BLEND = 3042 	# /usr/include/GL/gl.h:374
+GL_BLEND_SRC = 3041 	# /usr/include/GL/gl.h:375
+GL_BLEND_DST = 3040 	# /usr/include/GL/gl.h:376
+GL_ZERO = 0 	# /usr/include/GL/gl.h:377
+GL_ONE = 1 	# /usr/include/GL/gl.h:378
+GL_SRC_COLOR = 768 	# /usr/include/GL/gl.h:379
+GL_ONE_MINUS_SRC_COLOR = 769 	# /usr/include/GL/gl.h:380
+GL_SRC_ALPHA = 770 	# /usr/include/GL/gl.h:381
+GL_ONE_MINUS_SRC_ALPHA = 771 	# /usr/include/GL/gl.h:382
+GL_DST_ALPHA = 772 	# /usr/include/GL/gl.h:383
+GL_ONE_MINUS_DST_ALPHA = 773 	# /usr/include/GL/gl.h:384
+GL_DST_COLOR = 774 	# /usr/include/GL/gl.h:385
+GL_ONE_MINUS_DST_COLOR = 775 	# /usr/include/GL/gl.h:386
+GL_SRC_ALPHA_SATURATE = 776 	# /usr/include/GL/gl.h:387
+GL_FEEDBACK = 7169 	# /usr/include/GL/gl.h:390
+GL_RENDER = 7168 	# /usr/include/GL/gl.h:391
+GL_SELECT = 7170 	# /usr/include/GL/gl.h:392
+GL_2D = 1536 	# /usr/include/GL/gl.h:395
+GL_3D = 1537 	# /usr/include/GL/gl.h:396
+GL_3D_COLOR = 1538 	# /usr/include/GL/gl.h:397
+GL_3D_COLOR_TEXTURE = 1539 	# /usr/include/GL/gl.h:398
+GL_4D_COLOR_TEXTURE = 1540 	# /usr/include/GL/gl.h:399
+GL_POINT_TOKEN = 1793 	# /usr/include/GL/gl.h:400
+GL_LINE_TOKEN = 1794 	# /usr/include/GL/gl.h:401
+GL_LINE_RESET_TOKEN = 1799 	# /usr/include/GL/gl.h:402
+GL_POLYGON_TOKEN = 1795 	# /usr/include/GL/gl.h:403
+GL_BITMAP_TOKEN = 1796 	# /usr/include/GL/gl.h:404
+GL_DRAW_PIXEL_TOKEN = 1797 	# /usr/include/GL/gl.h:405
+GL_COPY_PIXEL_TOKEN = 1798 	# /usr/include/GL/gl.h:406
+GL_PASS_THROUGH_TOKEN = 1792 	# /usr/include/GL/gl.h:407
+GL_FEEDBACK_BUFFER_POINTER = 3568 	# /usr/include/GL/gl.h:408
+GL_FEEDBACK_BUFFER_SIZE = 3569 	# /usr/include/GL/gl.h:409
+GL_FEEDBACK_BUFFER_TYPE = 3570 	# /usr/include/GL/gl.h:410
+GL_SELECTION_BUFFER_POINTER = 3571 	# /usr/include/GL/gl.h:413
+GL_SELECTION_BUFFER_SIZE = 3572 	# /usr/include/GL/gl.h:414
+GL_FOG = 2912 	# /usr/include/GL/gl.h:417
+GL_FOG_MODE = 2917 	# /usr/include/GL/gl.h:418
+GL_FOG_DENSITY = 2914 	# /usr/include/GL/gl.h:419
+GL_FOG_COLOR = 2918 	# /usr/include/GL/gl.h:420
+GL_FOG_INDEX = 2913 	# /usr/include/GL/gl.h:421
+GL_FOG_START = 2915 	# /usr/include/GL/gl.h:422
+GL_FOG_END = 2916 	# /usr/include/GL/gl.h:423
+GL_LINEAR = 9729 	# /usr/include/GL/gl.h:424
+GL_EXP = 2048 	# /usr/include/GL/gl.h:425
+GL_EXP2 = 2049 	# /usr/include/GL/gl.h:426
+GL_LOGIC_OP = 3057 	# /usr/include/GL/gl.h:429
+GL_INDEX_LOGIC_OP = 3057 	# /usr/include/GL/gl.h:430
+GL_COLOR_LOGIC_OP = 3058 	# /usr/include/GL/gl.h:431
+GL_LOGIC_OP_MODE = 3056 	# /usr/include/GL/gl.h:432
+GL_CLEAR = 5376 	# /usr/include/GL/gl.h:433
+GL_SET = 5391 	# /usr/include/GL/gl.h:434
+GL_COPY = 5379 	# /usr/include/GL/gl.h:435
+GL_COPY_INVERTED = 5388 	# /usr/include/GL/gl.h:436
+GL_NOOP = 5381 	# /usr/include/GL/gl.h:437
+GL_INVERT = 5386 	# /usr/include/GL/gl.h:438
+GL_AND = 5377 	# /usr/include/GL/gl.h:439
+GL_NAND = 5390 	# /usr/include/GL/gl.h:440
+GL_OR = 5383 	# /usr/include/GL/gl.h:441
+GL_NOR = 5384 	# /usr/include/GL/gl.h:442
+GL_XOR = 5382 	# /usr/include/GL/gl.h:443
+GL_EQUIV = 5385 	# /usr/include/GL/gl.h:444
+GL_AND_REVERSE = 5378 	# /usr/include/GL/gl.h:445
+GL_AND_INVERTED = 5380 	# /usr/include/GL/gl.h:446
+GL_OR_REVERSE = 5387 	# /usr/include/GL/gl.h:447
+GL_OR_INVERTED = 5389 	# /usr/include/GL/gl.h:448
+GL_STENCIL_BITS = 3415 	# /usr/include/GL/gl.h:451
+GL_STENCIL_TEST = 2960 	# /usr/include/GL/gl.h:452
+GL_STENCIL_CLEAR_VALUE = 2961 	# /usr/include/GL/gl.h:453
+GL_STENCIL_FUNC = 2962 	# /usr/include/GL/gl.h:454
+GL_STENCIL_VALUE_MASK = 2963 	# /usr/include/GL/gl.h:455
+GL_STENCIL_FAIL = 2964 	# /usr/include/GL/gl.h:456
+GL_STENCIL_PASS_DEPTH_FAIL = 2965 	# /usr/include/GL/gl.h:457
+GL_STENCIL_PASS_DEPTH_PASS = 2966 	# /usr/include/GL/gl.h:458
+GL_STENCIL_REF = 2967 	# /usr/include/GL/gl.h:459
+GL_STENCIL_WRITEMASK = 2968 	# /usr/include/GL/gl.h:460
+GL_STENCIL_INDEX = 6401 	# /usr/include/GL/gl.h:461
+GL_KEEP = 7680 	# /usr/include/GL/gl.h:462
+GL_REPLACE = 7681 	# /usr/include/GL/gl.h:463
+GL_INCR = 7682 	# /usr/include/GL/gl.h:464
+GL_DECR = 7683 	# /usr/include/GL/gl.h:465
+GL_NONE = 0 	# /usr/include/GL/gl.h:468
+GL_LEFT = 1030 	# /usr/include/GL/gl.h:469
+GL_RIGHT = 1031 	# /usr/include/GL/gl.h:470
+GL_FRONT_LEFT = 1024 	# /usr/include/GL/gl.h:474
+GL_FRONT_RIGHT = 1025 	# /usr/include/GL/gl.h:475
+GL_BACK_LEFT = 1026 	# /usr/include/GL/gl.h:476
+GL_BACK_RIGHT = 1027 	# /usr/include/GL/gl.h:477
+GL_AUX0 = 1033 	# /usr/include/GL/gl.h:478
+GL_AUX1 = 1034 	# /usr/include/GL/gl.h:479
+GL_AUX2 = 1035 	# /usr/include/GL/gl.h:480
+GL_AUX3 = 1036 	# /usr/include/GL/gl.h:481
+GL_COLOR_INDEX = 6400 	# /usr/include/GL/gl.h:482
+GL_RED = 6403 	# /usr/include/GL/gl.h:483
+GL_GREEN = 6404 	# /usr/include/GL/gl.h:484
+GL_BLUE = 6405 	# /usr/include/GL/gl.h:485
+GL_ALPHA = 6406 	# /usr/include/GL/gl.h:486
+GL_LUMINANCE = 6409 	# /usr/include/GL/gl.h:487
+GL_LUMINANCE_ALPHA = 6410 	# /usr/include/GL/gl.h:488
+GL_ALPHA_BITS = 3413 	# /usr/include/GL/gl.h:489
+GL_RED_BITS = 3410 	# /usr/include/GL/gl.h:490
+GL_GREEN_BITS = 3411 	# /usr/include/GL/gl.h:491
+GL_BLUE_BITS = 3412 	# /usr/include/GL/gl.h:492
+GL_INDEX_BITS = 3409 	# /usr/include/GL/gl.h:493
+GL_SUBPIXEL_BITS = 3408 	# /usr/include/GL/gl.h:494
+GL_AUX_BUFFERS = 3072 	# /usr/include/GL/gl.h:495
+GL_READ_BUFFER = 3074 	# /usr/include/GL/gl.h:496
+GL_DRAW_BUFFER = 3073 	# /usr/include/GL/gl.h:497
+GL_DOUBLEBUFFER = 3122 	# /usr/include/GL/gl.h:498
+GL_STEREO = 3123 	# /usr/include/GL/gl.h:499
+GL_BITMAP = 6656 	# /usr/include/GL/gl.h:500
+GL_COLOR = 6144 	# /usr/include/GL/gl.h:501
+GL_DEPTH = 6145 	# /usr/include/GL/gl.h:502
+GL_STENCIL = 6146 	# /usr/include/GL/gl.h:503
+GL_DITHER = 3024 	# /usr/include/GL/gl.h:504
+GL_RGB = 6407 	# /usr/include/GL/gl.h:505
+GL_RGBA = 6408 	# /usr/include/GL/gl.h:506
+GL_MAX_LIST_NESTING = 2865 	# /usr/include/GL/gl.h:509
+GL_MAX_EVAL_ORDER = 3376 	# /usr/include/GL/gl.h:510
+GL_MAX_LIGHTS = 3377 	# /usr/include/GL/gl.h:511
+GL_MAX_CLIP_PLANES = 3378 	# /usr/include/GL/gl.h:512
+GL_MAX_TEXTURE_SIZE = 3379 	# /usr/include/GL/gl.h:513
+GL_MAX_PIXEL_MAP_TABLE = 3380 	# /usr/include/GL/gl.h:514
+GL_MAX_ATTRIB_STACK_DEPTH = 3381 	# /usr/include/GL/gl.h:515
+GL_MAX_MODELVIEW_STACK_DEPTH = 3382 	# /usr/include/GL/gl.h:516
+GL_MAX_NAME_STACK_DEPTH = 3383 	# /usr/include/GL/gl.h:517
+GL_MAX_PROJECTION_STACK_DEPTH = 3384 	# /usr/include/GL/gl.h:518
+GL_MAX_TEXTURE_STACK_DEPTH = 3385 	# /usr/include/GL/gl.h:519
+GL_MAX_VIEWPORT_DIMS = 3386 	# /usr/include/GL/gl.h:520
+GL_MAX_CLIENT_ATTRIB_STACK_DEPTH = 3387 	# /usr/include/GL/gl.h:521
+GL_ATTRIB_STACK_DEPTH = 2992 	# /usr/include/GL/gl.h:524
+GL_CLIENT_ATTRIB_STACK_DEPTH = 2993 	# /usr/include/GL/gl.h:525
+GL_COLOR_CLEAR_VALUE = 3106 	# /usr/include/GL/gl.h:526
+GL_COLOR_WRITEMASK = 3107 	# /usr/include/GL/gl.h:527
+GL_CURRENT_INDEX = 2817 	# /usr/include/GL/gl.h:528
+GL_CURRENT_COLOR = 2816 	# /usr/include/GL/gl.h:529
+GL_CURRENT_NORMAL = 2818 	# /usr/include/GL/gl.h:530
+GL_CURRENT_RASTER_COLOR = 2820 	# /usr/include/GL/gl.h:531
+GL_CURRENT_RASTER_DISTANCE = 2825 	# /usr/include/GL/gl.h:532
+GL_CURRENT_RASTER_INDEX = 2821 	# /usr/include/GL/gl.h:533
+GL_CURRENT_RASTER_POSITION = 2823 	# /usr/include/GL/gl.h:534
+GL_CURRENT_RASTER_TEXTURE_COORDS = 2822 	# /usr/include/GL/gl.h:535
+GL_CURRENT_RASTER_POSITION_VALID = 2824 	# /usr/include/GL/gl.h:536
+GL_CURRENT_TEXTURE_COORDS = 2819 	# /usr/include/GL/gl.h:537
+GL_INDEX_CLEAR_VALUE = 3104 	# /usr/include/GL/gl.h:538
+GL_INDEX_MODE = 3120 	# /usr/include/GL/gl.h:539
+GL_INDEX_WRITEMASK = 3105 	# /usr/include/GL/gl.h:540
+GL_MODELVIEW_MATRIX = 2982 	# /usr/include/GL/gl.h:541
+GL_MODELVIEW_STACK_DEPTH = 2979 	# /usr/include/GL/gl.h:542
+GL_NAME_STACK_DEPTH = 3440 	# /usr/include/GL/gl.h:543
+GL_PROJECTION_MATRIX = 2983 	# /usr/include/GL/gl.h:544
+GL_PROJECTION_STACK_DEPTH = 2980 	# /usr/include/GL/gl.h:545
+GL_RENDER_MODE = 3136 	# /usr/include/GL/gl.h:546
+GL_RGBA_MODE = 3121 	# /usr/include/GL/gl.h:547
+GL_TEXTURE_MATRIX = 2984 	# /usr/include/GL/gl.h:548
+GL_TEXTURE_STACK_DEPTH = 2981 	# /usr/include/GL/gl.h:549
+GL_VIEWPORT = 2978 	# /usr/include/GL/gl.h:550
+GL_AUTO_NORMAL = 3456 	# /usr/include/GL/gl.h:553
+GL_MAP1_COLOR_4 = 3472 	# /usr/include/GL/gl.h:554
+GL_MAP1_INDEX = 3473 	# /usr/include/GL/gl.h:555
+GL_MAP1_NORMAL = 3474 	# /usr/include/GL/gl.h:556
+GL_MAP1_TEXTURE_COORD_1 = 3475 	# /usr/include/GL/gl.h:557
+GL_MAP1_TEXTURE_COORD_2 = 3476 	# /usr/include/GL/gl.h:558
+GL_MAP1_TEXTURE_COORD_3 = 3477 	# /usr/include/GL/gl.h:559
+GL_MAP1_TEXTURE_COORD_4 = 3478 	# /usr/include/GL/gl.h:560
+GL_MAP1_VERTEX_3 = 3479 	# /usr/include/GL/gl.h:561
+GL_MAP1_VERTEX_4 = 3480 	# /usr/include/GL/gl.h:562
+GL_MAP2_COLOR_4 = 3504 	# /usr/include/GL/gl.h:563
+GL_MAP2_INDEX = 3505 	# /usr/include/GL/gl.h:564
+GL_MAP2_NORMAL = 3506 	# /usr/include/GL/gl.h:565
+GL_MAP2_TEXTURE_COORD_1 = 3507 	# /usr/include/GL/gl.h:566
+GL_MAP2_TEXTURE_COORD_2 = 3508 	# /usr/include/GL/gl.h:567
+GL_MAP2_TEXTURE_COORD_3 = 3509 	# /usr/include/GL/gl.h:568
+GL_MAP2_TEXTURE_COORD_4 = 3510 	# /usr/include/GL/gl.h:569
+GL_MAP2_VERTEX_3 = 3511 	# /usr/include/GL/gl.h:570
+GL_MAP2_VERTEX_4 = 3512 	# /usr/include/GL/gl.h:571
+GL_MAP1_GRID_DOMAIN = 3536 	# /usr/include/GL/gl.h:572
+GL_MAP1_GRID_SEGMENTS = 3537 	# /usr/include/GL/gl.h:573
+GL_MAP2_GRID_DOMAIN = 3538 	# /usr/include/GL/gl.h:574
+GL_MAP2_GRID_SEGMENTS = 3539 	# /usr/include/GL/gl.h:575
+GL_COEFF = 2560 	# /usr/include/GL/gl.h:576
+GL_ORDER = 2561 	# /usr/include/GL/gl.h:577
+GL_DOMAIN = 2562 	# /usr/include/GL/gl.h:578
+GL_PERSPECTIVE_CORRECTION_HINT = 3152 	# /usr/include/GL/gl.h:581
+GL_POINT_SMOOTH_HINT = 3153 	# /usr/include/GL/gl.h:582
+GL_LINE_SMOOTH_HINT = 3154 	# /usr/include/GL/gl.h:583
+GL_POLYGON_SMOOTH_HINT = 3155 	# /usr/include/GL/gl.h:584
+GL_FOG_HINT = 3156 	# /usr/include/GL/gl.h:585
+GL_DONT_CARE = 4352 	# /usr/include/GL/gl.h:586
+GL_FASTEST = 4353 	# /usr/include/GL/gl.h:587
+GL_NICEST = 4354 	# /usr/include/GL/gl.h:588
+GL_SCISSOR_BOX = 3088 	# /usr/include/GL/gl.h:591
+GL_SCISSOR_TEST = 3089 	# /usr/include/GL/gl.h:592
+GL_MAP_COLOR = 3344 	# /usr/include/GL/gl.h:595
+GL_MAP_STENCIL = 3345 	# /usr/include/GL/gl.h:596
+GL_INDEX_SHIFT = 3346 	# /usr/include/GL/gl.h:597
+GL_INDEX_OFFSET = 3347 	# /usr/include/GL/gl.h:598
+GL_RED_SCALE = 3348 	# /usr/include/GL/gl.h:599
+GL_RED_BIAS = 3349 	# /usr/include/GL/gl.h:600
+GL_GREEN_SCALE = 3352 	# /usr/include/GL/gl.h:601
+GL_GREEN_BIAS = 3353 	# /usr/include/GL/gl.h:602
+GL_BLUE_SCALE = 3354 	# /usr/include/GL/gl.h:603
+GL_BLUE_BIAS = 3355 	# /usr/include/GL/gl.h:604
+GL_ALPHA_SCALE = 3356 	# /usr/include/GL/gl.h:605
+GL_ALPHA_BIAS = 3357 	# /usr/include/GL/gl.h:606
+GL_DEPTH_SCALE = 3358 	# /usr/include/GL/gl.h:607
+GL_DEPTH_BIAS = 3359 	# /usr/include/GL/gl.h:608
+GL_PIXEL_MAP_S_TO_S_SIZE = 3249 	# /usr/include/GL/gl.h:609
+GL_PIXEL_MAP_I_TO_I_SIZE = 3248 	# /usr/include/GL/gl.h:610
+GL_PIXEL_MAP_I_TO_R_SIZE = 3250 	# /usr/include/GL/gl.h:611
+GL_PIXEL_MAP_I_TO_G_SIZE = 3251 	# /usr/include/GL/gl.h:612
+GL_PIXEL_MAP_I_TO_B_SIZE = 3252 	# /usr/include/GL/gl.h:613
+GL_PIXEL_MAP_I_TO_A_SIZE = 3253 	# /usr/include/GL/gl.h:614
+GL_PIXEL_MAP_R_TO_R_SIZE = 3254 	# /usr/include/GL/gl.h:615
+GL_PIXEL_MAP_G_TO_G_SIZE = 3255 	# /usr/include/GL/gl.h:616
+GL_PIXEL_MAP_B_TO_B_SIZE = 3256 	# /usr/include/GL/gl.h:617
+GL_PIXEL_MAP_A_TO_A_SIZE = 3257 	# /usr/include/GL/gl.h:618
+GL_PIXEL_MAP_S_TO_S = 3185 	# /usr/include/GL/gl.h:619
+GL_PIXEL_MAP_I_TO_I = 3184 	# /usr/include/GL/gl.h:620
+GL_PIXEL_MAP_I_TO_R = 3186 	# /usr/include/GL/gl.h:621
+GL_PIXEL_MAP_I_TO_G = 3187 	# /usr/include/GL/gl.h:622
+GL_PIXEL_MAP_I_TO_B = 3188 	# /usr/include/GL/gl.h:623
+GL_PIXEL_MAP_I_TO_A = 3189 	# /usr/include/GL/gl.h:624
+GL_PIXEL_MAP_R_TO_R = 3190 	# /usr/include/GL/gl.h:625
+GL_PIXEL_MAP_G_TO_G = 3191 	# /usr/include/GL/gl.h:626
+GL_PIXEL_MAP_B_TO_B = 3192 	# /usr/include/GL/gl.h:627
+GL_PIXEL_MAP_A_TO_A = 3193 	# /usr/include/GL/gl.h:628
+GL_PACK_ALIGNMENT = 3333 	# /usr/include/GL/gl.h:629
+GL_PACK_LSB_FIRST = 3329 	# /usr/include/GL/gl.h:630
+GL_PACK_ROW_LENGTH = 3330 	# /usr/include/GL/gl.h:631
+GL_PACK_SKIP_PIXELS = 3332 	# /usr/include/GL/gl.h:632
+GL_PACK_SKIP_ROWS = 3331 	# /usr/include/GL/gl.h:633
+GL_PACK_SWAP_BYTES = 3328 	# /usr/include/GL/gl.h:634
+GL_UNPACK_ALIGNMENT = 3317 	# /usr/include/GL/gl.h:635
+GL_UNPACK_LSB_FIRST = 3313 	# /usr/include/GL/gl.h:636
+GL_UNPACK_ROW_LENGTH = 3314 	# /usr/include/GL/gl.h:637
+GL_UNPACK_SKIP_PIXELS = 3316 	# /usr/include/GL/gl.h:638
+GL_UNPACK_SKIP_ROWS = 3315 	# /usr/include/GL/gl.h:639
+GL_UNPACK_SWAP_BYTES = 3312 	# /usr/include/GL/gl.h:640
+GL_ZOOM_X = 3350 	# /usr/include/GL/gl.h:641
+GL_ZOOM_Y = 3351 	# /usr/include/GL/gl.h:642
+GL_TEXTURE_ENV = 8960 	# /usr/include/GL/gl.h:645
+GL_TEXTURE_ENV_MODE = 8704 	# /usr/include/GL/gl.h:646
+GL_TEXTURE_1D = 3552 	# /usr/include/GL/gl.h:647
+GL_TEXTURE_2D = 3553 	# /usr/include/GL/gl.h:648
+GL_TEXTURE_WRAP_S = 10242 	# /usr/include/GL/gl.h:649
+GL_TEXTURE_WRAP_T = 10243 	# /usr/include/GL/gl.h:650
+GL_TEXTURE_MAG_FILTER = 10240 	# /usr/include/GL/gl.h:651
+GL_TEXTURE_MIN_FILTER = 10241 	# /usr/include/GL/gl.h:652
+GL_TEXTURE_ENV_COLOR = 8705 	# /usr/include/GL/gl.h:653
+GL_TEXTURE_GEN_S = 3168 	# /usr/include/GL/gl.h:654
+GL_TEXTURE_GEN_T = 3169 	# /usr/include/GL/gl.h:655
+GL_TEXTURE_GEN_MODE = 9472 	# /usr/include/GL/gl.h:656
+GL_TEXTURE_BORDER_COLOR = 4100 	# /usr/include/GL/gl.h:657
+GL_TEXTURE_WIDTH = 4096 	# /usr/include/GL/gl.h:658
+GL_TEXTURE_HEIGHT = 4097 	# /usr/include/GL/gl.h:659
+GL_TEXTURE_BORDER = 4101 	# /usr/include/GL/gl.h:660
+GL_TEXTURE_COMPONENTS = 4099 	# /usr/include/GL/gl.h:661
+GL_TEXTURE_RED_SIZE = 32860 	# /usr/include/GL/gl.h:662
+GL_TEXTURE_GREEN_SIZE = 32861 	# /usr/include/GL/gl.h:663
+GL_TEXTURE_BLUE_SIZE = 32862 	# /usr/include/GL/gl.h:664
+GL_TEXTURE_ALPHA_SIZE = 32863 	# /usr/include/GL/gl.h:665
+GL_TEXTURE_LUMINANCE_SIZE = 32864 	# /usr/include/GL/gl.h:666
+GL_TEXTURE_INTENSITY_SIZE = 32865 	# /usr/include/GL/gl.h:667
+GL_NEAREST_MIPMAP_NEAREST = 9984 	# /usr/include/GL/gl.h:668
+GL_NEAREST_MIPMAP_LINEAR = 9986 	# /usr/include/GL/gl.h:669
+GL_LINEAR_MIPMAP_NEAREST = 9985 	# /usr/include/GL/gl.h:670
+GL_LINEAR_MIPMAP_LINEAR = 9987 	# /usr/include/GL/gl.h:671
+GL_OBJECT_LINEAR = 9217 	# /usr/include/GL/gl.h:672
+GL_OBJECT_PLANE = 9473 	# /usr/include/GL/gl.h:673
+GL_EYE_LINEAR = 9216 	# /usr/include/GL/gl.h:674
+GL_EYE_PLANE = 9474 	# /usr/include/GL/gl.h:675
+GL_SPHERE_MAP = 9218 	# /usr/include/GL/gl.h:676
+GL_DECAL = 8449 	# /usr/include/GL/gl.h:677
+GL_MODULATE = 8448 	# /usr/include/GL/gl.h:678
+GL_NEAREST = 9728 	# /usr/include/GL/gl.h:679
+GL_REPEAT = 10497 	# /usr/include/GL/gl.h:680
+GL_CLAMP = 10496 	# /usr/include/GL/gl.h:681
+GL_S = 8192 	# /usr/include/GL/gl.h:682
+GL_T = 8193 	# /usr/include/GL/gl.h:683
+GL_R = 8194 	# /usr/include/GL/gl.h:684
+GL_Q = 8195 	# /usr/include/GL/gl.h:685
+GL_TEXTURE_GEN_R = 3170 	# /usr/include/GL/gl.h:686
+GL_TEXTURE_GEN_Q = 3171 	# /usr/include/GL/gl.h:687
+GL_VENDOR = 7936 	# /usr/include/GL/gl.h:690
+GL_RENDERER = 7937 	# /usr/include/GL/gl.h:691
+GL_VERSION = 7938 	# /usr/include/GL/gl.h:692
+GL_EXTENSIONS = 7939 	# /usr/include/GL/gl.h:693
+GL_NO_ERROR = 0 	# /usr/include/GL/gl.h:696
+GL_INVALID_ENUM = 1280 	# /usr/include/GL/gl.h:697
+GL_INVALID_VALUE = 1281 	# /usr/include/GL/gl.h:698
+GL_INVALID_OPERATION = 1282 	# /usr/include/GL/gl.h:699
+GL_STACK_OVERFLOW = 1283 	# /usr/include/GL/gl.h:700
+GL_STACK_UNDERFLOW = 1284 	# /usr/include/GL/gl.h:701
+GL_OUT_OF_MEMORY = 1285 	# /usr/include/GL/gl.h:702
+GL_CURRENT_BIT = 1 	# /usr/include/GL/gl.h:705
+GL_POINT_BIT = 2 	# /usr/include/GL/gl.h:706
+GL_LINE_BIT = 4 	# /usr/include/GL/gl.h:707
+GL_POLYGON_BIT = 8 	# /usr/include/GL/gl.h:708
+GL_POLYGON_STIPPLE_BIT = 16 	# /usr/include/GL/gl.h:709
+GL_PIXEL_MODE_BIT = 32 	# /usr/include/GL/gl.h:710
+GL_LIGHTING_BIT = 64 	# /usr/include/GL/gl.h:711
+GL_FOG_BIT = 128 	# /usr/include/GL/gl.h:712
+GL_DEPTH_BUFFER_BIT = 256 	# /usr/include/GL/gl.h:713
+GL_ACCUM_BUFFER_BIT = 512 	# /usr/include/GL/gl.h:714
+GL_STENCIL_BUFFER_BIT = 1024 	# /usr/include/GL/gl.h:715
+GL_VIEWPORT_BIT = 2048 	# /usr/include/GL/gl.h:716
+GL_TRANSFORM_BIT = 4096 	# /usr/include/GL/gl.h:717
+GL_ENABLE_BIT = 8192 	# /usr/include/GL/gl.h:718
+GL_COLOR_BUFFER_BIT = 16384 	# /usr/include/GL/gl.h:719
+GL_HINT_BIT = 32768 	# /usr/include/GL/gl.h:720
+GL_EVAL_BIT = 65536 	# /usr/include/GL/gl.h:721
+GL_LIST_BIT = 131072 	# /usr/include/GL/gl.h:722
+GL_TEXTURE_BIT = 262144 	# /usr/include/GL/gl.h:723
+GL_SCISSOR_BIT = 524288 	# /usr/include/GL/gl.h:724
+GL_ALL_ATTRIB_BITS = 1048575 	# /usr/include/GL/gl.h:725
+GL_PROXY_TEXTURE_1D = 32867 	# /usr/include/GL/gl.h:729
+GL_PROXY_TEXTURE_2D = 32868 	# /usr/include/GL/gl.h:730
+GL_TEXTURE_PRIORITY = 32870 	# /usr/include/GL/gl.h:731
+GL_TEXTURE_RESIDENT = 32871 	# /usr/include/GL/gl.h:732
+GL_TEXTURE_BINDING_1D = 32872 	# /usr/include/GL/gl.h:733
+GL_TEXTURE_BINDING_2D = 32873 	# /usr/include/GL/gl.h:734
+GL_TEXTURE_INTERNAL_FORMAT = 4099 	# /usr/include/GL/gl.h:735
+GL_ALPHA4 = 32827 	# /usr/include/GL/gl.h:736
+GL_ALPHA8 = 32828 	# /usr/include/GL/gl.h:737
+GL_ALPHA12 = 32829 	# /usr/include/GL/gl.h:738
+GL_ALPHA16 = 32830 	# /usr/include/GL/gl.h:739
+GL_LUMINANCE4 = 32831 	# /usr/include/GL/gl.h:740
+GL_LUMINANCE8 = 32832 	# /usr/include/GL/gl.h:741
+GL_LUMINANCE12 = 32833 	# /usr/include/GL/gl.h:742
+GL_LUMINANCE16 = 32834 	# /usr/include/GL/gl.h:743
+GL_LUMINANCE4_ALPHA4 = 32835 	# /usr/include/GL/gl.h:744
+GL_LUMINANCE6_ALPHA2 = 32836 	# /usr/include/GL/gl.h:745
+GL_LUMINANCE8_ALPHA8 = 32837 	# /usr/include/GL/gl.h:746
+GL_LUMINANCE12_ALPHA4 = 32838 	# /usr/include/GL/gl.h:747
+GL_LUMINANCE12_ALPHA12 = 32839 	# /usr/include/GL/gl.h:748
+GL_LUMINANCE16_ALPHA16 = 32840 	# /usr/include/GL/gl.h:749
+GL_INTENSITY = 32841 	# /usr/include/GL/gl.h:750
+GL_INTENSITY4 = 32842 	# /usr/include/GL/gl.h:751
+GL_INTENSITY8 = 32843 	# /usr/include/GL/gl.h:752
+GL_INTENSITY12 = 32844 	# /usr/include/GL/gl.h:753
+GL_INTENSITY16 = 32845 	# /usr/include/GL/gl.h:754
+GL_R3_G3_B2 = 10768 	# /usr/include/GL/gl.h:755
+GL_RGB4 = 32847 	# /usr/include/GL/gl.h:756
+GL_RGB5 = 32848 	# /usr/include/GL/gl.h:757
+GL_RGB8 = 32849 	# /usr/include/GL/gl.h:758
+GL_RGB10 = 32850 	# /usr/include/GL/gl.h:759
+GL_RGB12 = 32851 	# /usr/include/GL/gl.h:760
+GL_RGB16 = 32852 	# /usr/include/GL/gl.h:761
+GL_RGBA2 = 32853 	# /usr/include/GL/gl.h:762
+GL_RGBA4 = 32854 	# /usr/include/GL/gl.h:763
+GL_RGB5_A1 = 32855 	# /usr/include/GL/gl.h:764
+GL_RGBA8 = 32856 	# /usr/include/GL/gl.h:765
+GL_RGB10_A2 = 32857 	# /usr/include/GL/gl.h:766
+GL_RGBA12 = 32858 	# /usr/include/GL/gl.h:767
+GL_RGBA16 = 32859 	# /usr/include/GL/gl.h:768
+GL_CLIENT_PIXEL_STORE_BIT = 1 	# /usr/include/GL/gl.h:769
+GL_CLIENT_VERTEX_ARRAY_BIT = 2 	# /usr/include/GL/gl.h:770
+GL_ALL_CLIENT_ATTRIB_BITS = 4294967295 	# /usr/include/GL/gl.h:771
+GL_CLIENT_ALL_ATTRIB_BITS = 4294967295 	# /usr/include/GL/gl.h:772
+# /usr/include/GL/gl.h:780
 glClearIndex = _link_function('glClearIndex', None, [GLfloat], None)
 
-# /usr/include/GL/gl.h:1306
-glClearStencil = _link_function('glClearStencil', None, [GLint], None)
+# /usr/include/GL/gl.h:782
+glClearColor = _link_function('glClearColor', None, [GLclampf, GLclampf, GLclampf, GLclampf], None)
 
-# /usr/include/GL/gl.h:1307
-glClipPlane = _link_function('glClipPlane', None, [GLenum, POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:784
+glClear = _link_function('glClear', None, [GLbitfield], None)
 
-# /usr/include/GL/gl.h:1308
-glColor3b = _link_function('glColor3b', None, [GLbyte, GLbyte, GLbyte], None)
-
-# /usr/include/GL/gl.h:1309
-glColor3bv = _link_function('glColor3bv', None, [POINTER(GLbyte)], None)
-
-# /usr/include/GL/gl.h:1310
-glColor3d = _link_function('glColor3d', None, [GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1311
-glColor3dv = _link_function('glColor3dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1312
-glColor3f = _link_function('glColor3f', None, [GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1313
-glColor3fv = _link_function('glColor3fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1314
-glColor3i = _link_function('glColor3i', None, [GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1315
-glColor3iv = _link_function('glColor3iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1316
-glColor3s = _link_function('glColor3s', None, [GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1317
-glColor3sv = _link_function('glColor3sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1318
-glColor3ub = _link_function('glColor3ub', None, [GLubyte, GLubyte, GLubyte], None)
-
-# /usr/include/GL/gl.h:1319
-glColor3ubv = _link_function('glColor3ubv', None, [POINTER(GLubyte)], None)
-
-# /usr/include/GL/gl.h:1320
-glColor3ui = _link_function('glColor3ui', None, [GLuint, GLuint, GLuint], None)
-
-# /usr/include/GL/gl.h:1321
-glColor3uiv = _link_function('glColor3uiv', None, [POINTER(GLuint)], None)
-
-# /usr/include/GL/gl.h:1322
-glColor3us = _link_function('glColor3us', None, [GLushort, GLushort, GLushort], None)
-
-# /usr/include/GL/gl.h:1323
-glColor3usv = _link_function('glColor3usv', None, [POINTER(GLushort)], None)
-
-# /usr/include/GL/gl.h:1324
-glColor4b = _link_function('glColor4b', None, [GLbyte, GLbyte, GLbyte, GLbyte], None)
-
-# /usr/include/GL/gl.h:1325
-glColor4bv = _link_function('glColor4bv', None, [POINTER(GLbyte)], None)
-
-# /usr/include/GL/gl.h:1326
-glColor4d = _link_function('glColor4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1327
-glColor4dv = _link_function('glColor4dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1328
-glColor4f = _link_function('glColor4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1329
-glColor4fv = _link_function('glColor4fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1330
-glColor4i = _link_function('glColor4i', None, [GLint, GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1331
-glColor4iv = _link_function('glColor4iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1332
-glColor4s = _link_function('glColor4s', None, [GLshort, GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1333
-glColor4sv = _link_function('glColor4sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1334
-glColor4ub = _link_function('glColor4ub', None, [GLubyte, GLubyte, GLubyte, GLubyte], None)
-
-# /usr/include/GL/gl.h:1335
-glColor4ubv = _link_function('glColor4ubv', None, [POINTER(GLubyte)], None)
-
-# /usr/include/GL/gl.h:1336
-glColor4ui = _link_function('glColor4ui', None, [GLuint, GLuint, GLuint, GLuint], None)
-
-# /usr/include/GL/gl.h:1337
-glColor4uiv = _link_function('glColor4uiv', None, [POINTER(GLuint)], None)
-
-# /usr/include/GL/gl.h:1338
-glColor4us = _link_function('glColor4us', None, [GLushort, GLushort, GLushort, GLushort], None)
-
-# /usr/include/GL/gl.h:1339
-glColor4usv = _link_function('glColor4usv', None, [POINTER(GLushort)], None)
-
-# /usr/include/GL/gl.h:1340
-glColorMask = _link_function('glColorMask', None, [GLboolean, GLboolean, GLboolean, GLboolean], None)
-
-# /usr/include/GL/gl.h:1341
-glColorMaterial = _link_function('glColorMaterial', None, [GLenum, GLenum], None)
-
-# /usr/include/GL/gl.h:1342
-glColorPointer = _link_function('glColorPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1343
-glCopyPixels = _link_function('glCopyPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum], None)
-
-# /usr/include/GL/gl.h:1344
-glCopyTexImage1D = _link_function('glCopyTexImage1D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLint], None)
-
-# /usr/include/GL/gl.h:1345
-glCopyTexImage2D = _link_function('glCopyTexImage2D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei, GLint], None)
-
-# /usr/include/GL/gl.h:1346
-glCopyTexSubImage1D = _link_function('glCopyTexSubImage1D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei], None)
-
-# /usr/include/GL/gl.h:1347
-glCopyTexSubImage2D = _link_function('glCopyTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], None)
-
-# /usr/include/GL/gl.h:1348
-glCullFace = _link_function('glCullFace', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1349
-glDeleteLists = _link_function('glDeleteLists', None, [GLuint, GLsizei], None)
-
-# /usr/include/GL/gl.h:1350
-glDeleteTextures = _link_function('glDeleteTextures', None, [GLsizei, POINTER(GLuint)], None)
-
-# /usr/include/GL/gl.h:1351
-glDepthFunc = _link_function('glDepthFunc', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1352
-glDepthMask = _link_function('glDepthMask', None, [GLboolean], None)
-
-# /usr/include/GL/gl.h:1353
-glDepthRange = _link_function('glDepthRange', None, [GLclampd, GLclampd], None)
-
-# /usr/include/GL/gl.h:1354
-glDisable = _link_function('glDisable', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1355
-glDisableClientState = _link_function('glDisableClientState', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1356
-glDrawArrays = _link_function('glDrawArrays', None, [GLenum, GLint, GLsizei], None)
-
-# /usr/include/GL/gl.h:1357
-glDrawBuffer = _link_function('glDrawBuffer', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1358
-glDrawElements = _link_function('glDrawElements', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1359
-glDrawPixels = _link_function('glDrawPixels', None, [GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1360
-glEdgeFlag = _link_function('glEdgeFlag', None, [GLboolean], None)
-
-# /usr/include/GL/gl.h:1361
-glEdgeFlagPointer = _link_function('glEdgeFlagPointer', None, [GLsizei, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1362
-glEdgeFlagv = _link_function('glEdgeFlagv', None, [POINTER(GLboolean)], None)
-
-# /usr/include/GL/gl.h:1363
-glEnable = _link_function('glEnable', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1364
-glEnableClientState = _link_function('glEnableClientState', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1365
-glEnd = _link_function('glEnd', None, [], None)
-
-# /usr/include/GL/gl.h:1366
-glEndList = _link_function('glEndList', None, [], None)
-
-# /usr/include/GL/gl.h:1367
-glEvalCoord1d = _link_function('glEvalCoord1d', None, [GLdouble], None)
-
-# /usr/include/GL/gl.h:1368
-glEvalCoord1dv = _link_function('glEvalCoord1dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1369
-glEvalCoord1f = _link_function('glEvalCoord1f', None, [GLfloat], None)
-
-# /usr/include/GL/gl.h:1370
-glEvalCoord1fv = _link_function('glEvalCoord1fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1371
-glEvalCoord2d = _link_function('glEvalCoord2d', None, [GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1372
-glEvalCoord2dv = _link_function('glEvalCoord2dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1373
-glEvalCoord2f = _link_function('glEvalCoord2f', None, [GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1374
-glEvalCoord2fv = _link_function('glEvalCoord2fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1375
-glEvalMesh1 = _link_function('glEvalMesh1', None, [GLenum, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1376
-glEvalMesh2 = _link_function('glEvalMesh2', None, [GLenum, GLint, GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1377
-glEvalPoint1 = _link_function('glEvalPoint1', None, [GLint], None)
-
-# /usr/include/GL/gl.h:1378
-glEvalPoint2 = _link_function('glEvalPoint2', None, [GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1379
-glFeedbackBuffer = _link_function('glFeedbackBuffer', None, [GLsizei, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1380
-glFinish = _link_function('glFinish', None, [], None)
-
-# /usr/include/GL/gl.h:1381
-glFlush = _link_function('glFlush', None, [], None)
-
-# /usr/include/GL/gl.h:1382
-glFogf = _link_function('glFogf', None, [GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1383
-glFogfv = _link_function('glFogfv', None, [GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1384
-glFogi = _link_function('glFogi', None, [GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1385
-glFogiv = _link_function('glFogiv', None, [GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1386
-glFrontFace = _link_function('glFrontFace', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1387
-glFrustum = _link_function('glFrustum', None, [GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1388
-glGenLists = _link_function('glGenLists', GLuint, [GLsizei], None)
-
-# /usr/include/GL/gl.h:1389
-glGenTextures = _link_function('glGenTextures', None, [GLsizei, POINTER(GLuint)], None)
-
-# /usr/include/GL/gl.h:1390
-glGetBooleanv = _link_function('glGetBooleanv', None, [GLenum, POINTER(GLboolean)], None)
-
-# /usr/include/GL/gl.h:1391
-glGetClipPlane = _link_function('glGetClipPlane', None, [GLenum, POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1392
-glGetDoublev = _link_function('glGetDoublev', None, [GLenum, POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1393
-glGetError = _link_function('glGetError', GLenum, [], None)
-
-# /usr/include/GL/gl.h:1394
-glGetFloatv = _link_function('glGetFloatv', None, [GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1395
-glGetIntegerv = _link_function('glGetIntegerv', None, [GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1396
-glGetLightfv = _link_function('glGetLightfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1397
-glGetLightiv = _link_function('glGetLightiv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1398
-glGetMapdv = _link_function('glGetMapdv', None, [GLenum, GLenum, POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1399
-glGetMapfv = _link_function('glGetMapfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1400
-glGetMapiv = _link_function('glGetMapiv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1401
-glGetMaterialfv = _link_function('glGetMaterialfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1402
-glGetMaterialiv = _link_function('glGetMaterialiv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1403
-glGetPixelMapfv = _link_function('glGetPixelMapfv', None, [GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1404
-glGetPixelMapuiv = _link_function('glGetPixelMapuiv', None, [GLenum, POINTER(GLuint)], None)
-
-# /usr/include/GL/gl.h:1405
-glGetPixelMapusv = _link_function('glGetPixelMapusv', None, [GLenum, POINTER(GLushort)], None)
-
-# /usr/include/GL/gl.h:1406
-glGetPointerv = _link_function('glGetPointerv', None, [GLenum, POINTER(POINTER(GLvoid))], None)
-
-# /usr/include/GL/gl.h:1407
-glGetPolygonStipple = _link_function('glGetPolygonStipple', None, [POINTER(GLubyte)], None)
-
-# /usr/include/GL/gl.h:1408
-glGetString = _link_function('glGetString', POINTER(GLubyte), [GLenum], None)
-
-# /usr/include/GL/gl.h:1409
-glGetTexEnvfv = _link_function('glGetTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1410
-glGetTexEnviv = _link_function('glGetTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1411
-glGetTexGendv = _link_function('glGetTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1412
-glGetTexGenfv = _link_function('glGetTexGenfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1413
-glGetTexGeniv = _link_function('glGetTexGeniv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1414
-glGetTexImage = _link_function('glGetTexImage', None, [GLenum, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1415
-glGetTexLevelParameterfv = _link_function('glGetTexLevelParameterfv', None, [GLenum, GLint, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1416
-glGetTexLevelParameteriv = _link_function('glGetTexLevelParameteriv', None, [GLenum, GLint, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1417
-glGetTexParameterfv = _link_function('glGetTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1418
-glGetTexParameteriv = _link_function('glGetTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1419
-glHint = _link_function('glHint', None, [GLenum, GLenum], None)
-
-# /usr/include/GL/gl.h:1420
+# /usr/include/GL/gl.h:786
 glIndexMask = _link_function('glIndexMask', None, [GLuint], None)
 
-# /usr/include/GL/gl.h:1421
-glIndexPointer = _link_function('glIndexPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], None)
+# /usr/include/GL/gl.h:788
+glColorMask = _link_function('glColorMask', None, [GLboolean, GLboolean, GLboolean, GLboolean], None)
 
-# /usr/include/GL/gl.h:1422
-glIndexd = _link_function('glIndexd', None, [GLdouble], None)
+# /usr/include/GL/gl.h:790
+glAlphaFunc = _link_function('glAlphaFunc', None, [GLenum, GLclampf], None)
 
-# /usr/include/GL/gl.h:1423
-glIndexdv = _link_function('glIndexdv', None, [POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:792
+glBlendFunc = _link_function('glBlendFunc', None, [GLenum, GLenum], None)
 
-# /usr/include/GL/gl.h:1424
-glIndexf = _link_function('glIndexf', None, [GLfloat], None)
-
-# /usr/include/GL/gl.h:1425
-glIndexfv = _link_function('glIndexfv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1426
-glIndexi = _link_function('glIndexi', None, [GLint], None)
-
-# /usr/include/GL/gl.h:1427
-glIndexiv = _link_function('glIndexiv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1428
-glIndexs = _link_function('glIndexs', None, [GLshort], None)
-
-# /usr/include/GL/gl.h:1429
-glIndexsv = _link_function('glIndexsv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1430
-glIndexub = _link_function('glIndexub', None, [GLubyte], None)
-
-# /usr/include/GL/gl.h:1431
-glIndexubv = _link_function('glIndexubv', None, [POINTER(GLubyte)], None)
-
-# /usr/include/GL/gl.h:1432
-glInitNames = _link_function('glInitNames', None, [], None)
-
-# /usr/include/GL/gl.h:1433
-glInterleavedArrays = _link_function('glInterleavedArrays', None, [GLenum, GLsizei, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1434
-glIsEnabled = _link_function('glIsEnabled', GLboolean, [GLenum], None)
-
-# /usr/include/GL/gl.h:1435
-glIsList = _link_function('glIsList', GLboolean, [GLuint], None)
-
-# /usr/include/GL/gl.h:1436
-glIsTexture = _link_function('glIsTexture', GLboolean, [GLuint], None)
-
-# /usr/include/GL/gl.h:1437
-glLightModelf = _link_function('glLightModelf', None, [GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1438
-glLightModelfv = _link_function('glLightModelfv', None, [GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1439
-glLightModeli = _link_function('glLightModeli', None, [GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1440
-glLightModeliv = _link_function('glLightModeliv', None, [GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1441
-glLightf = _link_function('glLightf', None, [GLenum, GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1442
-glLightfv = _link_function('glLightfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1443
-glLighti = _link_function('glLighti', None, [GLenum, GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1444
-glLightiv = _link_function('glLightiv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1445
-glLineStipple = _link_function('glLineStipple', None, [GLint, GLushort], None)
-
-# /usr/include/GL/gl.h:1446
-glLineWidth = _link_function('glLineWidth', None, [GLfloat], None)
-
-# /usr/include/GL/gl.h:1447
-glListBase = _link_function('glListBase', None, [GLuint], None)
-
-# /usr/include/GL/gl.h:1448
-glLoadIdentity = _link_function('glLoadIdentity', None, [], None)
-
-# /usr/include/GL/gl.h:1449
-glLoadMatrixd = _link_function('glLoadMatrixd', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1450
-glLoadMatrixf = _link_function('glLoadMatrixf', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1451
-glLoadName = _link_function('glLoadName', None, [GLuint], None)
-
-# /usr/include/GL/gl.h:1452
+# /usr/include/GL/gl.h:794
 glLogicOp = _link_function('glLogicOp', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1453
-glMap1d = _link_function('glMap1d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:796
+glCullFace = _link_function('glCullFace', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1454
-glMap1f = _link_function('glMap1f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], None)
+# /usr/include/GL/gl.h:798
+glFrontFace = _link_function('glFrontFace', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1455
-glMap2d = _link_function('glMap2d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1456
-glMap2f = _link_function('glMap2f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1457
-glMapGrid1d = _link_function('glMapGrid1d', None, [GLint, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1458
-glMapGrid1f = _link_function('glMapGrid1f', None, [GLint, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1459
-glMapGrid2d = _link_function('glMapGrid2d', None, [GLint, GLdouble, GLdouble, GLint, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1460
-glMapGrid2f = _link_function('glMapGrid2f', None, [GLint, GLfloat, GLfloat, GLint, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1461
-glMaterialf = _link_function('glMaterialf', None, [GLenum, GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1462
-glMaterialfv = _link_function('glMaterialfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1463
-glMateriali = _link_function('glMateriali', None, [GLenum, GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1464
-glMaterialiv = _link_function('glMaterialiv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1465
-glMatrixMode = _link_function('glMatrixMode', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1466
-glMultMatrixd = _link_function('glMultMatrixd', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1467
-glMultMatrixf = _link_function('glMultMatrixf', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1468
-glNewList = _link_function('glNewList', None, [GLuint, GLenum], None)
-
-# /usr/include/GL/gl.h:1469
-glNormal3b = _link_function('glNormal3b', None, [GLbyte, GLbyte, GLbyte], None)
-
-# /usr/include/GL/gl.h:1470
-glNormal3bv = _link_function('glNormal3bv', None, [POINTER(GLbyte)], None)
-
-# /usr/include/GL/gl.h:1471
-glNormal3d = _link_function('glNormal3d', None, [GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1472
-glNormal3dv = _link_function('glNormal3dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1473
-glNormal3f = _link_function('glNormal3f', None, [GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1474
-glNormal3fv = _link_function('glNormal3fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1475
-glNormal3i = _link_function('glNormal3i', None, [GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1476
-glNormal3iv = _link_function('glNormal3iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1477
-glNormal3s = _link_function('glNormal3s', None, [GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1478
-glNormal3sv = _link_function('glNormal3sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1479
-glNormalPointer = _link_function('glNormalPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1480
-glOrtho = _link_function('glOrtho', None, [GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1481
-glPassThrough = _link_function('glPassThrough', None, [GLfloat], None)
-
-# /usr/include/GL/gl.h:1482
-glPixelMapfv = _link_function('glPixelMapfv', None, [GLenum, GLsizei, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1483
-glPixelMapuiv = _link_function('glPixelMapuiv', None, [GLenum, GLsizei, POINTER(GLuint)], None)
-
-# /usr/include/GL/gl.h:1484
-glPixelMapusv = _link_function('glPixelMapusv', None, [GLenum, GLsizei, POINTER(GLushort)], None)
-
-# /usr/include/GL/gl.h:1485
-glPixelStoref = _link_function('glPixelStoref', None, [GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1486
-glPixelStorei = _link_function('glPixelStorei', None, [GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1487
-glPixelTransferf = _link_function('glPixelTransferf', None, [GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1488
-glPixelTransferi = _link_function('glPixelTransferi', None, [GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1489
-glPixelZoom = _link_function('glPixelZoom', None, [GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1490
+# /usr/include/GL/gl.h:800
 glPointSize = _link_function('glPointSize', None, [GLfloat], None)
 
-# /usr/include/GL/gl.h:1491
+# /usr/include/GL/gl.h:802
+glLineWidth = _link_function('glLineWidth', None, [GLfloat], None)
+
+# /usr/include/GL/gl.h:804
+glLineStipple = _link_function('glLineStipple', None, [GLint, GLushort], None)
+
+# /usr/include/GL/gl.h:806
 glPolygonMode = _link_function('glPolygonMode', None, [GLenum, GLenum], None)
 
-# /usr/include/GL/gl.h:1492
+# /usr/include/GL/gl.h:808
 glPolygonOffset = _link_function('glPolygonOffset', None, [GLfloat, GLfloat], None)
 
-# /usr/include/GL/gl.h:1493
+# /usr/include/GL/gl.h:810
 glPolygonStipple = _link_function('glPolygonStipple', None, [POINTER(GLubyte)], None)
 
-# /usr/include/GL/gl.h:1494
-glPopAttrib = _link_function('glPopAttrib', None, [], None)
+# /usr/include/GL/gl.h:812
+glGetPolygonStipple = _link_function('glGetPolygonStipple', None, [POINTER(GLubyte)], None)
 
-# /usr/include/GL/gl.h:1495
-glPopClientAttrib = _link_function('glPopClientAttrib', None, [], None)
+# /usr/include/GL/gl.h:814
+glEdgeFlag = _link_function('glEdgeFlag', None, [GLboolean], None)
 
-# /usr/include/GL/gl.h:1496
-glPopMatrix = _link_function('glPopMatrix', None, [], None)
+# /usr/include/GL/gl.h:816
+glEdgeFlagv = _link_function('glEdgeFlagv', None, [POINTER(GLboolean)], None)
 
-# /usr/include/GL/gl.h:1497
-glPopName = _link_function('glPopName', None, [], None)
-
-# /usr/include/GL/gl.h:1498
-glPrioritizeTextures = _link_function('glPrioritizeTextures', None, [GLsizei, POINTER(GLuint), POINTER(GLclampf)], None)
-
-# /usr/include/GL/gl.h:1499
-glPushAttrib = _link_function('glPushAttrib', None, [GLbitfield], None)
-
-# /usr/include/GL/gl.h:1500
-glPushClientAttrib = _link_function('glPushClientAttrib', None, [GLbitfield], None)
-
-# /usr/include/GL/gl.h:1501
-glPushMatrix = _link_function('glPushMatrix', None, [], None)
-
-# /usr/include/GL/gl.h:1502
-glPushName = _link_function('glPushName', None, [GLuint], None)
-
-# /usr/include/GL/gl.h:1503
-glRasterPos2d = _link_function('glRasterPos2d', None, [GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1504
-glRasterPos2dv = _link_function('glRasterPos2dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1505
-glRasterPos2f = _link_function('glRasterPos2f', None, [GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1506
-glRasterPos2fv = _link_function('glRasterPos2fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1507
-glRasterPos2i = _link_function('glRasterPos2i', None, [GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1508
-glRasterPos2iv = _link_function('glRasterPos2iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1509
-glRasterPos2s = _link_function('glRasterPos2s', None, [GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1510
-glRasterPos2sv = _link_function('glRasterPos2sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1511
-glRasterPos3d = _link_function('glRasterPos3d', None, [GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1512
-glRasterPos3dv = _link_function('glRasterPos3dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1513
-glRasterPos3f = _link_function('glRasterPos3f', None, [GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1514
-glRasterPos3fv = _link_function('glRasterPos3fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1515
-glRasterPos3i = _link_function('glRasterPos3i', None, [GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1516
-glRasterPos3iv = _link_function('glRasterPos3iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1517
-glRasterPos3s = _link_function('glRasterPos3s', None, [GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1518
-glRasterPos3sv = _link_function('glRasterPos3sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1519
-glRasterPos4d = _link_function('glRasterPos4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1520
-glRasterPos4dv = _link_function('glRasterPos4dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1521
-glRasterPos4f = _link_function('glRasterPos4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1522
-glRasterPos4fv = _link_function('glRasterPos4fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1523
-glRasterPos4i = _link_function('glRasterPos4i', None, [GLint, GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1524
-glRasterPos4iv = _link_function('glRasterPos4iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1525
-glRasterPos4s = _link_function('glRasterPos4s', None, [GLshort, GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1526
-glRasterPos4sv = _link_function('glRasterPos4sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1527
-glReadBuffer = _link_function('glReadBuffer', None, [GLenum], None)
-
-# /usr/include/GL/gl.h:1528
-glReadPixels = _link_function('glReadPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1529
-glRectd = _link_function('glRectd', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1530
-glRectdv = _link_function('glRectdv', None, [POINTER(GLdouble), POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1531
-glRectf = _link_function('glRectf', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1532
-glRectfv = _link_function('glRectfv', None, [POINTER(GLfloat), POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1533
-glRecti = _link_function('glRecti', None, [GLint, GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1534
-glRectiv = _link_function('glRectiv', None, [POINTER(GLint), POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1535
-glRects = _link_function('glRects', None, [GLshort, GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1536
-glRectsv = _link_function('glRectsv', None, [POINTER(GLshort), POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1537
-glRenderMode = _link_function('glRenderMode', GLint, [GLenum], None)
-
-# /usr/include/GL/gl.h:1538
-glRotated = _link_function('glRotated', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1539
-glRotatef = _link_function('glRotatef', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1540
-glScaled = _link_function('glScaled', None, [GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1541
-glScalef = _link_function('glScalef', None, [GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1542
+# /usr/include/GL/gl.h:818
 glScissor = _link_function('glScissor', None, [GLint, GLint, GLsizei, GLsizei], None)
 
-# /usr/include/GL/gl.h:1543
-glSelectBuffer = _link_function('glSelectBuffer', None, [GLsizei, POINTER(GLuint)], None)
+# /usr/include/GL/gl.h:820
+glClipPlane = _link_function('glClipPlane', None, [GLenum, POINTER(GLdouble)], None)
 
-# /usr/include/GL/gl.h:1544
-glShadeModel = _link_function('glShadeModel', None, [GLenum], None)
+# /usr/include/GL/gl.h:822
+glGetClipPlane = _link_function('glGetClipPlane', None, [GLenum, POINTER(GLdouble)], None)
 
-# /usr/include/GL/gl.h:1545
-glStencilFunc = _link_function('glStencilFunc', None, [GLenum, GLint, GLuint], None)
+# /usr/include/GL/gl.h:824
+glDrawBuffer = _link_function('glDrawBuffer', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1546
-glStencilMask = _link_function('glStencilMask', None, [GLuint], None)
+# /usr/include/GL/gl.h:826
+glReadBuffer = _link_function('glReadBuffer', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1547
-glStencilOp = _link_function('glStencilOp', None, [GLenum, GLenum, GLenum], None)
+# /usr/include/GL/gl.h:828
+glEnable = _link_function('glEnable', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1548
-glTexCoord1d = _link_function('glTexCoord1d', None, [GLdouble], None)
+# /usr/include/GL/gl.h:830
+glDisable = _link_function('glDisable', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1549
-glTexCoord1dv = _link_function('glTexCoord1dv', None, [POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:832
+glIsEnabled = _link_function('glIsEnabled', GLboolean, [GLenum], None)
 
-# /usr/include/GL/gl.h:1550
-glTexCoord1f = _link_function('glTexCoord1f', None, [GLfloat], None)
+# /usr/include/GL/gl.h:835
+glEnableClientState = _link_function('glEnableClientState', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1551
-glTexCoord1fv = _link_function('glTexCoord1fv', None, [POINTER(GLfloat)], None)
+# /usr/include/GL/gl.h:837
+glDisableClientState = _link_function('glDisableClientState', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1552
-glTexCoord1i = _link_function('glTexCoord1i', None, [GLint], None)
+# /usr/include/GL/gl.h:840
+glGetBooleanv = _link_function('glGetBooleanv', None, [GLenum, POINTER(GLboolean)], None)
 
-# /usr/include/GL/gl.h:1553
-glTexCoord1iv = _link_function('glTexCoord1iv', None, [POINTER(GLint)], None)
+# /usr/include/GL/gl.h:842
+glGetDoublev = _link_function('glGetDoublev', None, [GLenum, POINTER(GLdouble)], None)
 
-# /usr/include/GL/gl.h:1554
-glTexCoord1s = _link_function('glTexCoord1s', None, [GLshort], None)
+# /usr/include/GL/gl.h:844
+glGetFloatv = _link_function('glGetFloatv', None, [GLenum, POINTER(GLfloat)], None)
 
-# /usr/include/GL/gl.h:1555
-glTexCoord1sv = _link_function('glTexCoord1sv', None, [POINTER(GLshort)], None)
+# /usr/include/GL/gl.h:846
+glGetIntegerv = _link_function('glGetIntegerv', None, [GLenum, POINTER(GLint)], None)
 
-# /usr/include/GL/gl.h:1556
-glTexCoord2d = _link_function('glTexCoord2d', None, [GLdouble, GLdouble], None)
+# /usr/include/GL/gl.h:849
+glPushAttrib = _link_function('glPushAttrib', None, [GLbitfield], None)
 
-# /usr/include/GL/gl.h:1557
-glTexCoord2dv = _link_function('glTexCoord2dv', None, [POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:851
+glPopAttrib = _link_function('glPopAttrib', None, [], None)
 
-# /usr/include/GL/gl.h:1558
-glTexCoord2f = _link_function('glTexCoord2f', None, [GLfloat, GLfloat], None)
+# /usr/include/GL/gl.h:854
+glPushClientAttrib = _link_function('glPushClientAttrib', None, [GLbitfield], None)
 
-# /usr/include/GL/gl.h:1559
-glTexCoord2fv = _link_function('glTexCoord2fv', None, [POINTER(GLfloat)], None)
+# /usr/include/GL/gl.h:856
+glPopClientAttrib = _link_function('glPopClientAttrib', None, [], None)
 
-# /usr/include/GL/gl.h:1560
-glTexCoord2i = _link_function('glTexCoord2i', None, [GLint, GLint], None)
+# /usr/include/GL/gl.h:859
+glRenderMode = _link_function('glRenderMode', GLint, [GLenum], None)
 
-# /usr/include/GL/gl.h:1561
-glTexCoord2iv = _link_function('glTexCoord2iv', None, [POINTER(GLint)], None)
+# /usr/include/GL/gl.h:861
+glGetError = _link_function('glGetError', GLenum, [], None)
 
-# /usr/include/GL/gl.h:1562
-glTexCoord2s = _link_function('glTexCoord2s', None, [GLshort, GLshort], None)
+# /usr/include/GL/gl.h:863
+glGetString = _link_function('glGetString', POINTER(GLubyte), [GLenum], None)
 
-# /usr/include/GL/gl.h:1563
-glTexCoord2sv = _link_function('glTexCoord2sv', None, [POINTER(GLshort)], None)
+# /usr/include/GL/gl.h:865
+glFinish = _link_function('glFinish', None, [], None)
 
-# /usr/include/GL/gl.h:1564
-glTexCoord3d = _link_function('glTexCoord3d', None, [GLdouble, GLdouble, GLdouble], None)
+# /usr/include/GL/gl.h:867
+glFlush = _link_function('glFlush', None, [], None)
 
-# /usr/include/GL/gl.h:1565
-glTexCoord3dv = _link_function('glTexCoord3dv', None, [POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:869
+glHint = _link_function('glHint', None, [GLenum, GLenum], None)
 
-# /usr/include/GL/gl.h:1566
-glTexCoord3f = _link_function('glTexCoord3f', None, [GLfloat, GLfloat, GLfloat], None)
+# /usr/include/GL/gl.h:876
+glClearDepth = _link_function('glClearDepth', None, [GLclampd], None)
 
-# /usr/include/GL/gl.h:1567
-glTexCoord3fv = _link_function('glTexCoord3fv', None, [POINTER(GLfloat)], None)
+# /usr/include/GL/gl.h:878
+glDepthFunc = _link_function('glDepthFunc', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1568
-glTexCoord3i = _link_function('glTexCoord3i', None, [GLint, GLint, GLint], None)
+# /usr/include/GL/gl.h:880
+glDepthMask = _link_function('glDepthMask', None, [GLboolean], None)
 
-# /usr/include/GL/gl.h:1569
-glTexCoord3iv = _link_function('glTexCoord3iv', None, [POINTER(GLint)], None)
+# /usr/include/GL/gl.h:882
+glDepthRange = _link_function('glDepthRange', None, [GLclampd, GLclampd], None)
 
-# /usr/include/GL/gl.h:1570
-glTexCoord3s = _link_function('glTexCoord3s', None, [GLshort, GLshort, GLshort], None)
+# /usr/include/GL/gl.h:889
+glClearAccum = _link_function('glClearAccum', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
 
-# /usr/include/GL/gl.h:1571
-glTexCoord3sv = _link_function('glTexCoord3sv', None, [POINTER(GLshort)], None)
+# /usr/include/GL/gl.h:891
+glAccum = _link_function('glAccum', None, [GLenum, GLfloat], None)
 
-# /usr/include/GL/gl.h:1572
-glTexCoord4d = _link_function('glTexCoord4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+# /usr/include/GL/gl.h:898
+glMatrixMode = _link_function('glMatrixMode', None, [GLenum], None)
 
-# /usr/include/GL/gl.h:1573
-glTexCoord4dv = _link_function('glTexCoord4dv', None, [POINTER(GLdouble)], None)
+# /usr/include/GL/gl.h:900
+glOrtho = _link_function('glOrtho', None, [GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble], None)
 
-# /usr/include/GL/gl.h:1574
-glTexCoord4f = _link_function('glTexCoord4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+# /usr/include/GL/gl.h:904
+glFrustum = _link_function('glFrustum', None, [GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble], None)
 
-# /usr/include/GL/gl.h:1575
-glTexCoord4fv = _link_function('glTexCoord4fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1576
-glTexCoord4i = _link_function('glTexCoord4i', None, [GLint, GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1577
-glTexCoord4iv = _link_function('glTexCoord4iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1578
-glTexCoord4s = _link_function('glTexCoord4s', None, [GLshort, GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1579
-glTexCoord4sv = _link_function('glTexCoord4sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1580
-glTexCoordPointer = _link_function('glTexCoordPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1581
-glTexEnvf = _link_function('glTexEnvf', None, [GLenum, GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1582
-glTexEnvfv = _link_function('glTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1583
-glTexEnvi = _link_function('glTexEnvi', None, [GLenum, GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1584
-glTexEnviv = _link_function('glTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1585
-glTexGend = _link_function('glTexGend', None, [GLenum, GLenum, GLdouble], None)
-
-# /usr/include/GL/gl.h:1586
-glTexGendv = _link_function('glTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1587
-glTexGenf = _link_function('glTexGenf', None, [GLenum, GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1588
-glTexGenfv = _link_function('glTexGenfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1589
-glTexGeni = _link_function('glTexGeni', None, [GLenum, GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1590
-glTexGeniv = _link_function('glTexGeniv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1591
-glTexImage1D = _link_function('glTexImage1D', None, [GLenum, GLint, GLint, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1592
-glTexImage2D = _link_function('glTexImage2D', None, [GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1593
-glTexParameterf = _link_function('glTexParameterf', None, [GLenum, GLenum, GLfloat], None)
-
-# /usr/include/GL/gl.h:1594
-glTexParameterfv = _link_function('glTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1595
-glTexParameteri = _link_function('glTexParameteri', None, [GLenum, GLenum, GLint], None)
-
-# /usr/include/GL/gl.h:1596
-glTexParameteriv = _link_function('glTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1597
-glTexSubImage1D = _link_function('glTexSubImage1D', None, [GLenum, GLint, GLint, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1598
-glTexSubImage2D = _link_function('glTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1599
-glTranslated = _link_function('glTranslated', None, [GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1600
-glTranslatef = _link_function('glTranslatef', None, [GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1601
-glVertex2d = _link_function('glVertex2d', None, [GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1602
-glVertex2dv = _link_function('glVertex2dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1603
-glVertex2f = _link_function('glVertex2f', None, [GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1604
-glVertex2fv = _link_function('glVertex2fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1605
-glVertex2i = _link_function('glVertex2i', None, [GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1606
-glVertex2iv = _link_function('glVertex2iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1607
-glVertex2s = _link_function('glVertex2s', None, [GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1608
-glVertex2sv = _link_function('glVertex2sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1609
-glVertex3d = _link_function('glVertex3d', None, [GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1610
-glVertex3dv = _link_function('glVertex3dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1611
-glVertex3f = _link_function('glVertex3f', None, [GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1612
-glVertex3fv = _link_function('glVertex3fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1613
-glVertex3i = _link_function('glVertex3i', None, [GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1614
-glVertex3iv = _link_function('glVertex3iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1615
-glVertex3s = _link_function('glVertex3s', None, [GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1616
-glVertex3sv = _link_function('glVertex3sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1617
-glVertex4d = _link_function('glVertex4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
-
-# /usr/include/GL/gl.h:1618
-glVertex4dv = _link_function('glVertex4dv', None, [POINTER(GLdouble)], None)
-
-# /usr/include/GL/gl.h:1619
-glVertex4f = _link_function('glVertex4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
-
-# /usr/include/GL/gl.h:1620
-glVertex4fv = _link_function('glVertex4fv', None, [POINTER(GLfloat)], None)
-
-# /usr/include/GL/gl.h:1621
-glVertex4i = _link_function('glVertex4i', None, [GLint, GLint, GLint, GLint], None)
-
-# /usr/include/GL/gl.h:1622
-glVertex4iv = _link_function('glVertex4iv', None, [POINTER(GLint)], None)
-
-# /usr/include/GL/gl.h:1623
-glVertex4s = _link_function('glVertex4s', None, [GLshort, GLshort, GLshort, GLshort], None)
-
-# /usr/include/GL/gl.h:1624
-glVertex4sv = _link_function('glVertex4sv', None, [POINTER(GLshort)], None)
-
-# /usr/include/GL/gl.h:1625
-glVertexPointer = _link_function('glVertexPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], None)
-
-# /usr/include/GL/gl.h:1626
+# /usr/include/GL/gl.h:908
 glViewport = _link_function('glViewport', None, [GLint, GLint, GLsizei, GLsizei], None)
 
+# /usr/include/GL/gl.h:911
+glPushMatrix = _link_function('glPushMatrix', None, [], None)
 
-__all__ = ['GLenum', 'GLboolean', 'GLbitfield', 'GLbyte', 'GLshort', 'GLint',
-'GLsizei', 'GLubyte', 'GLushort', 'GLuint', 'GLfloat', 'GLclampf', 'GLdouble',
-'GLclampd', 'GLvoid', 'GL_VERSION_1_1', 'GL_CURRENT_BIT', 'GL_POINT_BIT',
-'GL_LINE_BIT', 'GL_POLYGON_BIT', 'GL_POLYGON_STIPPLE_BIT',
-'GL_PIXEL_MODE_BIT', 'GL_LIGHTING_BIT', 'GL_FOG_BIT', 'GL_DEPTH_BUFFER_BIT',
-'GL_ACCUM_BUFFER_BIT', 'GL_STENCIL_BUFFER_BIT', 'GL_VIEWPORT_BIT',
-'GL_TRANSFORM_BIT', 'GL_ENABLE_BIT', 'GL_COLOR_BUFFER_BIT', 'GL_HINT_BIT',
-'GL_EVAL_BIT', 'GL_LIST_BIT', 'GL_TEXTURE_BIT', 'GL_SCISSOR_BIT',
-'GL_ALL_ATTRIB_BITS', 'GL_CLIENT_PIXEL_STORE_BIT',
-'GL_CLIENT_VERTEX_ARRAY_BIT', 'GL_CLIENT_ALL_ATTRIB_BITS', 'GL_FALSE',
-'GL_TRUE', 'GL_POINTS', 'GL_LINES', 'GL_LINE_LOOP', 'GL_LINE_STRIP',
+# /usr/include/GL/gl.h:913
+glPopMatrix = _link_function('glPopMatrix', None, [], None)
+
+# /usr/include/GL/gl.h:915
+glLoadIdentity = _link_function('glLoadIdentity', None, [], None)
+
+# /usr/include/GL/gl.h:917
+glLoadMatrixd = _link_function('glLoadMatrixd', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:918
+glLoadMatrixf = _link_function('glLoadMatrixf', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:920
+glMultMatrixd = _link_function('glMultMatrixd', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:921
+glMultMatrixf = _link_function('glMultMatrixf', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:923
+glRotated = _link_function('glRotated', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:925
+glRotatef = _link_function('glRotatef', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:928
+glScaled = _link_function('glScaled', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:929
+glScalef = _link_function('glScalef', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:931
+glTranslated = _link_function('glTranslated', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:932
+glTranslatef = _link_function('glTranslatef', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:939
+glIsList = _link_function('glIsList', GLboolean, [GLuint], None)
+
+# /usr/include/GL/gl.h:941
+glDeleteLists = _link_function('glDeleteLists', None, [GLuint, GLsizei], None)
+
+# /usr/include/GL/gl.h:943
+glGenLists = _link_function('glGenLists', GLuint, [GLsizei], None)
+
+# /usr/include/GL/gl.h:945
+glNewList = _link_function('glNewList', None, [GLuint, GLenum], None)
+
+# /usr/include/GL/gl.h:947
+glEndList = _link_function('glEndList', None, [], None)
+
+# /usr/include/GL/gl.h:949
+glCallList = _link_function('glCallList', None, [GLuint], None)
+
+# /usr/include/GL/gl.h:951
+glCallLists = _link_function('glCallLists', None, [GLsizei, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:954
+glListBase = _link_function('glListBase', None, [GLuint], None)
+
+# /usr/include/GL/gl.h:961
+glBegin = _link_function('glBegin', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:963
+glEnd = _link_function('glEnd', None, [], None)
+
+# /usr/include/GL/gl.h:966
+glVertex2d = _link_function('glVertex2d', None, [GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:967
+glVertex2f = _link_function('glVertex2f', None, [GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:968
+glVertex2i = _link_function('glVertex2i', None, [GLint, GLint], None)
+
+# /usr/include/GL/gl.h:969
+glVertex2s = _link_function('glVertex2s', None, [GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:971
+glVertex3d = _link_function('glVertex3d', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:972
+glVertex3f = _link_function('glVertex3f', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:973
+glVertex3i = _link_function('glVertex3i', None, [GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:974
+glVertex3s = _link_function('glVertex3s', None, [GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:976
+glVertex4d = _link_function('glVertex4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:977
+glVertex4f = _link_function('glVertex4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:978
+glVertex4i = _link_function('glVertex4i', None, [GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:979
+glVertex4s = _link_function('glVertex4s', None, [GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:981
+glVertex2dv = _link_function('glVertex2dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:982
+glVertex2fv = _link_function('glVertex2fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:983
+glVertex2iv = _link_function('glVertex2iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:984
+glVertex2sv = _link_function('glVertex2sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:986
+glVertex3dv = _link_function('glVertex3dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:987
+glVertex3fv = _link_function('glVertex3fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:988
+glVertex3iv = _link_function('glVertex3iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:989
+glVertex3sv = _link_function('glVertex3sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:991
+glVertex4dv = _link_function('glVertex4dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:992
+glVertex4fv = _link_function('glVertex4fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:993
+glVertex4iv = _link_function('glVertex4iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:994
+glVertex4sv = _link_function('glVertex4sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:997
+glNormal3b = _link_function('glNormal3b', None, [GLbyte, GLbyte, GLbyte], None)
+
+# /usr/include/GL/gl.h:998
+glNormal3d = _link_function('glNormal3d', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:999
+glNormal3f = _link_function('glNormal3f', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1000
+glNormal3i = _link_function('glNormal3i', None, [GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1001
+glNormal3s = _link_function('glNormal3s', None, [GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1003
+glNormal3bv = _link_function('glNormal3bv', None, [POINTER(GLbyte)], None)
+
+# /usr/include/GL/gl.h:1004
+glNormal3dv = _link_function('glNormal3dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1005
+glNormal3fv = _link_function('glNormal3fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1006
+glNormal3iv = _link_function('glNormal3iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1007
+glNormal3sv = _link_function('glNormal3sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1010
+glIndexd = _link_function('glIndexd', None, [GLdouble], None)
+
+# /usr/include/GL/gl.h:1011
+glIndexf = _link_function('glIndexf', None, [GLfloat], None)
+
+# /usr/include/GL/gl.h:1012
+glIndexi = _link_function('glIndexi', None, [GLint], None)
+
+# /usr/include/GL/gl.h:1013
+glIndexs = _link_function('glIndexs', None, [GLshort], None)
+
+# /usr/include/GL/gl.h:1014
+glIndexub = _link_function('glIndexub', None, [GLubyte], None)
+
+# /usr/include/GL/gl.h:1016
+glIndexdv = _link_function('glIndexdv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1017
+glIndexfv = _link_function('glIndexfv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1018
+glIndexiv = _link_function('glIndexiv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1019
+glIndexsv = _link_function('glIndexsv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1020
+glIndexubv = _link_function('glIndexubv', None, [POINTER(GLubyte)], None)
+
+# /usr/include/GL/gl.h:1022
+glColor3b = _link_function('glColor3b', None, [GLbyte, GLbyte, GLbyte], None)
+
+# /usr/include/GL/gl.h:1023
+glColor3d = _link_function('glColor3d', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1024
+glColor3f = _link_function('glColor3f', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1025
+glColor3i = _link_function('glColor3i', None, [GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1026
+glColor3s = _link_function('glColor3s', None, [GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1027
+glColor3ub = _link_function('glColor3ub', None, [GLubyte, GLubyte, GLubyte], None)
+
+# /usr/include/GL/gl.h:1028
+glColor3ui = _link_function('glColor3ui', None, [GLuint, GLuint, GLuint], None)
+
+# /usr/include/GL/gl.h:1029
+glColor3us = _link_function('glColor3us', None, [GLushort, GLushort, GLushort], None)
+
+# /usr/include/GL/gl.h:1031
+glColor4b = _link_function('glColor4b', None, [GLbyte, GLbyte, GLbyte, GLbyte], None)
+
+# /usr/include/GL/gl.h:1033
+glColor4d = _link_function('glColor4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1035
+glColor4f = _link_function('glColor4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1037
+glColor4i = _link_function('glColor4i', None, [GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1039
+glColor4s = _link_function('glColor4s', None, [GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1041
+glColor4ub = _link_function('glColor4ub', None, [GLubyte, GLubyte, GLubyte, GLubyte], None)
+
+# /usr/include/GL/gl.h:1043
+glColor4ui = _link_function('glColor4ui', None, [GLuint, GLuint, GLuint, GLuint], None)
+
+# /usr/include/GL/gl.h:1045
+glColor4us = _link_function('glColor4us', None, [GLushort, GLushort, GLushort, GLushort], None)
+
+# /usr/include/GL/gl.h:1049
+glColor3bv = _link_function('glColor3bv', None, [POINTER(GLbyte)], None)
+
+# /usr/include/GL/gl.h:1050
+glColor3dv = _link_function('glColor3dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1051
+glColor3fv = _link_function('glColor3fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1052
+glColor3iv = _link_function('glColor3iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1053
+glColor3sv = _link_function('glColor3sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1054
+glColor3ubv = _link_function('glColor3ubv', None, [POINTER(GLubyte)], None)
+
+# /usr/include/GL/gl.h:1055
+glColor3uiv = _link_function('glColor3uiv', None, [POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1056
+glColor3usv = _link_function('glColor3usv', None, [POINTER(GLushort)], None)
+
+# /usr/include/GL/gl.h:1058
+glColor4bv = _link_function('glColor4bv', None, [POINTER(GLbyte)], None)
+
+# /usr/include/GL/gl.h:1059
+glColor4dv = _link_function('glColor4dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1060
+glColor4fv = _link_function('glColor4fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1061
+glColor4iv = _link_function('glColor4iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1062
+glColor4sv = _link_function('glColor4sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1063
+glColor4ubv = _link_function('glColor4ubv', None, [POINTER(GLubyte)], None)
+
+# /usr/include/GL/gl.h:1064
+glColor4uiv = _link_function('glColor4uiv', None, [POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1065
+glColor4usv = _link_function('glColor4usv', None, [POINTER(GLushort)], None)
+
+# /usr/include/GL/gl.h:1068
+glTexCoord1d = _link_function('glTexCoord1d', None, [GLdouble], None)
+
+# /usr/include/GL/gl.h:1069
+glTexCoord1f = _link_function('glTexCoord1f', None, [GLfloat], None)
+
+# /usr/include/GL/gl.h:1070
+glTexCoord1i = _link_function('glTexCoord1i', None, [GLint], None)
+
+# /usr/include/GL/gl.h:1071
+glTexCoord1s = _link_function('glTexCoord1s', None, [GLshort], None)
+
+# /usr/include/GL/gl.h:1073
+glTexCoord2d = _link_function('glTexCoord2d', None, [GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1074
+glTexCoord2f = _link_function('glTexCoord2f', None, [GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1075
+glTexCoord2i = _link_function('glTexCoord2i', None, [GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1076
+glTexCoord2s = _link_function('glTexCoord2s', None, [GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1078
+glTexCoord3d = _link_function('glTexCoord3d', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1079
+glTexCoord3f = _link_function('glTexCoord3f', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1080
+glTexCoord3i = _link_function('glTexCoord3i', None, [GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1081
+glTexCoord3s = _link_function('glTexCoord3s', None, [GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1083
+glTexCoord4d = _link_function('glTexCoord4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1084
+glTexCoord4f = _link_function('glTexCoord4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1085
+glTexCoord4i = _link_function('glTexCoord4i', None, [GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1086
+glTexCoord4s = _link_function('glTexCoord4s', None, [GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1088
+glTexCoord1dv = _link_function('glTexCoord1dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1089
+glTexCoord1fv = _link_function('glTexCoord1fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1090
+glTexCoord1iv = _link_function('glTexCoord1iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1091
+glTexCoord1sv = _link_function('glTexCoord1sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1093
+glTexCoord2dv = _link_function('glTexCoord2dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1094
+glTexCoord2fv = _link_function('glTexCoord2fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1095
+glTexCoord2iv = _link_function('glTexCoord2iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1096
+glTexCoord2sv = _link_function('glTexCoord2sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1098
+glTexCoord3dv = _link_function('glTexCoord3dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1099
+glTexCoord3fv = _link_function('glTexCoord3fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1100
+glTexCoord3iv = _link_function('glTexCoord3iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1101
+glTexCoord3sv = _link_function('glTexCoord3sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1103
+glTexCoord4dv = _link_function('glTexCoord4dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1104
+glTexCoord4fv = _link_function('glTexCoord4fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1105
+glTexCoord4iv = _link_function('glTexCoord4iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1106
+glTexCoord4sv = _link_function('glTexCoord4sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1109
+glRasterPos2d = _link_function('glRasterPos2d', None, [GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1110
+glRasterPos2f = _link_function('glRasterPos2f', None, [GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1111
+glRasterPos2i = _link_function('glRasterPos2i', None, [GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1112
+glRasterPos2s = _link_function('glRasterPos2s', None, [GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1114
+glRasterPos3d = _link_function('glRasterPos3d', None, [GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1115
+glRasterPos3f = _link_function('glRasterPos3f', None, [GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1116
+glRasterPos3i = _link_function('glRasterPos3i', None, [GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1117
+glRasterPos3s = _link_function('glRasterPos3s', None, [GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1119
+glRasterPos4d = _link_function('glRasterPos4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1120
+glRasterPos4f = _link_function('glRasterPos4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1121
+glRasterPos4i = _link_function('glRasterPos4i', None, [GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1122
+glRasterPos4s = _link_function('glRasterPos4s', None, [GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1124
+glRasterPos2dv = _link_function('glRasterPos2dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1125
+glRasterPos2fv = _link_function('glRasterPos2fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1126
+glRasterPos2iv = _link_function('glRasterPos2iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1127
+glRasterPos2sv = _link_function('glRasterPos2sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1129
+glRasterPos3dv = _link_function('glRasterPos3dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1130
+glRasterPos3fv = _link_function('glRasterPos3fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1131
+glRasterPos3iv = _link_function('glRasterPos3iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1132
+glRasterPos3sv = _link_function('glRasterPos3sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1134
+glRasterPos4dv = _link_function('glRasterPos4dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1135
+glRasterPos4fv = _link_function('glRasterPos4fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1136
+glRasterPos4iv = _link_function('glRasterPos4iv', None, [POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1137
+glRasterPos4sv = _link_function('glRasterPos4sv', None, [POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1140
+glRectd = _link_function('glRectd', None, [GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1141
+glRectf = _link_function('glRectf', None, [GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1142
+glRecti = _link_function('glRecti', None, [GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1143
+glRects = _link_function('glRects', None, [GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1146
+glRectdv = _link_function('glRectdv', None, [POINTER(GLdouble), POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1147
+glRectfv = _link_function('glRectfv', None, [POINTER(GLfloat), POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1148
+glRectiv = _link_function('glRectiv', None, [POINTER(GLint), POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1149
+glRectsv = _link_function('glRectsv', None, [POINTER(GLshort), POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1156
+glVertexPointer = _link_function('glVertexPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1159
+glNormalPointer = _link_function('glNormalPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1162
+glColorPointer = _link_function('glColorPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1165
+glIndexPointer = _link_function('glIndexPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1168
+glTexCoordPointer = _link_function('glTexCoordPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1171
+glEdgeFlagPointer = _link_function('glEdgeFlagPointer', None, [GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1173
+glGetPointerv = _link_function('glGetPointerv', None, [GLenum, POINTER(POINTER(GLvoid))], None)
+
+# /usr/include/GL/gl.h:1175
+glArrayElement = _link_function('glArrayElement', None, [GLint], None)
+
+# /usr/include/GL/gl.h:1177
+glDrawArrays = _link_function('glDrawArrays', None, [GLenum, GLint, GLsizei], None)
+
+# /usr/include/GL/gl.h:1179
+glDrawElements = _link_function('glDrawElements', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1182
+glInterleavedArrays = _link_function('glInterleavedArrays', None, [GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1189
+glShadeModel = _link_function('glShadeModel', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:1191
+glLightf = _link_function('glLightf', None, [GLenum, GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1192
+glLighti = _link_function('glLighti', None, [GLenum, GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1193
+glLightfv = _link_function('glLightfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1195
+glLightiv = _link_function('glLightiv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1198
+glGetLightfv = _link_function('glGetLightfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1200
+glGetLightiv = _link_function('glGetLightiv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1203
+glLightModelf = _link_function('glLightModelf', None, [GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1204
+glLightModeli = _link_function('glLightModeli', None, [GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1205
+glLightModelfv = _link_function('glLightModelfv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1206
+glLightModeliv = _link_function('glLightModeliv', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1208
+glMaterialf = _link_function('glMaterialf', None, [GLenum, GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1209
+glMateriali = _link_function('glMateriali', None, [GLenum, GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1210
+glMaterialfv = _link_function('glMaterialfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1211
+glMaterialiv = _link_function('glMaterialiv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1213
+glGetMaterialfv = _link_function('glGetMaterialfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1214
+glGetMaterialiv = _link_function('glGetMaterialiv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1216
+glColorMaterial = _link_function('glColorMaterial', None, [GLenum, GLenum], None)
+
+# /usr/include/GL/gl.h:1223
+glPixelZoom = _link_function('glPixelZoom', None, [GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1225
+glPixelStoref = _link_function('glPixelStoref', None, [GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1226
+glPixelStorei = _link_function('glPixelStorei', None, [GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1228
+glPixelTransferf = _link_function('glPixelTransferf', None, [GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1229
+glPixelTransferi = _link_function('glPixelTransferi', None, [GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1231
+glPixelMapfv = _link_function('glPixelMapfv', None, [GLenum, GLsizei, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1233
+glPixelMapuiv = _link_function('glPixelMapuiv', None, [GLenum, GLsizei, POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1235
+glPixelMapusv = _link_function('glPixelMapusv', None, [GLenum, GLsizei, POINTER(GLushort)], None)
+
+# /usr/include/GL/gl.h:1238
+glGetPixelMapfv = _link_function('glGetPixelMapfv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1239
+glGetPixelMapuiv = _link_function('glGetPixelMapuiv', None, [GLenum, POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1240
+glGetPixelMapusv = _link_function('glGetPixelMapusv', None, [GLenum, POINTER(GLushort)], None)
+
+# /usr/include/GL/gl.h:1242
+glBitmap = _link_function('glBitmap', None, [GLsizei, GLsizei, GLfloat, GLfloat, GLfloat, GLfloat, POINTER(GLubyte)], None)
+
+# /usr/include/GL/gl.h:1247
+glReadPixels = _link_function('glReadPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1252
+glDrawPixels = _link_function('glDrawPixels', None, [GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1256
+glCopyPixels = _link_function('glCopyPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum], None)
+
+# /usr/include/GL/gl.h:1264
+glStencilFunc = _link_function('glStencilFunc', None, [GLenum, GLint, GLuint], None)
+
+# /usr/include/GL/gl.h:1266
+glStencilMask = _link_function('glStencilMask', None, [GLuint], None)
+
+# /usr/include/GL/gl.h:1268
+glStencilOp = _link_function('glStencilOp', None, [GLenum, GLenum, GLenum], None)
+
+# /usr/include/GL/gl.h:1270
+glClearStencil = _link_function('glClearStencil', None, [GLint], None)
+
+# /usr/include/GL/gl.h:1278
+glTexGend = _link_function('glTexGend', None, [GLenum, GLenum, GLdouble], None)
+
+# /usr/include/GL/gl.h:1279
+glTexGenf = _link_function('glTexGenf', None, [GLenum, GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1280
+glTexGeni = _link_function('glTexGeni', None, [GLenum, GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1282
+glTexGendv = _link_function('glTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1283
+glTexGenfv = _link_function('glTexGenfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1284
+glTexGeniv = _link_function('glTexGeniv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1286
+glGetTexGendv = _link_function('glGetTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1287
+glGetTexGenfv = _link_function('glGetTexGenfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1288
+glGetTexGeniv = _link_function('glGetTexGeniv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1291
+glTexEnvf = _link_function('glTexEnvf', None, [GLenum, GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1292
+glTexEnvi = _link_function('glTexEnvi', None, [GLenum, GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1294
+glTexEnvfv = _link_function('glTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1295
+glTexEnviv = _link_function('glTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1297
+glGetTexEnvfv = _link_function('glGetTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1298
+glGetTexEnviv = _link_function('glGetTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1301
+glTexParameterf = _link_function('glTexParameterf', None, [GLenum, GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1302
+glTexParameteri = _link_function('glTexParameteri', None, [GLenum, GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1304
+glTexParameterfv = _link_function('glTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1306
+glTexParameteriv = _link_function('glTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1309
+glGetTexParameterfv = _link_function('glGetTexParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1311
+glGetTexParameteriv = _link_function('glGetTexParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1314
+glGetTexLevelParameterfv = _link_function('glGetTexLevelParameterfv', None, [GLenum, GLint, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1316
+glGetTexLevelParameteriv = _link_function('glGetTexLevelParameteriv', None, [GLenum, GLint, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1320
+glTexImage1D = _link_function('glTexImage1D', None, [GLenum, GLint, GLint, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1326
+glTexImage2D = _link_function('glTexImage2D', None, [GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1332
+glGetTexImage = _link_function('glGetTexImage', None, [GLenum, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1339
+glGenTextures = _link_function('glGenTextures', None, [GLsizei, POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1341
+glDeleteTextures = _link_function('glDeleteTextures', None, [GLsizei, POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1343
+glBindTexture = _link_function('glBindTexture', None, [GLenum, GLuint], None)
+
+# /usr/include/GL/gl.h:1345
+glPrioritizeTextures = _link_function('glPrioritizeTextures', None, [GLsizei, POINTER(GLuint), POINTER(GLclampf)], None)
+
+# /usr/include/GL/gl.h:1349
+glAreTexturesResident = _link_function('glAreTexturesResident', GLboolean, [GLsizei, POINTER(GLuint), POINTER(GLboolean)], None)
+
+# /usr/include/GL/gl.h:1353
+glIsTexture = _link_function('glIsTexture', GLboolean, [GLuint], None)
+
+# /usr/include/GL/gl.h:1356
+glTexSubImage1D = _link_function('glTexSubImage1D', None, [GLenum, GLint, GLint, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1362
+glTexSubImage2D = _link_function('glTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1369
+glCopyTexImage1D = _link_function('glCopyTexImage1D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLint], None)
+
+# /usr/include/GL/gl.h:1375
+glCopyTexImage2D = _link_function('glCopyTexImage2D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei, GLint], None)
+
+# /usr/include/GL/gl.h:1382
+glCopyTexSubImage1D = _link_function('glCopyTexSubImage1D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei], None)
+
+# /usr/include/GL/gl.h:1387
+glCopyTexSubImage2D = _link_function('glCopyTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], None)
+
+# /usr/include/GL/gl.h:1397
+glMap1d = _link_function('glMap1d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1400
+glMap1f = _link_function('glMap1f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1404
+glMap2d = _link_function('glMap2d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1408
+glMap2f = _link_function('glMap2f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1413
+glGetMapdv = _link_function('glGetMapdv', None, [GLenum, GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1414
+glGetMapfv = _link_function('glGetMapfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1415
+glGetMapiv = _link_function('glGetMapiv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1417
+glEvalCoord1d = _link_function('glEvalCoord1d', None, [GLdouble], None)
+
+# /usr/include/GL/gl.h:1418
+glEvalCoord1f = _link_function('glEvalCoord1f', None, [GLfloat], None)
+
+# /usr/include/GL/gl.h:1420
+glEvalCoord1dv = _link_function('glEvalCoord1dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1421
+glEvalCoord1fv = _link_function('glEvalCoord1fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1423
+glEvalCoord2d = _link_function('glEvalCoord2d', None, [GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1424
+glEvalCoord2f = _link_function('glEvalCoord2f', None, [GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1426
+glEvalCoord2dv = _link_function('glEvalCoord2dv', None, [POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1427
+glEvalCoord2fv = _link_function('glEvalCoord2fv', None, [POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1429
+glMapGrid1d = _link_function('glMapGrid1d', None, [GLint, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1430
+glMapGrid1f = _link_function('glMapGrid1f', None, [GLint, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1432
+glMapGrid2d = _link_function('glMapGrid2d', None, [GLint, GLdouble, GLdouble, GLint, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1434
+glMapGrid2f = _link_function('glMapGrid2f', None, [GLint, GLfloat, GLfloat, GLint, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1437
+glEvalPoint1 = _link_function('glEvalPoint1', None, [GLint], None)
+
+# /usr/include/GL/gl.h:1439
+glEvalPoint2 = _link_function('glEvalPoint2', None, [GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1441
+glEvalMesh1 = _link_function('glEvalMesh1', None, [GLenum, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1443
+glEvalMesh2 = _link_function('glEvalMesh2', None, [GLenum, GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1450
+glFogf = _link_function('glFogf', None, [GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1452
+glFogi = _link_function('glFogi', None, [GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1454
+glFogfv = _link_function('glFogfv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1456
+glFogiv = _link_function('glFogiv', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1463
+glFeedbackBuffer = _link_function('glFeedbackBuffer', None, [GLsizei, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1465
+glPassThrough = _link_function('glPassThrough', None, [GLfloat], None)
+
+# /usr/include/GL/gl.h:1467
+glSelectBuffer = _link_function('glSelectBuffer', None, [GLsizei, POINTER(GLuint)], None)
+
+# /usr/include/GL/gl.h:1469
+glInitNames = _link_function('glInitNames', None, [], None)
+
+# /usr/include/GL/gl.h:1471
+glLoadName = _link_function('glLoadName', None, [GLuint], None)
+
+# /usr/include/GL/gl.h:1473
+glPushName = _link_function('glPushName', None, [GLuint], None)
+
+# /usr/include/GL/gl.h:1475
+glPopName = _link_function('glPopName', None, [], None)
+
+GL_RESCALE_NORMAL = 32826 	# /usr/include/GL/gl.h:1483
+GL_CLAMP_TO_EDGE = 33071 	# /usr/include/GL/gl.h:1484
+GL_MAX_ELEMENTS_VERTICES = 33000 	# /usr/include/GL/gl.h:1485
+GL_MAX_ELEMENTS_INDICES = 33001 	# /usr/include/GL/gl.h:1486
+GL_BGR = 32992 	# /usr/include/GL/gl.h:1487
+GL_BGRA = 32993 	# /usr/include/GL/gl.h:1488
+GL_UNSIGNED_BYTE_3_3_2 = 32818 	# /usr/include/GL/gl.h:1489
+GL_UNSIGNED_BYTE_2_3_3_REV = 33634 	# /usr/include/GL/gl.h:1490
+GL_UNSIGNED_SHORT_5_6_5 = 33635 	# /usr/include/GL/gl.h:1491
+GL_UNSIGNED_SHORT_5_6_5_REV = 33636 	# /usr/include/GL/gl.h:1492
+GL_UNSIGNED_SHORT_4_4_4_4 = 32819 	# /usr/include/GL/gl.h:1493
+GL_UNSIGNED_SHORT_4_4_4_4_REV = 33637 	# /usr/include/GL/gl.h:1494
+GL_UNSIGNED_SHORT_5_5_5_1 = 32820 	# /usr/include/GL/gl.h:1495
+GL_UNSIGNED_SHORT_1_5_5_5_REV = 33638 	# /usr/include/GL/gl.h:1496
+GL_UNSIGNED_INT_8_8_8_8 = 32821 	# /usr/include/GL/gl.h:1497
+GL_UNSIGNED_INT_8_8_8_8_REV = 33639 	# /usr/include/GL/gl.h:1498
+GL_UNSIGNED_INT_10_10_10_2 = 32822 	# /usr/include/GL/gl.h:1499
+GL_UNSIGNED_INT_2_10_10_10_REV = 33640 	# /usr/include/GL/gl.h:1500
+GL_LIGHT_MODEL_COLOR_CONTROL = 33272 	# /usr/include/GL/gl.h:1501
+GL_SINGLE_COLOR = 33273 	# /usr/include/GL/gl.h:1502
+GL_SEPARATE_SPECULAR_COLOR = 33274 	# /usr/include/GL/gl.h:1503
+GL_TEXTURE_MIN_LOD = 33082 	# /usr/include/GL/gl.h:1504
+GL_TEXTURE_MAX_LOD = 33083 	# /usr/include/GL/gl.h:1505
+GL_TEXTURE_BASE_LEVEL = 33084 	# /usr/include/GL/gl.h:1506
+GL_TEXTURE_MAX_LEVEL = 33085 	# /usr/include/GL/gl.h:1507
+GL_SMOOTH_POINT_SIZE_RANGE = 2834 	# /usr/include/GL/gl.h:1508
+GL_SMOOTH_POINT_SIZE_GRANULARITY = 2835 	# /usr/include/GL/gl.h:1509
+GL_SMOOTH_LINE_WIDTH_RANGE = 2850 	# /usr/include/GL/gl.h:1510
+GL_SMOOTH_LINE_WIDTH_GRANULARITY = 2851 	# /usr/include/GL/gl.h:1511
+GL_ALIASED_POINT_SIZE_RANGE = 33901 	# /usr/include/GL/gl.h:1512
+GL_ALIASED_LINE_WIDTH_RANGE = 33902 	# /usr/include/GL/gl.h:1513
+GL_PACK_SKIP_IMAGES = 32875 	# /usr/include/GL/gl.h:1514
+GL_PACK_IMAGE_HEIGHT = 32876 	# /usr/include/GL/gl.h:1515
+GL_UNPACK_SKIP_IMAGES = 32877 	# /usr/include/GL/gl.h:1516
+GL_UNPACK_IMAGE_HEIGHT = 32878 	# /usr/include/GL/gl.h:1517
+GL_TEXTURE_3D = 32879 	# /usr/include/GL/gl.h:1518
+GL_PROXY_TEXTURE_3D = 32880 	# /usr/include/GL/gl.h:1519
+GL_TEXTURE_DEPTH = 32881 	# /usr/include/GL/gl.h:1520
+GL_TEXTURE_WRAP_R = 32882 	# /usr/include/GL/gl.h:1521
+GL_MAX_3D_TEXTURE_SIZE = 32883 	# /usr/include/GL/gl.h:1522
+GL_TEXTURE_BINDING_3D = 32874 	# /usr/include/GL/gl.h:1523
+# /usr/include/GL/gl.h:1525
+glDrawRangeElements = _link_function('glDrawRangeElements', None, [GLenum, GLuint, GLuint, GLsizei, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1528
+glTexImage3D = _link_function('glTexImage3D', None, [GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1535
+glTexSubImage3D = _link_function('glTexSubImage3D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1542
+glCopyTexSubImage3D = _link_function('glCopyTexSubImage3D', None, [GLenum, GLint, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei], None)
+
+PFNGLDRAWRANGEELEMENTSPROC = CFUNCTYPE(None, GLenum, GLuint, GLuint, GLsizei, GLenum, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1548
+PFNGLTEXIMAGE3DPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1549
+PFNGLTEXSUBIMAGE3DPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1550
+PFNGLCOPYTEXSUBIMAGE3DPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLint, GLint, GLint, GLint, GLsizei, GLsizei) 	# /usr/include/GL/gl.h:1551
+GL_CONSTANT_COLOR = 32769 	# /usr/include/GL/gl.h:1558
+GL_ONE_MINUS_CONSTANT_COLOR = 32770 	# /usr/include/GL/gl.h:1559
+GL_CONSTANT_ALPHA = 32771 	# /usr/include/GL/gl.h:1560
+GL_ONE_MINUS_CONSTANT_ALPHA = 32772 	# /usr/include/GL/gl.h:1561
+GL_COLOR_TABLE = 32976 	# /usr/include/GL/gl.h:1562
+GL_POST_CONVOLUTION_COLOR_TABLE = 32977 	# /usr/include/GL/gl.h:1563
+GL_POST_COLOR_MATRIX_COLOR_TABLE = 32978 	# /usr/include/GL/gl.h:1564
+GL_PROXY_COLOR_TABLE = 32979 	# /usr/include/GL/gl.h:1565
+GL_PROXY_POST_CONVOLUTION_COLOR_TABLE = 32980 	# /usr/include/GL/gl.h:1566
+GL_PROXY_POST_COLOR_MATRIX_COLOR_TABLE = 32981 	# /usr/include/GL/gl.h:1567
+GL_COLOR_TABLE_SCALE = 32982 	# /usr/include/GL/gl.h:1568
+GL_COLOR_TABLE_BIAS = 32983 	# /usr/include/GL/gl.h:1569
+GL_COLOR_TABLE_FORMAT = 32984 	# /usr/include/GL/gl.h:1570
+GL_COLOR_TABLE_WIDTH = 32985 	# /usr/include/GL/gl.h:1571
+GL_COLOR_TABLE_RED_SIZE = 32986 	# /usr/include/GL/gl.h:1572
+GL_COLOR_TABLE_GREEN_SIZE = 32987 	# /usr/include/GL/gl.h:1573
+GL_COLOR_TABLE_BLUE_SIZE = 32988 	# /usr/include/GL/gl.h:1574
+GL_COLOR_TABLE_ALPHA_SIZE = 32989 	# /usr/include/GL/gl.h:1575
+GL_COLOR_TABLE_LUMINANCE_SIZE = 32990 	# /usr/include/GL/gl.h:1576
+GL_COLOR_TABLE_INTENSITY_SIZE = 32991 	# /usr/include/GL/gl.h:1577
+GL_CONVOLUTION_1D = 32784 	# /usr/include/GL/gl.h:1578
+GL_CONVOLUTION_2D = 32785 	# /usr/include/GL/gl.h:1579
+GL_SEPARABLE_2D = 32786 	# /usr/include/GL/gl.h:1580
+GL_CONVOLUTION_BORDER_MODE = 32787 	# /usr/include/GL/gl.h:1581
+GL_CONVOLUTION_FILTER_SCALE = 32788 	# /usr/include/GL/gl.h:1582
+GL_CONVOLUTION_FILTER_BIAS = 32789 	# /usr/include/GL/gl.h:1583
+GL_REDUCE = 32790 	# /usr/include/GL/gl.h:1584
+GL_CONVOLUTION_FORMAT = 32791 	# /usr/include/GL/gl.h:1585
+GL_CONVOLUTION_WIDTH = 32792 	# /usr/include/GL/gl.h:1586
+GL_CONVOLUTION_HEIGHT = 32793 	# /usr/include/GL/gl.h:1587
+GL_MAX_CONVOLUTION_WIDTH = 32794 	# /usr/include/GL/gl.h:1588
+GL_MAX_CONVOLUTION_HEIGHT = 32795 	# /usr/include/GL/gl.h:1589
+GL_POST_CONVOLUTION_RED_SCALE = 32796 	# /usr/include/GL/gl.h:1590
+GL_POST_CONVOLUTION_GREEN_SCALE = 32797 	# /usr/include/GL/gl.h:1591
+GL_POST_CONVOLUTION_BLUE_SCALE = 32798 	# /usr/include/GL/gl.h:1592
+GL_POST_CONVOLUTION_ALPHA_SCALE = 32799 	# /usr/include/GL/gl.h:1593
+GL_POST_CONVOLUTION_RED_BIAS = 32800 	# /usr/include/GL/gl.h:1594
+GL_POST_CONVOLUTION_GREEN_BIAS = 32801 	# /usr/include/GL/gl.h:1595
+GL_POST_CONVOLUTION_BLUE_BIAS = 32802 	# /usr/include/GL/gl.h:1596
+GL_POST_CONVOLUTION_ALPHA_BIAS = 32803 	# /usr/include/GL/gl.h:1597
+GL_CONSTANT_BORDER = 33105 	# /usr/include/GL/gl.h:1598
+GL_REPLICATE_BORDER = 33107 	# /usr/include/GL/gl.h:1599
+GL_CONVOLUTION_BORDER_COLOR = 33108 	# /usr/include/GL/gl.h:1600
+GL_COLOR_MATRIX = 32945 	# /usr/include/GL/gl.h:1601
+GL_COLOR_MATRIX_STACK_DEPTH = 32946 	# /usr/include/GL/gl.h:1602
+GL_MAX_COLOR_MATRIX_STACK_DEPTH = 32947 	# /usr/include/GL/gl.h:1603
+GL_POST_COLOR_MATRIX_RED_SCALE = 32948 	# /usr/include/GL/gl.h:1604
+GL_POST_COLOR_MATRIX_GREEN_SCALE = 32949 	# /usr/include/GL/gl.h:1605
+GL_POST_COLOR_MATRIX_BLUE_SCALE = 32950 	# /usr/include/GL/gl.h:1606
+GL_POST_COLOR_MATRIX_ALPHA_SCALE = 32951 	# /usr/include/GL/gl.h:1607
+GL_POST_COLOR_MATRIX_RED_BIAS = 32952 	# /usr/include/GL/gl.h:1608
+GL_POST_COLOR_MATRIX_GREEN_BIAS = 32953 	# /usr/include/GL/gl.h:1609
+GL_POST_COLOR_MATRIX_BLUE_BIAS = 32954 	# /usr/include/GL/gl.h:1610
+GL_POST_COLOR_MATRIX_ALPHA_BIAS = 32955 	# /usr/include/GL/gl.h:1611
+GL_HISTOGRAM = 32804 	# /usr/include/GL/gl.h:1612
+GL_PROXY_HISTOGRAM = 32805 	# /usr/include/GL/gl.h:1613
+GL_HISTOGRAM_WIDTH = 32806 	# /usr/include/GL/gl.h:1614
+GL_HISTOGRAM_FORMAT = 32807 	# /usr/include/GL/gl.h:1615
+GL_HISTOGRAM_RED_SIZE = 32808 	# /usr/include/GL/gl.h:1616
+GL_HISTOGRAM_GREEN_SIZE = 32809 	# /usr/include/GL/gl.h:1617
+GL_HISTOGRAM_BLUE_SIZE = 32810 	# /usr/include/GL/gl.h:1618
+GL_HISTOGRAM_ALPHA_SIZE = 32811 	# /usr/include/GL/gl.h:1619
+GL_HISTOGRAM_LUMINANCE_SIZE = 32812 	# /usr/include/GL/gl.h:1620
+GL_HISTOGRAM_SINK = 32813 	# /usr/include/GL/gl.h:1621
+GL_MINMAX = 32814 	# /usr/include/GL/gl.h:1622
+GL_MINMAX_FORMAT = 32815 	# /usr/include/GL/gl.h:1623
+GL_MINMAX_SINK = 32816 	# /usr/include/GL/gl.h:1624
+GL_TABLE_TOO_LARGE = 32817 	# /usr/include/GL/gl.h:1625
+GL_BLEND_EQUATION = 32777 	# /usr/include/GL/gl.h:1626
+GL_MIN = 32775 	# /usr/include/GL/gl.h:1627
+GL_MAX = 32776 	# /usr/include/GL/gl.h:1628
+GL_FUNC_ADD = 32774 	# /usr/include/GL/gl.h:1629
+GL_FUNC_SUBTRACT = 32778 	# /usr/include/GL/gl.h:1630
+GL_FUNC_REVERSE_SUBTRACT = 32779 	# /usr/include/GL/gl.h:1631
+GL_BLEND_COLOR = 32773 	# /usr/include/GL/gl.h:1632
+# /usr/include/GL/gl.h:1635
+glColorTable = _link_function('glColorTable', None, [GLenum, GLenum, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1639
+glColorSubTable = _link_function('glColorSubTable', None, [GLenum, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1644
+glColorTableParameteriv = _link_function('glColorTableParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1647
+glColorTableParameterfv = _link_function('glColorTableParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1650
+glCopyColorSubTable = _link_function('glCopyColorSubTable', None, [GLenum, GLsizei, GLint, GLint, GLsizei], None)
+
+# /usr/include/GL/gl.h:1653
+glCopyColorTable = _link_function('glCopyColorTable', None, [GLenum, GLenum, GLint, GLint, GLsizei], None)
+
+# /usr/include/GL/gl.h:1656
+glGetColorTable = _link_function('glGetColorTable', None, [GLenum, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1659
+glGetColorTableParameterfv = _link_function('glGetColorTableParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1662
+glGetColorTableParameteriv = _link_function('glGetColorTableParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1665
+glBlendEquation = _link_function('glBlendEquation', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:1667
+glBlendColor = _link_function('glBlendColor', None, [GLclampf, GLclampf, GLclampf, GLclampf], None)
+
+# /usr/include/GL/gl.h:1670
+glHistogram = _link_function('glHistogram', None, [GLenum, GLsizei, GLenum, GLboolean], None)
+
+# /usr/include/GL/gl.h:1673
+glResetHistogram = _link_function('glResetHistogram', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:1675
+glGetHistogram = _link_function('glGetHistogram', None, [GLenum, GLboolean, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1679
+glGetHistogramParameterfv = _link_function('glGetHistogramParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1682
+glGetHistogramParameteriv = _link_function('glGetHistogramParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1685
+glMinmax = _link_function('glMinmax', None, [GLenum, GLenum, GLboolean], None)
+
+# /usr/include/GL/gl.h:1688
+glResetMinmax = _link_function('glResetMinmax', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:1690
+glGetMinmax = _link_function('glGetMinmax', None, [GLenum, GLboolean, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1694
+glGetMinmaxParameterfv = _link_function('glGetMinmaxParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1697
+glGetMinmaxParameteriv = _link_function('glGetMinmaxParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1700
+glConvolutionFilter1D = _link_function('glConvolutionFilter1D', None, [GLenum, GLenum, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1704
+glConvolutionFilter2D = _link_function('glConvolutionFilter2D', None, [GLenum, GLenum, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1708
+glConvolutionParameterf = _link_function('glConvolutionParameterf', None, [GLenum, GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1711
+glConvolutionParameterfv = _link_function('glConvolutionParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1714
+glConvolutionParameteri = _link_function('glConvolutionParameteri', None, [GLenum, GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1717
+glConvolutionParameteriv = _link_function('glConvolutionParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1720
+glCopyConvolutionFilter1D = _link_function('glCopyConvolutionFilter1D', None, [GLenum, GLenum, GLint, GLint, GLsizei], None)
+
+# /usr/include/GL/gl.h:1723
+glCopyConvolutionFilter2D = _link_function('glCopyConvolutionFilter2D', None, [GLenum, GLenum, GLint, GLint, GLsizei, GLsizei], None)
+
+# /usr/include/GL/gl.h:1727
+glGetConvolutionFilter = _link_function('glGetConvolutionFilter', None, [GLenum, GLenum, GLenum, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1730
+glGetConvolutionParameterfv = _link_function('glGetConvolutionParameterfv', None, [GLenum, GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1733
+glGetConvolutionParameteriv = _link_function('glGetConvolutionParameteriv', None, [GLenum, GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1736
+glSeparableFilter2D = _link_function('glSeparableFilter2D', None, [GLenum, GLenum, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid), POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1740
+glGetSeparableFilter = _link_function('glGetSeparableFilter', None, [GLenum, GLenum, GLenum, POINTER(GLvoid), POINTER(GLvoid), POINTER(GLvoid)], None)
+
+PFNGLBLENDCOLORPROC = CFUNCTYPE(None, GLclampf, GLclampf, GLclampf, GLclampf) 	# /usr/include/GL/gl.h:1743
+PFNGLBLENDEQUATIONPROC = CFUNCTYPE(None, GLenum) 	# /usr/include/GL/gl.h:1744
+GL_TEXTURE0 = 33984 	# /usr/include/GL/gl.h:1753
+GL_TEXTURE1 = 33985 	# /usr/include/GL/gl.h:1754
+GL_TEXTURE2 = 33986 	# /usr/include/GL/gl.h:1755
+GL_TEXTURE3 = 33987 	# /usr/include/GL/gl.h:1756
+GL_TEXTURE4 = 33988 	# /usr/include/GL/gl.h:1757
+GL_TEXTURE5 = 33989 	# /usr/include/GL/gl.h:1758
+GL_TEXTURE6 = 33990 	# /usr/include/GL/gl.h:1759
+GL_TEXTURE7 = 33991 	# /usr/include/GL/gl.h:1760
+GL_TEXTURE8 = 33992 	# /usr/include/GL/gl.h:1761
+GL_TEXTURE9 = 33993 	# /usr/include/GL/gl.h:1762
+GL_TEXTURE10 = 33994 	# /usr/include/GL/gl.h:1763
+GL_TEXTURE11 = 33995 	# /usr/include/GL/gl.h:1764
+GL_TEXTURE12 = 33996 	# /usr/include/GL/gl.h:1765
+GL_TEXTURE13 = 33997 	# /usr/include/GL/gl.h:1766
+GL_TEXTURE14 = 33998 	# /usr/include/GL/gl.h:1767
+GL_TEXTURE15 = 33999 	# /usr/include/GL/gl.h:1768
+GL_TEXTURE16 = 34000 	# /usr/include/GL/gl.h:1769
+GL_TEXTURE17 = 34001 	# /usr/include/GL/gl.h:1770
+GL_TEXTURE18 = 34002 	# /usr/include/GL/gl.h:1771
+GL_TEXTURE19 = 34003 	# /usr/include/GL/gl.h:1772
+GL_TEXTURE20 = 34004 	# /usr/include/GL/gl.h:1773
+GL_TEXTURE21 = 34005 	# /usr/include/GL/gl.h:1774
+GL_TEXTURE22 = 34006 	# /usr/include/GL/gl.h:1775
+GL_TEXTURE23 = 34007 	# /usr/include/GL/gl.h:1776
+GL_TEXTURE24 = 34008 	# /usr/include/GL/gl.h:1777
+GL_TEXTURE25 = 34009 	# /usr/include/GL/gl.h:1778
+GL_TEXTURE26 = 34010 	# /usr/include/GL/gl.h:1779
+GL_TEXTURE27 = 34011 	# /usr/include/GL/gl.h:1780
+GL_TEXTURE28 = 34012 	# /usr/include/GL/gl.h:1781
+GL_TEXTURE29 = 34013 	# /usr/include/GL/gl.h:1782
+GL_TEXTURE30 = 34014 	# /usr/include/GL/gl.h:1783
+GL_TEXTURE31 = 34015 	# /usr/include/GL/gl.h:1784
+GL_ACTIVE_TEXTURE = 34016 	# /usr/include/GL/gl.h:1785
+GL_CLIENT_ACTIVE_TEXTURE = 34017 	# /usr/include/GL/gl.h:1786
+GL_MAX_TEXTURE_UNITS = 34018 	# /usr/include/GL/gl.h:1787
+GL_NORMAL_MAP = 34065 	# /usr/include/GL/gl.h:1789
+GL_REFLECTION_MAP = 34066 	# /usr/include/GL/gl.h:1790
+GL_TEXTURE_CUBE_MAP = 34067 	# /usr/include/GL/gl.h:1791
+GL_TEXTURE_BINDING_CUBE_MAP = 34068 	# /usr/include/GL/gl.h:1792
+GL_TEXTURE_CUBE_MAP_POSITIVE_X = 34069 	# /usr/include/GL/gl.h:1793
+GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 34070 	# /usr/include/GL/gl.h:1794
+GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 34071 	# /usr/include/GL/gl.h:1795
+GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 34072 	# /usr/include/GL/gl.h:1796
+GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 34073 	# /usr/include/GL/gl.h:1797
+GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 34074 	# /usr/include/GL/gl.h:1798
+GL_PROXY_TEXTURE_CUBE_MAP = 34075 	# /usr/include/GL/gl.h:1799
+GL_MAX_CUBE_MAP_TEXTURE_SIZE = 34076 	# /usr/include/GL/gl.h:1800
+GL_COMPRESSED_ALPHA = 34025 	# /usr/include/GL/gl.h:1802
+GL_COMPRESSED_LUMINANCE = 34026 	# /usr/include/GL/gl.h:1803
+GL_COMPRESSED_LUMINANCE_ALPHA = 34027 	# /usr/include/GL/gl.h:1804
+GL_COMPRESSED_INTENSITY = 34028 	# /usr/include/GL/gl.h:1805
+GL_COMPRESSED_RGB = 34029 	# /usr/include/GL/gl.h:1806
+GL_COMPRESSED_RGBA = 34030 	# /usr/include/GL/gl.h:1807
+GL_TEXTURE_COMPRESSION_HINT = 34031 	# /usr/include/GL/gl.h:1808
+GL_TEXTURE_COMPRESSED_IMAGE_SIZE = 34464 	# /usr/include/GL/gl.h:1809
+GL_TEXTURE_COMPRESSED = 34465 	# /usr/include/GL/gl.h:1810
+GL_NUM_COMPRESSED_TEXTURE_FORMATS = 34466 	# /usr/include/GL/gl.h:1811
+GL_COMPRESSED_TEXTURE_FORMATS = 34467 	# /usr/include/GL/gl.h:1812
+GL_MULTISAMPLE = 32925 	# /usr/include/GL/gl.h:1814
+GL_SAMPLE_ALPHA_TO_COVERAGE = 32926 	# /usr/include/GL/gl.h:1815
+GL_SAMPLE_ALPHA_TO_ONE = 32927 	# /usr/include/GL/gl.h:1816
+GL_SAMPLE_COVERAGE = 32928 	# /usr/include/GL/gl.h:1817
+GL_SAMPLE_BUFFERS = 32936 	# /usr/include/GL/gl.h:1818
+GL_SAMPLES = 32937 	# /usr/include/GL/gl.h:1819
+GL_SAMPLE_COVERAGE_VALUE = 32938 	# /usr/include/GL/gl.h:1820
+GL_SAMPLE_COVERAGE_INVERT = 32939 	# /usr/include/GL/gl.h:1821
+GL_MULTISAMPLE_BIT = 536870912 	# /usr/include/GL/gl.h:1822
+GL_TRANSPOSE_MODELVIEW_MATRIX = 34019 	# /usr/include/GL/gl.h:1824
+GL_TRANSPOSE_PROJECTION_MATRIX = 34020 	# /usr/include/GL/gl.h:1825
+GL_TRANSPOSE_TEXTURE_MATRIX = 34021 	# /usr/include/GL/gl.h:1826
+GL_TRANSPOSE_COLOR_MATRIX = 34022 	# /usr/include/GL/gl.h:1827
+GL_COMBINE = 34160 	# /usr/include/GL/gl.h:1829
+GL_COMBINE_RGB = 34161 	# /usr/include/GL/gl.h:1830
+GL_COMBINE_ALPHA = 34162 	# /usr/include/GL/gl.h:1831
+GL_SOURCE0_RGB = 34176 	# /usr/include/GL/gl.h:1832
+GL_SOURCE1_RGB = 34177 	# /usr/include/GL/gl.h:1833
+GL_SOURCE2_RGB = 34178 	# /usr/include/GL/gl.h:1834
+GL_SOURCE0_ALPHA = 34184 	# /usr/include/GL/gl.h:1835
+GL_SOURCE1_ALPHA = 34185 	# /usr/include/GL/gl.h:1836
+GL_SOURCE2_ALPHA = 34186 	# /usr/include/GL/gl.h:1837
+GL_OPERAND0_RGB = 34192 	# /usr/include/GL/gl.h:1838
+GL_OPERAND1_RGB = 34193 	# /usr/include/GL/gl.h:1839
+GL_OPERAND2_RGB = 34194 	# /usr/include/GL/gl.h:1840
+GL_OPERAND0_ALPHA = 34200 	# /usr/include/GL/gl.h:1841
+GL_OPERAND1_ALPHA = 34201 	# /usr/include/GL/gl.h:1842
+GL_OPERAND2_ALPHA = 34202 	# /usr/include/GL/gl.h:1843
+GL_RGB_SCALE = 34163 	# /usr/include/GL/gl.h:1844
+GL_ADD_SIGNED = 34164 	# /usr/include/GL/gl.h:1845
+GL_INTERPOLATE = 34165 	# /usr/include/GL/gl.h:1846
+GL_SUBTRACT = 34023 	# /usr/include/GL/gl.h:1847
+GL_CONSTANT = 34166 	# /usr/include/GL/gl.h:1848
+GL_PRIMARY_COLOR = 34167 	# /usr/include/GL/gl.h:1849
+GL_PREVIOUS = 34168 	# /usr/include/GL/gl.h:1850
+GL_DOT3_RGB = 34478 	# /usr/include/GL/gl.h:1852
+GL_DOT3_RGBA = 34479 	# /usr/include/GL/gl.h:1853
+GL_CLAMP_TO_BORDER = 33069 	# /usr/include/GL/gl.h:1855
+# /usr/include/GL/gl.h:1857
+glActiveTexture = _link_function('glActiveTexture', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:1859
+glClientActiveTexture = _link_function('glClientActiveTexture', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:1861
+glCompressedTexImage1D = _link_function('glCompressedTexImage1D', None, [GLenum, GLint, GLenum, GLsizei, GLint, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1863
+glCompressedTexImage2D = _link_function('glCompressedTexImage2D', None, [GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1865
+glCompressedTexImage3D = _link_function('glCompressedTexImage3D', None, [GLenum, GLint, GLenum, GLsizei, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1867
+glCompressedTexSubImage1D = _link_function('glCompressedTexSubImage1D', None, [GLenum, GLint, GLint, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1869
+glCompressedTexSubImage2D = _link_function('glCompressedTexSubImage2D', None, [GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1871
+glCompressedTexSubImage3D = _link_function('glCompressedTexSubImage3D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1873
+glGetCompressedTexImage = _link_function('glGetCompressedTexImage', None, [GLenum, GLint, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:1875
+glMultiTexCoord1d = _link_function('glMultiTexCoord1d', None, [GLenum, GLdouble], None)
+
+# /usr/include/GL/gl.h:1877
+glMultiTexCoord1dv = _link_function('glMultiTexCoord1dv', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1879
+glMultiTexCoord1f = _link_function('glMultiTexCoord1f', None, [GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:1881
+glMultiTexCoord1fv = _link_function('glMultiTexCoord1fv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1883
+glMultiTexCoord1i = _link_function('glMultiTexCoord1i', None, [GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:1885
+glMultiTexCoord1iv = _link_function('glMultiTexCoord1iv', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1887
+glMultiTexCoord1s = _link_function('glMultiTexCoord1s', None, [GLenum, GLshort], None)
+
+# /usr/include/GL/gl.h:1889
+glMultiTexCoord1sv = _link_function('glMultiTexCoord1sv', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1891
+glMultiTexCoord2d = _link_function('glMultiTexCoord2d', None, [GLenum, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1893
+glMultiTexCoord2dv = _link_function('glMultiTexCoord2dv', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1895
+glMultiTexCoord2f = _link_function('glMultiTexCoord2f', None, [GLenum, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1897
+glMultiTexCoord2fv = _link_function('glMultiTexCoord2fv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1899
+glMultiTexCoord2i = _link_function('glMultiTexCoord2i', None, [GLenum, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1901
+glMultiTexCoord2iv = _link_function('glMultiTexCoord2iv', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1903
+glMultiTexCoord2s = _link_function('glMultiTexCoord2s', None, [GLenum, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1905
+glMultiTexCoord2sv = _link_function('glMultiTexCoord2sv', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1907
+glMultiTexCoord3d = _link_function('glMultiTexCoord3d', None, [GLenum, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1909
+glMultiTexCoord3dv = _link_function('glMultiTexCoord3dv', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1911
+glMultiTexCoord3f = _link_function('glMultiTexCoord3f', None, [GLenum, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1913
+glMultiTexCoord3fv = _link_function('glMultiTexCoord3fv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1915
+glMultiTexCoord3i = _link_function('glMultiTexCoord3i', None, [GLenum, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1917
+glMultiTexCoord3iv = _link_function('glMultiTexCoord3iv', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1919
+glMultiTexCoord3s = _link_function('glMultiTexCoord3s', None, [GLenum, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1921
+glMultiTexCoord3sv = _link_function('glMultiTexCoord3sv', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1923
+glMultiTexCoord4d = _link_function('glMultiTexCoord4d', None, [GLenum, GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:1925
+glMultiTexCoord4dv = _link_function('glMultiTexCoord4dv', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:1927
+glMultiTexCoord4f = _link_function('glMultiTexCoord4f', None, [GLenum, GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:1929
+glMultiTexCoord4fv = _link_function('glMultiTexCoord4fv', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:1931
+glMultiTexCoord4i = _link_function('glMultiTexCoord4i', None, [GLenum, GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:1933
+glMultiTexCoord4iv = _link_function('glMultiTexCoord4iv', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:1935
+glMultiTexCoord4s = _link_function('glMultiTexCoord4s', None, [GLenum, GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:1937
+glMultiTexCoord4sv = _link_function('glMultiTexCoord4sv', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:1940
+glLoadTransposeMatrixd = _link_function('glLoadTransposeMatrixd', None, [GLdouble * 16], None)
+
+# /usr/include/GL/gl.h:1942
+glLoadTransposeMatrixf = _link_function('glLoadTransposeMatrixf', None, [GLfloat * 16], None)
+
+# /usr/include/GL/gl.h:1944
+glMultTransposeMatrixd = _link_function('glMultTransposeMatrixd', None, [GLdouble * 16], None)
+
+# /usr/include/GL/gl.h:1946
+glMultTransposeMatrixf = _link_function('glMultTransposeMatrixf', None, [GLfloat * 16], None)
+
+# /usr/include/GL/gl.h:1948
+glSampleCoverage = _link_function('glSampleCoverage', None, [GLclampf, GLboolean], None)
+
+PFNGLACTIVETEXTUREPROC = CFUNCTYPE(None, GLenum) 	# /usr/include/GL/gl.h:1951
+PFNGLSAMPLECOVERAGEPROC = CFUNCTYPE(None, GLclampf, GLboolean) 	# /usr/include/GL/gl.h:1952
+PFNGLCOMPRESSEDTEXIMAGE3DPROC = CFUNCTYPE(None, GLenum, GLint, GLenum, GLsizei, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1953
+PFNGLCOMPRESSEDTEXIMAGE2DPROC = CFUNCTYPE(None, GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1954
+PFNGLCOMPRESSEDTEXIMAGE1DPROC = CFUNCTYPE(None, GLenum, GLint, GLenum, GLsizei, GLint, GLsizei, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1955
+PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1956
+PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLsizei, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1957
+PFNGLCOMPRESSEDTEXSUBIMAGE1DPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLsizei, GLenum, GLsizei, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1958
+PFNGLGETCOMPRESSEDTEXIMAGEPROC = CFUNCTYPE(None, GLenum, GLint, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:1959
+GL_ARB_multitexture = 1 	# /usr/include/GL/gl.h:1967
+GL_TEXTURE0_ARB = 33984 	# /usr/include/GL/gl.h:1969
+GL_TEXTURE1_ARB = 33985 	# /usr/include/GL/gl.h:1970
+GL_TEXTURE2_ARB = 33986 	# /usr/include/GL/gl.h:1971
+GL_TEXTURE3_ARB = 33987 	# /usr/include/GL/gl.h:1972
+GL_TEXTURE4_ARB = 33988 	# /usr/include/GL/gl.h:1973
+GL_TEXTURE5_ARB = 33989 	# /usr/include/GL/gl.h:1974
+GL_TEXTURE6_ARB = 33990 	# /usr/include/GL/gl.h:1975
+GL_TEXTURE7_ARB = 33991 	# /usr/include/GL/gl.h:1976
+GL_TEXTURE8_ARB = 33992 	# /usr/include/GL/gl.h:1977
+GL_TEXTURE9_ARB = 33993 	# /usr/include/GL/gl.h:1978
+GL_TEXTURE10_ARB = 33994 	# /usr/include/GL/gl.h:1979
+GL_TEXTURE11_ARB = 33995 	# /usr/include/GL/gl.h:1980
+GL_TEXTURE12_ARB = 33996 	# /usr/include/GL/gl.h:1981
+GL_TEXTURE13_ARB = 33997 	# /usr/include/GL/gl.h:1982
+GL_TEXTURE14_ARB = 33998 	# /usr/include/GL/gl.h:1983
+GL_TEXTURE15_ARB = 33999 	# /usr/include/GL/gl.h:1984
+GL_TEXTURE16_ARB = 34000 	# /usr/include/GL/gl.h:1985
+GL_TEXTURE17_ARB = 34001 	# /usr/include/GL/gl.h:1986
+GL_TEXTURE18_ARB = 34002 	# /usr/include/GL/gl.h:1987
+GL_TEXTURE19_ARB = 34003 	# /usr/include/GL/gl.h:1988
+GL_TEXTURE20_ARB = 34004 	# /usr/include/GL/gl.h:1989
+GL_TEXTURE21_ARB = 34005 	# /usr/include/GL/gl.h:1990
+GL_TEXTURE22_ARB = 34006 	# /usr/include/GL/gl.h:1991
+GL_TEXTURE23_ARB = 34007 	# /usr/include/GL/gl.h:1992
+GL_TEXTURE24_ARB = 34008 	# /usr/include/GL/gl.h:1993
+GL_TEXTURE25_ARB = 34009 	# /usr/include/GL/gl.h:1994
+GL_TEXTURE26_ARB = 34010 	# /usr/include/GL/gl.h:1995
+GL_TEXTURE27_ARB = 34011 	# /usr/include/GL/gl.h:1996
+GL_TEXTURE28_ARB = 34012 	# /usr/include/GL/gl.h:1997
+GL_TEXTURE29_ARB = 34013 	# /usr/include/GL/gl.h:1998
+GL_TEXTURE30_ARB = 34014 	# /usr/include/GL/gl.h:1999
+GL_TEXTURE31_ARB = 34015 	# /usr/include/GL/gl.h:2000
+GL_ACTIVE_TEXTURE_ARB = 34016 	# /usr/include/GL/gl.h:2001
+GL_CLIENT_ACTIVE_TEXTURE_ARB = 34017 	# /usr/include/GL/gl.h:2002
+GL_MAX_TEXTURE_UNITS_ARB = 34018 	# /usr/include/GL/gl.h:2003
+# /usr/include/GL/gl.h:2005
+glActiveTextureARB = _link_function('glActiveTextureARB', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:2006
+glClientActiveTextureARB = _link_function('glClientActiveTextureARB', None, [GLenum], None)
+
+# /usr/include/GL/gl.h:2007
+glMultiTexCoord1dARB = _link_function('glMultiTexCoord1dARB', None, [GLenum, GLdouble], None)
+
+# /usr/include/GL/gl.h:2008
+glMultiTexCoord1dvARB = _link_function('glMultiTexCoord1dvARB', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:2009
+glMultiTexCoord1fARB = _link_function('glMultiTexCoord1fARB', None, [GLenum, GLfloat], None)
+
+# /usr/include/GL/gl.h:2010
+glMultiTexCoord1fvARB = _link_function('glMultiTexCoord1fvARB', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:2011
+glMultiTexCoord1iARB = _link_function('glMultiTexCoord1iARB', None, [GLenum, GLint], None)
+
+# /usr/include/GL/gl.h:2012
+glMultiTexCoord1ivARB = _link_function('glMultiTexCoord1ivARB', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:2013
+glMultiTexCoord1sARB = _link_function('glMultiTexCoord1sARB', None, [GLenum, GLshort], None)
+
+# /usr/include/GL/gl.h:2014
+glMultiTexCoord1svARB = _link_function('glMultiTexCoord1svARB', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:2015
+glMultiTexCoord2dARB = _link_function('glMultiTexCoord2dARB', None, [GLenum, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:2016
+glMultiTexCoord2dvARB = _link_function('glMultiTexCoord2dvARB', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:2017
+glMultiTexCoord2fARB = _link_function('glMultiTexCoord2fARB', None, [GLenum, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:2018
+glMultiTexCoord2fvARB = _link_function('glMultiTexCoord2fvARB', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:2019
+glMultiTexCoord2iARB = _link_function('glMultiTexCoord2iARB', None, [GLenum, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:2020
+glMultiTexCoord2ivARB = _link_function('glMultiTexCoord2ivARB', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:2021
+glMultiTexCoord2sARB = _link_function('glMultiTexCoord2sARB', None, [GLenum, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:2022
+glMultiTexCoord2svARB = _link_function('glMultiTexCoord2svARB', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:2023
+glMultiTexCoord3dARB = _link_function('glMultiTexCoord3dARB', None, [GLenum, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:2024
+glMultiTexCoord3dvARB = _link_function('glMultiTexCoord3dvARB', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:2025
+glMultiTexCoord3fARB = _link_function('glMultiTexCoord3fARB', None, [GLenum, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:2026
+glMultiTexCoord3fvARB = _link_function('glMultiTexCoord3fvARB', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:2027
+glMultiTexCoord3iARB = _link_function('glMultiTexCoord3iARB', None, [GLenum, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:2028
+glMultiTexCoord3ivARB = _link_function('glMultiTexCoord3ivARB', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:2029
+glMultiTexCoord3sARB = _link_function('glMultiTexCoord3sARB', None, [GLenum, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:2030
+glMultiTexCoord3svARB = _link_function('glMultiTexCoord3svARB', None, [GLenum, POINTER(GLshort)], None)
+
+# /usr/include/GL/gl.h:2031
+glMultiTexCoord4dARB = _link_function('glMultiTexCoord4dARB', None, [GLenum, GLdouble, GLdouble, GLdouble, GLdouble], None)
+
+# /usr/include/GL/gl.h:2032
+glMultiTexCoord4dvARB = _link_function('glMultiTexCoord4dvARB', None, [GLenum, POINTER(GLdouble)], None)
+
+# /usr/include/GL/gl.h:2033
+glMultiTexCoord4fARB = _link_function('glMultiTexCoord4fARB', None, [GLenum, GLfloat, GLfloat, GLfloat, GLfloat], None)
+
+# /usr/include/GL/gl.h:2034
+glMultiTexCoord4fvARB = _link_function('glMultiTexCoord4fvARB', None, [GLenum, POINTER(GLfloat)], None)
+
+# /usr/include/GL/gl.h:2035
+glMultiTexCoord4iARB = _link_function('glMultiTexCoord4iARB', None, [GLenum, GLint, GLint, GLint, GLint], None)
+
+# /usr/include/GL/gl.h:2036
+glMultiTexCoord4ivARB = _link_function('glMultiTexCoord4ivARB', None, [GLenum, POINTER(GLint)], None)
+
+# /usr/include/GL/gl.h:2037
+glMultiTexCoord4sARB = _link_function('glMultiTexCoord4sARB', None, [GLenum, GLshort, GLshort, GLshort, GLshort], None)
+
+# /usr/include/GL/gl.h:2038
+glMultiTexCoord4svARB = _link_function('glMultiTexCoord4svARB', None, [GLenum, POINTER(GLshort)], None)
+
+PFNGLACTIVETEXTUREARBPROC = CFUNCTYPE(None, GLenum) 	# /usr/include/GL/gl.h:2040
+PFNGLCLIENTACTIVETEXTUREARBPROC = CFUNCTYPE(None, GLenum) 	# /usr/include/GL/gl.h:2041
+PFNGLMULTITEXCOORD1DARBPROC = CFUNCTYPE(None, GLenum, GLdouble) 	# /usr/include/GL/gl.h:2042
+PFNGLMULTITEXCOORD1DVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLdouble)) 	# /usr/include/GL/gl.h:2043
+PFNGLMULTITEXCOORD1FARBPROC = CFUNCTYPE(None, GLenum, GLfloat) 	# /usr/include/GL/gl.h:2044
+PFNGLMULTITEXCOORD1FVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLfloat)) 	# /usr/include/GL/gl.h:2045
+PFNGLMULTITEXCOORD1IARBPROC = CFUNCTYPE(None, GLenum, GLint) 	# /usr/include/GL/gl.h:2046
+PFNGLMULTITEXCOORD1IVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLint)) 	# /usr/include/GL/gl.h:2047
+PFNGLMULTITEXCOORD1SARBPROC = CFUNCTYPE(None, GLenum, GLshort) 	# /usr/include/GL/gl.h:2048
+PFNGLMULTITEXCOORD1SVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLshort)) 	# /usr/include/GL/gl.h:2049
+PFNGLMULTITEXCOORD2DARBPROC = CFUNCTYPE(None, GLenum, GLdouble, GLdouble) 	# /usr/include/GL/gl.h:2050
+PFNGLMULTITEXCOORD2DVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLdouble)) 	# /usr/include/GL/gl.h:2051
+PFNGLMULTITEXCOORD2FARBPROC = CFUNCTYPE(None, GLenum, GLfloat, GLfloat) 	# /usr/include/GL/gl.h:2052
+PFNGLMULTITEXCOORD2FVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLfloat)) 	# /usr/include/GL/gl.h:2053
+PFNGLMULTITEXCOORD2IARBPROC = CFUNCTYPE(None, GLenum, GLint, GLint) 	# /usr/include/GL/gl.h:2054
+PFNGLMULTITEXCOORD2IVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLint)) 	# /usr/include/GL/gl.h:2055
+PFNGLMULTITEXCOORD2SARBPROC = CFUNCTYPE(None, GLenum, GLshort, GLshort) 	# /usr/include/GL/gl.h:2056
+PFNGLMULTITEXCOORD2SVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLshort)) 	# /usr/include/GL/gl.h:2057
+PFNGLMULTITEXCOORD3DARBPROC = CFUNCTYPE(None, GLenum, GLdouble, GLdouble, GLdouble) 	# /usr/include/GL/gl.h:2058
+PFNGLMULTITEXCOORD3DVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLdouble)) 	# /usr/include/GL/gl.h:2059
+PFNGLMULTITEXCOORD3FARBPROC = CFUNCTYPE(None, GLenum, GLfloat, GLfloat, GLfloat) 	# /usr/include/GL/gl.h:2060
+PFNGLMULTITEXCOORD3FVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLfloat)) 	# /usr/include/GL/gl.h:2061
+PFNGLMULTITEXCOORD3IARBPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLint) 	# /usr/include/GL/gl.h:2062
+PFNGLMULTITEXCOORD3IVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLint)) 	# /usr/include/GL/gl.h:2063
+PFNGLMULTITEXCOORD3SARBPROC = CFUNCTYPE(None, GLenum, GLshort, GLshort, GLshort) 	# /usr/include/GL/gl.h:2064
+PFNGLMULTITEXCOORD3SVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLshort)) 	# /usr/include/GL/gl.h:2065
+PFNGLMULTITEXCOORD4DARBPROC = CFUNCTYPE(None, GLenum, GLdouble, GLdouble, GLdouble, GLdouble) 	# /usr/include/GL/gl.h:2066
+PFNGLMULTITEXCOORD4DVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLdouble)) 	# /usr/include/GL/gl.h:2067
+PFNGLMULTITEXCOORD4FARBPROC = CFUNCTYPE(None, GLenum, GLfloat, GLfloat, GLfloat, GLfloat) 	# /usr/include/GL/gl.h:2068
+PFNGLMULTITEXCOORD4FVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLfloat)) 	# /usr/include/GL/gl.h:2069
+PFNGLMULTITEXCOORD4IARBPROC = CFUNCTYPE(None, GLenum, GLint, GLint, GLint, GLint) 	# /usr/include/GL/gl.h:2070
+PFNGLMULTITEXCOORD4IVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLint)) 	# /usr/include/GL/gl.h:2071
+PFNGLMULTITEXCOORD4SARBPROC = CFUNCTYPE(None, GLenum, GLshort, GLshort, GLshort, GLshort) 	# /usr/include/GL/gl.h:2072
+PFNGLMULTITEXCOORD4SVARBPROC = CFUNCTYPE(None, GLenum, POINTER(GLshort)) 	# /usr/include/GL/gl.h:2073
+GL_MESA_shader_debug = 1 	# /usr/include/GL/gl.h:2098
+GL_DEBUG_OBJECT_MESA = 34649 	# /usr/include/GL/gl.h:2100
+GL_DEBUG_PRINT_MESA = 34650 	# /usr/include/GL/gl.h:2101
+GL_DEBUG_ASSERT_MESA = 34651 	# /usr/include/GL/gl.h:2102
+GLhandleARB = c_uint 	# /usr/include/GL/glext.h:4420
+# /usr/include/GL/gl.h:2104
+glCreateDebugObjectMESA = _link_function('glCreateDebugObjectMESA', GLhandleARB, [], None)
+
+# /usr/include/GL/gl.h:2105
+glClearDebugLogMESA = _link_function('glClearDebugLogMESA', None, [GLhandleARB, GLenum, GLenum], None)
+
+GLcharARB = c_char 	# /usr/include/GL/glext.h:4419
+# /usr/include/GL/gl.h:2106
+glGetDebugLogMESA = _link_function('glGetDebugLogMESA', None, [GLhandleARB, GLenum, GLenum, GLsizei, POINTER(GLsizei), POINTER(GLcharARB)], None)
+
+# /usr/include/GL/gl.h:2108
+glGetDebugLogLengthMESA = _link_function('glGetDebugLogLengthMESA', GLsizei, [GLhandleARB, GLenum, GLenum], None)
+
+GL_MESA_packed_depth_stencil = 1 	# /usr/include/GL/gl.h:2120
+GL_DEPTH_STENCIL_MESA = 34640 	# /usr/include/GL/gl.h:2122
+GL_UNSIGNED_INT_24_8_MESA = 34641 	# /usr/include/GL/gl.h:2123
+GL_UNSIGNED_INT_8_24_REV_MESA = 34642 	# /usr/include/GL/gl.h:2124
+GL_UNSIGNED_SHORT_15_1_MESA = 34643 	# /usr/include/GL/gl.h:2125
+GL_UNSIGNED_SHORT_1_15_REV_MESA = 34644 	# /usr/include/GL/gl.h:2126
+GL_MESA_program_debug = 1 	# /usr/include/GL/gl.h:2132
+GL_FRAGMENT_PROGRAM_POSITION_MESA = 35760 	# /usr/include/GL/gl.h:2134
+GL_FRAGMENT_PROGRAM_CALLBACK_MESA = 35761 	# /usr/include/GL/gl.h:2135
+GL_FRAGMENT_PROGRAM_CALLBACK_FUNC_MESA = 35762 	# /usr/include/GL/gl.h:2136
+GL_FRAGMENT_PROGRAM_CALLBACK_DATA_MESA = 35763 	# /usr/include/GL/gl.h:2137
+GL_VERTEX_PROGRAM_POSITION_MESA = 35764 	# /usr/include/GL/gl.h:2138
+GL_VERTEX_PROGRAM_CALLBACK_MESA = 35765 	# /usr/include/GL/gl.h:2139
+GL_VERTEX_PROGRAM_CALLBACK_FUNC_MESA = 35766 	# /usr/include/GL/gl.h:2140
+GL_VERTEX_PROGRAM_CALLBACK_DATA_MESA = 35767 	# /usr/include/GL/gl.h:2141
+GLprogramcallbackMESA = CFUNCTYPE(None, GLenum, POINTER(GLvoid)) 	# /usr/include/GL/gl.h:2143
+# /usr/include/GL/gl.h:2145
+glProgramCallbackMESA = _link_function('glProgramCallbackMESA', None, [GLenum, GLprogramcallbackMESA, POINTER(GLvoid)], None)
+
+# /usr/include/GL/gl.h:2147
+glGetProgramRegisterfvMESA = _link_function('glGetProgramRegisterfvMESA', None, [GLenum, GLsizei, POINTER(GLubyte), POINTER(GLfloat)], None)
+
+GL_MESA_texture_array = 1 	# /usr/include/GL/gl.h:2153
+GL_ATI_blend_equation_separate = 1 	# /usr/include/GL/gl.h:2186
+GL_ALPHA_BLEND_EQUATION_ATI = 34877 	# /usr/include/GL/gl.h:2188
+# /usr/include/GL/gl.h:2190
+glBlendEquationSeparateATI = _link_function('glBlendEquationSeparateATI', None, [GLenum, GLenum], None)
+
+PFNGLBLENDEQUATIONSEPARATEATIPROC = CFUNCTYPE(None, GLenum, GLenum) 	# /usr/include/GL/gl.h:2191
+
+__all__ = ['GL_VERSION_1_1', 'GL_VERSION_1_2', 'GL_VERSION_1_3',
+'GL_ARB_imaging', 'GLenum', 'GLboolean', 'GLbitfield', 'GLvoid', 'GLbyte',
+'GLshort', 'GLint', 'GLubyte', 'GLushort', 'GLuint', 'GLsizei', 'GLfloat',
+'GLclampf', 'GLdouble', 'GLclampd', 'GL_FALSE', 'GL_TRUE', 'GL_BYTE',
+'GL_UNSIGNED_BYTE', 'GL_SHORT', 'GL_UNSIGNED_SHORT', 'GL_INT',
+'GL_UNSIGNED_INT', 'GL_FLOAT', 'GL_2_BYTES', 'GL_3_BYTES', 'GL_4_BYTES',
+'GL_DOUBLE', 'GL_POINTS', 'GL_LINES', 'GL_LINE_LOOP', 'GL_LINE_STRIP',
 'GL_TRIANGLES', 'GL_TRIANGLE_STRIP', 'GL_TRIANGLE_FAN', 'GL_QUADS',
-'GL_QUAD_STRIP', 'GL_POLYGON', 'GL_ACCUM', 'GL_LOAD', 'GL_RETURN', 'GL_MULT',
-'GL_ADD', 'GL_NEVER', 'GL_LESS', 'GL_EQUAL', 'GL_LEQUAL', 'GL_GREATER',
-'GL_NOTEQUAL', 'GL_GEQUAL', 'GL_ALWAYS', 'GL_ZERO', 'GL_ONE', 'GL_SRC_COLOR',
-'GL_ONE_MINUS_SRC_COLOR', 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA',
-'GL_DST_ALPHA', 'GL_ONE_MINUS_DST_ALPHA', 'GL_DST_COLOR',
-'GL_ONE_MINUS_DST_COLOR', 'GL_SRC_ALPHA_SATURATE', 'GL_NONE', 'GL_FRONT_LEFT',
-'GL_FRONT_RIGHT', 'GL_BACK_LEFT', 'GL_BACK_RIGHT', 'GL_FRONT', 'GL_BACK',
-'GL_LEFT', 'GL_RIGHT', 'GL_FRONT_AND_BACK', 'GL_AUX0', 'GL_AUX1', 'GL_AUX2',
-'GL_AUX3', 'GL_NO_ERROR', 'GL_INVALID_ENUM', 'GL_INVALID_VALUE',
-'GL_INVALID_OPERATION', 'GL_STACK_OVERFLOW', 'GL_STACK_UNDERFLOW',
-'GL_OUT_OF_MEMORY', 'GL_TABLE_TOO_LARGE', 'GL_2D', 'GL_3D', 'GL_3D_COLOR',
-'GL_3D_COLOR_TEXTURE', 'GL_4D_COLOR_TEXTURE', 'GL_PASS_THROUGH_TOKEN',
-'GL_POINT_TOKEN', 'GL_LINE_TOKEN', 'GL_POLYGON_TOKEN', 'GL_BITMAP_TOKEN',
-'GL_DRAW_PIXEL_TOKEN', 'GL_COPY_PIXEL_TOKEN', 'GL_LINE_RESET_TOKEN', 'GL_EXP',
-'GL_EXP2', 'GL_CW', 'GL_CCW', 'GL_COEFF', 'GL_ORDER', 'GL_DOMAIN',
-'GL_PIXEL_MAP_I_TO_I', 'GL_PIXEL_MAP_S_TO_S', 'GL_PIXEL_MAP_I_TO_R',
-'GL_PIXEL_MAP_I_TO_G', 'GL_PIXEL_MAP_I_TO_B', 'GL_PIXEL_MAP_I_TO_A',
-'GL_PIXEL_MAP_R_TO_R', 'GL_PIXEL_MAP_G_TO_G', 'GL_PIXEL_MAP_B_TO_B',
-'GL_PIXEL_MAP_A_TO_A', 'GL_VERTEX_ARRAY_POINTER', 'GL_NORMAL_ARRAY_POINTER',
-'GL_COLOR_ARRAY_POINTER', 'GL_INDEX_ARRAY_POINTER',
-'GL_TEXTURE_COORD_ARRAY_POINTER', 'GL_EDGE_FLAG_ARRAY_POINTER',
-'GL_CURRENT_COLOR', 'GL_CURRENT_INDEX', 'GL_CURRENT_NORMAL',
-'GL_CURRENT_TEXTURE_COORDS', 'GL_CURRENT_RASTER_COLOR',
-'GL_CURRENT_RASTER_INDEX', 'GL_CURRENT_RASTER_TEXTURE_COORDS',
-'GL_CURRENT_RASTER_POSITION', 'GL_CURRENT_RASTER_POSITION_VALID',
-'GL_CURRENT_RASTER_DISTANCE', 'GL_POINT_SMOOTH', 'GL_POINT_SIZE',
-'GL_SMOOTH_POINT_SIZE_RANGE', 'GL_SMOOTH_POINT_SIZE_GRANULARITY',
-'GL_POINT_SIZE_RANGE', 'GL_POINT_SIZE_GRANULARITY', 'GL_LINE_SMOOTH',
-'GL_LINE_WIDTH', 'GL_SMOOTH_LINE_WIDTH_RANGE',
-'GL_SMOOTH_LINE_WIDTH_GRANULARITY', 'GL_LINE_WIDTH_RANGE',
-'GL_LINE_WIDTH_GRANULARITY', 'GL_LINE_STIPPLE', 'GL_LINE_STIPPLE_PATTERN',
-'GL_LINE_STIPPLE_REPEAT', 'GL_LIST_MODE', 'GL_MAX_LIST_NESTING',
-'GL_LIST_BASE', 'GL_LIST_INDEX', 'GL_POLYGON_MODE', 'GL_POLYGON_SMOOTH',
-'GL_POLYGON_STIPPLE', 'GL_EDGE_FLAG', 'GL_CULL_FACE', 'GL_CULL_FACE_MODE',
-'GL_FRONT_FACE', 'GL_LIGHTING', 'GL_LIGHT_MODEL_LOCAL_VIEWER',
-'GL_LIGHT_MODEL_TWO_SIDE', 'GL_LIGHT_MODEL_AMBIENT', 'GL_SHADE_MODEL',
-'GL_COLOR_MATERIAL_FACE', 'GL_COLOR_MATERIAL_PARAMETER', 'GL_COLOR_MATERIAL',
-'GL_FOG', 'GL_FOG_INDEX', 'GL_FOG_DENSITY', 'GL_FOG_START', 'GL_FOG_END',
-'GL_FOG_MODE', 'GL_FOG_COLOR', 'GL_DEPTH_RANGE', 'GL_DEPTH_TEST',
-'GL_DEPTH_WRITEMASK', 'GL_DEPTH_CLEAR_VALUE', 'GL_DEPTH_FUNC',
-'GL_ACCUM_CLEAR_VALUE', 'GL_STENCIL_TEST', 'GL_STENCIL_CLEAR_VALUE',
-'GL_STENCIL_FUNC', 'GL_STENCIL_VALUE_MASK', 'GL_STENCIL_FAIL',
-'GL_STENCIL_PASS_DEPTH_FAIL', 'GL_STENCIL_PASS_DEPTH_PASS', 'GL_STENCIL_REF',
-'GL_STENCIL_WRITEMASK', 'GL_MATRIX_MODE', 'GL_NORMALIZE', 'GL_VIEWPORT',
-'GL_MODELVIEW_STACK_DEPTH', 'GL_PROJECTION_STACK_DEPTH',
-'GL_TEXTURE_STACK_DEPTH', 'GL_MODELVIEW_MATRIX', 'GL_PROJECTION_MATRIX',
-'GL_TEXTURE_MATRIX', 'GL_ATTRIB_STACK_DEPTH', 'GL_CLIENT_ATTRIB_STACK_DEPTH',
-'GL_ALPHA_TEST', 'GL_ALPHA_TEST_FUNC', 'GL_ALPHA_TEST_REF', 'GL_DITHER',
-'GL_BLEND_DST', 'GL_BLEND_SRC', 'GL_BLEND', 'GL_LOGIC_OP_MODE',
-'GL_INDEX_LOGIC_OP', 'GL_LOGIC_OP', 'GL_COLOR_LOGIC_OP', 'GL_AUX_BUFFERS',
-'GL_DRAW_BUFFER', 'GL_READ_BUFFER', 'GL_SCISSOR_BOX', 'GL_SCISSOR_TEST',
-'GL_INDEX_CLEAR_VALUE', 'GL_INDEX_WRITEMASK', 'GL_COLOR_CLEAR_VALUE',
-'GL_COLOR_WRITEMASK', 'GL_INDEX_MODE', 'GL_RGBA_MODE', 'GL_DOUBLEBUFFER',
-'GL_STEREO', 'GL_RENDER_MODE', 'GL_PERSPECTIVE_CORRECTION_HINT',
-'GL_POINT_SMOOTH_HINT', 'GL_LINE_SMOOTH_HINT', 'GL_POLYGON_SMOOTH_HINT',
-'GL_FOG_HINT', 'GL_TEXTURE_GEN_S', 'GL_TEXTURE_GEN_T', 'GL_TEXTURE_GEN_R',
-'GL_TEXTURE_GEN_Q', 'GL_PIXEL_MAP_I_TO_I_SIZE', 'GL_PIXEL_MAP_S_TO_S_SIZE',
-'GL_PIXEL_MAP_I_TO_R_SIZE', 'GL_PIXEL_MAP_I_TO_G_SIZE',
-'GL_PIXEL_MAP_I_TO_B_SIZE', 'GL_PIXEL_MAP_I_TO_A_SIZE',
-'GL_PIXEL_MAP_R_TO_R_SIZE', 'GL_PIXEL_MAP_G_TO_G_SIZE',
-'GL_PIXEL_MAP_B_TO_B_SIZE', 'GL_PIXEL_MAP_A_TO_A_SIZE',
-'GL_UNPACK_SWAP_BYTES', 'GL_UNPACK_LSB_FIRST', 'GL_UNPACK_ROW_LENGTH',
-'GL_UNPACK_SKIP_ROWS', 'GL_UNPACK_SKIP_PIXELS', 'GL_UNPACK_ALIGNMENT',
-'GL_PACK_SWAP_BYTES', 'GL_PACK_LSB_FIRST', 'GL_PACK_ROW_LENGTH',
-'GL_PACK_SKIP_ROWS', 'GL_PACK_SKIP_PIXELS', 'GL_PACK_ALIGNMENT',
-'GL_MAP_COLOR', 'GL_MAP_STENCIL', 'GL_INDEX_SHIFT', 'GL_INDEX_OFFSET',
-'GL_RED_SCALE', 'GL_RED_BIAS', 'GL_ZOOM_X', 'GL_ZOOM_Y', 'GL_GREEN_SCALE',
-'GL_GREEN_BIAS', 'GL_BLUE_SCALE', 'GL_BLUE_BIAS', 'GL_ALPHA_SCALE',
-'GL_ALPHA_BIAS', 'GL_DEPTH_SCALE', 'GL_DEPTH_BIAS', 'GL_MAX_EVAL_ORDER',
-'GL_MAX_LIGHTS', 'GL_MAX_CLIP_PLANES', 'GL_MAX_TEXTURE_SIZE',
-'GL_MAX_PIXEL_MAP_TABLE', 'GL_MAX_ATTRIB_STACK_DEPTH',
-'GL_MAX_MODELVIEW_STACK_DEPTH', 'GL_MAX_NAME_STACK_DEPTH',
-'GL_MAX_PROJECTION_STACK_DEPTH', 'GL_MAX_TEXTURE_STACK_DEPTH',
-'GL_MAX_VIEWPORT_DIMS', 'GL_MAX_CLIENT_ATTRIB_STACK_DEPTH',
-'GL_SUBPIXEL_BITS', 'GL_INDEX_BITS', 'GL_RED_BITS', 'GL_GREEN_BITS',
-'GL_BLUE_BITS', 'GL_ALPHA_BITS', 'GL_DEPTH_BITS', 'GL_STENCIL_BITS',
-'GL_ACCUM_RED_BITS', 'GL_ACCUM_GREEN_BITS', 'GL_ACCUM_BLUE_BITS',
-'GL_ACCUM_ALPHA_BITS', 'GL_NAME_STACK_DEPTH', 'GL_AUTO_NORMAL',
-'GL_MAP1_COLOR_4', 'GL_MAP1_INDEX', 'GL_MAP1_NORMAL',
-'GL_MAP1_TEXTURE_COORD_1', 'GL_MAP1_TEXTURE_COORD_2',
-'GL_MAP1_TEXTURE_COORD_3', 'GL_MAP1_TEXTURE_COORD_4', 'GL_MAP1_VERTEX_3',
-'GL_MAP1_VERTEX_4', 'GL_MAP2_COLOR_4', 'GL_MAP2_INDEX', 'GL_MAP2_NORMAL',
-'GL_MAP2_TEXTURE_COORD_1', 'GL_MAP2_TEXTURE_COORD_2',
-'GL_MAP2_TEXTURE_COORD_3', 'GL_MAP2_TEXTURE_COORD_4', 'GL_MAP2_VERTEX_3',
-'GL_MAP2_VERTEX_4', 'GL_MAP1_GRID_DOMAIN', 'GL_MAP1_GRID_SEGMENTS',
-'GL_MAP2_GRID_DOMAIN', 'GL_MAP2_GRID_SEGMENTS', 'GL_TEXTURE_1D',
-'GL_TEXTURE_2D', 'GL_FEEDBACK_BUFFER_POINTER', 'GL_FEEDBACK_BUFFER_SIZE',
-'GL_FEEDBACK_BUFFER_TYPE', 'GL_SELECTION_BUFFER_POINTER',
-'GL_SELECTION_BUFFER_SIZE', 'GL_POLYGON_OFFSET_UNITS',
-'GL_POLYGON_OFFSET_POINT', 'GL_POLYGON_OFFSET_LINE', 'GL_POLYGON_OFFSET_FILL',
-'GL_POLYGON_OFFSET_FACTOR', 'GL_TEXTURE_BINDING_1D', 'GL_TEXTURE_BINDING_2D',
-'GL_TEXTURE_BINDING_3D', 'GL_VERTEX_ARRAY', 'GL_NORMAL_ARRAY',
+'GL_QUAD_STRIP', 'GL_POLYGON', 'GL_VERTEX_ARRAY', 'GL_NORMAL_ARRAY',
 'GL_COLOR_ARRAY', 'GL_INDEX_ARRAY', 'GL_TEXTURE_COORD_ARRAY',
 'GL_EDGE_FLAG_ARRAY', 'GL_VERTEX_ARRAY_SIZE', 'GL_VERTEX_ARRAY_TYPE',
 'GL_VERTEX_ARRAY_STRIDE', 'GL_NORMAL_ARRAY_TYPE', 'GL_NORMAL_ARRAY_STRIDE',
 'GL_COLOR_ARRAY_SIZE', 'GL_COLOR_ARRAY_TYPE', 'GL_COLOR_ARRAY_STRIDE',
 'GL_INDEX_ARRAY_TYPE', 'GL_INDEX_ARRAY_STRIDE', 'GL_TEXTURE_COORD_ARRAY_SIZE',
 'GL_TEXTURE_COORD_ARRAY_TYPE', 'GL_TEXTURE_COORD_ARRAY_STRIDE',
-'GL_EDGE_FLAG_ARRAY_STRIDE', 'GL_TEXTURE_WIDTH', 'GL_TEXTURE_HEIGHT',
-'GL_TEXTURE_INTERNAL_FORMAT', 'GL_TEXTURE_COMPONENTS',
-'GL_TEXTURE_BORDER_COLOR', 'GL_TEXTURE_BORDER', 'GL_TEXTURE_RED_SIZE',
+'GL_EDGE_FLAG_ARRAY_STRIDE', 'GL_VERTEX_ARRAY_POINTER',
+'GL_NORMAL_ARRAY_POINTER', 'GL_COLOR_ARRAY_POINTER', 'GL_INDEX_ARRAY_POINTER',
+'GL_TEXTURE_COORD_ARRAY_POINTER', 'GL_EDGE_FLAG_ARRAY_POINTER', 'GL_V2F',
+'GL_V3F', 'GL_C4UB_V2F', 'GL_C4UB_V3F', 'GL_C3F_V3F', 'GL_N3F_V3F',
+'GL_C4F_N3F_V3F', 'GL_T2F_V3F', 'GL_T4F_V4F', 'GL_T2F_C4UB_V3F',
+'GL_T2F_C3F_V3F', 'GL_T2F_N3F_V3F', 'GL_T2F_C4F_N3F_V3F',
+'GL_T4F_C4F_N3F_V4F', 'GL_MATRIX_MODE', 'GL_MODELVIEW', 'GL_PROJECTION',
+'GL_TEXTURE', 'GL_POINT_SMOOTH', 'GL_POINT_SIZE', 'GL_POINT_SIZE_GRANULARITY',
+'GL_POINT_SIZE_RANGE', 'GL_LINE_SMOOTH', 'GL_LINE_STIPPLE',
+'GL_LINE_STIPPLE_PATTERN', 'GL_LINE_STIPPLE_REPEAT', 'GL_LINE_WIDTH',
+'GL_LINE_WIDTH_GRANULARITY', 'GL_LINE_WIDTH_RANGE', 'GL_POINT', 'GL_LINE',
+'GL_FILL', 'GL_CW', 'GL_CCW', 'GL_FRONT', 'GL_BACK', 'GL_POLYGON_MODE',
+'GL_POLYGON_SMOOTH', 'GL_POLYGON_STIPPLE', 'GL_EDGE_FLAG', 'GL_CULL_FACE',
+'GL_CULL_FACE_MODE', 'GL_FRONT_FACE', 'GL_POLYGON_OFFSET_FACTOR',
+'GL_POLYGON_OFFSET_UNITS', 'GL_POLYGON_OFFSET_POINT',
+'GL_POLYGON_OFFSET_LINE', 'GL_POLYGON_OFFSET_FILL', 'GL_COMPILE',
+'GL_COMPILE_AND_EXECUTE', 'GL_LIST_BASE', 'GL_LIST_INDEX', 'GL_LIST_MODE',
+'GL_NEVER', 'GL_LESS', 'GL_EQUAL', 'GL_LEQUAL', 'GL_GREATER', 'GL_NOTEQUAL',
+'GL_GEQUAL', 'GL_ALWAYS', 'GL_DEPTH_TEST', 'GL_DEPTH_BITS',
+'GL_DEPTH_CLEAR_VALUE', 'GL_DEPTH_FUNC', 'GL_DEPTH_RANGE',
+'GL_DEPTH_WRITEMASK', 'GL_DEPTH_COMPONENT', 'GL_LIGHTING', 'GL_LIGHT0',
+'GL_LIGHT1', 'GL_LIGHT2', 'GL_LIGHT3', 'GL_LIGHT4', 'GL_LIGHT5', 'GL_LIGHT6',
+'GL_LIGHT7', 'GL_SPOT_EXPONENT', 'GL_SPOT_CUTOFF', 'GL_CONSTANT_ATTENUATION',
+'GL_LINEAR_ATTENUATION', 'GL_QUADRATIC_ATTENUATION', 'GL_AMBIENT',
+'GL_DIFFUSE', 'GL_SPECULAR', 'GL_SHININESS', 'GL_EMISSION', 'GL_POSITION',
+'GL_SPOT_DIRECTION', 'GL_AMBIENT_AND_DIFFUSE', 'GL_COLOR_INDEXES',
+'GL_LIGHT_MODEL_TWO_SIDE', 'GL_LIGHT_MODEL_LOCAL_VIEWER',
+'GL_LIGHT_MODEL_AMBIENT', 'GL_FRONT_AND_BACK', 'GL_SHADE_MODEL', 'GL_FLAT',
+'GL_SMOOTH', 'GL_COLOR_MATERIAL', 'GL_COLOR_MATERIAL_FACE',
+'GL_COLOR_MATERIAL_PARAMETER', 'GL_NORMALIZE', 'GL_CLIP_PLANE0',
+'GL_CLIP_PLANE1', 'GL_CLIP_PLANE2', 'GL_CLIP_PLANE3', 'GL_CLIP_PLANE4',
+'GL_CLIP_PLANE5', 'GL_ACCUM_RED_BITS', 'GL_ACCUM_GREEN_BITS',
+'GL_ACCUM_BLUE_BITS', 'GL_ACCUM_ALPHA_BITS', 'GL_ACCUM_CLEAR_VALUE',
+'GL_ACCUM', 'GL_ADD', 'GL_LOAD', 'GL_MULT', 'GL_RETURN', 'GL_ALPHA_TEST',
+'GL_ALPHA_TEST_REF', 'GL_ALPHA_TEST_FUNC', 'GL_BLEND', 'GL_BLEND_SRC',
+'GL_BLEND_DST', 'GL_ZERO', 'GL_ONE', 'GL_SRC_COLOR', 'GL_ONE_MINUS_SRC_COLOR',
+'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA', 'GL_DST_ALPHA',
+'GL_ONE_MINUS_DST_ALPHA', 'GL_DST_COLOR', 'GL_ONE_MINUS_DST_COLOR',
+'GL_SRC_ALPHA_SATURATE', 'GL_FEEDBACK', 'GL_RENDER', 'GL_SELECT', 'GL_2D',
+'GL_3D', 'GL_3D_COLOR', 'GL_3D_COLOR_TEXTURE', 'GL_4D_COLOR_TEXTURE',
+'GL_POINT_TOKEN', 'GL_LINE_TOKEN', 'GL_LINE_RESET_TOKEN', 'GL_POLYGON_TOKEN',
+'GL_BITMAP_TOKEN', 'GL_DRAW_PIXEL_TOKEN', 'GL_COPY_PIXEL_TOKEN',
+'GL_PASS_THROUGH_TOKEN', 'GL_FEEDBACK_BUFFER_POINTER',
+'GL_FEEDBACK_BUFFER_SIZE', 'GL_FEEDBACK_BUFFER_TYPE',
+'GL_SELECTION_BUFFER_POINTER', 'GL_SELECTION_BUFFER_SIZE', 'GL_FOG',
+'GL_FOG_MODE', 'GL_FOG_DENSITY', 'GL_FOG_COLOR', 'GL_FOG_INDEX',
+'GL_FOG_START', 'GL_FOG_END', 'GL_LINEAR', 'GL_EXP', 'GL_EXP2', 'GL_LOGIC_OP',
+'GL_INDEX_LOGIC_OP', 'GL_COLOR_LOGIC_OP', 'GL_LOGIC_OP_MODE', 'GL_CLEAR',
+'GL_SET', 'GL_COPY', 'GL_COPY_INVERTED', 'GL_NOOP', 'GL_INVERT', 'GL_AND',
+'GL_NAND', 'GL_OR', 'GL_NOR', 'GL_XOR', 'GL_EQUIV', 'GL_AND_REVERSE',
+'GL_AND_INVERTED', 'GL_OR_REVERSE', 'GL_OR_INVERTED', 'GL_STENCIL_BITS',
+'GL_STENCIL_TEST', 'GL_STENCIL_CLEAR_VALUE', 'GL_STENCIL_FUNC',
+'GL_STENCIL_VALUE_MASK', 'GL_STENCIL_FAIL', 'GL_STENCIL_PASS_DEPTH_FAIL',
+'GL_STENCIL_PASS_DEPTH_PASS', 'GL_STENCIL_REF', 'GL_STENCIL_WRITEMASK',
+'GL_STENCIL_INDEX', 'GL_KEEP', 'GL_REPLACE', 'GL_INCR', 'GL_DECR', 'GL_NONE',
+'GL_LEFT', 'GL_RIGHT', 'GL_FRONT_LEFT', 'GL_FRONT_RIGHT', 'GL_BACK_LEFT',
+'GL_BACK_RIGHT', 'GL_AUX0', 'GL_AUX1', 'GL_AUX2', 'GL_AUX3', 'GL_COLOR_INDEX',
+'GL_RED', 'GL_GREEN', 'GL_BLUE', 'GL_ALPHA', 'GL_LUMINANCE',
+'GL_LUMINANCE_ALPHA', 'GL_ALPHA_BITS', 'GL_RED_BITS', 'GL_GREEN_BITS',
+'GL_BLUE_BITS', 'GL_INDEX_BITS', 'GL_SUBPIXEL_BITS', 'GL_AUX_BUFFERS',
+'GL_READ_BUFFER', 'GL_DRAW_BUFFER', 'GL_DOUBLEBUFFER', 'GL_STEREO',
+'GL_BITMAP', 'GL_COLOR', 'GL_DEPTH', 'GL_STENCIL', 'GL_DITHER', 'GL_RGB',
+'GL_RGBA', 'GL_MAX_LIST_NESTING', 'GL_MAX_EVAL_ORDER', 'GL_MAX_LIGHTS',
+'GL_MAX_CLIP_PLANES', 'GL_MAX_TEXTURE_SIZE', 'GL_MAX_PIXEL_MAP_TABLE',
+'GL_MAX_ATTRIB_STACK_DEPTH', 'GL_MAX_MODELVIEW_STACK_DEPTH',
+'GL_MAX_NAME_STACK_DEPTH', 'GL_MAX_PROJECTION_STACK_DEPTH',
+'GL_MAX_TEXTURE_STACK_DEPTH', 'GL_MAX_VIEWPORT_DIMS',
+'GL_MAX_CLIENT_ATTRIB_STACK_DEPTH', 'GL_ATTRIB_STACK_DEPTH',
+'GL_CLIENT_ATTRIB_STACK_DEPTH', 'GL_COLOR_CLEAR_VALUE', 'GL_COLOR_WRITEMASK',
+'GL_CURRENT_INDEX', 'GL_CURRENT_COLOR', 'GL_CURRENT_NORMAL',
+'GL_CURRENT_RASTER_COLOR', 'GL_CURRENT_RASTER_DISTANCE',
+'GL_CURRENT_RASTER_INDEX', 'GL_CURRENT_RASTER_POSITION',
+'GL_CURRENT_RASTER_TEXTURE_COORDS', 'GL_CURRENT_RASTER_POSITION_VALID',
+'GL_CURRENT_TEXTURE_COORDS', 'GL_INDEX_CLEAR_VALUE', 'GL_INDEX_MODE',
+'GL_INDEX_WRITEMASK', 'GL_MODELVIEW_MATRIX', 'GL_MODELVIEW_STACK_DEPTH',
+'GL_NAME_STACK_DEPTH', 'GL_PROJECTION_MATRIX', 'GL_PROJECTION_STACK_DEPTH',
+'GL_RENDER_MODE', 'GL_RGBA_MODE', 'GL_TEXTURE_MATRIX',
+'GL_TEXTURE_STACK_DEPTH', 'GL_VIEWPORT', 'GL_AUTO_NORMAL', 'GL_MAP1_COLOR_4',
+'GL_MAP1_INDEX', 'GL_MAP1_NORMAL', 'GL_MAP1_TEXTURE_COORD_1',
+'GL_MAP1_TEXTURE_COORD_2', 'GL_MAP1_TEXTURE_COORD_3',
+'GL_MAP1_TEXTURE_COORD_4', 'GL_MAP1_VERTEX_3', 'GL_MAP1_VERTEX_4',
+'GL_MAP2_COLOR_4', 'GL_MAP2_INDEX', 'GL_MAP2_NORMAL',
+'GL_MAP2_TEXTURE_COORD_1', 'GL_MAP2_TEXTURE_COORD_2',
+'GL_MAP2_TEXTURE_COORD_3', 'GL_MAP2_TEXTURE_COORD_4', 'GL_MAP2_VERTEX_3',
+'GL_MAP2_VERTEX_4', 'GL_MAP1_GRID_DOMAIN', 'GL_MAP1_GRID_SEGMENTS',
+'GL_MAP2_GRID_DOMAIN', 'GL_MAP2_GRID_SEGMENTS', 'GL_COEFF', 'GL_ORDER',
+'GL_DOMAIN', 'GL_PERSPECTIVE_CORRECTION_HINT', 'GL_POINT_SMOOTH_HINT',
+'GL_LINE_SMOOTH_HINT', 'GL_POLYGON_SMOOTH_HINT', 'GL_FOG_HINT',
+'GL_DONT_CARE', 'GL_FASTEST', 'GL_NICEST', 'GL_SCISSOR_BOX',
+'GL_SCISSOR_TEST', 'GL_MAP_COLOR', 'GL_MAP_STENCIL', 'GL_INDEX_SHIFT',
+'GL_INDEX_OFFSET', 'GL_RED_SCALE', 'GL_RED_BIAS', 'GL_GREEN_SCALE',
+'GL_GREEN_BIAS', 'GL_BLUE_SCALE', 'GL_BLUE_BIAS', 'GL_ALPHA_SCALE',
+'GL_ALPHA_BIAS', 'GL_DEPTH_SCALE', 'GL_DEPTH_BIAS',
+'GL_PIXEL_MAP_S_TO_S_SIZE', 'GL_PIXEL_MAP_I_TO_I_SIZE',
+'GL_PIXEL_MAP_I_TO_R_SIZE', 'GL_PIXEL_MAP_I_TO_G_SIZE',
+'GL_PIXEL_MAP_I_TO_B_SIZE', 'GL_PIXEL_MAP_I_TO_A_SIZE',
+'GL_PIXEL_MAP_R_TO_R_SIZE', 'GL_PIXEL_MAP_G_TO_G_SIZE',
+'GL_PIXEL_MAP_B_TO_B_SIZE', 'GL_PIXEL_MAP_A_TO_A_SIZE', 'GL_PIXEL_MAP_S_TO_S',
+'GL_PIXEL_MAP_I_TO_I', 'GL_PIXEL_MAP_I_TO_R', 'GL_PIXEL_MAP_I_TO_G',
+'GL_PIXEL_MAP_I_TO_B', 'GL_PIXEL_MAP_I_TO_A', 'GL_PIXEL_MAP_R_TO_R',
+'GL_PIXEL_MAP_G_TO_G', 'GL_PIXEL_MAP_B_TO_B', 'GL_PIXEL_MAP_A_TO_A',
+'GL_PACK_ALIGNMENT', 'GL_PACK_LSB_FIRST', 'GL_PACK_ROW_LENGTH',
+'GL_PACK_SKIP_PIXELS', 'GL_PACK_SKIP_ROWS', 'GL_PACK_SWAP_BYTES',
+'GL_UNPACK_ALIGNMENT', 'GL_UNPACK_LSB_FIRST', 'GL_UNPACK_ROW_LENGTH',
+'GL_UNPACK_SKIP_PIXELS', 'GL_UNPACK_SKIP_ROWS', 'GL_UNPACK_SWAP_BYTES',
+'GL_ZOOM_X', 'GL_ZOOM_Y', 'GL_TEXTURE_ENV', 'GL_TEXTURE_ENV_MODE',
+'GL_TEXTURE_1D', 'GL_TEXTURE_2D', 'GL_TEXTURE_WRAP_S', 'GL_TEXTURE_WRAP_T',
+'GL_TEXTURE_MAG_FILTER', 'GL_TEXTURE_MIN_FILTER', 'GL_TEXTURE_ENV_COLOR',
+'GL_TEXTURE_GEN_S', 'GL_TEXTURE_GEN_T', 'GL_TEXTURE_GEN_MODE',
+'GL_TEXTURE_BORDER_COLOR', 'GL_TEXTURE_WIDTH', 'GL_TEXTURE_HEIGHT',
+'GL_TEXTURE_BORDER', 'GL_TEXTURE_COMPONENTS', 'GL_TEXTURE_RED_SIZE',
 'GL_TEXTURE_GREEN_SIZE', 'GL_TEXTURE_BLUE_SIZE', 'GL_TEXTURE_ALPHA_SIZE',
 'GL_TEXTURE_LUMINANCE_SIZE', 'GL_TEXTURE_INTENSITY_SIZE',
-'GL_TEXTURE_PRIORITY', 'GL_TEXTURE_RESIDENT', 'GL_DONT_CARE', 'GL_FASTEST',
-'GL_NICEST', 'GL_AMBIENT', 'GL_DIFFUSE', 'GL_SPECULAR', 'GL_POSITION',
-'GL_SPOT_DIRECTION', 'GL_SPOT_EXPONENT', 'GL_SPOT_CUTOFF',
-'GL_CONSTANT_ATTENUATION', 'GL_LINEAR_ATTENUATION',
-'GL_QUADRATIC_ATTENUATION', 'GL_COMPILE', 'GL_COMPILE_AND_EXECUTE', 'GL_BYTE',
-'GL_UNSIGNED_BYTE', 'GL_SHORT', 'GL_UNSIGNED_SHORT', 'GL_INT',
-'GL_UNSIGNED_INT', 'GL_FLOAT', 'GL_2_BYTES', 'GL_3_BYTES', 'GL_4_BYTES',
-'GL_DOUBLE', 'GL_DOUBLE_EXT', 'GL_CLEAR', 'GL_AND', 'GL_AND_REVERSE',
-'GL_COPY', 'GL_AND_INVERTED', 'GL_NOOP', 'GL_XOR', 'GL_OR', 'GL_NOR',
-'GL_EQUIV', 'GL_INVERT', 'GL_OR_REVERSE', 'GL_COPY_INVERTED',
-'GL_OR_INVERTED', 'GL_NAND', 'GL_SET', 'GL_EMISSION', 'GL_SHININESS',
-'GL_AMBIENT_AND_DIFFUSE', 'GL_COLOR_INDEXES', 'GL_MODELVIEW', 'GL_PROJECTION',
-'GL_TEXTURE', 'GL_COLOR', 'GL_DEPTH', 'GL_STENCIL', 'GL_COLOR_INDEX',
-'GL_STENCIL_INDEX', 'GL_DEPTH_COMPONENT', 'GL_RED', 'GL_GREEN', 'GL_BLUE',
-'GL_ALPHA', 'GL_RGB', 'GL_RGBA', 'GL_LUMINANCE', 'GL_LUMINANCE_ALPHA',
-'GL_BITMAP', 'GL_POINT', 'GL_LINE', 'GL_FILL', 'GL_RENDER', 'GL_FEEDBACK',
-'GL_SELECT', 'GL_FLAT', 'GL_SMOOTH', 'GL_KEEP', 'GL_REPLACE', 'GL_INCR',
-'GL_DECR', 'GL_VENDOR', 'GL_RENDERER', 'GL_VERSION', 'GL_EXTENSIONS', 'GL_S',
-'GL_T', 'GL_R', 'GL_Q', 'GL_MODULATE', 'GL_DECAL', 'GL_TEXTURE_ENV_MODE',
-'GL_TEXTURE_ENV_COLOR', 'GL_TEXTURE_ENV', 'GL_EYE_LINEAR', 'GL_OBJECT_LINEAR',
-'GL_SPHERE_MAP', 'GL_TEXTURE_GEN_MODE', 'GL_OBJECT_PLANE', 'GL_EYE_PLANE',
-'GL_NEAREST', 'GL_LINEAR', 'GL_NEAREST_MIPMAP_NEAREST',
-'GL_LINEAR_MIPMAP_NEAREST', 'GL_NEAREST_MIPMAP_LINEAR',
-'GL_LINEAR_MIPMAP_LINEAR', 'GL_TEXTURE_MAG_FILTER', 'GL_TEXTURE_MIN_FILTER',
-'GL_TEXTURE_WRAP_S', 'GL_TEXTURE_WRAP_T', 'GL_PROXY_TEXTURE_1D',
-'GL_PROXY_TEXTURE_2D', 'GL_CLAMP', 'GL_REPEAT', 'GL_R3_G3_B2', 'GL_ALPHA4',
-'GL_ALPHA8', 'GL_ALPHA12', 'GL_ALPHA16', 'GL_LUMINANCE4', 'GL_LUMINANCE8',
-'GL_LUMINANCE12', 'GL_LUMINANCE16', 'GL_LUMINANCE4_ALPHA4',
-'GL_LUMINANCE6_ALPHA2', 'GL_LUMINANCE8_ALPHA8', 'GL_LUMINANCE12_ALPHA4',
-'GL_LUMINANCE12_ALPHA12', 'GL_LUMINANCE16_ALPHA16', 'GL_INTENSITY',
-'GL_INTENSITY4', 'GL_INTENSITY8', 'GL_INTENSITY12', 'GL_INTENSITY16',
-'GL_RGB4', 'GL_RGB5', 'GL_RGB8', 'GL_RGB10', 'GL_RGB12', 'GL_RGB16',
-'GL_RGBA2', 'GL_RGBA4', 'GL_RGB5_A1', 'GL_RGBA8', 'GL_RGB10_A2', 'GL_RGBA12',
-'GL_RGBA16', 'GL_V2F', 'GL_V3F', 'GL_C4UB_V2F', 'GL_C4UB_V3F', 'GL_C3F_V3F',
-'GL_N3F_V3F', 'GL_C4F_N3F_V3F', 'GL_T2F_V3F', 'GL_T4F_V4F', 'GL_T2F_C4UB_V3F',
-'GL_T2F_C3F_V3F', 'GL_T2F_N3F_V3F', 'GL_T2F_C4F_N3F_V3F',
-'GL_T4F_C4F_N3F_V4F', 'GL_CLIP_PLANE0', 'GL_CLIP_PLANE1', 'GL_CLIP_PLANE2',
-'GL_CLIP_PLANE3', 'GL_CLIP_PLANE4', 'GL_CLIP_PLANE5', 'GL_LIGHT0',
-'GL_LIGHT1', 'GL_LIGHT2', 'GL_LIGHT3', 'GL_LIGHT4', 'GL_LIGHT5', 'GL_LIGHT6',
-'GL_LIGHT7', 'GL_ABGR_EXT', 'GL_FUNC_SUBTRACT_EXT',
-'GL_FUNC_REVERSE_SUBTRACT_EXT', 'GL_UNSIGNED_BYTE_3_3_2_EXT',
-'GL_UNSIGNED_SHORT_4_4_4_4_EXT', 'GL_UNSIGNED_SHORT_5_5_5_1_EXT',
-'GL_UNSIGNED_INT_8_8_8_8_EXT', 'GL_UNSIGNED_INT_10_10_10_2_EXT',
-'GL_PACK_SKIP_IMAGES', 'GL_PACK_IMAGE_HEIGHT', 'GL_UNPACK_SKIP_IMAGES',
-'GL_UNPACK_IMAGE_HEIGHT', 'GL_TEXTURE_3D', 'GL_PROXY_TEXTURE_3D',
-'GL_TEXTURE_DEPTH', 'GL_TEXTURE_WRAP_R', 'GL_MAX_3D_TEXTURE_SIZE', 'GL_BGR',
-'GL_BGRA', 'GL_UNSIGNED_BYTE_3_3_2', 'GL_UNSIGNED_BYTE_2_3_3_REV',
+'GL_NEAREST_MIPMAP_NEAREST', 'GL_NEAREST_MIPMAP_LINEAR',
+'GL_LINEAR_MIPMAP_NEAREST', 'GL_LINEAR_MIPMAP_LINEAR', 'GL_OBJECT_LINEAR',
+'GL_OBJECT_PLANE', 'GL_EYE_LINEAR', 'GL_EYE_PLANE', 'GL_SPHERE_MAP',
+'GL_DECAL', 'GL_MODULATE', 'GL_NEAREST', 'GL_REPEAT', 'GL_CLAMP', 'GL_S',
+'GL_T', 'GL_R', 'GL_Q', 'GL_TEXTURE_GEN_R', 'GL_TEXTURE_GEN_Q', 'GL_VENDOR',
+'GL_RENDERER', 'GL_VERSION', 'GL_EXTENSIONS', 'GL_NO_ERROR',
+'GL_INVALID_ENUM', 'GL_INVALID_VALUE', 'GL_INVALID_OPERATION',
+'GL_STACK_OVERFLOW', 'GL_STACK_UNDERFLOW', 'GL_OUT_OF_MEMORY',
+'GL_CURRENT_BIT', 'GL_POINT_BIT', 'GL_LINE_BIT', 'GL_POLYGON_BIT',
+'GL_POLYGON_STIPPLE_BIT', 'GL_PIXEL_MODE_BIT', 'GL_LIGHTING_BIT',
+'GL_FOG_BIT', 'GL_DEPTH_BUFFER_BIT', 'GL_ACCUM_BUFFER_BIT',
+'GL_STENCIL_BUFFER_BIT', 'GL_VIEWPORT_BIT', 'GL_TRANSFORM_BIT',
+'GL_ENABLE_BIT', 'GL_COLOR_BUFFER_BIT', 'GL_HINT_BIT', 'GL_EVAL_BIT',
+'GL_LIST_BIT', 'GL_TEXTURE_BIT', 'GL_SCISSOR_BIT', 'GL_ALL_ATTRIB_BITS',
+'GL_PROXY_TEXTURE_1D', 'GL_PROXY_TEXTURE_2D', 'GL_TEXTURE_PRIORITY',
+'GL_TEXTURE_RESIDENT', 'GL_TEXTURE_BINDING_1D', 'GL_TEXTURE_BINDING_2D',
+'GL_TEXTURE_INTERNAL_FORMAT', 'GL_ALPHA4', 'GL_ALPHA8', 'GL_ALPHA12',
+'GL_ALPHA16', 'GL_LUMINANCE4', 'GL_LUMINANCE8', 'GL_LUMINANCE12',
+'GL_LUMINANCE16', 'GL_LUMINANCE4_ALPHA4', 'GL_LUMINANCE6_ALPHA2',
+'GL_LUMINANCE8_ALPHA8', 'GL_LUMINANCE12_ALPHA4', 'GL_LUMINANCE12_ALPHA12',
+'GL_LUMINANCE16_ALPHA16', 'GL_INTENSITY', 'GL_INTENSITY4', 'GL_INTENSITY8',
+'GL_INTENSITY12', 'GL_INTENSITY16', 'GL_R3_G3_B2', 'GL_RGB4', 'GL_RGB5',
+'GL_RGB8', 'GL_RGB10', 'GL_RGB12', 'GL_RGB16', 'GL_RGBA2', 'GL_RGBA4',
+'GL_RGB5_A1', 'GL_RGBA8', 'GL_RGB10_A2', 'GL_RGBA12', 'GL_RGBA16',
+'GL_CLIENT_PIXEL_STORE_BIT', 'GL_CLIENT_VERTEX_ARRAY_BIT',
+'GL_ALL_CLIENT_ATTRIB_BITS', 'GL_CLIENT_ALL_ATTRIB_BITS', 'glClearIndex',
+'glClearColor', 'glClear', 'glIndexMask', 'glColorMask', 'glAlphaFunc',
+'glBlendFunc', 'glLogicOp', 'glCullFace', 'glFrontFace', 'glPointSize',
+'glLineWidth', 'glLineStipple', 'glPolygonMode', 'glPolygonOffset',
+'glPolygonStipple', 'glGetPolygonStipple', 'glEdgeFlag', 'glEdgeFlagv',
+'glScissor', 'glClipPlane', 'glGetClipPlane', 'glDrawBuffer', 'glReadBuffer',
+'glEnable', 'glDisable', 'glIsEnabled', 'glEnableClientState',
+'glDisableClientState', 'glGetBooleanv', 'glGetDoublev', 'glGetFloatv',
+'glGetIntegerv', 'glPushAttrib', 'glPopAttrib', 'glPushClientAttrib',
+'glPopClientAttrib', 'glRenderMode', 'glGetError', 'glGetString', 'glFinish',
+'glFlush', 'glHint', 'glClearDepth', 'glDepthFunc', 'glDepthMask',
+'glDepthRange', 'glClearAccum', 'glAccum', 'glMatrixMode', 'glOrtho',
+'glFrustum', 'glViewport', 'glPushMatrix', 'glPopMatrix', 'glLoadIdentity',
+'glLoadMatrixd', 'glLoadMatrixf', 'glMultMatrixd', 'glMultMatrixf',
+'glRotated', 'glRotatef', 'glScaled', 'glScalef', 'glTranslated',
+'glTranslatef', 'glIsList', 'glDeleteLists', 'glGenLists', 'glNewList',
+'glEndList', 'glCallList', 'glCallLists', 'glListBase', 'glBegin', 'glEnd',
+'glVertex2d', 'glVertex2f', 'glVertex2i', 'glVertex2s', 'glVertex3d',
+'glVertex3f', 'glVertex3i', 'glVertex3s', 'glVertex4d', 'glVertex4f',
+'glVertex4i', 'glVertex4s', 'glVertex2dv', 'glVertex2fv', 'glVertex2iv',
+'glVertex2sv', 'glVertex3dv', 'glVertex3fv', 'glVertex3iv', 'glVertex3sv',
+'glVertex4dv', 'glVertex4fv', 'glVertex4iv', 'glVertex4sv', 'glNormal3b',
+'glNormal3d', 'glNormal3f', 'glNormal3i', 'glNormal3s', 'glNormal3bv',
+'glNormal3dv', 'glNormal3fv', 'glNormal3iv', 'glNormal3sv', 'glIndexd',
+'glIndexf', 'glIndexi', 'glIndexs', 'glIndexub', 'glIndexdv', 'glIndexfv',
+'glIndexiv', 'glIndexsv', 'glIndexubv', 'glColor3b', 'glColor3d', 'glColor3f',
+'glColor3i', 'glColor3s', 'glColor3ub', 'glColor3ui', 'glColor3us',
+'glColor4b', 'glColor4d', 'glColor4f', 'glColor4i', 'glColor4s', 'glColor4ub',
+'glColor4ui', 'glColor4us', 'glColor3bv', 'glColor3dv', 'glColor3fv',
+'glColor3iv', 'glColor3sv', 'glColor3ubv', 'glColor3uiv', 'glColor3usv',
+'glColor4bv', 'glColor4dv', 'glColor4fv', 'glColor4iv', 'glColor4sv',
+'glColor4ubv', 'glColor4uiv', 'glColor4usv', 'glTexCoord1d', 'glTexCoord1f',
+'glTexCoord1i', 'glTexCoord1s', 'glTexCoord2d', 'glTexCoord2f',
+'glTexCoord2i', 'glTexCoord2s', 'glTexCoord3d', 'glTexCoord3f',
+'glTexCoord3i', 'glTexCoord3s', 'glTexCoord4d', 'glTexCoord4f',
+'glTexCoord4i', 'glTexCoord4s', 'glTexCoord1dv', 'glTexCoord1fv',
+'glTexCoord1iv', 'glTexCoord1sv', 'glTexCoord2dv', 'glTexCoord2fv',
+'glTexCoord2iv', 'glTexCoord2sv', 'glTexCoord3dv', 'glTexCoord3fv',
+'glTexCoord3iv', 'glTexCoord3sv', 'glTexCoord4dv', 'glTexCoord4fv',
+'glTexCoord4iv', 'glTexCoord4sv', 'glRasterPos2d', 'glRasterPos2f',
+'glRasterPos2i', 'glRasterPos2s', 'glRasterPos3d', 'glRasterPos3f',
+'glRasterPos3i', 'glRasterPos3s', 'glRasterPos4d', 'glRasterPos4f',
+'glRasterPos4i', 'glRasterPos4s', 'glRasterPos2dv', 'glRasterPos2fv',
+'glRasterPos2iv', 'glRasterPos2sv', 'glRasterPos3dv', 'glRasterPos3fv',
+'glRasterPos3iv', 'glRasterPos3sv', 'glRasterPos4dv', 'glRasterPos4fv',
+'glRasterPos4iv', 'glRasterPos4sv', 'glRectd', 'glRectf', 'glRecti',
+'glRects', 'glRectdv', 'glRectfv', 'glRectiv', 'glRectsv', 'glVertexPointer',
+'glNormalPointer', 'glColorPointer', 'glIndexPointer', 'glTexCoordPointer',
+'glEdgeFlagPointer', 'glGetPointerv', 'glArrayElement', 'glDrawArrays',
+'glDrawElements', 'glInterleavedArrays', 'glShadeModel', 'glLightf',
+'glLighti', 'glLightfv', 'glLightiv', 'glGetLightfv', 'glGetLightiv',
+'glLightModelf', 'glLightModeli', 'glLightModelfv', 'glLightModeliv',
+'glMaterialf', 'glMateriali', 'glMaterialfv', 'glMaterialiv',
+'glGetMaterialfv', 'glGetMaterialiv', 'glColorMaterial', 'glPixelZoom',
+'glPixelStoref', 'glPixelStorei', 'glPixelTransferf', 'glPixelTransferi',
+'glPixelMapfv', 'glPixelMapuiv', 'glPixelMapusv', 'glGetPixelMapfv',
+'glGetPixelMapuiv', 'glGetPixelMapusv', 'glBitmap', 'glReadPixels',
+'glDrawPixels', 'glCopyPixels', 'glStencilFunc', 'glStencilMask',
+'glStencilOp', 'glClearStencil', 'glTexGend', 'glTexGenf', 'glTexGeni',
+'glTexGendv', 'glTexGenfv', 'glTexGeniv', 'glGetTexGendv', 'glGetTexGenfv',
+'glGetTexGeniv', 'glTexEnvf', 'glTexEnvi', 'glTexEnvfv', 'glTexEnviv',
+'glGetTexEnvfv', 'glGetTexEnviv', 'glTexParameterf', 'glTexParameteri',
+'glTexParameterfv', 'glTexParameteriv', 'glGetTexParameterfv',
+'glGetTexParameteriv', 'glGetTexLevelParameterfv', 'glGetTexLevelParameteriv',
+'glTexImage1D', 'glTexImage2D', 'glGetTexImage', 'glGenTextures',
+'glDeleteTextures', 'glBindTexture', 'glPrioritizeTextures',
+'glAreTexturesResident', 'glIsTexture', 'glTexSubImage1D', 'glTexSubImage2D',
+'glCopyTexImage1D', 'glCopyTexImage2D', 'glCopyTexSubImage1D',
+'glCopyTexSubImage2D', 'glMap1d', 'glMap1f', 'glMap2d', 'glMap2f',
+'glGetMapdv', 'glGetMapfv', 'glGetMapiv', 'glEvalCoord1d', 'glEvalCoord1f',
+'glEvalCoord1dv', 'glEvalCoord1fv', 'glEvalCoord2d', 'glEvalCoord2f',
+'glEvalCoord2dv', 'glEvalCoord2fv', 'glMapGrid1d', 'glMapGrid1f',
+'glMapGrid2d', 'glMapGrid2f', 'glEvalPoint1', 'glEvalPoint2', 'glEvalMesh1',
+'glEvalMesh2', 'glFogf', 'glFogi', 'glFogfv', 'glFogiv', 'glFeedbackBuffer',
+'glPassThrough', 'glSelectBuffer', 'glInitNames', 'glLoadName', 'glPushName',
+'glPopName', 'GL_RESCALE_NORMAL', 'GL_CLAMP_TO_EDGE',
+'GL_MAX_ELEMENTS_VERTICES', 'GL_MAX_ELEMENTS_INDICES', 'GL_BGR', 'GL_BGRA',
+'GL_UNSIGNED_BYTE_3_3_2', 'GL_UNSIGNED_BYTE_2_3_3_REV',
 'GL_UNSIGNED_SHORT_5_6_5', 'GL_UNSIGNED_SHORT_5_6_5_REV',
 'GL_UNSIGNED_SHORT_4_4_4_4', 'GL_UNSIGNED_SHORT_4_4_4_4_REV',
 'GL_UNSIGNED_SHORT_5_5_5_1', 'GL_UNSIGNED_SHORT_1_5_5_5_REV',
 'GL_UNSIGNED_INT_8_8_8_8', 'GL_UNSIGNED_INT_8_8_8_8_REV',
 'GL_UNSIGNED_INT_10_10_10_2', 'GL_UNSIGNED_INT_2_10_10_10_REV',
-'GL_RESCALE_NORMAL', 'GL_LIGHT_MODEL_COLOR_CONTROL', 'GL_SINGLE_COLOR',
-'GL_SEPARATE_SPECULAR_COLOR', 'GL_CLAMP_TO_EDGE', 'GL_TEXTURE_MIN_LOD',
-'GL_TEXTURE_MAX_LOD', 'GL_TEXTURE_BASE_LEVEL', 'GL_TEXTURE_MAX_LEVEL',
-'GL_MAX_ELEMENTS_VERTICES', 'GL_MAX_ELEMENTS_INDICES',
-'GL_ALIASED_POINT_SIZE_RANGE', 'GL_ALIASED_LINE_WIDTH_RANGE',
+'GL_LIGHT_MODEL_COLOR_CONTROL', 'GL_SINGLE_COLOR',
+'GL_SEPARATE_SPECULAR_COLOR', 'GL_TEXTURE_MIN_LOD', 'GL_TEXTURE_MAX_LOD',
+'GL_TEXTURE_BASE_LEVEL', 'GL_TEXTURE_MAX_LEVEL', 'GL_SMOOTH_POINT_SIZE_RANGE',
+'GL_SMOOTH_POINT_SIZE_GRANULARITY', 'GL_SMOOTH_LINE_WIDTH_RANGE',
+'GL_SMOOTH_LINE_WIDTH_GRANULARITY', 'GL_ALIASED_POINT_SIZE_RANGE',
+'GL_ALIASED_LINE_WIDTH_RANGE', 'GL_PACK_SKIP_IMAGES', 'GL_PACK_IMAGE_HEIGHT',
+'GL_UNPACK_SKIP_IMAGES', 'GL_UNPACK_IMAGE_HEIGHT', 'GL_TEXTURE_3D',
+'GL_PROXY_TEXTURE_3D', 'GL_TEXTURE_DEPTH', 'GL_TEXTURE_WRAP_R',
+'GL_MAX_3D_TEXTURE_SIZE', 'GL_TEXTURE_BINDING_3D', 'glDrawRangeElements',
+'glTexImage3D', 'glTexSubImage3D', 'glCopyTexSubImage3D',
+'PFNGLDRAWRANGEELEMENTSPROC', 'PFNGLTEXIMAGE3DPROC', 'PFNGLTEXSUBIMAGE3DPROC',
+'PFNGLCOPYTEXSUBIMAGE3DPROC', 'GL_CONSTANT_COLOR',
+'GL_ONE_MINUS_CONSTANT_COLOR', 'GL_CONSTANT_ALPHA',
+'GL_ONE_MINUS_CONSTANT_ALPHA', 'GL_COLOR_TABLE',
+'GL_POST_CONVOLUTION_COLOR_TABLE', 'GL_POST_COLOR_MATRIX_COLOR_TABLE',
+'GL_PROXY_COLOR_TABLE', 'GL_PROXY_POST_CONVOLUTION_COLOR_TABLE',
+'GL_PROXY_POST_COLOR_MATRIX_COLOR_TABLE', 'GL_COLOR_TABLE_SCALE',
+'GL_COLOR_TABLE_BIAS', 'GL_COLOR_TABLE_FORMAT', 'GL_COLOR_TABLE_WIDTH',
+'GL_COLOR_TABLE_RED_SIZE', 'GL_COLOR_TABLE_GREEN_SIZE',
+'GL_COLOR_TABLE_BLUE_SIZE', 'GL_COLOR_TABLE_ALPHA_SIZE',
+'GL_COLOR_TABLE_LUMINANCE_SIZE', 'GL_COLOR_TABLE_INTENSITY_SIZE',
+'GL_CONVOLUTION_1D', 'GL_CONVOLUTION_2D', 'GL_SEPARABLE_2D',
+'GL_CONVOLUTION_BORDER_MODE', 'GL_CONVOLUTION_FILTER_SCALE',
+'GL_CONVOLUTION_FILTER_BIAS', 'GL_REDUCE', 'GL_CONVOLUTION_FORMAT',
+'GL_CONVOLUTION_WIDTH', 'GL_CONVOLUTION_HEIGHT', 'GL_MAX_CONVOLUTION_WIDTH',
+'GL_MAX_CONVOLUTION_HEIGHT', 'GL_POST_CONVOLUTION_RED_SCALE',
+'GL_POST_CONVOLUTION_GREEN_SCALE', 'GL_POST_CONVOLUTION_BLUE_SCALE',
+'GL_POST_CONVOLUTION_ALPHA_SCALE', 'GL_POST_CONVOLUTION_RED_BIAS',
+'GL_POST_CONVOLUTION_GREEN_BIAS', 'GL_POST_CONVOLUTION_BLUE_BIAS',
+'GL_POST_CONVOLUTION_ALPHA_BIAS', 'GL_CONSTANT_BORDER', 'GL_REPLICATE_BORDER',
+'GL_CONVOLUTION_BORDER_COLOR', 'GL_COLOR_MATRIX',
+'GL_COLOR_MATRIX_STACK_DEPTH', 'GL_MAX_COLOR_MATRIX_STACK_DEPTH',
+'GL_POST_COLOR_MATRIX_RED_SCALE', 'GL_POST_COLOR_MATRIX_GREEN_SCALE',
+'GL_POST_COLOR_MATRIX_BLUE_SCALE', 'GL_POST_COLOR_MATRIX_ALPHA_SCALE',
+'GL_POST_COLOR_MATRIX_RED_BIAS', 'GL_POST_COLOR_MATRIX_GREEN_BIAS',
+'GL_POST_COLOR_MATRIX_BLUE_BIAS', 'GL_POST_COLOR_MATRIX_ALPHA_BIAS',
+'GL_HISTOGRAM', 'GL_PROXY_HISTOGRAM', 'GL_HISTOGRAM_WIDTH',
+'GL_HISTOGRAM_FORMAT', 'GL_HISTOGRAM_RED_SIZE', 'GL_HISTOGRAM_GREEN_SIZE',
+'GL_HISTOGRAM_BLUE_SIZE', 'GL_HISTOGRAM_ALPHA_SIZE',
+'GL_HISTOGRAM_LUMINANCE_SIZE', 'GL_HISTOGRAM_SINK', 'GL_MINMAX',
+'GL_MINMAX_FORMAT', 'GL_MINMAX_SINK', 'GL_TABLE_TOO_LARGE',
+'GL_BLEND_EQUATION', 'GL_MIN', 'GL_MAX', 'GL_FUNC_ADD', 'GL_FUNC_SUBTRACT',
+'GL_FUNC_REVERSE_SUBTRACT', 'GL_BLEND_COLOR', 'glColorTable',
+'glColorSubTable', 'glColorTableParameteriv', 'glColorTableParameterfv',
+'glCopyColorSubTable', 'glCopyColorTable', 'glGetColorTable',
+'glGetColorTableParameterfv', 'glGetColorTableParameteriv', 'glBlendEquation',
+'glBlendColor', 'glHistogram', 'glResetHistogram', 'glGetHistogram',
+'glGetHistogramParameterfv', 'glGetHistogramParameteriv', 'glMinmax',
+'glResetMinmax', 'glGetMinmax', 'glGetMinmaxParameterfv',
+'glGetMinmaxParameteriv', 'glConvolutionFilter1D', 'glConvolutionFilter2D',
+'glConvolutionParameterf', 'glConvolutionParameterfv',
+'glConvolutionParameteri', 'glConvolutionParameteriv',
+'glCopyConvolutionFilter1D', 'glCopyConvolutionFilter2D',
+'glGetConvolutionFilter', 'glGetConvolutionParameterfv',
+'glGetConvolutionParameteriv', 'glSeparableFilter2D', 'glGetSeparableFilter',
+'PFNGLBLENDCOLORPROC', 'PFNGLBLENDEQUATIONPROC', 'GL_TEXTURE0', 'GL_TEXTURE1',
+'GL_TEXTURE2', 'GL_TEXTURE3', 'GL_TEXTURE4', 'GL_TEXTURE5', 'GL_TEXTURE6',
+'GL_TEXTURE7', 'GL_TEXTURE8', 'GL_TEXTURE9', 'GL_TEXTURE10', 'GL_TEXTURE11',
+'GL_TEXTURE12', 'GL_TEXTURE13', 'GL_TEXTURE14', 'GL_TEXTURE15',
+'GL_TEXTURE16', 'GL_TEXTURE17', 'GL_TEXTURE18', 'GL_TEXTURE19',
+'GL_TEXTURE20', 'GL_TEXTURE21', 'GL_TEXTURE22', 'GL_TEXTURE23',
+'GL_TEXTURE24', 'GL_TEXTURE25', 'GL_TEXTURE26', 'GL_TEXTURE27',
+'GL_TEXTURE28', 'GL_TEXTURE29', 'GL_TEXTURE30', 'GL_TEXTURE31',
 'GL_ACTIVE_TEXTURE', 'GL_CLIENT_ACTIVE_TEXTURE', 'GL_MAX_TEXTURE_UNITS',
-'GL_TEXTURE0', 'GL_TEXTURE1', 'GL_TEXTURE2', 'GL_TEXTURE3', 'GL_TEXTURE4',
-'GL_TEXTURE5', 'GL_TEXTURE6', 'GL_TEXTURE7', 'GL_TEXTURE8', 'GL_TEXTURE9',
-'GL_TEXTURE10', 'GL_TEXTURE11', 'GL_TEXTURE12', 'GL_TEXTURE13',
-'GL_TEXTURE14', 'GL_TEXTURE15', 'GL_TEXTURE16', 'GL_TEXTURE17',
-'GL_TEXTURE18', 'GL_TEXTURE19', 'GL_TEXTURE20', 'GL_TEXTURE21',
-'GL_TEXTURE22', 'GL_TEXTURE23', 'GL_TEXTURE24', 'GL_TEXTURE25',
-'GL_TEXTURE26', 'GL_TEXTURE27', 'GL_TEXTURE28', 'GL_TEXTURE29',
-'GL_TEXTURE30', 'GL_TEXTURE31', 'GL_NORMAL_MAP', 'GL_REFLECTION_MAP',
-'GL_TEXTURE_CUBE_MAP', 'GL_TEXTURE_BINDING_CUBE_MAP',
-'GL_TEXTURE_CUBE_MAP_POSITIVE_X', 'GL_TEXTURE_CUBE_MAP_NEGATIVE_X',
-'GL_TEXTURE_CUBE_MAP_POSITIVE_Y', 'GL_TEXTURE_CUBE_MAP_NEGATIVE_Y',
-'GL_TEXTURE_CUBE_MAP_POSITIVE_Z', 'GL_TEXTURE_CUBE_MAP_NEGATIVE_Z',
-'GL_PROXY_TEXTURE_CUBE_MAP', 'GL_MAX_CUBE_MAP_TEXTURE_SIZE', 'GL_COMBINE',
-'GL_COMBINE_RGB', 'GL_COMBINE_ALPHA', 'GL_RGB_SCALE', 'GL_ADD_SIGNED',
-'GL_INTERPOLATE', 'GL_CONSTANT', 'GL_PRIMARY_COLOR', 'GL_PREVIOUS',
-'GL_SOURCE0_RGB', 'GL_SOURCE1_RGB', 'GL_SOURCE2_RGB', 'GL_SOURCE0_ALPHA',
-'GL_SOURCE1_ALPHA', 'GL_SOURCE2_ALPHA', 'GL_OPERAND0_RGB', 'GL_OPERAND1_RGB',
-'GL_OPERAND2_RGB', 'GL_OPERAND0_ALPHA', 'GL_OPERAND1_ALPHA',
-'GL_OPERAND2_ALPHA', 'GL_SUBTRACT', 'GL_TRANSPOSE_MODELVIEW_MATRIX',
-'GL_TRANSPOSE_PROJECTION_MATRIX', 'GL_TRANSPOSE_TEXTURE_MATRIX',
-'GL_TRANSPOSE_COLOR_MATRIX', 'GL_COMPRESSED_ALPHA', 'GL_COMPRESSED_LUMINANCE',
-'GL_COMPRESSED_LUMINANCE_ALPHA', 'GL_COMPRESSED_INTENSITY',
-'GL_COMPRESSED_RGB', 'GL_COMPRESSED_RGBA', 'GL_TEXTURE_COMPRESSION_HINT',
-'GL_TEXTURE_COMPRESSED_IMAGE_SIZE', 'GL_TEXTURE_COMPRESSED',
-'GL_NUM_COMPRESSED_TEXTURE_FORMATS', 'GL_COMPRESSED_TEXTURE_FORMATS',
-'GL_DOT3_RGB', 'GL_DOT3_RGBA', 'GL_CLAMP_TO_BORDER', 'GL_MULTISAMPLE',
+'GL_NORMAL_MAP', 'GL_REFLECTION_MAP', 'GL_TEXTURE_CUBE_MAP',
+'GL_TEXTURE_BINDING_CUBE_MAP', 'GL_TEXTURE_CUBE_MAP_POSITIVE_X',
+'GL_TEXTURE_CUBE_MAP_NEGATIVE_X', 'GL_TEXTURE_CUBE_MAP_POSITIVE_Y',
+'GL_TEXTURE_CUBE_MAP_NEGATIVE_Y', 'GL_TEXTURE_CUBE_MAP_POSITIVE_Z',
+'GL_TEXTURE_CUBE_MAP_NEGATIVE_Z', 'GL_PROXY_TEXTURE_CUBE_MAP',
+'GL_MAX_CUBE_MAP_TEXTURE_SIZE', 'GL_COMPRESSED_ALPHA',
+'GL_COMPRESSED_LUMINANCE', 'GL_COMPRESSED_LUMINANCE_ALPHA',
+'GL_COMPRESSED_INTENSITY', 'GL_COMPRESSED_RGB', 'GL_COMPRESSED_RGBA',
+'GL_TEXTURE_COMPRESSION_HINT', 'GL_TEXTURE_COMPRESSED_IMAGE_SIZE',
+'GL_TEXTURE_COMPRESSED', 'GL_NUM_COMPRESSED_TEXTURE_FORMATS',
+'GL_COMPRESSED_TEXTURE_FORMATS', 'GL_MULTISAMPLE',
 'GL_SAMPLE_ALPHA_TO_COVERAGE', 'GL_SAMPLE_ALPHA_TO_ONE', 'GL_SAMPLE_COVERAGE',
 'GL_SAMPLE_BUFFERS', 'GL_SAMPLES', 'GL_SAMPLE_COVERAGE_VALUE',
-'GL_SAMPLE_COVERAGE_INVERT', 'GL_MULTISAMPLE_BIT', 'GL_VERTEX_ARRAY_EXT',
-'GL_NORMAL_ARRAY_EXT', 'GL_COLOR_ARRAY_EXT', 'GL_INDEX_ARRAY_EXT',
-'GL_TEXTURE_COORD_ARRAY_EXT', 'GL_EDGE_FLAG_ARRAY_EXT',
-'GL_VERTEX_ARRAY_SIZE_EXT', 'GL_VERTEX_ARRAY_TYPE_EXT',
-'GL_VERTEX_ARRAY_STRIDE_EXT', 'GL_VERTEX_ARRAY_COUNT_EXT',
-'GL_NORMAL_ARRAY_TYPE_EXT', 'GL_NORMAL_ARRAY_STRIDE_EXT',
-'GL_NORMAL_ARRAY_COUNT_EXT', 'GL_COLOR_ARRAY_SIZE_EXT',
-'GL_COLOR_ARRAY_TYPE_EXT', 'GL_COLOR_ARRAY_STRIDE_EXT',
-'GL_COLOR_ARRAY_COUNT_EXT', 'GL_INDEX_ARRAY_TYPE_EXT',
-'GL_INDEX_ARRAY_STRIDE_EXT', 'GL_INDEX_ARRAY_COUNT_EXT',
-'GL_TEXTURE_COORD_ARRAY_SIZE_EXT', 'GL_TEXTURE_COORD_ARRAY_TYPE_EXT',
-'GL_TEXTURE_COORD_ARRAY_STRIDE_EXT', 'GL_TEXTURE_COORD_ARRAY_COUNT_EXT',
-'GL_EDGE_FLAG_ARRAY_STRIDE_EXT', 'GL_EDGE_FLAG_ARRAY_COUNT_EXT',
-'GL_VERTEX_ARRAY_POINTER_EXT', 'GL_NORMAL_ARRAY_POINTER_EXT',
-'GL_COLOR_ARRAY_POINTER_EXT', 'GL_INDEX_ARRAY_POINTER_EXT',
-'GL_TEXTURE_COORD_ARRAY_POINTER_EXT', 'GL_EDGE_FLAG_ARRAY_POINTER_EXT',
-'GL_TEXTURE_MIN_LOD_SGIS', 'GL_TEXTURE_MAX_LOD_SGIS',
-'GL_TEXTURE_BASE_LEVEL_SGIS', 'GL_TEXTURE_MAX_LEVEL_SGIS',
-'GL_SHARED_TEXTURE_PALETTE_EXT', 'GL_RESCALE_NORMAL_EXT',
-'GL_TEXTURE_COMPARE_SGIX', 'GL_TEXTURE_COMPARE_OPERATOR_SGIX',
-'GL_TEXTURE_LEQUAL_R_SGIX', 'GL_TEXTURE_GEQUAL_R_SGIX',
-'GL_DEPTH_COMPONENT16_SGIX', 'GL_DEPTH_COMPONENT24_SGIX',
-'GL_DEPTH_COMPONENT32_SGIX', 'GL_GENERATE_MIPMAP_SGIS',
-'GL_GENERATE_MIPMAP_HINT_SGIS', 'GL_POINT_SIZE_MIN', 'GL_POINT_SIZE_MAX',
-'GL_POINT_FADE_THRESHOLD_SIZE', 'GL_POINT_DISTANCE_ATTENUATION',
-'GL_FOG_COORDINATE_SOURCE', 'GL_FOG_COORDINATE', 'GL_FRAGMENT_DEPTH',
-'GL_CURRENT_FOG_COORDINATE', 'GL_FOG_COORDINATE_ARRAY_TYPE',
-'GL_FOG_COORDINATE_ARRAY_STRIDE', 'GL_FOG_COORDINATE_ARRAY_POINTER',
-'GL_FOG_COORDINATE_ARRAY', 'GL_COLOR_SUM', 'GL_CURRENT_SECONDARY_COLOR',
-'GL_SECONDARY_COLOR_ARRAY_SIZE', 'GL_SECONDARY_COLOR_ARRAY_TYPE',
-'GL_SECONDARY_COLOR_ARRAY_STRIDE', 'GL_SECONDARY_COLOR_ARRAY_POINTER',
-'GL_SECONDARY_COLOR_ARRAY', 'GL_INCR_WRAP', 'GL_DECR_WRAP',
-'GL_MAX_TEXTURE_LOD_BIAS', 'GL_TEXTURE_FILTER_CONTROL', 'GL_TEXTURE_LOD_BIAS',
-'GL_GENERATE_MIPMAP', 'GL_GENERATE_MIPMAP_HINT', 'GL_BLEND_DST_RGB',
-'GL_BLEND_SRC_RGB', 'GL_BLEND_DST_ALPHA', 'GL_BLEND_SRC_ALPHA',
-'GL_MIRRORED_REPEAT', 'GL_DEPTH_COMPONENT16', 'GL_DEPTH_COMPONENT24',
-'GL_DEPTH_COMPONENT32', 'GL_TEXTURE_DEPTH_SIZE', 'GL_DEPTH_TEXTURE_MODE',
-'GL_TEXTURE_COMPARE_MODE', 'GL_TEXTURE_COMPARE_FUNC',
-'GL_COMPARE_R_TO_TEXTURE', 'glAccum', 'glAlphaFunc', 'glAreTexturesResident',
-'glArrayElement', 'glBegin', 'glBindTexture', 'glBitmap', 'glBlendFunc',
-'glCallList', 'glCallLists', 'glClear', 'glClearAccum', 'glClearColor',
-'glClearDepth', 'glClearIndex', 'glClearStencil', 'glClipPlane', 'glColor3b',
-'glColor3bv', 'glColor3d', 'glColor3dv', 'glColor3f', 'glColor3fv',
-'glColor3i', 'glColor3iv', 'glColor3s', 'glColor3sv', 'glColor3ub',
-'glColor3ubv', 'glColor3ui', 'glColor3uiv', 'glColor3us', 'glColor3usv',
-'glColor4b', 'glColor4bv', 'glColor4d', 'glColor4dv', 'glColor4f',
-'glColor4fv', 'glColor4i', 'glColor4iv', 'glColor4s', 'glColor4sv',
-'glColor4ub', 'glColor4ubv', 'glColor4ui', 'glColor4uiv', 'glColor4us',
-'glColor4usv', 'glColorMask', 'glColorMaterial', 'glColorPointer',
-'glCopyPixels', 'glCopyTexImage1D', 'glCopyTexImage2D', 'glCopyTexSubImage1D',
-'glCopyTexSubImage2D', 'glCullFace', 'glDeleteLists', 'glDeleteTextures',
-'glDepthFunc', 'glDepthMask', 'glDepthRange', 'glDisable',
-'glDisableClientState', 'glDrawArrays', 'glDrawBuffer', 'glDrawElements',
-'glDrawPixels', 'glEdgeFlag', 'glEdgeFlagPointer', 'glEdgeFlagv', 'glEnable',
-'glEnableClientState', 'glEnd', 'glEndList', 'glEvalCoord1d',
-'glEvalCoord1dv', 'glEvalCoord1f', 'glEvalCoord1fv', 'glEvalCoord2d',
-'glEvalCoord2dv', 'glEvalCoord2f', 'glEvalCoord2fv', 'glEvalMesh1',
-'glEvalMesh2', 'glEvalPoint1', 'glEvalPoint2', 'glFeedbackBuffer', 'glFinish',
-'glFlush', 'glFogf', 'glFogfv', 'glFogi', 'glFogiv', 'glFrontFace',
-'glFrustum', 'glGenLists', 'glGenTextures', 'glGetBooleanv', 'glGetClipPlane',
-'glGetDoublev', 'glGetError', 'glGetFloatv', 'glGetIntegerv', 'glGetLightfv',
-'glGetLightiv', 'glGetMapdv', 'glGetMapfv', 'glGetMapiv', 'glGetMaterialfv',
-'glGetMaterialiv', 'glGetPixelMapfv', 'glGetPixelMapuiv', 'glGetPixelMapusv',
-'glGetPointerv', 'glGetPolygonStipple', 'glGetString', 'glGetTexEnvfv',
-'glGetTexEnviv', 'glGetTexGendv', 'glGetTexGenfv', 'glGetTexGeniv',
-'glGetTexImage', 'glGetTexLevelParameterfv', 'glGetTexLevelParameteriv',
-'glGetTexParameterfv', 'glGetTexParameteriv', 'glHint', 'glIndexMask',
-'glIndexPointer', 'glIndexd', 'glIndexdv', 'glIndexf', 'glIndexfv',
-'glIndexi', 'glIndexiv', 'glIndexs', 'glIndexsv', 'glIndexub', 'glIndexubv',
-'glInitNames', 'glInterleavedArrays', 'glIsEnabled', 'glIsList',
-'glIsTexture', 'glLightModelf', 'glLightModelfv', 'glLightModeli',
-'glLightModeliv', 'glLightf', 'glLightfv', 'glLighti', 'glLightiv',
-'glLineStipple', 'glLineWidth', 'glListBase', 'glLoadIdentity',
-'glLoadMatrixd', 'glLoadMatrixf', 'glLoadName', 'glLogicOp', 'glMap1d',
-'glMap1f', 'glMap2d', 'glMap2f', 'glMapGrid1d', 'glMapGrid1f', 'glMapGrid2d',
-'glMapGrid2f', 'glMaterialf', 'glMaterialfv', 'glMateriali', 'glMaterialiv',
-'glMatrixMode', 'glMultMatrixd', 'glMultMatrixf', 'glNewList', 'glNormal3b',
-'glNormal3bv', 'glNormal3d', 'glNormal3dv', 'glNormal3f', 'glNormal3fv',
-'glNormal3i', 'glNormal3iv', 'glNormal3s', 'glNormal3sv', 'glNormalPointer',
-'glOrtho', 'glPassThrough', 'glPixelMapfv', 'glPixelMapuiv', 'glPixelMapusv',
-'glPixelStoref', 'glPixelStorei', 'glPixelTransferf', 'glPixelTransferi',
-'glPixelZoom', 'glPointSize', 'glPolygonMode', 'glPolygonOffset',
-'glPolygonStipple', 'glPopAttrib', 'glPopClientAttrib', 'glPopMatrix',
-'glPopName', 'glPrioritizeTextures', 'glPushAttrib', 'glPushClientAttrib',
-'glPushMatrix', 'glPushName', 'glRasterPos2d', 'glRasterPos2dv',
-'glRasterPos2f', 'glRasterPos2fv', 'glRasterPos2i', 'glRasterPos2iv',
-'glRasterPos2s', 'glRasterPos2sv', 'glRasterPos3d', 'glRasterPos3dv',
-'glRasterPos3f', 'glRasterPos3fv', 'glRasterPos3i', 'glRasterPos3iv',
-'glRasterPos3s', 'glRasterPos3sv', 'glRasterPos4d', 'glRasterPos4dv',
-'glRasterPos4f', 'glRasterPos4fv', 'glRasterPos4i', 'glRasterPos4iv',
-'glRasterPos4s', 'glRasterPos4sv', 'glReadBuffer', 'glReadPixels', 'glRectd',
-'glRectdv', 'glRectf', 'glRectfv', 'glRecti', 'glRectiv', 'glRects',
-'glRectsv', 'glRenderMode', 'glRotated', 'glRotatef', 'glScaled', 'glScalef',
-'glScissor', 'glSelectBuffer', 'glShadeModel', 'glStencilFunc',
-'glStencilMask', 'glStencilOp', 'glTexCoord1d', 'glTexCoord1dv',
-'glTexCoord1f', 'glTexCoord1fv', 'glTexCoord1i', 'glTexCoord1iv',
-'glTexCoord1s', 'glTexCoord1sv', 'glTexCoord2d', 'glTexCoord2dv',
-'glTexCoord2f', 'glTexCoord2fv', 'glTexCoord2i', 'glTexCoord2iv',
-'glTexCoord2s', 'glTexCoord2sv', 'glTexCoord3d', 'glTexCoord3dv',
-'glTexCoord3f', 'glTexCoord3fv', 'glTexCoord3i', 'glTexCoord3iv',
-'glTexCoord3s', 'glTexCoord3sv', 'glTexCoord4d', 'glTexCoord4dv',
-'glTexCoord4f', 'glTexCoord4fv', 'glTexCoord4i', 'glTexCoord4iv',
-'glTexCoord4s', 'glTexCoord4sv', 'glTexCoordPointer', 'glTexEnvf',
-'glTexEnvfv', 'glTexEnvi', 'glTexEnviv', 'glTexGend', 'glTexGendv',
-'glTexGenf', 'glTexGenfv', 'glTexGeni', 'glTexGeniv', 'glTexImage1D',
-'glTexImage2D', 'glTexParameterf', 'glTexParameterfv', 'glTexParameteri',
-'glTexParameteriv', 'glTexSubImage1D', 'glTexSubImage2D', 'glTranslated',
-'glTranslatef', 'glVertex2d', 'glVertex2dv', 'glVertex2f', 'glVertex2fv',
-'glVertex2i', 'glVertex2iv', 'glVertex2s', 'glVertex2sv', 'glVertex3d',
-'glVertex3dv', 'glVertex3f', 'glVertex3fv', 'glVertex3i', 'glVertex3iv',
-'glVertex3s', 'glVertex3sv', 'glVertex4d', 'glVertex4dv', 'glVertex4f',
-'glVertex4fv', 'glVertex4i', 'glVertex4iv', 'glVertex4s', 'glVertex4sv',
-'glVertexPointer', 'glViewport']
+'GL_SAMPLE_COVERAGE_INVERT', 'GL_MULTISAMPLE_BIT',
+'GL_TRANSPOSE_MODELVIEW_MATRIX', 'GL_TRANSPOSE_PROJECTION_MATRIX',
+'GL_TRANSPOSE_TEXTURE_MATRIX', 'GL_TRANSPOSE_COLOR_MATRIX', 'GL_COMBINE',
+'GL_COMBINE_RGB', 'GL_COMBINE_ALPHA', 'GL_SOURCE0_RGB', 'GL_SOURCE1_RGB',
+'GL_SOURCE2_RGB', 'GL_SOURCE0_ALPHA', 'GL_SOURCE1_ALPHA', 'GL_SOURCE2_ALPHA',
+'GL_OPERAND0_RGB', 'GL_OPERAND1_RGB', 'GL_OPERAND2_RGB', 'GL_OPERAND0_ALPHA',
+'GL_OPERAND1_ALPHA', 'GL_OPERAND2_ALPHA', 'GL_RGB_SCALE', 'GL_ADD_SIGNED',
+'GL_INTERPOLATE', 'GL_SUBTRACT', 'GL_CONSTANT', 'GL_PRIMARY_COLOR',
+'GL_PREVIOUS', 'GL_DOT3_RGB', 'GL_DOT3_RGBA', 'GL_CLAMP_TO_BORDER',
+'glActiveTexture', 'glClientActiveTexture', 'glCompressedTexImage1D',
+'glCompressedTexImage2D', 'glCompressedTexImage3D',
+'glCompressedTexSubImage1D', 'glCompressedTexSubImage2D',
+'glCompressedTexSubImage3D', 'glGetCompressedTexImage', 'glMultiTexCoord1d',
+'glMultiTexCoord1dv', 'glMultiTexCoord1f', 'glMultiTexCoord1fv',
+'glMultiTexCoord1i', 'glMultiTexCoord1iv', 'glMultiTexCoord1s',
+'glMultiTexCoord1sv', 'glMultiTexCoord2d', 'glMultiTexCoord2dv',
+'glMultiTexCoord2f', 'glMultiTexCoord2fv', 'glMultiTexCoord2i',
+'glMultiTexCoord2iv', 'glMultiTexCoord2s', 'glMultiTexCoord2sv',
+'glMultiTexCoord3d', 'glMultiTexCoord3dv', 'glMultiTexCoord3f',
+'glMultiTexCoord3fv', 'glMultiTexCoord3i', 'glMultiTexCoord3iv',
+'glMultiTexCoord3s', 'glMultiTexCoord3sv', 'glMultiTexCoord4d',
+'glMultiTexCoord4dv', 'glMultiTexCoord4f', 'glMultiTexCoord4fv',
+'glMultiTexCoord4i', 'glMultiTexCoord4iv', 'glMultiTexCoord4s',
+'glMultiTexCoord4sv', 'glLoadTransposeMatrixd', 'glLoadTransposeMatrixf',
+'glMultTransposeMatrixd', 'glMultTransposeMatrixf', 'glSampleCoverage',
+'PFNGLACTIVETEXTUREPROC', 'PFNGLSAMPLECOVERAGEPROC',
+'PFNGLCOMPRESSEDTEXIMAGE3DPROC', 'PFNGLCOMPRESSEDTEXIMAGE2DPROC',
+'PFNGLCOMPRESSEDTEXIMAGE1DPROC', 'PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC',
+'PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC', 'PFNGLCOMPRESSEDTEXSUBIMAGE1DPROC',
+'PFNGLGETCOMPRESSEDTEXIMAGEPROC', 'GL_ARB_multitexture', 'GL_TEXTURE0_ARB',
+'GL_TEXTURE1_ARB', 'GL_TEXTURE2_ARB', 'GL_TEXTURE3_ARB', 'GL_TEXTURE4_ARB',
+'GL_TEXTURE5_ARB', 'GL_TEXTURE6_ARB', 'GL_TEXTURE7_ARB', 'GL_TEXTURE8_ARB',
+'GL_TEXTURE9_ARB', 'GL_TEXTURE10_ARB', 'GL_TEXTURE11_ARB', 'GL_TEXTURE12_ARB',
+'GL_TEXTURE13_ARB', 'GL_TEXTURE14_ARB', 'GL_TEXTURE15_ARB',
+'GL_TEXTURE16_ARB', 'GL_TEXTURE17_ARB', 'GL_TEXTURE18_ARB',
+'GL_TEXTURE19_ARB', 'GL_TEXTURE20_ARB', 'GL_TEXTURE21_ARB',
+'GL_TEXTURE22_ARB', 'GL_TEXTURE23_ARB', 'GL_TEXTURE24_ARB',
+'GL_TEXTURE25_ARB', 'GL_TEXTURE26_ARB', 'GL_TEXTURE27_ARB',
+'GL_TEXTURE28_ARB', 'GL_TEXTURE29_ARB', 'GL_TEXTURE30_ARB',
+'GL_TEXTURE31_ARB', 'GL_ACTIVE_TEXTURE_ARB', 'GL_CLIENT_ACTIVE_TEXTURE_ARB',
+'GL_MAX_TEXTURE_UNITS_ARB', 'glActiveTextureARB', 'glClientActiveTextureARB',
+'glMultiTexCoord1dARB', 'glMultiTexCoord1dvARB', 'glMultiTexCoord1fARB',
+'glMultiTexCoord1fvARB', 'glMultiTexCoord1iARB', 'glMultiTexCoord1ivARB',
+'glMultiTexCoord1sARB', 'glMultiTexCoord1svARB', 'glMultiTexCoord2dARB',
+'glMultiTexCoord2dvARB', 'glMultiTexCoord2fARB', 'glMultiTexCoord2fvARB',
+'glMultiTexCoord2iARB', 'glMultiTexCoord2ivARB', 'glMultiTexCoord2sARB',
+'glMultiTexCoord2svARB', 'glMultiTexCoord3dARB', 'glMultiTexCoord3dvARB',
+'glMultiTexCoord3fARB', 'glMultiTexCoord3fvARB', 'glMultiTexCoord3iARB',
+'glMultiTexCoord3ivARB', 'glMultiTexCoord3sARB', 'glMultiTexCoord3svARB',
+'glMultiTexCoord4dARB', 'glMultiTexCoord4dvARB', 'glMultiTexCoord4fARB',
+'glMultiTexCoord4fvARB', 'glMultiTexCoord4iARB', 'glMultiTexCoord4ivARB',
+'glMultiTexCoord4sARB', 'glMultiTexCoord4svARB', 'PFNGLACTIVETEXTUREARBPROC',
+'PFNGLCLIENTACTIVETEXTUREARBPROC', 'PFNGLMULTITEXCOORD1DARBPROC',
+'PFNGLMULTITEXCOORD1DVARBPROC', 'PFNGLMULTITEXCOORD1FARBPROC',
+'PFNGLMULTITEXCOORD1FVARBPROC', 'PFNGLMULTITEXCOORD1IARBPROC',
+'PFNGLMULTITEXCOORD1IVARBPROC', 'PFNGLMULTITEXCOORD1SARBPROC',
+'PFNGLMULTITEXCOORD1SVARBPROC', 'PFNGLMULTITEXCOORD2DARBPROC',
+'PFNGLMULTITEXCOORD2DVARBPROC', 'PFNGLMULTITEXCOORD2FARBPROC',
+'PFNGLMULTITEXCOORD2FVARBPROC', 'PFNGLMULTITEXCOORD2IARBPROC',
+'PFNGLMULTITEXCOORD2IVARBPROC', 'PFNGLMULTITEXCOORD2SARBPROC',
+'PFNGLMULTITEXCOORD2SVARBPROC', 'PFNGLMULTITEXCOORD3DARBPROC',
+'PFNGLMULTITEXCOORD3DVARBPROC', 'PFNGLMULTITEXCOORD3FARBPROC',
+'PFNGLMULTITEXCOORD3FVARBPROC', 'PFNGLMULTITEXCOORD3IARBPROC',
+'PFNGLMULTITEXCOORD3IVARBPROC', 'PFNGLMULTITEXCOORD3SARBPROC',
+'PFNGLMULTITEXCOORD3SVARBPROC', 'PFNGLMULTITEXCOORD4DARBPROC',
+'PFNGLMULTITEXCOORD4DVARBPROC', 'PFNGLMULTITEXCOORD4FARBPROC',
+'PFNGLMULTITEXCOORD4FVARBPROC', 'PFNGLMULTITEXCOORD4IARBPROC',
+'PFNGLMULTITEXCOORD4IVARBPROC', 'PFNGLMULTITEXCOORD4SARBPROC',
+'PFNGLMULTITEXCOORD4SVARBPROC', 'GL_MESA_shader_debug',
+'GL_DEBUG_OBJECT_MESA', 'GL_DEBUG_PRINT_MESA', 'GL_DEBUG_ASSERT_MESA',
+'glCreateDebugObjectMESA', 'glClearDebugLogMESA', 'glGetDebugLogMESA',
+'glGetDebugLogLengthMESA', 'GL_MESA_packed_depth_stencil',
+'GL_DEPTH_STENCIL_MESA', 'GL_UNSIGNED_INT_24_8_MESA',
+'GL_UNSIGNED_INT_8_24_REV_MESA', 'GL_UNSIGNED_SHORT_15_1_MESA',
+'GL_UNSIGNED_SHORT_1_15_REV_MESA', 'GL_MESA_program_debug',
+'GL_FRAGMENT_PROGRAM_POSITION_MESA', 'GL_FRAGMENT_PROGRAM_CALLBACK_MESA',
+'GL_FRAGMENT_PROGRAM_CALLBACK_FUNC_MESA',
+'GL_FRAGMENT_PROGRAM_CALLBACK_DATA_MESA', 'GL_VERTEX_PROGRAM_POSITION_MESA',
+'GL_VERTEX_PROGRAM_CALLBACK_MESA', 'GL_VERTEX_PROGRAM_CALLBACK_FUNC_MESA',
+'GL_VERTEX_PROGRAM_CALLBACK_DATA_MESA', 'GLprogramcallbackMESA',
+'glProgramCallbackMESA', 'glGetProgramRegisterfvMESA',
+'GL_MESA_texture_array', 'GL_ATI_blend_equation_separate',
+'GL_ALPHA_BLEND_EQUATION_ATI', 'glBlendEquationSeparateATI',
+'PFNGLBLENDEQUATIONSEPARATEATIPROC']
 # END GENERATED CONTENT (do not edit above this line)
+
 
 
 

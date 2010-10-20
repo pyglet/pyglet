@@ -147,6 +147,7 @@ from pyglet import graphics
 from pyglet.window import *
 
 from pyglet.image import atlas
+from pyglet.compat import asbytes
 
 class ImageException(Exception):
     pass
@@ -272,8 +273,8 @@ class CheckerImagePattern(ImagePattern):
         self.color2 = '%c%c%c%c' % color2
 
     def create_image(self, width, height):
-        hw = width/2
-        hh = height/2
+        hw = width // 2
+        hh = height // 2
         row1 = self.color1 * hw + self.color2 * hw
         row2 = self.color2 * hw + self.color1 * hw
         data = row1 * hh + row2 * hh
@@ -940,7 +941,7 @@ class ImageData(AbstractImage):
             alignment = 2
         else:
             alignment = 4
-        row_length = data_pitch / len(data_format)
+        row_length = data_pitch // len(data_format)
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
@@ -989,7 +990,7 @@ class ImageData(AbstractImage):
         data = self._current_data
         current_pitch = self._current_pitch
         current_format = self._current_format
-        sign_pitch = current_pitch / abs(current_pitch)
+        sign_pitch = current_pitch // abs(current_pitch)
         if format != self._current_format:
             # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to
             # ARGB
@@ -1043,9 +1044,9 @@ class ImageData(AbstractImage):
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
-                rows = re.findall('.' * abs(pitch), data, re.DOTALL)
+                rows = re.findall(asbytes('.') * abs(pitch), data, re.DOTALL)
                 rows.reverse()
-                data = ''.join(rows)
+                data = asbytes('').join(rows)
 
         return data
 
@@ -1158,9 +1159,10 @@ class ImageDataRegion(ImageData):
 
         self._ensure_string_data()
         data = self._convert(self._current_format, abs(self._current_pitch))
-        rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
+        rows = re.findall(asbytes('.') * abs(self._current_pitch), data,
+                          re.DOTALL)
         rows = [row[x1:x2] for row in rows[self.y:self.y+self.height]]
-        self._current_data = ''.join(rows)
+        self._current_data = asbytes('').join(rows)
         self._current_pitch = self.width * len(self._current_format)
         self._current_texture = None
         self.x = 0

@@ -347,7 +347,7 @@ class Win32Font(base.Font):
 
         logfont = LOGFONT()
         # Conversion of point size to device pixels
-        logfont.lfHeight = int(-size * logpixelsy / 72)
+        logfont.lfHeight = int(-size * logpixelsy // 72)
         if bold:
             logfont.lfWeight = FW_BOLD
         else:
@@ -553,7 +553,7 @@ class GDIPlusFont(Win32Font):
             self.dpi = 96
         else:
             unit = UnitPixel
-            size = (size * dpi) / 72
+            size = (size * dpi) // 72
             self.dpi = dpi
 
         style = 0

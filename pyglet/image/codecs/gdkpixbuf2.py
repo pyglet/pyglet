@@ -76,12 +76,11 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
 
     def _load(self, file, filename, load_func):
         data = file.read()
-        err = c_int()
         loader = gdkpixbuf.gdk_pixbuf_loader_new()
-        gdkpixbuf.gdk_pixbuf_loader_write(loader, data, len(data), byref(err))
-        result = load_func(loader)
-        if not gdkpixbuf.gdk_pixbuf_loader_close(loader, byref(err)):
+        gdkpixbuf.gdk_pixbuf_loader_write(loader, data, len(data), None)
+        if not gdkpixbuf.gdk_pixbuf_loader_close(loader, None):
             raise ImageDecodeException(filename)
+        result = load_func(loader)
         if not result:
             raise ImageDecodeException('Unable to load: %s' % filename)
         return result

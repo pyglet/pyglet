@@ -25,8 +25,8 @@ class EVENT_LOOP(unittest.TestCase):
             self.timer_count += 1
             tc = self.timer_count
             if tc > warmup_iterations:
-                self.assertAlmostEqual(dt, interval, 2)
-                self.assertAlmostEqual(t - self.last_t, interval, 2)
+                self.assertAlmostEqual(dt, interval, places=2)
+                self.assertAlmostEqual(t - self.last_t, interval, places=2)
             self.last_t = t
 
             if self.timer_count > iterations + warmup_iterations:

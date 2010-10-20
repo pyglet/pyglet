@@ -286,7 +286,7 @@ class ButtonWidget(ControlWidget):
             y1 + self.BORDER_MARGIN,
             x2 - self.BORDER_MARGIN,
             y2 - self.BORDER_MARGIN)
-        self.name_label.x = (x1 + x2) / 2
+        self.name_label.x = (x1 + x2) // 2
         self.name_label.y = y1 + self.CONTENT_MARGIN
 
     def delete(self):

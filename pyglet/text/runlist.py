@@ -285,8 +285,11 @@ class AbstractRunIterator(object):
 
 class RunIterator(AbstractRunIterator):
     def __init__(self, run_list):
-        self.next = iter(run_list).next
+        self._run_list_iter = iter(run_list)
         self.start, self.end, self.value = self.next()
+        
+    def next(self):
+        return self._run_list_iter.next()
 
     def __getitem__(self, index):
         while index >= self.end and index > self.start:

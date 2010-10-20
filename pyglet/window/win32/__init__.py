@@ -405,8 +405,8 @@ class Win32Window(BaseWindow):
         rect = RECT()
         _user32.GetClientRect(self._view_hwnd, byref(rect))
         _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP, byref(rect), 2)
-        p.x = (rect.left + rect.right) / 2
-        p.y = (rect.top + rect.bottom) / 2
+        p.x = (rect.left + rect.right) // 2
+        p.y = (rect.top + rect.bottom) // 2
 
         # This is the point the mouse will be kept at while in exclusive
         # mode.

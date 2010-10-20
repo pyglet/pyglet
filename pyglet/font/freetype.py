@@ -46,6 +46,7 @@ import pyglet.lib
 from pyglet.font import base
 from pyglet import image
 from pyglet.font.freetype_lib import *
+from pyglet.compat import asbytes
 
 # fontconfig library definitions
 fontconfig = pyglet.lib.load_library('fontconfig')
@@ -56,12 +57,12 @@ fontconfig.FcPatternBuild.restype = c_void_p
 fontconfig.FcFontMatch.restype = c_void_p
 fontconfig.FcFreeTypeCharIndex.restype = c_uint
 
-FC_FAMILY = 'family'
-FC_SIZE = 'size'
-FC_SLANT = 'slant'
-FC_WEIGHT = 'weight'
-FC_FT_FACE = 'ftface'
-FC_FILE = 'file'
+FC_FAMILY = asbytes('family')
+FC_SIZE = asbytes('size')
+FC_SLANT = asbytes('slant')
+FC_WEIGHT = asbytes('weight')
+FC_FT_FACE = asbytes('ftface')
+FC_FILE = asbytes('file')
 
 FC_WEIGHT_REGULAR = 80
 FC_WEIGHT_BOLD = 200

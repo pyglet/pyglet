@@ -59,204 +59,240 @@ if not hasattr(ctypes, 'c_int64'):
 import pyglet.libs.x11.xlib
 import pyglet.gl.glx
 
-# VERSION_1_3 (/usr/include/GL/glx.h:73)
-# VERSION_1_4 (/usr/include/GL/glx.h:132)
-# ARB_get_proc_address (/usr/include/GL/glx.h:137)
-# VERSION_1_1 (/usr/include/GL/glx.h:208)
-# VERSION_1_2 (/usr/include/GL/glx.h:221)
-# VERSION_1_3 (/usr/include/GL/glx.h:229)
-# VERSION_1_4 (/usr/include/GL/glx.h:301)
+# H (/usr/include/GL/glx.h:26)
 # ARB_get_proc_address (/usr/include/GL/glx.h:317)
-# GLXEXT_LEGACY (/usr/include/GL/glx.h:349)
-GLX_GLXEXT_VERSION = 21 	# GL/glxext.h:51
-# VERSION_1_3 (GL/glxext.h:53)
-# VERSION_1_4 (GL/glxext.h:112)
-# ARB_get_proc_address (GL/glxext.h:117)
-# ARB_multisample (GL/glxext.h:120)
-GLX_SAMPLE_BUFFERS_ARB = 100000 	# GL/glxext.h:121
-GLX_SAMPLES_ARB = 100001 	# GL/glxext.h:122
-# ARB_fbconfig_float (GL/glxext.h:125)
-GLX_RGBA_FLOAT_TYPE_ARB = 8377 	# GL/glxext.h:126
-GLX_RGBA_FLOAT_BIT_ARB = 4 	# GL/glxext.h:127
-# ARB_create_context (GL/glxext.h:130)
-GLX_CONTEXT_DEBUG_BIT_ARB = 1 	# GL/glxext.h:131
-GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB = 2 	# GL/glxext.h:132
-GLX_CONTEXT_MAJOR_VERSION_ARB = 8337 	# GL/glxext.h:133
-GLX_CONTEXT_MINOR_VERSION_ARB = 8338 	# GL/glxext.h:134
-GLX_CONTEXT_FLAGS_ARB = 8340 	# GL/glxext.h:135
-# SGIS_multisample (GL/glxext.h:138)
-GLX_SAMPLE_BUFFERS_SGIS = 100000 	# GL/glxext.h:139
-GLX_SAMPLES_SGIS = 100001 	# GL/glxext.h:140
-# EXT_visual_info (GL/glxext.h:143)
-GLX_X_VISUAL_TYPE_EXT = 34 	# GL/glxext.h:144
-GLX_TRANSPARENT_TYPE_EXT = 35 	# GL/glxext.h:145
-GLX_TRANSPARENT_INDEX_VALUE_EXT = 36 	# GL/glxext.h:146
-GLX_TRANSPARENT_RED_VALUE_EXT = 37 	# GL/glxext.h:147
-GLX_TRANSPARENT_GREEN_VALUE_EXT = 38 	# GL/glxext.h:148
-GLX_TRANSPARENT_BLUE_VALUE_EXT = 39 	# GL/glxext.h:149
-GLX_TRANSPARENT_ALPHA_VALUE_EXT = 40 	# GL/glxext.h:150
-GLX_NONE_EXT = 32768 	# GL/glxext.h:151
-GLX_TRUE_COLOR_EXT = 32770 	# GL/glxext.h:152
-GLX_DIRECT_COLOR_EXT = 32771 	# GL/glxext.h:153
-GLX_PSEUDO_COLOR_EXT = 32772 	# GL/glxext.h:154
-GLX_STATIC_COLOR_EXT = 32773 	# GL/glxext.h:155
-GLX_GRAY_SCALE_EXT = 32774 	# GL/glxext.h:156
-GLX_STATIC_GRAY_EXT = 32775 	# GL/glxext.h:157
-GLX_TRANSPARENT_RGB_EXT = 32776 	# GL/glxext.h:158
-GLX_TRANSPARENT_INDEX_EXT = 32777 	# GL/glxext.h:159
-# SGI_swap_control (GL/glxext.h:162)
-# SGI_video_sync (GL/glxext.h:165)
-# SGI_make_current_read (GL/glxext.h:168)
-# SGIX_video_source (GL/glxext.h:171)
-# EXT_visual_rating (GL/glxext.h:174)
-GLX_VISUAL_CAVEAT_EXT = 32 	# GL/glxext.h:175
-GLX_SLOW_VISUAL_EXT = 32769 	# GL/glxext.h:176
-GLX_NON_CONFORMANT_VISUAL_EXT = 32781 	# GL/glxext.h:177
-# EXT_import_context (GL/glxext.h:181)
-GLX_SHARE_CONTEXT_EXT = 32778 	# GL/glxext.h:182
-GLX_VISUAL_ID_EXT = 32779 	# GL/glxext.h:183
-GLX_SCREEN_EXT = 32780 	# GL/glxext.h:184
-# SGIX_fbconfig (GL/glxext.h:187)
-GLX_WINDOW_BIT_SGIX = 1 	# GL/glxext.h:188
-GLX_PIXMAP_BIT_SGIX = 2 	# GL/glxext.h:189
-GLX_RGBA_BIT_SGIX = 1 	# GL/glxext.h:190
-GLX_COLOR_INDEX_BIT_SGIX = 2 	# GL/glxext.h:191
-GLX_DRAWABLE_TYPE_SGIX = 32784 	# GL/glxext.h:192
-GLX_RENDER_TYPE_SGIX = 32785 	# GL/glxext.h:193
-GLX_X_RENDERABLE_SGIX = 32786 	# GL/glxext.h:194
-GLX_FBCONFIG_ID_SGIX = 32787 	# GL/glxext.h:195
-GLX_RGBA_TYPE_SGIX = 32788 	# GL/glxext.h:196
-GLX_COLOR_INDEX_TYPE_SGIX = 32789 	# GL/glxext.h:197
-# SGIX_pbuffer (GL/glxext.h:201)
-GLX_PBUFFER_BIT_SGIX = 4 	# GL/glxext.h:202
-GLX_BUFFER_CLOBBER_MASK_SGIX = 134217728 	# GL/glxext.h:203
-GLX_FRONT_LEFT_BUFFER_BIT_SGIX = 1 	# GL/glxext.h:204
-GLX_FRONT_RIGHT_BUFFER_BIT_SGIX = 2 	# GL/glxext.h:205
-GLX_BACK_LEFT_BUFFER_BIT_SGIX = 4 	# GL/glxext.h:206
-GLX_BACK_RIGHT_BUFFER_BIT_SGIX = 8 	# GL/glxext.h:207
-GLX_AUX_BUFFERS_BIT_SGIX = 16 	# GL/glxext.h:208
-GLX_DEPTH_BUFFER_BIT_SGIX = 32 	# GL/glxext.h:209
-GLX_STENCIL_BUFFER_BIT_SGIX = 64 	# GL/glxext.h:210
-GLX_ACCUM_BUFFER_BIT_SGIX = 128 	# GL/glxext.h:211
-GLX_SAMPLE_BUFFERS_BIT_SGIX = 256 	# GL/glxext.h:212
-GLX_MAX_PBUFFER_WIDTH_SGIX = 32790 	# GL/glxext.h:213
-GLX_MAX_PBUFFER_HEIGHT_SGIX = 32791 	# GL/glxext.h:214
-GLX_MAX_PBUFFER_PIXELS_SGIX = 32792 	# GL/glxext.h:215
-GLX_OPTIMAL_PBUFFER_WIDTH_SGIX = 32793 	# GL/glxext.h:216
-GLX_OPTIMAL_PBUFFER_HEIGHT_SGIX = 32794 	# GL/glxext.h:217
-GLX_PRESERVED_CONTENTS_SGIX = 32795 	# GL/glxext.h:218
-GLX_LARGEST_PBUFFER_SGIX = 32796 	# GL/glxext.h:219
-GLX_WIDTH_SGIX = 32797 	# GL/glxext.h:220
-GLX_HEIGHT_SGIX = 32798 	# GL/glxext.h:221
-GLX_EVENT_MASK_SGIX = 32799 	# GL/glxext.h:222
-GLX_DAMAGED_SGIX = 32800 	# GL/glxext.h:223
-GLX_SAVED_SGIX = 32801 	# GL/glxext.h:224
-GLX_WINDOW_SGIX = 32802 	# GL/glxext.h:225
-GLX_PBUFFER_SGIX = 32803 	# GL/glxext.h:226
-# SGI_cushion (GL/glxext.h:229)
-# SGIX_video_resize (GL/glxext.h:232)
-GLX_SYNC_FRAME_SGIX = 0 	# GL/glxext.h:233
-GLX_SYNC_SWAP_SGIX = 1 	# GL/glxext.h:234
-# SGIX_dmbuffer (GL/glxext.h:237)
-GLX_DIGITAL_MEDIA_PBUFFER_SGIX = 32804 	# GL/glxext.h:238
-# SGIX_swap_group (GL/glxext.h:241)
-# SGIX_swap_barrier (GL/glxext.h:244)
-# SGIS_blended_overlay (GL/glxext.h:247)
-GLX_BLENDED_RGBA_SGIS = 32805 	# GL/glxext.h:248
-# SGIS_shared_multisample (GL/glxext.h:251)
-GLX_MULTISAMPLE_SUB_RECT_WIDTH_SGIS = 32806 	# GL/glxext.h:252
-GLX_MULTISAMPLE_SUB_RECT_HEIGHT_SGIS = 32807 	# GL/glxext.h:253
-# SUN_get_transparent_index (GL/glxext.h:256)
-# 3DFX_multisample (GL/glxext.h:259)
-GLX_SAMPLE_BUFFERS_3DFX = 32848 	# GL/glxext.h:260
-GLX_SAMPLES_3DFX = 32849 	# GL/glxext.h:261
-# MESA_copy_sub_buffer (GL/glxext.h:264)
-# MESA_pixmap_colormap (GL/glxext.h:267)
-# MESA_release_buffers (GL/glxext.h:270)
-# MESA_set_3dfx_mode (GL/glxext.h:273)
-GLX_3DFX_WINDOW_MODE_MESA = 1 	# GL/glxext.h:274
-GLX_3DFX_FULLSCREEN_MODE_MESA = 2 	# GL/glxext.h:275
-# SGIX_visual_select_group (GL/glxext.h:278)
-GLX_VISUAL_SELECT_GROUP_SGIX = 32808 	# GL/glxext.h:279
-# OML_swap_method (GL/glxext.h:282)
-GLX_SWAP_METHOD_OML = 32864 	# GL/glxext.h:283
-GLX_SWAP_EXCHANGE_OML = 32865 	# GL/glxext.h:284
-GLX_SWAP_COPY_OML = 32866 	# GL/glxext.h:285
-GLX_SWAP_UNDEFINED_OML = 32867 	# GL/glxext.h:286
-# OML_sync_control (GL/glxext.h:289)
-# NV_float_buffer (GL/glxext.h:292)
-GLX_FLOAT_COMPONENTS_NV = 8368 	# GL/glxext.h:293
-# SGIX_hyperpipe (GL/glxext.h:296)
-GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX = 80 	# GL/glxext.h:297
-GLX_BAD_HYPERPIPE_CONFIG_SGIX = 91 	# GL/glxext.h:298
-GLX_BAD_HYPERPIPE_SGIX = 92 	# GL/glxext.h:299
-GLX_HYPERPIPE_DISPLAY_PIPE_SGIX = 1 	# GL/glxext.h:300
-GLX_HYPERPIPE_RENDER_PIPE_SGIX = 2 	# GL/glxext.h:301
-GLX_PIPE_RECT_SGIX = 1 	# GL/glxext.h:302
-GLX_PIPE_RECT_LIMITS_SGIX = 2 	# GL/glxext.h:303
-GLX_HYPERPIPE_STEREO_SGIX = 3 	# GL/glxext.h:304
-GLX_HYPERPIPE_PIXEL_AVERAGE_SGIX = 4 	# GL/glxext.h:305
-GLX_HYPERPIPE_ID_SGIX = 32816 	# GL/glxext.h:306
-# MESA_agp_offset (GL/glxext.h:309)
-# EXT_fbconfig_packed_float (GL/glxext.h:312)
-GLX_RGBA_UNSIGNED_FLOAT_TYPE_EXT = 8369 	# GL/glxext.h:313
-GLX_RGBA_UNSIGNED_FLOAT_BIT_EXT = 8 	# GL/glxext.h:314
-# EXT_framebuffer_sRGB (GL/glxext.h:317)
-GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT = 8370 	# GL/glxext.h:318
-# EXT_texture_from_pixmap (GL/glxext.h:321)
-GLX_TEXTURE_1D_BIT_EXT = 1 	# GL/glxext.h:322
-GLX_TEXTURE_2D_BIT_EXT = 2 	# GL/glxext.h:323
-GLX_TEXTURE_RECTANGLE_BIT_EXT = 4 	# GL/glxext.h:324
-GLX_BIND_TO_TEXTURE_RGB_EXT = 8400 	# GL/glxext.h:325
-GLX_BIND_TO_TEXTURE_RGBA_EXT = 8401 	# GL/glxext.h:326
-GLX_BIND_TO_MIPMAP_TEXTURE_EXT = 8402 	# GL/glxext.h:327
-GLX_BIND_TO_TEXTURE_TARGETS_EXT = 8403 	# GL/glxext.h:328
-GLX_Y_INVERTED_EXT = 8404 	# GL/glxext.h:329
-GLX_TEXTURE_FORMAT_EXT = 8405 	# GL/glxext.h:330
-GLX_TEXTURE_TARGET_EXT = 8406 	# GL/glxext.h:331
-GLX_MIPMAP_TEXTURE_EXT = 8407 	# GL/glxext.h:332
-GLX_TEXTURE_FORMAT_NONE_EXT = 8408 	# GL/glxext.h:333
-GLX_TEXTURE_FORMAT_RGB_EXT = 8409 	# GL/glxext.h:334
-GLX_TEXTURE_FORMAT_RGBA_EXT = 8410 	# GL/glxext.h:335
-GLX_TEXTURE_1D_EXT = 8411 	# GL/glxext.h:336
-GLX_TEXTURE_2D_EXT = 8412 	# GL/glxext.h:337
-GLX_TEXTURE_RECTANGLE_EXT = 8413 	# GL/glxext.h:338
-GLX_FRONT_LEFT_EXT = 8414 	# GL/glxext.h:339
-GLX_FRONT_RIGHT_EXT = 8415 	# GL/glxext.h:340
-GLX_BACK_LEFT_EXT = 8416 	# GL/glxext.h:341
-GLX_BACK_RIGHT_EXT = 8417 	# GL/glxext.h:342
-GLX_FRONT_EXT = 8414 	# GL/glxext.h:343
-GLX_BACK_EXT = 8416 	# GL/glxext.h:344
-GLX_AUX0_EXT = 8418 	# GL/glxext.h:345
-GLX_AUX1_EXT = 8419 	# GL/glxext.h:346
-GLX_AUX2_EXT = 8420 	# GL/glxext.h:347
-GLX_AUX3_EXT = 8421 	# GL/glxext.h:348
-GLX_AUX4_EXT = 8422 	# GL/glxext.h:349
-GLX_AUX5_EXT = 8423 	# GL/glxext.h:350
-GLX_AUX6_EXT = 8424 	# GL/glxext.h:351
-GLX_AUX7_EXT = 8425 	# GL/glxext.h:352
-GLX_AUX8_EXT = 8426 	# GL/glxext.h:353
-GLX_AUX9_EXT = 8427 	# GL/glxext.h:354
-# NV_present_video (GL/glxext.h:357)
-GLX_NUM_VIDEO_SLOTS_NV = 8432 	# GL/glxext.h:358
-# NV_video_out (GL/glxext.h:361)
-GLX_VIDEO_OUT_COLOR_NV = 8387 	# GL/glxext.h:362
-GLX_VIDEO_OUT_ALPHA_NV = 8388 	# GL/glxext.h:363
-GLX_VIDEO_OUT_DEPTH_NV = 8389 	# GL/glxext.h:364
-GLX_VIDEO_OUT_COLOR_AND_ALPHA_NV = 8390 	# GL/glxext.h:365
-GLX_VIDEO_OUT_COLOR_AND_DEPTH_NV = 8391 	# GL/glxext.h:366
-GLX_VIDEO_OUT_FRAME_NV = 8392 	# GL/glxext.h:367
-GLX_VIDEO_OUT_FIELD_1_NV = 8393 	# GL/glxext.h:368
-GLX_VIDEO_OUT_FIELD_2_NV = 8394 	# GL/glxext.h:369
-GLX_VIDEO_OUT_STACKED_FIELDS_1_2_NV = 8395 	# GL/glxext.h:370
-GLX_VIDEO_OUT_STACKED_FIELDS_2_1_NV = 8396 	# GL/glxext.h:371
-# NV_swap_group (GL/glxext.h:374)
-# ARB_get_proc_address (GL/glxext.h:380)
-# SGIX_video_source (GL/glxext.h:384)
+# GLXEXT_LEGACY (/usr/include/GL/glx.h:334)
+GLX_GLXEXT_VERSION = 32 	# GL/glxext.h:53
+# VERSION_1_3 (GL/glxext.h:55)
+# VERSION_1_4 (GL/glxext.h:114)
+# ARB_get_proc_address (GL/glxext.h:119)
+# ARB_multisample (GL/glxext.h:122)
+GLX_SAMPLE_BUFFERS_ARB = 100000 	# GL/glxext.h:123
+GLX_SAMPLES_ARB = 100001 	# GL/glxext.h:124
+# ARB_vertex_buffer_object (GL/glxext.h:127)
+GLX_CONTEXT_ALLOW_BUFFER_BYTE_ORDER_MISMATCH_ARB = 8341 	# GL/glxext.h:128
+# ARB_fbconfig_float (GL/glxext.h:131)
+GLX_RGBA_FLOAT_TYPE_ARB = 8377 	# GL/glxext.h:132
+GLX_RGBA_FLOAT_BIT_ARB = 4 	# GL/glxext.h:133
+# ARB_framebuffer_sRGB (GL/glxext.h:136)
+GLX_FRAMEBUFFER_SRGB_CAPABLE_ARB = 8370 	# GL/glxext.h:137
+# ARB_create_context (GL/glxext.h:140)
+GLX_CONTEXT_DEBUG_BIT_ARB = 1 	# GL/glxext.h:141
+GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB = 2 	# GL/glxext.h:142
+GLX_CONTEXT_MAJOR_VERSION_ARB = 8337 	# GL/glxext.h:143
+GLX_CONTEXT_MINOR_VERSION_ARB = 8338 	# GL/glxext.h:144
+GLX_CONTEXT_FLAGS_ARB = 8340 	# GL/glxext.h:145
+# ARB_create_context_profile (GL/glxext.h:148)
+GLX_CONTEXT_CORE_PROFILE_BIT_ARB = 1 	# GL/glxext.h:149
+GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB = 2 	# GL/glxext.h:150
+GLX_CONTEXT_PROFILE_MASK_ARB = 37158 	# GL/glxext.h:151
+# ARB_create_context_robustness (GL/glxext.h:154)
+GLX_CONTEXT_ROBUST_ACCESS_BIT_ARB = 4 	# GL/glxext.h:155
+GLX_LOSE_CONTEXT_ON_RESET_ARB = 33362 	# GL/glxext.h:156
+GLX_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB = 33366 	# GL/glxext.h:157
+GLX_NO_RESET_NOTIFICATION_ARB = 33377 	# GL/glxext.h:158
+# SGIS_multisample (GL/glxext.h:161)
+GLX_SAMPLE_BUFFERS_SGIS = 100000 	# GL/glxext.h:162
+GLX_SAMPLES_SGIS = 100001 	# GL/glxext.h:163
+# EXT_visual_info (GL/glxext.h:166)
+GLX_X_VISUAL_TYPE_EXT = 34 	# GL/glxext.h:167
+GLX_TRANSPARENT_TYPE_EXT = 35 	# GL/glxext.h:168
+GLX_TRANSPARENT_INDEX_VALUE_EXT = 36 	# GL/glxext.h:169
+GLX_TRANSPARENT_RED_VALUE_EXT = 37 	# GL/glxext.h:170
+GLX_TRANSPARENT_GREEN_VALUE_EXT = 38 	# GL/glxext.h:171
+GLX_TRANSPARENT_BLUE_VALUE_EXT = 39 	# GL/glxext.h:172
+GLX_TRANSPARENT_ALPHA_VALUE_EXT = 40 	# GL/glxext.h:173
+GLX_NONE_EXT = 32768 	# GL/glxext.h:174
+GLX_TRUE_COLOR_EXT = 32770 	# GL/glxext.h:175
+GLX_DIRECT_COLOR_EXT = 32771 	# GL/glxext.h:176
+GLX_PSEUDO_COLOR_EXT = 32772 	# GL/glxext.h:177
+GLX_STATIC_COLOR_EXT = 32773 	# GL/glxext.h:178
+GLX_GRAY_SCALE_EXT = 32774 	# GL/glxext.h:179
+GLX_STATIC_GRAY_EXT = 32775 	# GL/glxext.h:180
+GLX_TRANSPARENT_RGB_EXT = 32776 	# GL/glxext.h:181
+GLX_TRANSPARENT_INDEX_EXT = 32777 	# GL/glxext.h:182
+# SGI_swap_control (GL/glxext.h:185)
+# SGI_video_sync (GL/glxext.h:188)
+# SGI_make_current_read (GL/glxext.h:191)
+# SGIX_video_source (GL/glxext.h:194)
+# EXT_visual_rating (GL/glxext.h:197)
+GLX_VISUAL_CAVEAT_EXT = 32 	# GL/glxext.h:198
+GLX_SLOW_VISUAL_EXT = 32769 	# GL/glxext.h:199
+GLX_NON_CONFORMANT_VISUAL_EXT = 32781 	# GL/glxext.h:200
+# EXT_import_context (GL/glxext.h:204)
+GLX_SHARE_CONTEXT_EXT = 32778 	# GL/glxext.h:205
+GLX_VISUAL_ID_EXT = 32779 	# GL/glxext.h:206
+GLX_SCREEN_EXT = 32780 	# GL/glxext.h:207
+# SGIX_fbconfig (GL/glxext.h:210)
+GLX_WINDOW_BIT_SGIX = 1 	# GL/glxext.h:211
+GLX_PIXMAP_BIT_SGIX = 2 	# GL/glxext.h:212
+GLX_RGBA_BIT_SGIX = 1 	# GL/glxext.h:213
+GLX_COLOR_INDEX_BIT_SGIX = 2 	# GL/glxext.h:214
+GLX_DRAWABLE_TYPE_SGIX = 32784 	# GL/glxext.h:215
+GLX_RENDER_TYPE_SGIX = 32785 	# GL/glxext.h:216
+GLX_X_RENDERABLE_SGIX = 32786 	# GL/glxext.h:217
+GLX_FBCONFIG_ID_SGIX = 32787 	# GL/glxext.h:218
+GLX_RGBA_TYPE_SGIX = 32788 	# GL/glxext.h:219
+GLX_COLOR_INDEX_TYPE_SGIX = 32789 	# GL/glxext.h:220
+# SGIX_pbuffer (GL/glxext.h:224)
+GLX_PBUFFER_BIT_SGIX = 4 	# GL/glxext.h:225
+GLX_BUFFER_CLOBBER_MASK_SGIX = 134217728 	# GL/glxext.h:226
+GLX_FRONT_LEFT_BUFFER_BIT_SGIX = 1 	# GL/glxext.h:227
+GLX_FRONT_RIGHT_BUFFER_BIT_SGIX = 2 	# GL/glxext.h:228
+GLX_BACK_LEFT_BUFFER_BIT_SGIX = 4 	# GL/glxext.h:229
+GLX_BACK_RIGHT_BUFFER_BIT_SGIX = 8 	# GL/glxext.h:230
+GLX_AUX_BUFFERS_BIT_SGIX = 16 	# GL/glxext.h:231
+GLX_DEPTH_BUFFER_BIT_SGIX = 32 	# GL/glxext.h:232
+GLX_STENCIL_BUFFER_BIT_SGIX = 64 	# GL/glxext.h:233
+GLX_ACCUM_BUFFER_BIT_SGIX = 128 	# GL/glxext.h:234
+GLX_SAMPLE_BUFFERS_BIT_SGIX = 256 	# GL/glxext.h:235
+GLX_MAX_PBUFFER_WIDTH_SGIX = 32790 	# GL/glxext.h:236
+GLX_MAX_PBUFFER_HEIGHT_SGIX = 32791 	# GL/glxext.h:237
+GLX_MAX_PBUFFER_PIXELS_SGIX = 32792 	# GL/glxext.h:238
+GLX_OPTIMAL_PBUFFER_WIDTH_SGIX = 32793 	# GL/glxext.h:239
+GLX_OPTIMAL_PBUFFER_HEIGHT_SGIX = 32794 	# GL/glxext.h:240
+GLX_PRESERVED_CONTENTS_SGIX = 32795 	# GL/glxext.h:241
+GLX_LARGEST_PBUFFER_SGIX = 32796 	# GL/glxext.h:242
+GLX_WIDTH_SGIX = 32797 	# GL/glxext.h:243
+GLX_HEIGHT_SGIX = 32798 	# GL/glxext.h:244
+GLX_EVENT_MASK_SGIX = 32799 	# GL/glxext.h:245
+GLX_DAMAGED_SGIX = 32800 	# GL/glxext.h:246
+GLX_SAVED_SGIX = 32801 	# GL/glxext.h:247
+GLX_WINDOW_SGIX = 32802 	# GL/glxext.h:248
+GLX_PBUFFER_SGIX = 32803 	# GL/glxext.h:249
+# SGI_cushion (GL/glxext.h:252)
+# SGIX_video_resize (GL/glxext.h:255)
+GLX_SYNC_FRAME_SGIX = 0 	# GL/glxext.h:256
+GLX_SYNC_SWAP_SGIX = 1 	# GL/glxext.h:257
+# SGIX_dmbuffer (GL/glxext.h:260)
+GLX_DIGITAL_MEDIA_PBUFFER_SGIX = 32804 	# GL/glxext.h:261
+# SGIX_swap_group (GL/glxext.h:264)
+# SGIX_swap_barrier (GL/glxext.h:267)
+# SGIS_blended_overlay (GL/glxext.h:270)
+GLX_BLENDED_RGBA_SGIS = 32805 	# GL/glxext.h:271
+# SGIS_shared_multisample (GL/glxext.h:274)
+GLX_MULTISAMPLE_SUB_RECT_WIDTH_SGIS = 32806 	# GL/glxext.h:275
+GLX_MULTISAMPLE_SUB_RECT_HEIGHT_SGIS = 32807 	# GL/glxext.h:276
+# SUN_get_transparent_index (GL/glxext.h:279)
+# 3DFX_multisample (GL/glxext.h:282)
+GLX_SAMPLE_BUFFERS_3DFX = 32848 	# GL/glxext.h:283
+GLX_SAMPLES_3DFX = 32849 	# GL/glxext.h:284
+# MESA_copy_sub_buffer (GL/glxext.h:287)
+# MESA_pixmap_colormap (GL/glxext.h:290)
+# MESA_release_buffers (GL/glxext.h:293)
+# MESA_set_3dfx_mode (GL/glxext.h:296)
+GLX_3DFX_WINDOW_MODE_MESA = 1 	# GL/glxext.h:297
+GLX_3DFX_FULLSCREEN_MODE_MESA = 2 	# GL/glxext.h:298
+# SGIX_visual_select_group (GL/glxext.h:301)
+GLX_VISUAL_SELECT_GROUP_SGIX = 32808 	# GL/glxext.h:302
+# OML_swap_method (GL/glxext.h:305)
+GLX_SWAP_METHOD_OML = 32864 	# GL/glxext.h:306
+GLX_SWAP_EXCHANGE_OML = 32865 	# GL/glxext.h:307
+GLX_SWAP_COPY_OML = 32866 	# GL/glxext.h:308
+GLX_SWAP_UNDEFINED_OML = 32867 	# GL/glxext.h:309
+# OML_sync_control (GL/glxext.h:312)
+# NV_float_buffer (GL/glxext.h:315)
+GLX_FLOAT_COMPONENTS_NV = 8368 	# GL/glxext.h:316
+# SGIX_hyperpipe (GL/glxext.h:319)
+GLX_HYPERPIPE_PIPE_NAME_LENGTH_SGIX = 80 	# GL/glxext.h:320
+GLX_BAD_HYPERPIPE_CONFIG_SGIX = 91 	# GL/glxext.h:321
+GLX_BAD_HYPERPIPE_SGIX = 92 	# GL/glxext.h:322
+GLX_HYPERPIPE_DISPLAY_PIPE_SGIX = 1 	# GL/glxext.h:323
+GLX_HYPERPIPE_RENDER_PIPE_SGIX = 2 	# GL/glxext.h:324
+GLX_PIPE_RECT_SGIX = 1 	# GL/glxext.h:325
+GLX_PIPE_RECT_LIMITS_SGIX = 2 	# GL/glxext.h:326
+GLX_HYPERPIPE_STEREO_SGIX = 3 	# GL/glxext.h:327
+GLX_HYPERPIPE_PIXEL_AVERAGE_SGIX = 4 	# GL/glxext.h:328
+GLX_HYPERPIPE_ID_SGIX = 32816 	# GL/glxext.h:329
+# MESA_agp_offset (GL/glxext.h:332)
+# EXT_fbconfig_packed_float (GL/glxext.h:335)
+GLX_RGBA_UNSIGNED_FLOAT_TYPE_EXT = 8369 	# GL/glxext.h:336
+GLX_RGBA_UNSIGNED_FLOAT_BIT_EXT = 8 	# GL/glxext.h:337
+# EXT_framebuffer_sRGB (GL/glxext.h:340)
+GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT = 8370 	# GL/glxext.h:341
+# EXT_texture_from_pixmap (GL/glxext.h:344)
+GLX_TEXTURE_1D_BIT_EXT = 1 	# GL/glxext.h:345
+GLX_TEXTURE_2D_BIT_EXT = 2 	# GL/glxext.h:346
+GLX_TEXTURE_RECTANGLE_BIT_EXT = 4 	# GL/glxext.h:347
+GLX_BIND_TO_TEXTURE_RGB_EXT = 8400 	# GL/glxext.h:348
+GLX_BIND_TO_TEXTURE_RGBA_EXT = 8401 	# GL/glxext.h:349
+GLX_BIND_TO_MIPMAP_TEXTURE_EXT = 8402 	# GL/glxext.h:350
+GLX_BIND_TO_TEXTURE_TARGETS_EXT = 8403 	# GL/glxext.h:351
+GLX_Y_INVERTED_EXT = 8404 	# GL/glxext.h:352
+GLX_TEXTURE_FORMAT_EXT = 8405 	# GL/glxext.h:353
+GLX_TEXTURE_TARGET_EXT = 8406 	# GL/glxext.h:354
+GLX_MIPMAP_TEXTURE_EXT = 8407 	# GL/glxext.h:355
+GLX_TEXTURE_FORMAT_NONE_EXT = 8408 	# GL/glxext.h:356
+GLX_TEXTURE_FORMAT_RGB_EXT = 8409 	# GL/glxext.h:357
+GLX_TEXTURE_FORMAT_RGBA_EXT = 8410 	# GL/glxext.h:358
+GLX_TEXTURE_1D_EXT = 8411 	# GL/glxext.h:359
+GLX_TEXTURE_2D_EXT = 8412 	# GL/glxext.h:360
+GLX_TEXTURE_RECTANGLE_EXT = 8413 	# GL/glxext.h:361
+GLX_FRONT_LEFT_EXT = 8414 	# GL/glxext.h:362
+GLX_FRONT_RIGHT_EXT = 8415 	# GL/glxext.h:363
+GLX_BACK_LEFT_EXT = 8416 	# GL/glxext.h:364
+GLX_BACK_RIGHT_EXT = 8417 	# GL/glxext.h:365
+GLX_FRONT_EXT = 8414 	# GL/glxext.h:366
+GLX_BACK_EXT = 8416 	# GL/glxext.h:367
+GLX_AUX0_EXT = 8418 	# GL/glxext.h:368
+GLX_AUX1_EXT = 8419 	# GL/glxext.h:369
+GLX_AUX2_EXT = 8420 	# GL/glxext.h:370
+GLX_AUX3_EXT = 8421 	# GL/glxext.h:371
+GLX_AUX4_EXT = 8422 	# GL/glxext.h:372
+GLX_AUX5_EXT = 8423 	# GL/glxext.h:373
+GLX_AUX6_EXT = 8424 	# GL/glxext.h:374
+GLX_AUX7_EXT = 8425 	# GL/glxext.h:375
+GLX_AUX8_EXT = 8426 	# GL/glxext.h:376
+GLX_AUX9_EXT = 8427 	# GL/glxext.h:377
+# NV_present_video (GL/glxext.h:380)
+GLX_NUM_VIDEO_SLOTS_NV = 8432 	# GL/glxext.h:381
+# NV_video_out (GL/glxext.h:384)
+GLX_VIDEO_OUT_COLOR_NV = 8387 	# GL/glxext.h:385
+GLX_VIDEO_OUT_ALPHA_NV = 8388 	# GL/glxext.h:386
+GLX_VIDEO_OUT_DEPTH_NV = 8389 	# GL/glxext.h:387
+GLX_VIDEO_OUT_COLOR_AND_ALPHA_NV = 8390 	# GL/glxext.h:388
+GLX_VIDEO_OUT_COLOR_AND_DEPTH_NV = 8391 	# GL/glxext.h:389
+GLX_VIDEO_OUT_FRAME_NV = 8392 	# GL/glxext.h:390
+GLX_VIDEO_OUT_FIELD_1_NV = 8393 	# GL/glxext.h:391
+GLX_VIDEO_OUT_FIELD_2_NV = 8394 	# GL/glxext.h:392
+GLX_VIDEO_OUT_STACKED_FIELDS_1_2_NV = 8395 	# GL/glxext.h:393
+GLX_VIDEO_OUT_STACKED_FIELDS_2_1_NV = 8396 	# GL/glxext.h:394
+# NV_swap_group (GL/glxext.h:397)
+# NV_video_capture (GL/glxext.h:400)
+GLX_DEVICE_ID_NV = 8397 	# GL/glxext.h:401
+GLX_UNIQUE_ID_NV = 8398 	# GL/glxext.h:402
+GLX_NUM_VIDEO_CAPTURE_SLOTS_NV = 8399 	# GL/glxext.h:403
+# EXT_swap_control (GL/glxext.h:406)
+GLX_SWAP_INTERVAL_EXT = 8433 	# GL/glxext.h:407
+GLX_MAX_SWAP_INTERVAL_EXT = 8434 	# GL/glxext.h:408
+# NV_copy_image (GL/glxext.h:411)
+# INTEL_swap_event (GL/glxext.h:414)
+GLX_BUFFER_SWAP_COMPLETE_INTEL_MASK = 67108864 	# GL/glxext.h:415
+GLX_EXCHANGE_COMPLETE_INTEL = 33152 	# GL/glxext.h:416
+GLX_COPY_COMPLETE_INTEL = 33153 	# GL/glxext.h:417
+GLX_FLIP_COMPLETE_INTEL = 33154 	# GL/glxext.h:418
+# NV_multisample_coverage (GL/glxext.h:421)
+GLX_COVERAGE_SAMPLES_NV = 100001 	# GL/glxext.h:422
+GLX_COLOR_SAMPLES_NV = 8371 	# GL/glxext.h:423
+# AMD_gpu_association (GL/glxext.h:426)
+GLX_GPU_VENDOR_AMD = 7936 	# GL/glxext.h:427
+GLX_GPU_RENDERER_STRING_AMD = 7937 	# GL/glxext.h:428
+GLX_GPU_OPENGL_VERSION_STRING_AMD = 7938 	# GL/glxext.h:429
+GLX_GPU_FASTEST_TARGET_GPUS_AMD = 8610 	# GL/glxext.h:430
+GLX_GPU_RAM_AMD = 8611 	# GL/glxext.h:431
+GLX_GPU_CLOCK_AMD = 8612 	# GL/glxext.h:432
+GLX_GPU_NUM_PIPES_AMD = 8613 	# GL/glxext.h:433
+GLX_GPU_NUM_SIMD_AMD = 8614 	# GL/glxext.h:434
+GLX_GPU_NUM_RB_AMD = 8615 	# GL/glxext.h:435
+GLX_GPU_NUM_SPI_AMD = 8616 	# GL/glxext.h:436
+# EXT_create_context_es2_profile (GL/glxext.h:439)
+GLX_CONTEXT_ES2_PROFILE_BIT_EXT = 4 	# GL/glxext.h:440
+# ARB_get_proc_address (GL/glxext.h:446)
+# SGIX_video_source (GL/glxext.h:450)
 XID = pyglet.libs.x11.xlib.XID
-GLXVideoSourceSGIX = XID 	# GL/glxext.h:385
-# SGIX_fbconfig (GL/glxext.h:388)
-GLXFBConfigIDSGIX = XID 	# GL/glxext.h:389
+GLXVideoSourceSGIX = XID 	# GL/glxext.h:451
+# SGIX_fbconfig (GL/glxext.h:454)
+GLXFBConfigIDSGIX = XID 	# GL/glxext.h:455
 class struct___GLXFBConfigRec(Structure):
     __slots__ = [
     ]
@@ -271,10 +307,10 @@ struct___GLXFBConfigRec._fields_ = [
     ('_opaque_struct', c_int)
 ]
 
-GLXFBConfigSGIX = POINTER(struct___GLXFBConfigRec) 	# GL/glxext.h:390
-# SGIX_pbuffer (GL/glxext.h:393)
-GLXPbufferSGIX = XID 	# GL/glxext.h:394
-class struct_anon_103(Structure):
+GLXFBConfigSGIX = POINTER(struct___GLXFBConfigRec) 	# GL/glxext.h:456
+# SGIX_pbuffer (GL/glxext.h:459)
+GLXPbufferSGIX = XID 	# GL/glxext.h:460
+class struct_anon_106(Structure):
     __slots__ = [
         'type',
         'serial',
@@ -292,7 +328,7 @@ class struct_anon_103(Structure):
     ]
 Display = pyglet.libs.x11.xlib.Display
 GLXDrawable = pyglet.gl.glx.GLXDrawable
-struct_anon_103._fields_ = [
+struct_anon_106._fields_ = [
     ('type', c_int),
     ('serial', c_ulong),
     ('send_event', c_int),
@@ -308,266 +344,276 @@ struct_anon_103._fields_ = [
     ('count', c_int),
 ]
 
-GLXBufferClobberEventSGIX = struct_anon_103 	# GL/glxext.h:407
-# VERSION_1_3 (GL/glxext.h:447)
-# VERSION_1_4 (GL/glxext.h:489)
-# ARB_get_proc_address (GL/glxext.h:497)
-# ARB_multisample (GL/glxext.h:505)
-GLX_ARB_multisample = 1 	# GL/glxext.h:506
-# ARB_fbconfig_float (GL/glxext.h:509)
-GLX_ARB_fbconfig_float = 1 	# GL/glxext.h:510
-# ARB_create_context (GL/glxext.h:513)
-GLX_ARB_create_context = 1 	# GL/glxext.h:514
+GLXBufferClobberEventSGIX = struct_anon_106 	# GL/glxext.h:473
+# NV_video_output (GL/glxext.h:476)
+GLXVideoDeviceNV = c_uint 	# GL/glxext.h:477
+# NV_video_capture (GL/glxext.h:480)
+GLXVideoCaptureDeviceNV = XID 	# GL/glxext.h:481
+# VERSION_1_3 (GL/glxext.h:521)
+# VERSION_1_4 (GL/glxext.h:563)
+# ARB_get_proc_address (GL/glxext.h:571)
+# ARB_multisample (GL/glxext.h:579)
+GLX_ARB_multisample = 1 	# GL/glxext.h:580
+# ARB_fbconfig_float (GL/glxext.h:583)
+GLX_ARB_fbconfig_float = 1 	# GL/glxext.h:584
+# ARB_framebuffer_sRGB (GL/glxext.h:587)
+GLX_ARB_framebuffer_sRGB = 1 	# GL/glxext.h:588
+# ARB_create_context (GL/glxext.h:591)
+GLX_ARB_create_context = 1 	# GL/glxext.h:592
 GLXContext = pyglet.gl.glx.GLXContext
 GLXFBConfig = pyglet.gl.glx.GLXFBConfig
-# GL/glxext.h:516
+# GL/glxext.h:594
 glXCreateContextAttribsARB = _link_function('glXCreateContextAttribsARB', GLXContext, [POINTER(Display), GLXFBConfig, GLXContext, c_int, POINTER(c_int)], 'ARB_create_context')
 
-PFNGLXCREATECONTEXTATTRIBSARBPROC = CFUNCTYPE(GLXContext, POINTER(Display), GLXFBConfig, GLXContext, c_int, POINTER(c_int)) 	# GL/glxext.h:518
-# SGIS_multisample (GL/glxext.h:521)
-GLX_SGIS_multisample = 1 	# GL/glxext.h:522
-# EXT_visual_info (GL/glxext.h:525)
-GLX_EXT_visual_info = 1 	# GL/glxext.h:526
-# SGI_swap_control (GL/glxext.h:529)
-GLX_SGI_swap_control = 1 	# GL/glxext.h:530
-# GL/glxext.h:532
+PFNGLXCREATECONTEXTATTRIBSARBPROC = CFUNCTYPE(GLXContext, POINTER(Display), GLXFBConfig, GLXContext, c_int, POINTER(c_int)) 	# GL/glxext.h:596
+# ARB_create_context_profile (GL/glxext.h:599)
+GLX_ARB_create_context_profile = 1 	# GL/glxext.h:600
+# ARB_create_context_robustness (GL/glxext.h:603)
+GLX_ARB_create_context_robustness = 1 	# GL/glxext.h:604
+# SGIS_multisample (GL/glxext.h:607)
+GLX_SGIS_multisample = 1 	# GL/glxext.h:608
+# EXT_visual_info (GL/glxext.h:611)
+GLX_EXT_visual_info = 1 	# GL/glxext.h:612
+# SGI_swap_control (GL/glxext.h:615)
+GLX_SGI_swap_control = 1 	# GL/glxext.h:616
+# GL/glxext.h:618
 glXSwapIntervalSGI = _link_function('glXSwapIntervalSGI', c_int, [c_int], 'SGI_swap_control')
 
-PFNGLXSWAPINTERVALSGIPROC = CFUNCTYPE(c_int, c_int) 	# GL/glxext.h:534
-# SGI_video_sync (GL/glxext.h:537)
-GLX_SGI_video_sync = 1 	# GL/glxext.h:538
-# GL/glxext.h:540
+PFNGLXSWAPINTERVALSGIPROC = CFUNCTYPE(c_int, c_int) 	# GL/glxext.h:620
+# SGI_video_sync (GL/glxext.h:623)
+GLX_SGI_video_sync = 1 	# GL/glxext.h:624
+# GL/glxext.h:626
 glXGetVideoSyncSGI = _link_function('glXGetVideoSyncSGI', c_int, [POINTER(c_uint)], 'SGI_video_sync')
 
-# GL/glxext.h:541
+# GL/glxext.h:627
 glXWaitVideoSyncSGI = _link_function('glXWaitVideoSyncSGI', c_int, [c_int, c_int, POINTER(c_uint)], 'SGI_video_sync')
 
-PFNGLXGETVIDEOSYNCSGIPROC = CFUNCTYPE(c_int, POINTER(c_uint)) 	# GL/glxext.h:543
-PFNGLXWAITVIDEOSYNCSGIPROC = CFUNCTYPE(c_int, c_int, c_int, POINTER(c_uint)) 	# GL/glxext.h:544
-# SGI_make_current_read (GL/glxext.h:547)
-GLX_SGI_make_current_read = 1 	# GL/glxext.h:548
-# GL/glxext.h:550
+PFNGLXGETVIDEOSYNCSGIPROC = CFUNCTYPE(c_int, POINTER(c_uint)) 	# GL/glxext.h:629
+PFNGLXWAITVIDEOSYNCSGIPROC = CFUNCTYPE(c_int, c_int, c_int, POINTER(c_uint)) 	# GL/glxext.h:630
+# SGI_make_current_read (GL/glxext.h:633)
+GLX_SGI_make_current_read = 1 	# GL/glxext.h:634
+# GL/glxext.h:636
 glXMakeCurrentReadSGI = _link_function('glXMakeCurrentReadSGI', c_int, [POINTER(Display), GLXDrawable, GLXDrawable, GLXContext], 'SGI_make_current_read')
 
-# GL/glxext.h:551
+# GL/glxext.h:637
 glXGetCurrentReadDrawableSGI = _link_function('glXGetCurrentReadDrawableSGI', GLXDrawable, [], 'SGI_make_current_read')
 
-PFNGLXMAKECURRENTREADSGIPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, GLXDrawable, GLXContext) 	# GL/glxext.h:553
-PFNGLXGETCURRENTREADDRAWABLESGIPROC = CFUNCTYPE(GLXDrawable) 	# GL/glxext.h:554
-# SGIX_video_source (GL/glxext.h:557)
-GLX_SGIX_video_source = 1 	# GL/glxext.h:558
-# EXT_visual_rating (GL/glxext.h:569)
-GLX_EXT_visual_rating = 1 	# GL/glxext.h:570
-# EXT_import_context (GL/glxext.h:573)
-GLX_EXT_import_context = 1 	# GL/glxext.h:574
-# GL/glxext.h:576
+PFNGLXMAKECURRENTREADSGIPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, GLXDrawable, GLXContext) 	# GL/glxext.h:639
+PFNGLXGETCURRENTREADDRAWABLESGIPROC = CFUNCTYPE(GLXDrawable) 	# GL/glxext.h:640
+# SGIX_video_source (GL/glxext.h:643)
+GLX_SGIX_video_source = 1 	# GL/glxext.h:644
+# EXT_visual_rating (GL/glxext.h:655)
+GLX_EXT_visual_rating = 1 	# GL/glxext.h:656
+# EXT_import_context (GL/glxext.h:659)
+GLX_EXT_import_context = 1 	# GL/glxext.h:660
+# GL/glxext.h:662
 glXGetCurrentDisplayEXT = _link_function('glXGetCurrentDisplayEXT', POINTER(Display), [], 'EXT_import_context')
 
-# GL/glxext.h:577
+# GL/glxext.h:663
 glXQueryContextInfoEXT = _link_function('glXQueryContextInfoEXT', c_int, [POINTER(Display), GLXContext, c_int, POINTER(c_int)], 'EXT_import_context')
 
 GLXContextID = pyglet.gl.glx.GLXContextID
-# GL/glxext.h:578
+# GL/glxext.h:664
 glXGetContextIDEXT = _link_function('glXGetContextIDEXT', GLXContextID, [GLXContext], 'EXT_import_context')
 
-# GL/glxext.h:579
+# GL/glxext.h:665
 glXImportContextEXT = _link_function('glXImportContextEXT', GLXContext, [POINTER(Display), GLXContextID], 'EXT_import_context')
 
-# GL/glxext.h:580
+# GL/glxext.h:666
 glXFreeContextEXT = _link_function('glXFreeContextEXT', None, [POINTER(Display), GLXContext], 'EXT_import_context')
 
-PFNGLXGETCURRENTDISPLAYEXTPROC = CFUNCTYPE(POINTER(Display)) 	# GL/glxext.h:582
-PFNGLXQUERYCONTEXTINFOEXTPROC = CFUNCTYPE(c_int, POINTER(Display), GLXContext, c_int, POINTER(c_int)) 	# GL/glxext.h:583
-PFNGLXGETCONTEXTIDEXTPROC = CFUNCTYPE(GLXContextID, GLXContext) 	# GL/glxext.h:584
-PFNGLXIMPORTCONTEXTEXTPROC = CFUNCTYPE(GLXContext, POINTER(Display), GLXContextID) 	# GL/glxext.h:585
-PFNGLXFREECONTEXTEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXContext) 	# GL/glxext.h:586
-# SGIX_fbconfig (GL/glxext.h:589)
-GLX_SGIX_fbconfig = 1 	# GL/glxext.h:590
-# GL/glxext.h:592
+PFNGLXGETCURRENTDISPLAYEXTPROC = CFUNCTYPE(POINTER(Display)) 	# GL/glxext.h:668
+PFNGLXQUERYCONTEXTINFOEXTPROC = CFUNCTYPE(c_int, POINTER(Display), GLXContext, c_int, POINTER(c_int)) 	# GL/glxext.h:669
+PFNGLXGETCONTEXTIDEXTPROC = CFUNCTYPE(GLXContextID, GLXContext) 	# GL/glxext.h:670
+PFNGLXIMPORTCONTEXTEXTPROC = CFUNCTYPE(GLXContext, POINTER(Display), GLXContextID) 	# GL/glxext.h:671
+PFNGLXFREECONTEXTEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXContext) 	# GL/glxext.h:672
+# SGIX_fbconfig (GL/glxext.h:675)
+GLX_SGIX_fbconfig = 1 	# GL/glxext.h:676
+# GL/glxext.h:678
 glXGetFBConfigAttribSGIX = _link_function('glXGetFBConfigAttribSGIX', c_int, [POINTER(Display), GLXFBConfigSGIX, c_int, POINTER(c_int)], 'SGIX_fbconfig')
 
-# GL/glxext.h:593
+# GL/glxext.h:679
 glXChooseFBConfigSGIX = _link_function('glXChooseFBConfigSGIX', POINTER(GLXFBConfigSGIX), [POINTER(Display), c_int, POINTER(c_int), POINTER(c_int)], 'SGIX_fbconfig')
 
 GLXPixmap = pyglet.gl.glx.GLXPixmap
 Pixmap = pyglet.libs.x11.xlib.Pixmap
-# GL/glxext.h:594
+# GL/glxext.h:680
 glXCreateGLXPixmapWithConfigSGIX = _link_function('glXCreateGLXPixmapWithConfigSGIX', GLXPixmap, [POINTER(Display), GLXFBConfigSGIX, Pixmap], 'SGIX_fbconfig')
 
-# GL/glxext.h:595
+# GL/glxext.h:681
 glXCreateContextWithConfigSGIX = _link_function('glXCreateContextWithConfigSGIX', GLXContext, [POINTER(Display), GLXFBConfigSGIX, c_int, GLXContext, c_int], 'SGIX_fbconfig')
 
 XVisualInfo = pyglet.libs.x11.xlib.XVisualInfo
-# GL/glxext.h:596
+# GL/glxext.h:682
 glXGetVisualFromFBConfigSGIX = _link_function('glXGetVisualFromFBConfigSGIX', POINTER(XVisualInfo), [POINTER(Display), GLXFBConfigSGIX], 'SGIX_fbconfig')
 
-# GL/glxext.h:597
+# GL/glxext.h:683
 glXGetFBConfigFromVisualSGIX = _link_function('glXGetFBConfigFromVisualSGIX', GLXFBConfigSGIX, [POINTER(Display), POINTER(XVisualInfo)], 'SGIX_fbconfig')
 
-PFNGLXGETFBCONFIGATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), GLXFBConfigSGIX, c_int, POINTER(c_int)) 	# GL/glxext.h:599
-PFNGLXCHOOSEFBCONFIGSGIXPROC = CFUNCTYPE(POINTER(GLXFBConfigSGIX), POINTER(Display), c_int, POINTER(c_int), POINTER(c_int)) 	# GL/glxext.h:600
-PFNGLXCREATEGLXPIXMAPWITHCONFIGSGIXPROC = CFUNCTYPE(GLXPixmap, POINTER(Display), GLXFBConfigSGIX, Pixmap) 	# GL/glxext.h:601
-PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC = CFUNCTYPE(GLXContext, POINTER(Display), GLXFBConfigSGIX, c_int, GLXContext, c_int) 	# GL/glxext.h:602
-PFNGLXGETVISUALFROMFBCONFIGSGIXPROC = CFUNCTYPE(POINTER(XVisualInfo), POINTER(Display), GLXFBConfigSGIX) 	# GL/glxext.h:603
-PFNGLXGETFBCONFIGFROMVISUALSGIXPROC = CFUNCTYPE(GLXFBConfigSGIX, POINTER(Display), POINTER(XVisualInfo)) 	# GL/glxext.h:604
-# SGIX_pbuffer (GL/glxext.h:607)
-GLX_SGIX_pbuffer = 1 	# GL/glxext.h:608
-# GL/glxext.h:610
+PFNGLXGETFBCONFIGATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), GLXFBConfigSGIX, c_int, POINTER(c_int)) 	# GL/glxext.h:685
+PFNGLXCHOOSEFBCONFIGSGIXPROC = CFUNCTYPE(POINTER(GLXFBConfigSGIX), POINTER(Display), c_int, POINTER(c_int), POINTER(c_int)) 	# GL/glxext.h:686
+PFNGLXCREATEGLXPIXMAPWITHCONFIGSGIXPROC = CFUNCTYPE(GLXPixmap, POINTER(Display), GLXFBConfigSGIX, Pixmap) 	# GL/glxext.h:687
+PFNGLXCREATECONTEXTWITHCONFIGSGIXPROC = CFUNCTYPE(GLXContext, POINTER(Display), GLXFBConfigSGIX, c_int, GLXContext, c_int) 	# GL/glxext.h:688
+PFNGLXGETVISUALFROMFBCONFIGSGIXPROC = CFUNCTYPE(POINTER(XVisualInfo), POINTER(Display), GLXFBConfigSGIX) 	# GL/glxext.h:689
+PFNGLXGETFBCONFIGFROMVISUALSGIXPROC = CFUNCTYPE(GLXFBConfigSGIX, POINTER(Display), POINTER(XVisualInfo)) 	# GL/glxext.h:690
+# SGIX_pbuffer (GL/glxext.h:693)
+GLX_SGIX_pbuffer = 1 	# GL/glxext.h:694
+# GL/glxext.h:696
 glXCreateGLXPbufferSGIX = _link_function('glXCreateGLXPbufferSGIX', GLXPbufferSGIX, [POINTER(Display), GLXFBConfigSGIX, c_uint, c_uint, POINTER(c_int)], 'SGIX_pbuffer')
 
-# GL/glxext.h:611
+# GL/glxext.h:697
 glXDestroyGLXPbufferSGIX = _link_function('glXDestroyGLXPbufferSGIX', None, [POINTER(Display), GLXPbufferSGIX], 'SGIX_pbuffer')
 
-# GL/glxext.h:612
+# GL/glxext.h:698
 glXQueryGLXPbufferSGIX = _link_function('glXQueryGLXPbufferSGIX', c_int, [POINTER(Display), GLXPbufferSGIX, c_int, POINTER(c_uint)], 'SGIX_pbuffer')
 
-# GL/glxext.h:613
+# GL/glxext.h:699
 glXSelectEventSGIX = _link_function('glXSelectEventSGIX', None, [POINTER(Display), GLXDrawable, c_ulong], 'SGIX_pbuffer')
 
-# GL/glxext.h:614
+# GL/glxext.h:700
 glXGetSelectedEventSGIX = _link_function('glXGetSelectedEventSGIX', None, [POINTER(Display), GLXDrawable, POINTER(c_ulong)], 'SGIX_pbuffer')
 
-PFNGLXCREATEGLXPBUFFERSGIXPROC = CFUNCTYPE(GLXPbufferSGIX, POINTER(Display), GLXFBConfigSGIX, c_uint, c_uint, POINTER(c_int)) 	# GL/glxext.h:616
-PFNGLXDESTROYGLXPBUFFERSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXPbufferSGIX) 	# GL/glxext.h:617
-PFNGLXQUERYGLXPBUFFERSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), GLXPbufferSGIX, c_int, POINTER(c_uint)) 	# GL/glxext.h:618
-PFNGLXSELECTEVENTSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_ulong) 	# GL/glxext.h:619
-PFNGLXGETSELECTEDEVENTSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, POINTER(c_ulong)) 	# GL/glxext.h:620
-# SGI_cushion (GL/glxext.h:623)
-GLX_SGI_cushion = 1 	# GL/glxext.h:624
+PFNGLXCREATEGLXPBUFFERSGIXPROC = CFUNCTYPE(GLXPbufferSGIX, POINTER(Display), GLXFBConfigSGIX, c_uint, c_uint, POINTER(c_int)) 	# GL/glxext.h:702
+PFNGLXDESTROYGLXPBUFFERSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXPbufferSGIX) 	# GL/glxext.h:703
+PFNGLXQUERYGLXPBUFFERSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), GLXPbufferSGIX, c_int, POINTER(c_uint)) 	# GL/glxext.h:704
+PFNGLXSELECTEVENTSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_ulong) 	# GL/glxext.h:705
+PFNGLXGETSELECTEDEVENTSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, POINTER(c_ulong)) 	# GL/glxext.h:706
+# SGI_cushion (GL/glxext.h:709)
+GLX_SGI_cushion = 1 	# GL/glxext.h:710
 Window = pyglet.libs.x11.xlib.Window
-# GL/glxext.h:626
+# GL/glxext.h:712
 glXCushionSGI = _link_function('glXCushionSGI', None, [POINTER(Display), Window, c_float], 'SGI_cushion')
 
-PFNGLXCUSHIONSGIPROC = CFUNCTYPE(None, POINTER(Display), Window, c_float) 	# GL/glxext.h:628
-# SGIX_video_resize (GL/glxext.h:631)
-GLX_SGIX_video_resize = 1 	# GL/glxext.h:632
-# GL/glxext.h:634
+PFNGLXCUSHIONSGIPROC = CFUNCTYPE(None, POINTER(Display), Window, c_float) 	# GL/glxext.h:714
+# SGIX_video_resize (GL/glxext.h:717)
+GLX_SGIX_video_resize = 1 	# GL/glxext.h:718
+# GL/glxext.h:720
 glXBindChannelToWindowSGIX = _link_function('glXBindChannelToWindowSGIX', c_int, [POINTER(Display), c_int, c_int, Window], 'SGIX_video_resize')
 
-# GL/glxext.h:635
+# GL/glxext.h:721
 glXChannelRectSGIX = _link_function('glXChannelRectSGIX', c_int, [POINTER(Display), c_int, c_int, c_int, c_int, c_int, c_int], 'SGIX_video_resize')
 
-# GL/glxext.h:636
+# GL/glxext.h:722
 glXQueryChannelRectSGIX = _link_function('glXQueryChannelRectSGIX', c_int, [POINTER(Display), c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)], 'SGIX_video_resize')
 
-# GL/glxext.h:637
+# GL/glxext.h:723
 glXQueryChannelDeltasSGIX = _link_function('glXQueryChannelDeltasSGIX', c_int, [POINTER(Display), c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)], 'SGIX_video_resize')
 
-GLenum = c_uint 	# /usr/include/GL/gl.h:53
-# GL/glxext.h:638
+GLenum = c_uint 	# /usr/include/GL/gl.h:153
+# GL/glxext.h:724
 glXChannelRectSyncSGIX = _link_function('glXChannelRectSyncSGIX', c_int, [POINTER(Display), c_int, c_int, GLenum], 'SGIX_video_resize')
 
-PFNGLXBINDCHANNELTOWINDOWSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, Window) 	# GL/glxext.h:640
-PFNGLXCHANNELRECTSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, c_int, c_int, c_int) 	# GL/glxext.h:641
-PFNGLXQUERYCHANNELRECTSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)) 	# GL/glxext.h:642
-PFNGLXQUERYCHANNELDELTASSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)) 	# GL/glxext.h:643
-PFNGLXCHANNELRECTSYNCSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, GLenum) 	# GL/glxext.h:644
-# SGIX_dmbuffer (GL/glxext.h:647)
-GLX_SGIX_dmbuffer = 1 	# GL/glxext.h:648
-# SGIX_swap_group (GL/glxext.h:657)
-GLX_SGIX_swap_group = 1 	# GL/glxext.h:658
-# GL/glxext.h:660
+PFNGLXBINDCHANNELTOWINDOWSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, Window) 	# GL/glxext.h:726
+PFNGLXCHANNELRECTSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, c_int, c_int, c_int) 	# GL/glxext.h:727
+PFNGLXQUERYCHANNELRECTSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)) 	# GL/glxext.h:728
+PFNGLXQUERYCHANNELDELTASSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_int)) 	# GL/glxext.h:729
+PFNGLXCHANNELRECTSYNCSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, GLenum) 	# GL/glxext.h:730
+# SGIX_dmbuffer (GL/glxext.h:733)
+GLX_SGIX_dmbuffer = 1 	# GL/glxext.h:734
+# SGIX_swap_group (GL/glxext.h:743)
+GLX_SGIX_swap_group = 1 	# GL/glxext.h:744
+# GL/glxext.h:746
 glXJoinSwapGroupSGIX = _link_function('glXJoinSwapGroupSGIX', None, [POINTER(Display), GLXDrawable, GLXDrawable], 'SGIX_swap_group')
 
-PFNGLXJOINSWAPGROUPSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, GLXDrawable) 	# GL/glxext.h:662
-# SGIX_swap_barrier (GL/glxext.h:665)
-GLX_SGIX_swap_barrier = 1 	# GL/glxext.h:666
-# GL/glxext.h:668
+PFNGLXJOINSWAPGROUPSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, GLXDrawable) 	# GL/glxext.h:748
+# SGIX_swap_barrier (GL/glxext.h:751)
+GLX_SGIX_swap_barrier = 1 	# GL/glxext.h:752
+# GL/glxext.h:754
 glXBindSwapBarrierSGIX = _link_function('glXBindSwapBarrierSGIX', None, [POINTER(Display), GLXDrawable, c_int], 'SGIX_swap_barrier')
 
-# GL/glxext.h:669
+# GL/glxext.h:755
 glXQueryMaxSwapBarriersSGIX = _link_function('glXQueryMaxSwapBarriersSGIX', c_int, [POINTER(Display), c_int, POINTER(c_int)], 'SGIX_swap_barrier')
 
-PFNGLXBINDSWAPBARRIERSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int) 	# GL/glxext.h:671
-PFNGLXQUERYMAXSWAPBARRIERSSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, POINTER(c_int)) 	# GL/glxext.h:672
-# SUN_get_transparent_index (GL/glxext.h:675)
-GLX_SUN_get_transparent_index = 1 	# GL/glxext.h:676
-# GL/glxext.h:678
+PFNGLXBINDSWAPBARRIERSGIXPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int) 	# GL/glxext.h:757
+PFNGLXQUERYMAXSWAPBARRIERSSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, POINTER(c_int)) 	# GL/glxext.h:758
+# SUN_get_transparent_index (GL/glxext.h:761)
+GLX_SUN_get_transparent_index = 1 	# GL/glxext.h:762
+# GL/glxext.h:764
 glXGetTransparentIndexSUN = _link_function('glXGetTransparentIndexSUN', c_int, [POINTER(Display), Window, Window, POINTER(c_long)], 'SUN_get_transparent_index')
 
-PFNGLXGETTRANSPARENTINDEXSUNPROC = CFUNCTYPE(c_int, POINTER(Display), Window, Window, POINTER(c_long)) 	# GL/glxext.h:680
-# MESA_copy_sub_buffer (GL/glxext.h:683)
-GLX_MESA_copy_sub_buffer = 1 	# GL/glxext.h:684
-# GL/glxext.h:686
+PFNGLXGETTRANSPARENTINDEXSUNPROC = CFUNCTYPE(c_int, POINTER(Display), Window, Window, POINTER(c_long)) 	# GL/glxext.h:766
+# MESA_copy_sub_buffer (GL/glxext.h:769)
+GLX_MESA_copy_sub_buffer = 1 	# GL/glxext.h:770
+# GL/glxext.h:772
 glXCopySubBufferMESA = _link_function('glXCopySubBufferMESA', None, [POINTER(Display), GLXDrawable, c_int, c_int, c_int, c_int], 'MESA_copy_sub_buffer')
 
-PFNGLXCOPYSUBBUFFERMESAPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int, c_int, c_int, c_int) 	# GL/glxext.h:688
-# MESA_pixmap_colormap (GL/glxext.h:691)
-GLX_MESA_pixmap_colormap = 1 	# GL/glxext.h:692
+PFNGLXCOPYSUBBUFFERMESAPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int, c_int, c_int, c_int) 	# GL/glxext.h:774
+# MESA_pixmap_colormap (GL/glxext.h:777)
+GLX_MESA_pixmap_colormap = 1 	# GL/glxext.h:778
 Colormap = pyglet.libs.x11.xlib.Colormap
-# GL/glxext.h:694
+# GL/glxext.h:780
 glXCreateGLXPixmapMESA = _link_function('glXCreateGLXPixmapMESA', GLXPixmap, [POINTER(Display), POINTER(XVisualInfo), Pixmap, Colormap], 'MESA_pixmap_colormap')
 
-PFNGLXCREATEGLXPIXMAPMESAPROC = CFUNCTYPE(GLXPixmap, POINTER(Display), POINTER(XVisualInfo), Pixmap, Colormap) 	# GL/glxext.h:696
-# MESA_release_buffers (GL/glxext.h:699)
-GLX_MESA_release_buffers = 1 	# GL/glxext.h:700
-# GL/glxext.h:702
+PFNGLXCREATEGLXPIXMAPMESAPROC = CFUNCTYPE(GLXPixmap, POINTER(Display), POINTER(XVisualInfo), Pixmap, Colormap) 	# GL/glxext.h:782
+# MESA_release_buffers (GL/glxext.h:785)
+GLX_MESA_release_buffers = 1 	# GL/glxext.h:786
+# GL/glxext.h:788
 glXReleaseBuffersMESA = _link_function('glXReleaseBuffersMESA', c_int, [POINTER(Display), GLXDrawable], 'MESA_release_buffers')
 
-PFNGLXRELEASEBUFFERSMESAPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable) 	# GL/glxext.h:704
-# MESA_set_3dfx_mode (GL/glxext.h:707)
-GLX_MESA_set_3dfx_mode = 1 	# GL/glxext.h:708
-# GL/glxext.h:710
+PFNGLXRELEASEBUFFERSMESAPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable) 	# GL/glxext.h:790
+# MESA_set_3dfx_mode (GL/glxext.h:793)
+GLX_MESA_set_3dfx_mode = 1 	# GL/glxext.h:794
+# GL/glxext.h:796
 glXSet3DfxModeMESA = _link_function('glXSet3DfxModeMESA', c_int, [c_int], 'MESA_set_3dfx_mode')
 
-PFNGLXSET3DFXMODEMESAPROC = CFUNCTYPE(c_int, c_int) 	# GL/glxext.h:712
-# SGIX_visual_select_group (GL/glxext.h:715)
-GLX_SGIX_visual_select_group = 1 	# GL/glxext.h:716
-# OML_swap_method (GL/glxext.h:719)
-GLX_OML_swap_method = 1 	# GL/glxext.h:720
-# OML_sync_control (GL/glxext.h:723)
-GLX_OML_sync_control = 1 	# GL/glxext.h:724
-# GL/glxext.h:726
+PFNGLXSET3DFXMODEMESAPROC = CFUNCTYPE(c_int, c_int) 	# GL/glxext.h:798
+# SGIX_visual_select_group (GL/glxext.h:801)
+GLX_SGIX_visual_select_group = 1 	# GL/glxext.h:802
+# OML_swap_method (GL/glxext.h:805)
+GLX_OML_swap_method = 1 	# GL/glxext.h:806
+# OML_sync_control (GL/glxext.h:809)
+GLX_OML_sync_control = 1 	# GL/glxext.h:810
+# GL/glxext.h:812
 glXGetSyncValuesOML = _link_function('glXGetSyncValuesOML', c_int, [POINTER(Display), GLXDrawable, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)], 'OML_sync_control')
 
-# GL/glxext.h:727
+# GL/glxext.h:813
 glXGetMscRateOML = _link_function('glXGetMscRateOML', c_int, [POINTER(Display), GLXDrawable, POINTER(c_int32), POINTER(c_int32)], 'OML_sync_control')
 
-# GL/glxext.h:728
+# GL/glxext.h:814
 glXSwapBuffersMscOML = _link_function('glXSwapBuffersMscOML', c_int64, [POINTER(Display), GLXDrawable, c_int64, c_int64, c_int64], 'OML_sync_control')
 
-# GL/glxext.h:729
+# GL/glxext.h:815
 glXWaitForMscOML = _link_function('glXWaitForMscOML', c_int, [POINTER(Display), GLXDrawable, c_int64, c_int64, c_int64, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)], 'OML_sync_control')
 
-# GL/glxext.h:730
+# GL/glxext.h:816
 glXWaitForSbcOML = _link_function('glXWaitForSbcOML', c_int, [POINTER(Display), GLXDrawable, c_int64, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)], 'OML_sync_control')
 
-PFNGLXGETSYNCVALUESOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)) 	# GL/glxext.h:732
-PFNGLXGETMSCRATEOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, POINTER(c_int32), POINTER(c_int32)) 	# GL/glxext.h:733
-PFNGLXSWAPBUFFERSMSCOMLPROC = CFUNCTYPE(c_int64, POINTER(Display), GLXDrawable, c_int64, c_int64, c_int64) 	# GL/glxext.h:734
-PFNGLXWAITFORMSCOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int64, c_int64, c_int64, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)) 	# GL/glxext.h:735
-PFNGLXWAITFORSBCOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int64, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)) 	# GL/glxext.h:736
-# NV_float_buffer (GL/glxext.h:739)
-GLX_NV_float_buffer = 1 	# GL/glxext.h:740
-# SGIX_hyperpipe (GL/glxext.h:743)
-GLX_SGIX_hyperpipe = 1 	# GL/glxext.h:744
-class struct_anon_105(Structure):
+PFNGLXGETSYNCVALUESOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)) 	# GL/glxext.h:818
+PFNGLXGETMSCRATEOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, POINTER(c_int32), POINTER(c_int32)) 	# GL/glxext.h:819
+PFNGLXSWAPBUFFERSMSCOMLPROC = CFUNCTYPE(c_int64, POINTER(Display), GLXDrawable, c_int64, c_int64, c_int64) 	# GL/glxext.h:820
+PFNGLXWAITFORMSCOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int64, c_int64, c_int64, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)) 	# GL/glxext.h:821
+PFNGLXWAITFORSBCOMLPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int64, POINTER(c_int64), POINTER(c_int64), POINTER(c_int64)) 	# GL/glxext.h:822
+# NV_float_buffer (GL/glxext.h:825)
+GLX_NV_float_buffer = 1 	# GL/glxext.h:826
+# SGIX_hyperpipe (GL/glxext.h:829)
+GLX_SGIX_hyperpipe = 1 	# GL/glxext.h:830
+class struct_anon_107(Structure):
     __slots__ = [
         'pipeName',
         'networkId',
     ]
-struct_anon_105._fields_ = [
+struct_anon_107._fields_ = [
     ('pipeName', c_char * 80),
     ('networkId', c_int),
 ]
 
-GLXHyperpipeNetworkSGIX = struct_anon_105 	# GL/glxext.h:749
-class struct_anon_106(Structure):
+GLXHyperpipeNetworkSGIX = struct_anon_107 	# GL/glxext.h:835
+class struct_anon_108(Structure):
     __slots__ = [
         'pipeName',
         'channel',
         'participationType',
         'timeSlice',
     ]
-struct_anon_106._fields_ = [
+struct_anon_108._fields_ = [
     ('pipeName', c_char * 80),
     ('channel', c_int),
     ('participationType', c_uint),
     ('timeSlice', c_int),
 ]
 
-GLXHyperpipeConfigSGIX = struct_anon_106 	# GL/glxext.h:757
-class struct_anon_107(Structure):
+GLXHyperpipeConfigSGIX = struct_anon_108 	# GL/glxext.h:843
+class struct_anon_109(Structure):
     __slots__ = [
         'pipeName',
         'srcXOrigin',
@@ -579,7 +625,7 @@ class struct_anon_107(Structure):
         'destWidth',
         'destHeight',
     ]
-struct_anon_107._fields_ = [
+struct_anon_109._fields_ = [
     ('pipeName', c_char * 80),
     ('srcXOrigin', c_int),
     ('srcYOrigin', c_int),
@@ -591,8 +637,8 @@ struct_anon_107._fields_ = [
     ('destHeight', c_int),
 ]
 
-GLXPipeRect = struct_anon_107 	# GL/glxext.h:763
-class struct_anon_108(Structure):
+GLXPipeRect = struct_anon_109 	# GL/glxext.h:849
+class struct_anon_110(Structure):
     __slots__ = [
         'pipeName',
         'XOrigin',
@@ -600,7 +646,7 @@ class struct_anon_108(Structure):
         'maxHeight',
         'maxWidth',
     ]
-struct_anon_108._fields_ = [
+struct_anon_110._fields_ = [
     ('pipeName', c_char * 80),
     ('XOrigin', c_int),
     ('YOrigin', c_int),
@@ -608,72 +654,183 @@ struct_anon_108._fields_ = [
     ('maxWidth', c_int),
 ]
 
-GLXPipeRectLimits = struct_anon_108 	# GL/glxext.h:768
-# GL/glxext.h:771
+GLXPipeRectLimits = struct_anon_110 	# GL/glxext.h:854
+# GL/glxext.h:857
 glXQueryHyperpipeNetworkSGIX = _link_function('glXQueryHyperpipeNetworkSGIX', POINTER(GLXHyperpipeNetworkSGIX), [POINTER(Display), POINTER(c_int)], 'SGIX_hyperpipe')
 
-# GL/glxext.h:772
+# GL/glxext.h:858
 glXHyperpipeConfigSGIX = _link_function('glXHyperpipeConfigSGIX', c_int, [POINTER(Display), c_int, c_int, POINTER(GLXHyperpipeConfigSGIX), POINTER(c_int)], 'SGIX_hyperpipe')
 
-# GL/glxext.h:773
+# GL/glxext.h:859
 glXQueryHyperpipeConfigSGIX = _link_function('glXQueryHyperpipeConfigSGIX', POINTER(GLXHyperpipeConfigSGIX), [POINTER(Display), c_int, POINTER(c_int)], 'SGIX_hyperpipe')
 
-# GL/glxext.h:774
+# GL/glxext.h:860
 glXDestroyHyperpipeConfigSGIX = _link_function('glXDestroyHyperpipeConfigSGIX', c_int, [POINTER(Display), c_int], 'SGIX_hyperpipe')
 
-# GL/glxext.h:775
+# GL/glxext.h:861
 glXBindHyperpipeSGIX = _link_function('glXBindHyperpipeSGIX', c_int, [POINTER(Display), c_int], 'SGIX_hyperpipe')
 
-# GL/glxext.h:776
+# GL/glxext.h:862
 glXQueryHyperpipeBestAttribSGIX = _link_function('glXQueryHyperpipeBestAttribSGIX', c_int, [POINTER(Display), c_int, c_int, c_int, POINTER(None), POINTER(None)], 'SGIX_hyperpipe')
 
-# GL/glxext.h:777
+# GL/glxext.h:863
 glXHyperpipeAttribSGIX = _link_function('glXHyperpipeAttribSGIX', c_int, [POINTER(Display), c_int, c_int, c_int, POINTER(None)], 'SGIX_hyperpipe')
 
-# GL/glxext.h:778
+# GL/glxext.h:864
 glXQueryHyperpipeAttribSGIX = _link_function('glXQueryHyperpipeAttribSGIX', c_int, [POINTER(Display), c_int, c_int, c_int, POINTER(None)], 'SGIX_hyperpipe')
 
-PFNGLXQUERYHYPERPIPENETWORKSGIXPROC = CFUNCTYPE(POINTER(GLXHyperpipeNetworkSGIX), POINTER(Display), POINTER(c_int)) 	# GL/glxext.h:780
-PFNGLXHYPERPIPECONFIGSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(GLXHyperpipeConfigSGIX), POINTER(c_int)) 	# GL/glxext.h:781
-PFNGLXQUERYHYPERPIPECONFIGSGIXPROC = CFUNCTYPE(POINTER(GLXHyperpipeConfigSGIX), POINTER(Display), c_int, POINTER(c_int)) 	# GL/glxext.h:782
-PFNGLXDESTROYHYPERPIPECONFIGSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int) 	# GL/glxext.h:783
-PFNGLXBINDHYPERPIPESGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int) 	# GL/glxext.h:784
-PFNGLXQUERYHYPERPIPEBESTATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, POINTER(None), POINTER(None)) 	# GL/glxext.h:785
-PFNGLXHYPERPIPEATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, POINTER(None)) 	# GL/glxext.h:786
-PFNGLXQUERYHYPERPIPEATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, POINTER(None)) 	# GL/glxext.h:787
-# MESA_agp_offset (GL/glxext.h:790)
-GLX_MESA_agp_offset = 1 	# GL/glxext.h:791
-# GL/glxext.h:793
+PFNGLXQUERYHYPERPIPENETWORKSGIXPROC = CFUNCTYPE(POINTER(GLXHyperpipeNetworkSGIX), POINTER(Display), POINTER(c_int)) 	# GL/glxext.h:866
+PFNGLXHYPERPIPECONFIGSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(GLXHyperpipeConfigSGIX), POINTER(c_int)) 	# GL/glxext.h:867
+PFNGLXQUERYHYPERPIPECONFIGSGIXPROC = CFUNCTYPE(POINTER(GLXHyperpipeConfigSGIX), POINTER(Display), c_int, POINTER(c_int)) 	# GL/glxext.h:868
+PFNGLXDESTROYHYPERPIPECONFIGSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int) 	# GL/glxext.h:869
+PFNGLXBINDHYPERPIPESGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int) 	# GL/glxext.h:870
+PFNGLXQUERYHYPERPIPEBESTATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, POINTER(None), POINTER(None)) 	# GL/glxext.h:871
+PFNGLXHYPERPIPEATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, POINTER(None)) 	# GL/glxext.h:872
+PFNGLXQUERYHYPERPIPEATTRIBSGIXPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, c_int, POINTER(None)) 	# GL/glxext.h:873
+# MESA_agp_offset (GL/glxext.h:876)
+GLX_MESA_agp_offset = 1 	# GL/glxext.h:877
+# GL/glxext.h:879
 glXGetAGPOffsetMESA = _link_function('glXGetAGPOffsetMESA', c_uint, [POINTER(None)], 'MESA_agp_offset')
 
-PFNGLXGETAGPOFFSETMESAPROC = CFUNCTYPE(c_uint, POINTER(None)) 	# GL/glxext.h:795
-# EXT_fbconfig_packed_float (GL/glxext.h:798)
-GLX_EXT_fbconfig_packed_float = 1 	# GL/glxext.h:799
-# EXT_framebuffer_sRGB (GL/glxext.h:802)
-GLX_EXT_framebuffer_sRGB = 1 	# GL/glxext.h:803
-# EXT_texture_from_pixmap (GL/glxext.h:806)
-GLX_EXT_texture_from_pixmap = 1 	# GL/glxext.h:807
-# GL/glxext.h:809
+PFNGLXGETAGPOFFSETMESAPROC = CFUNCTYPE(c_uint, POINTER(None)) 	# GL/glxext.h:881
+# EXT_fbconfig_packed_float (GL/glxext.h:884)
+GLX_EXT_fbconfig_packed_float = 1 	# GL/glxext.h:885
+# EXT_framebuffer_sRGB (GL/glxext.h:888)
+GLX_EXT_framebuffer_sRGB = 1 	# GL/glxext.h:889
+# EXT_texture_from_pixmap (GL/glxext.h:892)
+GLX_EXT_texture_from_pixmap = 1 	# GL/glxext.h:893
+# GL/glxext.h:895
 glXBindTexImageEXT = _link_function('glXBindTexImageEXT', None, [POINTER(Display), GLXDrawable, c_int, POINTER(c_int)], 'EXT_texture_from_pixmap')
 
-# GL/glxext.h:810
+# GL/glxext.h:896
 glXReleaseTexImageEXT = _link_function('glXReleaseTexImageEXT', None, [POINTER(Display), GLXDrawable, c_int], 'EXT_texture_from_pixmap')
 
-PFNGLXBINDTEXIMAGEEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int, POINTER(c_int)) 	# GL/glxext.h:812
-PFNGLXRELEASETEXIMAGEEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int) 	# GL/glxext.h:813
-# NV_present_video (GL/glxext.h:816)
-GLX_NV_present_video = 1 	# GL/glxext.h:817
-# NV_video_out (GL/glxext.h:820)
-GLX_NV_video_out = 1 	# GL/glxext.h:821
-# NV_swap_group (GL/glxext.h:824)
-GLX_NV_swap_group = 1 	# GL/glxext.h:825
+PFNGLXBINDTEXIMAGEEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int, POINTER(c_int)) 	# GL/glxext.h:898
+PFNGLXRELEASETEXIMAGEEXTPROC = CFUNCTYPE(None, POINTER(Display), GLXDrawable, c_int) 	# GL/glxext.h:899
+# NV_present_video (GL/glxext.h:902)
+GLX_NV_present_video = 1 	# GL/glxext.h:903
+# GL/glxext.h:905
+glXEnumerateVideoDevicesNV = _link_function('glXEnumerateVideoDevicesNV', POINTER(c_uint), [POINTER(Display), c_int, POINTER(c_int)], 'NV_present_video')
+
+# GL/glxext.h:906
+glXBindVideoDeviceNV = _link_function('glXBindVideoDeviceNV', c_int, [POINTER(Display), c_uint, c_uint, POINTER(c_int)], 'NV_present_video')
+
+PFNGLXENUMERATEVIDEODEVICESNVPROC = CFUNCTYPE(POINTER(c_uint), POINTER(Display), c_int, POINTER(c_int)) 	# GL/glxext.h:908
+PFNGLXBINDVIDEODEVICENVPROC = CFUNCTYPE(c_int, POINTER(Display), c_uint, c_uint, POINTER(c_int)) 	# GL/glxext.h:909
+# NV_video_output (GL/glxext.h:912)
+GLX_NV_video_output = 1 	# GL/glxext.h:913
+# GL/glxext.h:915
+glXGetVideoDeviceNV = _link_function('glXGetVideoDeviceNV', c_int, [POINTER(Display), c_int, c_int, POINTER(GLXVideoDeviceNV)], 'NV_video_output')
+
+# GL/glxext.h:916
+glXReleaseVideoDeviceNV = _link_function('glXReleaseVideoDeviceNV', c_int, [POINTER(Display), c_int, GLXVideoDeviceNV], 'NV_video_output')
+
+GLXPbuffer = pyglet.gl.glx.GLXPbuffer
+# GL/glxext.h:917
+glXBindVideoImageNV = _link_function('glXBindVideoImageNV', c_int, [POINTER(Display), GLXVideoDeviceNV, GLXPbuffer, c_int], 'NV_video_output')
+
+# GL/glxext.h:918
+glXReleaseVideoImageNV = _link_function('glXReleaseVideoImageNV', c_int, [POINTER(Display), GLXPbuffer], 'NV_video_output')
+
+GLboolean = c_ubyte 	# /usr/include/GL/gl.h:154
+# GL/glxext.h:919
+glXSendPbufferToVideoNV = _link_function('glXSendPbufferToVideoNV', c_int, [POINTER(Display), GLXPbuffer, c_int, POINTER(c_ulong), GLboolean], 'NV_video_output')
+
+# GL/glxext.h:920
+glXGetVideoInfoNV = _link_function('glXGetVideoInfoNV', c_int, [POINTER(Display), c_int, GLXVideoDeviceNV, POINTER(c_ulong), POINTER(c_ulong)], 'NV_video_output')
+
+PFNGLXGETVIDEODEVICENVPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, c_int, POINTER(GLXVideoDeviceNV)) 	# GL/glxext.h:922
+PFNGLXRELEASEVIDEODEVICENVPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, GLXVideoDeviceNV) 	# GL/glxext.h:923
+PFNGLXBINDVIDEOIMAGENVPROC = CFUNCTYPE(c_int, POINTER(Display), GLXVideoDeviceNV, GLXPbuffer, c_int) 	# GL/glxext.h:924
+PFNGLXRELEASEVIDEOIMAGENVPROC = CFUNCTYPE(c_int, POINTER(Display), GLXPbuffer) 	# GL/glxext.h:925
+PFNGLXSENDPBUFFERTOVIDEONVPROC = CFUNCTYPE(c_int, POINTER(Display), GLXPbuffer, c_int, POINTER(c_ulong), GLboolean) 	# GL/glxext.h:926
+PFNGLXGETVIDEOINFONVPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, GLXVideoDeviceNV, POINTER(c_ulong), POINTER(c_ulong)) 	# GL/glxext.h:927
+# NV_swap_group (GL/glxext.h:930)
+GLX_NV_swap_group = 1 	# GL/glxext.h:931
+GLuint = c_uint 	# /usr/include/GL/gl.h:162
+# GL/glxext.h:933
+glXJoinSwapGroupNV = _link_function('glXJoinSwapGroupNV', c_int, [POINTER(Display), GLXDrawable, GLuint], 'NV_swap_group')
+
+# GL/glxext.h:934
+glXBindSwapBarrierNV = _link_function('glXBindSwapBarrierNV', c_int, [POINTER(Display), GLuint, GLuint], 'NV_swap_group')
+
+# GL/glxext.h:935
+glXQuerySwapGroupNV = _link_function('glXQuerySwapGroupNV', c_int, [POINTER(Display), GLXDrawable, POINTER(GLuint), POINTER(GLuint)], 'NV_swap_group')
+
+# GL/glxext.h:936
+glXQueryMaxSwapGroupsNV = _link_function('glXQueryMaxSwapGroupsNV', c_int, [POINTER(Display), c_int, POINTER(GLuint), POINTER(GLuint)], 'NV_swap_group')
+
+# GL/glxext.h:937
+glXQueryFrameCountNV = _link_function('glXQueryFrameCountNV', c_int, [POINTER(Display), c_int, POINTER(GLuint)], 'NV_swap_group')
+
+# GL/glxext.h:938
+glXResetFrameCountNV = _link_function('glXResetFrameCountNV', c_int, [POINTER(Display), c_int], 'NV_swap_group')
+
+PFNGLXJOINSWAPGROUPNVPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, GLuint) 	# GL/glxext.h:940
+PFNGLXBINDSWAPBARRIERNVPROC = CFUNCTYPE(c_int, POINTER(Display), GLuint, GLuint) 	# GL/glxext.h:941
+PFNGLXQUERYSWAPGROUPNVPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, POINTER(GLuint), POINTER(GLuint)) 	# GL/glxext.h:942
+PFNGLXQUERYMAXSWAPGROUPSNVPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, POINTER(GLuint), POINTER(GLuint)) 	# GL/glxext.h:943
+PFNGLXQUERYFRAMECOUNTNVPROC = CFUNCTYPE(c_int, POINTER(Display), c_int, POINTER(GLuint)) 	# GL/glxext.h:944
+PFNGLXRESETFRAMECOUNTNVPROC = CFUNCTYPE(c_int, POINTER(Display), c_int) 	# GL/glxext.h:945
+# NV_video_capture (GL/glxext.h:948)
+GLX_NV_video_capture = 1 	# GL/glxext.h:949
+# GL/glxext.h:951
+glXBindVideoCaptureDeviceNV = _link_function('glXBindVideoCaptureDeviceNV', c_int, [POINTER(Display), c_uint, GLXVideoCaptureDeviceNV], 'NV_video_capture')
+
+# GL/glxext.h:952
+glXEnumerateVideoCaptureDevicesNV = _link_function('glXEnumerateVideoCaptureDevicesNV', POINTER(GLXVideoCaptureDeviceNV), [POINTER(Display), c_int, POINTER(c_int)], 'NV_video_capture')
+
+# GL/glxext.h:953
+glXLockVideoCaptureDeviceNV = _link_function('glXLockVideoCaptureDeviceNV', None, [POINTER(Display), GLXVideoCaptureDeviceNV], 'NV_video_capture')
+
+# GL/glxext.h:954
+glXQueryVideoCaptureDeviceNV = _link_function('glXQueryVideoCaptureDeviceNV', c_int, [POINTER(Display), GLXVideoCaptureDeviceNV, c_int, POINTER(c_int)], 'NV_video_capture')
+
+# GL/glxext.h:955
+glXReleaseVideoCaptureDeviceNV = _link_function('glXReleaseVideoCaptureDeviceNV', None, [POINTER(Display), GLXVideoCaptureDeviceNV], 'NV_video_capture')
+
+PFNGLXBINDVIDEOCAPTUREDEVICENVPROC = CFUNCTYPE(c_int, POINTER(Display), c_uint, GLXVideoCaptureDeviceNV) 	# GL/glxext.h:957
+PFNGLXENUMERATEVIDEOCAPTUREDEVICESNVPROC = CFUNCTYPE(POINTER(GLXVideoCaptureDeviceNV), POINTER(Display), c_int, POINTER(c_int)) 	# GL/glxext.h:958
+PFNGLXLOCKVIDEOCAPTUREDEVICENVPROC = CFUNCTYPE(None, POINTER(Display), GLXVideoCaptureDeviceNV) 	# GL/glxext.h:959
+PFNGLXQUERYVIDEOCAPTUREDEVICENVPROC = CFUNCTYPE(c_int, POINTER(Display), GLXVideoCaptureDeviceNV, c_int, POINTER(c_int)) 	# GL/glxext.h:960
+PFNGLXRELEASEVIDEOCAPTUREDEVICENVPROC = CFUNCTYPE(None, POINTER(Display), GLXVideoCaptureDeviceNV) 	# GL/glxext.h:961
+# EXT_swap_control (GL/glxext.h:964)
+GLX_EXT_swap_control = 1 	# GL/glxext.h:965
+# GL/glxext.h:967
+glXSwapIntervalEXT = _link_function('glXSwapIntervalEXT', c_int, [POINTER(Display), GLXDrawable, c_int], 'EXT_swap_control')
+
+PFNGLXSWAPINTERVALEXTPROC = CFUNCTYPE(c_int, POINTER(Display), GLXDrawable, c_int) 	# GL/glxext.h:969
+# NV_copy_image (GL/glxext.h:972)
+GLX_NV_copy_image = 1 	# GL/glxext.h:973
+GLint = c_int 	# /usr/include/GL/gl.h:159
+GLsizei = c_int 	# /usr/include/GL/gl.h:163
+# GL/glxext.h:975
+glXCopyImageSubDataNV = _link_function('glXCopyImageSubDataNV', None, [POINTER(Display), GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei], 'NV_copy_image')
+
+PFNGLXCOPYIMAGESUBDATANVPROC = CFUNCTYPE(None, POINTER(Display), GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLXContext, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei) 	# GL/glxext.h:977
+# INTEL_swap_event (GL/glxext.h:980)
+GLX_INTEL_swap_event = 1 	# GL/glxext.h:981
+# NV_multisample_coverage (GL/glxext.h:984)
+GLX_NV_multisample_coverage = 1 	# GL/glxext.h:985
+# NV_vertex_array_range (/usr/include/GL/glx.h:349)
+# MESA_allocate_memory (/usr/include/GL/glx.h:363)
+# ARB_render_texture (/usr/include/GL/glx.h:380)
+# NV_float_buffer (/usr/include/GL/glx.h:393)
+# MESA_swap_frame_usage (/usr/include/GL/glx.h:405)
+# MESA_swap_control (/usr/include/GL/glx.h:425)
+# EXT_texture_from_pixmap (/usr/include/GL/glx.h:442)
 
 __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
-'GLX_RGBA_FLOAT_TYPE_ARB', 'GLX_RGBA_FLOAT_BIT_ARB',
+'GLX_CONTEXT_ALLOW_BUFFER_BYTE_ORDER_MISMATCH_ARB', 'GLX_RGBA_FLOAT_TYPE_ARB',
+'GLX_RGBA_FLOAT_BIT_ARB', 'GLX_FRAMEBUFFER_SRGB_CAPABLE_ARB',
 'GLX_CONTEXT_DEBUG_BIT_ARB', 'GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB',
 'GLX_CONTEXT_MAJOR_VERSION_ARB', 'GLX_CONTEXT_MINOR_VERSION_ARB',
-'GLX_CONTEXT_FLAGS_ARB', 'GLX_SAMPLE_BUFFERS_SGIS', 'GLX_SAMPLES_SGIS',
-'GLX_X_VISUAL_TYPE_EXT', 'GLX_TRANSPARENT_TYPE_EXT',
+'GLX_CONTEXT_FLAGS_ARB', 'GLX_CONTEXT_CORE_PROFILE_BIT_ARB',
+'GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB', 'GLX_CONTEXT_PROFILE_MASK_ARB',
+'GLX_CONTEXT_ROBUST_ACCESS_BIT_ARB', 'GLX_LOSE_CONTEXT_ON_RESET_ARB',
+'GLX_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB',
+'GLX_NO_RESET_NOTIFICATION_ARB', 'GLX_SAMPLE_BUFFERS_SGIS',
+'GLX_SAMPLES_SGIS', 'GLX_X_VISUAL_TYPE_EXT', 'GLX_TRANSPARENT_TYPE_EXT',
 'GLX_TRANSPARENT_INDEX_VALUE_EXT', 'GLX_TRANSPARENT_RED_VALUE_EXT',
 'GLX_TRANSPARENT_GREEN_VALUE_EXT', 'GLX_TRANSPARENT_BLUE_VALUE_EXT',
 'GLX_TRANSPARENT_ALPHA_VALUE_EXT', 'GLX_NONE_EXT', 'GLX_TRUE_COLOR_EXT',
@@ -726,11 +883,22 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'GLX_VIDEO_OUT_COLOR_AND_ALPHA_NV', 'GLX_VIDEO_OUT_COLOR_AND_DEPTH_NV',
 'GLX_VIDEO_OUT_FRAME_NV', 'GLX_VIDEO_OUT_FIELD_1_NV',
 'GLX_VIDEO_OUT_FIELD_2_NV', 'GLX_VIDEO_OUT_STACKED_FIELDS_1_2_NV',
-'GLX_VIDEO_OUT_STACKED_FIELDS_2_1_NV', 'GLXVideoSourceSGIX',
-'GLXFBConfigIDSGIX', 'GLXFBConfigSGIX', 'GLXPbufferSGIX',
-'GLXBufferClobberEventSGIX', 'GLX_ARB_multisample', 'GLX_ARB_fbconfig_float',
+'GLX_VIDEO_OUT_STACKED_FIELDS_2_1_NV', 'GLX_DEVICE_ID_NV', 'GLX_UNIQUE_ID_NV',
+'GLX_NUM_VIDEO_CAPTURE_SLOTS_NV', 'GLX_SWAP_INTERVAL_EXT',
+'GLX_MAX_SWAP_INTERVAL_EXT', 'GLX_BUFFER_SWAP_COMPLETE_INTEL_MASK',
+'GLX_EXCHANGE_COMPLETE_INTEL', 'GLX_COPY_COMPLETE_INTEL',
+'GLX_FLIP_COMPLETE_INTEL', 'GLX_COVERAGE_SAMPLES_NV', 'GLX_COLOR_SAMPLES_NV',
+'GLX_GPU_VENDOR_AMD', 'GLX_GPU_RENDERER_STRING_AMD',
+'GLX_GPU_OPENGL_VERSION_STRING_AMD', 'GLX_GPU_FASTEST_TARGET_GPUS_AMD',
+'GLX_GPU_RAM_AMD', 'GLX_GPU_CLOCK_AMD', 'GLX_GPU_NUM_PIPES_AMD',
+'GLX_GPU_NUM_SIMD_AMD', 'GLX_GPU_NUM_RB_AMD', 'GLX_GPU_NUM_SPI_AMD',
+'GLX_CONTEXT_ES2_PROFILE_BIT_EXT', 'GLXVideoSourceSGIX', 'GLXFBConfigIDSGIX',
+'GLXFBConfigSGIX', 'GLXPbufferSGIX', 'GLXBufferClobberEventSGIX',
+'GLXVideoDeviceNV', 'GLXVideoCaptureDeviceNV', 'GLX_ARB_multisample',
+'GLX_ARB_fbconfig_float', 'GLX_ARB_framebuffer_sRGB',
 'GLX_ARB_create_context', 'glXCreateContextAttribsARB',
-'PFNGLXCREATECONTEXTATTRIBSARBPROC', 'GLX_SGIS_multisample',
+'PFNGLXCREATECONTEXTATTRIBSARBPROC', 'GLX_ARB_create_context_profile',
+'GLX_ARB_create_context_robustness', 'GLX_SGIS_multisample',
 'GLX_EXT_visual_info', 'GLX_SGI_swap_control', 'glXSwapIntervalSGI',
 'PFNGLXSWAPINTERVALSGIPROC', 'GLX_SGI_video_sync', 'glXGetVideoSyncSGI',
 'glXWaitVideoSyncSGI', 'PFNGLXGETVIDEOSYNCSGIPROC',
@@ -789,8 +957,30 @@ __all__ = ['GLX_GLXEXT_VERSION', 'GLX_SAMPLE_BUFFERS_ARB', 'GLX_SAMPLES_ARB',
 'GLX_EXT_fbconfig_packed_float', 'GLX_EXT_framebuffer_sRGB',
 'GLX_EXT_texture_from_pixmap', 'glXBindTexImageEXT', 'glXReleaseTexImageEXT',
 'PFNGLXBINDTEXIMAGEEXTPROC', 'PFNGLXRELEASETEXIMAGEEXTPROC',
-'GLX_NV_present_video', 'GLX_NV_video_out', 'GLX_NV_swap_group']
+'GLX_NV_present_video', 'glXEnumerateVideoDevicesNV', 'glXBindVideoDeviceNV',
+'PFNGLXENUMERATEVIDEODEVICESNVPROC', 'PFNGLXBINDVIDEODEVICENVPROC',
+'GLX_NV_video_output', 'glXGetVideoDeviceNV', 'glXReleaseVideoDeviceNV',
+'glXBindVideoImageNV', 'glXReleaseVideoImageNV', 'glXSendPbufferToVideoNV',
+'glXGetVideoInfoNV', 'PFNGLXGETVIDEODEVICENVPROC',
+'PFNGLXRELEASEVIDEODEVICENVPROC', 'PFNGLXBINDVIDEOIMAGENVPROC',
+'PFNGLXRELEASEVIDEOIMAGENVPROC', 'PFNGLXSENDPBUFFERTOVIDEONVPROC',
+'PFNGLXGETVIDEOINFONVPROC', 'GLX_NV_swap_group', 'glXJoinSwapGroupNV',
+'glXBindSwapBarrierNV', 'glXQuerySwapGroupNV', 'glXQueryMaxSwapGroupsNV',
+'glXQueryFrameCountNV', 'glXResetFrameCountNV', 'PFNGLXJOINSWAPGROUPNVPROC',
+'PFNGLXBINDSWAPBARRIERNVPROC', 'PFNGLXQUERYSWAPGROUPNVPROC',
+'PFNGLXQUERYMAXSWAPGROUPSNVPROC', 'PFNGLXQUERYFRAMECOUNTNVPROC',
+'PFNGLXRESETFRAMECOUNTNVPROC', 'GLX_NV_video_capture',
+'glXBindVideoCaptureDeviceNV', 'glXEnumerateVideoCaptureDevicesNV',
+'glXLockVideoCaptureDeviceNV', 'glXQueryVideoCaptureDeviceNV',
+'glXReleaseVideoCaptureDeviceNV', 'PFNGLXBINDVIDEOCAPTUREDEVICENVPROC',
+'PFNGLXENUMERATEVIDEOCAPTUREDEVICESNVPROC',
+'PFNGLXLOCKVIDEOCAPTUREDEVICENVPROC', 'PFNGLXQUERYVIDEOCAPTUREDEVICENVPROC',
+'PFNGLXRELEASEVIDEOCAPTUREDEVICENVPROC', 'GLX_EXT_swap_control',
+'glXSwapIntervalEXT', 'PFNGLXSWAPINTERVALEXTPROC', 'GLX_NV_copy_image',
+'glXCopyImageSubDataNV', 'PFNGLXCOPYIMAGESUBDATANVPROC',
+'GLX_INTEL_swap_event', 'GLX_NV_multisample_coverage']
 # END GENERATED CONTENT (do not edit above this line)
+
 
 
 

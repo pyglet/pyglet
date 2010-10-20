@@ -49,7 +49,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         self.height = height is None and image.height or height
         self.vertex_lists = {}
 
-        anchor_y = self.height / image.height * image.anchor_y
+        anchor_y = self.height // image.height * image.anchor_y
         ascent = max(0, self.height - anchor_y)
         descent = min(0, -anchor_y)
         super(ImageElement, self).__init__(ascent, descent, self.width)

@@ -39,8 +39,8 @@ if _debug_win32:
                 result = fn(*args)
                 err = _GetLastError()
                 if err != 0:
-                    map(_log_win32.write,
-                        traceback.format_list(traceback.extract_stack()[:-1]))
+                    for entry in traceback.format_list(traceback.extract_stack()[:-1]):
+                        _log_win32.write(entry)
                     print >> _log_win32, format_error(err)
                 return result
             return f
