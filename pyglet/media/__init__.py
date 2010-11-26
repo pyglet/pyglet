@@ -384,6 +384,9 @@ class MediaEvent(object):
     def __repr__(self):
         return '%s(%r, %r, %r)' % (self.__class__.__name__,
             self.timestamp, self.event, self.args)
+    
+    def __lt__(self, other):
+        return hash(self) < hash(other)
 
 class SourceInfo(object):
     '''Source metadata information.
