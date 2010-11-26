@@ -50,6 +50,7 @@ from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _gdi32 as gdi32, _user32 as user32
 from pyglet.libs.win32 import _kernel32 as kernel32
+from pyglet.compat import asbytes
 
 _debug_font = pyglet.options['debug_font']
 
@@ -353,7 +354,7 @@ class Win32Font(base.Font):
         else:
             logfont.lfWeight = FW_NORMAL
         logfont.lfItalic = italic
-        logfont.lfFaceName = name
+        logfont.lfFaceName = asbytes(name)
         logfont.lfQuality = ANTIALIASED_QUALITY
         return logfont
 
