@@ -53,6 +53,8 @@ from pyglet.canvas.xlib import XlibCanvas
 from pyglet.libs.x11 import xlib
 from pyglet.libs.x11 import cursorfont
 
+from pyglet.compat import asbytes
+
 try:
     from pyglet.libs.x11 import xsync
     _have_xsync = True
@@ -263,10 +265,10 @@ class XlibWindow(BaseWindow):
             # Set supported protocols
             protocols = []
             protocols.append(xlib.XInternAtom(self._x_display,
-                                              'WM_DELETE_WINDOW', False))
+                                              asbytes('WM_DELETE_WINDOW'), False))
             if self._enable_xsync:
                 protocols.append(xlib.XInternAtom(self._x_display,
-                                                  '_NET_WM_SYNC_REQUEST',
+                                                  asbytes('_NET_WM_SYNC_REQUEST'),
                                                   False))
             protocols = (c_ulong * len(protocols))(*protocols)
             xlib.XSetWMProtocols(self._x_display, self._window,
@@ -278,7 +280,7 @@ class XlibWindow(BaseWindow):
                 self._sync_counter = xlib.XID(
                     xsync.XSyncCreateCounter(self._x_display, value))
                 atom = xlib.XInternAtom(self._x_display,
-                                        '_NET_WM_SYNC_REQUEST_COUNTER', False)
+                                        asbytes('_NET_WM_SYNC_REQUEST_COUNTER'), False)
                 ptr = pointer(self._sync_counter)
 
                 xlib.XChangeProperty(self._x_display, self._window,
@@ -344,7 +346,7 @@ class XlibWindow(BaseWindow):
         # is http://www.sbin.org/doc/Xlib/chapt_11.html
         if _have_utf8 and not self._x_ic:
             if not self.display._x_im:
-                xlib.XSetLocaleModifiers('@im=none')
+                xlib.XSetLocaleModifiers(asbytes('@im=none'))
                 self.display._x_im = \
                     xlib.XOpenIM(self._x_display, None, None, None)
 
@@ -358,9 +360,9 @@ class XlibWindow(BaseWindow):
                                        c_char_p, xlib.Window,
                                        c_void_p]
             self._x_ic = xlib.XCreateIC(self.display._x_im, 
-                'inputStyle', xlib.XIMPreeditNothing|xlib.XIMStatusNothing,
-                'clientWindow', self._window,
-                'focusWindow', self._window,
+                asbytes('inputStyle'), xlib.XIMPreeditNothing|xlib.XIMStatusNothing,
+                asbytes('clientWindow'), self._window,
+                asbytes('focusWindow'), self._window,
                 None)
 
             filter_events = c_ulong()
@@ -725,7 +727,7 @@ class XlibWindow(BaseWindow):
         xlib.XSetWMNormalHints(self._x_display, self._window, byref(hints))
 
     def _set_text_property(self, name, value, allow_utf8=True):
-        atom = xlib.XInternAtom(self._x_display, name, False)
+        atom = xlib.XInternAtom(self._x_display, asbytes(name), False)
         if not atom:
             raise XlibException('Undefined atom "%s"' % name)
         assert type(value) in (str, unicode)
@@ -749,11 +751,11 @@ class XlibWindow(BaseWindow):
         #xlib.XFree(property.value)
 
     def _set_atoms_property(self, name, values, mode=xlib.PropModeReplace):
-        name_atom = xlib.XInternAtom(self._x_display, name, False)
+        name_atom = xlib.XInternAtom(self._x_display, asbytes(name), False)
         atoms = []
         for value in values:
-            atoms.append(xlib.XInternAtom(self._x_display, value, False))
-        atom_type = xlib.XInternAtom(self._x_display, 'ATOM', False)
+            atoms.append(xlib.XInternAtom(self._x_display, asbytes(value), False))
+        atom_type = xlib.XInternAtom(self._x_display, asbytes('ATOM'), False)
         if len(atoms):
             atoms_ar = (xlib.Atom * len(atoms))(*atoms)
             xlib.XChangeProperty(self._x_display, self._window,
@@ -1118,11 +1120,11 @@ class XlibWindow(BaseWindow):
     def _event_clientmessage(self, ev):
         atom = ev.xclient.data.l[0]
         if atom == xlib.XInternAtom(ev.xclient.display,
-                                    'WM_DELETE_WINDOW', False):
+                                    asbytes('WM_DELETE_WINDOW'), False):
             self.dispatch_event('on_close')
         elif (self._enable_xsync and 
               atom == xlib.XInternAtom(ev.xclient.display, 
-                                       '_NET_WM_SYNC_REQUEST', False)):
+                                       asbytes('_NET_WM_SYNC_REQUEST'), False)):
             lo = ev.xclient.data.l[2]
             hi = ev.xclient.data.l[3]
             self._current_sync_value = xsync.XSyncValue(hi, lo)

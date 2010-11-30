@@ -43,6 +43,8 @@ from ctypes import *
 import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function
 
+from pyglet.compat import asbytes
+
 __all__ = ['link_GL', 'link_GLU', 'link_GLX']
 
 gl_lib = pyglet.lib.load_library('GL')
@@ -68,7 +70,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     except AttributeError:
         if _have_getprocaddress:
             # Fallback if implemented but not in ABI
-            bname = cast(pointer(create_string_buffer(name)), POINTER(c_ubyte))
+            bname = cast(pointer(create_string_buffer(asbytes(name))), POINTER(c_ubyte))
             addr = glXGetProcAddressARB(bname)
             if addr:
                 ftype = CFUNCTYPE(*((restype,) + tuple(argtypes)))
