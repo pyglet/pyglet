@@ -19,7 +19,7 @@
 
     <li><a
     href="http://groups.google.com/group/pyglet-commits">pyglet-commits</a> is
-    an announcement list which broadcasts SVN commits.</li>
+    an announcement list which broadcasts source commits.</li>
   </ul>
 
   <!--
@@ -50,21 +50,28 @@
   can read this wiki, however you must be a pyglet developer (have SVN commit
   access) to write to it.</p>
 
-  <h2>subversion repository</h2>
+  <h2>mercurial repository</h2>
 
-  <p>The subversion repository houses the source trunk, documentation,
+  <p>The mercurial repository houses the source trunk, documentation,
   examples and development tools.  You can <a
-  href="http://pyglet.googlecode.com/svn/">browse the repository</a> or check
-  out a working copy using an SVN client:</p>
+  href="http://code.google.com/p/pyglet/source/browse/">browse the
+  repository</a> or check out a working copy using a mercurial client:</p>
 
-  <p class="console">svn checkout http://pyglet.googlecode.com/svn/trunk/
-  pyglet</p>
+  <p class="console">hg clone https://pyglet.googlecode.com/hg/ pyglet</p>
+
+  <p>See the <a
+      href="http://code.google.com/p/pyglet/source/checkout">googlecode</a>
+    hosting page for more details about the repository.</p>
 
   <h2>contact</h2>
 
-  <p>pyglet is primarily developed by Alex Holkner.  You can reach him via
-  email at <a href="Alex.Holkner@gmail.com">Alex.Holkner@gmail.com</a>.  Other
-  contributors are noted in the NOTICE file of the source trunk or any source
-  distribution.</p>
+  <p>pyglet is developed by many individual volunteers, and there is no
+    central point of contact.  If you have a question about developing with
+    pyglet, or you wish to contribute a patch, please join the mailing list
+    (details above).</p>
+
+  <p>For legal issues, please contact Alex Holkner.  You can reach him via
+    email at <a 
+      href="mailto:Alex.Holkner@gmail.com">Alex.Holkner@gmail.com</a>.</p>
 
 </div>

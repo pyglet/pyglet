@@ -1,4 +1,10 @@
 <news>
+  <item date="7-January-2010" author="Richard"
+    title="pyglet 1.1.4 released">
+    <a href="download.html">pyglet 1.1.4</a> has been released, including
+    several important bug fixes. Thanks to the pyglet community for all
+    your effort in getting this release out.
+  </item>
   <item date="6-February-2009" author="Alex"
         title="New pyglet.org hosting">
     Thanks to the support of the good people at <a
