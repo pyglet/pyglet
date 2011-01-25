@@ -1688,21 +1688,16 @@ if _is_epydoc:
 else:
     # Try to determine which platform to use.
     if sys.platform == 'darwin':
-        #from pyglet.window.carbon import CarbonWindow
-        #Window = CarbonWindow
-        from pyglet.window.cocoa import CocoaWindow
-        Window = CocoaWindow
+        from pyglet.window.cocoa import CocoaWindow as Window
     elif sys.platform in ('win32', 'cygwin'):
-        from pyglet.window.win32 import Win32Window
-        Window = Win32Window
+        from pyglet.window.win32 import Win32Window as Window
     else:
         # XXX HACK around circ problem, should be fixed after removal of
         # shadow nonsense
         #pyglet.window = sys.modules[__name__]
         #import key, mouse
 
-        from pyglet.window.xlib import XlibWindow
-        Window = XlibWindow
+        from pyglet.window.xlib import XlibWindow as Window
 
 
 # Deprecated API

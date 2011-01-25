@@ -42,6 +42,9 @@ from pyglet.window import key
 
 # From SDL: src/video/quartz/SDL_QuartzKeys.h
 # These are the Macintosh key scancode constants -- from Inside Macintosh
+# http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
+# Renamed QZ_RALT, QZ_LALT to QZ_ROPTION, QZ_LOPTION
+# and QZ_RMETA, QZ_LMETA to QZ_RCOMMAND, QZ_LCOMMAND.
 
 QZ_ESCAPE = 0x35
 QZ_F1 = 0x7A
@@ -137,22 +140,26 @@ QZ_KP2 = 0x54
 QZ_KP3 = 0x55
 QZ_KP_ENTER = 0x4C
 QZ_LCTRL = 0x3B
-QZ_LALT = 0x3A
-QZ_LMETA = 0x37
+QZ_LOPTION = 0x3A
+QZ_LCOMMAND = 0x37
 QZ_SPACE = 0x31
-QZ_RMETA = 0x36
-QZ_RALT = 0x3D
+QZ_RCOMMAND = 0x36
+QZ_ROPTION = 0x3D
 QZ_RCTRL = 0x3E
 QZ_LEFT = 0x7B
 QZ_DOWN = 0x7D
 QZ_RIGHT = 0x7C
 QZ_KP0 = 0x52
 QZ_KP_PERIOD = 0x41
-QZ_IBOOK_ENTER = 0x34
-QZ_IBOOK_LEFT = 0x3B
-QZ_IBOOK_RIGHT = 0x3C
-QZ_IBOOK_DOWN = 0x3D
-QZ_IBOOK_UP = 0x3E
+# I am pretty certain that these constants are a left-over kludge and should be removed.
+# See http://forums.libsdl.org/viewtopic.php?t=1789&sid=5f8c2583bd34f812db225831fc27a175
+# which explains that they date from 2001 during the era of Mac OS 10.0.  At any rate,
+# they conflict with already defined constants like QZ_LCTRL which I actually need.
+#QZ_IBOOK_ENTER = 0x34
+#QZ_IBOOK_LEFT = 0x3B
+#QZ_IBOOK_RIGHT = 0x3C
+#QZ_IBOOK_DOWN = 0x3D
+#QZ_IBOOK_UP = 0x3E
 
 keymap = {
     QZ_ESCAPE: key.ESCAPE,
@@ -249,22 +256,23 @@ keymap = {
     QZ_KP3: key.NUM_3,
     QZ_KP_ENTER: key.NUM_ENTER,
     QZ_LCTRL: key.LCTRL,
-    QZ_LALT: key.LALT,
-    QZ_LMETA: key.LMETA,
+    QZ_LOPTION: key.LOPTION,
+    QZ_LCOMMAND: key.LCOMMAND,
     QZ_SPACE: key.SPACE,
-    QZ_RMETA: key.RMETA,
-    QZ_RALT: key.RALT,
+    QZ_RCOMMAND: key.RCOMMAND,
+    QZ_ROPTION: key.ROPTION,
     QZ_RCTRL: key.RCTRL,
     QZ_LEFT: key.LEFT,
     QZ_DOWN: key.DOWN,
     QZ_RIGHT: key.RIGHT,
     QZ_KP0: key.NUM_0,
     QZ_KP_PERIOD: key.NUM_DECIMAL,
-    QZ_IBOOK_ENTER: key.ENTER,
-    QZ_IBOOK_LEFT: key.LEFT,
-    QZ_IBOOK_RIGHT: key.RIGHT,
-    QZ_IBOOK_DOWN: key.DOWN,
-    QZ_IBOOK_UP: key.UP,
+# See above comments.
+#    QZ_IBOOK_ENTER: key.ENTER,
+#    QZ_IBOOK_LEFT: key.LEFT,
+#    QZ_IBOOK_RIGHT: key.RIGHT,
+#    QZ_IBOOK_DOWN: key.DOWN,
+#    QZ_IBOOK_UP: key.UP,
 }
 
 

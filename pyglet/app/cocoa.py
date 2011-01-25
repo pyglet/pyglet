@@ -75,7 +75,25 @@ class CocoaEventLoop(PlatformEventLoop):
 
         # Dispatch the event (if any).
         if event is not None:
-            if event.type() != NSApplicationDefined:
+            event_type = event.type()
+            if event_type != NSApplicationDefined:
+                # For key events, we send out special pyglet-specific actions
+                # which replace the keyDown:, keyUp:, and flagsChanged: messages
+                # because NSApplication translates multiple key presses into key 
+                # equivalents before sending them on, which means that some keyUp:
+                # messages are never sent for individual keys.   Our pyglet-specific
+                # replacements ensure that we see all the raw key presses & releases.
+                # We also filter out key-down repeats since pyglet only sends one
+                # on_key_press event per key press.
+                if event_type == NSKeyDown and not event.isARepeat():
+                    NSApp().sendAction_to_from_("pygletKeyDown:", None, event)
+                elif event_type == NSKeyUp:
+                    NSApp().sendAction_to_from_("pygletKeyUp:", None, event)
+                elif event_type == NSFlagsChanged:
+                    NSApp().sendAction_to_from_("pygletFlagsChanged:", None, event)
+
+                # Send the event on as usual.  The responder will still receive the normal
+                # keyUp:, keyDown:, and flagsChanged: events, along with everything else.
                 NSApp().sendEvent_(event)
 
             NSApp().updateWindows()
