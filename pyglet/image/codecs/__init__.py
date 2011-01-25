@@ -183,12 +183,15 @@ def add_default_image_codecs():
     except ImportError:
         pass
 
-    # Mac OS X default: QuickTime
+    # Mac OS X default: Quartz
     if sys.platform == 'darwin':
         try:
-            import pyglet.image.codecs.quicktime
-            add_encoders(quicktime)
-            add_decoders(quicktime)
+            #import pyglet.image.codecs.quicktime
+            #add_encoders(quicktime)
+            #add_decoders(quicktime)
+            import pyglet.image.codecs.quartz
+            add_encoders(quartz)
+            add_decoders(quartz)
         except ImportError:
             pass
 
