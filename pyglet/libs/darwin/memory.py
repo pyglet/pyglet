@@ -37,7 +37,7 @@ def exit_autorelease_pool():
     thread = NSThread.currentThread()
     pool_stack = _autorelease_pools[thread]
     pool = pool_stack.pop()
-    pool.release()
+    del pool
     _autorelease_pool_lock.release()
 
 
@@ -57,21 +57,20 @@ autorelease = _AutoreleasePoolContextManager()
 def _clean_autorelease_pools():
     _autorelease_pool_lock.acquire()
     for thread in list(_autorelease_pools):
-        pool_stack = _autorelease_pools[thread]
         if thread.isFinished():
-            for pool in pool_stack:
-                pool.release()
             del _autorelease_pools[thread]
         else:
+            pool_stack = _autorelease_pools[thread]
             for idx, pool in enumerate(pool_stack):
                 pool_stack[idx] = create_pool()
-                pool.release()
+                del pool
     _autorelease_pool_lock.release()
 
 def _cleaner():
     while True:
         _clean_autorelease_pools()
         time.sleep(1.0)
+
 _cleaner = threading.Thread(target=_cleaner)
 _cleaner.daemon = True
 _cleaner.start()

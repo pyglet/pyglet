@@ -44,26 +44,32 @@ from pyglet.libs.darwin import *
 
 # Prepare the default application.
 NSApplication.sharedApplication()
-NSApp().finishLaunching()
 
 class CocoaEventLoop(PlatformEventLoop):
 
     def start(self):
         self._pool = NSAutoreleasePool.alloc().init()
+        # finishLaunching should be called after there is an autorelease pool.
+        NSApp().finishLaunching()
 
     def step(self, timeout=None):
 
         # Recycle the autorelease pool.
-        self._pool.release()
+        del self._pool
         self._pool = NSAutoreleasePool.alloc().init()
 
         # Determine the timeout date.
         if timeout is None:
+            # Using distantFuture as untilDate means that nextEventMatchingMask
+            # will wait until the next event comes along.
             timeout_date = NSDate.distantFuture()
         else:
             timeout_date = NSDate.date().addTimeInterval_(timeout)
 
-        # Retrieve the next event (if any).
+        # Retrieve the next event (if any).  We wait for an event to show up
+        # and then process it, or if timeout_date expires we simply return.
+        # We only process one event per call of step().
+        self._is_running.set()
         event = NSApp().nextEventMatchingMask_untilDate_inMode_dequeue_(
                 NSAnyEventMask, timeout_date, NSDefaultRunLoopMode, True)
 
@@ -71,10 +77,25 @@ class CocoaEventLoop(PlatformEventLoop):
         if event is not None:
             if event.type() != NSApplicationDefined:
                 NSApp().sendEvent_(event)
-        NSApp().updateWindows()
+
+            NSApp().updateWindows()
+            did_time_out = False
+        else:
+            did_time_out = True
+
+        self._is_running.clear()
+
+        # pyglet.app.run() uses _run_estimated() by default, which checks
+        # to see if we timed out or not.  If we tell it the truth about 
+        # whether or not we timed out, then the framerate drops significantly,
+        # and CPU usage decreases.  If you want to be honest, then uncomment
+        # the following line:
+#        return did_time_out
+        # If you want better FPS, then lie:
+        return False
     
     def stop(self):
-        self._pool.release()
+        del self._pool
 
     def notify(self):
         enter_autorelease_pool()
