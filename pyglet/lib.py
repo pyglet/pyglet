@@ -96,7 +96,9 @@ class LibraryLoader(object):
             platform_names = list(platform_names)
 
         if self.platform == 'linux2':
-            platform_names.extend(['lib%s.so' % n for n in names])
+            for name in names:
+                libname = ctypes.util.find_library(name)
+                platform_names.append(libname or 'lib%s.so' % name)
 
         platform_names.extend(names)
         for name in platform_names:

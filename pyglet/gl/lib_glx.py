@@ -58,7 +58,7 @@ try:
     glXGetProcAddressARB.argtypes = [POINTER(c_ubyte)]
     _have_getprocaddress = True
 except AttributeError:
-    _have_get_procaddress = False
+    _have_getprocaddress = False
     
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
