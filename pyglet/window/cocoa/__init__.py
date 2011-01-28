@@ -105,7 +105,7 @@ class PygletDelegate(NSObject):
     def windowWillClose_(self, notification):
         # We don't want to send on_close events when we are simply recreating
         # the window (e.g. moving to fullscreen) so check to make sure it's OK:
-        if not self._window._should_supress_on_close_event:
+        if not self._window._should_suppress_on_close_event:
             self._window.dispatch_event("on_close")
 
     def windowDidMove_(self, notification):
@@ -431,7 +431,7 @@ class CocoaWindow(BaseWindow):
     _mouse_ignore_motion = False
 
     # Used with window recreation to avoid misleading on_close dispatches.
-    _should_supress_on_close_event = False
+    _should_suppress_on_close_event = False
 
     # NSWindow style masks.
     _style_masks = {
@@ -452,24 +452,22 @@ class CocoaWindow(BaseWindow):
         if 'fullscreen' in changes:
             if not self._fullscreen:
                 # Leaving fullscreen mode.
-                self._nswindow.orderOut_(None)
-                self.context.detach()
                 CGDisplayRelease(self.screen.cg_display_id)
 
         # Don't dispatch an on_close event when we destroy the old window
         # (otherwise our context will get destroyed).
-        self._should_supress_on_close_event = True
+        self._should_suppress_on_close_event = True
         self._create()
-        self._should_supress_on_close_event = False
+        self._should_suppress_on_close_event = False
 
     def _create(self):
         if self._nswindow:
             # The window is about the be recreated so destroy everything
             # associated with the old window, then destroy the window itself.
-            self.context.detach()
             self.canvas = None
             self._nswindow.orderOut_(None)
             self._nswindow.close()
+            self.context.detach()
             self._nswindow = None
 
         # Determine window parameters.
@@ -535,22 +533,20 @@ class CocoaWindow(BaseWindow):
         self.dispatch_event("on_resize", self._width, self._height)
 
     def close(self):
-        super(CocoaWindow, self).close()
-        if not self.context:
-            return
-        
-        self.context.destroy()
-        self.context = None
-
         # Restore cursor visibility
         self.set_mouse_platform_visible(True)
         self.set_exclusive_mouse(False)
 
         if self._fullscreen:
             CGDisplayRelease( CGMainDisplayID() )
-        else:
-            self._nswindow.close()
-            self._nswindow = None
+
+        self._should_suppress_on_close_event = True
+        self._nswindow.close()
+        self._should_suppress_on_close_event = False
+        
+        # Do this last, so that we don't see white flash 
+        # when exiting application from fullscreen mode.
+        super(CocoaWindow, self).close()
 
     def switch_to(self):
         self.context.set_current()
