@@ -117,20 +117,18 @@ class CocoaCanvasConfig(CanvasConfig):
 
  
     def create_context(self, share):
-
         # Determine the shared NSOpenGLContext.
-        if share is None:
-            share_context = None
+        if share:
+            share_context = share._nscontext
         else:
-            share_context = share._ns_context
+            share_context = None
 
         # Create a new NSOpenGLContext.
-        ns_context = NSOpenGLContext.alloc()
-        ns_context.initWithFormat_shareContext_(
-                self._pixel_format,
-                share_context,)
+        nscontext = NSOpenGLContext.alloc().initWithFormat_shareContext_(
+            self._pixel_format,
+            share_context)
 
-        return CocoaContext(self, share, ns_context)
+        return CocoaContext(self, nscontext, share)
 
     def compatible(self, canvas):
         return isinstance(canvas, CocoaCanvas)
@@ -138,10 +136,49 @@ class CocoaCanvasConfig(CanvasConfig):
 
 class CocoaContext(Context):
 
-    def __init__(self, config, share, ns_context):
+    def __init__(self, config, nscontext, share):
         super(CocoaContext, self).__init__(config, share)
-        self._ns_context = ns_context
+        self.config = config
+        self._nscontext = nscontext
+
+    def attach(self, canvas):
+        super(CocoaContext, self).attach(canvas)
+        canvas.nsview.setPixelFormat_(self.config._pixel_format)
+        canvas.nsview.setOpenGLContext_(self._nscontext)
+        # The NSView instance should be attached to a nondeferred window before calling
+        # setView, otherwise you get an "invalid drawable" message.
+        self._nscontext.setView_(canvas.nsview)
+        self.set_current()
+
+    def detach(self):
+        super(CocoaContext, self).detach()
+        self._nscontext.clearDrawable()
 
     def set_current(self):
-        self._ns_context.makeCurrentContext()
+        self._nscontext.makeCurrentContext()
         super(CocoaContext, self).set_current()
+
+    def update_geometry(self):
+        # Need to call this method whenever the context drawable (an NSView)
+        # changes size or location.
+        self._nscontext.update()
+
+    def set_full_screen(self):
+        self._nscontext.setFullScreen()
+        self._nscontext.makeCurrentContext()
+
+    def destroy(self):
+        super(CocoaContext, self).destroy()
+        self._nscontext = None
+
+    def set_vsync(self, vsync=True):
+        # Does not work because of PyObjC bug.
+        #self._nscontext.setValues_forParameter_([1], NSOpenGLCPSwapInterval)
+        pass
+
+    def get_vsync(self):
+        value = self._nscontext.getValues_forParameter_(None, NSOpenGLCPSwapInterval)
+        return value
+        
+    def flip(self):
+        self._nscontext.flushBuffer()

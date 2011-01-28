@@ -95,31 +95,27 @@ class PygletDelegate(NSObject):
     # CocoaWindow object.
     _window = None
 
-    # NSWindow object.
-    _nswindow = None
-
-    # NSView object.
-    _nsview = None
-
     def initWithWindow_(self, window):
         self = super(PygletDelegate, self).init()
         if self is not None:
             self._window = window
-            self._nswindow = window._nswindow
-            self._nsview = window._nsview
-            self._nswindow.setDelegate_(self)
+            window._nswindow.setDelegate_(self)
         return self
 
     def windowWillClose_(self, notification):
-        self._window.dispatch_event("on_close")
+        # We don't want to send on_close events when we are simply recreating
+        # the window (e.g. moving to fullscreen) so check to make sure it's OK:
+        if not self._window._should_supress_on_close_event:
+            self._window.dispatch_event("on_close")
 
     def windowDidMove_(self, notification):
         x, y = self._window.get_location()
         self._window.dispatch_event("on_move", x, y)
 
     def windowDidResize_(self, notification):
-        width, height = self._window.get_size()
-        self._window.dispatch_event("on_resize", width, height)
+        # Don't need to do anything here because if we subclass PygletView
+        # from NSOpenGLView, we handle everything in the reshape method.
+        pass
 
     def windowDidChangeScreen(self, notification):
         pass
@@ -130,8 +126,29 @@ class PygletWindow(NSWindow):
     def canBecomeKeyWindow(self):
         return True
 
+    # When the window is being resized, it enters into a mini event loop that
+    # only looks at mouseDragged and mouseUp events, blocking everything else.
+    # Among other things, this makes it impossible to run an NSTimer to call the
+    # idle() function in order to update the view during the resize.  So we
+    # override this method, called by the resizing event loop, and call the
+    # idle() function from here.  This *almost* works.  I can't figure out what
+    # is happening at the very beginning of a resize event.  The NSView's
+    # viewWillStartLiveResize method is called and then nothing happens until
+    # the mouse is dragged.  I think NSApplication's nextEventMatchingMask_etc
+    # method is being called instead of this one.  I don't really feel like
+    # subclassing NSApplication just to fix this.  Also, to prevent white flashes
+    # while resizing, we must also call idle() from the view's reshape method.
+    def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask, date, mode, dequeue):
+        if self.inLiveResize():
+            # Call the idle() method while we're stuck in a live resize event.
+            from pyglet import app
+            if app.event_loop is not None:
+                app.event_loop.idle()
+                
+        return super(PygletWindow, self).nextEventMatchingMask_untilDate_inMode_dequeue_(mask, date, mode, dequeue)
 
-class PygletView(NSView):
+
+class PygletView(NSOpenGLView):
 
     # CocoaWindow object.
     _window = None
@@ -141,24 +158,28 @@ class PygletView(NSView):
     # of whack if a modifier key is released while the window doesn't have focus.
     _modifier_keys_down = set() 
 
-    def initWithWindow_(self, window):
-        self = super(PygletView, self).init()
+    def initWithFrame_cocoaWindow_(self, frame, window):
+        self = super(PygletView, self).initWithFrame_(frame)
         if self is not None:
             self._window = window
-            tracking_options = NSTrackingMouseEnteredAndExited | \
-                               NSTrackingActiveAlways | \
-                               NSTrackingInVisibleRect
-            self.tracking_area = NSTrackingArea.alloc() \
-                .initWithRect_options_owner_userInfo_(
-                    self.frame(),     # rect
-                    tracking_options, # options
-                    self,             # owner
-                    None,             # userInfo
-                    )
-            self.addTrackingArea_(self.tracking_area)
+            self.setupTrackingArea()
         return self
+
+    def setupTrackingArea(self):
+        tracking_options = NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways | NSTrackingInVisibleRect
+
+        self.tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
+            self.frame(),     # rect
+            tracking_options, # options
+            self,             # owner
+            None)             # userInfo
+
+        self.addTrackingArea_(self.tracking_area)
     
     def canBecomeKeyView(self):
+        return True
+
+    def isOpaque(self):
         return True
 
     ## Event data.
@@ -192,6 +213,26 @@ class PygletView(NSView):
         return keymap[nsevent.keyCode()]
 
     ## Event responders.
+
+    # This is an NSOpenGLView-specific method that automatically gets called
+    # whenever the view's rectangle changes.  The stuff here could just as well
+    # be done in the windowDidResize_ delegate method if we chose to use a
+    # custom NSView class instead.  NSOpenGLView is supposed to automatically
+    # call the context's update method for us whenever the view resizes, however
+    # it seems like we need to manually call it here for some reason.
+    def reshape(self):
+        width, height = map(int, self.bounds().size)
+        self._window.context.update_geometry()
+        self._window.dispatch_event("on_resize", width, height)
+        # Can't get app.event_loop.enter_blocking() working with Cocoa, because
+        # when mouse clicks on the window's resize control, Cocoa enters into a
+        # mini-event loop that only responds to mouseDragged and mouseUp events.
+        # This means that using NSTimer to call idle() won't work.  Our kludge
+        # is to override NSWindow's nextEventMatchingMask_etc method and call
+        # idle() from there.
+        from pyglet import app
+        if app.event_loop is not None:
+            app.event_loop.idle()
 
     def keyDown_(self, nsevent):        
         # replaced by pygletKeyDown_
@@ -375,12 +416,6 @@ class CocoaWindow(BaseWindow):
     # NSWindow instance.
     _nswindow = None
 
-    # NSView instance.
-    _nsview = None
-
-    # NSOpenGLContext instance.
-    _nscontext = None
-
     # Delegate object.
     _delegate = None
     
@@ -388,15 +423,15 @@ class CocoaWindow(BaseWindow):
     _location = None
     _minimum_size = None
     _maximum_size = None
-    _event_dispatcher = None
-    _current_modifiers = 0
-    _mapped_modifers = 0
     _track_ref = 0
     _track_region = None
 
     _mouse_exclusive = False
     _mouse_platform_visible = True
     _mouse_ignore_motion = False
+
+    # Used with window recreation to avoid misleading on_close dispatches.
+    _should_supress_on_close_event = False
 
     # NSWindow style masks.
     _style_masks = {
@@ -412,22 +447,27 @@ class CocoaWindow(BaseWindow):
 
     def _recreate(self, changes):
         if ('context' in changes):
-            self._nscontext.makeCurrentContext()
+            self.context.set_current()
         
         if 'fullscreen' in changes:
             if not self._fullscreen:
-                # Leaving fullscreen
-                self._nscontext.clearDrawable()
+                # Leaving fullscreen mode.
+                self._nswindow.orderOut_(None)
+                self.context.detach()
                 CGDisplayRelease(self.screen.cg_display_id)
-        
+
+        # Don't dispatch an on_close event when we destroy the old window
+        # (otherwise our context will get destroyed).
+        self._should_supress_on_close_event = True
         self._create()
+        self._should_supress_on_close_event = False
 
     def _create(self):
-
-        self._nscontext = self.context._ns_context
-
         if self._nswindow:
-            self._nscontext.clearDrawable()
+            # The window is about the be recreated so destroy everything
+            # associated with the old window, then destroy the window itself.
+            self.context.detach()
+            self.canvas = None
             self._nswindow.orderOut_(None)
             self._nswindow.close()
             self._nswindow = None
@@ -442,46 +482,43 @@ class CocoaWindow(BaseWindow):
             style_mask = self._style_masks[self._style]
             if self._resizable:
                 style_mask |= NSResizableWindowMask
-            
-        # Create window, view and delegate.
 
-        self._nswindow = PygletWindow.alloc() \
-                .initWithContentRect_styleMask_backing_defer_(
-                        content_rect,           # contentRect
-                        style_mask,             # styleMask
-                        NSBackingStoreBuffered, # backing
-                        False,                  # defer
-                        )
+        # First create an instance of our NSWindow subclass.
+        self._nswindow = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            content_rect,           # contentRect
+            style_mask,             # styleMask
+            NSBackingStoreBuffered, # backing
+            False)                  # defer
 
-        self._nsview = PygletView.alloc() \
-                .initWithFrame_(
-                        NSMakeRect(0, 0, 0, 0), # frame
-                        ) \
-                .initWithWindow_(
-                        self, # window
-                        )
+        if self._fullscreen:
+            CGDisplayCapture(self.screen.cg_display_id)
+            self._nswindow.setLevel_(CGShieldingWindowLevel())
+            self._nswindow.setBackgroundColor_(NSColor.blackColor())            
+            self._nswindow.setOpaque_(True)
+            self.context.set_full_screen()
+            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_show')
+            self.dispatch_event('on_expose')
+        else:
+            self._nswindow.center()
 
-        self._delegate = PygletDelegate.alloc() \
-                .initWithWindow_(
-                        self, # window
-                        )
-            
-        # Configure NSWindow and NSView.
-        self._nswindow.setContentView_(self._nsview)
-        self._nswindow.makeFirstResponder_(self._nsview)
+        # Then create a view and set it as our NSWindow's content view.
+        nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
+        self._nswindow.setContentView_(nsview)
+        self._nswindow.makeFirstResponder_(nsview)
+
+        # Create a canvas with the view as its drawable and attach context to it.
+        # Note that canvas owns the nsview; when canvas is destroyed, view goes with it.
+        self.canvas = CocoaCanvas(self.display, self.screen, nsview)
+        self.context.attach(self.canvas)
+
+        # Configure the window.
         self._nswindow.setAcceptsMouseMovedEvents_(True)
         self._nswindow.setReleasedWhenClosed_(False)
-        if self._fullscreen:
-            self._width = self.screen.width
-            self._height = self.screen.height
-            CGDisplayCapture(self.screen.cg_display_id)
-            self._nscontext.setFullScreen()
-            self._nswindow.setLevel_(CGShieldingWindowLevel())
-            self._nswindow.setBackgroundColor_(NSColor.blackColor())
-        else: 
-            self._nswindow.center()
-        self._nscontext.setView_(self._nsview)
 
+        # Set the delegate.
+        self._delegate = PygletDelegate.alloc().initWithWindow_(self)
+            
         # Configure CocoaWindow.
         self.set_caption(self._caption)
         self.set_visible(self._visible)
@@ -492,19 +529,18 @@ class CocoaWindow(BaseWindow):
         if self._maximum_size is not None:
             self.set_maximum_size(*self._maximum_size)
         
-        self._nscontext.update()
-        self.context.attach(self.context.config.canvas)
+        self.context.update_geometry()
         self.switch_to()
         self.set_vsync(self._vsync)
         self.dispatch_event("on_resize", self._width, self._height)
 
     def close(self):
         super(CocoaWindow, self).close()
-        if not self._nscontext:
+        if not self.context:
             return
         
-        self._nscontext.clearDrawable()
-        self._nscontext = None
+        self.context.destroy()
+        self.context = None
 
         # Restore cursor visibility
         self.set_mouse_platform_visible(True)
@@ -517,11 +553,11 @@ class CocoaWindow(BaseWindow):
             self._nswindow = None
 
     def switch_to(self):
-        self._context.set_current()
+        self.context.set_current()
 
     def flip(self):
         self.draw_mouse_cursor()
-        self._nscontext.flushBuffer()
+        self.context.flip()
 
     def dispatch_events(self):
         self.dispatch_pending_events()
@@ -529,7 +565,6 @@ class CocoaWindow(BaseWindow):
     def dispatch_pending_events(self):
         while self._event_queue:
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
-
 
     def set_caption(self, caption):
         self._caption = caption

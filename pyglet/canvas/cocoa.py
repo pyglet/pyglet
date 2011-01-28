@@ -34,7 +34,7 @@ class CocoaScreen(Screen):
         return nsnumber.unsignedIntValue()
 
     def get_matching_configs(self, template):
-        canvas = CocoaCanvas(self.display, self)
+        canvas = CocoaCanvas(self.display, self, None)
         return template.match(canvas)
 
     def get_modes(self):
@@ -60,9 +60,10 @@ class CocoaScreenMode(ScreenMode):
 
 class CocoaCanvas(Canvas):
 
-    def __init__(self, display, screen):
+    def __init__(self, display, screen, nsview):
         super(CocoaCanvas, self).__init__(display)
         self.screen = screen
+        self.nsview = nsview
 
 
 
