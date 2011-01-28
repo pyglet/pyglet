@@ -42,18 +42,35 @@ __version__ = '$Id: $'
 from pyglet.app.base import PlatformEventLoop
 from pyglet.libs.darwin import *
 
-# Prepare the default application.
-NSApplication.sharedApplication()
-
 class CocoaEventLoop(PlatformEventLoop):
+
+    def __init__(self):
+        super(CocoaEventLoop, self).__init__()
+        # Prepare the default application.
+        NSApplication.sharedApplication()
+
+    def _create_application_menu(self):
+        # Sets up a menu and installs a "quit" item so that we can use
+        # Command-Q to exit the application.
+        # See http://cocoawithlove.com/2010/09/minimalist-cocoa-programming.html
+        # This could also be done much more easily with a NIB.
+        menubar = NSMenu.alloc().init()
+        appMenuItem = NSMenuItem.alloc().init()
+        menubar.addItem_(appMenuItem)
+        NSApp().setMainMenu_(menubar)
+        appMenu = NSMenu.alloc().init()
+        quitTitle = "Quit " + NSProcessInfo.processInfo().processName()
+        quitItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(quitTitle, "terminate:", "q")
+        appMenu.addItem_(quitItem)
+        appMenuItem.setSubmenu_(appMenu)
 
     def start(self):
         self._pool = NSAutoreleasePool.alloc().init()
         # finishLaunching should be called after there is an autorelease pool.
         NSApp().finishLaunching()
+        self._create_application_menu()
 
     def step(self, timeout=None):
-
         # Recycle the autorelease pool.
         del self._pool
         self._pool = NSAutoreleasePool.alloc().init()
