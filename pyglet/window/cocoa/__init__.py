@@ -419,7 +419,6 @@ class CocoaWindow(BaseWindow):
     _delegate = None
     
     # Window properties
-    _location = None
     _minimum_size = None
     _maximum_size = None
     _track_ref = 0
@@ -515,12 +514,10 @@ class CocoaWindow(BaseWindow):
 
         # Set the delegate.
         self._delegate = PygletDelegate.alloc().initWithWindow_(self)
-            
+
         # Configure CocoaWindow.
         self.set_caption(self._caption)
         self.set_visible(self._visible)
-        if self._location is not None:
-            self.set_location(*self._location)
         if self._minimum_size is not None:
             self.set_minimum_size(*self._minimum_size)
         if self._maximum_size is not None:
@@ -610,43 +607,38 @@ class CocoaWindow(BaseWindow):
             self._nswindow.setTitle_(caption)
 
     def get_location(self):
-        if self._nswindow is not None:
-            origin = self._nswindow.frame().origin
-            return int(origin.x), int(origin.y)
-        return 0, 0
+        rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())        
+        screen_width, screen_height = self._nswindow.screen().frame().size
+        return int(rect.origin.x), int(screen_height - rect.origin.y - rect.size.height)
 
     def set_location(self, x, y):
-        if self._nswindow is not None:
-            self.window.setFrameOrigin_(self._location)
+        rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())        
+        screen_width, screen_height = self._nswindow.screen().frame().size
+        self._nswindow.setFrameOrigin_(NSPoint(x, screen_height - y - rect.size.height))
 
     def get_size(self):
-        if self._nswindow is not None:
-            size = self._nswindow.contentView().frame().size
-            return int(size.width), int(size.height)
-        return 0, 0
+        rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())
+        return int(rect.size.width), int(rect.size.height)
 
     def set_size(self, width, height):
-        if self._nswindow and not self._fullscreen:
-            self._width = int(width)
-            self._height = int(height)
-
-            frame = self._nswindow.frame()
-            frame.size.width = self._width
-            frame.size.height = self._height
-            self._nswindow.setFrame_display_(frame, False)
-
-            self.dispatch_event('on_resize', self._width, self._height)
-            self.dispatch_event('on_expose')
+        if self._fullscreen:
+            raise WindowException('Cannot set size of fullscreen window.')
+        self._width = int(width)
+        self._height = int(height)
+        self._nswindow.setContentSize_(NSSize(width, height))
+            
+        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('on_expose')
 
     def set_minimum_size(self, width, height):
         self._minimum_size = NSSize(width, height)
         if self._nswindow is not None:
-            self._nswindow.setMinSize_(self._minimum_size)
+            self._nswindow.setContentMinSize_(self._minimum_size)
 
     def set_maximum_size(self, width, height):
         self._maximum_size = NSSize(width, height)
         if self._nswindow is not None:
-            self._nswindow.setMaxSize_(self._maximum_size)
+            self._nswindow.setContentMaxSize_(self._maximum_size)
 
     def activate(self):
         if self._nswindow is not None:
@@ -662,20 +654,25 @@ class CocoaWindow(BaseWindow):
                 self.dispatch_event('on_expose')
                 self._nswindow.makeKeyAndOrderFront_(None)
             else:
+                self.dispatch_event('on_hide')
                 self._nswindow.orderOut_(None)
 
     def minimize(self):
         self._mouse_in_window = False
         self.set_mouse_platform_visible()
         if self._nswindow is not None:
-            self._nswindow.minimize_(None)
+            self._nswindow.miniaturize_(None)
 
     def maximize(self):
         if self._nswindow is not None:
             self._nswindow.zoom_(None)
 
     def set_vsync(self, vsync):
-        pass
+        if pyglet.options['vsync'] is not None:
+            vsync = pyglet.options['vsync']
+        self._vsync = vsync # _recreate depends on this
+        if self.context:
+            self.context.set_vsync(vsync)
 
     def set_mouse_platform_visible(self, visible=None):
         if visible is None:
