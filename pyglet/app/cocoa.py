@@ -48,6 +48,13 @@ class CocoaEventLoop(PlatformEventLoop):
         super(CocoaEventLoop, self).__init__()
         # Prepare the default application.
         NSApplication.sharedApplication()
+        # Create an autorelease pool for menu creation and finishLaunching
+        pool = NSAutoreleasePool.alloc().init()
+        self._create_application_menu()
+        NSApp().finishLaunching()
+        NSApp().activateIgnoringOtherApps_(True)
+        # Then get rid of the pool when we're done.
+        del pool
 
     def _create_application_menu(self):
         # Sets up a menu and installs a "quit" item so that we can use
@@ -65,15 +72,11 @@ class CocoaEventLoop(PlatformEventLoop):
         appMenuItem.setSubmenu_(appMenu)
 
     def start(self):
-        self._pool = NSAutoreleasePool.alloc().init()
-        # finishLaunching should be called after there is an autorelease pool.
-        NSApp().finishLaunching()
-        self._create_application_menu()
+        pass
 
     def step(self, timeout=None):
-        # Recycle the autorelease pool.
-        del self._pool
-        self._pool = NSAutoreleasePool.alloc().init()
+        # Create an autorelease pool for this iteration.
+        pool = NSAutoreleasePool.alloc().init()
 
         # Determine the timeout date.
         if timeout is None:
@@ -120,6 +123,9 @@ class CocoaEventLoop(PlatformEventLoop):
 
         self._is_running.clear()
 
+        # Destroy the autorelease pool used for this step.
+        del pool
+
         # pyglet.app.run() uses _run_estimated() by default, which checks
         # to see if we timed out or not.  If we tell it the truth about 
         # whether or not we timed out, then the framerate drops significantly,
@@ -130,7 +136,7 @@ class CocoaEventLoop(PlatformEventLoop):
         return False
     
     def stop(self):
-        del self._pool
+        pass
 
     def notify(self):
         enter_autorelease_pool()
