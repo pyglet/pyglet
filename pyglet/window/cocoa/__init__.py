@@ -59,8 +59,6 @@ from pyglet.gl import glu_info
 
 from pyglet.event import EventDispatcher
 
-from Cocoa import *
-from Quartz import *
 
 # Map symbol,modifiers -> motion
 # Determined by experiment with TextEdit.app
@@ -224,6 +222,7 @@ class PygletView(NSOpenGLView):
         width, height = map(int, self.bounds().size)
         self._window.context.update_geometry()
         self._window.dispatch_event("on_resize", width, height)
+        self._window.dispatch_event("on_expose")
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
         # when mouse clicks on the window's resize control, Cocoa enters into a
         # mini-event loop that only responds to mouseDragged and mouseUp events.
@@ -526,11 +525,10 @@ class CocoaWindow(BaseWindow):
             self.set_minimum_size(*self._minimum_size)
         if self._maximum_size is not None:
             self.set_maximum_size(*self._maximum_size)
-        
+
         self.context.update_geometry()
         self.switch_to()
         self.set_vsync(self._vsync)
-        self.dispatch_event("on_resize", self._width, self._height)
 
     def close(self):
         # Restore cursor visibility
@@ -549,18 +547,62 @@ class CocoaWindow(BaseWindow):
         super(CocoaWindow, self).close()
 
     def switch_to(self):
-        self.context.set_current()
+        if self.context:
+            self.context.set_current()
 
     def flip(self):
         self.draw_mouse_cursor()
-        self.context.flip()
+        if self.context:
+            self.context.flip()
 
     def dispatch_events(self):
+        self._allow_dispatch_event = True
+        # Process all pyglet events.
         self.dispatch_pending_events()
-    
+        event = True
+
+        # Dequeue and process all of the pending Cocoa events.
+        pool = NSAutoreleasePool.alloc().init()
+        while event and self._nswindow and self._context:
+            try:
+                event = NSApp().nextEventMatchingMask_untilDate_inMode_dequeue_(
+                    NSAnyEventMask, None, NSEventTrackingRunLoopMode, True)
+
+                if event is not None:
+                    event_type = event.type()
+                    # Send key events to special handlers.
+                    if event_type == NSKeyDown and not event.isARepeat():
+                        NSApp().sendAction_to_from_("pygletKeyDown:", None, event)
+                    elif event_type == NSKeyUp:
+                        NSApp().sendAction_to_from_("pygletKeyUp:", None, event)
+                    elif event_type == NSFlagsChanged:
+                        NSApp().sendAction_to_from_("pygletFlagsChanged:", None, event)
+                    # Pass on other events.
+                    NSApp().sendEvent_(event)
+                    NSApp().updateWindows()
+
+            except Exception as e:
+                # This is a horrible, horrible kludge so that we can get through
+                # the test scripts, which all use dispatch_events instead of the
+                # pyglet.app event loop.  When using dispatch_events,
+                # occasionally we'll get an exception while trying to get the
+                # next event, which says: 
+                #      NSInvalidArgumentException - Unlocking Focus on wrong
+                #      view (<NSThemeFrame>), expected <PygletView>.
+                # I can't figure out why this is happening; I think it has
+                # something to do with events left in the event queue that refer
+                # to invalid windows.
+                print 'ignoring dispatch_events exception:', e
+                event = False  # fall out of the while loop
+
+        del pool
+
+        self._allow_dispatch_event = False
+
     def dispatch_pending_events(self):
         while self._event_queue:
-            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
+            event = self._event_queue.pop(0)
+            EventDispatcher.dispatch_event(self, *event)
 
     def set_caption(self, caption):
         self._caption = caption
@@ -584,14 +626,17 @@ class CocoaWindow(BaseWindow):
         return 0, 0
 
     def set_size(self, width, height):
-        self._width = int(width)
-        self._height = int(height)
-        if self._nswindow is not None:
-            if not self._fullscreen:
-                frame = self._nswindow.frame()
-                frame.size.width = self._width
-                frame.size.height = self._height
-                self._nswindow.setFrame_display_(frame, False)
+        if self._nswindow and not self._fullscreen:
+            self._width = int(width)
+            self._height = int(height)
+
+            frame = self._nswindow.frame()
+            frame.size.width = self._width
+            frame.size.height = self._height
+            self._nswindow.setFrame_display_(frame, False)
+
+            self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_expose')
 
     def set_minimum_size(self, width, height):
         self._minimum_size = NSSize(width, height)
@@ -612,6 +657,9 @@ class CocoaWindow(BaseWindow):
         self._visible = visible
         if self._nswindow is not None:
             if visible:
+                self.dispatch_event('on_resize', self._width, self._height)
+                self.dispatch_event('on_show')
+                self.dispatch_event('on_expose')
                 self._nswindow.makeKeyAndOrderFront_(None)
             else:
                 self._nswindow.orderOut_(None)
