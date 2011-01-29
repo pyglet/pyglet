@@ -121,25 +121,39 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
 class QuartzFont(base.Font):
     glyph_renderer_class = QuartzGlyphRenderer
-    _loaded_cgFont_table = {}
+    _loaded_CGFont_table = {}
 
-    def _create_font_with_traits(self, ctFont, bold, italic):
-        # Setup the symbolic trait value from passed in flags.
-        traitValue = 0
-        if bold: traitValue |= CoreText.kCTFontBoldTrait
-        if italic: traitValue |= CoreText.kCTFontItalicTrait
-        # The symbolic trait mask is used to restrict which traits are changed.
-        traitMask = CoreText.kCTFontBoldTrait | CoreText.kCTFontItalicTrait
-        # Try to create a font in the same family as ctFont but with the desired traits.
-        # Values of 0.0 for size and None for the text matrix preserve the values of the 
-        # original font.  
-        newFont = CoreText.CTFontCreateCopyWithSymbolicTraits(ctFont, 0.0, None, traitValue, traitMask)
-        # If no font with the desired traits can be found, then return the original font.
-        if newFont:
-            return newFont
-        else:
-            return ctFont
-        
+    def _lookup_font_with_family_and_traits(self, family, bold, italic):
+        # This method searches the _loaded_CGFont_table to find a loaded
+        # font of the given family with the desired traits.  If it can't find
+        # anything with the exact traits, it tries to fall back to whatever
+        # we have loaded that's close.  If it can't find anything in the
+        # given family at all, it returns None.
+
+        # Check if we've loaded the font with the specified family.
+        if family not in self._loaded_CGFont_table:
+            return None
+        # Grab a dictionary of all fonts in the family, keyed by traits.
+        fonts = self._loaded_CGFont_table[family]
+        if not fonts:
+            return None
+        # Construct traits value
+        traits = 0
+        if bold: traits |= CoreText.kCTFontBoldTrait
+        if italic: traits |= CoreText.kCTFontItalicTrait
+        # Return font with desired traits if it is available. 
+        if traits in fonts:
+            return fonts[traits]
+        # Otherwise try to find a font with some of the traits.
+        for (t, f) in fonts:
+            if traits & t:
+                return f
+        # Otherwise try to return a regular font.
+        if 0 in fonts:
+            return fonts[0]
+        # Otherwise return whatever we have.
+        return fonts.values()[0]
+
 
     def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(QuartzFont, self).__init__()
@@ -151,36 +165,34 @@ class QuartzFont(base.Font):
         size = size * dpi / 72.0
 
         name = unicode(name)
-        if name in self._loaded_cgFont_table:
-            # Grab previously loaded cgFont from table and use it to 
-            # create a CTFont object with the specified size.
-            cgFont = self._loaded_cgFont_table[name]
-            self.ctFont = CoreText.CTFontCreateWithGraphicsFont(cgFont, size, None, None)
-
-            # Add the bold and italic traits if possible.
-            if bold or italic:
-                self.ctFont = _create_font_with_traits(self.ctFont, bold, italic)
+        # First see if we can find an appropriate font from our table of loaded fonts.
+        cgFont = self._lookup_font_with_family_and_traits(name, bold, italic)
+        if cgFont:
+            # Use cgFont from table to create a CTFont object with the specified size.
+            self.ctFont = CoreText.CTFontCreateWithGraphicsFont(cgFont, size, None, None)        
         else:
-            # Use Cocoa for non-graphics fonts, because it is easier to set the
-            # font traits this way.  (I would use CTFontCreateWithFontDescriptor, but
-            # I can't get PyObjC to do the right thing with the attributes dictionary)
+            # Use Cocoa for non-graphics fonts that are system-installed.
             manager = Cocoa.NSFontManager.sharedFontManager()
                 
             traits = 0
             if bold: traits |= Cocoa.NSBoldFontMask
             if italic: traits |= Cocoa.NSItalicFontMask
 
-            # This method should always return something, falling back to the closest
-            # similar font if it can't find one with the given name or traits.
+            # Try to find specified font.  Returns None if it can't.
             self.ctFont = manager.fontWithFamily_traits_weight_size_(name, traits, 0, size)
-            
+            if not self.ctFont:
+                # Try to fall back to Helvetica
+                self.ctFont = manager.fontWithFamily_traits_weight_size_('Helvetica', traits, 0, size)
+
+            assert self.ctFont, "Couldn't load font: " + name
+                
         self.ascent = CoreText.CTFontGetAscent(self.ctFont)
         self.descent = -CoreText.CTFontGetDescent(self.ctFont)
 
     @classmethod
     def have_font(cls, name):
         name = unicode(name)
-        if name in cls._loaded_cgFont_table: return True
+        if name in cls._loaded_CGFont_table: return True
         # Try to create the font to see if it exists.
         return Quartz.CGFontCreateWithFontName(name) is not None
 
@@ -196,9 +208,21 @@ class QuartzFont(base.Font):
         provider = Quartz.CGDataProviderCreateWithCFData(dataRef)
         cgFont = Quartz.CGFontCreateWithDataProvider(provider)
         
-        # Get the full name of the font and use it as the key to store
-        # in our table of fonts loaded from memory.
-        fullName = unicode(Quartz.CGFontCopyFullName(cgFont))
-        cls._loaded_cgFont_table[fullName] = cgFont
+        # Create a template CTFont from the graphics font so that we can get font info.
+        ctFont = CoreText.CTFontCreateWithGraphicsFont(cgFont, 1, None, None)        
+        # Get info about the font to use as key in our font table.
+        familyName = unicode(CoreText.CTFontCopyFamilyName(ctFont))
+        fullName = unicode(CoreText.CTFontCopyFullName(ctFont))
+        traits = CoreText.CTFontGetSymbolicTraits(ctFont)
+
+        # Store font in table. We store it under both its family name and its
+        # full name, since its not always clear which one will be looked up.
+        if familyName not in cls._loaded_CGFont_table:
+            cls._loaded_CGFont_table[familyName] = {}
+        cls._loaded_CGFont_table[familyName][traits] = cgFont
+
+        if fullName not in cls._loaded_CGFont_table:
+            cls._loaded_CGFont_table[fullName] = {}
+        cls._loaded_CGFont_table[fullName][traits] = cgFont
 
         
