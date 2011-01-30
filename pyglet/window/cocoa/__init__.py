@@ -82,10 +82,32 @@ _motion_map = {
 }
 
 
+# This class is a wrapper around NSCursor which prevents us from
+# sending too many hide or unhide messages in a row.  Apparently
+# NSCursor treats them like retain/release messages, which can be
+# problematic when we are e.g. switching between window & fullscreen.
+class SystemCursor:
+    cursor_is_hidden = False
+    @classmethod
+    def hide(cls):
+        if not cls.cursor_is_hidden:
+            NSCursor.hide()
+            cls.cursor_is_hidden = True
+    @classmethod
+    def unhide(cls):
+        if cls.cursor_is_hidden:
+            NSCursor.unhide()
+            cls.cursor_is_hidden = False
+
+
 class CocoaMouseCursor(MouseCursor):
     drawable = False
-    def __init__(self, theme):
-        self.theme = theme
+    def __init__(self, constructor):
+        # constructor is an NSCursor class method creating one of the
+        # default cursors, e.g. NSCursor.pointingHandCursor.
+        self.constructor = constructor
+    def set(self):
+        self.constructor().set()
 
 
 class PygletDelegate(NSObject):
@@ -156,23 +178,33 @@ class PygletView(NSOpenGLView):
     # of whack if a modifier key is released while the window doesn't have focus.
     _modifier_keys_down = set() 
 
+    # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate 
+    # events so that we can custom set the mouse cursor within the view.
+    _tracking_area = None
+
     def initWithFrame_cocoaWindow_(self, frame, window):
         self = super(PygletView, self).initWithFrame_(frame)
         if self is not None:
             self._window = window
-            self.setupTrackingArea()
+            self.updateTrackingAreas()
         return self
 
-    def setupTrackingArea(self):
-        tracking_options = NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways | NSTrackingInVisibleRect
+    def updateTrackingAreas(self):
+        # This method is called automatically whenever the tracking areas need to be
+        # recreated, for example when window resizes.
+        if self._tracking_area:
+            self.removeTrackingArea_(self._tracking_area)
+            del self._tracking_area
 
-        self.tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
+        tracking_options = NSTrackingMouseEnteredAndExited | NSTrackingActiveInActiveApp | NSTrackingCursorUpdate
+
+        self._tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
             self.frame(),     # rect
             tracking_options, # options
             self,             # owner
             None)             # userInfo
 
-        self.addTrackingArea_(self.tracking_area)
+        self.addTrackingArea_(self._tracking_area)
     
     def canBecomeKeyView(self):
         return True
@@ -403,11 +435,26 @@ class PygletView(NSOpenGLView):
 
     def mouseEntered_(self, nsevent):
         x, y = self.getLocation_(nsevent)
+        self._window._mouse_in_window = True
+        # Don't call self._window.set_mouse_platform_visible() from here.
+        # Better to do it from cursorUpdate:
         self._window.dispatch_event('on_mouse_enter', x, y)
 
     def mouseExited_(self, nsevent):
         x, y = self.getLocation_(nsevent)
+        self._window._mouse_in_window = False
+        self._window.set_mouse_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
+
+    def cursorUpdate_(self, nsevent):
+        # Called when mouse cursor enters view.  Unlike mouseEntered:,
+        # this method will be called if the view appears underneath a
+        # motionless mouse cursor, as can happen during window creation,
+        # or when switching into fullscreen mode.  
+        # BUG: If the mouse enters the window via the resize control at the
+        # the bottom right corner, the resize control will set the cursor
+        # to the default arrow and screw up our cursor tracking.
+        self._window.set_mouse_platform_visible()
 
 
 class CocoaWindow(BaseWindow):
@@ -712,13 +759,84 @@ class CocoaWindow(BaseWindow):
         if self.context:
             self.context.set_vsync(vsync)
 
-    def set_mouse_platform_visible(self, visible=None):
-        if visible is None:
-            visible = self._mouse_visible
-        if visible:
-            NSCursor.unhide()
+    def _mouse_in_content_rect(self):
+        # Returns true if mouse is inside the window's content rectangle.
+        # Better to use this method to check manually rather than relying
+        # on instance variables that may not be set correctly.
+        point = NSEvent.mouseLocation()
+        rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())
+        return NSPointInRect(point, rect)
+
+    def set_mouse_platform_visible(self, platform_visible=None):
+        # When the platform_visible argument is supplied with a boolean, then this
+        # method simply sets whether or not the platform mouse cursor is visible.
+        if platform_visible is not None:
+            if platform_visible:
+                SystemCursor.unhide()
+            else:
+                SystemCursor.hide()
+        # But if it has been called without an argument, it turns into
+        # a completely different function.  Now we are trying to figure out
+        # whether or not the mouse *should* be visible, and if so, what it should
+        # look like.
         else:
-            NSCursor.hide()
+            # If we are in mouse exclusive mode, then hide the mouse cursor.
+            if self._mouse_exclusive:
+                SystemCursor.hide()
+            # If we aren't inside the window, then always show the mouse
+            # and make sure that it is the default cursor.
+            elif not self._mouse_in_content_rect():
+                NSCursor.arrowCursor().set()
+                SystemCursor.unhide()
+            # If we are in the window, then what we do depends on both
+            # the current pyglet-set visibility setting for the mouse and
+            # the type of the mouse cursor.  If the cursor has been hidden
+            # in the window with set_mouse_visible() then don't show it.
+            elif not self._mouse_visible:
+                SystemCursor.hide()
+            # If the mouse is set as a system-defined cursor, then we
+            # need to set the cursor and show the mouse.
+            elif isinstance(self._mouse_cursor, CocoaMouseCursor):
+                self._mouse_cursor.set()
+                SystemCursor.unhide()
+            # If the mouse cursor is drawable, then it we need to hide
+            # the system mouse cursor, so that the cursor can draw itself.
+            elif self._mouse_cursor.drawable:
+                SystemCursor.hide()
+            # Otherwise, show the default cursor.
+            else:
+                NSCursor.arrowCursor().set()
+                SystemCursor.unhide()
+                
+    def get_system_mouse_cursor(self, name):
+        # It would make a lot more sense for most of this code to be
+        # inside the CocoaMouseCursor class, but all of the CURSOR_xxx
+        # constants are defined as properties of BaseWindow.
+        if name == self.CURSOR_DEFAULT:
+            return DefaultMouseCursor()
+        cursors = {
+            self.CURSOR_CROSSHAIR:       NSCursor.crosshairCursor,
+            self.CURSOR_HAND:            NSCursor.pointingHandCursor,
+            self.CURSOR_HELP:            NSCursor.arrowCursor,
+            self.CURSOR_NO:              NSCursor.operationNotAllowedCursor, # Mac OS 10.6
+            self.CURSOR_SIZE:            NSCursor.arrowCursor,
+            self.CURSOR_SIZE_UP:         NSCursor.resizeUpCursor,
+            self.CURSOR_SIZE_UP_RIGHT:   NSCursor.arrowCursor,
+            self.CURSOR_SIZE_RIGHT:      NSCursor.resizeRightCursor,
+            self.CURSOR_SIZE_DOWN_RIGHT: NSCursor.arrowCursor,
+            self.CURSOR_SIZE_DOWN:       NSCursor.resizeDownCursor,
+            self.CURSOR_SIZE_DOWN_LEFT:  NSCursor.arrowCursor,
+            self.CURSOR_SIZE_LEFT:       NSCursor.resizeLeftCursor,
+            self.CURSOR_SIZE_UP_LEFT:    NSCursor.arrowCursor,
+            self.CURSOR_SIZE_UP_DOWN:    NSCursor.resizeUpDownCursor,
+            self.CURSOR_SIZE_LEFT_RIGHT: NSCursor.resizeLeftRightCursor,
+            self.CURSOR_TEXT:            NSCursor.IBeamCursor,
+            self.CURSOR_WAIT:            NSCursor.arrowCursor, # No wristwatch cursor in Cocoa
+            self.CURSOR_WAIT_ARROW:      NSCursor.arrowCursor, # No wristwatch cursor in Cocoa
+            }  
+        if name not in cursors:
+            raise RuntimeError('Unknown cursor name "%s"' % name)
+        return CocoaMouseCursor(cursors[name])
 
     def set_exclusive_mouse(self, exclusive=True):
         pass
