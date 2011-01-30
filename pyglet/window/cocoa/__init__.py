@@ -606,6 +606,44 @@ class CocoaWindow(BaseWindow):
         if self._nswindow is not None:
             self._nswindow.setTitle_(caption)
 
+    def set_icon(self, *images):
+        # Only use the biggest image from the list.
+        max_image = images[0]
+        for img in images:
+            if img.width > max_image.width and img.height > max_image.height:
+                max_image = img
+
+        # Grab image data from pyglet image.
+        image = max_image.get_image_data()
+        format = 'ARGB'
+        bytesPerRow = len(format) * image.width
+        data = image.get_data(format, -bytesPerRow)
+
+        # Use image data to create a data provider.
+        provider = CGDataProviderCreateWithData(None, data, len(data), None)
+
+        # Then create a CGImage from the provider.
+        cgimage = CGImageCreate(
+            image.width, image.height, 8, 32, bytesPerRow,
+            CGColorSpaceCreateDeviceRGB(),
+            kCGImageAlphaFirst,
+            provider,
+            None,
+            True,
+            kCGRenderingIntentDefault)
+        
+        if not cgimage:
+            return
+
+        # Turn the CGImage into an NSImage.
+        size = NSMakeSize(image.width, image.height)
+        nsimage = NSImage.alloc().initWithCGImage_size_(cgimage, size)
+        if not nsimage:
+            return
+
+        # And finally set the app icon.
+        NSApp().setApplicationIconImage_(nsimage)
+
     def get_location(self):
         rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())        
         screen_width, screen_height = self._nswindow.screen().frame().size
