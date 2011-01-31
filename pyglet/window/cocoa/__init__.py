@@ -137,8 +137,20 @@ class PygletDelegate(NSObject):
         # from NSOpenGLView, we handle everything in the reshape method.
         pass
 
-    def windowDidChangeScreen(self, notification):
-        pass
+    def windowDidBecomeKey_(self, notification):
+        self._window.dispatch_event("on_activate")
+    
+    def windowDidResignKey_(self, notification):
+        self._window.dispatch_event("on_deactivate")
+        
+    def windowDidMiniaturize_(self, notification):
+        self._window.dispatch_event("on_hide")
+
+    def windowDidDeminiaturize_(self, notification):
+        self._window.dispatch_event("on_show")
+
+    def windowDidExpose_(self,  notification):
+        self._window.dispatch_event("on_expose")
 
 
 class PygletWindow(NSWindow):
@@ -261,9 +273,10 @@ class PygletView(NSOpenGLView):
         # This means that using NSTimer to call idle() won't work.  Our kludge
         # is to override NSWindow's nextEventMatchingMask_etc method and call
         # idle() from there.
-        from pyglet import app
-        if app.event_loop is not None:
-            app.event_loop.idle()
+        if not self._window._legacy_invalid: # avoid calling idle before window drawn.
+            from pyglet import app
+            if app.event_loop is not None:
+                app.event_loop.idle()
 
     def keyDown_(self, nsevent):        
         # replaced by pygletKeyDown_
@@ -361,6 +374,9 @@ class PygletView(NSOpenGLView):
                     self._window.dispatch_event('on_key_press', symbol, modifiers)
 
     def mouseMoved_(self, nsevent):
+        # Don't send on_mouse_motion events if we're not inside the content rectangle.
+        if not self._window._mouse_in_content_rect():
+            return
         x, y = self.getLocation_(nsevent)
         dx, dy = self.getDelta_(nsevent)
         self._window.dispatch_event('on_mouse_motion', x, y, dx, dy)
@@ -381,15 +397,13 @@ class PygletView(NSOpenGLView):
         dx, dy = self.getDelta_(nsevent)
         buttons = mouse.LEFT
         modifiers = self.getModifiers_(nsevent)
-        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons,
-                                    modifiers)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def mouseUp_(self, nsevent):
         x, y = self.getLocation_(nsevent)
         buttons = mouse.LEFT
         modifiers = self.getModifiers_(nsevent)
-        self._window.dispatch_event('on_mouse_release', x, y, buttons,
-                                    modifiers)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
     
     def rightMouseDown_(self, nsevent):
         x, y = self.getLocation_(nsevent)
@@ -402,15 +416,13 @@ class PygletView(NSOpenGLView):
         dx, dy = self.getDelta_(nsevent)
         buttons = mouse.RIGHT
         modifiers = self.getModifiers_(nsevent)
-        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons,
-                                    modifiers)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def rightMouseUp_(self, nsevent):
         x, y = self.getLocation_(nsevent)
         buttons = mouse.RIGHT
         modifiers = self.getModifiers_(nsevent)
-        self._window.dispatch_event('on_mouse_release', x, y, buttons,
-                                    modifiers)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
     
     def otherMouseDown_(self, nsevent):
         x, y = self.getLocation_(nsevent)
@@ -423,15 +435,13 @@ class PygletView(NSOpenGLView):
         dx, dy = self.getDelta_(nsevent)
         buttons = mouse.MIDDLE
         modifiers = self.getModifiers_(nsevent)
-        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons,
-                                    modifiers)
+        self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def otherMouseUp_(self, nsevent):
         x, y = self.getLocation_(nsevent)
         buttons = mouse.MIDDLE
         modifiers = self.getModifiers_(nsevent)
-        self._window.dispatch_event('on_mouse_release', x, y, buttons,
-                                    modifiers)
+        self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
 
     def mouseEntered_(self, nsevent):
         x, y = self.getLocation_(nsevent)
@@ -564,7 +574,6 @@ class CocoaWindow(BaseWindow):
 
         # Configure CocoaWindow.
         self.set_caption(self._caption)
-        self.set_visible(self._visible)
         if self._minimum_size is not None:
             self.set_minimum_size(*self._minimum_size)
         if self._maximum_size is not None:
@@ -573,6 +582,7 @@ class CocoaWindow(BaseWindow):
         self.context.update_geometry()
         self.switch_to()
         self.set_vsync(self._vsync)
+        self.set_visible(self._visible)
 
     def close(self):
         # Restore cursor visibility
@@ -711,9 +721,6 @@ class CocoaWindow(BaseWindow):
         self._width = int(width)
         self._height = int(height)
         self._nswindow.setContentSize_(NSSize(width, height))
-            
-        self.dispatch_event('on_resize', self._width, self._height)
-        self.dispatch_event('on_expose')
 
     def set_minimum_size(self, width, height):
         self._minimum_size = NSSize(width, height)
@@ -734,17 +741,13 @@ class CocoaWindow(BaseWindow):
         self._visible = visible
         if self._nswindow is not None:
             if visible:
-                self.dispatch_event('on_resize', self._width, self._height)
                 self.dispatch_event('on_show')
-                self.dispatch_event('on_expose')
                 self._nswindow.makeKeyAndOrderFront_(None)
             else:
-                self.dispatch_event('on_hide')
                 self._nswindow.orderOut_(None)
 
     def minimize(self):
         self._mouse_in_window = False
-        self.set_mouse_platform_visible()
         if self._nswindow is not None:
             self._nswindow.miniaturize_(None)
 
