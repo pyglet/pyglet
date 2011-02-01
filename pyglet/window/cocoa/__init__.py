@@ -120,7 +120,24 @@ class PygletDelegate(NSObject):
         if self is not None:
             self._window = window
             window._nswindow.setDelegate_(self)
+        # Register delegate for hide and unhide notifications so that we 
+        # can dispatch the corresponding pyglet events.
+        NSNotificationCenter.defaultCenter().addObserver_selector_name_object_(
+            self, "applicationDidHide:", NSApplicationDidHideNotification, None)
+        NSNotificationCenter.defaultCenter().addObserver_selector_name_object_(
+            self, "applicationDidUnhide:", NSApplicationDidUnhideNotification, None)
         return self
+
+    def dealloc(self):
+        # Unregister delegate from notification center.
+        NSNotificationCenter.defaultCenter().removeObserver_(self)
+        super(PygletDelegate, self).dealloc()
+
+    def applicationDidHide_(self, notification):
+        self._window.dispatch_event("on_hide")
+    
+    def applicationDidUnhide_(self, notification):
+        self._window.dispatch_event("on_show")
 
     def windowWillClose_(self, notification):
         # We don't want to send on_close events when we are simply recreating
@@ -226,12 +243,12 @@ class PygletView(NSOpenGLView):
 
     ## Event data.
 
-    def getDelta_(self, nsevent):
+    def getMouseDelta_(self, nsevent):
         dx = nsevent.deltaX()
         dy = nsevent.deltaY()
         return int(dx), int(dy)
 
-    def getLocation_(self, nsevent):
+    def getMousePosition_(self, nsevent):
         in_window = nsevent.locationInWindow()
         x, y = self.convertPoint_fromView_(in_window, None)
         return int(x), int(y)
@@ -377,81 +394,81 @@ class PygletView(NSOpenGLView):
         # Don't send on_mouse_motion events if we're not inside the content rectangle.
         if not self._window._mouse_in_content_rect():
             return
-        x, y = self.getLocation_(nsevent)
-        dx, dy = self.getDelta_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
+        dx, dy = self.getMouseDelta_(nsevent)
         self._window.dispatch_event('on_mouse_motion', x, y, dx, dy)
     
     def scrollWheel_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
-        scroll_x, scroll_y = self.getDelta_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
+        scroll_x, scroll_y = self.getMouseDelta_(nsevent)
         self._window.dispatch_event('on_mouse_scroll', x, y, scroll_x, scroll_y)
     
     def mouseDown_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         buttons = mouse.LEFT
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
     def mouseDragged_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
-        dx, dy = self.getDelta_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
+        dx, dy = self.getMouseDelta_(nsevent)
         buttons = mouse.LEFT
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def mouseUp_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         buttons = mouse.LEFT
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
     
     def rightMouseDown_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         buttons = mouse.RIGHT
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
     def rightMouseDragged_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
-        dx, dy = self.getDelta_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
+        dx, dy = self.getMouseDelta_(nsevent)
         buttons = mouse.RIGHT
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def rightMouseUp_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         buttons = mouse.RIGHT
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
     
     def otherMouseDown_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         buttons = mouse.MIDDLE
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
     
     def otherMouseDragged_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
-        dx, dy = self.getDelta_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
+        dx, dy = self.getMouseDelta_(nsevent)
         buttons = mouse.MIDDLE
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
     
     def otherMouseUp_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         buttons = mouse.MIDDLE
         modifiers = self.getModifiers_(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
 
     def mouseEntered_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         self._window._mouse_in_window = True
         # Don't call self._window.set_mouse_platform_visible() from here.
         # Better to do it from cursorUpdate:
         self._window.dispatch_event('on_mouse_enter', x, y)
 
     def mouseExited_(self, nsevent):
-        x, y = self.getLocation_(nsevent)
+        x, y = self.getMousePosition_(nsevent)
         self._window._mouse_in_window = False
         self._window.set_mouse_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)

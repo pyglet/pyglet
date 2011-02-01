@@ -66,8 +66,13 @@ class CocoaEventLoop(PlatformEventLoop):
         menubar.addItem_(appMenuItem)
         NSApp().setMainMenu_(menubar)
         appMenu = NSMenu.alloc().init()
-        quitTitle = "Quit " + NSProcessInfo.processInfo().processName()
-        quitItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(quitTitle, "terminate:", "q")
+        processName = NSProcessInfo.processInfo().processName()
+        hideItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            "Hide " + processName, "hide:", "h")
+        appMenu.addItem_(hideItem)
+        appMenu.addItem_(NSMenuItem.separatorItem())
+        quitItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            "Quit " + processName, "terminate:", "q")
         appMenu.addItem_(quitItem)
         appMenuItem.setSubmenu_(appMenu)
 
