@@ -499,7 +499,8 @@ class BaseWindow(EventDispatcher):
         if not config:
             for template_config in [
                 gl.Config(double_buffer=True, depth_size=24),
-                gl.Config(double_buffer=True, depth_size=16)]:
+                gl.Config(double_buffer=True, depth_size=16),
+                None]:
                 try:
                     config = screen.get_best_config(template_config)
                     break
