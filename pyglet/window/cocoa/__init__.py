@@ -126,6 +126,8 @@ class PygletDelegate(NSObject):
             self, "applicationDidHide:", NSApplicationDidHideNotification, None)
         NSNotificationCenter.defaultCenter().addObserver_selector_name_object_(
             self, "applicationDidUnhide:", NSApplicationDidUnhideNotification, None)
+        # Flag set when we pause exclusive mouse mode if window loses key status.
+        self.did_pause_exclusive_mouse = False
         return self
 
     def dealloc(self):
@@ -137,6 +139,11 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event("on_hide")
     
     def applicationDidUnhide_(self, notification):
+        if self._window._mouse_exclusive and CGCursorIsVisible():
+            # The cursor should be hidden, but for some reason it's not;
+            # try to force the cursor to hide (without over-hiding).
+            SystemCursor.unhide()
+            SystemCursor.hide()
         self._window.dispatch_event("on_show")
 
     def windowWillClose_(self, notification):
@@ -155,15 +162,37 @@ class PygletDelegate(NSObject):
         pass
 
     def windowDidBecomeKey_(self, notification):
+        # Restore exclusive mouse mode if it was active before we lost key status.
+        if self.did_pause_exclusive_mouse:
+            self._window.set_exclusive_mouse(True)
+            self.did_pause_exclusive_mouse = False
+            self._window._nswindow.setMovable_(True)   # Mac OS X 10.6 
+        # Restore previous mouse visibility settings.
+        self._window.set_mouse_platform_visible()
         self._window.dispatch_event("on_activate")
     
     def windowDidResignKey_(self, notification):
+        # Pause exclusive mouse mode if it is active.
+        if self._window._mouse_exclusive:
+            self._window.set_exclusive_mouse(False)
+            self.did_pause_exclusive_mouse = True
+            # We need to prevent the window from being unintentionally dragged
+            # (by the call to set_mouse_position in set_exclusive_mouse) when
+            # the window is reactivated by clicking on its title bar.
+            self._window._nswindow.setMovable_(False)   # Mac OS X 10.6 
+        # Make sure that cursor is visible.
+        self._window.set_mouse_platform_visible(True)
         self._window.dispatch_event("on_deactivate")
         
     def windowDidMiniaturize_(self, notification):
         self._window.dispatch_event("on_hide")
 
     def windowDidDeminiaturize_(self, notification):
+        if self._window._mouse_exclusive and CGCursorIsVisible():
+            # The cursor should be hidden, but for some reason it's not;
+            # try to force the cursor to hide (without over-hiding).
+            SystemCursor.unhide()
+            SystemCursor.hide()
         self._window.dispatch_event("on_show")
 
     def windowDidExpose_(self,  notification):
@@ -391,8 +420,11 @@ class PygletView(NSOpenGLView):
                     self._window.dispatch_event('on_key_press', symbol, modifiers)
 
     def mouseMoved_(self, nsevent):
+        if self._window._mouse_ignore_motion:
+            self._window._mouse_ignore_motion = False
+            return
         # Don't send on_mouse_motion events if we're not inside the content rectangle.
-        if not self._window._mouse_in_content_rect():
+        if not self._window._mouse_in_window:
             return
         x, y = self.getMousePosition_(nsevent)
         dx, dy = self.getMouseDelta_(nsevent)
@@ -470,7 +502,8 @@ class PygletView(NSOpenGLView):
     def mouseExited_(self, nsevent):
         x, y = self.getMousePosition_(nsevent)
         self._window._mouse_in_window = False
-        self._window.set_mouse_platform_visible()
+        if not self._window._mouse_exclusive:
+            self._window.set_mouse_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
 
     def cursorUpdate_(self, nsevent):
@@ -481,7 +514,8 @@ class PygletView(NSOpenGLView):
         # BUG: If the mouse enters the window via the resize control at the
         # the bottom right corner, the resize control will set the cursor
         # to the default arrow and screw up our cursor tracking.
-        self._window.set_mouse_platform_visible()
+        if not self._window._mouse_exclusive:
+            self._window.set_mouse_platform_visible()
 
 
 class CocoaWindow(BaseWindow):
@@ -495,8 +529,6 @@ class CocoaWindow(BaseWindow):
     # Window properties
     _minimum_size = None
     _maximum_size = None
-    _track_ref = 0
-    _track_region = None
 
     _mouse_exclusive = False
     _mouse_platform_visible = True
@@ -785,7 +817,7 @@ class CocoaWindow(BaseWindow):
         # on instance variables that may not be set correctly.
         point = NSEvent.mouseLocation()
         rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())
-        return NSPointInRect(point, rect)
+        return NSMouseInRect(point, rect, False)
 
     def set_mouse_platform_visible(self, platform_visible=None):
         # When the platform_visible argument is supplied with a boolean, then this
@@ -858,8 +890,39 @@ class CocoaWindow(BaseWindow):
             raise RuntimeError('Unknown cursor name "%s"' % name)
         return CocoaMouseCursor(cursors[name])
 
+    def set_mouse_position(self, x, y, absolute=False):
+        if absolute:
+            # If absolute, then x, y is given in global display coordinates
+            # which sets (0,0) at top left corner of main display.  It is possible
+            # to warp the mouse position to a point inside of another display.
+            CGWarpMouseCursorPosition((x,y))
+        else: 
+            # Window-relative coordinates: (x, y) are given in window coords
+            # with (0,0) at bottom-left corner of window and y up.  We find
+            # which display the window is in and then convert x, y into local
+            # display coords where (0,0) is now top-left of display and y down.
+            screenInfo = self._nswindow.screen().deviceDescription()
+            displayID = screenInfo.objectForKey_("NSScreenNumber") 
+            displayBounds = CGDisplayBounds(displayID)
+            windowOrigin = self._nswindow.frame().origin
+            x += windowOrigin.x
+            y = displayBounds.size.height - windowOrigin.y - y
+            CGDisplayMoveCursorToPoint(displayID, (x,y))
+
     def set_exclusive_mouse(self, exclusive=True):
-        pass
+        self._mouse_exclusive = exclusive
+        if exclusive:
+            # Move mouse to center of window.
+            width, height = self._nswindow.frame().size
+            # Skip the next motion event, which would return a large delta.
+            self._mouse_ignore_motion = True
+            self.set_mouse_position(width/2, height/2)
+            CGAssociateMouseAndMouseCursorPosition(False)
+        else:
+            CGAssociateMouseAndMouseCursorPosition(True)
+
+        # Update visibility of mouse cursor.
+        self.set_mouse_platform_visible()
 
     def set_exclusive_keyboard(self, exclusive=True):
         # http://developer.apple.com/mac/library/technotes/tn2002/tn2062.html
