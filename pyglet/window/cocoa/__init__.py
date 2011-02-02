@@ -279,8 +279,11 @@ class PygletView(NSOpenGLView):
 
     def getMousePosition_(self, nsevent):
         in_window = nsevent.locationInWindow()
-        x, y = self.convertPoint_fromView_(in_window, None)
-        return int(x), int(y)
+        x, y = map(int, self.convertPoint_fromView_(in_window, None))
+        # Must record mouse position for BaseWindow.draw_mouse_cursor to work.
+        self._window._mouse_x = x
+        self._window._mouse_y = y
+        return x, y
 
     def getModifiers_(self, nsevent):
         modifiers = 0
