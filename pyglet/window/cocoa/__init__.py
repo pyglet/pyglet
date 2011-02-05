@@ -647,9 +647,6 @@ class CocoaWindow(BaseWindow):
             self._nswindow.setBackgroundColor_(NSColor.blackColor())            
             self._nswindow.setOpaque_(True)
             self.context.set_full_screen()
-            self.dispatch_event('on_resize', self._width, self._height)
-            self.dispatch_event('on_show')
-            self.dispatch_event('on_expose')
         else:
             self._nswindow.center()
 
@@ -657,6 +654,15 @@ class CocoaWindow(BaseWindow):
         nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
         self._nswindow.setContentView_(nsview)
         self._nswindow.makeFirstResponder_(nsview)
+
+        # Pyglet expects creation events to be dispatched in this order, but
+        # generally on_resize and on_expose come before on_show if I let things
+        # happen naturally.  Therefore, just manually send out these events the
+        # way pyglet wants them.  Some of the events will be repeated (hopefully
+        # harmlessly) soon after.
+        self.dispatch_event('on_resize', self._width, self._height)
+        self.dispatch_event('on_show')
+        self.dispatch_event('on_expose')
 
         # Create a canvas with the view as its drawable and attach context to it.
         # Note that canvas owns the nsview; when canvas is destroyed, view goes with it.
@@ -828,7 +834,11 @@ class CocoaWindow(BaseWindow):
         self._visible = visible
         if self._nswindow is not None:
             if visible:
+                # Not really sure why on_resize needs to be here, 
+                # but it's what pyglet wants.
+                self.dispatch_event('on_resize', self._width, self._height)
                 self.dispatch_event('on_show')
+                self.dispatch_event('on_expose')
                 self._nswindow.makeKeyAndOrderFront_(None)
             else:
                 self._nswindow.orderOut_(None)
