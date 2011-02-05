@@ -373,7 +373,7 @@ class PygletView(NSOpenGLView):
         # This means that using NSTimer to call idle() won't work.  Our kludge
         # is to override NSWindow's nextEventMatchingMask_etc method and call
         # idle() from there.
-        if not self._window._legacy_invalid: # avoid calling idle before window drawn.
+        if self.inLiveResize():
             from pyglet import app
             if app.event_loop is not None:
                 app.event_loop.idle()
