@@ -146,11 +146,12 @@ class PygletDelegate(NSObject):
             SystemCursor.hide()
         self._window.dispatch_event("on_show")
 
-    def windowWillClose_(self, notification):
+    def windowShouldClose_(self, notification):
         # We don't want to send on_close events when we are simply recreating
         # the window (e.g. moving to fullscreen) so check to make sure it's OK:
         if not self._window._should_suppress_on_close_event:
             self._window.dispatch_event("on_close")
+        return False
 
     def windowDidMove_(self, notification):
         x, y = self._window.get_location()
@@ -313,6 +314,7 @@ class PygletView(NSOpenGLView):
     # it seems like we need to manually call it here for some reason.
     def reshape(self):
         width, height = map(int, self.bounds().size)
+        self._window.switch_to()
         self._window.context.update_geometry()
         self._window.dispatch_event("on_resize", width, height)
         self._window.dispatch_event("on_expose")
@@ -648,6 +650,10 @@ class CocoaWindow(BaseWindow):
         self._nswindow.close()
         self._should_suppress_on_close_event = False
         
+        # We must also remove view from window, otherwise it will
+        # continue to receive events with an invalid context.
+        self.canvas.nsview.removeFromSuperviewWithoutNeedingDisplay()
+        
         # Do this last, so that we don't see white flash 
         # when exiting application from fullscreen mode.
         super(CocoaWindow, self).close()
@@ -670,36 +676,21 @@ class CocoaWindow(BaseWindow):
         # Dequeue and process all of the pending Cocoa events.
         pool = NSAutoreleasePool.alloc().init()
         while event and self._nswindow and self._context:
-            try:
-                event = NSApp().nextEventMatchingMask_untilDate_inMode_dequeue_(
-                    NSAnyEventMask, None, NSEventTrackingRunLoopMode, True)
+            event = NSApp().nextEventMatchingMask_untilDate_inMode_dequeue_(
+                NSAnyEventMask, None, NSEventTrackingRunLoopMode, True)
 
-                if event is not None:
-                    event_type = event.type()
-                    # Send key events to special handlers.
-                    if event_type == NSKeyDown and not event.isARepeat():
-                        NSApp().sendAction_to_from_("pygletKeyDown:", None, event)
-                    elif event_type == NSKeyUp:
-                        NSApp().sendAction_to_from_("pygletKeyUp:", None, event)
-                    elif event_type == NSFlagsChanged:
-                        NSApp().sendAction_to_from_("pygletFlagsChanged:", None, event)
-                    # Pass on other events.
-                    NSApp().sendEvent_(event)
-                    NSApp().updateWindows()
-
-            except Exception as e:
-                # This is a horrible, horrible kludge so that we can get through
-                # the test scripts, which all use dispatch_events instead of the
-                # pyglet.app event loop.  When using dispatch_events,
-                # occasionally we'll get an exception while trying to get the
-                # next event, which says: 
-                #      NSInvalidArgumentException - Unlocking Focus on wrong
-                #      view (<NSThemeFrame>), expected <PygletView>.
-                # I can't figure out why this is happening; I think it has
-                # something to do with events left in the event queue that refer
-                # to invalid windows.
-                print 'ignoring dispatch_events exception:', e
-                event = False  # fall out of the while loop
+            if event is not None:
+                event_type = event.type()
+                # Send key events to special handlers.
+                if event_type == NSKeyDown and not event.isARepeat():
+                    NSApp().sendAction_to_from_("pygletKeyDown:", None, event)
+                elif event_type == NSKeyUp:
+                    NSApp().sendAction_to_from_("pygletKeyUp:", None, event)
+                elif event_type == NSFlagsChanged:
+                    NSApp().sendAction_to_from_("pygletFlagsChanged:", None, event)
+                # Pass on other events.
+                NSApp().sendEvent_(event)
+                NSApp().updateWindows()
 
         del pool
 
@@ -915,10 +906,10 @@ class CocoaWindow(BaseWindow):
     def set_exclusive_mouse(self, exclusive=True):
         self._mouse_exclusive = exclusive
         if exclusive:
-            # Move mouse to center of window.
-            width, height = self._nswindow.frame().size
             # Skip the next motion event, which would return a large delta.
             self._mouse_ignore_motion = True
+            # Move mouse to center of window.
+            width, height = self._nswindow.frame().size
             self.set_mouse_position(width/2, height/2)
             CGAssociateMouseAndMouseCursorPosition(False)
         else:
