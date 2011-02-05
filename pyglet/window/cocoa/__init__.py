@@ -60,28 +60,6 @@ from pyglet.gl import glu_info
 from pyglet.event import EventDispatcher
 
 
-# Map symbol,modifiers -> motion
-# Determined by experiment with TextEdit.app
-_motion_map = {
-    (key.UP, False):                    key.MOTION_UP,
-    (key.RIGHT, False):                 key.MOTION_RIGHT,
-    (key.DOWN, False):                  key.MOTION_DOWN,
-    (key.LEFT, False):                  key.MOTION_LEFT,
-    (key.LEFT, key.MOD_OPTION):         key.MOTION_PREVIOUS_WORD,
-    (key.RIGHT, key.MOD_OPTION):        key.MOTION_NEXT_WORD,
-    (key.LEFT, key.MOD_COMMAND):        key.MOTION_BEGINNING_OF_LINE,
-    (key.RIGHT, key.MOD_COMMAND):       key.MOTION_END_OF_LINE,
-    (key.PAGEUP, False):                key.MOTION_PREVIOUS_PAGE,
-    (key.PAGEDOWN, False):              key.MOTION_NEXT_PAGE,
-    (key.HOME, False):                  key.MOTION_BEGINNING_OF_FILE,
-    (key.END, False):                   key.MOTION_END_OF_FILE,
-    (key.UP, key.MOD_COMMAND):          key.MOTION_BEGINNING_OF_FILE,
-    (key.DOWN, key.MOD_COMMAND):        key.MOTION_END_OF_FILE,
-    (key.BACKSPACE, False):             key.MOTION_BACKSPACE,
-    (key.DELETE, False):                key.MOTION_DELETE,
-}
-
-
 # This class is a wrapper around NSCursor which prevents us from
 # sending too many hide or unhide messages in a row.  Apparently
 # NSCursor treats them like retain/release messages, which can be
@@ -200,6 +178,65 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event("on_expose")
 
 
+# This custom NSTextView subclass is used for capturing all of the
+# on_text, on_text_motion, and on_text_motion_select events.
+class PygletTextView(NSTextView):
+    def insertText_(self, text):
+        self._window.dispatch_event("on_text", text)
+    def moveUp_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_UP)
+    def moveDown_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_DOWN)
+    def moveLeft_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_LEFT)
+    def moveRight_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_RIGHT)
+    def moveWordLeft_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_PREVIOUS_WORD)        
+    def moveWordRight_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_NEXT_WORD)        
+    def moveToBeginningOfLine_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_BEGINNING_OF_LINE)
+    def moveToEndOfLine_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_END_OF_LINE)
+    def scrollPageUp_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_PREVIOUS_PAGE)
+    def scrollPageDown_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_NEXT_PAGE)
+    def scrollToBeginningOfDocument_(self, sender):   # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion", key.MOTION_BEGINNING_OF_FILE)
+    def scrollToEndOfDocument_(self, sender):         # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion", key.MOTION_END_OF_FILE)
+    def deleteBackward_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_BACKSPACE)
+    def deleteForward_(self, sender):
+        self._window.dispatch_event("on_text_motion", key.MOTION_DELETE)
+    def moveUpAndModifySelection_(self, sender):
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_UP)
+    def moveDownAndModifySelection_(self, sender):
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_DOWN)
+    def moveLeftAndModifySelection_(self, sender):
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_LEFT)
+    def moveRightAndModifySelection_(self, sender):
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_RIGHT)
+    def moveWordLeftAndModifySelection_(self, sender):
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_PREVIOUS_WORD)        
+    def moveWordRightAndModifySelection_(self, sender):
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_NEXT_WORD)        
+    def moveToBeginningOfLineAndModifySelection_(self, sender):      # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_BEGINNING_OF_LINE)
+    def moveToEndOfLineAndModifySelection_(self, sender):            # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_END_OF_LINE)
+    def pageUpAndModifySelection_(self, sender):                     # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_PREVIOUS_PAGE)
+    def pageDownAndModifySelection_(self, sender):                   # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_NEXT_PAGE)
+    def moveToBeginningOfDocumentAndModifySelection_(self, sender):  # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_BEGINNING_OF_FILE)
+    def moveToEndOfDocumentAndModifySelection_(self, sender):        # Mac OS X 10.6
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_END_OF_FILE)
+
+
 class PygletWindow(NSWindow):
 
     def canBecomeKeyWindow(self):
@@ -246,6 +283,18 @@ class PygletView(NSOpenGLView):
         if self is not None:
             self._window = window
             self.updateTrackingAreas()
+
+        # Create an instance of PygletTextView to handle text events. 
+        # We must do this because NSOpenGLView doesn't conform to the
+        # NSTextInputClient protocol by default, and the insertText: method will
+        # not do the right thing with respect to translating key sequences like
+        # "Option-e", "e" if the protocol isn't implemented.  So the easiest
+        # thing to do is to subclass NSTextView which *does* implement the
+        # protocol and let it handle text input.
+        self._textview = PygletTextView.alloc().init()
+        self._textview.setFieldEditor_(False)  # interpret tab and return as raw characters
+        self._textview._window = window
+        self.addSubview_(self._textview)       # add text view to the responder chain.
         return self
 
     def updateTrackingAreas(self):
@@ -328,11 +377,6 @@ class PygletView(NSOpenGLView):
             from pyglet import app
             if app.event_loop is not None:
                 app.event_loop.idle()
-
-    def keyDown_(self, nsevent):        
-        # replaced by pygletKeyDown_
-        # Don't remove this definition, or default keyDown_ method will beep on key press.
-        pass
 
     def pygletKeyDown_(self, nsevent):
         symbol = self.getSymbol_(nsevent)
