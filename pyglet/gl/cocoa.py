@@ -20,7 +20,7 @@ from pyglet.canvas.cocoa import CocoaCanvas
 _gl_attributes = {
     'double_buffer': NSOpenGLPFADoubleBuffer,
     'stereo': NSOpenGLPFAStereo,
-    'color_size': NSOpenGLPFAColorSize,            # replaces AGL_BUFFER_SIZE
+    'buffer_size': NSOpenGLPFAColorSize, 
     'sample_buffers': NSOpenGLPFASampleBuffers,
     'samples': NSOpenGLPFASamples,
     'aux_buffers': NSOpenGLPFAAuxBuffers,
@@ -58,6 +58,19 @@ _boolean_gl_attributes = frozenset([
     NSOpenGLPFASampleAlpha,
 ])
 
+# Attributes for which no NSOpenGLPixelFormatAttribute name exists.
+# We could probably compute actual values for these using 
+# NSOpenGLPFAColorSize / 4 and NSOpenGLFAAccumSize / 4, but I'm not that 
+# confident I know what I'm doing.
+_fake_gl_attributes = {
+    'red_size': 0,
+    'green_size': 0,
+    'blue_size': 0,
+    'accum_red_size': 0,
+    'accum_green_size': 0,
+    'accum_blue_size': 0,
+    'accum_alpha_size': 0
+}
 
 class CocoaConfig(Config):
 
@@ -112,9 +125,12 @@ class CocoaCanvasConfig(CanvasConfig):
         # corresponding attributes of the canvas config.
         for name, attr in _gl_attributes.items():
             value = self._pixel_format.getValues_forAttribute_forVirtualScreen_(None, attr, 0)
-            if value:
+            if value is not None:
                 setattr(self, name, value)
-
+        
+        # Set these attributes so that we can run pyglet.info.
+        for name, value in _fake_gl_attributes.items():
+            setattr(self, name, value)
  
     def create_context(self, share):
         # Determine the shared NSOpenGLContext.
