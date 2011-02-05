@@ -177,17 +177,20 @@ class QuartzFont(base.Font):
             traits = 0
             if bold: traits |= Cocoa.NSBoldFontMask
             if italic: traits |= Cocoa.NSItalicFontMask
+            
+            # On a scale of 0 to 15; 5 indicates a normal book weight.
+            weight = 5
 
             # Try to find specified font.  Returns None if it can't.
-            self.ctFont = manager.fontWithFamily_traits_weight_size_(name, traits, 0, size)
+            self.ctFont = manager.fontWithFamily_traits_weight_size_(name, traits, weight, size)
             if not self.ctFont:
                 # Try to fall back to Helvetica
-                self.ctFont = manager.fontWithFamily_traits_weight_size_('Helvetica', traits, 0, size)
+                self.ctFont = manager.fontWithFamily_traits_weight_size_('Helvetica', traits, weight, size)
 
             assert self.ctFont, "Couldn't load font: " + name
-                
-        self.ascent = CoreText.CTFontGetAscent(self.ctFont)
-        self.descent = -CoreText.CTFontGetDescent(self.ctFont)
+
+        self.ascent = int(math.ceil(CoreText.CTFontGetAscent(self.ctFont)))
+        self.descent = -int(math.ceil(CoreText.CTFontGetDescent(self.ctFont)))
 
     @classmethod
     def have_font(cls, name):
