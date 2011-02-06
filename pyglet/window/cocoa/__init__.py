@@ -187,6 +187,7 @@ class PygletTextView(NSTextView):
         return self
 
     def insertText_(self, text):
+        self.setString_("")
         self._window.dispatch_event("on_text", text)
     def moveUp_(self, sender):
         self._window.dispatch_event("on_text_motion", key.MOTION_UP)
