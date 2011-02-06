@@ -270,6 +270,18 @@ class PygletWindow(NSWindow):
         return super(PygletWindow, self).nextEventMatchingMask_untilDate_inMode_dequeue_(mask, date, mode, dequeue)
 
 
+class PygletToolWindow(NSPanel):
+
+    def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask, date, mode, dequeue):
+        if self.inLiveResize():
+            # Call the idle() method while we're stuck in a live resize event.
+            from pyglet import app
+            if app.event_loop is not None:
+                app.event_loop.idle()
+                
+        return super(PygletToolWindow, self).nextEventMatchingMask_untilDate_inMode_dequeue_(mask, date, mode, dequeue)
+
+
 class PygletView(NSOpenGLView):
 
     # CocoaWindow object.
@@ -613,7 +625,8 @@ class CocoaWindow(BaseWindow):
         BaseWindow.WINDOW_STYLE_DIALOG:     NSTitledWindowMask |
                                             NSClosableWindowMask,
         BaseWindow.WINDOW_STYLE_TOOL:       NSTitledWindowMask |
-                                            NSClosableWindowMask,
+                                            NSClosableWindowMask | 
+                                            NSUtilityWindowMask,
         BaseWindow.WINDOW_STYLE_BORDERLESS: NSBorderlessWindowMask,
     }
 
@@ -643,6 +656,7 @@ class CocoaWindow(BaseWindow):
 
         # Determine window parameters.
         content_rect = NSMakeRect(0, 0, self._width, self._height)
+        WindowClass = PygletWindow
         if self._fullscreen:
             style_mask = NSBorderlessWindowMask
         else:
@@ -651,9 +665,11 @@ class CocoaWindow(BaseWindow):
             style_mask = self._style_masks[self._style]
             if self._resizable:
                 style_mask |= NSResizableWindowMask
+            if self._style == BaseWindow.WINDOW_STYLE_TOOL:
+                WindowClass = PygletToolWindow
 
         # First create an instance of our NSWindow subclass.
-        self._nswindow = PygletWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+        self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
             content_rect,           # contentRect
             style_mask,             # styleMask
             NSBackingStoreBuffered, # backing
