@@ -125,10 +125,8 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event("on_show")
 
     def windowShouldClose_(self, notification):
-        # We don't want to send on_close events when we are simply recreating
-        # the window (e.g. moving to fullscreen) so check to make sure it's OK:
-        if not self._window._should_suppress_on_close_event:
-            self._window.dispatch_event("on_close")
+        # The method is not called if [NSWindow close] was used.
+        self._window.dispatch_event("on_close")
         return False
 
     def windowDidMove_(self, notification):
@@ -181,6 +179,13 @@ class PygletDelegate(NSObject):
 # This custom NSTextView subclass is used for capturing all of the
 # on_text, on_text_motion, and on_text_motion_select events.
 class PygletTextView(NSTextView):
+
+    def initWithCocoaWindow_(self, window):
+        self = super(PygletTextView, self).init()
+        if self is not None:
+            self._window = window
+        return self
+
     def insertText_(self, text):
         self._window.dispatch_event("on_text", text)
     def moveUp_(self, sender):
@@ -291,9 +296,8 @@ class PygletView(NSOpenGLView):
         # "Option-e", "e" if the protocol isn't implemented.  So the easiest
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
-        self._textview = PygletTextView.alloc().init()
+        self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
         self._textview.setFieldEditor_(False)  # interpret tab and return as raw characters
-        self._textview._window = window
         self.addSubview_(self._textview)       # add text view to the responder chain.
         return self
 
@@ -319,6 +323,20 @@ class PygletView(NSOpenGLView):
 
     def isOpaque(self):
         return True
+
+    # This method is called during window close.
+    def destroy(self):
+        # Remove tracking area.
+        if self._tracking_area:
+            self.removeTrackingArea_(self._tracking_area)
+            self._tracking_area = None
+        # Get rid of the textview, then remove self from window.
+        # BUG: the textview never gets garbage collected...
+        self._textview._window = None
+        self._textview.removeFromSuperviewWithoutNeedingDisplay()
+        self._textview = None
+        self._window = None
+        self.removeFromSuperviewWithoutNeedingDisplay()        
 
     ## Event data.
 
@@ -583,8 +601,8 @@ class CocoaWindow(BaseWindow):
     _mouse_platform_visible = True
     _mouse_ignore_motion = False
 
-    # Used with window recreation to avoid misleading on_close dispatches.
-    _should_suppress_on_close_event = False
+    # Flag set during close() method.
+    _was_closed = False
 
     # NSWindow style masks.
     _style_masks = {
@@ -607,13 +625,12 @@ class CocoaWindow(BaseWindow):
                 # Leaving fullscreen mode.
                 CGDisplayRelease(self.screen.cg_display_id)
 
-        # Don't dispatch an on_close event when we destroy the old window
-        # (otherwise our context will get destroyed).
-        self._should_suppress_on_close_event = True
         self._create()
-        self._should_suppress_on_close_event = False
 
     def _create(self):
+        # Create a temporary autorelease pool for this method.
+        pool = NSAutoreleasePool.alloc().init()
+
         if self._nswindow:
             # The window is about the be recreated so destroy everything
             # associated with the old window, then destroy the window itself.
@@ -665,7 +682,6 @@ class CocoaWindow(BaseWindow):
         self.dispatch_event('on_expose')
 
         # Create a canvas with the view as its drawable and attach context to it.
-        # Note that canvas owns the nsview; when canvas is destroyed, view goes with it.
         self.canvas = CocoaCanvas(self.display, self.screen, nsview)
         self.context.attach(self.canvas)
 
@@ -688,7 +704,16 @@ class CocoaWindow(BaseWindow):
         self.set_vsync(self._vsync)
         self.set_visible(self._visible)
 
+        del pool
+
     def close(self):
+        # If we've already gone through this once, don't do it again.
+        if self._was_closed:
+            return
+
+        # Create a temporary autorelease pool for this method.
+        pool = NSAutoreleasePool.alloc().init()
+
         # Restore cursor visibility
         self.set_mouse_platform_visible(True)
         self.set_exclusive_mouse(False)
@@ -696,17 +721,30 @@ class CocoaWindow(BaseWindow):
         if self._fullscreen:
             CGDisplayRelease( CGMainDisplayID() )
 
-        self._should_suppress_on_close_event = True
-        self._nswindow.close()
-        self._should_suppress_on_close_event = False
-        
-        # We must also remove view from window, otherwise it will
-        # continue to receive events with an invalid context.
-        self.canvas.nsview.removeFromSuperviewWithoutNeedingDisplay()
-        
+        # Remove the delegate object
+        if self._delegate:
+            self._nswindow.setDelegate_(None)
+            self._delegate._window = None
+            self._delegate = None
+            
+        # Remove window from display and remove its view.
+        if self._nswindow:
+            self._nswindow.orderOut_(None)
+            self._nswindow.setContentView_(None)
+            self._nswindow.close()
+
+        # Remove view from canvas and then remove canvas.
+        if self.canvas:
+            self.canvas.nsview.destroy()
+            self.canvas.nsview = None
+            self.canvas = None
+
         # Do this last, so that we don't see white flash 
         # when exiting application from fullscreen mode.
         super(CocoaWindow, self).close()
+
+        self._was_closed = True
+        del pool
 
     def switch_to(self):
         if self.context:
