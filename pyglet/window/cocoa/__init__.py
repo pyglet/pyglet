@@ -825,8 +825,11 @@ class CocoaWindow(BaseWindow):
         data = image.get_data(format, -bytesPerRow)
 
         # Use image data to create a data provider.
-        provider = CGDataProviderCreateWithData(None, data, len(data), None)
-
+        # Using CGDataProviderCreateWithData crashes PyObjC 2.2b3, so we create
+        # a CFDataRef object first and use it to create the data provider.
+        cfdata = CoreFoundation.CFDataCreate(None, data, len(data))
+        provider = CGDataProviderCreateWithCFData(cfdata)
+        
         # Then create a CGImage from the provider.
         cgimage = CGImageCreate(
             image.width, image.height, 8, 32, bytesPerRow,
