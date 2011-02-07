@@ -682,7 +682,7 @@ class CocoaWindow(BaseWindow):
             self._nswindow.setOpaque_(True)
             self.context.set_full_screen()
         else:
-            self._nswindow.center()
+            self._set_nice_window_location()
 
         # Then create a view and set it as our NSWindow's content view.
         nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
@@ -722,6 +722,20 @@ class CocoaWindow(BaseWindow):
         self.set_visible(self._visible)
 
         del pool
+
+    def _set_nice_window_location(self):
+        # Construct a list of all visible windows that aren't us.
+        visible_windows = [ win for win in pyglet.app.windows if
+                            win is not self and 
+                            win._nswindow and 
+                            win._nswindow.isVisible() ]
+        # If there aren't any visible windows, then center this window.
+        if not visible_windows:
+            self._nswindow.center()
+        # Otherwise, cascade from last window in list.
+        else:
+            point = visible_windows[-1]._nswindow.cascadeTopLeftFromPoint_(NSZeroPoint)
+            self._nswindow.cascadeTopLeftFromPoint_(point)
 
     def close(self):
         # If we've already gone through this once, don't do it again.
