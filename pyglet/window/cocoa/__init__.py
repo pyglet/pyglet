@@ -117,7 +117,7 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event("on_hide")
     
     def applicationDidUnhide_(self, notification):
-        if self._window._mouse_exclusive and CGCursorIsVisible():
+        if self._window._is_mouse_exclusive and CGCursorIsVisible():
             # The cursor should be hidden, but for some reason it's not;
             # try to force the cursor to hide (without over-hiding).
             SystemCursor.unhide()
@@ -150,7 +150,7 @@ class PygletDelegate(NSObject):
     
     def windowDidResignKey_(self, notification):
         # Pause exclusive mouse mode if it is active.
-        if self._window._mouse_exclusive:
+        if self._window._is_mouse_exclusive:
             self._window.set_exclusive_mouse(False)
             self.did_pause_exclusive_mouse = True
             # We need to prevent the window from being unintentionally dragged
@@ -165,7 +165,7 @@ class PygletDelegate(NSObject):
         self._window.dispatch_event("on_hide")
 
     def windowDidDeminiaturize_(self, notification):
-        if self._window._mouse_exclusive and CGCursorIsVisible():
+        if self._window._is_mouse_exclusive and CGCursorIsVisible():
             # The cursor should be hidden, but for some reason it's not;
             # try to force the cursor to hide (without over-hiding).
             SystemCursor.unhide()
@@ -174,6 +174,15 @@ class PygletDelegate(NSObject):
 
     def windowDidExpose_(self,  notification):
         self._window.dispatch_event("on_expose")
+
+    def terminate_(self, sender):
+        NSApp().terminate_(self)
+
+    def validateMenuItem_(self, menuitem):
+        # Disable quitting with command-q when in keyboard exclusive mode.
+        if menuitem.action() == 'terminate:':
+            return not self._window._is_keyboard_exclusive
+        return True
 
 
 # This custom NSTextView subclass is used for capturing all of the
@@ -582,7 +591,7 @@ class PygletView(NSOpenGLView):
     def mouseExited_(self, nsevent):
         x, y = self.getMousePosition_(nsevent)
         self._window._mouse_in_window = False
-        if not self._window._mouse_exclusive:
+        if not self._window._is_mouse_exclusive:
             self._window.set_mouse_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
 
@@ -594,7 +603,7 @@ class PygletView(NSOpenGLView):
         # BUG: If the mouse enters the window via the resize control at the
         # the bottom right corner, the resize control will set the cursor
         # to the default arrow and screw up our cursor tracking.
-        if not self._window._mouse_exclusive:
+        if not self._window._is_mouse_exclusive:
             self._window.set_mouse_platform_visible()
 
 
@@ -610,9 +619,11 @@ class CocoaWindow(BaseWindow):
     _minimum_size = None
     _maximum_size = None
 
-    _mouse_exclusive = False
+    _is_mouse_exclusive = False
     _mouse_platform_visible = True
     _mouse_ignore_motion = False
+
+    _is_keyboard_exclusive = False
 
     # Flag set during close() method.
     _was_closed = False
@@ -748,6 +759,7 @@ class CocoaWindow(BaseWindow):
         # Restore cursor visibility
         self.set_mouse_platform_visible(True)
         self.set_exclusive_mouse(False)
+        self.set_exclusive_keyboard(False)
 
         if self._fullscreen:
             CGDisplayRelease( CGMainDisplayID() )
@@ -953,7 +965,7 @@ class CocoaWindow(BaseWindow):
         # look like.
         else:
             # If we are in mouse exclusive mode, then hide the mouse cursor.
-            if self._mouse_exclusive:
+            if self._is_mouse_exclusive:
                 SystemCursor.hide()
             # If we aren't inside the window, then always show the mouse
             # and make sure that it is the default cursor.
@@ -1030,7 +1042,7 @@ class CocoaWindow(BaseWindow):
             CGDisplayMoveCursorToPoint(displayID, (x,y))
 
     def set_exclusive_mouse(self, exclusive=True):
-        self._mouse_exclusive = exclusive
+        self._is_mouse_exclusive = exclusive
         if exclusive:
             # Skip the next motion event, which would return a large delta.
             self._mouse_ignore_motion = True
@@ -1046,4 +1058,31 @@ class CocoaWindow(BaseWindow):
 
     def set_exclusive_keyboard(self, exclusive=True):
         # http://developer.apple.com/mac/library/technotes/tn2002/tn2062.html
-        pass
+        # http://developer.apple.com/library/mac/#technotes/KioskMode/
+
+        # BUG: System keys like F9 or command-tab are disabled, however 
+        # pyglet also does not receive key press events for them.
+        # Disabled menu items and key equivalents still beep.
+
+        # Need to define these constants for PyObjC < 2.3
+        NSApplicationPresentationDefault = 0
+        NSApplicationPresentationHideDock = 1 << 1
+        NSApplicationPresentationHideMenuBar = 1 << 3
+        NSApplicationPresentationDisableProcessSwitching = 1 << 5
+        NSApplicationPresentationDisableHideApplication = 1 << 8
+
+        # This flag is queried by window delegate to determine whether 
+        # the quit menu item is active.
+        self._is_keyboard_exclusive = exclusive
+            
+        if exclusive:
+            # "Be nice! Don't disable force-quit!" 
+            #          -- Patrick Swayze, Road House (1989)
+            options = NSApplicationPresentationHideDock | \
+                      NSApplicationPresentationHideMenuBar | \
+                      NSApplicationPresentationDisableProcessSwitching | \
+                      NSApplicationPresentationDisableHideApplication
+        else:
+            options = NSApplicationPresentationDefault
+
+        NSApp().setPresentationOptions_(options)

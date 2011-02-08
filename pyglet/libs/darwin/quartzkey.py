@@ -45,6 +45,8 @@ from pyglet.window import key
 # http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
 # Renamed QZ_RALT, QZ_LALT to QZ_ROPTION, QZ_LOPTION
 # and QZ_RMETA, QZ_LMETA to QZ_RCOMMAND, QZ_LCOMMAND.
+# Some keys (like F16) are not defined here.  Look at:
+# /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Headers/Events.h
 
 QZ_ESCAPE = 0x35
 QZ_F1 = 0x7A
@@ -59,10 +61,10 @@ QZ_F9 = 0x65
 QZ_F10 = 0x6D
 QZ_F11 = 0x67
 QZ_F12 = 0x6F
-QZ_PRINT = 0x69
-QZ_SCROLLOCK = 0x6B
-QZ_PAUSE = 0x71
-QZ_POWER = 0x7F
+QZ_F13 = 0x69
+QZ_F14 = 0x6B
+QZ_F15 = 0x71
+QZ_F16 = 0x6A
 QZ_BACKQUOTE = 0x32
 QZ_1 = 0x12
 QZ_2 = 0x13
@@ -175,10 +177,10 @@ keymap = {
     QZ_F10: key.F10,
     QZ_F11: key.F11,
     QZ_F12: key.F12,
-    QZ_PRINT: key.PRINT,
-    QZ_SCROLLOCK: key.SCROLLLOCK,
-    QZ_PAUSE: key.PAUSE,
-    #QZ_POWER: key.POWER,
+    QZ_F13: key.F13,
+    QZ_F14: key.F14,
+    QZ_F15: key.F15,
+    QZ_F16: key.F16,
     QZ_BACKQUOTE: key.QUOTELEFT,
     QZ_1: key._1,
     QZ_2: key._2,
