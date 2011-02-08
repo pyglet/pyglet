@@ -188,9 +188,20 @@ class CocoaContext(Context):
         self._nscontext = None
 
     def set_vsync(self, vsync=True):
-        # Does not work because of PyObjC bug.
-        #self._nscontext.setValues_forParameter_([1], NSOpenGLCPSwapInterval)
-        pass
+        from objc import __version__ as pyobjc_version
+        if float(pyobjc_version[:3]) >= 2.3:
+            self._nscontext.setValues_forParameter_(vsync, NSOpenGLCPSwapInterval)
+        # While the following code works for PyObjC 2.2, it is so ugly that I
+        # would rather just leave it commented out.
+        # else:
+        #     from ctypes import cdll, util, c_void_p, c_int, byref
+        #     cglContext = self._nscontext.CGLContextObj()
+        #     dir(cglContext) # must call dir in order to access pointerAsInteger???
+        #     ctypes_context = c_void_p(cglContext.pointerAsInteger)
+        #     quartz = cdll.LoadLibrary(util.find_library('Quartz'))
+        #     value = c_int(vsync)
+        #     kCGLCPSwapInterval = 222
+        #     quartz.CGLSetParameter(ctypes_context, kCGLCPSwapInterval, byref(value))
 
     def get_vsync(self):
         value = self._nscontext.getValues_forParameter_(None, NSOpenGLCPSwapInterval)
