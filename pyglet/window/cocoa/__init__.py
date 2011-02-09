@@ -39,25 +39,18 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from ctypes import *
-import os.path
 import unicodedata
-import warnings
 
 import pyglet
-from pyglet.window import WindowException, \
-    BaseWindow, MouseCursor, DefaultMouseCursor, _PlatformEventHandler
-from pyglet.window import key
-from pyglet.window import mouse
-from pyglet.window import event
+from pyglet.window import BaseWindow, WindowException
+from pyglet.window import MouseCursor, DefaultMouseCursor
+from pyglet.window import key, mouse
+from pyglet.event import EventDispatcher
+
 from pyglet.canvas.cocoa import CocoaCanvas
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin.quartzkey import keymap, charmap
-
-from pyglet.gl import gl_info
-from pyglet.gl import glu_info
-
-from pyglet.event import EventDispatcher
 
 
 # This class is a wrapper around NSCursor which prevents us from
@@ -193,11 +186,21 @@ class PygletTextView(NSTextView):
         self = super(PygletTextView, self).init()
         if self is not None:
             self._window = window
+            self.setFieldEditor_(False)  # interpret tab and return as raw characters
         return self
 
     def insertText_(self, text):
         self.setString_("")
-        self._window.dispatch_event("on_text", text)
+        # Don't send control characters (tab, newline) as on_text events.
+        if unicodedata.category(text[0]) != 'Cc':
+            self._window.dispatch_event("on_text", text)
+
+    def insertNewline_(self, sender):
+        # Distinguish between carriage return (u'\r') and enter (u'\x03').
+        # Only the return key press gets sent as an on_text event.
+        if NSApp().currentEvent().charactersIgnoringModifiers()[0] == u'\r':
+            self._window.dispatch_event("on_text", u'\r')
+
     def moveUp_(self, sender):
         self._window.dispatch_event("on_text_motion", key.MOTION_UP)
     def moveDown_(self, sender):
@@ -319,7 +322,6 @@ class PygletView(NSOpenGLView):
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
         self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
-        self._textview.setFieldEditor_(False)  # interpret tab and return as raw characters
         self.addSubview_(self._textview)       # add text view to the responder chain.
         return self
 
