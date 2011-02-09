@@ -646,9 +646,8 @@ class CocoaWindow(BaseWindow):
             self.context.set_current()
         
         if 'fullscreen' in changes:
-            if not self._fullscreen:
-                # Leaving fullscreen mode.
-                CGDisplayRelease(self.screen.cg_display_id)
+            if not self._fullscreen:  # leaving fullscreen
+                self.screen.release_display()
 
         self._create()
 
@@ -687,11 +686,15 @@ class CocoaWindow(BaseWindow):
             False)                  # defer
 
         if self._fullscreen:
-            CGDisplayCapture(self.screen.cg_display_id)
+            # BUG: I suspect that this doesn't do the right thing when using
+            # multiple monitors (which would be to go fullscreen on the monitor
+            # where the window is located).  However I've no way to test.
+            self.screen.capture_display()
             self._nswindow.setLevel_(CGShieldingWindowLevel())
             self._nswindow.setBackgroundColor_(NSColor.blackColor())            
             self._nswindow.setOpaque_(True)
             self.context.set_full_screen()
+            self._center_fullscreen_window()
         else:
             self._set_nice_window_location()
 
@@ -748,6 +751,12 @@ class CocoaWindow(BaseWindow):
             point = visible_windows[-1]._nswindow.cascadeTopLeftFromPoint_(NSZeroPoint)
             self._nswindow.cascadeTopLeftFromPoint_(point)
 
+    def _center_fullscreen_window(self):
+        # [NSWindow center] does not move the window to a true center position.
+        x = int((self.screen.width - self._width)/2)
+        y = int((self.screen.height - self._height)/2)
+        self._nswindow.setFrameOrigin_((x, y))
+
     def close(self):
         # If we've already gone through this once, don't do it again.
         if self._was_closed:
@@ -761,9 +770,6 @@ class CocoaWindow(BaseWindow):
         self.set_exclusive_mouse(False)
         self.set_exclusive_keyboard(False)
 
-        if self._fullscreen:
-            CGDisplayRelease( CGMainDisplayID() )
-
         # Remove the delegate object
         if self._delegate:
             self._nswindow.setDelegate_(None)
@@ -775,6 +781,10 @@ class CocoaWindow(BaseWindow):
             self._nswindow.orderOut_(None)
             self._nswindow.setContentView_(None)
             self._nswindow.close()
+
+        # Restore screen mode. This also releases the display
+        # if it was captured for fullscreen mode.
+        self.screen.restore_mode()
 
         # Remove view from canvas and then remove canvas.
         if self.canvas:
