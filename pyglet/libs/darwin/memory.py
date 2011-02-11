@@ -62,7 +62,7 @@ def _clean_autorelease_pools():
         else:
             pool_stack = _autorelease_pools[thread]
             for idx, pool in enumerate(pool_stack):
-                pool_stack[idx] = create_pool()
+                pool_stack[idx] = _create_pool()
                 del pool
     _autorelease_pool_lock.release()
 
