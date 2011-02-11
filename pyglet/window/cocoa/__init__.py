@@ -182,6 +182,9 @@ class PygletDelegate(NSObject):
 # on_text, on_text_motion, and on_text_motion_select events.
 class PygletTextView(NSTextView):
 
+    def keyDown_(self, nsevent):
+        self.interpretKeyEvents_( [ nsevent ] )
+
     def initWithCocoaWindow_(self, window):
         self = super(PygletTextView, self).init()
         if self is not None:
