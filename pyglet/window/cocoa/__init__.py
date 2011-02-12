@@ -284,6 +284,9 @@ class PygletWindow(NSWindow):
                 
         return super(PygletWindow, self).nextEventMatchingMask_untilDate_inMode_dequeue_(mask, date, mode, dequeue)
 
+    # Need this for set_size to not flash.
+    def animationResizeTime_(self, newFrame):
+        return 0.0
 
 class PygletToolWindow(NSPanel):
 
@@ -724,6 +727,8 @@ class CocoaWindow(BaseWindow):
         # Configure the window.
         self._nswindow.setAcceptsMouseMovedEvents_(True)
         self._nswindow.setReleasedWhenClosed_(False)
+        self._nswindow.useOptimizedDrawing_(True)
+        self._nswindow.setPreservesContentDuringLiveResize_(False)
 
         # Set the delegate.
         self._delegate = PygletDelegate.alloc().initWithWindow_(self)
@@ -910,9 +915,17 @@ class CocoaWindow(BaseWindow):
     def set_size(self, width, height):
         if self._fullscreen:
             raise WindowException('Cannot set size of fullscreen window.')
-        self._width = int(width)
-        self._height = int(height)
-        self._nswindow.setContentSize_(NSSize(width, height))
+        self._width = max(1, int(width))
+        self._height = max(1, int(height))
+        # Move frame origin down so that top-left corner of window doesn't move.
+        rect = self._nswindow.contentRectForFrameRect_(self._nswindow.frame())
+        rect.origin.y += rect.size.height - self._height
+        rect.size.width = self._width
+        rect.size.height = self._height
+        frame = self._nswindow.frameRectForContentRect_(rect)
+        # The window background flashes when the frame size changes unless it's
+        # animated, but we can set the window's animationResizeTime to zero.
+        self._nswindow.setFrame_display_animate_(frame, True, self._nswindow.isVisible())
 
     def set_minimum_size(self, width, height):
         self._minimum_size = NSSize(width, height)
