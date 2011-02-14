@@ -11,6 +11,10 @@ import sys
 
 window = pyglet.window.Window()
 
+@window.event
+def on_draw():
+    window.clear()
+
 remote = pyglet.input.get_apple_remote()
 if not remote:
     print 'Apple IR Remote not available.'
