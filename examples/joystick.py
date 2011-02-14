@@ -9,17 +9,15 @@ __version__ = '$Id: $'
 import pyglet
 from pyglet.gl import *
 
-joysticks = pyglet.input.get_joysticks()
-assert joysticks, 'No joystick device is connected'
-joystick = joysticks[0]
-joystick.open()
-
 window = pyglet.window.Window()
+
+joystick = pyglet.input.get_joysticks()[0]
+joystick.open()
 
 @window.event
 def on_draw():
-    x = (0.8*joystick.x + 1) * window.width / 2
-    y = (-0.8*joystick.y + 1) * window.height / 2
+    x = (joystick.x + 1) * window.width / 2
+    y = (-joystick.y + 1) * window.height / 2
     z = joystick.z
     angle = joystick.rz * 180
 
