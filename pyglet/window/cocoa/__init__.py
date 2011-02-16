@@ -305,11 +305,6 @@ class PygletView(NSOpenGLView):
     # CocoaWindow object.
     _window = None
 
-    # A set containing pyglet key codes for all currently pressed modifier keys:
-    # Note you can't necessarily trust the state of this set, because it can get out
-    # of whack if a modifier key is released while the window doesn't have focus.
-    _modifier_keys_down = set() 
-
     # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate 
     # events so that we can custom set the mouse cursor within the view.
     _tracking_area = None
@@ -393,6 +388,7 @@ class PygletView(NSOpenGLView):
         if modifierFlags & NSControlKeyMask:
             modifiers |= key.MOD_CTRL
         if modifierFlags & NSAlternateKeyMask:
+            modifiers |= key.MOD_ALT
             modifiers |= key.MOD_OPTION
         if modifierFlags & NSCommandKeyMask:
             modifiers |= key.MOD_COMMAND
@@ -437,84 +433,46 @@ class PygletView(NSOpenGLView):
         self._window.dispatch_event('on_key_release', symbol, modifiers)
 
     def pygletFlagsChanged_(self, nsevent):
-        # This message is received whenever the modifier keys change state.
-        # This code is complicated because, while we can determine the actual
-        # modifier key that changed by looking at [nsevent keyCode], this won't
-        # tell us whether the key was pressed down or released.  We can look at
-        # the modifier flags to get a clue, but the flags don't distinguish between
-        # the left and right versions of a modifier key.  
-        #
-        # For example, consider the following sequence of events:
-        #   1. No key pressed --> modifiers & NSControlKeyMask == False
-        #   2. LCTRL pressed  --> modifiers & NSControlKeyMask == True
-        #   3. RCTRL pressed  --> modifiers & NSControlKeyMask == True
-        #   4. LCTRL released --> modifiers & NSControlKeyMask == True still
-        #   5. RCTRL released --> modifiers & NSControlKeyMask == False
-        # 
-        # To deal with this, we try to keep track of the state of each modifier key
-        # on our own, using the _modifiers_key_down set, which holds the pyglet key
-        # codes of all currently pressed modifier keys.  The problem is that we can't
-        # be sure that our tracking set stays up to date, because if the modifier keys
-        # change state while the window doesn't have focus, this method will never be
-        # called.  We look at three things to try to guess whether the key is up or down:
-        #   1. the stored state of the key (which could be wrong)
-        #   2. the stored state of its twin key (which could be wrong)
-        #   3. the state of its associated modifier flag.
+        # Handles on_key_press and on_key_release events for modifier keys.
+        # Note that capslock is handled differently than other keys; it acts
+        # as a toggle, so on_key_release is only sent when it's turned off.
+
+        # TODO: Move these constants somewhere else.
+        # Undocumented left/right modifier masks found by experimentation:
+        NSLeftShiftKeyMask      = 1 << 1
+        NSRightShiftKeyMask     = 1 << 2
+        NSLeftControlKeyMask    = 1 << 0
+        NSRightControlKeyMask   = 1 << 13
+        NSLeftAlternateKeyMask  = 1 << 5
+        NSRightAlternateKeyMask = 1 << 6
+        NSLeftCommandKeyMask    = 1 << 3
+        NSRightCommandKeyMask   = 1 << 4
+
+        maskForKey = { key.LSHIFT : NSLeftShiftKeyMask,
+                       key.RSHIFT : NSRightShiftKeyMask,
+                       key.LCTRL : NSLeftControlKeyMask,
+                       key.RCTRL : NSRightControlKeyMask,
+                       key.LOPTION : NSLeftAlternateKeyMask,
+                       key.ROPTION : NSRightAlternateKeyMask,
+                       key.LCOMMAND : NSLeftCommandKeyMask,
+                       key.RCOMMAND : NSRightCommandKeyMask,
+                       key.CAPSLOCK : NSAlphaShiftKeyMask }
+
         symbol = self.getSymbol_(nsevent)
-        modifiers = self.getModifiers_(nsevent)
-        symbol_to_mod = { key.LSHIFT : key.MOD_SHIFT,
-                          key.RSHIFT : key.MOD_SHIFT,
-                          key.LCTRL : key.MOD_CTRL, 
-                          key.RCTRL : key.MOD_CTRL, 
-                          key.LOPTION : key.MOD_OPTION,
-                          key.ROPTION : key.MOD_OPTION,
-                          key.LCOMMAND : key.MOD_COMMAND,
-                          key.RCOMMAND : key.MOD_COMMAND,
-                          key.CAPSLOCK : key.MOD_CAPSLOCK }
 
-        symbol_to_twin = { key.LSHIFT : key.RSHIFT,
-                           key.RSHIFT : key.LSHIFT,
-                           key.LCTRL : key.RCTRL,
-                           key.RCTRL : key.LCTRL,
-                           key.LOPTION : key.ROPTION,
-                           key.ROPTION : key.LOPTION,
-                           key.LCOMMAND : key.RCOMMAND,
-                           key.RCOMMAND : key.LCOMMAND,
-                           key.CAPSLOCK : key.CAPSLOCK }
-
-        if symbol not in symbol_to_mod: 
-            # Ignore this event if symbol is not a modifier key.  We need to check this
-            # because for example, we receive a flagsChanged message when using command-tab
-            # to switch applications, with the symbol == "a" when the command key is released.
+        # Ignore this event if symbol is not a modifier key.  We must check this
+        # because e.g., we receive a flagsChanged message when using CMD-tab to
+        # switch applications, with symbol == "a" when command key is released.
+        if symbol not in maskForKey: 
             return
 
-        if not symbol_to_mod[symbol] & modifiers:
-            # key was certainly released.
-            self._modifier_keys_down.discard(symbol)
-            self._modifier_keys_down.discard(symbol_to_twin[symbol])  # get rid of its twin just to be safe.
-            self._window.dispatch_event('on_key_release', symbol, modifiers)
+        modifiers = self.getModifiers_(nsevent)
+        modifierFlags = nsevent.modifierFlags()
+
+        if symbol and modifierFlags & maskForKey[symbol]:
+            self._window.dispatch_event('on_key_press', symbol, modifiers)
         else:
-            # The modifier flag is set, but could be because twin key is pressed.
-            # We have to rely on the _modifier_keys_down set to figure out what
-            # happened. However it is possible in weird situations that it is out
-            # of sync with reality, so try not to trust it too much.
-            if symbol not in self._modifier_keys_down:
-                # Either (a) the key was pressed, or
-                # (b) key was released while twin held down, and table out of sync.
-                # Safest thing to do is just assume key press.
-                self._modifier_keys_down.add(symbol)
-                self._window.dispatch_event('on_key_press', symbol, modifiers)
-            else:
-                # Either (a) the key was released and twin is pressed, or 
-                # (b) key was pressed and _modifier_keys_down is out of sync.
-                if symbol_to_twin[symbol] in self._modifier_keys_down:
-                    # Assume key was released
-                    self._modifier_keys_down.discard(symbol)
-                    self._window.dispatch_event('on_key_release', symbol, modifiers)
-                else:
-                    # Assume that key was pressed and _modifier_keys_down screwed up.
-                    self._modifier_keys_down.add(symbol)
-                    self._window.dispatch_event('on_key_press', symbol, modifiers)
+            self._window.dispatch_event('on_key_release', symbol, modifiers)
 
     def mouseMoved_(self, nsevent):
         if self._window._mouse_ignore_motion:
