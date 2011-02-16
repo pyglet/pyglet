@@ -807,15 +807,15 @@ class CocoaWindow(BaseWindow):
 
             if event is not None:
                 event_type = event.type()
-                # Send key events to special handlers.
+                # Pass on all events.
+                NSApp().sendEvent_(event)
+                # And resend key events to special handlers.
                 if event_type == NSKeyDown and not event.isARepeat():
                     NSApp().sendAction_to_from_("pygletKeyDown:", None, event)
                 elif event_type == NSKeyUp:
                     NSApp().sendAction_to_from_("pygletKeyUp:", None, event)
                 elif event_type == NSFlagsChanged:
                     NSApp().sendAction_to_from_("pygletFlagsChanged:", None, event)
-                # Pass on other events.
-                NSApp().sendEvent_(event)
                 NSApp().updateWindows()
 
         del pool
