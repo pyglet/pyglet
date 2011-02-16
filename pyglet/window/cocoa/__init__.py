@@ -474,6 +474,23 @@ class PygletView(NSOpenGLView):
         else:
             self._window.dispatch_event('on_key_release', symbol, modifiers)
 
+    # Overriding this method helps prevent system beeps for unhandled events.
+    def performKeyEquivalent_(self, nsevent):
+        # Let arrow keys and certain function keys pass through the responder
+        # chain so that the textview can handle on_text_motion events.
+        modifierFlags = nsevent.modifierFlags()
+        if modifierFlags & NSNumericPadKeyMask:
+            return False
+        if modifierFlags & NSFunctionKeyMask:
+            ch = nsevent.charactersIgnoringModifiers()
+            if ch in (NSHomeFunctionKey, NSEndFunctionKey, 
+                      NSPageUpFunctionKey, NSPageDownFunctionKey):
+                return False
+        # Send the key equivalent to the main menu to perform menu items.
+        NSApp().mainMenu().performKeyEquivalent_(nsevent)
+        # Indicate that we've handled the event so system won't beep.
+        return True
+
     def mouseMoved_(self, nsevent):
         if self._window._mouse_ignore_motion:
             self._window._mouse_ignore_motion = False
@@ -1048,7 +1065,6 @@ class CocoaWindow(BaseWindow):
 
         # BUG: System keys like F9 or command-tab are disabled, however 
         # pyglet also does not receive key press events for them.
-        # Disabled menu items and key equivalents still beep.
 
         # Need to define these constants for PyObjC < 2.3
         NSApplicationPresentationDefault = 0
