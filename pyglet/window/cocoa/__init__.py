@@ -300,7 +300,7 @@ class PygletToolWindow(NSPanel):
         return super(PygletToolWindow, self).nextEventMatchingMask_untilDate_inMode_dequeue_(mask, date, mode, dequeue)
 
 
-class PygletView(NSOpenGLView):
+class PygletView(NSView):
 
     # CocoaWindow object.
     _window = None
@@ -399,14 +399,17 @@ class PygletView(NSOpenGLView):
 
     ## Event responders.
 
-    # This is an NSOpenGLView-specific method that automatically gets called
-    # whenever the view's rectangle changes.  The stuff here could just as well
-    # be done in the windowDidResize_ delegate method if we chose to use a
-    # custom NSView class instead.  NSOpenGLView is supposed to automatically
-    # call the context's update method for us whenever the view resizes, however
-    # it seems like we need to manually call it here for some reason.
-    def reshape(self):
-        width, height = map(int, self.bounds().size)
+    # This method is called whenever the view changes size.
+    def setFrameSize_(self, size):
+        super(PygletView, self).setFrameSize_(size)
+        
+        # This method is called when view is first installed as the
+        # contentView of window.  Don't do anything on first call.
+        # This also helps ensure correct window creation event ordering.
+        if not self._window.context.canvas:
+            return
+
+        width, height = map(int, size)
         self._window.switch_to()
         self._window.context.update_geometry()
         self._window.dispatch_event("on_resize", width, height)
@@ -672,10 +675,10 @@ class CocoaWindow(BaseWindow):
             # BUG: I suspect that this doesn't do the right thing when using
             # multiple monitors (which would be to go fullscreen on the monitor
             # where the window is located).  However I've no way to test.
-            self.screen.capture_display()
-            self._nswindow.setLevel_(CGShieldingWindowLevel())
             self._nswindow.setBackgroundColor_(NSColor.blackColor())            
             self._nswindow.setOpaque_(True)
+            self.screen.capture_display()
+            self._nswindow.setLevel_(CGShieldingWindowLevel())
             self.context.set_full_screen()
             self._center_fullscreen_window()
         else:
@@ -685,15 +688,6 @@ class CocoaWindow(BaseWindow):
         nsview = PygletView.alloc().initWithFrame_cocoaWindow_(content_rect, self)
         self._nswindow.setContentView_(nsview)
         self._nswindow.makeFirstResponder_(nsview)
-
-        # Pyglet expects creation events to be dispatched in this order, but
-        # generally on_resize and on_expose come before on_show if I let things
-        # happen naturally.  Therefore, just manually send out these events the
-        # way pyglet wants them.  Some of the events will be repeated (hopefully
-        # harmlessly) soon after.
-        self.dispatch_event('on_resize', self._width, self._height)
-        self.dispatch_event('on_show')
-        self.dispatch_event('on_expose')
 
         # Create a canvas with the view as its drawable and attach context to it.
         self.canvas = CocoaCanvas(self.display, self.screen, nsview)

@@ -159,8 +159,6 @@ class CocoaContext(Context):
 
     def attach(self, canvas):
         super(CocoaContext, self).attach(canvas)
-        canvas.nsview.setPixelFormat_(self.config._pixel_format)
-        canvas.nsview.setOpenGLContext_(self._nscontext)
         # The NSView instance should be attached to a nondeferred window before calling
         # setView, otherwise you get an "invalid drawable" message.
         self._nscontext.setView_(canvas.nsview)
@@ -180,8 +178,8 @@ class CocoaContext(Context):
         self._nscontext.update()
 
     def set_full_screen(self):
-        self._nscontext.setFullScreen()
         self._nscontext.makeCurrentContext()
+        self._nscontext.setFullScreen()
 
     def destroy(self):
         super(CocoaContext, self).destroy()
