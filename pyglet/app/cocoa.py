@@ -89,7 +89,7 @@ class CocoaEventLoop(PlatformEventLoop):
             # will wait until the next event comes along.
             timeout_date = NSDate.distantFuture()
         else:
-            timeout_date = NSDate.date().addTimeInterval_(timeout)
+            timeout_date = NSDate.dateWithTimeIntervalSinceNow_(timeout)
 
         # Retrieve the next event (if any).  We wait for an event to show up
         # and then process it, or if timeout_date expires we simply return.
@@ -131,14 +131,7 @@ class CocoaEventLoop(PlatformEventLoop):
         # Destroy the autorelease pool used for this step.
         del pool
 
-        # pyglet.app.run() uses _run_estimated() by default, which checks
-        # to see if we timed out or not.  If we tell it the truth about 
-        # whether or not we timed out, then the framerate drops significantly,
-        # and CPU usage decreases.  If you want to be honest, then uncomment
-        # the following line:
-#        return did_time_out
-        # If you want better FPS, then lie:
-        return False
+        return did_time_out
     
     def stop(self):
         pass
