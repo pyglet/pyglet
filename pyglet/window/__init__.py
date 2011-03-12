@@ -669,8 +669,12 @@ class BaseWindow(EventDispatcher):
         self._recreate(['fullscreen'])
 
         if not self._fullscreen and self._windowed_location:
-            # Restore windowed location
-            self.set_location(*self._windowed_location)
+            # Restore windowed location.
+            # TODO: Move into platform _create?
+            # Not harmless on Carbon because upsets _width and _height
+            # via _on_window_bounds_changed.
+            if sys.platform != 'darwin' or pyglet.options['darwin_cocoa']:
+                self.set_location(*self._windowed_location)
 
     def _set_fullscreen_mode(self, mode, width, height):
         if mode is not None:
@@ -1684,7 +1688,10 @@ if _is_epydoc:
 else:
     # Try to determine which platform to use.
     if sys.platform == 'darwin':
-        from pyglet.window.cocoa import CocoaWindow as Window
+        if pyglet.options['darwin_cocoa']:
+            from pyglet.window.cocoa import CocoaWindow as Window
+        else:
+            from pyglet.window.carbon import CarbonWindow as Window
     elif sys.platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
     else:

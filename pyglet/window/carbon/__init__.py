@@ -757,7 +757,7 @@ class CarbonWindow(BaseWindow):
 
     @staticmethod
     def _get_mouse_button_and_modifiers(ev):
-        buttons = c_uint()
+        buttons = c_uint32()
         carbon.GetEventParameter(ev, kEventParamMouseChord,
             typeMouseButton, c_void_p(), sizeof(buttons), c_void_p(),
             byref(buttons))

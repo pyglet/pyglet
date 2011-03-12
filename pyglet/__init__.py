@@ -128,7 +128,14 @@ if getattr(sys, 'frozen', None):
 #:     that implements the _NET_WM_SYNC_REQUEST protocol.
 #:
 #:     **Since:** pyglet 1.1
-#:
+#: darwin_cocoa
+#:     If True, the Cocoa-based pyglet implementation is used as opposed to
+#:     the 32-bit Carbon implementation.  When python is running in 64-bit mode
+#:     on Mac OS X 10.6 or later, this option is set to True by default.  
+#:     Otherwise the Carbon implementation is preferred.
+#:   
+#:     **Since:** pyglet 1.2
+#:   
 options = {
     'audio': ('directsound', 'pulse', 'openal', 'silent'),
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
@@ -151,6 +158,7 @@ options = {
     'vsync': None,
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
+    'darwin_cocoa': False,
 }
 
 _option_types = {
@@ -175,7 +183,27 @@ _option_types = {
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
+    'darwin_cocoa': bool,
 }
+
+def _choose_darwin_platform():
+    """Choose between Darwin's Carbon and Cocoa implementations."""
+    if sys.platform != 'darwin':
+        return
+    is_64bits = sys.maxint > 2**32
+    import platform
+    osx_version = float(platform.release()[:4])
+    from objc import __version__ as pyobjc_version
+    pyobjc_version = float(pyobjc_version[:3])
+    if is_64bits:
+        if osx_version < 10.6:
+            raise Exception('pyglet is not compatible with 64-bit Python for versions of Mac OS X prior to 10.6.')
+        if pyobjc_version < 2.2:
+            raise Exception('pyglet is not compatible with 64-bit Python for versions of PyObjC prior to 2.2')            
+        options['darwin_cocoa'] = True
+    else:
+        options['darwin_cocoa'] = False        
+_choose_darwin_platform()  # can be overridden by an environment variable below
 
 def _read_environment():
     '''Read defaults for options from environment'''
