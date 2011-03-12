@@ -45,7 +45,8 @@ from pyglet.window import key
 # http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
 # Renamed QZ_RALT, QZ_LALT to QZ_ROPTION, QZ_LOPTION
 # and QZ_RMETA, QZ_LMETA to QZ_RCOMMAND, QZ_LCOMMAND.
-# Some keys (like F16) are not defined here.  Look at:
+#
+# See also:
 # /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Headers/Events.h
 
 QZ_ESCAPE = 0x35
@@ -153,15 +154,6 @@ QZ_DOWN = 0x7D
 QZ_RIGHT = 0x7C
 QZ_KP0 = 0x52
 QZ_KP_PERIOD = 0x41
-# I am pretty certain that these constants are a left-over kludge and should be removed.
-# See http://forums.libsdl.org/viewtopic.php?t=1789&sid=5f8c2583bd34f812db225831fc27a175
-# which explains that they date from 2001 during the era of Mac OS 10.0.  At any rate,
-# they conflict with already defined constants like QZ_LCTRL which I actually need.
-#QZ_IBOOK_ENTER = 0x34
-#QZ_IBOOK_LEFT = 0x3B
-#QZ_IBOOK_RIGHT = 0x3C
-#QZ_IBOOK_DOWN = 0x3D
-#QZ_IBOOK_UP = 0x3E
 
 keymap = {
     QZ_ESCAPE: key.ESCAPE,
@@ -269,12 +261,6 @@ keymap = {
     QZ_RIGHT: key.RIGHT,
     QZ_KP0: key.NUM_0,
     QZ_KP_PERIOD: key.NUM_DECIMAL,
-# See above comments.
-#    QZ_IBOOK_ENTER: key.ENTER,
-#    QZ_IBOOK_LEFT: key.LEFT,
-#    QZ_IBOOK_RIGHT: key.RIGHT,
-#    QZ_IBOOK_DOWN: key.DOWN,
-#    QZ_IBOOK_UP: key.UP,
 }
 
 
@@ -351,6 +337,3 @@ charmap = {
     '}' : key.BRACERIGHT,
     '~' : key.ASCIITILDE
 }
-
-
-
