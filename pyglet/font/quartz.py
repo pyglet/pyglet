@@ -106,9 +106,10 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
         bytesPerRow = Quartz.CGImageGetBytesPerRow(imageRef)
         imageData = Quartz.CGDataProviderCopyData(Quartz.CGImageGetDataProvider(imageRef))
-        buffer = (c_byte * (height * bytesPerRow))()
+        bufferSize = CoreFoundation.CFDataGetLength(imageData)
+        buffer = (c_byte * bufferSize)()
         # Treat imageData as an NSData object.
-        imageData.getBytes_length_(buffer, CoreFoundation.CFDataGetLength(imageData))
+        imageData.getBytes_length_(buffer, bufferSize)
 
         pimage = pyglet.image.ImageData(width, height, 'RGBA', buffer, bytesPerRow)
 
