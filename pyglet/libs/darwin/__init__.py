@@ -2,8 +2,6 @@ import pyglet
 
 # Cocoa implementation:
 if pyglet.options['darwin_cocoa']:
-    from memory import *
-
     from Foundation import *
     from Cocoa import *
     from Quartz import *

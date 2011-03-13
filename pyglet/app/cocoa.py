@@ -137,7 +137,7 @@ class CocoaEventLoop(PlatformEventLoop):
         pass
 
     def notify(self):
-        enter_autorelease_pool()
+        pool = NSAutoreleasePool.alloc().init()
         notifyEvent = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
                     NSApplicationDefined, # type
                     NSPoint(0.0, 0.0),    # location
@@ -150,4 +150,4 @@ class CocoaEventLoop(PlatformEventLoop):
                     0,                    # data2
                     )
         NSApp().postEvent_atStart_(notifyEvent, False)
-        exit_autorelease_pool()
+        del pool
