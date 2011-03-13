@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-'''Test RGBA load using the platform decoder (Quartz, GDI+ or Gdk).  You
-should see the rgba.png image on a checkboard background.
+'''Test RGBA load using the platform decoder (QuickTime, Quartz, GDI+ or Gdk).
+You should see the rgba.png image on a checkboard background.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -16,7 +16,11 @@ if sys.platform == 'linux2':
 elif sys.platform in ('win32', 'cygwin'):
     from pyglet.image.codecs.gdiplus import GDIPlusDecoder as dclass
 elif sys.platform == 'darwin':
-    from pyglet.image.codecs.quartz import QuartzImageDecoder as dclass
+    from pyglet import options as pyglet_options
+    if pyglet_options['darwin_cocoa']:
+        from pyglet.image.codecs.quartz import QuartzImageDecoder as dclass
+    else:
+        from pyglet.image.codecs.quicktime import QuickTimeImageDecoder as dclass
 
 class TEST_PLATFORM_RGBA_LOAD(base_load.TestLoad):
     texture_file = 'rgba.png'
