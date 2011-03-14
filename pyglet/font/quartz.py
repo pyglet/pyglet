@@ -41,13 +41,114 @@ __version__ = '$Id: $'
 # TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI
 # independence?
 
-from ctypes import *
 import math
+
+from ctypes import *
+from ctypes import util
 
 from pyglet.font import base
 import pyglet.image
 
-import Quartz, CoreFoundation, CoreText, Cocoa
+# Load all the needed frameworks.
+cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
+quartz = cdll.LoadLibrary(util.find_library('quartz'))
+ct = cdll.LoadLibrary(util.find_library('CoreText'))
+
+# TODO: Move all of the type definitions and ctypes setup somewhere else.
+
+# Type definitions:
+CFIndex = c_long
+UniChar = c_ushort
+CGGlyph = c_ushort
+
+# /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
+#    CoreGraphics.framework/Headers/CGBase.h
+import sys
+if sys.maxint > 2**32:
+    CGFloat = c_double
+else:
+    CGFloat = c_float
+
+# CFRange struct defined in CFBase.h
+# This replaces the CFRangeMake(LOC, LEN) macro.
+class CFRange(Structure):
+    _fields_ = [ ("location", CFIndex), ("length", CFIndex) ]
+
+# /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
+#    CoreGraphics.framework/Headers/CGGeometry.h
+class CGPoint(Structure):
+    _fields_ = [ ("x", CGFloat), ("y", CGFloat) ]
+
+class CGSize(Structure):
+    _fields_ = [ ("width", CGFloat), ("height", CGFloat) ]
+
+class CGRect(Structure):
+    _fields_ = [ ("origin", CGPoint), ("size", CGSize) ]
+
+# Setup return types for functions that return pointers.
+# (Otherwise ctypes returns 32-bit int which breaks on 64-bit systems.)
+# Note that you must also wrap the return value with c_void_p before
+# you use it as an argument to another function, otherwise ctypes will
+# automatically convert it back to a 32-bit int again.
+cf.CFDictionaryCreateMutable.restype = c_void_p
+cf.CFStringCreateWithCString.restype = c_void_p
+cf.CFAttributedStringCreate.restype = c_void_p
+cf.CFDataCreate.restype = c_void_p
+cf.CFNumberCreate.restype = c_void_p
+
+ct.CTLineCreateWithAttributedString.restype = c_void_p
+ct.CTFontGetBoundingRectsForGlyphs.restype = CGRect
+ct.CTFontGetAdvancesForGlyphs.restype = c_double
+ct.CTFontGetAscent.restype = CGFloat
+ct.CTFontGetDescent.restype = CGFloat
+ct.CTFontCreateWithGraphicsFont.restype = c_void_p
+ct.CTFontCreateWithGraphicsFont.argtypes = [c_void_p, CGFloat, c_void_p, c_void_p]
+ct.CTFontCopyFamilyName.restype = c_void_p
+ct.CTFontCopyFullName.restype = c_void_p
+ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
+ct.CTFontCreateWithFontDescriptor.restype = c_void_p
+ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
+
+quartz.CGColorSpaceCreateDeviceRGB.restype = c_void_p
+quartz.CGBitmapContextCreate.restype = c_void_p
+quartz.CGBitmapContextCreateImage.restype = c_void_p
+quartz.CGImageGetDataProvider.restype = c_void_p
+quartz.CGDataProviderCopyData.restype = c_void_p
+quartz.CGDataProviderCreateWithCFData.restype = c_void_p
+quartz.CGFontCreateWithDataProvider.restype = c_void_p
+quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
+quartz.CGFontCreateWithFontName.restype = c_void_p
+
+# Core Foundation constants
+kCFStringEncodingUTF8 = 0x08000100
+kCFNumberSInt32Type   = 3
+
+# CoreText constants
+kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
+kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
+kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
+kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
+kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
+
+# CTFontTraits.h
+kCTFontItalicTrait = (1 << 0)
+kCTFontBoldTrait   = (1 << 1)
+
+# CGImage.h
+kCGImageAlphaPremultipliedLast = 1
+
+# Python string to/from CFString conversion helper functions:
+def CFSTR(text):
+    return c_void_p(cf.CFStringCreateWithCString(None, text.encode('utf8'), kCFStringEncodingUTF8))
+
+def cfstring_to_string(cfstring):
+    length = cf.CFStringGetLength(cfstring)
+    size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
+    buffer = c_buffer(size + 1)
+    result = cf.CFStringGetCString(cfstring, buffer, len(buffer), kCFStringEncodingUTF8)
+    if result:
+        return buffer.value
+
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
@@ -64,20 +165,24 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         ctFont = self.font.ctFont
 
         # Create an attributed string using text and font.
-        attributes = CoreFoundation.CFDictionaryCreateMutable(None, 1, CoreFoundation.kCFTypeDictionaryKeyCallBacks, CoreFoundation.kCFTypeDictionaryValueCallBacks)
-        CoreFoundation.CFDictionaryAddValue(attributes, CoreText.kCTFontAttributeName, ctFont)
-        string = CoreFoundation.CFAttributedStringCreate(None, unicode(text), attributes)
+        attributes = c_void_p(cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
+        cf.CFDictionaryAddValue(attributes, kCTFontAttributeName, ctFont)
+        string = c_void_p(cf.CFAttributedStringCreate(None, CFSTR(text), attributes))
 
         # Create a CTLine object to render the string.
-        line = CoreText.CTLineCreateWithAttributedString(string)
+        line = c_void_p(ct.CTLineCreateWithAttributedString(string))
+        cf.CFRelease(string)
+        cf.CFRelease(attributes)
         
         # Get a bounding rectangle for glyphs in string.
-        result, glyphs = CoreText.CTFontGetGlyphsForCharacters(ctFont, text, None, len(text))
-        rect, rects = CoreText.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, len(glyphs))
-        size = rect.size
+        count = len(text)
+        chars = (UniChar * count)(*map(ord,unicode(text)))
+        glyphs = (CGGlyph * count)()
+        ct.CTFontGetGlyphsForCharacters(ctFont, chars, glyphs, count)
+        rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
 
         # Get advance for all glyphs in string.
-        advance, advances = CoreText.CTFontGetAdvancesForGlyphs(ctFont, CoreText.kCTFontDefaultOrientation, glyphs, None, len(glyphs))
+        advance = ct.CTFontGetAdvancesForGlyphs(ctFont, 0, glyphs, None, count)
 
         # Set image parameters:
         # We add 2 pixels to the bitmap width and height so that there will be a 1-pixel border
@@ -93,27 +198,41 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         # Create bitmap context.
         bitsPerComponent = 8
         bytesPerRow = 4*width
-        colorSpace = Quartz.CGColorSpaceCreateDeviceRGB()
-        bitmap = Quartz.CGBitmapContextCreate(None, width, height, bitsPerComponent, bytesPerRow, colorSpace, Quartz.kCGImageAlphaPremultipliedLast)
+        colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
+        bitmap = c_void_p(quartz.CGBitmapContextCreate(
+                None, 
+                width, 
+                height, 
+                bitsPerComponent, 
+                bytesPerRow, 
+                colorSpace, 
+                kCGImageAlphaPremultipliedLast))
 
         # Draw text to bitmap context.
-        Quartz.CGContextSetShouldAntialias(bitmap, True)
-        Quartz.CGContextSetTextPosition(bitmap, -lsb, baseline)
-        CoreText.CTLineDraw(line, bitmap)
+        quartz.CGContextSetShouldAntialias(bitmap, True)
+        quartz.CGContextSetTextPosition(bitmap, -lsb, baseline)
+        ct.CTLineDraw(line, bitmap)
+        cf.CFRelease(line)
 
         # Create an image to get the data out.
-        imageRef = Quartz.CGBitmapContextCreateImage(bitmap)
+        imageRef = c_void_p(quartz.CGBitmapContextCreateImage(bitmap))
 
-        bytesPerRow = Quartz.CGImageGetBytesPerRow(imageRef)
-        imageData = Quartz.CGDataProviderCopyData(Quartz.CGImageGetDataProvider(imageRef))
-        bufferSize = CoreFoundation.CFDataGetLength(imageData)
-        buffer = (c_byte * bufferSize)()
-        # Treat imageData as an NSData object.
-        imageData.getBytes_length_(buffer, bufferSize)
+        bytesPerRow = quartz.CGImageGetBytesPerRow(imageRef)
+        dataProvider = c_void_p(quartz.CGImageGetDataProvider(imageRef))
+        imageData = c_void_p(quartz.CGDataProviderCopyData(dataProvider))
+        buffersize = cf.CFDataGetLength(imageData)
+        buffer = (c_byte * buffersize)()
+        byteRange = CFRange(0, buffersize)
+        cf.CFDataGetBytes(imageData, byteRange, buffer)
 
-        pimage = pyglet.image.ImageData(width, height, 'RGBA', buffer, bytesPerRow)
+        quartz.CGImageRelease(imageRef)
+        quartz.CGDataProviderRelease(imageData)
+        cf.CFRelease(bitmap)
+        cf.CFRelease(colorSpace)
 
-        glyph = self.font.create_glyph(pimage)
+        glyph_image = pyglet.image.ImageData(width, height, 'RGBA', buffer, bytesPerRow)
+
+        glyph = self.font.create_glyph(glyph_image)
         glyph.set_bearings(baseline, lsb, advance)
         t = list(glyph.tex_coords)
         glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
@@ -124,7 +243,7 @@ class QuartzFont(base.Font):
     glyph_renderer_class = QuartzGlyphRenderer
     _loaded_CGFont_table = {}
 
-    def _lookup_font_with_family_and_traits(self, family, bold, italic):
+    def _lookup_font_with_family_and_traits(self, family, traits):
         # This method searches the _loaded_CGFont_table to find a loaded
         # font of the given family with the desired traits.  If it can't find
         # anything with the exact traits, it tries to fall back to whatever
@@ -138,10 +257,6 @@ class QuartzFont(base.Font):
         fonts = self._loaded_CGFont_table[family]
         if not fonts:
             return None
-        # Construct traits value
-        traits = 0
-        if bold: traits |= CoreText.kCTFontBoldTrait
-        if italic: traits |= CoreText.kCTFontItalicTrait
         # Return font with desired traits if it is available. 
         if traits in fonts:
             return fonts[traits]
@@ -156,6 +271,31 @@ class QuartzFont(base.Font):
         return fonts.values()[0]
 
 
+    def _create_font_descriptor(self, family_name, traits):
+        # Create an attribute dictionary.
+        attributes = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
+        # Add family name to attributes.
+        cfname = CFSTR(family_name)
+        cf.CFDictionaryAddValue(attributes, kCTFontFamilyNameAttribute, cfname)
+        cf.CFRelease(cfname)
+        # Construct a CFNumber to represent the traits.
+        itraits = c_int32(traits)
+        symTraits = c_void_p(cf.CFNumberCreate(None, kCFNumberSInt32Type, byref(itraits)))
+        if symTraits:
+            # Construct a dictionary to hold the traits values.
+            traitsDict = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
+            if traitsDict:
+                # Add CFNumber traits to traits dictionary.
+                cf.CFDictionaryAddValue(traitsDict, kCTFontSymbolicTrait, symTraits)
+                # Add traits dictionary to attributes.
+                cf.CFDictionaryAddValue(attributes, kCTFontTraitsAttribute, traitsDict)
+                cf.CFRelease(traitsDict)
+            cf.CFRelease(symTraits)
+        # Create font descriptor with attributes.
+        descriptor = c_void_p(ct.CTFontDescriptorCreateWithAttributes(attributes))
+        cf.CFRelease(attributes)
+        return descriptor
+
     def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(QuartzFont, self).__init__()
 
@@ -164,41 +304,41 @@ class QuartzFont(base.Font):
         # I don't know what is the right thing to do here.
         if dpi is None: dpi = 96
         size = size * dpi / 72.0
+        
+        # Construct traits value.
+        traits = 0
+        if bold: traits |= kCTFontBoldTrait
+        if italic: traits |= kCTFontItalicTrait
 
         name = unicode(name)
         # First see if we can find an appropriate font from our table of loaded fonts.
-        cgFont = self._lookup_font_with_family_and_traits(name, bold, italic)
+        cgFont = self._lookup_font_with_family_and_traits(name, traits)
         if cgFont:
             # Use cgFont from table to create a CTFont object with the specified size.
-            self.ctFont = CoreText.CTFontCreateWithGraphicsFont(cgFont, size, None, None)        
+            self.ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, size, None, None))
         else:
-            # Use Cocoa for non-graphics fonts that are system-installed.
-            manager = Cocoa.NSFontManager.sharedFontManager()
-                
-            traits = 0
-            if bold: traits |= Cocoa.NSBoldFontMask
-            if italic: traits |= Cocoa.NSItalicFontMask
-            
-            # On a scale of 0 to 15; 5 indicates a normal book weight.
-            weight = 5
-
-            # Try to find specified font.  Returns None if it can't.
-            self.ctFont = manager.fontWithFamily_traits_weight_size_(name, traits, weight, size)
-            if not self.ctFont:
-                # Try to fall back to Helvetica
-                self.ctFont = manager.fontWithFamily_traits_weight_size_('Helvetica', traits, weight, size)
+            # Create a font descriptor for given name and traits and use it to create font.
+            descriptor = self._create_font_descriptor(name, traits)
+            self.ctFont = c_void_p(ct.CTFontCreateWithFontDescriptor(descriptor, size, None))
 
             assert self.ctFont, "Couldn't load font: " + name
 
-        self.ascent = int(math.ceil(CoreText.CTFontGetAscent(self.ctFont)))
-        self.descent = -int(math.ceil(CoreText.CTFontGetDescent(self.ctFont)))
+        self.ascent = int(math.ceil(ct.CTFontGetAscent(self.ctFont)))
+        self.descent = -int(math.ceil(ct.CTFontGetDescent(self.ctFont)))
 
     @classmethod
     def have_font(cls, name):
         name = unicode(name)
         if name in cls._loaded_CGFont_table: return True
         # Try to create the font to see if it exists.
-        return Quartz.CGFontCreateWithFontName(name) is not None
+        # TODO: Find a better way to check.
+        cfstring = CFSTR(name)
+        cgfont = c_void_p(quartz.CGFontCreateWithFontName(cfstring))
+        cf.CFRelease(cfstring)
+        if cgfont:
+            cf.CFRelease(cgfont)
+            return True
+        return False
 
     @classmethod
     def add_font_data(cls, data):
@@ -208,16 +348,27 @@ class QuartzFont(base.Font):
         # it can be found by our __init__ method.
         # Note that the iOS CTFontManager *is* able to register graphics fonts,
         # however this method is missing from CTFontManager on MacOS 10.6
-        dataRef = CoreFoundation.CFDataCreate(None, data, len(data))
-        provider = Quartz.CGDataProviderCreateWithCFData(dataRef)
-        cgFont = Quartz.CGFontCreateWithDataProvider(provider)
-        
+        dataRef = c_void_p(cf.CFDataCreate(None, data, len(data)))
+        provider = c_void_p(quartz.CGDataProviderCreateWithCFData(dataRef))
+        cgFont = c_void_p(quartz.CGFontCreateWithDataProvider(provider))
+
+        cf.CFRelease(dataRef)
+        quartz.CGDataProviderRelease(provider)
+
         # Create a template CTFont from the graphics font so that we can get font info.
-        ctFont = CoreText.CTFontCreateWithGraphicsFont(cgFont, 1, None, None)        
+        ctFont = c_void_p(ct.CTFontCreateWithGraphicsFont(cgFont, 1, None, None))
+
         # Get info about the font to use as key in our font table.
-        familyName = unicode(CoreText.CTFontCopyFamilyName(ctFont))
-        fullName = unicode(CoreText.CTFontCopyFullName(ctFont))
-        traits = CoreText.CTFontGetSymbolicTraits(ctFont)
+        string = c_void_p(ct.CTFontCopyFamilyName(ctFont))
+        familyName = unicode(cfstring_to_string(string))
+        cf.CFRelease(string)
+
+        string = c_void_p(ct.CTFontCopyFullName(ctFont))
+        fullName = unicode(cfstring_to_string(string))
+        cf.CFRelease(string)
+
+        traits = ct.CTFontGetSymbolicTraits(ctFont)
+        cf.CFRelease(ctFont)
 
         # Store font in table. We store it under both its family name and its
         # full name, since its not always clear which one will be looked up.
