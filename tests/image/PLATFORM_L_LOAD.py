@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-'''Test L load using the platform decoder (QuickTime, GDI+ or Gdk).  You
-should see the l.png image on a checkboard background.
+'''Test L load using the platform decoder (QuickTime, Quartz, GDI+ or Gdk).
+You should see the l.png image on a checkboard background.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -16,7 +16,11 @@ if sys.platform == 'linux2':
 elif sys.platform in ('win32', 'cygwin'):
     from pyglet.image.codecs.gdiplus import GDIPlusDecoder as dclass
 elif sys.platform == 'darwin':
-    from pyglet.image.codecs.quicktime import QuickTimeImageDecoder as dclass
+    from pyglet import options as pyglet_options
+    if pyglet_options['darwin_cocoa']:
+        from pyglet.image.codecs.quartz import QuartzImageDecoder as dclass
+    else:
+        from pyglet.image.codecs.quicktime import QuickTimeImageDecoder as dclass
 
 class TEST_PLATFORM_L_LOAD(base_load.TestLoad):
     texture_file = 'l.png'

@@ -42,6 +42,12 @@ from pyglet.window import key
 
 # From SDL: src/video/quartz/SDL_QuartzKeys.h
 # These are the Macintosh key scancode constants -- from Inside Macintosh
+# http://boredzo.org/blog/wp-content/uploads/2007/05/imtx-virtual-keycodes.png
+# Renamed QZ_RALT, QZ_LALT to QZ_ROPTION, QZ_LOPTION
+# and QZ_RMETA, QZ_LMETA to QZ_RCOMMAND, QZ_LCOMMAND.
+#
+# See also:
+# /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Headers/Events.h
 
 QZ_ESCAPE = 0x35
 QZ_F1 = 0x7A
@@ -56,10 +62,10 @@ QZ_F9 = 0x65
 QZ_F10 = 0x6D
 QZ_F11 = 0x67
 QZ_F12 = 0x6F
-QZ_PRINT = 0x69
-QZ_SCROLLOCK = 0x6B
-QZ_PAUSE = 0x71
-QZ_POWER = 0x7F
+QZ_F13 = 0x69
+QZ_F14 = 0x6B
+QZ_F15 = 0x71
+QZ_F16 = 0x6A
 QZ_BACKQUOTE = 0x32
 QZ_1 = 0x12
 QZ_2 = 0x13
@@ -137,22 +143,17 @@ QZ_KP2 = 0x54
 QZ_KP3 = 0x55
 QZ_KP_ENTER = 0x4C
 QZ_LCTRL = 0x3B
-QZ_LALT = 0x3A
-QZ_LMETA = 0x37
+QZ_LOPTION = 0x3A
+QZ_LCOMMAND = 0x37
 QZ_SPACE = 0x31
-QZ_RMETA = 0x36
-QZ_RALT = 0x3D
+QZ_RCOMMAND = 0x36
+QZ_ROPTION = 0x3D
 QZ_RCTRL = 0x3E
 QZ_LEFT = 0x7B
 QZ_DOWN = 0x7D
 QZ_RIGHT = 0x7C
 QZ_KP0 = 0x52
 QZ_KP_PERIOD = 0x41
-QZ_IBOOK_ENTER = 0x34
-QZ_IBOOK_LEFT = 0x3B
-QZ_IBOOK_RIGHT = 0x3C
-QZ_IBOOK_DOWN = 0x3D
-QZ_IBOOK_UP = 0x3E
 
 keymap = {
     QZ_ESCAPE: key.ESCAPE,
@@ -168,10 +169,10 @@ keymap = {
     QZ_F10: key.F10,
     QZ_F11: key.F11,
     QZ_F12: key.F12,
-    QZ_PRINT: key.PRINT,
-    QZ_SCROLLOCK: key.SCROLLLOCK,
-    QZ_PAUSE: key.PAUSE,
-    #QZ_POWER: key.POWER,
+    QZ_F13: key.F13,
+    QZ_F14: key.F14,
+    QZ_F15: key.F15,
+    QZ_F16: key.F16,
     QZ_BACKQUOTE: key.QUOTELEFT,
     QZ_1: key._1,
     QZ_2: key._2,
@@ -249,22 +250,17 @@ keymap = {
     QZ_KP3: key.NUM_3,
     QZ_KP_ENTER: key.NUM_ENTER,
     QZ_LCTRL: key.LCTRL,
-    QZ_LALT: key.LALT,
-    QZ_LMETA: key.LMETA,
+    QZ_LOPTION: key.LOPTION,
+    QZ_LCOMMAND: key.LCOMMAND,
     QZ_SPACE: key.SPACE,
-    QZ_RMETA: key.RMETA,
-    QZ_RALT: key.RALT,
+    QZ_RCOMMAND: key.RCOMMAND,
+    QZ_ROPTION: key.ROPTION,
     QZ_RCTRL: key.RCTRL,
     QZ_LEFT: key.LEFT,
     QZ_DOWN: key.DOWN,
     QZ_RIGHT: key.RIGHT,
     QZ_KP0: key.NUM_0,
     QZ_KP_PERIOD: key.NUM_DECIMAL,
-    QZ_IBOOK_ENTER: key.ENTER,
-    QZ_IBOOK_LEFT: key.LEFT,
-    QZ_IBOOK_RIGHT: key.RIGHT,
-    QZ_IBOOK_DOWN: key.DOWN,
-    QZ_IBOOK_UP: key.UP,
 }
 
 
@@ -341,6 +337,3 @@ charmap = {
     '}' : key.BRACERIGHT,
     '~' : key.ASCIITILDE
 }
-
-
-

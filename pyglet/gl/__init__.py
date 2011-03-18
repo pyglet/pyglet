@@ -216,7 +216,10 @@ elif _sys.platform in ('win32', 'cygwin'):
 elif _sys.platform == 'linux2':
     from xlib import XlibConfig as Config
 elif _sys.platform == 'darwin':
-    from carbon import CarbonConfig as Config
+    if _pyglet.options['darwin_cocoa']:
+        from cocoa import CocoaConfig as Config
+    else:
+        from carbon import CarbonConfig as Config
 del base
 
 # XXX remove

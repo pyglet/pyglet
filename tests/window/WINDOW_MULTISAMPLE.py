@@ -120,7 +120,7 @@ class WINDOW_MULTISAMPLE(unittest.TestCase):
     def test_multisample(self):
         self.set_window()
         self.angle = 0
-        clock.set_fps_limit = 30
+        clock.set_fps_limit(30)
         while not self.win.has_exit:
             dt = clock.tick()
             self.angle += dt

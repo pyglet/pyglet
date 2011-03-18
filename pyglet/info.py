@@ -59,6 +59,13 @@ def dump_python():
     import sys
     print 'sys.version:', sys.version
     print 'sys.platform:', sys.platform
+    print 'sys.maxint:', sys.maxint
+    if sys.platform == 'darwin':
+        try: 
+            from objc import __version__ as pyobjc_version
+            print 'objc.__version__:', pyobjc_version
+        except:
+            print 'PyObjC not available'
     print 'os.getcwd():', os.getcwd()
     for key, value in os.environ.items():
         if key.startswith('PYGLET_'):

@@ -1,31 +1,45 @@
 import pyglet
 
-from types import *
-from constants import *
+# Cocoa implementation:
+if pyglet.options['darwin_cocoa']:
+    from Foundation import *
+    from Cocoa import *
+    from Quartz import *
 
-carbon = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/Carbon.framework')
-quicktime = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/QuickTime.framework')
+    NSAnyEventMask = 0xFFFFFFFFL
 
-carbon.GetEventDispatcherTarget.restype = EventTargetRef
-carbon.ReceiveNextEvent.argtypes = \
-    [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
-#carbon.GetWindowPort.restype = agl.AGLDrawable
-EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
-carbon.NewEventHandlerUPP.restype = c_void_p
-carbon.GetCurrentKeyModifiers = c_uint32
-carbon.NewRgn.restype = RgnHandle
-carbon.CGDisplayBounds.argtypes = [c_void_p]
-carbon.CGDisplayBounds.restype = CGRect
+# Carbon implementation:
+else:
+    from types import *
+    from constants import *
 
-def create_cfstring(text):
-    return carbon.CFStringCreateWithCString(c_void_p(), 
-                                            text.encode('utf8'),
-                                            kCFStringEncodingUTF8)
+    carbon = pyglet.lib.load_library(
+        framework='/System/Library/Frameworks/Carbon.framework')
 
-def _oscheck(result):
-    if result != noErr:
-        raise RuntimeError('Carbon error %d' % result)
-    return result
+    # No 64-bit version of quicktime
+    # (It was replaced with QTKit, which is written in Objective-C)
+    quicktime = pyglet.lib.load_library(
+        framework='/System/Library/Frameworks/QuickTime.framework')
 
+    carbon.GetEventDispatcherTarget.restype = EventTargetRef
+    carbon.ReceiveNextEvent.argtypes = \
+        [c_uint32, c_void_p, c_double, c_ubyte, POINTER(EventRef)]
+    #carbon.GetWindowPort.restype = agl.AGLDrawable
+    EventHandlerProcPtr = CFUNCTYPE(c_int, c_int, c_void_p, c_void_p)
+
+    # CarbonEvent functions are not available in 64-bit Carbon
+    carbon.NewEventHandlerUPP.restype = c_void_p
+    carbon.GetCurrentKeyModifiers = c_uint32
+    carbon.NewRgn.restype = RgnHandle
+    carbon.CGDisplayBounds.argtypes = [c_void_p]
+    carbon.CGDisplayBounds.restype = CGRect
+
+    def create_cfstring(text):
+        return carbon.CFStringCreateWithCString(c_void_p(), 
+                                                text.encode('utf8'),
+                                                kCFStringEncodingUTF8)
+
+    def _oscheck(result):
+        if result != noErr:
+            raise RuntimeError('Carbon error %d' % result)
+        return result
