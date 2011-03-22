@@ -67,6 +67,7 @@ setup_info = dict(
         'pyglet.text.formats',
         'pyglet.window', 
         'pyglet.window.carbon',
+        'pyglet.window.cocoa',
         'pyglet.window.win32', 
         'pyglet.window.xlib',
     ],
