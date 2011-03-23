@@ -367,7 +367,9 @@ class PygletView(NSView):
 
     def getMouseDelta_(self, nsevent):
         dx = nsevent.deltaX()
-        dy = nsevent.deltaY()
+        # Pyglet coordinate system has positive y up, but NSWindow
+        # has positive y down, so we must flip sign on dy.
+        dy = -nsevent.deltaY()
         return int(dx), int(dy)
 
     def getMousePosition_(self, nsevent):
@@ -508,7 +510,8 @@ class PygletView(NSView):
     def scrollWheel_(self, nsevent):
         x, y = self.getMousePosition_(nsevent)
         scroll_x, scroll_y = self.getMouseDelta_(nsevent)
-        self._window.dispatch_event('on_mouse_scroll', x, y, scroll_x, scroll_y)
+        # Flip sign (back to original) on dy for scroll wheel.
+        self._window.dispatch_event('on_mouse_scroll', x, y, scroll_x, -scroll_y)
     
     def mouseDown_(self, nsevent):
         x, y = self.getMousePosition_(nsevent)
