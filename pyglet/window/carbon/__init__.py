@@ -104,6 +104,7 @@ class CarbonWindow(BaseWindow):
     _mouse_exclusive = False
     _mouse_platform_visible = True
     _mouse_ignore_motion = False
+    _mouse_button_state = 0
 
     def _recreate(self, changes):
         # We can't destroy the window while event handlers are active,
@@ -755,27 +756,29 @@ class CarbonWindow(BaseWindow):
         return (int(position.x - bounds.left - self._view_x), 
                 int(position.y - bounds.top - self._view_y))
 
-    @staticmethod
-    def _get_mouse_button_and_modifiers(ev):
-        buttons = c_uint32()
-        carbon.GetEventParameter(ev, kEventParamMouseChord,
-            typeMouseButton, c_void_p(), sizeof(buttons), c_void_p(),
-            byref(buttons))
-        
-        buttons_out = 0
-        if buttons.value & 1: 
-            buttons_out |= mouse.LEFT
-        if buttons.value & 2: 
-            buttons_out |= mouse.RIGHT
-        if buttons.value & 3: 
-            buttons_out |= mouse.MIDDLE
+    def _get_mouse_buttons_changed(self):
+        button_state = self._get_mouse_buttons()
+        change = self._mouse_button_state ^ button_state
+        self._mouse_button_state = button_state
+        return change
 
+    @staticmethod
+    def _get_mouse_buttons():
+        buttons = carbon.GetCurrentEventButtonState()
+        button_state = 0
+        if buttons & 0x1: button_state |= mouse.LEFT
+        if buttons & 0x2: button_state |= mouse.RIGHT
+        if buttons & 0x4: button_state |= mouse.MIDDLE
+        return button_state
+    
+    @staticmethod
+    def _get_modifiers(ev):
         modifiers = c_uint32()
         carbon.GetEventParameter(ev, kEventParamKeyModifiers,
             typeUInt32, c_void_p(), sizeof(modifiers), c_void_p(),
             byref(modifiers))
 
-        return buttons_out, CarbonWindow._map_modifiers(modifiers.value)
+        return CarbonWindow._map_modifiers(modifiers.value)
 
     def _get_mouse_in_content(self, ev, x, y):
         if self._fullscreen:
@@ -791,7 +794,8 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_down(self, next_handler, ev, data):
         x, y = self._get_mouse_position(ev)
         if self._get_mouse_in_content(ev, x, y):
-            button, modifiers = self._get_mouse_button_and_modifiers(ev)
+            button = self._get_mouse_buttons_changed()
+            modifiers = self._get_modifiers(ev)
             if button is not None:
                 y = self.height - y
                 self.dispatch_event('on_mouse_press', x, y, button, modifiers)
@@ -803,7 +807,8 @@ class CarbonWindow(BaseWindow):
     def _on_mouse_up(self, next_handler, ev, data):
         # Always report mouse up, even out of content area, because it's
         # probably after a drag gesture.
-        button, modifiers = self._get_mouse_button_and_modifiers(ev)
+        button = self._get_mouse_buttons_changed()
+        modifiers = self._get_modifiers(ev)
         if button is not None:
             x, y = self._get_mouse_position(ev)
             y = self.height - y
@@ -837,7 +842,8 @@ class CarbonWindow(BaseWindow):
 
     @CarbonEventHandler(kEventClassMouse, kEventMouseDragged)
     def _on_mouse_dragged(self, next_handler, ev, data):
-        button, modifiers = self._get_mouse_button_and_modifiers(ev)
+        button = self._get_mouse_buttons()
+        modifiers = self._get_modifiers(ev)
         if button is not None:
             x, y = self._get_mouse_position(ev)
             y = self.height - y
