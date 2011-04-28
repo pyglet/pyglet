@@ -76,7 +76,7 @@ entire batch of sprites is then drawn in one call::
     ball_sprites = []
     for i in range(100):
         x, y = i * 10, 50
-        ball_sprites.append(pyglet.sprite.Sprite(ball_image, x, y, batch=batch)
+        ball_sprites.append(pyglet.sprite.Sprite(ball_image, x, y, batch=batch))
 
     @window.event
     def on_draw():
