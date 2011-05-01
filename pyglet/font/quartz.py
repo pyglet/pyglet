@@ -261,7 +261,7 @@ class QuartzFont(base.Font):
         if traits in fonts:
             return fonts[traits]
         # Otherwise try to find a font with some of the traits.
-        for (t, f) in fonts:
+        for (t, f) in fonts.items():
             if traits & t:
                 return f
         # Otherwise try to return a regular font.
