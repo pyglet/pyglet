@@ -234,11 +234,14 @@ class TestCase(object):
         else:
             result = StandardTestResult(self)
 
+        print ("Running Test: %s" % self)
+        if module.__doc__:
+            print module.__doc__
+        print '-' * 78
         if module_interactive:
-            print '-' * 78
-            if module.__doc__:
-                print module.__doc__
             raw_input('Press return to begin test...')
+
+
         suite = unittest.TestLoader().loadTestsFromModule(module)
 
         options.log.info('Begin unit tests for %s', self)
@@ -513,8 +516,10 @@ def main():
         components = [plan.root]
 
     if not errors:
+        print '-' * 78
         for component in components:
             component.test(options)
+        print '-' * 78
 
 if __name__ == '__main__':
     main()
