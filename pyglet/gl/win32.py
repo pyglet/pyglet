@@ -232,14 +232,13 @@ class Win32ARBContext(Win32Context):
         super(Win32ARBContext, self).__init__(config, share)
 
     def attach(self, canvas):
-        super(Win32Context, self).attach(canvas)
+        super(Win32ARBContext, self).attach(canvas)
 
         share = self.context_share
         if share:
             if not share.canvas:
                 raise RuntimeError('Share context has no canvas.')
             share = share._context
-        share = None
 
         attribs = []
         if self.config.major_version is not None:
