@@ -41,6 +41,9 @@ kHIDUsage_GD_SystemMenuRight   = 0x8A
 kHIDUsage_GD_SystemMenuLeft    = 0x8B
 kHIDUsage_GD_SystemMenuUp      = 0x8C
 kHIDUsage_GD_SystemMenuDown    = 0x8D
+kHIDUsage_Csmr_Menu            = 0x40
+kHIDUsage_Csmr_FastForward     = 0xB3
+kHIDUsage_Csmr_Rewind          = 0xB4
 kHIDUsage_Csmr_Eject	       = 0xB8
 kHIDUsage_Csmr_Mute	       = 0xE2
 kHIDUsage_Csmr_VolumeIncrement = 0xE9
@@ -386,10 +389,14 @@ _button_names = {
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuLeft): 'left',
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuUp): 'up',
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuDown): 'down',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_FastForward): 'right_hold',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_Rewind): 'left_hold',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_Menu): 'menu_hold',
+    (0xff01, 0x23): 'select_hold',
     (kHIDPage_Consumer, kHIDUsage_Csmr_Eject): 'eject',
     (kHIDPage_Consumer, kHIDUsage_Csmr_Mute): 'mute',
-    (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeIncrement): 'volume up',
-    (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeDecrement): 'volume down'
+    (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeIncrement): 'volume_up',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeDecrement): 'volume_down'
 }
 
 class PygletDevice(Device):
