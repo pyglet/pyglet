@@ -61,6 +61,11 @@ kHIDUsage_GD_SystemMenuLeft	= 0x8B
 kHIDUsage_GD_SystemMenuUp	= 0x8C
 kHIDUsage_GD_SystemMenuDown	= 0x8D
 
+kHIDPage_Consumer              = 0x0C
+kHIDUsage_Csmr_Menu            = 0x40
+kHIDUsage_Csmr_FastForward     = 0xB3
+kHIDUsage_Csmr_Rewind          = 0xB4
+
 MACH_PORT_NULL = 0
 kIOHIDDeviceKey = "IOHIDDevice"
 kIOServicePlane = "IOService"
@@ -444,6 +449,10 @@ _button_names = {
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuLeft): 'left',
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuUp): 'up',
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemMenuDown): 'down',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_FastForward): 'right_hold',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_Rewind): 'left_hold',
+    (kHIDPage_Consumer, kHIDUsage_Csmr_Menu): 'menu_hold',
+    (0xff01, 0x23): 'select_hold',
 }
 
 def _create_control(properties):
