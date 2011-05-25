@@ -94,8 +94,8 @@ Keys on the number pad have separate symbols::
     key.NUM_EQUAL
     key.NUM_DIVIDE
     key.NUM_MULTIPLY
-    key.NUM_MINUS
-    key.NUM_PLUS
+    key.NUM_SUBTRACT
+    key.NUM_ADD
     key.NUM_DECIMAL
     key.NUM_ENTER
 
