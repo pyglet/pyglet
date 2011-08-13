@@ -189,15 +189,16 @@ class Win32Context(Context):
         self._context = None
 
     def attach(self, canvas):
-        if self.config._requires_gl_3():
-            raise gl.ContextException(
-                'Require WGL_ARB_create_context extension to create ' +
-                'OpenGL 3 contexts.')
-
         super(Win32Context, self).attach(canvas)
 
-        self.config._set_pixel_format(canvas)
-        self._context = wgl.wglCreateContext(canvas.hdc)
+        if not self._context:
+            if self.config._requires_gl_3():
+                raise gl.ContextException(
+                    'Require WGL_ARB_create_context extension to create ' +
+                    'OpenGL 3 contexts.')
+                
+            self.config._set_pixel_format(canvas)
+            self._context = wgl.wglCreateContext(canvas.hdc)
 
         share = self.context_share
         if share:
@@ -232,8 +233,6 @@ class Win32ARBContext(Win32Context):
         super(Win32ARBContext, self).__init__(config, share)
 
     def attach(self, canvas):
-        super(Win32ARBContext, self).attach(canvas)
-
         share = self.context_share
         if share:
             if not share.canvas:
@@ -260,3 +259,4 @@ class Win32ARBContext(Win32Context):
         self.config._set_pixel_format(canvas)
         self._context = wglext_arb.wglCreateContextAttribsARB(canvas.hdc,
             share, attribs)
+        super(Win32ARBContext, self).attach(canvas)
