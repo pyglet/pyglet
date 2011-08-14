@@ -92,7 +92,7 @@ class GLXInfo(object):
 
     def get_server_vendor(self):
         self.check_display()
-        return glXQueryServerString(self.display, 0, GLX_VENDOR)
+        return asstr(glXQueryServerString(self.display, 0, GLX_VENDOR))
     
     def get_server_version(self):
         # glXQueryServerString was introduced in GLX 1.1, so we need to use the
@@ -107,7 +107,7 @@ class GLXInfo(object):
 
     def get_server_extensions(self):
         self.check_display()
-        return glXQueryServerString(self.display, 0, GLX_EXTENSIONS).split()
+        return asstr(glXQueryServerString(self.display, 0, GLX_EXTENSIONS)).split()
 
     def get_client_vendor(self):
         self.check_display()
@@ -123,7 +123,7 @@ class GLXInfo(object):
 
     def get_extensions(self):
         self.check_display()
-        return glXQueryExtensionsString(self.display, 0).split()
+        return asstr(glXQueryExtensionsString(self.display, 0)).split()
 
     def have_extension(self, extension):
         self.check_display()

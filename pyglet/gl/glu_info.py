@@ -63,6 +63,7 @@ from ctypes import *
 import warnings
 
 from pyglet.gl.glu import *
+from pyglet.compat import asstr
 
 class GLUInfo(object):
     '''Information interface for the GLU library. 
@@ -88,8 +89,8 @@ class GLUInfo(object):
         self.have_context = True
         if not self._have_info:
             self.extensions = \
-                cast(gluGetString(GLU_EXTENSIONS), c_char_p).value.split()
-            self.version = cast(gluGetString(GLU_VERSION), c_char_p).value
+                asstr(cast(gluGetString(GLU_EXTENSIONS), c_char_p).value).split()
+            self.version = asstr(cast(gluGetString(GLU_VERSION), c_char_p).value)
             self._have_info = True
 
     def have_version(self, major, minor=0, release=0):
