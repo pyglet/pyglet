@@ -1,5 +1,10 @@
 #!/usr/bin/python
-# $Id:$
+'''Test that the event loop can do timing.
+
+The test will display a series of intervals, iterations and sleep times.
+It should then display an incrementing number up to 2x the number of
+iterations, at a rate determined by the interval.
+'''
 
 import sys
 import unittest
@@ -16,11 +21,15 @@ from time import sleep
 
 class EVENT_LOOP(unittest.TestCase):
     def t_scheduled(self, interval, iterations, sleep_time=0):
+        print 'Test interval=%s, iterations=%s, sleep=%s' % (interval,
+            iterations, sleep_time)
         warmup_iterations = iterations
 
         self.last_t = 0.
         self.timer_count = 0
         def f(dt):
+            sys.stdout.write('%s\r' % self.timer_count)
+            sys.stdout.flush()
             t = time()
             self.timer_count += 1
             tc = self.timer_count
@@ -39,6 +48,7 @@ class EVENT_LOOP(unittest.TestCase):
             pyglet.app.run()
         finally:
             pyglet.clock.unschedule(f)
+        print
 
     def test_1_5(self):
         self.t_scheduled(1, 5, 0)
