@@ -680,9 +680,14 @@ class CarbonWindow(BaseWindow):
         wchar = c_wchar()
         carbon.GetEventParameter(ev, kEventParamKeyUnicodes,
             typeUnicodeText, c_void_p(), sizeof(wchar), c_void_p(), byref(wchar))
-        wchar = str((wchar.value)).upper()
+        try:
+            wchar = str((wchar.value)).upper()
+        except UnicodeEncodeError:
+            # (this fix for issue 405 caused a bug itself (see comments 6-7);
+            #  this try/except fixes it)
+            wchar = None
         # If the unicode char is within charmap keys (ascii value), then we use
-        # the correspinding symbol.
+        # the corresponding symbol.
         if wchar in charmap.keys():
             symbol = charmap[wchar]
         else:
