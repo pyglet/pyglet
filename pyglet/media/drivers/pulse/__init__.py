@@ -202,6 +202,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         sample_spec.rate = audio_format.sample_rate
         sample_spec.channels = audio_format.channels
         channel_map = None
+        self.sample_rate = audio_format.sample_rate
 
         try:
             context.lock()
@@ -233,7 +234,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             device = None
             buffer_attr = None
             flags = (pa.PA_STREAM_START_CORKED |
-                     pa.PA_STREAM_INTERPOLATE_TIMING)
+                     pa.PA_STREAM_INTERPOLATE_TIMING |
+                     pa.PA_STREAM_VARIABLE_RATE)
 
             sync_stream = None  # TODO use this
             check(
@@ -537,8 +539,11 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         context.unlock()
 
     def set_pitch(self, pitch):
-        # XXX TODO (pa_stream_update_sample_rate)
-        pass
+        pa.pa_stream_update_sample_rate(self.stream,
+                                        int(pitch*self.sample_rate),
+                                        self._success_cb_func,
+                                        None)
+                                        
 
 def create_audio_driver():
     global context
