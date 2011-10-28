@@ -1,3 +1,6 @@
 syntax: glob
 *.pyc
 *.pyo
+build
+pyglet.*.log
+*.orig
