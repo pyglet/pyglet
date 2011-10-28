@@ -342,7 +342,7 @@ class EventDispatcher(object):
             is always ``None``.
 
         '''
-        assert event_type in self.event_types
+        assert event_type in self.event_types, "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
 
         invoked = False
 
