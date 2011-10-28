@@ -4,3 +4,4 @@ syntax: glob
 build
 pyglet.*.log
 *.orig
+.DS_Store
