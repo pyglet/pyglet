@@ -71,7 +71,10 @@ if sys.version_info[0] >= 3:
     def asbytes(s):
         if isinstance(s, bytes):
             return s
-        return s.encode("utf-8")
+        elif isinstance(s, str):
+            return bytes(ord(c) for c in s)
+        else:
+            return bytes(s)
     
     def asstr(s):
         if isinstance(s, str):
