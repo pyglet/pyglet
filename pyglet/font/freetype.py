@@ -54,8 +54,20 @@ fontconfig = pyglet.lib.load_library('fontconfig')
 FcResult = c_int
 
 fontconfig.FcPatternBuild.restype = c_void_p
+fontconfig.FcPatternCreate.restype = c_void_p
 fontconfig.FcFontMatch.restype = c_void_p
 fontconfig.FcFreeTypeCharIndex.restype = c_uint
+
+fontconfig.FcPatternAddDouble.argtypes = [c_void_p, c_char_p, c_double]
+fontconfig.FcPatternAddInteger.argtypes = [c_void_p, c_char_p, c_int]
+fontconfig.FcPatternAddString.argtypes = [c_void_p, c_char_p, c_char_p]
+fontconfig.FcConfigSubstitute.argtypes = [c_void_p, c_void_p, c_int]
+fontconfig.FcDefaultSubstitute.argtypes = [c_void_p]
+fontconfig.FcFontMatch.argtypes = [c_void_p, c_void_p, c_void_p]
+fontconfig.FcPatternDestroy.argtypes = [c_void_p]
+
+fontconfig.FcPatternGetFTFace.argtypes = [c_void_p, c_char_p, c_int, c_void_p]
+fontconfig.FcPatternGet.argtypes = [c_void_p, c_char_p, c_int, c_void_p]
 
 FC_FAMILY = asbytes('family')
 FC_SIZE = asbytes('size')
