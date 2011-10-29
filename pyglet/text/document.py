@@ -446,8 +446,10 @@ class AbstractDocument(event.EventDispatcher):
 
     def _delete_text(self, start, end):
         for element in list(self._elements):
-            if start <= element.position < end:
+            if start <= element._position < end:
                 self._elements.remove(element)
+            elif element._position >= end: # fix bug 538
+                element._position -= (end - start)
 
         self._text = self._text[:start] + self._text[end:]
 
