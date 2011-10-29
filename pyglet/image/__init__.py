@@ -984,7 +984,9 @@ class ImageData(AbstractImage):
         current format or pitch.
         '''
         if format == self._current_format and pitch == self._current_pitch:
-            return asbytes(self._current_data)
+            if type(self._current_data) is str:
+                return asbytes(self._current_data)
+            return self._current_data
 
         self._ensure_string_data()
         data = self._current_data
