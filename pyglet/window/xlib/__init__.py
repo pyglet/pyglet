@@ -766,11 +766,11 @@ class XlibWindow(BaseWindow):
 
     def _set_wm_state(self, *states):
         # Set property
-        net_wm_state = xlib.XInternAtom(self._x_display, '_NET_WM_STATE', False)
+        net_wm_state = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_STATE'), False)
         atoms = []
         for state in states:
-            atoms.append(xlib.XInternAtom(self._x_display, state, False))
-        atom_type = xlib.XInternAtom(self._x_display, 'ATOM', False)
+            atoms.append(xlib.XInternAtom(self._x_display, asbytes(state), False))
+        atom_type = xlib.XInternAtom(self._x_display, asbytes('ATOM'), False)
         if len(atoms):
             atoms_ar = (xlib.Atom * len(atoms))(*atoms)
             xlib.XChangeProperty(self._x_display, self._window,

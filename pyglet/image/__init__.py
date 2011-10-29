@@ -147,7 +147,7 @@ from pyglet import graphics
 from pyglet.window import *
 
 from pyglet.image import atlas
-from pyglet.compat import asbytes
+from pyglet.compat import asbytes, bytes_type
 
 class ImageException(Exception):
     pass
@@ -599,10 +599,10 @@ class ImageData(AbstractImage):
     `format` and `pitch` to obtain the current encoding is not deprecated).
     '''
 
-    _swap1_pattern = re.compile('(.)', re.DOTALL)
-    _swap2_pattern = re.compile('(.)(.)', re.DOTALL)
-    _swap3_pattern = re.compile('(.)(.)(.)', re.DOTALL)
-    _swap4_pattern = re.compile('(.)(.)(.)(.)', re.DOTALL)
+    _swap1_pattern = re.compile(asbytes('(.)'), re.DOTALL)
+    _swap2_pattern = re.compile(asbytes('(.)(.)'), re.DOTALL)
+    _swap3_pattern = re.compile(asbytes('(.)(.)(.)'), re.DOTALL)
+    _swap4_pattern = re.compile(asbytes('(.)(.)(.)(.)'), re.DOTALL)
 
     _current_texture = None
     _current_mipmap_texture = None
@@ -984,7 +984,7 @@ class ImageData(AbstractImage):
         current format or pitch.
         '''
         if format == self._current_format and pitch == self._current_pitch:
-            return self._current_data
+            return asbytes(self._current_data)
 
         self._ensure_string_data()
         data = self._current_data
@@ -994,13 +994,13 @@ class ImageData(AbstractImage):
         if format != self._current_format:
             # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to
             # ARGB
-            repl = ''
+            repl = asbytes('')
             for c in format:
                 try:
                     idx = current_format.index(c) + 1
                 except ValueError:
                     idx = 1
-                repl += r'\%d' % idx
+                repl += asbytes(r'\%d' % idx)
 
             if len(current_format) == 1:
                 swap_pattern = self._swap1_pattern
@@ -1018,9 +1018,9 @@ class ImageData(AbstractImage):
             if abs(self._current_pitch) != packed_pitch:
                 # Pitch is wider than pixel data, need to go row-by-row.
                 rows = re.findall(
-                    '.' * abs(self._current_pitch), data, re.DOTALL)
+                    asbytes('.') * abs(self._current_pitch), data, re.DOTALL)
                 rows = [swap_pattern.sub(repl, r[:packed_pitch]) for r in rows]
-                data = ''.join(rows)
+                data = asbytes('').join(rows)
             else:
                 # Rows are tightly packed, apply regex over whole image.
                 data = swap_pattern.sub(repl, data)
@@ -1033,14 +1033,14 @@ class ImageData(AbstractImage):
             if diff > 0:
                 # New pitch is shorter than old pitch, chop bytes off each row
                 pattern = re.compile(
-                    '(%s)%s' % ('.' * abs(pitch), '.' * diff), re.DOTALL)
-                data = pattern.sub(r'\1', data)    
+                    asbytes('(%s)%s' % ('.' * abs(pitch), '.' * diff)), re.DOTALL)
+                data = pattern.sub(asbytes(r'\1'), data)    
             elif diff < 0:
                 # New pitch is longer than old pitch, add '0' bytes to each row
                 pattern = re.compile(
-                    '(%s)' % ('.' * abs(current_pitch)), re.DOTALL)
+                    asbytes('(%s)' % ('.' * abs(current_pitch))), re.DOTALL)
                 pad = '.' * -diff
-                data = pattern.sub(r'\1%s' % pad, data)
+                data = pattern.sub(asbytes(r'\1%s' % pad), data)
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
@@ -1048,10 +1048,10 @@ class ImageData(AbstractImage):
                 rows.reverse()
                 data = asbytes('').join(rows)
 
-        return data
+        return asbytes(data)
 
     def _ensure_string_data(self):
-        if type(self._current_data) is not str:
+        if type(self._current_data) is not bytes_type:
             buf = create_string_buffer(len(self._current_data))
             memmove(buf, self._current_data, len(self._current_data))
             self._current_data = buf.raw
