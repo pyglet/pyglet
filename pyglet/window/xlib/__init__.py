@@ -604,8 +604,8 @@ class XlibWindow(BaseWindow):
                     xlib.CurrentTime)
 
                 # Move pointer to center of window
-                x = self._width / 2
-                y = self._height / 2
+                x = self._width // 2
+                y = self._height // 2
                 self._mouse_exclusive_client = x, y
                 self.set_mouse_position(x, y)
             elif self._fullscreen and not self.screen._xinerama:
