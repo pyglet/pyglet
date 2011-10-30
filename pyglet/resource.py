@@ -91,9 +91,9 @@ import os
 import weakref
 import sys
 import zipfile
-import StringIO
 
 import pyglet
+from pyglet.compat import BytesIO
 
 class ResourceNotFoundException(Exception):
     '''The named resource was not found on the search path.'''
@@ -225,7 +225,7 @@ class ZIPLocation(Location):
         else:
             path = filename
         text = self.zip.read(path)
-        return StringIO.StringIO(text)
+        return BytesIO(text)
         
 class URLLocation(Location):
     '''Location on the network.

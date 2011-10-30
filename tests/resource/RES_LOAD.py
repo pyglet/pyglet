@@ -33,6 +33,7 @@ import sys
 import unittest
 
 from pyglet import resource
+from pyglet.compat import asbytes
 
 class TestCase(unittest.TestCase):
     def setUp(self):
@@ -43,7 +44,7 @@ class TestCase(unittest.TestCase):
 
     def check_file(self, path, file, result):
         loader = resource.Loader(path, script_home=self.script_home)
-        self.assertTrue(loader.file(file).read() == '%s\n' % result)
+        self.assertTrue(loader.file(file).read() == asbytes('%s\n' % result))
 
     def checkFail(self, path):
         loader = resource.Loader(path, script_home=self.script_home)
