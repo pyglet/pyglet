@@ -150,8 +150,10 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
                 print 'timestamp: %r' % timestamp
 
             # Dispatch events
-            while events and events[0].timestamp <= timestamp:
-                events[0]._sync_dispatch_to_player(self.player)
+            while events and timestamp is not None:
+                if (events[0].timestamp is None or
+                    events[0].timestamp <= timestamp):
+                    events[0]._sync_dispatch_to_player(self.player)
                 del events[0]
 
             # Calculate how much data to request from source
