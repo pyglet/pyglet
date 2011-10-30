@@ -328,7 +328,7 @@ class XlibWindow(BaseWindow):
             mwmhints = mwmhints_t()
             mwmhints.flags = MWM_HINTS_DECORATIONS
             mwmhints.decorations = 0
-            name = xlib.XInternAtom(self._x_display, '_MOTIF_WM_HINTS', False)
+            name = xlib.XInternAtom(self._x_display, asbytes('_MOTIF_WM_HINTS'), False)
             xlib.XChangeProperty(self._x_display, self._window,
                 name, name, 32, xlib.PropModeReplace, 
                 cast(pointer(mwmhints), POINTER(c_ubyte)),
@@ -700,7 +700,7 @@ class XlibWindow(BaseWindow):
             ('big', 8):    'AAAAARGB'
         }[(sys.byteorder, sizeof(c_ulong))]
 
-        data = ''
+        data = asbytes('')
         for image in images:
             image = image.get_image_data()
             pitch = -(image.width * len(format))
@@ -710,9 +710,9 @@ class XlibWindow(BaseWindow):
             data += s.raw + image.get_data(format, pitch)
         buffer = (c_ubyte * len(data))()
         memmove(buffer, data, len(data))
-        atom = xlib.XInternAtom(self._x_display, '_NET_WM_ICON', False)
+        atom = xlib.XInternAtom(self._x_display, asbytes('_NET_WM_ICON'), False)
         xlib.XChangeProperty(self._x_display, self._window, atom, XA_CARDINAL,
-            32, xlib.PropModeReplace, buffer, len(data)/sizeof(c_ulong))
+            32, xlib.PropModeReplace, buffer, len(data)//sizeof(c_ulong))
 
     # Private utility
 
