@@ -47,3 +47,13 @@ Please join us on the mailing list at
 http://groups.google.com/group/pyglet-users
 
 For more information and an RSS news feed, visit http://www.pyglet.org
+
+Testing
+-------
+
+Because of its interactive nature pyglet uses a custom test runner which is
+invoked with:
+
+    % python tests/test.py
+
+The test runner is described in more detail in the tests/test.py docstring.
