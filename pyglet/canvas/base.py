@@ -132,9 +132,19 @@ class Screen(object):
         :return: A configuration supported by the platform that best
             fulfils the needs described by the template.
         '''
+        configs = None
         if template is None:
-            template = gl.Config()
-        configs = self.get_matching_configs(template)
+            for template_config in [
+                gl.Config(double_buffer=True, depth_size=24),
+                gl.Config(double_buffer=True, depth_size=16),
+                None]:
+                try:
+                    configs = self.get_matching_configs(template_config)
+                    break
+                except NoSuchConfigException:
+                    pass
+        else:
+            configs = self.get_matching_configs(template)
         if not configs:
             raise window.NoSuchConfigException()
         return configs[0]
