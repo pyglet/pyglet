@@ -722,7 +722,7 @@ class BaseWindow(EventDispatcher):
         '''Default on_close handler.'''
         self.has_exit = True
         from pyglet import app
-        if app.platform_event_loop.is_running():
+        if app.event_loop.is_running:
             self.close()
 
     def on_key_press(self, symbol, modifiers):

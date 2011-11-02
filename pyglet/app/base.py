@@ -113,6 +113,7 @@ class EventLoop(event.EventDispatcher):
     def __init__(self):
         self._has_exit_condition = threading.Condition()
         self.clock = clock.get_default()
+        self.is_running = False
 
     def run(self):
         '''Begin processing events, scheduled functions and window updates.
@@ -129,10 +130,12 @@ class EventLoop(event.EventDispatcher):
         platform_event_loop.start()
         self.dispatch_event('on_enter')
 
+        self.is_running = True
         if True: # TODO runtime option.
             self._run_estimated()
         else:
             self._run()
+        self.is_running = False
             
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
