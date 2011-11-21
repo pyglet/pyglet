@@ -79,7 +79,7 @@ print
 context = w.context
 print 'Context is', context
 
-if context.__class__.__name__ == 'XlibGLContext':
+if "xlib" in globals() and isinstance(context, xlib.BaseXlibContext):
     from pyglet.gl import glx_info
     print 'GLX %s direct'%(context.is_direct() and 'is' or 'is not')
     if not glx_info.have_version(1, 1):
@@ -98,7 +98,7 @@ if context.__class__.__name__ == 'XlibGLContext':
         print 'GLX extensions:'
         exts = glx_info.get_extensions()
         print ' ', '\n  '.join(textwrap.wrap(' '.join(exts)))
-elif context.__class__.__name__ == 'Win32Context':
+elif "win32" in globals() and isinstance(context, win32.Win32Context):
     from pyglet.gl import wgl_info
     if wgl_info.have_extension('WGL_EXT_extensions_string'):
         wgl_extensions = wgl_info.get_extensions()
