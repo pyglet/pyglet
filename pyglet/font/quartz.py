@@ -48,47 +48,6 @@ import pyglet.image
 
 from pyglet.libs.darwin.cocoapy import *
 
-######################################################################
-
-# TODO: Move all of the ctypes setup for CoreText into 
-# pyglet/libs/darwin/cocoalibs.py
-# Also need to explicitly set argtypes for CoreText functions.
-ct = cdll.LoadLibrary(util.find_library('CoreText'))
-
-# Setup return types for functions that return pointers.
-# (Otherwise ctypes returns 32-bit int which breaks on 64-bit systems.)
-# Note that you must also wrap the return value with c_void_p before
-# you use it as an argument to another function, otherwise ctypes will
-# automatically convert it back to a 32-bit int again.
-ct.CTLineCreateWithAttributedString.restype = c_void_p
-ct.CTFontGetBoundingRectsForGlyphs.restype = CGRect
-ct.CTFontGetAdvancesForGlyphs.restype = c_double
-ct.CTFontGetAscent.restype = CGFloat
-ct.CTFontGetDescent.restype = CGFloat
-ct.CTFontCreateWithGraphicsFont.restype = c_void_p
-ct.CTFontCreateWithGraphicsFont.argtypes = [c_void_p, CGFloat, c_void_p, c_void_p]
-ct.CTFontCopyFamilyName.restype = c_void_p
-ct.CTFontCopyFullName.restype = c_void_p
-ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
-ct.CTFontCreateWithFontDescriptor.restype = c_void_p
-ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
-
-quartz.CGFontCreateWithDataProvider.restype = c_void_p
-quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
-quartz.CGFontCreateWithFontName.restype = c_void_p
-
-# CoreText constants
-kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
-kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
-kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
-kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
-kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
-
-# CTFontTraits.h
-kCTFontItalicTrait = (1 << 0)
-kCTFontBoldTrait   = (1 << 1)
-
-######################################################################
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):

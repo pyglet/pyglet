@@ -42,6 +42,7 @@ CGPoint = NSPoint
 
 class NSSize(Structure):
     _fields_ = [ ("width", CGFloat), ("height", CGFloat) ]
+CGSize = NSSize
 
 class NSRect(Structure):
     _fields_ = [ ("origin", NSPoint), ("size", NSSize) ]

@@ -33,7 +33,6 @@ cf.CFStringGetCString.argtypes = [c_void_p, c_char_p, CFIndex, CFStringEncoding]
 cf.CFAttributedStringCreate.restype = c_void_p
 cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
 
-
 def CFSTR(string):
     return ObjCInstance(c_void_p(cf.CFStringCreateWithCString(
             None, string.encode('utf8'), kCFStringEncodingUTF8)))
@@ -74,6 +73,9 @@ cf.CFDataGetLength.argtypes = [c_void_p]
 
 cf.CFDictionaryGetValue.restype = c_void_p
 cf.CFDictionaryGetValue.argtypes = [c_void_p, c_void_p]
+
+cf.CFDictionaryAddValue.restype = None
+cf.CFDictionaryAddValue.argtypes = [c_void_p, c_void_p, c_void_p]
 
 cf.CFDictionaryCreateMutable.restype = c_void_p
 cf.CFDictionaryCreateMutable.argtypes = [CFAllocatorRef, CFIndex, c_void_p, c_void_p]
@@ -235,6 +237,7 @@ quartz = cdll.LoadLibrary(util.find_library('quartz'))
 
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h
+CGBitmapInfo = c_uint32          # CGImage.h
 
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
 #     ImageIO.framework/Headers/CGImageProperties.h
@@ -251,7 +254,8 @@ quartz.CGDisplayIDToOpenGLDisplayMask.argtypes = [c_uint32]
 quartz.CGMainDisplayID.restype = CGDirectDisplayID
 quartz.CGMainDisplayID.argtypes = []
 
-quartz.CGShieldingWindowLevel.restype = c_uint32
+quartz.CGShieldingWindowLevel.restype = c_int32
+quartz.CGShieldingWindowLevel.argtypes = []
 
 quartz.CGCursorIsVisible.restype = c_bool
 
@@ -260,6 +264,9 @@ quartz.CGDisplayCopyAllDisplayModes.argtypes = [CGDirectDisplayID, c_void_p]
 
 quartz.CGDisplaySetDisplayMode.restype = CGError
 quartz.CGDisplaySetDisplayMode.argtypes = [CGDirectDisplayID, c_void_p, c_void_p]
+
+quartz.CGDisplayCapture.restype = CGError
+quartz.CGDisplayCapture.argtypes = [CGDirectDisplayID]
 
 quartz.CGDisplayRelease.restype = CGError
 quartz.CGDisplayRelease.argtypes = [CGDirectDisplayID]
@@ -319,6 +326,7 @@ quartz.CGImageGetBytesPerRow.restype = c_size_t
 quartz.CGImageGetBytesPerRow.argtypes = [c_void_p]
 
 quartz.CGColorSpaceCreateDeviceRGB.restype = c_void_p
+quartz.CGColorSpaceCreateDeviceRGB.argtypes = []
 
 quartz.CGDataProviderRelease.restype = None
 quartz.CGDataProviderRelease.argtypes = [c_void_p]
@@ -335,18 +343,88 @@ quartz.CGDisplayMoveCursorToPoint.argtypes = [CGDirectDisplayID, CGPoint]
 quartz.CGAssociateMouseAndMouseCursorPosition.restype = CGError
 quartz.CGAssociateMouseAndMouseCursorPosition.argtypes = [c_bool]
 
-CGBitmapInfo = c_uint32
 quartz.CGBitmapContextCreate.restype = c_void_p
 quartz.CGBitmapContextCreate.argtypes = [c_void_p, c_size_t, c_size_t, c_size_t, c_size_t, c_void_p, CGBitmapInfo]
 
 quartz.CGBitmapContextCreateImage.restype = c_void_p
 quartz.CGBitmapContextCreateImage.argtypes = [c_void_p]
 
+quartz.CGFontCreateWithDataProvider.restype = c_void_p
+quartz.CGFontCreateWithDataProvider.argtypes = [c_void_p]
+
+quartz.CGFontCreateWithFontName.restype = c_void_p
+quartz.CGFontCreateWithFontName.argtypes = [c_void_p]
+
+quartz.CGContextSetTextPosition.restype = None
+quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
+
+quartz.CGContextSetShouldAntialias.restype = None
+quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
+
+######################################################################
+
+# CORETEXT
+ct = cdll.LoadLibrary(util.find_library('CoreText'))
+
+# Types
+CTFontOrientation = c_uint32      # CTFontDescriptor.h
+CTFontSymbolicTraits = c_uint32   # CTFontTraits.h
+
+# CoreText constants
+kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
+kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
+kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
+kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
+kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
+
+# constants from CTFontTraits.h
+kCTFontItalicTrait = (1 << 0)
+kCTFontBoldTrait   = (1 << 1)
+
+ct.CTLineCreateWithAttributedString.restype = c_void_p
+ct.CTLineCreateWithAttributedString.argtypes = [c_void_p]
+
+ct.CTLineDraw.restype = None
+ct.CTLineDraw.argtypes = [c_void_p, c_void_p]
+
+ct.CTFontGetBoundingRectsForGlyphs.restype = CGRect
+ct.CTFontGetBoundingRectsForGlyphs.argtypes = [c_void_p, CTFontOrientation, POINTER(CGGlyph), POINTER(CGRect), CFIndex]
+
+ct.CTFontGetAdvancesForGlyphs.restype = c_double
+ct.CTFontGetAdvancesForGlyphs.argtypes = [c_void_p, CTFontOrientation, POINTER(CGGlyph), POINTER(CGSize), CFIndex]
+
+ct.CTFontGetAscent.restype = CGFloat
+ct.CTFontGetAscent.argtypes = [c_void_p]
+
+ct.CTFontGetDescent.restype = CGFloat
+ct.CTFontGetDescent.argtypes = [c_void_p]
+
+ct.CTFontGetSymbolicTraits.restype = CTFontSymbolicTraits
+ct.CTFontGetSymbolicTraits.argtypes = [c_void_p]
+
+ct.CTFontGetGlyphsForCharacters.restype = c_bool
+ct.CTFontGetGlyphsForCharacters.argtypes = [c_void_p, POINTER(UniChar), POINTER(CGGlyph), CFIndex]
+
+ct.CTFontCreateWithGraphicsFont.restype = c_void_p
+ct.CTFontCreateWithGraphicsFont.argtypes = [c_void_p, CGFloat, c_void_p, c_void_p]
+
+ct.CTFontCopyFamilyName.restype = c_void_p
+ct.CTFontCopyFamilyName.argtypes = [c_void_p]
+
+ct.CTFontCopyFullName.restype = c_void_p
+ct.CTFontCopyFullName.argtypes = [c_void_p]
+
+ct.CTFontCreateWithFontDescriptor.restype = c_void_p
+ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
+
+ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
+ct.CTFontDescriptorCreateWithAttributes.argtypes = [c_void_p]
 
 ######################################################################
 
 # FOUNDATION
 
 foundation = cdll.LoadLibrary(util.find_library('Foundation'))
+
 foundation.NSMouseInRect.restype = c_bool
 foundation.NSMouseInRect.argtypes = [NSPoint, NSRect, c_bool]
