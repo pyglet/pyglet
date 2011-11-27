@@ -34,54 +34,73 @@
 
 '''
 '''
-from __future__ import with_statement
-
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from pyglet.app.base import PlatformEventLoop
-from pyglet.libs.darwin import *
+from pyglet.libs.darwin.cocoapy import *
+
+NSApplication = ObjCClass('NSApplication')
+NSMenu = ObjCClass('NSMenu')
+NSMenuItem = ObjCClass('NSMenuItem')
+NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
+NSDate = ObjCClass('NSDate')
+NSEvent = ObjCClass('NSEvent')
+
+def add_menu_item(menu, title, action, key):
+    title = CFSTR(title)
+    action = get_selector(action)
+    key = CFSTR(key)
+    menuItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        title, action, key)
+    menu.addItem_(menuItem)
+
+    # cleanup
+    title.release()
+    key.release()
+    menuItem.release()
+
+def create_menu():
+    appMenu = NSMenu.alloc().init()
+
+    # Hide still doesn't work!?
+    add_menu_item(appMenu, 'Hide!', 'hide:', 'h')
+    appMenu.addItem_(NSMenuItem.separatorItem())
+    add_menu_item(appMenu, 'Quit!', 'terminate:', 'q')
+
+    menubar = NSMenu.alloc().init()
+    appMenuItem = NSMenuItem.alloc().init()
+    appMenuItem.setSubmenu_(appMenu)
+    menubar.addItem_(appMenuItem)
+    NSApp = NSApplication.sharedApplication()
+    NSApp.setMainMenu_(menubar)
+
+    # cleanup
+    appMenu.release()
+    menubar.release()
+    appMenuItem.release()
+
 
 class CocoaEventLoop(PlatformEventLoop):
 
     def __init__(self):
         super(CocoaEventLoop, self).__init__()
         # Prepare the default application.
-        NSApplication.sharedApplication()
+        self.NSApp = NSApplication.sharedApplication()
         # Create an autorelease pool for menu creation and finishLaunching
-        pool = NSAutoreleasePool.alloc().init()
-        self._create_application_menu()
-        NSApp().finishLaunching()
-        NSApp().activateIgnoringOtherApps_(True)
-        # Then get rid of the pool when we're done.
-        del pool
-
-    def _create_application_menu(self):
-        # Sets up a menu and installs a "quit" item so that we can use
-        # Command-Q to exit the application.
-        # See http://cocoawithlove.com/2010/09/minimalist-cocoa-programming.html
-        # This could also be done much more easily with a NIB.
-        menubar = NSMenu.alloc().init()
-        appMenuItem = NSMenuItem.alloc().init()
-        menubar.addItem_(appMenuItem)
-        NSApp().setMainMenu_(menubar)
-        appMenu = NSMenu.alloc().init()
-        processName = NSProcessInfo.processInfo().processName()
-        hideItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            "Hide " + processName, "hide:", "h")
-        appMenu.addItem_(hideItem)
-        appMenu.addItem_(NSMenuItem.separatorItem())
-        quitItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            "Quit " + processName, "terminate:", "q")
-        appMenu.addItem_(quitItem)
-        appMenuItem.setSubmenu_(appMenu)
+        self.pool = NSAutoreleasePool.alloc().init()
+        create_menu()
+        self.NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+        self.NSApp.finishLaunching()
+        self.NSApp.activateIgnoringOtherApps_(True)
 
     def start(self):
         pass
 
     def step(self, timeout=None):
-        # Create an autorelease pool for this iteration.
-        pool = NSAutoreleasePool.alloc().init()
+        # Drain the old autorelease pool
+        self.pool.drain()
+        self.pool = NSAutoreleasePool.alloc().init()
 
         # Determine the timeout date.
         if timeout is None:
@@ -95,8 +114,8 @@ class CocoaEventLoop(PlatformEventLoop):
         # and then process it, or if timeout_date expires we simply return.
         # We only process one event per call of step().
         self._is_running.set()
-        event = NSApp().nextEventMatchingMask_untilDate_inMode_dequeue_(
-                NSAnyEventMask, timeout_date, NSDefaultRunLoopMode, True)
+        event = self.NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
+            NSAnyEventMask, timeout_date, NSDefaultRunLoopMode, True)
 
         # Dispatch the event (if any).
         if event is not None:
@@ -104,7 +123,7 @@ class CocoaEventLoop(PlatformEventLoop):
             if event_type != NSApplicationDefined:
                 # Send out event as normal.  Responders will still receive 
                 # keyUp:, keyDown:, and flagsChanged: events.
-                NSApp().sendEvent_(event)
+                self.NSApp.sendEvent_(event)
 
                 # Resend key events as special pyglet-specific messages
                 # which supplant the keyDown:, keyUp:, and flagsChanged: messages
@@ -115,13 +134,13 @@ class CocoaEventLoop(PlatformEventLoop):
                 # We also filter out key-down repeats since pyglet only sends one
                 # on_key_press event per key press.
                 if event_type == NSKeyDown and not event.isARepeat():
-                    NSApp().sendAction_to_from_("pygletKeyDown:", None, event)
+                    self.NSApp.sendAction_to_from_(get_selector("pygletKeyDown:"), None, event)
                 elif event_type == NSKeyUp:
-                    NSApp().sendAction_to_from_("pygletKeyUp:", None, event)
+                    self.NSApp.sendAction_to_from_(get_selector("pygletKeyUp:"), None, event)
                 elif event_type == NSFlagsChanged:
-                    NSApp().sendAction_to_from_("pygletFlagsChanged:", None, event)
+                    self.NSApp.sendAction_to_from_(get_selector("pygletFlagsChanged:"), None, event)
 
-            NSApp().updateWindows()
+            self.NSApp.updateWindows()
             did_time_out = False
         else:
             did_time_out = True
@@ -129,7 +148,7 @@ class CocoaEventLoop(PlatformEventLoop):
         self._is_running.clear()
 
         # Destroy the autorelease pool used for this step.
-        del pool
+        #del pool
 
         return did_time_out
     
@@ -139,15 +158,17 @@ class CocoaEventLoop(PlatformEventLoop):
     def notify(self):
         pool = NSAutoreleasePool.alloc().init()
         notifyEvent = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
-                    NSApplicationDefined, # type
-                    NSPoint(0.0, 0.0),    # location
-                    0,                    # modifierFlags
-                    0,                    # timestamp
-                    0,                    # windowNumber
-                    None,                 # graphicsContext
-                    0,                    # subtype
-                    0,                    # data1
-                    0,                    # data2
-                    )
-        NSApp().postEvent_atStart_(notifyEvent, False)
-        del pool
+            NSApplicationDefined, # type
+            NSPoint(0.0, 0.0),    # location
+            0,                    # modifierFlags
+            0,                    # timestamp
+            0,                    # windowNumber
+            None,                 # graphicsContext
+            0,                    # subtype
+            0,                    # data1
+            0,                    # data2
+            )
+
+        self.NSApp.postEvent_atStart_(notifyEvent, False)
+        pool.drain()
+        

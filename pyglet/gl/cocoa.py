@@ -8,13 +8,15 @@ __version__ = '$Id: $'
 
 from pyglet.gl.base import Config, CanvasConfig, Context
 
-from pyglet.libs.darwin import *
 from pyglet.gl import ContextException
 from pyglet.gl import gl
 from pyglet.gl import agl
 
 from pyglet.canvas.cocoa import CocoaCanvas
 
+from pyglet.libs.darwin.cocoapy import *
+
+NSOpenGLContext = ObjCClass('NSOpenGLContext')
 
 # Valid names for GL attributes and their corresponding NSOpenGL constant.
 _gl_attributes = {
@@ -100,13 +102,17 @@ class CocoaConfig(Config):
         # http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html%23//apple_ref/doc/uid/TP40001987-CH210-SW6
         attrs.append(NSOpenGLPFAFullScreen)
         attrs.append(NSOpenGLPFAScreenMask)
-        attrs.append(CGDisplayIDToOpenGLDisplayMask(CGMainDisplayID()))
+        attrs.append(quartz.CGDisplayIDToOpenGLDisplayMask(quartz.CGMainDisplayID()))
         
         # Terminate the list.
         attrs.append(0)
 
+        attrsArrayType = c_uint32 * len(attrs)
+        attrsArray = attrsArrayType(*attrs)
+
         # Create the pixel format.
-        pixel_format = NSOpenGLPixelFormat.alloc().initWithAttributes_(attrs)
+        pixel_format = send_message('NSOpenGLPixelFormat', 'alloc')
+        pixel_format = send_message(pixel_format, 'initWithAttributes:', attrsArray, argtypes=[attrsArrayType])
                 
         # Return the match list.
         if pixel_format is None:
@@ -124,9 +130,10 @@ class CocoaCanvasConfig(CanvasConfig):
         # Query values for the attributes of the pixel format, and then set the
         # corresponding attributes of the canvas config.
         for name, attr in _gl_attributes.items():
-            value = self._pixel_format.getValues_forAttribute_forVirtualScreen_(None, attr, 0)
-            if value is not None:
-                setattr(self, name, value)
+            vals = c_long()
+            send_message(self._pixel_format, 'getValues:forAttribute:forVirtualScreen:',
+                         byref(vals), attr, 0, argtypes=[POINTER(c_long), c_int, c_long])
+            setattr(self, name, vals.value)
         
         # Set these attributes so that we can run pyglet.info.
         for name, value in _fake_gl_attributes.items():
@@ -183,23 +190,13 @@ class CocoaContext(Context):
 
     def destroy(self):
         super(CocoaContext, self).destroy()
+        self._nscontext.release()
         self._nscontext = None
 
     def set_vsync(self, vsync=True):
         from objc import __version__ as pyobjc_version
         if float(pyobjc_version[:3]) >= 2.3:
             self._nscontext.setValues_forParameter_(vsync, NSOpenGLCPSwapInterval)
-        # While the following code works for PyObjC 2.2, it is so ugly that I
-        # would rather just leave it commented out.
-        # else:
-        #     from ctypes import cdll, util, c_void_p, c_int, byref
-        #     cglContext = self._nscontext.CGLContextObj()
-        #     dir(cglContext) # must call dir in order to access pointerAsInteger???
-        #     ctypes_context = c_void_p(cglContext.pointerAsInteger)
-        #     quartz = cdll.LoadLibrary(util.find_library('Quartz'))
-        #     value = c_int(vsync)
-        #     kCGLCPSwapInterval = 222
-        #     quartz.CGLSetParameter(ctypes_context, kCGLCPSwapInterval, byref(value))
 
     def get_vsync(self):
         value = self._nscontext.getValues_forParameter_(None, NSOpenGLCPSwapInterval)

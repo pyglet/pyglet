@@ -12,60 +12,32 @@ from ctypes import util
 from pyglet import app
 from base import Display, Screen, ScreenMode, Canvas
 
-# Use PyObjC to get the list of displays and their dimensions,
-# just because it is easier.  However this module could be made
-# to be pure ctypes if necessary.
-from Cocoa import NSScreen
+from pyglet.libs.darwin.cocoapy import *
 
-######################################################################
-# ctypes setup:
-
-cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
-
-# Core Foundation constants
-kCFStringEncodingUTF8 = 0x08000100
-
-cf.CFArrayGetValueAtIndex.restype = c_void_p
-quartz.CGDisplayCopyAllDisplayModes.restype = c_void_p
-quartz.CGDisplayCopyAllDisplayModes.argtypes = [c_uint32, c_void_p]
-quartz.CGDisplayModeGetRefreshRate.restype = c_double
-quartz.CGDisplayModeCopyPixelEncoding.restype = c_void_p
-
-def cfstring_to_string(cfstring):
-    length = cf.CFStringGetLength(cfstring)
-    size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
-    buffer = c_buffer(size + 1)
-    result = cf.CFStringGetCString(cfstring, buffer, len(buffer), kCFStringEncodingUTF8)
-    if result:
-        return buffer.value
-
-def cfarray_to_list(cfarray):
-    count = cf.CFArrayGetCount(cfarray)
-    return [ c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i))
-             for i in range(count) ]
-
-######################################################################
 
 class CocoaDisplay(Display):
 
     def get_screens(self):
-        return [CocoaScreen(self, nsscreen) for nsscreen in NSScreen.screens()]
+        maxDisplays = 256 
+        activeDisplays = (CGDirectDisplayID * maxDisplays)()
+        count = c_uint32()
+        quartz.CGGetActiveDisplayList(maxDisplays, activeDisplays, byref(count))
+        return [CocoaScreen(self, displayID) for displayID in list(activeDisplays)[:count.value]]
 
 
 class CocoaScreen(Screen):
 
-    def __init__(self, display, nsscreen):
-        (x, y), (width, height) = nsscreen.frame()
+    def __init__(self, display, displayID):
+        bounds = quartz.CGDisplayBounds(displayID)
+        # FIX ME:
+        # Probably need to convert the origin coordinates depending on context:
+        # http://www.cocoabuilder.com/archive/cocoa/233492-ns-cg-rect-conversion-and-screen-coordinates.html
+        x, y = bounds.origin.x, bounds.origin.y
+        width, height = bounds.size.width, bounds.size.height
         super(CocoaScreen, self).__init__(display, int(x), int(y), int(width), int(height))
-        self._nsscreen = nsscreen
-        self._cg_display_id = self._get_CGDirectDisplayID()
+        self._cg_display_id = displayID
         # Save the default mode so we can restore to it.
         self._default_mode = self.get_mode()
-
-    def _get_CGDirectDisplayID(self):
-        screenInfo = self._nsscreen.deviceDescription()
-        return screenInfo.objectForKey_("NSScreenNumber")
 
     def get_matching_configs(self, template):
         canvas = CocoaCanvas(self.display, self, None)
@@ -78,7 +50,6 @@ class CocoaScreen(Screen):
         return modes
 
     def get_mode(self):
-        quartz.CGDisplayCopyDisplayMode.restype = c_void_p
         cgmode = c_void_p(quartz.CGDisplayCopyDisplayMode(self._cg_display_id))
         mode = CocoaScreenMode(self, cgmode)
         quartz.CGDisplayModeRelease(cgmode)

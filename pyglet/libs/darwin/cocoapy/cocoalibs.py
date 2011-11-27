@@ -200,6 +200,11 @@ NSApplicationPresentationHideMenuBar = 1 << 3
 NSApplicationPresentationDisableProcessSwitching = 1 << 5
 NSApplicationPresentationDisableHideApplication = 1 << 8
 
+# NSRunningApplication.h
+NSApplicationActivationPolicyRegular = 0
+NSApplicationActivationPolicyAccessory = 1
+NSApplicationActivationPolicyProhibited = 2
+
 ######################################################################
 
 # QUARTZ / COREGRAPHICS
@@ -223,15 +228,27 @@ quartz.CGDisplayIDToOpenGLDisplayMask.argtypes = [c_uint32]
 
 quartz.CGMainDisplayID.restype = c_uint32
 
-quartz.CGShieldingWindowLevel.restype = c_int32
+quartz.CGShieldingWindowLevel.restype = c_uint32
 
 quartz.CGCursorIsVisible.restype = c_bool
 
 quartz.CGDisplayCopyAllDisplayModes.restype = c_void_p
 quartz.CGDisplayCopyAllDisplayModes.argtypes = [CGDirectDisplayID, c_void_p]
 
+quartz.CGDisplayCopyDisplayMode.restype = c_void_p
+quartz.CGDisplayCopyDisplayMode.argtypes = [CGDirectDisplayID]
+
 quartz.CGDisplayModeGetRefreshRate.restype = c_double
 quartz.CGDisplayModeGetRefreshRate.argtypes = [c_void_p]
+
+quartz.CGDisplayModeRetain.restype = c_void_p
+quartz.CGDisplayModeRetain.argtypes = [c_void_p] 
+
+quartz.CGDisplayModeGetWidth.restype = c_size_t
+quartz.CGDisplayModeGetWidth.argtypes = [c_void_p]
+
+quartz.CGDisplayModeGetHeight.restype = c_size_t
+quartz.CGDisplayModeGetHeight.argtypes = [c_void_p]
 
 quartz.CGDisplayModeCopyPixelEncoding.restype = c_void_p
 quartz.CGDisplayModeCopyPixelEncoding.argtypes = [c_void_p]
