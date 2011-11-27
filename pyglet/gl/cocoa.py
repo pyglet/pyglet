@@ -194,13 +194,15 @@ class CocoaContext(Context):
         self._nscontext = None
 
     def set_vsync(self, vsync=True):
-        from objc import __version__ as pyobjc_version
-        if float(pyobjc_version[:3]) >= 2.3:
-            self._nscontext.setValues_forParameter_(vsync, NSOpenGLCPSwapInterval)
+        vals = c_long(vsync)
+        send_message(self._nscontext, 'setValues:forParameter:',
+                     byref(vals), NSOpenGLCPSwapInterval, argtypes=[POINTER(c_long), c_int])
 
     def get_vsync(self):
-        value = self._nscontext.getValues_forParameter_(None, NSOpenGLCPSwapInterval)
-        return value
+        vals = c_long()
+        send_message(self._nscontext, 'getValues:forParameter:',
+                     byref(vals), NSOpenGLCPSwapInterval, argtypes=[POINTER(c_long), c_int])
+        return vals.value
         
     def flip(self):
         self._nscontext.flushBuffer()
