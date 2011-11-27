@@ -802,7 +802,8 @@ class ObjCClass(object):
         else:
             # If method name isn't in the cached list, it might be a method of
             # the superclass, so call class_getInstanceMethod to check.
-            method = c_void_p(objc.class_getInstanceMethod(self.ptr, get_selector(name)))
+            selector = get_selector(name.replace('_', ':'))
+            method = c_void_p(objc.class_getInstanceMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
                 self.instance_methods[name] = objc_method
@@ -818,7 +819,8 @@ class ObjCClass(object):
         else:
             # If method name isn't in the cached list, it might be a method of
             # the superclass, so call class_getInstanceMethod to check.
-            method = c_void_p(objc.class_getClassMethod(self.ptr, get_selector(name)))
+            selector = get_selector(name.replace('_', ':'))
+            method = c_void_p(objc.class_getClassMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
                 self.class_methods[name] = objc_method
@@ -989,6 +991,8 @@ def convert_method_arguments(encoding, args):
 #     myinstance = myclass.alloc().init()
 #
 class ObjCSubclass(object):
+    _retained_objects = {}
+
     """Use this to create a subclass of an existing Objective-C class.
     It consists primarily of function decorators which you use to add methods
     to the subclass."""
@@ -1063,3 +1067,42 @@ class ObjCSubclass(object):
             return objc_class_method
         return decorator
 
+    def initmethod(self, encoding):
+        """Function decorator for instance init methods."""
+        # Add encodings for hidden self and cmd arguments.
+        # BUG: This doesn't work if the return encoding is not single char.
+        encoding = encoding[0] + '@:' + encoding[1:]
+        def decorator(f):
+            def objc_method(objc_self, objc_cmd, *args):
+                py_self = ObjCInstance(objc_self)
+                py_self.objc_cmd = objc_cmd
+                args = convert_method_arguments(encoding, args)
+                result = f(py_self, *args)
+                if isinstance(result, ObjCClass):
+                    result = result.ptr
+                elif isinstance(result, ObjCInstance):
+                    self.retain(result)
+                    result = result.returnValue()
+                return result
+            name = f.func_name.replace('_', ':')
+            self.add_method(objc_method, name, encoding)
+            return objc_method
+        return decorator
+
+    def dealloc(self, f):
+        """Function decorator for dealloc method to perform object cleanup."""
+        # Add encodings for hidden self and cmd arguments.
+        def objc_method(objc_self, objc_cmd):
+            py_self = ObjCInstance(objc_self)
+            py_self.objc_cmd = objc_cmd
+            f(py_self)
+            self.release(py_self)
+        self.add_method(objc_method, 'dealloc', 'v@:')
+        return objc_method
+
+
+    def retain(self, obj):
+        self._retained_objects[obj.ptr.value] = obj
+
+    def release(self, obj):
+        del self._retained_objects[obj.ptr.value]
