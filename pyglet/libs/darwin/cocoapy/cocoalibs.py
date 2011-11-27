@@ -11,6 +11,7 @@ from cocoatypes import *
 cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
 
 kCFStringEncodingUTF8 = 0x08000100
+
 CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
 
@@ -28,6 +29,10 @@ cf.CFStringGetMaximumSizeForEncoding.argtypes = [CFIndex, CFStringEncoding]
 
 cf.CFStringGetCString.restype = c_bool
 cf.CFStringGetCString.argtypes = [c_void_p, c_char_p, CFIndex, CFStringEncoding]
+
+cf.CFAttributedStringCreate.restype = c_void_p
+cf.CFAttributedStringCreate.argtypes = [CFAllocatorRef, c_void_p, c_void_p]
+
 
 def CFSTR(string):
     return ObjCInstance(c_void_p(cf.CFStringCreateWithCString(
@@ -61,8 +66,23 @@ def cfarray_to_list(cfarray):
 cf.CFDataCreate.restype = c_void_p
 cf.CFDataCreate.argtypes = [c_void_p, c_void_p, CFIndex]
 
+cf.CFDataGetBytes.restype = None
+cf.CFDataGetBytes.argtypes = [c_void_p, CFRange, c_void_p]
+
+cf.CFDataGetLength.restype = CFIndex
+cf.CFDataGetLength.argtypes = [c_void_p]
+
 cf.CFDictionaryGetValue.restype = c_void_p
 cf.CFDictionaryGetValue.argtypes = [c_void_p, c_void_p]
+
+cf.CFDictionaryCreateMutable.restype = c_void_p
+cf.CFDictionaryCreateMutable.argtypes = [CFAllocatorRef, CFIndex, c_void_p, c_void_p]
+
+CFNumberType = c_uint32
+kCFNumberSInt32Type   = 3
+
+cf.CFNumberCreate.restype = c_void_p
+cf.CFNumberCreate.argtypes = [CFAllocatorRef, CFNumberType, c_void_p]
 
 # Helper function to convert CFNumber to a Python float.
 kCFNumberFloatType = 12
@@ -183,6 +203,8 @@ kCGImageAlphaNoneSkipLast           = 5
 kCGImageAlphaNoneSkipFirst          = 6
 kCGImageAlphaOnly                   = 7
 
+kCGImageAlphaPremultipliedLast = 1
+
 kCGBitmapAlphaInfoMask              = 0x1F
 kCGBitmapFloatComponents            = 1 << 8
 
@@ -226,7 +248,8 @@ kCGRenderingIntentDefault = 0
 quartz.CGDisplayIDToOpenGLDisplayMask.restype = c_uint32
 quartz.CGDisplayIDToOpenGLDisplayMask.argtypes = [c_uint32]
 
-quartz.CGMainDisplayID.restype = c_uint32
+quartz.CGMainDisplayID.restype = CGDirectDisplayID
+quartz.CGMainDisplayID.argtypes = []
 
 quartz.CGShieldingWindowLevel.restype = c_uint32
 
@@ -234,6 +257,12 @@ quartz.CGCursorIsVisible.restype = c_bool
 
 quartz.CGDisplayCopyAllDisplayModes.restype = c_void_p
 quartz.CGDisplayCopyAllDisplayModes.argtypes = [CGDirectDisplayID, c_void_p]
+
+quartz.CGDisplaySetDisplayMode.restype = CGError
+quartz.CGDisplaySetDisplayMode.argtypes = [CGDirectDisplayID, c_void_p, c_void_p]
+
+quartz.CGDisplayRelease.restype = CGError
+quartz.CGDisplayRelease.argtypes = [CGDirectDisplayID]
 
 quartz.CGDisplayCopyDisplayMode.restype = c_void_p
 quartz.CGDisplayCopyDisplayMode.argtypes = [CGDirectDisplayID]
@@ -243,6 +272,9 @@ quartz.CGDisplayModeGetRefreshRate.argtypes = [c_void_p]
 
 quartz.CGDisplayModeRetain.restype = c_void_p
 quartz.CGDisplayModeRetain.argtypes = [c_void_p] 
+
+quartz.CGDisplayModeRelease.restype = None
+quartz.CGDisplayModeRelease.argtypes = [c_void_p]
 
 quartz.CGDisplayModeGetWidth.restype = c_size_t
 quartz.CGDisplayModeGetWidth.argtypes = [c_void_p]
@@ -280,6 +312,12 @@ quartz.CGDataProviderCreateWithCFData.argtypes = [c_void_p]
 quartz.CGImageCreate.restype = c_void_p
 quartz.CGImageCreate.argtypes = [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t, c_void_p, c_uint32, c_void_p, c_void_p, c_bool, c_int]
 
+quartz.CGImageRelease.restype = None
+quartz.CGImageRelease.argtypes = [c_void_p]
+
+quartz.CGImageGetBytesPerRow.restype = c_size_t
+quartz.CGImageGetBytesPerRow.argtypes = [c_void_p]
+
 quartz.CGColorSpaceCreateDeviceRGB.restype = c_void_p
 
 quartz.CGDataProviderRelease.restype = None
@@ -296,6 +334,14 @@ quartz.CGDisplayMoveCursorToPoint.argtypes = [CGDirectDisplayID, CGPoint]
 
 quartz.CGAssociateMouseAndMouseCursorPosition.restype = CGError
 quartz.CGAssociateMouseAndMouseCursorPosition.argtypes = [c_bool]
+
+CGBitmapInfo = c_uint32
+quartz.CGBitmapContextCreate.restype = c_void_p
+quartz.CGBitmapContextCreate.argtypes = [c_void_p, c_size_t, c_size_t, c_size_t, c_size_t, c_void_p, CGBitmapInfo]
+
+quartz.CGBitmapContextCreateImage.restype = c_void_p
+quartz.CGBitmapContextCreateImage.argtypes = [c_void_p]
+
 
 ######################################################################
 

@@ -102,7 +102,7 @@ objc.class_createInstance.argtypes = [c_void_p, c_size_t]
 # Method class_getClassMethod(Class aClass, SEL aSelector)
 # Will also search superclass for implementations.
 objc.class_getClassMethod.restype = c_void_p
-objc.class_getClassMethod.argtpes = [c_void_p, c_void_p]
+objc.class_getClassMethod.argtypes = [c_void_p, c_void_p]
 
 # Ivar class_getClassVariable(Class cls, const char* name)
 objc.class_getClassVariable.restype = c_void_p
