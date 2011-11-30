@@ -7,7 +7,7 @@ NSApplication = ObjCClass('NSApplication')
 class PygletDelegate_Implementation(object):
     PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
     
-    @PygletDelegate.initmethod('@'+PyObjectEncoding)
+    @PygletDelegate.method('@'+PyObjectEncoding)
     def initWithWindow_(self, window):
         self = ObjCInstance(send_super(self, 'init'))
 
@@ -34,7 +34,7 @@ class PygletDelegate_Implementation(object):
         self.did_pause_exclusive_mouse = False
         return self
 
-    @PygletDelegate.dealloc
+    @PygletDelegate.method('v')
     def dealloc(self):
         # Unregister delegate from notification center.
         notificationCenter = NSNotificationCenter.defaultCenter()

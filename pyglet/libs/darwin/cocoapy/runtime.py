@@ -847,8 +847,7 @@ class ObjCClass(object):
 class ObjCInstance(object):
     """Python wrapper for an Objective-C instance."""
 
-    _cached_objects = weakref.WeakValueDictionary()
-    _method_returns = {}
+    _cached_objects = {} 
 
     def __new__(cls, object_ptr):
         """Create a new ObjCInstance or return a previously created one
@@ -861,17 +860,11 @@ class ObjCInstance(object):
         if not object_ptr.value:
             return None
 
-        # Check if this is an Objective-C method return first.
-        # If it is, move the object from the _method_returns dictionary
-        # where we were keeping it alive, to the weakref-ed 
-        # _cached_objects dictionary.
-        if object_ptr.value in cls._method_returns:
-            objc_instance = cls._method_returns.pop(object_ptr.value)
-            cls._cached_objects[object_ptr.value] = objc_instance
-            return objc_instance
-
         # Check if we've already created an python ObjCInstance for this
-        # object_ptr id and if so, then return it.
+        # object_ptr id and if so, then return it.  A single ObjCInstance will
+        # be created for any object pointer when it is first encountered.
+        # This same ObjCInstance will then persist until the object is 
+        # deallocated.
         if object_ptr.value in cls._cached_objects:
             return cls._cached_objects[object_ptr.value]
 
@@ -886,6 +879,17 @@ class ObjCInstance(object):
         # Store new object in the dictionary of cached objects, keyed
         # by the (integer) memory address pointed to by the object_ptr.
         cls._cached_objects[object_ptr.value] = objc_instance
+
+        # Create a DeallocationObserver and associate it with this object.
+        # When the Objective-C object is deallocated, the observer will remove
+        # the ObjCInstance corresponding to the object from the cached objects
+        # dictionary, effectively destroying the ObjCInstance.
+        observer = send_message(send_message('DeallocationObserver', 'alloc'), 'initWithObject:', objc_instance)
+        objc.objc_setAssociatedObject(objc_instance, observer, observer, 0x301)
+        # The observer is retained by the object we associate it to.  We release
+        # the observer now so that it will be deallocated when the associated
+        # object is deallocated.
+        send_message(observer, 'release')
 
         return objc_instance
 
@@ -912,16 +916,6 @@ class ObjCInstance(object):
         # Otherwise raise an exception.
         raise AttributeError('ObjCInstance %s has no attribute %s' % (self.objc_class.name, name))
 
-    def returnValue(self):
-        """Used to temporarily store a strong reference to an ObjCInstance
-        object that was created inside an Objective-C method and is being
-        returned across the Objective-C / Python boundary as a pointer value."""
-        # Store object in _method_returns dictionary so that it won't be
-        # garbage collected.  The strong reference will be removed the next
-        # time its ObjCInstance is retrieved from the pointer value.
-        self._method_returns[self.ptr.value] = self
-        return self.ptr.value
-
 ######################################################################
 
 def convert_method_arguments(encoding, args):
@@ -946,7 +940,7 @@ def convert_method_arguments(encoding, args):
 #
 # Typical usage would be to first create and register the subclass:
 #
-#     MySubclass = ObjCSubclass('MySubclassName', 'NSObject')
+#     MySubclass = ObjCSubclass('NSObject', 'MySubclassName')
 #
 # then add methods with:
 #
@@ -991,11 +985,10 @@ def convert_method_arguments(encoding, args):
 #     myinstance = myclass.alloc().init()
 #
 class ObjCSubclass(object):
-    _retained_objects = {}
-
     """Use this to create a subclass of an existing Objective-C class.
     It consists primarily of function decorators which you use to add methods
     to the subclass."""
+
     def __init__(self, superclass, name, register=True):
         self._imp_table = {}
         self.name = name
@@ -1003,12 +996,18 @@ class ObjCSubclass(object):
         self._as_parameter_ = self.objc_cls
         if register:
             self.register()
-        self.objc_metaclass = get_metaclass(name)
 
     def register(self):
+        """Register the new class with the Objective-C runtime."""
         objc.objc_registerClassPair(self.objc_cls)
+        # We can get the metaclass only after the class is registered.
+        self.objc_metaclass = get_metaclass(self.name)
 
     def add_ivar(self, varname, vartype):
+        """Add instance variable named varname to the subclass.
+        varname should be a string.
+        vartype is a ctypes type.
+        The class must be registered AFTER adding instance variables."""
         return add_ivar(self.objc_cls, varname, vartype)
 
     def add_method(self, method, name, encoding):
@@ -1019,7 +1018,18 @@ class ObjCSubclass(object):
     def add_class_method(self, method, name, encoding):
         imp = add_method(self.objc_metaclass, name, method, encoding)
         self._imp_table[name] = imp
-    
+
+    def rawmethod(self, encoding):
+        """Decorator for instance methods without any fancy shenanigans.
+        The function must have the signature f(self, cmd, *args)
+        where both self and cmd are just pointers to objc objects."""
+        encoding = encoding[0] + '@:' + encoding[1:]
+        def decorator(f):
+            name = f.func_name.replace('_', ':')
+            self.add_method(f, name, encoding)
+            return f
+        return decorator
+     
     def method(self, encoding):
         """Function decorator for instance methods."""
         # Add encodings for hidden self and cmd arguments.
@@ -1032,21 +1042,15 @@ class ObjCSubclass(object):
                 args = convert_method_arguments(encoding, args)
                 result = f(py_self, *args)
                 if isinstance(result, ObjCClass):
-                    result = result.ptr
+                    result = result.ptr.value
                 elif isinstance(result, ObjCInstance):
-                    # An ObjCInstance crosses over the ObjC/Python boundary as
-                    # just a pointer value.  Using the returnValue() method will
-                    # temporarily keep the object alive as it crosses the boundary
-                    # so that it will still exist as an ObjCInstance object in 
-                    # Python-land when it gets to the other side.
-                    # (Sort of like the teleporter pattern buffer in Star Trek.)
-                    result = result.returnValue()
+                    result = result.ptr.value
                 return result
             name = f.func_name.replace('_', ':')
             self.add_method(objc_method, name, encoding)
             return objc_method
         return decorator
-    
+                  
     def classmethod(self, encoding):
         """Function decorator for class methods."""
         # Add encodings for hidden self and cmd arguments.
@@ -1058,51 +1062,55 @@ class ObjCSubclass(object):
                 args = convert_method_arguments(encoding, args)
                 result = f(py_cls, *args)
                 if isinstance(result, ObjCClass):
-                    result = result.ptr
+                    result = result.ptr.value
                 elif isinstance(result, ObjCInstance):
-                    result = result.returnValue()
+                    result = result.ptr.value
                 return result
             name = f.func_name.replace('_', ':')
             self.add_class_method(objc_class_method, name, encoding)
             return objc_class_method
         return decorator
 
-    def initmethod(self, encoding):
-        """Function decorator for instance init methods."""
-        # Add encodings for hidden self and cmd arguments.
-        # BUG: This doesn't work if the return encoding is not single char.
-        encoding = encoding[0] + '@:' + encoding[1:]
-        def decorator(f):
-            def objc_method(objc_self, objc_cmd, *args):
-                py_self = ObjCInstance(objc_self)
-                py_self.objc_cmd = objc_cmd
-                args = convert_method_arguments(encoding, args)
-                result = f(py_self, *args)
-                if isinstance(result, ObjCClass):
-                    result = result.ptr
-                elif isinstance(result, ObjCInstance):
-                    self.retain(result)
-                    result = result.returnValue()
-                return result
-            name = f.func_name.replace('_', ':')
-            self.add_method(objc_method, name, encoding)
-            return objc_method
-        return decorator
+######################################################################
 
-    def dealloc(self, f):
-        """Function decorator for dealloc method to perform object cleanup."""
-        # Add encodings for hidden self and cmd arguments.
-        def objc_method(objc_self, objc_cmd):
-            py_self = ObjCInstance(objc_self)
-            py_self.objc_cmd = objc_cmd
-            f(py_self)
-            self.release(py_self)
-        self.add_method(objc_method, 'dealloc', 'v@:')
-        return objc_method
+# Instances of DeallocationObserver are associated with every 
+# Objective-C object that gets wrapped inside an ObjCInstance.
+# Their sole purpose is to watch for when the Objective-C object
+# is deallocated, and then remove the object from the dictionary
+# of cached ObjCInstance objects kept by the ObjCInstance class.
+#
+# The methods of the class defined below are decorated with 
+# rawmethod() instead of method() because DeallocationObservers
+# are created inside of ObjCInstance's __new__ method and we have
+# to be careful to not create another ObjCInstance here (which
+# happens when the usual method decorator turns the self argument
+# into an ObjCInstance), or else get trapped in an infinite recursion.
+class DeallocationObserver_Implementation(object):
+    DeallocationObserver = ObjCSubclass('NSObject', 'DeallocationObserver', register=False)
+    DeallocationObserver.add_ivar('observed_object', c_void_p)
+    DeallocationObserver.register()
 
+    @DeallocationObserver.rawmethod('@@')
+    def initWithObject_(self, cmd, anObject):
+        self = send_super(self, 'init')
+        self = self.value
+        set_instance_variable(self, 'observed_object', anObject, c_void_p)
+        return self
+    
+    @DeallocationObserver.rawmethod('v')
+    def dealloc(self, cmd):
+        anObject = get_instance_variable(self, 'observed_object', c_void_p)
+        ObjCInstance._cached_objects.pop(anObject, None)
+        send_super(self, 'dealloc')
 
-    def retain(self, obj):
-        self._retained_objects[obj.ptr.value] = obj
+    @DeallocationObserver.rawmethod('v')    
+    def finalize(self, cmd):
+        # Called instead of dealloc if using garbage collection.  
+        # (which would have to be explicitly started with 
+        # objc_startCollectorThread(), so probably not too much reason 
+        # to have this here, but I guess it can't hurt.)
+        anObject = get_instance_variable(self, 'observed_object', c_void_p)
+        ObjCInstance._cached_objects.pop(anObject, None)
+        send_super(self, 'finalize')
 
-    def release(self, obj):
-        del self._retained_objects[obj.ptr.value]
+DeallocationObserver = ObjCClass('DeallocationObserver')

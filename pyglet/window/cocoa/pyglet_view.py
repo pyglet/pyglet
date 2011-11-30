@@ -46,7 +46,7 @@ def getSymbol(nsevent):
 class PygletView_Implementation(object):
     PygletView = ObjCSubclass('NSView', 'PygletView')
 
-    @PygletView.initmethod('@'+NSRectEncoding+PyObjectEncoding)
+    @PygletView.method('@'+NSRectEncoding+PyObjectEncoding)
     def initWithFrame_cocoaWindow_(self, frame, window):
 
         # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate 
@@ -75,7 +75,7 @@ class PygletView_Implementation(object):
         self.addSubview_(self._textview)
         return self
 
-    @PygletView.dealloc
+    @PygletView.method('v')
     def dealloc(self):
         self._window = None
         #send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')

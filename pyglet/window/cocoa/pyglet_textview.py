@@ -12,7 +12,7 @@ NSApplication = ObjCClass('NSApplication')
 class PygletTextView_Implementation(object):
     PygletTextView = ObjCSubclass('NSTextView', 'PygletTextView')
 
-    @PygletTextView.initmethod('@'+PyObjectEncoding)
+    @PygletTextView.method('@'+PyObjectEncoding)
     def initWithCocoaWindow_(self, window):
         self = ObjCInstance(send_super(self, 'init'))
         if not self:
@@ -23,7 +23,7 @@ class PygletTextView_Implementation(object):
         self.empty_string = CFSTR("")
         return self
 
-    @PygletTextView.dealloc
+    @PygletTextView.method('v')
     def dealloc(self):
         self.empty_string.release()
 
