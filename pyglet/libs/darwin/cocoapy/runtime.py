@@ -649,6 +649,8 @@ class ObjCMethod(object):
             return self.typecodes[encoding]
         elif encoding[0] == '^' and encoding[1:] in self.typecodes:
             return POINTER(self.typecodes[encoding[1:]])
+        elif encoding[0] == '^' and encoding[1:] in [CGImageEncoding]:
+            return c_void_p
         elif encoding[0] == 'r' and encoding[1:] in self.typecodes:
             # const decorator, don't care
             return self.typecodes[encoding[1:]]

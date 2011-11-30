@@ -60,6 +60,7 @@ NSCursor = ObjCClass('NSCursor')
 NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 NSColor = ObjCClass('NSColor')
 NSEvent = ObjCClass('NSEvent')
+NSImage = ObjCClass('NSImage')
 
 class CocoaMouseCursor(MouseCursor):
     drawable = False

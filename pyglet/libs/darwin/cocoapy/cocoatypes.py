@@ -35,6 +35,9 @@ NSIntegerEncoding = encoding_for_ctype(NSInteger)
 NSUIntegerEncoding = encoding_for_ctype(NSUInteger)
 CGFloatEncoding = encoding_for_ctype(CGFloat)    
 
+# Special case so that NSImage.initWithCGImage_size_() will work.
+CGImageEncoding = '{CGImage=}'
+
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):
     _fields_ = [ ("x", CGFloat), ("y", CGFloat) ]
