@@ -16,6 +16,7 @@ from pyglet.canvas.cocoa import CocoaCanvas
 
 from pyglet.libs.darwin.cocoapy import *
 
+NSOpenGLPixelFormat = ObjCClass('NSOpenGLPixelFormat')
 NSOpenGLContext = ObjCClass('NSOpenGLContext')
 
 # Valid names for GL attributes and their corresponding NSOpenGL constant.
@@ -107,13 +108,11 @@ class CocoaConfig(Config):
         # Terminate the list.
         attrs.append(0)
 
+        # Create the pixel format.
         attrsArrayType = c_uint32 * len(attrs)
         attrsArray = attrsArrayType(*attrs)
-
-        # Create the pixel format.
-        pixel_format = send_message('NSOpenGLPixelFormat', 'alloc')
-        pixel_format = send_message(pixel_format, 'initWithAttributes:', attrsArray, argtypes=[attrsArrayType])
-                
+        pixel_format = NSOpenGLPixelFormat.alloc().initWithAttributes_(attrsArray)
+       
         # Return the match list.
         if pixel_format is None:
             return []
@@ -130,9 +129,8 @@ class CocoaCanvasConfig(CanvasConfig):
         # Query values for the attributes of the pixel format, and then set the
         # corresponding attributes of the canvas config.
         for name, attr in _gl_attributes.items():
-            vals = c_long()
-            send_message(self._pixel_format, 'getValues:forAttribute:forVirtualScreen:',
-                         byref(vals), attr, 0, argtypes=[POINTER(c_long), c_int, c_long])
+            vals = c_int()
+            self._pixel_format.getValues_forAttribute_forVirtualScreen_(byref(vals), attr, 0)
             setattr(self, name, vals.value)
         
         # Set these attributes so that we can run pyglet.info.
