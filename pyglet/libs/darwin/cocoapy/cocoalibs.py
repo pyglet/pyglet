@@ -325,6 +325,18 @@ quartz.CGImageRelease.argtypes = [c_void_p]
 quartz.CGImageGetBytesPerRow.restype = c_size_t
 quartz.CGImageGetBytesPerRow.argtypes = [c_void_p]
 
+quartz.CGImageGetWidth.restype = c_size_t
+quartz.CGImageGetWidth.argtypes = [c_void_p]
+
+quartz.CGImageGetHeight.restype = c_size_t
+quartz.CGImageGetHeight.argtypes = [c_void_p]
+
+quartz.CGImageGetBitsPerPixel.restype = c_size_t
+quartz.CGImageGetBitsPerPixel.argtypes = [c_void_p]
+
+quartz.CGImageGetBitmapInfo.restype = CGBitmapInfo
+quartz.CGImageGetBitmapInfo.argtypes = [c_void_p]
+
 quartz.CGColorSpaceCreateDeviceRGB.restype = c_void_p
 quartz.CGColorSpaceCreateDeviceRGB.argtypes = []
 

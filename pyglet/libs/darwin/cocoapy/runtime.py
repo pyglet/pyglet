@@ -31,7 +31,6 @@
 
 import sys
 import platform
-import weakref
 
 from ctypes import *
 from ctypes import util
