@@ -603,8 +603,9 @@ class ObjCMethod(object):
     typecodes = {'c':c_byte, 'i':c_int, 's':c_short, 'l':c_long, 'q':c_longlong, 
                  'C':c_ubyte, 'I':c_uint, 'S':c_ushort, 'L':c_ulong, 'Q':c_ulonglong, 
                  'f':c_float, 'd':c_double, 'B':c_bool, 'v':None, 'Vv':None, '*':c_char_p,
-                 '@':c_void_p, '#':c_void_p, ':':c_void_p, '^v':c_void_p, 
+                 '@':c_void_p, '#':c_void_p, ':':c_void_p, '^v':c_void_p, '?':c_void_p, 
                  NSPointEncoding:NSPoint, NSSizeEncoding:NSSize, NSRectEncoding:NSRect,
+                 NSRangeEncoding:NSRange,
                  PyObjectEncoding:py_object}
 
     cfunctype_table = {}
@@ -649,11 +650,15 @@ class ObjCMethod(object):
             return self.typecodes[encoding]
         elif encoding[0] == '^' and encoding[1:] in self.typecodes:
             return POINTER(self.typecodes[encoding[1:]])
-        elif encoding[0] == '^' and encoding[1:] in [CGImageEncoding]:
+        elif encoding[0] == '^' and encoding[1:] in [CGImageEncoding, NSZoneEncoding]:
+            # special cases
             return c_void_p
         elif encoding[0] == 'r' and encoding[1:] in self.typecodes:
             # const decorator, don't care
             return self.typecodes[encoding[1:]]
+        elif encoding[0:2] == 'r^' and encoding[2:] in self.typecodes:
+            # const pointer, also don't care
+            return POINTER(self.typecodes[encoding[2:]])
         else:
             raise Exception('unknown encoding for %s: %s' % (self.name, encoding))
         
@@ -1114,5 +1119,3 @@ class DeallocationObserver_Implementation(object):
         anObject = get_instance_variable(self, 'observed_object', c_void_p)
         ObjCInstance._cached_objects.pop(anObject, None)
         send_super(self, 'finalize')
-
-DeallocationObserver = ObjCClass('DeallocationObserver')

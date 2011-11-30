@@ -23,6 +23,7 @@ if __LP64__:
     NSPointEncoding = '{CGPoint=dd}'
     NSSizeEncoding = '{CGSize=dd}'
     NSRectEncoding = '{CGRect={CGPoint=dd}{CGSize=dd}}'
+    NSRangeEncoding = '{_NSRange=QQ}'
 else:
     NSInteger = c_int
     NSUInteger = c_uint
@@ -30,6 +31,7 @@ else:
     NSPointEncoding = '{_NSPoint=ff}'
     NSSizeEncoding = '{_NSSize=ff}'
     NSRectEncoding = '{_NSRect={_NSPoint=ff}{_NSSize=ff}}'
+    NSRangeEncoding = '{_NSRange=II}'
 
 NSIntegerEncoding = encoding_for_ctype(NSInteger)
 NSUIntegerEncoding = encoding_for_ctype(NSUInteger)
@@ -37,6 +39,8 @@ CGFloatEncoding = encoding_for_ctype(CGFloat)
 
 # Special case so that NSImage.initWithCGImage_size_() will work.
 CGImageEncoding = '{CGImage=}'
+
+NSZoneEncoding = '{_NSZone=}'
 
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):

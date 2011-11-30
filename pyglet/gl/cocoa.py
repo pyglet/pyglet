@@ -194,14 +194,12 @@ class CocoaContext(Context):
         self._nscontext = None
 
     def set_vsync(self, vsync=True):
-        vals = c_long(vsync)
-        send_message(self._nscontext, 'setValues:forParameter:',
-                     byref(vals), NSOpenGLCPSwapInterval, argtypes=[POINTER(c_long), c_int])
+        vals = c_int(vsync)
+        self._nscontext.setValues_forParameter_(byref(vals), NSOpenGLCPSwapInterval)
 
     def get_vsync(self):
-        vals = c_long()
-        send_message(self._nscontext, 'getValues:forParameter:',
-                     byref(vals), NSOpenGLCPSwapInterval, argtypes=[POINTER(c_long), c_int])
+        vals = c_int()
+        self._nscontext.getValues_forParameter_(byref(vals), NSOpenGLCPSwapInterval)
         return vals.value
         
     def flip(self):
