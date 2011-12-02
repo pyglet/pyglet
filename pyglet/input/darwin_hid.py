@@ -1,21 +1,13 @@
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
 
-from ctypes import *
-from ctypes import util
+import sys
+__LP64__ = (sys.maxint > 2**32)
 
-# Load frameworks
+from pyglet.libs.darwin.cocoapy import *
+
+# Load iokit framework
 iokit = cdll.LoadLibrary(util.find_library('IOKit'))
-cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
-
-# Core Foundation constants
-kCFStringEncodingASCII   = 0x0600
-kCFStringEncodingUnicode = 0x0100
-kCFStringEncodingUTF8    = 0x08000100
-
-kCFNumberIntType = 9
-
-kCFRunLoopDefaultMode = c_void_p.in_dll(iokit, 'kCFRunLoopDefaultMode')
 
 # IOKit constants from
 # /System/Library/Frameworks/IOKit.framework/Headers/hid/IOHIDKeys.h
@@ -49,72 +41,150 @@ kHIDUsage_Csmr_Mute	       = 0xE2
 kHIDUsage_Csmr_VolumeIncrement = 0xE9
 kHIDUsage_Csmr_VolumeDecrement = 0xEA
 
+IOReturn = c_int  # IOReturn.h
+IOOptionBits = c_uint32   # IOTypes.h
 
-# Setup return types for functions that return pointers.
-# (Otherwise ctypes returns 32-bit int which breaks on 64-bit systems.)
-# Note that you must also wrap the return value with c_void_p before
-# you use it as an argument to another function, otherwise ctypes will
-# automatically convert it back to a 32-bit int again.
-cf.CFStringCreateWithCString.restype = c_void_p
-cf.CFArrayGetValueAtIndex.restype = c_void_p
-cf.CFRunLoopGetCurrent.restype = c_void_p
-cf.CFRunLoopGetMain.restype = c_void_p
-iokit.IOHIDDeviceGetProperty.restype = c_void_p
+# IOHIDKeys.h
+IOHIDElementType = c_int 
+IOHIDElementCollectionType = c_int 
+if __LP64__:
+    IOHIDElementCookie = c_uint32
+else:
+    IOHIDElementCookie = c_void_p
+
+iokit.IOHIDManagerGetTypeID.restype = CFTypeID
+iokit.IOHIDManagerGetTypeID.argtypes = []
+
+iokit.IOHIDDeviceClose.restype = IOReturn
+iokit.IOHIDDeviceClose.argtypes = [c_void_p, IOOptionBits]
+
+iokit.IOHIDDeviceConformsTo.restype = c_ubyte
+iokit.IOHIDDeviceConformsTo.argtypes = [c_void_p, c_uint32, c_uint32]
+
 iokit.IOHIDDeviceCopyMatchingElements.restype = c_void_p
-iokit.IOHIDValueGetElement.restype = c_void_p
+iokit.IOHIDDeviceCopyMatchingElements.argtypes = [c_void_p, c_void_p, IOOptionBits]
+
+iokit.IOHIDDeviceGetProperty.restype = c_void_p
+iokit.IOHIDDeviceGetProperty.argtypes = [c_void_p, c_void_p]
+
+iokit.IOHIDDeviceGetTypeID.restype = CFTypeID
+iokit.IOHIDDeviceGetTypeID.argtypes = []
+
+iokit.IOHIDDeviceOpen.restype = IOReturn
+iokit.IOHIDDeviceOpen.argtypes = [c_void_p, IOOptionBits]
+
+iokit.IOHIDDeviceRegisterInputValueCallback.restype = None
+iokit.IOHIDDeviceRegisterInputValueCallback.argtypes = [c_void_p, c_void_p, c_void_p]
+
+iokit.IOHIDDeviceRegisterRemovalCallback.restype = None
+iokit.IOHIDDeviceRegisterRemovalCallback.argtypes = [c_void_p, c_void_p, c_void_p]
+
+iokit.IOHIDDeviceScheduleWithRunLoop.restype = None
+iokit.IOHIDDeviceScheduleWithRunLoop.argtypes = [c_void_p, c_void_p, c_void_p]
+
+iokit.IOHIDDeviceUnscheduleFromRunLoop.restype = None
+iokit.IOHIDDeviceUnscheduleFromRunLoop.argtypes = [c_void_p, c_void_p, c_void_p]
+
+iokit.IOHIDElementGetCollectionType.restype = IOHIDElementCollectionType
+iokit.IOHIDElementGetCollectionType.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetCookie.restype = IOHIDElementCookie
+iokit.IOHIDElementGetCookie.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetLogicalMax.restype = CFIndex
+iokit.IOHIDElementGetLogicalMax.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetLogicalMin.restype = CFIndex
+iokit.IOHIDElementGetLogicalMin.argtypes = [c_void_p]
+
 iokit.IOHIDElementGetName.restype = c_void_p
+iokit.IOHIDElementGetName.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetPhysicalMax.restype = CFIndex
+iokit.IOHIDElementGetPhysicalMax.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetPhysicalMin.restype = CFIndex
+iokit.IOHIDElementGetPhysicalMin.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetReportCount.restype = c_uint32
+iokit.IOHIDElementGetReportCount.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetReportID.restype = c_uint32
+iokit.IOHIDElementGetReportID.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetReportSize.restype = c_uint32
+iokit.IOHIDElementGetReportSize.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetType.restype = IOHIDElementType
+iokit.IOHIDElementGetType.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetTypeID.restype = CFTypeID
+iokit.IOHIDElementGetTypeID.argtypes = []
+
+iokit.IOHIDElementGetUnit.restype = c_uint32
+iokit.IOHIDElementGetUnit.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetUnitExponent.restype = c_uint32
+iokit.IOHIDElementGetUnitExponent.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetUsage.restype = c_uint32
+iokit.IOHIDElementGetUsage.argtypes = [c_void_p]
+
+iokit.IOHIDElementGetUsagePage.restype = c_uint32
+iokit.IOHIDElementGetUsagePage.argtypes = [c_void_p]
+
+iokit.IOHIDElementHasNullState.restype = c_bool
+iokit.IOHIDElementHasNullState.argtypes = [c_void_p]
+
+iokit.IOHIDElementHasPreferredState.restype = c_bool
+iokit.IOHIDElementHasPreferredState.argtypes = [c_void_p]
+
+iokit.IOHIDElementIsArray.restype = c_bool
+iokit.IOHIDElementIsArray.argtypes = [c_void_p]
+
+iokit.IOHIDElementIsNonLinear.restype = c_bool
+iokit.IOHIDElementIsNonLinear.argtypes = [c_void_p]
+
+iokit.IOHIDElementIsRelative.restype = c_bool
+iokit.IOHIDElementIsRelative.argtypes = [c_void_p]
+
+iokit.IOHIDElementIsVirtual.restype = c_bool
+iokit.IOHIDElementIsVirtual.argtypes = [c_void_p]
+
+iokit.IOHIDElementIsWrapping.restype = c_bool
+iokit.IOHIDElementIsWrapping.argtypes = [c_void_p]
+
 iokit.IOHIDManagerCreate.restype = c_void_p
+iokit.IOHIDManagerCreate.argtypes = [CFAllocatorRef, IOOptionBits]
+
 iokit.IOHIDManagerCopyDevices.restype = c_void_p
+iokit.IOHIDManagerCopyDevices.argtypes = [c_void_p]
+
+iokit.IOHIDManagerRegisterDeviceMatchingCallback.restype = None
+iokit.IOHIDManagerRegisterDeviceMatchingCallback.argtypes = [c_void_p, c_void_p, c_void_p]
+
+iokit.IOHIDManagerScheduleWithRunLoop.restype = c_void_p
+iokit.IOHIDManagerScheduleWithRunLoop.argtypes = [c_void_p, c_void_p, c_void_p]
+
+iokit.IOHIDManagerSetDeviceMatching.restype = None
+iokit.IOHIDManagerSetDeviceMatching.argtypes = [c_void_p, c_void_p]
+
+iokit.IOHIDValueGetElement.restype = c_void_p
+iokit.IOHIDValueGetElement.argtypes = [c_void_p]
+
+iokit.IOHIDValueGetIntegerValue.restype = CFIndex
+iokit.IOHIDValueGetIntegerValue.argtypes = [c_void_p]
+
+iokit.IOHIDValueGetTimeStamp.restype = c_uint64
+iokit.IOHIDValueGetTimeStamp.argtypes = [c_void_p]
+
+iokit.IOHIDValueGetTypeID.restype = CFTypeID
+iokit.IOHIDValueGetTypeID.argtypes = []
 
 # Callback function types
 HIDManagerCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)    
 HIDDeviceCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p)    
 HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)    
-
-######################################################################
-# Core Foundation type to Python type conversion functions
-
-def CFSTR(text):
-    return c_void_p(cf.CFStringCreateWithCString(None, text.encode('utf8'), kCFStringEncodingUTF8))
-
-def cfstring_to_string(cfstring):
-    length = cf.CFStringGetLength(cfstring)
-    size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
-    buffer = c_buffer(size + 1)
-    result = cf.CFStringGetCString(cfstring, buffer, len(buffer), kCFStringEncodingUTF8)
-    if result:
-        return buffer.value
-
-def cfnumber_to_int(cfnumber):
-    result = c_int()
-    if cf.CFNumberGetValue(cfnumber, kCFNumberIntType, byref(result)):
-        return result.value
-
-def cfset_to_set(cfset):
-    count = cf.CFSetGetCount(cfset)
-    buffer = (c_void_p * count)()
-    cf.CFSetGetValues(cfset, byref(buffer))
-    return set([ cftype_to_value(c_void_p(buffer[i])) for i in range(count) ])
-    
-def cfarray_to_list(cfarray):
-    count = cf.CFArrayGetCount(cfarray)
-    return [ cftype_to_value(c_void_p(cf.CFArrayGetValueAtIndex(cfarray, i))) 
-             for i in range(count) ]
-    
-def cftype_to_value(cftype):
-    if not cftype:
-        return None
-    typeID = cf.CFGetTypeID(cftype)
-    if typeID == cf.CFStringGetTypeID():
-        return cfstring_to_string(cftype)
-    elif typeID == cf.CFNumberGetTypeID():
-        return cfnumber_to_int(cftype)
-    elif typeID == iokit.IOHIDDeviceGetTypeID():
-        return HIDDevice.get_device(cftype)
-    elif typeID == iokit.IOHIDElementGetTypeID():
-        return HIDDeviceElement.get_element(cftype)
-    else:
-        return cftype
 
 ######################################################################
 # HID Class Wrappers
@@ -361,6 +431,14 @@ class HIDManager:
             self.managerRef,
             self.matching_callback,
             None)
+
+######################################################################
+
+# Add conversion methods for IOHIDDevices and IOHIDDeviceElements
+# to the list of known types used by cftype_to_value.
+known_cftypes[iokit.IOHIDDeviceGetTypeID()] = HIDDevice.get_device
+known_cftypes[iokit.IOHIDElementGetTypeID()] = HIDDeviceElement.get_element
+
 
 ######################################################################
 # Pyglet interface to HID

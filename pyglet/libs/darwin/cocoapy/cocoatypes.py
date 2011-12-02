@@ -80,3 +80,5 @@ class NSRange(Structure):
 
 NSZeroPoint = NSPoint(0,0)
 
+CFTypeID = c_ulong
+CFNumberType = c_uint32
