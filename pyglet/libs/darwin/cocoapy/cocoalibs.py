@@ -120,7 +120,8 @@ def cfnumber_to_number(cfnumber):
                       kCFNumberCharType:c_byte, kCFNumberShortType:c_short,
                       kCFNumberIntType:c_int, kCFNumberLongType:c_long,
                       kCFNumberLongLongType:c_longlong, kCFNumberFloatType:c_float,
-                      kCFNumberDoubleType:c_double, kCFNumberCFIndexType:CFIndex}
+                      kCFNumberDoubleType:c_double, kCFNumberCFIndexType:CFIndex,
+                      kCFNumberCGFloatType:CGFloat}
 
     if numeric_type in cfnum_to_ctype:
         t = cfnum_to_ctype[numeric_type]
@@ -153,7 +154,9 @@ cf.CFSetGetCount.restype = CFIndex
 cf.CFSetGetCount.argtypes = [c_void_p]
 
 cf.CFSetGetValues.restype = None
-cf.CFSetGetValues.argtypes = [c_void_p, POINTER(c_void_p)]
+# PyPy 1.7 is fine with 2nd arg as POINTER(c_void_p),
+# but CPython ctypes 1.1.0 complains, so just use c_void_p.
+cf.CFSetGetValues.argtypes = [c_void_p, c_void_p]
 
 def cfset_to_set(cfset):
     """Convert CFSet to python set."""
