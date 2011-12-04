@@ -52,9 +52,6 @@ if __LP64__:
 else:
     IOHIDElementCookie = c_void_p
 
-iokit.IOHIDManagerGetTypeID.restype = CFTypeID
-iokit.IOHIDManagerGetTypeID.argtypes = []
-
 iokit.IOHIDDeviceClose.restype = IOReturn
 iokit.IOHIDDeviceClose.argtypes = [c_void_p, IOOptionBits]
 
@@ -160,6 +157,9 @@ iokit.IOHIDManagerCreate.argtypes = [CFAllocatorRef, IOOptionBits]
 iokit.IOHIDManagerCopyDevices.restype = c_void_p
 iokit.IOHIDManagerCopyDevices.argtypes = [c_void_p]
 
+iokit.IOHIDManagerGetTypeID.restype = CFTypeID
+iokit.IOHIDManagerGetTypeID.argtypes = []
+
 iokit.IOHIDManagerRegisterDeviceMatchingCallback.restype = None
 iokit.IOHIDManagerRegisterDeviceMatchingCallback.argtypes = [c_void_p, c_void_p, c_void_p]
 
@@ -254,7 +254,9 @@ class HIDDevice:
                 self.versionNumber, self.primaryUsage, self.primaryUsagePage)
 
     def get_property(self, name):
-        cfvalue = c_void_p(iokit.IOHIDDeviceGetProperty(self.deviceRef, CFSTR(name)))
+        cfname = CFSTR(name)
+        cfvalue = c_void_p(iokit.IOHIDDeviceGetProperty(self.deviceRef, cfname))
+        cf.CFRelease(cfname)
         return cftype_to_value(cfvalue)
         
     def open(self, exclusive_mode=False):
