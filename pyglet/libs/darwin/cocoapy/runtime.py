@@ -900,6 +900,12 @@ class ObjCInstance(object):
         return objc_instance
 
     def __repr__(self):
+        if self.objc_class.name == 'NSCFString':
+            # Display contents of NSString objects
+            from cocoalibs import cfstring_to_string
+            string = cfstring_to_string(self)
+            return "<ObjCInstance %#x: %s (%s) at %s>" % (id(self), self.objc_class.name, string, str(self.ptr.value))
+
         return "<ObjCInstance %#x: %s at %s>" % (id(self), self.objc_class.name, str(self.ptr.value))
 
     def __getattr__(self, name):
