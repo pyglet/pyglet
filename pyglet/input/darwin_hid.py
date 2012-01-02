@@ -264,6 +264,15 @@ class HIDDevice:
     def add_value_observer(self, observer):
         self.value_observers.add(observer)
 
+    def get_value(self, element):
+        # If the device is not open, then returns None
+        valueRef = c_void_p()
+        iokit.IOHIDDeviceGetValue(self.deviceRef, element.elementRef, byref(valueRef))
+        if valueRef:
+            return HIDValue(valueRef)
+        else:
+            return None
+
 
 class HIDDeviceElement:
     @classmethod
@@ -417,6 +426,7 @@ class PygletDevice(Device):
         self.device.schedule_with_run_loop()
         self._is_open = True
         self._is_exclusive = exclusive
+        self._set_initial_control_values()
 
     def close(self):
         super(PygletDevice, self).close()
@@ -468,6 +478,15 @@ class PygletDevice(Device):
             
             control._cookie = element.cookie
             self._controls[control._cookie] = control
+
+    def _set_initial_control_values(self):
+        # Must be called AFTER the device has been opened.
+        for element in self.device.elements:
+            if element.cookie in self._controls:
+                control = self._controls[element.cookie]
+                hid_value = self.device.get_value(element)
+                if hid_value:
+                    control._set_value(hid_value.intvalue)
 
 ######################################################################
 
