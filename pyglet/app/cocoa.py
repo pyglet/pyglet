@@ -51,6 +51,7 @@ class CocoaEventLoop(PlatformEventLoop):
         # Create an autorelease pool for menu creation and finishLaunching
         pool = NSAutoreleasePool.alloc().init()
         self._create_application_menu()
+        NSApp().setActivationPolicy_(0)  # Mac OS X 10.6 
         NSApp().finishLaunching()
         NSApp().activateIgnoringOtherApps_(True)
         # Then get rid of the pool when we're done.
