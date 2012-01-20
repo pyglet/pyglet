@@ -282,7 +282,7 @@ class Button(Control):
 Button.register_event_type('on_press')
 Button.register_event_type('on_release')
 
-class Joystick(object):
+class Joystick(EventDispatcher):
     '''High-level interface for joystick-like devices.  This includes analogue
     and digital joysticks, gamepads, game controllers, and possibly even
     steering wheels and other input devices.  There is unfortunately no way to
@@ -290,8 +290,23 @@ class Joystick(object):
 
     To use a joystick, first call `open`, then in your game loop examine
     the values of `x`, `y`, and so on.  These values are normalized to the
-    range [-1.0, 1.0]. Attach event handlers to the `button_controls` to
-    receive events when a button is pressed or released.
+    range [-1.0, 1.0]. 
+
+    To receive events when the value of an axis changes, attach an 
+    on_joyaxis_motion event handler to the joystick.  The `Joystick` instance,
+    axis name, and current value are passed as parameters to this event.
+
+    To handle button events, you should attach on_joybutton_press and 
+    on_joy_button_release event handlers to the joystick.  Both the `Joystick`
+    instance and the index of the changed button are passed as parameters to 
+    these events.
+
+    Alternately, you may attach event handlers to each individual button in 
+    `button_controls` to receive on_press or on_release events.
+    
+    To use the hat switch, attach an on_joyhat_motion event handler to the
+    joystick.  The handler will be called with both the hat_x and hat_y values
+    whenever the value of the hat switch changes.
 
     The device name can be queried to get the name of the joystick.
 
@@ -302,8 +317,8 @@ class Joystick(object):
             Current X (horizontal) value ranging from -1.0 (left) to 1.0
             (right).
         `y` : float
-            Current y (vertical) value ranging from -1.0 (bottom) to 1.0
-            (top).
+            Current y (vertical) value ranging from -1.0 (top) to 1.0
+            (bottom).
         `z` : float
             Current Z value ranging from -1.0 to 1.0.  On joysticks the Z
             value is usually the throttle control.  On game controllers the Z
@@ -345,7 +360,6 @@ class Joystick(object):
             Underlying control for `hat_y` value, or ``None`` if not available.
         `button_controls` : list of `Button`
             Underlying controls for `buttons` values.
-
     '''
 
     def __init__(self, device):
@@ -382,7 +396,9 @@ class Joystick(object):
 
             @control.event
             def on_change(value):
-                setattr(self, name, value * scale + bias)
+                normalized_value = value * scale + bias
+                setattr(self, name, normalized_value)
+                self.dispatch_event('on_joyaxis_motion', self, name, normalized_value)
 
         def add_button(control):
             i = len(self.buttons)
@@ -392,6 +408,14 @@ class Joystick(object):
             @control.event
             def on_change(value):
                 self.buttons[i] = value
+            
+            @control.event
+            def on_press():
+                self.dispatch_event('on_joybutton_press', self, i)
+
+            @control.event
+            def on_release():
+                self.dispatch_event('on_joybutton_release', self, i)
 
         def add_hat(control):
             # 8-directional hat encoded as a single control (Windows/Mac)
@@ -419,6 +443,7 @@ class Joystick(object):
                     else:
                         # Out of range
                         self.hat_x = self.hat_y = 0
+                self.dispatch_event('on_joyhat_motion', self, self.hat_x, self.hat_y)
 
         for control in device.get_controls():
             if isinstance(control, AbsoluteAxis):
@@ -439,6 +464,53 @@ class Joystick(object):
         '''Close the joystick device.  See `Device.close`.
         '''
         self.device.close()
+
+    def on_joyaxis_motion(self, joystick, axis, value):
+        '''The value of a joystick axis changed.
+        :Parameters:
+           `joystick` : `Joystick`
+              The joystick device whose axis changed.
+           `axis` : string
+              The name of the axis that changed.
+           `value` : float
+              The current value of the axis, normalized to [-1, 1].
+        '''
+
+    def on_joybutton_press(self, joystick, button):
+        '''A button on the joystick was pressed.
+        :Parameters:
+            `joystick` : `Joystick`
+               The joystick device whose button was pressed.
+            `button' : int
+               The index (in `button_controls`) of the button that was pressed.
+        '''
+        
+    def on_joybutton_release(self, joystick, button):
+        '''A button on the joystick was released.
+        :Parameters:
+            `joystick` : `Joystick`
+               The joystick device whose button was released.
+            `button' : int
+               The index (in `button_controls`) of the button that was released.
+        '''
+
+    def on_joyhat_motion(self, joystick, hat_x, hat_y):
+        '''The value of the joystick hat switch changed.
+        :Parameters:
+            `joystick` : `Joystick`
+               The joystick device whose hat control changed.
+            `hat_x` : int
+               Current hat (POV) horizontal position; one of -1 (left), 0
+               (centered) or 1 (right).
+            `hat_y` : int
+               Current hat (POV) vertical position; one of -1 (bottom), 0
+               (centered) or 1 (top).
+        '''
+
+Joystick.register_event_type('on_joyaxis_motion')
+Joystick.register_event_type('on_joybutton_press')
+Joystick.register_event_type('on_joybutton_release')
+Joystick.register_event_type('on_joyhat_motion')
 
 class AppleRemote(EventDispatcher):
     '''High-level interface for Apple remote control.
