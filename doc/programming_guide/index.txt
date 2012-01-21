@@ -26,6 +26,7 @@ If this is your first time reading about pyglet, we suggest you start at
 .. include:: events.txt
 .. include:: keyboard.txt
 .. include:: mouse.txt
+.. include:: input.txt
 .. include:: time.txt
 .. include:: text.txt
 .. include:: image.txt

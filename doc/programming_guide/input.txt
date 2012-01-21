@@ -1,0 +1,142 @@
+Working with other input devices
+================================
+
+Pyglet's `input` module allows you to accept input from any USB human
+interface device (HID).  High level interfaces are provided for
+working with joysticks and with the Apple Remote.
+
+.. contents::
+    :local:
+
+Using joysticks
+---------------
+
+Before using a joystick, you must find it and open it.  To get a list
+of all joystick devices currently connected to your computer, call 
+`pyglet.input.get_joysticks`::
+
+    joysticks = pyglet.input.get_joysticks()
+
+Then choose a joystick from the list and call `Joystick.open` to open
+the device::
+
+    if joysticks:
+        joystick = joysticks[0]
+    joystick.open()
+
+You may immediately begin querying the state of the joystick by
+looking at its attributes.  The current position of the joystick is
+recorded in its 'x' and 'y' attributes, both of which are normalized
+to values within the range of -1 to 1.  For the x-axis, `x` = -1 means
+the joystick is pushed all the way to the left and `x` = 1 means the
+joystick is pushed to the right.  For the y-axis, a value of `y` = -1
+means that the joystick is pushed up and a value of `y` = 1 means that
+the joystick is pushed down.
+
+If your joystick has two analog controllers, the position of the
+second controller is typically given by `z` and `rz`, where `z` is the
+horizontal axis position and `rz` is the vertical axis position.
+
+The state of the joystick buttons is contained in the `buttons`
+attribute as a list of boolean values.  A True value indicates that
+the corresponding button is being pressed.  While buttons may be
+labeled A, B, X, or Y on the physical joystick, they are simply
+referred to by their index when accessing the `buttons` list.  There
+is no way to know which button index corresponds to which physical
+button on the device without simply testing the particular joystick.
+So it is a good idea to let users change button assignments.
+
+Each open joystick dispatches events when the joystick changes state.
+For buttons, there is the `on_joybutton_press` event which is sent
+whenever any of the joystick's buttons are pressed::
+
+    def on_joybutton_press(joystick, button):
+        pass
+
+and the `on_joybutton_release` event which is sent whenever any of the
+joystick's buttons are released::
+ 
+    def on_joybutton_release(joystick, button):
+        pass
+
+The `joystick` parameter is the `Joystick` instance whose buttons
+changed state (useful if you have multiple joysticks connected).
+The `button` parameter signifies which button changed and is simply an
+integer value, the index of the corresponding button in the `buttons`
+list. 
+
+For most games, it is probably best to examine the current position of
+the joystick directly by using the `x` and `y` attributes.  However if
+you want to receive notifications whenever these values change you
+should handle the `on_joyaxis_motion event`::
+
+    def on_joyaxis_motion(joystick, axis, value):
+        pass
+
+The `joystick` parameter again tells you which joystick device
+changed.  The `axis` parameter is string such as "x", "y", or "rx"
+telling you which axis changed value.  And `value` gives the current
+normalized value of the axis, ranging between -1 and 1.
+
+If the joystick has a hat switch, you may examine its current value by
+looking at the `hat_x` and `hat_y` attributes.  For both, the values
+are either -1, 0, or 1.  Note that `hat_y` will output 1 in the up
+position and -1 in the down position, which is the opposite of the
+y-axis control.
+
+To be notified when the hat switch changes value, handle the
+`on_joyhat_motion` event::
+
+    def on_joyhat_motion(joystick, hat_x, hat_y):
+        pass
+
+The `hat_x` and `hat_y` parameters give the same values as the
+joystick's `hat_x` and `hat_y` attributes.
+
+A good way to use the joystick event handlers might be to define them
+within a controller class and then call::
+
+    joystick.push_handlers(my_controller)
+
+
+Using the Apple Remote
+----------------------
+
+The Apple Remote is a small infrared remote originally distributed
+with the iMac.  The remote has six buttons, which are accessed with
+the names `left, `right`, `up`, `down`, `menu`, and `select`.
+Additionally when certain buttons are held down, they act as virtual
+buttons.  These are named `left_hold', 'right_hold', 'menu_hold', and
+'select_hold'.
+
+To use the remote, first call `get_apple_remote`::
+
+    remote = pyglet.input.get_apple_remote()
+
+Then open it::
+
+    if remote:
+        remote.open(window, exclusive=True)
+
+The remote is opened in exclusive mode so that while we are using the
+remote in our program, pressing the buttons does not activate Front
+Row, or change the volume, etc. on the computer.
+
+The following event handlers tell you when a button on the remote has
+been either pressed or released::
+
+    def on_button_press(button):
+        pass
+
+    def on_button_release(button):
+        pass
+
+The `button` parameter indicates which button changed and is a string
+equal to one of the ten button names defined above: "up", "down",
+"left", "left_hold", "right",  "right_hold", "select", "select_hold",
+"menu", or "menu_hold". 
+
+To use the remote, you may define code for the event handlers in
+some controller class and then call::
+
+    remote.push_handlers(my_controller)
