@@ -217,8 +217,8 @@ application.  The following example recreates the `ClockTimer` example from
     # The subject
     class ClockTimer(pyglet.event.EventDispatcher):
         def tick(self):
-            self.dispatch_events('on_update')
-    ClockTimer.register_event('on_update')
+            self.dispatch_event('on_update')
+    ClockTimer.register_event_type('on_update')
 
     # Abstract observer class
     class Observer(object):
