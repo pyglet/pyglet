@@ -238,6 +238,8 @@ class Writer:
         Write a PNG chunk to the output file, including length and checksum.
         """
         # http://www.w3.org/TR/PNG/#5Chunk-layout
+        tag = asbytes(tag)
+        data = asbytes(data)
         outfile.write(struct.pack("!I", len(data)))
         outfile.write(tag)
         outfile.write(data)
