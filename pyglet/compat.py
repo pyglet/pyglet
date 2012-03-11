@@ -75,6 +75,12 @@ if sys.version_info[0] >= 3:
             return bytes(ord(c) for c in s)
         else:
             return bytes(s)
+
+    def asbytes_filename(s):
+        if isinstance(s, bytes):
+            return s
+        elif isinstance(s, str):
+            return s.encode(encoding=sys.getfilesystemencoding())
     
     def asstr(s):
         if isinstance(s, str):
@@ -87,6 +93,7 @@ else:
     import StringIO
     
     asbytes = str
+    asbytes_filename = str
     asstr = str
     bytes_type = str
     BytesIO = StringIO.StringIO

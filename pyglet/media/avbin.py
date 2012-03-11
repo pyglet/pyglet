@@ -50,6 +50,7 @@ import pyglet.lib
 from pyglet.media import \
     MediaFormatException, StreamingSource, VideoFormat, AudioFormat, \
     AudioData, MediaEvent, WorkerThread, SourceInfo
+from pyglet.compat import asbytes, asbytes_filename
 
 av = pyglet.lib.load_library('avbin', 
                              darwin='/usr/local/lib/libavbin.dylib')
@@ -228,7 +229,7 @@ class AVbinSource(StreamingSource):
         if file is not None:
             raise NotImplementedError('TODO: Load from file stream')
 
-        self._file = av.avbin_open_filename(filename)
+        self._file = av.avbin_open_filename(asbytes_filename(filename))
         if not self._file:
             raise AVbinException('Could not open "%s"' % filename)
 
@@ -560,4 +561,4 @@ else:
     _debug = False
     av.avbin_set_log_level(AVBIN_LOG_QUIET)
 
-_have_frame_rate = av.avbin_have_feature('frame_rate')
+_have_frame_rate = av.avbin_have_feature(asbytes('frame_rate'))
