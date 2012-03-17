@@ -669,11 +669,12 @@ class CocoaWindow(BaseWindow):
                 WindowClass = PygletToolWindow
 
         # First create an instance of our NSWindow subclass.
-        self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
+        self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_screen_(
             content_rect,           # contentRect
             style_mask,             # styleMask
             NSBackingStoreBuffered, # backing
-            False)                  # defer
+            False,                  # defer
+            self.screen._nsscreen)  # screen      
 
         if self._fullscreen:
             # BUG: I suspect that this doesn't do the right thing when using
