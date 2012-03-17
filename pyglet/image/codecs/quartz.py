@@ -80,48 +80,34 @@ class QuartzImageDecoder(ImageDecoder):
     def get_animation_file_extensions(self):
         return ['.gif']
      
-    def _get_format(self, imageRef):
-        """Try to figure out the internal format of the image."""
-        # This is adapted from the sample code here:
-        # http://developer.apple.com/library/ios/#samplecode/GLImageProcessing/Listings/Texture_m
-        
-        bpp = Quartz.CGImageGetBitsPerPixel(imageRef)
-        if bpp == 8: # GL_LUMINANCE
-            return 'L'
-        elif bpp == 16: # GL_LUMINANCE_ALPHA
-            return 'LA'
-        elif bpp == 24: # GL_RGB
-            return 'RGB'
-        elif bpp == 32: # GL_RGBA or GL_BGRA
-            info = Quartz.CGImageGetBitmapInfo(imageRef)
-            alphaInfo = info & Quartz.kCGBitmapAlphaInfoMask
-            if alphaInfo in [Quartz.kCGImageAlphaPremultipliedFirst,
-                             Quartz.kCGImageAlphaFirst,
-                             Quartz.kCGImageAlphaNoneSkipFirst]:
-                return 'BGRA'
-            return 'RGBA'
-        # If we get here, then we don't know what the format is.
-        raise ImageDecodeException(filename or file)
-
     def _get_pyglet_ImageData_from_source_at_index(self, sourceRef, index):
         imageRef = Quartz.CGImageSourceCreateImageAtIndex(sourceRef, index, None)
-
-        # Get info about the image.
+        
+        # Regardless of the internal format of the image (L, LA, RGB, RGBA, etc)
+        # we just automatically convert everything to an RGBA format.
+        format = 'RGBA'
+        rgbColorSpace = Quartz.CGColorSpaceCreateDeviceRGB()
+        bitsPerComponent = 8
         width = Quartz.CGImageGetWidth(imageRef)
         height = Quartz.CGImageGetHeight(imageRef)
-        bytesPerRow = Quartz.CGImageGetBytesPerRow(imageRef)
+        bytesPerRow = 4 * width
 
-        # Try to determine the internal format of the image.
-        format = self._get_format(imageRef)
-
-        # Copy the uncompressed image data to a buffer.
-        imageData = Quartz.CGDataProviderCopyData(Quartz.CGImageGetDataProvider(imageRef))
-        bufferSize = CoreFoundation.CFDataGetLength(imageData)
+        # Create a buffer to store the RGBA formatted data.
+        bufferSize = height * bytesPerRow
         buffer = (c_byte * bufferSize)()
-        # Treat imageData as an NSData object.
-        imageData.getBytes_length_(buffer, bufferSize)
-        
-        del imageRef, imageData
+
+        # Create a bitmap context for the RGBA formatted data.
+        bitmap = Quartz.CGBitmapContextCreate(buffer, 
+                                              width, height, 
+                                              bitsPerComponent,
+                                              bytesPerRow, 
+                                              rgbColorSpace, 
+                                              Quartz.kCGImageAlphaPremultipliedLast)
+
+        # Write the image data into the bitmap.
+        Quartz.CGContextDrawImage(bitmap, Quartz.CGRectMake(0,0,width, height), imageRef)
+
+        del bitmap, imageRef, rgbColorSpace
         
         pitch = bytesPerRow
         return ImageData(width, height, format, buffer, -pitch)
