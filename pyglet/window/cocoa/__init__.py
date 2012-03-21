@@ -685,7 +685,7 @@ class CocoaWindow(BaseWindow):
             self.screen.capture_display()
             self._nswindow.setLevel_(CGShieldingWindowLevel())
             self.context.set_full_screen()
-            self._center_fullscreen_window()
+            self._center_window()
         else:
             self._set_nice_window_location()
 
@@ -729,14 +729,15 @@ class CocoaWindow(BaseWindow):
                             win._nswindow.isVisible() ]
         # If there aren't any visible windows, then center this window.
         if not visible_windows:
-            self._nswindow.center()
+            self._center_window()
         # Otherwise, cascade from last window in list.
         else:
             point = visible_windows[-1]._nswindow.cascadeTopLeftFromPoint_(NSZeroPoint)
             self._nswindow.cascadeTopLeftFromPoint_(point)
 
-    def _center_fullscreen_window(self):
-        # [NSWindow center] does not move the window to a true center position.
+    def _center_window(self):
+        # [NSWindow center] does not move the window to a true center position
+        # and also always moves the window to the main display.
         x = int((self.screen.width - self._width)/2)
         y = int((self.screen.height - self._height)/2)
         self._nswindow.setFrameOrigin_((x, y))
