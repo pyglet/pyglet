@@ -63,7 +63,7 @@ giving the indices into the vertex data.  The following example draws the same
 two points as above, but indexes the vertices (sequentially)::
 
     pyglet.graphics.draw_indexed(2, pyglet.gl.GL_POINTS, 
-        [0, 1, 2, 3],
+        [0, 1],
         ('v2i', (10, 15, 30, 35))
     )
 
