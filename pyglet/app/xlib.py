@@ -110,7 +110,7 @@ class XlibEventLoop(PlatformEventLoop):
 
         # If nothing was immediately pending, block until there's activity
         # on a device.
-        if not pending_devices and (timeout is None or not timeout):
+        if not pending_devices and (timeout is None or timeout > 0.0):
             iwtd = self._select_devices
             pending_devices, _, _ = select.select(iwtd, (), (), timeout)
 
