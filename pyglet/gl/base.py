@@ -307,19 +307,20 @@ class Context(object):
             for attr, check in self._workaround_checks:
                 setattr(self, attr, check(self._info))
 
-        # Release textures on this context scheduled for deletion
+        # Release textures and buffers on this context scheduled for deletion.
+        # Note that the garbage collector may introduce a race condition,
+        # so operate on a copy of the textures/buffers and remove the deleted
+        # items using list slicing (which is an atomic operation)
         if self.object_space._doomed_textures:
-            textures = self.object_space._doomed_textures
+            textures = self.object_space._doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
             gl.glDeleteTextures(len(textures), textures)
-            self.object_space._doomed_textures = []
-
-        # Release buffers on this context scheduled for deletion
+            self.object_space._doomed_textures[0:len(textures)] = []
         if self.object_space._doomed_buffers:
-            buffers = self.object_space._doomed_buffers
+            buffers = self.object_space._doomed_buffers[:]
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
-            self.object_space._doomed_buffers = []
+            self.object_space._doomed_buffers[0:len(buffers)] = []
 
     def destroy(self):
         '''Release the context.
