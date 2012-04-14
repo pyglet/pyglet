@@ -1335,7 +1335,11 @@ class PreprocessorNamespace(EvaluationContext):
             # TODO everyone else.
         }.get(platform.machine(), ())
         platform_macros = {
+            'linux': ('__gnu_linux__', '__linux', '__linux__', 'linux',
+                       '__unix', '__unix__', 'unix'),
             'linux2': ('__gnu_linux__', '__linux', '__linux__', 'linux',
+                       '__unix', '__unix__', 'unix'),
+            'linux3': ('__gnu_linux__', '__linux', '__linux__', 'linux',
                        '__unix', '__unix__', 'unix'),
             'darwin': ('__MACH__', '__APPLE__', '__DYNAMIC__', '__APPLE_CC__'),
             'win32':  ('_WIN32',),

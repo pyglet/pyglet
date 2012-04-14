@@ -507,7 +507,7 @@ class OpenALDriver(AbstractAudioDriver):
 
     def get_extensions(self):
         extensions = alc.alcGetString(self._device, alc.ALC_EXTENSIONS)
-        if sys.platform in ('darwin', 'linux2'):
+        if sys.platform == 'darwin' or sys.platform.startswith('linux'):
             return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
         else:
             return _split_nul_strings(extensions)

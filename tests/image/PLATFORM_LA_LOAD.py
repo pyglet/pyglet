@@ -11,7 +11,7 @@ import unittest
 import base_load
 import sys
 
-if sys.platform == 'linux2':
+if sys.platform.startswith('linux'):
     from pyglet.image.codecs.gdkpixbuf2 import GdkPixbuf2ImageDecoder as dclass
 elif sys.platform in ('win32', 'cygwin'):
     from pyglet.image.codecs.gdiplus import GDIPlusDecoder as dclass

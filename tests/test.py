@@ -437,7 +437,9 @@ class RegressionCheckTestResult(unittest.TestResult):
 def main():
     capabilities = ['GENERIC']
     platform_capabilities = {
+        'linux': 'X11',
         'linux2': 'X11',
+        'linux3': 'X11',
         'win32': 'WIN',
         'cygwin': 'WIN',
         'darwin': 'OSX'

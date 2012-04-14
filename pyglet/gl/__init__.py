@@ -213,7 +213,7 @@ if _is_epydoc:
     from base import Config
 elif _sys.platform in ('win32', 'cygwin'):
     from win32 import Win32Config as Config
-elif _sys.platform == 'linux2':
+elif _sys.platform.startswith('linux'):
     from xlib import XlibConfig as Config
 elif _sys.platform == 'darwin':
     if _pyglet.options['darwin_cocoa']:

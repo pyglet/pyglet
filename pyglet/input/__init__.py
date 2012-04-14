@@ -151,7 +151,7 @@ else:
     def get_tablets(display=None):
         return []
 
-    if sys.platform == 'linux2':
+    if sys.platform.startswith('linux'):
         from x11_xinput import get_devices as xinput_get_devices
         from x11_xinput_tablet import get_tablets
         from evdev import get_devices as evdev_get_devices

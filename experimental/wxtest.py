@@ -15,7 +15,7 @@ import sys
 if sys.platform == 'win32':
     from pyglet.window.win32 import _user32
     from pyglet.gl import wgl
-elif sys.platform == 'linux2':
+elif sys.platform.startswith('linux'):
     from pyglet.image.codecs.gdkpixbuf2 import gdk
     from pyglet.gl import glx
 
@@ -159,7 +159,7 @@ class GTKWxCanvas(AbstractWxCanvas):
 
 if sys.platform == 'win32':
     WxCanvas = Win32WxCanvas
-elif sys.platform == 'linux2':
+elif sys.platform.startswith('linux'):
     WxCanvas = GTKWxCanvas
 else:
     assert False

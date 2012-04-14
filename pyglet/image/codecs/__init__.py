@@ -209,7 +209,7 @@ def add_default_image_codecs():
             pass
 
     # Linux default: GdkPixbuf 2.0
-    if sys.platform == 'linux2':
+    if sys.platform.startswith('linux'):
         try:
             import pyglet.image.codecs.gdkpixbuf2
             add_encoders(gdkpixbuf2)

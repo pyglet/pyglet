@@ -95,7 +95,7 @@ class LibraryLoader(object):
         elif type(platform_names) is tuple:
             platform_names = list(platform_names)
 
-        if self.platform == 'linux2':
+        if self.platform.startswith('linux'):
             for name in names:
                 libname = ctypes.util.find_library(name)
                 platform_names.append(libname or 'lib%s.so' % name)
@@ -298,7 +298,7 @@ class LinuxLibraryLoader(LibraryLoader):
 
 if sys.platform == 'darwin':
     loader = MachOLibraryLoader()
-elif sys.platform == 'linux2':
+elif sys.platform.startswith('linux'):
     loader = LinuxLibraryLoader()
 else:
     loader = LibraryLoader()
