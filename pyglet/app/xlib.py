@@ -85,6 +85,7 @@ class NotificationDevice(XlibSelectDevice):
 
     def select(self):
         self._event.clear()
+        os.read(self._sync_file_read, 1)
         app.platform_event_loop.dispatch_posted_events()
 
     def poll(self):
