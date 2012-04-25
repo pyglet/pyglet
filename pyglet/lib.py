@@ -86,6 +86,9 @@ class LibraryLoader(object):
 
         Raises ImportError if library is not found.
         '''
+        if not names:
+            raise ImportError("No library name specified")
+        
         if 'framework' in kwargs and self.platform == 'darwin':
             return self.load_framework(kwargs['framework'])
         
