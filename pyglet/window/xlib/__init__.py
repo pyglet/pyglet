@@ -391,7 +391,10 @@ class XlibWindow(BaseWindow):
         e = xlib.XEvent()
         while True:
             xlib.XNextEvent(self._x_display, e)
-            if e.type == xlib.MapNotify:
+            if e.type == xlib.ConfigureNotify:
+                self._width = e.xconfigure.width
+                self._height = e.xconfigure.height
+            elif e.type == xlib.MapNotify:
                 break
         xlib.XSelectInput(
             self._x_display, self._window, self._default_event_mask)
