@@ -133,16 +133,32 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
         # Extract each image   
         for control_delay in delays:
             pixbuf = gdkpixbuf.gdk_pixbuf_animation_iter_get_pixbuf(iter)
+            # When attempting to load animated gifs with an alpha channel on
+            #  linux gdkpixbuf will normally return a null pixbuf for the final
+            #  frame resulting in a segfault:
+            #  http://code.google.com/p/pyglet/issues/detail?id=411
+            # Since it is unclear why exactly this happens, the workaround
+            #  below is to start again and extract that frame on its own.
+            if pixbuf == None:
+                file.seek(0)
+                anim = self._load(file, filename,
+                                gdkpixbuf.gdk_pixbuf_loader_get_animation)
+                temptime = GTimeVal(0, 0)
+                iter = gdkpixbuf.gdk_pixbuf_animation_get_iter(anim, byref(temptime))
+                gdkpixbuf.gdk_pixbuf_animation_iter_advance(iter, byref(time))
+                pixbuf = gdkpixbuf.gdk_pixbuf_animation_iter_get_pixbuf(iter)
             image = self._pixbuf_to_image(pixbuf)
             frames.append(AnimationFrame(image, control_delay))
+
+            gdk_delay = gdkpixbuf.gdk_pixbuf_animation_iter_get_delay_time(iter)
+
+            if gdk_delay == -1:
+                break
 
             gdk_delay = gdkpixbuf.gdk_pixbuf_animation_iter_get_delay_time(iter)
             gdk_delay *= 1000 # milliseconds to microseconds
             # Compare gdk_delay to control_delay for interest only.
             #print control_delay, gdk_delay / 1000000.
-
-            if gdk_delay == -1:
-                break
 
             us = time.tv_usec + gdk_delay
             time.tv_sec += us // 1000000
