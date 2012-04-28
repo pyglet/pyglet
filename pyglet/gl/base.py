@@ -250,10 +250,12 @@ class Context(object):
         #   "ATI Radeon X1600 OpenGL Engine"
         # glGenBuffers not exported by
         #   "ATI Radeon X1270 x86/MMX/3DNow!/SSE2"
+        #   "RADEON XPRESS 200M Series x86/MMX/3DNow!/SSE2"
         # glGenBuffers not exported by
         #   "Intel 965/963 Graphics Media Accelerator"
         ('_workaround_vbo',
          lambda info: (info.get_renderer().startswith('ATI Radeon X')
+                       or info.get_renderer().startswith('RADEON XPRESS 200M')
                        or info.get_renderer() == 
                             'Intel 965/963 Graphics Media Accelerator')),
 
