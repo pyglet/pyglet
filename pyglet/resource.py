@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -67,7 +67,7 @@ script home.  Some examples::
 
     # Search just the `res` directory, assumed to be located alongside the
     # main script file.
-    path = ['res'] 
+    path = ['res']
 
     # Search the directory containing the module `levels.level1`, followed
     # by the `res/images` directory.
@@ -218,7 +218,7 @@ class ZIPLocation(Location):
         '''
         self.zip = zip
         self.dir = dir
-        
+
     def open(self, filename, mode='rb'):
         if self.dir:
             path = self.dir + '/' + filename
@@ -226,7 +226,7 @@ class ZIPLocation(Location):
             path = filename
         text = self.zip.read(path)
         return BytesIO(text)
-        
+
 class URLLocation(Location):
     '''Location on the network.
 
@@ -439,9 +439,13 @@ class Loader(object):
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name):
+    def _alloc_image(self, name, atlas=True):
         file = self.file(name)
         img = pyglet.image.load(name, file=file)
+        if not atlas:
+            return img.get_texture(True)
+
+        # find an atlas suitable for the image
         bin = self._get_texture_atlas_bin(img.width, img.height)
         if bin is None:
             return img.get_texture(True)
@@ -452,7 +456,7 @@ class Loader(object):
         '''A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
-        ''' 
+        '''
         # Large images are not placed in an atlas
         if width > 128 or height > 128:
             return None
@@ -471,7 +475,7 @@ class Loader(object):
 
         return bin
 
-    def image(self, name, flip_x=False, flip_y=False, rotate=0):
+    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True):
         '''Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
@@ -488,20 +492,26 @@ class Loader(object):
             `rotate` : int
                 The returned image will be rotated clockwise by the given
                 number of degrees (a multiple of 90).
+            `atlas` : bool
+                If True, the image will be loaded into an atlas managed by
+                pyglet. If atlas loading is not appropriate for specific
+                texturing reasons (e.g. border control is required) then set
+                this argument to False.
 
         :rtype: `Texture`
-        :return: A complete texture if the image is large, otherwise a
-            `TextureRegion` of a texture atlas.
+        :return: A complete texture if the image is large or not in an atlas,
+            otherwise a `TextureRegion` of a texture atlas.
         '''
         self._require_index()
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name)
+            identity = self._cached_images[name] = self._alloc_image(name,
+                atlas=atlas)
 
         if not rotate and not flip_x and not flip_y:
             return identity
-                
+
         return identity.get_transform(flip_x, flip_y, rotate)
 
     def animation(self, name, flip_x=False, flip_y=False, rotate=0):
@@ -528,7 +538,7 @@ class Loader(object):
             identity = self._cached_animations[name]
         except KeyError:
             animation = pyglet.image.load_animation(name, self.file(name))
-            bin = self._get_texture_atlas_bin(animation.get_max_width(), 
+            bin = self._get_texture_atlas_bin(animation.get_max_width(),
                                               animation.get_max_height())
             if bin:
                 animation.add_to_texture_bin(bin)
@@ -537,9 +547,9 @@ class Loader(object):
 
         if not rotate and not flip_x and not flip_y:
             return identity
-                
+
         return identity.get_transform(flip_x, flip_y, rotate)
-       
+
     def get_cached_image_names(self):
         '''Get a list of image filenames that have been cached.
 
@@ -572,7 +582,7 @@ class Loader(object):
         '''
         self._require_index()
         return self._texture_atlas_bins.values()
-       
+
     def media(self, name, streaming=True):
         '''Load a sound or video resource.
 
