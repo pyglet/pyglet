@@ -99,8 +99,8 @@ required when using the texture for a 3D model.
 
 `pyglet.resource.image` is optimised for loading sprite-like images that can
 have their texture coordinates adjusted.  The resource module attempts to pack
-small images into larger textures for efficient rendering (which is why the
-return type of this function can be `TextureRegion`).
+small images into larger textures (called an atlas) for efficient rendering
+(which is why the return type of this function can be `TextureRegion`).
 
 Resource locations
 ^^^^^^^^^^^^^^^^^^
