@@ -39,109 +39,86 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from ctypes import *
+from ctypes.wintypes import *
 
-BOOL = c_int
-DWORD = c_uint32
-BYTE = c_char
-LONG = c_long
-WORD = c_short
+
+INT = c_int
+LPVOID = c_void_p
+HCURSOR = HANDLE
+LRESULT = LPARAM
+COLORREF = DWORD
+PVOID = c_void_p
 WCHAR = c_wchar
 BCHAR = c_wchar
+LPRECT = POINTER(RECT)
+LPPOINT = POINTER(POINT)
+LPMSG = POINTER(MSG)
+UINT_PTR = HANDLE
+LONG_PTR = HANDLE
 
-HANDLE = c_void_p
-HWND = HANDLE
-HMONITOR = HANDLE
-HGLOBAL = HANDLE
-HDC = HANDLE
-HBITMAP = HANDLE
-LPARAM = c_long
+LF_FACESIZE = 32
+CCHDEVICENAME = 32
+CCHFORMNAME = 32
 
-WNDPROC = WINFUNCTYPE(c_long, c_int, c_uint, c_int, c_int)
-TIMERPROC = WINFUNCTYPE(None, HWND, c_uint, POINTER(c_uint), c_uint)
+WNDPROC = WINFUNCTYPE(LRESULT, HWND, UINT, WPARAM, LPARAM)
+TIMERPROC = WINFUNCTYPE(None, HWND, UINT, POINTER(UINT), DWORD)
+TIMERAPCPROC = WINFUNCTYPE(None, PVOID, DWORD, DWORD)
+MONITORENUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, LPRECT, LPARAM)
 
-class RECT(Structure):
-    _fields_ = [
-        ('left', c_long),
-        ('top', c_long),
-        ('right', c_long),
-        ('bottom', c_long)
-    ]
+def MAKEINTRESOURCE(i):
+    return cast(c_void_p(i&0xFFFF), c_wchar_p)
+
 
 class WNDCLASS(Structure):
     _fields_ = [
-        ('style', c_uint),
+        ('style', UINT),
         ('lpfnWndProc', WNDPROC),
         ('cbClsExtra', c_int),
         ('cbWndExtra', c_int),
-        ('hInstance', c_int),
-        ('hIcon', c_int),
-        ('hCursor', c_int),
-        ('hbrBackground', c_int),
+        ('hInstance', HINSTANCE),
+        ('hIcon', HICON),
+        ('hCursor', HCURSOR),
+        ('hbrBackground', HBRUSH),
         ('lpszMenuName', c_char_p),
         ('lpszClassName', c_wchar_p)
     ]
 
-class POINT(Structure):
+class SECURITY_ATTRIBUTES(Structure):
     _fields_ = [
-        ('x', c_long),
-        ('y', c_long)
+        ("nLength", DWORD),
+        ("lpSecurityDescriptor", c_void_p),
+        ("bInheritHandle", BOOL)
     ]
-
-class MSG(Structure):
-    _fields_ = [
-        ('hwnd', c_int),
-        ('message', c_uint),
-        ('wParam', c_int),
-        ('lParam', c_int),
-        ('time', c_int),
-        ('pt', POINT)
-    ]
+    __slots__ = [f[0] for f in _fields_]
 
 class PIXELFORMATDESCRIPTOR(Structure):
     _fields_ = [
-        ('nSize', c_ushort),
-        ('nVersion', c_ushort),
-        ('dwFlags', c_ulong),
-        ('iPixelType', c_ubyte),
-        ('cColorBits', c_ubyte),
-        ('cRedBits', c_ubyte),
-        ('cRedShift', c_ubyte),
-        ('cGreenBits', c_ubyte),
-        ('cGreenShift', c_ubyte),
-        ('cBlueBits', c_ubyte),
-        ('cBlueShift', c_ubyte),
-        ('cAlphaBits', c_ubyte),
-        ('cAlphaShift', c_ubyte),
-        ('cAccumBits', c_ubyte),
-        ('cAccumRedBits', c_ubyte),
-        ('cAccumGreenBits', c_ubyte),
-        ('cAccumBlueBits', c_ubyte),
-        ('cAccumAlphaBits', c_ubyte),
-        ('cDepthBits', c_ubyte),
-        ('cStencilBits', c_ubyte),
-        ('cAuxBuffers', c_ubyte),
-        ('iLayerType', c_ubyte),
-        ('bReserved', c_ubyte),
-        ('dwLayerMask', c_ulong),
-        ('dwVisibleMask', c_ulong),
-        ('dwDamageMask', c_ulong)
-    ]
-
-class TRACKMOUSEEVENT(Structure):
-    _fields_ = [
-        ('cbSize', DWORD),
+        ('nSize', WORD),
+        ('nVersion', WORD),
         ('dwFlags', DWORD),
-        ('hwndTrack', HWND),
-        ('dwHoverTime', DWORD)
-    ]
-
-class MINMAXINFO(Structure):
-    _fields_ = [
-        ('ptReserved', POINT),
-        ('ptMaxSize', POINT),
-        ('ptMaxPosition', POINT),
-        ('ptMinTrackSize', POINT),
-        ('ptMaxTrackSize', POINT)
+        ('iPixelType', BYTE),
+        ('cColorBits', BYTE),
+        ('cRedBits', BYTE),
+        ('cRedShift', BYTE),
+        ('cGreenBits', BYTE),
+        ('cGreenShift', BYTE),
+        ('cBlueBits', BYTE),
+        ('cBlueShift', BYTE),
+        ('cAlphaBits', BYTE),
+        ('cAlphaShift', BYTE),
+        ('cAccumBits', BYTE),
+        ('cAccumRedBits', BYTE),
+        ('cAccumGreenBits', BYTE),
+        ('cAccumBlueBits', BYTE),
+        ('cAccumAlphaBits', BYTE),
+        ('cDepthBits', BYTE),
+        ('cStencilBits', BYTE),
+        ('cAuxBuffers', BYTE),
+        ('iLayerType', BYTE),
+        ('bReserved', BYTE),
+        ('dwLayerMask', DWORD),
+        ('dwVisibleMask', DWORD),
+        ('dwDamageMask', DWORD)
     ]
 
 class RGBQUAD(Structure):
@@ -151,6 +128,23 @@ class RGBQUAD(Structure):
         ('rgbRed', BYTE),
         ('rgbReserved', BYTE),
     ]
+    __slots__ = [f[0] for f in _fields_]
+
+class CIEXYZ(Structure):
+    _fields_ = [
+        ('ciexyzX', DWORD),
+        ('ciexyzY', DWORD),
+        ('ciexyzZ', DWORD),
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+class CIEXYZTRIPLE(Structure):
+    _fields_ = [
+        ('ciexyzRed', CIEXYZ),
+        ('ciexyzBlue', CIEXYZ),
+        ('ciexyzGreen', CIEXYZ),
+    ]
+    __slots__ = [f[0] for f in _fields_]
 
 class BITMAPINFOHEADER(Structure):
     _fields_ = [
@@ -165,26 +159,6 @@ class BITMAPINFOHEADER(Structure):
         ('biYPelsPerMeter', LONG),
         ('biClrUsed', DWORD),
         ('biClrImportant', DWORD),
-    ]
-
-class BITMAPINFO(Structure):
-    _fields_ = [
-        ('bmiHeader', BITMAPINFOHEADER),
-        ('bmiColors', RGBQUAD * 1)
-    ]
-
-class CIEXYZ(Structure):
-    _fields_ = [
-        ('ciexyzX', DWORD),
-        ('ciexyzY', DWORD),
-        ('ciexyzZ', DWORD),
-    ]
-
-class CIEXYZTRIPLE(Structure):
-    _fields_ = [
-        ('ciexyzRed', CIEXYZ),
-        ('ciexyzBlue', CIEXYZ),
-        ('ciexyzGreen', CIEXYZ),
     ]
 
 class BITMAPV5HEADER(Structure):
@@ -215,30 +189,96 @@ class BITMAPV5HEADER(Structure):
         ('bV5Reserved', DWORD),
     ]
 
-class ICONINFO(Structure):
+class BITMAPINFO(Structure):
     _fields_ = [
-        ('fIcon', BOOL),
-        ('xHotspot', DWORD),
-        ('yHotspot', DWORD),
-        ('hbmMask', HBITMAP),
-        ('hbmColor', HBITMAP)
+        ('bmiHeader', BITMAPINFOHEADER),
+        ('bmiColors', RGBQUAD * 1)
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+class LOGFONT(Structure):
+    _fields_ = [
+        ('lfHeight', LONG),
+        ('lfWidth', LONG),
+        ('lfEscapement', LONG),
+        ('lfOrientation', LONG),
+        ('lfWeight', LONG),
+        ('lfItalic', BYTE),
+        ('lfUnderline', BYTE),
+        ('lfStrikeOut', BYTE),
+        ('lfCharSet', BYTE),
+        ('lfOutPrecision', BYTE),
+        ('lfClipPrecision', BYTE),
+        ('lfQuality', BYTE),
+        ('lfPitchAndFamily', BYTE),
+        ('lfFaceName', (c_char * LF_FACESIZE))  # Use ASCII
     ]
 
-_CCHDEVICENAME = 32
-_CCHFORMNAME = 32
+class TRACKMOUSEEVENT(Structure):
+    _fields_ = [
+        ('cbSize', DWORD),
+        ('dwFlags', DWORD),
+        ('hwndTrack', HWND),
+        ('dwHoverTime', DWORD)
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+class MINMAXINFO(Structure):
+    _fields_ = [
+        ('ptReserved', POINT),
+        ('ptMaxSize', POINT),
+        ('ptMaxPosition', POINT),
+        ('ptMinTrackSize', POINT),
+        ('ptMaxTrackSize', POINT)
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+class ABC(Structure):
+    _fields_ = [
+        ('abcA', c_int),
+        ('abcB', c_uint),
+        ('abcC', c_int)
+    ]
+    __slots__ = [f[0] for f in _fields_]
+
+class TEXTMETRIC(Structure):
+    _fields_ = [
+        ('tmHeight', c_long),
+        ('tmAscent', c_long),
+        ('tmDescent', c_long),
+        ('tmInternalLeading', c_long),
+        ('tmExternalLeading', c_long),
+        ('tmAveCharWidth', c_long),
+        ('tmMaxCharWidth', c_long),
+        ('tmWeight', c_long),
+        ('tmOverhang', c_long),
+        ('tmDigitizedAspectX', c_long),
+        ('tmDigitizedAspectY', c_long),
+        ('tmFirstChar', c_char),  # Use ASCII
+        ('tmLastChar', c_char),
+        ('tmDefaultChar', c_char),
+        ('tmBreakChar', c_char),
+        ('tmItalic', c_byte),
+        ('tmUnderlined', c_byte),
+        ('tmStruckOut', c_byte),
+        ('tmPitchAndFamily', c_byte),
+        ('tmCharSet', c_byte)
+    ]
+    __slots__ = [f[0] for f in _fields_]
 
 class MONITORINFOEX(Structure):
-    _fields_ = (
+    _fields_ = [
         ('cbSize', DWORD),
         ('rcMonitor', RECT),
         ('rcWork', RECT),
         ('dwFlags', DWORD),
-        ('szDevice', WCHAR * _CCHDEVICENAME)
-    )
+        ('szDevice', WCHAR * CCHDEVICENAME)
+    ]
+    __slots__ = [f[0] for f in _fields_]
 
 class DEVMODE(Structure):
-    _fields_ = (
-        ('dmDeviceName', BCHAR * _CCHDEVICENAME),
+    _fields_ = [
+        ('dmDeviceName', BCHAR * CCHDEVICENAME),
         ('dmSpecVersion', WORD),
         ('dmDriverVersion', WORD),
         ('dmSize', WORD),
@@ -259,7 +299,7 @@ class DEVMODE(Structure):
         ('dmYResolution', c_short),
         ('dmTTOption', c_short),
         ('dmCollate', c_short),
-        ('dmFormName', BCHAR * _CCHFORMNAME),
+        ('dmFormName', BCHAR * CCHFORMNAME),
         ('dmLogPixels', WORD),
         ('dmBitsPerPel', DWORD),
         ('dmPelsWidth', DWORD),
@@ -273,4 +313,14 @@ class DEVMODE(Structure):
         ('dmReserved2', DWORD),
         ('dmPanningWidth', DWORD),
         ('dmPanningHeight', DWORD),
-    )
+    ]
+
+class ICONINFO(Structure):
+    _fields_ = [
+        ('fIcon', BOOL),
+        ('xHotspot', DWORD),
+        ('yHotspot', DWORD),
+        ('hbmMask', HBITMAP),
+        ('hbmColor', HBITMAP)
+    ]
+    __slots__ = [f[0] for f in _fields_]

@@ -38,6 +38,8 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import sys
+import struct
 import ctypes
 import threading
 import time
@@ -52,7 +54,13 @@ from pyglet.media import \
     AudioData, MediaEvent, WorkerThread, SourceInfo
 from pyglet.compat import asbytes, asbytes_filename
 
-av = pyglet.lib.load_library('avbin', 
+
+if sys.platform.startswith('win') and struct.calcsize('P') == 8:
+    av = 'avbin64'
+else:
+    av = 'avbin'
+
+av = pyglet.lib.load_library(av, 
                              darwin='/usr/local/lib/libavbin.dylib')
 
 AVBIN_RESULT_ERROR = -1

@@ -17,9 +17,8 @@ class Win32Display(Display):
             screens.append(
                 Win32Screen(self, hMonitor, r.left, r.top, width, height))
             return True
-        enum_proc_type = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
-        enum_proc_ptr = enum_proc_type(enum_proc)
-        _user32.EnumDisplayMonitors(NULL, NULL, enum_proc_ptr, 0)
+        enum_proc_ptr = MONITORENUMPROC(enum_proc)
+        _user32.EnumDisplayMonitors(None, None, enum_proc_ptr, 0)
         return screens
 
 class Win32Screen(Screen):

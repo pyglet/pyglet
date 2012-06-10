@@ -54,104 +54,6 @@ from pyglet.compat import asbytes
 
 _debug_font = pyglet.options['debug_font']
 
-HFONT = HANDLE
-HBITMAP = HANDLE
-HDC = HANDLE
-HGDIOBJ = HANDLE
-gdi32.CreateFontIndirectA.restype = HFONT
-gdi32.CreateCompatibleBitmap.restype = HBITMAP
-gdi32.CreateCompatibleDC.restype = HDC
-user32.GetDC.restype = HDC
-gdi32.GetStockObject.restype = HGDIOBJ
-gdi32.CreateDIBSection.restype = HBITMAP
-
-class LOGFONT(Structure):
-    _fields_ = [
-        ('lfHeight', c_long),
-        ('lfWidth', c_long),
-        ('lfEscapement', c_long),
-        ('lfOrientation', c_long),
-        ('lfWeight', c_long),
-        ('lfItalic', c_byte),
-        ('lfUnderline', c_byte),
-        ('lfStrikeOut', c_byte),
-        ('lfCharSet', c_byte),
-        ('lfOutPrecision', c_byte),
-        ('lfClipPrecision', c_byte),
-        ('lfQuality', c_byte),
-        ('lfPitchAndFamily', c_byte),
-        ('lfFaceName', (c_char * LF_FACESIZE))  # Use ASCII
-    ]
-    __slots__ = [f[0] for f in _fields_]
-
-class TEXTMETRIC(Structure):
-    _fields_ = [
-        ('tmHeight', c_long),
-        ('tmAscent', c_long),
-        ('tmDescent', c_long),
-        ('tmInternalLeading', c_long),
-        ('tmExternalLeading', c_long),
-        ('tmAveCharWidth', c_long),
-        ('tmMaxCharWidth', c_long),
-        ('tmWeight', c_long),
-        ('tmOverhang', c_long),
-        ('tmDigitizedAspectX', c_long),
-        ('tmDigitizedAspectY', c_long),
-        ('tmFirstChar', c_char),  # Use ASCII 
-        ('tmLastChar', c_char),
-        ('tmDefaultChar', c_char),
-        ('tmBreakChar', c_char),
-        ('tmItalic', c_byte),
-        ('tmUnderlined', c_byte),
-        ('tmStruckOut', c_byte),
-        ('tmPitchAndFamily', c_byte),
-        ('tmCharSet', c_byte)
-    ]
-    __slots__ = [f[0] for f in _fields_]
-
-class ABC(Structure):
-    _fields_ = [
-        ('abcA', c_int),
-        ('abcB', c_uint),
-        ('abcC', c_int)
-    ]
-    __slots__ = [f[0] for f in _fields_]
-
-class BITMAPINFOHEADER(Structure):
-    _fields_ = [
-        ('biSize', c_uint32),
-        ('biWidth', c_int),
-        ('biHeight', c_int),
-        ('biPlanes', c_short),
-        ('biBitCount', c_short),
-        ('biCompression', c_uint32),
-        ('biSizeImage', c_uint32),
-        ('biXPelsPerMeter', c_long),
-        ('biYPelsPerMeter', c_long),
-        ('biClrUsed', c_uint32),
-        ('biClrImportant', c_uint32)
-    ]
-    __slots__ = [f[0] for f in _fields_]
-
-class RGBQUAD(Structure):
-    _fields_ = [
-        ('rgbBlue', c_byte),
-        ('rgbGreen', c_byte),
-        ('rgbRed', c_byte),
-        ('rgbReserved', c_byte)
-    ]
-
-    def __init__(self, r, g, b):
-        self.rgbRed = r
-        self.rgbGreen = g
-        self.rgbBlue = b
-
-
-class BITMAPINFO(Structure):
-    _fields_ = [
-        ('bmiHeader', BITMAPINFOHEADER),
-        ('bmiColors', c_ulong * 3)
-    ]
 
 def str_ucs2(text):
     if byteorder == 'big':
@@ -268,8 +170,8 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
 
         # Draw to DC
         user32.FillRect(self._dc, byref(self._bitmap_rect), self._black)
-        gdi32.ExtTextOutA(self._dc, -lsb, 0, 0, c_void_p(), text,
-            len(text), c_void_p())
+        gdi32.ExtTextOutA(self._dc, -lsb, 0, 0, None, text,
+            len(text), None)
         gdi32.GdiFlush()
 
         # Create glyph object and copy bitmap data to texture
@@ -296,9 +198,9 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
         info.bmiHeader.biBitCount = 32 
         info.bmiHeader.biCompression = BI_RGB
 
-        self._dc = gdi32.CreateCompatibleDC(c_void_p())
-        self._bitmap = gdi32.CreateDIBSection(c_void_p(),
-            byref(info), DIB_RGB_COLORS, byref(data), c_void_p(),
+        self._dc = gdi32.CreateCompatibleDC(None)
+        self._bitmap = gdi32.CreateDIBSection(None,
+            byref(info), DIB_RGB_COLORS, byref(data), None,
             0)
         # Spookiness: the above line causes a "not enough storage" error,
         # even though that error cannot be generated according to docs,
@@ -457,7 +359,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         gdiplus.GdipSetStringFormatFlags(format, flags)
         gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
             self.font._gdipfont, ctypes.byref(rect), format,
-            ctypes.byref(bbox), 0, 0)
+            ctypes.byref(bbox), None, None)
 
         lsb = 0
         advance = int(math.ceil(bbox.width))

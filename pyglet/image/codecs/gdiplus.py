@@ -45,9 +45,10 @@ from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
+from pyglet.libs.win32 import _kernel32 as kernel32
+
 
 ole32 = windll.ole32
-kernel32 = windll.kernel32
 gdiplus = windll.gdiplus
 
 LPSTREAM = c_void_p
@@ -105,9 +106,6 @@ class Rect(Structure):
         ('Height', c_int)
     ]
 
-kernel32.GlobalAlloc.restype = HGLOBAL
-kernel32.GlobalLock.restype = c_void_p
-
 PropertyTagFrameDelay = 0x5100
 
 class PropertyItem(Structure):
@@ -117,6 +115,75 @@ class PropertyItem(Structure):
         ('type', c_short),
         ('value', c_void_p)
     ]
+    
+INT_PTR = POINTER(INT)
+UINT_PTR = POINTER(UINT)
+
+ole32.CreateStreamOnHGlobal.argtypes = [HGLOBAL, BOOL, LPSTREAM]
+
+gdiplus.GdipBitmapLockBits.restype = c_int
+gdiplus.GdipBitmapLockBits.argtypes = [c_void_p, c_void_p, UINT, c_int, c_void_p]
+gdiplus.GdipBitmapUnlockBits.restype = c_int
+gdiplus.GdipBitmapUnlockBits.argtypes = [c_void_p, c_void_p]
+gdiplus.GdipCloneStringFormat.restype = c_int
+gdiplus.GdipCloneStringFormat.argtypes = [c_void_p, c_void_p]
+gdiplus.GdipCreateBitmapFromScan0.restype = c_int
+gdiplus.GdipCreateBitmapFromScan0.argtypes = [c_int, c_int, c_int, c_int, POINTER(BYTE), c_void_p]
+gdiplus.GdipCreateBitmapFromStream.restype = c_int
+gdiplus.GdipCreateBitmapFromStream.argtypes = [c_void_p, c_void_p]
+gdiplus.GdipCreateFont.restype = c_int
+gdiplus.GdipCreateFont.argtypes = [c_void_p, REAL, INT, c_int, c_void_p]
+gdiplus.GdipCreateFontFamilyFromName.restype = c_int
+gdiplus.GdipCreateFontFamilyFromName.argtypes = [c_wchar_p, c_void_p, c_void_p]
+gdiplus.GdipCreateMatrix.restype = None
+gdiplus.GdipCreateMatrix.argtypes = [c_void_p]
+gdiplus.GdipCreateSolidFill.restype = c_int
+gdiplus.GdipCreateSolidFill.argtypes = [c_int, c_void_p]  # ARGB
+gdiplus.GdipDisposeImage.restype = c_int
+gdiplus.GdipDisposeImage.argtypes = [c_void_p]
+gdiplus.GdipDrawString.restype = c_int
+gdiplus.GdipDrawString.argtypes = [c_void_p, c_wchar_p, c_int, c_void_p, c_void_p, c_void_p, c_void_p]
+gdiplus.GdipFlush.restype = c_int
+gdiplus.GdipFlush.argtypes = [c_void_p, c_int]
+gdiplus.GdipGetImageDimension.restype = c_int
+gdiplus.GdipGetImageDimension.argtypes = [c_void_p, POINTER(REAL), POINTER(REAL)]
+gdiplus.GdipGetImageGraphicsContext.restype = c_int
+gdiplus.GdipGetImageGraphicsContext.argtypes = [c_void_p, c_void_p]
+gdiplus.GdipGetImagePixelFormat.restype = c_int
+gdiplus.GdipGetImagePixelFormat.argtypes = [c_void_p, c_void_p]
+gdiplus.GdipGetPropertyItem.restype = c_int
+gdiplus.GdipGetPropertyItem.argtypes = [c_void_p, c_uint, c_uint, c_void_p]
+gdiplus.GdipGetPropertyItemSize.restype = c_int
+gdiplus.GdipGetPropertyItemSize.argtypes = [c_void_p, c_uint, UINT_PTR]
+gdiplus.GdipGraphicsClear.restype = c_int
+gdiplus.GdipGraphicsClear.argtypes = [c_void_p, c_int]  # ARGB
+gdiplus.GdipImageGetFrameCount.restype = c_int
+gdiplus.GdipImageGetFrameCount.argtypes = [c_void_p, c_void_p, UINT_PTR]
+gdiplus.GdipImageGetFrameDimensionsCount.restype = c_int
+gdiplus.GdipImageGetFrameDimensionsCount.argtypes = [c_void_p, UINT_PTR]
+gdiplus.GdipImageGetFrameDimensionsList.restype = c_int
+gdiplus.GdipImageGetFrameDimensionsList.argtypes = [c_void_p, c_void_p, UINT]
+gdiplus.GdipImageSelectActiveFrame.restype = c_int
+gdiplus.GdipImageSelectActiveFrame.argtypes = [c_void_p, c_void_p, UINT]
+gdiplus.GdipMeasureString.restype = c_int
+gdiplus.GdipMeasureString.argtypes = [c_void_p, c_wchar_p, c_int, c_void_p, c_void_p, c_void_p, c_void_p, INT_PTR, INT_PTR]
+gdiplus.GdipNewPrivateFontCollection.restype = c_int
+gdiplus.GdipNewPrivateFontCollection.argtypes = [c_void_p]
+gdiplus.GdipPrivateAddMemoryFont.restype = c_int
+gdiplus.GdipPrivateAddMemoryFont.argtypes = [c_void_p, c_void_p, c_int]
+gdiplus.GdipSetPageUnit.restype = c_int
+gdiplus.GdipSetPageUnit.argtypes = [c_void_p, c_int]
+gdiplus.GdipSetStringFormatFlags.restype = c_int
+gdiplus.GdipSetStringFormatFlags.argtypes = [c_void_p, c_int]
+gdiplus.GdipSetTextRenderingHint.restype = c_int
+gdiplus.GdipSetTextRenderingHint.argtypes = [c_void_p, c_int]
+gdiplus.GdipStringFormatGetGenericTypographic.restype = c_int
+gdiplus.GdipStringFormatGetGenericTypographic.argtypes = [c_void_p]
+gdiplus.GdiplusShutdown.restype = None
+gdiplus.GdiplusShutdown.argtypes = [POINTER(ULONG)]
+gdiplus.GdiplusStartup.restype = c_int
+gdiplus.GdiplusStartup.argtypes = [c_void_p, c_void_p, c_void_p]
+
 
 class GDIPlusDecoder(ImageDecoder):
     def get_file_extensions(self):

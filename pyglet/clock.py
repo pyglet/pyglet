@@ -154,8 +154,7 @@ if sys.platform in ('win32', 'cygwin'):
     _kernel32 = ctypes.windll.kernel32
     class _ClockBase(object):
         def __init__(self):
-            self._timer = _kernel32.CreateWaitableTimerA(ctypes.c_void_p(), 
-                True, ctypes.c_void_p())
+            self._timer = _kernel32.CreateWaitableTimerA(None, True, None)
 
         def sleep(self, microseconds):
             delay = ctypes.c_longlong(int(-microseconds * 10))

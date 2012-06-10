@@ -174,7 +174,7 @@ class Win32Window(BaseWindow):
             self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
-            self._window_class.hIcon = _user32.LoadIconW(module, 1)
+            self._window_class.hIcon = _user32.LoadIconW(module, MAKEINTRESOURCE(1))
             self._window_class.hbrBackground = black
             self._window_class.lpszMenuName = None
             self._window_class.cbClsExtra = 0
@@ -318,8 +318,11 @@ class Win32Window(BaseWindow):
     def get_location(self):
         rect = RECT()
         _user32.GetClientRect(self._hwnd, byref(rect))
-        _user32.ClientToScreen(self._hwnd, byref(rect))
-        return rect.left, rect.top
+        point = POINT()
+        point.x = rect.left
+        point.y = rect.top
+        _user32.ClientToScreen(self._hwnd, byref(point))
+        return point.x, point.y
 
     def set_size(self, width, height):
         if self._fullscreen:
@@ -382,8 +385,8 @@ class Win32Window(BaseWindow):
             if isinstance(self._mouse_cursor, Win32MouseCursor):
                 cursor = self._mouse_cursor.cursor
             else:
-                cursor = _user32.LoadCursorW(None, IDC_ARROW)
-            _user32.SetClassLongW(self._view_hwnd, GCL_HCURSOR, cursor)
+                cursor = _user32.LoadCursorW(None, MAKEINTRESOURCE(IDC_ARROW))
+            _user32.SetClassLongPtrW(self._view_hwnd, GCL_HCURSOR, cursor)
             _user32.SetCursor(cursor)
 
         if platform_visible == self._mouse_platform_visible:
@@ -433,7 +436,7 @@ class Win32Window(BaseWindow):
             _user32.ClipCursor(byref(rect))
         else:
             # Release clip
-            _user32.ClipCursor(c_void_p())
+            _user32.ClipCursor(None)
 
         self._exclusive_mouse = exclusive
         self._exclusive_mouse_focus = self._has_focus
@@ -489,7 +492,7 @@ class Win32Window(BaseWindow):
         }
         if name not in names:
             raise RuntimeError('Unknown cursor name "%s"' % name)
-        cursor = _user32.LoadCursorW(None, names[name])
+        cursor = _user32.LoadCursorW(None, unicode(names[name]))
         return Win32MouseCursor(cursor)
 
     def set_icon(self, *images):
@@ -614,8 +617,7 @@ class Win32Window(BaseWindow):
                 self._event_queue.append((event_handler, msg, wParam, lParam))
                 result = 0
         if not result and msg != WM_CLOSE:
-            result = _user32.DefWindowProcW(c_int(hwnd), c_int(msg),
-                c_int(wParam), c_int(lParam)) 
+            result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam) 
         return result
 
     def _wnd_proc_view(self, hwnd, msg, wParam, lParam):
@@ -628,8 +630,7 @@ class Win32Window(BaseWindow):
                 self._event_queue.append((event_handler, msg, wParam, lParam))
                 result = 0
         if not result and msg != WM_CLOSE:
-            result = _user32.DefWindowProcW(c_int(hwnd), c_int(msg),
-                c_int(wParam), c_int(lParam)) 
+            result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam) 
         return result
 
     # Event handlers
