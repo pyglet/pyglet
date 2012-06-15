@@ -234,10 +234,11 @@ class TestCase(object):
         else:
             result = StandardTestResult(self)
 
-        print ("Running Test: %s" % self)
-        if module.__doc__:
-            print module.__doc__
         print '-' * 78
+        options.completed_tests += 1
+        print ("Running Test: %s (%d/%d)\n" % (self, options.completed_tests, options.num_tests))
+        if module.__doc__:
+            print '    ' + module.__doc__.replace('\n','\n    ')
         if module_interactive:
             raw_input('Press return to begin test...')
 
@@ -257,7 +258,7 @@ class TestCase(object):
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
-            print module.__doc__
+#             print module.__doc__
             user_result = raw_input('[P]assed test, [F]ailed test: ')
             if user_result and user_result[0] in ('F', 'f'):
                 print 'Enter failure description: '
@@ -277,6 +278,9 @@ class TestCase(object):
     def __cmp__(self, other):
         return cmp(str(self), str(other))
 
+    def num_tests(self):
+        return 1
+
 class TestSection(object):
     def __init__(self, name):
         self.name = name
@@ -292,6 +296,9 @@ class TestSection(object):
         
     def __repr__(self):
         return 'TestSection(%s)' % self.name
+
+    def num_tests(self):
+        return sum([c.num_tests() for c in self.children])
 
 class TestPlan(TestSection):
     def __init__(self):
@@ -518,7 +525,8 @@ def main():
         components = [plan.root]
 
     if not errors:
-        print '-' * 78
+        options.num_tests = sum([c.num_tests() for c in components])
+        options.completed_tests = 0
         for component in components:
             component.test(options)
         print '-' * 78
