@@ -78,6 +78,8 @@ class _TraceLibrary(object):
         return f
 
 class LibraryLoader(object):
+    darwin_not_found_error = "image not found"
+    linux_not_found_error  = "No such file or directory"
     def load_library(self, *names, **kwargs):
         '''Find and load a library.  
         
@@ -112,7 +114,11 @@ class LibraryLoader(object):
                 if _debug_trace:
                     lib = _TraceLibrary(lib)
                 return lib
-            except OSError:
+            except OSError, o:
+                if ((self.linux_not_found_error not in o.message) and
+                    (self.darwin_not_found_error not in o.message)):
+                    print "Unexpected error loading library %s: %s" % (name, o.message)
+                    raise
                 path = self.find_library(name)
                 if path:
                     try:
