@@ -255,12 +255,17 @@ class TestCase(object):
             options.log.error(error[1])
         options.log.info('%d tests run', result.testsRun)
 
+        num_failures = len(result.failures)
+        num_errors = len(result.errors)
+        if num_failures or num_errors:
+            print '%d Failures and %d Errors detected.' % (num_failures, num_errors)
+
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
 #             print module.__doc__
             user_result = raw_input('[P]assed test, [F]ailed test: ')
-            if user_result and user_result[0] in ('F', 'f'):
+            if user_result and user_result.strip()[0] in ('F', 'f'):
                 print 'Enter failure description: '
                 description = raw_input('> ')
                 options.log.error('User marked fail for %s', self)
@@ -502,12 +507,15 @@ def main():
             i += 1
         options.log_file = options.log_file % i
 
-    logging.basicConfig(filename=options.log_file, level=options.log_level)
+    print 'Test results are saved in log file:', options.log_file
+
+    logging.basicConfig(filename=options.log_file, level=options.log_level, format='%(levelname)s %(message)s')
     options.log = logging.getLogger()
 
     options.log.info('Beginning test at %s', time.ctime())
     options.log.info('Capabilities are: %s', ', '.join(options.capabilities))
     options.log.info('sys.platform = %s', sys.platform)
+    options.log.info('pyglet.version = %s', pyglet.version)
     options.log.info('Reading test plan from %s', options.plan)
     plan = TestPlan.from_file(options.plan)
 
@@ -530,6 +538,8 @@ def main():
         for component in components:
             component.test(options)
         print '-' * 78
+
+    print 'Test results are saved in log file:', options.log_file
 
 if __name__ == '__main__':
     main()
