@@ -43,111 +43,10 @@ __version__ = '$Id: $'
 
 import math
 
-from ctypes import *
-from ctypes import util
-
 from pyglet.font import base
 import pyglet.image
 
-# Load all the needed frameworks.
-cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
-ct = cdll.LoadLibrary(util.find_library('CoreText'))
-
-# TODO: Move all of the type definitions and ctypes setup somewhere else.
-
-# Type definitions:
-CFIndex = c_long
-UniChar = c_ushort
-CGGlyph = c_ushort
-
-# /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
-#    CoreGraphics.framework/Headers/CGBase.h
-import sys
-if sys.maxint > 2**32:
-    CGFloat = c_double
-else:
-    CGFloat = c_float
-
-# CFRange struct defined in CFBase.h
-# This replaces the CFRangeMake(LOC, LEN) macro.
-class CFRange(Structure):
-    _fields_ = [ ("location", CFIndex), ("length", CFIndex) ]
-
-# /System/Library/Frameworks/ApplicationServices.framework/Frameworks/...
-#    CoreGraphics.framework/Headers/CGGeometry.h
-class CGPoint(Structure):
-    _fields_ = [ ("x", CGFloat), ("y", CGFloat) ]
-
-class CGSize(Structure):
-    _fields_ = [ ("width", CGFloat), ("height", CGFloat) ]
-
-class CGRect(Structure):
-    _fields_ = [ ("origin", CGPoint), ("size", CGSize) ]
-
-# Setup return types for functions that return pointers.
-# (Otherwise ctypes returns 32-bit int which breaks on 64-bit systems.)
-# Note that you must also wrap the return value with c_void_p before
-# you use it as an argument to another function, otherwise ctypes will
-# automatically convert it back to a 32-bit int again.
-cf.CFDictionaryCreateMutable.restype = c_void_p
-cf.CFStringCreateWithCString.restype = c_void_p
-cf.CFAttributedStringCreate.restype = c_void_p
-cf.CFDataCreate.restype = c_void_p
-cf.CFNumberCreate.restype = c_void_p
-
-ct.CTLineCreateWithAttributedString.restype = c_void_p
-ct.CTFontGetBoundingRectsForGlyphs.restype = CGRect
-ct.CTFontGetAdvancesForGlyphs.restype = c_double
-ct.CTFontGetAscent.restype = CGFloat
-ct.CTFontGetDescent.restype = CGFloat
-ct.CTFontCreateWithGraphicsFont.restype = c_void_p
-ct.CTFontCreateWithGraphicsFont.argtypes = [c_void_p, CGFloat, c_void_p, c_void_p]
-ct.CTFontCopyFamilyName.restype = c_void_p
-ct.CTFontCopyFullName.restype = c_void_p
-ct.CTFontDescriptorCreateWithAttributes.restype = c_void_p
-ct.CTFontCreateWithFontDescriptor.restype = c_void_p
-ct.CTFontCreateWithFontDescriptor.argtypes = [c_void_p, CGFloat, c_void_p]
-
-quartz.CGColorSpaceCreateDeviceRGB.restype = c_void_p
-quartz.CGBitmapContextCreate.restype = c_void_p
-quartz.CGBitmapContextCreateImage.restype = c_void_p
-quartz.CGImageGetDataProvider.restype = c_void_p
-quartz.CGDataProviderCopyData.restype = c_void_p
-quartz.CGDataProviderCreateWithCFData.restype = c_void_p
-quartz.CGFontCreateWithDataProvider.restype = c_void_p
-quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
-quartz.CGFontCreateWithFontName.restype = c_void_p
-
-# Core Foundation constants
-kCFStringEncodingUTF8 = 0x08000100
-kCFNumberSInt32Type   = 3
-
-# CoreText constants
-kCTFontAttributeName = c_void_p.in_dll(ct, 'kCTFontAttributeName')
-kCTFontFamilyNameAttribute = c_void_p.in_dll(ct, 'kCTFontFamilyNameAttribute')
-kCTFontSymbolicTrait = c_void_p.in_dll(ct, 'kCTFontSymbolicTrait')
-kCTFontWeightTrait = c_void_p.in_dll(ct, 'kCTFontWeightTrait')
-kCTFontTraitsAttribute = c_void_p.in_dll(ct, 'kCTFontTraitsAttribute')
-
-# CTFontTraits.h
-kCTFontItalicTrait = (1 << 0)
-kCTFontBoldTrait   = (1 << 1)
-
-# CGImage.h
-kCGImageAlphaPremultipliedLast = 1
-
-# Python string to/from CFString conversion helper functions:
-def CFSTR(text):
-    return c_void_p(cf.CFStringCreateWithCString(None, text.encode('utf8'), kCFStringEncodingUTF8))
-
-def cfstring_to_string(cfstring):
-    length = cf.CFStringGetLength(cfstring)
-    size = cf.CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8)
-    buffer = c_buffer(size + 1)
-    result = cf.CFStringGetCString(cfstring, buffer, len(buffer), kCFStringEncodingUTF8)
-    if result:
-        return buffer.value
+from pyglet.libs.darwin.cocoapy import *
 
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
@@ -238,6 +137,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
         
         return glyph
+
 
 class QuartzFont(base.Font):
     glyph_renderer_class = QuartzGlyphRenderer

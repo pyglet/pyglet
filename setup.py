@@ -56,6 +56,7 @@ setup_info = dict(
         'pyglet.input',
         'pyglet.libs',
         'pyglet.libs.darwin',
+        'pyglet.libs.darwin.cocoapy',
         'pyglet.libs.win32',
         'pyglet.libs.x11',
         'pyglet.media', 

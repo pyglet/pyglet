@@ -38,40 +38,13 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from ctypes import *
-
 from pyglet.image import ImageData, Animation, AnimationFrame
 from pyglet.image.codecs import *
 
-import Quartz, CoreFoundation, LaunchServices 
+from pyglet.libs.darwin.cocoapy import *
 
-# TODO:
-# more complete list of openable formats?
-# which formats actually make sense for pyglet to try to open?
 
 class QuartzImageDecoder(ImageDecoder):
-    def _get_all_file_extensions(self):
-        """Query the OS to determine all possible image-related files it can open."""
-        # A lot of these are RAW file types, which are probably unlikely 
-        # candidates for files to be opened anyway.
-        # First get a list of uniform type identifiers (they look like 'com.microsoft.bmp').
-        types = Quartz.CGImageSourceCopyTypeIdentifiers()
-        # Then convert these into a list of associated extensions.
-        extensions = []
-        for uti in types:
-            desc = LaunchServices.UTTypeCopyDescription(uti)
-            decl = LaunchServices.UTTypeCopyDeclaration(uti)
-            try:
-                spec = decl['UTTypeTagSpecification']
-                ext = spec['public.filename-extension']
-                if str(ext) == ext:
-                    extensions.append('.'+ext)
-                else:
-                    extensions.extend( [ '.'+x for x in ext] )
-            except:
-                pass
-        return extensions
-
     def get_file_extensions(self):
         # Quartz can actually decode many more formats, but these are the most common.
         return [ '.bmp', '.cur', '.gif', '.ico', '.jp2', '.jpg', '.jpeg', 
@@ -81,71 +54,80 @@ class QuartzImageDecoder(ImageDecoder):
         return ['.gif']
      
     def _get_pyglet_ImageData_from_source_at_index(self, sourceRef, index):
-        imageRef = Quartz.CGImageSourceCreateImageAtIndex(sourceRef, index, None)
-        
+        imageRef = c_void_p(quartz.CGImageSourceCreateImageAtIndex(sourceRef, index, None))
+
         # Regardless of the internal format of the image (L, LA, RGB, RGBA, etc)
         # we just automatically convert everything to an RGBA format.
         format = 'RGBA'
-        rgbColorSpace = Quartz.CGColorSpaceCreateDeviceRGB()
+        rgbColorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
         bitsPerComponent = 8
-        width = Quartz.CGImageGetWidth(imageRef)
-        height = Quartz.CGImageGetHeight(imageRef)
+        width = quartz.CGImageGetWidth(imageRef)
+        height = quartz.CGImageGetHeight(imageRef)
         bytesPerRow = 4 * width
 
         # Create a buffer to store the RGBA formatted data.
         bufferSize = height * bytesPerRow
-        buffer = (c_byte * bufferSize)()
+        buffer = (c_ubyte * bufferSize)()
 
         # Create a bitmap context for the RGBA formatted data.
-        bitmap = Quartz.CGBitmapContextCreate(buffer, 
-                                              width, height, 
-                                              bitsPerComponent,
-                                              bytesPerRow, 
-                                              rgbColorSpace, 
-                                              Quartz.kCGImageAlphaPremultipliedLast)
-
+        # Note that premultiplied alpha is required:
+        # http://developer.apple.com/library/mac/#qa/qa1037/_index.html
+        bitmap = c_void_p(quartz.CGBitmapContextCreate(buffer, 
+                                                       width, height, 
+                                                       bitsPerComponent, 
+                                                       bytesPerRow, 
+                                                       rgbColorSpace, 
+                                                       kCGImageAlphaPremultipliedLast))
+                          
         # Write the image data into the bitmap.
-        Quartz.CGContextDrawImage(bitmap, Quartz.CGRectMake(0,0,width, height), imageRef)
-
-        del bitmap, imageRef, rgbColorSpace
+        quartz.CGContextDrawImage(bitmap, NSMakeRect(0,0,width,height), imageRef)
+        
+        quartz.CGImageRelease(imageRef)
+        quartz.CGContextRelease(bitmap)
+        quartz.CGColorSpaceRelease(rgbColorSpace)
         
         pitch = bytesPerRow
         return ImageData(width, height, format, buffer, -pitch)
 
     def decode(self, file, filename):
         file_bytes = file.read()
-        data = CoreFoundation.CFDataCreate(None, file_bytes, len(file_bytes))
+        data = c_void_p(cf.CFDataCreate(None, file_bytes, len(file_bytes)))
         # Second argument is an options dictionary.  It might be a good idea to provide
         # a value for kCGImageSourceTypeIdentifierHint here using filename extension.
-        sourceRef = Quartz.CGImageSourceCreateWithData(data, None)
+        sourceRef = c_void_p(quartz.CGImageSourceCreateWithData(data, None))
         image = self._get_pyglet_ImageData_from_source_at_index(sourceRef, 0)
-        del data, sourceRef
+
+        cf.CFRelease(data)
+        cf.CFRelease(sourceRef)
+
         return image
 
     def decode_animation(self, file, filename):
         # If file is not an animated GIF, it will be loaded as a single-frame animation.
         file_bytes = file.read()
-        data = CoreFoundation.CFDataCreate(None, file_bytes, len(file_bytes))
-        sourceRef = Quartz.CGImageSourceCreateWithData(data, None)
+        data = c_void_p(cf.CFDataCreate(None, file_bytes, len(file_bytes)))
+        sourceRef = c_void_p(quartz.CGImageSourceCreateWithData(data, None))
 
         # Get number of frames in the animation.
-        count = Quartz.CGImageSourceGetCount(sourceRef)
+        count = quartz.CGImageSourceGetCount(sourceRef)
         
         frames = []
 
         for index in range(count):
             # Try to determine frame duration from GIF properties dictionary.
             duration = 0.1  # default duration if none found
-            props = Quartz.CGImageSourceCopyPropertiesAtIndex(sourceRef, index, None)
-            if Quartz.kCGImagePropertyGIFDictionary in props:
-                gif_props = props[Quartz.kCGImagePropertyGIFDictionary]
-                if Quartz.kCGImagePropertyGIFDelayTime in gif_props:
-                    duration = gif_props[Quartz.kCGImagePropertyGIFDelayTime]
+            props = c_void_p(quartz.CGImageSourceCopyPropertiesAtIndex(sourceRef, index, None))
+            if cf.CFDictionaryContainsKey(props, kCGImagePropertyGIFDictionary):
+                gif_props = c_void_p(cf.CFDictionaryGetValue(props, kCGImagePropertyGIFDictionary))
+                if cf.CFDictionaryContainsKey(gif_props, kCGImagePropertyGIFDelayTime):
+                    duration = cfnumber_to_float(c_void_p(cf.CFDictionaryGetValue(gif_props, kCGImagePropertyGIFDelayTime)))
             
+            cf.CFRelease(props)
             image = self._get_pyglet_ImageData_from_source_at_index(sourceRef, index)
             frames.append( AnimationFrame(image, duration) )
 
-        del data, sourceRef
+        cf.CFRelease(data)
+        cf.CFRelease(sourceRef)
 
         return Animation(frames)
         
