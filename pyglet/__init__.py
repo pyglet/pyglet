@@ -190,7 +190,9 @@ def _choose_darwin_platform():
     """Choose between Darwin's Carbon and Cocoa implementations."""
     if sys.platform != 'darwin':
         return
-    is_64bits = sys.maxint > 2**32
+    import struct
+    numbits = 8*struct.calcsize("P")
+    is_64bits = (numbits == 64)
     import platform
     osx_version = platform.mac_ver()[0]
     if is_64bits:
