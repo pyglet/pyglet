@@ -120,7 +120,7 @@ class QuartzImageDecoder(ImageDecoder):
             if cf.CFDictionaryContainsKey(props, kCGImagePropertyGIFDictionary):
                 gif_props = c_void_p(cf.CFDictionaryGetValue(props, kCGImagePropertyGIFDictionary))
                 if cf.CFDictionaryContainsKey(gif_props, kCGImagePropertyGIFDelayTime):
-                    duration = cfnumber_to_float(c_void_p(cf.CFDictionaryGetValue(gif_props, kCGImagePropertyGIFDelayTime)))
+                    duration = cfnumber_to_number(c_void_p(cf.CFDictionaryGetValue(gif_props, kCGImagePropertyGIFDelayTime)))
             
             cf.CFRelease(props)
             image = self._get_pyglet_ImageData_from_source_at_index(sourceRef, index)
