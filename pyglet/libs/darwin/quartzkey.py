@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -149,6 +149,7 @@ QZ_SPACE = 0x31
 QZ_RCOMMAND = 0x36
 QZ_ROPTION = 0x3D
 QZ_RCTRL = 0x3E
+QZ_FUNCTION = 0x3F
 QZ_LEFT = 0x7B
 QZ_DOWN = 0x7D
 QZ_RIGHT = 0x7C
@@ -256,6 +257,7 @@ keymap = {
     QZ_RCOMMAND: key.RCOMMAND,
     QZ_ROPTION: key.ROPTION,
     QZ_RCTRL: key.RCTRL,
+    QZ_FUNCTION: key.FUNCTION,
     QZ_LEFT: key.LEFT,
     QZ_DOWN: key.DOWN,
     QZ_RIGHT: key.RIGHT,
