@@ -229,6 +229,7 @@ HELP          = 0xff6a
 BREAK         = 0xff6b
 MODESWITCH    = 0xff7e
 SCRIPTSWITCH  = 0xff7e
+FUNCTION      = 0xffd2
 
 # Text motion constants: these are allowed to clash with key constants
 MOTION_UP                = UP
@@ -321,7 +322,6 @@ LCOMMAND      = 0xffed
 RCOMMAND      = 0xffee
 LOPTION       = 0xffd0
 ROPTION       = 0xffd1
-FUNCTION      = 0xffd2
 
 # Latin-1
 SPACE         = 0x020
