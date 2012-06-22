@@ -3,6 +3,39 @@
 '''Test framework for pyglet.  Reads details of components and capabilities
 from a requirements document, runs the appropriate unit tests.
 
+How to Run the Tests
+--------------------
+::
+
+    python tests/test.py top app graphics clock resource # these all run automatically
+    python tests/test.py font media text
+    python tests/test.py image
+    python tests/test.py window
+
+Because the tests are interactive, they can take quite a while to complete. The
+'window' section in particular takes a long time. It can be frustrating to get
+almost through the tests and then something gets messed up, so we suggest you
+run the tests in sections as listed above. If you are curious, the sections are
+defined in tests/plan.txt. 
+
+Here are the different sections and how long they take.
+
+    =========== ===========
+    Section     Time to Run
+    =========== ===========
+    top         automatic
+    app         automatic
+    graphics    automatic
+    clock       automatic
+    resource    automatic
+    font        1 minute
+    media       1 minute
+    text        1 minute
+    image       5 minutes
+    window      10 minutes
+    =========== ===========
+
+
 Overview
 --------
 
@@ -40,7 +73,7 @@ Some tests generate regression images if enabled, so you will only
 need to run through the interactive procedure once.  During
 subsequent runs the image shown on screen will be compared with the
 regression images and passed automatically if they match.  There are
-command line options for enabling this feature.
+command line options for enabling this feature.Literal block
 
 By default regression images are saved in tests/regression/images/
 
@@ -54,7 +87,7 @@ command-line arguments, all test cases in all sections will be run::
     python tests/test.py
 
 Before each test, a description of the test will be printed, including
-some information of what you should look for, and what interactivity
+some information of what you should look for, and what interactivityLiteral block
 is provided (including how to stop the test).  Press ENTER to begin
 the test.
 
@@ -67,39 +100,46 @@ Details of each test session are logged for future use.
 
 Command-line options:
 
---plan=
+`--plan=`
     Specify the test plan file (defaults to tests/plan.txt)
---test-root=
+`--test-root=`
     Specify the top-level directory to look for unit tests in (defaults
     to test/)
---capabilities=
+`--capabilities=`
     Specify the capabilities to select, comma separated.  By default this
     only includes your operating system capability (X11, WIN or OSX) and
     GENERIC.
---log-level=
+`--log-level=`
     Specify the minimum log level to write (defaults to 10: info)
---log-file=
+
+`--log-file=`
     Specify log file to write to (defaults to "pyglet.%d.log")
---regression-capture
+
+`--regression-capture`
     Save regression images to disk.  Use this only if the tests have
     already been shown to pass.
---regression-check
+
+`--regression-check`
     Look for a regression image on disk instead of prompting the user for
     passage.  If a regression image is found, it is compared with the test
     case using the tolerance specified below.  Recommended only for
     developers.
---regression-tolerance=
+
+`--regression-tolerance=`
     Specify the tolerance when comparing a regression image.  A value of
     2, for example, means each sample component must be +/- 2 units
     of the regression image.  Tolerance of 0 means images must be identical,
     tolerance of 256 means images will always match (if correct dimensions).
     Defaults to 2.
---regression-path=
+
+`--regression-path=`
     Specify the directory to store and look for regression images.
     Defaults to tests/regression/images/
---developer
+
+`--developer`
     Selects the DEVELOPER capability.
---no-interactive=
+
+`--no-interactive=`
     Don't write descriptions or prompt for confirmation; just run each
     test in succcession.
 
@@ -112,9 +152,6 @@ Examples
     python tests/test.py --capabilities=GENERIC,NVIDIA,WIN window
 
 Runs all tests in the window section with the given capabilities.
-
-    python tests/test.py --no-interactive FULLSCREEN_TOGGLE
-
 Test just the FULLSCREEN_TOGGLE test case without prompting for input (useful
 for development).
 

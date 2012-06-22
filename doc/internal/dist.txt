@@ -1,18 +1,19 @@
 Making a pyglet release
 -----------------------
 
-1. svn up
+1. hg pull -u
 2. Update version string in setup.py, pyglet/__init__.py and CHANGELOG
    Update README, and the two readme.rtf files on Windows and Mac.
-3. svn ci
+3. hg push
 4. Mac OS X release (requires OS X 10.5 and developer tools installed)::
-   NOTE for 10.5:  bdist_mpkg doesn't quite work, needs a hack to avoid
-                   doing the admin write check (you'll see when you get the
-                   traceback).
 
-        sudo tools/genmpkg/genmpkg.sh
+           sudo tools/genmpkg/genmpkg.sh
 
    Creates .dmg in dist/
+
+   NOTE for 10.5:  bdist_mpkg doesn't quite work, needs a hack to avoid
+   doing the admin write check (you'll see when you get the
+   traceback).
 
 5. Windows release (requires WIX 3.0.  WIX bin/ must be in PATH)::
 
@@ -22,7 +23,7 @@ Making a pyglet release
 
 6. Linux - You will need docutils, the docbook writer from the docutils sandbox, inkscape, fop, docbook-xsl, and perhaps more:
 
-   	tools/gendoc.sh all
+   	./make.py clean ; ./make.py docs:w
 
    Creates doc package in dist/
 

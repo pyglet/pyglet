@@ -33,40 +33,41 @@ print "Generating pyglet %s Documentation" % (pyglet.version)
 
 implementations = ["carbon", "cocoa", "win32", "xlib"]
 
-# Do not try to import this modules
-skip_modules = {"pyglet":
-                {"pyglet.app": implementations,
-                 "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
-                 "pyglet.font": ["carbon",
-                                 "quartz",
-                                 "win32",
-                                 "freetype", "freetype_lib"],
-                 "pyglet.input": ["carbon_hid", "carbon_tablet",
-                                  "darwin_hid",
-                                  "directinput",
-                                  "evdev",
-                                  "wintab",
-                                  "x11_xinput", "x11_xinput_tablet"],
-                 "pyglet.image.codecs": ["gdiplus",
-                                         "gdkpixbuf2",
-                                         "pil",
-                                         "quartz",
-                                         "quicktime"],
-                 "pyglet.gl": implementations + ["agl",
-                              "glext_arb", "glext_nv",
-                              "glx", "glx_info",
-                              "glxext_arb", "glxext_mesa", "glxext_nv",
-                              "lib_agl", "lib_glx", "lib_wgl",
-                              "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
-                 "pyglet.libs": ["darwin",
-                                 "win32",
-                                 "x11"],
-                 "pyglet.media.drivers": ["directsound",
-                                          "openal",
-                                          "pulse"],
-                 "pyglet.window": implementations},
+# Do not try to import these modules
+skip_modules = {"pyglet": {
+                     "pyglet.app": implementations,
+                     "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
+                     "pyglet.font": ["carbon",
+                                     "quartz",
+                                     "win32",
+                                     "freetype", "freetype_lib"],
+                     "pyglet.input": ["carbon_hid", "carbon_tablet",
+                                      "darwin_hid",
+                                      "directinput",
+                                      "evdev",
+                                      "wintab",
+                                      "x11_xinput", "x11_xinput_tablet"],
+                     "pyglet.image.codecs": ["gdiplus",
+                                             "gdkpixbuf2",
+                                             "pil",
+                                             "quartz",
+                                             "quicktime"],
+                     "pyglet.gl": implementations + ["agl",
+                                  "glext_arb", "glext_nv",
+                                  "glx", "glx_info",
+                                  "glxext_arb", "glxext_mesa", "glxext_nv",
+                                  "lib_agl", "lib_glx", "lib_wgl",
+                                  "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
+                     "pyglet.libs": ["darwin",
+                                     "win32",
+                                     "x11"],
+                     "pyglet.media.drivers": ["directsound",
+                                              "openal",
+                                              "pulse"],
+                     "pyglet.window": implementations,
+                     },
                 "tests": {}
-                }
+               }
 
 
 # Skip members
@@ -435,7 +436,6 @@ def _get_submodules(rootpath, skip):
 for mod in skip_modules.keys():
     sys.all_submodules = _get_submodules(os.path.join('..', mod),
                                          skip_modules[mod])
-
 sys.skip_member = skip_member
 
 

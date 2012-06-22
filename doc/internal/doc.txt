@@ -22,9 +22,9 @@ The complete documentation can be generated using ``sphinx``.
 * ``graphviz``: If you want to generate graphs.
 
 
-To build the documentation enter to the ``pyglet/doc`` folder and execute::
+To build the documentation, execute::
 
-   make html
+   ./make.py docs
 
 If the build succeeds, the web pages are in ``_build/html``
 
@@ -35,16 +35,13 @@ If the build succeeds, the web pages are in ``_build/html``
 Contents
 --------
 
-The entry point that defines all the contents is ``pyglet/doc/index.txt`` 
+``pyglet/doc/index.txt``: The first page of the documentation.
 
-.. rubric:: Programming Guide
+``pyglet/doc/programming_guide``: The first page of the programming guide.
 
-All the pages are located in ``pyglet/doc/programming_guide`` 
-
-.. rubric:: Internals
-
-Advanced topics are covered in files located at ``pyglet/doc/internal`` 
-
+``pyglet/doc/internal``: 
+    Documentation for those working on Pyglet itself, such as how to make a release 
+    or how the ctypes library is used.
 
 .. rubric:: Docstrings
 

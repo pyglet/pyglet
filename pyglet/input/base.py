@@ -467,44 +467,48 @@ class Joystick(EventDispatcher):
 
     def on_joyaxis_motion(self, joystick, axis, value):
         '''The value of a joystick axis changed.
+
         :Parameters:
-           `joystick` : `Joystick`
-              The joystick device whose axis changed.
-           `axis` : string
-              The name of the axis that changed.
-           `value` : float
-              The current value of the axis, normalized to [-1, 1].
+            `joystick` : `Joystick`
+                The joystick device whose axis changed.
+            `axis` : string
+                The name of the axis that changed.
+            `value` : float
+                The current value of the axis, normalized to [-1, 1].
         '''
 
     def on_joybutton_press(self, joystick, button):
         '''A button on the joystick was pressed.
+
         :Parameters:
             `joystick` : `Joystick`
-               The joystick device whose button was pressed.
-            `button' : int
-               The index (in `button_controls`) of the button that was pressed.
+                The joystick device whose button was pressed.
+            `button` : int
+                The index (in `button_controls`) of the button that was pressed.
         '''
         
     def on_joybutton_release(self, joystick, button):
         '''A button on the joystick was released.
+
         :Parameters:
             `joystick` : `Joystick`
-               The joystick device whose button was released.
-            `button' : int
-               The index (in `button_controls`) of the button that was released.
+                The joystick device whose button was released.
+            `button` : int
+                The index (in `button_controls`) of the button that was released.
         '''
 
     def on_joyhat_motion(self, joystick, hat_x, hat_y):
         '''The value of the joystick hat switch changed.
+
         :Parameters:
             `joystick` : `Joystick`
-               The joystick device whose hat control changed.
+                The joystick device whose hat control changed.
             `hat_x` : int
-               Current hat (POV) horizontal position; one of -1 (left), 0
-               (centered) or 1 (right).
+                Current hat (POV) horizontal position; one of -1 (left), 0
+                (centered) or 1 (right).
             `hat_y` : int
-               Current hat (POV) vertical position; one of -1 (bottom), 0
-               (centered) or 1 (top).
+                Current hat (POV) vertical position; one of -1 (bottom), 0
+                (centered) or 1 (top).
         '''
 
 Joystick.register_event_type('on_joyaxis_motion')

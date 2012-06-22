@@ -19,7 +19,8 @@ def clean():
 def docs():
     make_bin = 'make.exe' if sys.platform=='win32' else 'make'
     call([make_bin, 'html'], cwd=DOC_DIR)
-    webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
+    if '--no-open' not in sys.argv:
+        webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
 
 
 if __name__=='__main__':

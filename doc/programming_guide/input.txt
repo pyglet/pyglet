@@ -106,8 +106,8 @@ The Apple Remote is a small infrared remote originally distributed
 with the iMac.  The remote has six buttons, which are accessed with
 the names `left, `right`, `up`, `down`, `menu`, and `select`.
 Additionally when certain buttons are held down, they act as virtual
-buttons.  These are named `left_hold', 'right_hold', 'menu_hold', and
-'select_hold'.
+buttons.  These are named `left_hold`, 'right_hold`, `menu_hold`, and
+`select_hold`.
 
 To use the remote, first call `get_apple_remote`::
 

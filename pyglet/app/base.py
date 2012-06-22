@@ -330,7 +330,7 @@ class EventLoop(event.EventDispatcher):
 
         :rtype: bool
         :return: ``True`` if the `has_exit` flag is now set, otherwise
-        ``False``.
+            ``False``.
         '''
         self._has_exit_condition.acquire()
         self._has_exit_condition.wait(timeout)

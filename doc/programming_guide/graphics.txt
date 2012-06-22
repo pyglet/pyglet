@@ -29,7 +29,7 @@ denoted by the constants
 * ``pyglet.gl.GL_QUAD_STRIP``
 * ``pyglet.gl.GL_POLYGON``
 
-See the `OpenGL Programming Guide`_ for a description of each of mode.
+See the `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_ for a description of each of mode.
 
 Each primitive is made up of one or more vertices.  Each vertex is specified
 with either 2, 3 or 4 components (for 2D, 3D, or non-homogeneous coordinates).

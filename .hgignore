@@ -7,3 +7,4 @@ pyglet.*.log
 .DS_Store
 doc/api
 doc/_build
+doc/internal/build.rst
