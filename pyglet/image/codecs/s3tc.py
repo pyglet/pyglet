@@ -61,7 +61,7 @@ class PackedImageData(AbstractImage):
         if self.packed_format == GL_UNSIGNED_SHORT_5_6_5:
             # Unpack to GL_RGB.  Assume self.data is already 16-bit
             i = 0
-            out = (c_ubyte * (self.width * self.height * 3))()
+            out = (ctypes.c_ubyte * (self.width * self.height * 3))()
             for c in self.data:
                 out[i+2] = (c & 0x1f) << 3
                 out[i+1] = (c & 0x7e0) >> 3
@@ -90,6 +90,12 @@ class PackedImageData(AbstractImage):
         return texture
     
     texture = property(_get_texture)
+
+    def get_texture(self, rectangle=False, force_rectangle=False):
+        '''The parameters 'rectangle' and 'force_rectangle' are ignored.
+           See the documentation of the method 'AbstractImage.get_texture' for
+           a more detailed documentation of the method. '''
+        return self._get_texture()
 
 def decode_dxt1_rgb(data, width, height):
     # Decode to 16-bit RGB UNSIGNED_SHORT_5_6_5
