@@ -128,12 +128,17 @@ Drawing modes
 =============
 
 Methods in this module that accept a ``mode`` parameter will accept any value
-in the OpenGL drawing mode enumeration; for example, ``GL_POINTS``,
-``GL_LINES``, ``GL_TRIANGLES``, etc.  
+in the OpenGL drawing mode enumeration: ``GL_POINTS``, ``GL_LINE_STRIP``,
+``GL_LINE_LOOP``, ``GL_LINES``, ``GL_TRIANGLE_STRIP``, ``GL_TRIANGLE_FAN``,
+``GL_TRIANGLES``, ``GL_QUAD_STRIP``, ``GL_QUADS``, and ``GL_POLYGON``.
 
-Because of the way the graphics API renders multiple primitives with shared
-state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot be used
---- the results are undefined.
+:: 
+
+    pyglet.graphics.draw(1, GL_POINTS, ('v2i',(10,20)))
+
+However, because of the way the graphics API renders multiple primitives with 
+shared state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot
+be used --- the results are undefined.
 
 When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
 must be taken to insert degenerate vertices at the beginning and end of each
@@ -171,8 +176,9 @@ def draw(size, mode, *data):
     :Parameters:
         `size` : int
             Number of vertices given
-        `mode` : int
-            OpenGL drawing mode, e.g. ``GL_TRIANGLES``
+        `mode` : gl primitive type 
+            OpenGL drawing mode, e.g. ``GL_TRIANGLES``, 
+            avoiding quotes.
         `data` : data items
             Attribute formats and data.  See the module summary for 
             details.
