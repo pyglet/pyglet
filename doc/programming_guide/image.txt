@@ -560,7 +560,7 @@ animation into a texture bin.  A sprite is used to display the animation in
 the window::
 
     animation = pyglet.image.load_animation('animation.gif')
-    bin = pyglet.image.TextureBin()
+    bin = pyglet.image.atlas.TextureBin()
     animation.add_to_texture_bin(bin)
     sprite = pyglet.sprite.Sprite(animation)
 
