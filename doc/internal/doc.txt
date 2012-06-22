@@ -1,0 +1,219 @@
+Documentation
+=============
+
+``pyglet`` uses reStructuredText markup language for both 
+the Programming Guide and the docstrings embedded in the code.
+
+.. seealso::
+
+   * `Docutils <http://docutils.sourceforge.net/rst.html>`_
+   * `Sphinx <http://sphinx.pocoo.org/rest.html>`_ 
+   * `Graphviz <http://www.graphviz.org/>`_
+
+
+Build
+-----
+
+The complete documentation can be generated using ``sphinx``.
+
+.. rubric:: Requirements
+
+* ``sphinx``: Documentation builder.
+* ``graphviz``: If you want to generate graphs.
+
+
+To build the documentation enter to the ``pyglet/doc`` folder and execute::
+
+   make html
+
+If the build succeeds, the web pages are in ``_build/html``
+
+.. note::
+
+   The documentation build configuration file is ``pyglet/doc/conf.py`` 
+
+Contents
+--------
+
+The entry point that defines all the contents is ``pyglet/doc/index.txt`` 
+
+.. rubric:: Programming Guide
+
+All the pages are located in ``pyglet/doc/programming_guide`` 
+
+.. rubric:: Internals
+
+Advanced topics are covered in files located at ``pyglet/doc/internal`` 
+
+
+.. rubric:: Docstrings
+
+The API documentation is generated from the source code.
+
+:Example:
+
+   .. code-block:: python
+
+      class Class1():
+      """Short description.
+
+      Detailed explanation, formatted as reST.
+      Can be as detailed as it is needed. 
+    
+   
+      :Parameters: 
+         Narrative description
+         `arg1` : type description
+             description
+
+      :return: return description
+      :since: pyglet 1.2
+
+      """
+
+      property1 = None
+      """This is an attribute.
+      """
+
+
+      def _get_property2(self):
+          """Getter Method 
+          
+          :return: property1 value
+          :rtype: property1 type
+          """
+
+      def _set_property2(self, value):
+          """Setter Method 
+          
+          :param value: property1 value
+          :type value: property1 type
+
+          """
+   
+      property2 = property(_get_property2, _set_property2,
+                        doc='''Short description
+   
+      This is another attribute.
+
+      :type: type
+      :see: something else
+      ''')
+ 
+
+
+
+
+Generation 
+----------
+
+In order to generate this documentation, several modifications have 
+been done in ``sphinx.ext.autosummary``, as well as some code in ``conf.py``.
+
+It does the following:
+
+* Find all modules and creates a tree.
+* Events are separated from regular methods.
+* Skip some modules, classes, functions and methods.
+
+
+Structure
+*********
+
+All the items are saved in the ``api`` folder, following the module hierarchy structure,  
+and the page name is the full name of the item. 
+
+For example, the page containing the list of events of the Window class is::
+
+   api/pyglet/window/pyglet.window.Window.html#events
+
+
+Templates
+*********
+
+The files at ``pyglet/doc/_templates`` control all the process.
+
+
+Module
+
+   * Module documentation
+   * Modules
+   * Classes
+   * Functions
+   * Exceptions
+
+
+Class
+
+   * Inheritance diagram
+   * Class documentation
+   * Events
+   * Methods
+   * Attributes
+   * Members documentation
+   * Inherited members documentation (not indexed)
+
+
+Function
+
+   * Function documentation
+
+
+Exception
+
+   * Exception documentation
+
+Omisions
+********
+
+.. rubric:: Skipped members
+
+The ``skip_member`` function in ``conf.py`` contains rules to
+prevent certain members to appear in the documentation
+
+Due to the large number of members that were listed when generating, 
+a modification in  ``autosummary`` prevents all members that are not 
+defined in the current module to appear in the member lists. 
+
+This means that if a module imports members like this::
+
+    from pyglet.gl import *
+
+That members are not listed in the module documentation.
+
+.. warning:: 
+   There is one exception to the rule, for clarity sake: 
+   
+   * If a member is defined in ``module.base``, and imported by ``module``, it does appear in the ``module`` page lists. 
+
+
+.. rubric:: Skipped modules
+
+Some modules in ``pyglet`` can not be imported when documenting, 
+so a black list in ``conf.py`` contains all the modules that are
+not to be documented:
+
+
+
+.. include:: blacklist.rst
+
+
+.. note::
+   To be able to document a module, it has to be importable when ``sys._is_epydoc`` is ``True``.
+
+
+Details
+-------
+
+.. rubric:: Build
+
+
+.. include:: build.rst
+
+
+.. rubric:: Warnings
+
+See the `Sphinx warnings log file <../warnings.txt>`_ for details.
+
+
+

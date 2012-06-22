@@ -10,30 +10,28 @@ API reference, provided separately.
 If this is your first time reading about pyglet, we suggest you start at
 `Writing a pyglet application`.
 
-.. contents:: Sections
-    :depth: 1
 
-.. contents:: Table of contents
-    :depth: 3
+.. toctree::
+   :maxdepth: 3
 
-.. include:: installation.txt
-.. include:: quickstart.txt
-.. include:: context.txt
-.. include:: gl.txt
-.. include:: graphics.txt
-.. include:: windowing.txt
-.. include:: eventloop.txt
-.. include:: events.txt
-.. include:: keyboard.txt
-.. include:: mouse.txt
-.. include:: input.txt
-.. include:: time.txt
-.. include:: text.txt
-.. include:: image.txt
-.. include:: media.txt
-.. include:: resources.txt
-.. include:: debug.txt
-.. include:: features1.1.txt
+   installation
+   quickstart
+   context
+   gl
+   graphics
+   windowing
+   eventloop
+   events
+   keyboard
+   mouse
+   input
+   time
+   text
+   image
+   media
+   resources
+   debug
+   features1.1
 
 ..
     .. include:: advanced.txt
