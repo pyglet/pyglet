@@ -1,0 +1,54 @@
+Metadata-Version: 1.1
+Name: Sphinx
+Version: 1.1.3
+Summary: Python documentation generator
+Home-page: http://sphinx.pocoo.org/
+Author: Georg Brandl
+Author-email: georg@python.org
+License: BSD
+Download-URL: http://pypi.python.org/pypi/Sphinx
+Description: 
+        Sphinx is a tool that makes it easy to create intelligent and beautiful
+        documentation for Python projects (or other documents consisting of multiple
+        reStructuredText sources), written by Georg Brandl.  It was originally created
+        for the new Python documentation, and has excellent facilities for Python
+        project documentation, but C/C++ is supported as well, and more languages are
+        planned.
+        
+        Sphinx uses reStructuredText as its markup language, and many of its strengths
+        come from the power and straightforwardness of reStructuredText and its parsing
+        and translating suite, the Docutils.
+        
+        Among its features are the following:
+        
+        * Output formats: HTML (including derivative formats such as HTML Help, Epub
+          and Qt Help), plain text, manual pages and LaTeX or direct PDF output
+          using rst2pdf
+        * Extensive cross-references: semantic markup and automatic links
+          for functions, classes, glossary terms and similar pieces of information
+        * Hierarchical structure: easy definition of a document tree, with automatic
+          links to siblings, parents and children
+        * Automatic indices: general index as well as a module index
+        * Code handling: automatic highlighting using the Pygments highlighter
+        * Flexible HTML output using the Jinja 2 templating engine
+        * Various extensions are available, e.g. for automatic testing of snippets
+          and inclusion of appropriately formatted docstrings
+        * Setuptools integration
+        
+        A development egg can be found `here
+        <http://bitbucket.org/birkenfeld/sphinx/get/tip.gz#egg=Sphinx-dev>`_.
+        
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Documentation
+Classifier: Topic :: Text Processing
+Classifier: Topic :: Utilities

@@ -7,7 +7,7 @@ import inspect
 import webbrowser
 from subprocess import call, check_output
 
-THIS_DIR = op.dirname(__file__)
+THIS_DIR = op.dirname(op.abspath(__file__))
 DOC_DIR = op.join(THIS_DIR, 'doc')
 
 def clean():
@@ -18,7 +18,18 @@ def clean():
 
 def docs():
     make_bin = 'make.exe' if sys.platform=='win32' else 'make'
-    call([make_bin, 'html'], cwd=DOC_DIR)
+    
+    env = dict(os.environ)
+
+    sphinx_dir = op.join(THIS_DIR, 'tools', 'Sphinx-1.1.3-py2.7.egg')
+    if 'PYTHONPATH' in env:
+        env['PYTHONPATH'] = os.pathsep.join([sphinx_dir, env['PYTHONPATH']])
+    else:
+        env['PYTHONPATH'] = sphinx_dir
+
+    print 'PYTHONPATH=', env['PYTHONPATH']
+
+    call([make_bin, 'html'], cwd=DOC_DIR, env=env)
     if '--no-open' not in sys.argv:
         webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
 
