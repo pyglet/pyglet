@@ -219,8 +219,8 @@ class CocoaWindow(BaseWindow):
     def _center_window(self):
         # [NSWindow center] does not move the window to a true center position
         # and also always moves the window to the main display.
-        x = int((self.screen.width - self._width)/2)
-        y = int((self.screen.height - self._height)/2)
+        x = self.screen.x + int((self.screen.width - self._width)/2)
+        y = self.screen.y + int((self.screen.height - self._height)/2)
         self._nswindow.setFrameOrigin_(NSPoint(x, y))
 
     def close(self):
