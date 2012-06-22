@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -94,13 +94,13 @@ class GlyphString(object):
 
     def __init__(self, text, glyphs, x=0, y=0):
         '''Create a glyph string.
-        
+
         The `text` string is used to determine valid breakpoints; all glyphs
         must have already been determined using
         `pyglet.font.base.Font.get_glyphs`.  The string
         will be positioned with the baseline of the left-most glyph at the
         given coordinates.
-        
+
         :Parameters:
             `text` : str or unicode
                 String to represent.
@@ -114,7 +114,7 @@ class GlyphString(object):
         '''
         # Create an interleaved array in GL_T2F_V3F format and determine
         # state changes required.
-        
+
         lst = []
         texture = None
         self.text = text
@@ -148,18 +148,18 @@ class GlyphString(object):
 
     def get_break_index(self, from_index, width):
         '''Find a breakpoint within the text for a given width.
-        
+
         Returns a valid breakpoint after `from_index` so that the text
         between `from_index` and the breakpoint fits within `width` pixels.
 
         This method uses precomputed cumulative glyph widths to give quick
-        answer, and so is much faster than 
-        `pyglet.font.base.Font.get_glyphs_for_width`.  
+        answer, and so is much faster than
+        `pyglet.font.base.Font.get_glyphs_for_width`.
 
         :Parameters:
             `from_index` : int
                 Index of text to begin at, or 0 for the beginning of the
-                string. 
+                string.
             `width` : float
                 Maximum width to use.
 
@@ -173,14 +173,14 @@ class GlyphString(object):
         if from_index:
             width += self.cumulative_advance[from_index-1]
         for i, (c, w) in enumerate(
-                zip(self.text[from_index:], 
+                zip(self.text[from_index:],
                     self.cumulative_advance[from_index:])):
             if c in u'\u0020\u200b':
                 to_index = i + from_index + 1
             if c == '\n':
                 return i + from_index + 1
             if w > width:
-                return to_index 
+                return to_index
         return to_index
 
     def get_subwidth(self, from_index, to_index):
@@ -196,14 +196,14 @@ class GlyphString(object):
         '''
         if to_index <= from_index:
             return 0
-        width = self.cumulative_advance[to_index-1] 
+        width = self.cumulative_advance[to_index-1]
         if from_index:
             width -= self.cumulative_advance[from_index-1]
         return width
 
     def draw(self, from_index=0, to_index=None):
         '''Draw a region of the glyph string.
-        
+
         Assumes texture state is enabled.  To enable the texture state::
 
             from pyglet.gl import *
@@ -340,9 +340,10 @@ class Text(object):
 
         self._group = _TextZGroup()
         self._document = pyglet.text.decode_text(text)
-        self._layout = pyglet.text.layout.TextLayout(self._document, 
+        self._layout = pyglet.text.layout.TextLayout(self._document,
                                               width=width,
                                               multiline=multiline,
+                                              wrap_lines=width is not None,
                                               dpi=font.dpi,
                                               group=self._group)
 
@@ -401,7 +402,7 @@ class Text(object):
             elif self._layout.anchor_x == 'center':
                 self._layout.x = self.x + self._layout.width - \
                     self._layout.content_width // 2
-            elif self._layout.anchor_x == 'right': 
+            elif self._layout.anchor_x == 'right':
                 self._layout.x = self.x + 2 * self._layout.width - \
                     self._layout.content_width
         else:
@@ -442,8 +443,8 @@ class Text(object):
         if self._wrap == None:
             self._layout.multiline = False
         elif self._wrap == 'width':
-            self._layout.multiline = True
             self._layout.width = self._width
+            self._layout.multiline = True
             self._document.set_style(0, len(self.text), dict(wrap=True))
         elif self._wrap == 'multiline':
             self._layout.multiline = True
@@ -459,15 +460,16 @@ class Text(object):
 
     def _set_width(self, width):
         self._width = width
+        self._layout._wrap_lines_flag = width is not None
         self._update_wrap()
 
-    width = property(_get_width, _set_width, 
+    width = property(_get_width, _set_width,
         doc='''Width of the text.
 
         When set, this enables word-wrapping to the specified width.
         Otherwise, the width of the text as it will be rendered can be
         determined.
-        
+
         :type: float
         ''')
 
@@ -476,7 +478,7 @@ class Text(object):
 
     height = property(_get_height,
         doc='''Height of the text.
-        
+
         This property is the ascent minus the descent of the font, unless
         there is more than one line of word-wrapped text, in which case
         the height takes into account the line leading.  Read-only.
@@ -496,7 +498,7 @@ class Text(object):
 
         The glyph vertices are only recalculated as needed, so multiple
         changes to the text can be performed with no performance penalty.
-        
+
         :type: str
         ''')
 
@@ -604,7 +606,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
             family and size.
         `dpi` : float
             The assumed resolution of the display device, for the purposes of
-            determining the pixel size of the font.  Defaults to 96. 
+            determining the pixel size of the font.  Defaults to 96.
 
     :rtype: `Font`
     '''
@@ -624,7 +626,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
         else:
             name = None
 
-    # Locate or create font cache   
+    # Locate or create font cache
     shared_object_space = gl.current_context.object_space
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
         shared_object_space.pyglet_font_font_cache = \
@@ -655,7 +657,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
     # collected if momentarily dropped.
     del font_hold[3:]
     font_hold.insert(0, font)
-    
+
     return font
 
 def add_file(font):

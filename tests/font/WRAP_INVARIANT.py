@@ -19,11 +19,11 @@ class TEST_WRAP_INVARIANT(base_text.TextTestBase):
     text = 'TEST TEST'
 
     def render(self):
-        fnt = font.load('', 24) 
+        fnt = font.load('', 24)
         self.label1 = font.Text(fnt, 'TEST TEST', 10, 150)
-        self.label1.width = self.label1.width
+        self.label1.width = self.label1.width + 1
         self.label2 = font.Text(fnt, 'SPAM SPAM\nSPAM', 10, 50)
-        self.label2.width = self.label2.width
+        self.label2.width = self.label2.width + 1
 
     def draw(self):
         self.label1.draw()

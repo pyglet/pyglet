@@ -135,8 +135,16 @@ dimensions::
 
 Additional arguments to the constructor allow the specification of a graphics
 batch and group (recommended if many layouts are to be rendered), and the
-optional `multiline` flag.  To render more than one line of text (either
-through word-wrapping or explicit line breaks) `multiline` must be ``True``.
+optional `multiline` and `wrap_lines` flags.
+
+`multiline`
+  To honor newlines in the document you will need to set this to ``True``. If
+  you do not then newlines will be rendered as plain spaces.
+
+`wrap_lines`
+  If you expect that your document lines will be wider than the display width
+  then pyglet can automatically wrap them to fit the width by setting this
+  option to ``True``.
 
 Like labels, layouts are positioned through their `x`, `y`, `anchor_x` and
 `anchor_y` properties.  Note that unlike `AbstractImage`, the `anchor`

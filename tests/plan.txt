@@ -228,3 +228,4 @@ text
     text.ELEMENT                                GENERIC
     text.HTML                                   GENERIC
     text.HTML_IMAGE                             GENERIC
+    text.MULTILINE_WRAP                         GENERIC
