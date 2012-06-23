@@ -149,12 +149,24 @@ class CocoaWindow(BaseWindow):
                 WindowClass = PygletToolWindow
 
         # First create an instance of our NSWindow subclass.
-        self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_screen_(
+
+        # FIX ME:
+        # Need to use this initializer to have any hope of multi-monitor support.
+        # But currently causes problems on Mac OS X Lion.  So for now, we initialize the
+        # window without including screen information.
+        #
+        # self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_screen_(
+        #     content_rect,           # contentRect
+        #     style_mask,             # styleMask
+        #     NSBackingStoreBuffered, # backing
+        #     False,                  # defer
+        #     self.screen.get_nsscreen())  # screen      
+
+        self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
             content_rect,           # contentRect
             style_mask,             # styleMask
             NSBackingStoreBuffered, # backing
-            False,                  # defer
-            self.screen.get_nsscreen())  # screen      
+            False)                  # defer
 
         if self._fullscreen:
             # BUG: I suspect that this doesn't do the right thing when using
