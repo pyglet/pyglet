@@ -8,3 +8,4 @@ pyglet.*.log
 doc/api
 doc/_build
 doc/internal/build.rst
+doc/internal/blacklist.rst
