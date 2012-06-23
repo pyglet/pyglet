@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Nabla Lab documentation build configuration file, created by
+# pyglet documentation build configuration file, created by
 # Txema Vicente <txema@nabla.net>
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -68,6 +68,9 @@ skip_modules = {"pyglet": {
                      },
                 "tests": {}
                }
+
+if sys.platform!="win32":
+    skip_modules["pyglet"]["pyglet"]=["com"]
 
 
 # Skip members
