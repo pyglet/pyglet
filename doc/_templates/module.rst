@@ -41,19 +41,6 @@ Classes
 {% block functions %}
 {% if functions %}
 
-Functions
----------
-   
-.. autosummary::
-   :toctree: {{ objname  }}/
-   :template: function.rst
-
-{% for item in functions %}
-   {{ item }}
-{%- endfor %}
-{% endif %}
-{% endblock %}
-
 
 {% block exceptions %}
 {% if exceptions %}
@@ -65,6 +52,20 @@ Functions
    :template: exception.rst
 
 {% for item in exceptions %}
+   {{ item }}
+{%- endfor %}
+{% endif %}
+{% endblock %}
+
+
+Functions
+---------
+   
+.. autosummary::
+   :toctree: {{ objname  }}/
+   :template: function.rst
+
+{% for item in functions %}
    {{ item }}
 {%- endfor %}
 {% endif %}

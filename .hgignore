@@ -7,5 +7,6 @@ pyglet.*.log
 .DS_Store
 doc/api
 doc/_build
+doc/go.bat
 doc/internal/build.rst
 doc/internal/blacklist.rst
