@@ -86,4 +86,3 @@ Functions
 
 .. template module.rst
 
-

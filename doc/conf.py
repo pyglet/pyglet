@@ -13,14 +13,11 @@
 
 import sys, os
 
-
-
 # pyglet base path.
 sys.path.insert(0, os.path.abspath('..'))
 
 # patched extensions base path.
 sys.path.insert(0, os.path.abspath('.'))
-
 
 sys.is_epydoc = True
 try:
@@ -72,7 +69,6 @@ skip_modules = {"pyglet": {
 
 # Skip members
 def skip_member(member, obj):
-
     module = obj.__name__
 
     if ".win32" in module: return True
@@ -81,12 +77,12 @@ def skip_member(member, obj):
     if ".xlib" in module: return True
 
     if member.startswith("PFN"): return True
-    
+
     if module.startswith("pyglet.gl.glext_"): return True
     if module.startswith("pyglet.gl.gl_ext_"): return True
     if module.startswith("pyglet.gl.glxext_"): return True
     if module.startswith("pyglet.image.codecs."): return True
-    
+
     if module=="pyglet.gl.gl" or module=="pyglet.gl.gl_info":
         if member=="pointer": return True
     else:
@@ -115,19 +111,12 @@ def skip_member(member, obj):
                       "set_conversion_mode",
                       "set_last_error",
                       "set_errno",
-                      "sizeof"]: 
+                      "sizeof"]:
             return True
-        
+
     return False
 
-
-
-
-
 autosummary_generate = True
-
-
-
 
 # -- General configuration -----------------------------------------------------
 
@@ -138,13 +127,12 @@ autosummary_generate = True
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
               'ext.autosummary',
-              'sphinx.ext.inheritance_diagram', 
+              'sphinx.ext.inheritance_diagram',
               'sphinx.ext.todo']
 
 inheritance_graph_attrs = dict(rankdir="LR", size='""')
 
 autodoc_member_order='groupwise'
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -225,11 +213,11 @@ html_theme = 'nature'
 html_title = "pyglet v%s documentation" % (pyglet.version)
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "[]"
+html_short_title = "pyglet"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-# html_logo = "_static/logo.png"
+html_logo = "_static/logo.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -361,9 +349,6 @@ texinfo_documents = [
 #texinfo_show_urls = 'footnote'
 
 
-
-
-
 # pyglet documentation --------------------------------------------------
 
 import inspect
@@ -408,10 +393,10 @@ def _get_submodules(rootpath, skip):
             tree[module] = []
         tree[module].append(submodule)
         return True
-                    
+
     for root, subs, files in os.walk(rootpath):
         py_files = sorted([f for f in files if os.path.splitext(f)[1] == '.py'])
-                    
+
         if INITPY in py_files:
             subpackage = root[len(rootpath):].lstrip(os.path.sep).\
                 replace(os.path.sep, '.')
@@ -420,8 +405,8 @@ def _get_submodules(rootpath, skip):
             base_package, submodule = part[0], part[2]
             found += 1
             if save(base_package, submodule): saved += 1
-            
-            py_files.remove(INITPY)    
+
+            py_files.remove(INITPY)
             for py_file in py_files:
                 found += 1
                 module = os.path.splitext(py_file)[0]
@@ -452,9 +437,9 @@ class EventDocumenter(MethodDocumenter):
         if member.__doc__ is not None:
             if ":event:" in member.__doc__:
                 return inspect.isroutine(member) and \
-                       not isinstance(parent, ModuleDocumenter)  
+                       not isinstance(parent, ModuleDocumenter)
         return False
-          
+
 def setup(app):
     app.add_autodocumenter(EventDocumenter)
 
