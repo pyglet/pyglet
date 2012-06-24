@@ -31,18 +31,15 @@ API Reference:
    internal
    Testing framework <api/tests.test>
    
-..
 
-   .. rubric:: Packages:
+.. rubric:: Documented packages
 
-   .. autosummary::
-      :toctree: api/ 
-      :template: package.rst
+.. autosummary::
+   :toctree: api/ 
+   :template: package.rst
  
-      pyglet
-      tests.test
-
-
+   pyglet
+   tests.test
 
 .. rubric:: Related Documentation:
 
@@ -51,4 +48,7 @@ API Reference:
 * `AVbin Documentation <http://avbin.github.com/AVbin/Docs.html>`_
 * `ctypes Reference <http://docs.python.org/lib/module-ctypes.html>`_
 * `Python Documentation <http://docs.python.org/>`_
+
+
+
 
