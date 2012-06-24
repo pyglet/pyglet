@@ -18,21 +18,10 @@ def clean():
 
 def docs():
     make_bin = 'make.exe' if sys.platform=='win32' else 'make'
-    
-    env = dict(os.environ)
 
-    sphinx_dir = op.join(THIS_DIR, 'tools', 'Sphinx-1.1.3-py2.7.egg')
-    if 'PYTHONPATH' in env:
-        env['PYTHONPATH'] = os.pathsep.join([sphinx_dir, env['PYTHONPATH']])
-    else:
-        env['PYTHONPATH'] = sphinx_dir
-
-    print 'PYTHONPATH=', env['PYTHONPATH']
-
-    call([make_bin, 'html'], cwd=DOC_DIR, env=env)
+    call([make_bin, 'html'], cwd=DOC_DIR)
     if '--no-open' not in sys.argv:
         webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
-
 
 if __name__=='__main__':
     avail_cmds = dict(filter(lambda (k,v): not k.startswith('_') and inspect.isfunction(v),
