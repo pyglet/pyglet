@@ -194,18 +194,20 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                                    get_members(obj, 'function')
                 ns['exceptions'], ns['all_exceptions'] = \
                                    get_members(obj, 'exception')
+                documented = ns['classes']+ns['functions']+ns['exceptions']
+                
                 if sys.all_submodules.has_key(obj.__name__):
                     ns['submodules'] = sys.all_submodules[obj.__name__]
+                    documented += ns['submodules']
 
                 ns['members'] = ns['all_members']
-
                 try:
                     obj_dict = safe_getattr(obj, '__dict__')
                 except AttributeError:
                     obj_dict = []
 
                 public = [x for x in obj_dict if not x.startswith('_')]
-                for item in ns['classes']+ns['functions']+ns['exceptions']:
+                for item in documented:
                     if item in public:
                         public.remove(item)
 
