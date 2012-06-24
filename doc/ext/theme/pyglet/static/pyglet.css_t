@@ -1,8 +1,8 @@
 /*
- * nature.css_t
+ * pyglet.css_t
  * ~~~~~~~~~~~~
  *
- * Sphinx stylesheet -- nature theme.
+ * Sphinx stylesheet 
  *
  * :copyright: Copyright 2007-2011 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
@@ -261,4 +261,11 @@ tt.descname {
 p.rubric {
     font-weight: normal;
     font-size: 22px;
+}
+
+span.relatedlogo a, span.relatedlogo img {
+    margin: 0px;
+    position:relative;
+    top:3px;
+    left:1px;
 }
