@@ -460,6 +460,12 @@ quartz.CGFontCreateWithDataProvider.argtypes = [c_void_p]
 quartz.CGFontCreateWithFontName.restype = c_void_p
 quartz.CGFontCreateWithFontName.argtypes = [c_void_p]
 
+quartz.CGContextDrawImage.restype = None
+quartz.CGContextDrawImage.argtypes = [c_void_p, CGRect, c_void_p]
+
+quartz.CGContextRelease.restype = None
+quartz.CGContextRelease.argtypes = [c_void_p]
+
 quartz.CGContextSetTextPosition.restype = None
 quartz.CGContextSetTextPosition.argtypes = [c_void_p, CGFloat, CGFloat]
 
