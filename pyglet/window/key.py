@@ -305,6 +305,10 @@ F13           = 0xffca
 F14           = 0xffcb
 F15           = 0xffcc
 F16           = 0xffcd
+F17           = 0xffce
+F18           = 0xffcf
+F19           = 0xffd0
+F20           = 0xffd1
 
 # Modifiers
 LSHIFT        = 0xffe1
@@ -320,8 +324,8 @@ LWINDOWS      = 0xffeb
 RWINDOWS      = 0xffec
 LCOMMAND      = 0xffed
 RCOMMAND      = 0xffee
-LOPTION       = 0xffd0
-ROPTION       = 0xffd1
+LOPTION       = 0xffef
+ROPTION       = 0xfff0
 
 # Latin-1
 SPACE         = 0x020
