@@ -1,3 +1,56 @@
+1.2alpha1
+	* ported to Python 3
+	* ported to 64-bit Linux, Windows and OS X
+	* configurable texture filtering for issue:463
+	* added set_mouse_position to window, fix for issue:467
+	* correction to use textures min/mag filter for get_texture
+	* fix runaway event loops caused by least squares estimator
+	* ported to Cocoa on OS X to allow 64-bit compatibility
+	* compute correct expiration time for the event loop
+	* fix ordering of Groups and OrderedGroups
+	* updated OpenGL wrappers (except for agl* and wgl*)
+	* fix loading of small images using GdkPixbuf2ImageDecoder for issue:493
+	* applied Andrew Straw's pyglet-xvfb.patch patch from issue:456
+	* fix for issue:517 tests/window/CONTEXT_SHARE.py glIsList exceptions
+	* renamed Label parameter 'halign' to 'align', fix for issue:460
+	* numeric keypad constants in docs don't match key.py, fix for issue:523
+	* use new method for quering extensions if OpenGL version is >=3
+	* don't create another context in Win32Context.attach() if the sub-class
+	  (Win32ARBContext) already created one
+	* remove unused module 'glext_missing' - everything should already be in
+	  'glext_arb'
+	* pitch change functionality with pulseaudio driver; patch from Adam Bark,
+	  issue:536
+	* add missing freetype ctypes declarations, patch from issue:529
+	* (possible) fixes for context sharing problems on Windows
+	* add flag to check if event-loop is running
+	* added chapter to programming guide for input module
+	* add variation on how to import PIL, fix issue 551
+	* fix 100% cpu load with scheduled events when using xlib
+	* handle race condition in texture cleanup, fix for issue:565
+	* fix different linux platform strings, issue:571
+	* fix tiling window manager resizable window initialisation, issue:563
+	* fix examples/window_platform_event.py when no "names", issue:561
+	* fix for GIFs with alpha, Frankie.Robertson, issue:411
+	* added exception for ATI radeon xpress 200M not exporting glGenBuffers
+	* allow pyglet.resource.image to specify that the image be stand-alone and
+	  not loaded into an atlas
+	* mention atlas in the programming guide
+	* apply patch for x64 issues on windows, fix issue:510
+	* make test runner output easier to read and verify for the tester
+	* make failing to load libraries that exist but have fatal problems is not
+	  be _silently_ ignored on Linux and OS X, fix issue:579
+	* replaced pyglet/image/codecs/quartz.py with ctypes-only code
+	* added complete type declarations to darwin_hid so pypy will stop
+	  complaining
+	* add OS X function key
+	* fix multiline/wrap_line confusing (Martin Di Paola), per issue:394
+	* apply Txema Vicente's patch to generate docs with Sphinx
+	* apply patch fixing image.DDS_RGB_DXT1_LOAD (and similar) throwing
+	  ImageException from petete.zur88, issue:580
+	* fix example in animation docs
+	* clarify docs for graphics.draw() from Tim McNamara in issue:478
+
 1.1.1
     * examples: Fixed graphics.py triangle windings
     * pyglet.clock: Fixed resource leak in Clock.unschedule

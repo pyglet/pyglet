@@ -11,7 +11,7 @@ import shutil
 import sys
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.2dev'
+VERSION = '1.2alpha1'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
@@ -45,13 +45,13 @@ setup_info = dict(
 
     # Package info
     packages=[
-        'pyglet', 
+        'pyglet',
         'pyglet.app',
         'pyglet.canvas',
-        'pyglet.font', 
-        'pyglet.gl', 
+        'pyglet.font',
+        'pyglet.gl',
         'pyglet.graphics',
-        'pyglet.image', 
+        'pyglet.image',
         'pyglet.image.codecs',
         'pyglet.input',
         'pyglet.libs',
@@ -59,17 +59,17 @@ setup_info = dict(
         'pyglet.libs.darwin.cocoapy',
         'pyglet.libs.win32',
         'pyglet.libs.x11',
-        'pyglet.media', 
-        'pyglet.media.drivers', 
-        'pyglet.media.drivers.directsound', 
-        'pyglet.media.drivers.openal', 
-        'pyglet.media.drivers.pulse', 
+        'pyglet.media',
+        'pyglet.media.drivers',
+        'pyglet.media.drivers.directsound',
+        'pyglet.media.drivers.openal',
+        'pyglet.media.drivers.pulse',
         'pyglet.text',
         'pyglet.text.formats',
-        'pyglet.window', 
+        'pyglet.window',
         'pyglet.window.carbon',
         'pyglet.window.cocoa',
-        'pyglet.window.win32', 
+        'pyglet.window.win32',
         'pyglet.window.xlib',
     ],
 )
@@ -106,7 +106,7 @@ elif 'bdist_mpkg' in sys.argv:
     _have_setuptools = True
 
     from bdist_mpkg_pyglet import plists, pkg, cmd_bdist_mpkg, tools
-    
+
     # Check for ctypes if installing into Python 2.4
     def ctypes_requirement(pkgname, prefix):
         prefix = os.path.join(prefix, 'ctypes')
@@ -136,7 +136,7 @@ elif 'bdist_mpkg' in sys.argv:
         def get_metapackage_info(self):
             info = dict(cmd_bdist_mpkg.bdist_mpkg.get_metapackage_info(self))
             info.update(dict(
-                # Set background image alignment 
+                # Set background image alignment
                 IFPkgFlagBackgroundScaling='none',
                 IFPkgFlagBackgroundAlignment='topleft',
                 # Remove specific Python version requirement from metapackage,
@@ -172,7 +172,7 @@ elif 'bdist_mpkg' in sys.argv:
             # pyglet packages
             files, common, prefix = self.get_scheme_root(scheme)
 
-            def add_package(python_dir, package_dir, 
+            def add_package(python_dir, package_dir,
                             pyver, pkgname, description):
                 scheme_prefix = package_dir
                 pkgfile = pkgname + '.pkg'
@@ -204,12 +204,12 @@ elif 'bdist_mpkg' in sys.argv:
 
                 # Move the archive up to the metapackage and symlink to it
                 pkgfile = os.path.join(pkgdir, 'Contents/Archive.pax.gz')
-                shutil.move(pkgfile, 
+                shutil.move(pkgfile,
                             os.path.join(pkgdir, '../../Archive.pax.gz'))
                 os.symlink('../../../Archive.pax.gz', pkgfile)
 
                 pkgfile = os.path.join(pkgdir, 'Contents/Archive.bom')
-                shutil.move(pkgfile, 
+                shutil.move(pkgfile,
                             os.path.join(pkgdir, '../../Archive.bom'))
                 os.symlink('../../../Archive.bom', pkgfile)
 
@@ -218,12 +218,12 @@ elif 'bdist_mpkg' in sys.argv:
 
             add_package(
                 '/System/Library/Frameworks/Python.framework/Versions/2.5',
-                '/Library/Python/2.5/site-packages', 
+                '/Library/Python/2.5/site-packages',
                 '2.5', 'pyglet-syspy2.5',
                 'pyglet for Python 2.5 in /System/Library')
             add_package(
                 '/System/Library/Frameworks/Python.framework/Versions/2.6',
-                '/Library/Python/2.6/site-packages', 
+                '/Library/Python/2.6/site-packages',
                 '2.6', 'pyglet-syspy2.6',
                 'pyglet for Python 2.6 in /System/Library')
             add_package(
@@ -260,7 +260,7 @@ elif 'bdist_mpkg' in sys.argv:
                     '/lib/python2.6/site-packages',
                 '2.6', 'pyglet-macports-py2.6',
                 'pyglet for MacPorts Python 2.6 in /opt/local')
- 
+
         # Don't build to an absolute path, assume within site-packages (makes
         # it easier to symlink the same archive for all packages)
         def get_scheme_install_prefix(self, scheme):
