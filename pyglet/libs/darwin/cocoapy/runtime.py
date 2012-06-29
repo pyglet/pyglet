@@ -497,25 +497,71 @@ def send_super(receiver, selName, *args, **kwargs):
 
 cfunctype_table = {}
 
-def tokenize_encoding(encoding):
-    token_list = []
-    brace_count = 0
-    token = ''
+def parse_type_encoding(encoding):
+    """Takes a type encoding string and outputs a list of the separated type codes.
+    Currently does not handle unions or bitfields and strips out any field width
+    specifiers or type specifiers from the encoding.
+
+    Examples:
+    parse_type_encoding('^v16@0:8') --> ['^v', '@', ':']
+    parse_type_encoding('{CGSize=dd}40@0:8{CGSize=dd}16Q32') --> ['{CGSize=dd}', '@', ':', '{CGSize=dd}', 'Q']
+    """
+    type_encodings = []
+    brace_count = 0    # number of unclosed curly braces
+    bracket_count = 0  # number of unclosed square brackets
+    typecode = ''
     for c in encoding:
-        token += c
         if c == '{':
+            # Check if this marked the end of previous type code.
+            if typecode and typecode[-1] != '^' and brace_count == 0 and bracket_count == 0:
+                type_encodings.append(typecode)
+                typecode = ''
+            typecode += c
             brace_count += 1
         elif c == '}':
+            typecode += c
             brace_count -= 1
-            if brace_count < 0: # bad encoding
-                brace_count = 0
-        if brace_count == 0:
-            token_list.append(token)
-            token = ''
-    return token_list
+            assert(brace_count >= 0)
+        elif c == '[':
+            # Check if this marked the end of previous type code.
+            if typecode and typecode[-1] != '^' and brace_count == 0 and bracket_count == 0:
+                type_encodings.append(typecode)
+                typecode = ''
+            typecode += c
+            bracket_count += 1
+        elif c == ']':
+            typecode += c
+            bracket_count -= 1
+            assert(bracket_count >= 0)
+        elif brace_count or bracket_count:
+            # Anything encountered while inside braces or brackets gets stuck on.
+            typecode += c
+        elif c in '0123456789':
+            # Ignore field width specifiers for now.
+            pass
+        elif c in 'rnNoORV':
+            # Also ignore type specifiers.
+            pass
+        elif c in '^cislqCISLQfdBv*@#:b?':
+            if typecode and typecode[-1] == '^':
+                # Previous char was pointer specifier, so keep going.
+                typecode += c
+            else:
+                # Add previous type code to the list.
+                if typecode:
+                    type_encodings.append(typecode)
+                # Start a new type code.
+                typecode = c
+            
+    # Add the last type code to the list
+    if typecode:
+        type_encodings.append(typecode)
+
+    return type_encodings
+
 
 # Limited to basic types and pointers to basic types.
-# Does not try to handle arrays, structs, unions, or bitfields.
+# Does not try to handle arrays, arbitrary structs, unions, or bitfields.
 def cfunctype_for_encoding(encoding):
     # Check if we've already created a CFUNCTYPE for this encoding.
     # If so, then return the cached CFUNCTYPE.
@@ -527,24 +573,19 @@ def cfunctype_for_encoding(encoding):
                  'C':c_ubyte, 'I':c_uint, 'S':c_ushort, 'L':c_ulong, 'Q':c_ulonglong, 
                  'f':c_float, 'd':c_double, 'B':c_bool, 'v':None, '*':c_char_p,
                  '@':c_void_p, '#':c_void_p, ':':c_void_p, NSPointEncoding:NSPoint,
-                 NSSizeEncoding:NSSize, NSRectEncoding:NSRect, PyObjectEncoding:py_object}
+                 NSSizeEncoding:NSSize, NSRectEncoding:NSRect, NSRangeEncoding:NSRange,
+                 PyObjectEncoding:py_object}
     argtypes = []
-    pointer = False
-    for token in tokenize_encoding(encoding):
-        if pointer:
-            if token in typecodes:
-                argtypes.append(POINTER(typecodes[token]))
-                pointer = False
-            else:
-                raise Exception('unknown encoding')
+    for code in parse_type_encoding(encoding):
+        if code in typecodes:
+            argtypes.append(typecodes[code])
+        elif code[0] == '^' and code[1:] in typecodes:
+            argtypes.append(POINTER(typecodes[code[1:]]))
         else:
-            if token in typecodes:
-                argtypes.append(typecodes[token])
-            elif token == '^':
-                pointer = True
-            else:
-                raise Exception('unknown encoding: ' + token)
+            raise Exception('unknown type encoding: ' + code)
+
     cfunctype = CFUNCTYPE(*argtypes)
+
     # Cache the new CFUNCTYPE in the cfunctype_table.
     # We do this mainly because it prevents the CFUNCTYPE 
     # from being garbage-collected while we need it.
@@ -566,12 +607,14 @@ def register_subclass(subclass):
     objc.objc_registerClassPair(subclass)
 
 # types is a string encoding the argument types of the method.
-# The first char of types is the return type ('v' if void)
-# The second char must be '@' for id self.
-# The third char must be ':' for SEL cmd.
-# Additional chars are for types of other arguments if any.
+# The first type code of types is the return type (e.g. 'v' if void)
+# The second type code must be '@' for id self.
+# The third type code must be ':' for SEL cmd.
+# Additional type codes are for types of other arguments if any.
 def add_method(cls, selName, method, types):
-    assert(types[1:3] == '@:')
+    type_encodings = parse_type_encoding(types)
+    assert(type_encodings[1] == '@')  # ensure id self typecode
+    assert(type_encodings[2] == ':')  # ensure SEL cmd typecode
     selector = get_selector(selName)
     cfunctype = cfunctype_for_encoding(types)
     imp = cfunctype(method)
@@ -934,7 +977,7 @@ def convert_method_arguments(encoding, args):
     """Used by ObjCSubclass to convert Objective-C method arguments to
     Python values before passing them on to the Python-defined method."""
     new_args = []
-    arg_encodings = tokenize_encoding(encoding)[3:]
+    arg_encodings = parse_type_encoding(encoding)[3:]
     for e, a in zip(arg_encodings, args):
         if e == '@':
             new_args.append(ObjCInstance(a))
@@ -1035,7 +1078,10 @@ class ObjCSubclass(object):
         """Decorator for instance methods without any fancy shenanigans.
         The function must have the signature f(self, cmd, *args)
         where both self and cmd are just pointers to objc objects."""
-        encoding = encoding[0] + '@:' + encoding[1:]
+        # Add encodings for hidden self and cmd arguments.
+        typecodes = parse_type_encoding(encoding)
+        typecodes.insert(1, '@:')
+        encoding = ''.join(typecodes)
         def decorator(f):
             name = f.func_name.replace('_', ':')
             self.add_method(f, name, encoding)
@@ -1045,8 +1091,9 @@ class ObjCSubclass(object):
     def method(self, encoding):
         """Function decorator for instance methods."""
         # Add encodings for hidden self and cmd arguments.
-        # BUG: This doesn't work if the return encoding is not single char.
-        encoding = encoding[0] + '@:' + encoding[1:]
+        typecodes = parse_type_encoding(encoding)
+        typecodes.insert(1, '@:')
+        encoding = ''.join(typecodes)
         def decorator(f):
             def objc_method(objc_self, objc_cmd, *args):
                 py_self = ObjCInstance(objc_self)
@@ -1066,7 +1113,9 @@ class ObjCSubclass(object):
     def classmethod(self, encoding):
         """Function decorator for class methods."""
         # Add encodings for hidden self and cmd arguments.
-        encoding = encoding[0] + '@:' + encoding[1:]
+        typecodes = parse_type_encoding(encoding)
+        typecodes.insert(1, '@:')
+        encoding = ''.join(typecodes)
         def decorator(f):
             def objc_class_method(objc_cls, objc_cmd, *args):
                 py_cls = ObjCClass(objc_cls)

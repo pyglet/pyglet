@@ -36,6 +36,8 @@ def getModifiers(nsevent):
         modifiers |= key.MOD_OPTION
     if modifierFlags & NSCommandKeyMask:
         modifiers |= key.MOD_COMMAND
+    if modifierFlags & NSFunctionKeyMask:
+        modifiers |= key.MOD_FUNCTION
     return modifiers
 
 def getSymbol(nsevent):
@@ -179,7 +181,8 @@ class PygletView_Implementation(object):
                        key.ROPTION : NSRightAlternateKeyMask,
                        key.LCOMMAND : NSLeftCommandKeyMask,
                        key.RCOMMAND : NSRightCommandKeyMask,
-                       key.CAPSLOCK : NSAlphaShiftKeyMask }
+                       key.CAPSLOCK : NSAlphaShiftKeyMask,
+                       key.FUNCTION : NSFunctionKeyMask }
 
         symbol = getSymbol(nsevent)
 
