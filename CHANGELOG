@@ -1,11 +1,19 @@
 1.2alpha1
 	The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on
-	64-bit operating systems Linux, Windows and OS X. OS X layer is switched
-	to Cocoa.
+	64-bit operating systems Linux, Windows and OS X. The OS X layer has
+	switched to Cocoa.
+
+	Backwards-incompatible API changes:
+
+	* renamed Label parameter 'halign' to 'align', fix for issue:460
+	* remove unused module 'glext_missing' - everything should already be in
+	  'glext_arb'
+
+	Other changes and fixes:
 
 	* updated OpenGL wrappers (except for agl* and wgl*)
-	* configurable texture filtering for issue:463
 	* added set_mouse_position to window, fix for issue:467
+	* configurable texture filtering for issue:463
 	* correction to use textures min/mag filter for get_texture
 	* fix runaway event loops caused by least squares estimator
 	* compute correct expiration time for the event loop
@@ -13,41 +21,39 @@
 	* fix loading of small images using GdkPixbuf2ImageDecoder for issue:493
 	* applied Andrew Straw's pyglet-xvfb.patch patch from issue:456
 	* fix for issue:517 tests/window/CONTEXT_SHARE.py glIsList exceptions
-	* renamed Label parameter 'halign' to 'align', fix for issue:460
 	* numeric keypad constants in docs don't match key.py, fix for issue:523
-	* use new method for quering extensions if OpenGL version is >=3
-	* remove unused module 'glext_missing' - everything should already be in
-	  'glext_arb'
-	* pitch change functionality with pulseaudio driver; patch from Adam Bark,
-	  issue:536
+	* use new method for quering extensions if OpenGL version is >= 3
 	* add missing freetype ctypes declarations, patch from issue:529
 	* add flag to check if event-loop is running
-	* add variation on how to import PIL, fix issue 551
-	* fix 100% cpu load with scheduled events when using xlib
+	* add variation on how to import PIL, fix issue:551
 	* handle race condition in texture cleanup, fix for issue:565
-	* fix tiling window manager resizable window initialisation, issue:563
 	* fix examples/window_platform_event.py when no "names", issue:561
 	* fix for GIFs with alpha, Frankie.Robertson, issue:411
 	* added exception for ATI radeon xpress 200M not exporting glGenBuffers
 	* allow pyglet.resource.image to specify that the image be stand-alone and
 	  not loaded into an atlas
-	* mention atlas in the programming guide
 	* make test runner output easier to read and verify for the tester
 	* make failing to load libraries that exist but have fatal problems not
 	  be _silently_ ignored on Linux and OS X, fix issue:579
-	* replaced pyglet/image/codecs/quartz.py with ctypes-only code
-	* added complete type declarations to darwin_hid so pypy will stop
-	  complaining
 	* fix multiline/wrap_line confusing (Martin Di Paola), per issue:394
-	* apply Txema Vicente's patch to generate docs with Sphinx
 	* apply patch fixing image.DDS_RGB_DXT1_LOAD (and similar) throwing
 	  ImageException from petete.zur88, issue:580
 	* fix experimental/animation.py frame.delay reference (anatoly techtonik)
 	* docs: added chapter to programming guide for input module
 	* docs: fix example in animation docs
 	* docs: clarify graphics.draw() from Tim McNamara in issue:478
+	* docs: mention atlas in the programming guide
+	* docs: apply Txema Vicente's patch to generate docs with Sphinx
 	* Linux: fix different platform strings, issue:571
+	* Linux: fix 100% cpu load with scheduled events when using xlib
+	* Linux: pitch change functionality with pulseaudio driver; patch from Adam
+	  Bark, issue:536
+	* Linux: fix tiling window manager resizable window initialisation,
+	  issue:563
 	* OS X: add function key
+	* OS X: replaced pyglet/image/codecs/quartz.py with ctypes-only code
+	* OS X: added complete type declarations to darwin_hid so pypy will stop
+	  complaining
 	* Windows: apply patch for x64 issues, fix issue:510
 	* Windows: (possible) fixes for context sharing problems
 	* Windows: don't create another context in Win32Context.attach() if the
