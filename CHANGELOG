@@ -50,6 +50,7 @@
 	  ImageException from petete.zur88, issue:580
 	* fix example in animation docs
 	* clarify docs for graphics.draw() from Tim McNamara in issue:478
+	* fix experimental/animation.py frame.delay reference (anatoly techtonik)
 
 1.1.1
     * examples: Fixed graphics.py triangle windings
