@@ -386,7 +386,7 @@ class Win32Window(BaseWindow):
                 cursor = self._mouse_cursor.cursor
             else:
                 cursor = _user32.LoadCursorW(None, MAKEINTRESOURCE(IDC_ARROW))
-            _user32.SetClassLongPtrW(self._view_hwnd, GCL_HCURSOR, cursor)
+            _user32.SetClassLongW(self._view_hwnd, GCL_HCURSOR, cursor)
             _user32.SetCursor(cursor)
 
         if platform_visible == self._mouse_platform_visible:
@@ -492,7 +492,7 @@ class Win32Window(BaseWindow):
         }
         if name not in names:
             raise RuntimeError('Unknown cursor name "%s"' % name)
-        cursor = _user32.LoadCursorW(None, unicode(names[name]))
+        cursor = _user32.LoadCursorW(None, MAKEINTRESOURCE(names[name]))
         return Win32MouseCursor(cursor)
 
     def set_icon(self, *images):
