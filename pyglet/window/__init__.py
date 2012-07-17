@@ -563,6 +563,10 @@ class BaseWindow(EventDispatcher):
             self.set_visible(True)
             self.activate()
 
+    def __repr__(self):
+        return '%s(width=%d, height=%d)' % \
+            (self.__class__.__name__, self.width, self.height)
+
     def _create(self):
         raise NotImplementedError('abstract')
 

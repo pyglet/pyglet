@@ -37,30 +37,39 @@
 '''
 
 __docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+__version__ = '1.2'
 
+import sys
 import textwrap
 
+import pyglet
+import pyglet.app
+import pyglet.canvas
 import pyglet.window
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 
-platform = pyglet.window.get_platform()
-print 'Platform instance is %r' % platform
-display = platform.get_default_display()
-print 'Display instance is %r' % display
+print 'Pyglet:     %s' % pyglet.version
+print 'Platform:   %s' % sys.platform
+print 'Event loop: %s' % pyglet.app.PlatformEventLoop.__name__
+
+display = pyglet.canvas.get_display()
+print 'Display:    %s' % display.__class__.__name__
 print 'Screens:'
 for screen in display.get_screens():
     print '  %r' % screen
 
+print
 print 'Creating default context...'
 w = pyglet.window.Window(1, 1, visible=True)
+print 'Window:'
+print '  %s' % w
 
 print 'GL attributes:'
 attrs = w.config.get_gl_attributes()
 attrs = ' '.join(['%s=%s'%(name, value) for name, value in attrs])
-print '\n'.join(textwrap.wrap(attrs))
+print ' ', '\n  '.join(textwrap.wrap(attrs))
 
 print 'GL version:', gl_info.get_version()
 print 'GL vendor:', gl_info.get_vendor()
