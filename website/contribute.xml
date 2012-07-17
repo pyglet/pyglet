@@ -1,18 +1,15 @@
 <div>
   <h2>mailing lists</h2>
   <p>
-    The main forum for pyglet discussion is the <a
-    href="http://groups.google.com/group/pyglet-users">pyglet-users</a>
-    mailing list.  You can browse the mailing list online or provide your
-    email address for immediate or digest updates.
-  </p>
-
-  <p>
-    There are two more mailing lists if you're interested in following the
-    progress of pyglet development:
+    Pyglet communication mostly occurs on mailing lists.  You can browse them
+    online or subscribe for immediate or digest updates.
   </p>
 
   <ul>
+    <li><a
+    href="http://groups.google.com/group/pyglet-users">pyglet-users</a> is
+    the main forum for pyglet discussion.</li>
+
     <li><a
     href="http://groups.google.com/group/pyglet-issues">pyglet-issues</a> is
     an announcement list which broadcasts emails from the issue tracker.</li>
