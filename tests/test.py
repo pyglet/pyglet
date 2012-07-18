@@ -398,7 +398,28 @@ class TestPlan(object):
                 plan.names[section.name] = section
 
         return plan
-        
+
+    def run(self, options, names=[]):
+        if not names:
+            components = [self.root]
+        else:
+            components = []
+            for name in names:
+                if name not in self.names:
+                    options.log.error('Unknown test case or section "%s"', name)
+                    return False
+                else:
+                    components.append(self.names[name])
+                
+        options.num_tests = sum([c.num_tests() for c in components])
+        options.completed_tests = 0
+        for component in components:
+            component.test(options)
+        print '-' * 78
+
+        return True
+
+
 class StandardTestResult(unittest.TestResult):
     def __init__(self, component):
         super(StandardTestResult, self).__init__()
@@ -557,28 +578,11 @@ def main():
     options.log.info('sys.platform = %s', sys.platform)
     options.log.info('pyglet.version = %s', pyglet.version)
     options.log.info('Reading test plan from %s', options.plan)
+
     plan = TestPlan.from_file(options.plan)
-
-    errors = False
-    if args:
-        components = []
-        for arg in args:
-            try:
-                component = plan.names[arg]
-                components.append(component)
-            except KeyError:
-                options.log.error('Unknown test case or section "%s"', arg)
-                errors = True
-    else:
-        components = [plan.root]
-
-    if not errors:
-        options.num_tests = sum([c.num_tests() for c in components])
-        options.completed_tests = 0
-        for component in components:
-            component.test(options)
-        print '-' * 78
-
+    if not plan.run(options, args):
+       options.log.error('Test run failed.')
+    
     print 'Test results are saved in log file:', options.log_file
 
 if __name__ == '__main__':
