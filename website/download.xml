@@ -1,8 +1,8 @@
 <div>
   <p>
     The current stable version of pyglet is <strong>1.1.4</strong>.
-    <!--See below for the latest <a href="#unstable">development
-    release</a>.-->
+    See below for the latest <a href="#unstable">development
+    release</a>.
   </p>
 
   <h2>current release</h2>
@@ -64,7 +64,6 @@
     href="http://pyglet.googlecode.com/files/pyglet-1.1.4.zip">pyglet-1.1.4.zip</a></li>
   </ul>
 
-  <!--
   <a name="unstable" />
   <h2>development release</h2>
 
@@ -73,11 +72,11 @@
 
   <ul>
     <li>
-      Source, documentation and setuptools egg distributions for
-      <b>pyglet 1.1beta2</b> are available directly from the 
-      <a href="http://code.google.com/p/pyglet/downloads/list?q=1.1beta2">
+      Source and documentation for
+      <b>pyglet 1.2alpha1</b> are available directly from the
+      <a href="http://code.google.com/p/pyglet/downloads/list?q=1.2alpha1">
       download server</a>.
     </li>
   </ul>
-  -->
+
 </div>
