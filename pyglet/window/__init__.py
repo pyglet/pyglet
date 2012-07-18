@@ -1757,7 +1757,7 @@ class Platform(object):
     def get_default_display(self):
         '''Get the default display device.
 
-        :deprecated: Use `pyglet.app.get_display`.
+        :deprecated: Use `pyglet.canvas.get_display`.
 
         :rtype: `Display`
         '''
