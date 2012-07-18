@@ -38,24 +38,24 @@ def element_text(elem):
         return s
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.dirname(__file__), '..')
-    input_dir = os.path.join(root, 'website')
-    output_dir = os.path.join(root, 'website/dist')
+    input_dir = os.path.dirname(__file__)
+    output_dir = os.path.join(input_dir, 'dist')
     template_filename = os.path.join(input_dir, 'template.xhtml')
     news_items_filename = os.path.join(input_dir, 'news-items.xml')
     exclude_files = ('template.xhtml', 'news-items.xml')
 
+    print 'Writing site to %s/' % output_dir
     try:
         os.makedirs(output_dir)
     except OSError:
         pass #exists
 
-    # Read news items
+    print '..read news items'
     news_items_doc = parse(news_items_filename)
     news_items = [item for item in element_children(
                                     news_items_doc.documentElement, 'item')]
 
-    # Write ATOM feed (news.xml)
+    print '..write ATOM feed (news.xml)'
     atom_filename = os.path.join(output_dir, 'news.xml')
     root = ElementTree.Element('feed', xmlns="http://www.w3.org/2005/Atom")
     SE = ElementTree.SubElement
@@ -85,12 +85,14 @@ if __name__ == '__main__':
     s.write('<?xml version="1.0" encoding="UTF-8" ?>\n')
     ElementTree.ElementTree(root).write(s, 'utf-8')
 
-    # Read template
+    print '..read template'
     template = parse(template_filename)
 
+    print '..processing files'
     for file in os.listdir(input_dir):
         if file in exclude_files:
             continue
+        sys.stdout.write('.')
         if not file.endswith('.xml'):
             if os.path.isfile(os.path.join(input_dir, file)):
                 shutil.copy(os.path.join(input_dir, file), output_dir)
@@ -143,3 +145,4 @@ if __name__ == '__main__':
         output_filename = os.path.join(output_dir, 
                                        '%s.html' % os.path.splitext(file)[0])
         output_doc.writexml(open(output_filename, 'w'))
+    print '\nDone.'
