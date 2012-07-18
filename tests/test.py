@@ -301,8 +301,11 @@ class TestCase(object):
             len(result.failures) == 0 and 
             len(result.errors) == 0):
 #             print module.__doc__
-            user_result = raw_input('[P]assed test, [F]ailed test: ')
-            if user_result and user_result.strip()[0] in ('F', 'f'):
+            user_result = raw_input('Passed [Yn]: ')
+            while user_result and user_result not in 'YyNn':
+                print "Unrecognized response '%s'" % user_result
+                user_result = raw_input('Passed [Yn]: ')
+            if user_result and user_result in 'Nn':
                 print 'Enter failure description: '
                 description = raw_input('> ')
                 options.log.error('User marked fail for %s', self)
