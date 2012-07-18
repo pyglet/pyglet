@@ -42,7 +42,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 import pyglet
 
-FONTS = ['Consolas', 'Andale Mono', 'Inconsolata', 'Inconsolata-dz', 'Monaco',
+FONTS = ['Andale Mono', 'Consolas', 'Inconsolata', 'Inconsolata-dz', 'Monaco',
     'Menlo']
 
 SAMPLE = '''class Spam(object):
