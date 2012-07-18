@@ -239,10 +239,14 @@ class TestCase(object):
         return os.path.join(regressions_path, '%s.png' % self.name)
 
     def test(self, options):
+        options.tests_count += 1
         if not options.capabilities.intersection(self.capabilities):
+            options.tests_skipped += 1
+            options.log.debug('Capabilities mismatch. Skipping %s', self)
             return
 
-        options.log.info('Testing %s.', self)
+        options.log.info('--- test (%d/%d) %s',
+                         options.tests_count, options.num_tests, self)
         if options.pretend:
             return
 
@@ -272,8 +276,7 @@ class TestCase(object):
             result = StandardTestResult(self)
 
         print '-' * 78
-        options.completed_tests += 1
-        print ("Running Test: %s (%d/%d)\n" % (self, options.completed_tests, options.num_tests))
+        print ("Running Test: %s (%d/%d)\n" % (self, options.tests_count, options.num_tests))
         if module.__doc__:
             print '    ' + module.__doc__.replace('\n','\n    ')
         if module_interactive:
@@ -412,7 +415,8 @@ class TestPlan(object):
                     components.append(self.names[name])
                 
         options.num_tests = sum([c.num_tests() for c in components])
-        options.completed_tests = 0
+        options.tests_count = 0
+        options.tests_skipped = 0
         for component in components:
             component.test(options)
         print '-' * 78
