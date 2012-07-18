@@ -5,8 +5,6 @@
 Some text in various fonts will be displayed.  Green vertical lines mark
 the left edge of the text.  Blue vertical lines mark the right edge of the
 text.
-
-Press ESC to end the test.
 '''
 
 __docformat__ = 'restructuredtext'

@@ -5,8 +5,6 @@
 Four lines of text should be displayed, each in a different variant
 (bold/italic/regular) of Action Man at 24pt.  The Action Man fonts are
 included in the test directory (tests/font) as action_man*.ttf.
-
-Press ESC to end the test.
 '''
 
 __docformat__ = 'restructuredtext'

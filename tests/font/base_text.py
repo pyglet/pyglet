@@ -22,6 +22,10 @@ class TextTestBase(ImageRegressionTestCase):
     text = 'Quickly brown fox'
     window_size = 200, 200
 
+    def on_key_press(self, symbol, modifiers):
+        if symbol in (key.ENTER, key.ESCAPE):
+            self.window.dispatch_event('on_close')
+
     def on_expose(self):
         glClearColor(0.5, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)

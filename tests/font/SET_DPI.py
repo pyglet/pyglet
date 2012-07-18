@@ -4,8 +4,6 @@
 
 Some text in Action Man font will be displayed.  A green box should exactly
 bound the top and bottom of the text.
-
-Press ESC to end the test.
 '''
 
 __docformat__ = 'restructuredtext'
