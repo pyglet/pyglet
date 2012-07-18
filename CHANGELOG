@@ -1,4 +1,6 @@
-        * tools/gl_info.py: add pyglet version and platform info
+1.2beta1
+    * tools/gl_info.py: add pyglet version and platform info
+    * Windows: fix loading system cursors
 
 1.2alpha1
 	The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on
