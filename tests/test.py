@@ -342,7 +342,7 @@ class TestSection(object):
     def num_tests(self):
         return sum([c.num_tests() for c in self.children])
 
-class TestPlan(TestSection):
+class TestPlan(object):
     def __init__(self):
         self.root = None
         self.names = {}
