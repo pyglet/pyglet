@@ -38,7 +38,7 @@ def element_text(elem):
         return s
 
 if __name__ == '__main__':
-    input_dir = os.path.dirname(__file__)
+    input_dir = os.path.normpath(os.path.dirname(__file__))
     output_dir = os.path.join(input_dir, 'dist')
     template_filename = os.path.join(input_dir, 'template.xhtml')
     news_items_filename = os.path.join(input_dir, 'news-items.xml')
@@ -127,7 +127,7 @@ if __name__ == '__main__':
                 p.appendChild(attribution)
                 news_elem.parentNode.insertBefore(p, news_elem)
             news_elem.parentNode.removeChild(news_elem)
-            
+
 
         # Write body content
         output_content = get_elem_by_id(output_doc, 'div', 'content')
@@ -142,7 +142,7 @@ if __name__ == '__main__':
                     child.setAttribute('class', 'selected')
                 child.removeAttribute('select')
 
-        output_filename = os.path.join(output_dir, 
+        output_filename = os.path.join(output_dir,
                                        '%s.html' % os.path.splitext(file)[0])
         output_doc.writexml(open(output_filename, 'w'))
     print '\nDone.'
