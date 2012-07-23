@@ -1225,9 +1225,9 @@ class XlibWindow(BaseWindow):
         w, h = ev.xconfigure.width, ev.xconfigure.height
         x, y = ev.xconfigure.x, ev.xconfigure.y
         if self._width != w or self._height != h:
-            self._update_view_size()
             self._width = w
             self._height = h
+            self._update_view_size()
             self._needs_resize = True
         if self._x != x or self._y != y:
             self.dispatch_event('on_move', x, y)
