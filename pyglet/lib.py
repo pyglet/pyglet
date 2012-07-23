@@ -115,9 +115,9 @@ class LibraryLoader(object):
                     lib = _TraceLibrary(lib)
                 return lib
             except OSError, o:
-                if ((self.linux_not_found_error not in o.message) and
-                    (self.darwin_not_found_error not in o.message)):
-                    print "Unexpected error loading library %s: %s" % (name, o.message)
+                if ((self.linux_not_found_error not in o.args[0]) and
+                    (self.darwin_not_found_error not in o.args[0])):
+                    print "Unexpected error loading library %s: %s" % (name, o.args[0])
                     raise
                 path = self.find_library(name)
                 if path:
