@@ -433,6 +433,18 @@ class XlibWindow(BaseWindow):
                                   byref(attributes))
         return attributes.root
 
+    def _is_reparented(self):
+        root = c_ulong()
+        parent = c_ulong()
+        children = pointer(c_ulong())
+        n_children = c_uint()
+        
+        xlib.XQueryTree(self._x_display, self._window,
+                        byref(root), byref(parent), byref(children),
+                        byref(n_children))
+        
+        return root.value != parent.value
+
     def close(self):
         if not self._window:
             return
@@ -506,16 +518,17 @@ class XlibWindow(BaseWindow):
         return self._width, self._height
 
     def set_location(self, x, y):
-        # Assume the window manager has reparented our top-level window
-        # only once, in which case attributes.x/y give the offset from
-        # the frame to the content window.  Better solution would be
-        # to use _NET_FRAME_EXTENTS, where supported.
-        attributes = xlib.XWindowAttributes()
-        xlib.XGetWindowAttributes(self._x_display, self._window,
-                                  byref(attributes))
-        # XXX at least under KDE's WM these attrs are both 0
-        x -= attributes.x
-        y -= attributes.y
+        if self._is_reparented():
+            # Assume the window manager has reparented our top-level window
+            # only once, in which case attributes.x/y give the offset from
+            # the frame to the content window.  Better solution would be
+            # to use _NET_FRAME_EXTENTS, where supported.
+            attributes = xlib.XWindowAttributes()
+            xlib.XGetWindowAttributes(self._x_display, self._window,
+                                      byref(attributes))
+            # XXX at least under KDE's WM these attrs are both 0
+            x -= attributes.x
+            y -= attributes.y
         xlib.XMoveWindow(self._x_display, self._window, x, y)
 
     def get_location(self):
