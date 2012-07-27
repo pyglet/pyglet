@@ -403,7 +403,9 @@ class XlibWindow(BaseWindow):
         if self._override_redirect:
             # Possibly an override_redirect issue.
             self.activate()
-
+        
+        self._update_view_size()
+        
         self.dispatch_event('on_resize', self._width, self._height)
         self.dispatch_event('on_show')
         self.dispatch_event('on_expose')
