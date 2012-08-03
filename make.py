@@ -24,12 +24,15 @@ def docs():
         webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
 
 if __name__=='__main__':
-    avail_cmds = dict(filter(lambda (k,v): not k.startswith('_') and inspect.isfunction(v),
+    avail_cmds = dict(filter(lambda (k,v): not k.startswith('_') 
+                             and inspect.isfunction(v)
+                             and v.__module__ == '__main__',
                              locals().items()))
     try:
         cmd = avail_cmds[sys.argv[1]]
     except Exception, exc:
         print type(exc).__name__, ':', exc
         print 'Usage:', op.basename(sys.argv[0]), '<command>'
-        print 'where commands are:', ', '.join(avail_cmds)
-    cmd()
+        print '  where commands are:', ', '.join(avail_cmds)
+    else:
+        cmd()
