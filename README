@@ -9,9 +9,11 @@ and other visually-rich applications for Windows, Mac OS X and Linux.
 Requirements
 ------------
 
-pyglet requires one of the following operating systems:
+pyglet runs with Python 2.5+ and also with Python 3 through 2to3 tool (which
+is executed automatically when installing). pyglet works on the following
+operating systems:
 
-* Windows XP (32-bit only)
+* Windows XP or later
 * Mac OS X 10.3 or later
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
@@ -19,11 +21,6 @@ pyglet requires one of the following operating systems:
     * GDK 2.0 or later (required for loading images)
     * OpenAL or ALSA (required for playing audio)
     
-pyglet requires either:
-
-* Python 2.4 with ctypes installed
-* Python 2.5 or 2.6
-
 Installation
 ------------
 

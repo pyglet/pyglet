@@ -197,8 +197,6 @@ font
 
     font-metrics
         font.HORIZONTAL_METRICS                 GENERIC
-        font.KERNING
-        font.ITALIC_CORRECTION
 
     font-layout
         font.WRAP_INVARIANT                     GENERIC
