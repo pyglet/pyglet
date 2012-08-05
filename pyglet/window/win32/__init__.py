@@ -350,11 +350,9 @@ class Win32Window(BaseWindow):
 
     def set_visible(self, visible=True):
         if visible:
-            if self._fullscreen:
-                _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0, 0, 0, 0,
-                    SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
-            else:
-                _user32.ShowWindow(self._hwnd, SW_SHOW)
+            insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP
+            _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             self.dispatch_event('on_show')
             self.activate()
         else:
