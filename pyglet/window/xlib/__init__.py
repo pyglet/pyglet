@@ -1071,7 +1071,7 @@ class XlibWindow(BaseWindow):
         elif ev.type == xlib.KeyRelease:
             if symbol:
                 self.dispatch_event('on_key_release', symbol, modifiers)
-                if _can_detect_autorepeat:
+                if _can_detect_autorepeat and symbol in self.pressed_keys:
                     self.pressed_keys.remove(symbol)
 
     @XlibEventHandler(xlib.KeyPress)
