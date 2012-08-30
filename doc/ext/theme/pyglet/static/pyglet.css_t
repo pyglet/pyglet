@@ -267,5 +267,5 @@ span.relatedlogo a, span.relatedlogo img {
     margin: 0px;
     position:relative;
     top:3px;
-    right:1px;
+    left:1px;
 }

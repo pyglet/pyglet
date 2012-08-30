@@ -33,6 +33,10 @@ implementations = ["carbon", "cocoa", "win32", "xlib"]
 
 # Do not try to import these modules
 skip_modules = {"pyglet": {
+                     "pyglet.com": None,
+                     "pyglet.compat": None,
+                     "pyglet.lib": None,
+                     "pyglet.libs": None,
                      "pyglet.app": implementations,
                      "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
                      "pyglet.font": ["carbon",
@@ -56,9 +60,6 @@ skip_modules = {"pyglet": {
                                   "glxext_arb", "glxext_mesa", "glxext_nv",
                                   "lib_agl", "lib_glx", "lib_wgl",
                                   "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
-                     "pyglet.libs": ["darwin",
-                                     "win32",
-                                     "x11"],
                      "pyglet.media.drivers": ["directsound",
                                               "openal",
                                               "pulse"],
@@ -66,9 +67,6 @@ skip_modules = {"pyglet": {
                      },
                 "tests": {}
                }
-
-if sys.platform!="win32":
-    skip_modules["pyglet"]["pyglet"]=["com"]
 
 
 # Skip members
@@ -375,9 +373,12 @@ with open('internal/blacklist.rst', 'w') as f:
     modules = pack.keys()
     modules.sort()
     for mod in modules:
-        pack[mod].sort()
-        for sub in pack[mod]:
-            f.write("* ``"+mod+"."+sub+"``\n")
+        if pack[mod] is None:
+            f.write("* ``"+mod+"``\n")
+        else:
+            pack[mod].sort()
+            for sub in pack[mod]:
+                f.write("* ``"+mod+"."+sub+"``\n")
 
 import time
 import datetime

@@ -4,7 +4,8 @@ Internals
 
 .. toctree::
    :maxdepth: 1
-
+   
+   main
    programming_guide/advanced
    internal/gl
    internal/generated

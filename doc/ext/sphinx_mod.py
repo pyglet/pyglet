@@ -51,10 +51,21 @@ def find_modules(rootpath, skip):
             name = module
         return name
 
+    skipall = []
+    for m in skip.keys():
+        if skip[m] is None: skipall.append(m)
+
+    
+
     tree = {}
     saved = 0
     found = 0
     def save(module, submodule):
+        name = module+ "."+ submodule
+        for s in skipall:
+            if name.startswith(s):
+                print "SKIP "+name
+                return False
         if skip.has_key(module):
             if submodule in skip[module]:
                 return False
