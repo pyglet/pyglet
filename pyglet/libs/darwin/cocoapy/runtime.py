@@ -31,13 +31,14 @@
 
 import sys
 import platform
+import struct
 
 from ctypes import *
 from ctypes import util
 
-from cocoatypes import *
+from .cocoatypes import *
 
-__LP64__ = (sys.maxint > 2**32)
+__LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
 
 if sizeof(c_void_p) == 4:
@@ -395,17 +396,24 @@ objc.sel_registerName.argtypes = [c_char_p]
 
 ######################################################################
 
+def ensure_bytes(x):
+    if isinstance(x, bytes):
+        return x
+    return x.encode('ascii')
+
+######################################################################
+
 def get_selector(name):
-    return c_void_p(objc.sel_registerName(name))
+    return c_void_p(objc.sel_registerName(ensure_bytes(name)))
 
 def get_class(name):
-    return c_void_p(objc.objc_getClass(name))
+    return c_void_p(objc.objc_getClass(ensure_bytes(name)))
 
 def get_object_class(obj):
     return c_void_p(objc.object_getClass(obj))
 
 def get_metaclass(name):
-    return c_void_p(objc.objc_getMetaClass(name))
+    return c_void_p(objc.objc_getMetaClass(ensure_bytes(name)))
 
 def get_superclass_of_object(obj):
     cls = c_void_p(objc.object_getClass(obj))
@@ -445,7 +453,7 @@ def should_use_fpret(restype):
 # and argtypes should be a list of ctypes types for
 # the arguments of the message only.
 def send_message(receiver, selName, *args, **kwargs):
-    if isinstance(receiver, basestring):
+    if isinstance(receiver, str):
         receiver = get_class(receiver)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
@@ -500,7 +508,8 @@ cfunctype_table = {}
 def parse_type_encoding(encoding):
     """Takes a type encoding string and outputs a list of the separated type codes.
     Currently does not handle unions or bitfields and strips out any field width
-    specifiers or type specifiers from the encoding.
+    specifiers or type specifiers from the encoding.  For Python 3.2+, encoding is
+    assumed to be a bytes object and not unicode.
 
     Examples:
     parse_type_encoding('^v16@0:8') --> ['^v', '@', ':']
@@ -509,41 +518,46 @@ def parse_type_encoding(encoding):
     type_encodings = []
     brace_count = 0    # number of unclosed curly braces
     bracket_count = 0  # number of unclosed square brackets
-    typecode = ''
+    typecode = b''
     for c in encoding:
-        if c == '{':
+        # In Python 3, c comes out as an integer in the range 0-255.  In Python 2, c is a single character string.
+        # To fix the disparity, we convert c to a bytes object if necessary.
+        if isinstance(c, int):
+            c = bytes([c])
+            
+        if c == b'{':
             # Check if this marked the end of previous type code.
-            if typecode and typecode[-1] != '^' and brace_count == 0 and bracket_count == 0:
+            if typecode and typecode[-1:] != b'^' and brace_count == 0 and bracket_count == 0:
                 type_encodings.append(typecode)
-                typecode = ''
+                typecode = b''
             typecode += c
             brace_count += 1
-        elif c == '}':
+        elif c == b'}':
             typecode += c
             brace_count -= 1
             assert(brace_count >= 0)
-        elif c == '[':
+        elif c == b'[':
             # Check if this marked the end of previous type code.
-            if typecode and typecode[-1] != '^' and brace_count == 0 and bracket_count == 0:
+            if typecode and typecode[-1:] != b'^' and brace_count == 0 and bracket_count == 0:
                 type_encodings.append(typecode)
-                typecode = ''
+                typecode = b''
             typecode += c
             bracket_count += 1
-        elif c == ']':
+        elif c == b']':
             typecode += c
             bracket_count -= 1
             assert(bracket_count >= 0)
         elif brace_count or bracket_count:
             # Anything encountered while inside braces or brackets gets stuck on.
             typecode += c
-        elif c in '0123456789':
+        elif c in b'0123456789':
             # Ignore field width specifiers for now.
             pass
-        elif c in 'rnNoORV':
+        elif c in b'rnNoORV':
             # Also ignore type specifiers.
             pass
-        elif c in '^cislqCISLQfdBv*@#:b?':
-            if typecode and typecode[-1] == '^':
+        elif c in b'^cislqCISLQfdBv*@#:b?':
+            if typecode and typecode[-1:] == b'^':
                 # Previous char was pointer specifier, so keep going.
                 typecode += c
             else:
@@ -562,6 +576,7 @@ def parse_type_encoding(encoding):
 
 # Limited to basic types and pointers to basic types.
 # Does not try to handle arrays, arbitrary structs, unions, or bitfields.
+# Assume that encoding is a bytes object and not unicode.
 def cfunctype_for_encoding(encoding):
     # Check if we've already created a CFUNCTYPE for this encoding.
     # If so, then return the cached CFUNCTYPE.
@@ -569,17 +584,17 @@ def cfunctype_for_encoding(encoding):
         return cfunctype_table[encoding]
 
     # Otherwise, create a new CFUNCTYPE for the encoding.
-    typecodes = {'c':c_char, 'i':c_int, 's':c_short, 'l':c_long, 'q':c_longlong, 
-                 'C':c_ubyte, 'I':c_uint, 'S':c_ushort, 'L':c_ulong, 'Q':c_ulonglong, 
-                 'f':c_float, 'd':c_double, 'B':c_bool, 'v':None, '*':c_char_p,
-                 '@':c_void_p, '#':c_void_p, ':':c_void_p, NSPointEncoding:NSPoint,
+    typecodes = {b'c':c_char, b'i':c_int, b's':c_short, b'l':c_long, b'q':c_longlong, 
+                 b'C':c_ubyte, b'I':c_uint, b'S':c_ushort, b'L':c_ulong, b'Q':c_ulonglong, 
+                 b'f':c_float, b'd':c_double, b'B':c_bool, b'v':None, b'*':c_char_p,
+                 b'@':c_void_p, b'#':c_void_p, b':':c_void_p, NSPointEncoding:NSPoint,
                  NSSizeEncoding:NSSize, NSRectEncoding:NSRect, NSRangeEncoding:NSRange,
                  PyObjectEncoding:py_object}
     argtypes = []
     for code in parse_type_encoding(encoding):
         if code in typecodes:
             argtypes.append(typecodes[code])
-        elif code[0] == '^' and code[1:] in typecodes:
+        elif code[0:1] == b'^' and code[1:] in typecodes:
             argtypes.append(POINTER(typecodes[code[1:]]))
         else:
             raise Exception('unknown type encoding: ' + code)
@@ -599,9 +614,9 @@ def cfunctype_for_encoding(encoding):
 # You can add new methods after the class is registered,
 # but you cannot add any new ivars.
 def create_subclass(superclass, name):
-    if isinstance(superclass, basestring):
+    if isinstance(superclass, str):
         superclass = get_class(superclass)
-    return c_void_p(objc.objc_allocateClassPair(superclass, name, 0))
+    return c_void_p(objc.objc_allocateClassPair(superclass, ensure_bytes(name), 0))
 
 def register_subclass(subclass):
     objc.objc_registerClassPair(subclass)
@@ -613,8 +628,8 @@ def register_subclass(subclass):
 # Additional type codes are for types of other arguments if any.
 def add_method(cls, selName, method, types):
     type_encodings = parse_type_encoding(types)
-    assert(type_encodings[1] == '@')  # ensure id self typecode
-    assert(type_encodings[2] == ':')  # ensure SEL cmd typecode
+    assert(type_encodings[1] == b'@')  # ensure id self typecode
+    assert(type_encodings[2] == b':')  # ensure SEL cmd typecode
     selector = get_selector(selName)
     cfunctype = cfunctype_for_encoding(types)
     imp = cfunctype(method)
@@ -623,15 +638,15 @@ def add_method(cls, selName, method, types):
     return imp
 
 def add_ivar(cls, name, vartype):
-    return objc.class_addIvar(cls, name, sizeof(vartype), alignment(vartype), encoding_for_ctype(vartype))
+    return objc.class_addIvar(cls, ensure_bytes(name), sizeof(vartype), alignment(vartype), encoding_for_ctype(vartype))
 
 def set_instance_variable(obj, varname, value, vartype):
     objc.object_setInstanceVariable.argtypes = [c_void_p, c_char_p, vartype]
-    objc.object_setInstanceVariable(obj, varname, value)
+    objc.object_setInstanceVariable(obj, ensure_bytes(varname), value)
     
 def get_instance_variable(obj, varname, vartype):
     variable = vartype()
-    objc.object_getInstanceVariable(obj, varname, byref(variable))
+    objc.object_getInstanceVariable(obj, ensure_bytes(varname), byref(variable))
     return variable.value
 
 ######################################################################
@@ -642,10 +657,10 @@ class ObjCMethod(object):
     # Note, need to map 'c' to c_byte rather than c_char, because otherwise
     # ctypes converts the value into a one-character string which is generally
     # not what we want at all, especially when the 'c' represents a bool var.
-    typecodes = {'c':c_byte, 'i':c_int, 's':c_short, 'l':c_long, 'q':c_longlong, 
-                 'C':c_ubyte, 'I':c_uint, 'S':c_ushort, 'L':c_ulong, 'Q':c_ulonglong, 
-                 'f':c_float, 'd':c_double, 'B':c_bool, 'v':None, 'Vv':None, '*':c_char_p,
-                 '@':c_void_p, '#':c_void_p, ':':c_void_p, '^v':c_void_p, '?':c_void_p, 
+    typecodes = {b'c':c_byte, b'i':c_int, b's':c_short, b'l':c_long, b'q':c_longlong, 
+                 b'C':c_ubyte, b'I':c_uint, b'S':c_ushort, b'L':c_ulong, b'Q':c_ulonglong, 
+                 b'f':c_float, b'd':c_double, b'B':c_bool, b'v':None, b'Vv':None, b'*':c_char_p,
+                 b'@':c_void_p, b'#':c_void_p, b':':c_void_p, b'^v':c_void_p, b'?':c_void_p, 
                  NSPointEncoding:NSPoint, NSSizeEncoding:NSSize, NSRectEncoding:NSRect,
                  NSRangeEncoding:NSRange,
                  PyObjectEncoding:py_object}
@@ -657,7 +672,7 @@ class ObjCMethod(object):
         the return type and argument type information of the method."""
         self.selector = c_void_p(objc.method_getName(method))
         self.name = objc.sel_getName(self.selector)
-        self.pyname = self.name.replace(':', '_')
+        self.pyname = self.name.replace(b':', b'_')
         self.encoding = objc.method_getTypeEncoding(method)
         self.return_type = objc.method_copyReturnType(method)
         self.nargs = objc.method_getNumberOfArguments(method)
@@ -675,9 +690,9 @@ class ObjCMethod(object):
             self.argtypes = None
         # Get types for the return type.
         try:
-            if self.return_type == '@':
+            if self.return_type == b'@':
                 self.restype = ObjCInstance
-            elif self.return_type == '#':
+            elif self.return_type == b'#':
                 self.restype = ObjCClass
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
@@ -690,15 +705,15 @@ class ObjCMethod(object):
         """Return ctypes type for an encoded Objective-C type."""
         if encoding in self.typecodes:
             return self.typecodes[encoding]
-        elif encoding[0] == '^' and encoding[1:] in self.typecodes:
+        elif encoding[0:1] == b'^' and encoding[1:] in self.typecodes:
             return POINTER(self.typecodes[encoding[1:]])
-        elif encoding[0] == '^' and encoding[1:] in [CGImageEncoding, NSZoneEncoding]:
+        elif encoding[0:1] == b'^' and encoding[1:] in [CGImageEncoding, NSZoneEncoding]:
             # special cases
             return c_void_p
-        elif encoding[0] == 'r' and encoding[1:] in self.typecodes:
+        elif encoding[0:1] == b'r' and encoding[1:] in self.typecodes:
             # const decorator, don't care
             return self.typecodes[encoding[1:]]
-        elif encoding[0:2] == 'r^' and encoding[2:] in self.typecodes:
+        elif encoding[0:2] == b'r^' and encoding[2:] in self.typecodes:
             # const pointer, also don't care
             return POINTER(self.typecodes[encoding[2:]])
         else:
@@ -786,9 +801,9 @@ class ObjCClass(object):
         instance for the given Objective-C class.  The argument may be either
         the name of the class to retrieve, or a pointer to the class."""
         # Determine name and ptr values from passed in argument.
-        if isinstance(class_name_or_ptr, basestring):
+        if isinstance(class_name_or_ptr, str):
             name = class_name_or_ptr
-            ptr = c_void_p(objc.objc_getClass(name))
+            ptr = get_class(name)
         else:
             ptr = class_name_or_ptr
             # Make sure that ptr value is wrapped in c_void_p object
@@ -851,7 +866,7 @@ class ObjCClass(object):
         else:
             # If method name isn't in the cached list, it might be a method of
             # the superclass, so call class_getInstanceMethod to check.
-            selector = get_selector(name.replace('_', ':'))
+            selector = get_selector(name.replace(b'_', b':'))
             method = c_void_p(objc.class_getInstanceMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
@@ -868,7 +883,7 @@ class ObjCClass(object):
         else:
             # If method name isn't in the cached list, it might be a method of
             # the superclass, so call class_getInstanceMethod to check.
-            selector = get_selector(name.replace('_', ':'))
+            selector = get_selector(name.replace(b'_', b':'))
             method = c_void_p(objc.class_getClassMethod(self.ptr, selector))
             if method.value:
                 objc_method = ObjCMethod(method)
@@ -880,6 +895,7 @@ class ObjCClass(object):
         """Returns a callable method object with the given name."""
         # If name refers to a class method, then return a callable object
         # for the class method with self.ptr as hidden first parameter.
+        name = ensure_bytes(name)
         method = self.get_class_method(name)
         if method:
             return ObjCBoundMethod(method, self.ptr)
@@ -943,9 +959,9 @@ class ObjCInstance(object):
         return objc_instance
 
     def __repr__(self):
-        if self.objc_class.name == 'NSCFString':
+        if self.objc_class.name == b'NSCFString':
             # Display contents of NSString objects
-            from cocoalibs import cfstring_to_string
+            from .cocoalibs import cfstring_to_string
             string = cfstring_to_string(self)
             return "<ObjCInstance %#x: %s (%s) at %s>" % (id(self), self.objc_class.name, string, str(self.ptr.value))
 
@@ -959,6 +975,7 @@ class ObjCInstance(object):
         # ObjCBoundMethod, so that it will be able to keep the ObjCInstance
         # alive for chained calls like MyClass.alloc().init() where the 
         # object created by alloc() is not assigned to a variable.
+        name = ensure_bytes(name)
         method = self.objc_class.get_instance_method(name)
         if method:
             return ObjCBoundMethod(method, self)
@@ -979,9 +996,9 @@ def convert_method_arguments(encoding, args):
     new_args = []
     arg_encodings = parse_type_encoding(encoding)[3:]
     for e, a in zip(arg_encodings, args):
-        if e == '@':
+        if e == b'@':
             new_args.append(ObjCInstance(a))
-        elif e == '#':
+        elif e == b'#':
             new_args.append(ObjCClass(a))
         else:
             new_args.append(a)
@@ -1079,11 +1096,12 @@ class ObjCSubclass(object):
         The function must have the signature f(self, cmd, *args)
         where both self and cmd are just pointers to objc objects."""
         # Add encodings for hidden self and cmd arguments.
+        encoding = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding)
-        typecodes.insert(1, '@:')
-        encoding = ''.join(typecodes)
+        typecodes.insert(1, b'@:')
+        encoding = b''.join(typecodes)
         def decorator(f):
-            name = f.func_name.replace('_', ':')
+            name = f.__name__.replace('_', ':')
             self.add_method(f, name, encoding)
             return f
         return decorator
@@ -1091,9 +1109,10 @@ class ObjCSubclass(object):
     def method(self, encoding):
         """Function decorator for instance methods."""
         # Add encodings for hidden self and cmd arguments.
+        encoding = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding)
-        typecodes.insert(1, '@:')
-        encoding = ''.join(typecodes)
+        typecodes.insert(1, b'@:')
+        encoding = b''.join(typecodes)
         def decorator(f):
             def objc_method(objc_self, objc_cmd, *args):
                 py_self = ObjCInstance(objc_self)
@@ -1105,7 +1124,7 @@ class ObjCSubclass(object):
                 elif isinstance(result, ObjCInstance):
                     result = result.ptr.value
                 return result
-            name = f.func_name.replace('_', ':')
+            name = f.__name__.replace('_', ':')
             self.add_method(objc_method, name, encoding)
             return objc_method
         return decorator
@@ -1113,9 +1132,10 @@ class ObjCSubclass(object):
     def classmethod(self, encoding):
         """Function decorator for class methods."""
         # Add encodings for hidden self and cmd arguments.
+        encoding = ensure_bytes(encoding)
         typecodes = parse_type_encoding(encoding)
-        typecodes.insert(1, '@:')
-        encoding = ''.join(typecodes)
+        typecodes.insert(1, b'@:')
+        encoding = b''.join(typecodes)
         def decorator(f):
             def objc_class_method(objc_cls, objc_cmd, *args):
                 py_cls = ObjCClass(objc_cls)
@@ -1127,7 +1147,7 @@ class ObjCSubclass(object):
                 elif isinstance(result, ObjCInstance):
                     result = result.ptr.value
                 return result
-            name = f.func_name.replace('_', ':')
+            name = f.__name__.replace('_', ':')
             self.add_class_method(objc_class_method, name, encoding)
             return objc_class_method
         return decorator

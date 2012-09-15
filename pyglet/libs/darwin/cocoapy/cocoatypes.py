@@ -1,17 +1,18 @@
 from ctypes import *
 
-import sys, platform
-__LP64__ = (sys.maxint > 2**32)
+import sys, platform, struct
+
+__LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
 
-PyObjectEncoding = '{PyObject=@}'
+PyObjectEncoding = b'{PyObject=@}'
 
 def encoding_for_ctype(vartype):
-    typecodes = {c_char:'c', c_int:'i', c_short:'s', c_long:'l', c_longlong:'q',
-                 c_ubyte:'C', c_uint:'I', c_ushort:'S', c_ulong:'L', c_ulonglong:'Q',
-                 c_float:'f', c_double:'d', c_bool:'B', c_char_p:'*', c_void_p:'@',
+    typecodes = {c_char:b'c', c_int:b'i', c_short:b's', c_long:b'l', c_longlong:b'q',
+                 c_ubyte:b'C', c_uint:b'I', c_ushort:b'S', c_ulong:b'L', c_ulonglong:b'Q',
+                 c_float:b'f', c_double:b'd', c_bool:b'B', c_char_p:b'*', c_void_p:b'@',
                  py_object:PyObjectEncoding}
-    return typecodes.get(vartype, '?')
+    return typecodes.get(vartype, b'?')
 
 # Note CGBase.h located at
 # /System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/Headers/CGBase.h
@@ -20,27 +21,27 @@ if __LP64__:
     NSInteger = c_long
     NSUInteger = c_ulong
     CGFloat = c_double
-    NSPointEncoding = '{CGPoint=dd}'
-    NSSizeEncoding = '{CGSize=dd}'
-    NSRectEncoding = '{CGRect={CGPoint=dd}{CGSize=dd}}'
-    NSRangeEncoding = '{_NSRange=QQ}'
+    NSPointEncoding = b'{CGPoint=dd}'
+    NSSizeEncoding = b'{CGSize=dd}'
+    NSRectEncoding = b'{CGRect={CGPoint=dd}{CGSize=dd}}'
+    NSRangeEncoding = b'{_NSRange=QQ}'
 else:
     NSInteger = c_int
     NSUInteger = c_uint
     CGFloat = c_float
-    NSPointEncoding = '{_NSPoint=ff}'
-    NSSizeEncoding = '{_NSSize=ff}'
-    NSRectEncoding = '{_NSRect={_NSPoint=ff}{_NSSize=ff}}'
-    NSRangeEncoding = '{_NSRange=II}'
+    NSPointEncoding = b'{_NSPoint=ff}'
+    NSSizeEncoding = b'{_NSSize=ff}'
+    NSRectEncoding = b'{_NSRect={_NSPoint=ff}{_NSSize=ff}}'
+    NSRangeEncoding = b'{_NSRange=II}'
 
 NSIntegerEncoding = encoding_for_ctype(NSInteger)
 NSUIntegerEncoding = encoding_for_ctype(NSUInteger)
 CGFloatEncoding = encoding_for_ctype(CGFloat)    
 
 # Special case so that NSImage.initWithCGImage_size_() will work.
-CGImageEncoding = '{CGImage=}'
+CGImageEncoding = b'{CGImage=}'
 
-NSZoneEncoding = '{_NSZone=}'
+NSZoneEncoding = b'{_NSZone=}'
 
 # from /System/Library/Frameworks/Foundation.framework/Headers/NSGeometry.h
 class NSPoint(Structure):
