@@ -19,7 +19,7 @@ class PygletWindow_Implementation(object):
     # method is being called instead of this one.  I don't really feel like
     # subclassing NSApplication just to fix this.  Also, to prevent white flashes
     # while resizing, we must also call idle() from the view's reshape method.
-    @PygletWindow.method(b'@'+NSUIntegerEncoding+'@@B')
+    @PygletWindow.method(b'@'+NSUIntegerEncoding+b'@@B')
     def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask, date, mode, dequeue):
         if self.inLiveResize():
             # Call the idle() method while we're stuck in a live resize event.
@@ -45,7 +45,7 @@ class PygletWindow_Implementation(object):
 class PygletToolWindow_Implementation(object):
     PygletToolWindow = ObjCSubclass('NSPanel', 'PygletToolWindow')
 
-    @PygletToolWindow.method(b'@'+NSUIntegerEncoding+'@@B')
+    @PygletToolWindow.method(b'@'+NSUIntegerEncoding+b'@@B')
     def nextEventMatchingMask_untilDate_inMode_dequeue_(self, mask, date, mode, dequeue):
         if self.inLiveResize():
             # Call the idle() method while we're stuck in a live resize event.
