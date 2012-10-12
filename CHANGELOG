@@ -1,8 +1,9 @@
 1.2beta1
-    * tests: invalid answer no longer marks test as passed, some windows can 
-             be closed with ENTER key, test counter fixed and added to reports
+    * tests: invalid answer no longer marks test as passed, some windows can
+      be closed with ENTER key, test counter fixed and added to reports
     * tools/gl_info.py: add pyglet version and platform info
     * Windows: fix loading system cursors
+	* OS X: fix window creation under Mountain Lion (thanks Kuba Niegowski)
 
 1.2alpha1
 	The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on
