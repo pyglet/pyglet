@@ -209,6 +209,16 @@ import sys
 import time
 import unittest
 
+# --- Python 2/3 compatibility helpers ---
+PY3K = True if sys.version_info[0] == 3 else False
+
+def prompt(message):
+    if PY3K:
+        return input(message)
+    else:
+        return raw_input(message)
+
+
 # So we can find tests.regression and ensure local pyglet copy is tested.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -275,12 +285,12 @@ class TestCase(object):
         else:
             result = StandardTestResult(self)
 
-        print '-' * 78
-        print ("Running Test: %s (%d/%d)\n" % (self, options.tests_count, options.num_tests))
+        print('-' * 78)
+        print("Running Test: %s (%d/%d)\n" % (self, options.tests_count, options.num_tests))
         if module.__doc__:
-            print '    ' + module.__doc__.replace('\n','\n    ')
+            print('    ' + module.__doc__.replace('\n','\n    '))
         if module_interactive:
-            raw_input('Press return to begin test...')
+            prompt('Press return to begin test...')
 
 
         suite = unittest.TestLoader().loadTestsFromModule(module)
@@ -298,19 +308,19 @@ class TestCase(object):
         num_failures = len(result.failures)
         num_errors = len(result.errors)
         if num_failures or num_errors:
-            print '%d Failures and %d Errors detected.' % (num_failures, num_errors)
+            print('%d Failures and %d Errors detected.' % (num_failures, num_errors))
 
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
 #             print module.__doc__
-            user_result = raw_input('Passed [Yn]: ')
+            user_result = prompt('Passed [Yn]: ')
             while user_result and user_result not in 'YyNn':
-                print "Unrecognized response '%s'" % user_result
-                user_result = raw_input('Passed [Yn]: ')
+                print("Unrecognized response '%s'" % user_result)
+                user_result = prompt('Passed [Yn]: ')
             if user_result and user_result in 'Nn':
-                print 'Enter failure description: '
-                description = raw_input('> ')
+                print('Enter failure description: ')
+                description = prompt('> ')
                 options.log.error('User marked fail for %s', self)
                 options.log.error(description)
             else:
@@ -419,7 +429,7 @@ class TestPlan(object):
         options.tests_skipped = 0
         for component in components:
             component.test(options)
-        print '-' * 78
+        print('-' * 78)
 
         return True
 
@@ -572,7 +582,7 @@ def main():
             i += 1
         options.log_file = options.log_file % i
 
-    print 'Test results are saved in log file:', options.log_file
+    print('Test results are saved in log file:', options.log_file)
 
     logging.basicConfig(filename=options.log_file, level=options.log_level, format='%(levelname)s %(message)s')
     options.log = logging.getLogger()
@@ -587,7 +597,7 @@ def main():
     if not plan.run(options, args):
        options.log.error('Test run failed.')
     
-    print 'Test results are saved in log file:', options.log_file
+    print('Test results are saved in log file:', options.log_file)
 
 if __name__ == '__main__':
     main()
