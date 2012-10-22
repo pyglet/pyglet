@@ -13,7 +13,7 @@ import unittest
 
 from pyglet import font
 
-import base_text
+from . import base_text
 
 class TEST_ALIGN_MULTILINE(base_text.TextTestBase):
     font_name = ''

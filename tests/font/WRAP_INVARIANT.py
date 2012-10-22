@@ -11,7 +11,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import unittest
-import base_text
+from . import base_text
 from pyglet import font
 
 class TEST_WRAP_INVARIANT(base_text.TextTestBase):
