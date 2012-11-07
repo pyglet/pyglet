@@ -39,3 +39,6 @@ contrib/layout/Plex is derived from Plex.  Copyright Greg Ewing.
 
 tools/wraptypes/lex.py and tools/wraptypes/yacc.py are derived from ply.
 Copyright 2001-2006 David M.  Beazley.
+
+font/win32query.py is fontquery.py placed into public domain by
+anatoly techtonik.

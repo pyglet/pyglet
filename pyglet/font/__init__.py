@@ -585,6 +585,10 @@ if not getattr(sys, 'is_epydoc', False):
         from pyglet.font.freetype import FreeTypeFont
         _font_class = FreeTypeFont
 
+def have_font(name):
+    '''Check if specified system font name is available.'''
+    return _font_class.have_font(name)
+
 def load(name=None, size=None, bold=False, italic=False, dpi=None):
     '''Load a font for rendering.
 

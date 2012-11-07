@@ -1,8 +1,11 @@
 1.2beta1
+    + new API: font.have_font(name) returns True if named font is installed
     * tests: invalid answer no longer marks test as passed, some windows can 
              be closed with ENTER key, test counter fixed and added to reports
+    * tests: partial Python 3 compatibility
     * tools/gl_info.py: add pyglet version and platform info
     * Windows: fix loading system cursors
+    * Windows: implemented Win32Font.have_font() (anatoly techtonik)
 
 1.2alpha1
 	The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on
