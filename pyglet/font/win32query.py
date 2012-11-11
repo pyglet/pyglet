@@ -9,9 +9,9 @@ Use MIT License if public domain doesn't make sense for you.
 The task: Get monospace font for an application in the order of
 preference.
 
-The problem: Font ID in Windows is its name. Windows doesn't provide
+A problem: Font ID in Windows is its name. Windows doesn't provide
 any information about filenames they contained in. From two different
-files with the same font name you'll can get only one.
+files with the same font name you can get only one.
 
 Windows also doesn't have a clear concept of _generic font family_
 familiar from CSS specification. Here is how fontquery maps Windows
@@ -350,9 +350,18 @@ def query(charset=DEFAULT_CHARSET):
 
 # --- Public API ---
 
-def have_font(name):
-  """Return True if font with specified name is present."""
-  if name in query():
+__font_names_cache = []
+def have_font(name, refresh=False):
+  """
+  Return True if font with specified `name` is present. The result
+  of querying system font names is cached. Set `refresh` parameter
+  to True to purge cache and reload font information.
+  """
+  global __font_names_cache
+
+  if refresh or not __font_names_cache:
+    __font_names_cache = query()
+  if name in __font_names_cache:
     return True
   else:
     return False
