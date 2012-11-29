@@ -185,6 +185,12 @@ class MachOLibraryLoader(LibraryLoader):
                 'Frameworks',
                 libname))
 
+        # pyinstaller.py sets sys.frozen to True, and puts dylibs in
+        # Contents/MacOS, which path pyinstaller puts in sys._MEIPASS
+        if (hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS') and
+                sys.frozen == True and sys.platform == 'darwin'):
+            search_path.append(os.path.join(sys._MEIPASS, libname))
+
         if '/' in path:
             search_path.extend(
                 [os.path.join(p, libname) \

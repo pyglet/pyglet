@@ -4,6 +4,8 @@
     * tools/gl_info.py: add pyglet version and platform info
     * Windows: fix loading system cursors
 	* OS X: fix window creation under Mountain Lion (thanks Kuba Niegowski)
+	* OS X: Added dynamic library loading support for pyinstaller's handling of
+	  dynamic libraries on OS X (thanks Nathan Stocks)
 
 1.2alpha1
 	The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on
