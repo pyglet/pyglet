@@ -1,9 +1,12 @@
 1.2beta1
+    + new API: font.have_font(name) return True if named font is installed
     * tests: invalid answer no longer marks test as passed, some windows can
       be closed with ENTER key, test counter fixed and added to reports
+    * tests: partial Python 3 compatibility
     * tools/gl_info.py: add pyglet version and platform info
     * pyglet.media: fixed management of OpenAL buffers (thanks Walter Woods)
     * Windows: fix loading system cursors
+    * Windows: implemented Win32Font.have_font() (anatoly techtonik)
 	* OS X: fix window creation under Mountain Lion (thanks Kuba Niegowski)
 	* OS X: Added dynamic library loading support for pyinstaller's handling of
 	  dynamic libraries on OS X (thanks Nathan Stocks)

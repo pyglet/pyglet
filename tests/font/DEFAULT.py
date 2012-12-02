@@ -8,7 +8,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import unittest
-import base_text
+
+from . import base_text
 
 class TEST_DEFAULT(base_text.TextTestBase):
     font_name = ''

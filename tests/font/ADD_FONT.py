@@ -15,7 +15,7 @@ import unittest
 
 from pyglet import font
 
-import base_text
+from . import base_text
 
 base_path = os.path.dirname(__file__)
 
