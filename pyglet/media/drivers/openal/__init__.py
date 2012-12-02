@@ -47,6 +47,7 @@ from pyglet.media import MediaException, MediaEvent, AbstractAudioPlayer, \
 
 import pyglet
 _debug = pyglet.options['debug_media']
+_debug_buffers = pyglet.options.get('debug_media_buffers', False)
 
 class OpenALException(MediaException):
     pass
@@ -124,6 +125,12 @@ class OpenALWorker(MediaThread):
 
             if sleep_time != -1:
                 self.sleep(sleep_time)
+            else:
+                # We MUST sleep, or we will starve pyglet's main loop.  It
+                # also looks like if we don't sleep enough, we'll starve out
+                # various updates that stop us from properly removing players
+                # that should be removed.
+                time.sleep(self._nap_time)
 
     def add(self, player):
         self.condition.acquire()
@@ -137,6 +144,76 @@ class OpenALWorker(MediaThread):
             self.players.remove(player)
         self.condition.notify()
         self.condition.release()
+
+class OpenALBufferPool(object):
+    """At least Mac OS X doesn't free buffers when a source is deleted; it just
+    detaches them from the source.  So keep our own recycled queue.
+    """
+    def __init__(self):
+        self._buffers = [] # list of free buffer names
+        self._sources = {} # { sourceId : [ buffer names used ] }
+
+    def getBuffer(self, alSource):
+        """Convenience for returning one buffer name"""
+        return self.getBuffers(alSource, 1)[0]
+
+    def getBuffers(self, alSource, i):
+        """Returns an array containing i buffer names.  The returned list must
+        not be modified in any way, and may get changed by subsequent calls to
+        getBuffers.
+        """
+        assert context._lock.locked()
+        buffs = []
+        try:
+            while i > 0:
+                b = self._buffers.pop()
+                if not al.alIsBuffer(b):
+                    # Protect against implementations that DO free buffers
+                    # when they delete a source - carry on.
+                    if _debug_buffers:
+                        print("Found a bad buffer")
+                    continue
+                buffs.append(b)
+                i -= 1
+        except IndexError:
+            while i > 0:
+                buffer = al.ALuint()
+                al.alGenBuffers(1, buffer)
+                if _debug_buffers:
+                    error = al.alGetError()
+                    if error != 0:
+                        print("GEN BUFFERS: " + str(error))
+                buffs.append(buffer)
+                i -= 1
+
+        alSourceVal = alSource.value
+        if alSourceVal not in self._sources:
+            self._sources[alSourceVal] = buffs
+        else:
+            self._sources[alSourceVal].extend(buffs)
+
+        return buffs
+
+    def deleteSource(self, alSource):
+        """Delete a source pointer (self._al_source) and free its buffers"""
+        assert context._lock.locked()
+        for buffer in self._sources.pop(alSource.value):
+            self._buffers.append(buffer)
+
+    def dequeueBuffer(self, alSource, buffer):
+        """A buffer has finished playing, free it."""
+        assert context._lock.locked()
+        sourceBuffs = self._sources[alSource.value]
+        if buffer in sourceBuffs:
+            sourceBuffs.remove(buffer)
+            self._buffers.append(buffer)
+        elif _debug_buffers:
+            # This seems to be the problem with Mac OS X - The buffers are
+            # dequeued, but they're not _actually_ buffers.  In other words,
+            # there's some leakage, so after awhile, things break.
+            print("Bad buffer: " + str(buffer))
+
+bufferPool = OpenALBufferPool()
 
 class OpenALAudioPlayer(AbstractAudioPlayer):
     #: Minimum size of an OpenAL buffer worth bothering with, in bytes
@@ -218,7 +295,13 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._lock.acquire()
 
         context.lock()
+
         al.alDeleteSources(1, self._al_source)
+        bufferPool.deleteSource(self._al_source)
+        if _debug_buffers:
+            error = al.alGetError()
+            if error != 0:
+                print("DELETE ERROR: " + str(error))
         context.unlock()
         self._al_source = None
 
@@ -292,12 +375,21 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if processed:
             buffers = (al.ALuint * processed)()
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
-            al.alDeleteBuffers(len(buffers), buffers)
+            error = al.alGetError()
+            if error != 0:
+                if _debug_buffers:
+                    print("Source unqueue error: " + str(error))
+            else:
+                for b in buffers:
+                    bufferPool.dequeueBuffer(self._al_source, b)
         context.unlock()
 
         if processed:
-            if len(self._buffer_timestamps) == processed:
-                # Underrun, take note of timestamp
+            if (len(self._buffer_timestamps) == processed
+                    and self._buffer_timestamps[-1] is not None):
+                # Underrun, take note of timestamp.
+                # We check that the timestamp is not None, because otherwise
+                # our source could have been cleared.
                 self._underrun_timestamp = \
                     self._buffer_timestamps[-1] + \
                     self._buffer_sizes[-1] / \
@@ -365,15 +457,22 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                     self.source_group.audio_format.bytes_per_second
                 self._events.append((cursor, event))
 
-            buffer = al.ALuint()
             context.lock()
-            al.alGenBuffers(1, buffer)
-            al.alBufferData(buffer, 
+            buffer = bufferPool.getBuffer(self._al_source)
+            al.alBufferData(buffer,
                             self._al_format,
                             audio_data.data,
                             audio_data.length,
                             self.source_group.audio_format.sample_rate)
-            al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer)) 
+            if _debug_buffers:
+                error = al.alGetError()
+                if error != 0:
+                    print("BUFFER DATA ERROR: " + str(error))
+            al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer))
+            if _debug_buffers:
+                error = al.alGetError()
+                if error != 0:
+                    print("QUEUE BUFFER ERROR: " + str(error))
             context.unlock()
 
             self._write_cursor += audio_data.length

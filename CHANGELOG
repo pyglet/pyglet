@@ -2,6 +2,7 @@
     * tests: invalid answer no longer marks test as passed, some windows can
       be closed with ENTER key, test counter fixed and added to reports
     * tools/gl_info.py: add pyglet version and platform info
+    * pyglet.media: fixed management of OpenAL buffers (thanks Walter Woods)
     * Windows: fix loading system cursors
 	* OS X: fix window creation under Mountain Lion (thanks Kuba Niegowski)
 	* OS X: Added dynamic library loading support for pyinstaller's handling of
