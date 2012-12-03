@@ -110,7 +110,7 @@ Command-line options:
     only includes your operating system capability (X11, WIN or OSX) and
     GENERIC.
 `--log-level=`
-    Specify the minimum log level to write (defaults to 10: info)
+    Specify the minimum log level to write (defaults to 20: info)
 
 `--log-file=`
     Specify log file to write to (defaults to "pyglet.%d.log")
@@ -546,7 +546,7 @@ def main():
     op.add_option('--capabilities', help='selected test capabilities',
         default=','.join(capabilities))
     op.add_option('--log-level', help='verbosity of logging',
-        default=10, type='int')
+        default=20, type='int')
     op.add_option('--log-file', help='log to FILE', metavar='FILE', 
         default='pyglet.%d.log')
     op.add_option('--regression-path', metavar='DIR', default=regressions_path,
