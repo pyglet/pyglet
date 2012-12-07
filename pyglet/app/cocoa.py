@@ -96,7 +96,7 @@ class CocoaEventLoop(PlatformEventLoop):
         # If we don't do this, new windows will not display on 10.8 after finishLaunching
         # has been called.  
         defaults = NSUserDefaults.standardUserDefaults()
-        ignoreState = CFSTR("ApplerPersistenceIgnoreState")
+        ignoreState = CFSTR("ApplePersistenceIgnoreState")
         if not defaults.objectForKey_(ignoreState):
             defaults.setBool_forKey_(True, ignoreState)
 
