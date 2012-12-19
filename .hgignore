@@ -8,3 +8,4 @@ pyglet.*.log
 doc/api
 doc/internal/build.rst
 website/dist
+build
