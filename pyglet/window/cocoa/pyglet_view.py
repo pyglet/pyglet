@@ -9,8 +9,8 @@ NSTrackingArea = ObjCClass('NSTrackingArea')
 
 def getMouseDelta(nsevent):
     dx = nsevent.deltaX()
-    dy = nsevent.deltaY()
-    return int(dx), int(dy)
+    dy = -nsevent.deltaY()
+    return int(round(dx)), int(round(dy))
 
 def getMousePosition(self, nsevent):
     in_window = nsevent.locationInWindow()
