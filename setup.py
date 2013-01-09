@@ -72,6 +72,12 @@ setup_info = dict(
         'pyglet.window.win32',
         'pyglet.window.xlib',
     ],
+
+    # Add _ prefix to the names of temporary build dirs
+    options={
+        'build': {'build_base': '_build'},
+        'sdist': {'dist_dir': '_dist'},
+    }
 )
 
 setuptools_info = dict(

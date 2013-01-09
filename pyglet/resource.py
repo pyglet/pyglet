@@ -290,11 +290,6 @@ class Loader(object):
         self._script_home = script_home
         self._index = None
 
-        # Map name to image
-        self._cached_textures = weakref.WeakValueDictionary()
-        self._cached_images = weakref.WeakValueDictionary()
-        self._cached_animations = weakref.WeakValueDictionary()
-
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
 
@@ -308,9 +303,11 @@ class Loader(object):
         You must call this method if `path` is changed or the filesystem
         layout changes.
         '''
+        # map name to image etc.
         self._cached_textures = weakref.WeakValueDictionary()
         self._cached_images = weakref.WeakValueDictionary()
         self._cached_animations = weakref.WeakValueDictionary()
+
         self._index = {}
         for path in self.path:
             if path.startswith('@'):

@@ -178,6 +178,9 @@ iokit.IOHIDValueGetElement.argtypes = [c_void_p]
 iokit.IOHIDValueGetIntegerValue.restype = CFIndex
 iokit.IOHIDValueGetIntegerValue.argtypes = [c_void_p]
 
+iokit.IOHIDValueGetLength.restype = CFIndex
+iokit.IOHIDValueGetLength.argtypes = [c_void_p]
+
 iokit.IOHIDValueGetTimeStamp.restype = c_uint64
 iokit.IOHIDValueGetTimeStamp.argtypes = [c_void_p]
 
@@ -204,7 +207,14 @@ class HIDValue:
         assert(cf.CFGetTypeID(valueRef) == iokit.IOHIDValueGetTypeID())
         self.valueRef = valueRef
         self.timestamp = iokit.IOHIDValueGetTimeStamp(valueRef)
-        self.intvalue = iokit.IOHIDValueGetIntegerValue(valueRef)
+        self.length = iokit.IOHIDValueGetLength(valueRef)
+        if self.length <= 4:
+            self.intvalue = iokit.IOHIDValueGetIntegerValue(valueRef)
+        else:
+            # Values may be byte data rather than integers.
+            # e.g. the PS3 controller has a 39-byte HIDValue element.
+            # We currently do not try to handle these cases.
+            self.intvalue = None
         elementRef = c_void_p(iokit.IOHIDValueGetElement(valueRef))
         self.element = HIDDeviceElement.get_element(elementRef)
 

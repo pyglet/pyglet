@@ -46,6 +46,7 @@ NSMenuItem = ObjCClass('NSMenuItem')
 NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 NSDate = ObjCClass('NSDate')
 NSEvent = ObjCClass('NSEvent')
+NSUserDefaults = ObjCClass('NSUserDefaults')
 
 def add_menu_item(menu, title, action, key):
     title = CFSTR(title)
@@ -91,6 +92,13 @@ class CocoaEventLoop(PlatformEventLoop):
         self.pool = NSAutoreleasePool.alloc().init()
         create_menu()
         self.NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+        # Prevent Lion / Mountain Lion from automatically saving application state.
+        # If we don't do this, new windows will not display on 10.8 after finishLaunching
+        # has been called.  
+        defaults = NSUserDefaults.standardUserDefaults()
+        ignoreState = CFSTR("ApplePersistenceIgnoreState")
+        if not defaults.objectForKey_(ignoreState):
+            defaults.setBool_forKey_(True, ignoreState)
 
     def start(self):
         self.NSApp.finishLaunching()
