@@ -34,6 +34,14 @@
     href="http://pyglet.googlecode.com/files/pyglet-1.1.4.dmg">pyglet-1.1.4.dmg</a>: Mac OS X
     disk image, includes AVbin-5</li>
   </ul>
+  <h4>note about windows installer</h4>
+  <p>
+    The pyglet-1.1.4.msi installer only works with python versions 2.4, 2.5 or
+    2.6; if you wish to use python 2.7 please install from source. Simply
+    download the source tarball or zip, unpack it, enter the directory and run:
+    "python setup.py install". Alternatively if you are familiar with pip, "pip
+    install pyglet" will install pyglet-1.1.4.
+  </p>
 
   <h3>documentation</h3>
   <p>
