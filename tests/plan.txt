@@ -228,3 +228,4 @@ text
     text.HTML                                   GENERIC
     text.HTML_IMAGE                             GENERIC
     text.MULTILINE_WRAP                         GENERIC
+    text.ATTRIBUTED_TEXT_DECODER                GENERIC

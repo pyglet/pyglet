@@ -112,5 +112,6 @@ class TestCase(unittest.TestCase):
         self.window.set_visible()
         app.run()
 
+
 if __name__ == '__main__':
     unittest.main()
