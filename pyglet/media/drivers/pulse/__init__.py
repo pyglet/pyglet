@@ -259,8 +259,6 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         finally:
             context.unlock()
 
-        self.set_volume(self._volume)
-
         if _debug:
             print 'stream ready'
 
