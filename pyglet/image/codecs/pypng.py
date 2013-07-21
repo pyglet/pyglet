@@ -797,8 +797,8 @@ class Reader:
                 if greyscale:
                     image_metadata["transparent"] = struct.unpack("!1H", data)
                 elif has_palette:
-                    # FIXME
-                    raise Error("transparent color not supported for indexed images")
+                    # may have several transparent colors
+                    image_metadata["transparent"] = array('B', data)
                 else:
                     image_metadata["transparent"] = struct.unpack("!3H", data)
             elif tag == asbytes('gAMA'):
@@ -818,13 +818,25 @@ class Reader:
 
         if has_palette:
             if "palette" in image_metadata:
-                # convert the indexed data to RGB
+                # convert the indexed data to RGB, or RGBA if transparent
                 rgb_pixels = array('B')
                 for pixel in pixels:
                     pal_index = pixel*3
                     rgb_pixels.extend(image_metadata["palette"][pal_index:pal_index+3])
+                    # if there are transparent colors, use RGBA
+                    if "transparent" in image_metadata:
+                        if pixel in image_metadata["transparent"]:
+                            rgb_pixels.append(0)
+                        else:
+                            rgb_pixels.append(255)
                 pixels = rgb_pixels
                 self.planes = 3
+
+                if "transparent" in image_metadata:
+                    self.planes += 1
+                    has_alpha = True
+                    del image_metadata["transparent"]
+
                 if "background" in image_metadata:
                     pal_index = image_metadata["background"][0]*3
                     image_metadata["background"] = \
