@@ -750,18 +750,27 @@ class Reader:
                 if color_type == 0:
                     greyscale = True
                     has_alpha = False
+                    has_palette = False
                     planes = 1
                 elif color_type == 2:
                     greyscale = False
                     has_alpha = False
+                    has_palette = False
                     planes = 3
+                elif color_type == 3:
+                    greyscale = False
+                    has_alpha = False
+                    has_palette = True
+                    planes = 1
                 elif color_type == 4:
                     greyscale = True
                     has_alpha = True
+                    has_palette = False
                     planes = 2
                 elif color_type == 6:
                     greyscale = False
                     has_alpha = True
+                    has_palette = False
                     planes = 4
                 else:
                     raise Error("unknown PNG colour type %s" % color_type)
@@ -780,16 +789,25 @@ class Reader:
             elif tag == asbytes('bKGD'):
                 if greyscale:
                     image_metadata["background"] = struct.unpack("!1H", data)
+                elif has_palette:
+                    image_metadata["background"] = struct.unpack("!1B", data)
                 else:
                     image_metadata["background"] = struct.unpack("!3H", data)
             elif tag == asbytes('tRNS'):
                 if greyscale:
                     image_metadata["transparent"] = struct.unpack("!1H", data)
+                elif has_palette:
+                    # FIXME
+                    raise Error("transparent color not supported for indexed images")
                 else:
                     image_metadata["transparent"] = struct.unpack("!3H", data)
             elif tag == asbytes('gAMA'):
                 image_metadata["gamma"] = (
                     struct.unpack("!L", data)[0]) / 100000.0
+            elif tag == asbytes('PLTE'): # http://www.w3.org/TR/PNG/#11PLTE
+                if not len(data) or len(data) % 3 != 0 or len(data) > 3*(2**(self.bps*8)):
+                    raise Error("invalid palette size")
+                image_metadata["palette"] = array('B', data)
             elif tag == asbytes('IEND'): # http://www.w3.org/TR/PNG/#11IEND
                 break
         scanlines = array('B', zlib.decompress(asbytes('').join(compressed)))
@@ -797,6 +815,23 @@ class Reader:
             pixels = self.deinterlace(scanlines)
         else:
             pixels = self.read_flat(scanlines)
+
+        if has_palette:
+            if "palette" in image_metadata:
+                # convert the indexed data to RGB
+                rgb_pixels = array('B')
+                for pixel in pixels:
+                    pal_index = pixel*3
+                    rgb_pixels.extend(image_metadata["palette"][pal_index:pal_index+3])
+                pixels = rgb_pixels
+                self.planes = 3
+                if "background" in image_metadata:
+                    pal_index = image_metadata["background"][0]*3
+                    image_metadata["background"] = \
+                            image_metadata["palette"][pal_index:pal_index+3]
+            else:
+                raise Error("color_type is indexed but no palette was found")
+
         image_metadata["greyscale"] = greyscale
         image_metadata["has_alpha"] = has_alpha
         image_metadata["bytes_per_sample"] = bps
