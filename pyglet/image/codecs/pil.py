@@ -62,7 +62,11 @@ class PILImageDecoder(ImageDecoder):
             raise ImageDecodeException(
                 'PIL cannot read %r: %s' % (filename or file, e))
 
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        try:
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        except Exception, e:
+            raise ImageDecodeException(
+                'PIL failed to transpose %r: %s' % (filename or file, e))
 
         # Convert bitmap and palette images to component
         if image.mode in ('1', 'P'):
