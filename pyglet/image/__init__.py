@@ -444,7 +444,7 @@ class AbstractImage(object):
                 try:
                     encoder.encode(self, file, filename)
                     return
-                except codecs.ImageDecodeException, e:
+                except codecs.ImageEncodeException, e:
                     first_exception = first_exception or e
                     file.seek(0)
 
