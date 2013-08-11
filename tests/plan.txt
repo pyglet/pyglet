@@ -114,6 +114,10 @@ clock
     clock-multicore
         clock.MULTICORE                         WIN
 image
+    image-basic
+	    image-save
+	        image.NO_ENCODER_RGB_SAVE           X11 WIN OSX
+
     image-pattern
         image.CHECKERBOARD                      X11 WIN OSX
 
@@ -122,7 +126,9 @@ image
             image.PYPNG_RGBA_LOAD               X11 WIN OSX
             image.PYPNG_RGB_LOAD                X11 WIN OSX
             image.PYPNG_LA_LOAD                 X11 WIN OSX
-            image.PYPNG_L_LOAD                  X11 WIN OSX
+            image.PYPNG_L_LOAD                 	X11 WIN OSX
+            image.PNG_INDEXED_LOAD              X11 WIN OSX
+            image.PNG_INDEXED_TRANS_LOAD        X11 WIN OSX
 
         image-png-save
             image.PYPNG_RGBA_SAVE               X11 WIN OSX
@@ -150,6 +156,7 @@ image
             image.PIL_RGB_SAVE                  X11 WIN OSX
             image.PIL_LA_SAVE                   X11 WIN OSX
             image.PIL_L_SAVE                    X11 WIN OSX
+            image.PIL_RGB_LOAD_NO_DECODER       X11 WIN OSX
 
     image-platform
         image.PLATFORM_RGBA_LOAD                X11 WIN OSX
