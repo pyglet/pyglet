@@ -20,7 +20,7 @@ Image.Image.transpose = raise_error
 
 codecs.get_decoders = lambda filename: [PILImageDecoder(), PNGImageDecoder(),]
 
-class TEST_PIL_RGB_LOAD(base_load.TestLoad):
+class TEST_PIL_RGB_LOAD_NO_DECODER(base_load.TestLoad):
     texture_file = 'rgb.png'
     decoder = None
 

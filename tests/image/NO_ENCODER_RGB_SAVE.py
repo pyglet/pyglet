@@ -23,7 +23,7 @@ class MockPILImageEncoder(ImageEncoder):
 
 codecs.get_encoders = lambda filename: [MockPILImageEncoder(), PNGImageEncoder(),]
 
-class TEST_PNG_RGB_SAVE(base_save.TestSave):
+class TEST_NO_ENCODER_RGB_SAVE(base_save.TestSave):
     texture_file = 'rgb.png'
     encoder = None
 

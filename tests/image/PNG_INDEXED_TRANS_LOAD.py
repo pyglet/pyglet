@@ -12,7 +12,7 @@ import base_load
 
 from pyglet.image.codecs.png import PNGImageDecoder
 
-class TEST_SUITE(base_load.TestLoad):
+class TEST_PNG_INDEXED_TRANS_LOAD(base_load.TestLoad):
     texture_file = 'rgb_8bpp_trans.png'
     decoder = PNGImageDecoder()
 
