@@ -109,6 +109,8 @@ class CocoaEventLoop(PlatformEventLoop):
         self.pool.drain()
         self.pool = NSAutoreleasePool.alloc().init()
 
+        self.dispatch_posted_events()
+
         # Determine the timeout date.
         if timeout is None:
             # Using distantFuture as untilDate means that nextEventMatchingMask
