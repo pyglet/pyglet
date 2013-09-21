@@ -302,8 +302,7 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipGetPropertyItem(bitmap, prop_id, prop_size.value,
             prop_buffer)
 
-        # XXX Sure it's long?
-        n_delays = prop_item.length / sizeof(c_long)
+        n_delays = prop_item.length // sizeof(c_long)
         delays = cast(prop_item.value, POINTER(c_long * n_delays)).contents
 
         frames = []
