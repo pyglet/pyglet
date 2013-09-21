@@ -40,6 +40,7 @@ __version__ = '$Id: pil.py 163 2006-11-13 04:15:46Z Alex.Holkner $'
 
 from ctypes import *
 
+from pyglet.com import IUnknown
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
@@ -205,14 +206,14 @@ class GDIPlusDecoder(ImageDecoder):
         kernel32.GlobalUnlock(hglob)
 
         # Create IStream for the HGLOBAL
-        stream = LPSTREAM()
-        ole32.CreateStreamOnHGlobal(hglob, True, byref(stream))
+        self.stream = IUnknown()
+        ole32.CreateStreamOnHGlobal(hglob, True, byref(self.stream))
 
         # Load image from stream
         bitmap = c_void_p()
-        status = gdiplus.GdipCreateBitmapFromStream(stream, byref(bitmap))
+        status = gdiplus.GdipCreateBitmapFromStream(self.stream, byref(bitmap))
         if status != 0:
-            # TODO release stream
+            self.stream.Release()
             raise ImageDecodeException(
                 'GDI+ cannot load %r' % (filename or file))
 
@@ -268,7 +269,7 @@ class GDIPlusDecoder(ImageDecoder):
     def _delete_bitmap(self, bitmap):
         # Release image and stream
         gdiplus.GdipDisposeImage(bitmap)
-        # TODO: How to call IUnknown::Release on stream?
+        self.stream.Release()
 
     def decode(self, file, filename):
         bitmap = self._load_bitmap(file, filename)
