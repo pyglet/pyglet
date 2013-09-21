@@ -301,14 +301,16 @@ Standard controls for controlling playback are provided by these methods:
           - Begin or resume playback of the current source.
         * - `pause`
           - Pause playback of the current source.
-        * - `next`
+        * - `next_source`
           - Dequeue the current source and move to the next one immediately.
+		    `next` can also be used but it is deprecated because of
+			incompatibilities with Python 3.
         * - `seek`
           - Seek to a specific time within the current source.
 
 Note that there is no `stop` method.  If you do not need to resume playback,
 simply pause playback and discard the player and source objects.  Using the
-`next` method does not guarantee gapless playback.
+`next_source` method does not guarantee gapless playback.
 
 There are several properties that describe the player's current state:
 

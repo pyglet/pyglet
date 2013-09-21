@@ -700,11 +700,14 @@ class SourceGroup(object):
     def has_next(self):
         return len(self._sources) > 1
 
-    def next(self, immediate=True):
+    def next_source(self, immediate=True):
         if immediate:
             self._advance()
         else:
             self._advance_after_eos = True
+
+    #: :deprecated: Use `next_source` instead.
+    next = next_source  # old API, worked badly with 2to3
 
     def get_current_source(self):
         if self._sources:
@@ -1015,13 +1018,13 @@ class Player(pyglet.event.EventDispatcher):
                 self._paused_time = time
             self._audio_player.stop()
 
-    def next(self):
+    def next_source(self):
         if not self._groups:
             return
 
         group = self._groups[0]
         if group.has_next():
-            group.next()
+            group.next_source()
             return
 
         if self.source.video_format:
@@ -1039,6 +1042,9 @@ class Player(pyglet.event.EventDispatcher):
 
         self._set_playing(False)
         self.dispatch_event('on_player_eos')
+
+    #: :deprecated: Use `next_source` instead.
+    next = next_source  # old API, worked badly with 2to3
 
     def seek(self, time):
         if _debug:
@@ -1209,7 +1215,7 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         '''
-        self.next()
+        self.next_source()
         if _debug:
             print 'Player.on_source_group_eos'
 
