@@ -20,24 +20,19 @@
     </li>
   </ul>
 
-  <!--
+
   <h2>development release</h2>
 
-  Documentation for <b>pyglet 1.1 beta 2</b>.
+  Documentation for <b>pyglet development version (1.2)</b>.
 
   <ul>
     <li>
-      <a href="doc/1.1/programming_guide/index.html">Programming Guide</a>
+      <a href="https://pyglet-current.readthedocs.org/en/latest/">Programming Guide</a>
     </li>
     <li>
-      <a href="doc/1.1/programming_guide/appendix_migrating_to_pyglet_1_1.html">
-        Migrating to pyglet 1.1</a>
-    </li>
-    <li>
-      <a href="doc/1.1/api/index.html">API Reference</a>.
+      <a href="https://pyglet-current.readthedocs.org/en/latest/pyglet.html">API Reference</a>.
     </li>
   </ul>
-  -->
 
   <h2>additional resources</h2>
 
