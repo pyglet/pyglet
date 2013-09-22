@@ -303,8 +303,8 @@ Standard controls for controlling playback are provided by these methods:
           - Pause playback of the current source.
         * - `next_source`
           - Dequeue the current source and move to the next one immediately.
-		    `next` can also be used but it is deprecated because of
-			incompatibilities with Python 3.
+            `next` can also be used but it is deprecated because of
+            incompatibilities with Python 3.
         * - `seek`
           - Seek to a specific time within the current source.
 
