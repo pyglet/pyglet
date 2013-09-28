@@ -73,18 +73,22 @@
   </ul>
 
   <a name="unstable" />
-  <h2>development release</h2>
-
-  <p>These packages are provided for testing purposes, and are not suitable
-  for production use.</p>
-
+  <h2>development version</h2>
+  <p>
+	  The development version may not always be suitable for production use but it is
+	  recommended if you want to try the new features.
+  </p>
   <ul>
-    <li>
-      Source and documentation for
-      <b>pyglet 1.2alpha1</b> are available directly from the
-      <a href="http://code.google.com/p/pyglet/downloads/list?q=1.2alpha1">
-      download server</a>.
-    </li>
+  <li>You can install the latest version using pip:
+  <p class="console">
+	  pip install --upgrade http://pyglet.googlecode.com/archive/tip.zip
+  </p>
+  </li>
+  <li>Source and documentation for <b>pyglet 1.2 alpha1</b> are available directly from the
+	  <a href="http://code.google.com/p/pyglet/downloads/list?q=1.2alpha1">download server</a>.
+	  This version is too outdated, we recommend using the
+	  <a href="http://pyglet.googlecode.com/archive/tip.zip">latest repository version</a> (ZIP file) instead
+	  until the next version is released.
+  </li>
   </ul>
-
 </div>
