@@ -136,6 +136,14 @@ if getattr(sys, 'frozen', None):
 #:
 #:     **Since:** pyglet 1.2
 #:
+#: search_local_libs
+#:     If False, pyglet won't try to search for libraries in the script
+#:     directory and its `lib` subdirectory. This is useful to load a local
+#:     library instead of the system installed version. This option is set
+#:     to True by default.
+#:
+#:     **Since:** pyglet 1.2
+#:
 options = {
     'audio': ('directsound', 'pulse', 'openal', 'silent'),
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
@@ -159,6 +167,7 @@ options = {
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
     'darwin_cocoa': False,
+    'search_local_libs': True,
 }
 
 _option_types = {

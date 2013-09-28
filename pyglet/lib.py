@@ -51,6 +51,12 @@ import pyglet
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
 
+if pyglet.options['search_local_libs']:
+    script_path = pyglet.resource.get_script_home()
+    _local_lib_paths = [script_path, os.path.join(script_path, 'lib'),]
+else:
+    _local_lib_paths = None
+
 class _TraceFunction(object):
     def __init__(self, func):
         self.__dict__['_func'] = func
@@ -102,7 +108,7 @@ class LibraryLoader(object):
 
         if self.platform.startswith('linux'):
             for name in names:
-                libname = ctypes.util.find_library(name)
+                libname = self.find_library(name)
                 platform_names.append(libname or 'lib%s.so' % name)
 
         platform_names.extend(names)
@@ -150,6 +156,11 @@ class MachOLibraryLoader(LibraryLoader):
             self.ld_library_path = os.environ['LD_LIBRARY_PATH'].split(':')
         else:
             self.ld_library_path = []
+
+        if _local_lib_paths:
+            # search first for local libs
+            self.ld_library_path = _local_lib_paths + self.ld_library_path
+            os.environ['LD_LIBRARY_PATH'] = ':'.join(self.ld_library_path)
 
         if 'DYLD_LIBRARY_PATH' in os.environ:
             self.dyld_library_path = os.environ['DYLD_LIBRARY_PATH'].split(':')
@@ -254,6 +265,27 @@ class MachOLibraryLoader(LibraryLoader):
 
 class LinuxLibraryLoader(LibraryLoader):
     _ld_so_cache = None
+    _local_libs_cache = None
+
+    def _find_libs(self, directories):
+        cache = {}
+        lib_re = re.compile('lib(.*)\.so(?:$|\.)')
+        for dir in directories:
+            try:
+                for file in os.listdir(dir):
+                    match = lib_re.match(file)
+                    if match:
+                        # Index by filename
+                        path = os.path.join(dir, file)
+                        if file not in cache:
+                            cache[file] = path
+                        # Index by library name
+                        library = match.group(1)
+                        if library not in cache:
+                            cache[library] = path
+            except OSError:
+                pass
+        return cache
 
     def _create_ld_so_cache(self):
         # Recreate search path followed by ld.so.  This is going to be
@@ -276,31 +308,17 @@ class LinuxLibraryLoader(LibraryLoader):
 
         directories.extend(['/lib', '/usr/lib'])
 
-        cache = {}
-        lib_re = re.compile('lib(.*)\.so')
-        for dir in directories:
-            try:
-                for file in os.listdir(dir):
-                    if '.so' not in file:
-                        continue
-
-                    # Index by filename
-                    path = os.path.join(dir, file)
-                    if file not in cache:
-                        cache[file] = path
-
-                    # Index by library name
-                    match = lib_re.match(file)
-                    if match:
-                        library = match.group(1)
-                        if library not in cache:
-                            cache[library] = path
-            except OSError:
-                pass
-
-        self._ld_so_cache = cache
+        self._ld_so_cache = self._find_libs(directories)
 
     def find_library(self, path):
+
+        # search first for local libs
+        if _local_lib_paths:
+            if not self._local_libs_cache:
+                self._local_libs_cache = self._find_libs(_local_lib_paths)
+            if path in self._local_libs_cache:
+                return self._local_libs_cache[path]
+
         # ctypes tries ldconfig, gcc and objdump.  If none of these are
         # present, we implement the ld-linux.so search path as described in
         # the man page.
