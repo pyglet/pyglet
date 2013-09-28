@@ -138,8 +138,8 @@ def get_settings_path(name):
     conventions.  Note that the returned path may not exist: applications
     should use ``os.makedirs`` to construct it if desired.
 
-    On Linux, a hidden directory `name` in the user's home directory is
-    returned.
+    On Linux, a directory `name` in the user's configuration directory is
+    returned (usually under ``~/.config``).
 
     On Windows (including under Cygwin) the `name` directory in the user's
     ``Application Settings`` directory is returned.
@@ -160,6 +160,11 @@ def get_settings_path(name):
             return os.path.expanduser('~/%s' % name)
     elif sys.platform == 'darwin':
         return os.path.expanduser('~/Library/Application Support/%s' % name)
+    elif sys.platform.startswith('linux'):
+        if 'XDG_CONFIG_HOME' in os.environ:
+            return os.path.join(os.environ['XDG_CONFIG_HOME'], name)
+        else:
+            return os.path.expanduser('~/.config/%s' % name)
     else:
         return os.path.expanduser('~/.%s' % name)
 
