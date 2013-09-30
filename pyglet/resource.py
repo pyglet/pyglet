@@ -121,11 +121,15 @@ def get_script_home():
     if frozen in ('windows_exe', 'console_exe'):
         return os.path.dirname(sys.executable)
     elif frozen == 'macosx_app':
+        # py2app
         return os.environ['RESOURCEPATH']
     else:
         main = sys.modules['__main__']
         if hasattr(main, '__file__'):
             return os.path.dirname(main.__file__)
+        else:
+            # cx_Freeze
+            return os.path.dirname(sys.executable)
 
     # Probably interactive
     return ''
