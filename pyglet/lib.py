@@ -180,27 +180,13 @@ class MachOLibraryLoader(LibraryLoader):
         '''Implements the dylib search as specified in Apple documentation:
 
         http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
-
-        Before commencing the standard search, the method first checks
-        the bundle's ``Frameworks`` directory if the application is running
-        within a bundle (OS X .app).
         '''
 
         libname = os.path.basename(path)
         search_path = []
 
-        if hasattr(sys, 'frozen') and sys.frozen == 'macosx_app':
-            search_path.append(os.path.join(
-                os.environ['RESOURCEPATH'],
-                '..',
-                'Frameworks',
-                libname))
-
-        # pyinstaller.py sets sys.frozen to True, and puts dylibs in
-        # Contents/MacOS, which path pyinstaller puts in sys._MEIPASS
-        if (hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS') and
-                sys.frozen == True and sys.platform == 'darwin'):
-            search_path.append(os.path.join(sys._MEIPASS, libname))
+        if '.' not in libname:
+            libname = 'lib' + libname + '.dylib'
 
         if '/' in path:
             search_path.extend(

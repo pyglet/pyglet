@@ -60,8 +60,7 @@ if sys.platform.startswith('win') and struct.calcsize('P') == 8:
 else:
     av = 'avbin'
 
-av = pyglet.lib.load_library(av, 
-                             darwin='/usr/local/lib/libavbin.dylib')
+av = pyglet.lib.load_library(av)
 
 AVBIN_RESULT_ERROR = -1
 AVBIN_RESULT_OK = 0
