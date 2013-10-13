@@ -148,7 +148,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyglet'
-copyright = u'2006, Alex Holkner'
+copyright = u'2006-2013, Alex Holkner'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
