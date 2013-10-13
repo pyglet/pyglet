@@ -405,7 +405,7 @@ ASCIITILDE    = 0x07e
 
 _key_names = {}
 _motion_names = {}
-for _name, _value in locals().items():
+for _name, _value in locals().copy().items():
     if _name[:2] != '__' and _name.upper() == _name and \
        not _name.startswith('MOD_'):
         if _name.startswith('MOTION_'):

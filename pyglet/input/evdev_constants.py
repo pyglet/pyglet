@@ -532,7 +532,7 @@ FF_STATUS_MAX = 0x01
 _rel_raw_names = {}
 _abs_raw_names = {}
 _key_raw_names = {}
-for _name, _val in locals().items():
+for _name, _val in locals().copy().items():
     if _name.startswith('REL_'):
         _rel_raw_names[_val] = _name
     elif _name.startswith('ABS_'):
