@@ -54,7 +54,7 @@
   href="http://code.google.com/p/pyglet/source/browse/">browse the
   repository</a> or check out a working copy using a mercurial client:</p>
 
-  <p class="console">hg clone https://pyglet.googlecode.com/hg/ pyglet</p>
+  <p class="console">hg clone https://code.google.com/p/pyglet/ pyglet</p>
 
   <p>See the <a
       href="http://code.google.com/p/pyglet/source/checkout">googlecode</a>
