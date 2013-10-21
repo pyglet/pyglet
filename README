@@ -36,6 +36,10 @@ For Python 2 there are no compilation steps during the installation; if
 you prefer, you can simply add this directory to your PYTHONPATH and use
 pyglet without installing it.
 
+The documentation is available online at pyglet.org, but if you want to
+build the documentation yourself, please check the README file in the doc
+directory.
+
 Support
 -------
 
