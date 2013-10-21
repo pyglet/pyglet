@@ -18,20 +18,23 @@ operating systems:
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
     * OpenGL and GLX
-    * GDK 2.0 or later (required for loading images)
-    * OpenAL or ALSA (required for playing audio)
+    * GDK 2.0+ or PIL (required for loading images other than PNG and BMP)
+    * Pulseaudio or OpenAL (required for playing audio)
     
 Installation
 ------------
 
 If you're reading this README from a source distribution, install pyglet
-with::
+with:
 
     python setup.py install
 
-There are no compilation steps during the installation; if you prefer, you can
-simply add this directory to your PYTHONPATH and use pyglet without
-installing it.
+This is required for Python 3 as the code needs to be processed by 2to3  
+during the installation.
+
+For Python 2 there are no compilation steps during the installation; if
+you prefer, you can simply add this directory to your PYTHONPATH and use
+pyglet without installing it.
 
 Support
 -------
@@ -40,8 +43,9 @@ pyglet has an active developer and user community.  If you find a bug, please
 open an issue at http://code.google.com/p/pyglet/issues (requires a Google
 account).
 
-Please join us on the mailing list at 
-http://groups.google.com/group/pyglet-users
+Please join us on the mailing list at:
+
+    http://groups.google.com/group/pyglet-users
 
 For more information and an RSS news feed, visit http://www.pyglet.org
 
