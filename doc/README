@@ -12,7 +12,7 @@ documentation with:
 
     make html
 
-The HTML docs will be generated in the _build subdiretory.
+The HTML docs will be generated in the _build subdirectory.
 
 Please run `make help` for a complete list of targets, but be aware that some
 of them may have extra requirements.
