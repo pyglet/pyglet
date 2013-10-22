@@ -263,7 +263,8 @@ class Win32Font(base.Font):
 
     @classmethod
     def have_font(cls, name):
-        return win32query.have_font(name)
+        # [ ] add support for loading raster fonts
+        return win32query.have_font(name, vector_only=True)
 
     @classmethod
     def add_font_data(cls, data):
