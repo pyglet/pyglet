@@ -1,7 +1,8 @@
 Building the documentation
 --------------------------
 
-In order to build the documentation you'll need:
+In order to build the documentation you'll need all pyglet's requirements,
+plus the following:
 
 * Sphinx and its requirements (1.1.3 recommended): http://sphinx-doc.org/
 * Graphviz (optional): http://graphviz.org/
