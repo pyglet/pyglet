@@ -45,28 +45,12 @@ import pyglet
 FONTS = ['Andale Mono', 'Consolas', 'Inconsolata', 'Inconsolata-dz', 'Monaco',
     'Menlo']
 
-
-# [ ] tab character is buggy even with monospace fonts
-#FONTS = list(set(pyglet.font.win32query.font_list(vector_only=True, monospace_only=True)))
-# [ ] some fonts marked as monospace are shown incorrectly
-#     1. space is too narrow
-#     2. symbols are cropped by height
-#     [ ] maybe the requested font could not by found, and pyglet
-#         receives the closest one, but not monospaced
-#         [ ] check if pyglet receives signal when requested font
-#             can not be found
-#
-#       FP M      400 CHARSET:   0  @SimHei
-#       FP M      400 CHARSET:   0  @MS Gothic
-
-
-SAMPLE = '''
-class Spam(object):
-    def __init__(self):
-        # The quick brown fox
-        self.spam = {"jumped": 'over'}
+SAMPLE = '''class Spam(object):
+	def __init__(self):
+		# The quick brown fox
+		self.spam = {"jumped": 'over'}
     @the
-    def lazy(self, *dog):
+	def lazy(self, *dog):
 		self.dog = [lazy, lazy]'''
 
 class Window(pyglet.window.Window):

@@ -58,31 +58,8 @@ DEBUG = False
 
 __all__ = ['have_font', 'font_list']
 
-__version__ = '0.3'
+__version__ = '0.1'
 __url__ = 'https://bitbucket.org/techtonik/fontquery'
-
-import sys
-PY3K = sys.version_info >= (3, 0)
-
-#-- INTRO: MAINTAIN CACHED FONTS DB --
-
-# [ ] make it Django/NDB style model definition
-class FontEntry(object):
-  """
-  Font classification.
-  Level 0:
-  - name
-  - vector (True if font is vector, False for raster fonts)
-  - format: ttf | ...
-  """
-  def __init__(self, name, vector, format, monospace):
-    self.name = name
-    self.vector = vector
-    self.format = format
-    self.monospace = monospace
-
-# List of FontEntry objects
-FONTDB = []
 
 
 #-- CHAPTER 1: GET ALL SYSTEM FONTS USING EnumFontFamiliesEx FROM GDI --
@@ -267,50 +244,19 @@ FONTENUMPROC = ctypes.WINFUNCTYPE(
   wintypes.LPARAM
 )
 
-
+_font_names = set()
 def _enum_font_names(logfont, textmetricex, fonttype, param):
   """callback function to be executed during EnumFontFamiliesEx
      call for each font name. it stores names in global variable
   """
-  global FONTDB
-
+  global _font_names
   lf = logfont.contents
-  name = lf.lfFaceName
-  if PY3K:
-    # [ ] check this works
-    name = name.decode('utf-8')
-
-  # detect font type (vector|raster) and format (ttf)
-  # [ ] use Windows constant TRUETYPE_FONTTYPE
-  if fonttype & 4:
-    vector = True
-    format = 'ttf'
-  else:
-    vector = False
-    # [ ] research Windows raster format structure
-    format = 'unknown'
-
-  pitch = lf.lfPitchAndFamily & 0b11
-  family = lf.lfPitchAndFamily >> 4
-
-  # [ ] check FIXED_PITCH, VARIABLE_PITCH and FF_MODERN
-  #     combination
-  #
-  # FP T NM     400 CHARSET:   0  DFKai-SB
-  # FP T NM     400 CHARSET: 136  DFKai-SB
-  # FP T NM     400 CHARSET:   0  @DFKai-SB
-  # FP T NM     400 CHARSET: 136  @DFKai-SB
-  # VP T M      400 CHARSET:   0  OCR A Extended
-
-  monospace = False
-  if family == FF_MODERN:
-    monospace = True
-  
-  FONTDB.append(FontEntry(name, vector, format, monospace))
+  _font_names.add(lf.lfFaceName)
 
   if DEBUG:
     info = ''
  
+    pitch = lf.lfPitchAndFamily & 0b11
     if pitch == FIXED_PITCH:
       info += 'FP '
     elif pitch == VARIABLE_PITCH: 
@@ -318,10 +264,8 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
     else:
       info += '   '
 
-    # [ ] check exact fonttype values meaning
-    info += '%s ' % {0:'U', 1:'R', 4:'T'}[fonttype]
-
-    if monospace:
+    family = lf.lfPitchAndFamily >> 4
+    if family == FF_MODERN:
       info += 'M  '
     else:
       info += 'NM '
@@ -337,13 +281,18 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
 
     info += ' %s' % lf.lfWeight
 
-    if pitch == FIXED_PITCH:
-      print '%s CHARSET: %3s  %s' % (info, lf.lfCharSet, lf.lfFaceName)
+    #if pitch == FIXED_PITCH:
+    if 1:
+      print('%s CHARSET: %3s  %s' % (info, lf.lfCharSet, lf.lfFaceName))
 
   return 1   # non-0 to continue enumeration
 enum_font_names = FONTENUMPROC(_enum_font_names)
 
 # --- /define
+
+
+import sys
+PY3K = sys.version_info >= (3, 0)
 
 
 # --- prepare and call EnumFontFamiliesEx
@@ -353,12 +302,12 @@ def query(charset=DEFAULT_CHARSET):
   Prepare and call EnumFontFamiliesEx.
 
   query()
-    - return tuple with sorted list of all available system fonts
+    - return sorted list of all available system fonts
   query(charset=ANSI_CHARSET)
-    - return tuple sorted list of system fonts supporting ANSI charset
+    - return sorted list of system fonts supporting ANSI charset
 
   """
-  global FONTDB
+  global _font_names
 
   # 1. Get device context of the entire screen
   hdc = user32.GetDC(None)
@@ -381,7 +330,7 @@ def query(charset=DEFAULT_CHARSET):
 
   logfont = LOGFONT(0, 0, 0, 0, 0, 0, 0, 0, charset,
                     0, 0, 0, 0, b'\0')
-  FONTDB = []  # clear cached FONTDB for enum_font_names callback
+  _font_names = set()  # clear _font_names for enum_font_names callback
   res = gdi32.EnumFontFamiliesExA(
           hdc,   # handle to device context
           ctypes.byref(logfont),
@@ -393,69 +342,44 @@ def query(charset=DEFAULT_CHARSET):
   # 3. Release DC
   user32.ReleaseDC(None, hdc)
 
-  return FONTDB
+  if PY3K: # convert to strings from bytes
+    return [name.decode('utf-8') for name in sorted(_font_names)]
+  else:
+    return sorted(_font_names)
 
 
 # --- Public API ---
 
+__font_names_cache = []
 def have_font(name, refresh=False):
   """
   Return True if font with specified `name` is present. The result
   of querying system font names is cached. Set `refresh` parameter
   to True to purge cache and reload font information.
   """
-  if not FONTDB or refresh:
-    query()
-  if any(f.name == name for f in FONTDB):
+  global __font_names_cache
+
+  if refresh or not __font_names_cache:
+    __font_names_cache = query()
+  if name in __font_names_cache:
     return True
   else:
     return False
 
-def font_list(vector_only=False, monospace_only=False):
+def font_list():
   """Return list of system installed font names."""
+  return query()
 
-  if not FONTDB:
-    query()
-
-  fonts = FONTDB
-  if vector_only:
-    fonts = [f for f in fonts if f.vector]
-  if monospace_only:
-    fonts = [f for f in fonts if f.monospace]
-
-  return sorted([f.name for f in fonts])
 
 if __name__ == '__main__':
-  import sys
-  if sys.argv[1:] == ['debug']:
-    DEBUG = True
-
-  if sys.argv[1:] == ['test'] or DEBUG:
-    print 'Running tests..'
-    # test have_font (Windows)
-    test_arial = have_font('Arial')
-    print 'Have font "Arial"? %s' % test_arial
-    print 'Have font "missing-one"? %s' % have_font('missing-one')
-    # test cache is not rebuilt
-    FONTDB = [FontEntry('stub', False, '', False)]
-    assert(have_font('Arial') != test_arial)
-    # test cache is rebiult
-    assert(have_font('Arial', refresh=True) == test_arial)
-    if not DEBUG:
-      sys.exit()
-
-  if sys.argv[1:] == ['vector']:
-    fonts = font_list(vector_only=True)
-  elif sys.argv[1:] == ['mono']:
-    fonts = font_list(monospace_only=True)
-  elif sys.argv[1:] == ['vector','mono']:
-    fonts = font_list(vector_only=True, monospace_only=True)
-  else:
-    fonts = font_list()
-  print '\n'.join(fonts)
+  for f in font_list():
+    print(f)
+  if DEBUG:
+    print("Total: %s" % len(font_list()))
 
   if DEBUG:
-    print "Total: %s" % len(font_list())
+    print('Have font "Arial"? %s' % have_font('Arial'))
+    print('Have font "missing-one"? %s' % have_font('missing-one'))
 
 
 
