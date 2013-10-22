@@ -339,7 +339,7 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
 
     #if pitch == FIXED_PITCH:
     if 1:
-      print('%s CHARSET: %3s  %s' % (info, lf.lfCharSet, lf.lfFaceName))
+      print '%s CHARSET: %3s  %s' % (info, lf.lfCharSet, lf.lfFaceName)
 
   return 1   # non-0 to continue enumeration
 enum_font_names = FONTENUMPROC(_enum_font_names)
@@ -432,11 +432,11 @@ if __name__ == '__main__':
     DEBUG = True
 
   if sys.argv[1:] == ['test'] or DEBUG:
-    print('Running tests..')
+    print 'Running tests..'
     # test have_font (Windows)
     test_arial = have_font('Arial')
-    print('Have font "Arial"? %s' % test_arial)
-    print('Have font "missing-one"? %s' % have_font('missing-one'))
+    print 'Have font "Arial"? %s' % test_arial
+    print 'Have font "missing-one"? %s' % have_font('missing-one')
     # test cache is not rebuilt
     FONTDB = [FontEntry('stub', False, '', False)]
     assert(have_font('Arial') != test_arial)
@@ -453,10 +453,10 @@ if __name__ == '__main__':
     fonts = font_list(vector_only=True, monospace_only=True)
   else:
     fonts = font_list()
-  print('\n'.join(fonts))
+  print '\n'.join(fonts)
 
   if DEBUG:
-    print("Total: %s" % len(font_list()))
+    print "Total: %s" % len(font_list())
 
 
 
