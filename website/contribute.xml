@@ -1,74 +1,108 @@
 <div>
-  <h2>mailing lists</h2>
-  <p>
-    Pyglet communication mostly occurs on mailing lists.  You can browse them
-    online or subscribe for immediate or digest updates.
-  </p>
+    <h2>
+        Communication
+    </h2>
+    <p>
+        Pyglet communication occurs mostly in our
+        <a href="http://groups.google.com/group/pyglet-users">mailing list</a>.
+    </p>
+    <p>
+        Additionally, we have two other announcement mailing lists:
+    </p>
+    <ul>
+        <li>
+            <a href="http://groups.google.com/group/pyglet-issues">pyglet-issues</a>,
+            which broadcasts automatic emails from the issue tracker.
+        </li>
+        <li>
+            <a href="http://groups.google.com/group/pyglet-commits">pyglet-commits</a>,
+            which broadcasts automatic mails when a new commit is made to the source.</li>
+    </ul>
 
-  <ul>
-    <li><a
-    href="http://groups.google.com/group/pyglet-users">pyglet-users</a> is
-    the main forum for pyglet discussion.</li>
+    <h2>
+        Issue tracker
+    </h2>
+    <p>
+        You can use the <a href="http://code.google.com/p/pyglet/issues/list">issue tracker</a>
+        to report any bug or compatibility issue. You need
+        a <a href="http://mail.google.com/mail/signup">Google account</a> for that.
+    </p>
+    <p>
+        We prefer the tracker to address discussions on specific bugs,
+        and address broader topics of Pyglet in the mailing list.
+    </p>
 
-    <li><a
-    href="http://groups.google.com/group/pyglet-issues">pyglet-issues</a> is
-    an announcement list which broadcasts emails from the issue tracker.</li>
+    <h2>
+        Getting the trunk version
+    </h2>
+    <p>
+        The repository can be found <a href="http://code.google.com/p/pyglet/source/browse/">here</a>;
+        it hosts the source trunk, documentation, examples, and development tools.
+        You can get the latest version of the code using:
+    </p>
+    <p class="console">
+        hg clone https://code.google.com/p/pyglet/ pyglet
+    </p>
 
-    <li><a
-    href="http://groups.google.com/group/pyglet-commits">pyglet-commits</a> is
-    an announcement list which broadcasts source commits.</li>
-  </ul>
+    <h2>
+        Contributing to the source
+    </h2>
+    <p>
+        If you want to contribute to Pyglet, we suggest the following:
+    </p>
+    <ol>
+        <li>
+            Create your own clone in the <a href="http://code.google.com/p/pyglet/source/checkout">official repository</a>.
+        </li>
+        <li>
+            <p>Get a local copy of your clone using</p>
+            <p class="console">
+                hg clone https://code.google.com/r/&lt;username&gt;-&lt;rep_name&gt;/source/checkout
+            </p>
+        </li>
+        <li>
+            Commit your modifications and push them to your clone.
+        </li>
+        <li>
+            Ask a project member to review your commit by attaching the link of the commit in
+            the ticket the commit addresses, or post it in the mailing list.
+        </li>
+    </ol>
+    <p>
+        You can also create a patch of your changes and attach
+        it to the ticket or email it to the mailing list.
+    </p>
 
-  <!--
-  <h2>user pages</h2>
+    <h2>
+        Contributing to the documentation
+    </h2>
+    <p>
+        When asking to include your code in the trunk, check that you have addressed its
+        respective documentation, both within the code and the API documentation.
+        It is very important to all of us that the documentation matches the latest code and vice-versa.
+    </p>
+    <p>
+        Consequently, an error in the documentation, either because it is hard to understand or because
+        it doesn't match the code, <strong>is</strong> a bug that deserves to be reported on a ticket.
+    </p>
+    <p>
+        A good way to start contributing to a component of Pyglet is by its documentation.
+        When studying the code you are going to work with, also read the associated docs.
+        If you don't understand the code with the help of the docs, it is a sign that
+        the docs should be improved.
+    </p>
 
-  <p>Members of the pyglet-users mailing list can collaborate to <a
-  href="http://groups.google.com/group/pyglet-users/files">upload files</a>
-  and <a href="http://groups.google.com/group/pyglet-users/web">create web
-  pages</a>.  Screenshots from these pages will appear on pyglet.org to
-  promote your projects as well as pyglet.</p>
-
-  <p>Members can also contribute to the <a
-  href="http://groups.google.com/group/pyglet-users/web/faq">FAQ</a>, or write
-  new tutorials and "howto"s.</p>
-  -->
-
-  <h2>issue tracker</h2>
-
-  <p>The <a href="http://code.google.com/p/pyglet/issues/list">issue tracker</a>
-  should be used to report any bugs or compatibility issues.  You will need
-  a <a href="http://mail.google.com/mail/signup">Google account</a> to submit
-  issues.</p>
-
-  <h2>wiki</h2>
-
-  <p>We have a <a href="http://code.google.com/p/pyglet/w/list">wiki</a> which
-  is primarily used for discussing future design aspects of pyglet.  Anyone
-  can read this wiki, however you must be a pyglet developer (have SVN commit
-  access) to write to it.</p>
-
-  <h2>mercurial repository</h2>
-
-  <p>The mercurial repository houses the source trunk, documentation,
-  examples and development tools.  You can <a
-  href="http://code.google.com/p/pyglet/source/browse/">browse the
-  repository</a> or check out a working copy using a mercurial client:</p>
-
-  <p class="console">hg clone https://code.google.com/p/pyglet/ pyglet</p>
-
-  <p>See the <a
-      href="http://code.google.com/p/pyglet/source/checkout">googlecode</a>
-    hosting page for more details about the repository.</p>
-
-  <h2>contact</h2>
-
-  <p>pyglet is developed by many individual volunteers, and there is no
-    central point of contact.  If you have a question about developing with
-    pyglet, or you wish to contribute a patch, please join the mailing list
-    (details above).</p>
-
-  <p>For legal issues, please contact Alex Holkner.  You can reach him via
-    email at <a 
-      href="mailto:Alex.Holkner@gmail.com">Alex.Holkner@gmail.com</a>.</p>
-
+    <h2>
+        Contact
+    </h2>
+    <p>
+        Pyglet is developed by many individual volunteers, and there is no
+        central point of contact. If you have a question about developing with
+        Pyglet, or you wish to contribute, please join the
+        <a href="http://groups.google.com/group/pyglet-users">mailing list</a>.
+    </p>
+    <p>
+        For legal issues, please contact Alex Holkner. You can reach him via
+        email at <a href="mailto:Alex.Holkner@gmail.com">Alex.Holkner@gmail.com</a>.
+    </p>
 </div>
