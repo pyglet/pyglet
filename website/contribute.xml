@@ -1,6 +1,6 @@
 <div>
     <h2>
-        Communication
+        communication
     </h2>
     <p>
         Pyglet communication occurs mostly in our
@@ -20,7 +20,7 @@
     </ul>
 
     <h2>
-        Issue tracker
+        issue tracker
     </h2>
     <p>
         You can use the <a href="http://code.google.com/p/pyglet/issues/list">issue tracker</a>
@@ -33,7 +33,7 @@
     </p>
 
     <h2>
-        Getting the trunk version
+        getting the trunk version
     </h2>
     <p>
         The repository can be found <a href="http://code.google.com/p/pyglet/source/browse/">here</a>;
@@ -45,7 +45,7 @@
     </p>
 
     <h2>
-        Contributing to the source
+        contributing to the source
     </h2>
     <p>
         If you want to contribute to Pyglet, we suggest the following:
@@ -64,17 +64,16 @@
             Commit your modifications and push them to your clone.
         </li>
         <li>
-            Ask a project member to review your commit by attaching the link of the commit in
-            the ticket the commit addresses, or post it in the mailing list.
+			Open an ticket in the issue tracker describing your change and link the clone/commit. A project member
+			will review your commit providing feedback and eventually it will be merged into the official repository.
         </li>
     </ol>
     <p>
-        You can also create a patch of your changes and attach
-        it to the ticket or email it to the mailing list.
+        Alternatively you can also create a patch of your changes and attach it to the ticket.
     </p>
 
     <h2>
-        Contributing to the documentation
+        contributing to the documentation
     </h2>
     <p>
         When asking to include your code in the trunk, check that you have addressed its
@@ -86,19 +85,19 @@
         it doesn't match the code, <strong>is</strong> a bug that deserves to be reported on a ticket.
     </p>
     <p>
-        A good way to start contributing to a component of Pyglet is by its documentation.
+        A good way to start contributing to a component of pyglet is by its documentation.
         When studying the code you are going to work with, also read the associated docs.
         If you don't understand the code with the help of the docs, it is a sign that
         the docs should be improved.
     </p>
 
     <h2>
-        Contact
+        contact
     </h2>
     <p>
-        Pyglet is developed by many individual volunteers, and there is no
+        pyglet is developed by many individual volunteers, and there is no
         central point of contact. If you have a question about developing with
-        Pyglet, or you wish to contribute, please join the
+        pyglet, or you wish to contribute, please join the
         <a href="http://groups.google.com/group/pyglet-users">mailing list</a>.
     </p>
     <p>
