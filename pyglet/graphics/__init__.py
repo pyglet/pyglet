@@ -332,6 +332,16 @@ class Batch(object):
         self._draw_list = []
         self._draw_list_dirty = False
 
+    def invalidate(self):
+        '''Force the batch to update the draw list.
+
+        This method can be used to force the batch to re-compute the draw list
+        when the ordering of groups has changed.
+
+        :since: pyglet 1.2
+        '''
+        self._draw_list_dirty = True
+
     def add(self, count, mode, group, *data):
         '''Add a vertex list to the batch.
 
