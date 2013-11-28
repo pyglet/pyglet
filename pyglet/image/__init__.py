@@ -2248,8 +2248,13 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     def __getitem__(self, index):
         self._update_items()
-        # TODO tuples
-        return self._items[index]
+        if type(index) is tuple:
+            row, column = index
+            assert row >= 0 and column >= 0 and \
+                   row < self.rows and column < self.columns
+            return self._items[row * self.columns + column]
+        else:
+            return self._items[index]
 
     def __iter__(self):
         self._update_items()
