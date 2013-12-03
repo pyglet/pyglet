@@ -175,26 +175,34 @@ def load(filename, file=None, decoder=None):
 
     if not file:
         file = open(filename, 'rb')
+        opened_file = file
+    else:
+        opened_file = None
+
     if not hasattr(file, 'seek'):
         file = StringIO(file.read())
 
-    if decoder:
-        return decoder.decode(file, filename)
-    else:
-        first_exception = None
-        for decoder in codecs.get_decoders(filename):
-            try:
-                image = decoder.decode(file, filename)
-                return image
-            except codecs.ImageDecodeException, e:
-                if (not first_exception or 
-                    first_exception.exception_priority < e.exception_priority):
-                    first_exception = e
-                file.seek(0)
+    try:
+        if decoder:
+            return decoder.decode(file, filename)
+        else:
+            first_exception = None
+            for decoder in codecs.get_decoders(filename):
+                try:
+                    image = decoder.decode(file, filename)
+                    return image
+                except codecs.ImageDecodeException, e:
+                    if (not first_exception or
+                        first_exception.exception_priority < e.exception_priority):
+                        first_exception = e
+                    file.seek(0)
 
-        if not first_exception:
-            raise codecs.ImageDecodeException('No image decoders are available')
-        raise first_exception 
+            if not first_exception:
+                raise codecs.ImageDecodeException('No image decoders are available')
+            raise first_exception
+    finally:
+        if opened_file:
+            opened_file.close()
 
 def create(width, height, pattern=None):
     '''Create an image optionally filled with the given pattern.
@@ -444,7 +452,7 @@ class AbstractImage(object):
                 try:
                     encoder.encode(self, file, filename)
                     return
-                except codecs.ImageDecodeException, e:
+                except codecs.ImageEncodeException, e:
                     first_exception = first_exception or e
                     file.seek(0)
 
@@ -2240,8 +2248,13 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     def __getitem__(self, index):
         self._update_items()
-        # TODO tuples
-        return self._items[index]
+        if type(index) is tuple:
+            row, column = index
+            assert row >= 0 and column >= 0 and \
+                   row < self.rows and column < self.columns
+            return self._items[row * self.columns + column]
+        else:
+            return self._items[index]
 
     def __iter__(self):
         self._update_items()

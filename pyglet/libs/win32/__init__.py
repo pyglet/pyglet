@@ -1,11 +1,14 @@
 #!/usr/bin/python
 # $Id: $
 
+import struct
 from ctypes import *
 
 import pyglet
 import constants
 from types import *
+
+IS64 = struct.calcsize("P") == 8
 
 _debug_win32 = pyglet.options['debug_win32']
 
@@ -189,7 +192,7 @@ _user32.SetCapture.restype = HWND
 _user32.SetCapture.argtypes = [HWND]
 _user32.SetClassLongW.restype = DWORD
 _user32.SetClassLongW.argtypes = [HWND, c_int, LONG]
-if tuple.__itemsize__ == 8:
+if IS64:
     _user32.SetClassLongPtrW.restype = ULONG
     _user32.SetClassLongPtrW.argtypes = [HWND, c_int, LONG_PTR]
 else:

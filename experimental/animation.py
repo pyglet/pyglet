@@ -4,15 +4,13 @@
 '''
 
 __docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+__version__ = '1.2'
 
 import sys
 
 from pyglet import clock
 from pyglet import image
 from pyglet import window
-
-w = window.Window()
 
 class AnimationPlayer(object):
     expected_delay = 0
@@ -25,9 +23,9 @@ class AnimationPlayer(object):
     def next_frame(self, dt):
         self.index = (self.index + 1) % len(self.animation.frames)
         frame = self.animation.frames[self.index]
-        if frame.delay is not None:
-            delay = frame.delay - (self.expected_delay - dt)
-            delay = min(max(0, delay), frame.delay)
+        if frame.duration is not None:
+            delay = frame.duration - (self.expected_delay - dt)
+            delay = min(max(0, delay), frame.duration)
             clock.schedule_once(self.next_frame, delay)
             self.expected_delay = delay
 
@@ -41,6 +39,11 @@ except image.codecs.ImageDecodeException:
     source = media.load(sys.argv[1])
     source._seek(0)
     animation = source.get_animation()
+except IndexError:
+    sys.exit('usage: animation.py <image>')
+
+
+w = window.Window()
 
 clock.tick()
 player = AnimationPlayer(animation)

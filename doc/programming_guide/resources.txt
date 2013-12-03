@@ -202,7 +202,7 @@ The `pyglet.resource.get_settings_path` function returns a directory suitable
 for writing arbitrary user-centric data.  The directory used follows the
 operating system's convention:
 
-* ``~/.ApplicationName/`` on Linux
+* ``~/.config/ApplicationName/`` on Linux (depends on `XDG_CONFIG_HOME` environment variable).
 * ``$HOME\Application Settings\ApplicationName`` on Windows
 * ``~/Library/Application Support/ApplicationName`` on Mac OS X
 

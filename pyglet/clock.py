@@ -165,7 +165,7 @@ if sys.platform in ('win32', 'cygwin'):
     _default_time_function = time.clock
 
 else:
-    _c = pyglet.lib.load_library('c', darwin='/usr/lib/libc.dylib')
+    _c = pyglet.lib.load_library('c')
     _c.usleep.argtypes = [ctypes.c_ulong]
 
     class _ClockBase(object):

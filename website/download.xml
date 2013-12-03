@@ -1,8 +1,8 @@
 <div>
   <p>
     The current stable version of pyglet is <strong>1.1.4</strong>.
-    <!--See below for the latest <a href="#unstable">development
-    release</a>.-->
+    See below for the latest <a href="#unstable">development
+    release</a>.
   </p>
 
   <h2>current release</h2>
@@ -34,6 +34,14 @@
     href="http://pyglet.googlecode.com/files/pyglet-1.1.4.dmg">pyglet-1.1.4.dmg</a>: Mac OS X
     disk image, includes AVbin-5</li>
   </ul>
+  <h4>note about windows installer</h4>
+  <p>
+    The pyglet-1.1.4.msi installer only works with python versions 2.4, 2.5 or
+    2.6; if you wish to use python 2.7 please install from source. Simply
+    download the source tarball or zip, unpack it, enter the directory and run:
+    "python setup.py install". Alternatively if you are familiar with pip, "pip
+    install pyglet" will install pyglet-1.1.4.
+  </p>
 
   <h3>documentation</h3>
   <p>
@@ -42,7 +50,7 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.4-docs.zip">pyglet-1.1.4-docs.zip</a></li>
+    href="http://pyglet.googlecode.com/files/pyglet-docs-1.1.4.zip">pyglet-docs-1.1.4.zip</a></li>
   </ul>
 
   <h3>source distributions</h3>
@@ -55,7 +63,7 @@
   </p>
   <p>
     To play compressed audio and video files, you will also need <a
-    href="http://code.google.com/p/avbin">AVbin</a>.
+    href="http://avbin.github.io/">AVbin</a>.
   </p>
   <ul>
     <li><a
@@ -64,20 +72,23 @@
     href="http://pyglet.googlecode.com/files/pyglet-1.1.4.zip">pyglet-1.1.4.zip</a></li>
   </ul>
 
-  <!--
   <a name="unstable" />
-  <h2>development release</h2>
-
-  <p>These packages are provided for testing purposes, and are not suitable
-  for production use.</p>
-
+  <h2>development version</h2>
+  <p>
+	  The development version may not always be suitable for production use but it is
+	  recommended if you want to try the new features.
+  </p>
   <ul>
-    <li>
-      Source, documentation and setuptools egg distributions for
-      <b>pyglet 1.1beta2</b> are available directly from the 
-      <a href="http://code.google.com/p/pyglet/downloads/list?q=1.1beta2">
-      download server</a>.
-    </li>
+  <li>You can install the latest version using pip:
+  <p class="console">
+	  pip install --upgrade http://pyglet.googlecode.com/archive/tip.zip
+  </p>
+  </li>
+  <li>Source and documentation for <b>pyglet 1.2 alpha1</b> are available directly from the
+	  <a href="http://code.google.com/p/pyglet/downloads/list?q=1.2alpha1">download server</a>.
+	  This version is too outdated, we recommend using the
+	  <a href="http://pyglet.googlecode.com/archive/tip.zip">latest repository version</a> (ZIP file) instead
+	  until the next version is released.
+  </li>
   </ul>
-  -->
 </div>

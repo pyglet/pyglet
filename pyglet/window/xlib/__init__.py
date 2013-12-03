@@ -70,6 +70,12 @@ class mwmhints_t(Structure):
         ('status', c_uint32)
     ]
 
+# XXX: wraptypes can't parse the header this function is in yet
+XkbSetDetectableAutoRepeat = xlib._lib.XkbSetDetectableAutoRepeat
+XkbSetDetectableAutoRepeat.restype = c_int
+XkbSetDetectableAutoRepeat.argtypes = [POINTER(xlib.Display), c_int, POINTER(c_int)]
+_can_detect_autorepeat = None
+
 XA_CARDINAL = 6 # Xatom.h:14
 
 # Do we have the November 2000 UTF8 extension?
@@ -158,7 +164,14 @@ class XlibWindow(BaseWindow):
                     self._event_handlers[message] = func 
 
         super(XlibWindow, self).__init__(*args, **kwargs)
-        
+
+        global _can_detect_autorepeat
+        if _can_detect_autorepeat == None:
+            supported_rtrn = c_int()
+            _can_detect_autorepeat = XkbSetDetectableAutoRepeat(self.display._display, c_int(1), byref(supported_rtrn))
+        if _can_detect_autorepeat:
+            self.pressed_keys = set()
+
     def _recreate(self, changes):
         # If flipping to/from fullscreen, need to recreate the window.  (This
         # is the case with both override_redirect method and
@@ -403,7 +416,9 @@ class XlibWindow(BaseWindow):
         if self._override_redirect:
             # Possibly an override_redirect issue.
             self.activate()
-
+        
+        self._update_view_size()
+        
         self.dispatch_event('on_resize', self._width, self._height)
         self.dispatch_event('on_show')
         self.dispatch_event('on_expose')
@@ -430,6 +445,18 @@ class XlibWindow(BaseWindow):
         xlib.XGetWindowAttributes(self._x_display, self._window,
                                   byref(attributes))
         return attributes.root
+
+    def _is_reparented(self):
+        root = c_ulong()
+        parent = c_ulong()
+        children = pointer(c_ulong())
+        n_children = c_uint()
+        
+        xlib.XQueryTree(self._x_display, self._window,
+                        byref(root), byref(parent), byref(children),
+                        byref(n_children))
+        
+        return root.value != parent.value
 
     def close(self):
         if not self._window:
@@ -504,16 +531,17 @@ class XlibWindow(BaseWindow):
         return self._width, self._height
 
     def set_location(self, x, y):
-        # Assume the window manager has reparented our top-level window
-        # only once, in which case attributes.x/y give the offset from
-        # the frame to the content window.  Better solution would be
-        # to use _NET_FRAME_EXTENTS, where supported.
-        attributes = xlib.XWindowAttributes()
-        xlib.XGetWindowAttributes(self._x_display, self._window,
-                                  byref(attributes))
-        # XXX at least under KDE's WM these attrs are both 0
-        x -= attributes.x
-        y -= attributes.y
+        if self._is_reparented():
+            # Assume the window manager has reparented our top-level window
+            # only once, in which case attributes.x/y give the offset from
+            # the frame to the content window.  Better solution would be
+            # to use _NET_FRAME_EXTENTS, where supported.
+            attributes = xlib.XWindowAttributes()
+            xlib.XGetWindowAttributes(self._x_display, self._window,
+                                      byref(attributes))
+            # XXX at least under KDE's WM these attrs are both 0
+            x -= attributes.x
+            y -= attributes.y
         xlib.XMoveWindow(self._x_display, self._window, x, y)
 
     def get_location(self):
@@ -978,7 +1006,10 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.KeyPress)
     @XlibEventHandler(xlib.KeyRelease)
     def _event_key_view(self, ev):
-        if ev.type == xlib.KeyRelease:
+        # Try to detect autorepeat ourselves if the server doesn't support it
+        # XXX: Doesn't always work, better off letting the server do it
+        global _can_detect_autorepeat
+        if not _can_detect_autorepeat and ev.type == xlib.KeyRelease:
             # Look in the queue for a matching KeyPress with same timestamp,
             # indicating an auto-repeat rather than actual key event.
             saved = []
@@ -1026,8 +1057,10 @@ class XlibWindow(BaseWindow):
         motion = self._event_text_motion(symbol, modifiers)
 
         if ev.type == xlib.KeyPress:
-            if symbol:
+            if symbol and (not _can_detect_autorepeat or symbol not in self.pressed_keys):
                 self.dispatch_event('on_key_press', symbol, modifiers)
+                if _can_detect_autorepeat:
+                    self.pressed_keys.add(symbol)
             if motion:
                 if modifiers & key.MOD_SHIFT:
                     self.dispatch_event('on_text_motion_select', motion)
@@ -1038,6 +1071,8 @@ class XlibWindow(BaseWindow):
         elif ev.type == xlib.KeyRelease:
             if symbol:
                 self.dispatch_event('on_key_release', symbol, modifiers)
+                if _can_detect_autorepeat and symbol in self.pressed_keys:
+                    self.pressed_keys.remove(symbol)
 
     @XlibEventHandler(xlib.KeyPress)
     @XlibEventHandler(xlib.KeyRelease)
@@ -1225,9 +1260,9 @@ class XlibWindow(BaseWindow):
         w, h = ev.xconfigure.width, ev.xconfigure.height
         x, y = ev.xconfigure.x, ev.xconfigure.y
         if self._width != w or self._height != h:
-            self._update_view_size()
             self._width = w
             self._height = h
+            self._update_view_size()
             self._needs_resize = True
         if self._x != x or self._y != y:
             self.dispatch_event('on_move', x, y)

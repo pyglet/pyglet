@@ -521,6 +521,14 @@ suitable alternatives::
 
     sans_serif = pyglet.font.load(('Verdana', 'Helvetica', 'Arial'), 16)
 
+Also you can check for the availability of a font using `have_font`::
+
+    # Will return True
+    pyglet.font.have_font('Times New Roman')
+	
+    # Will return False
+    pyglet.font.have_font('missing-font-name')
+
 If you do not particularly care which font is used, and just need to display
 some readable text, you can specify `None` as the family name, which will load
 a default sans-serif font (Helvetica on Mac OS X, Arial on Windows XP)::

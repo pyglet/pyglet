@@ -119,6 +119,8 @@ def modifiers_string(modifiers):
         mod_names.append('MOD_COMMAND')
     if modifiers & MOD_OPTION:
         mod_names.append('MOD_OPTION')
+    if modifiers & MOD_FUNCTION:
+        mod_names.append('MOD_FUNCTION')
     return '|'.join(mod_names)
 
 def symbol_string(symbol):
@@ -179,6 +181,7 @@ MOD_WINDOWS     = 1 << 5
 MOD_COMMAND     = 1 << 6
 MOD_OPTION      = 1 << 7
 MOD_SCROLLLOCK  = 1 << 8
+MOD_FUNCTION    = 1 << 9
 
 #: Accelerator modifier.  On Windows and Linux, this is ``MOD_CTRL``, on
 #: Mac OS X it's ``MOD_COMMAND``.
@@ -305,6 +308,10 @@ F13           = 0xffca
 F14           = 0xffcb
 F15           = 0xffcc
 F16           = 0xffcd
+F17           = 0xffce
+F18           = 0xffcf
+F19           = 0xffd0
+F20           = 0xffd1
 
 # Modifiers
 LSHIFT        = 0xffe1
@@ -320,8 +327,8 @@ LWINDOWS      = 0xffeb
 RWINDOWS      = 0xffec
 LCOMMAND      = 0xffed
 RCOMMAND      = 0xffee
-LOPTION       = 0xffd0
-ROPTION       = 0xffd1
+LOPTION       = 0xffef
+ROPTION       = 0xfff0
 
 # Latin-1
 SPACE         = 0x020
@@ -398,7 +405,7 @@ ASCIITILDE    = 0x07e
 
 _key_names = {}
 _motion_names = {}
-for _name, _value in locals().items():
+for _name, _value in locals().copy().items():
     if _name[:2] != '__' and _name.upper() == _name and \
        not _name.startswith('MOD_'):
         if _name.startswith('MOTION_'):

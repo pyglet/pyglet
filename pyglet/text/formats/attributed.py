@@ -86,7 +86,7 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):
                 self.append('\n')
                 trailing_newline = True
             elif group == 'nl_para':
-                self.append(m.group('nl_para'))
+                self.append(m.group('nl_para')[1:]) # ignore the first \n
                 trailing_newline = True
             elif group == 'attr':
                 try:

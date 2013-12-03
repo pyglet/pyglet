@@ -185,7 +185,7 @@ def _create_joystick(device):
         elif control._event_type == EV_ABS and control._event_code == ABS_Y:
             have_y = True
         elif control._event_type == EV_KEY and \
-             control._event_code == BTN_JOYSTICK:
+             control._event_code in (BTN_JOYSTICK, BTN_GAMEPAD):
             have_button = True
     if not (have_x and have_y and have_button):
         return

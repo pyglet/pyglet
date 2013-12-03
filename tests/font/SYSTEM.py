@@ -15,7 +15,7 @@ __version__ = '$Id: $'
 
 import unittest
 import sys
-import base_text
+from . import base_text
 
 if sys.platform == 'darwin':
     font_name = 'Helvetica'

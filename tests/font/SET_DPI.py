@@ -4,8 +4,6 @@
 
 Some text in Action Man font will be displayed.  A green box should exactly
 bound the top and bottom of the text.
-
-Press ESC to end the test.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -17,7 +15,7 @@ import unittest
 from pyglet.gl import *
 from pyglet import font
 
-import base_text
+from . import base_text
 
 base_path = os.path.dirname(__file__)
 

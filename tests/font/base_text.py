@@ -9,10 +9,10 @@ __version__ = '$Id: $'
 import unittest
 import sys
 
-from pyglet.gl import *
+from pyglet import gl
 from pyglet import font
-from pyglet.window import *
-from pyglet.window.event import *
+from pyglet.window import Window
+from pyglet.window.event import key
 
 from tests.regression import ImageRegressionTestCase
 
@@ -22,10 +22,14 @@ class TextTestBase(ImageRegressionTestCase):
     text = 'Quickly brown fox'
     window_size = 200, 200
 
+    def on_key_press(self, symbol, modifiers):
+        if symbol in (key.ENTER, key.ESCAPE):
+            self.window.dispatch_event('on_close')
+
     def on_expose(self):
-        glClearColor(0.5, 0, 0, 1)
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
+        gl.glClearColor(0.5, 0, 0, 1)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glLoadIdentity()
         self.draw()
         self.window.flip()
 

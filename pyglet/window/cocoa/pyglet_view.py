@@ -9,8 +9,8 @@ NSTrackingArea = ObjCClass('NSTrackingArea')
 
 def getMouseDelta(nsevent):
     dx = nsevent.deltaX()
-    dy = nsevent.deltaY()
-    return int(dx), int(dy)
+    dy = -nsevent.deltaY()
+    return int(round(dx)), int(round(dy))
 
 def getMousePosition(self, nsevent):
     in_window = nsevent.locationInWindow()
@@ -36,6 +36,8 @@ def getModifiers(nsevent):
         modifiers |= key.MOD_OPTION
     if modifierFlags & NSCommandKeyMask:
         modifiers |= key.MOD_COMMAND
+    if modifierFlags & NSFunctionKeyMask:
+        modifiers |= key.MOD_FUNCTION
     return modifiers
 
 def getSymbol(nsevent):
@@ -46,7 +48,7 @@ def getSymbol(nsevent):
 class PygletView_Implementation(object):
     PygletView = ObjCSubclass('NSView', 'PygletView')
 
-    @PygletView.method('@'+NSRectEncoding+PyObjectEncoding)
+    @PygletView.method(b'@'+NSRectEncoding+PyObjectEncoding)
     def initWithFrame_cocoaWindow_(self, frame, window):
 
         # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate 
@@ -116,7 +118,7 @@ class PygletView_Implementation(object):
     ## Event responders.
 
     # This method is called whenever the view changes size.
-    @PygletView.method('v'+NSSizeEncoding) 
+    @PygletView.method(b'v'+NSSizeEncoding) 
     def setFrameSize_(self, size):
         send_super(self, 'setFrameSize:', size, argtypes=[NSSize])
 
@@ -179,7 +181,8 @@ class PygletView_Implementation(object):
                        key.ROPTION : NSRightAlternateKeyMask,
                        key.LCOMMAND : NSLeftCommandKeyMask,
                        key.RCOMMAND : NSRightCommandKeyMask,
-                       key.CAPSLOCK : NSAlphaShiftKeyMask }
+                       key.CAPSLOCK : NSAlphaShiftKeyMask,
+                       key.FUNCTION : NSFunctionKeyMask }
 
         symbol = getSymbol(nsevent)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import os.path as op
 import sys
@@ -13,34 +14,26 @@ DOC_DIR = op.join(THIS_DIR, 'doc')
 def clean():
     dirs = [op.join(DOC_DIR, '_build')]
     for d in dirs:
-        print '   Removing:', d
+        print('   Removing:', d)
         shutil.rmtree(d, ignore_errors=True)
 
 def docs():
     make_bin = 'make.exe' if sys.platform=='win32' else 'make'
-    
-    env = dict(os.environ)
 
-    sphinx_dir = op.join(THIS_DIR, 'tools', 'Sphinx-1.1.3-py2.7.egg')
-    if 'PYTHONPATH' in env:
-        env['PYTHONPATH'] = os.pathsep.join([sphinx_dir, env['PYTHONPATH']])
-    else:
-        env['PYTHONPATH'] = sphinx_dir
-
-    print 'PYTHONPATH=', env['PYTHONPATH']
-
-    call([make_bin, 'html'], cwd=DOC_DIR, env=env)
+    call([make_bin, 'html'], cwd=DOC_DIR)
     if '--no-open' not in sys.argv:
         webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
 
-
 if __name__=='__main__':
-    avail_cmds = dict(filter(lambda (k,v): not k.startswith('_') and inspect.isfunction(v),
+    avail_cmds = dict(filter(lambda kv: not kv[0].startswith('_') 
+                             and inspect.isfunction(kv[1])
+                             and kv[1].__module__ == '__main__',
                              locals().items()))
     try:
         cmd = avail_cmds[sys.argv[1]]
-    except Exception, exc:
-        print type(exc).__name__, ':', exc
-        print 'Usage:', op.basename(sys.argv[0]), '<command>'
-        print 'where commands are:', ', '.join(avail_cmds)
-    cmd()
+    except Exception as exc:
+        print(type(exc).__name__, ':', exc)
+        print('Usage:', op.basename(sys.argv[0]), '<command>')
+        print('  where commands are:', ', '.join(avail_cmds))
+    else:
+        cmd()

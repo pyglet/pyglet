@@ -309,7 +309,7 @@ class EventDispatcher(object):
         '''
         for frame in self._event_stack:
             try:
-                if frame[name] is handler:
+                if frame[name] == handler:
                     del frame[name]
                     break
             except KeyError:

@@ -45,6 +45,7 @@ import math
 from sys import byteorder
 import pyglet
 from pyglet.font import base
+from pyglet.font import win32query
 import pyglet.image
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
@@ -262,9 +263,8 @@ class Win32Font(base.Font):
 
     @classmethod
     def have_font(cls, name):
-        # CreateFontIndirect always returns a font... have to work out
-        # something with EnumFontFamily... TODO
-        return True
+        # [ ] add support for loading raster fonts
+        return win32query.have_font(name, vector_only=True)
 
     @classmethod
     def add_font_data(cls, data):

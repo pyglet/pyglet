@@ -1,4 +1,13 @@
 <news>
+  <item date="13-July-2012" author="Richard"
+    title="pyglet 1.2 alpha released">
+    The major <a href="download.html">1.2alpha1</a> release brings pyglet to
+    Python 3. Pyglet now also runs on 64-bit operating systems Linux, Windows
+    and OS X. The OS X layer switched to using Cocoa. There's also a load
+    of bug fixes, updates to the OpenGL wrappers and other minor new
+    improvements. Thanks to the pyglet community for all your effort in getting
+    this release out.
+  </item>
   <item date="7-January-2010" author="Richard"
     title="pyglet 1.1.4 released">
     <a href="download.html">pyglet 1.1.4</a> has been released, including

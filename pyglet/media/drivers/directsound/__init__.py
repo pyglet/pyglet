@@ -422,7 +422,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self.unlock()
 
     def set_pitch(self, pitch):
-        frequency = int(pitch * self.audio_format.sample_rate)
+        frequency = int(pitch * self.source_group.audio_format.sample_rate)
         self.lock()
         self._buffer.SetFrequency(frequency)
         self.unlock()

@@ -62,7 +62,11 @@ class PILImageDecoder(ImageDecoder):
             raise ImageDecodeException(
                 'PIL cannot read %r: %s' % (filename or file, e))
 
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        try:
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        except Exception, e:
+            raise ImageDecodeException(
+                'PIL failed to transpose %r: %s' % (filename or file, e))
 
         # Convert bitmap and palette images to component
         if image.mode in ('1', 'P'):
@@ -73,7 +77,10 @@ class PILImageDecoder(ImageDecoder):
         type = GL_UNSIGNED_BYTE
         width, height = image.size
 
-        return ImageData(width, height, image.mode, image.tostring())
+        # tostring is deprecated, replaced by tobytes in Pillow (PIL fork)
+        # (1.1.7) PIL still uses it
+        image_data_fn = getattr(image, "tobytes", getattr(image, "tostring"))
+        return ImageData(width, height, image.mode, image_data_fn())
 
 class PILImageEncoder(ImageEncoder):
     def get_file_extensions(self):

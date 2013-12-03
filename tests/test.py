@@ -110,7 +110,7 @@ Command-line options:
     only includes your operating system capability (X11, WIN or OSX) and
     GENERIC.
 `--log-level=`
-    Specify the minimum log level to write (defaults to 10: info)
+    Specify the minimum log level to write (defaults to 20: info)
 
 `--log-file=`
     Specify log file to write to (defaults to "pyglet.%d.log")
@@ -209,6 +209,16 @@ import sys
 import time
 import unittest
 
+# --- Python 2/3 compatibility helpers ---
+PY3K = True if sys.version_info[0] == 3 else False
+
+def prompt(message):
+    if PY3K:
+        return input(message)
+    else:
+        return raw_input(message)
+
+
 # So we can find tests.regression and ensure local pyglet copy is tested.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -239,10 +249,14 @@ class TestCase(object):
         return os.path.join(regressions_path, '%s.png' % self.name)
 
     def test(self, options):
+        options.tests_count += 1
         if not options.capabilities.intersection(self.capabilities):
+            options.tests_skipped += 1
+            options.log.debug('Capabilities mismatch. Skipping %s', self)
             return
 
-        options.log.info('Testing %s.', self)
+        options.log.info('--- test (%d/%d) %s',
+                         options.tests_count, options.num_tests, self)
         if options.pretend:
             return
 
@@ -271,13 +285,12 @@ class TestCase(object):
         else:
             result = StandardTestResult(self)
 
-        print '-' * 78
-        options.completed_tests += 1
-        print ("Running Test: %s (%d/%d)\n" % (self, options.completed_tests, options.num_tests))
+        print('-' * 78)
+        print("Running Test: %s (%d/%d)\n" % (self, options.tests_count, options.num_tests))
         if module.__doc__:
-            print '    ' + module.__doc__.replace('\n','\n    ')
+            print('    ' + module.__doc__.replace('\n','\n    '))
         if module_interactive:
-            raw_input('Press return to begin test...')
+            prompt('Press return to begin test...')
 
 
         suite = unittest.TestLoader().loadTestsFromModule(module)
@@ -295,16 +308,19 @@ class TestCase(object):
         num_failures = len(result.failures)
         num_errors = len(result.errors)
         if num_failures or num_errors:
-            print '%d Failures and %d Errors detected.' % (num_failures, num_errors)
+            print('%d Failures and %d Errors detected.' % (num_failures, num_errors))
 
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
 #             print module.__doc__
-            user_result = raw_input('[P]assed test, [F]ailed test: ')
-            if user_result and user_result.strip()[0] in ('F', 'f'):
-                print 'Enter failure description: '
-                description = raw_input('> ')
+            user_result = prompt('Passed [Yn]: ')
+            while user_result and user_result not in 'YyNn':
+                print("Unrecognized response '%s'" % user_result)
+                user_result = prompt('Passed [Yn]: ')
+            if user_result and user_result in 'Nn':
+                print('Enter failure description: ')
+                description = prompt('> ')
                 options.log.error('User marked fail for %s', self)
                 options.log.error(description)
             else:
@@ -342,7 +358,7 @@ class TestSection(object):
     def num_tests(self):
         return sum([c.num_tests() for c in self.children])
 
-class TestPlan(TestSection):
+class TestPlan(object):
     def __init__(self):
         self.root = None
         self.names = {}
@@ -395,7 +411,29 @@ class TestPlan(TestSection):
                 plan.names[section.name] = section
 
         return plan
-        
+
+    def run(self, options, names=[]):
+        if not names:
+            components = [self.root]
+        else:
+            components = []
+            for name in names:
+                if name not in self.names:
+                    options.log.error('Unknown test case or section "%s"', name)
+                    return False
+                else:
+                    components.append(self.names[name])
+                
+        options.num_tests = sum([c.num_tests() for c in components])
+        options.tests_count = 0
+        options.tests_skipped = 0
+        for component in components:
+            component.test(options)
+        print('-' * 78)
+
+        return True
+
+
 class StandardTestResult(unittest.TestResult):
     def __init__(self, component):
         super(StandardTestResult, self).__init__()
@@ -508,7 +546,7 @@ def main():
     op.add_option('--capabilities', help='selected test capabilities',
         default=','.join(capabilities))
     op.add_option('--log-level', help='verbosity of logging',
-        default=10, type='int')
+        default=20, type='int')
     op.add_option('--log-file', help='log to FILE', metavar='FILE', 
         default='pyglet.%d.log')
     op.add_option('--regression-path', metavar='DIR', default=regressions_path,
@@ -544,7 +582,7 @@ def main():
             i += 1
         options.log_file = options.log_file % i
 
-    print 'Test results are saved in log file:', options.log_file
+    print('Test results are saved in log file:', options.log_file)
 
     logging.basicConfig(filename=options.log_file, level=options.log_level, format='%(levelname)s %(message)s')
     options.log = logging.getLogger()
@@ -554,29 +592,12 @@ def main():
     options.log.info('sys.platform = %s', sys.platform)
     options.log.info('pyglet.version = %s', pyglet.version)
     options.log.info('Reading test plan from %s', options.plan)
+
     plan = TestPlan.from_file(options.plan)
-
-    errors = False
-    if args:
-        components = []
-        for arg in args:
-            try:
-                component = plan.names[arg]
-                components.append(component)
-            except KeyError:
-                options.log.error('Unknown test case or section "%s"', arg)
-                errors = True
-    else:
-        components = [plan.root]
-
-    if not errors:
-        options.num_tests = sum([c.num_tests() for c in components])
-        options.completed_tests = 0
-        for component in components:
-            component.test(options)
-        print '-' * 78
-
-    print 'Test results are saved in log file:', options.log_file
+    if not plan.run(options, args):
+       options.log.error('Test run failed.')
+    
+    print('Test results are saved in log file:', options.log_file)
 
 if __name__ == '__main__':
     main()

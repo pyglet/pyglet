@@ -66,6 +66,10 @@ QZ_F13 = 0x69
 QZ_F14 = 0x6B
 QZ_F15 = 0x71
 QZ_F16 = 0x6A
+QZ_F17 = 0x40
+QZ_F18 = 0x4F
+QZ_F19 = 0x50
+QZ_F20 = 0x5A
 QZ_BACKQUOTE = 0x32
 QZ_1 = 0x12
 QZ_2 = 0x13
@@ -174,6 +178,10 @@ keymap = {
     QZ_F14: key.F14,
     QZ_F15: key.F15,
     QZ_F16: key.F16,
+    QZ_F17: key.F17,
+    QZ_F18: key.F18,
+    QZ_F19: key.F19,
+    QZ_F20: key.F20,
     QZ_BACKQUOTE: key.QUOTELEFT,
     QZ_1: key._1,
     QZ_2: key._2,

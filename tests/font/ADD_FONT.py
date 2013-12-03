@@ -5,8 +5,6 @@
 Four lines of text should be displayed, each in a different variant
 (bold/italic/regular) of Action Man at 24pt.  The Action Man fonts are
 included in the test directory (tests/font) as action_man*.ttf.
-
-Press ESC to end the test.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -17,7 +15,7 @@ import unittest
 
 from pyglet import font
 
-import base_text
+from . import base_text
 
 base_path = os.path.dirname(__file__)
 

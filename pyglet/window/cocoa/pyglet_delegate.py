@@ -7,7 +7,7 @@ NSApplication = ObjCClass('NSApplication')
 class PygletDelegate_Implementation(object):
     PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
     
-    @PygletDelegate.method('@'+PyObjectEncoding)
+    @PygletDelegate.method(b'@'+PyObjectEncoding)
     def initWithWindow_(self, window):
         self = ObjCInstance(send_super(self, 'init'))
 

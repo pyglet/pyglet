@@ -1,0 +1,20 @@
+Building the documentation
+--------------------------
+
+In order to build the documentation you'll need all pyglet's requirements,
+plus the following:
+
+* Sphinx and its requirements (1.1.3 recommended): http://sphinx-doc.org/
+* Graphviz (optional): http://graphviz.org/
+* A `make` tool: https://www.gnu.org/software/make/
+
+Once you have all the requirements installed you can run build the HTML
+documentation with:
+
+    make html
+
+The HTML docs will be generated in the _build subdirectory.
+
+Please run `make help` for a complete list of targets, but be aware that some
+of them may have extra requirements.
+

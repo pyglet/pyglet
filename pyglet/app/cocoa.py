@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -46,6 +46,7 @@ NSMenuItem = ObjCClass('NSMenuItem')
 NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
 NSDate = ObjCClass('NSDate')
 NSEvent = ObjCClass('NSEvent')
+NSUserDefaults = ObjCClass('NSUserDefaults')
 
 def add_menu_item(menu, title, action, key):
     title = CFSTR(title)
@@ -91,16 +92,24 @@ class CocoaEventLoop(PlatformEventLoop):
         self.pool = NSAutoreleasePool.alloc().init()
         create_menu()
         self.NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
-        self.NSApp.finishLaunching()
-        self.NSApp.activateIgnoringOtherApps_(True)
+        # Prevent Lion / Mountain Lion from automatically saving application state.
+        # If we don't do this, new windows will not display on 10.8 after finishLaunching
+        # has been called.  
+        defaults = NSUserDefaults.standardUserDefaults()
+        ignoreState = CFSTR("ApplePersistenceIgnoreState")
+        if not defaults.objectForKey_(ignoreState):
+            defaults.setBool_forKey_(True, ignoreState)
 
     def start(self):
-        pass
+        self.NSApp.finishLaunching()
+        self.NSApp.activateIgnoringOtherApps_(True)
 
     def step(self, timeout=None):
         # Drain the old autorelease pool
         self.pool.drain()
         self.pool = NSAutoreleasePool.alloc().init()
+
+        self.dispatch_posted_events()
 
         # Determine the timeout date.
         if timeout is None:
@@ -121,13 +130,13 @@ class CocoaEventLoop(PlatformEventLoop):
         if event is not None:
             event_type = event.type()
             if event_type != NSApplicationDefined:
-                # Send out event as normal.  Responders will still receive 
+                # Send out event as normal.  Responders will still receive
                 # keyUp:, keyDown:, and flagsChanged: events.
                 self.NSApp.sendEvent_(event)
 
                 # Resend key events as special pyglet-specific messages
                 # which supplant the keyDown:, keyUp:, and flagsChanged: messages
-                # because NSApplication translates multiple key presses into key 
+                # because NSApplication translates multiple key presses into key
                 # equivalents before sending them on, which means that some keyUp:
                 # messages are never sent for individual keys.   Our pyglet-specific
                 # replacements ensure that we see all the raw key presses & releases.
@@ -151,7 +160,7 @@ class CocoaEventLoop(PlatformEventLoop):
         #del pool
 
         return did_time_out
-    
+
     def stop(self):
         pass
 
@@ -171,4 +180,4 @@ class CocoaEventLoop(PlatformEventLoop):
 
         self.NSApp.postEvent_atStart_(notifyEvent, False)
         pool.drain()
-        
+

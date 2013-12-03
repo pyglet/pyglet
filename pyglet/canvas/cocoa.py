@@ -14,7 +14,6 @@ from base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.darwin.cocoapy import *
 
-NSScreen = ObjCClass('NSScreen')
 
 class CocoaDisplay(Display):
 
@@ -40,18 +39,27 @@ class CocoaScreen(Screen):
         # Save the default mode so we can restore to it.
         self._default_mode = self.get_mode()
 
-    def get_nsscreen(self):
-        """Returns the NSScreen instance that matches our CGDirectDisplayID."""
-        screen_array = NSScreen.screens()
-        count = screen_array.count()
-        for i in range(count):
-            nsscreen = screen_array.objectAtIndex_(i)
-            screenInfo = nsscreen.deviceDescription()
-            displayID = screenInfo.objectForKey_(get_NSString('NSScreenNumber'))
-            displayID = displayID.intValue()
-            if displayID == self._cg_display_id:
-                return nsscreen
-        return None
+    # FIX ME:
+    # This method is needed to get multi-monitor support working properly.
+    # However the NSScreens.screens() message currently sends out a warning:
+    # "*** -[NSLock unlock]: lock (<NSLock: 0x...> '(null)') unlocked when not locked"
+    # on Snow Leopard and apparently causes python to crash on Lion.
+    # 
+    # def get_nsscreen(self):
+    #     """Returns the NSScreen instance that matches our CGDirectDisplayID."""
+    #     NSScreen = ObjCClass('NSScreen')
+    #     # Get a list of all currently active NSScreens and then search through
+    #     # them until we find one that matches our CGDisplayID.
+    #     screen_array = NSScreen.screens()
+    #     count = screen_array.count()
+    #     for i in range(count):
+    #         nsscreen = screen_array.objectAtIndex_(i)
+    #         screenInfo = nsscreen.deviceDescription()
+    #         displayID = screenInfo.objectForKey_(get_NSString('NSScreenNumber'))
+    #         displayID = displayID.intValue()
+    #         if displayID == self._cg_display_id:
+    #             return nsscreen
+    #     return None
 
     def get_matching_configs(self, template):
         canvas = CocoaCanvas(self.display, self, None)

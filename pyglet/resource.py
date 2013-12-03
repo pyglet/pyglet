@@ -121,11 +121,15 @@ def get_script_home():
     if frozen in ('windows_exe', 'console_exe'):
         return os.path.dirname(sys.executable)
     elif frozen == 'macosx_app':
+        # py2app
         return os.environ['RESOURCEPATH']
     else:
         main = sys.modules['__main__']
         if hasattr(main, '__file__'):
             return os.path.dirname(main.__file__)
+        else:
+            # cx_Freeze
+            return os.path.dirname(sys.executable)
 
     # Probably interactive
     return ''
@@ -138,8 +142,8 @@ def get_settings_path(name):
     conventions.  Note that the returned path may not exist: applications
     should use ``os.makedirs`` to construct it if desired.
 
-    On Linux, a hidden directory `name` in the user's home directory is
-    returned.
+    On Linux, a directory `name` in the user's configuration directory is
+    returned (usually under ``~/.config``).
 
     On Windows (including under Cygwin) the `name` directory in the user's
     ``Application Settings`` directory is returned.
@@ -160,6 +164,11 @@ def get_settings_path(name):
             return os.path.expanduser('~/%s' % name)
     elif sys.platform == 'darwin':
         return os.path.expanduser('~/Library/Application Support/%s' % name)
+    elif sys.platform.startswith('linux'):
+        if 'XDG_CONFIG_HOME' in os.environ:
+            return os.path.join(os.environ['XDG_CONFIG_HOME'], name)
+        else:
+            return os.path.expanduser('~/.config/%s' % name)
     else:
         return os.path.expanduser('~/.%s' % name)
 
@@ -290,11 +299,6 @@ class Loader(object):
         self._script_home = script_home
         self._index = None
 
-        # Map name to image
-        self._cached_textures = weakref.WeakValueDictionary()
-        self._cached_images = weakref.WeakValueDictionary()
-        self._cached_animations = weakref.WeakValueDictionary()
-
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
 
@@ -308,6 +312,11 @@ class Loader(object):
         You must call this method if `path` is changed or the filesystem
         layout changes.
         '''
+        # map name to image etc.
+        self._cached_textures = weakref.WeakValueDictionary()
+        self._cached_images = weakref.WeakValueDictionary()
+        self._cached_animations = weakref.WeakValueDictionary()
+
         self._index = {}
         for path in self.path:
             if path.startswith('@'):

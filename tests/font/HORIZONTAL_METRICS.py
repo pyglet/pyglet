@@ -5,8 +5,6 @@
 Some text in various fonts will be displayed.  Green vertical lines mark
 the left edge of the text.  Blue vertical lines mark the right edge of the
 text.
-
-Press ESC to end the test.
 '''
 
 __docformat__ = 'restructuredtext'
@@ -18,7 +16,7 @@ import unittest
 from pyglet.gl import *
 from pyglet import font
 
-import base_text
+from . import base_text
 
 base_path = os.path.dirname(__file__)
 

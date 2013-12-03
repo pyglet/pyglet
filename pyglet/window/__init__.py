@@ -563,6 +563,10 @@ class BaseWindow(EventDispatcher):
             self.set_visible(True)
             self.activate()
 
+    def __repr__(self):
+        return '%s(width=%d, height=%d)' % \
+            (self.__class__.__name__, self.width, self.height)
+
     def _create(self):
         raise NotImplementedError('abstract')
 
@@ -1753,7 +1757,7 @@ class Platform(object):
     def get_default_display(self):
         '''Get the default display device.
 
-        :deprecated: Use `pyglet.app.get_display`.
+        :deprecated: Use `pyglet.canvas.get_display`.
 
         :rtype: `Display`
         '''
