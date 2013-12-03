@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 import inspect
 
 
@@ -25,14 +25,14 @@ def setup(app):
 
 
 # Search all submodules
-def find_modules(rootpath, skip):
+def find_modules(rootpath, skip={}):
     """
     Look for every file in the directory tree and return a dict
     Hacked from sphinx.autodoc
     """
 
     INITPY = '__init__.py'
-
+    
     rootpath = os.path.normpath(os.path.abspath(rootpath))
     if INITPY in os.listdir(rootpath):
         root_package = rootpath.split(os.path.sep)[-1]
@@ -64,7 +64,6 @@ def find_modules(rootpath, skip):
         name = module+ "."+ submodule
         for s in skipall:
             if name.startswith(s):
-                print "SKIP "+name
                 return False
         if skip.has_key(module):
             if submodule in skip[module]:
@@ -98,3 +97,38 @@ def find_modules(rootpath, skip):
           (root_package, found, found-saved)
     return tree
 
+
+
+def find_all_modules(document_modules, skip_modules):
+    tree = {}
+    for mod in document_modules:
+        mod_path = os.path.join('..', mod)
+        if mod in skip_modules.keys():
+            tree.update(find_modules(mod_path, skip_modules[mod])) 
+        else:
+            tree.update(find_modules(mod_path))
+    return tree
+
+
+
+def write_build(data, filename):
+    with open(os.path.join('internal', filename), 'w') as f:
+        f.write(".. list-table::\n")
+        f.write("   :widths: 50 50\n")
+        f.write("\n")
+        for var, val in data:
+            f.write("   * - "+var+"\n     - "+val+"\n")
+
+
+
+def write_blacklist(pack, filename):
+    with open(os.path.join('internal', filename), 'w') as f:
+        modules = pack.keys()
+        modules.sort()
+        for mod in modules:
+            if pack[mod] is None:
+                f.write("* ``"+mod+"``\n")
+            else:
+                pack[mod].sort()
+                for sub in pack[mod]:
+                    f.write("* ``"+mod+"."+sub+"``\n")

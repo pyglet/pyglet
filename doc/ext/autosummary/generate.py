@@ -143,14 +143,15 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
             def get_members(obj, typ, include_public=[]):
                 items = []
                 for name in dir(obj):
-
-                    if sys.skip_member(name, obj): continue                    
+                    # skip_member
+                    if sys.skip_member(name, obj): continue
+                    # Remove .base members
                     if typ in ['class', 'function']:
                         c = getattr(obj, name)
                         if inspect.isclass(c) or inspect.isfunction(c):
                             if (c.__module__!=obj.__name__+".base" and
                                 c.__module__!=obj.__name__):
-                                    continue       
+                                    continue
                     try:
                         documenter = get_documenter(safe_getattr(obj, name), obj)
                     except AttributeError:
