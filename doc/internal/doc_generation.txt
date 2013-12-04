@@ -36,7 +36,10 @@ ReST files
 ----------
 The literature is a set of ``*.txt`` files.
 
-The ``autosummary`` directive at ``pyglet/doc/index.txt`` directive 
+
+The entry point is ``index.txt``.
+
+The ``autosummary`` directive at ``index.txt`` directive 
 is mandatory, it generates all the API documentation files.
 
 Omisions

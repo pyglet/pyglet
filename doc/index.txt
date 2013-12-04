@@ -32,11 +32,27 @@ API Reference
 
    api/pyglet
 
+
+Internals
+=========
+
+.. toctree::
+   :maxdepth: 3
+   
+   internal/main
+   programming_guide/advanced
+   internal/gl
+   internal/generated
+   internal/wraptypes
+   internal/dist
+   programming_guide/distribution
+   internal/doc
+
+
 .. toctree::
    :maxdepth: 2
 
    Testing Framework <api/tests.test>
-   Internals <internal>
 
 
 
