@@ -288,6 +288,12 @@ class Autosummary(Directive):
                 summary = m.group(1).strip()
             elif doc:
                 summary = doc[0].strip()
+
+                # Clean attribute fake doc
+                __doc = type(obj).__doc__
+                if isinstance(__doc, str):
+                    if __doc.startswith(summary):
+                        summary = "Type: "+type(obj).__name__                    
             else:
                 summary = ''
 

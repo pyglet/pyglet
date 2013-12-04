@@ -5,15 +5,37 @@
 #
 # This file is execfile()d with the current directory set to its containing dir.
 
+
 import os
 import sys
 import time
 import datetime
 
+sys.is_epydoc = True
+
+document_modules = ["pyglet", "tests"]
+
+# Patched extensions base path.
+sys.path.insert(0, os.path.abspath('.'))
+
+from ext.sphinx_mod import EventDocumenter
+from ext.sphinx_mod import find_all_modules, write_build, write_blacklist
+
+# import the pyglet package.
+sys.path.insert(0, os.path.abspath('..'))
+
+
+try:
+    import pyglet
+    print "Generating pyglet %s Documentation" % (pyglet.version)
+except:
+    print "ERROR: pyglet not found"
+    sys.exit(1)
+
 
 # -- PYGLET DOCUMENTATION CONFIGURATION ----------------------------------------
 
-document_modules = ["pyglet", "tests"]
+
 
 implementations = ["carbon", "cocoa", "win32", "xlib"]
 
@@ -47,6 +69,7 @@ skip_modules = {"pyglet": {
                                   "glxext_arb", "glxext_mesa", "glxext_nv",
                                   "lib_agl", "lib_glx", "lib_wgl",
                                   "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
+                     "pyglet.media": ["avbin"],
                      "pyglet.media.drivers": ["directsound",
                                               "openal",
                                               "pulse"],
@@ -56,7 +79,7 @@ skip_modules = {"pyglet": {
 
 
              
-# -- Things that should not be documented --------------------------------------
+# Things that should not be documented
 
 def skip_member(member, obj):
 
@@ -107,42 +130,19 @@ def skip_member(member, obj):
     return False
 
 
-
-
-
-# -- PYGLET DOCUMENTATION ------------------------------------------------------
-
-# import the pyglet package.
-sys.path.insert(0, os.path.abspath('..'))
-
-try:
-    import pyglet
-    print "Generating pyglet %s Documentation" % (pyglet.version)
-except:
-    print "ERROR: pyglet not found"
-    sys.exit(1)
-
-
-# Patched extensions base path.
-sys.path.insert(0, os.path.abspath('.'))
-
-from ext.sphinx_mod import EventDocumenter
-from ext.sphinx_mod import find_all_modules, write_build, write_blacklist
-
-
-
-sys.is_epydoc = True
+# autosummary generation filter
 sys.skip_member = skip_member
+
+# find modules
 sys.all_submodules = find_all_modules(document_modules, skip_modules)
 
 # Write dynamic rst text files
+write_blacklist(skip_modules["pyglet"], "blacklist.rst")
+
 now = datetime.datetime.fromtimestamp(time.time())
 data = (("Date", now.strftime("%Y/%m/%d %H:%M:%S")),
         ("pyglet version", pyglet.version))
 write_build(data, 'build.rst')
-write_blacklist(skip_modules["pyglet"], "blacklist.rst")
-
-
 
 
 
