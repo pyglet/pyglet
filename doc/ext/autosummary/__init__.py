@@ -182,6 +182,7 @@ class Autosummary(Directive):
         'toctree': directives.unchanged,
         'nosignatures': directives.flag,
         'template': directives.unchanged,
+        'hidden': directives.flag,
     }
 
     def warn(self, msg):
@@ -196,7 +197,10 @@ class Autosummary(Directive):
         names = [x.strip().split()[0] for x in self.content
                  if x.strip() and re.search(r'^[~a-zA-Z_]', x.strip()[0])]
         items = self.get_items(names)
-        nodes = self.get_table(items)
+        if 'hidden' in self.options:
+            nodes = []
+        else:
+            nodes = self.get_table(items)
 
         if 'toctree' in self.options:
             suffix = env.config.source_suffix
@@ -221,7 +225,8 @@ class Autosummary(Directive):
             tocnode['glob'] = None
 
             tocnode = autosummary_toc('', '', tocnode)
-            nodes.append(tocnode)
+            if not 'hidden' in self.options:
+                nodes.append(tocnode)
 
         return self.warnings + nodes
 
@@ -283,6 +288,12 @@ class Autosummary(Directive):
                 summary = m.group(1).strip()
             elif doc:
                 summary = doc[0].strip()
+
+                # Clean attribute fake doc
+                __doc = type(obj).__doc__
+                if isinstance(__doc, str):
+                    if __doc.startswith(summary):
+                        summary = "Type: "+type(obj).__name__                    
             else:
                 summary = ''
 

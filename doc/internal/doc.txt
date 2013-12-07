@@ -1,51 +1,43 @@
 Documentation
-=============
+*************
+
+This is the ``pyglet`` documentation, generated with ``sphinx``. 
+
+Details:
+
+.. include:: build.rst
+
+.. note::
+
+   See the `Sphinx warnings log file <../warnings.txt>`_ for errors.
+
+
+Writing documentation
+---------------------
 
 ``pyglet`` uses reStructuredText markup language for both 
 the Programming Guide and the docstrings embedded in the code.
 
-.. seealso::
-
-   * `Docutils <http://docutils.sourceforge.net/rst.html>`_
-   * `Sphinx <http://sphinx.pocoo.org/rest.html>`_ 
-   * `Graphviz <http://www.graphviz.org/>`_
+Literature 
+==========
 
 
-Build
------
+It is divided into several files, which are organized by ``toctree`` directives .
 
-The complete documentation can be generated using ``sphinx``.
+The entry point for all the documentation is ``pyglet/doc/index.txt``, which calls to:
 
-.. rubric:: Requirements
+* ``pyglet/doc/programming_guide``: The first page of the programming guide.
 
-* ``sphinx``: Documentation builder.
-* ``graphviz``: If you want to generate graphs.
+* ``pyglet/doc/internal``: 
+  Documentation for those working on Pyglet itself, such as how to make a release 
+  or how the ctypes library is used.
 
 
-To build the documentation, execute::
+Source code
+===========
 
-   ./make.py docs
+The API documentation is generated from the source code docstrings.
 
-If the build succeeds, the web pages are in ``_build/html``
-
-.. note::
-
-   The documentation build configuration file is ``pyglet/doc/conf.py`` 
-
-Contents
---------
-
-``pyglet/doc/index.txt``: The first page of the documentation.
-
-``pyglet/doc/programming_guide``: The first page of the programming guide.
-
-``pyglet/doc/internal``: 
-    Documentation for those working on Pyglet itself, such as how to make a release 
-    or how the ctypes library is used.
-
-.. rubric:: Docstrings
-
-The API documentation is generated from the source code.
 
 :Example:
 
@@ -68,9 +60,11 @@ The API documentation is generated from the source code.
 
       """
 
-      property1 = None
+      attribute1 = None
       """This is an attribute.
       """
+      #: This is an attribute.
+      attribute2 = None
 
 
       def _get_property2(self):
@@ -96,121 +90,32 @@ The API documentation is generated from the source code.
       :type: type
       :see: something else
       ''')
+
+
  
 
-
-
-
-Generation 
+Generation
 ----------
 
-In order to generate this documentation, several modifications have 
-been done in ``sphinx.ext.autosummary``, as well as some code in ``conf.py``.
+The complete documentation can be generated using ``sphinx``.
 
-It does the following:
+.. rubric:: Requirements
 
-* Find all modules and creates a tree.
-* Events are separated from regular methods.
-* Skip some modules, classes, functions and methods.
+* ``sphinx``: Documentation builder.
+* ``graphviz``: If you want to generate graphs.
 
 
-Structure
-*********
+To build the documentation, execute::
 
-All the items are saved in the ``api`` folder, following the module hierarchy structure,  
-and the page name is the full name of the item. 
+   ./make.py docs
 
-For example, the page containing the list of events of the Window class is::
-
-   api/pyglet/window/pyglet.window.Window.html#events
+If the build succeeds, the web pages are in ``_build/html``
 
 
-Templates
-*********
+.. rubric:: Details
 
-The files at ``pyglet/doc/_templates`` control all the process.
+.. toctree::
+   :maxdepth: 1
 
-
-Module
-
-   * Module documentation
-   * Modules
-   * Classes
-   * Functions
-   * Exceptions
-
-
-Class
-
-   * Inheritance diagram
-   * Class documentation
-   * Events
-   * Methods
-   * Attributes
-   * Members documentation
-   * Inherited members documentation (not indexed)
-
-
-Function
-
-   * Function documentation
-
-
-Exception
-
-   * Exception documentation
-
-Omisions
-********
-
-.. rubric:: Skipped members
-
-The ``skip_member`` function in ``conf.py`` contains rules to
-prevent certain members to appear in the documentation
-
-Due to the large number of members that were listed when generating, 
-a modification in  ``autosummary`` prevents all members that are not 
-defined in the current module to appear in the member lists. 
-
-This means that if a module imports members like this::
-
-    from pyglet.gl import *
-
-That members are not listed in the module documentation.
-
-.. warning:: 
-   There is one exception to the rule, for clarity sake: 
-   
-   * If a member is defined in ``module.base``, and imported by ``module``, it does appear in the ``module`` page lists. 
-
-
-.. rubric:: Skipped modules
-
-Some modules in ``pyglet`` can not be imported when documenting, 
-so a black list in ``conf.py`` contains all the modules that are
-not to be documented:
-
-
-
-.. include:: blacklist.rst
-
-
-.. note::
-   To be able to document a module, it has to be importable when ``sys._is_epydoc`` is ``True``.
-
-
-Details
--------
-
-.. rubric:: Build
-
-
-.. include:: build.rst
-
-
-.. rubric:: Warnings
-
-See the `Sphinx warnings log file <../warnings.txt>`_ for details.
-
-
+   doc_generation
 

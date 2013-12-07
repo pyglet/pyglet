@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Nabla Lab documentation build configuration file, created by
-# Txema Vicente <txema@nabla.net>
+# pyglet documentation build configuration file.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #

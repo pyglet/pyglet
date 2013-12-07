@@ -1688,8 +1688,10 @@ class FPSDisplay(object):
 if _is_epydoc:
     # We are building documentation
     Window = BaseWindow
-    Window.__name__ = 'Window'
+    BaseWindow.__name__ = 'Window'
     del BaseWindow
+
+    
 else:
     # Try to determine which platform to use.
     if sys.platform == 'darwin':

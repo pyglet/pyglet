@@ -143,14 +143,15 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
             def get_members(obj, typ, include_public=[]):
                 items = []
                 for name in dir(obj):
-
-                    if sys.skip_member(name, obj): continue                    
+                    # skip_member
+                    if sys.skip_member(name, obj): continue
+                    # Remove .base members
                     if typ in ['class', 'function']:
                         c = getattr(obj, name)
                         if inspect.isclass(c) or inspect.isfunction(c):
                             if (c.__module__!=obj.__name__+".base" and
                                 c.__module__!=obj.__name__):
-                                    continue       
+                                    continue
                     try:
                         documenter = get_documenter(safe_getattr(obj, name), obj)
                     except AttributeError:
@@ -194,18 +195,20 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                                    get_members(obj, 'function')
                 ns['exceptions'], ns['all_exceptions'] = \
                                    get_members(obj, 'exception')
+                documented = ns['classes']+ns['functions']+ns['exceptions']
+                
                 if sys.all_submodules.has_key(obj.__name__):
                     ns['submodules'] = sys.all_submodules[obj.__name__]
+                    documented += ns['submodules']
 
                 ns['members'] = ns['all_members']
-
                 try:
                     obj_dict = safe_getattr(obj, '__dict__')
                 except AttributeError:
                     obj_dict = []
 
                 public = [x for x in obj_dict if not x.startswith('_')]
-                for item in ns['classes']+ns['functions']+ns['exceptions']:
+                for item in documented:
                     if item in public:
                         public.remove(item)
 

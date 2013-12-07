@@ -1,0 +1,93 @@
+
+Pyglet documentation system
+===========================
+
+
+The documentation build configuration file is ``pyglet/doc/conf.py``. 
+
+It is a ``sphinx`` standard configuration file, but adds some requirements of ``pyglet`` package.
+
+All the modifications to ``sphinx`` patching are in the ``ext`` folder.
+
+* Separate Events from regular methods.
+* ``autosummary`` extension: Adds the hidden property and the capability to skip some modules and members
+
+.. note::
+
+   The patching requires a standard ``sphinx`` version 1.1.3
+
+
+
+
+API Templates
+-------------
+
+All the ``*.rst`` files in the ``_template`` folder configure the layout of the API documentation.
+
+The entry point is ``_template/package.rst``.
+
+
+HTML Theme
+----------
+The custom sphinx theme is in the ``ext/theme`` folder.
+
+
+ReST files
+----------
+The literature is a set of ``*.txt`` files.
+
+
+The entry point is ``index.txt``.
+
+The ``autosummary`` directive at ``index.txt`` directive 
+is mandatory, it generates all the API documentation files.
+
+Omisions
+--------
+
+Some things can not be imported when documenting, or are not to be documented, 
+
+
+Skipped members
+***************
+
+The ``skip_member`` function in ``conf.py`` contains rules to
+prevent certain members to appear in the documentation
+
+Due to the large number of members that were listed when generating, 
+a modification in  ``autosummary`` prevents all members that are not 
+defined in the current module to appear in the member lists. 
+
+This means that if a module imports members like this::
+
+    from pyglet.gl import *
+
+That members are not listed in the module documentation.
+
+.. warning:: 
+   There is one exception to the rule, for clarity sake: 
+   
+   * If a member is defined in ``module.base``, and imported by ``module``, it does appear in the ``module`` page lists. 
+
+
+Skipped modules
+***************
+
+Some modules in ``pyglet`` can not be imported when documenting, 
+so a black list in ``conf.py`` contains all the modules that are
+not to be documented:
+
+
+
+.. include:: blacklist.rst
+
+
+.. note::
+   To be able to document a module, it has to be importable when ``sys._is_epydoc`` is ``True``.
+
+
+
+Known bugs
+----------
+
+* The Window class attributes are not documented because they are defined at BaseWindow class. 
