@@ -263,9 +263,3 @@ p.rubric {
     font-size: 22px;
 }
 
-span.relatedlogo a, span.relatedlogo img {
-    margin: 0px;
-    position:relative;
-    top:3px;
-    left:1px;
-}

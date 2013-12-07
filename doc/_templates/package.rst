@@ -1,5 +1,5 @@
-``{{ fullname }}``
-===============================================================
+{{ fullname }}
+===========================================================
 
 .. automodule:: {{ fullname }}
 
@@ -8,7 +8,7 @@
 {% if submodules %}
 
 Modules
-----------
+-------
 
 .. autosummary::
    :toctree: {{ objname  }}/
@@ -38,11 +38,27 @@ Classes
 {% endif %}
 {% endblock %}
 
+{% block functions %}
+{% if functions %}
+
+Functions
+---------
+   
+.. autosummary::
+   :toctree: {{ objname  }}/
+
+{% for item in functions %}
+   {{ item }}
+{%- endfor %}
+{% endif %}
+{% endblock %}
+
 
 {% block exceptions %}
 {% if exceptions %}
 
-.. rubric:: Exceptions
+Exceptions
+----------
 
 .. autosummary::
    :toctree: {{ objname  }}/
@@ -55,36 +71,4 @@ Classes
 {% endblock %}
 
 
-{% block functions %}
-{% if functions %}
-
-Functions
----------
-   
-.. autosummary::
-   :toctree: {{ objname  }}/
-   :template: function.rst
-
-{% for item in functions %}
-   {{ item }}
-{%- endfor %}
-{% endif %}
-{% endblock %}
-
-
-
-{% block constants %}
-{% if constants %}
-
-.. rubric:: Defined
-
-{% for item in constants %}
-* {{ item }}
-{%- endfor %}
-{% endif %}
-{% endblock %}
-
-
-.. template module.rst
-
-
+.. template package.rst

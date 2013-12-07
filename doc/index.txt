@@ -6,36 +6,57 @@ development. It supports windowing, user interface event handling, OpenGL
 graphics, loading images and videos and playing sounds and music. It works on
 Windows, OS X and Linux.
 
+.. autosummary::
+   :toctree: api/
+   :template: package.rst
+   :hidden: 
 
+   pyglet
+   tests.test
 
-Programming Guide:
+Programming Guide
 ==================
 
 .. toctree::
    :maxdepth: 2
 
    Chapters <programming_guide/index>
+   
 
 
-API Reference:
+API Reference
 ==============
-
 
 .. toctree::
    :maxdepth: 3
 
-   pyglet
+   api/pyglet
 
-Testing Framework:
-==================
+
+Internals
+=========
+
+.. toctree::
+   :maxdepth: 3
+   
+   internal/main
+   programming_guide/advanced
+   internal/gl
+   internal/generated
+   internal/wraptypes
+   internal/dist
+   programming_guide/distribution
+   internal/doc
+
 
 .. toctree::
    :maxdepth: 2
 
-   api/tests.test
+   Testing Framework <api/tests.test>
 
 
-Related Documentation:
+
+Related Documentation
 ======================
 
 * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
