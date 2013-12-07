@@ -38,9 +38,6 @@ Classes
 {% endif %}
 {% endblock %}
 
-{% block functions %}
-{% if functions %}
-
 
 {% block exceptions %}
 {% if exceptions %}
@@ -57,6 +54,9 @@ Classes
 {% endif %}
 {% endblock %}
 
+
+{% block functions %}
+{% if functions %}
 
 Functions
 ---------
