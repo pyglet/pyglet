@@ -263,3 +263,7 @@ p.rubric {
     font-size: 22px;
 }
 
+img.logo {
+	width: 192px;
+}
+
