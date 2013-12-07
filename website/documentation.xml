@@ -27,10 +27,10 @@
 
   <ul>
     <li>
-      <a href="http://pyglet-current.usebox.net/programming_guide/index.html">Programming Guide</a>
+      <a href="doc-current/programming_guide/index.html">Programming Guide</a>
     </li>
     <li>
-      <a href="http://pyglet-current.usebox.net/pyglet.html">API Reference</a>.
+      <a href="doc-current/pyglet.html">API Reference</a>.
     </li>
   </ul>
 

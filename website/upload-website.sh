@@ -1,9 +1,10 @@
 #!/bin/bash
 # $Id:$
 
-PYGLET_ORG=66.35.48.21
+PYGLET_USR=pyglet
+PYGLET_ORG=pyglet.org
 PYGLET_DIR=/home/pyglet/www
 
-rsync -rv dist/* $PYGLET_ORG:$PYGLET_DIR/
+rsync -rv dist/* $PYGLET_USR@$PYGLET_ORG:$PYGLET_DIR/
 #rsync -rv ../doc/html/* $PYGLET_ORG:$PYGLET_DIR/doc/
 #rsync -rv ../doc/pdf/* $PYGLET_ORG:$PYGLET_DIR/doc/

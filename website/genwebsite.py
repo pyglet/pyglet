@@ -42,7 +42,8 @@ if __name__ == '__main__':
     output_dir = os.path.join(input_dir, 'dist')
     template_filename = os.path.join(input_dir, 'template.xhtml')
     news_items_filename = os.path.join(input_dir, 'news-items.xml')
-    exclude_files = ('template.xhtml', 'news-items.xml')
+    exclude_files = ('template.xhtml', 'news-items.xml', 'genwebsite.py',
+                     'upload-website.sh', 'update-all.php')
 
     print 'Writing site to %s/' % output_dir
     try:
