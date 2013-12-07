@@ -35,9 +35,8 @@
           {%- if not loop.first %}{{ reldelim2 }}{% endif %}</li>
         {%- endfor %}
         {%- block rootrellink %}
-        <li><span class="relatedlogo"><a href="{{ pathto(master_doc) }}">
-		  <img src="{{ pathto('_static/relatedlogo.png', 1) }}" alt="{{ shorttitle|e }}"/></span>
-		 </a>{{ reldelim1 }}</li>
+		<li><a href="http://pyglet.org/">pyglet.org</a>{{ reldelim2 }}</li>
+		<li><a href="{{ pathto(master_doc) }}">Documentation Index</a>{{ reldelim1 }}</li>
         {%- endblock %}
         {%- for parent in parents %}
           <li><a href="{{ parent.link|e }}" {% if loop.last %}{{ accesskey("U") }}{% endif %}>{{ parent.title }}</a>{{ reldelim1 }}</li>
