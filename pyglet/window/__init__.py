@@ -1688,7 +1688,7 @@ class FPSDisplay(object):
 if _is_epydoc:
     # We are building documentation
     Window = BaseWindow
-    BaseWindow.__name__ = 'Window'
+    Window.__name__ = 'Window'
     del BaseWindow
 
     
