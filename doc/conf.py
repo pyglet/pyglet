@@ -17,7 +17,6 @@ document_modules = ["pyglet", "tests"]
 # Patched extensions base path.
 sys.path.insert(0, os.path.abspath('.'))
 
-from ext.sphinx_mod import EventDocumenter
 from ext.sphinx_mod import find_all_modules, write_build, write_blacklist
 
 # import the pyglet package.
@@ -165,6 +164,7 @@ needs_sphinx = '1.1'
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
+              'ext.sphinx_mod',
               'ext.autosummary',
               'sphinx.ext.inheritance_diagram', 
               'sphinx.ext.todo']
