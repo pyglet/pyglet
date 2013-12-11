@@ -100,11 +100,7 @@ window
 
 clock
     clock-basic
-        clock.TICK                              X11 WIN OSX
-
-    clock-fps
         clock.FPS                               X11 WIN OSX
-        clock.FPS_LIMIT                         X11 WIN OSX
 
     clock-schedule
         clock.SCHEDULE                          X11 WIN OSX
