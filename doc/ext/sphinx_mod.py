@@ -2,9 +2,9 @@ import os
 import sys
 import inspect
 
-
 # Events
-from sphinx.ext.autodoc import MethodDocumenter, ModuleDocumenter
+from sphinx.ext.autodoc import MethodDocumenter
+from sphinx.ext.autodoc import ModuleDocumenter, ClassDocumenter
 
 class EventDocumenter(MethodDocumenter):
     objtype = "event"
@@ -13,15 +13,15 @@ class EventDocumenter(MethodDocumenter):
 
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
-        if member.__doc__ is not None:
-            if ":event:" in member.__doc__:
-                return inspect.isroutine(member) and \
-                       not isinstance(parent, ModuleDocumenter)  
-        return False
-          
+        if not isinstance(parent, ClassDocumenter):
+            return False
+        try:
+            return member.__name__ in member.im_class.event_types
+        except:
+            return False
+
 def setup(app):
     app.add_autodocumenter(EventDocumenter)
-
 
 
 # Search all submodules

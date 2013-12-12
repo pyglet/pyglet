@@ -118,6 +118,10 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
             warn('[autosummary] failed to import %r: %s' % (name, e))
             continue
 
+        # skip base modules
+        if name.endswith(".base"):
+            continue
+            
         fn = os.path.join(path, name + suffix)
 
         # skip it if it exists
@@ -145,7 +149,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 for name in dir(obj):
                     # skip_member
                     if sys.skip_member(name, obj): continue
-                    # Remove .base members
+                    # Remove imported members, except from .base
                     if typ in ['class', 'function']:
                         c = getattr(obj, name)
                         if inspect.isclass(c) or inspect.isfunction(c):
@@ -199,6 +203,9 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 
                 if sys.all_submodules.has_key(obj.__name__):
                     ns['submodules'] = sys.all_submodules[obj.__name__]
+                    # Hide base submodule
+                    if "base" in ns['submodules']:
+                        ns['submodules'].remove("base")
                     documented += ns['submodules']
 
                 ns['members'] = ns['all_members']
