@@ -103,19 +103,6 @@ Attributes
 Inherited members
 -----------------
 
-{% block inh_events_desc %}
-{% if inh_events %}
-
-   .. rubric:: Events
-
-{% for item in inh_events %}
-
-   .. automethod:: {{ objname }}.{{ item }}
-      :noindex:
-
-{%- endfor %}
-{% endif %}
-{% endblock %}
 
 {% block inh_methods_desc %}
 {% if inh_methods %}
@@ -130,6 +117,22 @@ Inherited members
 {%- endfor %}
 {% endif %}
 {% endblock %}
+
+
+{% block inh_events_desc %}
+{% if inh_events %}
+
+   .. rubric:: Events
+
+{% for item in inh_events %}
+
+   .. automethod:: {{ objname }}.{{ item }}
+      :noindex:
+
+{%- endfor %}
+{% endif %}
+{% endblock %}
+
 
 {% block inh_attributes_desc %}
 {% if inh_attributes %}
