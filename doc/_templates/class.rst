@@ -8,105 +8,109 @@
 .. inheritance-diagram:: {{ objname }}
 
 .. autoclass:: {{ objname }}
+  
 
-{% block events %}
-{% if events %}
-
-Events
-------
-
-.. autosummary::
-{% for item in events %}
-   ~{{ name }}.{{ item }}
-{%- endfor %}
-{% endif %}
-{% endblock %}
 
 {% block methods %}
 {% if methods %}
 
-Methods
--------
+   **Methods:**
 
-.. autosummary::
+      .. autosummary::
 {% for item in methods %}
-   ~{{ name }}.{{ item }}
+         ~{{ name }}.{{ item }}
 {%- endfor %}
 {% endif %}
 {% endblock %}
+
+
+{% block events %}
+{% if events %}
+
+   **Events:**
+
+      .. autosummary::
+{% for item in events %}
+         ~{{ name }}.{{ item }}
+{%- endfor %}
+{% endif %}
+{% endblock %}
+
 
 {% block attributes %}
 {% if attributes %}
    
-Attributes
-----------
+   **Attributes:**
 
-.. autosummary::
+      .. autosummary::
 {% for item in attributes %}
-   ~{{ name }}.{{ item }}
+         ~{{ name }}.{{ item }}
 {%- endfor %}
 {% endif %}
 {% endblock %}
 
-..
 
-.. rubric:: Descriptions
 
-.. class:: {{ objname }}
+{% block methods_desc %}
+{% if def_methods %}
+
+Methods
+-------
+
+{% for item in def_methods %}
+
+.. automethod:: {{ objname }}.{{ item }}
+
+{%- endfor %}
+{% endif %}
+{% endblock %}
+
 
 
 {% block events_desc %}
 {% if def_events %}
 
-   .. rubric:: Event details
+Events
+------
 
 {% for item in def_events %}
 
-   .. automethod:: {{ item }}
+.. automethod:: {{ objname }}.{{ item }}
 
 {%- endfor %}
 {% endif %}
 {% endblock %}
 
-{% block methods_desc %}
-{% if def_methods %}
-
-   .. rubric:: Method details
-
-{% for item in def_methods %}
-
-   .. automethod:: {{ item }}
-
-{%- endfor %}
-{% endif %}
-{% endblock %}
 
 {% block attributes_desc %}
 {% if def_attributes %}
 
-   .. rubric:: Attribute details
+Attributes
+----------
 
 {% for item in def_attributes %}
 
-   .. autoattribute:: {{ item }}
+.. autoattribute:: {{ objname }}.{{ item }}
 
 {%- endfor %}
 {% endif %}
 {% endblock %}
-
-
 
 
 
 {% if inherited %}
 
-   .. rubric:: Inherited member details
+Inherited members
+-----------------
 
 {% block inh_events_desc %}
 {% if inh_events %}
+
+   .. rubric:: Events
+
 {% for item in inh_events %}
 
-   .. automethod:: {{ item }}
+   .. automethod:: {{ objname }}.{{ item }}
       :noindex:
 
 {%- endfor %}
@@ -115,9 +119,12 @@ Attributes
 
 {% block inh_methods_desc %}
 {% if inh_methods %}
+
+   .. rubric:: Methods
+
 {% for item in inh_methods %}
 
-   .. automethod:: {{ item }}
+   .. automethod:: {{ objname }}.{{ item }}
       :noindex:
 
 {%- endfor %}
@@ -126,9 +133,12 @@ Attributes
 
 {% block inh_attributes_desc %}
 {% if inh_attributes %}
+
+   .. rubric:: Attributes
+
 {% for item in inh_attributes %}
 
-   .. autoattribute:: {{ item }}
+   .. autoattribute:: {{ objname }}.{{ item }}
       :noindex:
 
 {%- endfor %}

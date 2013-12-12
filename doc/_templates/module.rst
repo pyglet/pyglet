@@ -8,7 +8,7 @@
 {% if submodules %}
 
 Modules
-----------
+-------
 
 .. autosummary::
    :toctree: {{ objname  }}/
@@ -42,7 +42,8 @@ Classes
 {% block exceptions %}
 {% if exceptions %}
 
-.. rubric:: Exceptions
+Exceptions
+----------
 
 .. autosummary::
    :toctree: {{ objname  }}/
@@ -76,10 +77,13 @@ Functions
 {% block constants %}
 {% if constants %}
 
-.. rubric:: Defined
+Notes
+-----
+
+.. topic:: Defined
 
 {% for item in constants %}
-* {{ item }}
+   * ``{{ item }}``
 {%- endfor %}
 {% endif %}
 {% endblock %}

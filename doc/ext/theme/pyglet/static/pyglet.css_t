@@ -250,7 +250,8 @@ div.related tt, div.related a {
 }
 
 th.field-name {
-    font-size: 13px;
+    font-size: 14px;
+    padding-left: 0px !important;
 }
 
 

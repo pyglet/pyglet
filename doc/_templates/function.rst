@@ -1,9 +1,9 @@
-`{{ objname }}`
+`{{ objname }}` Function
 ==============================================================
 
 .. template function.rst
 
-Function defined in ``{{ module }}``
+Defined in ``{{ module }}``
 
 .. auto{{ objtype }}:: {{ fullname }}
 
