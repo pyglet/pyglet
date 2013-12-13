@@ -3,7 +3,7 @@ import sys
 import inspect
 
 # Events
-from sphinx.ext.autodoc import MethodDocumenter
+from sphinx.ext.autodoc import MethodDocumenter, FunctionDocumenter
 from sphinx.ext.autodoc import ModuleDocumenter, ClassDocumenter
 
 class EventDocumenter(MethodDocumenter):
@@ -13,6 +13,7 @@ class EventDocumenter(MethodDocumenter):
 
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
+
         if not isinstance(parent, ClassDocumenter):
             return False
         try:
@@ -20,8 +21,22 @@ class EventDocumenter(MethodDocumenter):
         except:
             return False
 
+
+class FunctionDocumenter2(FunctionDocumenter):
+    objtype = 'function'
+    
+    @classmethod
+    def can_document_member(cls, member, membername, isattr, parent):
+        can = FunctionDocumenter.can_document_member(
+                                 member, membername, isattr, parent)
+        # bound methods
+        plus = isinstance(parent, ModuleDocumenter) and inspect.ismethod(member)
+        return can or plus
+
+
 def setup(app):
     app.add_autodocumenter(EventDocumenter)
+    app.add_autodocumenter(FunctionDocumenter2)
 
 
 # Search all submodules

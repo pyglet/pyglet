@@ -84,49 +84,36 @@ def skip_member(member, obj):
 
     module = obj.__name__
 
+    if module=="tests.test": return True
+        
     if ".win32" in module: return True
     if ".carbon" in module: return True
     if ".cocoa" in module: return True
     if ".xlib" in module: return True
 
+    if module=="pyglet.input.evdev_constants": return True
+    if module=="pyglet.window.key":
+        if member==member.upper(): return True
+
+    if module=="pyglet.gl.glu": return True
     if module.startswith("pyglet.gl.glext_"): return True
     if module.startswith("pyglet.gl.gl_ext_"): return True
     if module.startswith("pyglet.gl.glxext_"): return True
     if module.startswith("pyglet.image.codecs."): return True
-
-    if member.startswith("PFN"): return True
     
-    if module=="pyglet.gl.gl" or module=="pyglet.gl.gl_info":
-        if member=="pointer": return True
-    else:
-        if member.upper().startswith("GL"):
-            if member.endswith("Info"): return False
-            if member.upper().startswith("GLU"):
-                if (".glu" in module):
-                    if member.startswith("GLU") and \
-                       not member.startswith("GLU_") : return True
-                    return False
-            if not member.startswith("gl_"): return True
-
-    if module in ["pyglet.gl.gl_info",
-                  "pyglet.gl.glu",
-                  "pyglet.gl.glu_info"]  \
-       or module.startswith("pyglet.image"):
-        if member in ["FormatError",
-                      "POINTER",
-                      "addressof",
-                      "alignment",
-                      "byref",
-                      "get_errno",
-                      "get_last_error",
-                      "pointer",
-                      "resize",
-                      "set_conversion_mode",
-                      "set_last_error",
-                      "set_errno",
-                      "sizeof"]: 
+    if member.startswith("PFN"): return True
+    if member.startswith("GL_"): return True
+    if member.startswith("GLU_"): return True
+    if member.startswith("RTLD_"): return True
+    if member=="GLvoid": return True
+    if len(member)>4:
+        if member.startswith("gl") and member[2]==member[2].upper():
             return True
+        if member.startswith("glu") and member[3]==member[3].upper():
+            return True
+
     return False
+
 
 
 # autosummary generation filter

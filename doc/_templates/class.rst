@@ -10,6 +10,17 @@
 .. autoclass:: {{ objname }}
   
 
+{% block constructor_desc %}
+{% if constructor %}
+
+   **Constructor:**
+
+   .. automethod:: {{ objname }}.__init__
+
+
+{% endif %}
+{% endblock %}
+
 
 {% block methods %}
 {% if methods %}

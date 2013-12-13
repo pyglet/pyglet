@@ -17,7 +17,7 @@
     :copyright: Copyright 2007-2011 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
-
+        
 import os
 import re
 import sys
@@ -144,23 +144,42 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 except TemplateNotFound:
                     template = template_env.get_template('autosummary/base.rst')
 
+
+            def exclude_member(obj, name):
+                if sys.skip_member(name, obj): 
+                    return True
+                
+                live = getattr(obj, name)
+
+                if inspect.isbuiltin(live): 
+                    return True
+
+                real_module = inspect.getmodule(live)
+                if real_module is not None:
+                    if real_module.__name__ in ["ctypes", 
+                                                "unittest"]: 
+                        return True
+                    
+                c = getattr(obj, name)
+                if inspect.isclass(c) or inspect.isfunction(c):
+                    if (c.__module__!=obj.__name__+".base" and
+                        c.__module__!=obj.__name__):
+                        return True
+                return False
+                
             def get_members(obj, typ, include_public=[]):
                 items = []
                 for name in dir(obj):
                     # skip_member
-                    if sys.skip_member(name, obj): continue
-                    # Remove imported members, except from .base
-                    if typ in ['class', 'function']:
-                        c = getattr(obj, name)
-                        if inspect.isclass(c) or inspect.isfunction(c):
-                            if (c.__module__!=obj.__name__+".base" and
-                                c.__module__!=obj.__name__):
-                                    continue
+                    if exclude_member(obj, name): 
+                        continue
                     try:
                         documenter = get_documenter(safe_getattr(obj, name), obj)
                     except AttributeError:
                         continue
                     if documenter.objtype == typ:
+                        items.append(name)
+                    elif typ=='function' and documenter.objtype=='boundmethod':
                         items.append(name)
                 public = [x for x in items
                           if x in include_public or not x.startswith('_')]
@@ -176,7 +195,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 defined = obj_dict.keys()
                 defined.sort()
                 for name in defined:
-                    if sys.skip_member(name, obj): continue
+                    if exclude_member(obj, name): 
+                        continue
                     try:
                         documenter = get_documenter(safe_getattr(obj, name), obj)
                     except AttributeError:
@@ -199,7 +219,9 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                                    get_members(obj, 'function')
                 ns['exceptions'], ns['all_exceptions'] = \
                                    get_members(obj, 'exception')
-                documented = ns['classes']+ns['functions']+ns['exceptions']
+                ns['data'], ns['all_data'] = \
+                                   get_members(obj, 'data')
+                documented = ns['classes']+ns['functions'] +ns['exceptions']+ns['data']
                 
                 if sys.all_submodules.has_key(obj.__name__):
                     ns['submodules'] = sys.all_submodules[obj.__name__]
@@ -222,7 +244,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 public.sort()
                 ns['members'] = public
                 ns['constants'] = [x for x in public
-                                   if not sys.skip_member(x, obj)]
+                                   #if not sys.skip_member(x, obj)]
+                                   if not exclude_member(obj, x)]
                 
             elif doc.objtype == 'class':
                 ns['members'] = dir(obj)
@@ -232,10 +255,19 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                                  get_members(obj, 'method', ['__init__'])
                 ns['attributes'], ns['all_attributes'] = \
                                  get_members(obj, 'attribute')
-
+                
                 ns['def_events'] = def_members(obj, 'event')
-                ns['def_methods'] = def_members(obj, 'method', ['__init__'])
+                ns['def_methods'] = def_members(obj, 'method')
                 ns['def_attributes'] = def_members(obj, 'attribute')
+
+                # Constructor method special case
+                if '__init__' in ns['methods']:
+                    ns['methods'].remove('__init__')
+                    if '__init__' in ns['def_methods']:
+                        ns['def_methods'].remove('__init__')
+                    ns['constructor']=['__init__']
+                else:
+                    ns['constructor']=[]
 
                 ns['inherited'] = []
                 for t in ['events', 'methods', 'attributes']:

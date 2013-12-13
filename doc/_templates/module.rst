@@ -73,6 +73,21 @@ Functions
 {% endblock %}
 
 
+{% block data %}
+{% if data %}
+
+Variables
+---------
+
+{% for item in data %}
+
+.. autodata:: {{ item }}
+
+{%- endfor %}
+{% endif %}
+{% endblock %}
+
+
 
 {% block constants %}
 {% if constants %}
