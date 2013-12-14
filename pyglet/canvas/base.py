@@ -8,24 +8,28 @@ from pyglet import window
 class Display(object):
     '''A display device supporting one or more screens.
 
-    :Ivariables:
-        `name` : str
-            Name of this display, if applicable.
-        `x_screen` : int
-            The X11 screen number of this display, if applicable.
-
     :since: pyglet 1.2
     '''
-    name = None
-    x_screen = None
 
+    name = None
+    '''Name of this display, if applicable.
+
+    :type: str
+    '''
+    
+    x_screen = None
+    '''The X11 screen number of this display, if applicable.
+
+    :type: int
+    '''
+    
     def __init__(self, name=None, x_screen=None):
         '''Create a display connection for the given name and screen.
 
-        On X11, `name` is of the form ``"hostname:display"``, where the
-        default is usually ``":1"``.  On X11, `x_screen` gives the X screen
-        number to use with this display.  A pyglet display can only be used
-        with one X screen; open multiple display connections to access
+        On X11, :attr:`name` is of the form ``"hostname:display"``, where the
+        default is usually ``":1"``.  On X11, :attr:`x_screen` gives the X 
+        screen number to use with this display.  A pyglet display can only be 
+        used with one X screen; open multiple display connections to access
         multiple X screens.  
         
         Note that TwinView, Xinerama, xrandr and other extensions present
@@ -33,8 +37,8 @@ class Display(object):
         mechanism for working with multiple monitors under X11 and allows each
         screen to be accessed through a single pyglet `Display`.
 
-        On platforms other than X11, `name` and `x_screen` are ignored; there is
-        only a single display device on these systems.
+        On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
+        ignored; there is only a single display device on these systems.
 
         :Parameters:
             `name` : str
@@ -48,14 +52,14 @@ class Display(object):
     def get_screens(self):
         '''Get the available screens.
 
-        A typical multi-monitor workstation comprises one `Display` with
-        multiple `Screen` s.  This method returns a list of screens which
-        can be enumerated to select one for full-screen display.
+        A typical multi-monitor workstation comprises one :class:`Display` 
+        with multiple :class:`Screen` s.  This method returns a list of 
+        screens which can be enumerated to select one for full-screen display.
 
         For the purposes of creating an OpenGL config, the default screen
         will suffice.
 
-        :rtype: list of `Screen`
+        :rtype: list of :class:`Screen`
         '''
         raise NotImplementedError('abstract')    
 
@@ -63,14 +67,14 @@ class Display(object):
         '''Get the default screen as specified by the user's operating system
         preferences.
 
-        :rtype: `Screen`
+        :rtype: :class:`Screen`
         '''
         return self.get_screens()[0]
 
     def get_windows(self):
         '''Get the windows currently attached to this display.
 
-        :rtype: sequence of `Window`
+        :rtype: sequence of :class:`pyglet.window.Window`
         '''
         return [window for window in app.windows if window.display is self]
 
@@ -82,29 +86,30 @@ class Screen(object):
     has no effect unless the window is made fullscreen, in which case
     the window will fill only that particular virtual screen.
 
-    The `width` and `height` attributes of a screen give the current
-    resolution of the screen.  The `x` and `y` attributes give the global
-    location of the top-left corner of the screen.  This is useful for
-    determining if screens arranged above or next to one another.  
+    The :attr:`width` and :attr:`height` attributes of a screen give the 
+    current resolution of the screen.  The :attr:`x` and :attr:`y` attributes 
+    give the global location of the top-left corner of the screen.  This is 
+    useful for determining if screens arranged above or next to one another.  
     
-    Use `Display.get_screens` or `Display.get_default_screen` to obtain an
-    instance of this class.
-
-    :Ivariables:
-        `display` : `Display`
-            Display this screen belongs to.
-        `x` : int
-            Left edge of the screen on the virtual desktop.
-        `y` : int
-            Top edge of the screen on the virtual desktop.
-        `width` : int
-            Width of the screen, in pixels.
-        `height` : int
-            Height of the screen, in pixels.
-
+    Use :func:`Display.get_screens` or :func:`Display.get_default_screen` to 
+    obtain an instance of this class.
     '''
 
     def __init__(self, display, x, y, width, height):
+        '''
+        
+        :parameters:
+            `display` : `pyglet.canvas.Display`
+                Display this screen belongs to.
+            `x` : int
+                Left edge of the screen on the virtual desktop.
+            `y` : int
+                Top edge of the screen on the virtual desktop.
+            `width` : int
+                Width of the screen, in pixels.
+            `height` : int
+                Height of the screen, in pixels.
+        '''
         self.display = display
         self.x = x
         self.y = y
@@ -119,16 +124,16 @@ class Screen(object):
         '''Get the best available GL config.
 
         Any required attributes can be specified in `template`.  If
-        no configuration matches the template, `NoSuchConfigException` will
-        be raised.
+        no configuration matches the template,
+        :class:`pyglet.window.NoSuchConfigException` will be raised.
 
-        :deprecated: Use `pyglet.gl.Config.match`.
+        :deprecated: Use :meth:`pyglet.gl.Config.match`.
 
         :Parameters:
             `template` : `pyglet.gl.Config`
                 A configuration with desired attributes filled in.
 
-        :rtype: `pyglet.gl.Config`
+        :rtype: :class:`pyglet.gl.Config`
         :return: A configuration supported by the platform that best
             fulfils the needs described by the template.
         '''
@@ -156,13 +161,13 @@ class Screen(object):
         to or greater in each returned config.  If no configs satisfy
         the template, an empty list is returned.
 
-        :deprecated: Use `pyglet.gl.Config.match`.
+        :deprecated: Use :meth:`pyglet.gl.Config.match`.
 
         :Parameters:
             `template` : `pyglet.gl.Config`
                 A configuration with desired attributes filled in.
 
-        :rtype: list of `pyglet.gl.Config`
+        :rtype: list of :class:`pyglet.gl.Config`
         :return: A list of matching configs.
         '''
         raise NotImplementedError('abstract')
@@ -170,7 +175,7 @@ class Screen(object):
     def get_modes(self):
         '''Get a list of screen modes supported by this screen.
 
-        :rtype: list of `ScreenMode`
+        :rtype: list of :class:`pyglet.canvas.ScreenMode`
 
         :since: pyglet 1.2
         '''
@@ -179,7 +184,7 @@ class Screen(object):
     def get_mode(self):
         '''Get the current display mode for this screen.
 
-        :rtype: `ScreenMode`
+        :rtype: :class:`ScreenMode`
 
         :since: pyglet 1.2
         '''
@@ -197,7 +202,7 @@ class Screen(object):
             `height` : int
                 Requested screen height.
 
-        :rtype: `ScreenMode`
+        :rtype: :class:`ScreenMode`
 
         :since: pyglet 1.2
         '''
@@ -237,10 +242,11 @@ class Screen(object):
     def set_mode(self, mode):
         '''Set the display mode for this screen.
 
-        The mode must be one previously returned by `get_mode` or `get_modes`.
+        The mode must be one previously returned by :meth:`get_mode` or 
+        :meth:`get_modes`.
 
         :Parameters:
-            `mode` : `ScreenMode`
+            `mode` : `pyglet.canvas.ScreenMode`
                 Screen mode to switch this screen to.
 
         '''
@@ -252,32 +258,45 @@ class Screen(object):
         raise NotImplementedError('abstract')
 
 class ScreenMode(object):
-    '''Screen resolution and display settings.  Applications should not
-    construct `ScreenMode` instances themselves; see `Screen.get_modes`.
+    '''Screen resolution and display settings.
 
-    The `depth` and `rate` variables may be ``None`` if the operating system
-    does not provide relevant data.
+    Applications should not construct `ScreenMode` instances themselves; see
+    :meth:`Screen.get_modes`.
 
-    :Ivariables:
-        `width` : int
-            Width of screen, in pixels.
-        `height` : int
-            Height of screen, in pixels.
-        `depth` : int
-            Pixel color depth, in bits per pixel.
-        `rate` : int
-            Screen refresh rate in Hz.
+    The :attr:`depth` and :attr:`rate` variables may be ``None`` if the 
+    operating system does not provide relevant data.
 
     :since: pyglet 1.2
 
     '''
 
     width = None
-    height = None
-    depth = None
-    rate = None
+    '''Width of screen, in pixels.
 
+    :type: int
+    '''
+    height = None
+    '''Height of screen, in pixels.
+
+    :type: int
+    '''
+    depth = None
+    '''Pixel color depth, in bits per pixel.
+
+    :type: int
+    '''
+    rate = None
+    '''Screen refresh rate in Hz.
+
+    :type: int
+    '''
+    
     def __init__(self, screen):
+        '''
+        
+        :parameters:
+            `screen` : `pyglet.canvas.Screen`
+        '''
         self.screen = screen
 
     def __repr__(self):
@@ -291,11 +310,13 @@ class Canvas(object):
     Canvases are used internally by pyglet to represent drawing areas --
     either within a window or full-screen.
 
-    :Ivariables:
-        `display` : `Display`
-            Display this canvas was created on.
-
     :since: pyglet 1.2
     '''
     def __init__(self, display):
+        '''
+        
+        :parameters:
+            `display` : `pyglet.canvas.Display`
+                Display this canvas was created on.
+        '''
         self.display = display
