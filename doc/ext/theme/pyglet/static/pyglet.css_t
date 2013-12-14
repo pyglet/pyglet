@@ -282,7 +282,6 @@ img.logo {
 
 .section dl {
     padding: 5px 0px 10px 0px;
-    background: #F8F8F8;
 }
 
 .section dt {
