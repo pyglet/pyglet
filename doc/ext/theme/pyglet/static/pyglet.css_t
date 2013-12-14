@@ -78,7 +78,7 @@ div.sphinxsidebar {
 }
 
 div.sphinxsidebarwrapper{
-    padding: 20px 0;
+    padding: 0px 0;
 }
  
 div.sphinxsidebar h3,
@@ -138,7 +138,7 @@ a {
 }
  
 a:hover {
-    color: #E32E00;
+    color: #A44;
     text-decoration: underline;
 }
  
@@ -149,14 +149,13 @@ div.body h4,
 div.body h5,
 div.body h6 {
     font-family: Arial, sans-serif;
-    background-color: #EEEEEE;
     font-weight: normal;
     color: #220000;
     margin: 30px 0px 10px 0px;
     padding: 5px 0 5px 10px;
     }
  
-div.body h1 { border-top: 20px solid white; margin-top: 0; font-size: 200%; }
+div.body h1 { border-top: 20px solid white; margin-top: 0; font-size: 200%; padding: 5px 0 5px 0px;}
 div.body h2 { font-size: 150%; background-color: #FFEEEE; }
 div.body h3 { font-size: 120%; background-color: #D8DEE3; }
 div.body h4 { font-size: 110%; background-color: #D8DEE3; }
@@ -183,12 +182,12 @@ div.admonition p.admonition-title + p {
     display: inline;
 }
 
-div.highlight{
-    background-color: white;
+div.highlight pre{
+    background-color: #FFFDDD;
 }
 
 div.note {
-    background-color: #eee;
+    background-color: #FCFCFC;
     border: 1px solid #ccc;
 }
  
@@ -225,11 +224,14 @@ pre {
 }
  
 tt {
-    background-color: #ecf0f3;
-    color: #222;
-    /* padding: 1px 2px; */
-    font-size: 1.1em;
+    background-color: #FFFDDD;
+    font-size: 16px;
     font-family: monospace;
+}
+
+h1 tt {
+    font-size: 1.1em;
+    font-weight: bold;
 }
 
 .viewcode-back {
@@ -256,8 +258,18 @@ th.field-name {
 
 
 tt.descname {
-    font-size: 16px;
+    font-size: 17px;
+    font-weight: bold;
+    color: #000;
 }
+
+
+tt.xref, p tt {
+    font-size: 15px;
+    position: relative;
+    bottom: 1px;
+    font-weight: normal;
+    } 
 
 p.rubric {
     font-weight: normal;
@@ -265,6 +277,14 @@ p.rubric {
 }
 
 img.logo {
-	width: 192px;
+    width: 192px;
 }
 
+.section dl {
+    padding: 5px 0px 10px 0px;
+}
+
+.section dt {
+    margin: 0px 0px 10px 0px;
+    background: #F8F8F8;
+}
