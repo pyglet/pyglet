@@ -100,6 +100,10 @@ def skip_member(member, obj):
     if module.startswith("pyglet.gl.gl_ext_"): return True
     if module.startswith("pyglet.gl.glxext_"): return True
     if module.startswith("pyglet.image.codecs."): return True
+
+    if module!="pyglet.gl.gl":
+        if member in ["DEFAULT_MODE", "current_context"]:
+            return True
     
     if member.startswith("PFN"): return True
     if member.startswith("GL_"): return True
