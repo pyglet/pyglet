@@ -17,7 +17,8 @@ from pyglet import event
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 class PlatformEventLoop(object):
-    '''
+    ''' Abstract class, implementation depends on platform.
+    
     :since: pyglet 1.2
     '''
     def __init__(self):
@@ -83,7 +84,7 @@ class PlatformEventLoop(object):
         pass
 
     def step(self, timeout=None):
-        '''TODO in mac/linux: return True if didn't time out'''
+        ''':TODO: in mac/linux: return True if didn't time out'''
         raise NotImplementedError('abstract')
 
     def set_timer(self, func, interval):
