@@ -100,6 +100,10 @@ def modify_docstrings(app, what, name, obj, options, lines,
             
         elif ":Ivariables:" in line:
             convert(ReST_Ivariable, i)
+
+        elif ":guide:" in line:
+            lines[i] = lines[i].replace(u':guide:`',
+                        u'.. seealso:: Programming Guide - :ref:`guide_')
             
         elif ":deprecated:" in line:
             lines[i] = lines[i].replace(u':deprecated:',
