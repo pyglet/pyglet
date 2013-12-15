@@ -5,7 +5,7 @@
 
 .. inheritance-diagram:: {{ fullname }}
 
-Exception defined in ``{{ module }}``
+Exception defined in :mod:`{{ module }}`
 
 .. currentmodule:: {{ module }}
 

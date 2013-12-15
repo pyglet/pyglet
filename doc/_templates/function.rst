@@ -3,7 +3,7 @@
 
 .. template function.rst
 
-Defined in ``{{ module }}``
+Defined in :mod:`{{ module }}`
 
 .. auto{{ objtype }}:: {{ fullname }}
 
