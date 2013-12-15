@@ -32,6 +32,9 @@ The entry point for all the documentation is ``pyglet/doc/index.txt``, which cal
   Documentation for those working on Pyglet itself, such as how to make a release 
   or how the ctypes library is used.
 
+.. seealso::
+
+   * `Sphinx: reStructuredText Primer <http://sphinx.pocoo.org/rest.html>`_ 
 
 Source code
 ===========
@@ -44,45 +47,65 @@ The API documentation is generated from the source code docstrings.
    .. code-block:: python
 
       class Class1():
-      """Short description.
+      '''Short description.
 
       Detailed explanation, formatted as reST.
       Can be as detailed as it is needed. 
     
    
-      :Parameters: 
-         Narrative description
-         `arg1` : type description
+      :Ivariables: 
+         `arg1`
              description
 
-      :return: return description
+      
       :since: pyglet 1.2
 
-      """
+      '''
 
       attribute1 = None
-      """This is an attribute.
-      """
-      #: This is an attribute.
+      '''This is an attribute.
+
+      More details.
+      '''
+
+      #: This is another attribute.
       attribute2 = None
 
 
-      def _get_property2(self):
-          """Getter Method 
+      def __init__(self):
+          '''Constructor
+
+          :parameters: 
+             `arg1` : type
+                description
+          '''
+
+          self.instance_attribute = None
+          '''This is an instance attribute.
+          '''
+
+      def method(self):
+          '''Short description.
+
+          :returns: return description
+          :rtype: returned type
+          '''
+
+      def _get_property1(self):
+          '''Getter Method 
           
           :return: property1 value
           :rtype: property1 type
-          """
+          '''
 
-      def _set_property2(self, value):
-          """Setter Method 
+      def _set_property1(self, value):
+          '''Setter Method 
           
-          :param value: property1 value
-          :type value: property1 type
-
-          """
+          :param value: property1 value # This is the ReST style
+          :type value: property1 type   # But you can use :parameters:
+          '''
    
-      property2 = property(_get_property2, _set_property2,
+      property1 = property(_get_property1, _set_property1,
                         doc='''Short description
    
       This is another attribute.
@@ -92,7 +115,76 @@ The API documentation is generated from the source code docstrings.
       ''')
 
 
- 
+Pyglet has some special roles.
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Source
+          - Shows
+        * - ``:deprecated: Do not use``
+          - .. warning:: Deprecated. Do not use
+        * - ``:since: 1.2``
+          - .. note:: Since 1.2
+
+.. _guide_doc_ref:
+
+Internal references
+===================
+
+To cross-reference to any documented API member, use the following roles:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Source
+          - Reference
+        * - ``:mod:`pyglet.app```
+          - The :mod:`pyglet.app` module
+        * - ``:func:`~pyglet.app.run```
+          - The :func:`~pyglet.app.run` function
+        * - ``:class:`~pyglet.window.Window```
+          - The :class:`~pyglet.window.Window` class
+        * - ``:meth:`~pyglet.window.Window.close```
+          - The :meth:`~pyglet.window.Window.close` method
+        * - ``:attr:`~pyglet.window.Window.fullscreen```
+          - The :attr:`~pyglet.window.Window.fullscreen` attribute
+        
+
+.. note:: Use ``~`` to show only the last part.
+
+.. _my_anchor:
+
+You can link to arbitrary locations in any document using ``:ref:``,
+but pyglet has a special role ``:guide:`` for this guide.
+
+A section header of the guide can have an anchor like this::
+
+   .. _guide_doc_ref:
+
+   Internal references
+   ===================
+
+
+It is also possible to put an anchor anywhere::
+
+   .. _my_anchor:
+
+   My anchor.
+
+
+And to insert a reference to an anchor:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Source
+          - Shows
+        * - ``:guide:`doc_ref```
+          - .. seealso:: Programming Guide - :ref:`guide_doc_ref`
+        * - ``:ref:`My Anchor<my_anchor>```
+          - :ref:`My Anchor<my_anchor>`
+
 
 Generation
 ----------

@@ -16,18 +16,18 @@ We'll begin with the requisite "Hello, World" introduction.  This program will
 open a window with some text in it and wait to be closed.  You can find the
 entire program in the `examples/programming_guide/hello_world.py` file.
 
-Begin by importing the pyglet package::
+Begin by importing the :mod:`pyglet` package::
 
     import pyglet
 
-Create a `Window` by calling its default constructor.  The window will be
-visible as soon as it's created, and will have reasonable default values for
-all its parameters::
+Create a :class:`pyglet.window.Window` by calling its default constructor.  The 
+window will be visible as soon as it's created, and will have reasonable default 
+values for all its parameters::
 
     window = pyglet.window.Window()
 
-To display the text, we'll create a `Label`.  Keyword arguments are used
-to set the font, position and anchorage of the label::
+To display the text, we'll create a :class:`~pyglet.text.Label`. Keyword 
+arguments are used to set the font, position and anchorage of the label::
 
     label = pyglet.text.Label('Hello, world', 
                               font_name='Times New Roman', 
@@ -35,25 +35,26 @@ to set the font, position and anchorage of the label::
                               x=window.width//2, y=window.height//2,
                               anchor_x='center', anchor_y='center')
 
-An `on_draw` event is dispatched to the window to give it a chance to redraw
-its contents.  pyglet provides several ways to attach event handlers to
-objects; a simple way is to use a decorator::
+An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window to 
+give it a chance to redraw its contents.  pyglet provides several ways to attach 
+event handlers to objects; a simple way is to use a decorator::
 
     @window.event
     def on_draw():
         window.clear()
         label.draw()
 
-Within the ``on_draw`` handler the window is cleared to the default background
-color (black), and the label is drawn.
+Within the :meth:`~pyglet.window.Window.on_draw` handler the window is cleared to 
+the default background color (black), and the label is drawn.
 
 Finally, call::
 
     pyglet.app.run()
 
 To let pyglet respond to application events such as the mouse and keyboard.
-Your event handlers will now be called as required, and the `run` method will
-return only when all application windows have been closed.
+Your event handlers will now be called as required, and the 
+:func:`~pyglet.app.run` method will return only when all application windows have 
+been closed.
 
 Note that earlier versions of pyglet required the application developer to
 write their own event-handling runloop.  This is still possible, but
@@ -78,14 +79,15 @@ within the window::
 
     pyglet.app.run()
 
-We used the `pyglet.resource.image` function to load the image, which
+We used the :func:`~pyglet.resource.image` function to load the image, which
 automatically locates the file relative to the source file (rather than the
 working directory).  To load an image not bundled with the application (for
-example, specified on the command line, you would use `pyglet.image.load`).
+example, specified on the command line, you would use 
+:func:`pyglet.image.load`).
 
-The `AbstractImage.blit` method draws the image.  The arguments ``(0, 0)``
-tell pyglet to draw the image at pixel coordinates 0, 0 in the window
-(the lower-left corner).
+The :meth:`~pyglet.image.AbstractImage.blit` method draws the image.  The 
+arguments ``(0, 0)`` tell pyglet to draw the image at pixel coordinates 0, 
+0 in the window (the lower-left corner).
 
 The complete code for this example is located in
 `examples/programming_guide/image_viewer.py`.
@@ -93,9 +95,9 @@ The complete code for this example is located in
 Handling mouse and keyboard events
 ----------------------------------
 
-So far the only event used is the `on_draw` event.  To react to keyboard and
-mouse events, it's necessary to write and attach event handlers for these
-events as well::
+So far the only event used is the :meth:`~pyglet.window.Window.on_draw` 
+event.  To react to keyboard and mouse events, it's necessary to write and 
+attach event handlers for these events as well::
 
     import pyglet
 
@@ -115,7 +117,7 @@ Keyboard events have two parameters: the virtual key `symbol` that was
 pressed, and a bitwise combination of any `modifiers` that are present (for
 example, the ``CTRL`` and ``SHIFT`` keys).
 
-The key symbols are defined in `pyglet.window.key`::
+The key symbols are defined in :mod:`pyglet.window.key`::
 
     from pyglet.window import key
 
@@ -128,7 +130,8 @@ The key symbols are defined in `pyglet.window.key`::
         elif symbol == key.ENTER:
             print 'The enter key was pressed.'
 
-See the `pyglet.window.key` documentation for a complete list of key symbols.
+See the :mod:`pyglet.window.key` documentation for a complete list of key 
+symbols.
 
 Mouse events are handled in a similar way::
 
@@ -167,10 +170,10 @@ The following example plays an MP3 file [#mp3]_::
 
     pyglet.app.run()
 
-As with the image loading example presented earlier, `pyglet.resource.media`
-locates the sound file in the application's directory (not the working
-directory).  If you know the actual filesystem path (either relative or
-absolute), use `pyglet.media.load`.
+As with the image loading example presented earlier, 
+:func:`~pyglet.resource.media` locates the sound file in the application's 
+directory (not the working directory).  If you know the actual filesystem path
+(either relative or absolute), use :func:`~pyglet.media.load`.
 
 Short sounds, such as a gunfire shot used in a game, should be decoded in
 memory before they are used, so that they play more immediately and incur less
