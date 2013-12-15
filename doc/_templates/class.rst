@@ -107,7 +107,21 @@ Attributes
 {% endif %}
 {% endblock %}
 
+{% block iattributes_desc %}
+{% if iattributes %}
 
+Instance Attributes
+-------------------
+
+{% for item in iattributes %}
+
+.. attribute:: {{ objname }}.{{ item.name }}
+
+   {{ item.doc }}
+
+{%- endfor %}
+{% endif %}
+{% endblock %}
 
 {% if inherited %}
 

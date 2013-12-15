@@ -33,6 +33,7 @@ from ..autosummary import import_by_name, get_documenter
 from sphinx.jinja2glue import BuiltinTemplateLoader
 from sphinx.util.osutil import ensuredir
 from sphinx.util.inspect import safe_getattr
+from sphinx.pycode import ModuleAnalyzer
 
 def main(argv=sys.argv):
     usage = """%prog [OPTIONS] SOURCEFILE ..."""
@@ -61,7 +62,8 @@ def _simple_info(msg):
 def _simple_warn(msg):
     print >> sys.stderr, 'WARNING: ' + msg
 
-
+        
+    
 # -- Generating output ---------------------------------------------------------
 
 def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
@@ -184,8 +186,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 public = [x for x in items
                           if x in include_public or not x.startswith('_')]
                 return public, items
-
-
+                
             def def_members(obj, typ, include_public=[]):
                 items = []
                 try:
@@ -207,6 +208,20 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                           if x in include_public or not x.startswith('_')]
                 return public
 
+            def get_iattributes(obj):
+                items = []
+                name = obj.__name__
+                obj_attr = dir(obj)
+                analyzer = ModuleAnalyzer.for_module(obj.__module__)
+                attr_docs = analyzer.find_attr_docs()
+                for pair, doc in attr_docs.iteritems():
+                    if name!=pair[0]:
+                        continue
+                    if not pair[1] in obj_attr:
+                        items.append({"name":pair[1],
+                                      "doc":'\n   '.join(doc)})
+                items.sort(key=lambda d: d["name"]) 
+                return items
 
             ns = {}
 
@@ -255,7 +270,8 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                                  get_members(obj, 'method', ['__init__'])
                 ns['attributes'], ns['all_attributes'] = \
                                  get_members(obj, 'attribute')
-                
+                # Add instance attributes
+                ns['iattributes'] = get_iattributes(obj)
                 ns['def_events'] = def_members(obj, 'event')
                 ns['def_methods'] = def_members(obj, 'method')
                 ns['def_attributes'] = def_members(obj, 'attribute')
