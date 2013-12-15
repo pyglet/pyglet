@@ -8,6 +8,8 @@ from pyglet import window
 class Display(object):
     '''A display device supporting one or more screens.
 
+    :guide:`displays`
+    
     :since: pyglet 1.2
     '''
 
@@ -74,7 +76,7 @@ class Display(object):
     def get_windows(self):
         '''Get the windows currently attached to this display.
 
-        :rtype: sequence of :class:`pyglet.window.Window`
+        :rtype: sequence of :class:`~pyglet.window.Window`
         '''
         return [window for window in app.windows if window.display is self]
 
@@ -91,30 +93,37 @@ class Screen(object):
     give the global location of the top-left corner of the screen.  This is 
     useful for determining if screens arranged above or next to one another.  
     
-    Use :func:`Display.get_screens` or :func:`Display.get_default_screen` to 
-    obtain an instance of this class.
+    Use :func:`~Display.get_screens` or :func:`~Display.get_default_screen`
+    to obtain an instance of this class.
+
+    :guide:`screens`
     '''
 
     def __init__(self, display, x, y, width, height):
         '''
         
         :parameters:
-            `display` : `pyglet.canvas.Display`
-                Display this screen belongs to.
+            `display` : `~pyglet.canvas.Display`
+                :attr:`display`
             `x` : int
-                Left edge of the screen on the virtual desktop.
+                Left edge :attr:`x`
             `y` : int
-                Top edge of the screen on the virtual desktop.
+                Top edge :attr:`y`
             `width` : int
-                Width of the screen, in pixels.
+                :attr:`width`
             `height` : int
-                Height of the screen, in pixels.
+                :attr:`height`
         '''
         self.display = display
+        '''Display this screen belongs to.'''
         self.x = x
+        '''Left edge of the screen on the virtual desktop.'''
         self.y = y
+        '''Top edge of the screen on the virtual desktop.'''
         self.width = width
+        '''Width of the screen, in pixels.'''
         self.height = height
+        '''Height of the screen, in pixels.'''
 
     def __repr__(self):
         return '%s(x=%d, y=%d, width=%d, height=%d)' % \
@@ -125,7 +134,7 @@ class Screen(object):
 
         Any required attributes can be specified in `template`.  If
         no configuration matches the template,
-        :class:`pyglet.window.NoSuchConfigException` will be raised.
+        :class:`~pyglet.window.NoSuchConfigException` will be raised.
 
         :deprecated: Use :meth:`pyglet.gl.Config.match`.
 
@@ -133,7 +142,7 @@ class Screen(object):
             `template` : `pyglet.gl.Config`
                 A configuration with desired attributes filled in.
 
-        :rtype: :class:`pyglet.gl.Config`
+        :rtype: :class:`~pyglet.gl.Config`
         :return: A configuration supported by the platform that best
             fulfils the needs described by the template.
         '''
@@ -167,7 +176,7 @@ class Screen(object):
             `template` : `pyglet.gl.Config`
                 A configuration with desired attributes filled in.
 
-        :rtype: list of :class:`pyglet.gl.Config`
+        :rtype: list of :class:`~pyglet.gl.Config`
         :return: A list of matching configs.
         '''
         raise NotImplementedError('abstract')
@@ -175,7 +184,7 @@ class Screen(object):
     def get_modes(self):
         '''Get a list of screen modes supported by this screen.
 
-        :rtype: list of :class:`pyglet.canvas.ScreenMode`
+        :rtype: list of :class:`ScreenMode`
 
         :since: pyglet 1.2
         '''
@@ -246,7 +255,7 @@ class Screen(object):
         :meth:`get_modes`.
 
         :Parameters:
-            `mode` : `pyglet.canvas.ScreenMode`
+            `mode` : `ScreenMode`
                 Screen mode to switch this screen to.
 
         '''
@@ -295,7 +304,7 @@ class ScreenMode(object):
         '''
         
         :parameters:
-            `screen` : `pyglet.canvas.Screen`
+            `screen` : `Screen`
         '''
         self.screen = screen
 
@@ -316,7 +325,9 @@ class Canvas(object):
         '''
         
         :parameters:
-            `display` : `pyglet.canvas.Display`
-                Display this canvas was created on.
+            `display` : `Display`
+                :attr:`display`
+                
         '''
         self.display = display
+        '''Display this canvas was created on.'''
