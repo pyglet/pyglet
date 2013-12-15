@@ -355,6 +355,18 @@ class XlibWindow(BaseWindow):
         # Set caption
         self.set_caption(self._caption)
 
+        # this is supported by some compositors (ie gnome-shell), and more to come
+        # see: http://standards.freedesktop.org/wm-spec/wm-spec-latest.html#idp6357888
+        _NET_WM_BYPASS_COMPOSITOR_HINT_ON = c_ulong(int(self._fullscreen))
+        name = xlib.XInternAtom(self._x_display,
+                                asbytes('_NET_WM_BYPASS_COMPOSITOR'), False)
+        ptr = pointer(_NET_WM_BYPASS_COMPOSITOR_HINT_ON)
+
+        xlib.XChangeProperty(self._x_display, self._window,
+                             name, XA_CARDINAL, 32,
+                             xlib.PropModeReplace,
+                             cast(ptr, POINTER(c_ubyte)), 1)
+
         # Create input context.  A good but very outdated reference for this
         # is http://www.sbin.org/doc/Xlib/chapt_11.html
         if _have_utf8 and not self._x_ic:
