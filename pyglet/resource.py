@@ -449,8 +449,12 @@ class Loader(object):
         font.add_file(file)
 
     def _alloc_image(self, name, atlas=True):
-        file = self.file(name)
-        img = pyglet.image.load(name, file=file)
+        try:
+            file = self.file(name)
+            img = pyglet.image.load(name, file=file)
+        finally:
+            file.close()
+
         if not atlas:
             return img.get_texture(True)
 
