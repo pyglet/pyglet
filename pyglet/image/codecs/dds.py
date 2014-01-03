@@ -47,7 +47,7 @@ from pyglet.gl import *
 from pyglet.image import CompressedImageData
 from pyglet.image import codecs
 from pyglet.image.codecs import s3tc
-from pyglet.compat import izip_longest
+from pyglet.compat import izip_longest as compat_izip_longest
 
 class DDSException(codecs.ImageDecodeException):
     exception_priority = 0
@@ -87,7 +87,9 @@ class _filestruct(object):
         if len(data) < self.get_size():
             raise DDSException('Not a DDS file')
         items = struct.unpack(self.get_format(), data)
-        for field, value in izip_longest(self._fields, items, fillvalue=None):
+        for field, value in compat_izip_longest(self._fields,
+                                                items,
+                                                fillvalue=None):
             setattr(self, field[0], value)
 
     def __repr__(self):
