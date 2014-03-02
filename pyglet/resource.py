@@ -453,7 +453,10 @@ class Loader(object):
             file = self.file(name)
             img = pyglet.image.load(name, file=file)
         finally:
-            file.close()
+            try:
+                file.close()
+            except UnboundLocalError:
+                pass
 
         if not atlas:
             return img.get_texture(True)
