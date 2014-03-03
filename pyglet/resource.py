@@ -449,14 +449,11 @@ class Loader(object):
         font.add_file(file)
 
     def _alloc_image(self, name, atlas=True):
+        file = self.file(name)
         try:
-            file = self.file(name)
             img = pyglet.image.load(name, file=file)
         finally:
-            try:
-                file.close()
-            except UnboundLocalError:
-                pass
+            file.close()
 
         if not atlas:
             return img.get_texture(True)
