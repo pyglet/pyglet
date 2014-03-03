@@ -114,6 +114,11 @@ def get_script_home():
     If none of the above cases apply and the file for ``__main__`` cannot
     be determined the working directory is returned.
 
+    When the script is being run by a Python profiler, this function
+    may return the directory where the profiler is running instead of
+    the directory of the real script. To workaround this behaviour the
+    full path to the real script can be specified in `pyglet.resource.path`.
+
     :rtype: str
     '''
 
@@ -126,7 +131,7 @@ def get_script_home():
     else:
         main = sys.modules['__main__']
         if hasattr(main, '__file__'):
-            return os.path.dirname(main.__file__)
+            return os.path.dirname(os.path.abspath(main.__file__))
         else:
             # cx_Freeze
             return os.path.dirname(sys.executable)
