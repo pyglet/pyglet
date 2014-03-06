@@ -103,9 +103,10 @@ class PILImageEncoder(ImageEncoder):
             format = 'RGBA'
         pitch = -(image.width * len(format))
 
-        # Note: Don't try and use frombuffer(..); different versions of
-        # PIL will orient the image differently.
-        pil_image = Image.fromstring(
+        # fromstring is deprecated, replaced by tobytes in Pillow (PIL fork)
+        # (1.1.7) PIL still uses it
+        image_from_fn = getattr(Image, "frombytes", getattr(Image, "fromstring"))
+        pil_image = image_from_fn(
             format, (image.width, image.height), image.get_data(format, pitch))
 
         try:
