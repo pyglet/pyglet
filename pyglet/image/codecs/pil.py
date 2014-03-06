@@ -103,7 +103,7 @@ class PILImageEncoder(ImageEncoder):
             format = 'RGBA'
         pitch = -(image.width * len(format))
 
-        # fromstring is deprecated, replaced by tobytes in Pillow (PIL fork)
+        # fromstring is deprecated, replaced by frombytes in Pillow (PIL fork)
         # (1.1.7) PIL still uses it
         image_from_fn = getattr(Image, "frombytes", getattr(Image, "fromstring"))
         pil_image = image_from_fn(
