@@ -575,9 +575,9 @@ class Batch(object):
             # Draw domains using this group
             domain_map = self.group_map[group]
             for (_, mode, _), domain in domain_map.items():
-                for list in vertex_lists:
-                    if list.domain is domain:
-                        list.draw(mode)
+                for alist in vertex_lists:
+                    if alist.domain is domain:
+                        alist.draw(mode)
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
