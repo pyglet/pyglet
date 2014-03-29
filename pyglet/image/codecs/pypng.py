@@ -104,6 +104,12 @@ _adam7 = ((0, 0, 8, 8),
           (1, 0, 2, 2),
           (0, 1, 1, 2))
 
+# Conditionally convert to bytes.  Works on Python 2 and Python 3.
+try:
+    bytes('', 'ascii')
+    def strtobytes(x): return bytes(x, 'iso8859-1')
+except (NameError, TypeError):
+    strtobytes = str
 
 def interleave_planes(ipixels, apixels, ipsize, apsize):
     """
@@ -309,7 +315,7 @@ class Writer:
         if len(data):
             compressed = compressor.compress(data.tostring())
         else:
-            compressed = ''
+            compressed = strtobytes('')
         flushed = compressor.flush()
         if len(compressed) or len(flushed):
             # print >> sys.stderr, len(data), len(compressed), len(flushed)
