@@ -226,6 +226,14 @@ def create(width, height, pattern=None):
         pattern = SolidColorImagePattern()
     return pattern.create_image(width, height)
 
+def color_as_bytes(color):
+    if sys.version.startswith('2'):
+        return '%c%c%c%c' % color
+    else:
+        if len(color) != 4:
+            raise TypeError("color is expected to have 4 components")
+        return bytes(color)
+
 class ImagePattern(object):
     '''Abstract image creation class.'''
     def create_image(self, width, height):
@@ -253,7 +261,7 @@ class SolidColorImagePattern(ImagePattern):
                 color to fill with.
 
         '''
-        self.color = '%c%c%c%c' % color
+        self.color = color_as_bytes(color)
 
     def create_image(self, width, height):
         data = self.color * width * height
@@ -277,8 +285,8 @@ class CheckerImagePattern(ImagePattern):
                 bottom-left corners of the image.
 
         '''
-        self.color1 = '%c%c%c%c' % color1
-        self.color2 = '%c%c%c%c' % color2
+        self.color1 = color_as_bytes(color1)
+        self.color2 = color_as_bytes(color2)
 
     def create_image(self, width, height):
         hw = width // 2
