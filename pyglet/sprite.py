@@ -209,8 +209,8 @@ class Sprite(event.EventDispatcher):
             `group` : `Group`
                 Optional parent group of the sprite.
             `usage` : str
-                Vertex buffer object usage hint, one of ``"none"`` (default),
-                ``"stream"``, ``"dynamic"`` or ``"static"``.  Applies
+                Vertex buffer object usage hint, one of ``"none"``,
+                ``"stream"``, ``"dynamic"`` (default) or ``"static"``.  Applies
                 only to vertex data.
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
