@@ -14,12 +14,12 @@ occuring.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from StringIO import StringIO
 import unittest
 import base_save
 
 from pyglet.gl import *
 from pyglet import image
+from pyglet.compat import BytesIO
 
 class TEST_BUFFER_SAVE(base_save.TestSave):
     alpha = False
@@ -37,21 +37,21 @@ class TEST_BUFFER_SAVE(base_save.TestSave):
         glColor4f(1, 1, 1, 1)
 
     def load_texture(self):
-        print 'Drawing scene...'
+        print('Drawing scene...')
         self.window.set_visible()
         self.window.dispatch_events()
         self.draw()
 
-        print 'Saving colour image...'
+        print('Saving colour image...')
         img = image.get_buffer_manager().get_color_buffer()
-        file = StringIO()
+        file = BytesIO()
         img.save('buffer.png', file)
 
-        print 'Loading colour image as texture...'
+        print('Loading colour image as texture...')
         file.seek(0)
         self.saved_texture = image.load('buffer.png', file)
 
-        print 'Done.'
+        print('Done.')
         self.window.set_visible(False)
 
 if __name__ == '__main__':
