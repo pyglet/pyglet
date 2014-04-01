@@ -14,35 +14,40 @@ from pyglet.window import *
 
 __noninteractive = True
 
+def colorbyte(color):
+    if sys.version.startswith('2'):
+        return '%c' % color
+    else:
+        return bytes((color,))
+
 class TestTexture3D(unittest.TestCase):
     def create_image(self, width, height, color):
-        data = ('%c' % color) * (width * height)
+        data =  colorbyte(color) * (width * height)
         return ImageData(width, height, 'L', data)
 
     def check_image(self, image, width, height, color):
         self.assertTrue(image.width == width)
         self.assertTrue(image.height == height)
-        color = '%c' % (color)
         image = image.image_data
         data = image.get_data('L', image.width)
-        self.assertTrue(data == color * len(data))
+        self.assertTrue(data == colorbyte(color) * len(data))
 
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
-        data = ''
+        data = b''
         color = 1
         width = itemwidth * cols + colpad * (cols - 1)
         height = itemheight * rows + rowpad * (rows - 1)
         for row in range(rows):
-            rowdata = ''
+            rowdata = b''
             for col in range(cols):
-                rowdata += ('%c' % color) * itemwidth
+                rowdata += colorbyte(color) * itemwidth
                 if col < cols - 1:
-                    rowdata += '\0' * colpad
+                    rowdata += b'\0' * colpad
                 color += 1
 
             data += rowdata * itemheight
             if row < rows - 1:
-                data += (width * '\0') * rowpad
+                data += (width * b'\0') * rowpad
         assert len(data) == width * height
         self.image = ImageData(width, height, 'L', data)
         grid = ImageGrid(self.image, rows, cols,
@@ -53,10 +58,9 @@ class TestTexture3D(unittest.TestCase):
         self.assertTrue(cellimage.width == self.grid.item_width)
         self.assertTrue(cellimage.height == self.grid.item_height)
 
-        color = '%c' % (cellindex + 1)
         cellimage = cellimage.image_data
         data = cellimage.get_data('L', cellimage.width)
-        self.assertTrue(data == color * len(data))
+        self.assertTrue(data == colorbyte(cellindex + 1) * len(data))
 
     def setUp(self):
         self.w = Window(visible=False)
