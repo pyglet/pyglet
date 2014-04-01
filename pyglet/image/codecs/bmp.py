@@ -157,7 +157,7 @@ class BMPImageDecoder(ImageDecoder):
         bytes = file.read()
         buffer = ctypes.c_buffer(bytes)
 
-        if bytes[:2] != 'BM':
+        if bytes[:2] != b'BM':
             raise ImageDecodeException(
                 'Not a Windows bitmap file: %r' % (filename or file))
 
