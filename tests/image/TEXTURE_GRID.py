@@ -14,23 +14,29 @@ from pyglet.window import *
 
 __noninteractive = True
 
+def colorbyte(color):
+    if sys.version.startswith('2'):
+        return '%c' % color
+    else:
+        return bytes((color,))
+
 class TestTextureGrid(unittest.TestCase):
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
-        data = ''
+        data = b''
         color = 1
         width = itemwidth * cols + colpad * (cols - 1)
         height = itemheight * rows + rowpad * (rows - 1)
         for row in range(rows):
-            rowdata = ''
+            rowdata = b''
             for col in range(cols):
-                rowdata += ('%c' % color) * itemwidth
+                rowdata += colorbyte(color) * itemwidth
                 if col < cols - 1:
-                    rowdata += '\0' * colpad
+                    rowdata += b'\0' * colpad
                 color += 1
 
             data += rowdata * itemheight
             if row < rows - 1:
-                data += (width * '\0') * rowpad
+                data += (width * b'\0') * rowpad
         assert len(data) == width * height
         self.image = ImageData(width, height, 'L', data)
         self.grid = ImageGrid(self.image, rows, cols,
@@ -40,7 +46,7 @@ class TestTextureGrid(unittest.TestCase):
         self.assertTrue(cellimage.width == self.grid.item_width)
         self.assertTrue(cellimage.height == self.grid.item_height)
 
-        color = '%c' % (cellindex + 1)
+        color = colorbyte(cellindex + 1)
         cellimage = cellimage.image_data
         data = cellimage.get_data('L', cellimage.width)
         self.assertTrue(data == color * len(data))
