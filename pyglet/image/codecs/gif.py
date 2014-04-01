@@ -81,7 +81,7 @@ def read(file):
     # 17. Header
     signature = file.read(3)
     version = file.read(3)
-    if signature != 'GIF':
+    if signature != b'GIF':
         raise ImageDecodeException('Not a GIF stream')
 
     stream = GIFStream()

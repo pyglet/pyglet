@@ -182,6 +182,9 @@ image
     image-atlas
         image.ATLAS                             GENERIC
 
+    image-gdkpixbuf2
+        image.GIF_LOAD                          X11
+
 font
     font-render
         font.DEFAULT                            X11 WIN OSX
