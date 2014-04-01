@@ -12,13 +12,9 @@ from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
-__noninteractive = True
+from texture_base import colorbyte
 
-def colorbyte(color):
-    if sys.version.startswith('2'):
-        return '%c' % color
-    else:
-        return bytes((color,))
+__noninteractive = True
 
 class TestTextureGrid(unittest.TestCase):
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
