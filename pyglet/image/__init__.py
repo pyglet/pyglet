@@ -1154,9 +1154,9 @@ class ImageDataRegion(ImageData):
 
         self._ensure_string_data()
         data = self._convert(self._current_format, abs(self._current_pitch))
-        rows = re.findall('.' * abs(self._current_pitch), data, re.DOTALL)
+        rows = re.findall(b'.' * abs(self._current_pitch), data, re.DOTALL)
         rows = [row[x1:x2] for row in rows[self.y:self.y+self.height]]
-        self._current_data = ''.join(rows)
+        self._current_data = b''.join(rows)
         self._current_pitch = self.width * len(self._current_format)
         self._current_texture = None
         self.x = 0
