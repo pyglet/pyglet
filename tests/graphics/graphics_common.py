@@ -203,7 +203,7 @@ class GraphicsIndexedGenericTestCase(GraphicsGenericTestCase):
         GraphicsGenericTestCase.setUp(self)
 
         # we use half of the data so we repeat vertices.
-        self.index_data = range(self.n_vertices/2) + range(self.n_vertices/2)
+        self.index_data = range(self.n_vertices//2) * 2
         random.seed(1)
         random.shuffle(self.index_data)
 
