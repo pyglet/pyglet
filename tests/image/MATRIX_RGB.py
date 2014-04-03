@@ -7,6 +7,8 @@ You should see the RGB test image correctly rendered.  Press ESC to
 end the test.
 '''
 
+from future import print_function
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
@@ -21,7 +23,7 @@ class TEST_MATRIX_RGB(base_load.TestLoad):
     
     def load_image(self):
         if not gl_info.have_extension('GL_ARB_imaging'):
-            print 'GL_ARB_imaging is not present, skipping test.'
+            print('GL_ARB_imaging is not present, skipping test.')
             self.has_exit = True
         else:
             # Load image as usual then rearrange components
