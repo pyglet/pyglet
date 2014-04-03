@@ -37,6 +37,8 @@
 Reference: http://msdn2.microsoft.com/en-us/library/bb172993.aspx
 '''
 
+from __future__ import division
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
@@ -143,12 +145,12 @@ class DDPIXELFORMAT(_filestruct):
     ]
 
 _compression_formats = {
-    ('DXT1', False): (GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  s3tc.decode_dxt1_rgb),
-    ('DXT1', True):  (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, s3tc.decode_dxt1_rgba),
-    ('DXT3', False): (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
-    ('DXT3', True):  (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
-    ('DXT5', False): (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
-    ('DXT5', True):  (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
+    (b'DXT1', False): (GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  s3tc.decode_dxt1_rgb),
+    (b'DXT1', True):  (GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, s3tc.decode_dxt1_rgba),
+    (b'DXT3', False): (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
+    (b'DXT3', True):  (GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, s3tc.decode_dxt3),
+    (b'DXT5', False): (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
+    (b'DXT5', True):  (GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, s3tc.decode_dxt5),
 }
 
 def _check_error():
@@ -163,7 +165,7 @@ class DDSImageDecoder(codecs.ImageDecoder):
     def decode(self, file, filename):
         header = file.read(DDSURFACEDESC2.get_size())
         desc = DDSURFACEDESC2(header)
-        if desc.dwMagic != 'DDS ' or desc.dwSize != 124:
+        if desc.dwMagic != b'DDS ' or desc.dwSize != 124:
             raise DDSException('Invalid DDS file (incorrect header).')
 
         width = desc.dwWidth
@@ -187,13 +189,13 @@ class DDSImageDecoder(codecs.ImageDecoder):
 
         has_alpha = desc.ddpfPixelFormat.dwRGBAlphaBitMask != 0
 
-        format, decoder = _compression_formats.get(
-            (desc.ddpfPixelFormat.dwFourCC, has_alpha), None)
-        if not format:
+        selector = (desc.ddpfPixelFormat.dwFourCC, has_alpha)
+        if selector not in _compression_formats:
             raise DDSException('Unsupported texture compression %s' % \
                 desc.ddpfPixelFormat.dwFourCC)
 
-        if format == GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+        dformat, decoder = _compression_formats[selector]
+        if dformat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
             block_size = 8
         else:
             block_size = 16
@@ -207,13 +209,13 @@ class DDSImageDecoder(codecs.ImageDecoder):
                 w = 1
             if not h:
                 h = 1
-            size = ((w + 3) / 4) * ((h + 3) / 4) * block_size
+            size = ((w + 3) // 4) * ((h + 3) // 4) * block_size
             data = file.read(size)
             datas.append(data)
             w >>= 1
             h >>= 1
 
-        image = CompressedImageData(width, height, format, datas[0],
+        image = CompressedImageData(width, height, dformat, datas[0],
             'GL_EXT_texture_compression_s3tc', decoder)
         level = 0
         for data in datas[1:]:
