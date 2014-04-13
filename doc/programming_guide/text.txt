@@ -2,8 +2,10 @@ Displaying text
 ===============
 
 pyglet provides the `font` module for rendering high-quality antialiased
-Unicode glyphs efficiently.  Any installed font on the operating system can be
-used, or you can supply your own font with your application.  
+Unicode glyphs efficiently.  Any installed font on the operating system is seen 
+by pyglet, or you can supply your own font with your application.  
+
+Notice that not all font formats are supported, see `Supported font formats`_
 
 Text rendering is performed with the `text` module, which can display
 word-wrapped formatted text.  There is also support for interactive editing of
@@ -622,7 +624,9 @@ If the custom font is distributed with your application, consider using the
 Supported font formats
 ^^^^^^^^^^^^^^^^^^^^^^
 
-pyglet can load any font file that the operating system natively supports.
+pyglet can load any font file that the operating system natively supports, 
+but not all formats all fully supported.
+
 The list of supported formats is shown in the table below.
 
     .. list-table::
@@ -648,7 +652,7 @@ The list of supported formats is shown in the table below.
           - 
           - X 
           - 
-        * - OpenType (.ttf) [#opentype]_
+        * - OpenType (.otf) [#opentype]_
           -
           - X
           -
@@ -666,7 +670,10 @@ The list of supported formats is shown in the table below.
                Mac OS X, the files can be used on any platform.  pyglet
                does not currently make use of the additional kerning and
                ligature information within OpenType fonts.
+               In Windows a few will use the variant DEVICE_FONTTYPE and may render bad, by example inconsolata.otf, from http://levien.com/type/myfonts/inconsolata.html
 
+Some of the fonts found in internet may miss information for some operating systems, others may have been written with work in progress tools not fully compliant with standards. Using the font with text editors or fonts viewers can help to determine if the font is broken.
+ 
 OpenGL font considerations
 --------------------------
 
