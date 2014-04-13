@@ -670,9 +670,14 @@ The list of supported formats is shown in the table below.
                Mac OS X, the files can be used on any platform.  pyglet
                does not currently make use of the additional kerning and
                ligature information within OpenType fonts.
-               In Windows a few will use the variant DEVICE_FONTTYPE and may render bad, by example inconsolata.otf, from http://levien.com/type/myfonts/inconsolata.html
+               In Windows a few will use the variant DEVICE_FONTTYPE and may
+			   render bad, by example inconsolata.otf, from 
+			   http://levien.com/type/myfonts/inconsolata.html
 
-Some of the fonts found in internet may miss information for some operating systems, others may have been written with work in progress tools not fully compliant with standards. Using the font with text editors or fonts viewers can help to determine if the font is broken.
+Some of the fonts found in internet may miss information for some operating 
+systems, others may have been written with work in progress tools not fully 
+compliant with standards. Using the font with text editors or fonts viewers 
+can help to determine if the font is broken.
  
 OpenGL font considerations
 --------------------------
