@@ -195,6 +195,17 @@ was captured, wait for user confirmation).  You can call
 capture_regression_image() several times; only the final image will be
 used.
 
+Python 3
+--------
+
+The tests have to be processed by 2to3 in order to run them with Python 3.
+
+This can be done with::
+
+    2to3 --output-dir=tests3 -W -n tests
+
+And then run the tests int tests3 directory.
+
 '''
 
 from __future__ import print_function
@@ -210,16 +221,6 @@ import re
 import sys
 import time
 import unittest
-
-# --- Python 2/3 compatibility helpers ---
-PY3K = True if sys.version_info[0] == 3 else False
-
-def prompt(message):
-    if PY3K:
-        return input(message)
-    else:
-        return raw_input(message)
-
 
 # So we can find tests.regression and ensure local pyglet copy is tested.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -292,7 +293,7 @@ class TestCase(object):
         if module.__doc__:
             print('    ' + module.__doc__.replace('\n','\n    '))
         if module_interactive:
-            prompt('Press return to begin test...')
+            raw_input('Press return to begin test...')
 
 
         suite = unittest.TestLoader().loadTestsFromModule(module)
@@ -316,13 +317,13 @@ class TestCase(object):
             len(result.failures) == 0 and 
             len(result.errors) == 0):
 #             print(module.__doc__)
-            user_result = prompt('Passed [Yn]: ')
+            user_result = raw_input('Passed [Yn]: ')
             while user_result and user_result not in 'YyNn':
                 print("Unrecognized response '%s'" % user_result)
-                user_result = prompt('Passed [Yn]: ')
+                user_result = raw_input('Passed [Yn]: ')
             if user_result and user_result in 'Nn':
                 print('Enter failure description: ')
-                description = prompt('> ')
+                description = raw_input('> ')
                 options.log.error('User marked fail for %s', self)
                 options.log.error(description)
             else:
