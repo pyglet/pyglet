@@ -268,7 +268,7 @@ less featureful encoding, see the `HTML` encoding, described below.
 
 The following example shows a simple attributed text encoded document:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -289,7 +289,7 @@ The following example shows a simple attributed text encoded document:
 Newlines are ignored, unless two are made in succession, indicating a
 paragraph break.  Line breaks can be forced with the ``\\`` sequence:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -301,7 +301,7 @@ paragraph break.  Line breaks can be forced with the ``\\`` sequence:
 Line breaks are also forced when the text is indented with one or more spaces
 or tabs, which is useful for typesetting code:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -314,7 +314,7 @@ or tabs, which is useful for typesetting code:
 
 Text can be styled using a attribute tag:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -330,7 +330,7 @@ internally.
 
 Some more examples follow:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -343,7 +343,7 @@ red text for the word "world").
 Paragraph styles can be set by prefixing the style name with a period (.).
 This ensures the style range exactly encompasses the paragraph:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -355,7 +355,7 @@ Attributed text can be loaded as a Unicode string.  In addition, any character
 can be inserted given its Unicode code point in numeric form, either in
 decimal:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -363,7 +363,7 @@ decimal:
 
 or hexadecimal:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -371,7 +371,7 @@ or hexadecimal:
 
 The characters ``{`` and ``}`` can be escaped by duplicating them:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
@@ -402,7 +402,7 @@ a string of HTML::
 
 The following elements are supported:
 
-.. class:: plain
+.. rst-class:: plain
 
   ::
 
