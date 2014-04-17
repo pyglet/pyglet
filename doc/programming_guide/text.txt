@@ -671,8 +671,8 @@ The list of supported formats is shown in the table below.
                does not currently make use of the additional kerning and
                ligature information within OpenType fonts.
                In Windows a few will use the variant DEVICE_FONTTYPE and may
-			   render bad, by example inconsolata.otf, from 
-			   http://levien.com/type/myfonts/inconsolata.html
+               render bad, by example inconsolata.otf, from
+               http://levien.com/type/myfonts/inconsolata.html
 
 Some of the fonts found in internet may miss information for some operating 
 systems, others may have been written with work in progress tools not fully 
