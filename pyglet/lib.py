@@ -307,7 +307,8 @@ class LinuxLibraryLoader(LibraryLoader):
             pass
 
         try:
-            directories.extend([dir.strip() for dir in open('/etc/ld.so.conf')])
+            with open('/etc/ld.so.conf') as fid:
+                directories.extend([dir.strip() for dir in fid])
         except IOError:
             pass
 
