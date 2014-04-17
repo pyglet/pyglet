@@ -1439,9 +1439,9 @@ def get_audio_driver():
             elif driver_name == 'silent':
                 _audio_driver = get_silent_audio_driver()
                 break
-        except:
+        except Exception as exp:
             if _debug:
-                print 'Error importing driver %s' % driver_name
+                print 'Error importing driver %s:\n%s' % (driver_name, str(exp))
     return _audio_driver
 
 def get_silent_audio_driver():
