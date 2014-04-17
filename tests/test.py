@@ -197,6 +197,8 @@ used.
 
 '''
 
+from __future__ import print_function
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -313,7 +315,7 @@ class TestCase(object):
         if (module_interactive and 
             len(result.failures) == 0 and 
             len(result.errors) == 0):
-#             print module.__doc__
+#             print(module.__doc__)
             user_result = prompt('Passed [Yn]: ')
             while user_result and user_result not in 'YyNn':
                 print("Unrecognized response '%s'" % user_result)
