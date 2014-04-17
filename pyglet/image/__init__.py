@@ -128,6 +128,8 @@ use of the data in this arbitrary format).
 
 '''
 
+from __future__ import division
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
@@ -138,7 +140,6 @@ import weakref
 
 from ctypes import *
 from math import ceil
-from StringIO import StringIO
 
 from pyglet import gl
 from pyglet.gl import *
@@ -147,7 +148,7 @@ from pyglet import graphics
 from pyglet.window import *
 
 from pyglet.image import atlas
-from pyglet.compat import asbytes, bytes_type
+from pyglet.compat import asbytes, bytes_type, BytesIO
 
 class ImageException(Exception):
     pass
@@ -180,7 +181,7 @@ def load(filename, file=None, decoder=None):
         opened_file = None
 
     if not hasattr(file, 'seek'):
-        file = StringIO(file.read())
+        file = BytesIO(file.read())
 
     try:
         if decoder:
@@ -1760,11 +1761,11 @@ class TextureRegion(Texture):
         owner_v2 = owner.tex_coords[7]
         scale_u = owner_u2 - owner_u1
         scale_v = owner_v2 - owner_v1
-        u1 = x / float(owner.width) * scale_u + owner_u1
-        v1 = y / float(owner.height) * scale_v + owner_v1
-        u2 = (x + width) / float(owner.width) * scale_u + owner_u1
-        v2 = (y + height) / float(owner.height) * scale_v + owner_v1
-        r = z / float(owner.images) + owner.tex_coords[2]
+        u1 = x / owner.width * scale_u + owner_u1
+        v1 = y / owner.height * scale_v + owner_v1
+        u2 = (x + width) / owner.width * scale_u + owner_u1
+        v2 = (y + height) / owner.height * scale_v + owner_v1
+        r = z / owner.images + owner.tex_coords[2]
         self.tex_coords = (u1, v1, r, u2, v1, r, u2, v2, r, u1, v2, r)
 
     def get_image_data(self):
@@ -1880,10 +1881,10 @@ class TileableTexture(Texture):
         The image will be tiled with the bottom-left corner of the destination
         rectangle aligned with the anchor point of this texture.
         '''
-        u1 = self.anchor_x / float(self.width)
-        v1 = self.anchor_y / float(self.height)
-        u2 = u1 + width / float(self.width)
-        v2 = v1 + height / float(self.height)
+        u1 = self.anchor_x / self.width
+        v1 = self.anchor_y / self.height
+        u2 = u1 + width / self.width
+        v2 = v1 + height / self.height
         w, h = width, height
         t = self.tex_coords
         array = (GLfloat * 32)(
@@ -2216,10 +2217,10 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
         if item_width is None:
             item_width = \
-                int((image.width - column_padding * (columns - 1)) / columns)
+                (image.width - column_padding * (columns - 1)) // columns
         if item_height is None:
             item_height = \
-                int((image.height - row_padding * (rows - 1)) / rows) 
+                (image.height - row_padding * (rows - 1)) // rows 
         self.image = image
         self.rows = rows
         self.columns = columns
@@ -2348,7 +2349,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 if type(index.start) is tuple:
                     row1, col1 = index.start
                 elif type(index.start) is int:
-                    row1 = index.start / self.columns
+                    row1 = index.start // self.columns
                     col1 = index.start % self.columns
                 assert row1 >= 0 and col1 >= 0 and \
                        row1 < self.rows and col1 < self.columns
@@ -2356,7 +2357,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 if type(index.stop) is tuple:
                     row2, col2 = index.stop
                 elif type(index.stop) is int:
-                    row2 = index.stop / self.columns
+                    row2 = index.stop // self.columns
                     col2 = index.stop % self.columns
                 assert row2 >= 0 and col2 >= 0 and \
                        row2 <= self.rows and col2 <= self.columns
@@ -2427,7 +2428,7 @@ def load_animation(filename, file=None, decoder=None):
     if not file:
         file = open(filename, 'rb')
     if not hasattr(file, 'seek'):
-        file = StringIO(file.read())
+        file = BytesIO(file.read())
 
     if decoder:
         return decoder.decode(file, filename)
