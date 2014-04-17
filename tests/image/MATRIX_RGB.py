@@ -7,7 +7,7 @@ You should see the RGB test image correctly rendered.  Press ESC to
 end the test.
 '''
 
-from future import print_function
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
