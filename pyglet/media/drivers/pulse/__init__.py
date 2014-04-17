@@ -57,7 +57,7 @@ class PulseAudioDriver(AbstractAudioDriver):
 
         # Create context
         app_name = self.get_app_name()
-        self._context = pa.pa_context_new(self.mainloop, app_name)
+        self._context = pa.pa_context_new(self.mainloop, app_name.encode('ASCII'))
 
         # Context state callback 
         self._state_cb_func = pa.pa_context_notify_cb_t(self._state_cb)
@@ -208,7 +208,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             context.lock()
             # Create stream
             self.stream = pa.pa_stream_new(context._context, 
-                                           str(id(self)),
+                                           str(id(self)).encode('ASCII'),
                                            sample_spec,
                                            channel_map)
             check_not_null(self.stream)
