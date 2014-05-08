@@ -38,7 +38,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import sys
 import struct
 import ctypes
 import threading
@@ -55,7 +54,7 @@ from pyglet.media import \
 from pyglet.compat import asbytes, asbytes_filename
 
 
-if sys.platform.startswith('win') and struct.calcsize('P') == 8:
+if pyglet.compat_platform.startswith('win') and struct.calcsize('P') == 8:
     av = 'avbin64'
 else:
     av = 'avbin'

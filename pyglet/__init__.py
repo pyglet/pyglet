@@ -59,6 +59,11 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:
 version = '1.2alpha1'
 
+# Pyglet platform treats *BSD systems as Linux
+compat_platform = sys.platform
+if "bsd" in compat_platform:
+    compat_platform = "linux-compat"
+
 def _require_ctypes_version(version):
     # Check ctypes version
     import ctypes
@@ -197,7 +202,7 @@ _option_types = {
 
 def _choose_darwin_platform():
     """Choose between Darwin's Carbon and Cocoa implementations."""
-    if sys.platform != 'darwin':
+    if compat_platform != 'darwin':
         return
     import struct
     numbits = 8*struct.calcsize("P")
@@ -227,7 +232,7 @@ def _read_environment():
             pass
 _read_environment()
 
-if sys.platform == 'cygwin':
+if compat_platform == 'cygwin':
     # This hack pretends that the posix-like ctypes provides windows
     # functionality.  COM does not work with this hack, so there is no
     # DirectSound support.

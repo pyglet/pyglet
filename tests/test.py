@@ -225,6 +225,7 @@ import unittest
 # So we can find tests.regression and ensure local pyglet copy is tested.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+from pyglet import compat_platform
 import tests.regression
 import pyglet.image
 
@@ -530,12 +531,13 @@ def main():
         'linux': 'X11',
         'linux2': 'X11',
         'linux3': 'X11',
+        'linux-compat': 'X11',
         'win32': 'WIN',
         'cygwin': 'WIN',
         'darwin': 'OSX'
     }
-    if sys.platform in platform_capabilities:
-        capabilities.append(platform_capabilities[sys.platform])
+    if compat_platform in platform_capabilities:
+        capabilities.append(platform_capabilities[compat_platform])
 
     script_root = os.path.dirname(__file__)
     plan_filename = os.path.normpath(os.path.join(script_root, 'plan.txt'))
@@ -594,6 +596,7 @@ def main():
     options.log.info('Capabilities are: %s', ', '.join(options.capabilities))
     options.log.info('sys.platform = %s', sys.platform)
     options.log.info('pyglet.version = %s', pyglet.version)
+    options.log.info('pyglet.platform = %s', pyglet.platform)
     options.log.info('Reading test plan from %s', options.plan)
 
     plan = TestPlan.from_file(options.plan)

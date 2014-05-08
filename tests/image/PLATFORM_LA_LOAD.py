@@ -9,13 +9,13 @@ __version__ = '$Id$'
 
 import unittest
 import base_load
-import sys
+from pyglet import compat_platform
 
-if sys.platform.startswith('linux'):
+if compat_platform.startswith('linux'):
     from pyglet.image.codecs.gdkpixbuf2 import GdkPixbuf2ImageDecoder as dclass
-elif sys.platform in ('win32', 'cygwin'):
+elif compat_platform in ('win32', 'cygwin'):
     from pyglet.image.codecs.gdiplus import GDIPlusDecoder as dclass
-elif sys.platform == 'darwin':
+elif compat_platform == 'darwin':
     from pyglet import options as pyglet_options
     if pyglet_options['darwin_cocoa']:
         from pyglet.image.codecs.quartz import QuartzImageDecoder as dclass

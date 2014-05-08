@@ -565,14 +565,14 @@ class Text(object):
         self._layout.draw()
 
 if not getattr(sys, 'is_epydoc', False):
-    if sys.platform == 'darwin':
+    if pyglet.compat_platform == 'darwin':
         if pyglet.options['darwin_cocoa']:
             from pyglet.font.quartz import QuartzFont
             _font_class = QuartzFont
         else:
             from pyglet.font.carbon import CarbonFont
             _font_class = CarbonFont
-    elif sys.platform in ('win32', 'cygwin'):
+    elif pyglet.compat_platform in ('win32', 'cygwin'):
         if pyglet.options['font'][0] == 'win32':
             from pyglet.font.win32 import Win32Font
             _font_class = Win32Font

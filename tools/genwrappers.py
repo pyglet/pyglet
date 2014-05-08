@@ -17,7 +17,7 @@ if __name__ == '__main__':
     if not os.path.exists('pyglet/window'):
         assert False, 'Run with CWD = trunk root.'
     names = sys.argv[1:]
-    if sys.platform.startswith('linux'):
+    if pyglet.compat_platform.startswith('linux'):
         if 'xlib' in names:    
             wrap('tools/wraptypes/wrap.py',
                  '-opyglet/libs/x11/xlib.py',

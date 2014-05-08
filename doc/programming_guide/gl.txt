@@ -203,12 +203,16 @@ The modules are named ``pyglet.gl.agl``, ``pyglet.gl.glx`` and
 ``pyglet.gl.wgl``.  You must only import the correct module for the running
 operating system::
 
-    if sys.platform == 'linux2':
+    if sys.platform.startswith('linux'):
         from pyglet.gl.glx import *
         glxCreatePbuffer(...)
     elif sys.platform == 'darwin':
         from pyglet.gl.agl import *
         aglCreatePbuffer(...)
+
+Alternativally you can use ``pyglet.compat_platform`` to support platforms that are
+compatible with platforms not officially supported by pyglet. For example
+FreeBSD systems will appear as ``linux-compat`` in ``pyglet.compat_platform``.
 
 There are convenience modules for querying the version and extensions of WGL
 and GLX named ``pyglet.gl.wgl_info`` and ``pyglet.gl.glx_info``, respectively.

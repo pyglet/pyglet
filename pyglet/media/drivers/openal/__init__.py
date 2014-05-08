@@ -35,7 +35,6 @@
 
 import ctypes
 import heapq
-import sys
 import threading
 import time
 import Queue
@@ -606,7 +605,7 @@ class OpenALDriver(AbstractAudioDriver):
 
     def get_extensions(self):
         extensions = alc.alcGetString(self._device, alc.ALC_EXTENSIONS)
-        if sys.platform == 'darwin' or sys.platform.startswith('linux'):
+        if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
             return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
         else:
             return _split_nul_strings(extensions)

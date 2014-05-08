@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
-import sys as _sys
-
-from pyglet import gl
+from pyglet import gl, compat_platform
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 
@@ -265,7 +263,7 @@ class Context(object):
         ('_workaround_vbo_finish',
          lambda info: ('ATI' in info.get_renderer() and 
                        info.have_version(1, 5) and
-                       _sys.platform == 'darwin')),
+                       compat_platform == 'darwin')),
     ]
 
     def __init__(self, config, context_share=None):

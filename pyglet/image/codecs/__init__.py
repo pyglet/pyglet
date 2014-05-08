@@ -53,7 +53,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import os.path
-import sys
+from pyglet import compat_platform
 
 _decoders = []              # List of registered ImageDecoders
 _decoder_extensions = {}    # Map str -> list of matching ImageDecoders
@@ -185,7 +185,7 @@ def add_default_image_codecs():
 
     # Mac OS X default: Quicktime for Carbon, Quartz for Cocoa.
     # TODO: Make ctypes Quartz the default for both Carbon & Cocoa.
-    if sys.platform == 'darwin':
+    if compat_platform == 'darwin':
         try:
             from pyglet import options as pyglet_options
             if pyglet_options['darwin_cocoa']:
@@ -200,7 +200,7 @@ def add_default_image_codecs():
             pass
 
     # Windows XP default: GDI+
-    if sys.platform in ('win32', 'cygwin'):
+    if compat_platform in ('win32', 'cygwin'):
         try:
             import pyglet.image.codecs.gdiplus
             add_encoders(gdiplus)
@@ -209,7 +209,7 @@ def add_default_image_codecs():
             pass
 
     # Linux default: GdkPixbuf 2.0
-    if sys.platform.startswith('linux'):
+    if compat_platform.startswith('linux'):
         try:
             import pyglet.image.codecs.gdkpixbuf2
             add_encoders(gdkpixbuf2)

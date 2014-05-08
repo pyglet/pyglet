@@ -143,7 +143,8 @@ class LibraryLoader(object):
 
     find_library = lambda self, name: ctypes.util.find_library(name)
 
-    platform = sys.platform
+    platform = pyglet.compat_platform
+    # this is only for library loading, don't include it in pyglet.platform
     if platform == 'cygwin':
         platform = 'win32'
 
@@ -204,7 +205,7 @@ class MachOLibraryLoader(LibraryLoader):
         # pyinstaller.py sets sys.frozen to True, and puts dylibs in
         # Contents/MacOS, which path pyinstaller puts in sys._MEIPASS
         if (hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS') and
-                sys.frozen == True and sys.platform == 'darwin'):
+                sys.frozen == True and pyglet.compat_platform == 'darwin'):
             search_path.append(os.path.join(sys._MEIPASS, libname))
 
         if '/' in path:
@@ -338,9 +339,9 @@ class LinuxLibraryLoader(LibraryLoader):
 
         return self._ld_so_cache.get(path)
 
-if sys.platform == 'darwin':
+if pyglet.compat_platform == 'darwin':
     loader = MachOLibraryLoader()
-elif sys.platform.startswith('linux'):
+elif pyglet.compat_platform.startswith('linux'):
     loader = LinuxLibraryLoader()
 else:
     loader = LibraryLoader()

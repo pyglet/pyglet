@@ -38,7 +38,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import sys
 import ctypes
 
 import pyglet
@@ -135,9 +134,9 @@ link_AGL = None
 link_GLX = None
 link_WGL = None
 
-if sys.platform in ('win32', 'cygwin'):
+if pyglet.compat_platform in ('win32', 'cygwin'):
     from pyglet.gl.lib_wgl import link_GL, link_GLU, link_WGL
-elif sys.platform == 'darwin':
+elif pyglet.compat_platform == 'darwin':
     from pyglet.gl.lib_agl import link_GL, link_GLU, link_AGL
 else:
     from pyglet.gl.lib_glx import link_GL, link_GLU, link_GLX

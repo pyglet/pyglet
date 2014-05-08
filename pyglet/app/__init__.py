@@ -157,16 +157,17 @@ def exit():
     event_loop.exit()
 
 from pyglet.app.base import EventLoop
+from pyglet import compat_platform
 if _is_epydoc:
     from pyglet.app.base import PlatformEventLoop
 else:
-    if sys.platform == 'darwin':
+    if compat_platform == 'darwin':
         from pyglet import options as pyglet_options
         if pyglet_options['darwin_cocoa']:
             from pyglet.app.cocoa import CocoaEventLoop as PlatformEventLoop
         else:
             from pyglet.app.carbon import CarbonEventLoop as PlatformEventLoop
-    elif sys.platform in ('win32', 'cygwin'):
+    elif compat_platform in ('win32', 'cygwin'):
         from pyglet.app.win32 import Win32EventLoop as PlatformEventLoop
     else:
         from pyglet.app.xlib import XlibEventLoop as PlatformEventLoop

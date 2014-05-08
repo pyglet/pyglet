@@ -208,14 +208,15 @@ def _create_shadow_window():
     from pyglet import app
     app.windows.remove(_shadow_window)
 
+from pyglet import compat_platform
 from base import ObjectSpace, CanvasConfig, Context
 if _is_epydoc:
     from base import Config
-elif _sys.platform in ('win32', 'cygwin'):
+elif compat_platform in ('win32', 'cygwin'):
     from win32 import Win32Config as Config
-elif _sys.platform.startswith('linux'):
+elif compat_platform.startswith('linux'):
     from xlib import XlibConfig as Config
-elif _sys.platform == 'darwin':
+elif compat_platform == 'darwin':
     if _pyglet.options['darwin_cocoa']:
         from cocoa import CocoaConfig as Config
     else:

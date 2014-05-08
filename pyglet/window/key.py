@@ -186,8 +186,8 @@ MOD_FUNCTION    = 1 << 9
 #: Accelerator modifier.  On Windows and Linux, this is ``MOD_CTRL``, on
 #: Mac OS X it's ``MOD_COMMAND``.
 MOD_ACCEL       = MOD_CTRL
-import sys as _sys
-if _sys.platform == 'darwin':
+from pyglet import compat_platform
+if compat_platform == 'darwin':
     MOD_ACCEL   = MOD_COMMAND
 
 

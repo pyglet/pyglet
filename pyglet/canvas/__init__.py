@@ -84,7 +84,8 @@ def get_display():
 if _is_epydoc:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
 else:
-    if sys.platform == 'darwin':
+    from pyglet import compat_platform
+    if compat_platform == 'darwin':
         from pyglet import options as pyglet_options
         if pyglet_options['darwin_cocoa']:
             from pyglet.canvas.cocoa import CocoaDisplay as Display
@@ -94,7 +95,7 @@ else:
             from pyglet.canvas.carbon import CarbonDisplay as Display
             from pyglet.canvas.carbon import CarbonScreen as Screen
             from pyglet.canvas.carbon import CarbonCanvas as Canvas
-    elif sys.platform in ('win32', 'cygwin'):
+    elif compat_platform in ('win32', 'cygwin'):
         from pyglet.canvas.win32 import Win32Display as Display
         from pyglet.canvas.win32 import Win32Screen as Screen
         from pyglet.canvas.win32 import Win32Canvas as Canvas

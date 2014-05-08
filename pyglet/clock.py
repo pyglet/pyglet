@@ -142,12 +142,12 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import time
-import sys
 import ctypes
 
 import pyglet.lib
+from pyglet import compat_platform
 
-if sys.platform in ('win32', 'cygwin'):
+if compat_platform in ('win32', 'cygwin'):
     # Win32 Sleep function is only 10-millisecond resolution, so instead
     # use a waitable timer object, which has up to 100-nanosecond resolution
     # (hardware and implementation dependent, of course).
@@ -943,6 +943,7 @@ class ClockDisplay(object):
 
 def test_clock():
     import getopt
+    import sys
     test_seconds = 1 
     test_fps = 60
     show_fps = False

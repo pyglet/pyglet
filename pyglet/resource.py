@@ -162,14 +162,15 @@ def get_settings_path(name):
 
     :rtype: str
     '''
-    if sys.platform in ('cygwin', 'win32'):
+
+    if pyglet.compat_platform in ('cygwin', 'win32'):
         if 'APPDATA' in os.environ:
             return os.path.join(os.environ['APPDATA'], name)
         else:
             return os.path.expanduser('~/%s' % name)
-    elif sys.platform == 'darwin':
+    elif pyglet.compat_platform == 'darwin':
         return os.path.expanduser('~/Library/Application Support/%s' % name)
-    elif sys.platform.startswith('linux'):
+    elif pyglet.compat_platform.startswith('linux'):
         if 'XDG_CONFIG_HOME' in os.environ:
             return os.path.join(os.environ['XDG_CONFIG_HOME'], name)
         else:

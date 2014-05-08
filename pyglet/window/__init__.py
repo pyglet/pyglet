@@ -678,7 +678,7 @@ class BaseWindow(EventDispatcher):
             # TODO: Move into platform _create?
             # Not harmless on Carbon because upsets _width and _height
             # via _on_window_bounds_changed.
-            if sys.platform != 'darwin' or pyglet.options['darwin_cocoa']:
+            if pyglet.compat_platform != 'darwin' or pyglet.options['darwin_cocoa']:
                 self.set_location(*self._windowed_location)
 
     def _set_fullscreen_mode(self, mode, width, height):
@@ -1695,12 +1695,12 @@ if _is_epydoc:
     
 else:
     # Try to determine which platform to use.
-    if sys.platform == 'darwin':
+    if pyglet.compat_platform == 'darwin':
         if pyglet.options['darwin_cocoa']:
             from pyglet.window.cocoa import CocoaWindow as Window
         else:
             from pyglet.window.carbon import CarbonWindow as Window
-    elif sys.platform in ('win32', 'cygwin'):
+    elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
     else:
         # XXX HACK around circ problem, should be fixed after removal of

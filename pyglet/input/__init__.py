@@ -151,7 +151,9 @@ else:
     def get_tablets(display=None):
         return []
 
-    if sys.platform.startswith('linux'):
+    from pyglet import compat_platform
+
+    if compat_platform.startswith('linux'):
         from x11_xinput import get_devices as xinput_get_devices
         from x11_xinput_tablet import get_tablets
         from evdev import get_devices as evdev_get_devices
@@ -159,13 +161,13 @@ else:
         def get_devices(display=None):
             return (evdev_get_devices(display) +
                     xinput_get_devices(display))
-    elif sys.platform in ('cygwin', 'win32'):
+    elif compat_platform in ('cygwin', 'win32'):
         from directinput import get_devices, get_joysticks
         try:
             from wintab import get_tablets
         except:
             pass
-    elif sys.platform == 'darwin':
+    elif compat_platform == 'darwin':
         from pyglet import options as pyglet_options
         if pyglet_options['darwin_cocoa']:
             from darwin_hid import get_devices, get_joysticks, get_apple_remote
