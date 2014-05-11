@@ -966,15 +966,18 @@ class Player(pyglet.event.EventDispatcher):
         self._paused_time = 0.0
 
     def queue(self, source):
-        if (self._groups and
-            source.audio_format == self._groups[-1].audio_format and
-            source.video_format == self._groups[-1].video_format):
-            self._groups[-1].queue(source)
+        if isinstance(source, SourceGroup):
+            self._groups.append(source)
         else:
-            group = SourceGroup(source.audio_format, source.video_format)
-            group.queue(source)
-            self._groups.append(group)
-            self._set_eos_action(self._eos_action)
+            if (self._groups and
+                source.audio_format == self._groups[-1].audio_format and
+                source.video_format == self._groups[-1].video_format):
+                self._groups[-1].queue(source)
+            else:
+                group = SourceGroup(source.audio_format, source.video_format)
+                group.queue(source)
+                self._groups.append(group)
+                self._set_eos_action(self._eos_action)
 
         self._set_playing(self._playing)
 
