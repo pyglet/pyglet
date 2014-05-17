@@ -1040,8 +1040,7 @@ class BaseWindow(EventDispatcher):
 
         '''
         self._mouse_visible = visible
-        if self._window:
-            self.set_mouse_platform_visible()
+        self.set_mouse_platform_visible()
 
     def set_mouse_platform_visible(self, platform_visible=None):
         '''Set the platform-drawn mouse cursor visibility.  This is called
