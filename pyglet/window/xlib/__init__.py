@@ -596,6 +596,8 @@ class XlibWindow(BaseWindow):
                            '_NET_WM_STATE_MAXIMIZED_VERT')
 
     def set_mouse_platform_visible(self, platform_visible=None):
+        if not self._window:
+            return
         if platform_visible is None:
             platform_visible = self._mouse_visible and \
                                not self._mouse_cursor.drawable
