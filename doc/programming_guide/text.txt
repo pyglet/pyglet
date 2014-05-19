@@ -254,6 +254,20 @@ For the purposes of these attributes, paragraphs are split by the newline
 character (U+0010) or the paragraph break character (U+2029).  Line breaks
 within a paragraph can be forced with character U+2028.
 
+Tabs
+....
+
+A tab character in pyglet text is interpreted as 'move to the next tab stop'.
+Tab stops are specified in pixels, not in some font unit; by default
+there is a tab stop every 50 pixels and because of that a tab can look too
+small for big fonts or too big for small fonts.
+
+Additionally, when rendering text with tabs using a `monospace` font, character boxes
+may not align vertically.
+
+To avoid these visualization issues the simpler solution is to convert the tabs to
+spaces before sending a string to a pyglet text-related class.
+
 Attributed text
 ^^^^^^^^^^^^^^^
 
