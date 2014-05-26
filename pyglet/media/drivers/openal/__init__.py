@@ -688,11 +688,11 @@ def cleanup_audio_driver():
     if _debug:
         print "Cleaning up audio driver"
 
-    context.lock()
-    bufferPool.delete()
-    context.unlock()
-
     if context:
+        context.lock()
+        bufferPool.delete()
+        context.unlock()
+
         context.delete()
         context = None
 
