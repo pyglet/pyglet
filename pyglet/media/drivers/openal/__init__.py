@@ -217,7 +217,7 @@ class OpenALBufferPool(object):
         """Delete all sources and free all buffers"""
         assert context._lock.locked()
         for source, buffers in self._sources.items():
-            al.alDeleteSources(1, ctypes.byref(ctypes.c_ulong(source)))
+            al.alDeleteSources(1, ctypes.byref(ctypes.c_uint(source)))
             for b in buffers:
                 if not al.alIsBuffer(b):
                     # Protect against implementations that DO free buffers
