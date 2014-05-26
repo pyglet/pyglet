@@ -38,6 +38,7 @@ import heapq
 import threading
 import time
 import Queue
+import atexit
 
 import lib_openal as al
 import lib_alc as alc
@@ -211,6 +212,24 @@ class OpenALBufferPool(object):
             # dequeued, but they're not _actually_ buffers.  In other words,
             # there's some leakage, so after awhile, things break.
             print("Bad buffer: " + str(buffer))
+
+    def delete(self):
+        """Delete all sources and free all buffers"""
+        assert context._lock.locked()
+        for source, buffers in self._sources.items():
+            al.alDeleteSources(1, ctypes.byref(ctypes.c_ulong(source)))
+            for b in buffers:
+                if not al.alIsBuffer(b):
+                    # Protect against implementations that DO free buffers
+                    # when they delete a source - carry on.
+                    if _debug_buffers:
+                        print("Found a bad buffer")
+                    continue
+                al.alDeleteBuffers(1, ctypes.byref(b))
+        for b in self._buffers:
+            al.alDeleteBuffers(1, ctypes.byref(b))
+        self._buffers = []
+        self._sources = {}
 
 bufferPool = OpenALBufferPool()
 
@@ -566,8 +585,8 @@ class OpenALDriver(AbstractAudioDriver):
         if not self._device:
             raise Exception('No OpenAL device.')
 
-        alcontext = alc.alcCreateContext(self._device, None)
-        alc.alcMakeContextCurrent(alcontext)
+        self._context = alc.alcCreateContext(self._device, None)
+        alc.alcMakeContextCurrent(self._context)
 
         self.have_1_1 = self.have_version(1, 1) and False
 
@@ -580,10 +599,17 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker.start()
 
     def create_audio_player(self, source_group, player):
+        assert self._device is not None, "Device was closed"
         return OpenALAudioPlayer(source_group, player)
 
     def delete(self):
         self.worker.stop()
+        self.lock()
+        alc.alcMakeContextCurrent(None)
+        alc.alcDestroyContext(self._context)
+        alc.alcCloseDevice(self._device)
+        self._device = None
+        self.unlock()
 
     def lock(self):
         self._lock.acquire()
@@ -655,3 +681,23 @@ def create_audio_driver(device_name=None):
     if _debug:
         print 'OpenAL', context.get_version()
     return context
+
+def cleanup_audio_driver():
+    global context
+
+    if _debug:
+        print "Cleaning up audio driver"
+
+    context.lock()
+    bufferPool.delete()
+    context.unlock()
+
+    if context:
+        context.delete()
+        context = None
+
+    if _debug:
+        print "Cleaning done"
+
+atexit.register(cleanup_audio_driver)
+
