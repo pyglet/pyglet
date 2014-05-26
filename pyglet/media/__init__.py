@@ -1021,6 +1021,16 @@ class Player(pyglet.event.EventDispatcher):
                 self._paused_time = time
             self._audio_player.stop()
 
+    def delete(self):
+        self.pause()
+
+        if self._audio_player:
+            self._audio_player.delete()
+            self._audio_player = None
+
+        while self._groups:
+            del self._groups[0]
+
     def next_source(self):
         if not self._groups:
             return
