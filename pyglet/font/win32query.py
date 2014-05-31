@@ -21,12 +21,29 @@ LOGFONT properties to generic CSS font families:
   sans-serif -   (LOGFONT.lfPitchAndFamily >> 4) == FF_SWISS
   cursive    -   (LOGFONT.lfPitchAndFamily >> 4) == FF_SCRIPT
   fantasy    -   (LOGFONT.lfPitchAndFamily >> 4) == FF_DECORATIVE
-  monospace  -   (LOGFONT.lfPitchAndFamily >> 4) == FF_MODERN
+  monospace  -   (lf.lfPitchAndFamily & 0b11) == FIXED_PITCH
 
-NOTE: Raster 'Modern' font and OpenType 'OCR A Extended' are
-      FF_MODERN, but have VARIABLE_PITCH for some reason
+NOTE: ATM, May 2015, the Microsoft documentation related to monospace
+is misleading due to poor wording:
+ - FF_MODERN in the description of LOGFONT structure tells
+   "Fonts with constant stroke width (monospace), with or without serifs.
+    Monospace fonts are usually modern.
+    Pica, Elite, and CourierNew are examples.
+   "
+   
+   Stroke width is the 'pen width', not glyph width. It should read
 
-      [ ] find a way to check char's pitch matches manually
+   "Fonts with constant stroke width, with or without serifs.
+    Monospace fonts are usually modern, but not all modern are monospace
+   "
+
+PYGLET NOTE:
+Examination of all fonts in a windows xp machine shows that all fonts
+with
+
+  fontentry.vector and fontentry.family != FF_DONTCARE
+
+are rendered fine.
 
 
 Use cases:
@@ -75,11 +92,12 @@ class FontEntry(object):
   - vector (True if font is vector, False for raster fonts)
   - format: ttf | ...
   """
-  def __init__(self, name, vector, format, monospace):
+  def __init__(self, name, vector, format, monospace, family):
     self.name = name
     self.vector = vector
     self.format = format
     self.monospace = monospace
+    self.family = family
 
 # List of FontEntry objects
 FONTDB = []
@@ -144,10 +162,12 @@ for (name, value) in locals().copy().items():
     CHARSET_NAMES[value] = name
 
 # font pitch constants ('fixed pitch' means 'monospace')
+DEFAULT_PITCH = 0
 FIXED_PITCH = 1
 VARIABLE_PITCH = 2
 
 # Windows font family constants
+FF_DONTCARE = 0   # Don't care or don't know
 FF_ROMAN = 1      # with serifs, proportional
 FF_SWISS = 2      # w/out serifs, proportional
 FF_MODERN = 3     # constant stroke width
@@ -198,12 +218,12 @@ class LOGFONT(ctypes.Structure):
       # PROOF_QUALITY
     ('lfPitchAndFamily', BYTE),
       # DEFAULT_PITCH
-      # FIXED_PITCH
+      # FIXED_PITCH      - authoritative for monospace
       # VARIABLE_PITCH
       #    stacked with any of 
       # FF_DECORATIVE   - novelty
       # FF_DONTCARE     - default font
-      # FF_MODERN       - monospace
+      # FF_MODERN       - stroke width ('pen width') near constant
       # FF_ROMAN        - proportional (variable char width) with serifs
       # FF_SCRIPT       - handwritten
       # FF_SWISS        - proportional without serifs
@@ -302,11 +322,11 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
   # FP T NM     400 CHARSET: 136  @DFKai-SB
   # VP T M      400 CHARSET:   0  OCR A Extended
 
-  monospace = False
-  if family == FF_MODERN:
-    monospace = True
-  
-  FONTDB.append(FontEntry(name, vector, format, monospace))
+  monospace = (pitch == FIXED_PITCH)
+
+  charset = lf.lfCharSet
+
+  FONTDB.append(FontEntry(name, vector, format, monospace, family))
 
   if DEBUG:
     info = ''
@@ -438,7 +458,7 @@ if __name__ == '__main__':
     print 'Have font "Arial"? %s' % test_arial
     print 'Have font "missing-one"? %s' % have_font('missing-one')
     # test cache is not rebuilt
-    FONTDB = [FontEntry('stub', False, '', False)]
+    FONTDB = [FontEntry('stub', False, '', False, FF_MODERN)]
     assert(have_font('Arial') != test_arial)
     # test cache is rebiult
     assert(have_font('Arial', refresh=True) == test_arial)
