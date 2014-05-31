@@ -233,7 +233,7 @@ class VideoPacket(object):
 class AVbinSource(StreamingSource):
     def __init__(self, filename, file=None):
         if file is not None:
-            raise NotImplementedError('TODO: Load from file stream')
+            raise NotImplementedError('Loading from file stream is not supported')
 
         self._file = av.avbin_open_filename(asbytes_filename(filename))
         if not self._file:
