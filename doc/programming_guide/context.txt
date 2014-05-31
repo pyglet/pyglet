@@ -379,7 +379,8 @@ context is recreated.
 pyglet creates a hidden "shadow" context as soon as :mod:`pyglet.gl` is 
 imported. By default, all windows will share object space with this shadow 
 context, so the above steps are generally not needed. The shadow context also 
-allows objects such as textures to be loaded before a window is created.
+allows objects such as textures to be loaded before a window is created (see
+``shadow_window`` in :data:`pyglet.options` for further details).
 
 When you create a :class:`~pyglet.gl.Context`, you tell pyglet which other 
 context it will obtain an object space from.  By default (when using the 

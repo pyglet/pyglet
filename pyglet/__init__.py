@@ -116,7 +116,12 @@ if getattr(sys, 'frozen', None):
 #:     the application window is created, and permits GL objects to be
 #:     shared between windows even after they've been closed.  You can
 #:     disable the creation of the shadow window by setting this option to
-#:     False.  Recommended for advanced devlopers only.
+#:     False.
+#:
+#:     Some OpenGL driver implementations may not support shared OpenGL
+#:     contexts and may require disabling the shadow window (and all resources
+#:     must be loaded after the window using them was created).  Recommended
+#:     for advanced developers only.
 #:
 #:     **Since:** pyglet 1.1
 #: vsync
