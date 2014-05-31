@@ -150,8 +150,9 @@ _user32.GetClientRect.restype = BOOL
 _user32.GetClientRect.argtypes = [HWND, LPRECT]
 _user32.GetCursorPos.restype = BOOL
 _user32.GetCursorPos.argtypes = [LPPOINT]
-_user32.GetDC.restype = HDC
-_user32.GetDC.argtypes = [HWND]
+# workaround for win 64-bit, see issue #664
+_user32.GetDC.restype = c_void_p # HDC
+_user32.GetDC.argtypes = [c_void_p] # [HWND]
 _user32.GetDesktopWindow.restype = HWND
 _user32.GetDesktopWindow.argtypes = []
 _user32.GetKeyState.restype = c_short
@@ -184,8 +185,9 @@ _user32.RegisterHotKey.restype = BOOL
 _user32.RegisterHotKey.argtypes = [HWND, c_int, UINT, UINT]
 _user32.ReleaseCapture.restype = BOOL
 _user32.ReleaseCapture.argtypes = []
-_user32.ReleaseDC.restype = c_int
-_user32.ReleaseDC.argtypes = [HWND, HDC]
+# workaround for win 64-bit, see issue #664
+_user32.ReleaseDC.restype = c_int32 # c_int
+_user32.ReleaseDC.argtypes = [c_void_p, c_void_p] # [HWND, HDC]
 _user32.ScreenToClient.restype = BOOL
 _user32.ScreenToClient.argtypes = [HWND, LPPOINT]
 _user32.SetCapture.restype = HWND
