@@ -40,7 +40,7 @@ video formats.
 
 Playback is handled by the `Player` class, which reads raw data from `Source`
 objects and provides methods for pausing, seeking, adjusting the volume, and
-so on.  The `Player` class implements a the best available audio device
+so on.  The `Player` class implements the best available audio device
 (currently, only OpenAL is supported)::
 
     player = Player()
@@ -51,7 +51,7 @@ associated with a single player by "queuing" it::
     source = load('background_music.mp3')
     player.queue(source)
 
-Use the `Player` to control playback.  
+Use the `Player` to control playback.
 
 If the source contains video, the `Source.video_format` attribute will be
 non-None, and the `Player.texture` attribute will contain the current video
@@ -66,6 +66,14 @@ rather than streamed from disk by wrapping the source in a `StaticSource`::
 
 The other advantage of a `StaticSource` is that it can be queued on any number
 of players, and so played many times simultaneously.
+
+pyglet relies on Python's garbage collector to release resources once a player
+has finished playing a source. In this way some operations that could affect
+the application performance can be delayed.
+
+The player provides a `Player.delete()` method that can be used to release
+resources immediately. Also a explicit call to `gc.collect()`can be used to
+collect unused resources.
 
 '''
 
