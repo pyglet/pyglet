@@ -67,12 +67,12 @@ rather than streamed from disk by wrapping the source in a `StaticSource`::
 The other advantage of a `StaticSource` is that it can be queued on any number
 of players, and so played many times simultaneously.
 
-pyglet relies on Python's garbage collector to release resources once a player
+pyglet relies on Python's garbage collector to release resources when a player
 has finished playing a source. In this way some operations that could affect
 the application performance can be delayed.
 
 The player provides a `Player.delete()` method that can be used to release
-resources immediately. Also a explicit call to `gc.collect()`can be used to
+resources immediately. Also an explicit call to `gc.collect()`can be used to
 collect unused resources.
 
 '''
