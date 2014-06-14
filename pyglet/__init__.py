@@ -213,8 +213,8 @@ def _choose_darwin_platform():
     numbits = 8*struct.calcsize("P")
     if numbits == 64:
         import platform
-        osx_version = platform.mac_ver()[0]
-        if osx_version < '10.6':
+        osx_version = platform.mac_ver()[0].split(".")
+        if int(osx_version[0]) == 10 and int(osx_version[1]) < 6:
             raise Exception('pyglet is not compatible with 64-bit Python for versions of Mac OS X prior to 10.6.')
         options['darwin_cocoa'] = True
     else:
