@@ -596,7 +596,7 @@ def main():
     options.log.info('Capabilities are: %s', ', '.join(options.capabilities))
     options.log.info('sys.platform = %s', sys.platform)
     options.log.info('pyglet.version = %s', pyglet.version)
-    options.log.info('pyglet.platform = %s', pyglet.platform)
+    options.log.info('pyglet.compat_platform = %s', pyglet.compat_platform)
     options.log.info('Reading test plan from %s', options.plan)
 
     plan = TestPlan.from_file(options.plan)
