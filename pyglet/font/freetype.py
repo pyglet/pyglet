@@ -256,6 +256,9 @@ class FreeTypeFont(base.Font):
         # Check system
         match = get_fontconfig().find_font(name, 12, False, False)
         if match:
+            # Check the name matches, fontconfig can return a default
+            if name and match.name and match.name.lower() != name.lower():
+                return False
             return True
         else:
             return False
