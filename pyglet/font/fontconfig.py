@@ -269,6 +269,22 @@ class FontConfigPattern(object):
         else:
             return None
 
+    def _get_integer(self, name):
+        value = self._get_value(name)
+
+        if value and value.type == FcTypeInteger:
+            return value.u.i
+        else:
+            return None
+
+    def _get_double(self, name):
+        value = self._get_value(name)
+
+        if value and value.type == FcTypeDouble:
+            return value.u.d
+        else:
+            return None
+
 
 class FontConfigSearchPattern(FontConfigPattern):
     def __init__(self, fontconfig):
@@ -324,6 +340,18 @@ class FontConfigSearchResult(FontConfigPattern):
     @property
     def name(self):
         return self._get_string(FC_FAMILY)
+
+    @property
+    def size(self):
+        return self._get_double(FC_SIZE)
+
+    @property
+    def bold(self):
+        return self._get_integer(FC_WEIGHT) == FC_WEIGHT_BOLD
+
+    @property
+    def italic(self):
+        return self._get_integer(FC_SLANT) == FC_SLANT_ITALIC
 
     @property
     def face(self):

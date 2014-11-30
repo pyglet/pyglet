@@ -48,6 +48,36 @@ class TEST_DEFAULT(unittest.TestCase):
         self.assertNotEqual(font_match.name.lower(), 'unknown')
         self.assertNotIn('unknown', font_match.file.lower())
 
+    def test_find_font_match_size(self):
+        font_match = get_fontconfig().find_font('arial', size=16.0)
+
+        self.assertIsNotNone(font_match)
+        self.assertEqual(font_match.name.lower(), 'arial')
+        self.assertIn('arial', font_match.file.lower())
+        self.assertEqual(font_match.size, 16.0)
+        self.assertFalse(font_match.bold)
+        self.assertFalse(font_match.italic)
+
+    def test_find_font_match_bold(self):
+        font_match = get_fontconfig().find_font('arial', size=12.0, bold=True)
+
+        self.assertIsNotNone(font_match)
+        self.assertEqual(font_match.name.lower(), 'arial')
+        self.assertIn('arial', font_match.file.lower())
+        self.assertEqual(font_match.size, 12.0)
+        self.assertTrue(font_match.bold)
+        self.assertFalse(font_match.italic)
+
+    def test_find_font_match_italic(self):
+        font_match = get_fontconfig().find_font('arial', size=12.0, italic=True)
+
+        self.assertIsNotNone(font_match)
+        self.assertEqual(font_match.name.lower(), 'arial')
+        self.assertIn('arial', font_match.file.lower())
+        self.assertEqual(font_match.size, 12.0)
+        self.assertFalse(font_match.bold)
+        self.assertTrue(font_match.italic)
+
 
 if __name__ == '__main__':
     unittest.main()
