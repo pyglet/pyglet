@@ -13,7 +13,7 @@ from pyglet.font.fontconfig import get_fontconfig
 __noninteractive = True
 
 
-class TEST_DEFAULT(unittest.TestCase):
+class TEST_FONTCONFIG(unittest.TestCase):
     def test_find_font_existing(self):
         font_match = get_fontconfig().find_font('arial')
 
