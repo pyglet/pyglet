@@ -142,6 +142,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
         return glyph
 
+
 class FreeTypeMemoryFont(object):
     def __init__(self, data):
         self.buffer = (ctypes.c_byte * len(data))()
@@ -180,6 +181,7 @@ class FreeTypeMemoryFont(object):
         except:
             pass
 
+
 class FreeTypeFont(base.Font):
     glyph_renderer_class = FreeTypeGlyphRenderer
 
@@ -189,61 +191,71 @@ class FreeTypeFont(base.Font):
     def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(FreeTypeFont, self).__init__()
 
-        if dpi is None:
-            dpi = 96  # as of pyglet 1.1; pyglet 1.0 had 72.
+        self._name = name
+        self._size = size
+        self._face_size = float_to_f26p6(size)
+        self._bold = bold
+        self._italic = italic
+        self._dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
 
-        # Check if font name/style matches a font loaded into memory by user
-        lname = name and name.lower() or ''
-        if (lname, bold, italic) in self._memory_fonts:
-            font = self._memory_fonts[lname, bold, italic]
-            self._set_face(font.face, size, dpi)
-            return
+        self._set_face(self._load_font_face())
 
-        # Use fontconfig to match the font (or substitute a default).
-        ft_library = ft_get_library()
+    def _load_font_face(self):
+        memory_font = self._get_memory_font(self._name, self._bold, self._italic)
+        if memory_font:
+            return memory_font.face
+        else:
+            return self._load_font_face_from_system()
 
-        match = get_fontconfig().find_font(name, size, bold, italic)
+    def _load_font_face_from_system(self):
+        match = get_fontconfig().find_font(self._name, self._size, self._bold, self._italic)
         if not match:
-            raise base.FontException('Could not match font "%s"' % name)
+            raise base.FontException('Could not match font "%s"' % self._name)
 
         font_face = match.face
         if not font_face:
             # Try to load from file directly
+            if not match.file:
+                raise base.FontException('No filename for "%s"' % self._name)
 
-            file_name = match.file
-            if not file_name:
-                raise base.FontException('No filename for "%s"' %
-                                         name)
+            font_face = self._load_font_face_from_file(match.file)
 
-            font_face = FT_Face()
-            result = FT_New_Face(ft_library, file_name, 0, byref(font_face))
-            if result:
-                raise base.FontException('Could not load "%s": %d' %
-                                         (name, result))
+        return font_face
 
-        self._set_face(font_face, size, dpi)
+    @staticmethod
+    def _load_font_face_from_file(file_name):
+        font_face = FT_Face()
+        ft_library = ft_get_library()
+        result = FT_New_Face(ft_library, file_name, 0, byref(font_face))
+        if result:
+            raise base.FontException('Could not load font from "%s": %d' %
+                                     (file_name, result))
+        return font_face
 
-    def _set_face(self, face, size, dpi):
+    def _set_face(self, face):
         self.face = face.contents
-        self._face_size = float_to_f26p6(size)
-        self._dpi = dpi
+        self._get_font_metrics()
 
-        FT_Set_Char_Size(self.face, 0, float_to_f26p6(size), dpi, dpi)
+    def _get_font_metrics(self):
+        FT_Set_Char_Size(self.face, 0, self._face_size, self._dpi, self._dpi)
         metrics = self.face.size.contents.metrics
         if metrics.ascender == 0 and metrics.descender == 0:
-            # Workaround broken fonts with no metrics.  Has been observed with
-            # courR12-ISO8859-1.pcf.gz: "Courier" "Regular"
-            #
-            # None of the metrics fields are filled in, so render a glyph and
-            # grab its height as the ascent, and make up an arbitrary
-            # descent.
-            i = get_fontconfig().char_index(self.face, 'X')
-            FT_Load_Glyph(self.face, i, FT_LOAD_RENDER)
-            self.ascent = self.face.available_sizes.contents.height
-            self.descent = -self.ascent // 4  # arbitrary.
+            self._get_font_metrics_workaround()
         else:
             self.ascent = int(f26p6_to_float(metrics.ascender))
             self.descent = int(f26p6_to_float(metrics.descender))
+
+    def _get_font_metrics_workaround(self):
+        # Workaround broken fonts with no metrics.  Has been observed with
+        # courR12-ISO8859-1.pcf.gz: "Courier" "Regular"
+        #
+        # None of the metrics fields are filled in, so render a glyph and
+        # grab its height as the ascent, and make up an arbitrary
+        # descent.
+        i = get_fontconfig().char_index(self.face, 'X')
+        FT_Load_Glyph(self.face, i, FT_LOAD_RENDER)
+        self.ascent = self.face.available_sizes.contents.height
+        self.descent = -self.ascent // 4  # arbitrary.
 
     @classmethod
     def have_font(cls, name):
@@ -267,3 +279,8 @@ class FreeTypeFont(base.Font):
     def add_font_data(cls, data):
         font = FreeTypeMemoryFont(data)
         cls._memory_fonts[font.name.lower(), font.bold, font.italic] = font
+
+    @classmethod
+    def _get_memory_font(cls, name, bold, italic):
+        lname = name and name.lower() or ''
+        return cls._memory_fonts.get((lname, bold, italic))
