@@ -32,61 +32,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
-
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import ctypes
-from ctypes import *
-from warnings import warn
-
-import pyglet.lib
 from pyglet.font import base
 from pyglet import image
+from pyglet.font.fontconfig import get_fontconfig
 from pyglet.font.freetype_lib import *
-from pyglet.compat import asbytes
-
-# fontconfig library definitions
-fontconfig = pyglet.lib.load_library('fontconfig')
-fontconfig.FcInit()
-
-(FcResultMatch,
- FcResultNoMatch,
- FcResultTypeMismatch,
- FcResultNoId,
- FcResultOutOfMemory) = range(5)
-FcResult = c_int
-
-fontconfig.FcPatternBuild.restype = c_void_p
-fontconfig.FcPatternCreate.restype = c_void_p
-fontconfig.FcFontMatch.restype = c_void_p
-fontconfig.FcFreeTypeCharIndex.restype = c_uint
-
-fontconfig.FcPatternAddDouble.argtypes = [c_void_p, c_char_p, c_double]
-fontconfig.FcPatternAddInteger.argtypes = [c_void_p, c_char_p, c_int]
-fontconfig.FcPatternAddString.argtypes = [c_void_p, c_char_p, c_char_p]
-fontconfig.FcConfigSubstitute.argtypes = [c_void_p, c_void_p, c_int]
-fontconfig.FcDefaultSubstitute.argtypes = [c_void_p]
-fontconfig.FcFontMatch.argtypes = [c_void_p, c_void_p, c_void_p]
-fontconfig.FcPatternDestroy.argtypes = [c_void_p]
-
-fontconfig.FcPatternGetFTFace.argtypes = [c_void_p, c_char_p, c_int, c_void_p]
-fontconfig.FcPatternGet.argtypes = [c_void_p, c_char_p, c_int, c_void_p]
-
-FC_FAMILY = asbytes('family')
-FC_SIZE = asbytes('size')
-FC_SLANT = asbytes('slant')
-FC_WEIGHT = asbytes('weight')
-FC_FT_FACE = asbytes('ftface')
-FC_FILE = asbytes('file')
-
-FC_WEIGHT_REGULAR = 80
-FC_WEIGHT_BOLD = 200
-
-FC_SLANT_ROMAN = 0
-FC_SLANT_ITALIC = 100
 
 FT_STYLE_FLAG_ITALIC = 1
 FT_STYLE_FLAG_BOLD = 2
@@ -96,6 +49,7 @@ FT_STYLE_FLAG_BOLD = 2
  FT_RENDER_MODE_MONO,
  FT_RENDER_MODE_LCD,
  FT_RENDER_MODE_LCD_V) = range(5)
+
 
 def FT_LOAD_TARGET_(x):
     return (x & 15) << 16
@@ -114,54 +68,22 @@ FT_LOAD_TARGET_LCD_V = FT_LOAD_TARGET_(FT_RENDER_MODE_LCD_V)
  FT_PIXEL_MODE_LCD,
  FT_PIXEL_MODE_LCD_V) = range(7)
 
-(FcTypeVoid,
- FcTypeInteger,
- FcTypeDouble, 
- FcTypeString, 
- FcTypeBool,
- FcTypeMatrix,
- FcTypeCharSet,
- FcTypeFTFace,
- FcTypeLangSet) = range(9)
-FcType = c_int
-
-(FcMatchPattern,
- FcMatchFont) = range(2)
-FcMatchKind = c_int
-
-
-class _FcValueUnion(Union):
-    _fields_ = [
-        ('s', c_char_p),
-        ('i', c_int),
-        ('b', c_int),
-        ('d', c_double),
-        ('m', c_void_p),
-        ('c', c_void_p),
-        ('f', c_void_p),
-        ('p', c_void_p),
-        ('l', c_void_p),
-    ]
-
-class FcValue(Structure):
-    _fields_ = [
-        ('type', FcType),
-        ('u', _FcValueUnion)
-    ]
-
-# End of library definitions
 
 def f16p16_to_float(value):
     return float(value) / (1 << 16)
 
+
 def float_to_f16p16(value):
     return int(value * (1 << 16))
+
 
 def f26p6_to_float(value):
     return float(value) / (1 << 6)
 
+
 def float_to_f26p6(value):
     return int(value * (1 << 6))
+
 
 class FreeTypeGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
@@ -172,7 +94,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         face = self.font.face
         FT_Set_Char_Size(face, 0, self.font._face_size, 
                          self.font._dpi, self.font._dpi)
-        glyph_index = fontconfig.FcFreeTypeCharIndex(byref(face), ord(text[0]))
+        glyph_index = get_fontconfig().char_index(face, text[0])
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
         if error != 0:
             raise base.FontException(
@@ -280,25 +202,28 @@ class FreeTypeFont(base.Font):
         # Use fontconfig to match the font (or substitute a default).
         ft_library = ft_get_library()
 
-        match = self.get_fontconfig_match(name, size, bold, italic)
+        match = get_fontconfig().find_font(name, size, bold, italic)
         if not match:
             raise base.FontException('Could not match font "%s"' % name)
 
-        f = FT_Face()
-        if fontconfig.FcPatternGetFTFace(match, FC_FT_FACE, 0, byref(f)) != 0:
-            value = FcValue()
-            result = fontconfig.FcPatternGet(match, FC_FILE, 0, byref(value))
-            if result != 0:
-                raise base.FontException('No filename or FT face for "%s"' % \
+        font_face = match.face
+        if not font_face:
+            # Try to load from file directly
+
+            file_name = match.file
+            if not file_name:
+                raise base.FontException('No filename for "%s"' %
                                          name)
-            result = FT_New_Face(ft_library, value.u.s, 0, byref(f))
+
+            font_face = FT_Face()
+            result = FT_New_Face(ft_library, file_name, 0, byref(font_face))
             if result:
-                raise base.FontException('Could not load "%s": %d' % \
+                raise base.FontException('Could not load "%s": %d' %
                                          (name, result))
 
-        fontconfig.FcPatternDestroy(match)
+        match.dispose()
 
-        self._set_face(f, size, dpi)
+        self._set_face(font_face, size, dpi)
 
     def _set_face(self, face, size, dpi):
         self.face = face.contents
@@ -314,89 +239,13 @@ class FreeTypeFont(base.Font):
             # None of the metrics fields are filled in, so render a glyph and
             # grab its height as the ascent, and make up an arbitrary
             # descent.
-            i = fontconfig.FcFreeTypeCharIndex(byref(self.face), ord('X'))
+            i = get_fontconfig().char_index(self.face, 'X')
             FT_Load_Glyph(self.face, i, FT_LOAD_RENDER)
             self.ascent = self.face.available_sizes.contents.height
             self.descent = -self.ascent // 4  # arbitrary.
         else:
             self.ascent = int(f26p6_to_float(metrics.ascender))
             self.descent = int(f26p6_to_float(metrics.descender))
-
-    @classmethod
-    def get_fontconfig_match(cls, name, size, bold, italic):
-        search_pattern = None
-
-        try:
-            # Look for a font that matches pattern
-            search_pattern = cls._create_fontconfig_pattern(name, size, bold, italic)
-            match_pattern = cls._get_font_match(search_pattern)
-
-            if not name:
-                return match_pattern
-
-            family_name = cls._get_font_family(match_pattern)
-
-            if family_name.lower() == name.lower():
-                return match_pattern
-            else:
-                fontconfig.FcPatternDestroy(match_pattern)
-        finally:
-            if search_pattern:
-                fontconfig.FcPatternDestroy(search_pattern)
-
-    @classmethod
-    def _create_fontconfig_pattern(cls, name, size, bold, italic):
-        if isinstance(name, unicode):
-            name = name.encode('utf8')
-
-        pattern = fontconfig.FcPatternCreate()
-        fontconfig.FcPatternAddDouble(pattern, FC_SIZE, c_double(size))
-        fontconfig.FcPatternAddInteger(pattern, FC_WEIGHT, cls._fontconfig_bold(bold))
-        fontconfig.FcPatternAddInteger(pattern, FC_SLANT, cls._fontconfig_italic(italic))
-        fontconfig.FcPatternAddString(pattern, FC_FAMILY, name)
-        fontconfig.FcConfigSubstitute(0, pattern, FcMatchPattern)
-        fontconfig.FcDefaultSubstitute(pattern)
-
-        return pattern
-
-    @classmethod
-    def _get_font_match(cls, search_pattern):
-        match_result = FcResult()
-        match_pattern = fontconfig.FcFontMatch(0, search_pattern, byref(match_result))
-
-        if cls._handle_fcresult(match_result.value):
-            return match_pattern
-        else:
-            return None
-
-    @classmethod
-    def _get_font_family(cls, pattern):
-        family_value = FcValue()
-        family_result = fontconfig.FcPatternGet(pattern, FC_FAMILY, 0, byref(family_value))
-        if not cls._handle_fcresult(family_result):
-            return None
-
-        if family_value.type == FcTypeString:
-            return family_value.u.s
-        else:
-            return None
-
-    @staticmethod
-    def _fontconfig_bold(bold):
-        return FC_WEIGHT_BOLD if bold else FC_WEIGHT_REGULAR
-
-    @staticmethod
-    def _fontconfig_italic(italic):
-        return FC_SLANT_ITALIC if italic else FC_SLANT_ROMAN
-
-    @staticmethod
-    def _handle_fcresult(result):
-        if result == FcResultMatch:
-            return True
-        elif result in (FcResultNoMatch, FcResultTypeMismatch, FcResultNoId):
-            return False
-        elif result == FcResultOutOfMemory:
-            raise RuntimeError('FontConfig ran out of memory.')
 
     @classmethod
     def have_font(cls, name):
@@ -407,9 +256,9 @@ class FreeTypeFont(base.Font):
                 return True
 
         # Check system
-        match = cls.get_fontconfig_match(name, 12, False, False)
+        match = get_fontconfig().find_font(name, 12, False, False)
         if match:
-            fontconfig.FcPatternDestroy(match)
+            match.dispose()
             return True
         else:
             return False
