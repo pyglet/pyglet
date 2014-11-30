@@ -38,6 +38,7 @@ Wrapper around the Linux FontConfig library. Used to find available fonts.
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+from collections import OrderedDict
 from ctypes import *
 
 import pyglet.lib
@@ -108,8 +109,13 @@ class FcValue(Structure):
 class FontConfig(object):
     def __init__(self):
         self._fontconfig = self._load_fontconfig_library()
+        self._search_cache = OrderedDict()
+        self._cache_size = 20
 
     def dispose(self):
+        while len(self._search_cache) > 0:
+            self._search_cache.popitem().dispose()
+
         self._fontconfig.FcFini()
         self._fontconfig = None
 
@@ -117,16 +123,38 @@ class FontConfig(object):
         return FontConfigSearchPattern(self._fontconfig)
 
     def find_font(self, name, size=12, bold=False, italic=False):
+        result = self._get_from_search_cache(name, size, bold, italic)
+        if result:
+            return result
+
         search_pattern = self.create_search_pattern()
         search_pattern.name = name
         search_pattern.size = size
         search_pattern.bold = bold
         search_pattern.italic = italic
-        return search_pattern.match()
+
+        result = search_pattern.match()
+        self._add_to_search_cache(search_pattern, result)
+        return result
 
     def char_index(self, face, character):
         return self._fontconfig.FcFreeTypeCharIndex(byref(face), ord(character))
 
+    def _add_to_search_cache(self, search_pattern, result_pattern):
+        self._search_cache[(search_pattern.name,
+                            search_pattern.size,
+                            search_pattern.bold,
+                            search_pattern.italic)] = result_pattern
+        if len(self._search_cache) > self._cache_size:
+            self._search_cache.popitem(last=False).dispose()
+
+    def _get_from_search_cache(self,  name, size, bold, italic):
+        result = self._search_cache.get((name, size, bold, italic), None)
+
+        if result and result.is_valid:
+            return result
+        else:
+            return None
 
     @staticmethod
     def _load_fontconfig_library():
@@ -156,6 +184,10 @@ class FontConfigPattern(object):
     def __init__(self, fontconfig, pattern=None):
         self._fontconfig = fontconfig
         self._pattern = pattern
+
+    @property
+    def is_valid(self):
+        return self._fontconfig and self._pattern
 
     def _create(self):
         assert not self._pattern

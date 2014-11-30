@@ -221,8 +221,6 @@ class FreeTypeFont(base.Font):
                 raise base.FontException('Could not load "%s": %d' %
                                          (name, result))
 
-        match.dispose()
-
         self._set_face(font_face, size, dpi)
 
     def _set_face(self, face, size, dpi):
@@ -258,7 +256,6 @@ class FreeTypeFont(base.Font):
         # Check system
         match = get_fontconfig().find_font(name, 12, False, False)
         if match:
-            match.dispose()
             return True
         else:
             return False
