@@ -145,20 +145,33 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
 class FreeTypeMemoryFont(object):
     def __init__(self, data):
+        self._copy_font_data(data)
+        self._create_font_face()
+        self._get_font_properties()
+
+    def _copy_font_data(self, data):
         self.buffer = (ctypes.c_byte * len(data))()
         ctypes.memmove(self.buffer, data, len(data))
 
+    def _create_font_face(self):
         ft_library = ft_get_library()
         self.face = FT_Face()
         r = FT_New_Memory_Face(ft_library, 
-            self.buffer, len(self.buffer), 0, self.face)
+                               self.buffer,
+                               len(self.buffer),
+                               0,
+                               self.face)
         if r != 0:
             raise base.FontException('Could not load font data')
 
+    def _get_font_properties(self):
         self.name = self.face.contents.family_name
         self.bold = self.face.contents.style_flags & FT_STYLE_FLAG_BOLD != 0
         self.italic = self.face.contents.style_flags & FT_STYLE_FLAG_ITALIC != 0
 
+        self._get_font_family_from_ttf()
+
+    def _get_font_family_from_ttf(self):
         # Replace Freetype's generic family name with TTF/OpenType specific
         # name if we can find one; there are some instances where Freetype
         # gets it wrong.
