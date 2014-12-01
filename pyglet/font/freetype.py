@@ -91,23 +91,8 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         self.font = font
 
     def render(self, text):
-        face = self.font.face
-        error = FT_Set_Char_Size(face,
-                                 0,
-                                 self.font.face_size,
-                                 self.font.dpi,
-                                 self.font.dpi)
-        # Error 0x17 indicates invalid pixel size, so font size cannot be changed
-        # TODO Warn the user?
-        if error != 0x17:
-            FreeTypeError.check_and_raise_on_error('Could not set size for "%c"' % text[0], error)
+        glyph_slot = self.font.get_glyph_data(text[0])
 
-        glyph_index = get_fontconfig().char_index(face, text[0])
-
-        error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
-        FreeTypeError.check_and_raise_on_error('Could not load glyph for "%c"' % text[0], error)
-
-        glyph_slot = face.glyph.contents
         width = glyph_slot.bitmap.width
         height = glyph_slot.bitmap.rows
         baseline = height - glyph_slot.bitmap_top
@@ -137,16 +122,20 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
             pitch <<= 3
         elif mode == FT_PIXEL_MODE_GRAY:
             # Usual case
+            assert glyph_slot.bitmap.num_grays == 256
             data = glyph_slot.bitmap.buffer
         else:
             raise base.FontException('Unsupported render mode for this glyph')
 
-        # pitch should be negative, but much faster to just swap tex_coords
-        img = image.ImageData(width, height, 'A', data, pitch)
+        # In FT positive pitch means `down` flow, in Pyglet ImageData
+        # negative values indicate a top-to-bottom arrangement. So pitch must be inverted.
+        # Using negative pitch causes conversions, so much faster to just swap tex_coords
+        img = image.ImageData(width, height, 'A', data, abs(pitch))
         glyph = self.font.create_glyph(img) 
         glyph.set_bearings(baseline, lsb, advance)
-        t = list(glyph.tex_coords)
-        glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
+        if pitch > 0:
+            t = list(glyph.tex_coords)
+            glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
 
         return glyph
 
@@ -219,6 +208,28 @@ class FreeTypeFont(base.Font):
         self.dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
 
         self._set_face(self._load_font_face())
+
+    def get_character_index(self, character):
+        assert self.face
+        return get_fontconfig().char_index(self.face, character)
+
+    def get_glyph_data(self, character):
+        error = FT_Set_Char_Size(self.face,
+                                 0,
+                                 self.face_size,
+                                 self.dpi,
+                                 self.dpi)
+        # Error 0x17 indicates invalid pixel size, so font size cannot be changed
+        # TODO Warn the user?
+        if error != 0x17:
+            FreeTypeError.check_and_raise_on_error('Could not set size for "%c"' % character, error)
+
+        glyph_index = self.get_character_index(character)
+
+        error = FT_Load_Glyph(self.face, glyph_index, FT_LOAD_RENDER)
+        FreeTypeError.check_and_raise_on_error('Could not load glyph for "%c"' % character, error)
+
+        return self.face.glyph.contents
 
     def _load_font_face(self):
         memory_font = self._get_memory_font(self.name, self.bold, self.italic)
