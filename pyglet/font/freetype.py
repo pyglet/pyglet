@@ -92,16 +92,18 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
     def render(self, text):
         face = self.font.face
-        FT_Set_Char_Size(face,
-                         0,
-                         self.font.face_size,
-                         self.font.dpi,
-                         self.font.dpi)
+        error = FT_Set_Char_Size(face,
+                                 0,
+                                 self.font.face_size,
+                                 self.font.dpi,
+                                 self.font.dpi)
+        FreeTypeError.check_and_raise_on_error('Could set size for "%c"' % text[0], error)
+
         glyph_index = get_fontconfig().char_index(face, text[0])
+
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
-        if error != 0:
-            raise base.FontException(
-                'Could not load glyph for "%c"' % text[0], error) 
+        FreeTypeError.check_and_raise_on_error('Could not load glyph for "%c"' % text[0], error)
+
         glyph_slot = face.glyph.contents
         width = glyph_slot.bitmap.width
         height = glyph_slot.bitmap.rows
@@ -159,13 +161,12 @@ class FreeTypeMemoryFont(object):
     def _create_font_face(self):
         ft_library = ft_get_library()
         self.face = FT_Face()
-        r = FT_New_Memory_Face(ft_library, 
-                               self.buffer,
-                               len(self.buffer),
-                               0,
-                               self.face)
-        if r != 0:
-            raise base.FontException('Could not load font data')
+        error = FT_New_Memory_Face(ft_library,
+                                   self.buffer,
+                                   len(self.buffer),
+                                   0,
+                                   self.face)
+        FreeTypeError.check_and_raise_on_error('Could not load font data', error)
 
     def _get_font_properties(self):
         self.name = self.face.contents.family_name
@@ -242,10 +243,8 @@ class FreeTypeFont(base.Font):
     def _load_font_face_from_file(file_name):
         font_face = FT_Face()
         ft_library = ft_get_library()
-        result = FT_New_Face(ft_library, file_name, 0, byref(font_face))
-        if result:
-            raise base.FontException('Could not load font from "%s": %d' %
-                                     (file_name, result))
+        error = FT_New_Face(ft_library, file_name, 0, byref(font_face))
+        FreeTypeError.check_and_raise_on_error('Could not load font from "%s"' % file_name, error)
         return font_face
 
     def _set_face(self, face):
@@ -253,7 +252,9 @@ class FreeTypeFont(base.Font):
         self._get_font_metrics()
 
     def _get_font_metrics(self):
-        FT_Set_Char_Size(self.face, 0, self.face_size, self.dpi, self.dpi)
+        error = FT_Set_Char_Size(self.face, 0, self.face_size, self.dpi, self.dpi)
+        FreeTypeError.check_and_raise_on_error('Could set size', error)
+
         metrics = self.face.size.contents.metrics
         if metrics.ascender == 0 and metrics.descender == 0:
             self._get_font_metrics_workaround()
@@ -269,7 +270,9 @@ class FreeTypeFont(base.Font):
         # grab its height as the ascent, and make up an arbitrary
         # descent.
         i = get_fontconfig().char_index(self.face, 'X')
-        FT_Load_Glyph(self.face, i, FT_LOAD_RENDER)
+        error = FT_Load_Glyph(self.face, i, FT_LOAD_RENDER)
+        FreeTypeError.check_and_raise_on_error('Could load glyph for "X"', error)
+
         self.ascent = self.face.available_sizes.contents.height
         self.descent = -self.ascent // 4  # arbitrary.
 

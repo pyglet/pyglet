@@ -259,7 +259,8 @@ class FT_FaceRec(Structure):
 
 FT_Face = POINTER(FT_FaceRec)
 
-class Error(Exception):
+
+class FreeTypeError(FontException):
     def __init__(self, message, errcode):
         self.message = message
         self.errcode = errcode
@@ -267,6 +268,12 @@ class Error(Exception):
     def __str__(self):
         return '%s: %s (%s)'%(self.__class__.__name__, self.message,
             self._ft_errors.get(self.errcode, 'unknown error'))
+
+    @classmethod
+    def check_and_raise_on_error(cls, message, errcode):
+        if errcode != 0:
+            raise cls(message, errcode)
+
     _ft_errors = {
         0x00: "no error" ,
         0x01: "cannot open resource" ,
