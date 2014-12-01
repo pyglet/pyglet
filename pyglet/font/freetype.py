@@ -92,8 +92,11 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
 
     def render(self, text):
         face = self.font.face
-        FT_Set_Char_Size(face, 0, self.font._face_size, 
-                         self.font._dpi, self.font._dpi)
+        FT_Set_Char_Size(face,
+                         0,
+                         self.font.face_size,
+                         self.font.dpi,
+                         self.font.dpi)
         glyph_index = get_fontconfig().char_index(face, text[0])
         error = FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER)
         if error != 0:
@@ -204,32 +207,32 @@ class FreeTypeFont(base.Font):
     def __init__(self, name, size, bold=False, italic=False, dpi=None):
         super(FreeTypeFont, self).__init__()
 
-        self._name = name
-        self._size = size
-        self._face_size = float_to_f26p6(size)
-        self._bold = bold
-        self._italic = italic
-        self._dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
+        self.name = name
+        self.size = size
+        self.face_size = float_to_f26p6(size)
+        self.bold = bold
+        self.italic = italic
+        self.dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
 
         self._set_face(self._load_font_face())
 
     def _load_font_face(self):
-        memory_font = self._get_memory_font(self._name, self._bold, self._italic)
+        memory_font = self._get_memory_font(self.name, self.bold, self.italic)
         if memory_font:
             return memory_font.face
         else:
             return self._load_font_face_from_system()
 
     def _load_font_face_from_system(self):
-        match = get_fontconfig().find_font(self._name, self._size, self._bold, self._italic)
+        match = get_fontconfig().find_font(self.name, self.size, self.bold, self.italic)
         if not match:
-            raise base.FontException('Could not match font "%s"' % self._name)
+            raise base.FontException('Could not match font "%s"' % self.name)
 
         font_face = match.face
         if not font_face:
             # Try to load from file directly
             if not match.file:
-                raise base.FontException('No filename for "%s"' % self._name)
+                raise base.FontException('No filename for "%s"' % self.name)
 
             font_face = self._load_font_face_from_file(match.file)
 
@@ -250,7 +253,7 @@ class FreeTypeFont(base.Font):
         self._get_font_metrics()
 
     def _get_font_metrics(self):
-        FT_Set_Char_Size(self.face, 0, self._face_size, self._dpi, self._dpi)
+        FT_Set_Char_Size(self.face, 0, self.face_size, self.dpi, self.dpi)
         metrics = self.face.size.contents.metrics
         if metrics.ascender == 0 and metrics.descender == 0:
             self._get_font_metrics_workaround()
