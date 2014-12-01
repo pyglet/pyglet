@@ -97,7 +97,10 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
                                  self.font.face_size,
                                  self.font.dpi,
                                  self.font.dpi)
-        FreeTypeError.check_and_raise_on_error('Could set size for "%c"' % text[0], error)
+        # Error 0x17 indicates invalid pixel size, so font size cannot be changed
+        # TODO Warn the user?
+        if error != 0x17:
+            FreeTypeError.check_and_raise_on_error('Could not set size for "%c"' % text[0], error)
 
         glyph_index = get_fontconfig().char_index(face, text[0])
 
@@ -253,14 +256,18 @@ class FreeTypeFont(base.Font):
 
     def _get_font_metrics(self):
         error = FT_Set_Char_Size(self.face, 0, self.face_size, self.dpi, self.dpi)
-        FreeTypeError.check_and_raise_on_error('Could set size', error)
-
-        metrics = self.face.size.contents.metrics
-        if metrics.ascender == 0 and metrics.descender == 0:
+        # Error 0x17 indicates invalid pixel size, so no metrics
+        if error == 0x17:
             self._get_font_metrics_workaround()
         else:
-            self.ascent = int(f26p6_to_float(metrics.ascender))
-            self.descent = int(f26p6_to_float(metrics.descender))
+            FreeTypeError.check_and_raise_on_error('Could not set size', error)
+
+            metrics = self.face.size.contents.metrics
+            if metrics.ascender == 0 and metrics.descender == 0:
+                self._get_font_metrics_workaround()
+            else:
+                self.ascent = int(f26p6_to_float(metrics.ascender))
+                self.descent = int(f26p6_to_float(metrics.descender))
 
     def _get_font_metrics_workaround(self):
         # Workaround broken fonts with no metrics.  Has been observed with
