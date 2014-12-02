@@ -90,54 +90,90 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         super(FreeTypeGlyphRenderer, self).__init__(font)
         self.font = font
 
-    def render(self, text):
-        glyph_slot = self.font.get_glyph_data(text[0])
+        self._glyph_slot = None
+        self._bitmap = None
 
-        width = glyph_slot.bitmap.width
-        height = glyph_slot.bitmap.rows
-        baseline = height - glyph_slot.bitmap_top
-        lsb = glyph_slot.bitmap_left
-        advance = int(f26p6_to_float(glyph_slot.advance.x))
-        mode = glyph_slot.bitmap.pixel_mode
-        pitch = glyph_slot.bitmap.pitch
-        
-        if mode == FT_PIXEL_MODE_MONO:
+        self._width = None
+        self._height = None
+        self._mode = None
+        self._pitch = None
+
+        self._baseline = None
+        self._lsb = None
+        self._advance_x = None
+
+        self._data = None
+
+    def _get_glyph(self, character):
+        assert self.font
+        assert len(character) == 1
+
+        self._glyph_slot = self.font.get_glyph_slot(character)
+        self._bitmap = self._glyph_slot.bitmap
+
+    def _get_glyph_metrics(self):
+        self._width = self._glyph_slot.bitmap.width
+        self._height = self._glyph_slot.bitmap.rows
+        self._mode = self._glyph_slot.bitmap.pixel_mode
+        self._pitch = self._glyph_slot.bitmap.pitch
+
+        self._baseline = self._height - self._glyph_slot.bitmap_top
+        self._lsb = self._glyph_slot.bitmap_left
+        self._advance_x = int(f26p6_to_float(self._glyph_slot.advance.x))
+
+    def _get_bitmap_data(self):
+        if self._mode == FT_PIXEL_MODE_MONO:
             # BCF fonts always render to 1 bit mono, regardless of render
             # flags. (freetype 2.3.5)
-            bitmap_data = cast(glyph_slot.bitmap.buffer, 
-                               POINTER(c_ubyte * (pitch * height))).contents
-            data = (c_ubyte * (pitch * 8 * height))()
-            data_i = 0
-            for byte in bitmap_data:
-                # Data is MSB; left-most pixel in a byte has value 128.
-                data[data_i + 0] = (byte & 0x80) and 255 or 0
-                data[data_i + 1] = (byte & 0x40) and 255 or 0
-                data[data_i + 2] = (byte & 0x20) and 255 or 0
-                data[data_i + 3] = (byte & 0x10) and 255 or 0
-                data[data_i + 4] = (byte & 0x08) and 255 or 0
-                data[data_i + 5] = (byte & 0x04) and 255 or 0
-                data[data_i + 6] = (byte & 0x02) and 255 or 0
-                data[data_i + 7] = (byte & 0x01) and 255 or 0
-                data_i += 8
-            pitch <<= 3
-        elif mode == FT_PIXEL_MODE_GRAY:
+            self._convert_mono_to_gray_bitmap()
+        elif self._mode == FT_PIXEL_MODE_GRAY:
             # Usual case
-            assert glyph_slot.bitmap.num_grays == 256
-            data = glyph_slot.bitmap.buffer
+            assert self._glyph_slot.bitmap.num_grays == 256
+            self._data = self._glyph_slot.bitmap.buffer
         else:
             raise base.FontException('Unsupported render mode for this glyph')
 
+    def _convert_mono_to_gray_bitmap(self):
+        bitmap_data = cast(self._bitmap.buffer,
+                           POINTER(c_ubyte * (self._pitch * self._height))).contents
+        data = (c_ubyte * (self._pitch * 8 * self._height))()
+        data_i = 0
+        for byte in bitmap_data:
+            # Data is MSB; left-most pixel in a byte has value 128.
+            data[data_i + 0] = (byte & 0x80) and 255 or 0
+            data[data_i + 1] = (byte & 0x40) and 255 or 0
+            data[data_i + 2] = (byte & 0x20) and 255 or 0
+            data[data_i + 3] = (byte & 0x10) and 255 or 0
+            data[data_i + 4] = (byte & 0x08) and 255 or 0
+            data[data_i + 5] = (byte & 0x04) and 255 or 0
+            data[data_i + 6] = (byte & 0x02) and 255 or 0
+            data[data_i + 7] = (byte & 0x01) and 255 or 0
+            data_i += 8
+        self._data = data
+        self._pitch <<= 3
+
+    def _create_glyph(self):
         # In FT positive pitch means `down` flow, in Pyglet ImageData
         # negative values indicate a top-to-bottom arrangement. So pitch must be inverted.
         # Using negative pitch causes conversions, so much faster to just swap tex_coords
-        img = image.ImageData(width, height, 'A', data, abs(pitch))
-        glyph = self.font.create_glyph(img) 
-        glyph.set_bearings(baseline, lsb, advance)
-        if pitch > 0:
+        img = image.ImageData(self._width,
+                              self._height,
+                              'A',
+                              self._data,
+                              abs(self._pitch))
+        glyph = self.font.create_glyph(img)
+        glyph.set_bearings(self._baseline, self._lsb, self._advance_x)
+        if self._pitch > 0:
             t = list(glyph.tex_coords)
             glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
 
         return glyph
+
+    def render(self, text):
+        self._get_glyph(text[0])
+        self._get_glyph_metrics()
+        self._get_bitmap_data()
+        return self._create_glyph()
 
 
 class FreeTypeMemoryFont(object):
@@ -213,7 +249,7 @@ class FreeTypeFont(base.Font):
         assert self.face
         return get_fontconfig().char_index(self.face, character)
 
-    def get_glyph_data(self, character):
+    def get_glyph_slot(self, character):
         error = FT_Set_Char_Size(self.face,
                                  0,
                                  self.face_size,
