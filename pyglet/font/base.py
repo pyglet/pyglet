@@ -336,25 +336,24 @@ class Font(object):
         :rtype: `Glyph`
         '''
         glyph = None
+        self._adapt_texture_size(image)
         for texture in self.textures:
             glyph = texture.fit(image)
             if glyph:
                 break
         if not glyph:
-            if image.width > self.texture_width or \
-               image.height > self.texture_height:
-                texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
-                    image.width * 2, image.height * 2,
-                    self.texture_internalformat)
-                self.texture_width = texture.width
-                self.texture_height = texture.height
-            else:
-                texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
-                    self.texture_width, self.texture_height,
-                    self.texture_internalformat)
+            texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
+                self.texture_width, self.texture_height,
+                self.texture_internalformat)
             self.textures.insert(0, texture)
             glyph = texture.fit(image)
         return glyph
+
+    def _adapt_texture_size(self, image):
+        if image.width > self.texture_width or \
+           image.height > self.texture_height:
+            largest_dimension = max(image.width, image.height)
+            self.texture_height = self.texture_width = largest_dimension * 4
 
     def get_glyphs(self, text):
         '''Create and return a list of Glyphs for `text`.
