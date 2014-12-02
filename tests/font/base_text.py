@@ -34,7 +34,7 @@ class TextTestBase(ImageRegressionTestCase):
         self.window.flip()
 
         if self.capture_regression_image():
-            self.window.exit_handler.has_exit = True
+            self.window.has_exit = True
 
     def render(self):
         fnt = font.load(self.font_name, self.font_size) 
