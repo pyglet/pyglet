@@ -230,6 +230,9 @@ class GlyphTextureAtlas(image.Texture):
         :return: The glyph representing the image from this texture, or None
             if the image doesn't fit.
         '''
+        if image.width > self.width or image.height > self.height:
+            return None
+
         if self.x + image.width > self.width:
             self.x = 0
             self.y += self.line_height + 1
