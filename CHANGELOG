@@ -10,6 +10,8 @@
 	* OS X: fix window creation under Mountain Lion (thanks Kuba Niegowski)
 	* OS X: Added dynamic library loading support for pyinstaller's handling of
 	  dynamic libraries on OS X (thanks Nathan Stocks)
+    * Large fonts are displayed correctly now, fix for issue:684
+    * Linux: reworked fontconfig use, fix for issue:506
 
 1.2alpha1
 	The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on
