@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Encoder and decoder for PNG files, using PyPNG (pypng.py).
+'''Encoder and decoder for PNG files, using PyPNG (png.py).
 '''
 
 __docformat__ = 'restructuredtext'
@@ -44,7 +44,8 @@ from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 
-import pyglet.image.codecs.pypng
+import pyglet.extlibs.png as pypng
+
 
 class PNGImageDecoder(ImageDecoder):
     def get_file_extensions(self):
@@ -52,19 +53,19 @@ class PNGImageDecoder(ImageDecoder):
 
     def decode(self, file, filename):
         try:
-            reader = pyglet.image.codecs.pypng.Reader(file=file)
-            width, height, pixels, metadata = reader.read()
+            reader = pypng.Reader(file=file)
+            width, height, pixels, metadata = reader.read_flat()
         except Exception, e:
             raise ImageDecodeException(
                 'PyPNG cannot read %r: %s' % (filename or file, e))
 
         if metadata['greyscale']:
-            if metadata['has_alpha']:
+            if metadata['alpha']:
                 format = 'LA'
             else:
                 format = 'L'
         else:
-            if metadata['has_alpha']:
+            if metadata['alpha']:
                 format = 'RGBA'
             else:
                 format = 'RGB'
@@ -93,11 +94,11 @@ class PNGImageEncoder(ImageEncoder):
 
         image.pitch = -(image.width * len(image.format))
 
-        writer = pyglet.image.codecs.pypng.Writer(
+        writer = pypng.Writer(
             image.width, image.height,
             bytes_per_sample=1,
             greyscale=greyscale,
-            has_alpha=has_alpha)
+            alpha=has_alpha)
 
         data = array.array('B')
         data.fromstring(image.data)
