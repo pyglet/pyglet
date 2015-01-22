@@ -39,6 +39,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import array
+import itertools
 
 from pyglet.gl import *
 from pyglet.image import *
@@ -54,7 +55,7 @@ class PNGImageDecoder(ImageDecoder):
     def decode(self, file, filename):
         try:
             reader = pypng.Reader(file=file)
-            width, height, pixels, metadata = reader.read_flat()
+            width, height, pixels, metadata = reader.asDirect()
         except Exception, e:
             raise ImageDecodeException(
                 'PyPNG cannot read %r: %s' % (filename or file, e))
@@ -70,6 +71,8 @@ class PNGImageDecoder(ImageDecoder):
             else:
                 format = 'RGB'
         pitch = len(format) * width
+
+        pixels = array.array('BH'[metadata['bitdepth']>8], itertools.chain(*pixels))
         return ImageData(width, height, format, pixels.tostring(), -pitch)
 
 class PNGImageEncoder(ImageEncoder):
