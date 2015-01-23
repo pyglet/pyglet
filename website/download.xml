@@ -6,20 +6,6 @@
   </p>
 
   <h2>current release</h2>
-<!--
-  <h2>runtime eggs</h2>
-  <p>
-    The runtime eggs can be used with any setuptools-enabled application.
-  </p>
-  <ul>
-    <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0-py2.4.egg">pyglet-1.0-py2.4.egg</a>:
-    Runtime for Python 2.4</li>
-    <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.0.2-py2.5.egg">pyglet-1.0.2-py2.5.egg</a>:
-    Runtime for Python 2.5</li>
-  </ul>
--->
   <h3>platform distributions</h3>
   <p>
     Choose the pyglet distribution corresponding to your platform, or select
@@ -67,9 +53,9 @@
   </p>
   <ul>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.4.tar.gz">pyglet-1.1.4.tar.gz</a></li>
+    href="https://bitbucket.org/pyglet/pyglet/get/pyglet-1.1.4.tar.gz">pyglet-1.1.4.tar.gz</a></li>
     <li><a
-    href="http://pyglet.googlecode.com/files/pyglet-1.1.4.zip">pyglet-1.1.4.zip</a></li>
+    href="https://bitbucket.org/pyglet/pyglet/get/pyglet-1.1.4.zip">pyglet-1.1.4.zip</a></li>
   </ul>
 
   <a name="unstable" />
@@ -81,14 +67,11 @@
   <ul>
   <li>You can install the latest version using pip:
   <p class="console">
-	  pip install --upgrade http://pyglet.googlecode.com/archive/tip.zip
+	  pip install --upgrade https://bitbucket.org/pyglet/pyglet/get/tip.zip
   </p>
   </li>
-  <li>Source and documentation for <b>pyglet 1.2 alpha1</b> are available directly from the
-	  <a href="http://code.google.com/p/pyglet/downloads/list?q=1.2alpha1">download server</a>.
-	  This version is too outdated, we recommend using the
-	  <a href="http://pyglet.googlecode.com/archive/tip.zip">latest repository version</a> (ZIP file) instead
-	  until the next version is released.
+  <li>Source and documentation for any tag or branch is available on 
+  <a href="https://bitbucket.org/pyglet/pyglet/downloads">bitbucket</a>
   </li>
   </ul>
 </div>

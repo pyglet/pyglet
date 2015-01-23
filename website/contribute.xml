@@ -6,26 +6,13 @@
         Pyglet communication occurs mostly in our
         <a href="http://groups.google.com/group/pyglet-users">mailing list</a>.
     </p>
-    <p>
-        Additionally, we have two other announcement mailing lists:
-    </p>
-    <ul>
-        <li>
-            <a href="http://groups.google.com/group/pyglet-issues">pyglet-issues</a>,
-            which broadcasts automatic emails from the issue tracker.
-        </li>
-        <li>
-            <a href="http://groups.google.com/group/pyglet-commits">pyglet-commits</a>,
-            which broadcasts automatic mails when a new commit is made to the source.</li>
-    </ul>
 
     <h2>
         issue tracker
     </h2>
     <p>
-        You can use the <a href="http://code.google.com/p/pyglet/issues/list">issue tracker</a>
-        to report any bug or compatibility issue. You need
-        a <a href="http://mail.google.com/mail/signup">Google account</a> for that.
+        You can use the <a href="https://bitbucket.org/pyglet/pyglet/issues">issue tracker</a>
+        to report any bug or compatibility issue.
     </p>
     <p>
         We prefer the tracker to address discussions on specific bugs,
@@ -36,12 +23,12 @@
         getting the trunk version
     </h2>
     <p>
-        The repository can be found <a href="http://code.google.com/p/pyglet/source/browse/">here</a>;
+        The repository can be found <a href="https://bitbucket.org/pyglet/pyglet/src">here</a>;
         it hosts the source trunk, documentation, examples, and development tools.
         You can get the latest version of the code using:
     </p>
     <p class="console">
-        hg clone https://code.google.com/p/pyglet/ pyglet
+        hg clone https://bitbucket.org/pyglet/pyglet
     </p>
 
     <h2>
@@ -52,24 +39,17 @@
     </p>
     <ol>
         <li>
-            Create your own clone in the <a href="http://code.google.com/p/pyglet/source/checkout">official repository</a>.
+            Fork the <a href="https://bitbucket.org/pyglet/pyglet/fork">official repository</a>.
         </li>
         <li>
-            <p>Get a local copy of your clone using</p>
-            <p class="console">
-                hg clone https://code.google.com/r/&lt;username&gt;-&lt;rep_name&gt;/source/checkout
-            </p>
+            Apply your changes to your fork.
         </li>
         <li>
-            Commit your modifications and push them to your clone.
-        </li>
-        <li>
-			Open an ticket in the issue tracker describing your change and link the clone/commit. A project member
-			will review your commit providing feedback and eventually it will be merged into the official repository.
+            Submit a <a href="https://bitbucket.org/pyglet/pyglet/pull-request">pull request</a> describing the changes you have made.
         </li>
     </ol>
     <p>
-        Alternatively you can also create a patch of your changes and attach it to the ticket.
+        Alternatively you can create a patch and submit it to the issue tracker.
     </p>
 
     <h2>
