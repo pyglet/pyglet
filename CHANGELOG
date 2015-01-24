@@ -1,4 +1,4 @@
-1.2beta1
+1.2rc1
     + new API: font.have_font(name) return True if named font is installed
     * tests: invalid answer no longer marks test as passed, some windows can
       be closed with ENTER key, test counter fixed and added to reports
