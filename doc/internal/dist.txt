@@ -23,7 +23,7 @@ Making a pyglet release
 
 6. Linux - You will need docutils, the docbook writer from the docutils sandbox, inkscape, fop, docbook-xsl, and perhaps more:
 
-   	./make.py clean ; ./make.py docs:w
+   	./make.py clean ; ./make.py docs
 
    Creates doc package in dist/
 
