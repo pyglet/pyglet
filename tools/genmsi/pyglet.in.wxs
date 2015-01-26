@@ -271,6 +271,7 @@
       <Directory Id="SystemFolder">
         <Component Id="AVbinComponent" Guid="AEEC09B3-FC40-4841-9805-32ABC272945D">
           <File Id="AVbinDLL" Name="avbin.dll" DiskId="1" Source="res\avbin.dll" />
+          <File Id="AVbinDLL64" Name="avbin64.dll" DiskId="1" Source="res\avbin64.dll" />
         </Component>
       </Directory>
       <!-- pyglet modules are inserted here -->
@@ -278,7 +279,7 @@
 
     <Feature Id="RuntimeFeature" Title="pyglet runtime" 
       Display="expand" Level="1" AllowAdvertise="no">
-      <Feature Id="AVbinFeature" Title="AVbin audio and video support (recommended)" Level="1" AllowAdvertise="no">
+      <Feature Id="AVbinFeature" Title="AVbin 10 audio and video support (recommended)" Level="1" AllowAdvertise="no">
         <ComponentRef Id="AVbinComponent" />
       </Feature>
       <!-- Python version features are inserted here -->

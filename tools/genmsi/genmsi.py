@@ -22,14 +22,16 @@ class PythonVersion(object):
         self.exe_prop = 'PYTHONEXE%s' % self.id
         self.components = []
 PYTHON_VERSIONS = (
-    PythonVersion('2.4', 'HKLM', 'Python 2.4'),
-    PythonVersion('2.5', 'HKLM', 'Python 2.5'),
     PythonVersion('2.6', 'HKLM', 'Python 2.6'),
-    PythonVersion('2.4', 'HKCU', 'Python 2.4 (current user only)'),
-    PythonVersion('2.5', 'HKCU', 'Python 2.5 (current user only)'),
     PythonVersion('2.6', 'HKCU', 'Python 2.6 (current user only)'),
+    PythonVersion('2.7', 'HKLM', 'Python 2.7'),
+    PythonVersion('2.7', 'HKCU', 'Python 2.7 (current user only)'),
+    PythonVersion('3.3', 'HKLM', 'Python 3.3'),
+    PythonVersion('3.3', 'HKCU', 'Python 3.3 (current user only)'),
+    PythonVersion('3.4', 'HKLM', 'Python 3.4'),
+    PythonVersion('3.4', 'HKCU', 'Python 3.4 (current user only)'),
 )
-MISSING_PYTHON_MESSAGE = 'pyglet requires Python 2.4 or later.  The ' \
+MISSING_PYTHON_MESSAGE = 'pyglet requires Python 2.6+ or 3.3+. Get from www.python.org. The ' \
                          'installation will be aborted.'
 
 exclude_packages = []
@@ -136,8 +138,8 @@ if __name__ == '__main__':
         pass
 
     # Copy current avbin into res
-    shutil.copyfile('c:/windows/system32/avbin.dll', 
-                    os.path.join(script_dir, 'res', 'avbin.dll'))
+    #shutil.copyfile('c:/windows/system32/avbin.dll', 
+    #                os.path.join(script_dir, 'res', 'avbin.dll'))
 
     # Determine release version from setup.py
     version_re = re.compile("VERSION = '([^']*)'")
@@ -164,7 +166,7 @@ if __name__ == '__main__':
         base = 0
     elif tag == '*beta':
         base = 16
-    elif tag == '*rc':
+    elif tag == '*rc' or tag == '*c':
         base = 32
     elif tag == '*final':
         base = 128
