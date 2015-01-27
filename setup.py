@@ -9,6 +9,7 @@ __version__ = '$Id$'
 import os
 import shutil
 import sys
+from setuptools import find_packages
 
 # Bump pyglet/__init__.py version as well.
 VERSION = '1.2rc1'
@@ -16,6 +17,10 @@ VERSION = '1.2rc1'
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
 for Windows, Mac OS X and Linux.'''
+
+def create_package_list(base_package):
+    return [base_package + '.' + pkg for pkg in find_packages(base_package)]
+
 
 setup_info = dict(
     # Metadata
@@ -44,34 +49,7 @@ setup_info = dict(
     ],
 
     # Package info
-    packages=[
-        'pyglet',
-        'pyglet.app',
-        'pyglet.canvas',
-        'pyglet.font',
-        'pyglet.gl',
-        'pyglet.graphics',
-        'pyglet.image',
-        'pyglet.image.codecs',
-        'pyglet.input',
-        'pyglet.libs',
-        'pyglet.libs.darwin',
-        'pyglet.libs.darwin.cocoapy',
-        'pyglet.libs.win32',
-        'pyglet.libs.x11',
-        'pyglet.media',
-        'pyglet.media.drivers',
-        'pyglet.media.drivers.directsound',
-        'pyglet.media.drivers.openal',
-        'pyglet.media.drivers.pulse',
-        'pyglet.text',
-        'pyglet.text.formats',
-        'pyglet.window',
-        'pyglet.window.carbon',
-        'pyglet.window.cocoa',
-        'pyglet.window.win32',
-        'pyglet.window.xlib',
-    ],
+    packages=create_package_list('pyglet'),
 
     # Add _ prefix to the names of temporary build dirs
     options={
@@ -291,7 +269,7 @@ if _have_setuptools:
     setup_info.update(setuptools_info)
 
     install_requires = []
-    if sys.version_info < (2, 5, 0):
+    if sys.version_info < (2, 6, 0):
         install_requires.append('ctypes')
     setup_info.update(dict(
         install_requires=install_requires,
