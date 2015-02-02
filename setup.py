@@ -12,7 +12,7 @@ import sys
 from setuptools import find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.2rc1'
+VERSION = '1.2.0rc2'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications

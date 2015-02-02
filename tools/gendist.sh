@@ -10,12 +10,16 @@ VERSION=`grep 'VERSION =' setup.py | cut -d "'" -f2`
 python setup.py sdist --formats=gztar,zip
 
 # Eggs
-#python2.4 setup.py bdist_egg --exclude-source-files
-#python2.5 setup.py bdist_egg --exclude-source-files
-python2.6 setup.py bdist_egg --exclude-source-files
-python2.7 setup.py bdist_egg --exclude-source-files
-python3.3 setup.py bdist_egg --exclude-source-files
-python3.4 setup.py bdist_egg --exclude-source-files
+#python2.6 setup.py bdist_egg --exclude-source-files
+#python2.7 setup.py bdist_egg --exclude-source-files
+#python3.3 setup.py bdist_egg --exclude-source-files
+#python3.4 setup.py bdist_egg --exclude-source-files
+
+# Wheels
+python2.6 setup.py bdist_wheel --exclude-source-files
+python2.7 setup.py bdist_wheel --exclude-source-files
+python3.3 setup.py bdist_wheel --exclude-source-files
+python3.4 setup.py bdist_wheel --exclude-source-files
 
 # Build docs archive
 python setup.py sdist --manifest-only
