@@ -9,7 +9,7 @@ __version__ = '$Id$'
 import os
 import shutil
 import sys
-from setuptools import find_packages
+from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
 VERSION = '1.2.0rc2'
@@ -59,38 +59,13 @@ setup_info = dict(
     # Add _ prefix to the names of temporary build dirs
     options={
         'build': {'build_base': '_build'},
-        'sdist': {'dist_dir': '_dist'},
-    }
-)
-
-setuptools_info = dict(
+        #        'sdist': {'dist_dir': '_dist'},
+    },
     zip_safe=True,
 )
 
-if 'bdist_egg' in sys.argv or 'develop' in sys.argv:
-    from setuptools import setup
-    _have_setuptools = True
 
-    # Don't walk SVN tree for default manifest
-    from setuptools.command import egg_info
-    from setuptools.command import sdist
-    egg_info.walk_revctrl = lambda: []
-    sdist.walk_revctrl = lambda: []
-
-    # Insert additional command-line arguments into install_lib when
-    # bdist_egg calls it, to compile byte-code with optimizations.
-    # This is a dirty hack.
-    from setuptools.command import bdist_egg
-    old_call_command = bdist_egg.bdist_egg.call_command
-    def call_command(self, *args, **kwargs):
-        if args[0] == 'install_lib':
-            kwargs['optimize'] = 2
-            kwargs['compile'] = False
-        cmd = old_call_command(self, *args, **kwargs)
-        return cmd
-    bdist_egg.bdist_egg.call_command = call_command
-
-elif 'bdist_mpkg' in sys.argv:
+if 'bdist_mpkg' in sys.argv:
     from setuptools import setup
     _have_setuptools = True
 
@@ -263,29 +238,10 @@ elif 'bdist_mpkg' in sys.argv:
         cmdclass={'bdist_mpkg': pyglet_bdist_mpkg,}
     ))
 
-else:
-    from distutils.core import setup
-    _have_setuptools = False
 
-
-
-if _have_setuptools:
-    # Additional dict values for setuptools
-    setup_info.update(setuptools_info)
-
-    install_requires = []
-    if sys.version_info < (2, 6, 0):
-        install_requires.append('ctypes')
-    setup_info.update(dict(
-        install_requires=install_requires,
-    ))
 
 if sys.version_info >= (3,):
     # Automatically run 2to3 when using Python 3
-    if _have_setuptools:
-        setup_info["use_2to3"] = True
-    else:
-        from distutils.command.build_py import build_py_2to3
-        setup_info["cmdclass"] = {"build_py" : build_py_2to3}
+    setup_info["use_2to3"] = True
 
 setup(**setup_info)
