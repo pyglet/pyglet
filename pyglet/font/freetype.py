@@ -36,6 +36,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import ctypes
+from pyglet.compat import asbytes
 from pyglet.font import base
 from pyglet import image
 from pyglet.font.fontconfig import get_fontconfig
@@ -293,7 +294,7 @@ class FreeTypeFont(base.Font):
     def _load_font_face_from_file(file_name):
         font_face = FT_Face()
         ft_library = ft_get_library()
-        error = FT_New_Face(ft_library, file_name, 0, byref(font_face))
+        error = FT_New_Face(ft_library, asbytes(file_name), 0, byref(font_face))
         FreeTypeError.check_and_raise_on_error('Could not load font from "%s"' % file_name, error)
         return font_face
 

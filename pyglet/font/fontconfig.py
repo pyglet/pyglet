@@ -42,7 +42,7 @@ from collections import OrderedDict
 from ctypes import *
 
 import pyglet.lib
-from pyglet.compat import asbytes
+from pyglet.compat import asbytes, asstr
 from pyglet.font.base import FontException
 
 # fontconfig library definitions
@@ -216,10 +216,10 @@ class FontConfigPattern(object):
         if not value:
             return
 
-        if isinstance(name, unicode):
-            name = name.encode('utf8')
+        if isinstance(value, unicode):
+            value  = value.encode('utf8')
 
-        self._fontconfig.FcPatternAddString(self._pattern, name, value)
+        self._fontconfig.FcPatternAddString(self._pattern, name, asbytes(value))
 
     def _set_double(self, name, value):
         assert self._pattern
@@ -257,7 +257,7 @@ class FontConfigPattern(object):
         value = self._get_value(name)
 
         if value and value.type == FcTypeString:
-            return value.u.s
+            return asstr(value.u.s)
         else:
             return None
 
