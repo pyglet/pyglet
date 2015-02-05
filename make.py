@@ -10,20 +10,41 @@ from subprocess import call, check_output
 
 THIS_DIR = op.dirname(op.abspath(__file__))
 DOC_DIR = op.join(THIS_DIR, 'doc')
+DIST_DIR = op.join(THIS_DIR, 'dist')
+GENDIST_TOOL = op.join(THIS_DIR, 'tools', 'gendist.sh')
 
 def clean():
-    dirs = [op.join(DOC_DIR, '_build')]
+    """Clean up all build artifacts, including generated documentation."""
+    dirs = [op.join(DOC_DIR, '_build'),
+            DIST_DIR]
     for d in dirs:
         print('   Removing:', d)
         shutil.rmtree(d, ignore_errors=True)
 
+
 def docs():
+    """Generate documentation"""
     make_bin = 'make.exe' if sys.platform=='win32' else 'make'
 
     os.makedirs(op.join(DOC_DIR, '_build', 'html'))
     call([make_bin, 'html'], cwd=DOC_DIR)
-    if '--no-open' not in sys.argv:
+    if '--open' in sys.argv:
         webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
+
+
+def dist():
+    """Create all files to distribute Pyglet"""
+    docs()
+    call(GENDIST_TOOL)
+
+
+def _print_usage():
+    print('Usage:', op.basename(sys.argv[0]), '<command>')
+    print('  where commands are:', ', '.join(avail_cmds))
+    print()
+    for name, cmd in avail_cmds.items():
+        print(name, '\t', cmd.__doc__)
+
 
 if __name__=='__main__':
     avail_cmds = dict(filter(lambda kv: not kv[0].startswith('_') 
@@ -32,9 +53,12 @@ if __name__=='__main__':
                              locals().items()))
     try:
         cmd = avail_cmds[sys.argv[1]]
-    except Exception as exc:
-        print(type(exc).__name__, ':', exc)
-        print('Usage:', op.basename(sys.argv[0]), '<command>')
-        print('  where commands are:', ', '.join(avail_cmds))
+    except IndexError:
+        # Invalid number of arguments, just print help
+        _print_usage()
+    except KeyError:
+        print('Unknown command:', sys.argv[1])
+        print()
+        _print_usage()
     else:
         cmd()
