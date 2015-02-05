@@ -287,6 +287,14 @@ FONTENUMPROC = ctypes.WINFUNCTYPE(
   wintypes.LPARAM
 )
 
+# When running 64 bit windows, some types are not 32 bit, so Python/ctypes guesses wrong
+gdi32.EnumFontFamiliesExA.argtypes = [
+        wintypes.HDC,
+        ctypes.POINTER(LOGFONT),
+        FONTENUMPROC,
+        wintypes.LPARAM,
+        wintypes.DWORD]
+
 
 def _enum_font_names(logfont, textmetricex, fonttype, param):
   """callback function to be executed during EnumFontFamiliesEx
