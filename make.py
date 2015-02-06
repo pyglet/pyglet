@@ -16,7 +16,9 @@ GENDIST_TOOL = op.join(THIS_DIR, 'tools', 'gendist.sh')
 def clean():
     """Clean up all build artifacts, including generated documentation."""
     dirs = [op.join(DOC_DIR, '_build'),
-            DIST_DIR]
+            DIST_DIR,
+            op.join(THIS_DIR, '_build'),
+            op.join(THIS_DIR, 'pyglet.egg-info')]
     for d in dirs:
         print('   Removing:', d)
         shutil.rmtree(d, ignore_errors=True)
