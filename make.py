@@ -28,7 +28,9 @@ def docs():
     """Generate documentation"""
     make_bin = 'make.exe' if sys.platform=='win32' else 'make'
 
-    os.makedirs(op.join(DOC_DIR, '_build', 'html'))
+    html_dir = op.join(DOC_DIR, '_build', 'html')
+    if not op.exists(html_dir):
+        os.makedirs(op.join(DOC_DIR, '_build', 'html'))
     call([make_bin, 'html'], cwd=DOC_DIR)
     if '--open' in sys.argv:
         webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
