@@ -25,9 +25,9 @@ class WINDOW_RESIZABLE(unittest.TestCase):
         self.w = w = window.Window(self.width, self.height, resizable=True)
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:
-            w.dispatch_events()
             window_util.draw_client_border(w)
             w.flip()
+            w.dispatch_events()
         w.close()
 
 if __name__ == '__main__':

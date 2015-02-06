@@ -24,8 +24,8 @@ class TEST_WINDOW_STYLE_TOOL(unittest.TestCase):
         glClearColor(1, 1, 1, 1)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)
-            w.dispatch_events()
             w.flip()
+            w.dispatch_events()
         w.close()
 
 if __name__ == '__main__':

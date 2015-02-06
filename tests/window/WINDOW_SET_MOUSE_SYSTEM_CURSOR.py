@@ -65,8 +65,8 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(unittest.TestCase):
         w.push_handlers(self)
         while not w.has_exit:
             glClear(GL_COLOR_BUFFER_BIT)
-            w.dispatch_events()
             w.flip()
+            w.dispatch_events()
         w.close()
 
 if __name__ == '__main__':
