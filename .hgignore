@@ -10,3 +10,7 @@ doc/internal/build.rst
 doc/internal/blacklist.rst
 website/dist
 build
+dist
+pyglet.egg-info/
+MANIFEST
+tests/regression/images/*.png

@@ -401,6 +401,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         context.lock()
         pa.pa_stream_disconnect(self.stream)
+        pa.pa_stream_set_state_callback(self.stream, None, None)
         context.unlock()
         pa.pa_stream_unref(self.stream)
         self.stream = None

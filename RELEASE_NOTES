@@ -1,0 +1,161 @@
+Pyglet 1.2
+==========
+The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on 64-bit operating systems 
+Linux, Windows and OS X. The OS X layer has switched to Cocoa.
+
+Backwards-incompatible API changes:
+* renamed Label parameter 'halign' to 'align', fix for issue:460
+* remove unused module 'glext_missing' - everything should already be in 'glext_arb'
+
+Python support
+--------------
+- 2.6 and up
+- NEW: 3.3 and up
+
+Platform support
+----------------
+- Improved win32 support
+- Windows: DirectInput support
+- OSX: Joystick support
+- Linux: GL 3 support
+- Linux: ALSA replaced by PulseAudio
+- Windows: Tablet API support
+- OSX: Tablet support
+- Linux: Tablet support
+- OSX: Cocoa support
+- OSX: Support for PyObjC 2.3
+
+Bugfixes
+--------
+- 294: pyglet.image.get_texture(rectangle=True) returns GL_TEXTURE_2D for tex.target if image is
+  POT
+- 345: image mouse cursor shows up after fullscreen switch
+- 347: vowel in Thai language did not display
+- 353: X11: Wrong keysym reported in on_key_press/release if shift pressed.
+- 355: wraptypes does not wrap hex or octal enum values properly
+- 357: Non-conforming ATI cards missing glGenBuffers
+- 358: ResourceNotFoundException has spelling error in message (in pyglet 1.1.2)
+- 361: xlib: initial mouse dx/dy incorrect if mouse on window
+- 362: Support for generic attributes are broken
+- 363: pyglet.resource no longer finds files within directories
+- 368: permission issues with some doc and example files
+- 371: pyglet.sprite uses integer coordinates for drawing
+- 376: Windows Installer Ambiguous about Supported Python Versions
+- 377: on_mouse_scroll not being called with latest pyglet revision (from svn) on vista64
+- 379: pyglet.media.drivers.alsa not in trunk r2421
+- 380: mac osx HID not working
+- 381: Missing attribute in VertexDomain when changing the group attribute of a sprite multiple
+  times
+- 382: evdev device name unicode problem
+- 387: input events stop being processed
+- 391: code cleanups for pyglet.image
+- 392: code cleanups for text and font
+- 393: code cleanup for input and app
+- 405: Virtual key codes are not mapped in OS X
+- 407: random crash with pyglet.clock.tick()
+- 408: IncrementalTextLayout, when deleted, still renders into its batch on document update
+- 409: pyglet.media.have_avbin missing in 1.2dev (svn rev 2445)
+- 411: Problem loading gif animation with alpha
+- 413: TileableTexture interchanges red and blue in some JPGs
+- 414: Carbon platform missing support for multiple mouse buttons during drag
+- 416: Endless loop in pyglet.resource.reindex()
+- 418: Vertical mouse scroll problem under windows
+- 422: Documentation: pyglet.resource and pats
+- 423: glMultiDrawElements called with incorrect arguments in method IndexedVertexDomain.draw
+- 424: Small documentation error in document layout model page
+- 426: Attempt to load resource from zipfile with no internal directory structure fail
+- 429: Exception when attributed text contains multiple trailing newlines
+- 439: EVENT_CLOSE test can't be passed
+- 440: tests/window/WINDOW_SET_MOUSE_SYSTEM_CURSOR does not exit when escape is pressed
+- 443: after the test window.EVENT_SHOW_HIDE process must be killed
+- 444: tests/resources/RES_LOAD_IMAGE opens a slew of windows and doesn't close them
+- 460: multiline label will not center align
+- 463: Min/Mag filter cannot be used with pyglets texture
+- 467: Setting the mouse position should be exposed to pyglet users
+- 471: Exception when clearing text of FormattedDocument with IncrementalTextLayout
+- 485: Wrapper generation (e.g. gengl.py) fails to parse L-prefaced character literals
+- 487: vendor specific keys on linux are crashing pyglet
+- 493: GdkPixbuf2ImageDecoder unable to decode images smaller than 1kb
+- 496: Another OpenGL 1.5 non-conforming video card
+- 510: Win-amd64 issues
+- 512: Fix missing parenthesis in docs
+- 517: tests/window/CONTEXT_SHARE.py glIsList exceptions
+- 519: Windows test log errors
+- 523: some incorrect key constants in the programming guide
+- 524: Pyglet 1.2dev events do not fire on OS X
+- 529: pyglet crashes on FreeBSD-8/amd64 if fonts are used. [patch included]
+- 533: pyglet.media.Player broken on Python3
+- 536: Pitch change functionality with pulseaudio driver.
+- 538: deleting text before an InlineElement fails to adjust its position properly, causes
+  tracebacks if style changed later
+- 551: image encoder fails on python 3
+- 552: Memory leak in pyglet.image.load
+- 558: Patch for /doc/programming_guide/graphics.txt
+- 565: Race condition leads to crash calling glDeleteBuffers
+- 570: xlib 100% CPU usage after post_event
+- 571: pyglet fails for sys.platform=='linux3'
+- 572: Patch for /pyglet/lib.py
+- 579: Failing to load libraries that exist but have fatal problems is _silently_ ignored on Linux
+  and OS X.
+- 580: image.DDS_RGB_DXT1_LOAD (and similar) throw ImageException
+- 610: Wrong messages in the NOTICE file
+- 611: Mouse event incorrect on OS-X
+- 616: Mention font.Font.have_font() in proguide, and expose font.have_font() for convenience
+- 624: mouse_motion events get delivered to cocoa windows on start
+- 625: osx platform segmentation fault when opening input devices
+- 630: pyglet 1.2alpha1 with Python 3.2
+- 637: 'pulse' audio driver sets the volume to 100%
+- 638: Player set_pitch crashes with 'directaudio' driver
+- 653: Unsupported PNG color type: 3
+- 657: gdiplus.py : n_delays must be long, not float.
+- 659: image.save method doesnt catch correct Exception
+- 660: platform_event_loop.post_event doesn't work for Cocoa loop
+- 661: Player.next is converted to Player.__next__ for python3
+- 662: gamepad cannot be found in linux
+- 664: bug in font/win32query.py on win x64 (its not always occur )
+- 665: remove_handler does not remove handler
+- 668: Sync pypng with upstream
+- 671: Support for local libraries
+- 672: User preferences shouldn't use ~/.ApplicationName/ but ~/.config/AplicationName/ in Linux
+- 673: Documentation building requirements are not documented
+- 674: README errors
+- 681: Tuple slice on ImageGrid documented but not implemented
+- 682: Documentation Link on homepage is incorrect.
+- 683: Improving "contribute" page
+- 684: Displaying large font fails under very specific conditions
+- 687: Exposing _draw_list_dirty in batch API.
+- 688: Doc folder refactorization
+- 692: docstring style modifications
+- 696: 2to3 convertsizip_longest to zip_longest
+- 699: SolidColorImagePattern and CheckerImagePattern appear to fail in python3 and pyglet1.2a
+- 704: [patch] py3 compatibility problem in pyglet/graphics/__init__.py
+- 710: resource path when using
+- 715: Patch for /pyglet/image/codecs/dds.py
+- 716: FIX: Pulseaudio / ctypes on Py3k
+- 718: False "ImageDecodeException: Not a GIF stream" in python3.x
+- 719: .bmp files traceback with py3
+- 720: tests/image compatibility StringIO vs BytesIO
+- 721: compatibilty py3 for tests/image TEXTURE_3D.py and TEXTURE_GRID.py
+- 722: TypeError in graphics test suite with python3.x
+- 723: py3 compatibility in tests/image MATRIX_RGB.py, MATRIX_RGBA.py
+- 724: py3 compatibility for png s (bytes vs str)
+- 727: tabs looking bad, especially in monospace fonts
+- 729: "ImportError: No module named future" in image.MATRIX_RGB test suite.
+- 731: Expectations about supported font formats
+- 734: spurious 'class plain' showing in sphinx rendering of doc/programming_guide/text.txt
+- 735: py3: BytesIO and disambiguate div for pyglet/image/__init__.py
+- 736: Pyglet media fails to close PulseAudio instances
+- 737: 1.2 programming guide mentions ALSA and not Pulse
+- 739: FIX: Prevent user mouse stupidity
+- 744: expectations and exploration of fonts in Windows
+- 747: Document pyglet's "shadow window" functionality
+- 754: tests/test.py -- AttributeError: 'module' object has no attribute 'platform' (i.e. pyglet
+  has no platform)
+
+New features
+------------
+- New eventloop implementation
+- Quartz image decoder
+- Improved documentation
+- new API: font.have_font(name) return True if named font is installed
+

@@ -13,12 +13,14 @@ prune examples/**/dist
 # Tests
 recursive-include tests *
 recursive-exclude tests/regression/images *.png
+recursive-exclude tests *.log
 
 # Docs
 # removed - docs available separately
 #recursive-include doc/html *
 #recursive-include doc/pdf *
 
+# Development artifacts
 prune **/.svn
 recursive-exclude * *.pyc
 recursive-exclude * *.pyo

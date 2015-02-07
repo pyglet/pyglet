@@ -43,9 +43,9 @@ class WINDOW_FIXED_SET_SIZE(unittest.TestCase):
         self.w = w = window.Window(self.width, self.height)
         w.push_handlers(self)
         while not w.has_exit:
-            w.dispatch_events()
             window_util.draw_client_border(w)
             w.flip()
+            w.dispatch_events()
         w.close()
 
 if __name__ == '__main__':

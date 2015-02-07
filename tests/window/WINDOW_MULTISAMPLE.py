@@ -125,9 +125,9 @@ class WINDOW_MULTISAMPLE(unittest.TestCase):
             dt = clock.tick()
             self.angle += dt
             
-            self.win.dispatch_events()
             self.render()
             self.win.flip()
+            self.win.dispatch_events()
         self.win.close()
 
 if __name__ == '__main__':
