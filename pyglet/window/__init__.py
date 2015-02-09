@@ -563,6 +563,10 @@ class BaseWindow(EventDispatcher):
             self.set_visible(True)
             self.activate()
 
+    def __del__(self):
+        # Always clean up the window when it is dereferenced. Makes sure there are no dangling pointers or memory leaks.
+        self.close()
+            
     def __repr__(self):
         return '%s(width=%d, height=%d)' % \
             (self.__class__.__name__, self.width, self.height)
