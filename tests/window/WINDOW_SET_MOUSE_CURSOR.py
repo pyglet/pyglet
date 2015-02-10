@@ -18,8 +18,10 @@ from pyglet.gl import *
 from pyglet import image
 from pyglet import window
 
-from os.path import join, dirname
-cursor_file = join(dirname(__file__), 'cursor.png')
+from os.path import abspath, join, dirname
+
+test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
+cursor_file = join(test_data_path, 'cursor.png')
 
 class WINDOW_SET_MOUSE_CURSOR(unittest.TestCase):
     def on_mouse_motion(self, x, y, dx, dy):

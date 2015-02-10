@@ -31,12 +31,13 @@ from pyglet.window import key
 
 import window_util
 
-from os.path import join, dirname
-icon_file1 = join(dirname(__file__), 'icon_size1.png')
-icon_file2 = join(dirname(__file__), 'icon_size2.png')
-icon_file3 = join(dirname(__file__), 'icon_size3.png')
-icon_file4 = join(dirname(__file__), 'icon_size4.png')
-icon_file5 = join(dirname(__file__), 'icon_size5.png')
+from os.path import abspath, join, dirname
+test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
+icon_file1 = join(test_data_path, 'icon_size1.png')
+icon_file2 = join(test_data_path, 'icon_size2.png')
+icon_file3 = join(test_data_path, 'icon_size3.png')
+icon_file4 = join(test_data_path, 'icon_size4.png')
+icon_file5 = join(test_data_path, 'icon_size5.png')
 
 class WINDOW_SET_ICON_SIZES(unittest.TestCase):
     def test_set_icon_sizes(self):
