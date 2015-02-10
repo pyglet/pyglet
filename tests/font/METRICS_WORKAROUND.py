@@ -18,13 +18,14 @@ from pyglet import font
 from . import base_text
 
 base_path = os.path.dirname(__file__)
+test_data_path = os.path.abspath(os.path.join(base_path, '..', 'data', 'fonts'))
 
 
 class TEST_METRICS_WORKAROUND(base_text.TextTestBase):
     window_size = 600, 100
 
     def render(self):
-        font.add_file(os.path.join(base_path, 'courR12-ISO8859-1.pcf'))
+        font.add_file(os.path.join(test_data_path, 'courR12-ISO8859-1.pcf'))
 
         fnt = font.load('Courier', 16)
 

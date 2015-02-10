@@ -18,12 +18,13 @@ from pyglet import font
 from . import base_text
 
 base_path = os.path.dirname(__file__)
+test_data_path = os.path.abspath(os.path.join(base_path, '..', 'data', 'fonts'))
 
 class TEST_ADD_FONT(base_text.TextTestBase):
     font_name = 'Action Man'
 
     def render(self):
-        font.add_file(os.path.join(base_path, 'action_man.ttf'))
+        font.add_file(os.path.join(test_data_path, 'action_man.ttf'))
 
         # Hard-code 16-pt at 100 DPI, and hard-code the pixel coordinates
         # we see that font at when DPI-specified rendering is correct.

@@ -19,12 +19,13 @@ from pyglet import font
 from . import base_text
 
 base_path = os.path.dirname(__file__)
+test_data_path = os.path.abspath(os.path.join(base_path, '..', 'data', 'fonts'))
 
 class TEST_HORIZONTAL_METRICS(base_text.TextTestBase):
     window_size = 400, 250
 
     def render(self):
-        font.add_file(os.path.join(base_path, 'action_man.ttf'))
+        font.add_file(os.path.join(test_data_path, 'action_man.ttf'))
 
         fnt1 = font.load('Action Man', 16)
         fnt2 = font.load('Arial', 16)
