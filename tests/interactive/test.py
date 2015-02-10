@@ -223,10 +223,10 @@ import time
 import unittest
 
 # So we can find tests.regression and ensure local pyglet copy is tested.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from pyglet import compat_platform
-import tests.regression
+import tests.interactive.regression
 import pyglet.image
 
 regressions_path = os.path.join(os.path.dirname(__file__), 
@@ -243,7 +243,7 @@ class TestCase(object):
         return '%s.py' % os.path.join(root, path)
 
     def get_module(self, root=''):
-        name = 'tests.%s' % self.name
+        name = 'tests.interactive.%s' % self.name
         module = __import__(name)
         for c in name.split('.')[1:]:
             module = getattr(module, c)
