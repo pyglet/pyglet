@@ -5,7 +5,7 @@ import unittest
 import pyglet
 from mock import Mock, MagicMock
 from contextlib import contextmanager
-from pyglet.event import NoHandlerException, EVENT_HANDLED, EVENT_UNHANDLED
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
 
 
 class EventTestCase(unittest.TestCase):
@@ -34,6 +34,7 @@ class EventTestCase(unittest.TestCase):
     def test_register_event_type(self):
         self.d.register_event_type('mock_event')
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_push_handlers_args(self):
         with self.mock_context():
             self.d.push_handlers(self.mock)
@@ -45,6 +46,7 @@ class EventTestCase(unittest.TestCase):
     def test_push_handlers_not_setup(self):
         self.d.push_handlers()
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_set_handlers_args(self):
         with self.mock_context():
             self.d.set_handlers(self.mock)
@@ -63,16 +65,19 @@ class EventTestCase(unittest.TestCase):
     def test_set_handler_not_setup(self):
         self.d.set_handler('mock_event', None)
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_pop_handlers(self):
         self.d.set_handler('mock_event', None)
         self.d.pop_handlers()
         with self.assertRaises(NoHandlerException):
             self.d.pop_handlers()
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_pop_handlers_not_setup(self):
         with self.assertRaises(NoHandlerException):
             self.d.pop_handlers()
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_remove_handlers_args(self):
         with self.mock_context(False):
             self.d.set_handler('mock_event', self.mock)
@@ -95,11 +100,13 @@ class EventTestCase(unittest.TestCase):
         self.d.register_event_type('mock_event')
         self.d.dispatch_event('mock_event')
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_dispatch_unhandled(self):
         self.d.register_event_type('mock_event')
         with self.assertRaises(NoHandlerException):
             self.d.dispatch_event('not_handled')
 
+    @unittest.skip('Requires changes to events from fork by Leif')
     def test_dispatch_event_not_setup(self):
         with self.assertRaises(NoHandlerException):
             self.d.dispatch_event('mock_event')

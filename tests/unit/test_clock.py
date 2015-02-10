@@ -66,6 +66,7 @@ class ClockTestCase(unittest.TestCase):
         self.advance_clock(2)
         self.assertEqual(self.callback_a.call_count, 2)
 
+    @unittest.skip('Requires changes to the clock')
     def test_schedule_interval_soft_multiple(self):
         self.clock.schedule_interval(self.callback_a, 1)
         self.clock.schedule_interval_soft(self.callback_b, 1)
@@ -154,6 +155,7 @@ class ClockTestCase(unittest.TestCase):
         self.clock.schedule(self.callback_a)
         self.assertTrue(self.clock.call_scheduled_functions(0))
 
+    @unittest.skip('Requires changes to the clock')
     def test_call_sched_return_True_if_called_functions_interval(self):
         self.clock.schedule_once(self.callback_a, 1)
         self.assertFalse(self.clock.call_scheduled_functions(0))
@@ -170,9 +172,11 @@ class ClockTestCase(unittest.TestCase):
         self.time = 3
         self.assertEqual(self.clock.tick(), 2)
 
+    @unittest.skip('Requires changes to the clock')
     def test_get_sleep_time_None_if_no_items(self):
         self.assertIsNone(self.clock.get_sleep_time())
 
+    @unittest.skip('Requires changes to the clock')
     def test_get_sleep_time_can_sleep(self):
         self.clock.schedule_once(self.callback_a, 3)
         self.clock.schedule_once(self.callback_b, 1)
@@ -186,6 +190,7 @@ class ClockTestCase(unittest.TestCase):
         self.advance_clock(3)
         self.assertEqual(self.clock.get_sleep_time(), 1)
 
+    @unittest.skip('Requires changes to the clock')
     def test_get_sleep_time_cannot_sleep(self):
         self.clock.schedule(self.callback_a)
         self.clock.schedule_once(self.callback_b, 1)
@@ -217,6 +222,7 @@ class ClockTestCase(unittest.TestCase):
         self.assertEqual(self.callback_c.call_count, 1)
         self.assertEqual(self.callback_d.call_count, 1)
 
+    @unittest.skip('Requires changes to the clock')
     def test_get_interval(self):
         self.assertEqual(self.clock.get_interval(), 0)
         self.advance_clock(100)
