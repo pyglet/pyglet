@@ -7,7 +7,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import unittest
-from os.path import dirname, join
+from os.path import abspath, dirname, join
 
 from pyglet.gl import *
 from pyglet import image
@@ -16,6 +16,8 @@ from pyglet.window import *
 from pyglet.window.event import *
 
 from tests.regression import ImageRegressionTestCase
+
+test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
 
 class TestLoad(ImageRegressionTestCase):
     texture_file = None
@@ -61,7 +63,7 @@ class TestLoad(ImageRegressionTestCase):
 
     def load_image(self):
         if self.texture_file:
-            self.texture_file = join(dirname(__file__), self.texture_file)
+            self.texture_file = join(test_data_path, self.texture_file)
             self.image = image.load(self.texture_file, decoder=self.decoder)
 
     def test_load(self):
