@@ -20,7 +20,7 @@ from pyglet import window
 from pyglet.window import key
 
 from os.path import abspath, join, dirname
-test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
+test_data_path = abspath(join(dirname(__file__), '..', '..', 'data', 'images'))
 icon_file = join(test_data_path, 'icon1.png')
 
 class WINDOW_SET_ICON(unittest.TestCase):

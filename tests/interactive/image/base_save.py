@@ -14,21 +14,28 @@ from pyglet import image
 from pyglet.image import codecs
 from pyglet.window import *
 from pyglet.window.event import *
+from pyglet.compat import BytesIO
 
 from tests.regression import ImageRegressionTestCase
 
-test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
+test_data_path = abspath(join(dirname(__file__), '..', '..', 'data', 'images'))
 
-class TestLoad(ImageRegressionTestCase):
+class TestSave(ImageRegressionTestCase):
     texture_file = None
-    image = None
-    texture = None
+    original_texture = None
+    saved_texture = None
     show_checkerboard = True
     alpha = True
     has_exit = False
-    decoder = None
 
     def on_expose(self):
+        self.draw()
+        self.window.flip()
+
+        if self.capture_regression_image():
+            self.has_exit = True
+
+    def draw(self):
         glClearColor(1, 1, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
@@ -49,35 +56,47 @@ class TestLoad(ImageRegressionTestCase):
             glMatrixMode(GL_MODELVIEW)
             glPopMatrix()
 
-        if self.texture:
-            glPushMatrix()
-            glTranslatef((self.window.width - self.texture.width) / 2,
-                         (self.window.height - self.texture.height) / 2,
-                         0)
-            self.texture.blit(0, 0, 0)
-            glPopMatrix()
-        self.window.flip()
+        self.draw_original()
+        self.draw_saved()
+            
+    def draw_original(self):
+        if self.original_texture:
+            self.original_texture.blit(
+                self.window.width / 4 - self.original_texture.width / 2,
+                (self.window.height - self.original_texture.height) / 2, 
+                0)
 
-        if self.capture_regression_image():
-            self.has_exit = True
+    def draw_saved(self):
+        if self.saved_texture:
+            self.saved_texture.blit(
+                self.window.width * 3 / 4 - self.saved_texture.width / 2,
+                (self.window.height - self.saved_texture.height) / 2, 
+                0)
 
-    def load_image(self):
+    def load_texture(self):
         if self.texture_file:
             self.texture_file = join(test_data_path, self.texture_file)
-            self.image = image.load(self.texture_file, decoder=self.decoder)
+            self.original_texture = image.load(self.texture_file).texture
 
-    def test_load(self):
+            file = BytesIO()
+            self.original_texture.save(self.texture_file, file,
+                                       encoder=self.encoder)
+            file.seek(0)
+            self.saved_texture = image.load(self.texture_file, file).texture
+
+    def create_window(self):
         width, height = 800, 600
-        self.window = w = Window(width, height, visible=False)
+        return Window(width, height, visible=False)
+
+    def test_save(self):
+        self.window = w = self.create_window()
         w.push_handlers(self)
 
         self.screen = image.get_buffer_manager().get_color_buffer()
         self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
 
-        self.load_image()
-        if self.image:
-            self.texture = self.image.texture
-    
+        self.load_texture()
+
         if self.alpha:
             glEnable(GL_BLEND)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)

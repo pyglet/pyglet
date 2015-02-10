@@ -20,7 +20,7 @@ from pyglet import window
 
 from os.path import abspath, join, dirname
 
-test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
+test_data_path = abspath(join(dirname(__file__), '..', '..', 'data', 'images'))
 cursor_file = join(test_data_path, 'cursor.png')
 
 class WINDOW_SET_MOUSE_CURSOR(unittest.TestCase):

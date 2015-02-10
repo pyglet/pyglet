@@ -32,7 +32,7 @@ from pyglet.window import key
 import window_util
 
 from os.path import abspath, join, dirname
-test_data_path = abspath(join(dirname(__file__), '..', 'data', 'images'))
+test_data_path = abspath(join(dirname(__file__), '..', '..', 'data', 'images'))
 icon_file1 = join(test_data_path, 'icon_size1.png')
 icon_file2 = join(test_data_path, 'icon_size2.png')
 icon_file3 = join(test_data_path, 'icon_size3.png')
