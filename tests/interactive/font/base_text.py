@@ -14,7 +14,7 @@ from pyglet import font
 from pyglet.window import Window
 from pyglet.window.event import key
 
-from tests.regression import ImageRegressionTestCase
+from tests.interactive.regression import ImageRegressionTestCase
 
 class TextTestBase(ImageRegressionTestCase):
     font_name = ''
