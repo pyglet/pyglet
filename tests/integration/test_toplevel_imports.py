@@ -5,14 +5,10 @@
 This _must_ be the first test run.
 '''
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: TICK.py 310 2006-12-23 15:56:35Z Alex.Holkner $'
-
+import imp
 import unittest
 
 import pyglet
-
-__noninteractive = True
 
 modules = [
     'app',
@@ -30,6 +26,7 @@ modules = [
     'graphics.vertexdomain',
     'image',
     'image.atlas',
+    'input',
     'media',
     'resource',
     'sprite',
@@ -50,6 +47,7 @@ def add_module_tests(name, bases, dict):
         def create_test(components):
             def test_module(self):
                 top = pyglet
+                imp.reload(top)
                 for component in components:
                     self.assertTrue(hasattr(top, component),
                       'Cannot access "%s" in "%s"' % (component, top.__name__))
@@ -64,6 +62,3 @@ def add_module_tests(name, bases, dict):
 class TEST_CASE(unittest.TestCase):
     __metaclass__ = add_module_tests
 
-
-if __name__ == '__main__':
-    unittest.main()

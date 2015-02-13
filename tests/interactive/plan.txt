@@ -10,9 +10,6 @@
 #     requirements, developer status).
 #   * Order matters... tests are run in the order they are specified.
 
-top
-    top.IMPORT                                  GENERIC
-
 app
     app.EVENT_LOOP                              GENERIC
 
