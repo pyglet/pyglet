@@ -1,12 +1,9 @@
 #!/usr/bin/python
-# $Id:$
 
 import random
 import unittest
 
 from pyglet.graphics import allocation
-
-__noninteractive = True
 
 class Region(object):
     def __init__(self, start, size):
@@ -140,7 +137,7 @@ class RegionAllocator(object):
 
     capacity = property(lambda self: self.allocator.capacity)
 
-class TestAllocation(unittest.TestCase):
+class AllocationTestCase(unittest.TestCase):
     def setUp(self):
         global fixture
         fixture = self
@@ -424,5 +421,3 @@ class TestAllocation(unittest.TestCase):
             allocator.dealloc(region) 
         self.assertTrue(allocator.get_free_size() == allocator.capacity)
 
-if __name__ == '__main__':
-    unittest.main()

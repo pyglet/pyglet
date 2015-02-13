@@ -11,14 +11,12 @@ coords are not supplied for a unit, but will still pass if the texture
 coordinates for each unit are swapped (the tex coords are identical).
 '''
 
-__noninteractive = True
-
 import unittest
 
 import pyglet
 from pyglet.gl import *
 
-class TEST_CASE(unittest.TestCase):
+class MultiTextureTestCase(unittest.TestCase):
     def test_multitexture(self):
         window = pyglet.window.Window(width=64, height=64)
         window.dispatch_events()
@@ -72,5 +70,3 @@ class TEST_CASE(unittest.TestCase):
             r, g, b = map(ord, (r, g, b))
         return r, g, b
 
-if __name__ == '__main__':
-    unittest.main()

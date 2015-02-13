@@ -10,14 +10,6 @@
 #     requirements, developer status).
 #   * Order matters... tests are run in the order they are specified.
 
-graphics
-    graphics.GRAPHICS_ALLOCATION                GENERIC
-    graphics.IMMEDIATE                          GENERIC
-    graphics.IMMEDIATE_INDEXED                  GENERIC
-    graphics.RETAINED                           GENERIC
-    graphics.RETAINED_INDEXED                   GENERIC
-    graphics.MULTITEXTURE                       GENERIC
-
 window
     window-basic
         window.WINDOW_OPEN                      X11 WIN OSX
