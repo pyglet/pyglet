@@ -84,17 +84,6 @@ window
             window.EVENT_SEQUENCE_UNSET_FULLSCREEN  X11 WIN OSX
 
 
-clock
-    clock-basic
-        clock.FPS                               X11 WIN OSX
-
-    clock-schedule
-        clock.SCHEDULE                          X11 WIN OSX
-        clock.SCHEDULE_INTERVAL                 X11 WIN OSX
-        clock.SCHEDULE_ONCE                     X11 WIN OSX
-
-    clock-multicore
-        clock.MULTICORE                         WIN
 image
     image-basic
 	    image-save

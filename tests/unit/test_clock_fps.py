@@ -11,8 +11,6 @@ import unittest
 
 from pyglet import clock
 
-__noninteractive = True
-
 
 class ClockTimingTestCase(unittest.TestCase):
 
@@ -105,6 +103,3 @@ class ClockTimingTestCase(unittest.TestCase):
                                expected_delta_time,
                                delta=0.01*expected_delta_time)
 
-
-if __name__ == '__main__':
-    unittest.main()
