@@ -13,11 +13,11 @@ __version__ = '$Id$'
 
 
 import time
+from tests.annotations import require_platform, Platform
 import unittest
 
-__noninteractive = True
 
-
+@require_platform(Platform.WINDOWS)
 class MULTICORE(unittest.TestCase):
     def test_multicore(self):
         failures = 0
@@ -30,6 +30,4 @@ class MULTICORE(unittest.TestCase):
            old_time = t
            time.sleep(0.001)
         self.assertTrue(failures == 0)
-        
-if __name__ == '__main__':
-    unittest.main()
+
