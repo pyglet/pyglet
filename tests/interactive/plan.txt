@@ -195,10 +195,6 @@ media
         media.PLAYER_EOS_NEXT                   X11 WIN OSX
         media.PLAYER_STATIC_STATIC              GENERIC
 
-resource
-    resource.RES_LOAD                           GENERIC
-    resource.RES_LOAD_IMAGE                     GENERIC
-
 text
     text.RUNLIST                                GENERIC
     text.EMPTY                                  GENERIC
