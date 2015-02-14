@@ -18,7 +18,7 @@ import unittest
 
 
 @require_platform(Platform.WINDOWS)
-class MULTICORE(unittest.TestCase):
+class WindowsMulticoreClockTestCase(unittest.TestCase):
     def test_multicore(self):
         failures = 0
         old_time = time.clock()
