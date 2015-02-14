@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 
 '''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-__noninteractive = True
-
-'''
 Layout:
 
 .                               (script home)
@@ -35,7 +27,7 @@ import unittest
 from pyglet import resource
 from pyglet.compat import asbytes
 
-class TestCase(unittest.TestCase):
+class ResourceLoadingTestCase(unittest.TestCase):
     def setUp(self):
         self.script_home = os.path.dirname(__file__)
 
@@ -157,5 +149,3 @@ class TestCase(unittest.TestCase):
     def test16c(self):
         self.check_file(['dir1/res.zip/dir1/'], 'dir1/file.txt', 'F9')
 
-if __name__ == '__main__':
-    unittest.main()

@@ -10,15 +10,13 @@ from pyglet import image
 from pyglet import resource
 from pyglet import window
 
-__noninteractive = True
-
 # Test image is laid out
 #  M R
 #  B G
 # In this test the image is sampled at four points from top-right clockwise:
 #  R G B M (red, green, blue, magenta)
 
-class TestCase(unittest.TestCase):
+class ResourceImageLoadingTestCase(unittest.TestCase):
     def setUp(self):
         self.w = window.Window(width=10, height=10)
         self.w.dispatch_events()
