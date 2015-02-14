@@ -248,7 +248,7 @@ if compat_platform == 'cygwin':
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
 
-if not options['darwin_cocoa']:
+if compat_platform == 'darwin' and not options['darwin_cocoa']:
     warnings.warn('Carbon support is to be deprecated in Pyglet 1.4', PendingDeprecationWarning)
 
 # Call tracing
