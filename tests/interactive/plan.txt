@@ -172,7 +172,6 @@ font
         font.ADD_FONT                           X11 WIN OSX
         font.HAVE_FONT                          X11 WIN OSX
         font.SET_DPI                            X11 WIN OSX
-        font.FONTCONFIG                         X11
 
     font-align
         font.HALIGN                             GENERIC

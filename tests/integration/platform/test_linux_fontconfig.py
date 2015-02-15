@@ -1,19 +1,15 @@
-#!/usr/bin/env python
-
 """
 Tests for fontconfig implementation.
 """
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import unittest
 
 from pyglet.font.fontconfig import get_fontconfig
+from tests.annotations import require_platform, Platform
 
-__noninteractive = True
 
-
-class TEST_FONTCONFIG(unittest.TestCase):
+@require_platform(Platform.LINUX)
+class FontConfigTestCase(unittest.TestCase):
     def test_find_font_existing(self):
         font_match = get_fontconfig().find_font('arial')
 
@@ -78,6 +74,3 @@ class TEST_FONTCONFIG(unittest.TestCase):
         self.assertFalse(font_match.bold)
         self.assertTrue(font_match.italic)
 
-
-if __name__ == '__main__':
-    unittest.main()
