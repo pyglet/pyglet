@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import array
 import os
+import pyglet
 from pyglet.image import get_buffer_manager
 import shutil
 from tests.interactive.noninteractive import run_interactive
@@ -147,7 +148,7 @@ class InteractiveTestCase(unittest.TestCase):
         return '{}.{}.{}.{:03d}.png'.format(self.__class__.__module__,
                                         self.__class__.__name__,
                                         self.__test_method_name,
-                                        len(self._screenshots))
+                                        len(self._screenshots)+1)
 
     def _get_screenshot_session_file_name(self, screenshot_name):
         return os.path.join(session_screenshot_path, screenshot_name)
