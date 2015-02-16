@@ -268,3 +268,85 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         files = glob.glob(os.path.join(self._committed_screenshot_path, '*.png'))
         self.assertEqual(len(files), 0, 'Screenshot should not have been committed')
 
+    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    def test_screenshot_does_not_match(self):
+        class _Test(InteractiveTestCase):
+            def test_1(self):
+                w = window.Window(200, 200)
+                w.switch_to()
+                glClearColor(0, 0, 1, 1)
+                glClear(GL_COLOR_BUFFER_BIT)
+                w.flip()
+
+                self.user_verify('Empty window')
+                w.close()
+
+        self._patch_screenshot_paths()
+
+        # Copy non matching screenshot
+        screenshot_name = 'tests.interactive.test_interactive_test_base._Test.test_1.001.png'
+        original_screenshot = os.path.join(os.path.dirname(__file__), '..', 'data', 'images', screenshot_name)
+        committed_screenshot = os.path.join(self._committed_screenshot_path, screenshot_name)
+        shutil.copy(original_screenshot, committed_screenshot)
+
+        # Start the test
+        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
+        self.assertIsNotNone(tests)
+        self.assertEqual(tests.countTestCases(), 1)
+
+        result = unittest.TestResult()
+        tests.run(result)
+
+        self.assertEqual(len(result.failures), 1, 'Expecting 1 failure')
+        self.assertEqual(len(result.errors), 0, 'Not expecting errors')
+        self.assertEqual(result.testsRun, 1, 'Expected 1 test run')
+
+        files = glob.glob(os.path.join(self._session_screenshot_path, '*.png'))
+        self.assertEqual(len(files), 1, 'Screenshot not stored in session directory')
+        self.assertIn('tests.interactive.test_interactive_test_base._Test.test_1.001.png', files[0])
+
+        # Verify committed image not changed
+        original_image = pyglet.image.load(original_screenshot)
+        committed_image = pyglet.image.load(committed_screenshot)
+        self.assert_image_equal(original_image, committed_image, 'Committed image should not be overwritten')
+
+    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    def test_screenshot_matches(self):
+        class _Test(InteractiveTestCase):
+            def test_1(self):
+                w = window.Window(200, 200)
+                w.switch_to()
+                glClearColor(1, 0, 1, 1)
+                glClear(GL_COLOR_BUFFER_BIT)
+                w.flip()
+
+                self.user_verify('Empty window')
+                w.close()
+
+        self._patch_screenshot_paths()
+
+        # Copy matching screenshot
+        screenshot_name = 'tests.interactive.test_interactive_test_base._Test.test_1.001.png'
+        original_screenshot = os.path.join(os.path.dirname(__file__), '..', 'data', 'images', screenshot_name)
+        committed_screenshot = os.path.join(self._committed_screenshot_path, screenshot_name)
+        shutil.copy(original_screenshot, committed_screenshot)
+
+        # Start the test
+        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
+        self.assertIsNotNone(tests)
+        self.assertEqual(tests.countTestCases(), 1)
+
+        result = unittest.TestResult()
+        tests.run(result)
+
+        self.assertEqual(len(result.failures), 0, 'Not expecting failures')
+        self.assertEqual(len(result.errors), 0, 'Not expecting errors')
+        self.assertEqual(result.testsRun, 1, 'Expected 1 test run')
+
+        files = glob.glob(os.path.join(self._session_screenshot_path, '*.png'))
+        self.assertEqual(len(files), 1, 'Screenshot not stored in session directory')
+        self.assertIn('tests.interactive.test_interactive_test_base._Test.test_1.001.png', files[0])
+
+

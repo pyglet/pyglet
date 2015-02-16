@@ -105,7 +105,7 @@ class InteractiveTestCase(unittest.TestCase):
         a = array.array('B', a)
         b = array.array('B', b)
         for (aa, bb) in zip(a, b):
-            self.assertTrue(abs(aa - bb) > tolerance, msg)
+            self.assertTrue(abs(aa - bb) <= tolerance, msg)
 
     def _take_screenshot(self):
         """
