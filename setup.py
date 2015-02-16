@@ -12,7 +12,7 @@ import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.2.0rc3'
+VERSION = '1.2.0'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
@@ -29,7 +29,7 @@ setup_info = dict(
     version=VERSION,
     author='Alex Holkner',
     author_email='Alex.Holkner@gmail.com',
-    url='http://www.pyglet.org/',
+    url='http://pyglet.readthedocs.org/en/pyglet-1.2-maintenance/',
     download_url='http://pypi.python.org/pypi/pyglet',
     description='Cross-platform windowing and multimedia library',
     long_description=long_description,
