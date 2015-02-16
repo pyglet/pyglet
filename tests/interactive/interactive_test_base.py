@@ -57,6 +57,9 @@ class InteractiveTestCase(unittest.TestCase):
         """
         Request the user to verify the current display is correct.
         """
+        failed = False
+        failure_description = None
+
         if run_interactive():
             print()
             print(description)
@@ -65,8 +68,8 @@ class InteractiveTestCase(unittest.TestCase):
                 if not response:
                     break
                 elif response in 'Nn':
-                    description = raw_input('Enter failure description: ')
-                    self.fail(description)
+                    failure_description = raw_input('Enter failure description: ')
+                    failed = True
                     break
                 elif response in 'Yy':
                     break
@@ -74,6 +77,9 @@ class InteractiveTestCase(unittest.TestCase):
                     print('Invalid response')
         if take_screenshot:
             self._take_screenshot()
+
+        if failed:
+            self.fail(failure_description)
 
     def assert_image_equal(self, a, b, tolerance=0, msg=None):
         if a is None:
