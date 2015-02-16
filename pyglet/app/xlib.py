@@ -105,13 +105,23 @@ class XlibEventLoop(PlatformEventLoop):
         # Timeout is from EventLoop.idle(). Return after that timeout or directly
         # after receiving a new event. None means: block for user input.
 
-        pending_devices, _, _ = select.select(self._select_devices, (), (), timeout)
+        # Poll devices to check for already pending events (select.select is not enough)
+        pending_devices = []
+        for device in self._select_devices:
+            if device.poll():
+                pending_devices.append(device)
+
+        # If no devices were ready, wait until one gets ready
+        if not pending_devices:
+            pending_devices, _, _ = select.select(self._select_devices, (), (), timeout)
 
         if not pending_devices:
+            # Notify caller that timeout expired without incoming events
             return False
 
         # Dispatch activity on matching devices
         for device in pending_devices:
             device.select()
 
+        # Notify caller that events were handled before timeout expired
         return True
