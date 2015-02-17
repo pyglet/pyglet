@@ -9,6 +9,15 @@ from tests.interactive.noninteractive import run_interactive
 import unittest
 import warnings
 
+try:
+    # If the easygui package is available, use it to display popup questions, instead of using the
+    # console (which might lose focus to the Pyglet windows).
+    # Not using Pyglet to show a window with the question to prevent interfering with the test.
+    import easygui
+    _has_gui = True
+except:
+    _has_gui = False
+
 base_screenshot_path = os.path.join(os.path.dirname(__file__), 'screenshots')
 committed_screenshot_path = os.path.join(base_screenshot_path, 'committed')
 session_screenshot_path = os.path.join(base_screenshot_path, 'session')
@@ -61,24 +70,11 @@ class InteractiveTestCase(unittest.TestCase):
         failure_description = None
 
         if run_interactive():
-            print()
-            print(description)
-            while True:
-                response = raw_input('Passed [Yn]: ')
-                if not response:
-                    break
-                elif response in 'Nn':
-                    failure_description = raw_input('Enter failure description: ')
-                    failed = True
-                    break
-                elif response in 'Yy':
-                    break
-                else:
-                    print('Invalid response')
+            failure_description = _ask_user_to_verify(description)
         if take_screenshot:
             self._take_screenshot()
 
-        if failed:
+        if failure_description is not None:
             self.fail(failure_description)
 
     def assert_image_equal(self, a, b, tolerance=0, msg=None):
@@ -161,6 +157,32 @@ class InteractiveTestCase(unittest.TestCase):
 
     def _get_screenshot_committed_file_name(self, screenshot_name):
         return os.path.join(committed_screenshot_path, screenshot_name)
+
+
+if _has_gui:
+    def _ask_user_to_verify(description):
+        failure_description = None
+        success = easygui.ynbox(description)
+        if not success:
+            failure_description = easygui.enterbox('Enter failure description:')
+        return failure_description
+else:
+    def _ask_user_to_verify(description):
+        failure_description = None
+        print()
+        print(description)
+        while True:
+            response = raw_input('Passed [Yn]: ')
+            if not response:
+                break
+            elif response in 'Nn':
+                failure_description = raw_input('Enter failure description: ')
+                break
+            elif response in 'Yy':
+                break
+            else:
+                print('Invalid response')
+        return failure_description
 
 
 def only_interactive(cls):
