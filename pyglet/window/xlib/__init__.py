@@ -141,9 +141,6 @@ class XlibWindow(BaseWindow):
     _current_sync_value = None
     _current_sync_valid = False
 
-    _needs_resize = False   # True when resize event has been received but not
-                            # dispatched
-
     _default_event_mask = (0x1ffffff 
         & ~xlib.PointerMotionHintMask
         & ~xlib.ResizeRedirectMask
@@ -876,11 +873,6 @@ class XlibWindow(BaseWindow):
                 xlib.ClientMessage, byref(e)):
             self.dispatch_platform_event(e) 
  
-        if self._needs_resize:
-            self.dispatch_event('on_resize', self._width, self._height)
-            self.dispatch_event('on_expose')
-            self._needs_resize = False
-
         self._allow_dispatch_event = False
 
     def dispatch_pending_events(self):
@@ -1277,7 +1269,7 @@ class XlibWindow(BaseWindow):
             self._width = w
             self._height = h
             self._update_view_size()
-            self._needs_resize = True
+            self.dispatch_event('on_resize', self._width, self._height)
         if self._x != x or self._y != y:
             self.dispatch_event('on_move', x, y)
             self._x = x
