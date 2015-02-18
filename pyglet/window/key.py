@@ -147,7 +147,7 @@ def motion_string(motion):
 
     Example::
 
-        >>> motion_string(MOTION_NEXT_WORD):
+        >>> motion_string(MOTION_NEXT_WORD)
         'MOTION_NEXT_WORD'
 
     :Parameters:
