@@ -1,3 +1,13 @@
+Pyglet 1.2.1
+============
+Minor bugfix release. Fixes some issues on Linux.
+
+Bugfixes
+--------
+- BB#18: X11: Events not processed while animating
+- X11: on_resize event not triggered
+- X11: Fix deletion of PulseAudioPlayer.
+
 Pyglet 1.2
 ==========
 The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on 64-bit operating systems 
