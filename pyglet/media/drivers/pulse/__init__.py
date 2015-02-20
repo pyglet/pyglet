@@ -27,6 +27,11 @@ def check_not_null(value):
         raise MediaException(pa.pa_strerror(error))
     return value
 
+def noop(*args):
+    """Empty callback to replace deleted callbacks in PA"""
+    pass
+
+
 class PulseAudioDriver(AbstractAudioDriver):
     _context = None
     def __init__(self):
@@ -401,7 +406,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         context.lock()
         pa.pa_stream_disconnect(self.stream)
-        pa.pa_stream_set_state_callback(self.stream, None, None)
+        pa.pa_stream_set_state_callback(self.stream, pa.pa_stream_notify_cb_t(noop), None)
         context.unlock()
         pa.pa_stream_unref(self.stream)
         self.stream = None
