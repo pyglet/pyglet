@@ -18,9 +18,15 @@ try:
 except:
     _has_gui = False
 
-base_screenshot_path = os.path.join(os.path.dirname(__file__), 'screenshots')
+local_dir = os.path.dirname(__file__)
+
+base_screenshot_path = os.path.join(local_dir, 'screenshots')
 committed_screenshot_path = os.path.join(base_screenshot_path, 'committed')
 session_screenshot_path = os.path.join(base_screenshot_path, 'session')
+
+test_data_path = os.path.abspath(os.path.join(local_dir, '..', 'data'))
+
+del local_dir
 
 
 class InteractiveTestCase(unittest.TestCase):
@@ -102,6 +108,13 @@ class InteractiveTestCase(unittest.TestCase):
         b = array.array('B', b)
         for (aa, bb) in zip(a, b):
             self.assertTrue(abs(aa - bb) <= tolerance, msg)
+
+    def get_test_data_file(self, *file_parts):
+        """
+        Get a file from the test data directory in an OS independent way. Supply relative file
+        name as you would in os.path.join().
+        """
+        return os.path.join(test_data_path, *file_parts)
 
     def _take_screenshot(self):
         """
