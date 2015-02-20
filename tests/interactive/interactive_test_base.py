@@ -52,6 +52,7 @@ class InteractiveTestCase(unittest.TestCase):
         test_method = getattr(self, self.__test_method_name, None)
         if not test_method:
             self.fail('Unknown test method: {}'.format(self.__test_method_name))
+        self._show_test_header(test_method)
         test_method()
 
         # If we arrive here, there have not been any failures yet
@@ -171,6 +172,15 @@ class InteractiveTestCase(unittest.TestCase):
     def _get_screenshot_committed_file_name(self, screenshot_name):
         return os.path.join(committed_screenshot_path, screenshot_name)
 
+    def _show_test_header(self, test_method):
+        print('='*80)
+        if test_method.__doc__:
+            print(test_method.__doc__)
+        elif self.__doc__:
+            print(self.__doc__)
+        else:
+            print('{}.{}'.format(self.__class__.__name__, test_method.__name__))
+        print('-'*80)
 
 if _has_gui:
     def _ask_user_to_verify(description):
