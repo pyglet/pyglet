@@ -1,22 +1,15 @@
-#!/usr/bin/env python
-
-'''Test that font.Text vertical alignment works.
-
-Four labels will be aligned top, center, baseline and bottom.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import unittest
-
 from pyglet import gl
 from pyglet import font
 
-from . import base_text
+from .font_test_base import FontTestBase
 
-class TEST_VALIGN(base_text.TextTestBase):
-    font_name = ''
+
+class VAlignTestCase(FontTestBase):
+    """Test that font.Text vertical alignment works.
+
+    Four labels will be aligned top, center, baseline and bottom.
+    """
+
     window_size = 600, 200
 
     def render(self):
@@ -42,5 +35,7 @@ class TEST_VALIGN(base_text.TextTestBase):
         for label in self.labels:
             label.draw()
 
-if __name__ == '__main__':
-    unittest.main()
+VAlignTestCase.create_test_case(
+        name='test_valign',
+        question='Are the four labels aligned top, center, baseline and bottom to the horizontal line?'
+        )

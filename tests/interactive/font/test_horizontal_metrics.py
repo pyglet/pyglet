@@ -1,31 +1,21 @@
-#!/usr/bin/env python
-
-'''Test that the horizontal font metrics are calculated correctly.
-
-Some text in various fonts will be displayed.  Green vertical lines mark
-the left edge of the text.  Blue vertical lines mark the right edge of the
-text.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import os
-import unittest
-
 from pyglet.gl import *
 from pyglet import font
 
-from . import base_text
+from .font_test_base import FontTestBase
 
-base_path = os.path.dirname(__file__)
-test_data_path = os.path.abspath(os.path.join(base_path, '..', '..', 'data', 'fonts'))
 
-class TEST_HORIZONTAL_METRICS(base_text.TextTestBase):
-    window_size = 400, 250
+class HorizontalMetricsTestCase(FontTestBase):
+    """Test that the horizontal font metrics are calculated correctly.
+
+    Some text in various fonts will be displayed.  Green vertical lines mark
+    the left edge of the text.  Blue vertical lines mark the right edge of the
+    text.
+    """
+
+    window_size = 600, 300
 
     def render(self):
-        font.add_file(os.path.join(test_data_path, 'action_man.ttf'))
+        font.add_file(self.get_test_data_file('fonts', 'action_man.ttf'))
 
         fnt1 = font.load('Action Man', 16)
         fnt2 = font.load('Arial', 16)
@@ -58,5 +48,7 @@ class TEST_HORIZONTAL_METRICS(base_text.TextTestBase):
             glEnd()
         glPopAttrib()
 
-if __name__ == '__main__':
-    unittest.main()
+HorizontalMetricsTestCase.create_test_case(
+        name='test_horizontal_metrics',
+        question='A green line should mark the left edge of the text, a blue line the right edge.'
+        )

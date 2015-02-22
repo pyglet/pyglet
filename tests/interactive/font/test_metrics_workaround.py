@@ -1,31 +1,20 @@
-#!/usr/bin/env python
-
-"""
-Test workaround for font missing metrics.
-
-Font should fit between top and bottom lines.
-"""
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import os
-import unittest
-
 from pyglet.gl import *
 from pyglet import font
 
-from . import base_text
-
-base_path = os.path.dirname(__file__)
-test_data_path = os.path.abspath(os.path.join(base_path, '..', '..', 'data', 'fonts'))
+from .font_test_base import FontTestBase
 
 
-class TEST_METRICS_WORKAROUND(base_text.TextTestBase):
+class MetricsWorkaroundTestCase(FontTestBase):
+    """
+    Test workaround for font missing metrics.
+
+    Font should fit between top and bottom lines.
+    """
+
     window_size = 600, 100
 
     def render(self):
-        font.add_file(os.path.join(test_data_path, 'courR12-ISO8859-1.pcf'))
+        font.add_file(self.get_test_data_file('fonts', 'courR12-ISO8859-1.pcf'))
 
         fnt = font.load('Courier', 16)
 
@@ -50,5 +39,8 @@ class TEST_METRICS_WORKAROUND(base_text.TextTestBase):
             glEnd()
         glPopAttrib()
 
-if __name__ == '__main__':
-    unittest.main()
+
+MetricsWorkaroundTestCase.create_test_case(
+        name='test_metrics_workaround',
+        question='Does the font properly fit between the top and bottom horizontal lines?'
+        )

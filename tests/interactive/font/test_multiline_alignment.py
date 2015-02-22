@@ -1,23 +1,15 @@
-#!/usr/bin/env python
-
-'''Test that font.Text alignment works with multiple lines.
-
-Three labels will be rendered at the top-left, center and bottom-right of the
-window.  Resize the window to ensure the alignment is as specified.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import unittest
-
 from pyglet import font
+from .font_test_base import FontTestBase
 
-from . import base_text
+class MultilineAlignmentTestCase(FontTestBase):
+    """Test that font.Text alignment works with multiple lines.
 
-class TEST_ALIGN_MULTILINE(base_text.TextTestBase):
+    Three labels will be rendered at the top-left, center and bottom-right of the
+    window.  Resize the window to ensure the alignment is as specified.
+    """
     font_name = ''
     window_size = 400, 500
+    question = "The three labels should be aligned as they describe"
 
     def render(self):
         fnt = font.load(self.font_name, self.font_size)
@@ -50,5 +42,4 @@ class TEST_ALIGN_MULTILINE(base_text.TextTestBase):
         for label in self.labels:
             label.draw()
 
-if __name__ == '__main__':
-    unittest.main()
+MultilineAlignmentTestCase.create_test_case(name='test_alignment')

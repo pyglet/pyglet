@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import array
+import inspect
 import os
 import pyglet
 from pyglet.image import get_buffer_manager
@@ -174,12 +175,11 @@ class InteractiveTestCase(unittest.TestCase):
 
     def _show_test_header(self, test_method):
         print('='*80)
+        print('{}.{}'.format(self.__class__.__name__, test_method.__name__))
         if test_method.__doc__:
-            print(test_method.__doc__)
+            print(inspect.getdoc(test_method))
         elif self.__doc__:
-            print(self.__doc__)
-        else:
-            print('{}.{}'.format(self.__class__.__name__, test_method.__name__))
+            print(inspect.getdoc(self))
         print('-'*80)
 
 if _has_gui:

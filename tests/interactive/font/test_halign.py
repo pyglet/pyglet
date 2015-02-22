@@ -1,21 +1,13 @@
-#!/usr/bin/env python
-
-'''Test that font.Text horizontal alignment works.
-
-Three labels will be rendered aligned left, center and right.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import unittest
-
 from pyglet import font
 
-from . import base_text
+from .font_test_base import FontTestBase
 
-class TEST_HALIGN(base_text.TextTestBase):
-    font_name = ''
+
+class HAlignTestCase(FontTestBase):
+    """Test that font.Text horizontal alignment works.
+
+    Three labels will be rendered aligned left, center and right.
+    """
 
     def render(self):
         fnt = font.load('', self.font_size)
@@ -37,5 +29,7 @@ class TEST_HALIGN(base_text.TextTestBase):
         for label in self.labels:
             label.draw()
 
-if __name__ == '__main__':
-    unittest.main()
+HAlignTestCase.create_test_case(
+        name='test_halign',
+        question='Are the labels aligned left, center and right as they say?'
+        )
