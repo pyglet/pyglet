@@ -68,9 +68,12 @@ class ImageLoadingTestCase(WindowedTestCase):
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
+class TheImageLoadingTestCase(ImageLoadingTestCase):
+    pass
+
 def create_image_test_cases(name, description, decoder_class, image_files):
     for image_file in image_files:
-        ImageLoadingTestCase.create_test_case(
+        TheImageLoadingTestCase.create_test_case(
                 name='test_{}_{}'.format(name, image_file),
                 description=description,
                 question='Do you see the {} image on a checkerboard background?'.format(image_file),
@@ -161,7 +164,7 @@ create_image_test_cases(
 # No decoder given
 def _pil_raise_error(obj, param):
     raise Exception()
-ImageLoadingTestCase.create_test_case(
+TheImageLoadingTestCase.create_test_case(
         name='test_no_decoder',
         description='Test loading using PIL if no decoder is given, PIL is not available and PyPNG decoder is available.',
         question='Do you see the rgb.png image on a checkerboard background?',
@@ -173,7 +176,7 @@ ImageLoadingTestCase.create_test_case(
 
 
 # GIF, only available on Linux
-ImageLoadingTestCase.create_test_case(
+TheImageLoadingTestCase.create_test_case(
         name='test_gif',
         description='Test loading using the Python gdkpixbuf2 GIF loader.',
         question='Do you see the 8bpp.gif image on a checkerboard background?',

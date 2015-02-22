@@ -1,13 +1,4 @@
-#!/usr/bin/env python
-
-'''Base class for image tests.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import unittest
-from os.path import abspath, dirname, join
+import mock
 
 from pyglet.gl import *
 from pyglet import image
@@ -16,24 +7,24 @@ from pyglet.window import *
 from pyglet.window.event import *
 from pyglet.compat import BytesIO
 
-from tests.regression import ImageRegressionTestCase
+from tests.interactive.windowed_test_base import WindowedTestCase
 
-test_data_path = abspath(join(dirname(__file__), '..', '..', 'data', 'images'))
 
-class TestSave(ImageRegressionTestCase):
+class ImageSavingTestCase(WindowedTestCase):
+    """Test saving of images using various encoders."""
     texture_file = None
     original_texture = None
     saved_texture = None
     show_checkerboard = True
     alpha = True
     has_exit = False
+    encoder = None
+
+    window_size = 800, 600
 
     def on_expose(self):
         self.draw()
         self.window.flip()
-
-        if self.capture_regression_image():
-            self.has_exit = True
 
     def draw(self):
         glClearColor(1, 1, 1, 1)
@@ -58,7 +49,7 @@ class TestSave(ImageRegressionTestCase):
 
         self.draw_original()
         self.draw_saved()
-            
+
     def draw_original(self):
         if self.original_texture:
             self.original_texture.blit(
@@ -75,7 +66,7 @@ class TestSave(ImageRegressionTestCase):
 
     def load_texture(self):
         if self.texture_file:
-            self.texture_file = join(test_data_path, self.texture_file)
+            self.texture_file = self.get_test_data_file('images', self.texture_file)
             self.original_texture = image.load(self.texture_file).texture
 
             file = BytesIO()
@@ -84,14 +75,7 @@ class TestSave(ImageRegressionTestCase):
             file.seek(0)
             self.saved_texture = image.load(self.texture_file, file).texture
 
-    def create_window(self):
-        width, height = 800, 600
-        return Window(width, height, visible=False)
-
-    def test_save(self):
-        self.window = w = self.create_window()
-        w.push_handlers(self)
-
+    def render(self):
         self.screen = image.get_buffer_manager().get_color_buffer()
         self.checkerboard = image.create(32, 32, image.CheckerImagePattern())
 
@@ -101,10 +85,54 @@ class TestSave(ImageRegressionTestCase):
             glEnable(GL_BLEND)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        w.set_visible()
-        while not (w.has_exit or self.has_exit):
-            w.dispatch_events()
-        w.close()
 
-if __name__ == '__main__':
-    unittest.main()
+def create_image_test_cases(name, description, encoder_class, image_files):
+    for image_file in image_files:
+        ImageSavingTestCase.create_test_case(
+                name='test_{}_{}'.format(name, image_file),
+                description=description,
+                question='Do you see the {} image twice on a checkerboard background?'.format(image_file),
+                texture_file=image_file,
+                encoder=encoder_class()
+                )
+
+
+# The test cases
+
+# Saving using PIL
+pil_description='Test saving using PIL. Reference image on the left and saved (and reloaded) image on the right.'
+png_files = ['la.png', 'l.png', 'rgba.png', 'rgb.png']
+from pyglet.image.codecs.pil import PILImageEncoder
+
+create_image_test_cases(
+        name='pil',
+        description=pil_description,
+        encoder_class=PILImageEncoder,
+        image_files=png_files
+        )
+
+# Saving using PyPNG
+pil_description='Test saving using PyPNG. Reference image on the left and saved (and reloaded) image on the right.'
+png_files = ['la.png', 'l.png', 'rgba.png', 'rgb.png']
+from pyglet.image.codecs.png import PNGImageEncoder
+
+create_image_test_cases(
+        name='pypng',
+        description=pil_description,
+        encoder_class=PNGImageEncoder,
+        image_files=png_files
+        )
+
+# PIL not available, no encoder given
+def _pil_raise_error(*args, **kwargs):
+    raise codecs.ImageEncodeException()
+ImageSavingTestCase.create_test_case(
+        name='test_no_pil_encoder',
+        description='Test saving using PyPNG if no decoder is given, PIL is not available and PyPNG decoder is available.',
+        question='Do you see the rgb.png image twice on a checkerboard background?',
+        texture_file='rgb.png',
+        decoder=None,
+        decorators=[mock.patch('pyglet.image.codecs.pil.PILImageEncoder.encode', _pil_raise_error),
+                    mock.patch('pyglet.image.codecs.get_encoders', lambda filename: [PILImageEncoder(), PNGImageEncoder()])]
+        )
+
