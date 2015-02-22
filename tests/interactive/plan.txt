@@ -93,13 +93,6 @@ image
         image.CHECKERBOARD                      X11 WIN OSX
 
     image-png
-        image-png-load
-            image.PYPNG_RGBA_LOAD               X11 WIN OSX
-            image.PYPNG_RGB_LOAD                X11 WIN OSX
-            image.PYPNG_LA_LOAD                 X11 WIN OSX
-            image.PYPNG_L_LOAD                 	X11 WIN OSX
-            image.PNG_INDEXED_LOAD              X11 WIN OSX
-            image.PNG_INDEXED_TRANS_LOAD        X11 WIN OSX
 
         image-png-save
             image.PYPNG_RGBA_SAVE               X11 WIN OSX
@@ -107,43 +100,16 @@ image
             image.PYPNG_LA_SAVE                 X11 WIN OSX
             image.PYPNG_L_SAVE                  X11 WIN OSX
 
-    image-bmp
-        image.BMP_RGB_1BPP_LOAD                 X11 WIN OSX
-        image.BMP_RGB_4BPP_LOAD                 X11 WIN OSX
-        image.BMP_RGB_8BPP_LOAD                 X11 WIN OSX
-        image.BMP_RGB_16BPP_LOAD                X11 WIN OSX
-        image.BMP_RGB_24BPP_LOAD                X11 WIN OSX
-        image.BMP_RGB_32BPP_LOAD                X11 WIN OSX
-        image.BMP_RGBA_32BPP_LOAD               X11 WIN OSX
-
     image-pil
-        image-pil-load
-            image.PIL_RGBA_LOAD                 X11 WIN OSX
-            image.PIL_RGB_LOAD                  X11 WIN OSX
-            image.PIL_LA_LOAD                   X11 WIN OSX
-            image.PIL_L_LOAD                    X11 WIN OSX
         image-pil-save
             image.PIL_RGBA_SAVE                 X11 WIN OSX
             image.PIL_RGB_SAVE                  X11 WIN OSX
             image.PIL_LA_SAVE                   X11 WIN OSX
             image.PIL_L_SAVE                    X11 WIN OSX
-            image.PIL_RGB_LOAD_NO_DECODER       X11 WIN OSX
-
-    image-platform
-        image.PLATFORM_RGBA_LOAD                X11 WIN OSX
-        image.PLATFORM_RGB_LOAD                 X11 WIN OSX
-        image.PLATFORM_LA_LOAD                  X11 WIN OSX
-        image.PLATFORM_L_LOAD                   X11 WIN OSX
 
     image-matrix
         image.MATRIX_RGB                        GENERIC
         image.MATRIX_RGBA                       GENERIC
-
-    image-dds
-        image.DDS_RGB_DXT1_LOAD                 GENERIC
-        image.DDS_RGBA_DXT1_LOAD                GENERIC
-        image.DDS_RGBA_DXT3_LOAD                GENERIC
-        image.DDS_RGBA_DXT5_LOAD                GENERIC
 
     image-buffer
         image.BUFFER_COPY                       X11 WIN OSX
@@ -154,11 +120,6 @@ image
         image.TEXTURE_GRID                      X11 WIN OSX
         image.TEXTURE_3D                        X11 WIN OSX
 
-    image-atlas
-        image.ATLAS                             GENERIC
-
-    image-gdkpixbuf2
-        image.GIF_LOAD                          X11
 
 font
     font-render
