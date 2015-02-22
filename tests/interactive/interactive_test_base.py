@@ -6,7 +6,6 @@ import os
 import pyglet
 from pyglet.image import get_buffer_manager
 import shutil
-from tests.interactive.noninteractive import run_interactive
 import unittest
 import warnings
 
@@ -29,6 +28,10 @@ test_data_path = os.path.abspath(os.path.join(local_dir, '..', 'data'))
 
 del local_dir
 
+interactive = True
+"""
+Are we running interactive? If so questions are asked to the user.
+"""
 
 class InteractiveTestCase(unittest.TestCase):
     """
@@ -47,7 +50,7 @@ class InteractiveTestCase(unittest.TestCase):
         """
         Internal main body of the test. Kicks off the test to run either interactive or not.
         """
-        if not run_interactive() and self.only_interactive:
+        if not interactive and self.only_interactive:
             self.skipTest('Test does not support running noninteractively')
 
         test_method = getattr(self, self.__test_method_name, None)
@@ -57,7 +60,7 @@ class InteractiveTestCase(unittest.TestCase):
         test_method()
 
         # If we arrive here, there have not been any failures yet
-        if run_interactive():
+        if interactive:
             self._commit_screenshots()
         else:
             if self._has_reference_screenshots():
@@ -77,7 +80,7 @@ class InteractiveTestCase(unittest.TestCase):
         failed = False
         failure_description = None
 
-        if run_interactive():
+        if interactive:
             failure_description = _ask_user_to_verify(description)
         if take_screenshot:
             self._take_screenshot()

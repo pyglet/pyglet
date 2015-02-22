@@ -20,19 +20,35 @@ way the tests can share a limited set of resources.
 
 Running unit and integration tests
 ----------------------------------
-To run the unit tests call:
+The tests run using Python's unittest module. They support running directly using that module, but
+to support extra options a wrapper is created.
+
+To run using the wrapper:
+    python -m tests.run [unit] [integration] [interactive]
+Here you can combine any of the suites to run.
+
+To run using unittest directly:
     python -m unittest discover tests.unit
-
-To run the integration tests call:
     python -m unittest discover tests.integration
+    python -m unittest discover tests.interactive
+    python -m unittest discover tests
 
-These tests should run fully automatic in a limited amount of time. The integration tests might
-spawn windows for rendering. No need to interact with these windows.
+The unit and integration tests should run fully automatic in a limited amount of time. The
+integration tests might spawn windows for rendering. No need to interact with these windows.
+The interactive tests require you to watch what happens and then respond whether they are passed
+or failed.
 
-Running interactive tests
--------------------------
-To run the interactive tests call:
-    python tests/integration/test.py
+You can also run all the interactive tests without giving feedback. This has two functions:
+    - If the tests supports screenshots, it will compare to a reference screenshot to determine
+      pass or fail.
+    - If not, the test can still verify that no exceptions or crashes occurs.
+Some test cases do not support running non interactively, they will be skipped.
 
-These tests require human interaction, so be ready to follow the instructions.
+To run without interaction:
+    python -m tests.run interactive --non-interactive
+    python -m tests.run interactive -n
+
+You can also combine all tests in this way:
+    python -m tests.run unit integration interactive -n
+
 """

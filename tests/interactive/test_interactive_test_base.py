@@ -79,8 +79,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         self.assertTrue(_Test.test1_ran, 'Test 1 should have run')
         self.assertTrue(_Test.test2_ran, 'Test 2 should have run')
 
-    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
-    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_skip_only_interactive(self):
         @only_interactive
         class _Test(InteractiveTestCase):
@@ -98,8 +97,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
 
         self.assertFalse(_Test.test1_ran, 'Test should have been skipped')
 
-    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
-    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_do_not_skip_normal_interactive(self):
         class _Test(InteractiveTestCase):
             test1_ran = False
@@ -162,8 +160,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
 
         self.assertIn('AssertionError: abcd', result.failures[0][1], 'Did not get failure message entered by user.')
 
-    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
-    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_verify_takes_screenshot(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
@@ -197,8 +194,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         self.assertEqual(len(files), 1, 'Screenshot not committed')
         self.assertIn('tests.interactive.test_interactive_test_base._Test.test_1.001.png', files[0])
 
-    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
-    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_screenshot_not_committed_on_noninteractive_failure(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
@@ -268,8 +264,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         files = glob.glob(os.path.join(self._committed_screenshot_path, '*.png'))
         self.assertEqual(len(files), 0, 'Screenshot should not have been committed')
 
-    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
-    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_screenshot_does_not_match(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
@@ -311,8 +306,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         committed_image = pyglet.image.load(committed_screenshot)
         self.assert_image_equal(original_image, committed_image, 'Committed image should not be overwritten')
 
-    @mock.patch('tests.interactive.noninteractive.run_interactive', lambda: False)
-    @mock.patch('tests.interactive.interactive_test_base.run_interactive', lambda: False)
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_screenshot_matches(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
