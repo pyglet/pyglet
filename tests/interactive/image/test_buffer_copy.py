@@ -18,7 +18,6 @@ class BufferCopyTestCase(ImageSavingTestCase):
     show_checkerboard = False
 
     def draw_original(self):
-        print('Drawing scene...')
         glBegin(GL_TRIANGLES)
         glColor4f(1, 0, 0, 1)
         glVertex3f(0, 0, -1)
@@ -31,11 +30,9 @@ class BufferCopyTestCase(ImageSavingTestCase):
         glColor4f(1, 1, 1, 1)
 
         if not self.saved_texture:
-            print('Copying colour image...')
             self.saved_texture = \
                 image.get_buffer_manager().get_color_buffer().texture
 
-        print('Done.')
 
 BufferCopyTestCase.create_test_case(
         name='test_copy_buffer',

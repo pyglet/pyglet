@@ -21,7 +21,6 @@ class DepthBufferSavingTestCase(ImageSavingTestCase):
     show_checkerboard = False
 
     def draw_original(self):
-        print('Drawing scene...')
         glClear(GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
@@ -38,16 +37,13 @@ class DepthBufferSavingTestCase(ImageSavingTestCase):
         glColor4f(1, 1, 1, 1)
 
         if not self.saved_texture:
-            print('Saving depth image...')
             img = image.get_buffer_manager().get_depth_buffer()
             file = BytesIO()
             img.save('buffer.png', file)
 
-            print('Loading depth image as texture...')
             file.seek(0)
             self.saved_texture = image.load('buffer.png', file)
 
-        print('Done.')
 
 DepthBufferSavingTestCase.create_test_case(
         name='test_save_depth_buffer',

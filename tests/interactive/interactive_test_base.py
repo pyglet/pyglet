@@ -100,7 +100,8 @@ class InteractiveTestCase(unittest.TestCase):
         test_method = getattr(self, self.__test_method_name, None)
         if not test_method:
             self.fail('Unknown test method: {}'.format(self.__test_method_name))
-        self._show_test_header(test_method)
+        if interactive:
+            self._show_test_header(test_method)
         test_method()
 
         # If we arrive here, there have not been any failures yet

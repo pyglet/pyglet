@@ -19,7 +19,6 @@ class BufferSavingTestCase(ImageSavingTestCase):
     show_checkerboard = False
 
     def draw_original(self):
-        print('Drawing scene...')
         glBegin(GL_TRIANGLES)
         glColor4f(1, 0, 0, 1)
         glVertex3f(0, 0, -1)
@@ -32,16 +31,13 @@ class BufferSavingTestCase(ImageSavingTestCase):
         glColor4f(1, 1, 1, 1)
 
         if not self.saved_texture:
-            print('Saving colour image...')
             img = image.get_buffer_manager().get_color_buffer()
             file = BytesIO()
             img.save('buffer.png', file)
 
-            print('Loading colour image as texture...')
             file.seek(0)
             self.saved_texture = image.load('buffer.png', file)
 
-        print('Done.')
 
 BufferSavingTestCase.create_test_case(
         name='test_buffer_saving',
