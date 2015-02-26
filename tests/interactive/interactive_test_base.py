@@ -28,17 +28,58 @@ test_data_path = os.path.abspath(os.path.join(local_dir, '..', 'data'))
 
 del local_dir
 
+# Filters for tests, corresponds to the decorators for tests
+run_only_interactive = True
+run_requires_user_action = True
+run_requires_user_validation = True
+
+# Show interactive prompts or not
 interactive = True
-"""
-Are we running interactive? If so questions are asked to the user.
-"""
+
+
+def set_noninteractive_sanity():
+    """
+    Filter tests to run in sanity check mode. Test cases that require the user to validate the
+    outcome will run, but the validation steps are skipped. Test cases that cannot run without
+    user intervention will be skipped. Fully automatic tests (using asserts and screenshot
+    comparison) also run without user intervention.
+    """
+    global run_only_interactive, run_requires_user_action, run_requires_user_validation
+    global interactive
+
+    run_only_interactive = False
+    run_requires_user_action = False
+    run_requires_user_validation = True
+    interactive = False
+
+
+def set_noninteractive_only_automatic():
+    """
+    Filter tests for only the fully automated tests to run. Tests that require user intervention
+    or validation by the user are skipped.
+    """
+    global run_only_interactive, run_requires_user_action, run_requires_user_validation
+    global interactive
+
+    run_only_interactive = False
+    run_requires_user_action = False
+    run_requires_user_validation = False
+    interactive = False
+
 
 class InteractiveTestCase(unittest.TestCase):
     """
     Base class for interactive tests.
-    """
 
-    only_interactive = False
+    Interactive tests exist on several levels of interactivity. The least interactive tests store
+    screenshots of user validated output that can be used to automatically compare to in a non
+    interactive run. More interactive tests cannot validate the results automatically, but can
+    run fully automatic for sanity checks. Finally there are tests that really require the user
+    to perform an action for the test to continue.
+
+    Use the decorators @only_interactive, @requires_user_validation and @requires_user_action to
+    mark a test case as such. This only works on the test suite (class) level.
+    """
 
     def __init__(self, methodName):
         super(InteractiveTestCase, self).__init__(methodName='_run_test')
@@ -50,8 +91,7 @@ class InteractiveTestCase(unittest.TestCase):
         """
         Internal main body of the test. Kicks off the test to run either interactive or not.
         """
-        if not interactive and self.only_interactive:
-            self.skipTest('Test does not support running noninteractively')
+        self._filter_test()
 
         test_method = getattr(self, self.__test_method_name, None)
         if not test_method:
@@ -72,6 +112,21 @@ class InteractiveTestCase(unittest.TestCase):
             # If reference screenshots were already present and there was a mismatch, it should
             # have failed above.
             self._commit_screenshots()
+
+    def _filter_test(self):
+        """
+        Check the filters to see whether this test needs to run.
+        """
+        only_interactive = getattr(self, 'test_only_interactive', False)
+        requires_user_action = getattr(self, 'test_requires_user_action', False)
+        requires_user_validation = getattr(self, 'test_requires_user_validation', False)
+
+        if only_interactive and not run_only_interactive:
+            self.skipTest('Test requires to be run interactively.')
+        if requires_user_action and not run_requires_user_action:
+            self.skipTest('Tests requiring user action are excluded.')
+        if requires_user_validation and not run_requires_user_validation:
+            self.skipTest('Tests requiring user validation are excluded.')
 
     def user_verify(self, description, take_screenshot=True):
         """
@@ -216,5 +271,22 @@ def only_interactive(cls):
     Mark a test case (class) as only interactive. This means it will be skipped if the user requests
     to run noninteractively.
     """
-    cls.only_interactive = True
+    cls.test_only_interactive = True
+    return cls
+
+def requires_user_action(cls):
+    """
+    Mark a test case (class) as requiring user action to run. The test cannot be run non interactive
+    at all.
+    """
+    cls.test_requires_user_action = True
+    return cls
+
+def requires_user_validation(cls):
+    """
+    Mark a test case (class) as requiring the user to validate the outcome. It cannot use screenshot
+    comparison or other asserts to validate. It is however possible to run non interactively to
+    perform a simple sanity check (no exceptions/crashes).
+    """
+    cls.test_requires_user_validation = True
     return cls

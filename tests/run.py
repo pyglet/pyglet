@@ -19,7 +19,11 @@ def _parse_args():
                         )
     parser.add_argument('--non-interactive', '-n',
                         action='store_true',
-                        help='Do not use interactive prompts. Skip tests that require them.'
+                        help='Do not use interactive prompts. Skip tests that cannot validate or run without.'
+                        )
+    parser.add_argument('--sanity', '-s',
+                        action='store_true',
+                        help='Run a sanity check without interactive prompts. Only skips tests that cannot finish without user intervention.'
                         )
 
     return parser.parse_args()
@@ -39,9 +43,12 @@ def _load_suites(suites):
     return combined_suite
 
 def _run_suites(test_suite, options):
-    if options.non_interactive:
+    if options.non_interactive or options.sanity:
         import tests.interactive.interactive_test_base
-        tests.interactive.interactive_test_base.interactive = False
+        if options.non_interactive:
+            tests.interactive.interactive_test_base.set_noninteractive_only_automatic()
+        else:
+            tests.interactive.interactive_test_base.set_noninteractive_sanity()
 
     runner = unittest.TextTestRunner()
     runner.run(test_suite)
