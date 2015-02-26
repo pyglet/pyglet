@@ -231,8 +231,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
 
         self.assertIn('AssertionError: abcd', result.failures[0][1], 'Did not get failure message entered by user.')
 
-    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
-    def test_verify_takes_screenshot(self):
+    def test_verify_commits_screenshot_on_user_passed(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
                 w = window.Window(200, 200)
@@ -241,7 +240,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
                 glClear(GL_COLOR_BUFFER_BIT)
                 w.flip()
 
-                self.user_verify('Empty window')
+                self.user_verify('Please choose yes (or press Enter)')
                 w.close()
 
         self._patch_screenshot_paths()
@@ -266,7 +265,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         self.assertIn('tests.interactive.test_interactive_test_base._Test.test_1.001.png', files[0])
 
     @mock.patch('tests.interactive.interactive_test_base.interactive', False)
-    def test_screenshot_not_committed_on_noninteractive_failure(self):
+    def test_screenshot_taken_but_not_committed_on_noninteractive_failure(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
                 w = window.Window(200, 200)
@@ -300,7 +299,75 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         files = glob.glob(os.path.join(self._committed_screenshot_path, '*.png'))
         self.assertEqual(len(files), 0, 'Screenshot should not have been comitted')
 
-    def test_screenshot_not_committed_on_user_failure(self):
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
+    @mock.patch('tests.interactive.interactive_test_base.allow_missing_screenshots', True)
+    def test_screenshot_taken_but_not_committed_on_noninteractive_pass(self):
+        class _Test(InteractiveTestCase):
+            def test_1(self):
+                w = window.Window(200, 200)
+                w.switch_to()
+                glClearColor(1, 0, 1, 1)
+                glClear(GL_COLOR_BUFFER_BIT)
+                w.flip()
+
+                self.user_verify('Empty window')
+                w.close()
+
+        self._patch_screenshot_paths()
+
+        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
+        self.assertIsNotNone(tests)
+        self.assertEqual(tests.countTestCases(), 1)
+
+        result = unittest.TestResult()
+        tests.run(result)
+
+        self.assertEqual(len(result.failures), 0, 'Not expecting failures')
+        self.assertEqual(len(result.errors), 0, 'Not expecting errors')
+        self.assertEqual(result.testsRun, 1, 'Expected 1 test run')
+
+        files = glob.glob(os.path.join(self._session_screenshot_path, '*.png'))
+        self.assertEqual(len(files), 1, 'Screenshot not stored in session directory')
+        self.assertIn('tests.interactive.test_interactive_test_base._Test.test_1.001.png', files[0])
+
+        files = glob.glob(os.path.join(self._committed_screenshot_path, '*.png'))
+        self.assertEqual(len(files), 0, 'Screenshot should not have been comitted')
+
+    @mock.patch('tests.interactive.interactive_test_base.interactive', False)
+    def test_fails_on_missing_screenshot_on_noninteractive_pass(self):
+        class _Test(InteractiveTestCase):
+            def test_1(self):
+                w = window.Window(200, 200)
+                w.switch_to()
+                glClearColor(1, 0, 1, 1)
+                glClear(GL_COLOR_BUFFER_BIT)
+                w.flip()
+
+                self.user_verify('Empty window')
+                w.close()
+
+        self._patch_screenshot_paths()
+
+        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
+        self.assertIsNotNone(tests)
+        self.assertEqual(tests.countTestCases(), 1)
+
+        result = unittest.TestResult()
+        tests.run(result)
+
+        self.assertEqual(len(result.failures), 1, 'Expecting 1 failure')
+        self.assertEqual(len(result.errors), 0, 'Not expecting errors')
+        self.assertEqual(result.testsRun, 1, 'Expected 1 test run')
+
+        files = glob.glob(os.path.join(self._session_screenshot_path, '*.png'))
+        self.assertEqual(len(files), 1, 'Screenshot not stored in session directory')
+        self.assertIn('tests.interactive.test_interactive_test_base._Test.test_1.001.png', files[0])
+
+        files = glob.glob(os.path.join(self._committed_screenshot_path, '*.png'))
+        self.assertEqual(len(files), 0, 'Screenshot should not have been comitted')
+
+
+    def test_screenshot_taken_but_not_committed_on_user_failure(self):
         class _Test(InteractiveTestCase):
             def test_1(self):
                 w = window.Window(200, 200)

@@ -36,6 +36,8 @@ run_requires_user_validation = True
 # Show interactive prompts or not
 interactive = True
 
+# Allow tests missing reference screenshots to pass
+allow_missing_screenshots = False
 
 def set_noninteractive_sanity():
     """
@@ -45,12 +47,13 @@ def set_noninteractive_sanity():
     comparison) also run without user intervention.
     """
     global run_only_interactive, run_requires_user_action, run_requires_user_validation
-    global interactive
+    global interactive, allow_missing_screenshots
 
     run_only_interactive = False
     run_requires_user_action = False
     run_requires_user_validation = True
     interactive = False
+    allow_missing_screenshots = True
 
 
 def set_noninteractive_only_automatic():
@@ -59,12 +62,13 @@ def set_noninteractive_only_automatic():
     or validation by the user are skipped.
     """
     global run_only_interactive, run_requires_user_action, run_requires_user_validation
-    global interactive
+    global interactive, allow_missing_screenshots
 
     run_only_interactive = False
     run_requires_user_action = False
     run_requires_user_validation = False
     interactive = False
+    allow_missing_screenshots = False
 
 
 class InteractiveTestCase(unittest.TestCase):
@@ -105,13 +109,15 @@ class InteractiveTestCase(unittest.TestCase):
         else:
             if self._has_reference_screenshots():
                 self._validate_screenshots()
-            else:
-                warnings.warn('No committed reference screenshots available. Creating reference.')
+                # Always commit the screenshots here. They can be used for the next test run.
+                # If reference screenshots were already present and there was a mismatch, it should
+                # have failed above.
+                self._commit_screenshots()
 
-            # Always commit the screenshots here. They can be used for the next test run.
-            # If reference screenshots were already present and there was a mismatch, it should
-            # have failed above.
-            self._commit_screenshots()
+            elif allow_missing_screenshots:
+                warnings.warn('No committed reference screenshots available. Ignoring.')
+            else:
+                self.fail('No committed reference screenshots available. Run interactive first.')
 
     def _filter_test(self):
         """
