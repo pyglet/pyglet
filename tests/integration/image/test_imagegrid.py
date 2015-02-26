@@ -1,22 +1,13 @@
-#!/usr/bin/env python
-
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import unittest
 
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
-from texture_base import colorbyte
+from texture_compat import colorbyte
 
-__noninteractive = True
-
-class TestTextureGrid(unittest.TestCase):
+class ImageGridTestCase(unittest.TestCase):
+    """Test the ImageGrid for textures."""
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
         data = b''
         color = 1
@@ -98,5 +89,3 @@ class TestTextureGrid(unittest.TestCase):
                 self.check_cell(images[i], row * cols + col)
                 i += 1
 
-if __name__ == '__main__':
-    unittest.main()

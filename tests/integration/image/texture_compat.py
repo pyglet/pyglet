@@ -1,3 +1,4 @@
+"""Python 2/3 compatibility functions for texture tests."""
 import sys
 
 

@@ -1,22 +1,13 @@
-#!/usr/bin/env python
-
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import unittest
 
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
-from texture_base import colorbyte
-
-__noninteractive = True
+from texture_compat import colorbyte
 
 class TestTexture3D(unittest.TestCase):
+    """Test the Texture3D for image grids."""
     def create_image(self, width, height, color):
         data =  colorbyte(color) * (width * height)
         return ImageData(width, height, 'L', data)
@@ -110,5 +101,3 @@ class TestTexture3D(unittest.TestCase):
         for i in range(rows * cols): 
             self.check_cell(self.grid[i], i)
 
-if __name__ == '__main__':
-    unittest.main()
