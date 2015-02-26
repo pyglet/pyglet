@@ -86,9 +86,13 @@ class ImageSavingTestCase(WindowedTestCase):
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
+class TheImageSavingTestCase(ImageSavingTestCase):
+    pass
+
+
 def create_image_test_cases(name, description, encoder_class, image_files):
     for image_file in image_files:
-        ImageSavingTestCase.create_test_case(
+        TheImageSavingTestCase.create_test_case(
                 name='test_{}_{}'.format(name, image_file),
                 description=description,
                 question='Do you see the {} image twice on a checkerboard background?'.format(image_file),
@@ -126,7 +130,7 @@ create_image_test_cases(
 # PIL not available, no encoder given
 def _pil_raise_error(*args, **kwargs):
     raise codecs.ImageEncodeException()
-ImageSavingTestCase.create_test_case(
+TheImageSavingTestCase.create_test_case(
         name='test_no_pil_encoder',
         description='Test saving using PyPNG if no decoder is given, PIL is not available and PyPNG decoder is available.',
         question='Do you see the rgb.png image twice on a checkerboard background?',
