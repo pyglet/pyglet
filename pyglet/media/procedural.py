@@ -57,7 +57,6 @@ class ProceduralSource(Source):
 
     def _get_audio_data(self, bytes):
         bytes = min(bytes, self._max_offset - self._offset)
-        print(bytes)
         if bytes <= 0:
             return None
         
