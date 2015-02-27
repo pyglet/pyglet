@@ -345,7 +345,7 @@ class AudioData(object):
         '''Remove some data from beginning of packet.  All events are
         cleared.'''
         self.events = ()
-        if bytes == self.length:
+        if bytes >= self.length:
             self.data = None
             self.length = 0
             self.timestamp += self.duration
