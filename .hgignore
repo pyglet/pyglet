@@ -17,3 +17,5 @@ tests/regression/images/*.png
 tests/interactive/screenshots/session/*.png
 tests/interactive/screenshots/committed/*.png
 *.swp
+.coverage
+coverage_report/
