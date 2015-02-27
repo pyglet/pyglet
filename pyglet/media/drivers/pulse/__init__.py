@@ -430,6 +430,9 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def play(self):
         if _debug:
             print 'play'
+
+        print(self._playing)
+
         context.lock()
         context.async_operation(
              pa.pa_stream_cork(self.stream, 0, 
@@ -445,6 +448,9 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             )
         context.unlock()
 
+        if not self._playing:
+            self._write_cb(self.stream, 1024, None)
+
         self._playing = True
 
     def stop(self):
@@ -452,7 +458,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             print 'stop'
         context.lock()
         context.async_operation(
-             pa.pa_stream_cork(self.stream, 1, 
+                 pa.pa_stream_cork(self.stream, 1, 
                                pa.pa_stream_success_cb_t(0), None)
         )
         context.unlock()
