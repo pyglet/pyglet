@@ -133,6 +133,92 @@ class StreamingSourceTestCase(unittest.TestCase):
         with self.assertRaises(media.MediaException):
             source._get_queue_source()
 
+class StaticSourceTestCase(unittest.TestCase):
+    def create_valid_mock_source(self, bitrate=8, channels=1):
+        self.mock_source = mock.MagicMock()
+        self.mock_queue_source = self.mock_source._get_queue_source.return_value
+
+        byte_rate = bitrate >> 3
+        self.mock_data = ['a'*22050*byte_rate*channels, 'b'*22050*byte_rate*channels, 'c'*11025*byte_rate*channels]
+        self.mock_audio_data = ''.join(self.mock_data)
+        def _get_audio_data(_):
+            if not self.mock_data:
+                return None
+            data = self.mock_data.pop(0)
+            return media.AudioData(data, len(data), 0.0, 1.0, ())
+        self.mock_queue_source.get_audio_data.side_effect = _get_audio_data
+
+        type(self.mock_queue_source).audio_format = mock.PropertyMock(return_value=media.AudioFormat(channels, bitrate, 11025))
+        type(self.mock_queue_source).video_format = mock.PropertyMock(return_value=None)
+
+
+    def test_reads_all_data_on_init(self):
+        self.create_valid_mock_source()
+        static_source = media.StaticSource(self.mock_source)
+
+        self.assertEqual(len(self.mock_data), 0, 'All audio data should be read')
+        self.assertEqual(self.mock_queue_source.get_audio_data.call_count, 4, 'Data should be retrieved until empty')
+
+        # Try to read all data plus more, more should be ignored
+        returned_audio_data = static_source._get_queue_source().get_audio_data(len(self.mock_audio_data)+1024)
+        self.assertEqual(returned_audio_data.get_string_data(), self.mock_audio_data, 'All data from the mock should be returned')
+        self.assertAlmostEqual(returned_audio_data.duration, 5.0)
+
+    def test_video_not_supported(self):
+        self.create_valid_mock_source()
+        type(self.mock_queue_source).video_format = mock.PropertyMock(return_value=media.VideoFormat(800, 600))
+
+        with self.assertRaises(NotImplementedError):
+            static_source = media.StaticSource(self.mock_source)
+
+    def test_seek(self):
+        self.create_valid_mock_source()
+        static_source = media.StaticSource(self.mock_source)
+
+        queue_source = static_source._get_queue_source()
+        queue_source.seek(1.0)
+        returned_audio_data = queue_source.get_audio_data(len(self.mock_audio_data))
+        self.assertAlmostEqual(returned_audio_data.duration, 4.0)
+        self.assertEqual(returned_audio_data.length, len(self.mock_audio_data)-11025)
+        self.assertEqual(returned_audio_data.get_string_data(), self.mock_audio_data[11025:], 'Should have seeked past 1 second')
+
+    def test_multiple_queued(self):
+        self.create_valid_mock_source()
+        static_source = media.StaticSource(self.mock_source)
+
+        # Check that seeking and consuming on queued instances does not affect others
+        queue_source1 = static_source._get_queue_source()
+        queue_source1.seek(1.0)
+
+        queue_source2 = static_source._get_queue_source()
+
+        returned_audio_data = queue_source2.get_audio_data(len(self.mock_audio_data))
+        self.assertAlmostEqual(returned_audio_data.duration, 5.0)
+        self.assertEqual(returned_audio_data.length, len(self.mock_audio_data), 'Should contain all data')
+
+
+        returned_audio_data = queue_source1.get_audio_data(len(self.mock_audio_data))
+        self.assertAlmostEqual(returned_audio_data.duration, 4.0)
+        self.assertEqual(returned_audio_data.length, len(self.mock_audio_data)-11025)
+        self.assertEqual(returned_audio_data.get_string_data(), self.mock_audio_data[11025:], 'Should have seeked past 1 second')
+
+    def test_seek_aligned_to_sample_size(self):
+        self.create_valid_mock_source(bitrate=16, channels=2)
+        static_source = media.StaticSource(self.mock_source)
+
+        queue_source = static_source._get_queue_source()
+        queue_source.seek(0.01)
+        returned_audio_data = queue_source.get_audio_data(len(self.mock_audio_data))
+        self.assertEqual(returned_audio_data.length % 4, 0, 'Must seek and return aligned to 4 byte chunks')
+
+    def test_consume_aligned_to_sample_size(self):
+        self.create_valid_mock_source(bitrate=16, channels=2)
+        static_source = media.StaticSource(self.mock_source)
+
+        queue_source = static_source._get_queue_source()
+        returned_audio_data = queue_source.get_audio_data(1000*4+3)
+        self.assertEqual(returned_audio_data.length % 4, 0, 'Must return aligned to 4 byte chunks')
+
 
 class SourceGroupTestCase(unittest.TestCase):
     def test_pause(self):
