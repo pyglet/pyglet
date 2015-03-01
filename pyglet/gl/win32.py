@@ -175,7 +175,9 @@ class Win32CanvasConfigARB(CanvasConfig):
         return isinstance(canvas, Win32Canvas)
 
     def create_context(self, share):
-        if wgl_info.have_extension('WGL_ARB_create_context'):
+        # Workaround for issue on certain Intel cards/drivers.
+        # TODO: Find out if there is a way to query for this problem
+        if wgl_info.have_extension('WGL_ARB_create_context') and gl_info.get_vendor() != 'Intel':
             return Win32ARBContext(self, share)
         else:
             return Win32Context(self, share)
