@@ -221,17 +221,263 @@ class StaticSourceTestCase(unittest.TestCase):
 
 
 class SourceGroupTestCase(unittest.TestCase):
-    def test_pause(self):
-        pass
+    audio_format = media.AudioFormat(1, 8, 11025)
+
+    def create_mock_source(self, duration, audio_data=None):
+        mock_source = mock.MagicMock()
+        m = mock_source._get_queue_source.return_value
+        type(m).audio_format = mock.PropertyMock(return_value=self.audio_format)
+        type(m).video_format = mock.PropertyMock(return_value=None)
+        type(m).duration = mock.PropertyMock(return_value=duration)
+        m.get_audio_data.return_value = self.create_audio_data(duration, audio_data)
+        return mock_source
+
+    def create_audio_data(self, duration=1., data=None):
+        if data is None:
+            return None
+
+        audio_data = media.AudioData(data, len(data), 0., duration, [])
+        return audio_data
+
+    def test_queueing(self):
+        source_group = media.SourceGroup(self.audio_format, None)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 0.)
+
+        source1 = self.create_mock_source(1.)
+        source_group.queue(source1)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 1.)
+
+        source2 = self.create_mock_source(2.0)
+        source_group.queue(source2)
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+    def test_seek(self):
+        source_group = media.SourceGroup(self.audio_format, None)
+        source1 = self.create_mock_source(1.)
+        source_group.queue(source1)
+        source2 = self.create_mock_source(2.)
+        source_group.queue(source2)
+
+        source_group.seek(0.5)
+
+        source1._get_queue_source.return_value.seek.assert_called_once_with(0.5)
+        self.assertFalse(source2._get_queue_source.return_value.seek.called)
+
+    def test_advance_eos_no_loop(self):
+        """Test that the source group advances to the next source if eos is encountered and looping
+        is not enabled"""
+        source_group = media.SourceGroup(self.audio_format, None)
+        source1 = self.create_mock_source(1., '1')
+        source2 = self.create_mock_source(2., '2')
+        source_group.queue(source1)
+        source_group.queue(source2)
+
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '1')
+        self.assertAlmostEqual(audio_data.timestamp, 0.)
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        # Source 1 is eos, source 2 returns 1.0 seconds (of 2.0)
+        source1._get_queue_source.return_value.get_audio_data.return_value = None
+        source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '2')
+        self.assertAlmostEqual(audio_data.timestamp, 1.)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2.)
+        self.assertEqual(len(audio_data.events), 1)
+        self.assertEqual(audio_data.events[0].event, 'on_eos')
+
+        # Source 2 not eos yet
+        source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '2')
+        self.assertAlmostEqual(audio_data.timestamp, 1.)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2.)
+        self.assertEqual(len(audio_data.events), 0)
+
+        # Now source 2 is eos
+        source2._get_queue_source.return_value.get_audio_data.return_value = None
+        audio_data = source_group.get_audio_data(1024)
+        self.assertIsNone(audio_data)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2., msg='Last source is not removed')
 
     def test_loop(self):
-        pass
+        """Test that the source group seeks to the start of the current source if eos is reached
+        and looping is enabled."""
+        source_group = media.SourceGroup(self.audio_format, None)
+        source_group.loop = True
+        source1 = self.create_mock_source(1., '1')
+        source2 = self.create_mock_source(2., '2')
+        source_group.queue(source1)
+        source_group.queue(source2)
 
-    def test_advance(self):
-        pass
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
 
-    def test_empty_sources_list(self):
-        pass
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '1')
+        self.assertAlmostEqual(audio_data.timestamp, 0.)
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        # Source 1 is eos, seek resets it to start
+        def seek(_):
+            source1._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='1')
+        source1._get_queue_source.return_value.seek.side_effect = seek
+        source1._get_queue_source.return_value.get_audio_data.return_value = None
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '1')
+        self.assertAlmostEqual(audio_data.timestamp, 1.)
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+        self.assertEqual(len(audio_data.events), 1)
+        self.assertEqual(audio_data.events[0].event, 'on_eos')
+
+    def test_loop_advance_on_eos(self):
+        """Test advancing to the next source on eos when looping is enabled."""
+        source_group = media.SourceGroup(self.audio_format, None)
+        source_group.loop = True
+        source1 = self.create_mock_source(1., '1')
+        source2 = self.create_mock_source(2., '2')
+        source_group.queue(source1)
+        source_group.queue(source2)
+
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '1')
+        self.assertAlmostEqual(audio_data.timestamp, 0.)
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        # Request advance on eos
+        source_group.next_source(immediate=False)
+        source1._get_queue_source.return_value.get_audio_data.return_value = None
+        source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '2')
+        self.assertAlmostEqual(audio_data.timestamp, 1.)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2.)
+        self.assertEqual(len(audio_data.events), 1)
+        self.assertEqual(audio_data.events[0].event, 'on_eos')
+
+        # Source 2 still loops
+        def seek(_):
+            source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        source2._get_queue_source.return_value.seek.side_effect = seek
+        source2._get_queue_source.return_value.get_audio_data.return_value = None
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '2')
+        self.assertAlmostEqual(audio_data.timestamp, 3.)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2.)
+        self.assertEqual(len(audio_data.events), 1)
+        self.assertEqual(audio_data.events[0].event, 'on_eos')
+
+    def test_loop_advance_immediate(self):
+        """Test advancing immediately to the next source when looping is enabled."""
+        source_group = media.SourceGroup(self.audio_format, None)
+        source_group.loop = True
+        source1 = self.create_mock_source(1., '1')
+        source2 = self.create_mock_source(2., '2')
+        source_group.queue(source1)
+        source_group.queue(source2)
+
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '1')
+        self.assertAlmostEqual(audio_data.timestamp, 0.)
+        self.assertTrue(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 3.)
+
+        # Request advance immediately
+        source_group.next_source(immediate=True)
+        source1._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='1')
+        source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '2')
+        self.assertAlmostEqual(audio_data.timestamp, 1.)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2.)
+        self.assertEqual(len(audio_data.events), 0)
+
+        # Source 2 still loops
+        def seek(_):
+            source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        source2._get_queue_source.return_value.seek.side_effect = seek
+        source2._get_queue_source.return_value.get_audio_data.return_value = None
+        audio_data = source_group.get_audio_data(1024)
+        self.assertEqual(audio_data.data, '2')
+        self.assertAlmostEqual(audio_data.timestamp, 3.)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 2.)
+        self.assertEqual(len(audio_data.events), 1)
+        self.assertEqual(audio_data.events[0].event, 'on_eos')
+
+    def test_empty_source_group(self):
+        """Test an empty source group"""
+        source_group = media.SourceGroup(self.audio_format, None)
+        self.assertFalse(source_group.has_next())
+        self.assertAlmostEqual(source_group.duration, 0.)
+        self.assertIsNone(source_group.get_current_source())
+        source_group.seek(1.)
+        source_group.next_source()
+        self.assertIsNone(source_group.get_audio_data(1024))
+        self.assertAlmostEqual(source_group.translate_timestamp(1.), 1.)
+        self.assertIsNone(source_group.get_next_video_timestamp())
+        self.assertIsNone(source_group.get_next_video_frame())
+
+    def test_translate_timestamp(self):
+        """Test that translate_timestamp works correctly with advancing and looping."""
+        source_group = media.SourceGroup(self.audio_format, None)
+        source_group.loop = True
+        source1 = self.create_mock_source(1., '1')
+        source2 = self.create_mock_source(2., '2')
+        source_group.queue(source1)
+        source_group.queue(source2)
+        self.assertAlmostEqual(source_group.translate_timestamp(1.), 1.)
+
+        # Loop source 1
+        def seek(_):
+            source1._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='1')
+        source1._get_queue_source.return_value.seek.side_effect = seek
+        source1._get_queue_source.return_value.get_audio_data.return_value = None
+        source_group.get_audio_data(1024)
+        self.assertAlmostEqual(source_group.translate_timestamp(2.), 1.)
+
+        # Loop source 1 again
+        def seek(_):
+            source1._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='1')
+        source1._get_queue_source.return_value.seek.side_effect = seek
+        source1._get_queue_source.return_value.get_audio_data.return_value = None
+        source_group.get_audio_data(1024)
+        self.assertAlmostEqual(source_group.translate_timestamp(3.), 1.)
+
+        # Advance to source 2
+        source_group.next_source()
+        self.assertAlmostEqual(source_group.translate_timestamp(4.), 1.)
+
+        # Loop source 2
+        def seek(_):
+            source2._get_queue_source.return_value.get_audio_data.return_value = self.create_audio_data(duration=1., data='2')
+        source2._get_queue_source.return_value.seek.side_effect = seek
+        source2._get_queue_source.return_value.get_audio_data.return_value = None
+        source_group.get_audio_data(1024)
+        self.assertAlmostEqual(source_group.translate_timestamp(6.), 1.)
 
 
 class PlayerTestCase(unittest.TestCase):

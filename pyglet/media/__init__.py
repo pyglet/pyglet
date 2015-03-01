@@ -752,6 +752,8 @@ class SourceGroup(object):
         :return: Audio data, or None if there is no more data.
         '''
 
+        if not self._sources:
+            return None
         data = self._sources[0].get_audio_data(bytes)
         eos = False
         while not data:
@@ -769,7 +771,7 @@ class SourceGroup(object):
                     self._advance()
                 else:
                     return None
-                
+
             data = self._sources[0].get_audio_data(bytes) # TODO method rename
 
         data.timestamp += self._timestamp_offset
@@ -803,6 +805,8 @@ class SourceGroup(object):
         '''
         # TODO track current video source independently from audio source for
         # better prebuffering.
+        if not self._sources:
+            return None
         timestamp = self._sources[0].get_next_video_timestamp()
         if timestamp is not None: 
             timestamp += self._timestamp_offset
@@ -819,7 +823,8 @@ class SourceGroup(object):
         :return: The next video frame image, or ``None`` if the video frame
             could not be decoded or there are no more video frames.
         '''
-        return self._sources[0].get_next_video_frame()
+        if self._sources:
+            return self._sources[0].get_next_video_frame()
 
 class AbstractAudioPlayer(object):
     '''Base class for driver audio players.
