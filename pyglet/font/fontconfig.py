@@ -146,7 +146,7 @@ class FontConfig(object):
                             search_pattern.bold,
                             search_pattern.italic)] = result_pattern
         if len(self._search_cache) > self._cache_size:
-            self._search_cache.popitem(last=False).dispose()
+            self._search_cache.popitem(last=False)[1].dispose()
 
     def _get_from_search_cache(self,  name, size, bold, italic):
         result = self._search_cache.get((name, size, bold, italic), None)
