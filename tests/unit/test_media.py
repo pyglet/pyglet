@@ -481,4 +481,48 @@ class SourceGroupTestCase(unittest.TestCase):
 
 
 class PlayerTestCase(unittest.TestCase):
-    pass
+    def create_mock_source(self, audio_format, video_format):
+        mock_source = mock.MagicMock()
+        type(mock_source).audio_format = mock.PropertyMock(return_value=audio_format)
+        type(mock_source).video_format = mock.PropertyMock(return_value=video_format)
+        type(mock_source._get_queue_source.return_value).audio_format = mock.PropertyMock(return_value=audio_format)
+        type(mock_source._get_queue_source.return_value).video_format = mock.PropertyMock(return_value=video_format)
+        return mock_source
+
+    @mock.patch('pyglet.media.get_audio_driver')
+    def test_queue_single_audio_source(self, mock_get_audio_driver):
+        """Queue a single audio source and start playing it."""
+        mock_audio_driver = mock_get_audio_driver.return_value
+        player = media.Player()
+
+        mock_source = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
+        player.queue(mock_source)
+
+        self.assertFalse(mock_get_audio_driver.called, msg='No audio driver required yet')
+        self.assertFalse(player.playing)
+        self.assertIs(player.source, mock_source._get_queue_source.return_value)
+        self.assertAlmostEqual(player.time, 0.)
+
+        player.play()
+
+        # Check a audio driver specific player is created for the single source
+        mock_get_audio_driver.assert_called_once_with()
+        self.assertEqual(mock_audio_driver.create_audio_player.call_count, 1)
+        call_args = mock_audio_driver.create_audio_player.call_args
+        self.assertIsInstance(call_args[0][0], media.SourceGroup)
+        self.assertIs(call_args[0][0].get_current_source(), mock_source._get_queue_source.return_value)
+        self.assertIs(call_args[0][1], player)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
