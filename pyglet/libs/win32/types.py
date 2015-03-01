@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -38,10 +38,47 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import ctypes
 from ctypes import *
 from ctypes.wintypes import *
 
 
+_int_types = (c_int16, c_int32)
+if hasattr(ctypes, 'c_int64'):
+    # Some builds of ctypes apparently do not have c_int64
+    # defined; it's a pretty good bet that these builds do not
+    # have 64-bit pointers.
+    _int_types += (c_int64,)
+for t in _int_types:
+    if sizeof(t) == sizeof(c_size_t):
+        c_ptrdiff_t = t
+del t
+del _int_types
+
+
+class c_void(Structure):
+    # c_void_p is a buggy return type, converting to int, so
+    # POINTER(None) == c_void_p is actually written as
+    # POINTER(c_void), so it can be treated as a real pointer.
+    _fields_ = [('dummy', c_int)]
+
+
+def POINTER_(obj):
+    p = ctypes.POINTER(obj)
+
+    # Convert None to a real NULL pointer to work around bugs
+    # in how ctypes handles None on 64-bit platforms
+    if not isinstance(p.from_param, classmethod):
+        def from_param(cls, x):
+            if x is None:
+                return cls()
+            else:
+                return x
+        p.from_param = classmethod(from_param)
+
+    return p
+
+c_void_p = POINTER_(c_void)
 INT = c_int
 LPVOID = c_void_p
 HCURSOR = HANDLE
@@ -55,6 +92,8 @@ LPPOINT = POINTER(POINT)
 LPMSG = POINTER(MSG)
 UINT_PTR = HANDLE
 LONG_PTR = HANDLE
+HDROP = HANDLE
+LPTSTR = LPWSTR
 
 LF_FACESIZE = 32
 CCHDEVICENAME = 32
@@ -66,7 +105,7 @@ TIMERAPCPROC = WINFUNCTYPE(None, PVOID, DWORD, DWORD)
 MONITORENUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, LPRECT, LPARAM)
 
 def MAKEINTRESOURCE(i):
-    return cast(c_void_p(i&0xFFFF), c_wchar_p)
+    return cast(ctypes.c_void_p(i & 0xFFFF), c_wchar_p)
 
 
 class WNDCLASS(Structure):
