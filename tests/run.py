@@ -3,6 +3,7 @@ Test runner that wraps around unittest.
 """
 
 import argparse
+import imp
 import os
 import pyglet
 import sys
@@ -11,6 +12,7 @@ import unittest
 
 try:
     from coverage import coverage
+    _cov = None
 except:
     coverage = None
 
@@ -90,18 +92,26 @@ def _run_suites(test_suite, options):
         else:
             tests.interactive.interactive_test_base.set_noninteractive_sanity()
 
-    if coverage is not None and options.coverage:
-        cov = coverage(branch=True,
-                       source=['pyglet'],
-                       omit=_get_platform_omit())
-        cov.start()
-
     runner = unittest.TextTestRunner()
     runner.run(test_suite)
 
+def _start_coverage(options):
     if coverage is not None and options.coverage:
-        cov.stop()
-        cov.html_report(directory='coverage_report')
+        global _cov
+        _cov = coverage(branch=True,
+                        source=['pyglet'],
+                        omit=_get_platform_omit())
+        _cov.start()
+
+        # Need to reload pyglet to get full coverage, because it was imported before coverage was
+        # started
+        imp.reload(pyglet)
+
+def _stop_coverage(options):
+    if coverage is not None and options.coverage:
+        global _cov
+        _cov.stop()
+        _cov.html_report(directory='coverage_report')
         html_report = os.path.abspath(os.path.join('coverage_report', 'index.html'))
         print('Coverage report: file://' + html_report)
 
@@ -132,5 +142,7 @@ def _get_platform_omit():
 
 if __name__ == '__main__':
     options =_parse_args()
+    _start_coverage(options)
     test_suite = _load_suites(options.suites)
     _run_suites(test_suite, options)
+    _stop_coverage(options)
