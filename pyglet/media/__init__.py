@@ -608,6 +608,8 @@ class StaticSource(Source):
 
         self.audio_format = source.audio_format
         if not self.audio_format:
+            self._data = None
+            self._duration = 0.
             return
 
         # Arbitrary: number of bytes to request at a time.
@@ -627,7 +629,8 @@ class StaticSource(Source):
                 float(self.audio_format.bytes_per_second)
 
     def _get_queue_source(self):
-        return StaticMemorySource(self._data, self.audio_format)
+        if self._data is not None:
+            return StaticMemorySource(self._data, self.audio_format)
 
     def get_audio_data(self, bytes):
         raise RuntimeError('StaticSource cannot be queued.')
@@ -789,7 +792,8 @@ class SourceGroup(object):
 
         timestamp = timestamp - self._timestamp_offset
         if timestamp < 0:
-            for duration in self._dequeued_durations[::-1]:
+            # _dequeued_durations is already ordered last to first
+            for duration in self._dequeued_durations:
                 timestamp += duration
                 if timestamp > 0:
                     break
