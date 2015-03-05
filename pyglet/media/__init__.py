@@ -1036,7 +1036,6 @@ class Player(pyglet.event.EventDispatcher):
             time = self._groups[0].translate_timestamp(time)
             if time is not None:
                 self._paused_time = time
-            self._audio_player.stop()
 
     def delete(self):
         self.pause()
@@ -1077,12 +1076,18 @@ class Player(pyglet.event.EventDispatcher):
     next = next_source  # old API, worked badly with 2to3
 
     def seek(self, time):
+        if not self.source:
+            return
+
         if _debug:
             print 'Player.seek(%r)' % time
 
         self._paused_time = time
         self.source.seek(time)
-        if self._audio_player: self._audio_player.clear()
+        if self._audio_player:
+            # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
+            # player is not stopped
+            self._audio_player.clear()
         if self.source.video_format:
             self._last_video_timestamp = None
             self.update_texture(time=time)

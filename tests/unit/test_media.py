@@ -583,6 +583,11 @@ class SourceGroupTestCase(unittest.TestCase):
 
 
 class PlayerTestCase(unittest.TestCase):
+    # Default values to use
+    audio_format_1 = media.AudioFormat(1, 8, 11025)
+    audio_format_2 = media.AudioFormat(2, 8, 11025)
+    audio_format_3 = media.AudioFormat(2, 16, 44100)
+
     def setUp(self):
         self.player = media.Player()
 
@@ -637,6 +642,10 @@ class PlayerTestCase(unittest.TestCase):
         self.current_playing_source_group = call_args[0][0]
         self.assert_in_current_playing_source_group(*sources)
 
+    def assert_no_new_driver_player_created(self):
+        """Assert that no new driver specific audio player is created."""
+        self.assertFalse(self.mock_get_audio_driver.called, msg='No new audio driver should be created')
+
     def assert_in_current_playing_source_group(self, *sources):
         self.assertIsNotNone(self.current_playing_source_group, msg='No previous call to create driver player')
 
@@ -649,22 +658,38 @@ class PlayerTestCase(unittest.TestCase):
     def assert_driver_player_not_destroyed(self):
         self.assertFalse(self.mock_audio_driver_player.delete.called)
 
+    def assert_driver_player_started(self):
+        self.mock_audio_driver_player.play.assert_called_once_with()
+
+    def assert_driver_player_stopped(self):
+        self.mock_audio_driver_player.stop.assert_called_once_with()
+
+    def assert_driver_player_cleared(self):
+        self.mock_audio_driver_player.clear.assert_called_once_with()
+
+    def assert_source_seek(self, source, time):
+        source._get_queue_source.return_value.seek.assert_called_once_with(time)
+
+    def pretend_driver_player_at_time(self, t):
+        self.mock_audio_driver_player.get_time.return_value = t
+
     def test_queue_single_audio_source_and_play(self):
         """Queue a single audio source and start playing it."""
 
-        mock_source = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
+        mock_source = self.create_mock_source(self.audio_format_1, None)
         self.player.queue(mock_source)
         self.assert_not_playing_yet(mock_source)
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source)
 
     def test_queue_multiple_audio_sources_same_format_and_play(self):
         """Queue multiple audio sources using the same audio format and start playing."""
-        mock_source1 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source2 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source3 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_1, None)
+        mock_source3 = self.create_mock_source(self.audio_format_1, None)
 
         self.player.queue(mock_source1)
         self.assert_not_playing_yet(mock_source1)
@@ -677,14 +702,15 @@ class PlayerTestCase(unittest.TestCase):
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source1, mock_source2, mock_source3)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source1)
 
     def test_queue_multiple_audio_sources_different_format_and_play_and_skip(self):
         """Queue multiple audio sources having different formats and start playing. Different
         formats should be played by seperate driver players."""
-        mock_source1 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source2 = self.create_mock_source(media.AudioFormat(2, 8, 11025), None)
-        mock_source3 = self.create_mock_source(media.AudioFormat(1, 16, 11025), None)
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_2, None)
+        mock_source3 = self.create_mock_source(self.audio_format_3, None)
 
         self.player.queue(mock_source1)
         self.assert_not_playing_yet(mock_source1)
@@ -697,27 +723,30 @@ class PlayerTestCase(unittest.TestCase):
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source1)
 
         self.reset_mocks()
         self.player.next_source()
         self.assert_driver_player_destroyed()
         self.assert_driver_player_created_for(mock_source2)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source2)
 
         self.reset_mocks()
         self.player.next_source()
         self.assert_driver_player_destroyed()
         self.assert_driver_player_created_for(mock_source3)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source3)
 
     def test_queue_multiple_audio_sources_same_format_and_play_and_skip(self):
         """When multiple audio sources with the same format are queued, they are played using the
         same driver player. Skipping to the next source is just advancing the source group.
         """
-        mock_source1 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source2 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source3 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_1, None)
+        mock_source3 = self.create_mock_source(self.audio_format_1, None)
 
         self.player.queue(mock_source1)
         self.player.queue(mock_source2)
@@ -725,23 +754,28 @@ class PlayerTestCase(unittest.TestCase):
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source1, mock_source2, mock_source3)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source1)
 
+        self.reset_mocks()
         self.player.next_source()
         self.assert_in_current_playing_source_group(mock_source2, mock_source3)
         self.assert_driver_player_not_destroyed()
+        self.assert_no_new_driver_player_created()
         self.assert_now_playing(mock_source2)
 
+        self.reset_mocks()
         self.player.next_source()
         self.assert_in_current_playing_source_group(mock_source3)
         self.assert_driver_player_not_destroyed()
+        self.assert_no_new_driver_player_created()
         self.assert_now_playing(mock_source3)
 
     def test_on_eos_ignored(self):
         """The player receives on_eos for every source, but does not need to do anything."""
-        mock_source1 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source2 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source3 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_1, None)
+        mock_source3 = self.create_mock_source(self.audio_format_1, None)
 
         self.player.queue(mock_source1)
         self.player.queue(mock_source2)
@@ -749,6 +783,7 @@ class PlayerTestCase(unittest.TestCase):
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source1, mock_source2, mock_source3)
+        self.assert_driver_player_started()
 
         self.reset_mocks()
         self.player.dispatch_event('on_eos')
@@ -761,9 +796,9 @@ class PlayerTestCase(unittest.TestCase):
     def test_on_source_group_eos_advance_to_next_group(self):
         """If a source group is depleted and a next group is available, start a new player for
         the next group."""
-        mock_source1 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source2 = self.create_mock_source(media.AudioFormat(2, 8, 11025), None)
-        mock_source3 = self.create_mock_source(media.AudioFormat(1, 16, 11025), None)
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_2, None)
+        mock_source3 = self.create_mock_source(self.audio_format_3, None)
 
         self.player.queue(mock_source1)
         self.player.queue(mock_source2)
@@ -772,6 +807,7 @@ class PlayerTestCase(unittest.TestCase):
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_started()
 
         self.reset_mocks()
         self.player.dispatch_event('on_source_group_eos')
@@ -781,12 +817,13 @@ class PlayerTestCase(unittest.TestCase):
 
     def test_player_stops_after_last_group_eos(self):
         """If the last or only source group is eos, the player stops."""
-        mock_source = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
+        mock_source = self.create_mock_source(self.audio_format_1, None)
         self.player.queue(mock_source)
         self.assert_not_playing_yet(mock_source)
 
         self.player.play()
         self.assert_driver_player_created_for(mock_source)
+        self.assert_driver_player_started()
         self.assert_now_playing(mock_source)
 
         self.reset_mocks()
@@ -804,9 +841,19 @@ class PlayerTestCase(unittest.TestCase):
         on_player_eos_mock = mock.MagicMock(return_value=None)
         self.player.event('on_player_eos')(on_player_eos_mock)
 
-        mock_source1 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source2 = self.create_mock_source(media.AudioFormat(1, 8, 11025), None)
-        mock_source3 = self.create_mock_source(media.AudioFormat(1, 16, 11025), None)
+        def reset_eos_mocks():
+            on_eos_mock.reset_mock()
+            on_source_group_eos_mock.reset_mock()
+            on_player_eos_mock.reset_mock()
+
+        def assert_eos_events_received(on_eos=False, on_source_group_eos=False, on_player_eos=False):
+            self.assertEqual(on_eos_mock.called, on_eos)
+            self.assertEqual(on_source_group_eos_mock.called, on_source_group_eos)
+            self.assertEqual(on_player_eos_mock.called, on_player_eos)
+
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_1, None)
+        mock_source3 = self.create_mock_source(self.audio_format_2, None)
 
         self.player.queue(mock_source1)
         self.player.queue(mock_source2)
@@ -817,37 +864,265 @@ class PlayerTestCase(unittest.TestCase):
         self.assert_driver_player_created_for(mock_source1, mock_source2)
 
         self.reset_mocks()
-        on_eos_mock.reset_mock()
-        on_source_group_eos_mock.reset_mock()
-        on_player_eos_mock.reset_mock()
+        reset_eos_mocks()
+        # Pretend the current source in the group was eos and next source started
         self.current_playing_source_group.next_source()
         self.player.dispatch_event('on_eos')
         self.assert_driver_player_not_destroyed()
-        on_eos_mock.assert_called_once_with()
-        self.assertFalse(on_source_group_eos_mock.called)
-        self.assertFalse(on_player_eos_mock.called)
+        assert_eos_events_received(on_eos=True)
 
         self.reset_mocks()
-        on_eos_mock.reset_mock()
-        on_source_group_eos_mock.reset_mock()
-        on_player_eos_mock.reset_mock()
+        reset_eos_mocks()
+        # Pretend current source group is eos, triggers player to play next source group on a new
+        # player
         self.player.dispatch_event('on_source_group_eos')
         self.assert_driver_player_destroyed()
         self.assert_driver_player_created_for(mock_source3)
-        self.assertFalse(on_eos_mock.called)
-        on_source_group_eos_mock.assert_called_once_with()
-        self.assertFalse(on_player_eos_mock.called)
+        assert_eos_events_received(on_source_group_eos=True)
 
         self.reset_mocks()
-        on_eos_mock.reset_mock()
-        on_source_group_eos_mock.reset_mock()
-        on_player_eos_mock.reset_mock()
+        reset_eos_mocks()
+        # Pretend current source group is eos. Should be no more source groups to play.
         self.player.dispatch_event('on_source_group_eos')
         self.assert_driver_player_destroyed()
         self.assert_not_playing(None)
-        self.assertFalse(on_eos_mock.called)
-        on_source_group_eos_mock.assert_called_once_with()
-        on_player_eos_mock.assert_called_once_with()
+        assert_eos_events_received(on_source_group_eos=True, on_player_eos=True)
+
+    def test_pause_resume(self):
+        """A stream can be paused. After that play will resume where paused."""
+        mock_source = self.create_mock_source(self.audio_format_1, None)
+        self.player.queue(mock_source)
+        self.player.play()
+        self.assert_driver_player_created_for(mock_source)
+        self.assert_driver_player_started()
+        self.assert_now_playing(mock_source)
+
+        self.reset_mocks()
+        self.pretend_driver_player_at_time(0.5)
+        self.player.pause()
+        self.assert_driver_player_stopped()
+        self.assert_driver_player_not_destroyed()
+
+        self.reset_mocks()
+        self.pretend_driver_player_at_time(0.6)
+        self.assertEqual(self.player.time, 0.5, msg='While paused, player should returned paused time')
+
+        self.reset_mocks()
+        self.player.play()
+        self.assert_driver_player_started()
+        self.assert_no_new_driver_player_created()
+        self.assert_now_playing(mock_source)
+        self.assertEqual(self.player.time, 0.6, msg='While playing, player should return time from driver player')
+
+    def test_delete(self):
+        """Test clean up of the player when delete() is called."""
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_2, None)
+        mock_source3 = self.create_mock_source(self.audio_format_3, None)
+
+        self.player.queue(mock_source1)
+        self.player.queue(mock_source2)
+        self.player.queue(mock_source3)
+        self.assert_not_playing_yet(mock_source1)
+
+        self.player.play()
+        self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_started()
+
+        self.reset_mocks()
+        self.player.delete()
+        self.assert_driver_player_stopped()
+        self.assert_driver_player_destroyed()
+
+    def test_empty_player(self):
+        """A player without queued sources should not start a driver player and should not raise
+        exceptions"""
+        self.assert_not_playing_yet(None)
+
+        self.reset_mocks()
+        self.player.play()
+        self.assert_no_new_driver_player_created()
+
+        self.reset_mocks()
+        self.player.pause()
+        self.assert_no_new_driver_player_created()
+        self.assert_driver_player_not_destroyed()
+
+        self.reset_mocks()
+        self.player.next_source()
+        self.assert_no_new_driver_player_created()
+        self.assert_driver_player_not_destroyed()
+
+        self.reset_mocks()
+        self.player.seek(0.8)
+        self.assert_no_new_driver_player_created()
+        self.assert_driver_player_not_destroyed()
+
+    def test_set_player_properties_before_playing(self):
+        """When setting player properties before a driver specific player is created, these settings
+        should be propagated after creating the player."""
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_2, None)
+        self.player.queue(mock_source1)
+        self.player.queue(mock_source2)
+        self.assert_not_playing_yet(mock_source1)
+
+        self.reset_mocks()
+        self.player.volume = 10.
+        self.player.min_distance = 2.
+        self.player.max_distance = 3.
+        self.player.position = (4, 4, 4)
+        self.player.pitch = 5.0
+        self.player.cone_orientation = (6, 6, 6)
+        self.player.cone_inner_angle = 7.
+        self.player.cone_outer_angle = 8.
+        self.player.cone_outer_gain = 9.
+
+        def assert_properties_set():
+            self.mock_audio_driver_player.set_volume.assert_called_once_with(10.)
+            self.mock_audio_driver_player.set_min_distance.assert_called_once_with(2.)
+            self.mock_audio_driver_player.set_max_distance.assert_called_once_with(3.)
+            self.mock_audio_driver_player.set_position.assert_called_once_with((4, 4, 4))
+            self.mock_audio_driver_player.set_pitch.assert_called_once_with(5.)
+            self.mock_audio_driver_player.set_cone_orientation.assert_called_once_with((6, 6, 6))
+            self.mock_audio_driver_player.set_cone_inner_angle.assert_called_once_with(7.)
+            self.mock_audio_driver_player.set_cone_outer_angle.assert_called_once_with(8.)
+            self.mock_audio_driver_player.set_cone_outer_gain.assert_called_once_with(9.)
+
+        self.reset_mocks()
+        self.player.play()
+        self.assert_driver_player_created_for(mock_source1)
+        self.assert_now_playing(mock_source1)
+        assert_properties_set()
+
+        self.reset_mocks()
+        self.player.next_source()
+        self.assert_driver_player_destroyed()
+        self.assert_driver_player_created_for(mock_source2)
+        assert_properties_set()
+
+    def test_set_player_properties_while_playing(self):
+        """When setting player properties while playing, the properties should be propagated to the
+        driver specific player right away."""
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_2, None)
+        self.player.queue(mock_source1)
+        self.player.queue(mock_source2)
+        self.assert_not_playing_yet(mock_source1)
+
+        self.reset_mocks()
+        self.player.play()
+        self.assert_driver_player_created_for(mock_source1)
+        self.assert_now_playing(mock_source1)
+
+        self.reset_mocks()
+        self.player.volume = 10.
+        self.mock_audio_driver_player.set_volume.assert_called_once_with(10.)
+
+        self.reset_mocks()
+        self.player.min_distance = 2.
+        self.mock_audio_driver_player.set_min_distance.assert_called_once_with(2.)
+
+        self.reset_mocks()
+        self.player.max_distance = 3.
+        self.mock_audio_driver_player.set_max_distance.assert_called_once_with(3.)
+
+        self.reset_mocks()
+        self.player.position = (4, 4, 4)
+        self.mock_audio_driver_player.set_position.assert_called_once_with((4, 4, 4))
+
+        self.reset_mocks()
+        self.player.pitch = 5.0
+        self.mock_audio_driver_player.set_pitch.assert_called_once_with(5.)
+
+        self.reset_mocks()
+        self.player.cone_orientation = (6, 6, 6)
+        self.mock_audio_driver_player.set_cone_orientation.assert_called_once_with((6, 6, 6))
+
+        self.reset_mocks()
+        self.player.cone_inner_angle = 7.
+        self.mock_audio_driver_player.set_cone_inner_angle.assert_called_once_with(7.)
+
+        self.reset_mocks()
+        self.player.cone_outer_angle = 8.
+        self.mock_audio_driver_player.set_cone_outer_angle.assert_called_once_with(8.)
+
+        self.reset_mocks()
+        self.player.cone_outer_gain = 9.
+        self.mock_audio_driver_player.set_cone_outer_gain.assert_called_once_with(9.)
+
+        self.reset_mocks()
+        self.player.next_source()
+        self.assert_driver_player_destroyed()
+        self.assert_driver_player_created_for(mock_source2)
+        self.mock_audio_driver_player.set_volume.assert_called_once_with(10.)
+        self.mock_audio_driver_player.set_min_distance.assert_called_once_with(2.)
+        self.mock_audio_driver_player.set_max_distance.assert_called_once_with(3.)
+        self.mock_audio_driver_player.set_position.assert_called_once_with((4, 4, 4))
+        self.mock_audio_driver_player.set_pitch.assert_called_once_with(5.)
+        self.mock_audio_driver_player.set_cone_orientation.assert_called_once_with((6, 6, 6))
+        self.mock_audio_driver_player.set_cone_inner_angle.assert_called_once_with(7.)
+        self.mock_audio_driver_player.set_cone_outer_angle.assert_called_once_with(8.)
+        self.mock_audio_driver_player.set_cone_outer_gain.assert_called_once_with(9.)
+
+    def test_seek(self):
+        """Test seeking to a specific time in the current source."""
+        mock_source = self.create_mock_source(self.audio_format_1, None)
+        self.player.queue(mock_source)
+        self.assert_not_playing_yet(mock_source)
+
+        self.reset_mocks()
+        mock_source.reset_mock()
+        self.player.seek(0.7)
+        self.assert_source_seek(mock_source, 0.7)
+
+        self.reset_mocks()
+        mock_source.reset_mock()
+        self.player.play()
+        self.assert_driver_player_created_for(mock_source)
+        self.assert_now_playing(mock_source)
+
+        self.reset_mocks()
+        mock_source.reset_mock()
+        self.player.seek(0.2)
+        self.assert_source_seek(mock_source, 0.2)
+        # Clear buffers for immediate result
+        self.assert_driver_player_cleared()
+
+    def test_queue_source_group(self):
+        """Source groups can also be queued. They are added as is without checking compatibility
+        with the current source group."""
+        mock_source1 = self.create_mock_source(self.audio_format_1, None)
+        mock_source2 = self.create_mock_source(self.audio_format_1, None)
+        mock_source3 = self.create_mock_source(self.audio_format_1, None)
+        group = media.SourceGroup(self.audio_format_1, None)
+        group.queue(mock_source2)
+        group.queue(mock_source3)
+
+        self.player.queue(mock_source1)
+        self.player.queue(group)
+        self.assert_not_playing_yet(mock_source1)
+
+        self.reset_mocks()
+        self.player.play()
+        self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_started()
+        self.assert_now_playing(mock_source1)
+
+        self.reset_mocks()
+        self.player.next_source()
+        self.assert_driver_player_destroyed()
+        self.assert_driver_player_created_for(mock_source2, mock_source3)
+        self.assert_driver_player_started()
+        self.assert_now_playing(mock_source2)
+
+
+
+
+
+
+
+
 
 
 
