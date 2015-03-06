@@ -31,9 +31,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id$
 
-'''Audio and video playback.
+"""Audio and video playback.
 
 pyglet can play WAV files, and if AVbin is installed, many other audio and
 video formats.
@@ -75,14 +74,10 @@ The player provides a `Player.delete()` method that can be used to release
 resources immediately. Also an explicit call to `gc.collect()`can be used to
 collect unused resources.
 
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+"""
 
 import atexit
 import ctypes
-import heapq
 import sys
 import threading
 import time
@@ -102,7 +97,7 @@ class CannotSeekException(MediaException):
     pass
 
 class MediaThread(object):
-    '''A thread that cleanly exits on interpreter shutdown, and provides
+    """A thread that cleanly exits on interpreter shutdown, and provides
     a sleep method that can be interrupted and a termination method.
 
     :Ivariables:
@@ -111,7 +106,7 @@ class MediaThread(object):
         `stopped` : bool
             True if `stop` has been called.
 
-    '''
+    """
     _threads = set()
     _threads_lock = threading.Lock()
 
@@ -152,12 +147,12 @@ class MediaThread(object):
         self._thread.start()
 
     def stop(self):
-        '''Stop the thread and wait for it to terminate.
+        """Stop the thread and wait for it to terminate.
 
         The `stop` instance variable is set to ``True`` and the condition is
         notified.  It is the responsibility of the `run` method to check
         the value of `stop` after each sleep or wait and to return if set.
-        '''
+        """
         if _debug:
             print 'MediaThread.stop()'
         self.condition.acquire()
@@ -167,13 +162,13 @@ class MediaThread(object):
         self._thread.join()
 
     def sleep(self, timeout):
-        '''Wait for some amount of time, or until notified.
+        """Wait for some amount of time, or until notified.
 
         :Parameters:
             `timeout` : float
                 Time to wait, in seconds.
 
-        '''
+        """
         if _debug:
             print 'MediaThread.sleep(%r)' % timeout
         self.condition.acquire()
@@ -181,11 +176,11 @@ class MediaThread(object):
         self.condition.release()
 
     def notify(self):
-        '''Interrupt the current sleep operation.
+        """Interrupt the current sleep operation.
 
         If the thread is currently sleeping, it will be woken immediately,
         instead of waiting the full duration of the timeout.
-        '''
+        """
         if _debug:
             print 'MediaThread.notify()'
         self.condition.acquire()
@@ -242,7 +237,7 @@ class WorkerThread(MediaThread):
         del self._jobs[:]
 
 class AudioFormat(object):
-    '''Audio details.
+    """Audio details.
 
     An instance of this class is provided by sources with audio tracks.  You
     should not modify the fields, as they are used internally to describe the
@@ -257,7 +252,7 @@ class AudioFormat(object):
         `sample_rate` : int
             Samples per second (in Hertz).
 
-    '''
+    """
 
     def __init__(self, channels, sample_size, sample_rate):
         self.channels = channels
@@ -282,7 +277,7 @@ class AudioFormat(object):
             self.sample_rate)
 
 class VideoFormat(object):
-    '''Video details.
+    """Video details.
 
     An instance of this class is provided by sources with a video track.  You
     should not modify the fields.
@@ -307,7 +302,7 @@ class VideoFormat(object):
 
             **Since:** pyglet 1.2.
 
-    '''
+    """
     
     def __init__(self, width, height, sample_aspect=1.0):
         self.width = width
@@ -316,7 +311,7 @@ class VideoFormat(object):
         self.frame_rate = None
 
 class AudioData(object):
-    '''A single packet of audio data.
+    """A single packet of audio data.
 
     This class is used internally by pyglet.
 
@@ -333,7 +328,7 @@ class AudioData(object):
             List of events contained within this packet.  Events are
             timestamped relative to this audio packet.
 
-    '''
+    """
     def __init__(self, data, length, timestamp, duration, events):
         self.data = data
         self.length = length
@@ -342,8 +337,8 @@ class AudioData(object):
         self.events = events
 
     def consume(self, bytes, audio_format):
-        '''Remove some data from beginning of packet.  All events are
-        cleared.'''
+        """Remove some data from beginning of packet.  All events are
+        cleared."""
         self.events = ()
         if bytes >= self.length:
             self.data = None
@@ -368,7 +363,7 @@ class AudioData(object):
         self.timestamp += bytes / float(audio_format.bytes_per_second)
 
     def get_string_data(self):
-        '''Return data as a string. (Python 3: return as bytes)'''
+        """Return data as a string. (Python 3: return as bytes)"""
         if isinstance(self.data, bytes_type):
             return self.data
 
@@ -397,7 +392,7 @@ class MediaEvent(object):
         return hash(self) < hash(other)
 
 class SourceInfo(object):
-    '''Source metadata information.
+    """Source metadata information.
 
     Fields are the empty string or zero if the information is not available.
 
@@ -420,7 +415,7 @@ class SourceInfo(object):
             Genre
 
     :since: pyglet 1.2
-    '''
+    """
 
     title = ''
     author = ''
@@ -432,7 +427,7 @@ class SourceInfo(object):
     genre = ''
 
 class Source(object):
-    '''An audio and/or video source.
+    """An audio and/or video source.
 
     :Ivariables:
         `audio_format` : `AudioFormat`
@@ -446,7 +441,7 @@ class Source(object):
             information is not available.
 
             **Since:** pyglet 1.2
-    '''
+    """
 
     _duration = None
     
@@ -458,7 +453,7 @@ class Source(object):
         return self._duration
 
     duration = property(lambda self: self._get_duration(),
-                        doc='''The length of the source, in seconds.
+                        doc="""The length of the source, in seconds.
 
         Not all source durations can be determined; in this case the value
         is None.
@@ -466,23 +461,23 @@ class Source(object):
         Read-only.
 
         :type: float
-        ''')
+        """)
 
     def play(self):
-        '''Play the source.
+        """Play the source.
 
         This is a convenience method which creates a Player for
         this source and plays it immediately.
 
         :rtype: `Player`
-        '''
+        """
         player = Player()
         player.queue(self)
         player.play()
         return player
 
     def get_animation(self):
-        '''Import all video frames into memory as an `Animation`.
+        """Import all video frames into memory as an `Animation`.
 
         An empty animation will be returned if the source has no video.
         Otherwise, the animation will contain all unplayed video frames (the
@@ -495,7 +490,7 @@ class Source(object):
         :since: pyglet 1.1
 
         :rtype: `pyglet.image.Animation`
-        '''
+        """
         from pyglet.image import Animation, AnimationFrame
         if not self.video_format:
             # XXX: This causes an assertion in the constructor of Animation
@@ -514,18 +509,18 @@ class Source(object):
             return Animation(frames)
 
     def get_next_video_timestamp(self):
-        '''Get the timestamp of the next video frame.
+        """Get the timestamp of the next video frame.
 
         :since: pyglet 1.1
 
         :rtype: float
         :return: The next timestamp, or ``None`` if there are no more video
             frames.
-        '''
+        """
         pass
 
     def get_next_video_frame(self):
-        '''Get the next video frame.
+        """Get the next video frame.
 
         Video frames may share memory: the previous frame may be invalidated
         or corrupted when this method is called unless the application has
@@ -536,23 +531,23 @@ class Source(object):
         :rtype: `pyglet.image.AbstractImage`
         :return: The next video frame image, or ``None`` if the video frame
             could not be decoded or there are no more video frames.
-        '''
+        """
         pass
 
     # Internal methods that SourceGroup calls on the source:
 
     def seek(self, timestamp):
-        '''Seek to given timestamp.'''
+        """Seek to given timestamp."""
         raise CannotSeekException()
 
     def _get_queue_source(self):
-        '''Return the `Source` to be used as the queue source for a player.
+        """Return the `Source` to be used as the queue source for a player.
 
-        Default implementation returns self.'''
+        Default implementation returns self."""
         return self
 
     def get_audio_data(self, bytes):
-        '''Get next packet of audio data.
+        """Get next packet of audio data.
 
         :Parameters:
             `bytes` : int
@@ -561,47 +556,47 @@ class Source(object):
         :rtype: `AudioData`
         :return: Next packet of audio data, or None if there is no (more)
             data.
-        '''
+        """
         return None
 
 class StreamingSource(Source):
-    '''A source that is decoded as it is being played, and can only be
+    """A source that is decoded as it is being played, and can only be
     queued once.
-    '''
+    """
     
     _is_queued = False
 
     is_queued = property(lambda self: self._is_queued,
-                         doc='''Determine if this source has been queued
+                         doc="""Determine if this source has been queued
         on a `Player` yet.
 
         Read-only.
 
         :type: bool
-        ''')
+        """)
 
     def _get_queue_source(self):
-        '''Return the `Source` to be used as the queue source for a player.
+        """Return the `Source` to be used as the queue source for a player.
 
-        Default implementation returns self.'''
+        Default implementation returns self."""
         if self._is_queued:
             raise MediaException('This source is already queued on a player.')
         self._is_queued = True
         return self
 
 class StaticSource(Source):
-    '''A source that has been completely decoded in memory.  This source can
+    """A source that has been completely decoded in memory.  This source can
     be queued onto multiple players any number of times.
-    '''
+    """
     
     def __init__(self, source):
-        '''Construct a `StaticSource` for the data in `source`.
+        """Construct a `StaticSource` for the data in `source`.
 
         :Parameters:
             `source` : `Source`
                 The source to read and decode audio and video data from.
 
-        '''
+        """
         source = source._get_queue_source()
         if source.video_format:
             raise NotImplementedError(
@@ -637,12 +632,12 @@ class StaticSource(Source):
         raise RuntimeError('StaticSource cannot be queued.')
 
 class StaticMemorySource(StaticSource):
-    '''Helper class for default implementation of `StaticSource`.  Do not use
-    directly.'''
+    """Helper class for default implementation of `StaticSource`.  Do not use
+    directly."""
 
     def __init__(self, data, audio_format):
-        '''Construct a memory source over the given data buffer.
-        '''
+        """Construct a memory source over the given data buffer.
+        """
         self._file = BytesIO(data)
         self._max_offset = len(data)
         self.audio_format = audio_format
@@ -677,14 +672,14 @@ class StaticMemorySource(StaticSource):
         return AudioData(data, len(data), timestamp, duration, [])
 
 class SourceGroup(object):
-    '''Read data from a queue of sources, with support for looping.  All
+    """Read data from a queue of sources, with support for looping.  All
     sources must share the same audio format.
     
     :Ivariables:
         `audio_format` : `AudioFormat`
             Required audio format for queued sources.
 
-    '''
+    """
 
     # TODO can sources list go empty?  what behaviour (ignore or error)?
 
@@ -739,14 +734,14 @@ class SourceGroup(object):
         self._loop = loop        
 
     loop = property(_get_loop, _set_loop, 
-                    doc='''Loop the current source indefinitely or until 
+                    doc="""Loop the current source indefinitely or until 
     `next` is called.  Initially False.
 
     :type: bool
-    ''')
+    """)
 
     def get_audio_data(self, bytes):
-        '''Get next audio packet.
+        """Get next audio packet.
 
         :Parameters:
             `bytes` : int
@@ -754,7 +749,7 @@ class SourceGroup(object):
 
         :rtype: `AudioData`
         :return: Audio data, or None if there is no more data.
-        '''
+        """
 
         if not self._sources:
             return None
@@ -786,7 +781,7 @@ class SourceGroup(object):
         return data
 
     def translate_timestamp(self, timestamp):
-        '''Get source-relative timestamp for the audio player's timestamp.'''
+        """Get source-relative timestamp for the audio player's timestamp."""
         # XXX 
         if timestamp is None:
             return None
@@ -802,12 +797,12 @@ class SourceGroup(object):
         return timestamp
 
     def get_next_video_timestamp(self):
-        '''Get the timestamp of the next video frame.
+        """Get the timestamp of the next video frame.
 
         :rtype: float
         :return: The next timestamp, or ``None`` if there are no more video
             frames.
-        '''
+        """
         # TODO track current video source independently from audio source for
         # better prebuffering.
         if not self._sources:
@@ -818,7 +813,7 @@ class SourceGroup(object):
         return timestamp
 
     def get_next_video_frame(self):
-        '''Get the next video frame.
+        """Get the next video frame.
 
         Video frames may share memory: the previous frame may be invalidated
         or corrupted when this method is called unless the application has
@@ -827,16 +822,16 @@ class SourceGroup(object):
         :rtype: `pyglet.image.AbstractImage`
         :return: The next video frame image, or ``None`` if the video frame
             could not be decoded or there are no more video frames.
-        '''
+        """
         if self._sources:
             return self._sources[0].get_next_video_frame()
 
 class AbstractAudioPlayer(object):
-    '''Base class for driver audio players.
-    '''
+    """Base class for driver audio players.
+    """
 
     def __init__(self, source_group, player):
-        '''Create a new audio player.
+        """Create a new audio player.
 
         :Parameters:
             `source_group` : `SourceGroup`
@@ -844,92 +839,92 @@ class AbstractAudioPlayer(object):
             `player` : `Player`
                 Player to receive EOS and video frame sync events.
 
-        '''
+        """
         self.source_group = source_group
         self.player = player
 
     def play(self):
-        '''Begin playback.'''
+        """Begin playback."""
         raise NotImplementedError('abstract')
 
     def stop(self):
-        '''Stop (pause) playback.'''
+        """Stop (pause) playback."""
         raise NotImplementedError('abstract')
 
     def delete(self):
-        '''Stop playing and clean up all resources used by player.'''
+        """Stop playing and clean up all resources used by player."""
         raise NotImplementedError('abstract')
    
     def _play_group(self, audio_players):
-        '''Begin simultaneous playback on a list of audio players.'''
+        """Begin simultaneous playback on a list of audio players."""
         # This should be overridden by subclasses for better synchrony.
         for player in audio_players:
             player.play()
 
     def _stop_group(self, audio_players):
-        '''Stop simultaneous playback on a list of audio players.'''
+        """Stop simultaneous playback on a list of audio players."""
         # This should be overridden by subclasses for better synchrony.
         for player in audio_players:
             player.play()
 
     def clear(self):
-        '''Clear all buffered data and prepare for replacement data.
+        """Clear all buffered data and prepare for replacement data.
 
         The player should be stopped before calling this method.
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def get_time(self):
-        '''Return approximation of current playback time within current source.
+        """Return approximation of current playback time within current source.
 
         Returns ``None`` if the audio player does not know what the playback
         time is (for example, before any valid audio data has been read).
 
         :rtype: float
         :return: current play cursor time, in seconds.
-        '''
+        """
         # TODO determine which source within group
         raise NotImplementedError('abstract')
 
     def set_volume(self, volume):
-        '''See `Player.volume`.'''
+        """See `Player.volume`."""
         pass
 
     def set_position(self, position):
-        '''See `Player.position`.'''
+        """See `Player.position`."""
         pass
 
     def set_min_distance(self, min_distance):
-        '''See `Player.min_distance`.'''
+        """See `Player.min_distance`."""
         pass
 
     def set_max_distance(self, max_distance):
-        '''See `Player.max_distance`.'''
+        """See `Player.max_distance`."""
         pass
 
     def set_pitch(self, pitch):
-        '''See `Player.pitch`.'''
+        """See `Player.pitch`."""
         pass
 
     def set_cone_orientation(self, cone_orientation):
-        '''See `Player.cone_orientation`.'''
+        """See `Player.cone_orientation`."""
         pass
 
     def set_cone_inner_angle(self, cone_inner_angle):
-        '''See `Player.cone_inner_angle`.'''
+        """See `Player.cone_inner_angle`."""
         pass
 
     def set_cone_outer_angle(self, cone_outer_angle):
-        '''See `Player.cone_outer_angle`.'''
+        """See `Player.cone_outer_angle`."""
         pass
 
     def set_cone_outer_gain(self, cone_outer_gain):
-        '''See `Player.cone_outer_gain`.'''
+        """See `Player.cone_outer_gain`."""
         pass
 
 class Player(pyglet.event.EventDispatcher):
-    '''High-level sound and video player.
-    '''
+    """High-level sound and video player.
+    """
 
     _last_video_timestamp = None
     _texture = None
@@ -1154,8 +1149,8 @@ class Player(pyglet.event.EventDispatcher):
         return self._texture
 
     def seek_next_frame(self):
-        '''Step forwards one video frame in the current Source.
-        '''
+        """Step forwards one video frame in the current Source.
+        """
         time = self._groups[0].get_next_video_timestamp()
         if time is None:
             return
@@ -1188,7 +1183,7 @@ class Player(pyglet.event.EventDispatcher):
             self._last_video_timestamp = ts
 
     def _set_eos_action(self, eos_action):
-        ''':deprecated:'''
+        """:deprecated:"""
         assert eos_action in (self.EOS_NEXT, self.EOS_STOP, 
                               self.EOS_PAUSE, self.EOS_LOOP)
         self._eos_action = eos_action
@@ -1198,7 +1193,7 @@ class Player(pyglet.event.EventDispatcher):
 
     eos_action = property(lambda self: self._eos_action,
                           _set_eos_action,
-                          doc='''Set the behaviour of the player when it
+                          doc="""Set the behaviour of the player when it
         reaches the end of the current source.
 
         This must be one of the constants `EOS_NEXT`, `EOS_PAUSE`, `EOS_STOP` or
@@ -1207,7 +1202,7 @@ class Player(pyglet.event.EventDispatcher):
         :deprecated: Use `SourceGroup.loop` and `SourceGroup.advance_after_eos`
 
         :type: str
-        ''')
+        """)
 
     def _player_property(name, doc=None):
         private_name = '_' + name
@@ -1236,30 +1231,30 @@ class Player(pyglet.event.EventDispatcher):
     # Events
 
     def on_player_eos(self):
-        '''The player ran out of sources.
+        """The player ran out of sources.
 
         :event:
-        '''
+        """
         if _debug:
             print 'Player.on_player_eos'
 
     def on_source_group_eos(self):
-        '''The current source group ran out of data.
+        """The current source group ran out of data.
 
         The default behaviour is to advance to the next source group if
         possible.
 
         :event:
-        '''
+        """
         self.next_source()
         if _debug:
             print 'Player.on_source_group_eos'
 
     def on_eos(self):
-        '''
+        """
 
         :event:
-        '''
+        """
         if _debug:
             print 'Player.on_eos'
 
@@ -1268,20 +1263,20 @@ Player.register_event_type('on_player_eos')
 Player.register_event_type('on_source_group_eos')
 
 class ManagedSoundPlayer(Player):
-    ''':deprecated: Use `Player`'''
+    """:deprecated: Use `Player`"""
     pass
 
 class PlayerGroup(object):
-    '''Group of players that can be played and paused simultaneously.
+    """Group of players that can be played and paused simultaneously.
 
     :Ivariables:
         `players` : list of `Player`
             Players in this group.
 
-    '''
+    """
 
     def __init__(self, players):
-        '''Create a player group for the given set of players.
+        """Create a player group for the given set of players.
 
         All players in the group must currently not belong to any other
         group.
@@ -1290,12 +1285,12 @@ class PlayerGroup(object):
             `players` : Sequence of `Player`
                 Players to add to this group.
 
-        '''
+        """
         self.players = list(players)
 
     def play(self):
-        '''Begin playing all players in the group simultaneously.
-        '''
+        """Begin playing all players in the group simultaneously.
+        """
         audio_players = [p._audio_player \
                          for p in self.players if p._audio_player]
         if audio_players:
@@ -1304,8 +1299,8 @@ class PlayerGroup(object):
             player.play()
 
     def pause(self):
-        '''Pause all players in the group simultaneously.
-        '''
+        """Pause all players in the group simultaneously.
+        """
         audio_players = [p._audio_player \
                          for p in self.players if p._audio_player]
         if audio_players:
@@ -1321,11 +1316,11 @@ class AbstractAudioDriver(object):
         raise NotImplementedError('abstract')
 
 class AbstractListener(object):
-    '''The listener properties for positional audio.
+    """The listener properties for positional audio.
 
     You can obtain the singleton instance of this class by calling
     `AbstractAudioDriver.get_listener`.
-    '''
+    """
     _volume = 1.0
     _position = (0, 0, 0)
     _forward_orientation = (0, 0, -1)
@@ -1336,35 +1331,35 @@ class AbstractListener(object):
 
     volume = property(lambda self: self._volume,
                       lambda self, volume: self._set_volume(volume),
-                      doc='''The master volume for sound playback.
+                      doc="""The master volume for sound playback.
 
         All sound volumes are multiplied by this master volume before being
         played.  A value of 0 will silence playback (but still consume
         resources).  The nominal volume is 1.0.
         
         :type: float
-        ''')
+        """)
 
     def _set_position(self, position):
         raise NotImplementedError('abstract')
 
     position = property(lambda self: self._position,
                         lambda self, position: self._set_position(position),
-                        doc='''The position of the listener in 3D space.
+                        doc="""The position of the listener in 3D space.
 
         The position is given as a tuple of floats (x, y, z).  The unit
         defaults to meters, but can be modified with the listener
         properties.
         
         :type: 3-tuple of float
-        ''')
+        """)
 
     def _set_forward_orientation(self, orientation):
         raise NotImplementedError('abstract')
 
     forward_orientation = property(lambda self: self._forward_orientation,
                                lambda self, o: self._set_forward_orientation(o),
-                               doc='''A vector giving the direction the
+                               doc="""A vector giving the direction the
         listener is facing.
 
         The orientation is given as a tuple of floats (x, y, z), and has
@@ -1372,14 +1367,14 @@ class AbstractListener(object):
         up orientation.
         
         :type: 3-tuple of float
-        ''')
+        """)
 
     def _set_up_orientation(self, orientation):
         raise NotImplementedError('abstract')
 
     up_orientation = property(lambda self: self._up_orientation,
                               lambda self, o: self._set_up_orientation(o),
-                              doc='''A vector giving the "up" orientation
+                              doc="""A vector giving the "up" orientation
         of the listener.
 
         The orientation is given as a tuple of floats (x, y, z), and has
@@ -1387,7 +1382,7 @@ class AbstractListener(object):
         forward orientation.
         
         :type: 3-tuple of float
-        ''')
+        """)
 
 class _LegacyListener(AbstractListener):
     def _set_volume(self, volume):
@@ -1429,7 +1424,7 @@ class RIFFSourceLoader(AbstractSourceLoader):
         return riff.WaveSource(filename, file)
     
 def load(filename, file=None, streaming=True):
-    '''Load a source from a file.
+    """Load a source from a file.
 
     Currently the `file` argument is not supported; media files must exist
     as real paths.
@@ -1444,7 +1439,7 @@ def load(filename, file=None, streaming=True):
             `StreamingSource` is created.
 
     :rtype: `Source`
-    '''
+    """
     source = get_source_loader().load(filename, file)
     if not streaming:
         source = StaticSource(source)

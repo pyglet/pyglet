@@ -31,7 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 from pyglet.media import Source, AudioFormat, AudioData
 
@@ -72,10 +71,10 @@ class ProceduralSource(Source):
                          [])
 
     def _generate_data(self, bytes, offset):
-        '''Generate `bytes` bytes of data.
+        """Generate `bytes` bytes of data.
 
         Return data as ctypes array or string.
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def seek(self, timestamp):

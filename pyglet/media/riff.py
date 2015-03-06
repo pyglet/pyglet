@@ -32,11 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Simple Python-only RIFF reader, supports uncompressed WAV files.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+"""Simple Python-only RIFF reader, supports uncompressed WAV files.
+"""
 
 # RIFF reference:
 # http://www.saettler.com/RIFFMCI/riffmci.html

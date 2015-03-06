@@ -32,11 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Use avbin to decode audio and video media.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+"""Use avbin to decode audio and video media.
+"""
 
 import struct
 import ctypes
@@ -512,9 +509,9 @@ class AVbinSource(StreamingSource):
         self._condition.release()
 
     def _ensure_video_packets(self):
-        '''Process packets until a video packet has been queued (and begun
+        """Process packets until a video packet has been queued (and begun
         decoding).  Return False if EOS.
-        '''
+        """
         if not self._video_packets:
             if _debug:
                 print 'No video packets...'
