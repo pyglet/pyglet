@@ -34,7 +34,7 @@
 
 import pyglet
 
-debug = pyglet.options['debug_media']
+_debug = pyglet.options['debug_media']
 
 
 class AbstractSourceLoader(object):
@@ -63,8 +63,12 @@ def get_source_loader():
     try:
         import pyglet.media.sources.avbin
         _source_loader = AVbinSourceLoader()
+        if _debug:
+            print('AVbin available, using to load media files')
     except ImportError:
         _source_loader = RIFFSourceLoader()
+        if _debug:
+            print('AVbin not available. Only supporting wave files.')
     return _source_loader
 
 _source_loader = None
