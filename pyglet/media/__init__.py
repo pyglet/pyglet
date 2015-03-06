@@ -83,6 +83,7 @@ import time
 import pyglet
 from pyglet.compat import bytes_type, BytesIO
 from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
+from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
 from pyglet.media.sources.loader import get_source_loader
 
@@ -223,26 +224,6 @@ class AudioData(object):
         buf = ctypes.create_string_buffer(self.length)
         ctypes.memmove(buf, self.data, self.length)
         return buf.raw
-
-class MediaEvent(object):
-    def __init__(self, timestamp, event, *args):
-        # Meaning of timestamp is dependent on context; and not seen by
-        # application.
-        self.timestamp = timestamp
-        self.event = event
-        self.args = args
-
-    def _sync_dispatch_to_player(self, player):
-        pyglet.app.platform_event_loop.post_event(player, self.event, *self.args)
-        time.sleep(0)
-        # TODO sync with media.dispatch_events
-
-    def __repr__(self):
-        return '%s(%r, %r, %r)' % (self.__class__.__name__,
-            self.timestamp, self.event, self.args)
-    
-    def __lt__(self, other):
-        return hash(self) < hash(other)
 
 class SourceInfo(object):
     """Source metadata information.
