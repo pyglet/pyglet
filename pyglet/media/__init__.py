@@ -498,6 +498,7 @@ class Source(object):
         '''
         from pyglet.image import Animation, AnimationFrame
         if not self.video_format:
+            # XXX: This causes an assertion in the constructor of Animation
             return Animation([])
         else:
             frames = []
