@@ -44,7 +44,7 @@
 # http://www.sonicspot.com/guide/wavefiles.html
 
 from pyglet.media import StreamingSource, AudioData, AudioFormat
-from pyglet.media import MediaFormatException
+from pyglet.media.exceptions import MediaFormatException
 from pyglet.compat import BytesIO, asbytes
 
 import struct

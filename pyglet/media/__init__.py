@@ -83,19 +83,11 @@ import time
 import pyglet
 from pyglet.compat import bytes_type, BytesIO
 from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
+from pyglet.media.exceptions import MediaException
 from pyglet.media.sources.loader import get_source_loader
 
 _debug = pyglet.options['debug_media']
 
-
-class MediaException(Exception):
-    pass
-
-class MediaFormatException(MediaException):
-    pass
-
-class CannotSeekException(MediaException):
-    pass
 
 class AudioFormat(object):
     """Audio details.

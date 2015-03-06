@@ -46,8 +46,9 @@ from pyglet.gl import gl_info
 from pyglet import image
 import pyglet.lib
 from pyglet.media import \
-    MediaFormatException, StreamingSource, VideoFormat, AudioFormat, \
+    StreamingSource, VideoFormat, AudioFormat, \
     AudioData, MediaEvent, SourceInfo
+from pyglet.media.exceptions import MediaFormatException
 from pyglet.media.media_thread import WorkerThread
 from pyglet.compat import asbytes, asbytes_filename
 
