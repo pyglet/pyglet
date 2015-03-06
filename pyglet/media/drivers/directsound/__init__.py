@@ -8,8 +8,8 @@ import threading
 import time
 
 import lib_dsound as lib
-from pyglet.media import MediaException, AbstractAudioDriver, \
-    AbstractAudioPlayer, MediaEvent
+from pyglet.media import MediaException, MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.media_thread import MediaThread
 from pyglet.window.win32 import _user32, _kernel32
 

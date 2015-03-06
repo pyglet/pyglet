@@ -82,6 +82,7 @@ import time
 
 import pyglet
 from pyglet.compat import bytes_type, BytesIO
+from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
 from pyglet.media.sources.loader import get_source_loader
 
 _debug = pyglet.options['debug_media']
@@ -686,102 +687,6 @@ class SourceGroup(object):
         if self._sources:
             return self._sources[0].get_next_video_frame()
 
-class AbstractAudioPlayer(object):
-    """Base class for driver audio players.
-    """
-
-    def __init__(self, source_group, player):
-        """Create a new audio player.
-
-        :Parameters:
-            `source_group` : `SourceGroup`
-                Source group to play from.
-            `player` : `Player`
-                Player to receive EOS and video frame sync events.
-
-        """
-        self.source_group = source_group
-        self.player = player
-
-    def play(self):
-        """Begin playback."""
-        raise NotImplementedError('abstract')
-
-    def stop(self):
-        """Stop (pause) playback."""
-        raise NotImplementedError('abstract')
-
-    def delete(self):
-        """Stop playing and clean up all resources used by player."""
-        raise NotImplementedError('abstract')
-   
-    def _play_group(self, audio_players):
-        """Begin simultaneous playback on a list of audio players."""
-        # This should be overridden by subclasses for better synchrony.
-        for player in audio_players:
-            player.play()
-
-    def _stop_group(self, audio_players):
-        """Stop simultaneous playback on a list of audio players."""
-        # This should be overridden by subclasses for better synchrony.
-        for player in audio_players:
-            player.play()
-
-    def clear(self):
-        """Clear all buffered data and prepare for replacement data.
-
-        The player should be stopped before calling this method.
-        """
-        raise NotImplementedError('abstract')
-
-    def get_time(self):
-        """Return approximation of current playback time within current source.
-
-        Returns ``None`` if the audio player does not know what the playback
-        time is (for example, before any valid audio data has been read).
-
-        :rtype: float
-        :return: current play cursor time, in seconds.
-        """
-        # TODO determine which source within group
-        raise NotImplementedError('abstract')
-
-    def set_volume(self, volume):
-        """See `Player.volume`."""
-        pass
-
-    def set_position(self, position):
-        """See `Player.position`."""
-        pass
-
-    def set_min_distance(self, min_distance):
-        """See `Player.min_distance`."""
-        pass
-
-    def set_max_distance(self, max_distance):
-        """See `Player.max_distance`."""
-        pass
-
-    def set_pitch(self, pitch):
-        """See `Player.pitch`."""
-        pass
-
-    def set_cone_orientation(self, cone_orientation):
-        """See `Player.cone_orientation`."""
-        pass
-
-    def set_cone_inner_angle(self, cone_inner_angle):
-        """See `Player.cone_inner_angle`."""
-        pass
-
-    def set_cone_outer_angle(self, cone_outer_angle):
-        """See `Player.cone_outer_angle`."""
-        pass
-
-    def set_cone_outer_gain(self, cone_outer_gain):
-        """See `Player.cone_outer_gain`."""
-        pass
-
 class Player(pyglet.event.EventDispatcher):
     """High-level sound and video player.
     """
@@ -1168,13 +1073,6 @@ class PlayerGroup(object):
         for player in self.players:
             player.pause()
 
-class AbstractAudioDriver(object):
-    def create_audio_player(self, source_group, player):
-        raise NotImplementedError('abstract')
-
-    def get_listener(self):
-        raise NotImplementedError('abstract')
-
 class AbstractListener(object):
     """The listener properties for positional audio.
 
@@ -1292,45 +1190,4 @@ def load(filename, file=None, streaming=True):
         source = StaticSource(source)
     return source
 
-def get_audio_driver():
-    global _audio_driver
-
-    if _audio_driver:
-        return _audio_driver
-
-    _audio_driver = None
-
-    for driver_name in pyglet.options['audio']:
-        try:
-            if driver_name == 'pulse':
-                from drivers import pulse
-                _audio_driver = pulse.create_audio_driver()
-                break
-            elif driver_name == 'openal':
-                from drivers import openal
-                _audio_driver = openal.create_audio_driver()
-                break
-            elif driver_name == 'directsound':
-                from drivers import directsound
-                _audio_driver = directsound.create_audio_driver()
-                break
-            elif driver_name == 'silent':
-                _audio_driver = get_silent_audio_driver()
-                break
-        except Exception as exp:
-            if _debug:
-                print 'Error importing driver %s:\n%s' % (driver_name, str(exp))
-    return _audio_driver
-
-def get_silent_audio_driver():
-    global _silent_audio_driver
-    
-    if not _silent_audio_driver:
-        from drivers import silent
-        _silent_audio_driver = silent.create_audio_driver()
-
-    return _silent_audio_driver
-
-_audio_driver = None
-_silent_audio_driver = None
 
