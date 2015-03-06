@@ -76,31 +76,7 @@ collect unused resources.
 
 """
 
+from pyglet.media.sources.loader import load
 from pyglet.media.sources.base import StaticSource
-from pyglet.media.sources.loader import get_source_loader
-
-
-#TODO: Move to sources/loader.py after splitting off sources
-def load(filename, file=None, streaming=True):
-    """Load a source from a file.
-
-    Currently the `file` argument is not supported; media files must exist
-    as real paths.
-
-    :Parameters:
-        `filename` : str
-            Filename of the media file to load.
-        `file` : file-like object
-            Not yet supported.
-        `streaming` : bool
-            If False, a `StaticSource` will be returned; otherwise (default) a
-            `StreamingSource` is created.
-
-    :rtype: `Source`
-    """
-    source = get_source_loader().load(filename, file)
-    if not streaming:
-        source = StaticSource(source)
-    return source
 
 

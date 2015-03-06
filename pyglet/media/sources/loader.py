@@ -33,8 +33,32 @@
 # ----------------------------------------------------------------------------
 
 import pyglet
+from pyglet.media.sources.base import StaticSource
 
 _debug = pyglet.options['debug_media']
+
+
+def load(filename, file=None, streaming=True):
+    """Load a source from a file.
+
+    Currently the `file` argument is not supported; media files must exist
+    as real paths.
+
+    :Parameters:
+        `filename` : str
+            Filename of the media file to load.
+        `file` : file-like object
+            Not yet supported.
+        `streaming` : bool
+            If False, a `StaticSource` will be returned; otherwise (default) a
+            `StreamingSource` is created.
+
+    :rtype: `Source`
+    """
+    source = get_source_loader().load(filename, file)
+    if not streaming:
+        source = StaticSource(source)
+    return source
 
 
 class AbstractSourceLoader(object):
