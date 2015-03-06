@@ -10,7 +10,7 @@ import time
 
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
-from pyglet.media.media_thread import MediaThread
+from pyglet.media.threads import MediaThread
 
 import pyglet
 _debug = pyglet.options['debug_media']

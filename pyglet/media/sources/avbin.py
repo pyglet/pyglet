@@ -50,7 +50,7 @@ from pyglet.media.sources.base import \
     AudioData, SourceInfo
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaFormatException
-from pyglet.media.media_thread import WorkerThread
+from pyglet.media.threads import WorkerThread
 from pyglet.compat import asbytes, asbytes_filename
 
 
