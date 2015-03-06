@@ -141,7 +141,7 @@ class AudioDataTestCase(unittest.TestCase):
 
 
 class SourceTestCase(unittest.TestCase):
-    @mock.patch('pyglet.media.ManagedSoundPlayer')
+    @mock.patch('pyglet.media.Player')
     def test_play(self, player_mock):
         source = media.Source()
         returned_player = source.play()
