@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.media import Source, AudioFormat, AudioData
+from pyglet.media.sources.base import Source, AudioFormat, AudioData
 
 import ctypes
 import os

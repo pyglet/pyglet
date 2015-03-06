@@ -43,8 +43,8 @@
 # http://www.borg.com/~jglatt/tech/wave.htm
 # http://www.sonicspot.com/guide/wavefiles.html
 
-from pyglet.media import StreamingSource, AudioData, AudioFormat
 from pyglet.media.exceptions import MediaFormatException
+from pyglet.media.sources.base import StreamingSource, AudioData, AudioFormat
 from pyglet.compat import BytesIO, asbytes
 
 import struct

@@ -45,7 +45,7 @@ from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet import image
 import pyglet.lib
-from pyglet.media import \
+from pyglet.media.sources.base import \
     StreamingSource, VideoFormat, AudioFormat, \
     AudioData, SourceInfo
 from pyglet.media.events import MediaEvent
