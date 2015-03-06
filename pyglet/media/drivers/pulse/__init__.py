@@ -9,10 +9,10 @@ __version__ = '$Id: $'
 import sys
 
 import lib_pulseaudio as pa
-from pyglet.media import AbstractListener
-from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
+from pyglet.media.listener import AbstractListener
 
 import pyglet
 _debug = pyglet.options['debug_media']

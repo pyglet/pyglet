@@ -42,10 +42,10 @@ import atexit
 
 import lib_openal as al
 import lib_alc as alc
-from pyglet.media import AbstractListener
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
+from pyglet.media.listener import AbstractListener
 from pyglet.media.media_thread import MediaThread
 
 import pyglet
