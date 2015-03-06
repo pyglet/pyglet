@@ -32,8 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+from abc import ABCMeta, abstractmethod
+
 import pyglet
-from pyglet.media.sources.base import StaticSource
+from .base import StaticSource
 
 _debug = pyglet.options['debug_media']
 
@@ -62,43 +64,54 @@ def load(filename, file=None, streaming=True):
 
 
 class AbstractSourceLoader(object):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
     def load(self, filename, file):
-        raise NotImplementedError('abstract')
+        pass
 
 
 class AVbinSourceLoader(AbstractSourceLoader):
     def load(self, filename, file):
-        import pyglet.media.sources.avbin as avbin
-        return avbin.AVbinSource(filename, file)
+        from .avbin import AVbinSource
+        return AVbinSource(filename, file)
 
 
 class RIFFSourceLoader(AbstractSourceLoader):
     def load(self, filename, file):
-        import pyglet.media.sources.riff as riff
-        return riff.WaveSource(filename, file)
+        from .riff import WaveSource
+        return WaveSource(filename, file)
 
 
 def get_source_loader():
     global _source_loader
 
-    if _source_loader:
+    if _source_loader is not None:
         return _source_loader
 
-    try:
-        import pyglet.media.sources.avbin
+    if have_avbin():
         _source_loader = AVbinSourceLoader()
         if _debug:
             print('AVbin available, using to load media files')
-    except ImportError:
+    else:
         _source_loader = RIFFSourceLoader()
         if _debug:
             print('AVbin not available. Only supporting wave files.')
+
     return _source_loader
 
 _source_loader = None
 
-try:
-    import pyglet.media.sources.avbin
-    have_avbin = True
-except ImportError:
-    have_avbin = False
+
+def have_avbin():
+    global _have_avbin
+    if _have_avbin is None:
+        try:
+            from .avbin import AVbinSource
+            _have_avbin = True
+        except ImportError:
+            _have_avbin = False
+    return _have_avbin
+
+_have_avbin = None
+

@@ -41,8 +41,6 @@ import threading
 import time
 
 import pyglet
-from pyglet import gl
-from pyglet.gl import gl_info
 from pyglet import image
 import pyglet.lib
 from pyglet.media.sources.base import \
