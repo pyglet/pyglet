@@ -76,7 +76,12 @@ collect unused resources.
 
 """
 
-from pyglet.media.sources.loader import load
-from pyglet.media.sources.base import StaticSource
+# Collect public interface from all submodules/packages
+from .drivers import get_audio_driver
+from .exceptions import *
+from .player import Player, PlayerGroup
+from .sources import *
 
+# For backwards compatibility, deprecate?
+from .sources import procedural
 
