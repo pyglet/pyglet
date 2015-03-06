@@ -2,7 +2,7 @@ from time import sleep
 
 import pyglet
 from pyglet import media
-from pyglet.media import procedural
+from pyglet.media.sources import procedural
 
 from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_validation
 

@@ -68,10 +68,10 @@ skip_modules = {"pyglet": {
                                   "glxext_arb", "glxext_mesa", "glxext_nv",
                                   "lib_agl", "lib_glx", "lib_wgl",
                                   "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
-                     "pyglet.media": ["avbin"],
                      "pyglet.media.drivers": ["directsound",
                                               "openal",
                                               "pulse"],
+                     "pyglet.media.sources": ["avbin"],
                      "pyglet.window": implementations,
                      }
                }

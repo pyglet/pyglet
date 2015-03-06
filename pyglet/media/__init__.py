@@ -84,8 +84,10 @@ import time
 
 import pyglet
 from pyglet.compat import bytes_type, BytesIO
+from pyglet.media.sources.loader import get_source_loader
 
 _debug = pyglet.options['debug_media']
+
 
 class MediaException(Exception):
     pass
@@ -1409,20 +1411,7 @@ class _LegacyListener(AbstractListener):
 #: :type: `AbstractListener`
 listener = _LegacyListener()
 
-class AbstractSourceLoader(object):
-    def load(self, filename, file):
-        raise NotImplementedError('abstract')
-
-class AVbinSourceLoader(AbstractSourceLoader):
-    def load(self, filename, file):
-        import avbin
-        return avbin.AVbinSource(filename, file)
-
-class RIFFSourceLoader(AbstractSourceLoader):
-    def load(self, filename, file):
-        import riff
-        return riff.WaveSource(filename, file)
-    
+#TODO: Move to sources/loader.py after splitting off sources
 def load(filename, file=None, streaming=True):
     """Load a source from a file.
 
@@ -1487,23 +1476,3 @@ def get_silent_audio_driver():
 _audio_driver = None
 _silent_audio_driver = None
 
-def get_source_loader():
-    global _source_loader
-
-    if _source_loader:
-        return _source_loader
-
-    try:
-        import avbin
-        _source_loader = AVbinSourceLoader()
-    except ImportError:
-        _source_loader = RIFFSourceLoader()
-    return _source_loader
-
-_source_loader = None
-
-try:
-    import avbin
-    have_avbin = True
-except ImportError:
-    have_avbin = False
