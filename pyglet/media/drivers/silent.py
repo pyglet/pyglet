@@ -9,7 +9,8 @@ __version__ = '$Id$'
 import time
 
 from pyglet.media import AbstractAudioPlayer, AbstractAudioDriver, \
-                         MediaThread, MediaEvent
+                         MediaEvent
+from pyglet.media.media_thread import MediaThread
 
 import pyglet
 _debug = pyglet.options['debug_media']

@@ -43,7 +43,8 @@ import atexit
 import lib_openal as al
 import lib_alc as alc
 from pyglet.media import MediaException, MediaEvent, AbstractAudioPlayer, \
-    AbstractAudioDriver, AbstractListener, MediaThread
+    AbstractAudioDriver, AbstractListener
+from pyglet.media.media_thread import MediaThread
 
 import pyglet
 _debug = pyglet.options['debug_media']
