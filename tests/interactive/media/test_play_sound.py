@@ -1,5 +1,6 @@
 import os
 import pyglet
+from pyglet.media.player import Player
 
 from tests.interactive.interactive_test_base import InteractiveTestCase, only_interactive
 
@@ -9,7 +10,7 @@ from tests.interactive.interactive_test_base import InteractiveTestCase, only_in
 @only_interactive
 class PlayerTest(InteractiveTestCase):
     def test_playback(self):
-        player = pyglet.media.Player()
+        player = Player()
         player.play()
 
         sound = self.get_test_data_file('media', 'alert.wav')

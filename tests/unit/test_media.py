@@ -4,11 +4,10 @@ import os
 import unittest
 
 import pyglet
-from pyglet import media
 from pyglet.compat import asbytes
-from pyglet.media import Player
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
+from pyglet.media.player import Player
 from pyglet.media.sources.base import *
 
 #pyglet.options['debug_media'] = True
@@ -145,7 +144,7 @@ class AudioDataTestCase(unittest.TestCase):
 
 
 class SourceTestCase(unittest.TestCase):
-    @mock.patch('pyglet.media.Player')
+    @mock.patch('pyglet.media.player.Player')
     def test_play(self, player_mock):
         source = Source()
         returned_player = source.play()
@@ -661,12 +660,12 @@ class PlayerTestCase(unittest.TestCase):
     def setUp(self):
         self.player = Player()
 
-        self._get_audio_driver_patcher = mock.patch('pyglet.media.get_audio_driver')
+        self._get_audio_driver_patcher = mock.patch('pyglet.media.player.get_audio_driver')
         self.mock_get_audio_driver = self._get_audio_driver_patcher.start()
         self.mock_audio_driver = self.mock_get_audio_driver.return_value
         self.mock_audio_driver_player = self.mock_audio_driver.create_audio_player.return_value
 
-        self._get_silent_audio_driver_patcher = mock.patch('pyglet.media.get_silent_audio_driver')
+        self._get_silent_audio_driver_patcher = mock.patch('pyglet.media.player.get_silent_audio_driver')
         self.mock_get_silent_audio_driver = self._get_silent_audio_driver_patcher.start()
         self.mock_silent_audio_driver = self.mock_get_silent_audio_driver.return_value
         self.mock_silent_audio_driver_player = self.mock_silent_audio_driver.create_audio_player.return_value

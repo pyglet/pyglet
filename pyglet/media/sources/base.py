@@ -258,7 +258,7 @@ class Source(object):
 
         :rtype: `Player`
         """
-        from pyglet.media import Player  # XXX Nasty circular dependency
+        from pyglet.media.player import Player  # XXX Nasty circular dependency
         player = Player()
         player.queue(self)
         player.play()
