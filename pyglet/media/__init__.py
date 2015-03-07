@@ -471,12 +471,12 @@ class Source(object):
     def play(self):
         '''Play the source.
 
-        This is a convenience method which creates a ManagedSoundPlayer for
+        This is a convenience method which creates a Player for
         this source and plays it immediately.
 
-        :rtype: `ManagedSoundPlayer`
+        :rtype: `Player`
         '''
-        player = ManagedSoundPlayer()
+        player = Player()
         player.queue(self)
         player.play()
         return player
