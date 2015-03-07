@@ -61,31 +61,6 @@ class Player(pyglet.event.EventDispatcher):
     _cone_outer_angle = 360.
     _cone_outer_gain = 1.
 
-    #: The player will pause when it reaches the end of the stream.
-    #:
-    #: :deprecated: Use `SourceGroup.advance_after_eos`
-    EOS_PAUSE = 'pause'
-
-    #: The player will loop the current stream continuosly.
-    #:
-    #: :deprecated: Use `SourceGroup.loop`
-    EOS_LOOP = 'loop'
-
-    #: The player will move on to the next queued stream when it reaches the
-    #: end of the current source.  If there is no source queued, the player
-    #: will pause.
-    #:
-    #: :deprecated: Use `SourceGroup.advance_after_eos`
-    EOS_NEXT = 'next'
-
-    #: The player will stop entirely; valid only for ManagedSoundPlayer.
-    #: 
-    #: :deprecated: Use `SourceGroup.advance_after_eos`
-    EOS_STOP = 'stop'
-
-    #: :deprecated:
-    _eos_action = EOS_NEXT
-
     def __init__(self):
         # List of queued source groups
         self._groups = []
@@ -109,7 +84,6 @@ class Player(pyglet.event.EventDispatcher):
                 group = SourceGroup(source.audio_format, source.video_format)
                 group.queue(source)
                 self._groups.append(group)
-                self._set_eos_action(self._eos_action)
 
         self._set_playing(self._playing)
 
@@ -301,28 +275,6 @@ class Player(pyglet.event.EventDispatcher):
             self._texture.blit_into(image, 0, 0, 0)
             self._last_video_timestamp = ts
 
-    def _set_eos_action(self, eos_action):
-        """:deprecated:"""
-        assert eos_action in (self.EOS_NEXT, self.EOS_STOP, 
-                              self.EOS_PAUSE, self.EOS_LOOP)
-        self._eos_action = eos_action
-        for group in self._groups:
-            group.loop = eos_action == self.EOS_LOOP
-            group.advance_after_eos = eos_action == self.EOS_NEXT
-
-    eos_action = property(lambda self: self._eos_action,
-                          _set_eos_action,
-                          doc="""Set the behaviour of the player when it
-        reaches the end of the current source.
-
-        This must be one of the constants `EOS_NEXT`, `EOS_PAUSE`, `EOS_STOP` or
-        `EOS_LOOP`.
-
-        :deprecated: Use `SourceGroup.loop` and `SourceGroup.advance_after_eos`
-
-        :type: str
-        """)
-
     def _player_property(name, doc=None):
         private_name = '_' + name
         set_name = 'set_' + name
@@ -381,9 +333,6 @@ Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_source_group_eos')
 
-class ManagedSoundPlayer(Player):
-    """:deprecated: Use `Player`"""
-    pass
 
 class PlayerGroup(object):
     """Group of players that can be played and paused simultaneously.

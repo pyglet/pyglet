@@ -32,8 +32,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.media.drivers import get_audio_driver
-
 
 class AbstractListener(object):
     """The listener properties for positional audio.
@@ -103,29 +101,4 @@ class AbstractListener(object):
         
         :type: 3-tuple of float
         """)
-
-class _LegacyListener(AbstractListener):
-    def _set_volume(self, volume):
-        get_audio_driver().get_listener().volume = volume
-        self._volume = volume
-
-    def _set_position(self, position):
-        get_audio_driver().get_listener().position = position
-        self._position = position
-
-    def _set_forward_orientation(self, forward_orientation):
-        get_audio_driver().get_listener().forward_orientation = \
-            forward_orientation
-        self._forward_orientation = forward_orientation
-
-    def _set_up_orientation(self, up_orientation):
-        get_audio_driver().get_listener().up_orientation = up_orientation
-        self._up_orientation = up_orientation
-
-#: The singleton `AbstractListener` object.
-#:
-#: :deprecated: Use `AbstractAudioDriver.get_listener`
-#:
-#: :type: `AbstractListener`
-listener = _LegacyListener()
 
