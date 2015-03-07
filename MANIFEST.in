@@ -2,6 +2,7 @@ include LICENSE
 include NOTICE
 include README
 include CHANGELOG
+include RELEASE_NOTES
 
 # Public tools
 include tools/inspect_font.py
