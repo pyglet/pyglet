@@ -86,6 +86,7 @@ import heapq
 import sys
 import threading
 import time
+import warnings
 
 import pyglet
 from pyglet.compat import bytes_type, BytesIO
@@ -1174,6 +1175,8 @@ class Player(pyglet.event.EventDispatcher):
 
     def _set_eos_action(self, eos_action):
         ''':deprecated:'''
+        warnings.warn('Player.eos_action is deprecated in favor of SourceGroup.loop and SourceGroup.advance_after_eos',
+                      category=DeprecationWarning)
         assert eos_action in (self.EOS_NEXT, self.EOS_STOP, 
                               self.EOS_PAUSE, self.EOS_LOOP)
         self._eos_action = eos_action
@@ -1254,7 +1257,9 @@ Player.register_event_type('on_source_group_eos')
 
 class ManagedSoundPlayer(Player):
     ''':deprecated: Use `Player`'''
-    pass
+    def __init__(self, *args, **kwargs):
+        warnings.warn('Use `Player` instead.', category=DeprecationWarning)
+        super(ManagedSoundPlayer, self).__init__(*args, **kwargs)
 
 class PlayerGroup(object):
     '''Group of players that can be played and paused simultaneously.
