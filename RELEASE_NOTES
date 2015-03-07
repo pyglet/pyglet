@@ -1,3 +1,12 @@
+Pyglet 1.2.2
+============
+Minor bugfix release. Includes documentation updates for deprecated code.
+
+Bugfixes
+--------
+- BB#21: X11: Error on fontconfig cache eviction
+- BB#23: Windows: Disable ARB context on Intel devices.
+
 Pyglet 1.2.1
 ============
 Minor bugfix release. Fixes some issues on Linux.
