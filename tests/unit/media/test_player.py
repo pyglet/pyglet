@@ -1,10 +1,11 @@
 import ctypes
 import mock
 import os
+import random
 import unittest
 
 import pyglet
-from pyglet.media.player import Player
+from pyglet.media.player import Player, PlayerGroup
 from pyglet.media.sources.base import *
 
 #pyglet.options['debug_media'] = True
@@ -786,4 +787,107 @@ class PlayerTestCase(unittest.TestCase):
         self.player.delete()
         self.assert_silent_driver_player_destroyed()
 
+
+class PlayerGroupTestCase(unittest.TestCase):
+    def create_mock_player(self, has_audio=True):
+        player = mock.MagicMock()
+        if has_audio:
+            audio_player = mock.PropertyMock(return_value=mock.MagicMock())
+        else:
+            audio_player = mock.PropertyMock(return_value=None)
+        type(player)._audio_player = audio_player
+        return player
+
+    def assert_players_started(self, *players):
+        for player in players:
+            player.play.assert_called_once_with()
+
+    def assert_audio_players_started(self, *players):
+        # Find the one player that was used to start the group, the rest should not be used
+        call_args = None
+        audio_players = []
+        for player in players:
+            audio_player = player._audio_player
+            audio_players.append(audio_player)
+            if call_args is not None:
+                self.assertFalse(audio_player._play_group.called, msg='Only one player should be used to start the group')
+            elif audio_player._play_group.called:
+                call_args = audio_player._play_group.call_args
+
+        self.assertIsNotNone(call_args, msg='No player was used to start all audio players.')
+        started_players = call_args[0][0]
+        self.assertItemsEqual(started_players, audio_players, msg='Not all players with audio players were started')
+
+    def assert_players_stopped(self, *players):
+        for player in players:
+            player.pause.assert_called_once_with()
+
+    def assert_audio_players_stopped(self, *players):
+        # Find the one player that was used to start the group, the rest should not be used
+        call_args = None
+        audio_players = []
+        for player in players:
+            audio_player = player._audio_player
+            audio_players.append(audio_player)
+            if call_args is not None:
+                self.assertFalse(audio_player._stop_group.called, msg='Only one player should be used to stop the group')
+            elif audio_player._stop_group.called:
+                call_args = audio_player._stop_group.call_args
+
+        self.assertIsNotNone(call_args, msg='No player was used to stop all audio players.')
+        stopped_players = call_args[0][0]
+        self.assertItemsEqual(stopped_players, audio_players, msg='Not all players with audio players were stopped')
+
+    def reset_mocks(self, *mocks):
+        for m in mocks:
+            m.reset_mock()
+
+    def test_empty_group(self):
+        """Just check nothing explodes on an empty group."""
+        group = PlayerGroup([])
+        group.play()
+        group.pause()
+
+    def test_only_with_audio(self):
+        """Test a group containing only players with audio."""
+        players = [self.create_mock_player(has_audio=True) for _ in range(10)]
+        group = PlayerGroup(players)
+
+        group.play()
+        self.assert_audio_players_started(*players)
+        self.assert_players_started(*players)
+        self.reset_mocks(*players)
+
+        group.pause()
+        self.assert_audio_players_stopped(*players)
+        self.assert_players_stopped(*players)
+
+    def test_only_without_audio(self):
+        """Test a group containing only players without audio."""
+        players = [self.create_mock_player(has_audio=False) for _ in range(10)]
+        group = PlayerGroup(players)
+
+        group.play()
+        self.assert_players_started(*players)
+        self.reset_mocks(*players)
+
+        group.pause()
+        self.assert_players_stopped(*players)
+
+    def test_mixed_players(self):
+        """Test a group containing both players with audio and players without audio."""
+        players_with_audio = [self.create_mock_player(has_audio=True) for _ in range(10)]
+        players_without_audio = [self.create_mock_player(has_audio=False) for _ in range(10)]
+        players = players_with_audio + players_without_audio
+        random.shuffle(players)
+        group = PlayerGroup(players)
+
+        group.play()
+        self.assert_audio_players_started(*players_with_audio)
+        self.assert_players_started(*players)
+        self.reset_mocks(*players)
+
+        group.pause()
+        self.assert_audio_players_stopped(*players_with_audio)
+        self.assert_players_stopped(*players)
 
