@@ -39,7 +39,7 @@ def get_silent_audio_driver():
     global _silent_audio_driver
 
     if not _silent_audio_driver:
-        from drivers import silent
+        from . import silent
         _silent_audio_driver = silent.create_audio_driver()
 
     return _silent_audio_driver

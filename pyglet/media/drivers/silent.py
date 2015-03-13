@@ -234,6 +234,9 @@ class SilentAudioDriver(AbstractAudioDriver):
         else:
             return SilentTimeAudioPlayer(source_group, player)
 
+    def get_listener(self):
+        raise NotImplementedError('Silent audio driver does not support positional audio')
+
 def create_audio_driver():
     return SilentAudioDriver()
 
