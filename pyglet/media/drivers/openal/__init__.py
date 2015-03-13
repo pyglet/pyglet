@@ -200,8 +200,9 @@ class OpenALBufferPool(object):
     def deleteSource(self, alSource):
         """Delete a source pointer (self._al_source) and free its buffers"""
         assert context.lock.locked()
-        for buffer in self._sources.pop(alSource.value):
-            self._buffers.append(buffer)
+        if alSource.value in self._sources:
+            for buffer in self._sources.pop(alSource.value):
+                self._buffers.append(buffer)
 
     def dequeueBuffer(self, alSource, buffer):
         """A buffer has finished playing, free it."""
