@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -31,6 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+from abc import ABCMeta, abstractmethod
 
 
 class AbstractListener(object):
@@ -39,13 +40,16 @@ class AbstractListener(object):
     You can obtain the singleton instance of this class by calling
     `AbstractAudioDriver.get_listener`.
     """
+    __metaclass__ = ABCMeta
+
     _volume = 1.0
     _position = (0, 0, 0)
     _forward_orientation = (0, 0, -1)
     _up_orientation = (0, 1, 0)
 
+    @abstractmethod
     def _set_volume(self, volume):
-        raise NotImplementedError('abstract')
+        pass
 
     volume = property(lambda self: self._volume,
                       lambda self, volume: self._set_volume(volume),
@@ -54,12 +58,13 @@ class AbstractListener(object):
         All sound volumes are multiplied by this master volume before being
         played.  A value of 0 will silence playback (but still consume
         resources).  The nominal volume is 1.0.
-        
+
         :type: float
         """)
 
+    @abstractmethod
     def _set_position(self, position):
-        raise NotImplementedError('abstract')
+        pass
 
     position = property(lambda self: self._position,
                         lambda self, position: self._set_position(position),
@@ -68,12 +73,13 @@ class AbstractListener(object):
         The position is given as a tuple of floats (x, y, z).  The unit
         defaults to meters, but can be modified with the listener
         properties.
-        
+
         :type: 3-tuple of float
         """)
 
+    @abstractmethod
     def _set_forward_orientation(self, orientation):
-        raise NotImplementedError('abstract')
+        pass
 
     forward_orientation = property(lambda self: self._forward_orientation,
                                lambda self, o: self._set_forward_orientation(o),
@@ -83,12 +89,13 @@ class AbstractListener(object):
         The orientation is given as a tuple of floats (x, y, z), and has
         no unit.  The forward orientation should be orthagonal to the
         up orientation.
-        
+
         :type: 3-tuple of float
         """)
 
+    @abstractmethod
     def _set_up_orientation(self, orientation):
-        raise NotImplementedError('abstract')
+        pass
 
     up_orientation = property(lambda self: self._up_orientation,
                               lambda self, o: self._set_up_orientation(o),
@@ -98,7 +105,7 @@ class AbstractListener(object):
         The orientation is given as a tuple of floats (x, y, z), and has
         no unit.  The up orientation should be orthagonal to the
         forward orientation.
-        
+
         :type: 3-tuple of float
         """)
 

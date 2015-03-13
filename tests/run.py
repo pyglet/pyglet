@@ -102,6 +102,8 @@ def _start_coverage(options):
                         source=['pyglet'],
                         omit=_get_platform_omit())
         _cov.exclude('if _debug:')
+        _cov.exclude('@abstractmethod')
+        _cov.exclude('pass')
         _cov.start()
 
         # Need to reload pyglet to get full coverage, because it was imported before coverage was
