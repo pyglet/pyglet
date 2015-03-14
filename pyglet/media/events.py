@@ -32,6 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+import time
+
 import pyglet
 
 
