@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -129,11 +129,11 @@ class Win32Window(BaseWindow):
 
 
         super(Win32Window, self).__init__(*args, **kwargs)
-        
+
     def _recreate(self, changes):
         if 'context' in changes:
             self._wgl_context = None
-        
+
         self._create()
 
     def _create(self):
@@ -171,7 +171,8 @@ class Win32Window(BaseWindow):
             black = _gdi32.GetStockObject(BLACK_BRUSH)
             self._window_class = WNDCLASS()
             self._window_class.lpszClassName = u'GenericAppClass%d' % id(self)
-            self._window_class.lpfnWndProc = WNDPROC(self._wnd_proc)
+            self._window_class.lpfnWndProc = WNDPROC(
+                self._get_window_proc(self._event_handlers))
             self._window_class.style = CS_VREDRAW | CS_HREDRAW
             self._window_class.hInstance = 0
             self._window_class.hIcon = _user32.LoadIconW(module, MAKEINTRESOURCE(1))
@@ -184,7 +185,8 @@ class Win32Window(BaseWindow):
             self._view_window_class = WNDCLASS()
             self._view_window_class.lpszClassName = \
                 u'GenericViewClass%d' % id(self)
-            self._view_window_class.lpfnWndProc = WNDPROC(self._wnd_proc_view)
+            self._view_window_class.lpfnWndProc = WNDPROC(
+                self._get_window_proc(self._view_event_handlers))
             self._view_window_class.style = 0
             self._view_window_class.hInstance = 0
             self._view_window_class.hIcon = 0
@@ -192,7 +194,7 @@ class Win32Window(BaseWindow):
             self._view_window_class.lpszMenuName = None
             self._view_window_class.cbClsExtra = 0
             self._view_window_class.cbWndExtra = 0
-            _user32.RegisterClassW(byref(self._view_window_class)) 
+            _user32.RegisterClassW(byref(self._view_window_class))
 
         if not self._hwnd:
             self._hwnd = _user32.CreateWindowExW(
@@ -310,7 +312,7 @@ class Win32Window(BaseWindow):
 
     def set_location(self, x, y):
         x, y = self._client_to_window_pos(x, y)
-        _user32.SetWindowPos(self._hwnd, 0, x, y, 0, 0, 
+        _user32.SetWindowPos(self._hwnd, 0, x, y, 0, 0,
             (SWP_NOZORDER |
              SWP_NOSIZE |
              SWP_NOOWNERZORDER))
@@ -377,7 +379,7 @@ class Win32Window(BaseWindow):
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
                                 not self._mouse_cursor.drawable) or \
-                               (not self._mouse_in_window or 
+                               (not self._mouse_in_window or
                                 not self._has_focus)
 
         if platform_visible and not self._mouse_cursor.drawable:
@@ -419,7 +421,7 @@ class Win32Window(BaseWindow):
         if self._exclusive_mouse == exclusive and \
            self._exclusive_mouse_focus == self._has_focus:
             return
-    
+
         if exclusive and self._has_focus:
             # Move mouse to the center of the window.
             self._reset_exclusive_mouse_screen()
@@ -430,7 +432,7 @@ class Win32Window(BaseWindow):
             # it outside the client area.
             rect = RECT()
             _user32.GetClientRect(self._view_hwnd, byref(rect))
-            _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP, 
+            _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP,
                                     byref(rect), 2)
             _user32.ClipCursor(byref(rect))
         else:
@@ -446,7 +448,7 @@ class Win32Window(BaseWindow):
             rect = RECT()
             _user32.GetClientRect(self._view_hwnd, byref(rect))
             _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP, byref(rect), 2)
-            
+
             x = x + rect.left
             y = rect.top + (rect.bottom - rect.top) - y
 
@@ -547,7 +549,7 @@ class Win32Window(BaseWindow):
 
             _gdi32.DeleteObject(mask)
             _gdi32.DeleteObject(bitmap)
-            
+
             return icon
 
         # Set large icon
@@ -606,31 +608,22 @@ class Win32Window(BaseWindow):
                 # win32 event
                 event[0](*event[1:])
 
-    def _wnd_proc(self, hwnd, msg, wParam, lParam):
-        event_handler = self._event_handlers.get(msg, None)
-        result = 0
-        if event_handler:
-            if self._allow_dispatch_event or not self._enable_event_queue:
-                result = event_handler(msg, wParam, lParam)
-            else:
-                self._event_queue.append((event_handler, msg, wParam, lParam))
-                result = 0
-        if not result and msg != WM_CLOSE:
-            result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam) 
-        return result
+    def _get_window_proc(self, event_handlers):
+        def f(hwnd, msg, wParam, lParam):
+            event_handler = event_handlers.get(msg, None)
+            result = None
+            if event_handler:
+                if self._allow_dispatch_event or not self._enable_event_queue:
+                    result = event_handler(msg, wParam, lParam)
+                else:
+                    result = 0
+                    self._event_queue.append((event_handler, msg,
+                                              wParam, lParam))
+            if result is None:
+                result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam)
+            return result
 
-    def _wnd_proc_view(self, hwnd, msg, wParam, lParam):
-        event_handler = self._view_event_handlers.get(msg, None)
-        result = 0
-        if event_handler:
-            if self._allow_dispatch_event or not self._enable_event_queue:
-                result = event_handler(msg, wParam, lParam)
-            else:
-                self._event_queue.append((event_handler, msg, wParam, lParam))
-                result = 0
-        if not result and msg != WM_CLOSE:
-            result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam) 
-        return result
+        return f
 
     # Event handlers
 
@@ -687,10 +680,10 @@ class Win32Window(BaseWindow):
             symbol = key.RALT
         elif symbol == key.LSHIFT:
             pass # TODO: some magic with getstate to find out if it's the
-                 # right or left shift key. 
+                 # right or left shift key.
 
         modifiers = self._get_modifiers(lParam)
-        
+
         if not repeat:
             self.dispatch_event(ev, symbol, modifiers)
 
@@ -732,7 +725,7 @@ class Win32Window(BaseWindow):
             # Reset mouse position (so we don't hit the edge of the screen).
             _x, _y = self._exclusive_mouse_screen
             self.set_mouse_position(_x, _y, absolute=True)
-            
+
         dx = x - self._mouse_x
         dy = y - self._mouse_y
 
@@ -758,7 +751,7 @@ class Win32Window(BaseWindow):
 
         self._mouse_x = x
         self._mouse_y = y
-        
+
         buttons = 0
         if wParam & MK_LBUTTON:
             buttons |= mouse.LEFT
@@ -770,7 +763,7 @@ class Win32Window(BaseWindow):
         if buttons:
             # Drag event
             modifiers = self._get_modifiers()
-            self.dispatch_event('on_mouse_drag', 
+            self.dispatch_event('on_mouse_drag',
                 x, y, dx, dy, buttons, modifiers)
         else:
             # Motion event
@@ -840,7 +833,7 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):
         delta = c_short(wParam >> 16).value
-        self.dispatch_event('on_mouse_scroll', 
+        self.dispatch_event('on_mouse_scroll',
             self._mouse_x, self._mouse_y, 0, delta / float(WHEEL_DELTA))
         return 0
 
@@ -861,8 +854,8 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_SIZING)
     def _event_sizing(self, msg, wParam, lParam):
-        #rect = cast(lParam, POINTER(RECT)).contents
-        #width, height = self.get_size()
+        # rect = cast(lParam, POINTER(RECT)).contents
+        # width, height = self.get_size()
 
         from pyglet import app
         if app.event_loop is not None:
@@ -896,12 +889,17 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_SYSCOMMAND)
     def _event_syscommand(self, msg, wParam, lParam):
+        # check for ALT key to prevent app from hanging because there is
+        # no windows menu bar
+        if wParam == SC_KEYMENU and lParam & (1 >> 16) <= 0:
+            return 0
+
         if wParam & 0xfff0 in (SC_MOVE, SC_SIZE):
             # Should be in WM_ENTERSIZEMOVE, but we never get that message.
             from pyglet import app
+
             if app.event_loop is not None:
                 app.event_loop.enter_blocking()
-        return 0
 
     @Win32EventHandler(WM_MOVE)
     def _event_move(self, msg, wParam, lParam):
@@ -915,7 +913,6 @@ class Win32Window(BaseWindow):
         from pyglet import app
         if app.event_loop is not None:
             app.event_loop.exit_blocking()
-        return 0
 
     '''
     # Alternative to using WM_SETFOCUS and WM_KILLFOCUS.  Which
