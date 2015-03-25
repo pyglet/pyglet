@@ -12,6 +12,8 @@ from pyglet.media.drivers.silent import SilentAudioDriver
 from pyglet.media.sources import SourceGroup
 from pyglet.media.sources.procedural import Silence
 
+from tests.annotations import Platform
+
 pyglet.options['debug_media'] = True
 pyglet.options['debug_media_buffers'] = True
 
@@ -161,9 +163,12 @@ except:
     pass
 
 try:
-    from pyglet.media.drivers import openal
-    class OpenALAudioDriverTestCase(_AudioDriverTestCase):
-        driver = openal
+    if pyglet.compat_platform not in Platform.LINUX:
+        # Segmentation fault in OpenAL on Ubuntu 14.10, so for now disabling this test for Linux
+
+        from pyglet.media.drivers import openal
+        class OpenALAudioDriverTestCase(_AudioDriverTestCase):
+            driver = openal
 except:
     pass
 
