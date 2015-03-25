@@ -6,6 +6,7 @@ import time
 import unittest
 
 import pyglet
+import pyglet.app  # Make sure it is loaded before patching it
 from pyglet.media.drivers import silent
 from pyglet.media.drivers.silent import SilentAudioDriver
 from pyglet.media.sources import SourceGroup
@@ -21,10 +22,20 @@ class GetMediaDriverTestCase(unittest.TestCase):
         self.assertIsNotNone(driver)
         self.assertFalse(isinstance(driver, SilentAudioDriver), msg='Cannot load audio driver for your platform')
 
+        # Make sure driver is deleted before other tests
+        if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
+            pyglet.media.drivers._audio_driver.delete()
+        pyglet.media.drivers._audio_driver = None
+
     def test_get_silent_driver(self):
         driver = pyglet.media.drivers.get_silent_audio_driver()
         self.assertIsNotNone(driver)
         self.assertIsInstance(driver, SilentAudioDriver)
+
+        # Make sure driver is deleted before other tests
+        if hasattr(pyglet.media.drivers._silent_audio_driver, 'delete'):
+            pyglet.media.drivers._silent_audio_driver.delete()
+        pyglet.media.drivers._silent_audio_driver = None
 
 
 class MockPlayer(object):
@@ -74,6 +85,12 @@ class _AudioDriverTestCase(unittest.TestCase):
                 received_events.append((event_type, args))
         return received_events
 
+    def create_source_group(self, *sources):
+        source_group = SourceGroup(sources[0].audio_format, None)
+        for source in sources:
+            source_group.queue(source)
+        return source_group
+
     def test_create_destroy(self):
         driver = self.driver.create_audio_driver()
         self.assertIsNotNone(driver)
@@ -83,9 +100,7 @@ class _AudioDriverTestCase(unittest.TestCase):
         driver = self.driver.create_audio_driver()
         self.assertIsNotNone(driver)
 
-        silence = Silence(1.)
-        source_group = SourceGroup(silence.audio_format, None)
-        source_group.queue(silence)
+        source_group = self.create_source_group(Silence(1.))
         player = mock.MagicMock()
 
         audio_player = driver.create_audio_player(source_group, player)
@@ -96,15 +111,29 @@ class _AudioDriverTestCase(unittest.TestCase):
         driver = self.driver.create_audio_driver()
         self.assertIsNotNone(driver)
 
-        silence = Silence(0.1)
-        source_group = SourceGroup(silence.audio_format, None)
-        source_group.queue(silence)
+        source_group = self.create_source_group(Silence(.1))
         player = MockPlayer()
 
         audio_player = driver.create_audio_player(source_group, player)
         try:
             audio_player.play()
             self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
+
+        finally:
+            audio_player.delete()
+
+    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
+    def test_audio_player_play_multiple(self):
+        driver = self.driver.create_audio_driver()
+        self.assertIsNotNone(driver)
+
+        source_group = self.create_source_group(Silence(.1), Silence(.1))
+        player = MockPlayer()
+
+        audio_player = driver.create_audio_player(source_group, player)
+        try:
+            audio_player.play()
+            self.wait_for_all_events(player, 0.3, 'on_eos', 'on_eos', 'on_source_group_eos')
 
         finally:
             audio_player.delete()
