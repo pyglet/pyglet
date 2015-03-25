@@ -180,13 +180,13 @@ class OpenALBufferPool(object):
                 i -= 1
         except IndexError:
             while i > 0:
-                buffer = al.ALuint()
-                al.alGenBuffers(1, buffer)
+                buffer_name = al.ALuint()
+                al.alGenBuffers(1, buffer_name)
                 if _debug_buffers:
                     error = al.alGetError()
                     if error != 0:
                         print("GEN BUFFERS: " + str(error))
-                buffs.append(buffer)
+                buffs.append(buffer_name)
                 i -= 1
 
         alSourceVal = alSource.value
@@ -383,6 +383,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                 processed = al.ALint()
                 al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
                 processed = processed.value
+                if _debug_buffers:
+                    print("Processed buffer count:", processed)
                 if processed:
                     buffers = (al.ALuint * processed)()
                     al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
@@ -414,12 +416,12 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             # Update play cursor using buffer cursor + estimate into current
             # buffer
             if context.have_1_1:
-                bytes = al.ALint()
+                byte_offset = al.ALint()
                 with context.lock:
-                    al.alGetSourcei(self._al_source, al.AL_BYTE_OFFSET, bytes)
+                    al.alGetSourcei(self._al_source, al.AL_BYTE_OFFSET, byte_offset)
                 if _debug:
-                    print 'got bytes offset', bytes.value
-                self._play_cursor = self._buffer_cursor + bytes.value
+                    print 'Current offset in bytes:', byte_offset.value
+                self._play_cursor = self._buffer_cursor + byte_offset.value
             else:
                 # Interpolate system time past buffer timestamp
                 self._play_cursor = \
@@ -440,6 +442,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             if self._eos:
                 write_size = 0
 
+        if _debug:
+            print("Write size {} bytes".format(write_size))
         return write_size
 
     def refill(self, write_size):
@@ -464,8 +468,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                     self._events.append((cursor, event))
 
                 with context.lock:
-                    buffer = bufferPool.getBuffer(self._al_source)
-                    al.alBufferData(buffer,
+                    buffer_name = bufferPool.getBuffer(self._al_source)
+                    print(self._al_source, buffer_name)
+                    al.alBufferData(buffer_name,
                                     self._al_format,
                                     audio_data.data,
                                     audio_data.length,
@@ -474,7 +479,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                         error = al.alGetError()
                         if error != 0:
                             print("BUFFER DATA ERROR: " + str(error))
-                    al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer))
+                    al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer_name))
                     if _debug_buffers:
                         error = al.alGetError()
                         if error != 0:
@@ -509,40 +514,47 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                 float(self.source_group.audio_format.bytes_per_second)
 
     def set_volume(self, volume):
+        volume = float(volume)
         with context.lock:
-            al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
+            al.alSourcef(self._al_source, al.AL_GAIN, max(0., volume))
 
     def set_position(self, position):
-        x, y, z = position
+        x, y, z = map(float, position)
         with context.lock:
             al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)
 
     def set_min_distance(self, min_distance):
+        min_distance = float(min_distance)
         with context.lock:
             al.alSourcef(self._al_source, al.AL_REFERENCE_DISTANCE, min_distance)
 
     def set_max_distance(self, max_distance):
+        max_distance = float(max_distance)
         with context.lock:
             al.alSourcef(self._al_source, al.AL_MAX_DISTANCE, max_distance)
 
     def set_pitch(self, pitch):
+        pitch = float(pitch)
         with context.lock:
-            al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
+            al.alSourcef(self._al_source, al.AL_PITCH, max(0., pitch))
 
     def set_cone_orientation(self, cone_orientation):
-        x, y, z = cone_orientation
+        x, y, z = map(float, cone_orientation)
         with context.lock:
             al.alSource3f(self._al_source, al.AL_DIRECTION, x, y, z)
 
     def set_cone_inner_angle(self, cone_inner_angle):
+        cone_inner_angle = float(cone_inner_angle)
         with context.lock:
             al.alSourcef(self._al_source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
 
     def set_cone_outer_angle(self, cone_outer_angle):
+        cone_outer_angle = float(cone_outer_angle)
         with context.lock:
             al.alSourcef(self._al_source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
 
     def set_cone_outer_gain(self, cone_outer_gain):
+        cone_outer_gain = float(cone_outer_gain)
         with context.lock:
             al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
 
@@ -616,30 +628,27 @@ class OpenALListener(AbstractListener):
         self._driver = driver
 
     def _set_volume(self, volume):
-        self._driver.lock()
-        al.alListenerf(al.AL_GAIN, volume)
-        self._driver.unlock()
+        volume = float(volume)
+        with self._driver.lock:
+            al.alListenerf(al.AL_GAIN, volume)
         self._volume = volume
 
     def _set_position(self, position):
-        x, y, z = position
-        self._driver.lock()
-        al.alListener3f(al.AL_POSITION, x, y, z)
-        self._driver.unlock()
-        self._position = position 
+        x, y, z = map(float, position)
+        with self._driver.lock:
+            al.alListener3f(al.AL_POSITION, x, y, z)
+        self._position = position
 
     def _set_forward_orientation(self, orientation):
-        val = (al.ALfloat * 6)(*(orientation + self._up_orientation))
-        self._driver.lock()
-        al.alListenerfv(al.AL_ORIENTATION, val)
-        self._driver.unlock()
+        val = (al.ALfloat * 6)(*map(float, (orientation + self._up_orientation)))
+        with self._driver.loc:
+            al.alListenerfv(al.AL_ORIENTATION, val)
         self._forward_orientation = orientation
 
     def _set_up_orientation(self, orientation):
-        val = (al.ALfloat * 6)(*(self._forward_orientation + orientation))
-        self._driver.lock()
-        al.alListenerfv(al.AL_ORIENTATION, val)
-        self._driver.unlock()
+        val = (al.ALfloat * 6)(*map(float, (self._forward_orientation + orientation)))
+        with self._driver.lock:
+            al.alListenerfv(al.AL_ORIENTATION, val)
         self._up_orientation = orientation
 
 context = None
