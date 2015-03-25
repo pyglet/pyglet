@@ -1,10 +1,36 @@
-#!/usr/bin/env python
-
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2008 Alex Holkner
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 
 import sys
 
@@ -34,12 +60,33 @@ def noop(*args):
     pass
 
 
+class PulseAudioMainLoopLock(object):
+    def __init__(self, threaded_mainloop):
+        self.threaded_mainloop = threaded_mainloop
+
+    def lock(self):
+        """Lock the threaded mainloop against events.  Required for all
+        calls into PA."""
+        pa.pa_threaded_mainloop_lock(self.threaded_mainloop)
+
+    def unlock(self):
+        """Unlock the mainloop thread."""
+        pa.pa_threaded_mainloop_unlock(self.threaded_mainloop)
+
+    def __enter__(self):
+        self.lock()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.unlock()
+
+
 class PulseAudioDriver(AbstractAudioDriver):
     _context = None
     def __init__(self):
         self.threaded_mainloop = pa.pa_threaded_mainloop_new()
         self.mainloop = pa.pa_threaded_mainloop_get_api(
             self.threaded_mainloop)
+        self.lock = PulseAudioMainLoopLock(self.threaded_mainloop)
 
         self._players = pyglet.app.WeakSet()
         self._listener = PulseAudioListener(self)
@@ -48,17 +95,16 @@ class PulseAudioDriver(AbstractAudioDriver):
         player = PulseAudioPlayer(source_group, player)
         self._players.add(player)
         return player
-        
+
     def connect(self, server=None):
-        '''Connect to pulseaudio server.
-        
+        """Connect to pulseaudio server.
+
         :Parameters:
             `server` : str
                 Server to connect to, or ``None`` for the default local
                 server (which may be spawned as a daemon if no server is
                 found).
-                
-        '''
+        """
         # TODO disconnect from old
         assert not self._context, 'Already connected'
 
@@ -66,9 +112,9 @@ class PulseAudioDriver(AbstractAudioDriver):
         app_name = self.get_app_name()
         self._context = pa.pa_context_new(self.mainloop, app_name.encode('ASCII'))
 
-        # Context state callback 
+        # Context state callback
         self._state_cb_func = pa.pa_context_notify_cb_t(self._state_cb)
-        pa.pa_context_set_state_callback(self._context, 
+        pa.pa_context_set_state_callback(self._context,
                                          self._state_cb_func, None)
 
         # Connect
@@ -77,59 +123,47 @@ class PulseAudioDriver(AbstractAudioDriver):
         )
 
 
-        self.lock()
-        check(
-            pa.pa_threaded_mainloop_start(self.threaded_mainloop)
-        )
-        try:
+        with self.lock:
+            check(
+                pa.pa_threaded_mainloop_start(self.threaded_mainloop)
+            )
             # Wait for context ready.
             self.wait()
             if pa.pa_context_get_state(self._context) != pa.PA_CONTEXT_READY:
                 check(-1)
-        finally:
-            self.unlock()
 
     def _state_cb(self, context, userdata):
         if _debug:
             print 'context state cb'
         state = pa.pa_context_get_state(self._context)
-        if state in (pa.PA_CONTEXT_READY, 
+        if state in (pa.PA_CONTEXT_READY,
                      pa.PA_CONTEXT_TERMINATED,
                      pa.PA_CONTEXT_FAILED):
             self.signal()
 
-    def lock(self):
-        '''Lock the threaded mainloop against events.  Required for all
-        calls into PA.'''
-        pa.pa_threaded_mainloop_lock(self.threaded_mainloop)
-
-    def unlock(self):
-        '''Unlock the mainloop thread.'''
-        pa.pa_threaded_mainloop_unlock(self.threaded_mainloop)
-
     def signal(self):
-        '''Signal the mainloop thread to break from a wait.'''
+        """Signal the mainloop thread to break from a wait."""
         pa.pa_threaded_mainloop_signal(self.threaded_mainloop, 0)
 
     def wait(self):
-        '''Wait for a signal.'''
+        """Wait for a signal."""
         pa.pa_threaded_mainloop_wait(self.threaded_mainloop)
 
     def sync_operation(self, op):
-        '''Wait for an operation to be done or cancelled, then release it.
-        Uses a busy-loop -- make sure a callback is registered to 
-        signal this listener.''' 
+        """Wait for an operation to be done or cancelled, then release it.
+        Uses a busy-loop -- make sure a callback is registered to
+        signal this listener."""
         while pa.pa_operation_get_state(op) == pa.PA_OPERATION_RUNNING:
             pa.pa_threaded_mainloop_wait(self.threaded_mainloop)
         pa.pa_operation_unref(op)
 
     def async_operation(self, op):
-        '''Release the operation immediately without waiting for it to
-        complete.'''
+        """Release the operation immediately without waiting for it to
+        complete."""
         pa.pa_operation_unref(op)
 
     def get_app_name(self):
-        '''Get the application name as advertised to the pulseaudio server.'''
+        """Get the application name as advertised to the pulseaudio server."""
         # TODO move app name into pyglet.app (also useful for OS X menu bar?).
         return sys.argv[0]
 
@@ -145,18 +179,19 @@ class PulseAudioDriver(AbstractAudioDriver):
             pa.pa_context_is_local(self._context) and 'Yes' or 'No')
 
     def delete(self):
-        '''Completely shut down pulseaudio client.'''
-        self.lock()
-        pa.pa_context_unref(self._context)
-        self.unlock()
+        """Completely shut down pulseaudio client."""
+        with self.lock:
+            pa.pa_context_unref(self._context)
 
         pa.pa_threaded_mainloop_stop(self.threaded_mainloop)
         pa.pa_threaded_mainloop_free(self.threaded_mainloop)
+        self.lock = None
         self.threaded_mainloop = None
         self.mainloop = None
 
     def get_listener(self):
         return self._listener
+
 
 class PulseAudioListener(AbstractListener):
     def __init__(self, driver):
@@ -175,6 +210,7 @@ class PulseAudioListener(AbstractListener):
 
     def _set_up_orientation(self, orientation):
         self._up_orientation = orientation
+
 
 class PulseAudioPlayer(AbstractAudioPlayer):
     _volume = 1.0
@@ -211,10 +247,9 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         channel_map = None
         self.sample_rate = audio_format.sample_rate
 
-        try:
-            context.lock()
+        with context.lock:
             # Create stream
-            self.stream = pa.pa_stream_new(context._context, 
+            self.stream = pa.pa_stream_new(context._context,
                                            str(id(self)).encode('ASCII'),
                                            sample_spec,
                                            channel_map)
@@ -246,25 +281,23 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
             sync_stream = None  # TODO use this
             check(
-                pa.pa_stream_connect_playback(self.stream, 
+                pa.pa_stream_connect_playback(self.stream,
                                               device,
-                                              buffer_attr, 
+                                              buffer_attr,
                                               flags,
-                                              None, 
+                                              None,
                                               sync_stream)
             )
 
             # Wait for stream readiness
             self._state_cb_func = pa.pa_stream_notify_cb_t(self._state_cb)
-            pa.pa_stream_set_state_callback(self.stream, 
+            pa.pa_stream_set_state_callback(self.stream,
                                             self._state_cb_func, None)
             while pa.pa_stream_get_state(self.stream) == pa.PA_STREAM_CREATING:
                 context.wait()
 
             if pa.pa_stream_get_state(self.stream) != pa.PA_STREAM_READY:
                 check(-1)
-        finally:
-            context.unlock()
 
         if _debug:
             print 'stream ready'
@@ -285,7 +318,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         # Asynchronously update time
         if self._events:
             context.async_operation(
-                pa.pa_stream_update_timing_info(self.stream, 
+                pa.pa_stream_update_timing_info(self.stream,
                                                 self._success_cb_func, None)
             )
 
@@ -315,7 +348,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 self._events.append((event_index, event))
 
             consumption = min(bytes, audio_data.length)
-            
+
             check(
                 pa.pa_stream_write(self.stream,
                                    audio_data.data,
@@ -346,13 +379,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             # Whole source group has been written.  Any underflow encountered
             # after now is the EOS.
             self._underflow_is_eos = True
-            
+
             # In case the source group wasn't long enough to prebuffer stream
             # to PA's satisfaction, trigger immediate playback (has no effect
             # if stream is already playing).
             if self._playing:
                 context.async_operation(
-                     pa.pa_stream_trigger(self.stream, 
+                     pa.pa_stream_trigger(self.stream,
                                           pa.pa_stream_success_cb_t(0), None)
                 )
 
@@ -399,17 +432,16 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self.delete()
         except:
             pass
-        
-    def delete(self):   
+
+    def delete(self):
         if _debug:
             print 'delete'
         if not self.stream:
             return
 
-        context.lock()
-        pa.pa_stream_disconnect(self.stream)
-        pa.pa_stream_set_state_callback(self.stream, pa.pa_stream_notify_cb_t(noop), None)
-        context.unlock()
+        with context.lock:
+            pa.pa_stream_disconnect(self.stream)
+            pa.pa_stream_set_state_callback(self.stream, pa.pa_stream_notify_cb_t(noop), None)
         pa.pa_stream_unref(self.stream)
         self.stream = None
 
@@ -422,55 +454,51 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         self._timestamps = []
         self._events = []
 
-        context.lock()
-        self._read_index_valid = False
-        context.sync_operation(
-            pa.pa_stream_prebuf(self.stream, self._success_cb_func, None)
-        )
-        context.unlock()
+        with context.lock:
+            self._read_index_valid = False
+            context.sync_operation(
+                pa.pa_stream_prebuf(self.stream, self._success_cb_func, None)
+            )
 
     def play(self):
         if _debug:
             print 'play'
 
-        context.lock()
-        context.async_operation(
-             pa.pa_stream_cork(self.stream, 0, 
-                               pa.pa_stream_success_cb_t(0), None)
-        )
-
-        # If whole stream has already been written, trigger immediate
-        # playback.        
-        if self._underflow_is_eos:
+        with context.lock:
             context.async_operation(
-                 pa.pa_stream_trigger(self.stream, 
-                                      pa.pa_stream_success_cb_t(0), None)
+                pa.pa_stream_cork(self.stream, 0,
+                                pa.pa_stream_success_cb_t(0), None)
             )
-        context.unlock()
+
+            # If whole stream has already been written, trigger immediate
+            # playback.
+            if self._underflow_is_eos:
+                context.async_operation(
+                    pa.pa_stream_trigger(self.stream,
+                                        pa.pa_stream_success_cb_t(0), None)
+                )
 
         self._playing = True
 
     def stop(self):
         if _debug:
             print 'stop'
-        context.lock()
-        context.async_operation(
-                 pa.pa_stream_cork(self.stream, 1, 
-                               pa.pa_stream_success_cb_t(0), None)
-        )
-        context.unlock()
+        with context.lock:
+            context.async_operation(
+                    pa.pa_stream_cork(self.stream, 1,
+                                pa.pa_stream_success_cb_t(0), None)
+            )
 
         self._playing = False
 
     def _get_read_index(self):
         #time = pa.pa_usec_t()
 
-        context.lock()
-        context.sync_operation(
-            pa.pa_stream_update_timing_info(self.stream, 
-                                            self._success_cb_func, None)
-        )
-        context.unlock()
+        with context.lock:
+            context.sync_operation(
+                pa.pa_stream_update_timing_info(self.stream,
+                                                self._success_cb_func, None)
+            )
 
         timing_info = pa.pa_stream_get_timing_info(self.stream)
         if timing_info:
@@ -530,27 +558,26 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         cvolume = pa.pa_cvolume()
         volume = pa.pa_sw_volume_from_linear(volume)
-        pa.pa_cvolume_set(cvolume, 
-                          self.source_group.audio_format.channels, 
+        pa.pa_cvolume_set(cvolume,
+                          self.source_group.audio_format.channels,
                           volume)
 
-        context.lock()
-        idx = pa.pa_stream_get_index(self.stream)
-        context.sync_operation(
-            pa.pa_context_set_sink_input_volume(context._context,
-                 idx,
-                 cvolume,
-                 self._context_success_cb_func,
-                 None)
-        )
-        context.unlock()
+        with context.lock:
+            idx = pa.pa_stream_get_index(self.stream)
+            context.sync_operation(
+                pa.pa_context_set_sink_input_volume(context._context,
+                    idx,
+                    cvolume,
+                    self._context_success_cb_func,
+                    None)
+            )
 
     def set_pitch(self, pitch):
         pa.pa_stream_update_sample_rate(self.stream,
                                         int(pitch*self.sample_rate),
                                         self._success_cb_func,
                                         None)
-                                        
+
 
 def create_audio_driver():
     global context
