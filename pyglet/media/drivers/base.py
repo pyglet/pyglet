@@ -144,3 +144,6 @@ class AbstractAudioDriver(object):
     def get_listener(self):
         pass
 
+    @abstractmethod
+    def delete(self):
+        pass
