@@ -58,6 +58,21 @@ class MockPlayer(object):
             return None, None
 
 
+class SilentTestSource(Silence):
+    def __init__(self, duration, sample_rate=44800, sample_size=16):
+        super(Silence, self).__init__(duration, sample_rate, sample_size)
+        self._bytes_read = 0
+
+    def get_audio_data(self, bytes):
+        data = super(Silence, self).get_audio_data(bytes)
+        if data:
+            self._bytes_read += data.length
+        return data
+
+    def has_fully_played(self):
+        return self._bytes_read == self._max_offset
+
+
 class EventForwarder(object):
     def post_event(self, destination, event_type, *args):
         destination.dispatch_event(event_type, *args)
@@ -117,13 +132,15 @@ class _AudioDriverTestCase(unittest.TestCase):
         self.assertIsNotNone(driver)
 
         try:
-            source_group = self.create_source_group(Silence(.1))
+            source = SilentTestSource(.1)
+            source_group = self.create_source_group(source)
             player = MockPlayer()
 
             audio_player = driver.create_audio_player(source_group, player)
             try:
                 audio_player.play()
                 self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
+                self.assertTrue(source.has_fully_played(), msg='Source not fully played')
 
             finally:
                 audio_player.delete()
@@ -136,13 +153,44 @@ class _AudioDriverTestCase(unittest.TestCase):
         self.assertIsNotNone(driver)
 
         try:
-            source_group = self.create_source_group(Silence(.1), Silence(.1))
+            sources = (SilentTestSource(.1), SilentTestSource(.1))
+            source_group = self.create_source_group(*sources)
             player = MockPlayer()
 
             audio_player = driver.create_audio_player(source_group, player)
             try:
                 audio_player.play()
                 self.wait_for_all_events(player, 0.3, 'on_eos', 'on_eos', 'on_source_group_eos')
+                for source in sources:
+                    self.assertTrue(source.has_fully_played(), msg='Source not fully played')
+
+            finally:
+                audio_player.delete()
+        finally:
+            driver.delete()
+
+    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
+    def test_audio_player_add_to_paused_group(self):
+        """This is current behaviour when adding a sound of the same format as the previous to a
+        player paused due to end of stream for previous sound."""
+        driver = self.driver.create_audio_driver()
+        self.assertIsNotNone(driver)
+
+        try:
+            source = SilentTestSource(.1)
+            source_group = self.create_source_group(source)
+            player = MockPlayer()
+
+            audio_player = driver.create_audio_player(source_group, player)
+            try:
+                audio_player.play()
+                self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
+
+                source2 = SilentTestSource(.1)
+                source_group.queue(source2)
+                audio_player.play()
+                self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
+                self.assertTrue(source2.has_fully_played(), msg='Source not fully played')
 
             finally:
                 audio_player.delete()
