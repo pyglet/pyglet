@@ -128,9 +128,8 @@ class MediaThread(object):
 
     @classmethod
     def _atexit(cls):
-        cls._threads_lock.acquire()
-        threads = list(cls._threads)
-        cls._threads_lock.release()
+        with cls._threads_lock:
+            threads = list(cls._threads)
         for thread in threads:
             thread.stop()
 
@@ -141,13 +140,11 @@ class MediaThread(object):
         if pyglet.options['debug_trace']:
             pyglet._install_trace()
 
-        self._threads_lock.acquire()
-        self._threads.add(self)
-        self._threads_lock.release()
+        with self._threads_lock:
+            self._threads.add(self)
         self.run()
-        self._threads_lock.acquire()
-        self._threads.remove(self)
-        self._threads_lock.release()
+        with self._threads_lock:
+            self._threads.remove(self)
 
     def start(self):
         self._thread.start()
@@ -161,10 +158,9 @@ class MediaThread(object):
         '''
         if _debug:
             print 'MediaThread.stop()'
-        self.condition.acquire()
-        self.stopped = True
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            self.stopped = True
+            self.condition.notify()
         self._thread.join()
 
     def sleep(self, timeout):
@@ -177,9 +173,8 @@ class MediaThread(object):
         '''
         if _debug:
             print 'MediaThread.sleep(%r)' % timeout
-        self.condition.acquire()
-        self.condition.wait(timeout)
-        self.condition.release()
+        with self.condition:
+            self.condition.wait(timeout)
 
     def notify(self):
         '''Interrupt the current sleep operation.
@@ -189,9 +184,8 @@ class MediaThread(object):
         '''
         if _debug:
             print 'MediaThread.notify()'
-        self.condition.acquire()
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            self.condition.notify()
 
 atexit.register(MediaThread._atexit)
 
@@ -208,27 +202,24 @@ class WorkerThread(MediaThread):
             job()
 
     def get_job(self):
-        self.condition.acquire()
-        while self._empty() and not self.stopped:
-            self.condition.wait()
-        if self.stopped:
-            result = None
-        else:
-            result = self._get()
-        self.condition.release()
+        with self.condition:
+            while self._empty() and not self.stopped:
+                self.condition.wait()
+            if self.stopped:
+                result = None
+            else:
+                result = self._get()
         return result
         
     def put_job(self, job):
-        self.condition.acquire()
-        self._put(job)
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            self._put(job)
+            self.condition.notify()
 
     def clear_jobs(self):
-        self.condition.acquire()
-        self._clear()
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            self._clear()
+            self.condition.notify()
 
     def _empty(self):
         return not self._jobs
