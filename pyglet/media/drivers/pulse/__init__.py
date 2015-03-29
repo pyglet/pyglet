@@ -223,6 +223,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         self._clear_write = False
         self._buffered_audio_data = None
         self._underflow_is_eos = False
+        self._buffer_underflow = False
         self._playing = False
 
         audio_format = source_group.audio_format
@@ -310,6 +311,10 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         context.signal()
 
     def _write_cb(self, stream, bytes, data):
+        # If number of bytes is not supplied, query PulseAudio for it
+        if bytes is None:
+            bytes = pa.pa_stream_writable_size(self.stream)
+
         if _debug:
             print 'write callback: %d bytes' % bytes
 
@@ -361,6 +366,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self._timestamps.append((self._write_index, audio_data.timestamp))
             self._write_index += consumption
             self._underflow_is_eos = False
+            self._buffer_underflow = False
 
             if _debug:
                 print 'write', consumption
@@ -396,6 +402,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self._sync_dispatch_player_event('on_eos')
             self._sync_dispatch_player_event('on_source_group_eos')
             self._underflow_is_eos = False
+            self._buffer_underflow = True
             if _debug:
                 print 'eos'
         else:
@@ -480,6 +487,9 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                     pa.pa_stream_trigger(self.stream,
                                         pa.pa_stream_success_cb_t(0), None)
                 )
+
+            if self._buffer_underflow:
+                self._write_cb(self.stream, None, None)
 
         self._playing = True
 
