@@ -6,6 +6,9 @@ import time
 import unittest
 
 import pyglet
+pyglet.options['debug_media'] = True
+pyglet.options['debug_media_buffers'] = True
+
 import pyglet.app  # Make sure it is loaded before patching it
 from pyglet.media.drivers import silent
 from pyglet.media.drivers.silent import SilentAudioDriver
@@ -13,9 +16,6 @@ from pyglet.media.sources import SourceGroup
 from pyglet.media.sources.procedural import Silence
 
 from tests.annotations import Platform
-
-pyglet.options['debug_media'] = True
-pyglet.options['debug_media_buffers'] = True
 
 
 class GetMediaDriverTestCase(unittest.TestCase):
