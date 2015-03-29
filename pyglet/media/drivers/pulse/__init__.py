@@ -53,10 +53,6 @@ def check_not_null(value):
         raise MediaException(pa.pa_strerror(error))
     return value
 
-def noop(*args):
-    """Empty callback to replace deleted callbacks in PA"""
-    pass
-
 
 class PulseAudioMainLoopLock(object):
     def __init__(self, threaded_mainloop):
@@ -179,6 +175,7 @@ class PulseAudioDriver(AbstractAudioDriver):
     def delete(self):
         """Completely shut down pulseaudio client."""
         with self.lock:
+            pa.pa_context_disconnect(self._context)
             pa.pa_context_unref(self._context)
 
         pa.pa_threaded_mainloop_stop(self.threaded_mainloop)
@@ -252,6 +249,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                                            sample_spec,
                                            channel_map)
             check_not_null(self.stream)
+            pa.pa_stream_ref(self.stream)
 
             # Callback trampoline for success operations
             self._success_cb_func = pa.pa_stream_success_cb_t(self._success_cb)
@@ -439,7 +437,12 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         with context.lock:
             pa.pa_stream_disconnect(self.stream)
-            pa.pa_stream_set_state_callback(self.stream, pa.pa_stream_notify_cb_t(noop), None)
+
+        # Wait for stream to terminate before continuing. Prevents cleaned up callbacks to be
+        # called
+        while pa.pa_stream_get_state(self.stream) != pa.PA_STREAM_TERMINATED:
+            context.wait()
+
         pa.pa_stream_unref(self.stream)
         self.stream = None
 
