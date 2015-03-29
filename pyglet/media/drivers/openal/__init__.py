@@ -162,7 +162,7 @@ class OpenALBufferPool(object):
         not be modified in any way, and may get changed by subsequent calls to
         getBuffers.
         """
-        assert context._lock.locked()
+        assert context.lock.locked()
         buffs = []
         try:
             while i > 0:
@@ -196,14 +196,14 @@ class OpenALBufferPool(object):
 
     def deleteSource(self, alSource):
         """Delete a source pointer (self._al_source) and free its buffers"""
-        assert context._lock.locked()
+        assert context.lock.locked()
         if alSource.value in self._sources:
             for buffer in self._sources.pop(alSource.value):
                 self._buffers.append(buffer)
 
     def dequeueBuffer(self, alSource, buffer):
         """A buffer has finished playing, free it."""
-        assert context._lock.locked()
+        assert context.lock.locked()
         sourceBuffs = self._sources[alSource.value]
         if buffer in sourceBuffs:
             sourceBuffs.remove(buffer)
@@ -216,7 +216,7 @@ class OpenALBufferPool(object):
 
     def delete(self):
         """Delete all sources and free all buffers"""
-        assert context._lock.locked()
+        assert context.lock.locked()
         for source, buffers in self._sources.items():
             al.alDeleteSources(1, ctypes.byref(ctypes.c_uint(source)))
             for b in buffers:
@@ -311,20 +311,15 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         context.worker.remove(self)
 
-        self._lock.acquire()
-
-        context.lock()
-
-        al.alDeleteSources(1, self._al_source)
-        bufferPool.deleteSource(self._al_source)
-        if _debug_buffers:
-            error = al.alGetError()
-            if error != 0:
-                print("DELETE ERROR: " + str(error))
-        context.unlock()
-        self._al_source = None
-
-        self._lock.release()
+        with self._lock:
+            with context.lock:
+                al.alDeleteSources(1, self._al_source)
+                bufferPool.deleteSource(self._al_source)
+                if _debug_buffers:
+                    error = al.alGetError()
+                    if error != 0:
+                        print("DELETE ERROR: " + str(error))
+            self._al_source = None
 
     def play(self):
         if self._playing:
@@ -342,12 +337,11 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def _al_play(self):
         if _debug:
             print 'OpenALAudioPlayer._al_play()'
-        context.lock()
-        state = al.ALint()
-        al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
-        if state.value != al.AL_PLAYING:
-            al.alSourcePlay(self._al_source)
-        context.unlock()
+        with context.lock:
+            state = al.ALint()
+            al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
+            if state.value != al.AL_PLAYING:
+                al.alSourcePlay(self._al_source)
 
     def stop(self):
         if not self._playing:
@@ -356,9 +350,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if _debug:
             print 'OpenALAudioPlayer.stop()'
         self._pause_timestamp = self.get_time()
-        context.lock()
-        al.alSourcePause(self._al_source)
-        context.unlock()
+        with context.lock:
+            al.alSourcePause(self._al_source)
         self._playing = False
 
         context.worker.remove(self)
@@ -367,91 +360,82 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if _debug:
             print 'OpenALAudioPlayer.clear()'
 
-        self._lock.acquire()
-        context.lock()
+        with self._lock:
+            with context.lock:
+                al.alSourceStop(self._al_source)
+                self._playing = False
 
-        al.alSourceStop(self._al_source)
-        self._playing = False
-
-        del self._events[:]
-        self._underrun_timestamp = None
-        self._buffer_timestamps = [None for _ in self._buffer_timestamps]
-
-        context.unlock()
-        self._lock.release()
+                del self._events[:]
+                self._underrun_timestamp = None
+                self._buffer_timestamps = [None for _ in self._buffer_timestamps]
 
     def _update_play_cursor(self):
         if not self._al_source:
             return
 
-        self._lock.acquire()
-        context.lock()
+        with self._lock:
+            with context.lock:
 
-        # Release spent buffers
-        processed = al.ALint()
-        al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
-        processed = processed.value
-        if processed:
-            buffers = (al.ALuint * processed)()
-            al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
-            error = al.alGetError()
-            if error != 0:
-                if _debug_buffers:
-                    print("Source unqueue error: " + str(error))
+                # Release spent buffers
+                processed = al.ALint()
+                al.alGetSourcei(self._al_source, al.AL_BUFFERS_PROCESSED, processed)
+                processed = processed.value
+                if processed:
+                    buffers = (al.ALuint * processed)()
+                    al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
+                    error = al.alGetError()
+                    if error != 0:
+                        if _debug_buffers:
+                            print("Source unqueue error: " + str(error))
+                    else:
+                        for b in buffers:
+                            bufferPool.dequeueBuffer(self._al_source, b)
+
+            if processed:
+                if (len(self._buffer_timestamps) == processed
+                        and self._buffer_timestamps[-1] is not None):
+                    # Underrun, take note of timestamp.
+                    # We check that the timestamp is not None, because otherwise
+                    # our source could have been cleared.
+                    self._underrun_timestamp = \
+                        self._buffer_timestamps[-1] + \
+                        self._buffer_sizes[-1] / \
+                            float(self.source_group.audio_format.bytes_per_second)
+                self._buffer_cursor += sum(self._buffer_sizes[:processed])
+                del self._buffer_sizes[:processed]
+                del self._buffer_timestamps[:processed]
+
+                if not context.have_1_1:
+                    self._buffer_system_time = time.time()
+
+            # Update play cursor using buffer cursor + estimate into current
+            # buffer
+            if context.have_1_1:
+                bytes = al.ALint()
+                with context.lock:
+                    al.alGetSourcei(self._al_source, al.AL_BYTE_OFFSET, bytes)
+                if _debug:
+                    print 'got bytes offset', bytes.value
+                self._play_cursor = self._buffer_cursor + bytes.value
             else:
-                for b in buffers:
-                    bufferPool.dequeueBuffer(self._al_source, b)
-        context.unlock()
+                # Interpolate system time past buffer timestamp
+                self._play_cursor = \
+                    self._buffer_cursor + int(
+                        (time.time() - self._buffer_system_time) * \
+                            self.source_group.audio_format.bytes_per_second)
 
-        if processed:
-            if (len(self._buffer_timestamps) == processed
-                    and self._buffer_timestamps[-1] is not None):
-                # Underrun, take note of timestamp.
-                # We check that the timestamp is not None, because otherwise
-                # our source could have been cleared.
-                self._underrun_timestamp = \
-                    self._buffer_timestamps[-1] + \
-                    self._buffer_sizes[-1] / \
-                        float(self.source_group.audio_format.bytes_per_second)
-            self._buffer_cursor += sum(self._buffer_sizes[:processed])
-            del self._buffer_sizes[:processed]
-            del self._buffer_timestamps[:processed]
-
-            if not context.have_1_1:
-                self._buffer_system_time = time.time()
-
-        # Update play cursor using buffer cursor + estimate into current
-        # buffer
-        if context.have_1_1:
-            bytes = al.ALint()
-            context.lock()
-            al.alGetSourcei(self._al_source, al.AL_BYTE_OFFSET, bytes)
-            context.unlock()
-            if _debug:
-                print 'got bytes offset', bytes.value
-            self._play_cursor = self._buffer_cursor + bytes.value
-        else:
-            # Interpolate system time past buffer timestamp
-            self._play_cursor = \
-                self._buffer_cursor + int(
-                    (time.time() - self._buffer_system_time) * \
-                        self.source_group.audio_format.bytes_per_second)
-
-        # Process events
-        while self._events and self._events[0][0] < self._play_cursor:
-            _, event = self._events.pop(0)
-            event._sync_dispatch_to_player(self.player)
-
-        self._lock.release()
+            # Process events
+            while self._events and self._events[0][0] < self._play_cursor:
+                _, event = self._events.pop(0)
+                event._sync_dispatch_to_player(self.player)
 
     def get_write_size(self):
-        self._lock.acquire()
-        self._update_play_cursor()
-        write_size = self._ideal_buffer_size - \
-            (self._write_cursor - self._play_cursor)
-        if self._eos:
-            write_size = 0
-        self._lock.release()
+        with self._lock:
+            self._update_play_cursor()
+            write_size = self._ideal_buffer_size - \
+                (self._write_cursor - self._play_cursor)
+            if self._eos:
+                write_size = 0
 
         return write_size
 
@@ -459,58 +443,54 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         if _debug:
             print 'refill', write_size
 
-        self._lock.acquire()
+        with self._lock:
 
-        while write_size > self._min_buffer_size:
-            audio_data = self.source_group.get_audio_data(write_size)
-            if not audio_data:
-                self._eos = True
-                self._events.append(
-                    (self._write_cursor, MediaEvent(0, 'on_eos')))
-                self._events.append(
-                    (self._write_cursor, MediaEvent(0, 'on_source_group_eos')))
-                break
+            while write_size > self._min_buffer_size:
+                audio_data = self.source_group.get_audio_data(write_size)
+                if not audio_data:
+                    self._eos = True
+                    self._events.append(
+                        (self._write_cursor, MediaEvent(0, 'on_eos')))
+                    self._events.append(
+                        (self._write_cursor, MediaEvent(0, 'on_source_group_eos')))
+                    break
 
-            for event in audio_data.events:
-                cursor = self._write_cursor + event.timestamp * \
-                    self.source_group.audio_format.bytes_per_second
-                self._events.append((cursor, event))
+                for event in audio_data.events:
+                    cursor = self._write_cursor + event.timestamp * \
+                        self.source_group.audio_format.bytes_per_second
+                    self._events.append((cursor, event))
 
-            context.lock()
-            buffer = bufferPool.getBuffer(self._al_source)
-            al.alBufferData(buffer,
-                            self._al_format,
-                            audio_data.data,
-                            audio_data.length,
-                            self.source_group.audio_format.sample_rate)
-            if _debug_buffers:
-                error = al.alGetError()
-                if error != 0:
-                    print("BUFFER DATA ERROR: " + str(error))
-            al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer))
-            if _debug_buffers:
-                error = al.alGetError()
-                if error != 0:
-                    print("QUEUE BUFFER ERROR: " + str(error))
-            context.unlock()
+                with context.lock:
+                    buffer = bufferPool.getBuffer(self._al_source)
+                    al.alBufferData(buffer,
+                                    self._al_format,
+                                    audio_data.data,
+                                    audio_data.length,
+                                    self.source_group.audio_format.sample_rate)
+                    if _debug_buffers:
+                        error = al.alGetError()
+                        if error != 0:
+                            print("BUFFER DATA ERROR: " + str(error))
+                    al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buffer))
+                    if _debug_buffers:
+                        error = al.alGetError()
+                        if error != 0:
+                            print("QUEUE BUFFER ERROR: " + str(error))
 
-            self._write_cursor += audio_data.length
-            self._buffer_sizes.append(audio_data.length)
-            self._buffer_timestamps.append(audio_data.timestamp)
-            write_size -= audio_data.length
+                self._write_cursor += audio_data.length
+                self._buffer_sizes.append(audio_data.length)
+                self._buffer_timestamps.append(audio_data.timestamp)
+                write_size -= audio_data.length
 
-        # Check for underrun stopping playback
-        if self._playing:
-            state = al.ALint()
-            context.lock()
-            al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
-            if state.value != al.AL_PLAYING:
-                if _debug:
-                    print 'underrun'
-                al.alSourcePlay(self._al_source)
-            context.unlock()
-
-        self._lock.release()
+            # Check for underrun stopping playback
+            if self._playing:
+                state = al.ALint()
+                with context.lock:
+                    al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, state)
+                    if state.value != al.AL_PLAYING:
+                        if _debug:
+                            print 'underrun'
+                        al.alSourcePlay(self._al_source)
 
     def get_time(self):
         try:
@@ -526,51 +506,42 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                 float(self.source_group.audio_format.bytes_per_second)
 
     def set_volume(self, volume):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_GAIN, max(0, volume))
 
     def set_position(self, position):
         x, y, z = position
-        context.lock()
-        al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)
-        context.unlock()
+        with context.lock:
+            al.alSource3f(self._al_source, al.AL_POSITION, x, y, z)
 
     def set_min_distance(self, min_distance):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_REFERENCE_DISTANCE, min_distance)
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_REFERENCE_DISTANCE, min_distance)
 
     def set_max_distance(self, max_distance):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_MAX_DISTANCE, max_distance)
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_MAX_DISTANCE, max_distance)
 
     def set_pitch(self, pitch):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_PITCH, max(0, pitch))
 
     def set_cone_orientation(self, cone_orientation):
         x, y, z = cone_orientation
-        context.lock()
-        al.alSource3f(self._al_source, al.AL_DIRECTION, x, y, z)
-        context.unlock()
+        with context.lock:
+            al.alSource3f(self._al_source, al.AL_DIRECTION, x, y, z)
 
     def set_cone_inner_angle(self, cone_inner_angle):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_CONE_INNER_ANGLE, cone_inner_angle)
 
     def set_cone_outer_angle(self, cone_outer_angle):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_CONE_OUTER_ANGLE, cone_outer_angle)
 
     def set_cone_outer_gain(self, cone_outer_gain):
-        context.lock()
-        al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
-        context.unlock()
+        with context.lock:
+            al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
 
 class OpenALDriver(AbstractAudioDriver):
     _forward_orientation = (0, 0, -1)
@@ -591,7 +562,7 @@ class OpenALDriver(AbstractAudioDriver):
 
         self.have_1_1 = self.have_version(1, 1) and False
 
-        self._lock = threading.Lock()
+        self.lock = threading.Lock()
 
         self._listener = OpenALListener(self)
 
@@ -605,18 +576,11 @@ class OpenALDriver(AbstractAudioDriver):
 
     def delete(self):
         self.worker.stop()
-        self.lock()
-        alc.alcMakeContextCurrent(None)
-        alc.alcDestroyContext(self._context)
-        alc.alcCloseDevice(self._device)
-        self._device = None
-        self.unlock()
-
-    def lock(self):
-        self._lock.acquire()
-
-    def unlock(self):
-        self._lock.release()
+        with self.lock:
+            alc.alcMakeContextCurrent(None)
+            alc.alcDestroyContext(self._context)
+            alc.alcCloseDevice(self._device)
+            self._device = None
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()
@@ -624,9 +588,9 @@ class OpenALDriver(AbstractAudioDriver):
     def get_version(self):
         major = alc.ALCint()
         minor = alc.ALCint()
-        alc.alcGetIntegerv(self._device, alc.ALC_MAJOR_VERSION, 
+        alc.alcGetIntegerv(self._device, alc.ALC_MAJOR_VERSION,
                            ctypes.sizeof(major), major)
-        alc.alcGetIntegerv(self._device, alc.ALC_MINOR_VERSION, 
+        alc.alcGetIntegerv(self._device, alc.ALC_MINOR_VERSION,
                            ctypes.sizeof(minor), minor)
         return major.value, minor.value
 
@@ -636,12 +600,13 @@ class OpenALDriver(AbstractAudioDriver):
             return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
         else:
             return _split_nul_strings(extensions)
-    
+
     def have_extension(self, extension):
         return extension in self.get_extensions()
 
     def get_listener(self):
         return self._listener
+
 
 class OpenALListener(AbstractListener):
     def __init__(self, driver):
@@ -690,9 +655,8 @@ def cleanup_audio_driver():
         print "Cleaning up audio driver"
 
     if context:
-        context.lock()
-        bufferPool.delete()
-        context.unlock()
+        with context.lock:
+            bufferPool.delete()
 
         context.delete()
         context = None
