@@ -1,3 +1,11 @@
+Pyglet 1.2.3
+============
+Minor bugfix release.
+
+Bugfixes:
+- Windows: Fix issue where ALT key causes app to hang.
+- Media: May fixes to PulseAudio and OpenAL media drivers
+
 Pyglet 1.2.2
 ============
 Minor bugfix release. Includes documentation updates for deprecated code.
