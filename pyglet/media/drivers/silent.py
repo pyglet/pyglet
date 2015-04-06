@@ -211,7 +211,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
 
         with self._thread.condition:
             if self._playing:
-                self._consume_packets()
+                self._consume_data()
                 self._playing = False
 
     def clear(self):
@@ -226,7 +226,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
 
     def get_time(self):
         with self._thread.condition:
-            result = self._audio_buffer.get_current_timestamp()
+            result = self._audio_buffer.get_current_timestamp() + self._calculate_offset()
 
         if _debug:
             print 'SilentAudioPlayer.get_time() -> ', result
@@ -235,7 +235,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
     def _update_time(self):
         self._last_update_system_time = time.time()
 
-    def _consume_packets(self):
+    def _consume_data(self):
         """Consume content of packets that should have been played back up to now."""
         with self._thread.condition:
             offset = self._calculate_offset()
@@ -329,7 +329,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
                 if self._thread.stopped:
                     break
 
-                self._consume_packets()
+                self._consume_data()
                 self._dispatch_events()
                 self._buffer_data()
 

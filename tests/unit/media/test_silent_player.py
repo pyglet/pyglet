@@ -2,11 +2,13 @@
 Tests for the silent audio driver.
 """
 
+import mock
 import unittest
 
-from pyglet.media.drivers.silent import EventBuffer, SilentAudioBuffer, SilentAudioPacket
+from pyglet.media.drivers.silent import (EventBuffer, SilentAudioBuffer, SilentAudioPacket,
+        SilentAudioPlayerPacketConsumer)
 from pyglet.media.events import MediaEvent
-from pyglet.media.sources import AudioData
+from pyglet.media.sources import AudioData, AudioFormat
 
 class SilentAudioPacketTest(unittest.TestCase):
     def test_partial_consume(self):
@@ -232,4 +234,151 @@ class EventBufferTest(unittest.TestCase):
         self.assertAlmostEqual(1.1, buf.get_time_to_next_event(.2))
         self.assertAlmostEqual(.1, buf.get_time_to_next_event(1.2))
 
+
+class MockSourceGroup(object):
+    audio_format = AudioFormat(1, 8, 44100)
+
+    def __init__(self, duration, timestamp=0.):
+        self.mock = mock.MagicMock()
+        type(self.mock).audio_format = mock.PropertyMock(return_value=self.audio_format)
+        self.mock.get_audio_data.side_effect = self._get_audio_data
+
+        self.timestamp = timestamp
+        self.duration = duration
+
+        self.seconds_buffered = 0.
+        self.bytes_buffered = 0
+
+    def _get_audio_data(self, length):
+        secs = float(length) / self.audio_format.bytes_per_second
+        if secs > self.duration:
+            secs = self.duration
+            length = int(secs * self.audio_format.bytes_per_second)
+
+        if length == 0:
+            return None
+
+        data = AudioData('a'*length, length, self.timestamp, secs, ())
+        self.timestamp += secs
+        self.duration -= secs
+        self.seconds_buffered += secs
+        self.bytes_buffered += length
+        return data
+
+
+class SilentAudioPlayerPacketConsumerTest(unittest.TestCase):
+    def setUp(self):
+        self.time_patcher = mock.patch('time.time')
+        self.thread_patcher = mock.patch('pyglet.media.drivers.silent.MediaThread')
+        self.mock_time = self.time_patcher.start()
+        self.mock_thread = self.thread_patcher.start()
+
+    def tearDown(self):
+        self.time_patcher.stop()
+        self.thread_patcher.stop()
+
+    def set_time(self, t):
+        self.mock_time.return_value = t
+
+    def test_buffer_data_initial(self):
+        mock_player = mock.MagicMock()
+        mock_source_group = MockSourceGroup(1.)
+
+        silent_player = SilentAudioPlayerPacketConsumer(mock_source_group.mock, mock_player)
+        self.set_time(1000.)
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.4, mock_source_group.seconds_buffered, delta=.01)
+
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+    def test_playing(self):
+        mock_player = mock.MagicMock()
+        mock_source_group = MockSourceGroup(1.)
+
+        silent_player = SilentAudioPlayerPacketConsumer(mock_source_group.mock, mock_player)
+
+        # Buffer initial data
+        self.set_time(1000.)
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.4, mock_source_group.seconds_buffered, delta=.01)
+
+        # Start playing
+        silent_player.play()
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+        # Check timestamp increases even when not consuming new data
+        self.set_time(1000.2)
+        self.assertAlmostEqual(.2, silent_player.get_time(), delta=.01)
+
+        # Timestamp sill correct after consuming data
+        silent_player._consume_data()
+        self.assertAlmostEqual(.2, silent_player.get_time(), delta=.01)
+
+        # Consuming data means we need to buffer more
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.6, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(.2, silent_player.get_time(), delta=.01)
+
+    def test_not_started_yet(self):
+        mock_player = mock.MagicMock()
+        mock_source_group = MockSourceGroup(1.)
+        silent_player = SilentAudioPlayerPacketConsumer(mock_source_group.mock, mock_player)
+
+        # Do initial buffering even when not playing yet
+        self.set_time(1000.)
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.4, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+        # Increase of timestamp does not change anything
+        self.set_time(1001.)
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+        # No data is consumed
+        silent_player._consume_data()
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+        # No new data is buffered
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.4, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+    def test_play_and_stop(self):
+        mock_player = mock.MagicMock()
+        mock_source_group = MockSourceGroup(1.)
+        silent_player = SilentAudioPlayerPacketConsumer(mock_source_group.mock, mock_player)
+
+        # Do initial buffering even when not playing yet
+        self.set_time(1000.)
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.4, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(0., silent_player.get_time(), delta=.01)
+
+        # Play a little bit
+        silent_player.play()
+        self.set_time(1000.2)
+        silent_player._consume_data()
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.6, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(.2, silent_player.get_time(), delta=.01)
+
+        # Now stop, this should consume data upto stopping moment
+        self.set_time(1000.4)
+        silent_player.stop()
+        self.assertAlmostEqual(.4, silent_player.get_time(), delta=.01)
+
+        # Buffering still happens
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.8, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(.4, silent_player.get_time(), delta=.01)
+
+        # But now playback is really paused
+        self.set_time(1001.)
+        self.assertAlmostEqual(.4, silent_player.get_time(), delta=.01)
+
+        # And no more buffering and consuming
+        silent_player._consume_data()
+        silent_player._buffer_data()
+        self.assertAlmostEqual(.8, mock_source_group.seconds_buffered, delta=.01)
+        self.assertAlmostEqual(.4, silent_player.get_time(), delta=.01)
 
