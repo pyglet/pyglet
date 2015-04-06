@@ -11,6 +11,7 @@ import lib_dsound as lib
 from pyglet.media import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.exceptions import MediaException
+from pyglet.media.listener import AbstractListener
 from pyglet.media.threads import MediaThread
 from pyglet.window.win32 import _user32, _kernel32
 
@@ -499,15 +500,22 @@ class DirectSoundDriver(AbstractAudioDriver):
     def create_audio_player(self, source_group, player):
         return DirectSoundAudioPlayer(source_group, player)
 
+    def get_listener(self):
+        return DirectSoundListener(self._listener, self._buffer)
+
     def delete(self):
         self.worker.stop()
         self._buffer.Release()
         self._buffer = None
         self._listener.Release()
         self._listener = None
-        
-    # Listener API
-      
+
+
+class DirectSoundListener(AbstractListener):
+    def __init__(self, listener, buffer_):
+        self._listener = listener
+        self._buffer = buffer_
+
     def _set_volume(self, volume):
         self._volume = volume
         self._buffer.SetVolume(_db(volume))
@@ -529,6 +537,7 @@ class DirectSoundDriver(AbstractAudioDriver):
         x, y, z = self._forward_orientation
         ux, uy, uz = self._up_orientation
         self._listener.SetOrientation(x, y, -z, ux, uy, -uz, lib.DS3D_IMMEDIATE)
+
 
 def create_audio_driver():
     global driver
