@@ -1,4 +1,4 @@
-import mock
+from tests import mock
 
 import pyglet
 from pyglet.gl import *

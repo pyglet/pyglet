@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import mock
+from tests import mock
 import Queue
 import time
 import unittest

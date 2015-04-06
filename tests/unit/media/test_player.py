@@ -1,5 +1,5 @@
 import ctypes
-import mock
+from tests import mock
 import os
 import random
 import unittest

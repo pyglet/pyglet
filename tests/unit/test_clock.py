@@ -1,5 +1,5 @@
 import unittest
-import mock
+from tests import mock
 import pyglet.clock
 
 

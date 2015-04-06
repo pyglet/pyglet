@@ -3,7 +3,7 @@ Test the base class for interactive test cases.
 """
 
 import glob
-import mock
+from tests import mock
 import os
 import shutil
 from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_validation, \

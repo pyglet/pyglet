@@ -2,7 +2,7 @@
 Tests for the silent audio driver.
 """
 
-import mock
+from tests import mock
 import unittest
 
 from pyglet.media.drivers.silent import (EventBuffer, SilentAudioBuffer, SilentAudioPacket,
