@@ -91,7 +91,8 @@ class Screen(object):
     The :attr:`width` and :attr:`height` attributes of a screen give the 
     current resolution of the screen.  The :attr:`x` and :attr:`y` attributes 
     give the global location of the top-left corner of the screen.  This is 
-    useful for determining if screens arranged above or next to one another.  
+    useful for determining if screens are arranged above or next to one 
+    another.
     
     Use :func:`~Display.get_screens` or :func:`~Display.get_default_screen`
     to obtain an instance of this class.
