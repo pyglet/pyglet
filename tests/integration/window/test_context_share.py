@@ -1,12 +1,5 @@
-#!/usr/bin/env python
-
-'''Test that multiple windows share objects by default.
-
-This test is non-interactive.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
+"""Test that multiple windows share objects by default.
+"""
 
 import unittest
 from ctypes import *
@@ -14,9 +7,7 @@ from ctypes import *
 from pyglet import window
 from pyglet.gl import *
 
-__noninteractive = True
-
-class CONTEXT_SHARE(unittest.TestCase):
+class ContextShareTest(unittest.TestCase):
     def create_context(self, share):
         display = window.get_platform().get_default_display()
         screen = display.get_default_screen()
@@ -97,7 +88,4 @@ class CONTEXT_SHARE(unittest.TestCase):
         finally:
             w1.close()
             w2.close()
-
-if __name__ == '__main__':
-    unittest.main()
 
