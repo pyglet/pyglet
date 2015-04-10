@@ -68,6 +68,10 @@ class SoundMediaPlayerTestCase(InteractiveTestCase):
 
         self.user_verify('Do you hear white noise again?', take_screenshot=False)
 
+        player.delete()
+
+        self.user_verify('Is it silent again?', take_screenshot=False)
+
     def test_next_on_end_of_stream(self):
         """Test that multiple items on the queue are played after each other."""
         source1 = procedural.WhiteNoise(1.0)
