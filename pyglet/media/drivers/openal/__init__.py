@@ -208,14 +208,15 @@ class OpenALBufferPool(object):
         """A buffer has finished playing, free it."""
         assert context.lock.locked()
         sourceBuffs = self._sources[alSource.value]
-        if buffer in sourceBuffs:
-            sourceBuffs.remove(buffer)
-            self._buffers.append(buffer)
-        elif _debug_buffers:
-            # This seems to be the problem with Mac OS X - The buffers are
-            # dequeued, but they're not _actually_ buffers.  In other words,
-            # there's some leakage, so after awhile, things break.
-            print("Bad buffer: " + str(buffer))
+        for i, b in enumerate(sourceBuffs):
+            if buffer == b.value:
+                self._buffers.append(sourceBuffs.pop(i))
+                break
+                
+        else:
+            # If no such buffer exists, should not happen anyway.
+            if _debug_buffers:
+                print("Bad buffer: " + str(buffer))
 
     def delete(self):
         """Delete all sources and free all buffers"""
