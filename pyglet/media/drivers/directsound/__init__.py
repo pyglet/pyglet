@@ -374,9 +374,13 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
                 ctypes.memmove(p2, audio_data.data, l2.value)
                 audio_data.consume(l2.value, self.source_group.audio_format)
         else:
-            ctypes.memset(p1, 0, l1.value)
+            if self.source_group.audio_format.sample_size == 8:
+                c = 0x80
+            else:
+                c = 0
+            ctypes.memset(p1, c, l1.value)
             if l2.value:
-                ctypes.memset(p2, 0, l2.value)
+                ctypes.memset(p2, c, l2.value)
         self._buffer.Unlock(p1, l1, p2, l2)
 
         self._write_cursor += length
