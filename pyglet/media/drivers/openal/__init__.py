@@ -639,7 +639,7 @@ class OpenALListener(AbstractListener):
 
     def _set_forward_orientation(self, orientation):
         val = (al.ALfloat * 6)(*map(float, (orientation + self._up_orientation)))
-        with self._driver.loc:
+        with self._driver.lock:
             al.alListenerfv(al.AL_ORIENTATION, val)
         self._forward_orientation = orientation
 
