@@ -68,27 +68,46 @@ class WindowEventsTestCase(InteractiveTestCase):
 @requires_user_action
 class KeyPressWindowEventTestCase(WindowEventsTestCase):
     number_of_checks = 10
-    keys = [key.A, key.B, key.C, key.D, key.E, key.F, key.G, key.H, key.I, key.J, key.K, key.L,
+    keys = (key.A, key.B, key.C, key.D, key.E, key.F, key.G, key.H, key.I, key.J, key.K, key.L,
             key.M, key.N, key.O, key.P, key.Q, key.R, key.S, key.T, key.U, key.V, key.W, key.X,
-            key.Y, key.Z]
+            key.Y, key.Z)
+    mod_shift_keys = (key.LSHIFT, key.RSHIFT)
+    mod_ctrl_keys = (key.LCTRL, key.RCTRL)
+    mod_alt_keys = (key.LALT, key.RALT)
+    mod_meta_keys = (key.LMETA, key.RMETA)
+    mod_meta = key.MOD_SHIFT | key.MOD_ALT
 
     def setUp(self):
         super(KeyPressWindowEventTestCase, self).setUp()
-        self.symbol = None
-        self.modifiers = None
-        self.pressed = False
+        self.chosen_symbol = None
+        self.chosen_modifiers = None
+        self.completely_pressed = False
+        self.active_keys = []
         self.checks_passed = 0
 
     def on_key_press(self, symbol, modifiers):
-        if self.pressed:
+        self.active_keys.append(symbol)
+
+        if self.completely_pressed:
             self.fail_test('Key already pressed, no release received.')
 
-        elif self._check_key(symbol, modifiers):
-            self.pressed = True
+        elif self._is_correct_modifier_key(symbol):
+            # Does not seem to be correct for modifier keys
+            #self._check_modifiers_against_pressed_keys(modifiers)
+            pass
+
+        elif self._is_correct_key(symbol):
+            self._check_modifiers_against_pressed_keys(modifiers)
+            self.completely_pressed = True
 
     def on_key_release(self, symbol, modifiers):
-        if self._check_key(symbol, modifiers):
-            self.pressed = False
+        if symbol not in self.active_keys:
+            self.fail_test('Released key "{}" was not pressed before.'.format(key.symbol_string(symbol)))
+        else:
+            self.active_keys.remove(symbol)
+
+        if len(self.active_keys) == 0 and self.completely_pressed:
+            self.completely_pressed = False
             self.checks_passed += 1
             if self.checks_passed == self.number_of_checks:
                 self.pass_test()
@@ -96,29 +115,76 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
                 self._select_next_key()
 
     def _select_next_key(self):
-        self.symbol = random.choice(self.keys)
-        self.modifiers = 0
+        self.chosen_symbol = random.choice(self.keys)
+
+        # Little trick, Ctrl, Alt and Shift are lowest modifier values, so everything between 0 and
+        # the full combination is a permutation of these three.
+        max_modifiers = key.MOD_SHIFT | key.MOD_ALT | key.MOD_CTRL
+        # Give a little more weight to key without modifiers
+        self.chosen_modifiers = max(0, random.randint(-2, max_modifiers))
+
+        self._update_question()
+
+    def _update_question(self):
+        modifiers = []
+        if self.chosen_modifiers & key.MOD_SHIFT:
+            modifiers.append('<Shift>')
+        if self.chosen_modifiers & key.MOD_ALT:
+            modifiers.append('<Alt>')
+        if self.chosen_modifiers & key.MOD_CTRL:
+            modifiers.append('<Ctrl>')
 
         self.question = """Please press and release:
 
-{}
+{} {}
 
 
-Press Esc if test does not pass.""".format(key.symbol_string(self.symbol))
+Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_string(self.chosen_symbol))
         self._render_question()
 
-    def _check_key(self, symbol, modifiers):
-        if not self.symbol:
+    def _is_correct_modifier_key(self, symbol):
+        modifier = self._get_modifier_for_key(symbol)
+        if modifier == 0:
+            return False
+
+        if not self.chosen_modifiers & modifier:
+            self.fail_test('Unexpected modifier key "{}"'.format(key.symbol_string(symbol)))
+
+        return True
+
+    def _get_modifier_for_key(self, symbol):
+        if symbol in self.mod_shift_keys:
+            return key.MOD_SHIFT
+        elif symbol in self.mod_alt_keys:
+            return key.MOD_ALT
+        elif symbol in self.mod_ctrl_keys:
+            return key.MOD_CTRL
+        elif symbol in self.mod_meta_keys:
+            return self.mod_meta
+        else:
+            return 0
+
+    def _get_modifiers_from_pressed_keys(self):
+        modifiers = 0
+        for symbol in self.active_keys:
+            modifiers |= self._get_modifier_for_key(symbol)
+        return modifiers
+
+    def _check_modifiers_against_pressed_keys(self, modifiers):
+        modifiers_from_keys = self._get_modifiers_from_pressed_keys()
+        if modifiers != modifiers_from_keys:
+            self.fail_test('Received modifiers "{}" do not match pressed keys "{}"'.format(
+                                key.modifiers_string(modifiers),
+                                key.modifiers_string(modifiers_from_keys)))
+
+    def _is_correct_key(self, symbol):
+        if not self.chosen_symbol:
             self.fail_test('No more key presses/releases expected.')
             return False
 
-        if self.symbol != symbol:
+        if self.chosen_symbol != symbol:
             self.fail_test('Received key "{}", but expected "{}"'.format(key.symbol_string(symbol),
-                                                                         key.symbol_string(self.symbol)))
-            return False
-        if self.modifiers != modifiers:
-            self.fail_test('Received modifiers "{}", but expected "{}"'.format(key.modifiers_string(modifiers),
-                                                                               key.modifiers_string(self.modifiers)))
+                                                                         key.symbol_string(self.chosen_symbol)))
             return False
 
         return True
