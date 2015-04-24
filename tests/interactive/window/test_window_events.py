@@ -86,6 +86,7 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
         self.checks_passed = 0
 
     def on_key_press(self, symbol, modifiers):
+        print('Press', key.symbol_string(symbol))
         self.active_keys.append(symbol)
 
         if self.completely_pressed:
@@ -101,6 +102,8 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
             self.completely_pressed = True
 
     def on_key_release(self, symbol, modifiers):
+        print('Release', key.symbol_string(symbol))
+        symbol = self._handle_meta_release(symbol)
         if symbol not in self.active_keys:
             self.fail_test('Released key "{}" was not pressed before.'.format(key.symbol_string(symbol)))
         else:
@@ -188,6 +191,20 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
             return False
 
         return True
+
+    def _handle_meta_release(self, symbol):
+        """The meta key can be either released as meta or as alt shift or vv"""
+        if symbol in (key.LMETA, key.LALT, key.RMETA, key.RALT):
+            if symbol not in self.active_keys:
+                if symbol == key.LMETA and key.LALT in self.active_keys:
+                    return key.LALT
+                if symbol == key.RMETA and key.RALT in self.active_keys:
+                    return key.RALT
+                if symbol == key.LALT and key.LMETA in self.active_keys:
+                    return key.LMETA
+                if symbol == key.RALT and key.RMETA in self.active_keys:
+                    return key.RMETA
+        return symbol
 
     def test_key_press_release(self):
         """Show several keys to press. Check that the event is triggered for the correct key."""
