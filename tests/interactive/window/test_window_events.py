@@ -337,3 +337,12 @@ Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
         self._select_next_key()
         self._test_main()
 
+@requires_user_action
+class CloseWindowEventsTest(WindowEventsTestCase):
+    def on_close(self):
+        self.pass_test()
+
+    def test_on_close_event(self):
+        """Test the on_close event triggerred when closing the window."""
+        self.question = "Please close this window by\nclicking the close button."
+        self._test_main()
