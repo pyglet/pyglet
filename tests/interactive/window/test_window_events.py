@@ -337,6 +337,7 @@ Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
         self._select_next_key()
         self._test_main()
 
+
 @requires_user_action
 class CloseWindowEventsTest(WindowEventsTestCase):
     def on_close(self):
@@ -345,4 +346,49 @@ class CloseWindowEventsTest(WindowEventsTestCase):
     def test_on_close_event(self):
         """Test the on_close event triggerred when closing the window."""
         self.question = "Please close this window by\nclicking the close button."
+        self._test_main()
+
+
+@requires_user_action
+class ActivateDeactivateWindowEventsTest(WindowEventsTestCase):
+    number_of_checks = 3
+
+    def setUp(self):
+        super(ActivateDeactivateWindowEventsTest, self).setUp()
+        self.window_active = None
+        self.checks_passed = 0
+
+    def on_expose(self):
+        self.window_active = True
+        self._update_question()
+
+    def on_activate(self):
+        if self.window_active:
+            self.fail_test('Got double on_activate')
+        else:
+            self.window_active = True
+            self.checks_passed += 1
+            if self.checks_passed >= self.number_of_checks:
+                self.pass_test()
+            else:
+                self._update_question()
+
+    def on_deactivate(self):
+        if not self.window_active:
+            self.fail_test('Got double on_deactivate')
+        else:
+            self.window_active = False
+            self._update_question()
+
+    def _update_question(self):
+        if self.window_active:
+            self.question = "Please activate another window."
+        else:
+            self.question = "Please activate this window."
+        self._render_question()
+
+    def test_activate_deactivate(self):
+        """Test the on_activate and on_deactivate events triggered when the window gets activated
+        or deactivated."""
+        self._update_question()
         self._test_main()
