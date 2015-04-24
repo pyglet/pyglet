@@ -211,6 +211,7 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
         self._select_next_key()
         self._test_main()
 
+
 @requires_user_action
 class TextWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 10
@@ -222,7 +223,6 @@ class TextWindowEventsTest(WindowEventsTestCase):
         self.checks_passed = 0
 
     def on_text(self, text):
-        print('on_text', text)
         if text != self.chosen_text:
             self.fail_test('Expected "{}", received "{}"'.format(self.chosen_text, text))
         else:
@@ -248,5 +248,92 @@ Press Esc if test does not pass.""".format(self.chosen_text)
     def test_key_text(self):
         """Show several keys to press. Check that the text events are triggered correctly."""
         self._select_next_text()
+        self._test_main()
+
+
+@requires_user_action
+class TextMotionWindowEventsTest(WindowEventsTestCase):
+    number_of_checks = 10
+    motion_keys = (key.MOTION_UP, key.MOTION_RIGHT, key.MOTION_DOWN, key.MOTION_LEFT,
+                   key.MOTION_NEXT_PAGE, key.MOTION_PREVIOUS_PAGE, key.MOTION_BACKSPACE,
+                   key.MOTION_DELETE)
+
+    def setUp(self):
+        super(TextMotionWindowEventsTest, self).setUp()
+        self.chosen_key = None
+        self.checks_passed = 0
+
+    def on_text_motion(self, motion):
+        if motion != self.chosen_key:
+            self.fail_test('Expected "{}", received "{}"'.format(
+                key.motion_string(self.chosen_key), key.motion_string(motion)))
+        else:
+            self.checks_passed += 1
+            if self.checks_passed >= self.number_of_checks:
+                self.pass_test()
+            else:
+                self._select_next_key()
+
+    def _select_next_key(self):
+        self.chosen_key = random.choice(self.motion_keys)
+        self._update_question()
+
+    def _update_question(self):
+        self.question = """Please press:
+
+{} ({})
+
+
+Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
+                                           key.symbol_string(self.chosen_key))
+        self._render_question()
+
+    def test_key_text_motion(self):
+        """Show several motion keys to press. Check that the on_text_motion events are triggered
+        correctly."""
+        self._select_next_key()
+        self._test_main()
+
+@requires_user_action
+class TextMotionSelectWindowEventsTest(WindowEventsTestCase):
+    number_of_checks = 10
+    motion_keys = (key.MOTION_UP, key.MOTION_RIGHT, key.MOTION_DOWN, key.MOTION_LEFT,
+                   key.MOTION_NEXT_PAGE, key.MOTION_PREVIOUS_PAGE, key.MOTION_BACKSPACE,
+                   key.MOTION_DELETE)
+
+    def setUp(self):
+        super(TextMotionSelectWindowEventsTest, self).setUp()
+        self.chosen_key = None
+        self.checks_passed = 0
+
+    def on_text_motion_select(self, motion):
+        if motion != self.chosen_key:
+            self.fail_test('Expected "{}", received "{}"'.format(
+                key.motion_string(self.chosen_key), key.motion_string(motion)))
+        else:
+            self.checks_passed += 1
+            if self.checks_passed >= self.number_of_checks:
+                self.pass_test()
+            else:
+                self._select_next_key()
+
+    def _select_next_key(self):
+        self.chosen_key = random.choice(self.motion_keys)
+        self._update_question()
+
+    def _update_question(self):
+        self.question = """Please hold <Shift> and press:
+
+{} ({})
+
+
+Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
+                                           key.symbol_string(self.chosen_key))
+        self._render_question()
+
+    def test_key_text_motion_select(self):
+        """Show several motion keys to press. Check that the on_text_motion_select events are
+        triggered correctly combined with shift."""
+        self._select_next_key()
         self._test_main()
 
