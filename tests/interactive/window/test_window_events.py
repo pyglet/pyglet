@@ -35,7 +35,7 @@ class WindowEventsTestCase(InteractiveTestCase):
         self.finished = True
 
     def _render_question(self):
-        fnt = font.load('')
+        fnt = font.load('Courier')
         self.label = font.Text(fnt, text=self.question, x=10, y=self.window_size[1]-20)
 
     def _draw(self):
@@ -210,3 +210,43 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
         """Show several keys to press. Check that the event is triggered for the correct key."""
         self._select_next_key()
         self._test_main()
+
+@requires_user_action
+class TextWindowEventsTest(WindowEventsTestCase):
+    number_of_checks = 10
+    text = '`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;\'ASDFGHJKL:"zxcvbnm,./ZXCVBNM<>?'
+
+    def setUp(self):
+        super(TextWindowEventsTest, self).setUp()
+        self.chosen_text = None
+        self.checks_passed = 0
+
+    def on_text(self, text):
+        print('on_text', text)
+        if text != self.chosen_text:
+            self.fail_test('Expected "{}", received "{}"'.format(self.chosen_text, text))
+        else:
+            self.checks_passed += 1
+            if self.checks_passed >= self.number_of_checks:
+                self.pass_test()
+            else:
+                self._select_next_text()
+
+    def _select_next_text(self):
+        self.chosen_text = random.choice(self.text)
+        self._update_question()
+
+    def _update_question(self):
+        self.question = """Please type:
+
+{}
+
+
+Press Esc if test does not pass.""".format(self.chosen_text)
+        self._render_question()
+
+    def test_key_text(self):
+        """Show several keys to press. Check that the text events are triggered correctly."""
+        self._select_next_text()
+        self._test_main()
+
