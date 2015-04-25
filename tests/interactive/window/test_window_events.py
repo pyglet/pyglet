@@ -392,3 +392,28 @@ class ActivateDeactivateWindowEventsTest(WindowEventsTestCase):
         or deactivated."""
         self._update_question()
         self._test_main()
+
+
+@requires_user_action
+class ExposeWindowEventsTest(WindowEventsTestCase):
+    number_of_checks = 5
+
+    def setUp(self):
+        super(ExposeWindowEventsTest, self).setUp()
+        self.checks_passed = 0
+
+    def on_expose(self):
+        self.checks_passed += 1
+        if self.checks_passed >= self.number_of_checks:
+            self.pass_test()
+
+    def test_expose(self):
+        """Test the on_expose event triggered when a redraw of the window is required."""
+        self.question = ("Please trigger a redraw of this window.\n\n"
+                         "Depending on your OS and window manager you might need to:\n"
+                         "- Cover the window with another window and uncover again\n"
+                         "- Minimize and restore the window\n\n"
+                         "Repeat up to 5 times (less might be accepted due to initial drawing)")
+        self.window_size = 700, 200
+        self._test_main()
+
