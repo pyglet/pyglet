@@ -417,3 +417,39 @@ class ExposeWindowEventsTest(WindowEventsTestCase):
         self.window_size = 700, 200
         self._test_main()
 
+
+@requires_user_action
+class ShowHideWindowEventsTest(WindowEventsTestCase):
+    number_of_checks = 5
+
+    def setUp(self):
+        super(ShowHideWindowEventsTest, self).setUp()
+        self.checks_passed = 0
+        self.visible = False
+
+    def on_show(self):
+        if self.visible:
+            self.fail_test('Received on_show twice without on_hide')
+        else:
+            self.checks_passed += 1
+            self.visible = True
+            if self.checks_passed >= self.number_of_checks:
+                self.pass_test()
+
+    def on_hide(self):
+        if not self.visible:
+            self.fail_test('Received on_hide twice without on_show')
+        else:
+            self.visible = False
+
+    def test_show_hide(self):
+        """Test the on_show and on_hide events."""
+        self.question = ('Please trigger hide and show this window again.\n'
+                         'You can do this by:\n'
+                         '- Minimize and restore the window\n'
+                         '- On OS X show and hide using Command+H or the dock context menu\n'
+                         '\n'
+                         'Test passes after doing this 4 times.')
+        self.window_size = 700, 200
+        self._test_main()
+
