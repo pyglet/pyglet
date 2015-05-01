@@ -90,7 +90,11 @@ class CocoaEventLoop(PlatformEventLoop):
         self.NSApp = NSApplication.sharedApplication()
         # Create an autorelease pool for menu creation and finishLaunching
         self.pool = NSAutoreleasePool.alloc().init()
-        create_menu()
+        if self.NSApp.isRunning():
+            # Application was already started by GUI library (e.g. wxPython).
+            return
+        if not self.NSApp.mainMenu():
+            create_menu()
         self.NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
         # Prevent Lion / Mountain Lion from automatically saving application state.
         # If we don't do this, new windows will not display on 10.8 after finishLaunching
@@ -101,8 +105,9 @@ class CocoaEventLoop(PlatformEventLoop):
             defaults.setBool_forKey_(True, ignoreState)
 
     def start(self):
-        self.NSApp.finishLaunching()
-        self.NSApp.activateIgnoringOtherApps_(True)
+        if not self.NSApp.isRunning():
+            self.NSApp.finishLaunching()
+            self.NSApp.activateIgnoringOtherApps_(True)
 
     def step(self, timeout=None):
         # Drain the old autorelease pool
