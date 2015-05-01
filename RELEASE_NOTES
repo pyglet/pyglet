@@ -4,7 +4,9 @@ Minor bugfix release.
 
 Bugfixes:
 - Windows: Fix issue where ALT key causes app to hang.
-- Media: May fixes to PulseAudio and OpenAL media drivers
+- Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).
+- OSX: Fix stealing the menu when already present in cocoa.
+- Fix multi texturing support (#28).
 
 Pyglet 1.2.2
 ============
