@@ -220,11 +220,11 @@ class VertexDomain(object):
                 # XXX this won't migrate; not documented.
                 texture = attribute.texture
                 if 'multi_tex_coords' not in self.attribute_names:
-                    self.attribute_names['multi_tex_coords'] = {}
+                    self.attribute_names['multi_tex_coords'] = []
                 assert texture not in self.attribute_names['multi_tex_coords'],\
                     'More than one multi_tex_coord attribute for texture %d' % \
                         texture
-                self.attribute_names['multi_tex_coords'][texture] = attribute
+                self.attribute_names['multi_tex_coords'].insert(texture,attribute)
             else:
                 name = attribute.plural
                 assert name not in self.attributes, \
@@ -556,22 +556,59 @@ class VertexList(object):
     _tex_coords_cache_version = None
 
     def _get_tex_coords(self):
-        if (self._tex_coords_cache_version != self.domain._version):
-            domain = self.domain
-            attribute = domain.attribute_names['tex_coords']
-            self._tex_coords_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._tex_coords_cache_version = domain._version
+        if 'multi_tex_coords' not in self.domain.attribute_names:
+            if (self._tex_coords_cache_version != self.domain._version):
+                domain = self.domain
+                attribute = domain.attribute_names['tex_coords']
+                self._tex_coords_cache = attribute.get_region(
+                    attribute.buffer, self.start, self.count)
+                self._tex_coords_cache_version = domain._version
 
-        region = self._tex_coords_cache
-        region.invalidate()
-        return region.array
+            region = self._tex_coords_cache
+            region.invalidate()
+            return region.array
+        else:
+            return None
 
     def _set_tex_coords(self, data):
-        self._get_tex_coords()[:] = data
+        if self._get_tex_coords() != None:
+            self._get_tex_coords()[:] = data
 
     tex_coords = property(_get_tex_coords, _set_tex_coords,
                           doc='''Array of texture coordinate data.''')
+
+    # ---
+
+    def _get_multi_tex_coords(self):
+        if 'tex_coords' not in self.domain.attribute_names:
+            if (self._tex_coords_cache_version != self.domain._version):
+                domain = self.domain
+                attribute = domain.attribute_names['multi_tex_coords']
+                self._tex_coords_cache = []
+                for a in attribute:
+                    self._tex_coords_cache.append(a.get_region(
+                        a.buffer, self.start, self.count))
+                self._tex_coords_cache_version = domain._version
+
+            region = self._tex_coords_cache
+            array = []
+            for a in region:
+                a.invalidate()
+                array.append(a.array)
+            return array
+        else:
+            return None
+
+    def _set_multi_tex_coords(self, data):
+        if self._get_multi_tex_coords() != None:
+            for a in xrange(0, len(self._tex_coords_cache),1):
+                if a > len(data):
+                    break
+                elif data[a] != None:
+                    self._tex_coords_cache[a].array[:] = data[a]
+
+    multi_tex_coords = property(_get_multi_tex_coords, _set_multi_tex_coords,
+                                doc='''Multi-array texture coordinate data.''')
 
     # ---
 
