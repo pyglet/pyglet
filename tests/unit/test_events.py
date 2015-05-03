@@ -3,7 +3,7 @@
 
 import unittest
 import pyglet
-from mock import Mock, MagicMock
+from tests.mock import Mock, MagicMock
 from contextlib import contextmanager
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
 
