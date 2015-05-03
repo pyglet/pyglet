@@ -112,17 +112,25 @@ create_image_test_cases(
 
 
 # PIL
-pil_description = 'Test loading using PIL.'
-from pyglet.image.codecs.pil import PILImageDecoder
 png_images = ['la.png', 'l.png', 'rgba.png', 'rgb.png']
+try:
+    from PIL import image
+    pil_available = True
+except ImportError:
+    pil_available = False
 
-create_image_test_cases(
-        name='pil',
-        description=pil_description,
-        decoder_class=PILImageDecoder,
-        image_files=png_images
-        )
+if pil_available:
+    pil_description = 'Test loading using PIL.'
+    from pyglet.image.codecs.pil import PILImageDecoder
 
+    create_image_test_cases(
+            name='pil',
+            description=pil_description,
+            decoder_class=PILImageDecoder,
+            image_files=png_images
+            )
+else:
+    print('PIL not available, skipping test')
 
 # Platform specific decoders
 platform_description = 'Test loading using the platform decoder (QuickTime, Quartz, GDI+ or Gdk)'
@@ -158,20 +166,6 @@ create_image_test_cases(
         description=pypng_description,
         decoder_class=PNGImageDecoder,
         image_files=png_images
-        )
-
-
-# No decoder given
-def _pil_raise_error(obj, param):
-    raise Exception()
-TheImageLoadingTestCase.create_test_case(
-        name='test_no_decoder',
-        description='Test loading using PIL if no decoder is given, PIL is not available and PyPNG decoder is available.',
-        question='Do you see the rgb.png image on a checkerboard background?',
-        texture_file='rgb.png',
-        decoder=None,
-        decorators=[mock.patch('pyglet.image.codecs.pil.Image.Image.transpose', _pil_raise_error),
-                    mock.patch('pyglet.image.codecs.get_decoders', lambda filename: [PILImageDecoder(), PNGImageDecoder()])]
         )
 
 
