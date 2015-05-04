@@ -7,8 +7,10 @@ import random
 from pyglet import font
 from pyglet import gl
 from pyglet.window import key, Window
+from pyglet.window.event import WindowEventLogger
 
 from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+from tests.interactive.window import window_util
 
 
 class WindowEventsTestCase(InteractiveTestCase):
@@ -453,3 +455,179 @@ class ShowHideWindowEventsTest(WindowEventsTestCase):
         self.window_size = 700, 200
         self._test_main()
 
+
+@requires_user_action
+class EVENT_BUTTON(InteractiveTestCase):
+    """Test that mouse button events work correctly.
+
+    Expected behaviour:
+        One window will be opened.  Click within this window and check the console
+        output for mouse events.  
+        - Buttons 1, 2, 4 correspond to left, middle, right, respectively.
+        - No events for scroll wheel
+        - Modifiers are correct
+
+        Close the window or press ESC to end the test.
+    """
+    def on_mouse_press(self, x, y, button, modifiers):
+        print 'Mouse button %d pressed at %f,%f with %s' % \
+            (button, x, y, key.modifiers_string(modifiers))
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        print 'Mouse button %d released at %f,%f with %s' % \
+            (button, x, y, key.modifiers_string(modifiers))
+
+    def test_button(self):
+        w = Window(200, 200)
+        w.push_handlers(self)
+        while not w.has_exit:
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class EVENT_MOVE(InteractiveTestCase):
+    """Test that window move event works correctly.
+
+    Expected behaviour:
+        One window will be opened.  Move the window and ensure that the
+        location printed to the terminal is correct.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_move(self, x, y):
+        print 'Window moved to %dx%d.' % (x, y)
+
+    def test_move(self):
+        w = Window(200, 200)
+        w.push_handlers(self)
+        while not w.has_exit:
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class EVENT_RESIZE(InteractiveTestCase):
+    """Test that resize event works correctly.
+
+    Expected behaviour:
+        One window will be opened.  Resize the window and ensure that the
+        dimensions printed to the terminal are correct.  You should see
+        a green border inside the window but no red.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_resize(self, width, height):
+        print 'Window resized to %dx%d.' % (width, height)
+
+    def test_resize(self):
+        w = Window(200, 200, resizable=True)
+        w.push_handlers(self)
+        while not w.has_exit:
+            window_util.draw_client_border(w)
+            w.flip()
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class EVENT_MOUSE_DRAG(InteractiveTestCase):
+    """Test that mouse drag event works correctly.
+
+    Expected behaviour:
+        One window will be opened.  Click and drag with the mouse and ensure
+        that buttons, coordinates and modifiers are reported correctly.  Events
+        should be generated even when the drag leaves the window.
+
+        Close the window or press ESC to end the test.
+    """
+    def test_mouse_drag(self):
+        w = Window(200, 200)
+        w.push_handlers(WindowEventLogger())
+        while not w.has_exit:
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class EVENT_MOUSEMOTION(InteractiveTestCase):
+    """Test that mouse motion event works correctly.
+
+    Expected behaviour:
+        One window will be opened.  Move the mouse in and out of this window
+        and ensure the absolute and relative coordinates are correct.
+        - Absolute coordinates should have (0,0) at bottom-left of client area
+        of window with positive y-axis pointing up and positive x-axis right.
+        - Relative coordinates should be positive when moving up and right.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_mouse_motion(self, x, y, dx, dy):
+        print 'Mouse at (%f, %f); relative (%f, %f).' % \
+            (x, y, dx, dy)
+
+    def test_motion(self):
+        w = Window(200, 200)
+        w.push_handlers(self)
+        while not w.has_exit:
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class EVENT_MOUSE_SCROLL(InteractiveTestCase):
+    """Test that mouse scroll event works correctly.
+
+    Expected behaviour:
+        One window will be opened.  Move the scroll wheel and check that events
+        are printed to console.  Positive values are associated with scrolling
+        up.
+
+        Scrolling can also be side-to-side, for example with an Apple Mighty
+        Mouse.
+
+        The actual scroll value is dependent on your operating system
+        user preferences.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_mouse_scroll(self, x, y, dx, dy):
+        print 'Mouse scrolled (%f, %f) (x=%f, y=%f)' % (dx, dy, x, y)
+
+    def test_mouse_scroll(self):
+        w = Window(200, 200)
+        w.push_handlers(self)
+        while not w.has_exit:
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class EVENT_MOUSE_ENTER_LEAVE(InteractiveTestCase):
+    """Test that mouse enter and leave events work correctly.
+
+    Expected behaviour:
+        One window will be opened.  Move the mouse in and out of this window
+        and ensure the events displayed are correct.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_mouse_enter(self, x, y):
+        print 'Entered at %f, %f' % (x, y)
+
+    def on_mouse_leave(self, x, y):
+        print 'Left at %f, %f' % (x, y)
+
+    def test_motion(self):
+        w = Window(200, 200)
+        w.push_handlers(self)
+        while not w.has_exit:
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
