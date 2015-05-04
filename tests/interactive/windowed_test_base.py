@@ -17,6 +17,7 @@ class WindowedTestCase(InteractiveTestCase):
 
     # Defaults
     window_size = 200, 200
+    window_options = None
     window = None
     question = None
 
@@ -48,8 +49,7 @@ class WindowedTestCase(InteractiveTestCase):
     def _test_main(self):
         assert self.question
 
-        width, height = self.window_size
-        self.window = w = Window(width, height, visible=False, resizable=True)
+        self.window = w = Window(**self._get_window_options())
         w.push_handlers(self)
         self.render()
         w.set_visible()
@@ -58,4 +58,22 @@ class WindowedTestCase(InteractiveTestCase):
         self.user_verify(cleandoc(self.question))
 
         w.close()
+
+    def _get_window_options(self):
+        if self.window_options:
+            options = self.window_options
+        else:
+            options = {}
+
+        if not 'width' in options:
+            options['width'] = self.window_size[0]
+        if not 'height' in options:
+            options['height'] = self.window_size[1]
+        if not 'visible' in options:
+            options['visible'] = False
+        if not 'resizable' in options:
+            options['resizable'] = True
+
+        return options
+
 
