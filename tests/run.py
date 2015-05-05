@@ -50,6 +50,12 @@ def _parse_args():
                         action='store_true',
                         help=coverage_help
                         )
+    parser.add_argument('--verbose', '-v',
+                        action='store_const',
+                        const=2,
+                        default=1,
+                        help='Enable unittest verbose output.'
+                        )
 
     options = parser.parse_args()
 
@@ -92,7 +98,7 @@ def _run_suites(test_suite, options):
         else:
             tests.interactive.interactive_test_base.set_noninteractive_sanity()
 
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=options.verbose)
     runner.run(test_suite)
 
 def _start_coverage(options):
