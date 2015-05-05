@@ -50,10 +50,12 @@ class WINDOW_SET_EXCLUSIVE_KEYBOARD(InteractiveTestCase):
     def test_set_exclusive_keyboard(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -88,10 +90,12 @@ class WINDOW_SET_EXCLUSIVE_MOUSE(InteractiveTestCase):
     def test_set_exclusive_mouse(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -124,12 +128,14 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
 
     def test_set_fullscreen(self):
         self.w = w = Window(200, 200)
-        w.push_handlers(self)
-        w.push_handlers(WindowEventLogger())
-        self.on_expose()
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            w.push_handlers(WindowEventLogger())
+            self.on_expose()
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -144,10 +150,12 @@ class WINDOW_SET_ICON(InteractiveTestCase):
     def test_set_icon(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.set_icon(image.load(self.get_test_data_file('images', 'icon1.png')))
-        w.dispatch_events()
-        self.user_verify('Does the window have a yellow A icon?')
-        w.close()
+        try:
+            w.set_icon(image.load(self.get_test_data_file('images', 'icon1.png')))
+            w.dispatch_events()
+            self.user_verify('Does the window have a yellow A icon?')
+        finally:
+            w.close()
 
 
 @requires_user_validation
@@ -171,14 +179,16 @@ class WINDOW_SET_ICON_SIZES(InteractiveTestCase):
     def test_set_icon_sizes(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.set_icon(image.load(self.get_test_data_file('images', 'icon_size1.png')),
-                   image.load(self.get_test_data_file('images', 'icon_size2.png')),
-                   image.load(self.get_test_data_file('images', 'icon_size3.png')),
-                   image.load(self.get_test_data_file('images', 'icon_size4.png')),
-                   image.load(self.get_test_data_file('images', 'icon_size5.png')))
-        w.dispatch_events()
-        self.user_verify('Does the window have the icon corresponding to the correct size?')
-        w.close()
+        try:
+            w.set_icon(image.load(self.get_test_data_file('images', 'icon_size1.png')),
+                    image.load(self.get_test_data_file('images', 'icon_size2.png')),
+                    image.load(self.get_test_data_file('images', 'icon_size3.png')),
+                    image.load(self.get_test_data_file('images', 'icon_size4.png')),
+                    image.load(self.get_test_data_file('images', 'icon_size5.png')))
+            w.dispatch_events()
+            self.user_verify('Does the window have the icon corresponding to the correct size?')
+        finally:
+            w.close()
 
 
 @requires_user_action
@@ -208,12 +218,14 @@ class WINDOW_SET_LOCATION(InteractiveTestCase):
         print('Window location now: %dx%d.' % self.w.get_location())
         self.assertSequenceEqual((x, y), self.w.get_location())
 
-    def test_set_size(self):
+    def test_set_location(self):
         self.w = w = Window(200, 200)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -248,12 +260,14 @@ class WINDOW_SET_MIN_MAX_SIZE(InteractiveTestCase):
     def test_min_max_size(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height, resizable=True)
-        w.push_handlers(self)
-        while not w.has_exit:
-            window_util.draw_client_border(w)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                window_util.draw_client_border(w)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -273,15 +287,17 @@ class WINDOW_SET_MOUSE_CURSOR(InteractiveTestCase):
     def test_set_mouse_cursor(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        img = image.load(self.get_test_data_file('images', 'cursor.png'))
-        w.set_mouse_cursor(ImageMouseCursor(img, 4, 28))
-        w.push_handlers(self)
-        glClearColor(1, 1, 1, 1)
-        while not w.has_exit:
-            glClear(GL_COLOR_BUFFER_BIT)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            img = image.load(self.get_test_data_file('images', 'cursor.png'))
+            w.set_mouse_cursor(ImageMouseCursor(img, 4, 28))
+            w.push_handlers(self)
+            glClearColor(1, 1, 1, 1)
+            while not w.has_exit:
+                glClear(GL_COLOR_BUFFER_BIT)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -338,12 +354,14 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(InteractiveTestCase):
     def test_set_visible(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.push_handlers(self)
-        while not w.has_exit:
-            glClear(GL_COLOR_BUFFER_BIT)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                glClear(GL_COLOR_BUFFER_BIT)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -370,10 +388,12 @@ class WINDOW_SET_MOUSE_VISIBLE(InteractiveTestCase):
     def test_set_visible(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -408,12 +428,14 @@ class WINDOW_SET_SIZE(InteractiveTestCase):
     def test_set_size(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height, resizable=True)
-        w.push_handlers(self)
-        while not w.has_exit:
-            window_util.draw_client_border(w)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                window_util.draw_client_border(w)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -427,19 +449,21 @@ class WINDOW_SET_VISIBLE(InteractiveTestCase):
     """
     def test_set_visible(self):
         w = Window(200, 200)
-        w.push_handlers(WindowEventLogger())
-        w.dispatch_events()
-        self.user_verify('Is the window visible?', take_screenshot=False)
+        try:
+            w.push_handlers(WindowEventLogger())
+            w.dispatch_events()
+            self.user_verify('Is the window visible?', take_screenshot=False)
 
-        w.set_visible(False)
-        w.dispatch_events()
-        self.user_verify('Is the window no longer visible?', take_screenshot=False)
+            w.set_visible(False)
+            w.dispatch_events()
+            self.user_verify('Is the window no longer visible?', take_screenshot=False)
 
-        w.set_visible(True)
-        w.dispatch_events()
-        self.user_verify('Is the window visible again?', take_screenshot=False)
+            w.set_visible(True)
+            w.dispatch_events()
+            self.user_verify('Is the window visible again?', take_screenshot=False)
 
-        w.close()
+        finally:
+            w.close()
 
 
 @requires_user_action
@@ -485,13 +509,15 @@ class WINDOW_SET_VSYNC(InteractiveTestCase):
 
     def test_open_window(self):
         self.w1 = self.open_window()
-        self.w1.push_handlers(self)
-        print 'vsync is %r' % self.w1.vsync
-        while not self.w1.has_exit:
-            self.color_index = 1 - self.color_index
-            self.draw_window(self.w1, self.colors[self.color_index])
-            self.w1.dispatch_events()
-        self.w1.close()
+        try:
+            self.w1.push_handlers(self)
+            print 'vsync is %r' % self.w1.vsync
+            while not self.w1.has_exit:
+                self.color_index = 1 - self.color_index
+                self.draw_window(self.w1, self.colors[self.color_index])
+                self.w1.dispatch_events()
+        finally:
+            self.w1.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -507,21 +533,23 @@ class WINDOW_SET_CAPTION(InteractiveTestCase):
         Press escape or close either window to finished the test.
     """
     def test_caption(self):
-        w1 = Window(400, 200, resizable=True)
-        w2 = Window(400, 200, resizable=True)
-        count = 1
-        w1.set_caption('Window caption %d' % count)
-        w2.set_caption(u'\u00bfHabla espa\u00f1ol?')
-        last_time = time.time()
-        while not (w1.has_exit or w2.has_exit):
-            if time.time() - last_time > 1:
-                count += 1
-                w1.set_caption('Window caption %d' % count)
-                last_time = time.time()
-            w1.dispatch_events()
-            w2.dispatch_events()
-        w1.close()
-        w2.close()
+        try:
+            w1 = Window(400, 200, resizable=True)
+            w2 = Window(400, 200, resizable=True)
+            count = 1
+            w1.set_caption('Window caption %d' % count)
+            w2.set_caption(u'\u00bfHabla espa\u00f1ol?')
+            last_time = time.time()
+            while not (w1.has_exit or w2.has_exit):
+                if time.time() - last_time > 1:
+                    count += 1
+                    w1.set_caption('Window caption %d' % count)
+                    last_time = time.time()
+                w1.dispatch_events()
+                w2.dispatch_events()
+        finally:
+            w1.close()
+            w2.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -556,12 +584,14 @@ class WINDOW_FIXED_SET_SIZE(InteractiveTestCase):
     def test_set_size(self):
         self.width, self.height = 200, 200
         self.w = w = Window(self.width, self.height)
-        w.push_handlers(self)
-        while not w.has_exit:
-            window_util.draw_client_border(w)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                window_util.draw_client_border(w)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 

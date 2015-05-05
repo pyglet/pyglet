@@ -19,18 +19,20 @@ class WINDOW_MINIMIZE_MAXIMIZE(InteractiveTestCase):
     def test_minimize_maximize(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height, resizable=True)
-        w.dispatch_events()
-        self.user_verify('Is the window visible and not maximized?')
+        try:
+            w.dispatch_events()
+            self.user_verify('Is the window visible and not maximized?')
 
-        w.maximize()
-        w.dispatch_events()
-        self.user_verify('Is the window maximized?')
+            w.maximize()
+            w.dispatch_events()
+            self.user_verify('Is the window maximized?')
 
-        w.minimize()
-        w.dispatch_events()
-        self.user_verify('Is the window minimized?')
+            w.minimize()
+            w.dispatch_events()
+            self.user_verify('Is the window minimized?')
 
-        w.close()
+        finally:
+            w.close()
 
 
 @requires_user_action
@@ -50,15 +52,17 @@ class WINDOW_ACTIVATE(InteractiveTestCase):
     """
     def test_activate(self):
         w = window.Window(200, 200)
-        w.push_handlers(WindowEventLogger())
-        last_time = time.time()
-        while not w.has_exit:
-            if time.time() - last_time > 5:
-                w.activate()
-                last_time = time.time()
-                print 'Activated window.'
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(WindowEventLogger())
+            last_time = time.time()
+            while not w.has_exit:
+                if time.time() - last_time > 5:
+                    w.activate()
+                    last_time = time.time()
+                    print 'Activated window.'
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -74,12 +78,14 @@ class WINDOW_RESIZABLE(InteractiveTestCase):
     def test_resizable(self):
         self.width, self.height = 200, 200
         self.w = w = window.Window(self.width, self.height, resizable=True)
-        glClearColor(1, 1, 1, 1)
-        while not w.has_exit:
-            window_util.draw_client_border(w)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            glClearColor(1, 1, 1, 1)
+            while not w.has_exit:
+                window_util.draw_client_border(w)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -102,16 +108,17 @@ class WINDOW_MODE_SWITCH(InteractiveTestCase):
 
     def test_set_fullscreen(self):
         self.w = w = window.Window(200, 200)
+        try:
+            self.modes = w.screen.get_modes()
+            self.assertTrue(len(self.modes) > 0, msg='No modes available')
+            print 'Press a letter to switch to the corresponding mode:'
+            for i, mode in enumerate(self.modes):
+                print '%s: %s' % (chr(i + ord('a')), mode)
 
-        self.modes = w.screen.get_modes()
-        self.assertTrue(len(self.modes) > 0, msg='No modes available')
-        print 'Press a letter to switch to the corresponding mode:'
-        for i, mode in enumerate(self.modes):
-            print '%s: %s' % (chr(i + ord('a')), mode)
-
-        w.push_handlers(self)
-        self.on_expose()
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+            w.push_handlers(self)
+            self.on_expose()
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)

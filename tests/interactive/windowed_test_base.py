@@ -50,14 +50,16 @@ class WindowedTestCase(InteractiveTestCase):
         assert self.question
 
         self.window = w = Window(**self._get_window_options())
-        w.push_handlers(self)
-        self.render()
-        w.set_visible()
-        w.dispatch_events()
+        try:
+            w.push_handlers(self)
+            self.render()
+            w.set_visible()
+            w.dispatch_events()
 
-        self.user_verify(cleandoc(self.question))
+            self.user_verify(cleandoc(self.question))
 
-        w.close()
+        finally:
+            w.close()
 
     def _get_window_options(self):
         if self.window_options:

@@ -52,15 +52,17 @@ class WindowEventsTestCase(InteractiveTestCase):
 
         width, height = self.window_size
         self.window = w = Window(width, height, visible=False, resizable=False)
-        w.push_handlers(self)
-        self._render_question()
-        w.set_visible()
+        try:
+            w.push_handlers(self)
+            self._render_question()
+            w.set_visible()
 
-        while not self.finished and not w.has_exit:
-            self._draw()
-            w.dispatch_events()
+            while not self.finished and not w.has_exit:
+                self._draw()
+                w.dispatch_events()
 
-        w.close()
+        finally:
+            w.close()
 
         # TODO: Allow entering reason of failure if user aborts
         self.assertTrue(self.finished, msg="Test aborted")
@@ -479,10 +481,12 @@ class EVENT_BUTTON(InteractiveTestCase):
 
     def test_button(self):
         w = Window(200, 200)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -501,10 +505,12 @@ class EVENT_MOVE(InteractiveTestCase):
 
     def test_move(self):
         w = Window(200, 200)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -524,12 +530,14 @@ class EVENT_RESIZE(InteractiveTestCase):
 
     def test_resize(self):
         w = Window(200, 200, resizable=True)
-        w.push_handlers(self)
-        while not w.has_exit:
-            window_util.draw_client_border(w)
-            w.flip()
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                window_util.draw_client_border(w)
+                w.flip()
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -546,10 +554,12 @@ class EVENT_MOUSE_DRAG(InteractiveTestCase):
     """
     def test_mouse_drag(self):
         w = Window(200, 200)
-        w.push_handlers(WindowEventLogger())
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(WindowEventLogger())
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -572,10 +582,12 @@ class EVENT_MOUSEMOTION(InteractiveTestCase):
 
     def test_motion(self):
         w = Window(200, 200)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -601,10 +613,12 @@ class EVENT_MOUSE_SCROLL(InteractiveTestCase):
 
     def test_mouse_scroll(self):
         w = Window(200, 200)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -626,8 +640,10 @@ class EVENT_MOUSE_ENTER_LEAVE(InteractiveTestCase):
 
     def test_motion(self):
         w = Window(200, 200)
-        w.push_handlers(self)
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)

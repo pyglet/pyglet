@@ -65,12 +65,14 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
 
     def test_set_fullscreen(self):
         self.w = w = window.Window(200, 200)
-        w.push_handlers(self)
-        w.push_handlers(WindowEventLogger())
-        self.on_expose()
-        while not w.has_exit:
-            w.dispatch_events()
-        w.close()
+        try:
+            w.push_handlers(self)
+            w.push_handlers(WindowEventLogger())
+            self.on_expose()
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -103,12 +105,14 @@ class WINDOW_INITIAL_FULLSCREEN(InteractiveTestCase):
 
     def test_initial_fullscreen(self):
         self.w = window.Window(fullscreen=True)
-        self.w.push_handlers(self)
-        self.w.push_handlers(WindowEventLogger())
-        self.on_expose()
-        while not self.w.has_exit:
-            self.w.dispatch_events()
-        self.w.close()
+        try:
+            self.w.push_handlers(self)
+            self.w.push_handlers(WindowEventLogger())
+            self.on_expose()
+            while not self.w.has_exit:
+                self.w.dispatch_events()
+        finally:
+            self.w.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
 
@@ -152,9 +156,11 @@ class MULTIPLE_SCREEN(InteractiveTestCase):
         for i in range(len(self.screens)):
             self.index = i
             self.open_next_window()
-            self.on_expose()
-            self.w.dispatch_events()
-            self.user_verify('Do you see a {} full screen window on screen {}?'.format(
-                self.colour_names[i], i+1))
-            self.w.close()
+            try:
+                self.on_expose()
+                self.w.dispatch_events()
+                self.user_verify('Do you see a {} full screen window on screen {}?'.format(
+                    self.colour_names[i], i+1))
+            finally:
+                self.w.close()
 

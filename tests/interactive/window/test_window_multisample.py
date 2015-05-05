@@ -116,15 +116,17 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
 
     def test_multisample(self):
         self.set_window()
-        self.angle = 0
-        clock.set_fps_limit(30)
-        while not self.win.has_exit:
-            dt = clock.tick()
-            self.angle += dt
+        try:
+            self.angle = 0
+            clock.set_fps_limit(30)
+            while not self.win.has_exit:
+                dt = clock.tick()
+                self.angle += dt
 
-            self.render()
-            self.win.flip()
-            self.win.dispatch_events()
-        self.win.close()
+                self.render()
+                self.win.flip()
+                self.win.dispatch_events()
+        finally:
+            self.win.close()
         self.user_verify('Pass test?', take_screenshot=False)
 
