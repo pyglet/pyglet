@@ -1,11 +1,6 @@
-#!/usr/bin/python
-# $Id:$
-
 from pyglet.text import runlist
 
 import unittest
-
-__noninteractive = True
 
 class TestStyleRuns(unittest.TestCase):
     def check_value(self, runs, value):
@@ -296,6 +291,3 @@ class TestStyleRuns(unittest.TestCase):
         runs = self.create_runs2()
         runs.delete(6, 7)
         self.check_value(runs, 'aaaabbccc')
-
-if __name__ == '__main__':
-    unittest.main()
