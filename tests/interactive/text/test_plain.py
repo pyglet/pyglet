@@ -1,17 +1,4 @@
-#!/usr/bin/env python
-
-'''Test an unformatted document is editable.
-
-Examine and type over the text in the window that appears.  The window
-contents can be scrolled with the mouse wheel.
-
-Press ESC to exit the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: STYLE.py 1754 2008-02-10 13:26:52Z Alex.Holkner $'
-
-import unittest
+from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
 from pyglet import app
 from pyglet import gl
@@ -22,7 +9,7 @@ from pyglet.text import layout
 from pyglet import window
 from pyglet.window import key, mouse
 
-doctext = '''PLAIN.py test document.
+doctext = """PLAIN.py test document.
 
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Maecenas aliquet quam sit amet enim. Donec iaculis, magna vitae imperdiet convallis, lectus sem ultricies nulla, non fringilla quam felis tempus velit. Etiam et velit. Integer euismod. Aliquam a diam. Donec sed ante. Mauris enim pede, dapibus sed, dapibus vitae, consectetuer in, est. Donec aliquam risus eu ipsum. Integer et tortor. Ut accumsan risus sed ante.
 
@@ -33,7 +20,8 @@ Etiam quam. Aliquam at ligula. Aenean quis dolor. Suspendisse potenti. Sed lacin
 Aenean metus lectus, faucibus in, malesuada at, fringilla nec, risus. Integer enim. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Proin bibendum felis vel neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Donec ipsum dui, euismod at, dictum eu, congue tincidunt, urna. Sed quis odio. Integer aliquam pretium augue. Vivamus nonummy, dolor vel viverra rutrum, lacus dui congue pede, vel sodales dui diam nec libero. Morbi et leo sit amet quam sollicitudin laoreet. Vivamus suscipit.
 
 Duis arcu eros, iaculis ut, vehicula in, elementum a, sapien. Phasellus ut tellus. Integer feugiat nunc eget odio. Morbi accumsan nonummy ipsum. Donec condimentum, tortor non faucibus luctus, neque mi mollis magna, nec gravida risus elit nec ipsum. Donec nec sem. Maecenas varius libero quis diam. Curabitur pulvinar. Morbi at sem eget mauris tempor vulputate. Aenean eget turpis.
-'''
+"""
+
 
 class TestWindow(window.Window):
     def __init__(self, *args, **kwargs):
@@ -74,11 +62,18 @@ class TestWindow(window.Window):
         if symbol == key.TAB:
             self.caret.on_text('\t')
 
-class TestCase(unittest.TestCase):
-    def test(self):
+
+class PlainTextTestCase(InteractiveTestCase):
+    """Test an unformatted document is editable.
+
+    Examine and type over the text in the window that appears.  The window
+    contents can be scrolled with the mouse wheel.
+
+    Press ESC to exit the test.
+    """
+    def test_plain(self):
         self.window = TestWindow(resizable=True, visible=False)
         self.window.set_visible()
         app.run()
+        self.user_verify('Pass test?', take_screenshot=False)
 
-if __name__ == '__main__':
-    unittest.main()

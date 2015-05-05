@@ -1,23 +1,4 @@
-#!/usr/bin/env python
-
-'''Test that a paragraph is broken or not according the settings in an 
-incremental layout.
-
-Three windows will be open (one per test) showing:
-   - A paragraph in a single line, skipping newlines and no wrapping the line.
-   - A paragraph in multiple lines, but the long lines will no be wrapped.
-   - Last, a paragraph in multiple lines with wrapped lines.
-
-You can edit the text in each window and you must press ESC to close the window 
-and continue with the next window until finish the test.
-
-Press ESC to exit the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import unittest
+from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
 from pyglet import app
 from pyglet import gl
@@ -28,23 +9,24 @@ from pyglet.text import layout
 from pyglet import window
 from pyglet.window import key, mouse
 
-nonewline_nowrap = '''{font_size 24}Multiline=False\n
+nonewline_nowrap = """{font_size 24}Multiline=False\n
 {font_size 12}This paragraph contains a lots of newlines however,\n
 the parameter multiline=False makes pyglet {font_size 16}ignore{font_size 12} it.\n
 For example this line should be not in a new line.\n
-And because the parameter multiline=False (ignoring wrap_lines) the {font_size 16}long lines are not broken{font_size 12}, as you can see in this line.'''
+And because the parameter multiline=False (ignoring wrap_lines) the {font_size 16}long lines are not broken{font_size 12}, as you can see in this line."""
 
-newline_nowrap = '''{font_size 24}Multiline=True -- Wrap_line=False\n
+newline_nowrap = """{font_size 24}Multiline=True -- Wrap_line=False\n
 {font_size 12}This paragraph contains a lots of newlines however,\n
 the parameter multiline=True makes pyglet {font_size 16}accept{font_size 12} it.\n
 For example this line should be in a new line.\n
-And because the parameter wrap_lines=False the {font_size 16}long lines are not broken{font_size 12}, as you can see in this line.'''
+And because the parameter wrap_lines=False the {font_size 16}long lines are not broken{font_size 12}, as you can see in this line."""
 
-newline_wrap = '''{font_size 24}Multiline=True -- Wrap_line=True\n
+newline_wrap = """{font_size 24}Multiline=True -- Wrap_line=True\n
 {font_size 12}This paragraph contains a lots of newlines however,\n
 the parameter multiline=True makes pyglet {font_size 16}accept{font_size 12} it.\n
 For example this line should be in a new line.\n
-And because the parameter wrap_lines=False the {font_size 16}long lines are broken{font_size 12}, as you can see in this line.'''
+And because the parameter wrap_lines=False the {font_size 16}long lines are broken{font_size 12}, as you can see in this line."""
+
 
 class TestWindow(window.Window):
     def __init__(self, multiline, wrap_lines, msg, *args, **kwargs):
@@ -54,7 +36,7 @@ class TestWindow(window.Window):
         self.document = text.decode_attributed(msg)
         self.margin = 2
         self.layout = layout.IncrementalTextLayout(self.document,
-            (self.width - self.margin * 2), 
+            (self.width - self.margin * 2),
             self.height - self.margin * 2,
             multiline=multiline,
             wrap_lines=wrap_lines,
@@ -89,29 +71,45 @@ class TestWindow(window.Window):
         super(TestWindow, self).on_key_press(symbol, modifiers)
         if symbol == key.TAB:
             self.caret.on_text('\t')
-    
-class TestCase(unittest.TestCase):
+
+
+@requires_user_action
+class MultilineWrapTestCase(InteractiveTestCase):
+    """Test that a paragraph is broken or not according the settings in an
+    incremental layout.
+
+    Three windows will be open (one per test) showing:
+    - A paragraph in a single line, skipping newlines and no wrapping the line.
+    - A paragraph in multiple lines, but the long lines will no be wrapped.
+    - Last, a paragraph in multiple lines with wrapped lines.
+
+    You can edit the text in each window and you must press ESC to close the window
+    and continue with the next window until finish the test.
+
+    Press ESC to exit the test.
+    """
+
     def testMultilineFalse(self):
         self.window = TestWindow(
-              multiline=False, wrap_lines=False, 
+              multiline=False, wrap_lines=False,
               msg=nonewline_nowrap, resizable=True, visible=False)
         self.window.set_visible()
         app.run()
-    
+        self.user_verify('Pass test?', take_screenshot=False)
+
     def testMultilineTrueNoLimited(self):
         self.window = TestWindow(
-              multiline=True, wrap_lines=False, 
+              multiline=True, wrap_lines=False,
               msg=newline_nowrap, resizable=True, visible=False)
         self.window.set_visible()
         app.run()
-    
+        self.user_verify('Pass test?', take_screenshot=False)
+
     def testMultilineTrueLimited(self):
         self.window = TestWindow(
-              multiline=True, wrap_lines=True, 
+              multiline=True, wrap_lines=True,
               msg=newline_wrap, resizable=True, visible=False)
         self.window.set_visible()
         app.run()
+        self.user_verify('Pass test?', take_screenshot=False)
 
-
-if __name__ == '__main__':
-    unittest.main()

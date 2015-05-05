@@ -1,24 +1,9 @@
-#!/usr/bin/env python
-
-'''Test that inline elements can have their style changed, even after text
-has been deleted before them. [This triggers bug 538 if it has not yet been fixed.]
-
-To run the test, delete the first line, one character at a time,
-verifying that the element remains visible and no tracebacks are
-printed to the console.
-
-Press ESC to end the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import unittest
+from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
 import pyglet
 from pyglet.text import caret, document, layout
 
-doctext = '''ELEMENT.py test document.
+doctext = """ELEMENT.py test document.
 
 PLACE CURSOR AT THE END OF THE ABOVE LINE, AND DELETE ALL ITS TEXT,
 BY PRESSING THE DELETE KEY REPEATEDLY.
@@ -46,7 +31,7 @@ blandit non, iaculis vel, libero. Vestibulum sed metus vel velit scelerisque
 varius. Vivamus a tellus. Proin nec orci vel elit molestie venenatis. Aenean
 fringilla, lorem vel fringilla bibendum, nibh mi varius mi, eget semper ipsum
 ligula ut urna. Nullam tempor convallis augue. Sed at dui.
-'''
+"""
 
 element_index = doctext.index('[element here]')
 doctext = doctext.replace('[element here]', '')
@@ -103,12 +88,21 @@ class TestWindow(pyglet.window.Window):
 
         self.document.set_style(0, len(self.document.text), dict(bold = None)) ### trigger bug 538
 
-class TestCase(unittest.TestCase):
-    def test(self):
-        self.window = TestWindow(##resizable=True,
-            visible=False)
+@requires_user_action
+class InlineElementStyleChangeTestCase(InteractiveTestCase):
+    """Test that inline elements can have their style changed, even after text
+    has been deleted before them. [This triggers bug 538 if it has not yet been fixed.]
+
+    To run the test, delete the first line, one character at a time,
+    verifying that the element remains visible and no tracebacks are
+    printed to the console.
+
+    Press ESC to end the test.
+    """
+
+    def test_inline_elements_style_change(self):
+        self.window = TestWindow(visible=False)
         self.window.set_visible()
         pyglet.app.run()
+        self.user_verify('Pass test?', take_screenshot=False)
 
-if __name__ == '__main__':
-    unittest.main()

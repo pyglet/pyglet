@@ -1,24 +1,9 @@
-#!/usr/bin/env python
-
-'''Test that inline elements are positioned correctly and are repositioned
-within an incremental layout.
-
-Examine and type over the text in the window that appears.  There are several
-elements drawn with grey boxes.  These should maintain their sizes and
-relative document positions as the text is scrolled and edited.
-
-Press ESC to exit the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import unittest
+from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
 import pyglet
 from pyglet.text import caret, document, layout
 
-doctext = '''ELEMENT.py test document.
+doctext = """ELEMENT.py test document.
 
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Fusce venenatis
 pharetra libero. Phasellus lacinia nisi feugiat felis. Sed id magna in nisl
@@ -76,7 +61,8 @@ in, lacinia nec, massa. Curabitur lectus erat, volutpat at, volutpat at,
 pharetra nec, turpis. Donec ornare nonummy leo. Donec consectetuer posuere
 metus. Quisque tincidunt risus facilisis dui. Ut suscipit turpis in massa.
 Aliquam erat volutpat.
-'''
+"""
+
 
 class TestElement(document.InlineElement):
     vertex_list = None
@@ -97,7 +83,8 @@ class TestElement(document.InlineElement):
     def remove(self, layout):
         self.vertex_list.delete()
         del self.vertex_list
-        
+
+
 class TestWindow(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
         super(TestWindow, self).__init__(*args, **kwargs)
@@ -139,11 +126,21 @@ class TestWindow(pyglet.window.Window):
         if symbol == pyglet.window.key.TAB:
             self.caret.on_text('\t')
 
-class TestCase(unittest.TestCase):
-    def test(self):
+
+@requires_user_action
+class InlineElementTestCase(InteractiveTestCase):
+    """Test that inline elements are positioned correctly and are repositioned
+    within an incremental layout.
+
+    Examine and type over the text in the window that appears.  There are several
+    elements drawn with grey boxes.  These should maintain their sizes and
+    relative document positions as the text is scrolled and edited.
+
+    Press ESC to exit the test.
+    """
+    def test_inline_elements(self):
         self.window = TestWindow(resizable=True, visible=False)
         self.window.set_visible()
         pyglet.app.run()
+        self.user_verify('Pass test?', take_screenshot=False)
 
-if __name__ == '__main__':
-    unittest.main()

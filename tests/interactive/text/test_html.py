@@ -1,18 +1,9 @@
-#!/usr/bin/env python
+from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
-'''Test that HTML data is decoded into a formatted document.
-
-Press ESC to exit the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: ELEMENT.py 1764 2008-02-16 05:24:46Z Alex.Holkner $'
-
-import unittest
 import pyglet
 from pyglet.text import caret, document, layout
 
-doctext = '''
+doctext = """
 <html>
   <head>
     (metadata including title is not displayed.)
@@ -195,7 +186,7 @@ Hard line breaks
 
   </body>
 </html>
-'''
+"""
 
 class TestWindow(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
@@ -236,11 +227,16 @@ class TestWindow(pyglet.window.Window):
         if symbol == pyglet.window.key.TAB:
             self.caret.on_text('\t')
 
-class TestCase(unittest.TestCase):
-    def test(self):
+
+@requires_user_action
+class HtmlTestCase(InteractiveTestCase):
+    """Test that HTML data is decoded into a formatted document.
+
+    Press ESC to exit the test.
+    """
+    def test_html(self):
         self.window = TestWindow(resizable=True, visible=False)
         self.window.set_visible()
         pyglet.app.run()
+        self.user_verify('Pass test?', take_screenshot=False)
 
-if __name__ == '__main__':
-    unittest.main()

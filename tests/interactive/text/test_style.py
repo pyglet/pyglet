@@ -1,20 +1,4 @@
-#!/usr/bin/env python
-
-'''Test that character and paragraph-level style is adhered to correctly in
-incremental layout.
-
-Examine and type over the text in the window that appears.  The window
-contents can be scrolled with the mouse wheel.  There are no formatting
-commands, however formatting should be preserved as expected when entering or
-replacing text and resizing the window.
-
-Press ESC to exit the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import unittest
+from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
 from pyglet import app
 from pyglet import gl
@@ -25,7 +9,7 @@ from pyglet.text import layout
 from pyglet import window
 from pyglet.window import key, mouse
 
-doctext = '''STYLE.py test document.
+doctext = """STYLE.py test document.
 
 {font_size 24}This is 24pt text.{font_size 12}
 
@@ -177,7 +161,8 @@ in culpa qui officia deserunt mollit anim id est laborum.{}
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore
 eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt
 in culpa qui officia deserunt mollit anim id est laborum.{}
-'''
+"""
+
 
 class TestWindow(window.Window):
     def __init__(self, *args, **kwargs):
@@ -217,12 +202,23 @@ class TestWindow(window.Window):
         super(TestWindow, self).on_key_press(symbol, modifiers)
         if symbol == key.TAB:
             self.caret.on_text('\t')
-    
-class TestCase(unittest.TestCase):
+
+
+@requires_user_action
+class TextStyleTestCase(InteractiveTestCase):
+    """Test that character and paragraph-level style is adhered to correctly in
+    incremental layout.
+
+    Examine and type over the text in the window that appears.  The window
+    contents can be scrolled with the mouse wheel.  There are no formatting
+    commands, however formatting should be preserved as expected when entering or
+    replacing text and resizing the window.
+
+    Press ESC to exit the test.
+    """
     def test(self):
         self.window = TestWindow(resizable=True, visible=False)
         self.window.set_visible()
         app.run()
+        self.user_verify('Pass test?', take_screenshot=False)
 
-if __name__ == '__main__':
-    unittest.main()
