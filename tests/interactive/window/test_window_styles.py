@@ -1,7 +1,9 @@
 from pyglet import window
+from tests.interactive.interactive_test_base import requires_user_validation
 from tests.interactive.windowed_test_base import WindowedTestCase
 
 
+@requires_user_validation
 class WindowStylesTest(WindowedTestCase):
     """Test available window styles."""
     pass
