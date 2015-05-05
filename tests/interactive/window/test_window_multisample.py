@@ -6,6 +6,7 @@ from pyglet import window
 from pyglet import clock
 from pyglet.window import key
 
+@requires_user_action
 class WINDOW_MULTISAMPLE(InteractiveTestCase):
     """Test that a window can have multisample.
 

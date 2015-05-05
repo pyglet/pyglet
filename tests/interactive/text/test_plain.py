@@ -63,6 +63,7 @@ class TestWindow(window.Window):
             self.caret.on_text('\t')
 
 
+@requires_user_action
 class PlainTextTestCase(InteractiveTestCase):
     """Test an unformatted document is editable.
 
