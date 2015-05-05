@@ -1,19 +1,8 @@
-#!/usr/bin/env python
-
-'''Test content_valign = 'center' property of IncrementalTextLayout.
-
-Examine and type over the text in the window that appears.  The window
-contents can be scrolled with the mouse wheel.  When the content height
-is less than the window height, the content should be aligned to the center
-of the window.
-
-Press ESC to exit the test.
-'''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: STYLE.py 1754 2008-02-10 13:26:52Z Alex.Holkner $'
 
-import unittest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 from pyglet import app
 from pyglet import gl
@@ -24,7 +13,7 @@ from pyglet.text import layout
 from pyglet import window
 from pyglet.window import key, mouse
 
-doctext = '''CONTENT_VALIGN_CENTER.py test document.
+doctext = """test_content_valign.py test document.
 
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Maecenas aliquet quam sit amet enim. Donec iaculis, magna vitae imperdiet convallis, lectus sem ultricies nulla, non fringilla quam felis tempus velit. Etiam et velit. Integer euismod. Aliquam a diam. Donec sed ante. Mauris enim pede, dapibus sed, dapibus vitae, consectetuer in, est. Donec aliquam risus eu ipsum. Integer et tortor. Ut accumsan risus sed ante.
 
@@ -35,10 +24,10 @@ Etiam quam. Aliquam at ligula. Aenean quis dolor. Suspendisse potenti. Sed lacin
 Aenean metus lectus, faucibus in, malesuada at, fringilla nec, risus. Integer enim. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Proin bibendum felis vel neque. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Donec ipsum dui, euismod at, dictum eu, congue tincidunt, urna. Sed quis odio. Integer aliquam pretium augue. Vivamus nonummy, dolor vel viverra rutrum, lacus dui congue pede, vel sodales dui diam nec libero. Morbi et leo sit amet quam sollicitudin laoreet. Vivamus suscipit.
 
 Duis arcu eros, iaculis ut, vehicula in, elementum a, sapien. Phasellus ut tellus. Integer feugiat nunc eget odio. Morbi accumsan nonummy ipsum. Donec condimentum, tortor non faucibus luctus, neque mi mollis magna, nec gravida risus elit nec ipsum. Donec nec sem. Maecenas varius libero quis diam. Curabitur pulvinar. Morbi at sem eget mauris tempor vulputate. Aenean eget turpis.
-'''
+"""
 
 class TestWindow(window.Window):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, content_valign, *args, **kwargs):
         super(TestWindow, self).__init__(*args, **kwargs)
 
         self.batch = graphics.Batch()
@@ -48,7 +37,7 @@ class TestWindow(window.Window):
             self.width - self.margin * 2, self.height - self.margin * 2,
             multiline=True,
             batch=self.batch)
-        self.layout.content_valign = 'center'
+        self.layout.content_valign = content_valign
         self.caret = caret.Caret(self.layout)
         self.push_handlers(self.caret)
 
@@ -77,11 +66,34 @@ class TestWindow(window.Window):
         if symbol == key.TAB:
             self.caret.on_text('\t')
 
-class TestCase(unittest.TestCase):
-    def test(self):
-        self.window = TestWindow(resizable=True, visible=False)
+class ContentValignTestCase(InteractiveTestCase):
+    def test_content_valign_bottom(self):
+        """Test content_valign = 'bottom' property of IncrementalTextLayout.
+
+        Examine and type over the text in the window that appears.  The window
+        contents can be scrolled with the mouse wheel.  When the content height
+        is less than the window height, the content should be aligned to the bottom
+        of the window.
+
+        Press ESC to exit the test.
+        """
+        self.window = TestWindow(resizable=True, visible=False, content_valign='bottom')
         self.window.set_visible()
         app.run()
+        self.user_verify('Test passed?', take_screenshot=False)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_content_valign_center(self):
+        """Test content_valign = 'center' property of IncrementalTextLayout.
+
+        Examine and type over the text in the window that appears.  The window
+        contents can be scrolled with the mouse wheel.  When the content height
+        is less than the window height, the content should be aligned to the center
+        of the window.
+
+        Press ESC to exit the test.
+        """
+        self.window = TestWindow(resizable=True, visible=False, content_valign='center')
+        self.window.set_visible()
+        app.run()
+        self.user_verify('Test passed?', take_screenshot=False)
+
