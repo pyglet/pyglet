@@ -3,7 +3,7 @@
 
 import unittest
 import pyglet
-from tests.mock import Mock, MagicMock
+from tests import mock
 from contextlib import contextmanager
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
 
@@ -19,7 +19,7 @@ class EventTestCase(unittest.TestCase):
 
     @contextmanager
     def mock_context(self, called=True):
-        self.mock = Mock(mock_event=Mock())
+        self.mock = mock.Mock(mock_event=mock.Mock())
         self.mock.__name__ = 'mock_event'
         self.d.register_event_type('mock_event')
         yield
