@@ -1,5 +1,7 @@
 """Tests for window settings."""
 
+import time
+
 from tests.interactive.interactive_test_base import (InteractiveTestCase,
         requires_user_action, requires_user_validation)
 from tests.interactive.window import window_util
@@ -491,3 +493,75 @@ class WINDOW_SET_VSYNC(InteractiveTestCase):
             self.w1.dispatch_events()
         self.w1.close()
         self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class WINDOW_SET_CAPTION(InteractiveTestCase):
+    """Test that the window caption can be set.
+
+    Expected behaviour:
+        Two windows will be opened, one with the caption "Window caption 1"
+        counting up every second; the other with a Unicode string including
+        some non-ASCII characters.
+
+        Press escape or close either window to finished the test.
+    """
+    def test_caption(self):
+        w1 = Window(400, 200, resizable=True)
+        w2 = Window(400, 200, resizable=True)
+        count = 1
+        w1.set_caption('Window caption %d' % count)
+        w2.set_caption(u'\u00bfHabla espa\u00f1ol?')
+        last_time = time.time()
+        while not (w1.has_exit or w2.has_exit):
+            if time.time() - last_time > 1:
+                count += 1
+                w1.set_caption('Window caption %d' % count)
+                last_time = time.time()
+            w1.dispatch_events()
+            w2.dispatch_events()
+        w1.close()
+        w2.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@requires_user_action
+class WINDOW_FIXED_SET_SIZE(InteractiveTestCase):
+    """Test that a non-resizable window's size can be set.
+
+    Expected behaviour:
+        One window will be opened.  The window's dimensions will be printed
+        to the terminal.
+
+        - press "x" to increase the width
+        - press "X" to decrease the width
+        - press "y" to increase the height
+        - press "Y" to decrease the height
+
+        You should see a green border inside the window but no red.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_key_press(self, symbol, modifiers):
+        delta = 20
+        if modifiers & key.MOD_SHIFT:
+            delta = -delta
+        if symbol == key.X:
+            self.width += delta
+        elif symbol == key.Y:
+            self.height += delta
+        self.w.set_size(self.width, self.height)
+        print 'Window size set to %dx%d.' % (self.width, self.height)
+
+    def test_set_size(self):
+        self.width, self.height = 200, 200
+        self.w = w = Window(self.width, self.height)
+        w.push_handlers(self)
+        while not w.has_exit:
+            window_util.draw_client_border(w)
+            w.flip()
+            w.dispatch_events()
+        w.close()
+        self.user_verify('Pass test?', take_screenshot=False)
+
+

@@ -1,32 +1,28 @@
-#!/usr/bin/env python
-'''Test that a window can have multisample.
-
-A window will be opened containing two rotating squares.  Initially,
-there will be no multisampling (the edges will look "jaggy").  Press:
-
-    * M to toggle multisampling on/off
-    * S to increase samples (2, 4, 6, 8, 10, ...)
-    * Shift+S to decrease samples
-
-Each time sample_buffers or samples is modified, the window will be recreated.
-Watch the console for success and failure messages.  If the multisample
-options are not supported, a "Failure" message will be printed and the window
-will be left as-is.
-
-Press ESC to end the test.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: WINDOW_OPEN.py 750 2007-03-17 01:16:12Z Alex.Holkner $'
-
-import unittest
+from tests.interactive.interactive_test_base import (InteractiveTestCase,
+        requires_user_action)
 
 from pyglet.gl import *
 from pyglet import window
 from pyglet import clock
 from pyglet.window import key
 
-class WINDOW_MULTISAMPLE(unittest.TestCase):
+class WINDOW_MULTISAMPLE(InteractiveTestCase):
+    """Test that a window can have multisample.
+
+    A window will be opened containing two rotating squares.  Initially,
+    there will be no multisampling (the edges will look "jaggy").  Press:
+
+        * M to toggle multisampling on/off
+        * S to increase samples (2, 4, 6, 8, 10, ...)
+        * Shift+S to decrease samples
+
+    Each time sample_buffers or samples is modified, the window will be recreated.
+    Watch the console for success and failure messages.  If the multisample
+    options are not supported, a "Failure" message will be printed and the window
+    will be left as-is.
+
+    Press ESC to end the test.
+    """
     win = None
     width = 640
     height = 480
@@ -40,13 +36,13 @@ class WINDOW_MULTISAMPLE(unittest.TestCase):
         try:
             if self.multisample:
                 print 'Attempting samples=%d...' % self.samples,
-                config = Config(sample_buffers=1, 
+                config = Config(sample_buffers=1,
                                 samples=self.samples,
                                 double_buffer=True)
             else:
                 print 'Disabling multisample...',
                 config = Config(double_buffer=True)
-            self.win = window.Window(self.width, self.height, 
+            self.win = window.Window(self.width, self.height,
                                      vsync=True,
                                      config=config)
             self.win.switch_to()
@@ -57,7 +53,7 @@ class WINDOW_MULTISAMPLE(unittest.TestCase):
                     glEnable(GL_MULTISAMPLE_ARB)
                 else:
                     glDisable(GL_MULTISAMPLE_ARB)
-            
+
             if oldwindow:
                 oldwindow.close()
 
@@ -115,7 +111,7 @@ class WINDOW_MULTISAMPLE(unittest.TestCase):
         glVertex2f(size, -size)
         glVertex2f(size, size)
         glVertex2f(-size, size)
-        glEnd() 
+        glEnd()
 
     def test_multisample(self):
         self.set_window()
@@ -124,12 +120,10 @@ class WINDOW_MULTISAMPLE(unittest.TestCase):
         while not self.win.has_exit:
             dt = clock.tick()
             self.angle += dt
-            
+
             self.render()
             self.win.flip()
             self.win.dispatch_events()
         self.win.close()
-
-if __name__ == '__main__':
-    unittest.main()
+        self.user_verify('Pass test?', take_screenshot=False)
 
