@@ -11,6 +11,7 @@ from tests.interactive.interactive_test_base import InteractiveTestCase, require
 import tempfile
 import unittest
 
+import pyglet
 from pyglet import window
 from pyglet.gl import *
 
