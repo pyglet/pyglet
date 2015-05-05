@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-
-'''Test that an empty document doesn't break.
-'''
-
-__docformat__ = 'restructuredtext'
-
-__noninteractive = True
-
 import unittest
 
 from pyglet import gl
@@ -14,6 +5,7 @@ from pyglet import graphics
 from pyglet.text import document
 from pyglet.text import layout
 from pyglet import window
+
 
 class TestWindow(window.Window):
     def __init__(self, doctype, *args, **kwargs):
@@ -29,16 +21,31 @@ class TestWindow(window.Window):
         self.clear()
         self.batch.draw()
 
-class TestCase(unittest.TestCase):
-    def testUnformatted(self):
+    def set_bold(self):
+        self.document.set_style(0, len(self.document.text), {"bold": True})
+
+
+class EmptyDocumentTest(unittest.TestCase):
+    """Test that an empty document doesn't break."""
+    def test_unformatted(self):
         self.window = TestWindow(document.UnformattedDocument)
         self.window.dispatch_events()
         self.window.close()
 
-    def testFormatted(self):
+    def test_formatted(self):
         self.window = TestWindow(document.FormattedDocument)
         self.window.dispatch_events()
         self.window.close()
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_bold_unformatted(self):
+        self.window = TestWindow(document.UnformattedDocument)
+        self.window.set_bold()
+        self.window.dispatch_events()
+        self.window.close()
+
+    def test_bold_formatted(self):
+        self.window = TestWindow(document.FormattedDocument)
+        self.window.set_bold()
+        self.window.dispatch_events()
+        self.window.close()
+
