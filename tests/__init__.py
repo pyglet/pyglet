@@ -2,8 +2,6 @@
 Test Suite for Pyglet
 =====================
 
-NOTE: This description is desired implementation. Still in progress.
-
 The test suite is divided in the following segments:
     - unit tests
     - integration tests
@@ -13,7 +11,7 @@ The unit and integration tests should run without user interaction. Unit tests a
 functionality contained in a single module/entity, while integration tests test integration
 between different modules and towards the system.
 Interactive tests require human interaction to validate the outcomes. They are mostly about
-verifying display of rendering.
+verifying display of rendering. Optionally they can be run without interaction.
 
 If any test requires external data files, please put them in the appropriate data directory. This
 way the tests can share a limited set of resources.
