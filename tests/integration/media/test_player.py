@@ -9,7 +9,7 @@ import time
 import unittest
 
 import pyglet
-pyglet.options['debug_media'] = True
+#pyglet.options['debug_media'] = True
 
 import pyglet.app  # Will be patched
 from pyglet.media import Player
@@ -29,7 +29,6 @@ class EventForwarder(threading.Thread):
                 break
             else:
                 destination.dispatch_event(event_type, *args)
-        print('event loop stopped')
 
     def post_event(self, destination, event_type, *args):
         self.queue.put((destination, event_type, args))

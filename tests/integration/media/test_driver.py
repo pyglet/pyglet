@@ -6,8 +6,8 @@ import time
 import unittest
 
 import pyglet
-pyglet.options['debug_media'] = True
-pyglet.options['debug_media_buffers'] = True
+#pyglet.options['debug_media'] = True
+#pyglet.options['debug_media_buffers'] = True
 
 import pyglet.app  # Make sure it is loaded before patching it
 from pyglet.media.drivers import silent

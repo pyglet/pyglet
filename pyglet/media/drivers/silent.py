@@ -243,7 +243,8 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             self._update_time()
 
             if self._audio_buffer.is_empty():
-                print('Out of packets')
+                if _debug:
+                    print('Out of packets')
                 timestamp = self.get_time()
                 MediaEvent(timestamp, 'on_eos')._sync_dispatch_to_player(self.player)
                 MediaEvent(timestamp, 'on_source_group_eos')._sync_dispatch_to_player(self.player)
