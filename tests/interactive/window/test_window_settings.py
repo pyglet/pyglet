@@ -153,7 +153,7 @@ class WINDOW_SET_ICON(InteractiveTestCase):
         try:
             w.set_icon(image.load(self.get_test_data_file('images', 'icon1.png')))
             w.dispatch_events()
-            self.user_verify('Does the window have a yellow A icon?')
+            self.user_verify('Does the window have a yellow A icon?', take_screenshot=False)
         finally:
             w.close()
 
@@ -186,7 +186,7 @@ class WINDOW_SET_ICON_SIZES(InteractiveTestCase):
                     image.load(self.get_test_data_file('images', 'icon_size4.png')),
                     image.load(self.get_test_data_file('images', 'icon_size5.png')))
             w.dispatch_events()
-            self.user_verify('Does the window have the icon corresponding to the correct size?')
+            self.user_verify('Does the window have the icon corresponding to the correct size?', take_screenshot=False)
         finally:
             w.close()
 

@@ -21,15 +21,18 @@ class WINDOW_MINIMIZE_MAXIMIZE(InteractiveTestCase):
         self.w = w = window.Window(self.width, self.height, resizable=True)
         try:
             w.dispatch_events()
-            self.user_verify('Is the window visible and not maximized?')
+            self.user_verify('Is the window visible and not maximized?',
+                             take_screenshot=False)
 
             w.maximize()
             w.dispatch_events()
-            self.user_verify('Is the window maximized?')
+            self.user_verify('Is the window maximized?',
+                             take_screenshot=False)
 
             w.minimize()
             w.dispatch_events()
-            self.user_verify('Is the window minimized?')
+            self.user_verify('Is the window minimized?',
+                             take_screenshot=False)
 
         finally:
             w.close()

@@ -20,6 +20,7 @@ class WindowedTestCase(InteractiveTestCase):
     window_options = None
     window = None
     question = None
+    take_screenshot = True
 
     # Methods to override in implementations
     def on_expose(self):
@@ -56,7 +57,7 @@ class WindowedTestCase(InteractiveTestCase):
             w.set_visible()
             w.dispatch_events()
 
-            self.user_verify(cleandoc(self.question))
+            self.user_verify(cleandoc(self.question), self.take_screenshot)
 
         finally:
             w.close()

@@ -82,7 +82,7 @@ class SoundMediaPlayerTestCase(InteractiveTestCase):
         player.play()
 
         sleep(2.0)
-        self.user_verify('Did you hear white noise for 1 second and then a tone at 440 Hz (A above middle C)?')
+        self.user_verify('Did you hear white noise for 1 second and then a tone at 440 Hz (A above middle C)?', take_screenshot=False)
 
     def test_static_source_wrapping(self):
         """Test that a sound can be recursively wrappend inside a static source."""
