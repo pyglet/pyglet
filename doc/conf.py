@@ -88,6 +88,9 @@ def skip_member(member, obj):
 
     module = obj.__name__
 
+    if module.startswith("tests"):
+        if ".test_" in module: return True
+
     if ".win32" in module: return True
     if ".carbon" in module: return True
     if ".cocoa" in module: return True
