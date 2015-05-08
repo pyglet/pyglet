@@ -12,7 +12,7 @@ Windows, OS X and Linux.
    :hidden: 
 
    pyglet
-   tests.test
+   tests
 
 Programming Guide
 ==================
@@ -52,7 +52,7 @@ Internals
 .. toctree::
    :maxdepth: 2
 
-   Testing Framework <api/tests.test>
+   Testing Framework <api/tests>
 
 
 
