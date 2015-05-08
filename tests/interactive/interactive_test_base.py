@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import array
+import functools
 import inspect
 import os
 import pyglet
@@ -86,24 +87,45 @@ class InteractiveTestCase(unittest.TestCase):
     """
 
     def __init__(self, methodName):
-        super(InteractiveTestCase, self).__init__(methodName='_run_test')
-        self.__test_method_name = methodName
-
+        super(InteractiveTestCase, self).__init__(methodName=methodName)
         self._screenshots = []
 
-    def _run_test(self):
+        self._wrap_test_method(methodName)
+
+    def _wrap_test_method(self, method_name):
+        """Wrap the test method in extra functionality required for interactive tests. Adds the
+        following functionality:
+        - filtering on decorators
+        - comparing and committing screenshots in case of a passed test
+
+        The set up steps are in the wrapper to prevent missing them when a test overrides the
+        setUp without calling the super class implementation. The tear down steps are there
+        because there is no access to the test result to determine whether the test has passed.
+
+        The wrapper insures that the names reported for the test methods are correct.
         """
-        Internal main body of the test. Kicks off the test to run either interactive or not.
-        """
+        test_method = getattr(self.__class__, method_name)
+        def _wrapper(self):
+            self._interactive_test_set_up()
+            test_method(self)
+            # If this line executes, test has passed
+            self._interactive_test_passed()
+
+        functools.update_wrapper(_wrapper, test_method)
+        setattr(self.__class__, method_name, _wrapper)
+
+    def _interactive_test_set_up(self):
+        """Actions to perform before starting an interactive test case."""
         self._filter_test()
 
-        test_method = getattr(self, self.__test_method_name, None)
-        if not test_method:
-            self.fail('Unknown test method: {}'.format(self.__test_method_name))
         if interactive:
-            self._show_test_header(test_method)
-        test_method()
+            self._show_test_header()
 
+    def _interactive_test_passed(self):
+        """Actions to perform after an interactive test is succesful."""
+        self._check_screenshots()
+
+    def _check_screenshots(self):
         # If we arrive here, there have not been any failures yet
         if interactive:
             self._commit_screenshots()
@@ -229,7 +251,7 @@ class InteractiveTestCase(unittest.TestCase):
         """
         return '{}.{}.{}.{:03d}.png'.format(self.__class__.__module__,
                                         self.__class__.__name__,
-                                        self.__test_method_name,
+                                        self._testMethodName,
                                         len(self._screenshots)+1)
 
     def _get_screenshot_session_file_name(self, screenshot_name):
@@ -238,11 +260,11 @@ class InteractiveTestCase(unittest.TestCase):
     def _get_screenshot_committed_file_name(self, screenshot_name):
         return os.path.join(committed_screenshot_path, screenshot_name)
 
-    def _show_test_header(self, test_method):
+    def _show_test_header(self):
         print('='*80)
-        print('{}.{}'.format(self.__class__.__name__, test_method.__name__))
-        if test_method.__doc__:
-            print(inspect.getdoc(test_method))
+        print('{}.{}'.format(self.__class__.__name__, self._testMethodName))
+        if self._testMethodDoc:
+            print(inspect.cleandoc(self._testMethodDoc))
         elif self.__doc__:
             print(inspect.getdoc(self))
         print('-'*80)
