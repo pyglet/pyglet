@@ -73,19 +73,21 @@ skip_modules = {"pyglet": {
                                               "pulse"],
                      "pyglet.media.sources": ["avbin"],
                      "pyglet.window": implementations,
+                     },
+                "tests": {
+                     "tests.extlibs": None,
+                     "tests.integration": None,
+                     "tests.unit": None
                      }
                }
 
 
-             
 # Things that should not be documented
 
 def skip_member(member, obj):
 
     module = obj.__name__
 
-    if module=="tests.test": return True
-        
     if ".win32" in module: return True
     if ".carbon" in module: return True
     if ".cocoa" in module: return True
@@ -104,7 +106,7 @@ def skip_member(member, obj):
     if module!="pyglet.gl.gl":
         if member in ["DEFAULT_MODE", "current_context"]:
             return True
-    
+
     if member.startswith("PFN"): return True
     if member.startswith("GL_"): return True
     if member.startswith("GLU_"): return True

@@ -47,12 +47,8 @@ Internals
    internal/dist
    programming_guide/distribution
    internal/doc
+   internal/testing
 
-
-.. toctree::
-   :maxdepth: 2
-
-   Testing Framework <api/tests>
 
 
 

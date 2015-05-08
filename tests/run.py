@@ -1,7 +1,6 @@
 """
-Test runner that wraps around unittest.
+For documentation please see doc/internal/testing.txt
 """
-
 import argparse
 import imp
 import os
