@@ -51,6 +51,8 @@ import pyglet
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
 
+_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
 if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
     _local_lib_paths = [script_path, os.path.join(script_path, 'lib'),]
@@ -83,6 +85,19 @@ class _TraceLibrary(object):
         f = _TraceFunction(func)
         return f
 
+if _is_epydoc:
+    class LibraryMock(object):
+        """Mock library used when generating documentation."""
+        def __getattr__(self, name):
+            return LibraryMock()
+
+        def __setattr__(self, name, value):
+            pass
+
+        def __call__(self, *args, **kwargs):
+            return LibraryMock()
+
+
 class LibraryLoader(object):
     darwin_not_found_error = "image not found"
     linux_not_found_error  = "No such file or directory"
@@ -94,6 +109,9 @@ class LibraryLoader(object):
 
         Raises ImportError if library is not found.
         '''
+        if _is_epydoc:
+            return LibraryMock()
+
         if 'framework' in kwargs and self.platform == 'darwin':
             return self.load_framework(kwargs['framework'])
 
