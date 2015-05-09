@@ -1,61 +1,48 @@
 Making a pyglet release
------------------------
+=======================
 
-1. hg pull -u
-2. Update version string in setup.py, pyglet/__init__.py and CHANGELOG
-   Update README, and the two readme.rtf files on Windows and Mac.
-3. hg push
-4. Mac OS X release (requires OS X 10.5 and developer tools installed)::
+#. Clone pyglet into a new directory
 
-           sudo tools/genmpkg/genmpkg.sh
+#. Make sure it is up to date::
 
-   Creates .dmg in dist/
+    hg pull -u
 
-   NOTE for 10.5:  bdist_mpkg doesn't quite work, needs a hack to avoid
-   doing the admin write check (you'll see when you get the
-   traceback).
+#. Update version string in the following files and commit:
 
-5. Windows release (requires WIX 3.0.  WIX bin/ must be in PATH)::
+   * setup.py
+   * pyglet/__init__.py
+   * doc/conf.py
 
-        python tools/genmsi/genmsi.py
-  
-   Creates .msi in dist/
+#. Tag the current changelist with the version number::
 
-6. Linux - You will need docutils, the docbook writer from the docutils sandbox, inkscape, fop, docbook-xsl, and perhaps more:
+    hg tag pyglet-x.y.z
 
-   	./make.py clean ; ./make.py docs
+#. Push the changes to the central repo::
 
-   Creates doc package in dist/
+    hg push
 
-7. Source, egg and doc releases:
+#. Build the wheels and documentation::
 
-        tools/gendist.sh
+    ./make.py clean
+    ./make.py dist
 
-   Creates .eggs, .tar.gzs and .zips in dist/
+#. Upload the wheels, zip and tarball to PyPI::
 
-8. Upload files to googlecode::
+    twine upload dist/pyglet-x.y.z*
 
-        python tools/upload/upload.py
+#. Upload the documentation to BitBucket
 
-9. svn copy https://pyglet.googlecode.com/svn/trunk \
-            https://pyglet.googlecode.com/svn/tags/pyglet-**VERSION**
-10. Copy URLs reported from upload into website/download.xml
-11. Add news item to website/news-items.xml
-12. Regenerate website with tools/genwebsite.sh
-13. Update pyglet.org from website/dist/ to /: 
-      download.html, news.html, news.xml, index.html
-    From doc/ to doc/:
-      html/api/*,  html/programming_guide/*
-      pdf/programming_guide.pdf
-14. python setup.py register
-15. Tell people!
+#. Start a build of the documentation on https://readthedocs.org/builds/pyglet
 
-Untested AFAIK:
-  * Source distros on any platform
-  * Eggs on any platform: both to be installed and without installation
-    ('require')
-  * Windows Vista
-  * Upgrade of Mac OS X install (after changing version string to beta, etc)
-  * Mac OS X with Python 2.4 + ctypes (ctypes didn't compile on my mac).
-  * Mac OS X 10.3
+#. Update the download page on BitBucket: https://bitbucket.org/pyglet/pyglet/wiki/Download
+ 
+#. Tell people!
+
+Major version increase
+----------------------
+When preparing for a major version you might also want to consider the following:
+
+ * Create a maintenance branch for the major version
+ * Add a readthedocs configuration for that maintenance branch
+ * Point the url in setup.py to the maintenance branch documentation
 
