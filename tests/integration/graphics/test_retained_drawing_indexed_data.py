@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """Tests vertex list drawing using indexed data.
 """
+from __future__ import absolute_import
 import unittest
 
 import pyglet
 
-from graphics_common import GraphicsIndexedGenericTestCase, get_feedback, GL_TRIANGLES
+from .graphics_common import GraphicsIndexedGenericTestCase, get_feedback, GL_TRIANGLES
 
 
 class RetainedDrawingIndexedDataTestCase(GraphicsIndexedGenericTestCase, unittest.TestCase):

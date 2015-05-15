@@ -1,4 +1,5 @@
 """Tests for window settings."""
+from __future__ import print_function
 
 import time
 
@@ -35,17 +36,17 @@ class WINDOW_SET_EXCLUSIVE_KEYBOARD(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_key_press(self, symbol, modifiers):
-        print 'Pressed %s with modifiers %s' % \
-            (key.symbol_string(symbol), key.modifiers_string(modifiers))
+        print('Pressed %s with modifiers %s' % \
+            (key.symbol_string(symbol), key.modifiers_string(modifiers)))
 
         if symbol == key.E:
             exclusive = not (modifiers & key.MOD_SHIFT)
             self.w.set_exclusive_keyboard(exclusive)
-            print 'Exclusive keyboard is now %r' % exclusive
+            print('Exclusive keyboard is now %r' % exclusive)
 
     def on_key_release(self, symbol, modifiers):
-        print 'Released %s with modifiers %s' % \
-            (key.symbol_string(symbol), key.modifiers_string(modifiers))
+        print('Released %s with modifiers %s' % \
+            (key.symbol_string(symbol), key.modifiers_string(modifiers)))
 
     def test_set_exclusive_keyboard(self):
         self.width, self.height = 200, 200
@@ -82,10 +83,10 @@ class WINDOW_SET_EXCLUSIVE_MOUSE(InteractiveTestCase):
         if symbol == key.E:
             exclusive = not (modifiers & key.MOD_SHIFT)
             self.w.set_exclusive_mouse(exclusive)
-            print 'Exclusive mouse is now %r' % exclusive
+            print('Exclusive mouse is now %r' % exclusive)
 
     def on_mouse_motion(self, x, y, dx, dy):
-        print 'on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy)
+        print('on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy))
 
     def test_set_exclusive_mouse(self):
         self.width, self.height = 200, 200
@@ -115,10 +116,10 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
     """
     def on_key_press(self, symbol, modifiers):
         if symbol == key.F:
-            print 'Setting fullscreen.'
+            print('Setting fullscreen.')
             self.w.set_fullscreen(True)
         elif symbol == key.G:
-            print 'Leaving fullscreen.'
+            print('Leaving fullscreen.')
             self.w.set_fullscreen(False)
 
     def on_expose(self):
@@ -214,7 +215,7 @@ class WINDOW_SET_LOCATION(InteractiveTestCase):
         if symbol == key.DOWN:
             y += 10
         self.w.set_location(x, y)
-        print 'Window location set to %dx%d.' % (x, y)
+        print('Window location set to %dx%d.' % (x, y))
         print('Window location now: %dx%d.' % self.w.get_location())
         self.assertSequenceEqual((x, y), self.w.get_location())
 
@@ -246,16 +247,16 @@ class WINDOW_SET_MIN_MAX_SIZE(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_resize(self, width, height):
-        print 'Window size is %dx%d.' % (width, height)
+        print('Window size is %dx%d.' % (width, height))
         self.width, self.height = width, height
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.N:
             self.w.set_minimum_size(self.width, self.height)
-            print 'Minimum size set to %dx%d.' % (self.width, self.height)
+            print('Minimum size set to %dx%d.' % (self.width, self.height))
         elif symbol == key.X:
             self.w.set_maximum_size(self.width, self.height)
-            print 'Maximum size set to %dx%d.' % (self.width, self.height)
+            print('Maximum size set to %dx%d.' % (self.width, self.height))
 
     def test_min_max_size(self):
         self.width, self.height = 200, 200
@@ -282,7 +283,7 @@ class WINDOW_SET_MOUSE_CURSOR(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_mouse_motion(self, x, y, dx, dy):
-        print 'on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy)
+        print('on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy))
 
     def test_set_mouse_cursor(self):
         self.width, self.height = 200, 200
@@ -347,7 +348,7 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(InteractiveTestCase):
             self.i = (self.i - 1) % len(names)
         cursor = self.w.get_system_mouse_cursor(names[self.i])
         self.w.set_mouse_cursor(cursor)
-        print 'Set cursor to "%s"' % names[self.i]
+        print('Set cursor to "%s"' % names[self.i])
 
         return True
 
@@ -380,10 +381,10 @@ class WINDOW_SET_MOUSE_VISIBLE(InteractiveTestCase):
         if symbol == key.V:
             visible = (modifiers & key.MOD_SHIFT)
             self.w.set_mouse_visible(visible)
-            print 'Mouse is now %s' % (visible and 'visible' or 'hidden')
+            print('Mouse is now %s' % (visible and 'visible' or 'hidden'))
 
     def on_mouse_motion(self, x, y, dx, dy):
-        print 'on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy)
+        print('on_mousemotion(x=%f, y=%f, dx=%f, dy=%f)' % (x, y, dx, dy))
 
     def test_set_visible(self):
         self.width, self.height = 200, 200
@@ -423,7 +424,7 @@ class WINDOW_SET_SIZE(InteractiveTestCase):
         elif symbol == key.Y:
             self.height += delta
         self.w.set_size(self.width, self.height)
-        print 'Window size set to %dx%d.' % (self.width, self.height)
+        print('Window size set to %dx%d.' % (self.width, self.height))
 
     def test_set_size(self):
         self.width, self.height = 200, 200
@@ -499,7 +500,7 @@ class WINDOW_SET_VSYNC(InteractiveTestCase):
         if symbol == key.V:
             vsync = not self.w1.vsync
             self.w1.set_vsync(vsync)
-            print 'vsync is %r' % self.w1.vsync
+            print('vsync is %r' % self.w1.vsync)
 
     def draw_window(self, window, colour):
         window.switch_to()
@@ -511,7 +512,7 @@ class WINDOW_SET_VSYNC(InteractiveTestCase):
         self.w1 = self.open_window()
         try:
             self.w1.push_handlers(self)
-            print 'vsync is %r' % self.w1.vsync
+            print('vsync is %r' % self.w1.vsync)
             while not self.w1.has_exit:
                 self.color_index = 1 - self.color_index
                 self.draw_window(self.w1, self.colors[self.color_index])
@@ -579,7 +580,7 @@ class WINDOW_FIXED_SET_SIZE(InteractiveTestCase):
         elif symbol == key.Y:
             self.height += delta
         self.w.set_size(self.width, self.height)
-        print 'Window size set to %dx%d.' % (self.width, self.height)
+        print('Window size set to %dx%d.' % (self.width, self.height))
 
     def test_set_size(self):
         self.width, self.height = 200, 200

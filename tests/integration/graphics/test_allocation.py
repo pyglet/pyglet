@@ -44,11 +44,11 @@ class RegionAllocator(object):
         regions = iter(self.regions)
         
         blocks = iter(zip(starts, sizes))
-        block_start, block_size = blocks.next()
+        block_start, block_size = next(blocks)
         block_used = False
         try:
             while True:
-                region = regions.next()
+                region = next(regions)
                 block_used = True
                 if region.start < block_start:
                     fixture.fail('Start of %r was not covered at %d' % (
@@ -62,7 +62,7 @@ class RegionAllocator(object):
                     fixture.fail('%r extended past end of block by %d' % \
                         (region, -block_size))
                 elif block_size == 0:
-                    block_start, block_size = blocks.next()
+                    block_start, block_size = next(blocks)
                     block_used = False
         except StopIteration:
             pass
@@ -71,13 +71,13 @@ class RegionAllocator(object):
             fixture.fail('Uncovered block(s) from %d' % block_start)
                 
         try:
-            block_start, block_size = blocks.next()
+            block_start, block_size = next(blocks)
             fixture.fail('Uncovered block(s) from %d' % block_start)
         except StopIteration:
             pass
 
         try:
-            region = regions.next()
+            region = next(regions)
             fixture.fail('%r was not covered')
         except StopIteration:
             pass
@@ -121,14 +121,14 @@ class RegionAllocator(object):
     def force_alloc(self, size):
         try:
             return self.alloc(size)
-        except allocation.AllocatorMemoryException, e:
+        except allocation.AllocatorMemoryException as e:
             self.allocator.set_capacity(e.requested_capacity)
             return self.alloc(size)
 
     def force_realloc(self, region, size):
         try:
             self.realloc(region, size)
-        except allocation.AllocatorMemoryException, e:
+        except allocation.AllocatorMemoryException as e:
             self.allocator.set_capacity(e.requested_capacity)
             self.realloc(region, size)
 

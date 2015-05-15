@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 from tests.interactive.interactive_test_base import (InteractiveTestCase,
         requires_user_action, requires_user_validation)
 
@@ -6,7 +8,7 @@ from pyglet.window.event import WindowEventLogger
 from pyglet.window import key
 from pyglet.gl import *
 
-import window_util
+from . import window_util
 
 
 @requires_user_action
@@ -37,7 +39,7 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
         fullscreen = not modifiers & key.MOD_CTRL
         doing = fullscreen and 'Setting' or 'Restoring from'
         if symbol == key._0:
-            print '%s default size' % doing
+            print('%s default size' % doing)
             self.w.set_fullscreen(fullscreen)
             return
         elif symbol == key._1:
@@ -54,7 +56,7 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
             width, height = 1280, 1024
         else:
             return
-        print '%s width=%d, height=%d' % (doing, width, height)
+        print('%s width=%d, height=%d' % (doing, width, height))
         self.w.set_fullscreen(fullscreen, width=width, height=height)
 
     def on_expose(self):
@@ -92,10 +94,10 @@ class WINDOW_INITIAL_FULLSCREEN(InteractiveTestCase):
     """
     def on_key_press(self, symbol, modifiers):
         if symbol == key.F:
-            print 'Setting fullscreen.'
+            print('Setting fullscreen.')
             self.w.set_fullscreen(True)
         elif symbol == key.G:
-            print 'Leaving fullscreen.'
+            print('Leaving fullscreen.')
             self.w.set_fullscreen(False)
 
     def on_expose(self):

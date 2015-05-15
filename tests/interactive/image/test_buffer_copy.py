@@ -1,4 +1,5 @@
-from test_image_saving import ImageSavingTestCase
+from __future__ import absolute_import
+from .test_image_saving import ImageSavingTestCase
 
 from pyglet.gl import *
 from pyglet import image

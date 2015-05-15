@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import unittest
 
 from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
-from texture_compat import colorbyte
+from .texture_compat import colorbyte
 
 class TestTexture3D(unittest.TestCase):
     """Test the Texture3D for image grids."""

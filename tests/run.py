@@ -1,6 +1,7 @@
 """
 For documentation please see doc/internal/testing.txt
 """
+from __future__ import print_function
 import argparse
 import imp
 import os

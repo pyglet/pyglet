@@ -1,6 +1,7 @@
 """
 Tests for events on windows.
 """
+from __future__ import print_function
 
 import random
 
@@ -90,7 +91,7 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
         self.checks_passed = 0
 
     def on_key_press(self, symbol, modifiers):
-        print('Press', key.symbol_string(symbol))
+        print('Press: ', key.symbol_string(symbol))
         self.active_keys.append(symbol)
 
         if self.completely_pressed:
@@ -106,7 +107,7 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
             self.completely_pressed = True
 
     def on_key_release(self, symbol, modifiers):
-        print('Release', key.symbol_string(symbol))
+        print('Release: ', key.symbol_string(symbol))
         symbol = self._handle_meta_release(symbol)
         if symbol not in self.active_keys:
             self.fail_test('Released key "{}" was not pressed before.'.format(key.symbol_string(symbol)))
@@ -472,12 +473,12 @@ class EVENT_BUTTON(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_mouse_press(self, x, y, button, modifiers):
-        print 'Mouse button %d pressed at %f,%f with %s' % \
-            (button, x, y, key.modifiers_string(modifiers))
+        print('Mouse button %d pressed at %f,%f with %s' % \
+            (button, x, y, key.modifiers_string(modifiers)))
 
     def on_mouse_release(self, x, y, button, modifiers):
-        print 'Mouse button %d released at %f,%f with %s' % \
-            (button, x, y, key.modifiers_string(modifiers))
+        print('Mouse button %d released at %f,%f with %s' % \
+            (button, x, y, key.modifiers_string(modifiers)))
 
     def test_button(self):
         w = Window(200, 200)
@@ -501,7 +502,7 @@ class EVENT_MOVE(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_move(self, x, y):
-        print 'Window moved to %dx%d.' % (x, y)
+        print('Window moved to %dx%d.' % (x, y))
 
     def test_move(self):
         w = Window(200, 200)
@@ -526,7 +527,7 @@ class EVENT_RESIZE(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_resize(self, width, height):
-        print 'Window resized to %dx%d.' % (width, height)
+        print('Window resized to %dx%d.' % (width, height))
 
     def test_resize(self):
         w = Window(200, 200, resizable=True)
@@ -577,8 +578,8 @@ class EVENT_MOUSEMOTION(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_mouse_motion(self, x, y, dx, dy):
-        print 'Mouse at (%f, %f); relative (%f, %f).' % \
-            (x, y, dx, dy)
+        print('Mouse at (%f, %f); relative (%f, %f).' % \
+            (x, y, dx, dy))
 
     def test_motion(self):
         w = Window(200, 200)
@@ -609,7 +610,7 @@ class EVENT_MOUSE_SCROLL(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_mouse_scroll(self, x, y, dx, dy):
-        print 'Mouse scrolled (%f, %f) (x=%f, y=%f)' % (dx, dy, x, y)
+        print('Mouse scrolled (%f, %f) (x=%f, y=%f)' % (dx, dy, x, y))
 
     def test_mouse_scroll(self):
         w = Window(200, 200)
@@ -633,10 +634,10 @@ class EVENT_MOUSE_ENTER_LEAVE(InteractiveTestCase):
         Close the window or press ESC to end the test.
     """
     def on_mouse_enter(self, x, y):
-        print 'Entered at %f, %f' % (x, y)
+        print('Entered at %f, %f' % (x, y))
 
     def on_mouse_leave(self, x, y):
-        print 'Left at %f, %f' % (x, y)
+        print('Left at %f, %f' % (x, y))
 
     def test_motion(self):
         w = Window(200, 200)

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """Tests immediate drawing.
 """
+from __future__ import absolute_import
 import unittest
 
 import pyglet
 
-from graphics_common import GraphicsGenericTestCase, get_feedback, GL_TRIANGLES
+from .graphics_common import GraphicsGenericTestCase, get_feedback, GL_TRIANGLES
 
 
 class ImmediateDrawingTestCase(GraphicsGenericTestCase, unittest.TestCase):
