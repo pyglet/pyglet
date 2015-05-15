@@ -14,3 +14,18 @@ except ImportError:
         # Last resort: use included mock library
         import tests.extlibs.mock as mock
 
+# Try to get python-future
+try:
+    import future
+except ImportError:
+    import os.path as op
+    import sys
+    sys.path.insert(0, op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future')))
+    del sys
+    del op
+    try:
+        import future
+    except ImportError:
+        print('Failed to get python-future')
+        raise
+
