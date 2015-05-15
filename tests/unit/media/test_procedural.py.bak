@@ -1,7 +1,7 @@
-from builtins import bytes, object
 from ctypes import sizeof
 import unittest
 
+from pyglet.compat import bytes_type
 from pyglet.media.sources.procedural import *
 
 
@@ -32,7 +32,7 @@ class ProceduralSourceTest(object):
         self.assertAlmostEqual(expected_duration, data.duration)
 
         self.assertIsNotNone(data.data)
-        if isinstance(data.data, (bytes, str)):
+        if isinstance(data.data, bytes_type):
             self.assertAlmostEqual(expected_bytes, len(data.data), delta=20)
         else:
             self.assertAlmostEqual(expected_bytes, sizeof(data.data), delta=20)

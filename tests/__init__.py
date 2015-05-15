@@ -20,7 +20,11 @@ try:
 except ImportError:
     import os.path as op
     import sys
-    sys.path.insert(0, op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future')))
+    future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
+    sys.path.insert(0, op.join(future_base, 'py2_3'))
+    if sys.version_info[:2] < (3, 0):
+        sys.path.insert(0, op.join(future_base, 'py2'))
+    del future_base
     del sys
     del op
     try:

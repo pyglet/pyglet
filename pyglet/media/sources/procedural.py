@@ -38,6 +38,12 @@ import ctypes
 import os
 import math
 
+def future_round(value):
+    """Function to have a round that functions the same on Py2 and Py3."""
+    # TODO: Check if future can replace this
+    return int(round(value))
+
+
 class ProceduralSource(Source):
     def __init__(self, duration, sample_rate=44800, sample_size=16):
         self._duration = float(duration)
@@ -118,7 +124,7 @@ class Sine(ProceduralSource):
             data = (ctypes.c_short * samples)()
         step = self.frequency * (math.pi * 2) / self.audio_format.sample_rate
         for i in range(samples):
-            data[i] = int(math.sin(step * (i + start)) * amplitude + bias)
+            data[i] = future_round(math.sin(step * (i + start)) * amplitude + bias)
         return data
 
 class Saw(ProceduralSource):
@@ -149,7 +155,7 @@ class Saw(ProceduralSource):
             if value < min:
                 value = min - (value - min)
                 step = -step
-            data[i] = value
+            data[i] = future_round(value)
         return data
 
 class Square(ProceduralSource):
@@ -176,5 +182,5 @@ class Square(ProceduralSource):
             if count == period:
                 value = amplitude - value
                 count = 0
-            data[i] = value
+            data[i] = future_round(value)
         return data

@@ -171,6 +171,9 @@ class AudioData(object):
 
     def get_string_data(self):
         """Return data as a string. (Python 3: return as bytes)"""
+        if self.data is None:
+            return b''
+
         if isinstance(self.data, bytes_type):
             return self.data
 
