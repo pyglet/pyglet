@@ -19,3 +19,4 @@ tests/interactive/screenshots/committed/*.png
 *.swp
 .coverage
 coverage_report/
+*.bak
