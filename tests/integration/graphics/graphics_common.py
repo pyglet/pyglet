@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+from __future__ import division
+from builtins import zip
+from builtins import range
+from builtins import object
 from abc import abstractmethod
 import random
 from collections import deque
@@ -11,7 +15,7 @@ from pyglet.gl import *
 def chunks(l, n):
     """ Yield successive n-sized chunks from l.
     """
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i+n]
 
 
@@ -45,7 +49,7 @@ def get_feedback(func):
     return vertices, colors, tex_coords
 
 
-class GraphicsGenericTestCase:
+class GraphicsGenericTestCase(object):
     """
     A generic test for asserting vertices positions
     using openGL Feedback Buffer.
@@ -203,7 +207,7 @@ class GraphicsIndexedGenericTestCase(GraphicsGenericTestCase):
         GraphicsGenericTestCase.setUp(self)
 
         # we use half of the data so we repeat vertices.
-        self.index_data = range(self.n_vertices//2) * 2
+        self.index_data = list(range(self.n_vertices//2)) * 2
         random.seed(1)
         random.shuffle(self.index_data)
 

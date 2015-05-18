@@ -10,6 +10,7 @@ The test will correctly detect the asbence of multitexturing, or if texture
 coords are not supplied for a unit, but will still pass if the texture
 coordinates for each unit are swapped (the tex coords are identical).
 '''
+from builtins import map
 
 import unittest
 
@@ -67,6 +68,6 @@ class MultiTextureTestCase(unittest.TestCase):
         i = y * buffer.pitch + x * 3
         r, g, b = data[i:i+3]
         if type(r) is str:
-            r, g, b = map(ord, (r, g, b))
+            r, g, b = list(map(ord, (r, g, b)))
         return r, g, b
 

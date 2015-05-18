@@ -1,8 +1,10 @@
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 
 import gc
 import inspect
-import Queue
+import queue
 from tests import mock
 import threading
 import time
@@ -20,7 +22,7 @@ from pyglet.media.sources.procedural import Silence
 class EventForwarder(threading.Thread):
     def __init__(self):
         super(EventForwarder, self).__init__()
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
 
     def run(self):
         while True:

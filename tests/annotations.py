@@ -14,7 +14,7 @@ import unittest
 
 # Platform identifiers
 class Platform(object):
-    LINUX = ('linux-compat', 'linux2')
+    LINUX = ('linux-compat', 'linux2', 'linux')
     WINDOWS = ('win32', 'cygwin')
     OSX = ('darwin',)
 

@@ -1,7 +1,10 @@
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 
 from tests import mock
-import Queue
+import queue
 import time
 import unittest
 
@@ -42,7 +45,7 @@ class GetMediaDriverTestCase(unittest.TestCase):
 
 class MockPlayer(object):
     def __init__(self):
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
 
     def dispatch_event(self, event_type, *args):
         self.queue.put((event_type, args))
@@ -54,7 +57,7 @@ class MockPlayer(object):
                 event_type, args = self.queue.get(timeout=end_time-time.time())
                 if event_type in event_types:
                     return event_type, args
-        except Queue.Empty:
+        except queue.Empty:
             return None, None
 
 

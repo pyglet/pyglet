@@ -1,3 +1,4 @@
+from builtins import map
 #!/usr/bin/python
 # $Id:$
 
@@ -37,7 +38,7 @@ class ResourceImageLoadingTestCase(unittest.TestCase):
             i = y * buffer.pitch + x * len(buffer.format)
             r, g, b, _ = bytes[i:i+len(buffer.format)]
             if type(r) is str:
-                r, g, b = map(ord, (r, g, b))
+                r, g, b = list(map(ord, (r, g, b)))
             return {
                 (255, 0, 0): 'r',
                 (0, 255, 0): 'g',
