@@ -106,7 +106,6 @@ class CocoaEventLoop(PlatformEventLoop):
 
     def start(self):
         if not self.NSApp.isRunning():
-            self.NSApp.finishLaunching()
             self.NSApp.activateIgnoringOtherApps_(True)
 
     def step(self, timeout=None):
@@ -167,7 +166,8 @@ class CocoaEventLoop(PlatformEventLoop):
         return did_time_out
 
     def stop(self):
-        pass
+        self.NSApp.activateIgnoringOtherApps_(False)
+        self.pool.drain()
 
     def notify(self):
         pool = NSAutoreleasePool.alloc().init()
