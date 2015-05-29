@@ -3,11 +3,18 @@ import sys
 from tests import mock
 import unittest
 
+import pyglet
 from pyglet.resource import get_script_home, get_settings_path
 
 
 _executable = os.path.abspath(os.path.join('path', 'exec'))
 _script_home = os.path.abspath('path')
+
+
+def _mock_expand_user(p):
+    parts = p.split(os.sep)
+    parts[0] = 'pyglet'
+    return os.path.join(*parts)
 
 
 class ResourcePathTest(unittest.TestCase):
@@ -50,4 +57,57 @@ class ResourcePathTest(unittest.TestCase):
     def test_script_home_interactive(self, *_):
         """Interactive prompt, eg idle or cpython"""
         self.assertEqual(get_script_home(), _script_home)
+
+
+    @mock.patch.object(pyglet, 'compat_platform', 'cygwin')
+    @mock.patch.dict('os.environ', {'APPDATA': 'pyglet'})
+    def test_settings_path_cygwin_appdata(self):
+        """Settings path on cygwin with APPDATA set."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', 'myapp'))
+
+    @mock.patch.object(pyglet, 'compat_platform', 'win32')
+    @mock.patch.dict('os.environ', {'APPDATA': 'pyglet'})
+    def test_settings_path_windows_appdata(self):
+        """Settings path on cygwin with APPDATA set."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', 'myapp'))
+
+    @mock.patch.object(pyglet, 'compat_platform', 'cygwin')
+    @mock.patch.object(os, 'environ', {})
+    @mock.patch.object(os.path, 'expanduser', _mock_expand_user)
+    def test_settings_path_cygwin_no_appdata(self):
+        """Settings path on cygwin without APPDATA set."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', 'myapp'))
+
+    @mock.patch.object(pyglet, 'compat_platform', 'win32')
+    @mock.patch.object(os, 'environ', {})
+    @mock.patch.object(os.path, 'expanduser', _mock_expand_user)
+    def test_settings_path_windows_no_appdata(self):
+        """Settings path on cygwin without APPDATA set."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', 'myapp'))
+
+    @mock.patch.object(pyglet, 'compat_platform', 'darwin')
+    @mock.patch.object(os.path, 'expanduser', _mock_expand_user)
+    def test_settings_path_darwin(self):
+        """Settings path on OSX."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', 'Library', 'Application Support', 'myapp'))
+
+    @mock.patch.object(pyglet, 'compat_platform', 'linux')
+    @mock.patch.dict('os.environ', {'XDG_CONFIG_HOME': 'pyglet'})
+    def test_settings_path_linux_xdg_config_home(self):
+        """Settings path on Linux with XDG_CONFIG_HOME available."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', 'myapp'))
+
+    @mock.patch.object(pyglet, 'compat_platform', 'linux')
+    @mock.patch.object(os, 'environ', {})
+    @mock.patch.object(os.path, 'expanduser', _mock_expand_user)
+    def test_settings_path_linux_xdg_config_home(self):
+        """Settings path on Linux without XDG_CONFIG_HOME."""
+        self.assertEqual(get_settings_path('myapp'),
+                         os.path.join('pyglet', '.config', 'myapp'))
 
