@@ -121,7 +121,6 @@ def get_script_home():
 
     :rtype: str
     '''
-
     frozen = getattr(sys, 'frozen', None)
     if frozen in ('windows_exe', 'console_exe'):
         return os.path.dirname(sys.executable)
@@ -133,11 +132,13 @@ def get_script_home():
         if hasattr(main, '__file__'):
             return os.path.dirname(os.path.abspath(main.__file__))
         else:
-            # cx_Freeze
-            return os.path.dirname(sys.executable)
+            if 'python' in os.path.basename(sys.executable):
+                # interactive
+                return os.getcwd()
+            else:
+                # cx_Freeze
+                return os.path.dirname(sys.executable)
 
-    # Probably interactive
-    return ''
 
 def get_settings_path(name):
     '''Get a directory to save user preferences.
