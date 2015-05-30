@@ -53,12 +53,13 @@ gdkpixbuf = pyglet.lib.load_library('gdk_pixbuf-2.0')
 
 GdkPixbufLoader = c_void_p
 GdkPixbuf = c_void_p
-gdkpixbuf.gdk_pixbuf_loader_new.restype = GdkPixbufLoader
-gdkpixbuf.gdk_pixbuf_loader_get_pixbuf.restype = GdkPixbuf
-gdkpixbuf.gdk_pixbuf_get_pixels.restype = c_void_p
-gdkpixbuf.gdk_pixbuf_loader_get_animation.restype = c_void_p
-gdkpixbuf.gdk_pixbuf_animation_get_iter.restype = c_void_p
-gdkpixbuf.gdk_pixbuf_animation_iter_get_pixbuf.restype = GdkPixbuf
+guchar = c_char
+gdkpixbuf.gdk_pixbuf_loader_new.restype = POINTER(GdkPixbufLoader)
+gdkpixbuf.gdk_pixbuf_loader_get_pixbuf.restype = POINTER(GdkPixbuf)
+gdkpixbuf.gdk_pixbuf_get_pixels.restype = POINTER(guchar)
+gdkpixbuf.gdk_pixbuf_loader_get_animation.restype = POINTER(c_void_p)
+gdkpixbuf.gdk_pixbuf_animation_get_iter.restype = POINTER(c_void_p)
+gdkpixbuf.gdk_pixbuf_animation_iter_get_pixbuf.restype = POINTER(GdkPixbuf)
 
 class GTimeVal(Structure):
     _fields_ = [
