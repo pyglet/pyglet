@@ -7,6 +7,8 @@ Bugfixes:
 - Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).
 - OSX: Fix stealing the menu when already present in cocoa.
 - Fix multi texturing support (#28).
+- OSX: Prevent segfault with multiple runs (#37/GC728)
+- ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25)
 
 Pyglet 1.2.2
 ============
