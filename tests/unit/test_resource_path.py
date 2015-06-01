@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from tests import mock
 import unittest
@@ -12,7 +13,7 @@ _script_home = os.path.abspath('path')
 
 
 def _mock_expand_user(p):
-    parts = p.split(os.sep)
+    parts = re.split(r"[\\/]+", p)
     parts[0] = 'pyglet'
     return os.path.join(*parts)
 
