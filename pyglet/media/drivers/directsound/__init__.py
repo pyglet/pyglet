@@ -41,46 +41,35 @@ class DirectSoundWorker(MediaThread):
         self.players = set()
 
     def run(self):
-        while True:
-            # This is a big lock, but ensures a player is not deleted while
-            # we're processing it -- this saves on extra checks in the
-            # player's methods that would otherwise have to check that it's
-            # still alive.
-            if _debug:
-                print 'DirectSoundWorker run attempt acquire'
+        # This is a big lock, but ensures a player is not deleted while
+        # we're processing it -- this saves on extra checks in the
+        # player's methods that would otherwise have to check that it's
+        # still alive.
+        with self.condition:
+            while True:
+                if self.stopped:
+                    break
+                sleep_time = -1
 
-            self.condition.acquire()
+                if self.players:
+                    player = None
+                    write_size = 0
+                    for p in self.players:
+                        s = p.get_write_size()
+                        if s > write_size:
+                            player = p
+                            write_size = s
 
-            if _debug:
-                print 'DirectSoundWorker run acquire'
-
-            if self.stopped:
-                self.condition.release()
-                break
-            sleep_time = -1
-
-            if self.players:
-                player = None
-                write_size = 0
-                for p in self.players:
-                    s = p.get_write_size()
-                    if s > write_size:
-                        player = p
-                        write_size = s
-
-                if write_size > self._min_write_size:
-                    player.refill(write_size)
+                    if write_size > self._min_write_size:
+                        player.refill(write_size)
+                    else:
+                        sleep_time = self._nap_time
                 else:
-                    sleep_time = self._nap_time
-            else:
-                sleep_time = self._sleep_time
+                    sleep_time = self._sleep_time
 
-            self.condition.release()
-            if _debug:
-                print 'DirectSoundWorker run release'
-
-            if sleep_time != -1:
-                self.sleep(sleep_time)
+                if sleep_time != -1:
+                    # self.sleep releases self.condition while asleep
+                    self.sleep(sleep_time)
 
         if _debug:
             print 'DirectSoundWorker exiting'
@@ -88,23 +77,21 @@ class DirectSoundWorker(MediaThread):
     def add(self, player):
         if _debug:
             print 'DirectSoundWorker add', player
-        self.condition.acquire()
-        self.players.add(player)
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            self.players.add(player)
+            self.condition.notify()
         if _debug:
             print 'return DirectSoundWorker add', player
 
     def remove(self, player):
         if _debug:
             print 'DirectSoundWorker remove', player
-        self.condition.acquire()
-        try:
-            self.players.remove(player)
-        except KeyError:
-            pass
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            try:
+                self.players.remove(player)
+            except KeyError:
+                pass
+            self.condition.notify()
         if _debug:
             print 'return DirectSoundWorker remove', player
 
@@ -207,16 +194,13 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         if driver and driver.worker:
             driver.worker.remove(self)
 
-        self.lock()
-
-        self._buffer.Stop()
-        self._buffer.Release()
-        self._buffer = None
-        if self._buffer3d:
-            self._buffer3d.Release()
-            self._buffer3d = None
-
-        self.unlock()
+        with self._lock:
+            self._buffer.Stop()
+            self._buffer.Release()
+            self._buffer = None
+            if self._buffer3d:
+                self._buffer3d.Release()
+                self._buffer3d = None
 
     def lock(self):
         self._lock.acquire()
@@ -229,12 +213,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             print 'DirectSound play'
         driver.worker.add(self)
 
-        self.lock()
-        if not self._playing:
-            self._playing = True
+        with self._lock:
+            if not self._playing:
+                self._playing = True
 
-            self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
-        self.unlock()
+                self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
         if _debug:
             print 'return DirectSound play'
 
@@ -243,103 +226,97 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             print 'DirectSound stop'
         driver.worker.remove(self)
 
-        self.lock()
-        if self._playing:
-            self._playing = False
+        with self._lock:
+            if self._playing:
+                self._playing = False
 
-            self._buffer.Stop()
-        self.unlock()
+                self._buffer.Stop()
         if _debug:
             print 'return DirectSound stop'
 
     def clear(self):
         if _debug:
             print 'DirectSound clear'
-        self.lock()
-        self._buffer.SetCurrentPosition(0)
-        self._play_cursor_ring = self._write_cursor_ring = 0
-        self._play_cursor = self._write_cursor 
-        self._eos_cursor = None
-        self._next_audio_data = None
-        del self._events[:]
-        del self._timestamps[:]
-        self.unlock()
+        with self._lock:
+            self._buffer.SetCurrentPosition(0)
+            self._play_cursor_ring = self._write_cursor_ring = 0
+            self._play_cursor = self._write_cursor 
+            self._eos_cursor = None
+            self._next_audio_data = None
+            del self._events[:]
+            del self._timestamps[:]
 
     def refill(self, write_size):
-        self.lock()
-        while write_size > 0:
-            if _debug:
-                print 'refill, write_size =', write_size
-            # Get next audio packet (or remains of last one)
-            if self._next_audio_data:
-                audio_data = self._next_audio_data
-                self._next_audio_data = None
-            else:
-                audio_data = self.source_group.get_audio_data(write_size)
-
-            # Write it, or silence if there are no more packets
-            if audio_data:
-                # Add events
-                for event in audio_data.events:
-                    event_cursor = self._write_cursor + event.timestamp * \
-                        self.source_group.audio_format.bytes_per_second
-                    self._events.append((event_cursor, event))
-
-                # Add timestamp (at end of this data packet)
-                ts_cursor = self._write_cursor + audio_data.length
-                self._timestamps.append(
-                    (ts_cursor, audio_data.timestamp + audio_data.duration))
-
-                # Write data
+        with self._lock:
+            while write_size > 0:
                 if _debug:
-                    print 'write', audio_data.length
-                length = min(write_size, audio_data.length)
-                self.write(audio_data, length)
-                if audio_data.length:
-                    self._next_audio_data = audio_data
-                write_size -= length
-            else:
-                # Write silence
-                if self._eos_cursor is None:
-                    self._eos_cursor = self._write_cursor
-                    self._events.append(
-                       (self._eos_cursor, MediaEvent(0, 'on_eos')))
-                    self._events.append(
-                       (self._eos_cursor, MediaEvent(0, 'on_source_group_eos')))
-                    self._events.sort()
-                if self._write_cursor > self._eos_cursor + self._buffer_size:
-                    self.stop()
+                    print 'refill, write_size =', write_size
+                # Get next audio packet (or remains of last one)
+                if self._next_audio_data:
+                    audio_data = self._next_audio_data
+                    self._next_audio_data = None
                 else:
-                    self.write(None, write_size)
-                write_size = 0
+                    audio_data = self.source_group.get_audio_data(write_size)
 
-        self.unlock()
+                # Write it, or silence if there are no more packets
+                if audio_data:
+                    # Add events
+                    for event in audio_data.events:
+                        event_cursor = self._write_cursor + event.timestamp * \
+                            self.source_group.audio_format.bytes_per_second
+                        self._events.append((event_cursor, event))
+
+                    # Add timestamp (at end of this data packet)
+                    ts_cursor = self._write_cursor + audio_data.length
+                    self._timestamps.append(
+                        (ts_cursor, audio_data.timestamp + audio_data.duration))
+
+                    # Write data
+                    if _debug:
+                        print 'write', audio_data.length
+                    length = min(write_size, audio_data.length)
+                    self.write(audio_data, length)
+                    if audio_data.length:
+                        self._next_audio_data = audio_data
+                    write_size -= length
+                else:
+                    # Write silence
+                    if self._eos_cursor is None:
+                        self._eos_cursor = self._write_cursor
+                        self._events.append(
+                           (self._eos_cursor, MediaEvent(0, 'on_eos')))
+                        self._events.append(
+                           (self._eos_cursor, MediaEvent(0, 'on_source_group_eos')))
+                        self._events.sort()
+                    if self._write_cursor > self._eos_cursor + self._buffer_size:
+                        self.stop()
+                    else:
+                        self.write(None, write_size)
+                    write_size = 0
 
     def update_play_cursor(self):
-        self.lock()
-        play_cursor_ring = lib.DWORD()
-        self._buffer.GetCurrentPosition(play_cursor_ring, None)
-        if play_cursor_ring.value < self._play_cursor_ring:
-            # Wrapped around
-            self._play_cursor += self._buffer_size - self._play_cursor_ring
-            self._play_cursor_ring = 0
-        self._play_cursor += play_cursor_ring.value - self._play_cursor_ring
-        self._play_cursor_ring = play_cursor_ring.value
+        with self._lock:
+            play_cursor_ring = lib.DWORD()
+            self._buffer.GetCurrentPosition(play_cursor_ring, None)
+            if play_cursor_ring.value < self._play_cursor_ring:
+                # Wrapped around
+                self._play_cursor += self._buffer_size - self._play_cursor_ring
+                self._play_cursor_ring = 0
+            self._play_cursor += play_cursor_ring.value - self._play_cursor_ring
+            self._play_cursor_ring = play_cursor_ring.value
 
-        # Dispatch pending events
-        pending_events = []
-        while self._events and self._events[0][0] <= self._play_cursor:
-            _, event = self._events.pop(0)
-            pending_events.append(event)
-        if _debug:
-            print 'Dispatching pending events:', pending_events
-            print 'Remaining events:', self._events
+            # Dispatch pending events
+            pending_events = []
+            while self._events and self._events[0][0] <= self._play_cursor:
+                _, event = self._events.pop(0)
+                pending_events.append(event)
+            if _debug:
+                print 'Dispatching pending events:', pending_events
+                print 'Remaining events:', self._events
 
-        # Remove expired timestamps
-        while self._timestamps and self._timestamps[0][0] < self._play_cursor:
-            del self._timestamps[0]
-
-        self.unlock()
+            # Remove expired timestamps
+            while self._timestamps and self._timestamps[0][0] < self._play_cursor:
+                del self._timestamps[0]
 
         for event in pending_events:
             event._sync_dispatch_to_player(self.player)
@@ -347,10 +324,9 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def get_write_size(self):
         self.update_play_cursor()
 
-        self.lock()
-        play_cursor = self._play_cursor
-        write_cursor = self._write_cursor
-        self.unlock()
+        with self._lock:
+            play_cursor = self._play_cursor
+            write_cursor = self._write_cursor
 
         return self._buffer_size - max(write_cursor - play_cursor, 0)
 
@@ -359,87 +335,78 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         if length == 0:
             return 0
 
-        self.lock()
+        with self._lock:
+            p1 = ctypes.c_void_p()
+            l1 = lib.DWORD()
+            p2 = ctypes.c_void_p()
+            l2 = lib.DWORD()
+            assert 0 < length <= self._buffer_size
+            self._buffer.Lock(self._write_cursor_ring, length, 
+                ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
+            assert length == l1.value + l2.value
 
-        p1 = ctypes.c_void_p()
-        l1 = lib.DWORD()
-        p2 = ctypes.c_void_p()
-        l2 = lib.DWORD()
-        assert 0 < length <= self._buffer_size
-        self._buffer.Lock(self._write_cursor_ring, length, 
-            ctypes.byref(p1), l1, ctypes.byref(p2), l2, 0)
-        assert length == l1.value + l2.value
-
-        if audio_data:
-            ctypes.memmove(p1, audio_data.data, l1.value)
-            audio_data.consume(l1.value, self.source_group.audio_format)
-            if l2.value:
-                ctypes.memmove(p2, audio_data.data, l2.value)
-                audio_data.consume(l2.value, self.source_group.audio_format)
-        else:
-            if self.source_group.audio_format.sample_size == 8:
-                c = 0x80
+            if audio_data:
+                ctypes.memmove(p1, audio_data.data, l1.value)
+                audio_data.consume(l1.value, self.source_group.audio_format)
+                if l2.value:
+                    ctypes.memmove(p2, audio_data.data, l2.value)
+                    audio_data.consume(l2.value, self.source_group.audio_format)
             else:
-                c = 0
-            ctypes.memset(p1, c, l1.value)
-            if l2.value:
-                ctypes.memset(p2, c, l2.value)
-        self._buffer.Unlock(p1, l1, p2, l2)
+                if self.source_group.audio_format.sample_size == 8:
+                    c = 0x80
+                else:
+                    c = 0
+                ctypes.memset(p1, c, l1.value)
+                if l2.value:
+                    ctypes.memset(p2, c, l2.value)
+            self._buffer.Unlock(p1, l1, p2, l2)
 
-        self._write_cursor += length
-        self._write_cursor_ring += length
-        self._write_cursor_ring %= self._buffer_size
-        self.unlock()
+            self._write_cursor += length
+            self._write_cursor_ring += length
+            self._write_cursor_ring %= self._buffer_size
 
     def get_time(self):
-        self.lock()
-        if self._timestamps:
-            cursor, ts = self._timestamps[0]
-            result = ts + (self._play_cursor - cursor) / \
-                float(self.source_group.audio_format.bytes_per_second)
-        else:
-            result = None
-        self.unlock()
+        with self._lock:
+            if self._timestamps:
+                cursor, ts = self._timestamps[0]
+                result = ts + (self._play_cursor - cursor) / \
+                    float(self.source_group.audio_format.bytes_per_second)
+            else:
+                result = None
 
         return result
         
     def set_volume(self, volume):
         volume = _db(volume)
-        self.lock()
-        self._buffer.SetVolume(volume)
-        self.unlock()
+        with self._lock:
+            self._buffer.SetVolume(volume)
 
     def set_position(self, position):
         if self._buffer3d:
             x, y, z = position
-            self.lock()
-            self._buffer3d.SetPosition(x, y, -z, lib.DS3D_IMMEDIATE)
-            self.unlock()
+            with self._lock:
+                self._buffer3d.SetPosition(x, y, -z, lib.DS3D_IMMEDIATE)
 
     def set_min_distance(self, min_distance):
         if self._buffer3d:
-            self.lock()
-            self._buffer3d.SetMinDistance(min_distance, lib.DS3D_IMMEDIATE)
-            self.unlock()
+            with self._lock:
+                self._buffer3d.SetMinDistance(min_distance, lib.DS3D_IMMEDIATE)
 
     def set_max_distance(self, max_distance):
         if self._buffer3d:
-            self.lock()
-            self._buffer3d.SetMaxDistance(max_distance, lib.DS3D_IMMEDIATE)
-            self.unlock()
+            with self._lock:
+                self._buffer3d.SetMaxDistance(max_distance, lib.DS3D_IMMEDIATE)
 
     def set_pitch(self, pitch):
         frequency = int(pitch * self.source_group.audio_format.sample_rate)
-        self.lock()
-        self._buffer.SetFrequency(frequency)
-        self.unlock()
+        with self._lock:
+            self._buffer.SetFrequency(frequency)
 
     def set_cone_orientation(self, cone_orientation):
         if self._buffer3d:
             x, y, z = cone_orientation
-            self.lock()
-            self._buffer3d.SetConeOrientation(x, y, -z, lib.DS3D_IMMEDIATE)
-            self.unlock()
+            with self._lock:
+                self._buffer3d.SetConeOrientation(x, y, -z, lib.DS3D_IMMEDIATE)
 
     def set_cone_inner_angle(self, cone_inner_angle):
         if self._buffer3d:
@@ -454,16 +421,14 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def _set_cone_angles(self):
         inner = min(self._cone_inner_angle, self._cone_outer_angle)
         outer = max(self._cone_inner_angle, self._cone_outer_angle)
-        self.lock()
-        self._buffer3d.SetConeAngles(inner, outer, lib.DS3D_IMMEDIATE)
-        self.unlock()
+        with self._lock:
+            self._buffer3d.SetConeAngles(inner, outer, lib.DS3D_IMMEDIATE)
 
     def set_cone_outer_gain(self, cone_outer_gain):
         if self._buffer3d:
             volume = _db(cone_outer_gain)
-            self.lock()
-            self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
-            self.unlock()
+            with self._lock:
+                self._buffer3d.SetConeOutsideVolume(volume, lib.DS3D_IMMEDIATE)
 
 class DirectSoundDriver(AbstractAudioDriver):
     def __init__(self):

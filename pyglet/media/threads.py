@@ -112,7 +112,8 @@ class MediaThread(object):
         if _debug:
             print 'MediaThread.sleep(%r)' % timeout
         with self.condition:
-            self.condition.wait(timeout)
+            if not self.stopped:
+                self.condition.wait(timeout)
 
     def notify(self):
         """Interrupt the current sleep operation.
