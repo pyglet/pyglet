@@ -470,7 +470,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
                 with context.lock:
                     buffer_name = bufferPool.getBuffer(self._al_source)
-                    print(self._al_source, buffer_name)
                     al.alBufferData(buffer_name,
                                     self._al_format,
                                     audio_data.data,
