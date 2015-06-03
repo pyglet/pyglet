@@ -20,14 +20,18 @@ class EventSequenceTest(object):
             self.start_time = time.time()
         if not self.finished:
             if self.next_sequence != sequence:
-                self.fail('ERROR: %s out of order' % name)
+                self.failure = 'ERROR: %s out of order' % name
             else:
                 self.next_sequence += 1
         if self.next_sequence > self.last_sequence:
             self.finished = True
 
-    def check_timeout(self):
-        self.assertTrue(time.time() - self.start_time < self.timeout)
+    def check(self):
+        self.assertTrue(time.time() - self.start_time < self.timeout,
+                        'Did not receive next expected event: %d' % self.last_sequence)
+        failed = getattr(self, 'failed', None)
+        if failed:
+            self.fail(failed)
 
 
 class WindowShowEventSequenceTest(EventSequenceTest, unittest.TestCase):
@@ -52,7 +56,7 @@ class WindowShowEventSequenceTest(EventSequenceTest, unittest.TestCase):
         self.check_sequence(0, 'begin')
         while not win.has_exit and not self.finished:
             win.dispatch_events()
-            self.check_timeout()
+            self.check()
         win.close()
 
 
@@ -74,7 +78,7 @@ class WindowCreateEventSequenceTest(EventSequenceTest, unittest.TestCase):
         self.check_sequence(0, 'begin')
         while not win.has_exit and not self.finished:
             win.dispatch_events()
-            self.check_timeout()
+            self.check()
         win.close()
 
 
@@ -96,7 +100,7 @@ class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCa
         self.check_sequence(0, 'begin')
         while not win.has_exit and not self.finished:
             win.dispatch_events()
-            self.check_timeout()
+            self.check()
         win.close()
 
 
@@ -118,7 +122,7 @@ class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase)
         self.check_sequence(0, 'begin')
         while not win.has_exit and not self.finished:
             win.dispatch_events()
-            self.check_timeout()
+            self.check()
         win.close()
 
 
@@ -140,5 +144,5 @@ class WindowUnsetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCas
         self.check_sequence(0, 'begin')
         while not win.has_exit and not self.finished:
             win.dispatch_events()
-            self.check_timeout()
+            self.check()
         win.close()
