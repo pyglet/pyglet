@@ -20,9 +20,10 @@ class EventSequenceTest(object):
             self.start_time = time.time()
         if not self.finished:
             if self.next_sequence != sequence:
-                self.failure = 'ERROR: %s out of order' % name
+                self.failed = 'ERROR: %s out of order' % name
             else:
                 self.next_sequence += 1
+                print(self.next_sequence)
         if self.next_sequence > self.last_sequence:
             self.finished = True
 
@@ -49,15 +50,17 @@ class WindowShowEventSequenceTest(EventSequenceTest, unittest.TestCase):
 
     def test_method(self):
         win = window.Window(visible=False)
-        win.dispatch_events()
-        win.push_handlers(self)
-
-        win.set_visible(True)
-        self.check_sequence(0, 'begin')
-        while not win.has_exit and not self.finished:
+        try:
             win.dispatch_events()
-            self.check()
-        win.close()
+            win.push_handlers(self)
+
+            win.set_visible(True)
+            self.check_sequence(0, 'begin')
+            while not win.has_exit and not self.finished:
+                win.dispatch_events()
+                self.check()
+        finally:
+            win.close()
 
 
 class WindowCreateEventSequenceTest(EventSequenceTest, unittest.TestCase):
@@ -74,12 +77,14 @@ class WindowCreateEventSequenceTest(EventSequenceTest, unittest.TestCase):
 
     def test_method(self):
         win = window.Window()
-        win.push_handlers(self)
-        self.check_sequence(0, 'begin')
-        while not win.has_exit and not self.finished:
-            win.dispatch_events()
-            self.check()
-        win.close()
+        try:
+            win.push_handlers(self)
+            self.check_sequence(0, 'begin')
+            while not win.has_exit and not self.finished:
+                win.dispatch_events()
+                self.check()
+        finally:
+            win.close()
 
 
 class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase):
@@ -96,12 +101,14 @@ class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCa
 
     def test_method(self):
         win = window.Window(fullscreen=True)
-        win.push_handlers(self)
-        self.check_sequence(0, 'begin')
-        while not win.has_exit and not self.finished:
-            win.dispatch_events()
-            self.check()
-        win.close()
+        try:
+            win.push_handlers(self)
+            self.check_sequence(0, 'begin')
+            while not win.has_exit and not self.finished:
+                win.dispatch_events()
+                self.check()
+        finally:
+            win.close()
 
 
 class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase):
@@ -115,15 +122,17 @@ class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase)
 
     def test_method(self):
         win = window.Window()
-        win.dispatch_events()
-
-        win.push_handlers(self)
-        win.set_fullscreen()
-        self.check_sequence(0, 'begin')
-        while not win.has_exit and not self.finished:
+        try:
             win.dispatch_events()
-            self.check()
-        win.close()
+
+            win.push_handlers(self)
+            win.set_fullscreen()
+            self.check_sequence(0, 'begin')
+            while not win.has_exit and not self.finished:
+                win.dispatch_events()
+                self.check()
+        finally:
+            win.close()
 
 
 class WindowUnsetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase):
@@ -137,12 +146,14 @@ class WindowUnsetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCas
 
     def test_method(self):
         win = window.Window(fullscreen=True)
-        win.dispatch_events()
-        win.push_handlers(self)
-
-        win.set_fullscreen(False)
-        self.check_sequence(0, 'begin')
-        while not win.has_exit and not self.finished:
+        try:
             win.dispatch_events()
-            self.check()
-        win.close()
+            win.push_handlers(self)
+
+            win.set_fullscreen(False)
+            self.check_sequence(0, 'begin')
+            while not win.has_exit and not self.finished:
+                win.dispatch_events()
+                self.check()
+        finally:
+            win.close()
