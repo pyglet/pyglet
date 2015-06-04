@@ -23,7 +23,6 @@ class EventSequenceTest(object):
                 self.failed = 'ERROR: %s out of order' % name
             else:
                 self.next_sequence += 1
-                print(self.next_sequence)
         if self.next_sequence > self.last_sequence:
             self.finished = True
 
