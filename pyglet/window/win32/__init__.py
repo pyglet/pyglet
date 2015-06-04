@@ -270,9 +270,9 @@ class Win32Window(BaseWindow):
 
         if self._visible:
             self.set_visible()
-            self.dispatch_event('on_expose')
             # Might need resize event if going from fullscreen to fullscreen
             self.dispatch_event('on_resize', self._width, self._height)
+            self.dispatch_event('on_expose')
 
     def _update_view_location(self, width, height):
         if self._fullscreen:
@@ -355,9 +355,9 @@ class Win32Window(BaseWindow):
             insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
-            self.dispatch_event('on_show')
-            self.activate()
             self.dispatch_event('on_resize', self._width, self._height)
+            self.activate()
+            self.dispatch_event('on_show')
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
             self.dispatch_event('on_hide')
