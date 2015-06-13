@@ -1229,7 +1229,7 @@ class TextLayout(object):
                                 line.paragraph_begin = True
 
                             # Remove kern from first glyph of line
-                            if run_accum:
+                            if run_accum and hasattr(run_accum, 'glyphs') and run_accum.glyphs:
                                 k, g = run_accum[0].glyphs[0]
                                 run_accum[0].glyphs[0] = (0, g)
                                 run_accum_width -= k
