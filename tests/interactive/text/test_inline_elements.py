@@ -139,8 +139,13 @@ class InlineElementTestCase(InteractiveTestCase):
     Press ESC to exit the test.
     """
     def test_inline_elements(self):
-        self.window = TestWindow(resizable=True, visible=False)
-        self.window.set_visible()
-        pyglet.app.run()
-        self.user_verify('Pass test?', take_screenshot=False)
+        self.window = None
+        try:
+            self.window = TestWindow(resizable=True, visible=False)
+            self.window.set_visible()
+            pyglet.app.run()
+            self.user_verify('Pass test?', take_screenshot=False)
+        finally:
+            if self.window:
+                self.window.close()
 
