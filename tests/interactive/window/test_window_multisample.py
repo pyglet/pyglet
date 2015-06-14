@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 from tests.interactive.interactive_test_base import (InteractiveTestCase,
         requires_user_action)
 

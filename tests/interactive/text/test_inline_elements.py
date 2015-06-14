@@ -1,3 +1,4 @@
+from builtins import range
 from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
 
 import pyglet

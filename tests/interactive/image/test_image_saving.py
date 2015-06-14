@@ -1,3 +1,4 @@
+from __future__ import division
 from tests import mock
 
 from pyglet.gl import *
@@ -53,15 +54,15 @@ class ImageSavingTestCase(WindowedTestCase):
     def draw_original(self):
         if self.original_texture:
             self.original_texture.blit(
-                self.window.width / 4 - self.original_texture.width / 2,
-                (self.window.height - self.original_texture.height) / 2, 
+                self.window.width // 4 - self.original_texture.width // 2,
+                (self.window.height - self.original_texture.height) // 2, 
                 0)
 
     def draw_saved(self):
         if self.saved_texture:
             self.saved_texture.blit(
-                self.window.width * 3 / 4 - self.saved_texture.width / 2,
-                (self.window.height - self.saved_texture.height) / 2, 
+                self.window.width * 3 // 4 - self.saved_texture.width // 2,
+                (self.window.height - self.saved_texture.height) // 2, 
                 0)
 
     def load_texture(self):

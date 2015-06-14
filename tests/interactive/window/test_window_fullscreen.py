@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import range
 from tests.interactive.interactive_test_base import (InteractiveTestCase,
         requires_user_action, requires_user_validation)
 

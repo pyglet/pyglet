@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import zip
+from builtins import input
 
 import array
 import functools
@@ -282,11 +284,11 @@ else:
         print()
         print(description)
         while True:
-            response = raw_input('Passed [Yn]: ')
+            response = input('Passed [Yn]: ')
             if not response:
                 break
             elif response in 'Nn':
-                failure_description = raw_input('Enter failure description: ')
+                failure_description = input('Enter failure description: ')
                 break
             elif response in 'Yy':
                 break
