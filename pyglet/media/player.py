@@ -1,3 +1,4 @@
+from __future__ import print_function
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -169,7 +170,7 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         if _debug:
-            print 'Player.seek(%r)' % time
+            print('Player.seek(%r)' % time)
 
         self._paused_time = time
         self.source.seek(time)
@@ -307,7 +308,7 @@ class Player(pyglet.event.EventDispatcher):
         :event:
         """
         if _debug:
-            print 'Player.on_player_eos'
+            print('Player.on_player_eos')
 
     def on_source_group_eos(self):
         """The current source group ran out of data.
@@ -319,7 +320,7 @@ class Player(pyglet.event.EventDispatcher):
         """
         self.next_source()
         if _debug:
-            print 'Player.on_source_group_eos'
+            print('Player.on_source_group_eos')
 
     def on_eos(self):
         """
@@ -327,7 +328,7 @@ class Player(pyglet.event.EventDispatcher):
         :event:
         """
         if _debug:
-            print 'Player.on_eos'
+            print('Player.on_eos')
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')

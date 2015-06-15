@@ -368,7 +368,7 @@ class AbstractDocument(event.EventDispatcher):
             `STYLE_INDETERMINATE` if more than one value is set.
         '''
         iter = self.get_style_runs(attribute)
-        _, value_end, value = iter.ranges(start, end).next()
+        _, value_end, value = next(iter.ranges(start, end))
         if value_end < end:
             return STYLE_INDETERMINATE
         else:
@@ -698,7 +698,7 @@ def _iter_elements(elements, length):
 class _ElementIterator(runlist.RunIterator):
     def __init__(self, elements, length):
         self._run_list_iter = _iter_elements(elements, length)
-        self.start, self.end, self.value = self.next()
+        self.start, self.end, self.value = next(self)
 
 class _FontStyleRunsRangeIterator(object):
     # XXX subclass runlist

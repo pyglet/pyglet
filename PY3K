@@ -23,4 +23,8 @@ Futurize stage 1 has been applied to:
 - pyglet.font
 - pyglet.gl
 - pyglet.graphics
-
+- pyglet.image
+- pyglet.input
+- pyglet.media
+- pyglet.text
+- pyglet.window

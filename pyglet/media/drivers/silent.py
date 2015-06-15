@@ -1,3 +1,4 @@
+from __future__ import print_function
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -189,14 +190,14 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
 
     def delete(self):
         if _debug:
-            print 'SilentAudioPlayer.delete'
+            print('SilentAudioPlayer.delete')
         self._thread.stop()
         with self._thread.condition:
             self._thread.condition.notify()
 
     def play(self):
         if _debug:
-            print 'SilentAudioPlayer.play'
+            print('SilentAudioPlayer.play')
 
         with self._thread.condition:
             self._eos = False
@@ -207,7 +208,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
 
     def stop(self):
         if _debug:
-            print 'SilentAudioPlayer.stop'
+            print('SilentAudioPlayer.stop')
 
         with self._thread.condition:
             if self._playing:
@@ -216,7 +217,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
 
     def clear(self):
         if _debug:
-            print 'SilentAudioPlayer.clear'
+            print('SilentAudioPlayer.clear')
 
         with self._thread.condition:
             self._event_buffer.clear()
@@ -229,7 +230,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             result = self._audio_buffer.get_current_timestamp() + self._calculate_offset()
 
         if _debug:
-            print 'SilentAudioPlayer.get_time() -> ', result
+            print('SilentAudioPlayer.get_time() -> ', result)
         return result
 
     def _update_time(self):
@@ -272,7 +273,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             while bytes_to_read > self._min_update_bytes and not self._eos:
                 # Pull audio data from source
                 if _debug:
-                    print 'Trying to buffer %d bytes (%r secs)' % (bytes_to_read, secs)
+                    print('Trying to buffer %d bytes (%r secs)' % (bytes_to_read, secs))
                 audio_data = self.source_group.get_audio_data(bytes_to_read)
                 if not audio_data:
                     self._eos = True
@@ -336,7 +337,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
 
                 sleep_time = self._get_sleep_time()
                 if _debug:
-                    print 'SilentAudioPlayer(Worker).sleep', sleep_time
+                    print('SilentAudioPlayer(Worker).sleep', sleep_time)
                 self._thread.sleep(sleep_time)
 
 

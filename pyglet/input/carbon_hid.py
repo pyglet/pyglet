@@ -2,6 +2,8 @@
 
 '''
 '''
+from __future__ import print_function
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -12,9 +14,9 @@ import pyglet
 from pyglet.libs.darwin import carbon, _oscheck, create_cfstring
 from pyglet.libs.darwin.constants import *
 
-from base import Device, Control, AbsoluteAxis, RelativeAxis, Button
-from base import Joystick, AppleRemote
-from base import DeviceExclusiveException
+from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
+from .base import Joystick, AppleRemote
+from .base import DeviceExclusiveException
 
 # non-broken c_void_p
 void_p = ctypes.POINTER(ctypes.c_int)
@@ -253,7 +255,7 @@ def get_property(properties, key):
 
 def dump_properties(properties):
     def func(key, value, context):
-        print '%s = %s' % (cfstring_to_string(key), cfvalue_to_value(value))
+        print('%s = %s' % (cfstring_to_string(key), cfvalue_to_value(value)))
     CFDictionaryApplierFunction = ctypes.CFUNCTYPE(None, 
         ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
     carbon.CFDictionaryApplyFunction(properties,
@@ -363,7 +365,7 @@ class DarwinHIDDevice(Device):
             r = self._queue.contents.contents.addElement(self._queue,
                                                          control._cookie, 0)
             if r != 0:
-                print 'error adding %r' % control
+                print('error adding %r' % control)
 
         self._event_source = CFRunLoopSourceRef()
         self._queue_callback_func = IOHIDCallbackFunction(self._queue_callback)

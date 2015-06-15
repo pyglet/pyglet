@@ -56,7 +56,7 @@ class PNGImageDecoder(ImageDecoder):
         try:
             reader = pypng.Reader(file=file)
             width, height, pixels, metadata = reader.asDirect()
-        except Exception, e:
+        except Exception as e:
             raise ImageDecodeException(
                 'PyPNG cannot read %r: %s' % (filename or file, e))
 

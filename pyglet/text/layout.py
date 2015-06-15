@@ -471,7 +471,7 @@ class _InlineElementBox(_AbstractBox):
 
 class _InvalidRange(object):
     def __init__(self):
-        self.start = sys.maxint
+        self.start = sys.maxsize
         self.end = 0
 
     def insert(self, start, length):
@@ -499,7 +499,7 @@ class _InvalidRange(object):
 
     def validate(self):
         start, end = self.start, self.end
-        self.start = sys.maxint
+        self.start = sys.maxsize
         self.end = 0
         return start, end
 
@@ -2002,7 +2002,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         self.invalid_vertex_lines.invalidate(invalid_start, invalid_end)
 
     def _update_visible_lines(self):
-        start = sys.maxint
+        start = sys.maxsize
         end = 0
         for i, line in enumerate(self.lines):
             if line.y + line.descent < self.view_y:

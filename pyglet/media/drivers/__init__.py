@@ -1,4 +1,6 @@
 """Drivers for playing back media."""
+from __future__ import print_function
+from __future__ import absolute_import
 
 import pyglet
 
@@ -16,15 +18,15 @@ def get_audio_driver():
     for driver_name in pyglet.options['audio']:
         try:
             if driver_name == 'pulse':
-                import pulse
+                from . import pulse
                 _audio_driver = pulse.create_audio_driver()
                 break
             elif driver_name == 'openal':
-                import openal
+                from . import openal
                 _audio_driver = openal.create_audio_driver()
                 break
             elif driver_name == 'directsound':
-                import directsound
+                from . import directsound
                 _audio_driver = directsound.create_audio_driver()
                 break
             elif driver_name == 'silent':
@@ -32,7 +34,7 @@ def get_audio_driver():
                 break
         except Exception as exp:
             if _debug:
-                print 'Error importing driver %s:\n%s' % (driver_name, str(exp))
+                print('Error importing driver %s:\n%s' % (driver_name, str(exp)))
     return _audio_driver
 
 def get_silent_audio_driver():

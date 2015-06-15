@@ -1,8 +1,10 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
 
 import sys
-__LP64__ = (sys.maxint > 2**32)
+__LP64__ = (sys.maxsize > 2**32)
 
 from pyglet.libs.darwin.cocoapy import *
 
@@ -258,7 +260,7 @@ class HIDDevice:
         for x in ('manufacturer', 'product', 'transport', 'vendorID', 'vendorIDSource', 'productID', 
                   'versionNumber', 'serialNumber', 'locationID', 'primaryUsage', 'primaryUsagePage'):
             value = getattr(self, x)
-            print x + ":", value
+            print(x + ":", value)
 
     def unique_identifier(self):
         # Since we can't rely on the serial number, create our own identifier.
@@ -467,9 +469,9 @@ known_cftypes[iokit.IOHIDElementGetTypeID()] = HIDDeviceElement.get_element
 ######################################################################
 # Pyglet interface to HID
 
-from base import Device, Control, AbsoluteAxis, RelativeAxis, Button
-from base import Joystick, AppleRemote
-from base import DeviceExclusiveException
+from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
+from .base import Joystick, AppleRemote
+from .base import DeviceExclusiveException
 
 _axis_names = {
     (0x01, 0x30): 'x',

@@ -34,6 +34,7 @@
 
 '''
 '''
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -49,11 +50,11 @@ from pyglet.canvas.cocoa import CocoaCanvas
 
 from pyglet.libs.darwin.cocoapy import *
 
-from systemcursor import SystemCursor
-from pyglet_delegate import PygletDelegate
-from pyglet_textview import PygletTextView
-from pyglet_window import PygletWindow, PygletToolWindow
-from pyglet_view import PygletView
+from .systemcursor import SystemCursor
+from .pyglet_delegate import PygletDelegate
+from .pyglet_textview import PygletTextView
+from .pyglet_window import PygletWindow, PygletToolWindow
+from .pyglet_view import PygletView
 
 NSApplication = ObjCClass('NSApplication')
 NSCursor = ObjCClass('NSCursor')

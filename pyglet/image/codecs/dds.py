@@ -38,6 +38,7 @@ Reference: http://msdn2.microsoft.com/en-us/library/bb172993.aspx
 '''
 
 from __future__ import division
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -156,7 +157,7 @@ _compression_formats = {
 def _check_error():
     e = glGetError()
     if e != 0:
-        print 'GL error %d' % e
+        print('GL error %d' % e)
 
 class DDSImageDecoder(codecs.ImageDecoder):
     def get_file_extensions(self):

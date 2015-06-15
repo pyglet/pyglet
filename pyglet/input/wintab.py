@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
+from __future__ import print_function
 import ctypes
 
 import pyglet
@@ -152,7 +153,7 @@ class WintabTabletCanvas(TabletCanvas):
         self.dispatch_event('on_motion', self._current_cursor,
             x, y, pressure, 0., 0.)
 
-        print packet.pkButtons
+        print(packet.pkButtons)
 
     @pyglet.window.win32.Win32EventHandler(0)
     def _event_wt_proximity(self, msg, wParam, lParam):

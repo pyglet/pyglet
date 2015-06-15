@@ -192,7 +192,7 @@ def load(filename, file=None, decoder=None):
                 try:
                     image = decoder.decode(file, filename)
                     return image
-                except codecs.ImageDecodeException, e:
+                except codecs.ImageDecodeException as e:
                     if (not first_exception or
                         first_exception.exception_priority < e.exception_priority):
                         first_exception = e
@@ -461,7 +461,7 @@ class AbstractImage(object):
                 try:
                     encoder.encode(self, file, filename)
                     return
-                except codecs.ImageEncodeException, e:
+                except codecs.ImageEncodeException as e:
                     first_exception = first_exception or e
                     file.seek(0)
 
@@ -2438,7 +2438,7 @@ def load_animation(filename, file=None, decoder=None):
             try:
                 image = decoder.decode_animation(file, filename)
                 return image
-            except codecs.ImageDecodeException, e:
+            except codecs.ImageDecodeException as e:
                 first_exception = first_exception or e
                 file.seek(0)
 

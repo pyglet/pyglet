@@ -1,3 +1,4 @@
+from __future__ import print_function
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -95,7 +96,7 @@ class MediaThread(object):
         the value of `stop` after each sleep or wait and to return if set.
         """
         if _debug:
-            print 'MediaThread.stop()'
+            print('MediaThread.stop()')
         with self.condition:
             self.stopped = True
             self.condition.notify()
@@ -110,7 +111,7 @@ class MediaThread(object):
 
         """
         if _debug:
-            print 'MediaThread.sleep(%r)' % timeout
+            print('MediaThread.sleep(%r)' % timeout)
         with self.condition:
             if not self.stopped:
                 self.condition.wait(timeout)
@@ -122,7 +123,7 @@ class MediaThread(object):
         instead of waiting the full duration of the timeout.
         """
         if _debug:
-            print 'MediaThread.notify()'
+            print('MediaThread.notify()')
         with self.condition:
             self.condition.notify()
 

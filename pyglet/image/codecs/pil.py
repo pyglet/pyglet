@@ -60,13 +60,13 @@ class PILImageDecoder(ImageDecoder):
     def decode(self, file, filename):
         try:
             image = Image.open(file)
-        except Exception, e:
+        except Exception as e:
             raise ImageDecodeException(
                 'PIL cannot read %r: %s' % (filename or file, e))
 
         try:
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        except Exception, e:
+        except Exception as e:
             raise ImageDecodeException(
                 'PIL failed to transpose %r: %s' % (filename or file, e))
 
@@ -113,7 +113,7 @@ class PILImageEncoder(ImageEncoder):
 
         try:
             pil_image.save(file, pil_format)
-        except Exception, e:
+        except Exception as e:
             raise ImageEncodeException(e)
 
 def get_decoders():

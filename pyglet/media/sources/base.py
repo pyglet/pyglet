@@ -1,3 +1,4 @@
+from __future__ import print_function
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -567,7 +568,7 @@ class SourceGroup(object):
         data.timestamp += self._timestamp_offset
         if eos:
             if _debug:
-                print 'adding on_eos event to audio data'
+                print('adding on_eos event to audio data')
             data.events.append(MediaEvent(0, 'on_eos'))
         return data
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
