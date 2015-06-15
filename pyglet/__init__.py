@@ -39,8 +39,24 @@ Detailed documentation is available at http://www.pyglet.org
 from __future__ import print_function
 from __future__ import absolute_import
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+# Check if future is installed, if not use included batteries
+try:
+    import future
+except ImportError:
+    import os.path as op
+    import sys
+    future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
+    sys.path.insert(0, op.join(future_base, 'py2_3'))
+    if sys.version_info[:2] < (3, 0):
+        sys.path.insert(0, op.join(future_base, 'py2'))
+    del future_base
+    del sys
+    del op
+    try:
+        import future
+    except ImportError:
+        print('Failed to get python-future')
+        raise
 
 import os
 import sys
