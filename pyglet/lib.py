@@ -35,6 +35,7 @@
 
 These extend and correct ctypes functions.
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -78,7 +79,7 @@ class _TraceFunction(object):
 class _TraceLibrary(object):
     def __init__(self, library):
         self._library = library
-        print library
+        print(library)
 
     def __getattr__(self, name):
         func = getattr(self._library, name)
@@ -132,20 +133,20 @@ class LibraryLoader(object):
             try:
                 lib = ctypes.cdll.LoadLibrary(name)
                 if _debug_lib:
-                    print name
+                    print(name)
                 if _debug_trace:
                     lib = _TraceLibrary(lib)
                 return lib
-            except OSError, o:
+            except OSError as o:
                 if self.platform == "win32" and o.winerror != 126:
-                    print "Unexpected error loading library %s: %s" % (name, str(o))
+                    print("Unexpected error loading library %s: %s" % (name, str(o)))
                     raise
                 path = self.find_library(name)
                 if path:
                     try:
                         lib = ctypes.cdll.LoadLibrary(path)
                         if _debug_lib:
-                            print path
+                            print(path)
                         if _debug_trace:
                             lib = _TraceLibrary(lib)
                         return lib
@@ -274,7 +275,7 @@ class MachOLibraryLoader(LibraryLoader):
         if realpath:
             lib = ctypes.cdll.LoadLibrary(realpath)
             if _debug_lib:
-                print realpath
+                print(realpath)
             if _debug_trace:
                 lib = _TraceLibrary(lib)
             return lib

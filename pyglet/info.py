@@ -39,6 +39,7 @@ Intended usage is to create a file for bug reports, e.g.::
     python -m pyglet.info > info.txt
 
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -47,53 +48,53 @@ _first_heading = True
 def _heading(heading):
     global _first_heading
     if not _first_heading:
-        print
+        print()
     else:
         _first_heading = False
-    print heading
-    print '-' * 78
+    print(heading)
+    print('-' * 78)
 
 def dump_python():
     '''Dump Python version and environment to stdout.'''
     import os
     import sys
-    print 'sys.version:', sys.version
-    print 'sys.platform:', sys.platform
-    print 'sys.maxint:', sys.maxint
+    print('sys.version:', sys.version)
+    print('sys.platform:', sys.platform)
+    print('sys.maxint:', sys.maxsize)
     if sys.platform == 'darwin':
         try: 
             from objc import __version__ as pyobjc_version
-            print 'objc.__version__:', pyobjc_version
+            print('objc.__version__:', pyobjc_version)
         except:
-            print 'PyObjC not available'
-    print 'os.getcwd():', os.getcwd()
+            print('PyObjC not available')
+    print('os.getcwd():', os.getcwd())
     for key, value in os.environ.items():
         if key.startswith('PYGLET_'):
-            print "os.environ['%s']: %s" % (key, value)
+            print("os.environ['%s']: %s" % (key, value))
 
 def dump_pyglet():
     '''Dump pyglet version and options.'''
     import pyglet
-    print 'pyglet.version:', pyglet.version
-    print 'pyglet.compat_platform:', pyglet.compat_platform
-    print 'pyglet.__file__:', pyglet.__file__
+    print('pyglet.version:', pyglet.version)
+    print('pyglet.compat_platform:', pyglet.compat_platform)
+    print('pyglet.__file__:', pyglet.__file__)
     for key, value in pyglet.options.items():
-        print "pyglet.options['%s'] = %r" % (key, value)
+        print("pyglet.options['%s'] = %r" % (key, value))
 
 def dump_window():
     '''Dump display, window, screen and default config info.'''
     import pyglet.window
     platform = pyglet.window.get_platform()
-    print 'platform:', repr(platform)
+    print('platform:', repr(platform))
     display = platform.get_default_display()
-    print 'display:', repr(display)
+    print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):
-        print 'screens[%d]: %r' % (i, screen)
+        print('screens[%d]: %r' % (i, screen))
     window = pyglet.window.Window(visible=False)
     for key, value in window.config.get_gl_attributes():
-        print "config['%s'] = %r" % (key, value)
-    print 'context:', repr(window.context)
+        print("config['%s'] = %r" % (key, value))
+    print('context:', repr(window.context))
 
     _heading('window.context._info')
     dump_gl(window.context)
@@ -105,100 +106,100 @@ def dump_gl(context=None):
         info = context.get_info()
     else:
         from pyglet.gl import gl_info as info
-    print 'gl_info.get_version():',  info.get_version()
-    print 'gl_info.get_vendor():',  info.get_vendor()
-    print 'gl_info.get_renderer():',  info.get_renderer()
-    print 'gl_info.get_extensions():'
+    print('gl_info.get_version():',  info.get_version())
+    print('gl_info.get_vendor():',  info.get_vendor())
+    print('gl_info.get_renderer():',  info.get_renderer())
+    print('gl_info.get_extensions():')
     extensions = list(info.get_extensions())
     extensions.sort()
     for name in extensions:
-        print '  ', name
+        print('  ', name)
 
 def dump_glu():
     '''Dump GLU info.'''
     from pyglet.gl import glu_info
-    print 'glu_info.get_version():',  glu_info.get_version()
-    print 'glu_info.get_extensions():'
+    print('glu_info.get_version():',  glu_info.get_version())
+    print('glu_info.get_extensions():')
     extensions = list(glu_info.get_extensions())
     extensions.sort()
     for name in extensions:
-        print '  ', name
+        print('  ', name)
 
 def dump_glx():
     '''Dump GLX info.'''
     try:
         from pyglet.gl import glx_info
     except:
-        print 'GLX not available.'
+        print('GLX not available.')
         return
     import pyglet
     window = pyglet.window.Window(visible=False)
-    print 'context.is_direct():', window.context.is_direct()
+    print('context.is_direct():', window.context.is_direct())
     window.close()
 
     if not glx_info.have_version(1, 1):
-        print 'Version: < 1.1'
+        print('Version: < 1.1')
     else:
-        print 'glx_info.get_server_vendor():', glx_info.get_server_vendor()
-        print 'glx_info.get_server_version():', glx_info.get_server_version()
-        print 'glx_info.get_server_extensions():'
+        print('glx_info.get_server_vendor():', glx_info.get_server_vendor())
+        print('glx_info.get_server_version():', glx_info.get_server_version())
+        print('glx_info.get_server_extensions():')
         for name in glx_info.get_server_extensions():
-            print '  ', name
-        print 'glx_info.get_client_vendor():', glx_info.get_client_vendor()
-        print 'glx_info.get_client_version():', glx_info.get_client_version()
-        print 'glx_info.get_client_extensions():'
+            print('  ', name)
+        print('glx_info.get_client_vendor():', glx_info.get_client_vendor())
+        print('glx_info.get_client_version():', glx_info.get_client_version())
+        print('glx_info.get_client_extensions():')
         for name in glx_info.get_client_extensions():
-            print '  ', name
-        print 'glx_info.get_extensions():'
+            print('  ', name)
+        print('glx_info.get_extensions():')
         for name in glx_info.get_extensions():
-            print '  ', name
+            print('  ', name)
 
 def dump_media():
     '''Dump pyglet.media info.'''
     import pyglet.media
-    print 'audio driver:', pyglet.media.get_audio_driver()
+    print('audio driver:', pyglet.media.get_audio_driver())
 
 def dump_avbin():
     '''Dump AVbin info.'''
     try:
         import pyglet.media.avbin
-        print 'Library:', pyglet.media.avbin.av
-        print 'AVbin version:', pyglet.media.avbin.av.avbin_get_version()
-        print 'FFmpeg revision:', \
-            pyglet.media.avbin.av.avbin_get_ffmpeg_revision()
+        print('Library:', pyglet.media.avbin.av)
+        print('AVbin version:', pyglet.media.avbin.av.avbin_get_version())
+        print('FFmpeg revision:', \
+            pyglet.media.avbin.av.avbin_get_ffmpeg_revision())
     except:
-        print 'AVbin not available.'
+        print('AVbin not available.')
 
 def dump_al():
     '''Dump OpenAL info.'''
     try:
         from pyglet.media.drivers import openal
     except:
-        print 'OpenAL not available.'
+        print('OpenAL not available.')
         return
-    print 'Library:', openal.al._lib
+    print('Library:', openal.al._lib)
 
     driver = openal.create_audio_driver()
-    print 'Version:', driver.get_version()
-    print 'Extensions:'
+    print('Version:', driver.get_version())
+    print('Extensions:')
     for extension in driver.get_extensions():
-        print '  ', extension
+        print('  ', extension)
 
 def dump_wintab():
     '''Dump WinTab info.'''
     try:
         from pyglet.input import wintab
     except:
-        print 'WinTab not available.'
+        print('WinTab not available.')
         return
 
     interface_name = wintab.get_interface_name()
     impl_version = wintab.get_implementation_version()
     spec_version = wintab.get_spec_version()
 
-    print 'WinTab: %s %d.%d (Spec %d.%d)' % (interface_name,
+    print('WinTab: %s %d.%d (Spec %d.%d)' % (interface_name,
         impl_version >> 8, impl_version & 0xff,
-        spec_version >> 8, spec_version & 0xff)
+        spec_version >> 8, spec_version & 0xff))
 
 def _try_dump(heading, func):
     _heading(heading)

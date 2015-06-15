@@ -137,6 +137,7 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
 of the system clock.
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -973,20 +974,20 @@ def test_clock():
     # Add one because first frame has no update interval.
     n_frames = int(test_seconds * test_fps + 1)
 
-    print 'Testing %f FPS for %f seconds...' % (test_fps, test_seconds)
+    print('Testing %f FPS for %f seconds...' % (test_fps, test_seconds))
     for i in xrange(n_frames):
         tick()
         if show_fps:
-            print get_fps()
+            print(get_fps())
     total_time = time.time() - start
     total_error = total_time - test_seconds
-    print 'Total clock error: %f secs' % total_error
-    print 'Total clock error / secs: %f secs/secs' % \
-        (total_error / test_seconds)
+    print('Total clock error: %f secs' % total_error)
+    print('Total clock error / secs: %f secs/secs' % \
+        (total_error / test_seconds))
 
     # Not fair to add the extra frame in this calc, since no-one's interested
     # in the startup situation.
-    print 'Average FPS: %f' % ((n_frames - 1) / total_time)
+    print('Average FPS: %f' % ((n_frames - 1) / total_time))
 
 if __name__ == '__main__':
     test_clock()
