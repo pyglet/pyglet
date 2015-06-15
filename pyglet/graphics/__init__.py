@@ -157,6 +157,7 @@ video drivers, and requires indexed vertex lists.
 
 :since: pyglet 1.1
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -522,25 +523,25 @@ class Batch(object):
 
     def _dump_draw_list(self):
         def dump(group, indent=''):
-            print indent, 'Begin group', group
+            print(indent, 'Begin group', group)
             domain_map = self.group_map[group]
             for _, domain in domain_map.items():
-                print indent, '  ', domain
+                print(indent, '  ', domain)
                 for start, size in zip(*domain.allocator.get_allocated_regions()):
-                    print indent, '    ', 'Region %d size %d:' % (start, size)
+                    print(indent, '    ', 'Region %d size %d:' % (start, size))
                     for key, attribute in domain.attribute_names.items():
-                        print indent, '      ',
+                        print(indent, '      ', end=' ')
                         try:
                             region = attribute.get_region(attribute.buffer,
                                                           start, size)
-                            print key, region.array[:]
+                            print(key, region.array[:])
                         except:
-                            print key, '(unmappable)'
+                            print(key, '(unmappable)')
             for child in self.group_children.get(group, ()):
                 dump(child, indent + '  ')
-            print indent, 'End group', group
+            print(indent, 'End group', group)
 
-        print 'Draw list for %r:' % self
+        print('Draw list for %r:' % self)
         for group in self.top_groups:
             dump(group)
         

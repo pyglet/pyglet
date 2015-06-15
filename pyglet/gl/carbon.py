@@ -2,11 +2,12 @@
 
 '''
 '''
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from base import Config, CanvasConfig, Context
+from .base import Config, CanvasConfig, Context
 
 from pyglet.libs.darwin import *
 from pyglet.libs.darwin import _oscheck

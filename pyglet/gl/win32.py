@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # $Id:$
 
+from __future__ import absolute_import
 from pyglet.canvas.win32 import Win32Canvas
-from base import Config, CanvasConfig, Context
+from .base import Config, CanvasConfig, Context
 
 from pyglet import gl
 from pyglet.gl import gl_info

@@ -2,6 +2,8 @@
 
 '''
 '''
+from __future__ import print_function
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -11,9 +13,9 @@ import ctypes
 
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
-from base import Display, Screen, ScreenMode, Canvas
+from .base import Display, Screen, ScreenMode, Canvas
 
-import xlib_vidmoderestore
+from . import xlib_vidmoderestore
 
 # XXX
 #from pyglet.window import NoSuchDisplayException
@@ -53,14 +55,14 @@ def _error_handler(display, event):
         event = event.contents
         buf = c_buffer(1024)
         xlib.XGetErrorText(display, event.error_code, buf, len(buf))
-        print 'X11 error:', buf.value
-        print '   serial:', event.serial
-        print '  request:', event.request_code
-        print '    minor:', event.minor_code
-        print ' resource:', event.resourceid
+        print('X11 error:', buf.value)
+        print('   serial:', event.serial)
+        print('  request:', event.request_code)
+        print('    minor:', event.minor_code)
+        print(' resource:', event.resourceid)
 
         import traceback
-        print 'Python stack trace (innermost last):'
+        print('Python stack trace (innermost last):')
         traceback.print_stack()
     return 0
 _error_handler_ptr = xlib.XErrorHandler(_error_handler)

@@ -10,3 +10,17 @@ When pyglet is installed using "python setup.py install" this happens automatica
 
 The converted version of pyglet is currently known to work on Windows and Linux, it
 might not work on MacOS (needs testing).
+
+--------------------
+Update: 15. Jun 2015
+--------------------
+
+All tests are now py2/3 compatible.
+
+Futurize stage 1 has been applied to:
+- pyglet.app
+- pyglet.canvas
+- pyglet.font
+- pyglet.gl
+- pyglet.graphics
+

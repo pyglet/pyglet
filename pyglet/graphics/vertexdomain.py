@@ -244,7 +244,7 @@ class VertexDomain(object):
         '''Allocate vertices, resizing the buffers if necessary.'''
         try:
             return self.allocator.alloc(count)
-        except allocation.AllocatorMemoryException, e:
+        except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
             for buffer, _ in self.buffer_attributes:
@@ -256,7 +256,7 @@ class VertexDomain(object):
         '''Reallocate vertices, resizing the buffers if necessary.'''
         try:
             return self.allocator.realloc(start, count, new_count)
-        except allocation.AllocatorMemoryException, e:
+        except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
             for buffer, _ in self.buffer_attributes:
@@ -657,7 +657,7 @@ class IndexedVertexDomain(VertexDomain):
         '''Allocate indices, resizing the buffers if necessary.'''
         try:
             return self.index_allocator.alloc(count)
-        except allocation.AllocatorMemoryException, e:
+        except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
             self.index_buffer.resize(capacity * self.index_element_size)
@@ -668,7 +668,7 @@ class IndexedVertexDomain(VertexDomain):
         '''Reallocate indices, resizing the buffers if necessary.'''
         try:
             return self.index_allocator.realloc(start, count, new_count)
-        except allocation.AllocatorMemoryException, e:
+        except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             self._version += 1
             self.index_buffer.resize(capacity * self.index_element_size)

@@ -90,6 +90,8 @@ by default:
 The information modules are provided for convenience, and are documented
 below.
 '''
+from __future__ import print_function
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -145,7 +147,7 @@ if _pyglet.options['debug_texture']:
         _debug_texture_sizes[texture] = size
         _debug_texture_total += size
 
-        print '%d (+%d)' % (_debug_texture_total, size)
+        print('%d (+%d)' % (_debug_texture_total, size))
 
     def _debug_texture_dealloc(texture):
         global _debug_texture_total
@@ -154,7 +156,7 @@ if _pyglet.options['debug_texture']:
         del _debug_texture_sizes[texture]
         _debug_texture_total -= size
 
-        print '%d (-%d)' % (_debug_texture_total, size)
+        print('%d (-%d)' % (_debug_texture_total, size))
 
     _glBindTexture = glBindTexture
     def glBindTexture(target, texture):
@@ -209,18 +211,18 @@ def _create_shadow_window():
     app.windows.remove(_shadow_window)
 
 from pyglet import compat_platform
-from base import ObjectSpace, CanvasConfig, Context
+from .base import ObjectSpace, CanvasConfig, Context
 if _is_epydoc:
-    from base import Config
+    from .base import Config
 elif compat_platform in ('win32', 'cygwin'):
-    from win32 import Win32Config as Config
+    from .win32 import Win32Config as Config
 elif compat_platform.startswith('linux'):
-    from xlib import XlibConfig as Config
+    from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
     if _pyglet.options['darwin_cocoa']:
-        from cocoa import CocoaConfig as Config
+        from .cocoa import CocoaConfig as Config
     else:
-        from carbon import CarbonConfig as Config
+        from .carbon import CarbonConfig as Config
 del base
 
 # XXX remove

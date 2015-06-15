@@ -2,6 +2,7 @@
 
 '''
 '''
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -9,7 +10,7 @@ __version__ = '$Id: $'
 from ctypes import *
 
 from pyglet.canvas.xlib import XlibCanvas
-from base import Config, CanvasConfig, Context
+from .base import Config, CanvasConfig, Context
 
 from pyglet import gl
 from pyglet.gl import glx

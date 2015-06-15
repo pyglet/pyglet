@@ -34,12 +34,14 @@
 
 '''
 '''
+from __future__ import print_function
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 from ctypes import *
-from base import FontException
+from .base import FontException
 import pyglet.lib
 
 _libfreetype = pyglet.lib.load_library('freetype')
@@ -52,7 +54,7 @@ def _get_function(name, argtypes, rtype):
         func.argtypes = argtypes
         func.restype = rtype
         return func
-    except AttributeError, e:
+    except AttributeError as e:
             raise ImportError(e)
 
 FT_Done_FreeType = _get_function('FT_Done_FreeType', [c_void_p], None)
@@ -87,7 +89,7 @@ class FT_Glyph_Metrics(Structure):
 
     def dump(self):
         for (name, type) in self._fields_:
-            print 'FT_Glyph_Metrics', name, `getattr(self, name)`
+            print('FT_Glyph_Metrics', name, repr(getattr(self, name)))
 
 class FT_Generic(Structure):
     _fields_ = [('data', c_void_p), ('finalizer', c_void_p)]
@@ -252,7 +254,7 @@ class FT_FaceRec(Structure):
 
     def dump(self):
         for (name, type) in self._fields_:
-            print 'FT_FaceRec', name, `getattr(self, name)`
+            print('FT_FaceRec', name, repr(getattr(self, name)))
 
     def has_kerning(self):
         return self.face_flags & FT_FACE_FLAG_KERNING

@@ -46,6 +46,7 @@ allocation.  The buffer is never resized smaller.
 The allocator maintains references to free space only; it is the caller's
 responsibility to maintain the allocated regions.
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -231,9 +232,9 @@ class Allocator(object):
             if p >= 0 and size <= alloc_size - p:
                 break
         if not (p >= 0 and size <= alloc_size - p):
-            print zip(self.starts, self.sizes)
-            print start, size, new_size
-            print p, alloc_start, alloc_size
+            print(zip(self.starts, self.sizes))
+            print(start, size, new_size)
+            print(p, alloc_start, alloc_size)
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
         if size == alloc_size - p:
