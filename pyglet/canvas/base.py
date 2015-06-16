@@ -1,3 +1,4 @@
+from builtins import object
 #!/usr/bin/python
 # $Id:$
 

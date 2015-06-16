@@ -3,13 +3,18 @@
 '''
 '''
 from __future__ import print_function
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import sys
 import threading
-import Queue
+import queue
 
 from pyglet import app
 from pyglet import clock
@@ -23,7 +28,7 @@ class PlatformEventLoop(object):
     :since: pyglet 1.2
     '''
     def __init__(self):
-        self._event_queue = Queue.Queue()
+        self._event_queue = queue.Queue()
         self._is_running = threading.Event()
         self._is_running.clear()
 
@@ -67,7 +72,7 @@ class PlatformEventLoop(object):
         while True:
             try:
                 dispatcher, event, args = self._event_queue.get(False)
-            except Queue.Empty:
+            except queue.Empty:
                 break
 
             dispatcher.dispatch_event(event, *args)

@@ -18,3 +18,8 @@ Update: 15. Jun 2015
 All tests are now py2/3 compatible.
 
 Futurize stage 1 has been applied to the whole pyglet package. Next step is to apply stage 2.
+
+Stage 2 applied to:
+- pyglet.app
+- pyglet.canvas
+

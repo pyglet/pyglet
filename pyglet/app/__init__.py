@@ -72,6 +72,7 @@ Applications must not subclass or replace this :class:`PlatformEventLoop`
 object.
 
 '''
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'

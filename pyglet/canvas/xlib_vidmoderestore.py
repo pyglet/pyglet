@@ -12,6 +12,7 @@ the process is terminated uncleanly.
 The child process is communicated to via a pipe, and watches for parent
 death with a Linux extension signal handler.
 '''
+from builtins import object
 
 import ctypes
 import os
