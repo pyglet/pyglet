@@ -34,6 +34,7 @@
 """
 Wrapper around the Linux FontConfig library. Used to find available fonts.
 """
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -216,8 +217,7 @@ class FontConfigPattern(object):
         if not value:
             return
 
-        if isinstance(value, unicode):
-            value  = value.encode('utf8')
+        value  = value.encode('utf8')
 
         self._fontconfig.FcPatternAddString(self._pattern, name, asbytes(value))
 

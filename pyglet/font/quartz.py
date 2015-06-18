@@ -34,6 +34,8 @@
 
 '''
 '''
+from builtins import map
+from builtins import str
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -75,7 +77,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         
         # Get a bounding rectangle for glyphs in string.
         count = len(text)
-        chars = (UniChar * count)(*map(ord,unicode(text)))
+        chars = (UniChar * count)(*list(map(ord,str(text))))
         glyphs = (CGGlyph * count)()
         ct.CTFontGetGlyphsForCharacters(ctFont, chars, glyphs, count)
         rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
@@ -210,7 +212,7 @@ class QuartzFont(base.Font):
         if bold: traits |= kCTFontBoldTrait
         if italic: traits |= kCTFontItalicTrait
 
-        name = unicode(name)
+        name = str(name)
         # First see if we can find an appropriate font from our table of loaded fonts.
         cgFont = self._lookup_font_with_family_and_traits(name, traits)
         if cgFont:
@@ -228,7 +230,7 @@ class QuartzFont(base.Font):
 
     @classmethod
     def have_font(cls, name):
-        name = unicode(name)
+        name = str(name)
         if name in cls._loaded_CGFont_table: return True
         # Try to create the font to see if it exists.
         # TODO: Find a better way to check.
@@ -260,11 +262,11 @@ class QuartzFont(base.Font):
 
         # Get info about the font to use as key in our font table.
         string = c_void_p(ct.CTFontCopyFamilyName(ctFont))
-        familyName = unicode(cfstring_to_string(string))
+        familyName = str(cfstring_to_string(string))
         cf.CFRelease(string)
 
         string = c_void_p(ct.CTFontCopyFullName(ctFont))
-        fullName = unicode(cfstring_to_string(string))
+        fullName = str(cfstring_to_string(string))
         cf.CFRelease(string)
 
         traits = ct.CTFontGetSymbolicTraits(ctFont)

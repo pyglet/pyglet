@@ -66,6 +66,9 @@ A convenient way to render a string of text is with a `Text`::
 See the `pyglet.font.base` module for documentation on the base classes used
 by this package.
 '''
+from __future__ import division
+from builtins import object
+from past.builtins import basestring
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -680,7 +683,7 @@ def add_file(font):
             Filename or file-like object to load fonts from.
 
     '''
-    if type(font) in (str, unicode):
+    if isinstance(font, basestring):
         font = open(font, 'rb')
     if hasattr(font, 'read'):
         font = font.read()

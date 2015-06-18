@@ -22,4 +22,5 @@ Futurize stage 1 has been applied to the whole pyglet package. Next step is to a
 Stage 2 applied to:
 - pyglet.app
 - pyglet.canvas
+- pyglet.font
 

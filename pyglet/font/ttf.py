@@ -43,6 +43,11 @@ References:
  * http://developer.apple.com/fonts/TTRefMan/RM06
  * http://www.microsoft.com/typography/otspec
 """
+from __future__ import division
+from builtins import zip
+from builtins import chr
+from builtins import range
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'  
@@ -52,7 +57,7 @@ import os
 import mmap
 import struct
 
-class TruetypeInfo:
+class TruetypeInfo(object):
     """Information about a single Truetype face.
 
     The class memory-maps the font file to read the tables, so
@@ -410,7 +415,7 @@ class TruetypeInfo:
         # format ever.  Whoever the fuckwit is that thought this up is
         # a fuckwit. 
         header = _read_cmap_format4Header(self._data, offset)
-        seg_count = header.seg_count_x2 / 2
+        seg_count = header.seg_count_x2 // 2
         array_size = struct.calcsize('>%dH' % seg_count)
         end_count = self._read_array('>%dH' % seg_count, 
             offset + header.size)
@@ -432,12 +437,12 @@ class TruetypeInfo:
                         id_range_offset_address + 2*i
                     g = struct.unpack('>H', self._data[addr:addr+2])[0]
                     if g != 0:
-                        character_map[unichr(c)] = (g + id_delta[i]) % 65536
+                        character_map[chr(c)] = (g + id_delta[i]) % 65536
             else:
                 for c in range(start_count[i], end_count[i] + 1):
                     g = (c + id_delta[i]) % 65536
                     if g != 0:
-                        character_map[unichr(c)] = g
+                        character_map[chr(c)] = g
         return character_map
 
     def _read_array(self, format, offset):
@@ -464,11 +469,11 @@ def _read_table(*entries):
         name, type = entry.split(':')
         names.append(name)
         fmt += type
-    class _table_class:
+    class _table_class(object):
         size = struct.calcsize(fmt)
         def __init__(self, data, offset):
             items = struct.unpack(fmt, data[offset:offset+self.size])
-            self.pairs = zip(names, items)
+            self.pairs = list(zip(names, items))
             for name, value in self.pairs:
                 setattr(self, name, value)
 
