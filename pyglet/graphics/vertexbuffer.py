@@ -43,6 +43,8 @@ Buffers can optionally be created "mappable" (incorporating the
 method which provides the most efficient path for updating partial data within
 the buffer.
 '''
+from builtins import range
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

@@ -158,6 +158,8 @@ video drivers, and requires indexed vertex lists.
 :since: pyglet 1.1
 '''
 from __future__ import print_function
+from builtins import zip
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -397,7 +399,7 @@ class Batch(object):
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
         start = vlist.start
-        vlist._set_index_data(map(lambda i: i + start, indices))
+        vlist._set_index_data([i + start for i in indices])
         for i, array in initial_arrays:
             vlist._set_attribute_data(i, array)
 

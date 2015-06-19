@@ -130,6 +130,7 @@ Some examples follow:
     2-float texture coordinate for texture unit 3.
 
 '''
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

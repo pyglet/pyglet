@@ -55,6 +55,9 @@ The entire domain can be efficiently drawn in one step with the
 `VertexDomain.draw` method, assuming all the vertices comprise primitives of
 the same OpenGL primitive mode.
 '''
+from builtins import zip
+from builtins import range
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -408,8 +411,8 @@ class VertexList(object):
                 Domain to migrate this vertex list to.
 
         '''
-        assert domain.attribute_names.keys() == \
-            self.domain.attribute_names.keys(), 'Domain attributes must match.'
+        assert list(domain.attribute_names.keys()) == \
+            list(self.domain.attribute_names.keys()), 'Domain attributes must match.'
 
         new_start = domain._safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
@@ -601,7 +604,7 @@ class VertexList(object):
 
     def _set_multi_tex_coords(self, data):
         if self._get_multi_tex_coords() != None:
-            for a in xrange(0, len(self._tex_coords_cache),1):
+            for a in range(0, len(self._tex_coords_cache),1):
                 if a > len(data):
                     break
                 elif data[a] != None:
@@ -790,7 +793,7 @@ class IndexedVertexList(VertexList):
         # Change indices (because vertices moved)
         if old_start != self.start:
             diff = self.start - old_start
-            self.indices[:] = map(lambda i: i + diff, self.indices)
+            self.indices[:] = [i + diff for i in self.indices]
 
         # Resize indices
         new_start = self.domain._safe_index_realloc(
