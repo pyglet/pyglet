@@ -23,4 +23,6 @@ Stage 2 applied to:
 - pyglet.app
 - pyglet.canvas
 - pyglet.font
+- pyglet.gl
+
 

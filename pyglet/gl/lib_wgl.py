@@ -34,6 +34,7 @@
 
 '''
 '''
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: lib_glx.py 597 2007-02-03 16:13:07Z Alex.Holkner $'

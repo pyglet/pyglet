@@ -92,6 +92,7 @@ below.
 '''
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import range
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
