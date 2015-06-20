@@ -347,7 +347,7 @@ class EventLoop(event.EventDispatcher):
 
     def on_window_close(self, window):
         '''Default window close handler.'''
-        if not app.windows:
+        if len(app.windows) == 0:
             self.exit()
 
     if _is_epydoc:
