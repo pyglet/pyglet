@@ -48,6 +48,7 @@ Modules must also implement the two functions::
         return []
     
 '''
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

@@ -37,6 +37,7 @@
 Currently supports version 3 and 4 bitmaps with BI_RGB and BI_BITFIELDS
 encoding.  Alpha channel is supported for 32-bit BI_RGB only.
 '''
+from builtins import range
 
 # Official docs are at
 # http://msdn2.microsoft.com/en-us/library/ms532311.aspx

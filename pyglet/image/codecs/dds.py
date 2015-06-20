@@ -39,6 +39,8 @@ Reference: http://msdn2.microsoft.com/en-us/library/bb172993.aspx
 
 from __future__ import division
 from __future__ import print_function
+from builtins import range
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'

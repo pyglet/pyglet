@@ -37,6 +37,8 @@
 http://www.w3.org/Graphics/GIF/spec-gif89a.txt
 '''
 from __future__ import print_function
+from __future__ import division
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'

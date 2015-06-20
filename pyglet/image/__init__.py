@@ -129,6 +129,10 @@ use of the data in this arbitrary format).
 '''
 
 from __future__ import division
+from builtins import bytes
+from builtins import zip
+from builtins import range
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -1953,7 +1957,7 @@ class BufferManager(object):
 
         stencil_bits = GLint()
         glGetIntegerv(GL_STENCIL_BITS, byref(stencil_bits))
-        self.free_stencil_bits = range(stencil_bits.value)
+        self.free_stencil_bits = list(range(stencil_bits.value))
 
         self.refs = []
 
