@@ -47,6 +47,7 @@ Example usage::
 
 :since: pyglet 1.1
 '''
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

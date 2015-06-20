@@ -29,4 +29,5 @@ Stage 2 applied to:
 - pyglet.input
 - pyglet.libs
 - pyglet.media
+- pyglet.text
 

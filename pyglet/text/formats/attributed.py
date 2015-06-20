@@ -35,6 +35,8 @@
 '''Extensible attributed text format for representing pyglet formatted
 documents.
 '''
+from builtins import chr
+from builtins import map
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -107,9 +109,9 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):
                 else:
                     self.attributes[name] = val
             elif group == 'escape_dec':
-                self.append(unichr(int(m.group('escape_dec_val'))))
+                self.append(chr(int(m.group('escape_dec_val'))))
             elif group == 'escape_hex':
-                self.append(unichr(int(m.group('escape_hex_val'), 16)))
+                self.append(chr(int(m.group('escape_hex_val'), 16)))
             elif group == 'escape_lbrace':
                 self.append('{')
             elif group == 'escape_rbrace':

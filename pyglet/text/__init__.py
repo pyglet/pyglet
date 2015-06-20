@@ -72,6 +72,7 @@ creating scrollable layouts.
 
 :since: pyglet 1.1
 '''
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

@@ -152,6 +152,12 @@ document; they will be ignored by the built-in text classes.
 
 :since: pyglet 1.1
 '''
+from __future__ import division
+from builtins import zip
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -425,7 +431,7 @@ class _GlyphBox(_AbstractBox):
         last_glyph_x = 0
         for kern, glyph in self.glyphs:
             last_glyph_x += kern
-            if last_glyph_x + glyph.advance / 2 > x:
+            if last_glyph_x + glyph.advance // 2 > x:
                 return position
             position += 1
             last_glyph_x += glyph.advance
@@ -461,7 +467,7 @@ class _InlineElementBox(_AbstractBox):
             return self.advance
 
     def get_position_in_box(self, x):
-        if x < self.advance / 2:
+        if x < self.advance // 2:
             return 0
         else:
             return 1
@@ -1411,7 +1417,7 @@ class TextLayout(object):
             l_dx = lambda x: int(x + dx)
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.vertices[:]
-                vertices[::2] = map(l_dx, vertices[::2])
+                vertices[::2] = list(map(l_dx, vertices[::2]))
                 vertex_list.vertices[:] = vertices
             self._x = x
 
@@ -1436,7 +1442,7 @@ class TextLayout(object):
             l_dy = lambda y: int(y + dy)
             for vertex_list in self._vertex_lists:
                 vertices = vertex_list.vertices[:]
-                vertices[1::2] = map(l_dy, vertices[1::2])
+                vertices[1::2] = list(map(l_dy, vertices[1::2]))
                 vertex_list.vertices[:] = vertices
             self._y = y
 

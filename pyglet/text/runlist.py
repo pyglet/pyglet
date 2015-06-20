@@ -35,6 +35,10 @@
 
 :since: pyglet 1.1
 '''
+from builtins import str
+from builtins import zip
+from builtins import next
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -288,7 +292,7 @@ class RunIterator(AbstractRunIterator):
         self._run_list_iter = iter(run_list)
         self.start, self.end, self.value = next(self)
         
-    def next(self):
+    def __next__(self):
         return next(self._run_list_iter)
 
     def __getitem__(self, index):
@@ -412,7 +416,7 @@ class ConstRunIterator(AbstractRunIterator):
         self.length = length
         self.value = value
 
-    def next(self):
+    def __next__(self):
         yield 0, self.length, self.value
 
     def ranges(self, start, end):

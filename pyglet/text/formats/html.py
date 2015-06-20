@@ -47,12 +47,13 @@ oddly if edited.
 
 No CSS styling is supported.
 '''
+from builtins import chr
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import HTMLParser
-import htmlentitydefs
+from future.moves.html.parser import HTMLParser
+from future.moves.html import entities
 import re
 
 import pyglet
@@ -111,7 +112,7 @@ _block_containers = ['_top_block',
                      'ul', 'ol', 'dir', 'menu', 'dl']
 
 
-class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
+class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
     '''Decoder for HTML documents.
     '''
     #: Default style attributes for unstyled text in the HTML document.
@@ -349,15 +350,15 @@ class HTMLDecoder(HTMLParser.HTMLParser, structured.StructuredTextDecoder):
                 self.list_stack.pop()
 
     def handle_entityref(self, name):
-        if name in htmlentitydefs.name2codepoint:
-            self.handle_data(unichr(htmlentitydefs.name2codepoint[name]))
+        if name in entities.name2codepoint:
+            self.handle_data(chr(entities.name2codepoint[name]))
     
     def handle_charref(self, name):
         name = name.lower()
         try:
             if name.startswith('x'):
-                self.handle_data(unichr(int(name[1:], 16)))
+                self.handle_data(chr(int(name[1:], 16)))
             else:
-                self.handle_data(unichr(int(name)))
+                self.handle_data(chr(int(name)))
         except ValueError:
             pass
