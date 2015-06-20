@@ -2,6 +2,8 @@
 # $Id:$
 
 from __future__ import print_function
+from builtins import range
+from builtins import object
 import ctypes
 
 import pyglet

@@ -2,6 +2,7 @@
 
 '''
 '''
+from __future__ import division
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

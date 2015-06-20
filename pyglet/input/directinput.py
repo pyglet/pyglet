@@ -1,3 +1,4 @@
+from builtins import zip
 #!/usr/bin/python
 # $Id:$
 
@@ -199,4 +200,9 @@ def _create_joystick(device):
         return base.Joystick(device)
 
 def get_joysticks(display=None):
-    return filter(None, [_create_joystick(d) for d in get_devices(display)])
+    return [joystick 
+            for joystick 
+            in [_create_joystick(device) 
+                for device
+                in get_devices(display)] 
+            if joystick is not None]

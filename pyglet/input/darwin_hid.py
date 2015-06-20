@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import object
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
 
@@ -202,7 +203,7 @@ HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)
 _device_lookup = {}  # IOHIDDeviceRef to python HIDDevice object  
 _element_lookup = {} # IOHIDElementRef to python HIDDeviceElement object
 
-class HIDValue:
+class HIDValue(object):
     def __init__(self, valueRef):
         # Check that this is a valid IOHIDValue.
         assert(valueRef)
@@ -220,7 +221,7 @@ class HIDValue:
         elementRef = c_void_p(iokit.IOHIDValueGetElement(valueRef))
         self.element = HIDDeviceElement.get_element(elementRef)
 
-class HIDDevice:
+class HIDDevice(object):
     @classmethod
     def get_device(cls, deviceRef):
         # deviceRef is a c_void_p pointing to an IOHIDDeviceRef
@@ -361,7 +362,7 @@ class HIDDevice:
             return None
 
 
-class HIDDeviceElement:
+class HIDDeviceElement(object):
     @classmethod
     def get_element(cls, elementRef):
         # elementRef is a c_void_p pointing to an IOHIDDeviceElementRef
@@ -405,7 +406,7 @@ class HIDDeviceElement:
         self.physicalMax = iokit.IOHIDElementGetPhysicalMax(elementRef)
 
 
-class HIDManager:
+class HIDManager(object):
     def __init__(self):
         # Create the HID Manager.
         self.managerRef = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))
@@ -529,7 +530,7 @@ class PygletDevice(Device):
         self._is_open = False
 
     def get_controls(self):
-        return self._controls.values()
+        return list(self._controls.values())
 
     def device_removed(self, hid_device):
         # Called by device when it is unplugged.
