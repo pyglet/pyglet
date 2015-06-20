@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
+from __future__ import division
 import ctypes
 
 lib = ctypes.windll.wintab32
