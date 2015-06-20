@@ -1,14 +1,15 @@
+from __future__ import absolute_import
 import pyglet
 
 # Cocoa implementation:
 if pyglet.options['darwin_cocoa']:
 
-    from cocoapy import *
+    from .cocoapy import *
 
 # Carbon implementation:
 else:
-    from types import *
-    from constants import *
+    from .types import *
+    from .constants import *
 
     carbon = pyglet.lib.load_library(
         framework='/System/Library/Frameworks/Carbon.framework')

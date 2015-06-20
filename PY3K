@@ -26,5 +26,6 @@ Stage 2 applied to:
 - pyglet.gl
 - pyglet.graphics
 - pyglet.image
+- pyglet.input
 
 

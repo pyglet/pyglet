@@ -34,12 +34,13 @@
 
 '''
 '''
+from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from pyglet.window import key
-from constants import *
+from .constants import *
 
 keymap = {
     ord('A'): key.A,
