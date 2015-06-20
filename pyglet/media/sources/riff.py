@@ -34,6 +34,8 @@
 
 """Simple Python-only RIFF reader, supports uncompressed WAV files.
 """
+from __future__ import division
+from builtins import object
 
 # RIFF reference:
 # http://www.saettler.com/RIFFMCI/riffmci.html

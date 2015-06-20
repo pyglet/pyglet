@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner

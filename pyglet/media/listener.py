@@ -1,3 +1,4 @@
+from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -32,15 +33,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 from abc import ABCMeta, abstractmethod
+from future.utils import with_metaclass
 
 
-class AbstractListener(object):
+class AbstractListener(with_metaclass(ABCMeta, object)):
     """The listener properties for positional audio.
 
     You can obtain the singleton instance of this class by calling
     `AbstractAudioDriver.get_listener`.
     """
-    __metaclass__ = ABCMeta
 
     _volume = 1.0
     _position = (0, 0, 0)

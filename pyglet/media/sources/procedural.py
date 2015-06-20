@@ -1,3 +1,5 @@
+from __future__ import division
+from builtins import range
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner

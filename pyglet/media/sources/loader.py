@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -37,6 +38,7 @@ from abc import ABCMeta, abstractmethod
 
 import pyglet
 from .base import StaticSource
+from future.utils import with_metaclass
 
 _debug = pyglet.options['debug_media']
 
@@ -64,9 +66,7 @@ def load(filename, file=None, streaming=True):
     return source
 
 
-class AbstractSourceLoader(object):
-    __metaclass__ = ABCMeta
-
+class AbstractSourceLoader(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def load(self, filename, file):
         pass

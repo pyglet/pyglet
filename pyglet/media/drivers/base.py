@@ -1,3 +1,4 @@
+from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -32,13 +33,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 from abc import ABCMeta, abstractmethod
+from future.utils import with_metaclass
 
 
-class AbstractAudioPlayer(object):
+class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
     """Base class for driver audio players.
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, source_group, player):
         """Create a new audio player.
@@ -133,9 +133,7 @@ class AbstractAudioPlayer(object):
         pass
 
 
-class AbstractAudioDriver(object):
-    __metaclass__ = ABCMeta
-
+class AbstractAudioDriver(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def create_audio_player(self, source_group, player):
         pass

@@ -35,6 +35,9 @@
 """Use avbin to decode audio and video media.
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from builtins import object
 
 import struct
 import ctypes
