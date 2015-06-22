@@ -59,6 +59,7 @@ Usage::
         if modifiers & key.MOD_CTRL:
 
 '''
+from builtins import str
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'

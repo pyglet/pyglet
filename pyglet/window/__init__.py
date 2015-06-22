@@ -121,6 +121,9 @@ above, "Working with multiple screens")::
         win = window.Window(config=configs[0])
 
 '''
+from __future__ import division
+from builtins import object
+from future.utils import with_metaclass
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -264,7 +267,7 @@ class _WindowMetaclass(type):
                 cls._platform_event_names.add(name)
         super(_WindowMetaclass, cls).__init__(name, bases, dict)
 
-class BaseWindow(EventDispatcher):
+class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     '''Platform-independent application window.
 
     A window is a "heavyweight" object occupying operating system resources.
@@ -295,7 +298,6 @@ class BaseWindow(EventDispatcher):
                 used.
 
     '''
-    __metaclass__ = _WindowMetaclass
 
     # Filled in by metaclass with the names of all methods on this (sub)class
     # that are platform event handlers.

@@ -34,6 +34,8 @@
 
 '''
 '''
+from __future__ import division
+from builtins import chr
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -703,7 +705,7 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_CHAR)
     def _event_char(self, msg, wParam, lParam):
-        text = unichr(wParam)
+        text = chr(wParam)
         if unicodedata.category(text) != 'Cc' or text == '\r':
             self.dispatch_event('on_text', text)
         return 0

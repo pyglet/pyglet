@@ -30,4 +30,5 @@ Stage 2 applied to:
 - pyglet.libs
 - pyglet.media
 - pyglet.text
+- pyglet.window
 

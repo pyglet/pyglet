@@ -1,3 +1,5 @@
+from builtins import chr
+from builtins import object
 import unicodedata
 
 from pyglet.window import key
@@ -46,7 +48,7 @@ class PygletTextView_Implementation(object):
         # Only the return key press gets sent as an on_text event.
         event = NSApplication.sharedApplication().currentEvent()
         chars = event.charactersIgnoringModifiers()
-        ch = unichr(chars.characterAtIndex_(0))
+        ch = chr(chars.characterAtIndex_(0))
         if ch == u'\r':
             self._window.dispatch_event("on_text", u'\r')
 
