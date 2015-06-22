@@ -94,6 +94,7 @@ sprites within batches.
 
 :since: pyglet 1.1
 '''
+from builtins import map
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -547,7 +548,7 @@ class Sprite(event.EventDispatcher):
     ''')
 
     def _set_color(self, rgb):
-        self._rgb = map(int, rgb)
+        self._rgb = list(map(int, rgb))
         self._update_color()
 
     color = property(lambda self: self._rgb, _set_color,

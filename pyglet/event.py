@@ -135,6 +135,8 @@ Not all event dispatchers require the call to ``dispatch_events``; check with
 the particular class documentation.
 
 '''
+from builtins import object
+from past.builtins import basestring
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -449,7 +451,7 @@ class EventDispatcher(object):
             name = func.__name__
             self.set_handler(name, func)
             return args[0]
-        elif type(args[0]) in (str, unicode):   # @window.event('on_resize')
+        elif isinstance(args[0], basestring):   # @window.event('on_resize')
             name = args[0]
             def decorator(func):
                 self.set_handler(name, func)

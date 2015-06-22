@@ -36,6 +36,9 @@
 These extend and correct ctypes functions.
 '''
 from __future__ import print_function
+from builtins import str
+from builtins import object
+from past.builtins import basestring
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -118,7 +121,7 @@ class LibraryLoader(object):
             raise ImportError("No library name specified")
         
         platform_names = kwargs.get(self.platform, [])
-        if type(platform_names) in (str, unicode):
+        if isinstance(platform_names, basestring):
             platform_names = [platform_names]
         elif type(platform_names) is tuple:
             platform_names = list(platform_names)

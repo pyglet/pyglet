@@ -38,6 +38,8 @@ Detailed documentation is available at http://www.pyglet.org
 '''
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import range
+from builtins import object
 
 # Check if future is installed, if not use included batteries
 try:

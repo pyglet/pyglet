@@ -68,9 +68,11 @@ the return value.
 Don't forget to manually manage memory... call Release() when you're done with
 an interface.
 '''
+from builtins import object
 
 import ctypes
 import sys
+from future.utils import with_metaclass
 
 if sys.platform != 'win32':
     raise ImportError('pyglet.com requires a Windows build of Python')
@@ -146,9 +148,8 @@ class InterfaceMetaclass(type(ctypes.POINTER(COMInterface))):
 
         return super(InterfaceMetaclass, cls).__new__(cls, name, bases, dct)
 
-class Interface(ctypes.POINTER(COMInterface)):
+class Interface(with_metaclass(InterfaceMetaclass, ctypes.POINTER(COMInterface))):
     '''Base COM interface pointer.'''
-    __metaclass__ = InterfaceMetaclass
 
 class IUnknown(Interface):
     _methods_ = [

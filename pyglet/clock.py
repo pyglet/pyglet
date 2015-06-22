@@ -138,6 +138,9 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 of the system clock.
 '''
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -975,7 +978,7 @@ def test_clock():
     n_frames = int(test_seconds * test_fps + 1)
 
     print('Testing %f FPS for %f seconds...' % (test_fps, test_seconds))
-    for i in xrange(n_frames):
+    for i in range(n_frames):
         tick()
         if show_fps:
             print(get_fps())
