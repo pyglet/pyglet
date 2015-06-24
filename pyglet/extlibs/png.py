@@ -184,6 +184,15 @@ And now, my famous members
 
 # http://www.python.org/doc/2.2.3/whatsnew/node5.html
 from __future__ import generators
+from __future__ import division
+from __future__ import print_function
+from builtins import bytes
+from builtins import str
+from builtins import zip
+from builtins import map
+from builtins import range
+from builtins import object
+from functools import reduce
 
 __version__ = "0.0.17"
 
@@ -228,7 +237,7 @@ _adam7 = ((0, 0, 8, 8),
 
 def group(s, n):
     # See http://www.python.org/doc/2.6/library/functions.html#zip
-    return zip(*[iter(s)]*n)
+    return list(zip(*[iter(s)]*n))
 
 def isarray(x):
     """Same as ``isinstance(x, array)`` except on Python 2.2, where it
@@ -263,17 +272,13 @@ else:
         return row.tobytes()
 
 # Conditionally convert to bytes.  Works on Python 2 and Python 3.
-try:
-    bytes('', 'ascii')
-    def strtobytes(x): return bytes(x, 'iso8859-1')
-    def bytestostr(x): return str(x, 'iso8859-1')
-except (NameError, TypeError):
-    # We get NameError when bytes() does not exist (most Python
-    # 2.x versions), and TypeError when bytes() exists but is on
-    # Python 2.x (when it is an alias for str() and takes at most
-    # one argument).
+# TODO: Find a way to do this using future
+if sys.version_info[:2] < (3,0):
     strtobytes = str
     bytestostr = str
+else:
+    def strtobytes(x): return bytes(x, 'iso8859-1')
+    def bytestostr(x): return str(x, 'iso8859-1')
 
 def interleave_planes(ipixels, apixels, ipsize, apsize):
     """
@@ -396,7 +401,7 @@ class ChunkError(FormatError):
     pass
 
 
-class Writer:
+class Writer(object):
     """
     PNG encoder in pure Python.
     """
@@ -636,7 +641,7 @@ class Writer:
         self.color_planes = (3,1)[self.greyscale or self.colormap]
         self.planes = self.color_planes + self.alpha
         # :todo: fix for bitdepth < 8
-        self.psize = (self.bitdepth/8) * self.planes
+        self.psize = (self.bitdepth//8) * self.planes
 
     def make_palette(self):
         """Create the byte sequences for a ``PLTE`` and if necessary a
@@ -776,7 +781,7 @@ class Writer:
             # Pack into bytes
             assert self.bitdepth < 8
             # samples per byte
-            spb = int(8/self.bitdepth)
+            spb = int(8//self.bitdepth)
             def extend(sl):
                 a = array('B', sl)
                 # Adding padding bytes so we can group into a whole
@@ -786,15 +791,15 @@ class Writer:
                 a.extend([0]*int(extra))
                 # Pack into bytes
                 l = group(a, spb)
-                l = map(lambda e: reduce(lambda x,y:
-                                           (x << self.bitdepth) + y, e), l)
+                l = [reduce(lambda x,y:
+                                           (x << self.bitdepth) + y, e) for e in l]
                 data.extend(l)
         if self.rescale:
             oldextend = extend
             factor = \
               float(2**self.rescale[1]-1) / float(2**self.rescale[0]-1)
             def extend(sl):
-                oldextend(map(lambda x: int(round(factor*x)), sl))
+                oldextend([int(round(factor*x)) for x in sl])
 
         # Build the first row, testing mostly to see if we need to
         # changed the extend function to cope with NumPy integer types
@@ -809,7 +814,7 @@ class Writer:
         # :todo: Certain exceptions in the call to ``.next()`` or the
         # following try would indicate no row data supplied.
         # Should catch.
-        i,row = enumrows.next()
+        i,row = next(enumrows)
         try:
             # If this fails...
             extend(row)
@@ -819,7 +824,7 @@ class Writer:
             # types, there are probably lots of other, unknown, "nearly"
             # int types it works for.
             def wrapmapint(f):
-                return lambda sl: f(map(int, sl))
+                return lambda sl: f(list(map(int, sl)))
             extend = wrapmapint(extend)
             del wrapmapint
             extend(row)
@@ -893,7 +898,7 @@ class Writer:
         if self.interlace:
             pixels = array('B')
             pixels.fromfile(infile,
-                            (self.bitdepth/8) * self.color_planes *
+                            (self.bitdepth//8) * self.color_planes *
                             self.width * self.height)
             self.write_passes(outfile, self.array_scanlines_interlace(pixels))
         else:
@@ -906,15 +911,15 @@ class Writer:
         """
         pixels = array('B')
         pixels.fromfile(ppmfile,
-                        (self.bitdepth/8) * self.color_planes *
+                        (self.bitdepth//8) * self.color_planes *
                         self.width * self.height)
         apixels = array('B')
         apixels.fromfile(pgmfile,
-                         (self.bitdepth/8) *
+                         (self.bitdepth//8) *
                          self.width * self.height)
         pixels = interleave_planes(pixels, apixels,
-                                   (self.bitdepth/8) * self.color_planes,
-                                   (self.bitdepth/8))
+                                   (self.bitdepth//8) * self.color_planes,
+                                   (self.bitdepth//8))
         if self.interlace:
             self.write_passes(outfile, self.array_scanlines_interlace(pixels))
         else:
@@ -1268,7 +1273,7 @@ def from_array(a, mode=None, info={}):
     # first row, which requires that we take a copy of its iterator.
     # We may also need the first row to derive width and bitdepth.
     a,t = itertools.tee(a)
-    row = t.next()
+    row = next(t)
     del t
     try:
         row[0][0]
@@ -1315,7 +1320,7 @@ def from_array(a, mode=None, info={}):
 # So that refugee's from PIL feel more at home.  Not documented.
 fromarray = from_array
 
-class Image:
+class Image(object):
     """A PNG image.  You can create an :class:`Image` object from
     an array of pixels by calling :meth:`png.from_array`.  It can be
     saved to disk with the :meth:`save` method.
@@ -1356,7 +1361,7 @@ class Image:
         finally:
             close()
 
-class _readable:
+class _readable(object):
     """
     A simple file-like interface for strings and arrays.
     """
@@ -1373,7 +1378,7 @@ class _readable:
         return r
 
 
-class Reader:
+class Reader(object):
     """
     PNG decoder in pure Python.
     """
@@ -1671,12 +1676,12 @@ class Reader:
             spb = 8//self.bitdepth
             out = array('B')
             mask = 2**self.bitdepth - 1
-            shifts = map(self.bitdepth.__mul__, reversed(range(spb)))
+            shifts = list(map(self.bitdepth.__mul__, reversed(list(range(spb)))))
             for o in raw:
-                out.extend(map(lambda i: mask&(o>>i), shifts))
+                out.extend([mask&(o>>i) for i in shifts])
             return out[:width]
 
-        return itertools.imap(asvalues, rows)
+        return map(asvalues, rows)
 
     def serialtoflat(self, bytes, width=None):
         """Convert serial format (byte stream) pixel data to flat row
@@ -1696,7 +1701,7 @@ class Reader:
         spb = 8//self.bitdepth
         out = array('B')
         mask = 2**self.bitdepth - 1
-        shifts = map(self.bitdepth.__mul__, reversed(range(spb)))
+        shifts = list(map(self.bitdepth.__mul__, reversed(list(range(spb)))))
         l = width
         for o in bytes:
             out.extend([(mask&(o>>s)) for s in shifts][:l])
@@ -1882,7 +1887,7 @@ class Reader:
             if not self.plte:
                 warnings.warn("PLTE chunk is required before tRNS chunk.")
             else:
-                if len(data) > len(self.plte)/3:
+                if len(data) > len(self.plte)//3:
                     # Was warning, but promoted to Error as it
                     # would otherwise cause pain later on.
                     raise FormatError("tRNS chunk is too long.")
@@ -1927,7 +1932,7 @@ class Reader:
             while True:
                 try:
                     type, data = self.chunk(lenient=lenient)
-                except ValueError, e:
+                except ValueError as e:
                     raise ChunkError(e.args[0])
                 if type == 'IEND':
                     # http://www.w3.org/TR/PNG/#11IEND
@@ -1965,7 +1970,7 @@ class Reader:
             arraycode = 'BH'[self.bitdepth>8]
             # Like :meth:`group` but producing an array.array object for
             # each row.
-            pixels = itertools.imap(lambda *row: array(arraycode, row),
+            pixels = map(lambda *row: array(arraycode, row),
                        *[iter(self.deinterlace(raw))]*self.width*self.planes)
         else:
             pixels = self.iterboxed(self.iterstraight(raw))
@@ -2020,7 +2025,7 @@ class Reader:
         if self.trns or alpha == 'force':
             trns = array('B', self.trns or '')
             trns.extend([255]*(len(plte)-len(trns)))
-            plte = map(operator.add, plte, group(trns, 1))
+            plte = list(map(operator.add, plte, group(trns, 1)))
         return plte
 
     def asDirect(self):
@@ -2077,7 +2082,7 @@ class Reader:
             plte = self.palette()
             def iterpal(pixels):
                 for row in pixels:
-                    row = map(plte.__getitem__, row)
+                    row = list(map(plte.__getitem__, row))
                     yield array('B', itertools.chain(*row))
             pixels = iterpal(pixels)
         elif self.trns:
@@ -2102,11 +2107,11 @@ class Reader:
                     # True/False to 0/maxval (by multiplication),
                     # and add it as the extra channel.
                     row = group(row, planes)
-                    opa = map(it.__ne__, row)
-                    opa = map(maxval.__mul__, opa)
-                    opa = zip(opa) # convert to 1-tuples
+                    opa = list(map(it.__ne__, row))
+                    opa = list(map(maxval.__mul__, opa))
+                    opa = list(zip(opa)) # convert to 1-tuples
                     yield array(typecode,
-                      itertools.chain(*map(operator.add, row, opa)))
+                      itertools.chain(*list(map(operator.add, row, opa))))
             pixels = itertrns(pixels)
         targetbitdepth = None
         if self.sbit:
@@ -2124,7 +2129,7 @@ class Reader:
             meta['bitdepth'] = targetbitdepth
             def itershift(pixels):
                 for row in pixels:
-                    yield map(shift.__rrshift__, row)
+                    yield list(map(shift.__rrshift__, row))
             pixels = itershift(pixels)
         return x,y,pixels,meta
 
@@ -2141,7 +2146,7 @@ class Reader:
         factor = float(maxval)/float(sourcemaxval)
         def iterfloat():
             for row in pixels:
-                yield map(factor.__mul__, row)
+                yield list(map(factor.__mul__, row))
         return x,y,iterfloat(),info
 
     def _as_rescale(self, get, targetbitdepth):
@@ -2154,7 +2159,7 @@ class Reader:
         meta['bitdepth'] = targetbitdepth
         def iterscale():
             for row in pixels:
-                yield map(lambda x: int(round(x*factor)), row)
+                yield [int(round(x*factor)) for x in row]
         if maxval == targetmaxval:
             return width, height, pixels, meta
         else:
@@ -2355,7 +2360,7 @@ except TypeError:
         # Expect to get here on Python 2.2
         def array(typecode, init=()):
             if type(init) == str:
-                return map(ord, init)
+                return list(map(ord, init))
             return list(init)
 
 # Further hacks to get it limping along on Python 2.2
@@ -2380,7 +2385,7 @@ except NameError:
 try:
     itertools
 except NameError:
-    class _dummy_itertools:
+    class _dummy_itertools(object):
         pass
     itertools = _dummy_itertools()
     def _itertools_imap(f, seq):
@@ -2755,7 +2760,7 @@ def _main(argv):
         # care about TUPLTYPE.
         greyscale = depth <= 2
         pamalpha = depth in (2,4)
-        supported = map(lambda x: 2**x-1, range(1,17))
+        supported = [2**x-1 for x in range(1,17)]
         try:
             mi = supported.index(maxval)
         except ValueError:
@@ -2792,5 +2797,5 @@ def _main(argv):
 if __name__ == '__main__':
     try:
         _main(sys.argv)
-    except Error, e:
-        print >>sys.stderr, e
+    except Error as e:
+        print(e, file=sys.stderr)
