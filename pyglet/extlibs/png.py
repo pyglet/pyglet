@@ -186,13 +186,13 @@ And now, my famous members
 from __future__ import generators
 from __future__ import division
 from __future__ import print_function
-from builtins import bytes
 from builtins import str
 from builtins import zip
 from builtins import map
 from builtins import range
 from builtins import object
 from functools import reduce
+from io import open
 
 __version__ = "0.0.17"
 
@@ -271,14 +271,6 @@ else:
         """
         return row.tobytes()
 
-# Conditionally convert to bytes.  Works on Python 2 and Python 3.
-# TODO: Find a way to do this using future
-if sys.version_info[:2] < (3,0):
-    strtobytes = str
-    bytestostr = str
-else:
-    def strtobytes(x): return bytes(x, 'iso8859-1')
-    def bytestostr(x): return str(x, 'iso8859-1')
 
 def interleave_planes(ipixels, apixels, ipsize, apsize):
     """
@@ -712,7 +704,7 @@ class Writer(object):
         outfile.write(_signature)
 
         # http://www.w3.org/TR/PNG/#11IHDR
-        write_chunk(outfile, 'IHDR',
+        write_chunk(outfile, b'IHDR',
                     struct.pack("!2I5B", self.width, self.height,
                                 self.bitdepth, self.color_type,
                                 0, 0, self.interlace))
@@ -720,13 +712,13 @@ class Writer(object):
         # See :chunk:order
         # http://www.w3.org/TR/PNG/#11gAMA
         if self.gamma is not None:
-            write_chunk(outfile, 'gAMA',
+            write_chunk(outfile, b'gAMA',
                         struct.pack("!L", int(round(self.gamma*1e5))))
 
         # See :chunk:order
         # http://www.w3.org/TR/PNG/#11sBIT
         if self.rescale:
-            write_chunk(outfile, 'sBIT',
+            write_chunk(outfile, b'sBIT',
                 struct.pack('%dB' % self.planes,
                             *[self.rescale[0]]*self.planes))
         
@@ -736,28 +728,28 @@ class Writer(object):
         # See http://www.w3.org/TR/PNG/#5ChunkOrdering
         if self.palette:
             p,t = self.make_palette()
-            write_chunk(outfile, 'PLTE', p)
+            write_chunk(outfile, b'PLTE', p)
             if t:
                 # tRNS chunk is optional. Only needed if palette entries
                 # have alpha.
-                write_chunk(outfile, 'tRNS', t)
+                write_chunk(outfile, b'tRNS', t)
 
         # http://www.w3.org/TR/PNG/#11tRNS
         if self.transparent is not None:
             if self.greyscale:
-                write_chunk(outfile, 'tRNS',
+                write_chunk(outfile, b'tRNS',
                             struct.pack("!1H", *self.transparent))
             else:
-                write_chunk(outfile, 'tRNS',
+                write_chunk(outfile, b'tRNS',
                             struct.pack("!3H", *self.transparent))
 
         # http://www.w3.org/TR/PNG/#11bKGD
         if self.background is not None:
             if self.greyscale:
-                write_chunk(outfile, 'bKGD',
+                write_chunk(outfile, b'bKGD',
                             struct.pack("!1H", *self.background))
             else:
-                write_chunk(outfile, 'bKGD',
+                write_chunk(outfile, b'bKGD',
                             struct.pack("!3H", *self.background))
 
         # http://www.w3.org/TR/PNG/#11IDAT
@@ -840,7 +832,7 @@ class Writer(object):
             if len(data) > self.chunk_limit:
                 compressed = compressor.compress(tostring(data))
                 if len(compressed):
-                    write_chunk(outfile, 'IDAT', compressed)
+                    write_chunk(outfile, b'IDAT', compressed)
                 # Because of our very witty definition of ``extend``,
                 # above, we must re-use the same ``data`` object.  Hence
                 # we use ``del`` to empty this one, rather than create a
@@ -849,12 +841,12 @@ class Writer(object):
         if len(data):
             compressed = compressor.compress(tostring(data))
         else:
-            compressed = strtobytes('')
+            compressed = b''
         flushed = compressor.flush()
         if len(compressed) or len(flushed):
-            write_chunk(outfile, 'IDAT', compressed + flushed)
+            write_chunk(outfile, b'IDAT', compressed + flushed)
         # http://www.w3.org/TR/PNG/#11IEND
-        write_chunk(outfile, 'IEND')
+        write_chunk(outfile, b'IEND')
         return i+1
 
     def write_array(self, outfile, pixels):
@@ -1001,7 +993,7 @@ class Writer(object):
                             pixels[offset+i:end_offset:skip]
                     yield row
 
-def write_chunk(outfile, tag, data=strtobytes('')):
+def write_chunk(outfile, tag, data=b''):
     """
     Write a PNG chunk to the output file, including length and
     checksum.
@@ -1009,7 +1001,6 @@ def write_chunk(outfile, tag, data=strtobytes('')):
 
     # http://www.w3.org/TR/PNG/#5Chunk-layout
     outfile.write(struct.pack("!I", len(data)))
-    tag = strtobytes(tag)
     outfile.write(tag)
     outfile.write(data)
     checksum = zlib.crc32(tag)
@@ -1464,7 +1455,7 @@ class Reader(object):
                 raise ValueError('Chunk %s too short for checksum.', tag)
             if seek and type != seek:
                 continue
-            verify = zlib.crc32(strtobytes(type))
+            verify = zlib.crc32(type)
             verify = zlib.crc32(data, verify)
             # Whether the output from zlib.crc32 is signed or not varies
             # according to hideous implementation details, see
@@ -1491,7 +1482,7 @@ class Reader(object):
         while True:
             t,v = self.chunk()
             yield t,v
-            if t == 'IEND':
+            if t == b'IEND':
                 break
 
     def undo_filter(self, filter_type, scanline, previous):
@@ -1787,7 +1778,6 @@ class Reader(object):
             raise FormatError(
               'End of file whilst reading chunk length and type.')
         length,type = struct.unpack('!I4s', x)
-        type = bytestostr(type)
         if length > 2**31-1:
             raise FormatError('Chunk %s is too large: %d.' % (type,length))
         return length,type
@@ -1802,7 +1792,7 @@ class Reader(object):
         """
 
         type, data = self.chunk(lenient=lenient)
-        method = '_process_' + type
+        method = '_process_' + str(type)
         m = getattr(self, method, None)
         if m:
             m(data)
@@ -1934,10 +1924,10 @@ class Reader(object):
                     type, data = self.chunk(lenient=lenient)
                 except ValueError as e:
                     raise ChunkError(e.args[0])
-                if type == 'IEND':
+                if type == b'IEND':
                     # http://www.w3.org/TR/PNG/#11IEND
                     break
-                if type != 'IDAT':
+                if type != b'IDAT':
                     continue
                 # type == 'IDAT'
                 # http://www.w3.org/TR/PNG/#11IDAT
@@ -2507,20 +2497,19 @@ def read_pam_header(infile):
     header = dict()
     while True:
         l = infile.readline().strip()
-        if l == strtobytes('ENDHDR'):
+        if l == b'ENDHDR':
             break
         if not l:
             raise EOFError('PAM ended prematurely')
-        if l[0] == strtobytes('#'):
+        if l[0] == b'#':
             continue
         l = l.split(None, 1)
         if l[0] not in header:
             header[l[0]] = l[1]
         else:
-            header[l[0]] += strtobytes(' ') + l[1]
+            header[l[0]] += b' ' + l[1]
 
-    required = ['WIDTH', 'HEIGHT', 'DEPTH', 'MAXVAL']
-    required = [strtobytes(x) for x in required]
+    required = [b'WIDTH', b'HEIGHT', b'DEPTH', b'MAXVAL']
     WIDTH,HEIGHT,DEPTH,MAXVAL = required
     present = [x for x in required if x in header]
     if len(present) != len(required):
@@ -2537,7 +2526,7 @@ def read_pam_header(infile):
           'WIDTH, HEIGHT, DEPTH, MAXVAL must all be positive integers')
     return 'P7', width, height, depth, maxval
 
-def read_pnm_header(infile, supported=('P5','P6')):
+def read_pnm_header(infile, supported=(b'P5',b'P6')):
     """
     Read a PNM header, returning (format,width,height,depth,maxval).
     `width` and `height` are in pixels.  `depth` is the number of
@@ -2549,20 +2538,18 @@ def read_pnm_header(infile, supported=('P5','P6')):
     # Generally, see http://netpbm.sourceforge.net/doc/ppm.html
     # and http://netpbm.sourceforge.net/doc/pam.html
 
-    supported = [strtobytes(x) for x in supported]
-
     # Technically 'P7' must be followed by a newline, so by using
     # rstrip() we are being liberal in what we accept.  I think this
     # is acceptable.
     type = infile.read(3).rstrip()
     if type not in supported:
         raise NotImplementedError('file format %s not supported' % type)
-    if type == strtobytes('P7'):
+    if type == b'P7':
         # PAM header parsing is completely different.
         return read_pam_header(infile)
     # Expected number of tokens in header (3 for P4, 4 for P6)
     expected = 4
-    pbm = ('P1', 'P4')
+    pbm = (b'P1', b'P4')
     if type in pbm:
         expected = 3
     header = [type]
@@ -2594,7 +2581,7 @@ def read_pnm_header(infile, supported=('P5','P6')):
         # This is bonkers; I've never seen it; and it's a bit awkward to
         # code good lexers in Python (no goto).  So we break on such
         # cases.
-        token = strtobytes('')
+        token = b''
         while c.isdigit():
             token += c
             c = getc()
@@ -2613,7 +2600,7 @@ def read_pnm_header(infile, supported=('P5','P6')):
     if type in pbm:
         # synthesize a MAXVAL
         header.append(1)
-    depth = (1,3)[type == strtobytes('P6')]
+    depth = (1,3)[type == b'P6']
     return header[0], header[1], header[2], depth, header[3]
 
 def write_pnm(file, width, height, pixels, meta):
@@ -2751,7 +2738,7 @@ def _main(argv):
     else:
         # Encode PNM to PNG
         format, width, height, depth, maxval = \
-          read_pnm_header(infile, ('P5','P6','P7'))
+          read_pnm_header(infile, (b'P5',b'P6',b'P7'))
         # When it comes to the variety of input formats, we do something
         # rather rude.  Observe that L, LA, RGB, RGBA are the 4 colour
         # types supported by PNG and that they correspond to 1, 2, 3, 4
@@ -2780,7 +2767,7 @@ def _main(argv):
         if options.alpha:
             pgmfile = open(options.alpha, 'rb')
             format, awidth, aheight, adepth, amaxval = \
-              read_pnm_header(pgmfile, 'P5')
+              read_pnm_header(pgmfile, b'P5')
             if amaxval != '255':
                 raise NotImplementedError(
                   'maxval %s not supported for alpha channel' % amaxval)

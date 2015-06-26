@@ -1,13 +1,13 @@
 from __future__ import division
-from tests import mock
+from io import BytesIO
 
 from pyglet.gl import *
 from pyglet import image
 from pyglet.image import codecs
 from pyglet.window import *
 from pyglet.window.event import *
-from pyglet.compat import BytesIO
 
+from tests import mock
 from tests.interactive.windowed_test_base import WindowedTestCase
 
 
@@ -70,11 +70,12 @@ class ImageSavingTestCase(WindowedTestCase):
             self.texture_file = self.get_test_data_file('images', self.texture_file)
             self.original_texture = image.load(self.texture_file).texture
 
-            file = BytesIO()
-            self.original_texture.save(self.texture_file, file,
+            buf = BytesIO()
+            self.original_texture.save(self.texture_file,
+                                       buf,
                                        encoder=self.encoder)
-            file.seek(0)
-            self.saved_texture = image.load(self.texture_file, file).texture
+            buf.seek(0)
+            self.saved_texture = image.load(self.texture_file, buf).texture
 
     def render(self):
         self.screen = image.get_buffer_manager().get_color_buffer()
