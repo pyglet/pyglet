@@ -1,13 +1,15 @@
 #!/usr/bin/python
 # $Id:$
 
+from __future__ import print_function
+from __future__ import absolute_import
 import ctypes
 import math
 import sys
 import threading
 import time
 
-import lib_dsound as lib
+from . import lib_dsound as lib
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.exceptions import MediaException
@@ -72,20 +74,20 @@ class DirectSoundWorker(MediaThread):
                     self.sleep(sleep_time)
 
         if _debug:
-            print 'DirectSoundWorker exiting'
+            print('DirectSoundWorker exiting')
 
     def add(self, player):
         if _debug:
-            print 'DirectSoundWorker add', player
+            print('DirectSoundWorker add', player)
         with self.condition:
             self.players.add(player)
             self.condition.notify()
         if _debug:
-            print 'return DirectSoundWorker add', player
+            print('return DirectSoundWorker add', player)
 
     def remove(self, player):
         if _debug:
-            print 'DirectSoundWorker remove', player
+            print('DirectSoundWorker remove', player)
         with self.condition:
             try:
                 self.players.remove(player)
@@ -93,7 +95,7 @@ class DirectSoundWorker(MediaThread):
                 pass
             self.condition.notify()
         if _debug:
-            print 'return DirectSoundWorker remove', player
+            print('return DirectSoundWorker remove', player)
 
 class DirectSoundAudioPlayer(AbstractAudioPlayer):
     # How many bytes the ring buffer should be
@@ -210,7 +212,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         
     def play(self):
         if _debug:
-            print 'DirectSound play'
+            print('DirectSound play')
         driver.worker.add(self)
 
         with self._lock:
@@ -219,11 +221,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
                 self._buffer.Play(0, 0, lib.DSBPLAY_LOOPING)
         if _debug:
-            print 'return DirectSound play'
+            print('return DirectSound play')
 
     def stop(self):
         if _debug:
-            print 'DirectSound stop'
+            print('DirectSound stop')
         driver.worker.remove(self)
 
         with self._lock:
@@ -232,11 +234,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
                 self._buffer.Stop()
         if _debug:
-            print 'return DirectSound stop'
+            print('return DirectSound stop')
 
     def clear(self):
         if _debug:
-            print 'DirectSound clear'
+            print('DirectSound clear')
         with self._lock:
             self._buffer.SetCurrentPosition(0)
             self._play_cursor_ring = self._write_cursor_ring = 0
@@ -250,7 +252,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         with self._lock:
             while write_size > 0:
                 if _debug:
-                    print 'refill, write_size =', write_size
+                    print('refill, write_size =', write_size)
                 # Get next audio packet (or remains of last one)
                 if self._next_audio_data:
                     audio_data = self._next_audio_data
@@ -273,7 +275,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
                     # Write data
                     if _debug:
-                        print 'write', audio_data.length
+                        print('write', audio_data.length)
                     length = min(write_size, audio_data.length)
                     self.write(audio_data, length)
                     if audio_data.length:
@@ -311,8 +313,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
                 _, event = self._events.pop(0)
                 pending_events.append(event)
             if _debug:
-                print 'Dispatching pending events:', pending_events
-                print 'Remaining events:', self._events
+                print('Dispatching pending events:', pending_events)
+                print('Remaining events:', self._events)
 
             # Remove expired timestamps
             while self._timestamps and self._timestamps[0][0] < self._play_cursor:
