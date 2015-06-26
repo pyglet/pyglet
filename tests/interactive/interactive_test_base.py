@@ -175,6 +175,8 @@ class InteractiveTestCase(unittest.TestCase):
             self.fail(failure_description)
 
     def assert_image_equal(self, a, b, tolerance=0, msg=None):
+        if msg is None:
+            msg = 'Screenshot does not match last committed screenshot'
         if a is None:
             self.assertIsNone(b, msg)
         else:
