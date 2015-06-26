@@ -38,9 +38,7 @@ documents.
 from builtins import chr
 from builtins import map
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
+from functools import reduce
 import operator
 import parser
 import re
