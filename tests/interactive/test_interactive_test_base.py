@@ -443,7 +443,7 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         # Verify committed image not changed
         original_image = pyglet.image.load(original_screenshot)
         committed_image = pyglet.image.load(committed_screenshot)
-        self.assert_image_equal(original_image, committed_image, 'Committed image should not be overwritten')
+        self.assert_image_equal(original_image, committed_image, msg='Committed image should not be overwritten')
 
     @mock.patch('tests.interactive.interactive_test_base.interactive', False)
     def test_screenshot_matches(self):
