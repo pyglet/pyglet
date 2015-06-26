@@ -77,7 +77,7 @@ class ImageElement(pyglet.text.document.InlineElement):
 def _int_to_roman(input):
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
     if not 0 < input < 4000:
-        raise ValueError, "Argument must be between 1 and 3999"    
+        raise ValueError("Argument must be between 1 and 3999")    
     ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
     nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
     result = ""
