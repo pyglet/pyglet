@@ -137,6 +137,7 @@ from builtins import object
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+from io import open
 import sys
 import re
 import warnings

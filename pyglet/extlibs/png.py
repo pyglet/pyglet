@@ -1760,7 +1760,7 @@ class Reader(object):
                 if self.atchunk is None:
                     raise FormatError(
                       'This PNG file has no IDAT chunks.')
-            if self.atchunk[1] == 'IDAT':
+            if self.atchunk[1] == b'IDAT':
                 return
             self.process_chunk(lenient=lenient)
 
@@ -1792,7 +1792,7 @@ class Reader(object):
         """
 
         type, data = self.chunk(lenient=lenient)
-        method = '_process_' + str(type)
+        method = '_process_' + str(type, 'ascii')
         m = getattr(self, method, None)
         if m:
             m(data)
