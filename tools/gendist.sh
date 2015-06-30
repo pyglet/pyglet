@@ -10,7 +10,6 @@ VERSION=`grep 'VERSION =' setup.py | cut -d "'" -f2`
 python setup.py sdist --formats=gztar,zip
 
 # Wheels
-python2 setup.py bdist_wheel
 python3 setup.py bdist_wheel 
 
 # Build docs archive

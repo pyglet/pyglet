@@ -1,26 +1,35 @@
 #!/usr/bin/env python
-
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import os
 import shutil
 import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.2.2'
+VERSION = '1.3.0a1'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
 for Windows, Mac OS X and Linux.'''
 
+# The source dist comes with batteries included, the wheel can use pip to get the rest
+is_wheel = 'bdist_wheel' in sys.argv
+
+excluded = []
+if is_wheel:
+    excluded.append('extlibs.future')
+
+def exclude_package(pkg):
+    for exclude in excluded:
+        if pkg.startswith(exclude):
+            return True
+    return False
+
 def create_package_list(base_package):
     return ([base_package] +
-            [base_package + '.' + pkg for pkg in find_packages(base_package)])
+            [base_package + '.' + pkg
+             for pkg
+             in find_packages(base_package)
+             if not exclude_package(pkg)])
 
 
 setup_info = dict(
@@ -29,7 +38,7 @@ setup_info = dict(
     version=VERSION,
     author='Alex Holkner',
     author_email='Alex.Holkner@gmail.com',
-    url='http://pyglet.readthedocs.org/en/pyglet-1.2-maintenance/',
+    url='http://pyglet.readthedocs.org/en/latest/',
     download_url='http://pypi.python.org/pypi/pyglet',
     description='Cross-platform windowing and multimedia library',
     long_description=long_description,
@@ -42,7 +51,7 @@ setup_info = dict(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows', # XP
+        'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
@@ -65,9 +74,7 @@ setup_info = dict(
     zip_safe=True,
 )
 
-
-if sys.version_info >= (3,):
-    # Automatically run 2to3 when using Python 3
-    setup_info["use_2to3"] = True
+if is_wheel:
+    setup_info['install_requires'] = ['future']
 
 setup(**setup_info)
