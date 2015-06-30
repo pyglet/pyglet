@@ -1,3 +1,29 @@
+Pyglet 1.3.0
+============
+This major release takes Python 3 support to the next level. The entire codebase is now compatible
+with both Python 2 and Python 3 without the need for 2to3. This should make it easier to develop
+pyglet and pyglet apps for both Python versions.
+
+The rest of this release is focussed on code quality and test coverage. No new features were added.
+
+Improvements
+------------
+
+Bugfixes
+--------
+
+Pyglet 1.2.3                                                                                        
+============                                                                                        
+Minor bugfix release.                                                                               
+                                                                                                    
+Bugfixes:                                                                                           
+- Windows: Fix issue where ALT key causes app to hang.                                              
+- Media: Many fixes to PulseAudio and OpenAL media drivers (a.o. #26, #27).                         
+- OSX: Fix stealing the menu when already present in cocoa.                                         
+- Fix multi texturing support (#28).                                                                
+- OSX: Prevent segfault with multiple runs (#37/GC728)                                              
+- ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25) 
+
 Pyglet 1.2.2
 ============
 Minor bugfix release. Includes documentation updates for deprecated code.
