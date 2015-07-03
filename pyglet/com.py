@@ -72,7 +72,6 @@ from builtins import object
 
 import ctypes
 import sys
-from future.utils import with_metaclass
 
 if sys.platform != 'win32':
     raise ImportError('pyglet.com requires a Windows build of Python')
@@ -148,8 +147,11 @@ class InterfaceMetaclass(type(ctypes.POINTER(COMInterface))):
 
         return super(InterfaceMetaclass, cls).__new__(cls, name, bases, dct)
 
-class Interface(with_metaclass(InterfaceMetaclass, ctypes.POINTER(COMInterface))):
-    '''Base COM interface pointer.'''
+# future.utils.with_metaclass does not work here, as the base class is from _ctypes.lib
+# See https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef
+Interface = InterfaceMetaclass(str('Interface'), (), {
+    '__doc__': 'Base COM interface pointer.',
+    })
 
 class IUnknown(Interface):
     _methods_ = [
