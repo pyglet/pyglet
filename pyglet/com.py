@@ -149,7 +149,7 @@ class InterfaceMetaclass(type(ctypes.POINTER(COMInterface))):
 
 # future.utils.with_metaclass does not work here, as the base class is from _ctypes.lib
 # See https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef
-Interface = InterfaceMetaclass(str('Interface'), (), {
+Interface = InterfaceMetaclass(str('Interface'), (ctypes.POINTER(COMInterface),), {
     '__doc__': 'Base COM interface pointer.',
     })
 
