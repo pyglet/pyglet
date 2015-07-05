@@ -35,6 +35,9 @@ class EventForwarder(threading.Thread):
     def post_event(self, destination, event_type, *args):
         self.queue.put((destination, event_type, args))
 
+    def notify(self):
+        pass
+
     def stop(self):
         self.queue.put((None, None, None))
         self.join()

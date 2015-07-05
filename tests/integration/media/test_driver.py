@@ -80,6 +80,9 @@ class EventForwarder(object):
     def post_event(self, destination, event_type, *args):
         destination.dispatch_event(event_type, *args)
 
+    def notify(self):
+        pass
+
 
 class _AudioDriverTestCase(unittest.TestCase):
     """Test a specific audio driver (either for platform or silent). Only checks the use of the
