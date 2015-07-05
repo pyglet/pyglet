@@ -99,7 +99,8 @@ class WeakSet(object):
         self._dict[value] = True
 
     def remove(self, value):
-        del self._dict[value]
+        # Value might be removed already if this is during __del__ of the item.
+        self._dict.pop(value, None)
 
     def __iter__(self):
         for key in self._dict.keys():
