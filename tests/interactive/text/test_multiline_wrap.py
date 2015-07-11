@@ -25,7 +25,7 @@ newline_wrap = """{font_size 24}Multiline=True -- Wrap_line=True\n
 {font_size 12}This paragraph contains a lots of newlines however,\n
 the parameter multiline=True makes pyglet {font_size 16}accept{font_size 12} it.\n
 For example this line should be in a new line.\n
-And because the parameter wrap_lines=False the {font_size 16}long lines are broken{font_size 12}, as you can see in this line."""
+And because the parameter wrap_lines=True the {font_size 16}long lines are broken{font_size 12}, as you can see in this line."""
 
 
 class TestWindow(window.Window):
