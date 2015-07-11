@@ -9,6 +9,7 @@ from tests.annotations import Platform, skip_platform
 from pyglet import window
 from pyglet.gl import *
 
+@skip_platform(Platform.WINDOWS)  # Causes crashes on Windows (issue #48)
 class ContextShareTest(unittest.TestCase):
     def create_context(self, share):
         display = window.get_platform().get_default_display()
@@ -16,7 +17,6 @@ class ContextShareTest(unittest.TestCase):
         config = screen.get_best_config()
         return config.create_context(share)
 
-    @skip_platform(Platform.WINDOWS)  # Causes crashes on Windows (issue #48)
     def test_context_share_list(self):
         w1 = window.Window(200, 200)
         try:
