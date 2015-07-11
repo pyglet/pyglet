@@ -28,4 +28,11 @@ def require_platform(platform):
     else:
         return unittest.skip('Skipped for current platform')
 
-
+def skip_platform(platform):
+    """
+    Do not run on the given platform(s). Specify multiple platforms using +.
+    """
+    if pyglet.compat_platform in platform:
+        return unittest.skip('Skipped for current platform')
+    else:
+        return lambda f: f

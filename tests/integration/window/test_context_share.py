@@ -4,6 +4,8 @@
 import unittest
 from ctypes import *
 
+from tests.annotations import Platform, skip_platform
+
 from pyglet import window
 from pyglet.gl import *
 
@@ -14,6 +16,7 @@ class ContextShareTest(unittest.TestCase):
         config = screen.get_best_config()
         return config.create_context(share)
 
+    @skip_platform(Platform.WINDOWS)  # Causes crashes on Windows (issue #48)
     def test_context_share_list(self):
         w1 = window.Window(200, 200)
         try:
@@ -24,6 +27,7 @@ class ContextShareTest(unittest.TestCase):
             glEndList()
             self.assertTrue(glIsList(glist))
         except:
+            glDeleteLists(glist, 1)
             w1.close()
             raise
 
@@ -32,6 +36,7 @@ class ContextShareTest(unittest.TestCase):
             w2.switch_to()
             self.assertTrue(glIsList(glist))
         finally:
+            glDeleteLists(glist, 1)
             w1.close()
             w2.close()
 
@@ -45,6 +50,7 @@ class ContextShareTest(unittest.TestCase):
             glEndList()
             self.assertTrue(glIsList(glist))
         except:
+            glDeleteLists(glist, 1)
             w1.close()
             raise
 
@@ -54,6 +60,7 @@ class ContextShareTest(unittest.TestCase):
             w2.switch_to()
             self.assertTrue(not glIsList(glist))
         finally:
+            glDeleteLists(glist, 1)
             w1.close()
             w2.close()
 
