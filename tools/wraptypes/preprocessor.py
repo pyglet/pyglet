@@ -1074,6 +1074,7 @@ class PreprocessorParser(yacc.Parser):
 
         if gcc_search_path:
             self.add_gcc_search_path()
+            self.add_cpp_search_path()
 
         self.lexer.filename = ''
 
@@ -1089,6 +1090,26 @@ class PreprocessorParser(yacc.Parser):
                      shell=True, stdout=PIPE).communicate()[0].strip()
         if path:
             self.include_path.append(path)
+
+    def add_cpp_search_path(self):
+        from subprocess import Popen, PIPE
+        try:
+            open('test.h', 'a').close()
+            output = Popen('cpp -v test.h', shell=True, stderr=PIPE).communicate()[1]
+            import pdb; pdb.set_trace()
+        finally:
+            os.remove('test.h')
+        if output:
+            output = output.split('\n')
+            while output and not '#include <...>' in output[0]:
+                print('Skipping:', output[0])
+                del output[0]
+            if output:
+                del output[0]  # Remove start line
+                while output and not 'End of search list' in output[0]:
+                    self.include_path.append(output[0].strip())
+                    print('Adding:', output[0].strip())
+                    del output[0]
 
     def parse(self, filename=None, data=None, namespace=None, debug=False): 
         self.output = []
