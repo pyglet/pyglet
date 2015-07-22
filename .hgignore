@@ -20,3 +20,5 @@ tests/interactive/screenshots/committed/*.png
 .coverage
 coverage_report/
 *.bak
+*.un~
+*.cache
