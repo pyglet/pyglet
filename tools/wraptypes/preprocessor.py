@@ -91,7 +91,6 @@ class SystemHeaderName(str):
 
 punctuators = {
     # value: (regex, type)
-    r'...': (r'\.\.\.', 'ELLIPSIS'),
     r'>>=': (r'>>=', 'RIGHT_ASSIGN'),
     r'<<=': (r'<<=', 'LEFT_ASSIGN'),
     r'+=': (r'\+=', 'ADD_ASSIGN'),
@@ -185,6 +184,12 @@ def t_directive(t):
         # TODO
         t.type = '#'
         t.lexer.nexttoken = ('IDENTIFIER', t.value[1:].lstrip())
+    return t
+
+@TOKEN(r'(' + IDENTIFIER + r')?\.\.\.')
+def t_ellipsis(t):
+    """In GNU C ellipsis can be prepended with a variable name, so not simply punctuation."""
+    t.type = 'ELLIPSIS'
     return t
 
 @TOKEN(punctuator_regex(punctuators))
