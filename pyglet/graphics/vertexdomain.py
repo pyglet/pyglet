@@ -813,6 +813,45 @@ class IndexedVertexList(VertexList):
         '''Delete this group.'''
         super(IndexedVertexList, self).delete()
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
+        
+    def migrate(self, domain):
+        '''Move this group from its current indexed domain and add to the 
+        specified one.  Attributes on domains must match.  (In practice, used 
+        to change parent state of some vertices).
+
+        :Parameters:
+            `domain` : `IndexedVertexDomain`
+                Indexed domain to migrate this vertex list to.
+
+        '''
+        old_start = self.start
+        old_domain = self.domain
+        super(IndexedVertexList, self).migrate(domain)
+        new_domain = domain
+        
+        # Note: this code renumber the indices of the *original* domain
+        # because the vertices are in a new position in the new domain
+        if old_start != self.start:
+            diff = self.start - old_start
+            region = old_domain.get_index_region(self.index_start, 
+                                self.index_count)
+            old_indices = region.array
+            old_indices[:] = map(lambda i: i + diff, old_indices)
+            region.invalidate()
+                                                
+        # copy indices to new domain
+        new_start = new_domain._safe_index_alloc(self.index_count)
+        old = old_domain.get_index_region(self.index_start, self.index_count)
+        new = new_domain.get_index_region(new_start, self.index_count)
+        new.array[:] = old.array[:]
+        new.invalidate()
+        
+        # deallocating indices creates odd behavior
+        #old_domain.index_allocator.dealloc(self.index_start, self.index_count)
+        self.domain = new_domain    # redundant but explicit
+        
+        self.index_start = new_start
+        self._indices_cache_version = None
 
     def _set_index_data(self, data):
         # TODO without region
