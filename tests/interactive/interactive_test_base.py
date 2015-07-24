@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 from builtins import zip
 from builtins import input
 
@@ -6,11 +6,14 @@ import array
 import functools
 import inspect
 import os
-import pyglet
-from pyglet.image import get_buffer_manager
 import shutil
 import unittest
 import warnings
+
+import pyglet
+from pyglet.image import get_buffer_manager
+
+from ..base import PygletTestCase
 
 try:
     # If the easygui package is available, use it to display popup questions, instead of using the
@@ -26,8 +29,6 @@ local_dir = os.path.dirname(__file__)
 base_screenshot_path = os.path.join(local_dir, 'screenshots')
 committed_screenshot_path = os.path.join(base_screenshot_path, 'committed')
 session_screenshot_path = os.path.join(base_screenshot_path, 'session')
-
-test_data_path = os.path.abspath(os.path.join(local_dir, '..', 'data'))
 
 del local_dir
 
@@ -74,7 +75,7 @@ def set_noninteractive_only_automatic():
     allow_missing_screenshots = False
 
 
-class InteractiveTestCase(unittest.TestCase):
+class InteractiveTestCase(PygletTestCase):
     """
     Base class for interactive tests.
 
@@ -201,13 +202,6 @@ class InteractiveTestCase(unittest.TestCase):
         b = array.array('B', b)
         for (aa, bb) in zip(a, b):
             self.assertTrue(abs(aa - bb) <= tolerance, msg)
-
-    def get_test_data_file(self, *file_parts):
-        """
-        Get a file from the test data directory in an OS independent way. Supply relative file
-        name as you would in os.path.join().
-        """
-        return os.path.join(test_data_path, *file_parts)
 
     def _take_screenshot(self):
         """
