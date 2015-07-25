@@ -3,11 +3,9 @@ from builtins import zip
 from builtins import input
 
 import array
-import functools
-import inspect
 import os
+import pytest
 import shutil
-import unittest
 import warnings
 
 import pyglet
@@ -32,48 +30,6 @@ session_screenshot_path = os.path.join(base_screenshot_path, 'session')
 
 del local_dir
 
-# Filters for tests, corresponds to the decorators for tests
-run_only_interactive = True
-run_requires_user_action = True
-run_requires_user_validation = True
-
-# Show interactive prompts or not
-interactive = True
-
-# Allow tests missing reference screenshots to pass
-allow_missing_screenshots = False
-
-def set_noninteractive_sanity():
-    """
-    Filter tests to run in sanity check mode. Test cases that require the user to validate the
-    outcome will run, but the validation steps are skipped. Test cases that cannot run without
-    user intervention will be skipped. Fully automatic tests (using asserts and screenshot
-    comparison) also run without user intervention.
-    """
-    global run_only_interactive, run_requires_user_action, run_requires_user_validation
-    global interactive, allow_missing_screenshots
-
-    run_only_interactive = False
-    run_requires_user_action = False
-    run_requires_user_validation = True
-    interactive = False
-    allow_missing_screenshots = True
-
-
-def set_noninteractive_only_automatic():
-    """
-    Filter tests for only the fully automated tests to run. Tests that require user intervention
-    or validation by the user are skipped.
-    """
-    global run_only_interactive, run_requires_user_action, run_requires_user_validation
-    global interactive, allow_missing_screenshots
-
-    run_only_interactive = False
-    run_requires_user_action = False
-    run_requires_user_validation = False
-    interactive = False
-    allow_missing_screenshots = False
-
 
 class InteractiveTestCase(PygletTestCase):
     """
@@ -88,49 +44,19 @@ class InteractiveTestCase(PygletTestCase):
     Use the decorators @only_interactive, @requires_user_validation and @requires_user_action to
     mark a test case as such. This only works on the test suite (class) level.
     """
+    # Show interactive prompts
+    interactive = True
+
+    # Allow tests missing reference screenshots to pass
+    allow_missing_screenshots = False
 
     def __init__(self, methodName):
         super(InteractiveTestCase, self).__init__(methodName=methodName)
         self._screenshots = []
 
-        self._wrap_test_method(methodName)
-
-    def _wrap_test_method(self, method_name):
-        """Wrap the test method in extra functionality required for interactive tests. Adds the
-        following functionality:
-        - filtering on decorators
-        - comparing and committing screenshots in case of a passed test
-
-        The set up steps are in the wrapper to prevent missing them when a test overrides the
-        setUp without calling the super class implementation. The tear down steps are there
-        because there is no access to the test result to determine whether the test has passed.
-
-        The wrapper insures that the names reported for the test methods are correct.
-        """
-        test_method = getattr(self.__class__, method_name)
-        def _wrapper(self):
-            self._interactive_test_set_up()
-            test_method(self)
-            # If this line executes, test has passed
-            self._interactive_test_passed()
-
-        functools.update_wrapper(_wrapper, test_method)
-        setattr(self.__class__, method_name, _wrapper)
-
-    def _interactive_test_set_up(self):
-        """Actions to perform before starting an interactive test case."""
-        self._filter_test()
-
-        if interactive:
-            self._show_test_header()
-
-    def _interactive_test_passed(self):
-        """Actions to perform after an interactive test is succesful."""
-        self._check_screenshots()
-
-    def _check_screenshots(self):
+    def check_screenshots(self):
         # If we arrive here, there have not been any failures yet
-        if interactive:
+        if self.interactive:
             self._commit_screenshots()
         else:
             if self._has_reference_screenshots():
@@ -140,25 +66,10 @@ class InteractiveTestCase(PygletTestCase):
                 # have failed above.
                 self._commit_screenshots()
 
-            elif allow_missing_screenshots:
+            elif self.allow_missing_screenshots:
                 warnings.warn('No committed reference screenshots available. Ignoring.')
             else:
                 self.fail('No committed reference screenshots available. Run interactive first.')
-
-    def _filter_test(self):
-        """
-        Check the filters to see whether this test needs to run.
-        """
-        only_interactive = getattr(self, 'test_only_interactive', False)
-        requires_user_action = getattr(self, 'test_requires_user_action', False)
-        requires_user_validation = getattr(self, 'test_requires_user_validation', False)
-
-        if only_interactive and not run_only_interactive:
-            self.skipTest('Test requires to be run interactively.')
-        if requires_user_action and not run_requires_user_action:
-            self.skipTest('Tests requiring user action are excluded.')
-        if requires_user_validation and not run_requires_user_validation:
-            self.skipTest('Tests requiring user validation are excluded.')
 
     def user_verify(self, description, take_screenshot=True):
         """
@@ -167,7 +78,7 @@ class InteractiveTestCase(PygletTestCase):
         failed = False
         failure_description = None
 
-        if interactive:
+        if self.interactive:
             failure_description = _ask_user_to_verify(description)
         if take_screenshot:
             self._take_screenshot()
@@ -258,15 +169,6 @@ class InteractiveTestCase(PygletTestCase):
     def _get_screenshot_committed_file_name(self, screenshot_name):
         return os.path.join(committed_screenshot_path, screenshot_name)
 
-    def _show_test_header(self):
-        print('='*80)
-        print('{}.{}'.format(self.__class__.__name__, self._testMethodName))
-        if self._testMethodDoc:
-            print(inspect.cleandoc(self._testMethodDoc))
-        elif self.__doc__:
-            print(inspect.getdoc(self))
-        print('-'*80)
-
 if _has_gui:
     def _ask_user_to_verify(description):
         failure_description = None
@@ -298,16 +200,14 @@ def only_interactive(cls):
     Mark a test case (class) as only interactive. This means it will be skipped if the user requests
     to run noninteractively.
     """
-    cls.test_only_interactive = True
-    return cls
+    return pytest.mark.only_interactive(cls)
 
 def requires_user_action(cls):
     """
     Mark a test case (class) as requiring user action to run. The test cannot be run non interactive
     at all.
     """
-    cls.test_requires_user_action = True
-    return cls
+    return pytest.mark.requires_user_action(cls)
 
 def requires_user_validation(cls):
     """
@@ -315,5 +215,4 @@ def requires_user_validation(cls):
     comparison or other asserts to validate. It is however possible to run non interactively to
     perform a simple sanity check (no exceptions/crashes).
     """
-    cls.test_requires_user_validation = True
-    return cls
+    return pytest.mark.requires_user_validation(cls)
