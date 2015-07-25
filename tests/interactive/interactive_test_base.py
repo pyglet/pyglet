@@ -175,6 +175,8 @@ if _has_gui:
         success = easygui.ynbox(description)
         if not success:
             failure_description = easygui.enterbox('Enter failure description:')
+            if not failure_description:
+                failure_description = 'No description entered'
         return failure_description
 else:
     def _ask_user_to_verify(description):
@@ -187,6 +189,8 @@ else:
                 break
             elif response in 'Nn':
                 failure_description = input('Enter failure description: ')
+                if not failure_description:
+                    failure_description = 'No description entered'
                 break
             elif response in 'Yy':
                 break
