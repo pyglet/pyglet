@@ -1,13 +1,15 @@
 import os
+import pytest
+
 import pyglet
 from pyglet.media.player import Player
 
-from tests.interactive.interactive_test_base import InteractiveTestCase, only_interactive
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 #pyglet.options['debug_media'] = True
 
 
-@only_interactive
+@pytest.mark.only_interactive
 class PlayerTest(InteractiveTestCase):
     def test_playback(self):
         player = Player()

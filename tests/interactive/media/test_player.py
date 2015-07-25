@@ -1,3 +1,4 @@
+import pytest
 from time import sleep
 
 import pyglet
@@ -5,12 +6,12 @@ from pyglet.media.player import Player
 from pyglet.media.sources import procedural
 from pyglet.media.sources.base import StaticSource
 
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_validation
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 #pyglet.options['debug_media'] = True
 
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class SoundMediaPlayerTestCase(InteractiveTestCase):
     """
     Interactively test the Player in pyglet.media for playing back sounds.

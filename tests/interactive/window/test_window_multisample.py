@@ -1,14 +1,14 @@
 from __future__ import print_function
 from __future__ import division
-from tests.interactive.interactive_test_base import (InteractiveTestCase,
-        requires_user_action)
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 from pyglet.gl import *
 from pyglet import window
 from pyglet import clock
 from pyglet.window import key
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_MULTISAMPLE(InteractiveTestCase):
     """Test that a window can have multisample.
 

@@ -195,24 +195,3 @@ else:
         return failure_description
 
 
-def only_interactive(cls):
-    """
-    Mark a test case (class) as only interactive. This means it will be skipped if the user requests
-    to run noninteractively.
-    """
-    return pytest.mark.only_interactive(cls)
-
-def requires_user_action(cls):
-    """
-    Mark a test case (class) as requiring user action to run. The test cannot be run non interactive
-    at all.
-    """
-    return pytest.mark.requires_user_action(cls)
-
-def requires_user_validation(cls):
-    """
-    Mark a test case (class) as requiring the user to validate the outcome. It cannot use screenshot
-    comparison or other asserts to validate. It is however possible to run non interactively to
-    perform a simple sanity check (no exceptions/crashes).
-    """
-    return pytest.mark.requires_user_validation(cls)

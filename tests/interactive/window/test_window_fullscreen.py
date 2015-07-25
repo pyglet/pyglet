@@ -1,8 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from builtins import range
-from tests.interactive.interactive_test_base import (InteractiveTestCase,
-        requires_user_action, requires_user_validation)
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 from pyglet import window
 from pyglet.window.event import WindowEventLogger
@@ -12,7 +12,7 @@ from pyglet.gl import *
 from . import window_util
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
     """Test that window can be set to and from various fullscreen sizes.
 
@@ -79,7 +79,7 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_INITIAL_FULLSCREEN(InteractiveTestCase):
     """Test that a window can be opened fullscreen.
 
@@ -119,7 +119,7 @@ class WINDOW_INITIAL_FULLSCREEN(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class MULTIPLE_SCREEN(InteractiveTestCase):
     """Test that screens can be selected for fullscreen.
 

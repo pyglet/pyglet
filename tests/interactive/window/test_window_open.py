@@ -1,10 +1,11 @@
-from tests.interactive.interactive_test_base import (InteractiveTestCase,
-        requires_user_action, requires_user_validation)
+import pytest
+
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 from pyglet import window
 from pyglet.gl import *
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class WINDOW_OPEN(InteractiveTestCase):
     def open_window(self):
         return window.Window(200, 200)

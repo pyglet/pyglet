@@ -1,4 +1,5 @@
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 from pyglet import app
 from pyglet import gl
@@ -62,7 +63,7 @@ class TestWindow(window.Window):
         if symbol == key.TAB:
             self.caret.on_text('\t')
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class ContentValignTestCase(InteractiveTestCase):
     def test_content_valign_bottom(self):
         """Test content_valign = 'bottom' property of IncrementalTextLayout.
