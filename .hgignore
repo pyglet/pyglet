@@ -22,3 +22,4 @@ coverage_report/
 *.bak
 *.un~
 *.cache
+tools/*tab.py
