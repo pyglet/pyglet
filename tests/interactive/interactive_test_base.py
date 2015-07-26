@@ -31,6 +31,137 @@ session_screenshot_path = os.path.join(base_screenshot_path, 'session')
 del local_dir
 
 
+class InteractiveFixture(object):
+    """Fixture for interactive test cases. Provides interactive prompts and
+    verifying screenshots.
+    """
+    def __init__(self, request):
+        self.screenshots = []
+        self._request = request
+
+    @property
+    def interactive(self):
+        return not self.sanity and not self.non_interactive
+
+    @property
+    def sanity(self):
+        return self._request.config.getoption('--sanity', False)
+
+    @property
+    def non_interactive(self):
+        return self._request.config.getoption('--non-interactive', False)
+
+    @property
+    def allow_missing_screenshots(self):
+        return not self.non_interactive
+
+    @property
+    def testname(self):
+        parts = []
+        parts.append(self._request.node.module.__name__)
+        if self._request.node.cls:
+            parts.append(self._request.node.cls.__name__)
+        parts.append(self._request.node.name)
+        return '.'.join(parts)
+
+    def user_verify(self, description, take_screenshot=True):
+        """
+        Request the user to verify the current display is correct.
+        """
+        failed = False
+        failure_description = None
+
+        if self.interactive:
+            failure_description = _ask_user_to_verify(description)
+        if take_screenshot:
+            screenshot_name = self._take_screenshot()
+            if not self.interactive:
+                self._check_screenshot(screenshot_name)
+
+        if failure_description is not None:
+            self.fail(failure_description)
+
+    def _take_screenshot(self):
+        """
+        Take a screenshot to allow visual verification.
+        """
+        screenshot_name = self._get_next_screenshot_name()
+        screenshot_file_name = self._get_screenshot_session_file_name(screenshot_name)
+
+        get_buffer_manager().get_color_buffer().image_data.save(screenshot_file_name)
+        self._screenshots.append(screenshot_name)
+        self._schedule_commit()
+
+        return screenshot_name
+
+    def _check_screenshot(self, screenshot_name):
+        session_file_name = self._get_screenshot_session_file_name(screenshot_name)
+        committed_file_name = self._get_screenshot_committed_file_name(screenshot_name)
+
+        assert os.path.is_file(session_file_name)
+        if os.path.is_file(committed_file_name):
+            committed_image = pyglet.image.load(committed_file_name)
+            session_image = pyglet.image.load(session_file_name)
+            self.assert_image_equal(committed_image, session_image)
+        else:
+            assert self.allow_missing_screenshots
+            warnings.warn('No committed reference screenshot available.')
+
+    def _get_next_screenshot_name(self):
+        """
+        Get the unique name for the next screenshot.
+        """
+        return '{}.{:03d}.png'.format(self.testname,
+                                      len(self._screenshots)+1)
+
+    def _get_screenshot_session_file_name(self, screenshot_name):
+        return os.path.join(session_screenshot_path, screenshot_name)
+
+    def _get_screenshot_committed_file_name(self, screenshot_name):
+        return os.path.join(committed_screenshot_path, screenshot_name)
+
+    def _schedule_commit(self):
+        if not hasattr(self._request.session, 'pending_screenshots'):
+            self._request.session.pending_screenshots = set()
+        self._request.session.pending_screenshots.add(self)
+
+    def assert_image_equal(self, a, b, tolerance=0, msg=None):
+        if msg is None:
+            msg = 'Screenshot does not match last committed screenshot'
+        if a is None:
+            assert b is None, msg
+        else:
+            assert b is not None, msg
+
+        a_data = a.image_data
+        b_data = b.image_data
+
+        assert a_data.width == b_data.width, msg
+        assert a_data.height == b_data.height, msg
+        assert a_data.format == b_data.format, msg
+        assert a_data.pitch == b_data.pitch, msg
+        self.assert_buffer_equal(a_data.data, b_data.data, tolerance, msg)
+
+    def assert_buffer_equal(self, a, b, tolerance=0, msg=None):
+        if tolerance == 0:
+            assert a == b, msg
+
+        assert len(a) == len(b), msg
+
+        a = array.array('B', a)
+        b = array.array('B', b)
+        for (aa, bb) in zip(a, b):
+            assert abs(aa - bb) <= tolerance, msg
+
+    def commit_screenshots(self):
+        """
+        Store the screenshots for reference if the test case is successful.
+        """
+        for screenshot_name in self._screenshots:
+            shutil.copyfile(self._get_screenshot_session_file_name(screenshot_name),
+                            self._get_screenshot_committed_file_name(screenshot_name))
+
+
 class InteractiveTestCase(PygletTestCase):
     """
     Base class for interactive tests.

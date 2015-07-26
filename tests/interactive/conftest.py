@@ -1,7 +1,12 @@
 """
 py.test hooks for interactive test cases.
 """
+from __future__ import absolute_import
 import inspect
+import pytest
+
+from .interactive_test_base import InteractiveFixture
+
 
 def pytest_collection_modifyitems(items, config):
     """Determine whether test should be skipped based on command-line options."""
@@ -36,6 +41,7 @@ def _skip_item(item, sanity, non_interactive):
     return False
 
 def pytest_runtest_setup(item):
+    # TODO: Remove after migrating tests
     sanity = item.config.getoption('--sanity', False)
     non_interactive = item.config.getoption('--non-interactive', False)
     interactive = not sanity and not non_interactive
@@ -53,17 +59,36 @@ def _show_test_header(item):
     print('-'*80)
 
 def _try_set_class_attribute(item, name, value):
-    if hasattr(item.obj.im_class, name):
-        setattr(item.obj.im_class, name, value)
+    if hasattr(item.obj, 'im_class'):
+        if hasattr(item.obj.im_class, name):
+            setattr(item.obj.im_class, name, value)
 
 def _get_doc(item):
     i = item
     while i is not None:
-        if hasattr(i.obj, '__doc__') and i.obj.__doc__ is not None:
+        if hasattr(i, 'obj') and hasattr(i.obj, '__doc__') and i.obj.__doc__ is not None:
             return inspect.cleandoc(i.obj.__doc__)
         i = i.parent
 
 def pytest_runtest_makereport(item, call):
     if call.when == 'call' and call.excinfo is None:
+        _legacy_check_screenshots(item)
+        _commit_screenshots(item)
+
+def _legacy_check_screenshots(item):
+    # TODO: Remove after migrating all tests
+    if hasattr(item, 'obj') and hasattr(item.obj, '__self__'):
         if hasattr(item.obj.__self__, 'check_screenshots'):
             item.obj.__self__.check_screenshots()
+
+def _commit_screenshots(item):
+    if hasattr(item.session, 'pending_screenshots'):
+        for fixture in item.session.pending_screenshots:
+            fixture.commit_screenshots()
+
+@pytest.fixture
+def interactive(request):
+    """Fixture for interactive test cases. Returns an object that can be used for
+    requesting interactive prompts and verifying screenshots.
+    """
+    return InteractiveFixture(request)
