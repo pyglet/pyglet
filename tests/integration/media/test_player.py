@@ -4,6 +4,7 @@ standard_library.install_aliases()
 
 import gc
 import inspect
+import pytest
 import queue
 from tests import mock
 import threading
@@ -59,6 +60,7 @@ class PlayerTestCase(unittest.TestCase):
         self.event_loop_patch.stop()
         self.forwarder.stop()
 
+    @pytest.mark.xfail
     def test_unreferenced_cleanup(self):
         """Test that the player gets cleaned up if there are no references left to it
         and playback of contained sources has finished."""
