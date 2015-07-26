@@ -21,3 +21,17 @@ class PygletTestCase(FutureTestCase):
         name as you would in os.path.join().
         """
         return os.path.join(test_data_path, *file_parts)
+
+
+class TestDataFixture(object):
+    """Fixture for accessing test data."""
+    def __init__(self):
+        local_dir = os.path.dirname(__file__)
+        self._test_data_path = os.path.abspath(os.path.join(local_dir, 'data'))
+
+    def get_file(self, *file_parts):
+        """
+        Get a file from the test data directory in an OS independent way. Supply relative file
+        name as you would in os.path.join().
+        """
+        return os.path.join(self._test_data_path, *file_parts)
