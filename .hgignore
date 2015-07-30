@@ -21,3 +21,5 @@ tests/interactive/screenshots/committed/*.png
 coverage_report/
 *.bak
 *.un~
+*.cache
+tools/*tab.py

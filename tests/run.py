@@ -150,8 +150,5 @@ def _get_platform_omit():
     return omit
 
 if __name__ == '__main__':
-    options =_parse_args()
-    _start_coverage(options)
-    test_suite = _load_suites(options.suites)
-    _run_suites(test_suite, options)
-    _stop_coverage(options)
+    import pytest
+    sys.exit(pytest.main())

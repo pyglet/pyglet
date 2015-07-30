@@ -1,4 +1,5 @@
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 import pyglet
 from pyglet.text import caret, document, layout
@@ -88,7 +89,7 @@ class TestWindow(pyglet.window.Window):
 
         self.document.set_style(0, len(self.document.text), dict(bold = None)) ### trigger bug 538
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class InlineElementStyleChangeTestCase(InteractiveTestCase):
     """Test that inline elements can have their style changed, even after text
     has been deleted before them. [This triggers bug 538 if it has not yet been fixed.]

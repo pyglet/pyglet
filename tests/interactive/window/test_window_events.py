@@ -3,6 +3,7 @@ Tests for events on windows.
 """
 from __future__ import print_function
 
+import pytest
 import random
 
 from pyglet import font
@@ -10,7 +11,7 @@ from pyglet import gl
 from pyglet.window import key, Window
 from pyglet.window.event import WindowEventLogger
 
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+from tests.interactive.interactive_test_base import InteractiveTestCase
 from tests.interactive.window import window_util
 
 
@@ -70,7 +71,7 @@ class WindowEventsTestCase(InteractiveTestCase):
         self.assertIsNone(self.failure, msg=self.failure)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class KeyPressWindowEventTestCase(WindowEventsTestCase):
     number_of_checks = 10
     keys = (key.A, key.B, key.C, key.D, key.E, key.F, key.G, key.H, key.I, key.J, key.K, key.L,
@@ -217,7 +218,7 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class TextWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 10
     text = '`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;\'ASDFGHJKL:"zxcvbnm,./ZXCVBNM<>?'
@@ -256,7 +257,7 @@ Press Esc if test does not pass.""".format(self.chosen_text)
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class TextMotionWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 10
     motion_keys = (key.MOTION_UP, key.MOTION_RIGHT, key.MOTION_DOWN, key.MOTION_LEFT,
@@ -299,7 +300,7 @@ Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
         self._select_next_key()
         self._test_main()
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class TextMotionSelectWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 10
     motion_keys = (key.MOTION_UP, key.MOTION_RIGHT, key.MOTION_DOWN, key.MOTION_LEFT,
@@ -343,7 +344,7 @@ Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class CloseWindowEventsTest(WindowEventsTestCase):
     def on_close(self):
         self.pass_test()
@@ -354,7 +355,7 @@ class CloseWindowEventsTest(WindowEventsTestCase):
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class ActivateDeactivateWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 3
 
@@ -399,7 +400,7 @@ class ActivateDeactivateWindowEventsTest(WindowEventsTestCase):
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class ExposeWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 5
 
@@ -423,7 +424,7 @@ class ExposeWindowEventsTest(WindowEventsTestCase):
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class ShowHideWindowEventsTest(WindowEventsTestCase):
     number_of_checks = 5
 
@@ -459,7 +460,7 @@ class ShowHideWindowEventsTest(WindowEventsTestCase):
         self._test_main()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_BUTTON(InteractiveTestCase):
     """Test that mouse button events work correctly.
 
@@ -491,7 +492,7 @@ class EVENT_BUTTON(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_MOVE(InteractiveTestCase):
     """Test that window move event works correctly.
 
@@ -515,7 +516,7 @@ class EVENT_MOVE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_RESIZE(InteractiveTestCase):
     """Test that resize event works correctly.
 
@@ -542,7 +543,7 @@ class EVENT_RESIZE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_MOUSE_DRAG(InteractiveTestCase):
     """Test that mouse drag event works correctly.
 
@@ -564,7 +565,7 @@ class EVENT_MOUSE_DRAG(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_MOUSEMOTION(InteractiveTestCase):
     """Test that mouse motion event works correctly.
 
@@ -592,7 +593,7 @@ class EVENT_MOUSEMOTION(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_MOUSE_SCROLL(InteractiveTestCase):
     """Test that mouse scroll event works correctly.
 
@@ -623,7 +624,7 @@ class EVENT_MOUSE_SCROLL(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class EVENT_MOUSE_ENTER_LEAVE(InteractiveTestCase):
     """Test that mouse enter and leave events work correctly.
 

@@ -429,8 +429,12 @@ class Batch(object):
 
         '''
         formats = vertex_list.domain.__formats
-        domain = batch._get_domain(False, mode, group, formats)
+        if isinstance(vertex_list, vertexdomain.IndexedVertexList):
+            domain = batch._get_domain(True, mode, group, formats)
+        else:
+            domain = batch._get_domain(False, mode, group, formats)
         vertex_list.migrate(domain)
+        self._draw_list_dirty = True
 
     def _get_domain(self, indexed, mode, group, formats):
         if group is None:

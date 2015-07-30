@@ -5,9 +5,9 @@ Test the base class for interactive test cases.
 import glob
 from tests import mock
 import os
+import pytest
 import shutil
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_validation, \
-        requires_user_action, only_interactive
+from tests.interactive.interactive_test_base import InteractiveTestCase
 import tempfile
 import unittest
 
@@ -15,7 +15,7 @@ import pyglet
 from pyglet import window
 from pyglet.gl import *
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class InteractiveTestCaseTest(InteractiveTestCase):
     """
     Test the interactive test case base. Is an interactive test case itself, to be able to test it
@@ -80,111 +80,6 @@ class InteractiveTestCaseTest(InteractiveTestCase):
 
         self.assertTrue(_Test.test1_ran, 'Test 1 should have run')
         self.assertTrue(_Test.test2_ran, 'Test 2 should have run')
-
-    @mock.patch('tests.interactive.interactive_test_base.run_only_interactive', False)
-    def test_filter_only_interactive_skip(self):
-        @only_interactive
-        class _Test(InteractiveTestCase):
-            test1_ran = False
-
-            def test_1(self):
-                _Test.test1_ran = True
-
-        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
-        self.assertIsNotNone(tests)
-        self.assertEqual(tests.countTestCases(), 1)
-
-        result = unittest.TestResult()
-        tests.run(result)
-
-        self.assertFalse(_Test.test1_ran, 'Test should have been skipped')
-
-    @mock.patch('tests.interactive.interactive_test_base.run_only_interactive', False)
-    def test_filter_only_interactive_no_skip(self):
-        class _Test(InteractiveTestCase):
-            test1_ran = False
-
-            def test_1(self):
-                _Test.test1_ran = True
-
-        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
-        self.assertIsNotNone(tests)
-        self.assertEqual(tests.countTestCases(), 1)
-
-        result = unittest.TestResult()
-        tests.run(result)
-
-        self.assertTrue(_Test.test1_ran, 'Test should have run')
-
-    @mock.patch('tests.interactive.interactive_test_base.run_requires_user_validation', False)
-    def test_filter_requires_user_validation_skip(self):
-        @requires_user_validation
-        class _Test(InteractiveTestCase):
-            test1_ran = False
-
-            def test_1(self):
-                _Test.test1_ran = True
-
-        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
-        self.assertIsNotNone(tests)
-        self.assertEqual(tests.countTestCases(), 1)
-
-        result = unittest.TestResult()
-        tests.run(result)
-
-        self.assertFalse(_Test.test1_ran, 'Test should have been skipped')
-
-    @mock.patch('tests.interactive.interactive_test_base.run_requires_user_validation', False)
-    def test_filter_requires_user_validation_no_skip(self):
-        class _Test(InteractiveTestCase):
-            test1_ran = False
-
-            def test_1(self):
-                _Test.test1_ran = True
-
-        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
-        self.assertIsNotNone(tests)
-        self.assertEqual(tests.countTestCases(), 1)
-
-        result = unittest.TestResult()
-        tests.run(result)
-
-        self.assertTrue(_Test.test1_ran, 'Test should have run')
-
-    @mock.patch('tests.interactive.interactive_test_base.run_requires_user_action', False)
-    def test_filter_requires_user_action_skip(self):
-        @requires_user_action
-        class _Test(InteractiveTestCase):
-            test1_ran = False
-
-            def test_1(self):
-                _Test.test1_ran = True
-
-        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
-        self.assertIsNotNone(tests)
-        self.assertEqual(tests.countTestCases(), 1)
-
-        result = unittest.TestResult()
-        tests.run(result)
-
-        self.assertFalse(_Test.test1_ran, 'Test should have been skipped')
-
-    @mock.patch('tests.interactive.interactive_test_base.run_requires_user_action', False)
-    def test_filter_requires_user_action_no_skip(self):
-        class _Test(InteractiveTestCase):
-            test1_ran = False
-
-            def test_1(self):
-                _Test.test1_ran = True
-
-        tests = unittest.defaultTestLoader.loadTestsFromTestCase(_Test)
-        self.assertIsNotNone(tests)
-        self.assertEqual(tests.countTestCases(), 1)
-
-        result = unittest.TestResult()
-        tests.run(result)
-
-        self.assertTrue(_Test.test1_ran, 'Test should have run')
 
     def test_user_verify_passed(self):
         class _Test(InteractiveTestCase):

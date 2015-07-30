@@ -1,4 +1,5 @@
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 import pyglet
 from pyglet.text import caret, document, layout
@@ -228,7 +229,7 @@ class TestWindow(pyglet.window.Window):
             self.caret.on_text('\t')
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class HtmlTestCase(InteractiveTestCase):
     """Test that HTML data is decoded into a formatted document.
 

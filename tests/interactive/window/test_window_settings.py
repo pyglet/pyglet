@@ -1,10 +1,10 @@
 """Tests for window settings."""
 from __future__ import print_function
 
+import pytest
 import time
 
-from tests.interactive.interactive_test_base import (InteractiveTestCase,
-        requires_user_action, requires_user_validation)
+from tests.interactive.interactive_test_base import InteractiveTestCase
 from tests.interactive.window import window_util
 
 from pyglet.gl import *
@@ -13,7 +13,7 @@ from pyglet.window import key, Window, ImageMouseCursor
 from pyglet.window.event import WindowEventLogger
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_EXCLUSIVE_KEYBOARD(InteractiveTestCase):
     """Test that exclusive keyboard mode can be set.
 
@@ -60,7 +60,7 @@ class WINDOW_SET_EXCLUSIVE_KEYBOARD(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_EXCLUSIVE_MOUSE(InteractiveTestCase):
     """Test that exclusive mouse mode can be set.
 
@@ -100,7 +100,7 @@ class WINDOW_SET_EXCLUSIVE_MOUSE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
     """Test that window can be set fullscreen and back again.
 
@@ -140,7 +140,7 @@ class WINDOW_SET_FULLSCREEN(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class WINDOW_SET_ICON(InteractiveTestCase):
     """Test that window icon can be set.
 
@@ -159,7 +159,7 @@ class WINDOW_SET_ICON(InteractiveTestCase):
             w.close()
 
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class WINDOW_SET_ICON_SIZES(InteractiveTestCase):
     """Test that window icon can be set for multiple sizes.
 
@@ -192,7 +192,7 @@ class WINDOW_SET_ICON_SIZES(InteractiveTestCase):
             w.close()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_LOCATION(InteractiveTestCase):
     """Test that window location can be set.
 
@@ -230,7 +230,7 @@ class WINDOW_SET_LOCATION(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_MIN_MAX_SIZE(InteractiveTestCase):
     """Test that minimum and maximum window size can be set.
 
@@ -272,7 +272,7 @@ class WINDOW_SET_MIN_MAX_SIZE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_MOUSE_CURSOR(InteractiveTestCase):
     """Test that image mouse cursor can be set.
 
@@ -302,7 +302,7 @@ class WINDOW_SET_MOUSE_CURSOR(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_MOUSE_PLATFORM_CURSOR(InteractiveTestCase):
     """Test that mouse cursor can be set to a platform-dependent image.
 
@@ -366,7 +366,7 @@ class WINDOW_SET_MOUSE_PLATFORM_CURSOR(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_MOUSE_VISIBLE(InteractiveTestCase):
     """Test that mouse cursor can be made visible and hidden.
 
@@ -398,7 +398,7 @@ class WINDOW_SET_MOUSE_VISIBLE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_SIZE(InteractiveTestCase):
     """Test that window size can be set.
 
@@ -440,7 +440,7 @@ class WINDOW_SET_SIZE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class WINDOW_SET_VISIBLE(InteractiveTestCase):
     """Test that the window can be hidden and shown.
 
@@ -467,7 +467,7 @@ class WINDOW_SET_VISIBLE(InteractiveTestCase):
             w.close()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_VSYNC(InteractiveTestCase):
     """Test that vsync can be set.
 
@@ -522,7 +522,7 @@ class WINDOW_SET_VSYNC(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_SET_CAPTION(InteractiveTestCase):
     """Test that the window caption can be set.
 
@@ -554,7 +554,7 @@ class WINDOW_SET_CAPTION(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_FIXED_SET_SIZE(InteractiveTestCase):
     """Test that a non-resizable window's size can be set.
 

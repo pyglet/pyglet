@@ -1,17 +1,17 @@
 from __future__ import print_function
 from builtins import chr
+import pytest
 import time
 
 from tests.annotations import Platform, require_platform
-from tests.interactive.interactive_test_base import (InteractiveTestCase,
-        requires_user_action, requires_user_validation)
+from tests.interactive.interactive_test_base import InteractiveTestCase
 from tests.interactive.window import window_util
 
 from pyglet import window
 from pyglet.gl import *
 from pyglet.window.event import WindowEventLogger
 
-@requires_user_validation
+@pytest.mark.requires_user_validation
 class WINDOW_MINIMIZE_MAXIMIZE(InteractiveTestCase):
     """Test that window can be minimized and maximized.
 
@@ -40,7 +40,7 @@ class WINDOW_MINIMIZE_MAXIMIZE(InteractiveTestCase):
             w.close()
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_ACTIVATE(InteractiveTestCase):
     """Test that the window can be activated (focus set).
 
@@ -71,7 +71,7 @@ class WINDOW_ACTIVATE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class WINDOW_RESIZABLE(InteractiveTestCase):
     """Test that window can be resized.
 
@@ -94,7 +94,7 @@ class WINDOW_RESIZABLE(InteractiveTestCase):
         self.user_verify('Pass test?', take_screenshot=False)
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 @require_platform(Platform.WINDOWS + Platform.OSX)
 class WINDOW_MODE_SWITCH(InteractiveTestCase):
     """Test switching to available screen modes."""

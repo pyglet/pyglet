@@ -1,4 +1,5 @@
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 from pyglet import app
 from pyglet import gl
@@ -73,7 +74,7 @@ class TestWindow(window.Window):
             self.caret.on_text('\t')
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class MultilineWrapTestCase(InteractiveTestCase):
     """Test that a paragraph is broken or not according the settings in an
     incremental layout.

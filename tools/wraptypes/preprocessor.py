@@ -91,7 +91,6 @@ class SystemHeaderName(str):
 
 punctuators = {
     # value: (regex, type)
-    r'...': (r'\.\.\.', 'ELLIPSIS'),
     r'>>=': (r'>>=', 'RIGHT_ASSIGN'),
     r'<<=': (r'<<=', 'LEFT_ASSIGN'),
     r'+=': (r'\+=', 'ADD_ASSIGN'),
@@ -185,6 +184,12 @@ def t_directive(t):
         # TODO
         t.type = '#'
         t.lexer.nexttoken = ('IDENTIFIER', t.value[1:].lstrip())
+    return t
+
+@TOKEN(r'(' + IDENTIFIER + r')?\.\.\.')
+def t_ellipsis(t):
+    """In GNU C ellipsis can be prepended with a variable name, so not simply punctuation."""
+    t.type = 'ELLIPSIS'
     return t
 
 @TOKEN(punctuator_regex(punctuators))
@@ -1069,6 +1074,7 @@ class PreprocessorParser(yacc.Parser):
 
         if gcc_search_path:
             self.add_gcc_search_path()
+            self.add_cpp_search_path()
 
         self.lexer.filename = ''
 
@@ -1084,6 +1090,26 @@ class PreprocessorParser(yacc.Parser):
                      shell=True, stdout=PIPE).communicate()[0].strip()
         if path:
             self.include_path.append(path)
+
+    def add_cpp_search_path(self):
+        from subprocess import Popen, PIPE
+        try:
+            open('test.h', 'a').close()
+            output = Popen('cpp -v test.h', shell=True, stderr=PIPE).communicate()[1]
+            import pdb; pdb.set_trace()
+        finally:
+            os.remove('test.h')
+        if output:
+            output = output.split('\n')
+            while output and not '#include <...>' in output[0]:
+                print('Skipping:', output[0])
+                del output[0]
+            if output:
+                del output[0]  # Remove start line
+                while output and not 'End of search list' in output[0]:
+                    self.include_path.append(output[0].strip())
+                    print('Adding:', output[0].strip())
+                    del output[0]
 
     def parse(self, filename=None, data=None, namespace=None, debug=False): 
         self.output = []

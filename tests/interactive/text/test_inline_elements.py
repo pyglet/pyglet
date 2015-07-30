@@ -1,5 +1,6 @@
 from builtins import range
-from tests.interactive.interactive_test_base import InteractiveTestCase, requires_user_action
+import pytest
+from tests.interactive.interactive_test_base import InteractiveTestCase
 
 import pyglet
 from pyglet.text import caret, document, layout
@@ -128,7 +129,7 @@ class TestWindow(pyglet.window.Window):
             self.caret.on_text('\t')
 
 
-@requires_user_action
+@pytest.mark.requires_user_action
 class InlineElementTestCase(InteractiveTestCase):
     """Test that inline elements are positioned correctly and are repositioned
     within an incremental layout.
