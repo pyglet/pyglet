@@ -92,7 +92,7 @@ The text of a document can be modified directly as a property on the object::
 
 However, if small changes are being made to the document it can be more
 efficient (when coupled with an appropriate layout; see below) to use the
-`remove_text` and `insert_text` methods instead.
+`delete_text` and `insert_text` methods instead.
 
 Layouts
 ^^^^^^^
