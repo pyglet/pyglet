@@ -16,11 +16,16 @@ class FontTestWindow(TestWindow):
                  font_size=24,
                  text='Quickly brown fox',
                  color=(0, 0, 0, 1),
+                 font_options=None,
+                 text_options=None,
                  *args, **kwargs):
         super(FontTestWindow, self).__init__(*args, **kwargs)
 
-        fnt = font.load(font_name, font_size)
-        self.label = font.Text(fnt, text, 10, 200, color=color)
+        font_options = font_options or {}
+        text_options = text_options or {}
+
+        fnt = font.load(font_name, font_size, **font_options)
+        self.label = font.Text(fnt, text, 10, 200, color=color, **text_options)
 
     def on_draw(self):
         super(FontTestWindow, self).on_draw()
