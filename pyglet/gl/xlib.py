@@ -194,13 +194,9 @@ class BaseXlibContext(Context):
         self.x_display = config.canvas.display._display
 
         self.glx_context = self._create_glx_context(share)
-        glx_context_id = self.glx_context.contents._opaque_struct
-        if glx_context_id == glx.GLX_BAD_CONTEXT:
-            raise gl.ContextException('Invalid context share')
-        elif glx_context_id == glx.GLXBadFBConfig:
-            raise gl.ContextException('Invalid GL configuration')
-        elif glx_context_id < 0:
-            raise gl.ContextException('Could not create GL context') 
+        if not self.glx_context:
+            # TODO: Check Xlib error generated
+            raise gl.ContextException('Could not create GL context')
 
         self._have_SGI_video_sync = \
             config.glx_info.have_extension('GLX_SGI_video_sync')
