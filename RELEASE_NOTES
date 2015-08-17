@@ -1,3 +1,11 @@
+Pyglet 1.2.4
+============
+Minor bugfix release.
+
+Bugfixes:
+- X11: Fix ContextException due to negative return value (#51)
+- X11: Fix segmentation fault in GdkPixBuf (#50)
+
 Pyglet 1.2.3
 ============
 Minor bugfix release.
