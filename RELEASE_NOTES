@@ -5,6 +5,7 @@ Minor bugfix release.
 Bugfixes:
 - X11: Fix ContextException due to negative return value (#51)
 - X11: Fix segmentation fault in GdkPixBuf (#50)
+- OpenAL: Fix incompatibility with Python 3 (#57)
 
 Pyglet 1.2.3
 ============
