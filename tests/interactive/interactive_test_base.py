@@ -64,22 +64,14 @@ class InteractiveFixture(object):
         parts.append(self._request.node.name)
         return '.'.join(parts)
 
-    def user_verify(self, description, take_screenshot=True):
-        """
-        Request the user to verify the current display is correct.
-        """
-        failed = False
+    def ask_question(self, description=None):
+        """Ask a question to verify the current test result. Uses the console or an external gui
+        as no window is available."""
         failure_description = None
-
         if self.interactive:
             failure_description = _ask_user_to_verify(description)
-        if take_screenshot:
-            screenshot_name = self._take_screenshot()
-            if not self.interactive:
-                self._check_screenshot(screenshot_name)
-
-        if failure_description is not None:
-            self.fail(failure_description)
+            if failure_description is not None:
+                self.fail(failure_description)
 
     def _take_screenshot(self):
         """
@@ -89,7 +81,7 @@ class InteractiveFixture(object):
         screenshot_file_name = self._get_screenshot_session_file_name(screenshot_name)
 
         get_buffer_manager().get_color_buffer().image_data.save(screenshot_file_name)
-        self._screenshots.append(screenshot_name)
+        self.screenshots.append(screenshot_name)
         self._schedule_commit()
 
         return screenshot_name
@@ -112,7 +104,7 @@ class InteractiveFixture(object):
         Get the unique name for the next screenshot.
         """
         return '{}.{:03d}.png'.format(self.testname,
-                                      len(self._screenshots)+1)
+                                      len(self.screenshots)+1)
 
     def _get_screenshot_session_file_name(self, screenshot_name):
         return os.path.join(session_screenshot_path, screenshot_name)
@@ -157,7 +149,7 @@ class InteractiveFixture(object):
         """
         Store the screenshots for reference if the test case is successful.
         """
-        for screenshot_name in self._screenshots:
+        for screenshot_name in self.screenshots:
             shutil.copyfile(self._get_screenshot_session_file_name(screenshot_name),
                             self._get_screenshot_committed_file_name(screenshot_name))
 

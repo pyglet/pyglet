@@ -1,11 +1,44 @@
 """
 Interactive tests for pyglet.font
 """
+import pytest
 
 from pyglet import gl
 from pyglet import font
 
+from tests.interactive.event_loop_test_base import TestWindow, EventLoopFixture
 from tests.interactive.windowed_test_base import WindowedTestCase
+
+
+class FontTestWindow(TestWindow):
+    def __init__(self,
+                 font_name='',
+                 font_size=24,
+                 text='Quickly brown fox',
+                 color=(0, 0, 0, 1),
+                 *args, **kwargs):
+        super(FontTestWindow, self).__init__(*args, **kwargs)
+
+        fnt = font.load(font_name, font_size)
+        self.label = font.Text(fnt, text, 10, 200, color=color)
+
+    def on_draw(self):
+        super(FontTestWindow, self).on_draw()
+        self.label.draw()
+
+
+class FontFixture(EventLoopFixture):
+    window_class = FontTestWindow
+
+    def test_font(self, question, **kwargs):
+        self.show_window(**kwargs)
+        self.ask_question(question)
+
+
+@pytest.fixture
+def font_fixture(request):
+    return FontFixture(request)
+
 
 class FontTestBase(WindowedTestCase):
     """
