@@ -18,18 +18,34 @@ class FontTestWindow(TestWindow):
                  color=(0, 0, 0, 1),
                  font_options=None,
                  text_options=None,
+                 fill_width=False,
+                 draw_baseline=False,
                  *args, **kwargs):
         super(FontTestWindow, self).__init__(*args, **kwargs)
+
+        self.draw_baseline = draw_baseline
 
         font_options = font_options or {}
         text_options = text_options or {}
 
+        if fill_width:
+            text_options['width'] = self.width
+
         fnt = font.load(font_name, font_size, **font_options)
-        self.label = font.Text(fnt, text, 10, 200, color=color, **text_options)
+        self.label = font.Text(fnt, text, 0, 200, color=color, **text_options)
 
     def on_draw(self):
         super(FontTestWindow, self).on_draw()
+        if self.draw_baseline:
+            self._draw_baseline()
         self.label.draw()
+
+    def _draw_baseline(self):
+        gl.glColor3f(0, 0, 0)
+        gl.glBegin(gl.GL_LINES)
+        gl.glVertex2f(0, 200)
+        gl.glVertex2f(self.width, 200)
+        gl.glEnd()
 
 
 class FontFixture(EventLoopFixture):
@@ -38,6 +54,11 @@ class FontFixture(EventLoopFixture):
     def test_font(self, question, **kwargs):
         self.show_window(**kwargs)
         self.ask_question(question)
+
+    @property
+    def label(self):
+        assert self.window is not None
+        return self.window.label
 
 
 @pytest.fixture

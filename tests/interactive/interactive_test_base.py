@@ -73,12 +73,15 @@ class InteractiveFixture(object):
             if failure_description is not None:
                 self.fail(failure_description)
 
-    def _take_screenshot(self):
+    def _take_screenshot(self, window=None):
         """
         Take a screenshot to allow visual verification.
         """
         screenshot_name = self._get_next_screenshot_name()
         screenshot_file_name = self._get_screenshot_session_file_name(screenshot_name)
+
+        if window is not None:
+            window.switch_to()
 
         get_buffer_manager().get_color_buffer().image_data.save(screenshot_file_name)
         self.screenshots.append(screenshot_name)

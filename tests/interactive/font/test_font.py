@@ -1,3 +1,6 @@
+"""
+Test font loading and rendering.
+"""
 import pytest
 
 import pyglet

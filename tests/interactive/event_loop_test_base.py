@@ -89,34 +89,43 @@ class EventLoopFixture(InteractiveFixture):
     def __init__(self, request):
         super(EventLoopFixture, self).__init__(request)
         self._request = request
-        self._window = None
+        self.window = None
         request.addfinalizer(self.tear_down)
 
     def show_window(self, **kwargs):
-        self._window = self.window_class(fixture=self, **kwargs)
+        self.window = self.window_class(fixture=self, **kwargs)
 
     def add_text(self, text):
         assert self._window is not None
-        self._window.add_text(text)
+        self.window.add_text(text)
 
     def ask_question(self, description=None, screenshot=True):
         """Ask a question inside the test window. By default takes a screenshot and validates
         that too."""
-        assert self._window is not None
+        assert self.window is not None
         if description:
-            self._window.add_text(description)
-        self._window.ask_question()
+            self.window.add_text(description)
+        self.window.ask_question()
+        caught_exception = None
         try:
             if self.interactive:
                 self.run_event_loop()
-                self._window.handle_answer()
+                self.window.handle_answer()
             else:
                 self.run_event_loop(0.1)
+        except Exception as ex:
+            caught_exception = ex
         finally:
             if screenshot:
-                screenshot_name = self._take_screenshot()
-                if not self.interactive:
-                    self._check_screenshot(screenshot_name)
+                try:
+                    screenshot_name = self._take_screenshot(self.window)
+                    if caught_exception is None and not self.interactive:
+                        self._check_screenshot(screenshot_name)
+                except:
+                    if caught_exception:
+                        raise caught_exception
+                    else:
+                        raise
 
     def ask_question_no_window(self, description=None):
         """Ask a question to verify the current test result. Uses the console or an external gui
@@ -132,9 +141,9 @@ class EventLoopFixture(InteractiveFixture):
         pyglet.app.exit()
 
     def tear_down(self):
-        if self._window:
-            self._window.close()
-            self._window = None
+        if self.window:
+            self.window.close()
+            self.window = None
 
 
 def test_question_pass(event_loop):
