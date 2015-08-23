@@ -125,3 +125,19 @@ def test_horizontal_metrics(font_fixture, test_data, font_name, text):
             text=text,
             width=600,
             )
+
+def test_metrics_workaround(font_fixture, test_data):
+    """Test workaround for font missing metrics.
+
+    Font should fit between top and bottom lines.
+    """
+    font.add_file(test_data.get_file('fonts', 'courR12-ISO8859-1.pcf'))
+    font_fixture.test_font(
+            font_name='Courier',
+            font_size=16,
+            question='The text should fit between the top and bottom lines',
+            draw_metrics=True,
+            text='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+            width=600,
+            )
+
