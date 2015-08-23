@@ -99,3 +99,29 @@ def test_add_font(font_fixture, test_data, font_desc, font_file, font_options):
             font_options=font_options,
             question="""You should see {} style Action Man at 24pt.""".format(font_desc)
              )
+
+@pytest.mark.parametrize('font_name,text', [
+        ('Action man', 'Action Man'),
+        ('Action man', 'Action Man longer test with more words'),
+        ('Arial', 'Arial'),
+        ('Arial', 'Arial longer test with more words'),
+        ('Times New Roman', 'Times New Roman'),
+        ('Times New Roman', 'Times New Roman longer test with more words'),
+    ])
+def test_horizontal_metrics(font_fixture, test_data, font_name, text):
+    """Test that the horizontal font metrics are calculated correctly.
+
+    Some text in various fonts will be displayed.  Green vertical lines mark
+    the left edge of the text.  Blue vertical lines mark the right edge of the
+    text.
+    """
+    question=("The green vertical lines should match the left edge of the text"
+            + "and the blue vertical lines should match the right edge of the text.")
+    font_fixture.test_font(
+            font_name=font_name,
+            font_size=16,
+            question=question,
+            draw_metrics=True,
+            text=text,
+            width=600,
+            )

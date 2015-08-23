@@ -20,7 +20,8 @@ def test_text_halign(font_fixture, halign):
             question='Is the text horizontally {} aligned?'.format(halign),
             text=halign.upper(),
             text_options={'halign': halign},
-            fill_width=True
+            fill_width=True,
+            draw_metrics=True,
             )
 
 @pytest.mark.parametrize('valign,desc', [

@@ -20,31 +20,52 @@ class FontTestWindow(TestWindow):
                  text_options=None,
                  fill_width=False,
                  draw_baseline=False,
+                 draw_metrics=False,
                  *args, **kwargs):
         super(FontTestWindow, self).__init__(*args, **kwargs)
 
         self.draw_baseline = draw_baseline
+        self.draw_metrics = draw_metrics
 
         font_options = font_options or {}
         text_options = text_options or {}
 
         if fill_width:
-            text_options['width'] = self.width
+            text_options['width'] = self.width - 10
 
-        fnt = font.load(font_name, font_size, **font_options)
-        self.label = font.Text(fnt, text, 0, 200, color=color, **text_options)
+        self.font = font.load(font_name, font_size, **font_options)
+        assert self.font is not None
+        self.label = font.Text(self.font, text, 5, 200, color=color, **text_options)
 
     def on_draw(self):
         super(FontTestWindow, self).on_draw()
         if self.draw_baseline:
             self._draw_baseline()
         self.label.draw()
+        if self.draw_metrics:
+            self._draw_metrics()
 
     def _draw_baseline(self):
         gl.glColor3f(0, 0, 0)
         gl.glBegin(gl.GL_LINES)
         gl.glVertex2f(0, 200)
         gl.glVertex2f(self.width, 200)
+        gl.glEnd()
+
+    def _draw_metrics(self):
+        gl.glBegin(gl.GL_LINES)
+        gl.glColor3f(0, 1, 0)
+        gl.glVertex2f(self.label.x, self.label.y + self.label.font.descent)
+        gl.glVertex2f(self.label.x, self.label.y + self.label.font.ascent)
+        gl.glColor3f(1, 0, 0)
+        gl.glVertex2f(self.label.x, self.label.y + self.label.font.ascent)
+        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.ascent)
+        gl.glColor3f(0, 0, 1)
+        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.ascent)
+        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.descent)
+        gl.glColor3f(1, 0, 1)
+        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.descent)
+        gl.glVertex2f(self.label.x, self.label.y + self.label.font.descent)
         gl.glEnd()
 
 
