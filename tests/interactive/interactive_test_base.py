@@ -93,8 +93,8 @@ class InteractiveFixture(object):
         session_file_name = self._get_screenshot_session_file_name(screenshot_name)
         committed_file_name = self._get_screenshot_committed_file_name(screenshot_name)
 
-        assert os.path.is_file(session_file_name)
-        if os.path.is_file(committed_file_name):
+        assert os.path.isfile(session_file_name)
+        if os.path.isfile(committed_file_name):
             committed_image = pyglet.image.load(committed_file_name)
             session_image = pyglet.image.load(session_file_name)
             self.assert_image_equal(committed_image, session_image)
