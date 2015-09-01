@@ -83,6 +83,8 @@ if sys.version_info[0] >= 3:
             return s.encode(encoding=sys.getfilesystemencoding())
     
     def asstr(s):
+        if s is None:
+            return ''
         if isinstance(s, str):
             return s
         return s.decode("utf-8")

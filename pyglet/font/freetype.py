@@ -37,7 +37,7 @@ from builtins import object
 import ctypes
 from collections import namedtuple
 
-from pyglet.compat import asbytes
+from pyglet.compat import asbytes, asstr
 from pyglet.font import base
 from pyglet import image
 from pyglet.font.fontconfig import get_fontconfig
@@ -244,7 +244,7 @@ class FreeTypeFace(object):
 
     @property
     def family_name(self):
-        return self.ft_face.contents.family_name
+        return asstr(self.ft_face.contents.family_name)
 
     @property
     def style_flags(self):
@@ -323,6 +323,9 @@ class FreeTypeFace(object):
         # Replace Freetype's generic family name with TTF/OpenType specific
         # name if we can find one; there are some instances where Freetype
         # gets it wrong.
+
+        return  # FIXME: This is broken
+
         if self.face_flags & FT_FACE_FLAG_SFNT:
             name = FT_SfntName()
             for i in range(FT_Get_Sfnt_Name_Count(self.ft_face)):
@@ -331,7 +334,8 @@ class FreeTypeFace(object):
                     if not (name.platform_id == TT_PLATFORM_MICROSOFT and
                             name.encoding_id == TT_MS_ID_UNICODE_CS):
                         continue
-                        self.name = string.decode('utf-16be', 'ignore')
+                    # name.string is not 0 terminated! use name.string_len
+                    self.name = name.string.decode('utf-16be', 'ignore')
                 except:
                     continue
 
