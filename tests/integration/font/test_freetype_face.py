@@ -1,11 +1,13 @@
 """Tests for loading and accessing FreeType font faces."""
-
 import pytest
+
+from tests.annotations import Platform, require_platform
 
 from pyglet.font.freetype import FreeTypeFace, FreeTypeMemoryFace
 from pyglet.font.fontconfig import get_fontconfig
 
 
+@require_platform(Platform.LINUX)
 @pytest.mark.parametrize('font_file_name,font_name,bold,italic', [
     ('action_man.ttf', 'Action Man', False, False),
     ('action_man_bold.ttf', 'Action Man', True, False),
@@ -24,6 +26,7 @@ def test_face_from_file(test_data, font_file_name, font_name, bold, italic):
     del face
 
 
+@require_platform(Platform.LINUX)
 @pytest.mark.parametrize('font_name,bold,italic', [
     ('Arial', False, False),
     ('Arial', True, False),
@@ -45,6 +48,7 @@ def test_face_from_fontconfig(font_name, bold, italic):
     del face
 
 
+@require_platform(Platform.LINUX)
 @pytest.mark.parametrize('font_file_name,font_name,bold,italic', [
     ('action_man.ttf', 'Action Man', False, False),
     ('action_man_bold.ttf', 'Action Man', True, False),
@@ -65,6 +69,7 @@ def test_memory_face(test_data, font_file_name, font_name, bold, italic):
     del font
 
 
+@require_platform(Platform.LINUX)
 @pytest.mark.parametrize('font_file_name,size,dpi,ascent,descent', [
     ('action_man.ttf', 16, 96, 15, -4),
     ('action_man.ttf', 10, 96, 9, -3),
@@ -80,6 +85,7 @@ def test_face_metrics(test_data, font_file_name, size, dpi, ascent, descent):
     assert metrics.descent == descent
 
 
+@require_platform(Platform.LINUX)
 @pytest.mark.parametrize('font_file_name,character,index', [
     ('action_man.ttf', 'a', 65),
     ('action_man.ttf', 'A', 33),
@@ -93,6 +99,7 @@ def test_character_index(test_data, font_file_name, character, index):
     assert face.get_character_index(character) == index
 
 
+@require_platform(Platform.LINUX)
 @pytest.mark.parametrize('font_file_name,glyph_index', [
     ('action_man.ttf', 65),
     ('action_man.ttf', 33),
