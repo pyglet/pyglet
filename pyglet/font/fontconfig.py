@@ -138,8 +138,18 @@ class FontConfig(object):
         self._add_to_search_cache(search_pattern, result)
         return result
 
-    def char_index(self, face, character):
-        return self._fontconfig.FcFreeTypeCharIndex(byref(face), ord(character))
+    def have_font(self, name):
+        result = self.find_font(name)
+        if result:
+            # Check the name matches, fontconfig can return a default
+            if name and result.name and result.name.lower() != name.lower():
+                return False
+            return True
+        else:
+            return False
+
+    def char_index(self, ft_face, character):
+        return self._fontconfig.FcFreeTypeCharIndex(ft_face, ord(character))
 
     def _add_to_search_cache(self, search_pattern, result_pattern):
         self._search_cache[(search_pattern.name,

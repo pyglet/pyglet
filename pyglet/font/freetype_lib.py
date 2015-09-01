@@ -31,14 +31,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
 from __future__ import print_function
 from __future__ import absolute_import
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 from ctypes import *
 from .base import FontException
@@ -57,8 +51,108 @@ def _get_function(name, argtypes, rtype):
     except AttributeError as e:
             raise ImportError(e)
 
-FT_Done_FreeType = _get_function('FT_Done_FreeType', [c_void_p], None)
-FT_Done_Face = _get_function('FT_Done_Face', [c_void_p], None)
+
+FT_Byte = c_char
+FT_Bytes = POINTER(FT_Byte)
+FT_Char = c_byte
+FT_Int = c_int
+FT_UInt = c_uint
+FT_Int16 = c_int16
+FT_UInt16 = c_uint16
+FT_Int32 = c_int32
+FT_UInt32 = c_uint32
+FT_Int64 = c_int64
+FT_UInt64 = c_uint64
+FT_Short = c_short
+FT_UShort = c_ushort
+FT_Long = c_long
+FT_ULong = c_ulong
+FT_Bool = c_char
+FT_Offset = c_size_t
+# FT_PtrDist = ?
+FT_String = c_char
+FT_String_Ptr = c_char_p
+FT_Tag = FT_UInt32
+FT_Error = c_int
+FT_Fixed = c_long
+FT_Pointer = c_void_p
+FT_Pos = c_long
+
+
+class FT_Vector(Structure):
+    _fields_ = [
+        ('x', FT_Pos),
+        ('y', FT_Pos)
+    ]
+
+
+class FT_BBox(Structure):
+    _fields_ = [
+        ('xMin', FT_Pos),
+        ('yMin', FT_Pos),
+        ('xMax', FT_Pos),
+        ('yMax', FT_Pos)
+    ]
+
+
+class FT_Matrix(Structure):
+    _fields_ = [
+        ('xx', FT_Fixed),
+        ('xy', FT_Fixed),
+        ('yx', FT_Fixed),
+        ('yy', FT_Fixed)
+    ]
+
+FT_FWord = c_short
+FT_UFWord = c_ushort
+FT_F2Dot14 = c_short
+
+
+class FT_UnitVector(Structure):
+    _fields_ = [
+        ('x', FT_F2Dot14),
+        ('y', FT_F2Dot14),
+    ]
+
+FT_F26Dot6 = c_long
+
+
+class FT_Data(Structure):
+    _fields_ = [
+        ('pointer', POINTER(FT_Byte)),
+        ('length', FT_Int),
+    ]
+
+FT_Generic_Finalizer = CFUNCTYPE(None, (c_void_p))
+
+
+class FT_Generic(Structure):
+    _fields_ = [
+        ('data', c_void_p),
+        ('finalizer', FT_Generic_Finalizer)
+    ]
+
+
+class FT_Bitmap(Structure):
+    _fields_ = [
+        ('rows', c_uint),
+        ('width', c_uint),
+        ('pitch', c_int),
+        ('buffer', POINTER(c_ubyte)),
+        ('num_grays', c_short),
+        ('pixel_mode', c_ubyte),
+        ('palette_mode', c_ubyte),
+        ('palette', c_void_p),
+    ]
+
+FT_PIXEL_MODE_NONE = 0
+FT_PIXEL_MODE_MONO = 1
+FT_PIXEL_MODE_GRAY = 2
+FT_PIXEL_MODE_GRAY2 = 3
+FT_PIXEL_MODE_GRAY4 = 4
+FT_PIXEL_MODE_LCD = 5
+FT_PIXEL_MODE_LCD_V = 6
+FT_PIXEL_MODE_BGRA = 7
 
 
 class FT_LibraryRec(Structure):
@@ -69,50 +163,54 @@ class FT_LibraryRec(Structure):
     def __del__(self):
         global _library
         try:
+            print('FT_LibraryRec.__del__')
             FT_Done_FreeType(byref(self))
             _library = None
         except:
             pass
 FT_Library = POINTER(FT_LibraryRec)
 
+
+class FT_Bitmap_Size(Structure):
+    _fields_ = [
+        ('height', c_ushort),
+        ('width', c_ushort),
+        ('size', c_long),
+        ('x_ppem', c_long),
+        ('y_ppem', c_long),
+    ]
+
+
 class FT_Glyph_Metrics(Structure):
     _fields_ = [
-        ('width', c_long),
-        ('height', c_long),
-        ('horiBearingX', c_long),
-        ('horiBearingY', c_long),
-        ('horiAdvance', c_long),
-        ('vertBearingX', c_long),
-        ('vertBearingY', c_long),
-        ('vertAdvance', c_long),
+        ('width', FT_Pos),
+        ('height', FT_Pos),
+
+        ('horiBearingX', FT_Pos),
+        ('horiBearingY', FT_Pos),
+        ('horiAdvance', FT_Pos),
+
+        ('vertBearingX', FT_Pos),
+        ('vertBearingY', FT_Pos),
+        ('vertAdvance', FT_Pos),
     ]
 
     def dump(self):
         for (name, type) in self._fields_:
             print('FT_Glyph_Metrics', name, repr(getattr(self, name)))
 
-class FT_Generic(Structure):
-    _fields_ = [('data', c_void_p), ('finalizer', c_void_p)]
+FT_Glyph_Format = c_ulong
 
-class FT_BBox(Structure):
-    _fields_ = [('xMin', c_long), ('yMin', c_long), ('xMax', c_long),
-        ('yMax', c_long)]
 
-class FT_Vector(Structure):
-    _fields_ = [('x', c_long), ('y', c_long)]
+def FT_IMAGE_TAG(tag):
+    return (ord(tag[0]) << 24) | (ord(tag[1]) << 16) | (ord(tag[2]) << 8) | ord(tag[3])
 
-class FT_Bitmap(Structure):
-    _fields_ = [
-        ('rows', c_int),
-        ('width', c_int),
-        ('pitch', c_int),
-        # declaring buffer as c_char_p confuses ctypes, poor dear
-        ('buffer', POINTER(c_ubyte)),
-        ('num_grays', c_short),
-        ('pixel_mode', c_ubyte),
-        ('palette_mode', c_char),
-        ('palette', c_void_p),
-    ]
+FT_GLYPH_FORMAT_NONE = 0
+FT_GLYPH_FORMAT_COMPOSITE = FT_IMAGE_TAG('comp')
+FT_GLYPH_FORMAT_BITMAP = FT_IMAGE_TAG('bits')
+FT_GLYPH_FORMAT_OUTLINE = FT_IMAGE_TAG('outl')
+FT_GLYPH_FORMAT_PLOTTER = FT_IMAGE_TAG('plot')
+
 
 class FT_Outline(Structure):
     _fields_ = [
@@ -124,52 +222,60 @@ class FT_Outline(Structure):
         ('flags', c_int),             # outline masks
     ]
 
+
+FT_SubGlyph = c_void_p
+
+
 class FT_GlyphSlotRec(Structure):
     _fields_ = [
         ('library', FT_Library),
         ('face', c_void_p),
         ('next', c_void_p),
-        ('reserved', c_uint),
+        ('reserved', FT_UInt),
         ('generic', FT_Generic),
 
         ('metrics', FT_Glyph_Metrics),
-        ('linearHoriAdvance', c_long),
-        ('linearVertAdvance', c_long),
+        ('linearHoriAdvance', FT_Fixed),
+        ('linearVertAdvance', FT_Fixed),
         ('advance', FT_Vector),
 
-        ('format', c_int),
+        ('format', FT_Glyph_Format),
 
         ('bitmap', FT_Bitmap),
-        ('bitmap_left', c_int),
-        ('bitmap_top', c_int),
+        ('bitmap_left', FT_Int),
+        ('bitmap_top', FT_Int),
 
         ('outline', FT_Outline),
-        ('num_subglyphs', c_uint),
-        ('subglyphs', c_void_p),
+        ('num_subglyphs', FT_UInt),
+        ('subglyphs', FT_SubGlyph),
 
         ('control_data', c_void_p),
         ('control_len', c_long),
 
-        ('lsb_delta', c_long),
-        ('rsb_delta', c_long),
+        ('lsb_delta', FT_Pos),
+        ('rsb_delta', FT_Pos),
+
         ('other', c_void_p),
+
         ('internal', c_void_p),
     ]
 FT_GlyphSlot = POINTER(FT_GlyphSlotRec)
 
+
 class FT_Size_Metrics(Structure):
     _fields_ = [
-        ('x_ppem', c_ushort),    # horizontal pixels per EM
-        ('y_ppem', c_ushort),    # vertical pixels per EM
+        ('x_ppem', FT_UShort),    # horizontal pixels per EM
+        ('y_ppem', FT_UShort),    # vertical pixels per EM
 
-        ('x_scale', c_long),     # two scales used to convert font units
-        ('y_scale', c_long),     # to 26.6 frac. pixel coordinates
+        ('x_scale', FT_Fixed),     # two scales used to convert font units
+        ('y_scale', FT_Fixed),     # to 26.6 frac. pixel coordinates
 
-        ('ascender', c_long),    # ascender in 26.6 frac. pixels
-        ('descender', c_long),   # descender in 26.6 frac. pixels
-        ('height', c_long),      # text height in 26.6 frac. pixels
-        ('max_advance', c_long), # max horizontal advance, in 26.6 pixels
+        ('ascender', FT_Pos),    # ascender in 26.6 frac. pixels
+        ('descender', FT_Pos),   # descender in 26.6 frac. pixels
+        ('height', FT_Pos),      # text height in 26.6 frac. pixels
+        ('max_advance', FT_Pos), # max horizontal advance, in 26.6 pixels
     ]
+
 
 class FT_SizeRec(Structure):
     _fields_ = [
@@ -180,14 +286,64 @@ class FT_SizeRec(Structure):
     ]
 FT_Size = POINTER(FT_SizeRec)
 
-class FT_Bitmap_Size(Structure):
+
+class FT_FaceRec(Structure):
     _fields_ = [
-        ('height', c_ushort),
-        ('width', c_ushort),
-        ('size', c_long),
-        ('x_ppem', c_long),
-        ('y_ppem', c_long),
+          ('num_faces', FT_Long),
+          ('face_index', FT_Long),
+
+          ('face_flags', FT_Long),
+          ('style_flags', FT_Long),
+
+          ('num_glyphs', FT_Long),
+
+          ('family_name', FT_String_Ptr),
+          ('style_name', FT_String_Ptr),
+
+          ('num_fixed_sizes', FT_Int),
+          ('available_sizes', POINTER(FT_Bitmap_Size)),
+
+          ('num_charmaps', FT_Int),
+          ('charmaps', c_void_p),
+
+          ('generic', FT_Generic),
+
+          ('bbox', FT_BBox),
+
+          ('units_per_EM', FT_UShort),
+          ('ascender', FT_Short),
+          ('descender', FT_Short),
+          ('height', FT_Short),
+
+          ('max_advance_width', FT_Short),
+          ('max_advance_height', FT_Short),
+
+          ('underline_position', FT_Short),
+          ('underline_thickness', FT_Short),
+
+          ('glyph', FT_GlyphSlot),
+          ('size', FT_Size),
+          ('charmap', c_void_p),
+
+          ('driver', c_void_p),
+          ('memory', c_void_p),
+          ('stream', c_void_p),
+
+          ('sizes_list', c_void_p),
+
+          ('autohint', FT_Generic),
+          ('extensions', c_void_p),
+          ('internal', c_void_p),
     ]
+
+    def dump(self):
+        for (name, type) in self._fields_:
+            print('FT_FaceRec', name, repr(getattr(self, name)))
+
+    def has_kerning(self):
+        return self.face_flags & FT_FACE_FLAG_KERNING
+FT_Face = POINTER(FT_FaceRec)
+
 
 # face_flags values
 FT_FACE_FLAG_SCALABLE          = 1 <<  0
@@ -203,63 +359,49 @@ FT_FACE_FLAG_GLYPH_NAMES       = 1 <<  9
 FT_FACE_FLAG_EXTERNAL_STREAM   = 1 << 10
 FT_FACE_FLAG_HINTER            = 1 << 11
 
-class FT_FaceRec(Structure):
-    _fields_ = [
-          ('num_faces', c_long),
-          ('face_index', c_long),
+FT_STYLE_FLAG_ITALIC = 1
+FT_STYLE_FLAG_BOLD = 2
 
-          ('face_flags', c_long),
-          ('style_flags', c_long),
 
-          ('num_glyphs', c_long),
-          ('family_name', c_char_p),
-          ('style_name', c_char_p),
+(FT_RENDER_MODE_NORMAL,
+ FT_RENDER_MODE_LIGHT,
+ FT_RENDER_MODE_MONO,
+ FT_RENDER_MODE_LCD,
+ FT_RENDER_MODE_LCD_V) = range(5)
 
-          ('num_fixed_sizes', c_int),
-          ('available_sizes', POINTER(FT_Bitmap_Size)),
 
-          ('num_charmaps', c_int),
-          ('charmaps', c_void_p),
+def FT_LOAD_TARGET_(x):
+    return (x & 15) << 16
 
-          ('generic', FT_Generic),
+FT_LOAD_TARGET_NORMAL = FT_LOAD_TARGET_(FT_RENDER_MODE_NORMAL)
+FT_LOAD_TARGET_LIGHT = FT_LOAD_TARGET_(FT_RENDER_MODE_LIGHT)
+FT_LOAD_TARGET_MONO = FT_LOAD_TARGET_(FT_RENDER_MODE_MONO)
+FT_LOAD_TARGET_LCD = FT_LOAD_TARGET_(FT_RENDER_MODE_LCD)
+FT_LOAD_TARGET_LCD_V = FT_LOAD_TARGET_(FT_RENDER_MODE_LCD_V)
 
-          ('bbox', FT_BBox),
+(FT_PIXEL_MODE_NONE,
+ FT_PIXEL_MODE_MONO,
+ FT_PIXEL_MODE_GRAY,
+ FT_PIXEL_MODE_GRAY2,
+ FT_PIXEL_MODE_GRAY4,
+ FT_PIXEL_MODE_LCD,
+ FT_PIXEL_MODE_LCD_V) = range(7)
 
-          ('units_per_EM', c_ushort),
-          ('ascender', c_short),
-          ('descender', c_short),
-          ('height', c_short),
 
-          ('max_advance_width', c_short),
-          ('max_advance_height', c_short),
+def f16p16_to_float(value):
+    return float(value) / (1 << 16)
 
-          ('underline_position', c_short),
-          ('underline_thickness', c_short),
 
-          ('glyph', FT_GlyphSlot),
-          ('size', FT_Size),
-          ('charmap', c_void_p),
+def float_to_f16p16(value):
+    return int(value * (1 << 16))
 
-          ('driver', c_void_p),
-          ('memory', c_void_p),
-          ('stream', c_void_p),
 
-          ('sizes_list_head', c_void_p),
-          ('sizes_list_tail', c_void_p),
+def f26p6_to_float(value):
+    return float(value) / (1 << 6)
 
-          ('autohint', FT_Generic),
-          ('extensions', c_void_p),
-          ('internal', c_void_p),
-    ]
 
-    def dump(self):
-        for (name, type) in self._fields_:
-            print('FT_FaceRec', name, repr(getattr(self, name)))
-
-    def has_kerning(self):
-        return self.face_flags & FT_FACE_FLAG_KERNING
-
-FT_Face = POINTER(FT_FaceRec)
+def float_to_f26p6(value):
+    return int(value * (1 << 6))
 
 
 class FreeTypeError(FontException):
@@ -272,9 +414,9 @@ class FreeTypeError(FontException):
             self._ft_errors.get(self.errcode, 'unknown error'))
 
     @classmethod
-    def check_and_raise_on_error(cls, message, errcode):
+    def check_and_raise_on_error(cls, errcode):
         if errcode != 0:
-            raise cls(message, errcode)
+            raise cls(None, errcode)
 
     _ft_errors = {
         0x00: "no error" ,
@@ -362,45 +504,60 @@ class FreeTypeError(FontException):
         0xB7: "`BBX' too big" ,
     }
 
+
+def _get_function_with_error_handling(name, argtypes, rtype):
+    func = _get_function(name, argtypes, rtype)
+    def _error_handling(*args, **kwargs):
+        err = func(*args, **kwargs)
+        FreeTypeError.check_and_raise_on_error(err)
+    return _error_handling
+
+
 FT_LOAD_RENDER = 0x4
 
-FT_F26Dot6 = c_long
+FT_Init_FreeType = _get_function_with_error_handling('FT_Init_FreeType',
+    [POINTER(FT_Library)], FT_Error)
+FT_Done_FreeType = _get_function_with_error_handling('FT_Done_FreeType',
+    [FT_Library], FT_Error)
 
-FT_Init_FreeType = _get_function('FT_Init_FreeType',
-    [POINTER(FT_Library)], c_int)
-FT_New_Memory_Face = _get_function('FT_New_Memory_Face',
-    [FT_Library, POINTER(c_byte), c_long, c_long, POINTER(FT_Face)], c_int)
-FT_New_Face = _get_function('FT_New_Face',
-    [FT_Library, c_char_p, c_long, POINTER(FT_Face)], c_int)
-FT_Set_Pixel_Sizes = _get_function('FT_Set_Pixel_Sizes',
-    [FT_Face, c_uint, c_uint], c_int)
-FT_Set_Char_Size = _get_function('FT_Set_Char_Size',
-    [FT_Face, FT_F26Dot6, FT_F26Dot6, c_uint, c_uint], c_int)
-FT_Load_Glyph = _get_function('FT_Load_Glyph',
-    [FT_Face, c_uint, c_int32], c_int)
-FT_Get_Char_Index = _get_function('FT_Get_Char_Index',
-    [FT_Face, c_ulong], c_uint)
-FT_Load_Char = _get_function('FT_Load_Char',
-    [FT_Face, c_ulong, c_int], c_int)
-FT_Get_Kerning = _get_function('FT_Get_Kerning',
-    [FT_Face, c_uint, c_uint, c_uint, POINTER(FT_Vector)], c_int)
+FT_New_Face = _get_function_with_error_handling('FT_New_Face',
+    [FT_Library, c_char_p, FT_Long, POINTER(FT_Face)], FT_Error)
+FT_Done_Face = _get_function_with_error_handling('FT_Done_Face',
+    [FT_Face], FT_Error)
+FT_Reference_Face = _get_function_with_error_handling('FT_Reference_Face',
+    [FT_Face], FT_Error)
+FT_New_Memory_Face = _get_function_with_error_handling('FT_New_Memory_Face',
+    [FT_Library, POINTER(FT_Byte), FT_Long, FT_Long, POINTER(FT_Face)], FT_Error)
+
+FT_Set_Char_Size = _get_function_with_error_handling('FT_Set_Char_Size',
+    [FT_Face, FT_F26Dot6, FT_F26Dot6, FT_UInt, FT_UInt], FT_Error)
+FT_Set_Pixel_Sizes = _get_function_with_error_handling('FT_Set_Pixel_Sizes',
+    [FT_Face, FT_UInt, FT_UInt], FT_Error)
+FT_Load_Glyph = _get_function_with_error_handling('FT_Load_Glyph',
+    [FT_Face, FT_UInt, FT_Int32], FT_Error)
+FT_Get_Char_Index = _get_function_with_error_handling('FT_Get_Char_Index',
+    [FT_Face, FT_ULong], FT_Error)
+FT_Load_Char = _get_function_with_error_handling('FT_Load_Char',
+    [FT_Face, FT_ULong, FT_Int32], FT_Error)
+FT_Get_Kerning = _get_function_with_error_handling('FT_Get_Kerning',
+    [FT_Face, FT_UInt, FT_UInt, FT_UInt, POINTER(FT_Vector)], FT_Error)
 
 # SFNT interface
 
 class FT_SfntName(Structure):
     _fields_ = [
-        ('platform_id', c_ushort),
-        ('encoding_id', c_ushort),
-        ('language_id', c_ushort),
-        ('name_id', c_ushort),
-        ('string', POINTER(c_byte)),
-        ('string_len', c_uint)
+        ('platform_id', FT_UShort),
+        ('encoding_id', FT_UShort),
+        ('language_id', FT_UShort),
+        ('name_id', FT_UShort),
+        ('string', POINTER(FT_Byte)),
+        ('string_len', FT_UInt)
     ]
 
 FT_Get_Sfnt_Name_Count = _get_function('FT_Get_Sfnt_Name_Count',
-    [FT_Face], c_uint)
-FT_Get_Sfnt_Name = _get_function('FT_Get_Sfnt_Name',
-    [FT_Face, c_uint, POINTER(FT_SfntName)], c_int)
+    [FT_Face], FT_UInt)
+FT_Get_Sfnt_Name = _get_function_with_error_handling('FT_Get_Sfnt_Name',
+    [FT_Face, FT_UInt, POINTER(FT_SfntName)], FT_Error)
 
 TT_PLATFORM_MICROSOFT = 3
 TT_MS_ID_UNICODE_CS = 1
