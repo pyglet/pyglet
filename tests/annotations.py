@@ -9,7 +9,7 @@ Later some test filtering could be added.
 from builtins import object
 
 import pyglet
-import unittest
+import pytest
 
 
 # Platform identifiers
@@ -23,16 +23,12 @@ def require_platform(platform):
     """
     Only run the test on the given platform(s). Specify multiple platforms using +.
     """
-    if pyglet.compat_platform in platform:
-        return lambda f: f
-    else:
-        return unittest.skip('Skipped for current platform')
+    return pytest.mark.skipif(pyglet.compat_platform not in platform,
+            reason='requires platform: %s' % str(platform))
 
 def skip_platform(platform):
     """
     Do not run on the given platform(s). Specify multiple platforms using +.
     """
-    if pyglet.compat_platform in platform:
-        return unittest.skip('Skipped for current platform')
-    else:
-        return lambda f: f
+    return pytest.mark.skipif(pyglet.compat_platform in platform,
+            reason='not supported for platform: %s' % str(platform))
