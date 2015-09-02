@@ -32,6 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+from builtins import object
 from ctypes import *
 
 from pyglet.gl import *
@@ -259,7 +260,7 @@ class GdkPixBufAnimationIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         self._advance()
         frame = self.get_frame()
         if frame is None:
