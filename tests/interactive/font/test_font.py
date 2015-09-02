@@ -179,22 +179,25 @@ def test_metrics_workaround(font_fixture, test_data):
             'The text should fit between the top and bottom lines',
             )
 
-#@pytest.mark.parametrize('dpi,width,height', [
-#    (120, 9, 27),
-#    ])
-#def test_dpi(font_fixture, test_data, dpi, width, height):
-#    font.add_file(test_data.get_file('fonts', 'action_man.ttf'))
-#    question=("The green vertical lines should match the left edge of the text"
-#            + "and the blue vertical lines should match the right edge of the text.")
-#    font_fixture.test_font(
-#            font_name='Action Man',
-#            font_size=16,
-#            font_options={'dpi': dpi},
-#            question=question,
-#            draw_metrics=True,
-#            text='The DPI is {}'.format(dpi),
-#            text_options = {
-#                'width': width,
-#                'height': height,
-#                }
-#            )
+@pytest.mark.parametrize('dpi,width,height', [
+    (120, 169, 23),
+    (100, 138, 19),
+    (160, 226, 30),
+    ])
+def test_dpi(font_fixture, test_data, dpi, width, height):
+    font.add_file(test_data.get_file('fonts', 'action_man.ttf'))
+    question=("The green vertical lines should match the left edge of the text"
+            + "and the blue vertical lines should match the right edge of the text.")
+    w = font_fixture.create_window()
+    w.draw_custom_metrics = width, height
+    w.load_font(
+            name='Action Man',
+            size=16,
+            dpi=dpi,
+            )
+    w.create_label(
+            text='The DPI is {}'.format(dpi),
+            )
+    font_fixture.ask_question(
+            question,
+            )

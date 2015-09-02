@@ -18,6 +18,7 @@ class FontTestWindow(TestWindow):
 
         self.draw_baseline = False
         self.draw_metrics = False
+        self.draw_custom_metrics = None
 
         self.font = None
         self.label = None
@@ -48,24 +49,32 @@ class FontTestWindow(TestWindow):
 
     def on_draw(self):
         super(FontTestWindow, self).on_draw()
-        if self.draw_baseline:
-            self._draw_baseline()
+        self._draw_baseline()
         self.label.draw()
-        if self.draw_metrics:
-            self._draw_metrics()
+        self._draw_metrics()
+        self._draw_custom_metrics()
 
     def _draw_baseline(self):
-        gl.glColor3f(0, 0, 0)
-        gl.glBegin(gl.GL_LINES)
-        gl.glVertex2f(0, 200)
-        gl.glVertex2f(self.width, 200)
-        gl.glEnd()
+        if self.draw_baseline:
+            gl.glColor3f(0, 0, 0)
+            gl.glBegin(gl.GL_LINES)
+            gl.glVertex2f(0, 200)
+            gl.glVertex2f(self.width, 200)
+            gl.glEnd()
 
     def _draw_metrics(self):
-        self._draw_box(self.label.x,
-                       self.label.y+self.font.descent,
-                       self.label.width,
-                       self.font.ascent-self.font.descent)
+        if self.draw_metrics:
+            self._draw_box(self.label.x,
+                        self.label.y+self.font.descent,
+                        self.label.width,
+                        self.font.ascent-self.font.descent)
+
+    def _draw_custom_metrics(self):
+        if self.draw_custom_metrics is not None:
+            assert len(self.draw_custom_metrics) == 2
+            self._draw_box(self.label.x,
+                        self.label.y+self.font.descent,
+                        *self.draw_custom_metrics)
 
     def _draw_box(self, x, y, w, h):
         gl.glBegin(gl.GL_LINES)
