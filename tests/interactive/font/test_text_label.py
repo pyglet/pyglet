@@ -16,12 +16,15 @@ def test_text_halign(font_fixture, halign):
 
     Three labels will be rendered aligned left, center and right.
     """
-    font_fixture.test_font(
-            question='Is the text horizontally {} aligned?'.format(halign),
+    w = font_fixture.create_window()
+    w.draw_metrics=True,
+    w.create_label(
             text=halign.upper(),
-            text_options={'halign': halign},
+            halign=halign,
             fill_width=True,
-            draw_metrics=True,
+            )
+    font_fixture.ask_question(
+            'Is the text horizontally {} aligned?'.format(halign),
             )
 
 @pytest.mark.parametrize('valign,desc', [
@@ -32,9 +35,12 @@ def test_text_halign(font_fixture, halign):
     ])
 def test_text_valign(font_fixture, valign, desc):
     """Test that font.Text vertical alignment works."""
-    font_fixture.test_font(
-            question='Is the text vertically {} aligned?\n{}'.format(valign, desc),
+    w = font_fixture.create_window()
+    w.draw_baseline = True
+    w.create_label(
             text=valign.upper() + ' y',
-            text_options={'valign': valign},
-            draw_baseline=True
+            valign=valign,
+            )
+    font_fixture.ask_question(
+            'Is the text vertically {} aligned?\n{}'.format(valign, desc),
             )

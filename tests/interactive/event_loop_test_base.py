@@ -92,8 +92,9 @@ class EventLoopFixture(InteractiveFixture):
         self.window = None
         request.addfinalizer(self.tear_down)
 
-    def show_window(self, **kwargs):
+    def create_window(self, **kwargs):
         self.window = self.window_class(fixture=self, **kwargs)
+        return self.window
 
     def add_text(self, text):
         assert self._window is not None
@@ -122,10 +123,10 @@ class EventLoopFixture(InteractiveFixture):
                     if caught_exception is None and not self.interactive:
                         self._check_screenshot(screenshot_name)
                 except:
-                    if caught_exception:
-                        raise caught_exception
-                    else:
+                    if not caught_exception:
                         raise
+            if caught_exception:
+                raise caught_exception
 
     def ask_question_no_window(self, description=None):
         """Ask a question to verify the current test result. Uses the console or an external gui
@@ -147,16 +148,16 @@ class EventLoopFixture(InteractiveFixture):
 
 
 def test_question_pass(event_loop):
-    event_loop.show_window()
+    event_loop.create_window()
     event_loop.ask_question('If you read this text, you should let the test pass.')
 
 def test_question_fail(event_loop):
-    event_loop.show_window()
+    event_loop.create_window()
     with pytest.raises(pytest.fail.Exception):
         event_loop.ask_question('Please press F to fail this test.')
 
 def test_question_skip(event_loop):
-    event_loop.show_window()
+    event_loop.create_window()
     event_loop.ask_question('Please press S to skip the rest of this test.')
     pytest.fail('You should have pressed S')
 

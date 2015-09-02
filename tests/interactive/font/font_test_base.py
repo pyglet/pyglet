@@ -12,30 +12,39 @@ from tests.interactive.windowed_test_base import WindowedTestCase
 
 class FontTestWindow(TestWindow):
     def __init__(self,
-                 font_name='',
-                 font_size=24,
-                 text='Quickly brown fox',
-                 color=(0, 0, 0, 1),
-                 font_options=None,
-                 text_options=None,
-                 fill_width=False,
-                 draw_baseline=False,
-                 draw_metrics=False,
-                 *args, **kwargs):
+                 *args,
+                 **kwargs):
         super(FontTestWindow, self).__init__(*args, **kwargs)
 
-        self.draw_baseline = draw_baseline
-        self.draw_metrics = draw_metrics
+        self.draw_baseline = False
+        self.draw_metrics = False
 
-        font_options = font_options or {}
-        text_options = text_options or {}
+        self.font = None
+        self.label = None
+
+    def load_font(self,
+                  name='',
+                  size=24,
+                  **options):
+        self.font = font.load(name, size, **options)
+        assert self.font is not None, 'Failed to load font'
+        return self.font
+
+    def create_label(self,
+                     text='Quickly brown fox',
+                     color=(0, 0, 0, 1),
+                     fill_width=False,
+                     **options):
+
+        assert self.label is None, 'Label already created'
+        if self.font is None:
+            self.load_font()
 
         if fill_width:
-            text_options['width'] = self.width - 10
+            options['width'] = self.width - 10
 
-        self.font = font.load(font_name, font_size, **font_options)
-        assert self.font is not None
-        self.label = font.Text(self.font, text, 5, 200, color=color, **text_options)
+        self.label = font.Text(self.font, text, 5, 200, color=color, **options)
+        return self.label
 
     def on_draw(self):
         super(FontTestWindow, self).on_draw()
@@ -53,19 +62,25 @@ class FontTestWindow(TestWindow):
         gl.glEnd()
 
     def _draw_metrics(self):
+        self._draw_box(self.label.x,
+                       self.label.y+self.font.descent,
+                       self.label.width,
+                       self.font.ascent-self.font.descent)
+
+    def _draw_box(self, x, y, w, h):
         gl.glBegin(gl.GL_LINES)
         gl.glColor3f(0, 1, 0)
-        gl.glVertex2f(self.label.x, self.label.y + self.label.font.descent)
-        gl.glVertex2f(self.label.x, self.label.y + self.label.font.ascent)
+        gl.glVertex2f(x, y)
+        gl.glVertex2f(x, y+h)
         gl.glColor3f(1, 0, 0)
-        gl.glVertex2f(self.label.x, self.label.y + self.label.font.ascent)
-        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.ascent)
+        gl.glVertex2f(x, y+h)
+        gl.glVertex2f(x+w, y+h)
         gl.glColor3f(0, 0, 1)
-        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.ascent)
-        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.descent)
+        gl.glVertex2f(x+w, y+h)
+        gl.glVertex2f(x+w, y)
         gl.glColor3f(1, 0, 1)
-        gl.glVertex2f(self.label.x + self.label.width, self.label.y + self.label.font.descent)
-        gl.glVertex2f(self.label.x, self.label.y + self.label.font.descent)
+        gl.glVertex2f(x+w, y)
+        gl.glVertex2f(x, y)
         gl.glEnd()
 
 
@@ -73,7 +88,7 @@ class FontFixture(EventLoopFixture):
     window_class = FontTestWindow
 
     def test_font(self, question, **kwargs):
-        self.show_window(**kwargs)
+        self.create_window(**kwargs)
         self.ask_question(question)
 
     @property
