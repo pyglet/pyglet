@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     sphinx.ext.autosummary
     ~~~~~~~~~~~~~~~~~~~~~~
@@ -52,6 +51,7 @@
     :copyright: Copyright 2007-2015 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
+from __future__ import absolute_import
 
 import os
 import re
@@ -564,7 +564,7 @@ def process_generate_options(app):
     if not genfiles:
         return
 
-    from generate import generate_autosummary_docs
+    from .generate import generate_autosummary_docs
 
     ext = app.config.source_suffix[0]
     genfiles = [genfile + (not genfile.endswith(ext) and ext or '')

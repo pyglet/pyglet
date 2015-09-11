@@ -208,9 +208,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                     obj_dict = safe_getattr(obj, '__dict__')
                 except AttributeError:
                     return []
-                defined = obj_dict.keys()
-                defined.sort()
-                for name in defined:
+                for name in sorted(obj_dict.keys()):
                     if exclude_member(obj, name): 
                         continue
                     try:
@@ -229,7 +227,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                 obj_attr = dir(obj)
                 analyzer = ModuleAnalyzer.for_module(obj.__module__)
                 attr_docs = analyzer.find_attr_docs()
-                for pair, doc in attr_docs.iteritems():
+                for pair, doc in attr_docs.items():
                     if name!=pair[0]:
                         continue
                     if not pair[1] in obj_attr:
@@ -253,7 +251,7 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
                                    get_members(obj, 'data')
                 documented = ns['classes']+ns['functions'] +ns['exceptions']+ns['data']
 
-                if sys.all_submodules.has_key(obj.__name__):
+                if obj.__name__ in sys.all_submodules:
                     ns['submodules'] = sys.all_submodules[obj.__name__]
                     # Hide base submodule
                     if "base" in ns['submodules']:

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 import inspect
@@ -51,9 +53,9 @@ def find_modules(rootpath, skip={}):
     rootpath = os.path.normpath(os.path.abspath(rootpath))
     if INITPY in os.listdir(rootpath):
         root_package = rootpath.split(os.path.sep)[-1]
-        print "Searching modules in", rootpath
+        print("Searching modules in", rootpath)
     else:
-        print "No modules in", rootpath
+        print("No modules in", rootpath)
         return
 
     def makename(package, module):
@@ -80,10 +82,10 @@ def find_modules(rootpath, skip={}):
         for s in skipall:
             if name.startswith(s):
                 return False
-        if skip.has_key(module):
+        if module in skip:
             if submodule in skip[module]:
                 return False
-        if not tree.has_key(module):
+        if not module in tree:
             tree[module] = []
         tree[module].append(submodule)
         return True
@@ -108,8 +110,8 @@ def find_modules(rootpath, skip={}):
 
     for item in tree.keys():
         tree[item].sort()
-    print "%s contains %i submodules, %i skipped" % \
-          (root_package, found, found-saved)
+    print("%s contains %i submodules, %i skipped" %
+          (root_package, found, found-saved))
     return tree
 
 
@@ -138,12 +140,9 @@ def write_build(data, filename):
 
 def write_blacklist(pack, filename):
     with open(os.path.join('internal', filename), 'w') as f:
-        modules = pack.keys()
-        modules.sort()
-        for mod in modules:
+        for mod in sorted(pack.keys()):
             if pack[mod] is None:
                 f.write("* ``"+mod+"``\n")
             else:
-                pack[mod].sort()
-                for sub in pack[mod]:
+                for sub in sorted(pack[mod]):
                     f.write("* ``"+mod+"."+sub+"``\n")
