@@ -46,6 +46,7 @@ skip_modules = {"pyglet": {
                      "pyglet.libs": None,
                      "pyglet.app": implementations,
                      "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
+                     "pyglet.extlibs": None,
                      "pyglet.font": ["carbon",
                                      "quartz",
                                      "win32",
@@ -155,7 +156,7 @@ autosummary_generate = True
 inheritance_graph_attrs = dict(rankdir="LR", size='""')
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.1'
+needs_sphinx = '1.3'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -189,7 +190,7 @@ copyright = u'2006-2013, Alex Holkner'
 # built documents.
 #
 # The short X.Y version.
-version = '1.2'
+version = '1.3'
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 
