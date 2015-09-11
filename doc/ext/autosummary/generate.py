@@ -137,10 +137,6 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
             warn('[autosummary] failed to import %r: %s' % (name, e))
             continue
 
-        # skip base modules
-        if name.endswith(".base"):
-            continue
-            
         fn = os.path.join(path, name + suffix)
 
         # skip it if it exists
@@ -253,9 +249,6 @@ def generate_autosummary_docs(sources, output_dir=None, suffix='.rst',
 
                 if obj.__name__ in sys.all_submodules:
                     ns['submodules'] = sys.all_submodules[obj.__name__]
-                    # Hide base submodule
-                    if "base" in ns['submodules']:
-                        ns['submodules'].remove("base")
                     documented += ns['submodules']
 
                 ns['members'] = ns['all_members']

@@ -51,6 +51,7 @@ skip_modules = {"pyglet": {
                                      "quartz",
                                      "win32",
                                      "freetype", "freetype_lib",
+                                     "fontconfig",
                                      "win32query",],
                      "pyglet.input": ["carbon_hid", "carbon_tablet",
                                       "darwin_hid",
@@ -183,7 +184,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyglet'
-copyright = u'2006-2013, Alex Holkner'
+copyright = u'2006-2015, Alex Holkner'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
