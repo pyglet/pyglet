@@ -1,7 +1,0 @@
--docs.zip documentation, test suite and examples to go with platform runtimes
--py2.4.egg runtime egg for Python 2.4
--py2.5.egg runtime egg for Python 2.5
-.dmg Mac OS X runtime installer
-.msi Windows runtime installer
-.tar.gz source tarball
-.zip source zip
