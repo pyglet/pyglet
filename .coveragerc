@@ -1,0 +1,15 @@
+[run]
+branch = True
+omit =
+  pyglet/extlibs/*
+
+[report]
+exclude_lines =
+  pragma: no cover
+  if _debug:
+  @abstractmethod
+  pass
+
+[html]
+directory = coverage_report
+
