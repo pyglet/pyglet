@@ -49,7 +49,12 @@ handle font loading for you, so manual loading is not required.
 
 pyglet will automatically load any system-installed fonts.  You can add additional fonts
 (for example, from your program resources) using :meth:`add_file` or
-:meth:`add_directory`. These fonts are then available in the same way as system-installed fonts.
+:meth:`add_directory`. These fonts are then available in the same way as system-installed fonts::
+
+    from pyglet import font
+    font.add_file('action_man.ttf')
+    action_man = font.load('Action Man', 16)
+
 
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
@@ -175,8 +180,9 @@ def add_file(font):
     either a filename or any file-like object.
 
     The font format is platform-dependent, but is typically a TrueType font
-    file containing a single font face.  Note that to load this file after
-    adding it you must specify the face name to `load`, not the filename.
+    file containing a single font face. Note that to use a font added with this method,
+    you should pass the face name (not the file name) to :meth:`pyglet.font.load` or any
+    other place where you normally specify a font.
 
     :Parameters:
         `font` : str or file
@@ -193,8 +199,8 @@ def add_file(font):
 def add_directory(dir):
     """Add a directory of fonts to pyglet's search path.
 
-    This function simply calls `add_file` for each file with a ``.ttf``
-    extension in the given directory.  Subdirectories are not searched.
+    This function simply calls :meth:`pyglet.font.add_file` for each file with a ``.ttf``
+    extension in the given directory. Subdirectories are not searched.
 
     :Parameters:
         `dir` : str
