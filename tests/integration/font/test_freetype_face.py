@@ -3,8 +3,13 @@ import pytest
 
 from tests.annotations import Platform, require_platform
 
-from pyglet.font.freetype import FreeTypeFace, FreeTypeMemoryFace
-from pyglet.font.fontconfig import get_fontconfig
+try:
+    from pyglet.font.freetype import FreeTypeFace, FreeTypeMemoryFace
+    from pyglet.font.fontconfig import get_fontconfig
+except ImportError:
+    FreeTypeFace = None
+    FreeTypeMemoryFace = None
+    get_fontconfig = None
 
 
 @require_platform(Platform.LINUX)
