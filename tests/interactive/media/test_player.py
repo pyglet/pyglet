@@ -23,7 +23,7 @@ def test_play_queue(interactive):
     # Pause for the duration of the sound
     sleep(1.0)
 
-    interactive.user_verify('Did you hear white noise for 1 second?', take_screenshot=False)
+    interactive.ask_question('Did you hear white noise for 1 second?')
 
 @pytest.mark.requires_user_validation
 def test_queue_play(interactive):
@@ -36,7 +36,7 @@ def test_queue_play(interactive):
     # Pause for the duration of the sound
     sleep(1.0)
 
-    interactive.user_verify('Did you hear white noise for 1 second?', take_screenshot=False)
+    interactive.ask_question('Did you hear white noise for 1 second?')
 
 @pytest.mark.requires_user_validation
 def test_pause_queue(interactive):
@@ -49,7 +49,7 @@ def test_pause_queue(interactive):
     # Pause for the duration of the sound
     sleep(1.0)
 
-    interactive.user_verify('Did you not hear any sound?', take_screenshot=False)
+    interactive.ask_question('Did you not hear any sound?')
 
 @pytest.mark.requires_user_validation
 def test_pause_sound(interactive):
@@ -62,15 +62,15 @@ def test_pause_sound(interactive):
     sleep(1.0)
     player.pause()
 
-    interactive.user_verify('Did you hear white noise for 1 second and is it now silent?', take_screenshot=False)
+    interactive.ask_question('Did you hear white noise for 1 second and is it now silent?')
 
     player.play()
 
-    interactive.user_verify('Do you hear white noise again?', take_screenshot=False)
+    interactive.ask_question('Do you hear white noise again?')
 
     player.delete()
 
-    interactive.user_verify('Is it silent again?', take_screenshot=False)
+    interactive.ask_question('Is it silent again?')
 
 @pytest.mark.requires_user_validation
 def test_next_on_end_of_stream(interactive):
@@ -83,7 +83,7 @@ def test_next_on_end_of_stream(interactive):
     player.play()
 
     sleep(2.0)
-    interactive.user_verify('Did you hear white noise for 1 second and then a tone at 440 Hz (A above middle C)?', take_screenshot=False)
+    interactive.ask_question('Did you hear white noise for 1 second and then a tone at 440 Hz (A above middle C)?')
 
 @pytest.mark.requires_user_validation
 def test_static_source_wrapping(interactive):
@@ -97,5 +97,5 @@ def test_static_source_wrapping(interactive):
 
     sleep(1.0)
 
-    interactive.user_verify('Did you hear white noise for 1 second?', take_screenshot=False)
+    interactive.ask_question('Did you hear white noise for 1 second?')
 
