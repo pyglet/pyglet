@@ -44,6 +44,7 @@ __version__ = '$Id: $'
 from ctypes import *
 
 import pyglet
+from pyglet import gl
 from pyglet.window import BaseWindow, WindowException
 from pyglet.window import MouseCursor, DefaultMouseCursor
 from pyglet.event import EventDispatcher
@@ -605,3 +606,16 @@ class CocoaWindow(BaseWindow):
 
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
+
+    def on_resize(self, width, height):
+        """Override default implementation to support retina displays."""
+        view = self.context._nscontext.view()
+        bounds = view.convertRectToBacking_(view.bounds()).size
+        back_width, back_height = (int(bounds.width), int(bounds.height))
+
+        gl.glViewport(0, 0, back_width, back_height)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.glOrtho(0, width, 0, height, -1, 1)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+
