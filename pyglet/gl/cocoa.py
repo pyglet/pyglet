@@ -167,6 +167,7 @@ class CocoaContext(Context):
         # The NSView instance should be attached to a nondeferred window before calling
         # setView, otherwise you get an "invalid drawable" message.
         self._nscontext.setView_(canvas.nsview)
+        self._nscontext.view().setWantsBestResolutionOpenGLSurface_(1)
         self.set_current()
 
     def detach(self):
