@@ -104,6 +104,7 @@ class EventLoopFixture(InteractiveFixture):
         """Ask a question inside the test window. By default takes a screenshot and validates
         that too."""
         assert self.window is not None
+        self.window.add_text('\n\n')
         if description:
             self.window.add_text(description)
         self.window.ask_question()
@@ -115,6 +116,8 @@ class EventLoopFixture(InteractiveFixture):
             else:
                 self.run_event_loop(0.1)
         except Exception as ex:
+            import traceback
+            traceback.print_exc()
             caught_exception = ex
         finally:
             if screenshot:

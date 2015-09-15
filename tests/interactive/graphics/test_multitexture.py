@@ -3,7 +3,9 @@
 import pyglet
 from pyglet import gl
 
-from tests.interactive.windowed_test_base import WindowedTestCase
+import pytest
+
+from tests.interactive.event_loop_test_base import TestWindow, EventLoopFixture
 
 EMPTY = 0
 BLUE_RECTANGLE = 1
@@ -11,13 +13,11 @@ GREEN_DOT = 2
 RED_CIRCLE = 3
 
 
-class MultiTextureTest(WindowedTestCase):
-    texture0 = EMPTY
-    texture1 = EMPTY
-    texture2 = EMPTY
-
-    def on_expose(self):
-        self.draw()
+class MultiTextureTestWindow(TestWindow):
+    def __init__(self, test_data, *args, **kwargs):
+        super(MultiTextureTestWindow, self).__init__(*args, **kwargs)
+        self.test_data = test_data
+        self.render()
 
     def render(self):
         # Enable blending
@@ -32,21 +32,19 @@ class MultiTextureTest(WindowedTestCase):
         self.texture = pyglet.image.TextureGrid(
                 pyglet.image.ImageGrid(
                     pyglet.image.load(
-                        self.get_test_data_file('images', 'multitexture.png')), 1, 4))
+                        self.test_data.get_file('images', 'multitexture.png')), 1, 4))
         self.background = pyglet.image.load(
-                self.get_test_data_file('images', 'grey_background.png')).get_texture()
+                self.test_data.get_file('images', 'grey_background.png')).get_texture()
 
         # Create vertex list showing the multi texture
         self.vertex_list = pyglet.graphics.vertex_list(4,
-                ('v2f', (32, 32, 64, 32, 64, 64, 32, 64)),
+                ('v2f', (32, 332, 64, 332, 64, 364, 32, 364)),
                 ('0t3f', self.texture[1].tex_coords),
                 ('1t3f', self.texture[2].tex_coords),
                 ('2t3f', self.texture[3].tex_coords))
-        self._set_multi_tex_coords()
 
-    def draw(self):
-        self.window.clear()
-        self.background.blit(0, 0)
+    def on_draw(self):
+        super(MultiTextureTestWindow, self).on_draw()
 
         self._bind_texture(0)
         self._bind_texture(1)
@@ -56,12 +54,12 @@ class MultiTextureTest(WindowedTestCase):
         self._unbind_texture(1)
         self._unbind_texture(0)
 
-        self.window.flip()
+        self.flip()
 
-    def _set_multi_tex_coords(self):
-        self.vertex_list.multi_tex_coords = [self.texture[self.texture0].tex_coords,
-                                             self.texture[self.texture1].tex_coords,
-                                             self.texture[self.texture2].tex_coords]
+    def set_textures(self, texture0=EMPTY, texture1=EMPTY, texture2=EMPTY):
+        self.vertex_list.multi_tex_coords = [self.texture[texture0].tex_coords,
+                                             self.texture[texture1].tex_coords,
+                                             self.texture[texture2].tex_coords]
 
     def _bind_texture(self, i):
         gl.glActiveTexture((gl.GL_TEXTURE0, gl.GL_TEXTURE1, gl.GL_TEXTURE2)[i])
@@ -77,30 +75,28 @@ class MultiTextureTest(WindowedTestCase):
         gl.glDisable(gl.GL_TEXTURE_2D)
 
 
-MultiTextureTest.create_test_case(
-        name="test_multitexture_1",
-        description='Verify that multiple textures can be applied to the same object.',
-        question='Do you see a green dot inside a red circle on a grey background?',
-        texture0=GREEN_DOT,
-        texture1=RED_CIRCLE,
-        texture2=EMPTY
-        )
+class MultiTextureFixture(EventLoopFixture):
+    window_class = MultiTextureTestWindow
 
-MultiTextureTest.create_test_case(
-        name="test_multitexture_2",
-        description='Verify that multiple textures can be applied to the same object.',
-        question='Do you see a green dot inside a red circle inside a blue rectangle on a grey background?',
-        texture0=GREEN_DOT,
-        texture1=RED_CIRCLE,
-        texture2=BLUE_RECTANGLE
-        )
 
-MultiTextureTest.create_test_case(
-        name="test_multitexture_3",
-        description='Verify that multiple textures can be applied to the same object.',
-        question='Do you see a red circle on a grey background?',
-        texture0=RED_CIRCLE,
-        texture1=RED_CIRCLE,
-        texture2=RED_CIRCLE
+@pytest.fixture
+def multi_texture_fixture(request):
+    return MultiTextureFixture(request)
+
+
+def test_multitexture(multi_texture_fixture, test_data):
+        'Verify that multiple textures can be applied to the same object.'
+        w = multi_texture_fixture.create_window(test_data=test_data, height=400)
+        w.set_textures(GREEN_DOT, RED_CIRCLE, EMPTY)
+        multi_texture_fixture.ask_question(
+            'Do you see a green dot inside a red circle on a white background?',
+        )
+        w.set_textures(GREEN_DOT, RED_CIRCLE, BLUE_RECTANGLE)
+        multi_texture_fixture.ask_question(
+            'Do you see a green dot inside a red circle inside a blue rectangle on a white background?',
+        )
+        w.set_textures(RED_CIRCLE, RED_CIRCLE, RED_CIRCLE)
+        multi_texture_fixture.ask_question(
+            'Do you see a red circle on a white background?',
         )
 
