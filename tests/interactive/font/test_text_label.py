@@ -16,13 +16,13 @@ def test_text_halign(font_fixture, halign):
 
     Three labels will be rendered aligned left, center and right.
     """
-    w = font_fixture.create_window()
-    w.draw_metrics=True,
-    w.create_label(
+    font_fixture.create_window()
+    font_fixture.draw_metrics=True,
+    font_fixture.create_label(
             text=halign.upper(),
             halign=halign,
             fill_width=True,
-            margin=0,
+            margin=1,
             )
     font_fixture.ask_question(
             'Is the text horizontally {} aligned?'.format(halign),
@@ -36,9 +36,9 @@ def test_text_halign(font_fixture, halign):
     ])
 def test_text_valign(font_fixture, valign, desc):
     """Test that font.Text vertical alignment works."""
-    w = font_fixture.create_window()
-    w.draw_baseline = True
-    w.create_label(
+    font_fixture.create_window()
+    font_fixture.draw_baseline = True
+    font_fixture.create_label(
             text=valign.upper() + ' y',
             valign=valign,
             )
@@ -54,17 +54,17 @@ def test_text_valign(font_fixture, valign, desc):
     ])
 def test_multiline_alignment(font_fixture, valign, halign):
     """Test horizontal and vertical alignment with multi line text."""
-    w = font_fixture.create_window(
+    font_fixture.create_window(
             height=500,
             )
-    w.create_label(
+    font_fixture.create_label(
             text='This text with multiple lines is aligned {}-{}'.format(valign, halign),
             halign=halign,
             valign=valign,
             fill_width=True,
             margin=0,
             )
-    w.draw_baseline = True
+    font_fixture.draw_baseline = True
     font_fixture.ask_question(
             'Is the text aligned {}-{}?'.format(valign, halign)
             )
@@ -76,8 +76,8 @@ def test_multiline_alignment(font_fixture, valign, halign):
     ])
 def test_wrap_invariant(font_fixture, text, question):
     """Test that text will not wrap when its width is set to its calculated width."""
-    w = font_fixture.create_window()
-    l = w.create_label(
+    font_fixture.create_window()
+    l = font_fixture.create_label(
             text=text
             )
     l.width = l.width + 1

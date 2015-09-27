@@ -5,7 +5,7 @@ from pyglet import gl
 
 import pytest
 
-from tests.interactive.event_loop_test_base import TestWindow, EventLoopFixture
+from tests.interactive.event_loop_test_base import EventLoopFixture
 
 EMPTY = 0
 BLUE_RECTANGLE = 1
@@ -13,11 +13,15 @@ GREEN_DOT = 2
 RED_CIRCLE = 3
 
 
-class MultiTextureTestWindow(TestWindow):
-    def __init__(self, test_data, *args, **kwargs):
-        super(MultiTextureTestWindow, self).__init__(*args, **kwargs)
+class MultiTextureFixture(EventLoopFixture):
+    def __init__(self, request, test_data):
+        super(MultiTextureFixture, self).__init__(request)
         self.test_data = test_data
+
+    def create_window(self, **kwargs):
+        w = super(MultiTextureFixture, self).create_window(**kwargs)
         self.render()
+        return w
 
     def render(self):
         # Enable blending
@@ -44,7 +48,7 @@ class MultiTextureTestWindow(TestWindow):
                 ('2t3f', self.texture[3].tex_coords))
 
     def on_draw(self):
-        super(MultiTextureTestWindow, self).on_draw()
+        super(MultiTextureFixture, self).on_draw()
 
         self._bind_texture(0)
         self._bind_texture(1)
@@ -53,8 +57,6 @@ class MultiTextureTestWindow(TestWindow):
         self._unbind_texture(2)
         self._unbind_texture(1)
         self._unbind_texture(0)
-
-        self.flip()
 
     def set_textures(self, texture0=EMPTY, texture1=EMPTY, texture2=EMPTY):
         self.vertex_list.multi_tex_coords = [self.texture[texture0].tex_coords,
@@ -75,27 +77,23 @@ class MultiTextureTestWindow(TestWindow):
         gl.glDisable(gl.GL_TEXTURE_2D)
 
 
-class MultiTextureFixture(EventLoopFixture):
-    window_class = MultiTextureTestWindow
-
-
 @pytest.fixture
-def multi_texture_fixture(request):
-    return MultiTextureFixture(request)
+def multi_texture_fixture(request, test_data):
+    return MultiTextureFixture(request, test_data)
 
 
 def test_multitexture(multi_texture_fixture, test_data):
         'Verify that multiple textures can be applied to the same object.'
-        w = multi_texture_fixture.create_window(test_data=test_data, height=400)
-        w.set_textures(GREEN_DOT, RED_CIRCLE, EMPTY)
+        w = multi_texture_fixture.create_window(height=400)
+        multi_texture_fixture.set_textures(GREEN_DOT, RED_CIRCLE, EMPTY)
         multi_texture_fixture.ask_question(
             'Do you see a green dot inside a red circle on a white background?',
         )
-        w.set_textures(GREEN_DOT, RED_CIRCLE, BLUE_RECTANGLE)
+        multi_texture_fixture.set_textures(GREEN_DOT, RED_CIRCLE, BLUE_RECTANGLE)
         multi_texture_fixture.ask_question(
             'Do you see a green dot inside a red circle inside a blue rectangle on a white background?',
         )
-        w.set_textures(RED_CIRCLE, RED_CIRCLE, RED_CIRCLE)
+        multi_texture_fixture.set_textures(RED_CIRCLE, RED_CIRCLE, RED_CIRCLE)
         multi_texture_fixture.ask_question(
             'Do you see a red circle on a white background?',
         )

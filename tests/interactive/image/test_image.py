@@ -5,15 +5,13 @@ import pytest
 from pyglet import gl, image
 
 from ...annotations import Platform, require_platform, require_gl_extension
-from ..event_loop_test_base import TestWindow, EventLoopFixture
+from ..event_loop_test_base import EventLoopFixture
 
 
-class ImageTestWindow(TestWindow):
-    """Window for testing image loading, saving and displaying. Supports showing
-    two images side by side for comparison and showing a checkerboard background."""
-
-    def __init__(self, fixture, **kwargs):
-        super(ImageTestWindow, self).__init__(fixture, width=800, height=600, **kwargs)
+class ImageTestFixture(EventLoopFixture):
+    def __init__(self, request, test_data):
+        super(ImageTestFixture, self).__init__(request)
+        self.test_data = test_data
 
         self.show_checkerboard = True
         self.show_triangle_left = False
@@ -37,13 +35,13 @@ class ImageTestWindow(TestWindow):
     def draw_checkerboard(self):
         if self.show_checkerboard:
             gl.glPushMatrix()
-            gl.glScalef(self.width/float(self.checkerboard.width),
-                        self.height/float(self.checkerboard.height),
+            gl.glScalef(self.window.width/float(self.checkerboard.width),
+                        self.window.height/float(self.checkerboard.height),
                         1.)
             gl.glMatrixMode(gl.GL_TEXTURE)
             gl.glPushMatrix()
-            gl.glScalef(self.width/float(self.checkerboard.width),
-                        self.height/float(self.checkerboard.height),
+            gl.glScalef(self.window.width/float(self.checkerboard.width),
+                        self.window.height/float(self.checkerboard.height),
                         1.)
             gl.glMatrixMode(gl.GL_MODELVIEW)
             self.checkerboard.blit(0, 0, 0)
@@ -55,17 +53,17 @@ class ImageTestWindow(TestWindow):
     def draw_left(self):
         if self.left_texture:
             self.left_texture.blit(
-                self.width // 4 - self.left_texture.width // 2,
-                (self.height - self.left_texture.height) // 2,
+                self.window.width // 4 - self.left_texture.width // 2,
+                (self.window.height - self.left_texture.height) // 2,
                 0)
 
     def draw_right(self):
         if self.right_texture:
-            x = self.width * 3 // 4 - self.right_texture.width // 2
-            x = max((x, self.width // 2))
+            x = self.window.width * 3 // 4 - self.right_texture.width // 2
+            x = max((x, self.window.width // 2))
             self.right_texture.blit(
                 x,
-                (self.height - self.right_texture.height) // 2,
+                (self.window.height - self.right_texture.height) // 2,
                 0)
 
     def load_left(self, image_file, decoder=None):
@@ -93,8 +91,8 @@ class ImageTestWindow(TestWindow):
         if self.show_triangle_left:
             w = 200
             h = 200
-            x = self.width // 4 - w // 2
-            y = (self.height - h) // 2
+            x = self.window.width // 4 - w // 2
+            y = (self.window.height - h) // 2
 
             gl.glEnable(gl.GL_DEPTH_TEST)
             gl.glBegin(gl.GL_TRIANGLES)
@@ -125,28 +123,21 @@ class ImageTestWindow(TestWindow):
         self.right_texture = image.load('buffer.png', stream)
 
 
-class ImageTestFixture(EventLoopFixture):
-    window_class = ImageTestWindow
-
-    def __init__(self, request, test_data):
-        super(ImageTestFixture, self).__init__(request)
-        self.test_data = test_data
-
     def test_image_loading(self, decoder, image_name):
         """Test loading images."""
-        w = self.create_window()
-        w.load_left(self.test_data.get_file("images", image_name), decoder)
-        w.enable_alpha()
+        self.create_window(width=800, height=600)
+        self.load_left(self.test_data.get_file("images", image_name), decoder)
+        self.enable_alpha()
         self.ask_question(
                 "Do you see the {} image on a checkerboard background?".format(image_name)
                 )
 
     def test_image_saving(self, encoder, image_name):
         """Test saving images."""
-        w = self.create_window()
-        w.load_left(self.test_data.get_file("images", image_name))
-        w.copy_left_to_right(encoder)
-        w.enable_alpha()
+        self.create_window(width=800, height=600)
+        self.load_left(self.test_data.get_file("images", image_name))
+        self.copy_left_to_right(encoder)
+        self.enable_alpha()
         self.ask_question(
                 "Do you see the {} image twice on a checkerboard background?".format(image_name)
                 )
@@ -166,7 +157,7 @@ gif_images = ['8bpp.gif']
 
 def test_checkerboard(image_test):
     """Test that the checkerboard pattern looks correct."""
-    w = image_test.create_window()
+    image_test.create_window()
     image_test.ask_question(
             "Do you see a checkboard pattern in two levels of grey?"
             )
@@ -257,9 +248,9 @@ def test_pypng_saving(image_test, image_name):
 @require_gl_extension('GL_ARB_imaging')
 def test_arb(image_test, image_name):
     """Test swapping color channels using the ARB imaging extension."""
-    w = image_test.create_window()
-    w.load_left(image_test.test_data.get_file('images', image_name))
-    w.load_right_arb(image_test.test_data.get_file('images', image_name), 'GRB')
+    image_test.create_window()
+    image_test.load_left(image_test.test_data.get_file('images', image_name))
+    image_test.load_right_arb(image_test.test_data.get_file('images', image_name), 'GRB')
     image_test.ask_question(
             "In the right image red and green should be swapped."
             )
@@ -275,14 +266,14 @@ def test_buffer_copy(image_test):
     buffer image appears (because retrieving and saving the image is a slow
     operation).
     """
-    w = image_test.create_window()
-    w.show_triangle_left = True
-    w.show_text = False
-    w.show_checkerboard = False
+    image_test.create_window(width=800, height=600)
+    image_test.show_triangle_left = True
+    image_test.show_text = False
+    image_test.show_checkerboard = False
 
     def step(dt):
-        w.copy_color_buffer()
-        w.show_text = True
+        image_test.copy_color_buffer()
+        image_test.show_text = True
         return True
     image_test.schedule_once(step)
 
@@ -300,14 +291,14 @@ def test_buffer_saving(image_test):
     buffer image appears (because retrieving and saving the image is a slow
     operation).
     """
-    w = image_test.create_window()
-    w.show_triangle_left = True
-    w.show_text = False
-    w.show_checkerboard = False
+    image_test.create_window(width=800, height=600)
+    image_test.show_triangle_left = True
+    image_test.show_text = False
+    image_test.show_checkerboard = False
 
     def step(dt):
-        w.save_and_load_color_buffer()
-        w.show_text = True
+        image_test.save_and_load_color_buffer()
+        image_test.show_text = True
         return True
     image_test.schedule_once(step)
 
@@ -325,14 +316,14 @@ def test_depth_buffer_saving(image_test):
     depth buffer image appears (because retrieving and saving the image is
     a slow operation).
     """
-    w = image_test.create_window()
-    w.show_triangle_left = True
-    w.show_text = False
-    w.show_checkerboard = False
+    image_test.create_window(width=800, height=600)
+    image_test.show_triangle_left = True
+    image_test.show_text = False
+    image_test.show_checkerboard = False
 
     def step(dt):
-        w.save_and_load_depth_buffer()
-        w.show_text = True
+        image_test.save_and_load_depth_buffer()
+        image_test.show_text = True
         return True
     image_test.schedule_once(step)
 

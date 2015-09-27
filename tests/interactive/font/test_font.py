@@ -18,8 +18,8 @@ from .font_test_base import font_fixture
     ])
 def test_color(font_fixture, question, color):
     """Test that font colour is applied correctly."""
-    w = font_fixture.create_window()
-    w.create_label(
+    font_fixture.create_window()
+    font_fixture.create_label(
             color=color
             )
     font_fixture.ask_question(question)
@@ -29,11 +29,11 @@ def test_default_font(font_fixture):
     """Test that a font with no name given still renders using some sort
     of default system font.
     """
-    w = font_fixture.create_window()
-    w.load_font(
+    font_fixture.create_window()
+    font_fixture.load_font(
             name=''
             )
-    w.create_label()
+    font_fixture.create_label()
     font_fixture.ask_question(
             'Font should be rendered using a default system font'
             )
@@ -57,11 +57,11 @@ def test_system_font(font_fixture):
     else:
         font_name = 'Arial'
 
-    w = font_fixture.create_window()
-    w.load_font(
+    font_fixture.create_window()
+    font_fixture.load_font(
             name=font_name
             )
-    w.create_label()
+    font_fixture.create_label()
     font_fixture.ask_question(
             '"Quickly brown fox" should be shown at 24pt using font ' + font_name
             )
@@ -70,11 +70,11 @@ def test_system_font(font_fixture):
 def test_bullet_glyphs(font_fixture):
     """Test that rendering of unicode glyphs works."""
 
-    w = font_fixture.create_window()
-    w.load_font(
+    font_fixture.create_window()
+    font_fixture.load_font(
             size=60
             )
-    w.create_label(
+    font_fixture.create_label(
             text=u'\u2022'*5,
             )
     font_fixture.ask_question(
@@ -85,15 +85,15 @@ def test_bullet_glyphs(font_fixture):
 def test_large_font(font_fixture):
     "Render a font using a very large size. Tests issue 684."
 
-    w = font_fixture.create_window(
+    font_fixture.create_window(
             width=1000,
             height=400,
             )
-    w.load_font(
+    font_fixture.load_font(
             name='Arial',
             size=292,
             )
-    w.create_label(
+    font_fixture.create_label(
             text='trawant',
             )
     font_fixture.ask_question(
@@ -115,12 +115,12 @@ def test_add_font(font_fixture, test_data, font_desc, font_file, font_options):
     included in the test data directory (tests/data/fonts) as action_man*.ttf.
     """
     font.add_file(test_data.get_file('fonts', font_file))
-    w = font_fixture.create_window()
-    w.load_font(
+    font_fixture.create_window()
+    font_fixture.load_font(
             name='Action Man',
             **font_options
             )
-    w.create_label()
+    font_fixture.create_label()
     font_fixture.ask_question(
             """You should see {} style Action Man at 24pt.""".format(font_desc)
             )
@@ -143,15 +143,15 @@ def test_horizontal_metrics(font_fixture, test_data, font_name, text):
     font.add_file(test_data.get_file('fonts', 'action_man.ttf'))
     question=("The green vertical lines should match the left edge of the text"
             + "and the blue vertical lines should match the right edge of the text.")
-    w = font_fixture.create_window(
+    font_fixture.create_window(
             width=600,
             )
-    w.draw_metrics = True
-    w.load_font(
+    font_fixture.draw_metrics = True
+    font_fixture.load_font(
             name=font_name,
             size=16,
             )
-    w.create_label(
+    font_fixture.create_label(
             text=text,
             )
     font_fixture.ask_question(
@@ -164,15 +164,15 @@ def test_metrics_workaround(font_fixture, test_data):
     Font should fit between top and bottom lines.
     """
     font.add_file(test_data.get_file('fonts', 'courR12-ISO8859-1.pcf'))
-    w = font_fixture.create_window(
+    font_fixture.create_window(
             width=600,
             )
-    w.draw_metrics = True
-    w.load_font(
+    font_fixture.draw_metrics = True
+    font_fixture.load_font(
             name='Courier',
             size=16,
             )
-    w.create_label(
+    font_fixture.create_label(
             text='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
             )
     font_fixture.ask_question(
@@ -188,14 +188,14 @@ def test_dpi(font_fixture, test_data, dpi, width, height):
     font.add_file(test_data.get_file('fonts', 'action_man.ttf'))
     question=("The green vertical lines should match the left edge of the text"
             + "and the blue vertical lines should match the right edge of the text.")
-    w = font_fixture.create_window()
-    w.draw_custom_metrics = width, height
-    w.load_font(
+    font_fixture.create_window()
+    font_fixture.draw_custom_metrics = width, height
+    font_fixture.load_font(
             name='Action Man',
             size=16,
             dpi=dpi,
             )
-    w.create_label(
+    font_fixture.create_label(
             text='The DPI is {}'.format(dpi),
             )
     font_fixture.ask_question(

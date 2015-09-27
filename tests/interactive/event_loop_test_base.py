@@ -20,7 +20,7 @@ def event_loop(request):
     return EventLoopFixture(request)
 
 
-class TestWindow(Window):
+class EventLoopFixture(InteractiveFixture):
 
     question = '\n\n(P)ass/(F)ail/(S)kip/(Q)uit?'
     key_pass = key.P
@@ -33,92 +33,59 @@ class TestWindow(Window):
             'height': 300,
             }
 
-    def __init__(self, fixture, **kwargs):
-        combined_kwargs = {}
-        combined_kwargs.update(self.base_options)
-        combined_kwargs.update(kwargs)
-        super(TestWindow, self).__init__(**combined_kwargs)
-
-        self._fixture = fixture
-        self.answer = None
-        self._create_text()
-
-    def _create_text(self):
-        self.batch = Batch()
-        self.document = FormattedDocument()
-        layout = TextLayout(self.document, self.width, self.height,
-                multiline=True, wrap_lines=True, batch=self.batch)
-        layout.content_valign = 'bottom'
-
-    def add_text(self, text):
-        self.document.insert_text(len(self.document.text), text)
-
-    def ask_question(self):
-        self.document.insert_text(len(self.document.text), self.question)
-        self.answer = None
-
-    def on_draw(self):
-        self.clear()
-        self.draw_text()
-
-    def clear(self):
-        gl.glClearColor(*self.clear_color)
-        super(TestWindow, self).clear()
-
-    def draw_text(self):
-        self.batch.draw()
-
-    def on_key_press(self, symbol, modifiers):
-        if symbol in (self.key_pass, self.key_fail, self.key_skip, self.key_quit):
-            self.answer = symbol
-            self._fixture.interrupt_event_loop()
-
-        # Prevent handling of Escape to close the window
-        return True
-
-    def handle_answer(self):
-        if self.answer is None:
-            raise Exception('Did not receive valid input in question window')
-        elif self.answer == self.key_fail:
-            # TODO: Ask input
-            pytest.fail('Tester marked test failed')
-        elif self.answer == self.key_skip:
-            pytest.skip('Tester marked test skipped')
-        elif self.answer == self.key_quit:
-            pytest.exit('Tester requested to quit')
-
-
-class EventLoopFixture(InteractiveFixture):
-
-    window_class = TestWindow
-
     def __init__(self, request):
         super(EventLoopFixture, self).__init__(request)
         self._request = request
         self.window = None
+        self.text_batch = None
+        self.text_document = None
+        self.answer = None
         request.addfinalizer(self.tear_down)
 
+    def tear_down(self):
+        if self.window:
+            self.window.close()
+            self.window = None
+
     def create_window(self, **kwargs):
-        self.window = self.window_class(fixture=self, **kwargs)
+        combined_kwargs = {}
+        combined_kwargs.update(self.base_options)
+        combined_kwargs.update(kwargs)
+        self.window = Window(**combined_kwargs)
+        self.window.push_handlers(self)
         return self.window
 
+    def get_document(self):
+        if self.text_document is None:
+            self._create_text()
+        return self.text_document
+
+    def _create_text(self):
+        assert self.window is not None
+        self.text_batch = Batch()
+        self.text_document = FormattedDocument()
+        layout = TextLayout(self.text_document, self.window.width, self.window.height,
+                multiline=True, wrap_lines=True, batch=self.text_batch)
+        layout.content_valign = 'bottom'
+
     def add_text(self, text):
-        assert self._window is not None
-        self.window.add_text(text)
+        self.get_document()
+        self.text_document.insert_text(len(self.text_document.text), text)
 
     def ask_question(self, description=None, screenshot=True):
         """Ask a question inside the test window. By default takes a screenshot and validates
         that too."""
         assert self.window is not None
-        self.window.add_text('\n\n')
+        self.add_text('\n\n')
         if description:
-            self.window.add_text(description)
-        self.window.ask_question()
+            self.add_text(description)
+        self.add_text(self.question)
+        self.answer = None
         caught_exception = None
         try:
             if self.interactive:
                 self.run_event_loop()
-                self.window.handle_answer()
+                self.handle_answer()
             else:
                 self.run_event_loop(0.1)
         except Exception as ex:
@@ -137,6 +104,17 @@ class EventLoopFixture(InteractiveFixture):
             if caught_exception:
                 raise caught_exception
 
+    def handle_answer(self):
+        if self.answer is None:
+            raise Exception('Did not receive valid input in question window')
+        elif self.answer == self.key_fail:
+            # TODO: Ask input
+            pytest.fail('Tester marked test failed')
+        elif self.answer == self.key_skip:
+            pytest.skip('Tester marked test skipped')
+        elif self.answer == self.key_quit:
+            pytest.exit('Tester requested to quit')
+
     def ask_question_no_window(self, description=None):
         """Ask a question to verify the current test result. Uses the console or an external gui
         as no window is available."""
@@ -150,14 +128,29 @@ class EventLoopFixture(InteractiveFixture):
     def interrupt_event_loop(self, *args, **kwargs):
         pyglet.app.exit()
 
-    def tear_down(self):
-        if self.window:
-            self.window.close()
-            self.window = None
-
     @staticmethod
     def schedule_once(callback, dt=.1):
         clock.schedule_once(callback, dt)
+
+    def on_draw(self):
+        self.clear()
+        self.draw_text()
+
+    def clear(self):
+        gl.glClearColor(*self.clear_color)
+        self.window.clear()
+
+    def draw_text(self):
+        self.text_batch.draw()
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol in (self.key_pass, self.key_fail, self.key_skip, self.key_quit):
+            self.answer = symbol
+            self.interrupt_event_loop()
+
+        # Prevent handling of Escape to close the window
+        return True
+
 
 
 def test_question_pass(event_loop):
