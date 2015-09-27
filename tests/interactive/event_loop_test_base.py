@@ -58,8 +58,14 @@ class TestWindow(Window):
         self.answer = None
 
     def on_draw(self):
-        gl.glClearColor(*self.clear_color)
         self.clear()
+        self.draw_text()
+
+    def clear(self):
+        gl.glClearColor(*self.clear_color)
+        super(TestWindow, self).clear()
+
+    def draw_text(self):
         self.batch.draw()
 
     def on_key_press(self, symbol, modifiers):
@@ -148,6 +154,10 @@ class EventLoopFixture(InteractiveFixture):
         if self.window:
             self.window.close()
             self.window = None
+
+    @staticmethod
+    def schedule_once(callback, dt=.1):
+        clock.schedule_once(callback, dt)
 
 
 def test_question_pass(event_loop):

@@ -9,6 +9,7 @@ Later some test filtering could be added.
 from builtins import object
 
 import pyglet
+from pyglet.gl import gl_info
 import pytest
 
 
@@ -32,3 +33,10 @@ def skip_platform(platform):
     """
     return pytest.mark.skipif(pyglet.compat_platform in platform,
             reason='not supported for platform: %s' % str(platform))
+
+def require_gl_extension(extension):
+    """
+    Only run if the given GL extension is available.
+    """
+    return pytest.mark.skipif(not gl_info.have_extension(extension),
+                              reason='Tests requires GL extension {}'.format(extension))
