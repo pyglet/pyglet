@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import inspect
 import pytest
 
+from .event_loop_test_base import event_loop
 from .interactive_test_base import InteractiveFixture
 
 

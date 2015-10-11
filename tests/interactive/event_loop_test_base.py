@@ -71,11 +71,13 @@ class EventLoopFixture(InteractiveFixture):
     def add_text(self, text):
         self.get_document()
         self.text_document.insert_text(len(self.text_document.text), text)
+        self.window._legacy_invalid = True
 
     def ask_question(self, description=None, screenshot=True):
         """Ask a question inside the test window. By default takes a screenshot and validates
         that too."""
-        assert self.window is not None
+        if self.window is None:
+            self.create_window()
         self.add_text('\n\n')
         if description:
             self.add_text(description)
@@ -141,7 +143,8 @@ class EventLoopFixture(InteractiveFixture):
         self.window.clear()
 
     def draw_text(self):
-        self.text_batch.draw()
+        if self.text_batch is not None:
+            self.text_batch.draw()
 
     def on_key_press(self, symbol, modifiers):
         if symbol in (self.key_pass, self.key_fail, self.key_skip, self.key_quit):

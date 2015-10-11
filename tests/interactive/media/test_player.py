@@ -5,11 +5,43 @@ import pytest
 from time import sleep
 
 import pyglet
+#pyglet.options['debug_media'] = True
 from pyglet.media.player import Player
 from pyglet.media.sources import procedural
 from pyglet.media.sources.base import StaticSource
 
-#pyglet.options['debug_media'] = True
+
+@pytest.mark.requires_user_validation
+def test_playback(event_loop, test_data):
+    """Test playing back sound files."""
+    player = Player()
+    player.on_player_eos = event_loop.interrupt_event_loop
+    player.play()
+
+    sound = test_data.get_file('media', 'alert.wav')
+    source = pyglet.media.load(sound, streaming=False)
+    player.queue(source)
+    event_loop.run_event_loop()
+
+    event_loop.ask_question('Did you hear the alert sound playing?')
+
+    sound2 = test_data.get_file('media', 'receive.wav')
+    source2 = pyglet.media.load(sound2, streaming=False)
+    player.queue(source2)
+    player.play()
+    event_loop.run_event_loop()
+
+    event_loop.ask_question('Did you hear the receive sound playing?')
+
+
+@pytest.mark.requires_user_validation
+def test_playback_fire_and_forget(event_loop, test_data):
+    """Test playing back sound files using fire and forget."""
+    sound = test_data.get_file('media', 'alert.wav')
+    source = pyglet.media.load(sound, streaming=False)
+    source.play()
+
+    event_loop.ask_question('Did you hear the alert sound playing?')
 
 
 @pytest.mark.requires_user_validation
