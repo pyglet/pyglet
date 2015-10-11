@@ -324,4 +324,9 @@ else:
                 print('Invalid response')
         return failure_description
 
-
+@pytest.fixture
+def interactive(request):
+    """Fixture for interactive test cases. Returns an object that can be used for
+    requesting interactive prompts and verifying screenshots.
+    """
+    return InteractiveFixture(request)

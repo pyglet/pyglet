@@ -5,8 +5,9 @@ from __future__ import absolute_import
 import inspect
 import pytest
 
+# Import fixtures from other modules
 from .event_loop_test_base import event_loop
-from .interactive_test_base import InteractiveFixture
+from .interactive_test_base import interactive
 
 
 def pytest_collection_modifyitems(items, config):
@@ -87,9 +88,3 @@ def _commit_screenshots(item):
         for fixture in item.session.pending_screenshots:
             fixture.commit_screenshots()
 
-@pytest.fixture
-def interactive(request):
-    """Fixture for interactive test cases. Returns an object that can be used for
-    requesting interactive prompts and verifying screenshots.
-    """
-    return InteractiveFixture(request)
