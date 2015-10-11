@@ -23,7 +23,7 @@ def test_playback(event_loop, test_data):
     player.queue(source)
     event_loop.run_event_loop()
 
-    event_loop.ask_question('Did you hear the alert sound playing?')
+    event_loop.ask_question('Did you hear the alert sound playing?', screenshot=False)
 
     sound2 = test_data.get_file('media', 'receive.wav')
     source2 = pyglet.media.load(sound2, streaming=False)
@@ -31,7 +31,7 @@ def test_playback(event_loop, test_data):
     player.play()
     event_loop.run_event_loop()
 
-    event_loop.ask_question('Did you hear the receive sound playing?')
+    event_loop.ask_question('Did you hear the receive sound playing?', screenshot=False)
 
 
 @pytest.mark.requires_user_validation
@@ -41,93 +41,91 @@ def test_playback_fire_and_forget(event_loop, test_data):
     source = pyglet.media.load(sound, streaming=False)
     source.play()
 
-    event_loop.ask_question('Did you hear the alert sound playing?')
+    event_loop.ask_question('Did you hear the alert sound playing?', screenshot=False)
 
 
 @pytest.mark.requires_user_validation
-def test_play_queue(interactive):
+def test_play_queue(event_loop):
     """Test playing a single sound on the queue."""
     source = procedural.WhiteNoise(1.0)
     player = Player()
+    player.on_player_eos = event_loop.interrupt_event_loop
     player.play()
     player.queue(source)
+    event_loop.run_event_loop()
 
-    # Pause for the duration of the sound
-    sleep(1.0)
-
-    interactive.ask_question('Did you hear white noise for 1 second?')
+    event_loop.ask_question('Did you hear white noise for 1 second?', screenshot=False)
 
 @pytest.mark.requires_user_validation
-def test_queue_play(interactive):
+def test_queue_play(event_loop):
     """Test putting a single sound on the queue and then starting the player."""
     source = procedural.WhiteNoise(1.0)
     player = Player()
+    player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source)
     player.play()
+    event_loop.run_event_loop()
 
-    # Pause for the duration of the sound
-    sleep(1.0)
-
-    interactive.ask_question('Did you hear white noise for 1 second?')
+    event_loop.ask_question('Did you hear white noise for 1 second?', screenshot=False)
 
 @pytest.mark.requires_user_validation
-def test_pause_queue(interactive):
+def test_pause_queue(event_loop):
     """Test the queue is not played when player is paused."""
     source = procedural.WhiteNoise(1.0)
     player = Player()
     player.pause()
     player.queue(source)
 
-    # Pause for the duration of the sound
-    sleep(1.0)
+    # Run for the duration of the sound
+    event_loop.run_event_loop(1.0)
 
-    interactive.ask_question('Did you not hear any sound?')
+    event_loop.ask_question('Did you not hear any sound?', screenshot=False)
 
 @pytest.mark.requires_user_validation
-def test_pause_sound(interactive):
+def test_pause_sound(event_loop):
     """Test that a playing sound can be paused."""
     source = procedural.WhiteNoise(60.0)
     player = Player()
     player.queue(source)
     player.play()
 
-    sleep(1.0)
+    event_loop.run_event_loop(1.0)
     player.pause()
-
-    interactive.ask_question('Did you hear white noise for 1 second and is it now silent?')
+    event_loop.ask_question('Did you hear white noise for 1 second and is it now silent?',
+                            screenshot=False)
 
     player.play()
-
-    interactive.ask_question('Do you hear white noise again?')
+    event_loop.ask_question('Do you hear white noise again?', screenshot=False)
 
     player.delete()
-
-    interactive.ask_question('Is it silent again?')
+    event_loop.ask_question('Is it silent again?', screenshot=False)
 
 @pytest.mark.requires_user_validation
-def test_next_on_end_of_stream(interactive):
+def test_next_on_end_of_stream(event_loop):
     """Test that multiple items on the queue are played after each other."""
     source1 = procedural.WhiteNoise(1.0)
     source2 = procedural.Sine(1.0)
     player = Player()
+    player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source1)
     player.queue(source2)
     player.play()
 
-    sleep(2.0)
-    interactive.ask_question('Did you hear white noise for 1 second and then a tone at 440 Hz (A above middle C)?')
+    event_loop.run_event_loop()
+    event_loop.ask_question('Did you hear white noise for 1 second and then a tone at 440 Hz'
+                            '(A above middle C)?', screenshot=False)
 
 @pytest.mark.requires_user_validation
-def test_static_source_wrapping(interactive):
+def test_static_source_wrapping(event_loop):
     """Test that a sound can be recursively wrappend inside a static source."""
     source = procedural.WhiteNoise(1.0)
     source = StaticSource(source)
     source = StaticSource(source)
     player = Player()
+    player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source)
     player.play()
 
-    sleep(1.0)
-
-    interactive.ask_question('Did you hear white noise for 1 second?')
+    event_loop.run_event_loop()
+    event_loop.ask_question('Did you hear white noise for 1 seconds?', screenshot=False)
 
