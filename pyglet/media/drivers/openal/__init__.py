@@ -102,31 +102,27 @@ class OpenALWorker(MediaThread):
             # we're processing it -- this saves on extra checks in the
             # player's methods that would otherwise have to check that it's
             # still alive.
-            self.condition.acquire()
+            with self.condition:
+                if self.stopped:
+                    break
+                sleep_time = -1
 
-            if self.stopped:
-                self.condition.release()
-                break
-            sleep_time = -1
+                # Refill player with least write_size
+                if self.players:
+                    player = None
+                    write_size = 0
+                    for p in self.players:
+                        s = p.get_write_size()
+                        if s > write_size:
+                            player = p
+                            write_size = s
 
-            # Refill player with least write_size
-            if self.players:
-                player = None
-                write_size = 0
-                for p in self.players:
-                    s = p.get_write_size()
-                    if s > write_size:
-                        player = p
-                        write_size = s
-
-                if write_size > self._min_write_size:
-                    player.refill(write_size)
+                    if write_size > self._min_write_size:
+                        player.refill(write_size)
+                    else:
+                        sleep_time = self._nap_time
                 else:
-                    sleep_time = self._nap_time
-            else:
-                sleep_time = self._sleep_time
-
-            self.condition.release()
+                    sleep_time = self._sleep_time
 
             if sleep_time != -1:
                 self.sleep(sleep_time)
@@ -138,17 +134,16 @@ class OpenALWorker(MediaThread):
                 time.sleep(self._nap_time)
 
     def add(self, player):
-        self.condition.acquire()
-        self.players.add(player)
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            self.players.add(player)
+            self.condition.notify()
 
     def remove(self, player):
-        self.condition.acquire()
-        if player in self.players:
-            self.players.remove(player)
-        self.condition.notify()
-        self.condition.release()
+        with self.condition:
+            if player in self.players:
+                self.players.remove(player)
+            self.condition.notify()
+
 
 class OpenALBufferPool(object):
     """At least Mac OS X doesn't free buffers when a source is deleted; it just
