@@ -1,3 +1,4 @@
+from builtins import str, isinstance
 import pytest
 from tests import mock
 import time
@@ -92,5 +93,35 @@ def test_worker_refill_multiple_players_refill_largest():
 
     finally:
         worker.stop()
+
+
+@pytest.fixture
+def device():
+    return openal.OpenALDevice()
+
+
+def test_device_create_delete(device):
+    assert device.is_ready
+    device.delete()
+    assert not device.is_ready
+
+
+def test_device_version(device):
+    major, minor = device.get_version()
+    assert major > 0
+    assert minor > 0
+
+
+def test_device_extensions(device):
+    extensions = device.get_extensions()
+    assert len(extensions) > 0
+    for ext in extensions:
+        assert isinstance(ext, str)
+
+
+def test_context_create_delete(device):
+    context = device.create_context()
+    assert context is not None
+    context.delete()
 
 

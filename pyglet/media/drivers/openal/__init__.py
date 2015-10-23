@@ -1,17 +1,15 @@
-from __future__ import print_function
-from __future__ import absolute_import
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -34,6 +32,9 @@ from __future__ import absolute_import
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 # $Id$
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
 
 import ctypes
 import heapq
@@ -73,7 +74,7 @@ def _split_nul_strings(s):
             nul = False
         i += 1
     s = s[:i - 1]
-    return filter(None, [ss.strip() for ss in s.split('\0')])
+    return filter(None, [str(ss.strip()) for ss in s.split('\0')])
 
 format_map = {
     (1,  8): al.AL_FORMAT_MONO8,
@@ -209,7 +210,7 @@ class OpenALBufferPool(object):
             if buffer == b.value:
                 self._buffers.append(sourceBuffs.pop(i))
                 break
-                
+
         else:
             # If no such buffer exists, should not happen anyway.
             if _debug_buffers:
@@ -555,6 +556,66 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         with context.lock:
             al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
 
+
+class OpenALDevice(object):
+    """OpenAL audio device."""
+    def __init__(self, device_name=None):
+        self._al_device = alc.alcOpenDevice(device_name)
+        if self._al_device is None:
+            raise OpenALException('No OpenAL devices.')
+
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        if self._al_device is not None:
+            alc.alcCloseDevice(self._al_device)
+            self._al_device = None
+
+    @property
+    def is_ready(self):
+        return self._al_device is not None
+
+    def create_context(self):
+        al_context = alc.alcCreateContext(self._al_device, None)
+        return OpenALContext(al_context)
+
+    def get_version(self):
+        major = alc.ALCint()
+        minor = alc.ALCint()
+        alc.alcGetIntegerv(self._al_device, alc.ALC_MAJOR_VERSION,
+                           ctypes.sizeof(major), major)
+        alc.alcGetIntegerv(self._al_device, alc.ALC_MINOR_VERSION,
+                           ctypes.sizeof(minor), minor)
+        return major.value, minor.value
+
+    def get_extensions(self):
+        extensions = alc.alcGetString(self._al_device, alc.ALC_EXTENSIONS)
+        if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
+            return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')]
+        else:
+            return _split_nul_strings(extensions)
+
+
+class OpenALContext(object):
+    def __init__(self, al_context):
+        self._al_context = al_context
+        self.make_current()
+
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        if self._al_context is not None:
+            # TODO: Check if this context is current
+            alc.alcMakeContextCurrent(None)
+            alc.alcDestroyContext(self._al_context)
+            self._al_context = None
+
+    def make_current(self):
+        alc.alcMakeContextCurrent(self._al_context)
+
+
 class OpenALDriver(AbstractAudioDriver):
     _forward_orientation = (0, 0, -1)
     _up_orientation = (0, 1, 0)
@@ -565,12 +626,9 @@ class OpenALDriver(AbstractAudioDriver):
         # TODO devices must be enumerated on Windows, otherwise 1.0 context is
         # returned.
 
-        self._device = alc.alcOpenDevice(device_name)
-        if not self._device:
-            raise Exception('No OpenAL device.')
-
-        self._context = alc.alcCreateContext(self._device, None)
-        alc.alcMakeContextCurrent(self._context)
+        self.device = OpenALDevice(device_name)
+        self.context = self.device.create_context()
+        self.context.make_current()
 
         self.have_1_1 = self.have_version(1, 1) and False
 
@@ -583,35 +641,27 @@ class OpenALDriver(AbstractAudioDriver):
         self.worker.start()
 
     def create_audio_player(self, source_group, player):
-        assert self._device is not None, "Device was closed"
+        assert self.device is not None, "Device was closed"
         return OpenALAudioPlayer(source_group, player)
 
     def delete(self):
         self.worker.stop()
         with self.lock:
-            alc.alcMakeContextCurrent(None)
-            alc.alcDestroyContext(self._context)
-            alc.alcCloseDevice(self._device)
-            self._device = None
+            self.context.delete()
+            self.context = None
+            self.device.delete()
+            self.device = None
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()
 
     def get_version(self):
-        major = alc.ALCint()
-        minor = alc.ALCint()
-        alc.alcGetIntegerv(self._device, alc.ALC_MAJOR_VERSION,
-                           ctypes.sizeof(major), major)
-        alc.alcGetIntegerv(self._device, alc.ALC_MINOR_VERSION,
-                           ctypes.sizeof(minor), minor)
-        return major.value, minor.value
+        assert self.device is not None, "Device was closed"
+        return self.device.get_version()
 
     def get_extensions(self):
-        extensions = alc.alcGetString(self._device, alc.ALC_EXTENSIONS)
-        if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
-            return ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')
-        else:
-            return _split_nul_strings(extensions)
+        assert self.device is not None, "Device was closed"
+        return self.device.get_extensions()
 
     def have_extension(self, extension):
         return extension in self.get_extensions()
