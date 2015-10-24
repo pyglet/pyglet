@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -80,6 +80,11 @@ class SpaceReader(object):
         lineno = 0
         for line in file:
             lineno += 1
+
+            if not isinstance('', bytes) and isinstance(line, bytes):
+                # decode bytes to str on Python 3
+                line = line.decode('ascii')
+
             if not line.strip() or line.startswith('#'):
                 continue
             if line.startswith(' '):
@@ -101,5 +106,5 @@ class SpaceReader(object):
                     reader = PlayerReader(player)
 
     def source(self, filename, **kwargs):
-        filename = os.path.join(self.basedir, filename) 
+        filename = os.path.join(self.basedir, filename)
         return media.load(filename, **kwargs)

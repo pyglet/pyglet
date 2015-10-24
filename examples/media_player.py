@@ -3,14 +3,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -36,6 +36,8 @@
 '''Audio and video player with simple GUI controls.
 '''
 
+from __future__ import print_function
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -45,6 +47,7 @@ from pyglet.gl import *
 import pyglet
 from pyglet.window import key
 
+
 def draw_rect(x, y, width, height):
     glBegin(GL_LINE_LOOP)
     glVertex2f(x, y)
@@ -52,6 +55,7 @@ def draw_rect(x, y, width, height):
     glVertex2f(x + width, y + height)
     glVertex2f(x, y + height)
     glEnd()
+
 
 class Control(pyglet.event.EventDispatcher):
     x = y = 0
@@ -62,7 +66,7 @@ class Control(pyglet.event.EventDispatcher):
         self.parent = parent
 
     def hit_test(self, x, y):
-        return (self.x < x < self.x + self.width and  
+        return (self.x < x < self.x + self.width and
                 self.y < y < self.y + self.height)
 
     def capture_events(self):
@@ -70,6 +74,7 @@ class Control(pyglet.event.EventDispatcher):
 
     def release_events(self):
         self.parent.remove_handlers(self)
+
 
 class Button(Control):
     charged = False
@@ -95,7 +100,8 @@ class Button(Control):
         self.charged = False
 
 Button.register_event_type('on_press')
-    
+
+
 class TextButton(Button):
     def __init__(self, *args, **kwargs):
         super(TextButton, self).__init__(*args, **kwargs)
@@ -112,6 +118,7 @@ class TextButton(Button):
     text = property(lambda self: self._text.text,
                     set_text)
 
+
 class Slider(Control):
     THUMB_WIDTH = 6
     THUMB_HEIGHT = 10
@@ -119,10 +126,10 @@ class Slider(Control):
 
     def draw(self):
         center_y = self.y + self.height / 2
-        draw_rect(self.x, center_y - self.GROOVE_HEIGHT / 2, 
+        draw_rect(self.x, center_y - self.GROOVE_HEIGHT / 2,
                   self.width, self.GROOVE_HEIGHT)
         pos = self.x + self.value * self.width / (self.max - self.min)
-        draw_rect(pos - self.THUMB_WIDTH / 2, center_y - self.THUMB_HEIGHT / 2, 
+        draw_rect(pos - self.THUMB_WIDTH / 2, center_y - self.THUMB_HEIGHT / 2,
                   self.THUMB_WIDTH, self.THUMB_HEIGHT)
 
     def coordinate_to_value(self, x):
@@ -137,7 +144,7 @@ class Slider(Control):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         value = min(max(self.coordinate_to_value(x), self.min), self.max)
         self.dispatch_event('on_change', value)
-    
+
     def on_mouse_release(self, x, y, button, modifiers):
         self.release_events()
         self.dispatch_event('on_end_scroll')
@@ -145,6 +152,7 @@ class Slider(Control):
 Slider.register_event_type('on_begin_scroll')
 Slider.register_event_type('on_end_scroll')
 Slider.register_event_type('on_change')
+
 
 class PlayerWindow(pyglet.window.Window):
     GUI_WIDTH = 400
@@ -154,7 +162,7 @@ class PlayerWindow(pyglet.window.Window):
 
     def __init__(self, player):
         super(PlayerWindow, self).__init__(caption='Media Player',
-                                           visible=False, 
+                                           visible=False,
                                            resizable=True)
         self.player = player
         self.player.push_handlers(self)
@@ -185,7 +193,7 @@ class PlayerWindow(pyglet.window.Window):
         self.window_button.on_press = lambda: win.set_fullscreen(False)
 
         self.controls = [
-            self.slider, 
+            self.slider,
             self.play_pause_button,
             self.window_button,
         ]
@@ -204,7 +212,6 @@ class PlayerWindow(pyglet.window.Window):
             self.controls.append(screen_button)
             i += 1
             x += screen_button.width + self.GUI_PADDING
-
 
     def on_eos(self):
         self.gui_update_state()
@@ -295,7 +302,7 @@ class PlayerWindow(pyglet.window.Window):
 
     def on_draw(self):
         self.clear()
-        
+
         # Video
         if self.player.source and self.player.source.video_format:
             self.player.get_texture().blit(self.video_x,
@@ -308,9 +315,10 @@ class PlayerWindow(pyglet.window.Window):
         for control in self.controls:
             control.draw()
 
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print 'Usage: media_player.py <filename> [<filename> ...]'
+        print('Usage: media_player.py <filename> [<filename> ...]')
         sys.exit(1)
 
     have_video = False

@@ -2,6 +2,8 @@
 A silly demonstration of how to use the Apple remote.
 '''
 
+from __future__ import print_function
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -14,11 +16,11 @@ class MainWindow(pyglet.window.Window):
     def __init__(self):
         super(MainWindow, self).__init__(visible=False)
         self.set_caption('Apple Remote Example')
-        
+
         # Look for the Apple Remote device.
         remote = pyglet.input.get_apple_remote()
         if not remote:
-            print 'Apple IR Remote not available.'
+            print('Apple IR Remote not available.')
             sys.exit(0)
 
         # Open the remote in exclusive mode so that pressing the remote
@@ -38,14 +40,14 @@ class MainWindow(pyglet.window.Window):
     # Event handler for Apple Remote button press events.
     # The button parameter is a string specifying the button that was pressed.
     def on_button_press(self, button):
-        print 'on_button_press', button
+        print('on_button_press', button)
 
         if button == 'up':
             self.carousel.scroll_up()
         elif button == 'down':
             self.carousel.scroll_down()
         elif button == 'left':
-            self.carousel.step_left() 
+            self.carousel.step_left()
         elif button == 'right':
             self.carousel.step_right()
         elif button == 'left_hold':
@@ -60,7 +62,7 @@ class MainWindow(pyglet.window.Window):
     # Event handler for Apple Remote button release events.
     # The button parameter is a string specifying the button that was released.
     def on_button_release(self, button):
-        print 'on_button_release', button
+        print('on_button_release', button)
 
         if button == 'left_hold':
             self.carousel.stop_rotating()
@@ -90,7 +92,6 @@ class MainWindow(pyglet.window.Window):
 
     def update(self, dt):
         self.carousel.update(dt)
-
 
 
 class Carousel:
@@ -190,7 +191,7 @@ class Carousel:
         vertex_list.vertices[:] = [-1, -1, 1, -1, 1, 1, -1, 1]
         # Draw tile background.
         glColor3ub(*self.tiles[index].color)
-        vertex_list.draw(GL_QUADS)        
+        vertex_list.draw(GL_QUADS)
         # Draw tile label.
         glBindTexture(texture.target, texture.id)
         glEnable(texture.target)
@@ -205,15 +206,15 @@ class Carousel:
         if self.is_rotating or self.index_diff:
             increment = self.direction * self.speed * self.float_increment * dt
             self.float_index = (self.float_index + increment) % self.num_tiles
-            
+
             if self.index_diff:
                 self.index_diff -= abs(increment)
                 if self.index_diff < 0:
                     self.index_diff = 0
                     self.float_index = round(self.float_index) % self.num_tiles
-                    self.index = int(self.float_index) 
+                    self.index = int(self.float_index)
                     self.is_rotating = False
-                
+
             self.angle = (self.float_index / self.num_tiles) * 360
 
 

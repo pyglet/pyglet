@@ -45,6 +45,7 @@ to see all.
 Don't include tabs in the text sample (see
 http://pyglet.org/doc-current/programming_guide/text.html#id9 )
 '''
+
 from __future__ import print_function, unicode_literals
 
 import pyglet
@@ -53,7 +54,7 @@ import pyglet.font.win32query as wq
 
 # support to generate a sample text good to spot monospace compliance.
 # Chosen to do a table of fields_per_line columns, each column with field_size
-# characters. Fields are filled with a rolling subset of ASCII characters. 
+# characters. Fields are filled with a rolling subset of ASCII characters.
 class SampleTable(object):
     field_size = 7
     gap_size = 3
@@ -82,7 +83,7 @@ class SampleTable(object):
 
     def text(self):
         return '\n'.join(self.lines)
-    
+
 def sample_text_monospaced_table():
     printables = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ '
     table = SampleTable()
