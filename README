@@ -9,7 +9,7 @@ and other visually-rich applications for Windows, Mac OS X and Linux.
 Requirements
 ------------
 
-pyglet runs with Python 2.5+ and also with Python 3 through 2to3 tool (which
+pyglet runs with Python 2.6+ and also with Python 3 through 2to3 tool (which
 is executed automatically when installing). pyglet works on the following
 operating systems:
 
