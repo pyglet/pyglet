@@ -100,6 +100,7 @@ __version__ = '$Id$'
 
 import math
 import sys
+import warnings
 
 from pyglet.gl import *
 from pyglet import clock
@@ -462,6 +463,7 @@ class Sprite(event.EventDispatcher):
         self._x = x
         self._y = y
         self._update_position()
+        warnings.warn("Use position property instead.", DeprecationWarning)
 
     @property
     def x(self):
