@@ -433,11 +433,20 @@ class Sprite(event.EventDispatcher):
 
     @property
     def position(self):
-        """The (x, y) coordinates of the sprite.
+        """The (x, y) coordinates of the sprite, as a tuple.
 
-        :type: (int, int)
+        :Parameters:
+            `x` : int
+                X coordinate of the sprite.
+            `y` : int
+                Y coordinate of the sprite.
         """
         return self._x, self._y
+
+    @position.setter
+    def position(self, *pos):
+        self._x, self._y = pos[0]
+        self._update_position()
 
     def set_position(self, x, y):
         """Set the X and Y coordinates of the sprite simultaneously.
@@ -447,6 +456,8 @@ class Sprite(event.EventDispatcher):
                 X coordinate of the sprite.
             `y` : int
                 Y coordinate of the sprite.
+
+        :deprecated: Set the X, Y coordinates via sprite.position instead.
         """
         self._x = x
         self._y = y
