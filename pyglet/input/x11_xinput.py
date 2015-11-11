@@ -321,10 +321,10 @@ def _check_extension(display):
     major_opcode = ctypes.c_int()
     first_event = ctypes.c_int()
     first_error = ctypes.c_int()
-    xlib.XQueryExtension(display._display, 'XInputExtension', 
-        ctypes.byref(major_opcode), 
-        ctypes.byref(first_event),
-        ctypes.byref(first_error))
+    xlib.XQueryExtension(display._display, b'XInputExtension',
+                         ctypes.byref(major_opcode),
+                         ctypes.byref(first_event),
+                         ctypes.byref(first_error))
     return bool(major_opcode.value)
 
 def get_devices(display=None):
