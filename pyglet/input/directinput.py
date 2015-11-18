@@ -195,7 +195,8 @@ def get_devices(display=None):
     return _devices
 
 def _create_joystick(device):
-    if device._type in (dinput.DI8DEVTYPE_JOYSTICK, dinput.DI8DEVTYPE_1STPERSON,
+    if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
+                        dinput.DI8DEVTYPE_1STPERSON,
                         dinput.DI8DEVTYPE_GAMEPAD):
         return base.Joystick(device)
 
