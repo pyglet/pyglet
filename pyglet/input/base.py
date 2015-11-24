@@ -138,12 +138,11 @@ class Control(EventDispatcher):
             operating systems.
     """
 
-    _value = None
-
     def __init__(self, name, raw_name=None):
         self.name = name
         self.raw_name = raw_name
         self.inverted = False
+        self._value = None
 
     @property
     def value(self):
@@ -153,7 +152,8 @@ class Control(EventDispatcher):
         the range is given by ``min`` and ``max`` (however the value may exceed
         this range); for relative controls the range is undefined.
 
-        :type: float"""
+        :type: float
+        """
         return self._value
 
     @value.setter
@@ -435,19 +435,17 @@ class Joystick(EventDispatcher):
                 if value & 0xffff == 0xffff:
                     self.hat_x = self.hat_y = 0
                 else:
-                    if control.max > 8: # DirectInput: scale value
+                    if control.max > 8:  # DirectInput: scale value
                         value //= 0xfff
                     if 0 <= value < 8:
-                        self.hat_x, self.hat_y = (
-                            ( 0,  1),
-                            ( 1,  1),
-                            ( 1,  0),
-                            ( 1, -1),
-                            ( 0, -1),
-                            (-1, -1),
-                            (-1,  0),
-                            (-1,  1),
-                        )[value]
+                        self.hat_x, self.hat_y = (( 0,  1),
+                                                  ( 1,  1),
+                                                  ( 1,  0),
+                                                  ( 1, -1),
+                                                  ( 0, -1),
+                                                  (-1, -1),
+                                                  (-1,  0),
+                                                  (-1,  1))[value]
                     else:
                         # Out of range
                         self.hat_x = self.hat_y = 0
@@ -455,8 +453,7 @@ class Joystick(EventDispatcher):
 
         for control in device.get_controls():
             if isinstance(control, AbsoluteAxis):
-                if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz', 
-                                    'hat_x', 'hat_y'):
+                if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz', 'hat_x', 'hat_y'):
                     add_axis(control)
                 elif control.name == 'hat':
                     add_hat(control)

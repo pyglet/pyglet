@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Joystick, tablet and USB HID device support.
+"""Joystick, tablet and USB HID device support.
 
 This module provides a unified interface to almost any input device, besides
 the regular mouse and keyboard support provided by `Window`.  At the lowest
@@ -75,7 +75,7 @@ no control list is available; instead, calling `Tablet.open` returns a
 
 :since: pyglet 1.2
 
-'''
+"""
 from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'
@@ -83,14 +83,15 @@ __version__ = '$Id: $'
 
 import sys
 
-from .base import Device, Control, RelativeAxis, AbsoluteAxis, \
-                 Button, Joystick, AppleRemote, Tablet
+from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button
+from .base import Joystick, AppleRemote, Tablet
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+
 def get_apple_remote(display=None):
-    '''Get the Apple remote control device.
+    """Get the Apple remote control device.
     
     The Apple remote is the small white 6-button remote control that
     accompanies most recent Apple desktops and laptops.  The remote can only
@@ -101,14 +102,13 @@ def get_apple_remote(display=None):
             Currently ignored.
 
     :rtype: `AppleRemote`
-    :return: The remote device, or ``None`` if the computer does not support
-        it.
-    '''
+    :return: The remote device, or `None` if the computer does not support it.
+    """
     return None
 
 if _is_epydoc:
     def get_devices(display=None):
-        '''Get a list of all attached input devices.
+        """Get a list of all attached input devices.
 
         :Parameters:
             `display` : `Display`
@@ -117,10 +117,10 @@ if _is_epydoc:
                 device.
 
         :rtype: list of `Device`
-        '''
+        """
 
     def get_joysticks(display=None):
-        '''Get a list of attached joysticks.
+        """Get a list of attached joysticks.
 
         :Parameters:
             `display` : `Display`
@@ -129,10 +129,10 @@ if _is_epydoc:
                 device.
 
         :rtype: list of `Joystick`
-        '''
+        """
 
     def get_tablets(display=None):
-        '''Get a list of tablets.
+        """Get a list of tablets.
 
         This function may return a valid tablet device even if one is not
         attached (for example, it is not possible on Mac OS X to determine if
@@ -147,7 +147,8 @@ if _is_epydoc:
                 device.
 
         :rtype: list of `Tablet`
-        '''
+        """
+
 else:
     def get_tablets(display=None):
         return []
