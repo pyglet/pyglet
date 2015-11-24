@@ -18,7 +18,7 @@ from pyglet.app.xlib import XlibSelectDevice
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button, Joystick
 from .base import DeviceOpenException
 from .evdev_constants import *
-from .evdev_constants import _rel_raw_names, _abs_raw_names, _key_raw_names
+
 
 c = pyglet.lib.load_library('c')
 
@@ -150,7 +150,7 @@ _rel_names = {
 }
 def _create_control(fileno, event_type, event_code):
     if event_type == EV_ABS:
-        raw_name = _abs_raw_names.get(event_code, 'EV_ABS(%x)' % event_code)
+        raw_name = abs_raw_names.get(event_code, 'EV_ABS(%x)' % event_code)
         name = _abs_names.get(event_code)
         absinfo = EVIOCGABS(fileno, event_code)
         value = absinfo.value
@@ -162,12 +162,12 @@ def _create_control(fileno, event_type, event_code):
         if name == 'hat_y':
             control.inverted = True
     elif event_type == EV_REL:
-        raw_name = _rel_raw_names.get(event_code, 'EV_REL(%x)' % event_code)
+        raw_name = rel_raw_names.get(event_code, 'EV_REL(%x)' % event_code)
         name = _rel_names.get(event_code)
         # TODO min/max?
         control = RelativeAxis(name, raw_name)
     elif event_type == EV_KEY:
-        raw_name = _key_raw_names.get(event_code, 'EV_KEY(%x)' % event_code)
+        raw_name = key_raw_names.get(event_code, 'EV_KEY(%x)' % event_code)
         name = None
         control = Button(name, raw_name)
     else:
