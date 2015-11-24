@@ -149,28 +149,28 @@ class XInputDevice(DeviceResponder, Device):
     # DeviceResponder interface
 
     def _key_press(self, e):
-        self.keys[e.keycode - self.min_keycode]._set_value(True)
+        self.keys[e.keycode - self.min_keycode].value = True
 
     def _key_release(self, e):
-        self.keys[e.keycode - self.min_keycode]._set_value(False)
+        self.keys[e.keycode - self.min_keycode].value = False
 
     def _button_press(self, e):
-        self.buttons[e.button]._set_value(True)
+        self.buttons[e.button].value = True
 
     def _button_release(self, e):
-        self.buttons[e.button]._set_value(False)
+        self.buttons[e.button].value = False
 
     def _motion(self, e):
         for i in range(e.axes_count):
-            self.axes[i]._set_value(e.axis_data[i])
+            self.axes[i].value = e.axis_data[i]
 
     def _proximity_in(self, e):
         if self.proximity_control:
-            self.proximity_control._set_value(True)
+            self.proximity_control.value = True
 
     def _proximity_out(self, e):
         if self.proximity_control:
-            self.proximity_control._set_value(False)
+            self.proximity_control.value = False
 
 class XInputWindowEventDispatcher(object):
     def __init__(self, window):

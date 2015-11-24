@@ -427,7 +427,7 @@ class DarwinHIDDevice(Device):
         while r == 0:
             try:
                 control = self._control_cookies[event.elementCookie]
-                control._set_value(event.value)
+                control.value = event.value
             except KeyError:
                 pass
 

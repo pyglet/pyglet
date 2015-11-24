@@ -157,7 +157,7 @@ def _create_control(fileno, event_type, event_code):
         min = absinfo.minimum
         max = absinfo.maximum
         control = AbsoluteAxis(name, min, max, raw_name)
-        control._set_value(value)
+        control.value = value
 
         if name == 'hat_y':
             control.inverted = True
@@ -304,7 +304,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         for event in events[:n_events]:
             try:
                 control = self.control_map[(event.type, event.code)]
-                control._set_value(event.value)
+                control.value = event.value
             except KeyError:
                 pass
 

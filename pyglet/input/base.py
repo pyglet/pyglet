@@ -145,12 +145,6 @@ class Control(EventDispatcher):
         self.raw_name = raw_name
         self.inverted = False
 
-    def _set_value(self, value):
-        if value == self._value:
-            return
-        self._value = value
-        self.dispatch_event('on_change', value)
-
     @property
     def value(self):
         """Current value of the control.
@@ -161,6 +155,13 @@ class Control(EventDispatcher):
 
         :type: float"""
         return self._value
+
+    @value.setter
+    def value(self, newvalue):
+        if newvalue == self._value:
+            return
+        self._value = newvalue
+        self.dispatch_event('on_change', newvalue)
 
     def __repr__(self):
         if self.name:
@@ -203,13 +204,14 @@ class RelativeAxis(Control):
     #: Name of the scroll wheel control
     WHEEL = 'wheel'
 
-    def _set_value(self, value):
-        self._value = value
-        self.dispatch_event('on_change', value)
-
     @property
     def value(self):
         return self._value
+
+    @value.setter
+    def value(self, newvalue):
+        self._value = newvalue
+        self.dispatch_event('on_change', newvalue)
 
 
 class AbsoluteAxis(Control):
@@ -256,19 +258,20 @@ class AbsoluteAxis(Control):
 class Button(Control):
     """A control whose value is boolean. """
 
-    def _set_value(self, value):
-        if value == self._value:
-            return
-        self._value = value
-        self.dispatch_event('on_change', bool(value))
-        if value:
-            self.dispatch_event('on_press')
-        else:
-            self.dispatch_event('on_release')
-
     @property
     def value(self):
         return bool(self._value)
+
+    @value.setter
+    def value(self, newvalue):
+        if newvalue == self._value:
+            return
+        self._value = newvalue
+        self.dispatch_event('on_change', bool(newvalue))
+        if newvalue:
+            self.dispatch_event('on_press')
+        else:
+            self.dispatch_event('on_release')
 
     if _is_epydoc:
         def on_press(self):
