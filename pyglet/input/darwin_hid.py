@@ -554,7 +554,7 @@ class PygletDevice(Device):
     def device_value_changed(self, hid_device, hid_value):
         # Called by device when input value changes.
         control = self._controls[hid_value.element.cookie]
-        control._set_value(hid_value.intvalue)
+        control.value = hid_value.intvalue
 
     def _create_controls(self):
         self._controls = {}
@@ -583,7 +583,7 @@ class PygletDevice(Device):
                 control = self._controls[element.cookie]
                 hid_value = self.device.get_value(element)
                 if hid_value:
-                    control._set_value(hid_value.intvalue)
+                    control.value = hid_value.intvalue
 
 ######################################################################
 

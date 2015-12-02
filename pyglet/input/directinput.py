@@ -160,7 +160,7 @@ class DirectInputDevice(base.Device):
                                    0)
         for event in events[:n_events.value]:
             index = event.dwOfs // 4
-            self.controls[index]._set_value(event.dwData)
+            self.controls[index].value = event.dwData
 
 _i_dinput = None
 

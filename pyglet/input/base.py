@@ -32,10 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Interface classes for `pyglet.input`.
+"""Interface classes for `pyglet.input`.
 
 :since: pyglet 1.2
-'''
+"""
 from __future__ import division
 from builtins import object
 
@@ -43,22 +43,25 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 import sys
-
 from pyglet.event import EventDispatcher
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+
 class DeviceException(Exception):
     pass
+
 
 class DeviceOpenException(DeviceException):
     pass
 
+
 class DeviceExclusiveException(DeviceException):
     pass
 
+
 class Device(object):
-    '''Input device.
+    """Input device.
 
     :Ivariables:
         `display` : `Display`
@@ -68,8 +71,8 @@ class Device(object):
         `manufacturer` : str
             Name of the device manufacturer, or ``None`` if the information is
             not available.
+    """
 
-    '''
     def __init__(self, display, name):
         self.display = display
         self.name = name
@@ -79,7 +82,7 @@ class Device(object):
         self.is_open = False
 
     def open(self, window=None, exclusive=False):
-        '''Open the device to begin receiving input from it.
+        """Open the device to begin receiving input from it.
 
         :Parameters:
             `window` : Window
@@ -92,30 +95,30 @@ class Device(object):
                 `DeviceExclusiveException` if the device cannot be opened this
                 way (for example, because another application has already
                 opened it).
+        """
 
-        '''
         if self.is_open:
             raise DeviceOpenException('Device is already open.')
 
         self.is_open = True
 
     def close(self):
-        '''Close the device.
-        '''
+        """Close the device. """
         self.is_open = False
 
     def get_controls(self):
-        '''Get a list of controls provided by the device.
+        """Get a list of controls provided by the device.
 
         :rtype: list of `Control`
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def __repr__(self):
         return '%s(name=%s)' % (self.__class__.__name__, self.name)
 
+
 class Control(EventDispatcher):
-    '''Single value input provided by a device.
+    """Single value input provided by a device.
 
     A control's value can be queried when the device is open.  Event handlers
     can be attached to the control to be called when the value changes.
@@ -133,31 +136,32 @@ class Control(EventDispatcher):
             If ``True``, the value reported is actually inverted from what the
             device reported; usually this is to provide consistency across
             operating systems.
-
-    '''
-    _value = None
+    """
 
     def __init__(self, name, raw_name=None):
         self.name = name
         self.raw_name = raw_name
         self.inverted = False
+        self._value = None
 
-    def _get_value(self):
+    @property
+    def value(self):
+        """Current value of the control.
+
+        The range of the value is device-dependent; for absolute controls
+        the range is given by ``min`` and ``max`` (however the value may exceed
+        this range); for relative controls the range is undefined.
+
+        :type: float
+        """
         return self._value
 
-    def _set_value(self, value):
-        if value == self._value:
+    @value.setter
+    def value(self, newvalue):
+        if newvalue == self._value:
             return
-        self._value = value
-        self.dispatch_event('on_change', value)
-
-    value = property(_get_value, doc='''Current value of the control.
-    
-    The range of the value is device-dependent; for absolute controls
-    the range is given by ``min`` and ``max`` (however the value may exceed
-    this range); for relative controls the range is undefined.
-    
-    :type: float''')
+        self._value = newvalue
+        self.dispatch_event('on_change', newvalue)
 
     def __repr__(self):
         if self.name:
@@ -168,21 +172,22 @@ class Control(EventDispatcher):
 
     if _is_epydoc:
         def on_change(self, value):
-            '''The value changed.
+            """The value changed.
 
             :Parameters:
                 `value` : float
                     Current value of the control.
 
             :event:
-            '''
+            """
 
 Control.register_event_type('on_change')
 
+
 class RelativeAxis(Control):
-    '''An axis whose value represents a relative change from the previous
+    """An axis whose value represents a relative change from the previous
     value.
-    '''
+    """
 
     #: Name of the horizontal axis control
     X = 'x'
@@ -199,17 +204,18 @@ class RelativeAxis(Control):
     #: Name of the scroll wheel control
     WHEEL = 'wheel'
 
-    def _get_value(self):
+    @property
+    def value(self):
         return self._value
 
-    def _set_value(self, value):
-        self._value = value
-        self.dispatch_event('on_change', value)
+    @value.setter
+    def value(self, newvalue):
+        self._value = newvalue
+        self.dispatch_event('on_change', newvalue)
 
-    value = property(_get_value)
 
 class AbsoluteAxis(Control):
-    '''An axis whose value represents a physical measurement from the device.
+    """An axis whose value represents a physical measurement from the device.
 
     The value is advertised to range over ``min`` and ``max``.
 
@@ -218,8 +224,7 @@ class AbsoluteAxis(Control):
             Minimum advertised value.
         `max` : float 
             Maximum advertised value.
-
-    '''
+    """
 
     #: Name of the horizontal axis control
     X = 'x'
@@ -249,43 +254,44 @@ class AbsoluteAxis(Control):
         self.min = min
         self.max = max
 
-class Button(Control):
-    '''A control whose value is boolean.
 
-    '''
-    def _get_value(self):
+class Button(Control):
+    """A control whose value is boolean. """
+
+    @property
+    def value(self):
         return bool(self._value)
 
-    def _set_value(self, value):
-        if value == self._value:
+    @value.setter
+    def value(self, newvalue):
+        if newvalue == self._value:
             return
-        self._value = value
-        self.dispatch_event('on_change', bool(value))
-        if value:
+        self._value = newvalue
+        self.dispatch_event('on_change', bool(newvalue))
+        if newvalue:
             self.dispatch_event('on_press')
         else:
             self.dispatch_event('on_release')
 
-    value = property(_get_value)
- 
     if _is_epydoc:
         def on_press(self):
-            '''The button was pressed.
+            """The button was pressed.
 
             :event:
-            '''
+            """
 
         def on_release(self):
-            '''The button was released.
+            """The button was released.
 
             :event:
-            '''
+            """
 
 Button.register_event_type('on_press')
 Button.register_event_type('on_release')
 
+
 class Joystick(EventDispatcher):
-    '''High-level interface for joystick-like devices.  This includes analogue
+    """High-level interface for joystick-like devices.  This includes analogue
     and digital joysticks, gamepads, game controllers, and possibly even
     steering wheels and other input devices.  There is unfortunately no way to
     distinguish between these different device types.
@@ -362,7 +368,7 @@ class Joystick(EventDispatcher):
             Underlying control for `hat_y` value, or ``None`` if not available.
         `button_controls` : list of `Button`
             Underlying controls for `buttons` values.
-    '''
+    """
 
     def __init__(self, device):
         self.device = device
@@ -429,19 +435,17 @@ class Joystick(EventDispatcher):
                 if value & 0xffff == 0xffff:
                     self.hat_x = self.hat_y = 0
                 else:
-                    if control.max > 8: # DirectInput: scale value
+                    if control.max > 8:  # DirectInput: scale value
                         value //= 0xfff
                     if 0 <= value < 8:
-                        self.hat_x, self.hat_y = (
-                            ( 0,  1),
-                            ( 1,  1),
-                            ( 1,  0),
-                            ( 1, -1),
-                            ( 0, -1),
-                            (-1, -1),
-                            (-1,  0),
-                            (-1,  1),
-                        )[value]
+                        self.hat_x, self.hat_y = (( 0,  1),
+                                                  ( 1,  1),
+                                                  ( 1,  0),
+                                                  ( 1, -1),
+                                                  ( 0, -1),
+                                                  (-1, -1),
+                                                  (-1,  0),
+                                                  (-1,  1))[value]
                     else:
                         # Out of range
                         self.hat_x = self.hat_y = 0
@@ -449,8 +453,7 @@ class Joystick(EventDispatcher):
 
         for control in device.get_controls():
             if isinstance(control, AbsoluteAxis):
-                if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz', 
-                                    'hat_x', 'hat_y'):
+                if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz', 'hat_x', 'hat_y'):
                     add_axis(control)
                 elif control.name == 'hat':
                     add_hat(control)
@@ -458,17 +461,15 @@ class Joystick(EventDispatcher):
                 add_button(control)
 
     def open(self, window=None, exclusive=False):
-        '''Open the joystick device.  See `Device.open`.
-        '''
+        """Open the joystick device.  See `Device.open`. """
         self.device.open(window, exclusive)
 
     def close(self):
-        '''Close the joystick device.  See `Device.close`.
-        '''
+        """Close the joystick device.  See `Device.close`. """
         self.device.close()
 
     def on_joyaxis_motion(self, joystick, axis, value):
-        '''The value of a joystick axis changed.
+        """The value of a joystick axis changed.
 
         :Parameters:
             `joystick` : `Joystick`
@@ -477,30 +478,30 @@ class Joystick(EventDispatcher):
                 The name of the axis that changed.
             `value` : float
                 The current value of the axis, normalized to [-1, 1].
-        '''
+        """
 
     def on_joybutton_press(self, joystick, button):
-        '''A button on the joystick was pressed.
+        """A button on the joystick was pressed.
 
         :Parameters:
             `joystick` : `Joystick`
                 The joystick device whose button was pressed.
             `button` : int
                 The index (in `button_controls`) of the button that was pressed.
-        '''
+        """
         
     def on_joybutton_release(self, joystick, button):
-        '''A button on the joystick was released.
+        """A button on the joystick was released.
 
         :Parameters:
             `joystick` : `Joystick`
                 The joystick device whose button was released.
             `button` : int
                 The index (in `button_controls`) of the button that was released.
-        '''
+        """
 
     def on_joyhat_motion(self, joystick, hat_x, hat_y):
-        '''The value of the joystick hat switch changed.
+        """The value of the joystick hat switch changed.
 
         :Parameters:
             `joystick` : `Joystick`
@@ -511,15 +512,16 @@ class Joystick(EventDispatcher):
             `hat_y` : int
                 Current hat (POV) vertical position; one of -1 (bottom), 0
                 (centered) or 1 (top).
-        '''
+        """
 
 Joystick.register_event_type('on_joyaxis_motion')
 Joystick.register_event_type('on_joybutton_press')
 Joystick.register_event_type('on_joybutton_release')
 Joystick.register_event_type('on_joyhat_motion')
 
+
 class AppleRemote(EventDispatcher):
-    '''High-level interface for Apple remote control.
+    """High-level interface for Apple remote control.
 
     This interface provides access to the 6 button controls on the remote.
     Pressing and holding certain buttons on the remote is interpreted as
@@ -548,11 +550,12 @@ class AppleRemote(EventDispatcher):
             Button control for the menu button.
         `menu_hold_control` : `Button`
             Button control for holding the menu button.
-    '''
+    """
     
     def __init__(self, device):
         def add_button(control):
             setattr(self, control.name + '_control', control)
+
             @control.event
             def on_press():
                 self.dispatch_event('on_button_press', control.name)
@@ -568,13 +571,11 @@ class AppleRemote(EventDispatcher):
                 add_button(control)
 
     def open(self, window=None, exclusive=False):
-        '''Open the device.  See `Device.open`.
-        '''
+        """Open the device.  See `Device.open`. """
         self.device.open(window, exclusive)
 
     def close(self):
-        '''Close the device.  See `Device.close`.
-        '''
+        """Close the device.  See `Device.close`. """
         self.device.close()
 
     def on_button_press(self, button):
@@ -615,7 +616,7 @@ AppleRemote.register_event_type('on_button_release')
 
 
 class Tablet(object):
-    '''High-level interface to tablet devices.
+    """High-level interface to tablet devices.
 
     Unlike other devices, tablets must be opened for a specific window,
     and cannot be opened exclusively.  The `open` method returns a
@@ -624,20 +625,22 @@ class Tablet(object):
     Currently only one tablet device can be used, though it can be opened on
     multiple windows.  If more than one tablet is connected, the behaviour is
     undefined.
-    '''
+    """
+
     def open(self, window):
-        '''Open a tablet device for a window.
+        """Open a tablet device for a window.
 
         :Parameters:
             `window` : `Window`
                 The window on which the tablet will be used.
 
         :rtype: `TabletCanvas`
-        '''
+        """
         raise NotImplementedError('abstract')
 
+
 class TabletCanvas(EventDispatcher):
-    '''Event dispatcher for tablets.
+    """Event dispatcher for tablets.
 
     Use `Tablet.open` to obtain this object for a particular tablet device and
     window.  Events may be generated even if the tablet stylus is outside of
@@ -650,7 +653,7 @@ class TabletCanvas(EventDispatcher):
     :Ivariables:
         `window` : Window
             The window on which this tablet was opened.
-    '''
+    """
     # OS X: Active window receives tablet events only when cursor is in window
     # Windows: Active window receives all tablet events
     #
@@ -661,13 +664,13 @@ class TabletCanvas(EventDispatcher):
         self.window = window
 
     def close(self):
-        '''Close the tablet device for this window.
-        '''
+        """Close the tablet device for this window.
+        """
         raise NotImplementedError('abstract')
 
     if _is_epydoc:
         def on_enter(self, cursor):
-            '''A cursor entered the proximity of the window.  The cursor may
+            """A cursor entered the proximity of the window.  The cursor may
             be hovering above the tablet surface, but outside of the window
             bounds, or it may have entered the window bounds.
 
@@ -680,10 +683,10 @@ class TabletCanvas(EventDispatcher):
                     The cursor that entered proximity.
 
             :event:
-            '''
+            """
 
         def on_leave(self, cursor):
-            '''A cursor left the proximity of the window.  The cursor may have
+            """A cursor left the proximity of the window.  The cursor may have
             moved too high above the tablet surface to be detected, or it may
             have left the bounds of the window.
 
@@ -696,10 +699,10 @@ class TabletCanvas(EventDispatcher):
                     The cursor that left proximity.
 
             :event:
-            '''
+            """
 
         def on_motion(self, cursor, x, y, pressure):
-            '''The cursor moved on the tablet surface.
+            """The cursor moved on the tablet surface.
 
             If `pressure` is 0, then the cursor is actually hovering above the
             tablet surface, not in contact.
@@ -720,14 +723,15 @@ class TabletCanvas(EventDispatcher):
                     Currently undefined.
 
             :event:
-            '''
+            """
 
 TabletCanvas.register_event_type('on_enter')
 TabletCanvas.register_event_type('on_leave')
 TabletCanvas.register_event_type('on_motion')
 
+
 class TabletCursor(object):
-    '''A distinct cursor used on a tablet.
+    """A distinct cursor used on a tablet.
 
     Most tablets support at least a *stylus* and an *erasor* cursor; this
     object is used to distinguish them when tablet events are generated.
@@ -735,8 +739,8 @@ class TabletCursor(object):
     :Ivariables:
         `name` : str
             Name of the cursor.
+    """
 
-    '''
     # TODO well-defined names for stylus and eraser.
 
     def __init__(self, name):
