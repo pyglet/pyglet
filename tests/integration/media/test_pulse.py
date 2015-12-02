@@ -12,18 +12,17 @@ from pyglet.media.sources import AudioFormat
 from pyglet.media.sources.procedural import Silence
 
 try:
-    from pyglet.media.drivers import pulse
-    import pyglet.media.drivers.pulse.lib_pulseaudio as pa
+    from pyglet.media.drivers.pulse import interface
 except ImportError:
-    pulse = None
+    interface = None
 
 
-pytestmark = pytest.mark.skipif(pulse is None, reason='requires PulseAudio')
+pytestmark = pytest.mark.skipif(interface is None, reason='requires PulseAudio')
 
 
 @pytest.fixture
 def mainloop():
-    return pulse.PulseAudioMainLoop()
+    return interface.PulseAudioMainLoop()
 
 
 def test_mainloop_run(mainloop):
