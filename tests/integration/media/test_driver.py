@@ -145,7 +145,7 @@ class _AudioDriverTestCase(unittest.TestCase):
             audio_player = driver.create_audio_player(source_group, player)
             try:
                 audio_player.play()
-                self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
+                self.wait_for_all_events(player, .2, 'on_eos', 'on_source_group_eos')
                 self.assertTrue(source.has_fully_played(), msg='Source not fully played')
 
             finally:
