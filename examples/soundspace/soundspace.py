@@ -3,14 +3,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -46,9 +46,9 @@ pyglet.resource.path.append('res')
 pyglet.resource.reindex()
 
 # Check for AVbin
-try:
-    from pyglet.media import avbin
-except ImportError:
+from pyglet.media import have_avbin
+
+if not have_avbin():
     raise ImportError('AVbin is required for this example, see '
         'http://code.google.com/p/avbin')
 
@@ -152,8 +152,8 @@ class PositionHandle(Handle):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         pos = self.win.mouse_transform(x, y)
         self.player.position = \
-            (pos[0] - self.offset[0], 
-             pos[1] - self.offset[1], 
+            (pos[0] - self.offset[0],
+             pos[1] - self.offset[1],
              pos[2] - self.offset[2])
 
 class OrientationHandle(Handle):
@@ -182,8 +182,8 @@ class OrientationHandle(Handle):
         glBegin(GL_LINES)
         glVertex2f(px, py)
         glVertex2f(x, y)
-        glEnd()        
-        
+        glEnd()
+
         # This handle (orientation)
         glColor3f(1, 1, 0)
         disc(self.radius, x, y)
@@ -226,7 +226,7 @@ class ConeAngleHandle(Handle):
         x = math.cos(angle) * self.length
         z = math.sin(angle) * self.length
         return px + x, py, pz + z
-       
+
     def draw(self):
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
 
@@ -237,7 +237,7 @@ class ConeAngleHandle(Handle):
         px, _, py = self.player.position
         angle = orientation_angle(self.player.cone_orientation)
         a = self.get_angle() * math.pi / 180.
-        disc(self.length, px, py, 
+        disc(self.length, px, py,
              start=angle - a/2,
              end=angle + a/2)
 
@@ -346,7 +346,7 @@ class MoreHandle(Handle):
         x, y, z = self.win.mouse_transform(x, y)
         for handle in self.win.more_handles:
             if handle.hit_test(x, y, z):
-                return 
+                return
         self.win.set_more_player_handles(None)
         self.win.remove_handlers(self)
         self.open = False
@@ -522,7 +522,7 @@ class SoundSpaceWindow(pyglet.window.Window):
         glScalef(self.zoom, self.zoom, 1)
 
     def mouse_transform(self, x, y):
-        return (float(x - self.tx) / self.zoom, 
+        return (float(x - self.tx) / self.zoom,
                 0,
                 float(y - self.ty) / self.zoom)
 
@@ -593,7 +593,7 @@ if __name__ == '__main__':
     # We swap Y and Z, moving to left-handed system
     listener = pyglet.media.get_audio_driver().get_listener()
     listener.up_orientation = (0, -1, 0)
-    
+
     # Start facing up (er, forwards)
     listener.forward_orientation = (0, 0, 1)
 

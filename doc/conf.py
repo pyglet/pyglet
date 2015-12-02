@@ -12,7 +12,7 @@ import datetime
 
 sys.is_epydoc = True
 
-document_modules = ["pyglet", "tests"]
+document_modules = ["pyglet"]
 
 # Patched extensions base path.
 sys.path.insert(0, os.path.abspath('.'))
@@ -76,11 +76,6 @@ skip_modules = {"pyglet": {
                      "pyglet.media.sources": ["avbin"],
                      "pyglet.window": implementations,
                      },
-                "tests": {
-                     "tests.extlibs": None,
-                     "tests.integration": None,
-                     "tests.unit": None
-                     }
                }
 
 
@@ -89,9 +84,6 @@ skip_modules = {"pyglet": {
 def skip_member(member, obj):
 
     module = obj.__name__
-
-    if module.startswith("tests"):
-        if ".test_" in module: return True
 
     if ".win32" in module: return True
     if ".carbon" in module: return True

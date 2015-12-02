@@ -3,6 +3,8 @@
 '''
 '''
 
+from __future__ import print_function
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -17,57 +19,57 @@ def on_draw():
 
 remote = pyglet.input.get_apple_remote()
 if not remote:
-    print 'Apple IR Remote not available.'
+    print('Apple IR Remote not available.')
     sys.exit(0)
 
 remote.open(window, exclusive=True)
 
 @remote.select_control.event
 def on_press():
-    print 'Press select'
+    print('Press select')
 
 @remote.menu_control.event
 def on_press():
-    print 'Press menu'
+    print('Press menu')
 
 @remote.up_control.event
 def on_press():
-    print 'Press up'
+    print('Press up')
 
 @remote.down_control.event
 def on_press():
-    print 'Press down'
+    print('Press down')
 
 @remote.left_control.event
 def on_press():
-    print 'Press left'
+    print('Press left')
 
 @remote.right_control.event
 def on_press():
-    print 'Press right'
+    print('Press right')
 
 @remote.select_control.event
 def on_release():
-    print 'Release select'
+    print('Release select')
 
 @remote.menu_control.event
 def on_release():
-    print 'Release menu'
+    print('Release menu')
 
 @remote.up_control.event
 def on_release():
-    print 'Release up'
+    print('Release up')
 
 @remote.down_control.event
 def on_release():
-    print 'Release down'
+    print('Release down')
 
 @remote.left_control.event
 def on_release():
-    print 'Release left'
+    print('Release left')
 
 @remote.right_control.event
 def on_release():
-    print 'Release right'
+    print('Release right')
 
 pyglet.app.run()
