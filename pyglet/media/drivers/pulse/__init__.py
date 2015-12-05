@@ -35,6 +35,8 @@ from __future__ import absolute_import
 
 from .adaptation import PulseAudioDriver
 
+import pyglet
+_debug = pyglet.options['debug_media']
 
 def create_audio_driver():
     driver = PulseAudioDriver()
