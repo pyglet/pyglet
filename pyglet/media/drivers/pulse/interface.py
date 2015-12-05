@@ -658,5 +658,6 @@ class PulseAudioOperation(PulseAudioLockable):
     def _success_callback(self, stream, success, userdata):
         if self._callback:
             self._callback()
+        self.pa_callback = None  # Clean up callback, not called anymore
         self.signal()
 
