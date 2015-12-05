@@ -87,13 +87,19 @@ class PulseAudioDriver(AbstractAudioDriver):
 
     def delete(self):
         """Completely shut down pulseaudio client."""
-        #TODO: Delete players
-        self.context.delete()
-        self.context = None
+        if self.mainloop is not None:
+            for player in self._players:
+                player.delete()
 
-        self.mainloop.delete()
-        self.mainloop = None
-        self.lock = None
+            with self.mainloop:
+                if self.context is not None:
+                    self.context.delete()
+                    self.context = None
+
+        if self.mainloop is not None:
+            self.mainloop.delete()
+            self.mainloop = None
+            self.lock = None
 
     def get_listener(self):
         return self._listener

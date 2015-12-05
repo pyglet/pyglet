@@ -386,6 +386,8 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
                 print("PulseAudioStream.delete")
                 print('PulseAudioStream: writable_size {}'.format(self.writable_size))
             if not self.is_unconnected:
+                if _debug:
+                    print("PulseAudioStream: disconnecting")
                 self.context.check(
                     pa.pa_stream_disconnect(self._pa_stream)
                     )

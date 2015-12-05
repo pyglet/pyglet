@@ -203,6 +203,24 @@ class _AudioDriverTestCase(unittest.TestCase):
         finally:
             driver.delete()
 
+    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
+    def test_audio_player_delete_driver_with_players(self):
+        """Delete a driver with active players. Should not cause problems."""
+        driver = self.driver.create_audio_driver()
+        self.assertIsNotNone(driver)
+
+        try:
+            source = SilentTestSource(10.)
+            source_group = self.create_source_group(source)
+            player = MockPlayer()
+
+            audio_player = driver.create_audio_player(source_group, player)
+            audio_player.play()
+
+        finally:
+            driver.delete()
+
+
 
 class SilentAudioDriverTestCase(_AudioDriverTestCase):
     driver = silent
