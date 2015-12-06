@@ -233,8 +233,9 @@ def test_stream_write(stream, audio_source):
 
 
 def test_stream_timing_info(filled_stream):
-    op = filled_stream.update_timing_info()
-    op.wait()
+    with filled_stream:
+        op = filled_stream.update_timing_info()
+        op.wait()
     assert op.is_done
     info = filled_stream.get_timing_info()
     assert info is not None
@@ -249,7 +250,7 @@ def test_stream_timing_info(filled_stream):
 def test_stream_trigger(filled_stream):
     with filled_stream:
         op = filled_stream.trigger()
-    op.wait()
+        op.wait()
     assert op.is_done
 
     with filled_stream:
@@ -262,7 +263,7 @@ def test_stream_trigger(filled_stream):
 def test_stream_prebuf(filled_stream):
     with filled_stream:
         op = filled_stream.prebuf()
-    op.wait()
+        op.wait()
     assert op.is_done
 
     with filled_stream:
@@ -277,14 +278,14 @@ def test_stream_cork(filled_stream):
 
     with filled_stream:
         op = filled_stream.resume()
-    op.wait()
+        op.wait()
     assert op.is_done
     assert not filled_stream.is_corked
 
     with filled_stream:
         op.delete()
         op = filled_stream.pause()
-    op.wait()
+        op.wait()
     assert op.is_done
     assert filled_stream.is_corked
 
@@ -298,7 +299,7 @@ def test_stream_cork(filled_stream):
 def test_stream_update_sample_rate(filled_stream):
     with filled_stream:
         op = filled_stream.update_sample_rate(44100)
-    op.wait()
+        op.wait()
     assert op.is_done
 
     with filled_stream:
@@ -333,7 +334,8 @@ def test_stream_write_needed(stream, audio_source):
         stream.resume().wait().delete()
 
     while on_write_needed.nbytes is None:
-        stream.wait()
+        with stream:
+            stream.wait()
     assert on_write_needed.nbytes > 0
     assert on_write_needed.underflow == False
     assert not stream.underflow
@@ -341,7 +343,8 @@ def test_stream_write_needed(stream, audio_source):
     on_write_needed.nbytes = None
     on_write_needed.underflow = None
     while on_write_needed.underflow != True:
-        stream.wait()
+        with stream:
+            stream.wait()
     assert on_write_needed.nbytes > 0
     assert on_write_needed.underflow == True
     assert stream.underflow

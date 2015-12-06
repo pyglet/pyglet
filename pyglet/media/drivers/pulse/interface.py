@@ -85,6 +85,7 @@ class PulseAudioMainLoop(object):
         self._pa_threaded_mainloop = pa.pa_threaded_mainloop_new()
         self._pa_mainloop = pa.pa_threaded_mainloop_get_api(
             self._pa_threaded_mainloop)
+        self._lock_count = 0
 
     def __del__(self):
         self.delete()
@@ -113,10 +114,14 @@ class PulseAudioMainLoop(object):
         calls into PA."""
         assert self._pa_threaded_mainloop is not None
         pa.pa_threaded_mainloop_lock(self._pa_threaded_mainloop)
+        self._lock_count += 1
 
     def unlock(self):
         """Unlock the mainloop thread."""
         assert self._pa_threaded_mainloop is not None
+        # TODO: This is not completely safe. Unlock might be called without lock.
+        assert self._lock_count > 0
+        self._lock_count -= 1
         pa.pa_threaded_mainloop_unlock(self._pa_threaded_mainloop)
 
     def signal(self):
@@ -127,7 +132,14 @@ class PulseAudioMainLoop(object):
     def wait(self):
         """Wait for a signal."""
         assert self._pa_threaded_mainloop is not None
+        # Although lock and unlock can be called reentrantly, the wait call only releases one lock.
+        assert self._lock_count > 0
+        original_lock_count = self._lock_count
+        while self._lock_count > 1:
+            self.unlock()
         pa.pa_threaded_mainloop_wait(self._pa_threaded_mainloop)
+        while self._lock_count < original_lock_count:
+            self.lock()
 
     def create_context(self):
         return PulseAudioContext(self, self._context_new())
@@ -262,7 +274,8 @@ class PulseAudioContext(PulseAudioLockable):
         )
 
         while not self.is_failed and not self.is_ready:
-            self.wait()
+            with self:
+                self.wait()
         if self.is_failed:
             self.raise_error()
 
