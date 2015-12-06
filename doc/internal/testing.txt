@@ -36,42 +36,8 @@ Running tests
 -------------
 The pyglet test suite is based on the `py.test framework <http://pytest.org>`_.
 
-Setting up environment
-''''''''''''''''''''''
-It is advised to set up a virtual environment for running the tests. Creating a virtual environment
-is similar for each operating system, as long as you make sure you install the following:
-    - Python (2.7, 3.4, 3.5)
-    - pip
-
-Linux & OSX
-^^^^^^^^^^^
-If you did not install virtualenv yet, do so::
-
-    pip install --upgrade pip
-    pip install virtualenv
-
-Create a virtual environment for each Python version you want to test. For example for 2.7::
-
-    virtualenv -p python2.7 venv/py27
-
-Activate the virtual environment::
-
-    . venv/py27/bin/activate
-
-The name of the active virtual environment will be added to the command prompt.
-
-Now install the prequisites for running the tests::
-
-    pip install pytest pytest-cov Pillow
-
-Create similar virtual environments to run the tests on Python 3.4 and 3.5.
-
-Windows
-^^^^^^^
-TODO: Similar to Linux & OSX, but paths are different and batch files are used.
-
-Running the tests
-'''''''''''''''''
+It is preferred to use a virtual environment to run the tests. For instructions to set
+up virtual environments see :doc:`virtualenv`.
 Make sure the virtual environment for the Python version you want to test is active. It is
 preferred to run the tests on 2.7, 3.4 and 3.5 to make sure changes are compatible with all
 supported Python versions.
