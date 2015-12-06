@@ -42,7 +42,6 @@ detailed insight in how pyglet is designed and how to help making pyglet even be
    :maxdepth: 3
 
    internal/virtualenv
-   internal/main
    internal/gl
    internal/generated
    internal/wraptypes

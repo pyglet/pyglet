@@ -29,6 +29,7 @@ If this is your first time reading about pyglet, we suggest you start at
    image
    media
    resources
+   options
    debug
    advanced
    features1.1

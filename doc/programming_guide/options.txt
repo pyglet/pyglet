@@ -1,5 +1,5 @@
-Importing pyglet
-================
+pyglet options
+==============
 
 .. automodule:: pyglet
    :members:
