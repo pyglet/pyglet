@@ -227,7 +227,7 @@ The following sections deal with the various concrete image classes.  All
 images subclass `AbstractImage`, which provides the basic interface described
 in previous sections.
 
-.. figure:: abstract_image.svg
+.. figure:: img/abstract_image.svg
 
     The `AbstractImage` class hierarchy.
 
@@ -417,7 +417,7 @@ such a composite image as if it were a simple Python sequence.  Discrete
 images can also be packed into one or more larger textures with texture bins
 and atlases.
 
-.. figure:: image_sequence.svg
+.. figure:: img/image_sequence.svg
 
     The AbstractImageSequence class hierarchy.
 
@@ -428,7 +428,7 @@ An "image grid" is a single image which is divided into several smaller images
 by drawing an imaginary grid over it.  The following image shows an image used
 for the explosion animation in the *Astraea* example.
 
-.. figure:: explosion.png
+.. figure:: img/explosion.png
 
     An image consisting of eight animation frames arranged in a grid.
 
@@ -447,7 +447,7 @@ images::
 Images with more than one row can be accessed either as a single-dimensional
 sequence, or as a (row, column) tuple; as shown in the following diagram.
 
-.. figure:: image_grid.svg
+.. figure:: img/image_grid.svg
 
     An image grid with several rows and columns, and the slices that can be
     used to access it.
@@ -589,7 +589,7 @@ objects.  Of course, this doesn't prevent you using framebuffer objects in
 your programs -- `pyglet.gl` provides this functionality -- just that they are
 not represented as `AbstractImage` types.
 
-.. figure:: buffer_image.svg
+.. figure:: img/buffer_image.svg
     
     The `BufferImage` hierarchy.
 
