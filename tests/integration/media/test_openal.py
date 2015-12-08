@@ -125,3 +125,19 @@ def test_context_create_delete(device):
     context.delete()
 
 
+@pytest.fixture
+def context(device):
+    return device.create_context()
+
+
+def test_context_make_current(context):
+    context.make_current()
+
+
+def test_source_create_delete(context):
+    source = openal.OpenALSource()
+    assert not source.is_playing
+    assert source.buffers_processed == 0
+    assert source.byte_offset == 0
+    source.delete()
+

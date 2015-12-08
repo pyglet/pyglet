@@ -56,7 +56,12 @@ _debug = pyglet.options['debug_media']
 _debug_buffers = pyglet.options.get('debug_media_buffers', False)
 
 class OpenALException(MediaException):
-    pass
+    def __init__(self, message=None, error_code=None):
+        self.message = message
+        self.error_code = error_code
+
+    def __str__(self):
+        return 'OpenAL Exception [{}]: {}'.format(self.error_code, self.message)
 
 # TODO move functions into context/driver?
 
@@ -163,7 +168,6 @@ class OpenALBufferPool(object):
         not be modified in any way, and may get changed by subsequent calls to
         getBuffers.
         """
-        assert context.lock.locked()
         buffs = []
         try:
             while i > 0:
@@ -197,14 +201,12 @@ class OpenALBufferPool(object):
 
     def deleteSource(self, alSource):
         """Delete a source pointer (self._al_source) and free its buffers"""
-        assert context.lock.locked()
         if alSource.value in self._sources:
             for buffer in self._sources.pop(alSource.value):
                 self._buffers.append(buffer)
 
     def dequeueBuffer(self, alSource, buffer):
         """A buffer has finished playing, free it."""
-        assert context.lock.locked()
         sourceBuffs = self._sources[alSource.value]
         for i, b in enumerate(sourceBuffs):
             if buffer == b.value:
@@ -218,7 +220,6 @@ class OpenALBufferPool(object):
 
     def delete(self):
         """Delete all sources and free all buffers"""
-        assert context.lock.locked()
         for source, buffers in self._sources.items():
             al.alDeleteSources(1, ctypes.byref(ctypes.c_uint(source)))
             for b in buffers:
@@ -578,7 +579,7 @@ class OpenALDevice(object):
 
     def create_context(self):
         al_context = alc.alcCreateContext(self._al_device, None)
-        return OpenALContext(al_context)
+        return OpenALContext(self, al_context)
 
     def get_version(self):
         major = alc.ALCint()
@@ -598,7 +599,8 @@ class OpenALDevice(object):
 
 
 class OpenALContext(object):
-    def __init__(self, al_context):
+    def __init__(self, device, al_context):
+        self.device = device
         self._al_context = al_context
         self.make_current()
 
@@ -614,6 +616,80 @@ class OpenALContext(object):
 
     def make_current(self):
         alc.alcMakeContextCurrent(self._al_context)
+
+
+class OpenALSource(object):
+    def __init__(self):
+        self._al_source = al.ALuint()
+        al.alGenSources(1, self._al_source)
+
+        self._state = al.ALint()
+
+        self._get_state()
+
+    def __del__(self):
+        self.delete()
+
+    def delete(self):
+        if self._al_source is not None:
+            al.alDeleteSources(1, self._al_source)
+            bufferPool.deleteSource(self._al_source)
+            self._al_source = None
+
+    @property
+    def is_playing(self):
+        self._get_state()
+        return self._state.value == al.AL_PLAYING
+
+    @property
+    def buffers_processed(self):
+        return self._get_int(al.AL_BUFFERS_PROCESSED)
+
+    @property
+    def byte_offset(self):
+        return self._get_int(al.AL_BYTE_OFFSET)
+
+    def play(self):
+        al.alSourcePlay(self._al_source)
+        self._check_error()
+
+    def pause(self):
+        al.alSourcePause(self._al_source)
+        self._check_error()
+
+    def stop(self):
+        al.alSourceStop(self._al_source)
+        self._check_error()
+
+    def unqueue_buffers(self):
+        processed = self.buffers_processed
+        buffers = (al.ALuint * processed)()
+        al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
+        self._check_error()
+        for b in buffers:
+            #TODO
+            bufferPool.dequeueBuffer(self._al_source, b)
+        return buffers
+
+    def _get_state(self):
+        if self._al_source is not None:
+            al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, self._state)
+
+    def _get_int(self, key):
+        al_int = al.ALint()
+        al.alGetSourcei(self._al_source, key, al_int)
+        return al_int.value
+
+    def _check_error(self, message=None):
+        """Check whether there is an OpenAL error and raise exception if present."""
+        error = al.alGetError()
+        if error != 0:
+            raise OpenALException(message=message, error_code=error)
+
+    def _raise_error(self, message):
+        """Raise an exception. Try to check for OpenAL error code too."""
+        self._check_error(message)
+        raise OpenALException(message)
 
 
 class OpenALDriver(AbstractAudioDriver):
