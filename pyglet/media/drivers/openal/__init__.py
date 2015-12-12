@@ -45,6 +45,7 @@ import atexit
 
 from . import lib_openal as al
 from . import lib_alc as alc
+from .interface import OpenALException, format_map, OpenALDevice
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
@@ -55,38 +56,6 @@ import pyglet
 _debug = pyglet.options['debug_media']
 _debug_buffers = pyglet.options.get('debug_media_buffers', False)
 
-class OpenALException(MediaException):
-    def __init__(self, message=None, error_code=None):
-        self.message = message
-        self.error_code = error_code
-
-    def __str__(self):
-        return 'OpenAL Exception [{}]: {}'.format(self.error_code, self.message)
-
-# TODO move functions into context/driver?
-
-def _split_nul_strings(s):
-    # NUL-separated list of strings, double-NUL-terminated.
-    nul = False
-    i = 0
-    while True:
-        if s[i] == '\0':
-            if nul:
-                break
-            else:
-                nul = True
-        else:
-            nul = False
-        i += 1
-    s = s[:i - 1]
-    return filter(None, [str(ss.strip()) for ss in s.split('\0')])
-
-format_map = {
-    (1,  8): al.AL_FORMAT_MONO8,
-    (1, 16): al.AL_FORMAT_MONO16,
-    (2,  8): al.AL_FORMAT_STEREO8,
-    (2, 16): al.AL_FORMAT_STEREO16,
-}
 
 class OpenALWorker(MediaThread):
     # Minimum size to bother refilling (bytes)
@@ -556,140 +525,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         cone_outer_gain = float(cone_outer_gain)
         with context.lock:
             al.alSourcef(self._al_source, al.AL_CONE_OUTER_GAIN, cone_outer_gain)
-
-
-class OpenALDevice(object):
-    """OpenAL audio device."""
-    def __init__(self, device_name=None):
-        self._al_device = alc.alcOpenDevice(device_name)
-        if self._al_device is None:
-            raise OpenALException('No OpenAL devices.')
-
-    def __del__(self):
-        self.delete()
-
-    def delete(self):
-        if self._al_device is not None:
-            alc.alcCloseDevice(self._al_device)
-            self._al_device = None
-
-    @property
-    def is_ready(self):
-        return self._al_device is not None
-
-    def create_context(self):
-        al_context = alc.alcCreateContext(self._al_device, None)
-        return OpenALContext(self, al_context)
-
-    def get_version(self):
-        major = alc.ALCint()
-        minor = alc.ALCint()
-        alc.alcGetIntegerv(self._al_device, alc.ALC_MAJOR_VERSION,
-                           ctypes.sizeof(major), major)
-        alc.alcGetIntegerv(self._al_device, alc.ALC_MINOR_VERSION,
-                           ctypes.sizeof(minor), minor)
-        return major.value, minor.value
-
-    def get_extensions(self):
-        extensions = alc.alcGetString(self._al_device, alc.ALC_EXTENSIONS)
-        if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
-            return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')]
-        else:
-            return _split_nul_strings(extensions)
-
-
-class OpenALContext(object):
-    def __init__(self, device, al_context):
-        self.device = device
-        self._al_context = al_context
-        self.make_current()
-
-    def __del__(self):
-        self.delete()
-
-    def delete(self):
-        if self._al_context is not None:
-            # TODO: Check if this context is current
-            alc.alcMakeContextCurrent(None)
-            alc.alcDestroyContext(self._al_context)
-            self._al_context = None
-
-    def make_current(self):
-        alc.alcMakeContextCurrent(self._al_context)
-
-
-class OpenALSource(object):
-    def __init__(self):
-        self._al_source = al.ALuint()
-        al.alGenSources(1, self._al_source)
-
-        self._state = al.ALint()
-
-        self._get_state()
-
-    def __del__(self):
-        self.delete()
-
-    def delete(self):
-        if self._al_source is not None:
-            al.alDeleteSources(1, self._al_source)
-            bufferPool.deleteSource(self._al_source)
-            self._al_source = None
-
-    @property
-    def is_playing(self):
-        self._get_state()
-        return self._state.value == al.AL_PLAYING
-
-    @property
-    def buffers_processed(self):
-        return self._get_int(al.AL_BUFFERS_PROCESSED)
-
-    @property
-    def byte_offset(self):
-        return self._get_int(al.AL_BYTE_OFFSET)
-
-    def play(self):
-        al.alSourcePlay(self._al_source)
-        self._check_error()
-
-    def pause(self):
-        al.alSourcePause(self._al_source)
-        self._check_error()
-
-    def stop(self):
-        al.alSourceStop(self._al_source)
-        self._check_error()
-
-    def unqueue_buffers(self):
-        processed = self.buffers_processed
-        buffers = (al.ALuint * processed)()
-        al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
-        self._check_error()
-        for b in buffers:
-            #TODO
-            bufferPool.dequeueBuffer(self._al_source, b)
-        return buffers
-
-    def _get_state(self):
-        if self._al_source is not None:
-            al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, self._state)
-
-    def _get_int(self, key):
-        al_int = al.ALint()
-        al.alGetSourcei(self._al_source, key, al_int)
-        return al_int.value
-
-    def _check_error(self, message=None):
-        """Check whether there is an OpenAL error and raise exception if present."""
-        error = al.alGetError()
-        if error != 0:
-            raise OpenALException(message=message, error_code=error)
-
-    def _raise_error(self, message):
-        """Raise an exception. Try to check for OpenAL error code too."""
-        self._check_error(message)
-        raise OpenALException(message)
 
 
 class OpenALDriver(AbstractAudioDriver):

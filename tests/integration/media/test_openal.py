@@ -97,7 +97,7 @@ def test_worker_refill_multiple_players_refill_largest():
 
 @pytest.fixture
 def device():
-    return openal.OpenALDevice()
+    return openal.interface.OpenALDevice()
 
 
 def test_device_create_delete(device):
@@ -135,9 +135,109 @@ def test_context_make_current(context):
 
 
 def test_source_create_delete(context):
-    source = openal.OpenALSource()
+    source = context.create_source()
     assert not source.is_playing
     assert source.buffers_processed == 0
     assert source.byte_offset == 0
     source.delete()
+
+
+def test_buffer_create_delete(context):
+    buf = openal.interface.OpenALBuffer.create()
+    assert buf.is_valid
+    assert buf.al_buffer is not None
+    buf.delete()
+    assert not buf.is_valid
+
+
+@pytest.fixture
+def buffer_pool():
+    return openal.interface.OpenALBufferPool()
+
+def test_bufferpool_get_single_buffer(buffer_pool):
+    assert len(buffer_pool) == 0
+
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+
+def test_bufferpool_return_valid_buffer(buffer_pool):
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+    buffer_pool.unqueue_buffer(buf)
+    assert len(buffer_pool) == 1
+
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+
+def test_bufferpool_get_multiple_buffers(buffer_pool):
+    bufs = buffer_pool.get_buffers(3)
+    assert bufs is not None
+    assert len(bufs) == 3
+    for buf in bufs:
+        assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+
+def test_bufferpool_return_multiple_valid_buffers(buffer_pool):
+    bufs = buffer_pool.get_buffers(3)
+    assert bufs is not None
+    assert len(bufs) == 3
+    for buf in bufs:
+        assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+    return_count = 0
+    for buf in bufs:
+        buffer_pool.unqueue_buffer(buf)
+        return_count += 1
+        assert len(buffer_pool) == return_count
+
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 2
+
+
+def test_bufferpool_return_invalid_buffer(buffer_pool):
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+    buf.delete()
+    assert not buf.is_valid
+    buffer_pool.unqueue_buffer(buf)
+    assert len(buffer_pool) == 0
+
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+
+def test_bufferpool_invalidate_buffer_in_pool(buffer_pool):
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
+
+    buffer_pool.unqueue_buffer(buf)
+    assert len(buffer_pool) == 1
+
+    buf.delete()
+    assert not buf.is_valid
+
+    buf = buffer_pool.get_buffer()
+    assert buf is not None
+    assert buf.is_valid
+    assert len(buffer_pool) == 0
 
