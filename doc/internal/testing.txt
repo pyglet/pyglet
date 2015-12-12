@@ -2,11 +2,7 @@ Testing pyglet
 ==============
 Test Suites
 -----------
-Tests for pyglet are divided into 3 suites:
-    - unit tests
-    - integration tests
-    - interactive test
-
+Tests for pyglet are divided into 3 suites.
 
 Unit tests
 ''''''''''
@@ -26,11 +22,6 @@ Interactive tests require the user to verify whether the test is successful and 
 require the user to perform actions in order for the test to continue. These tests can take a
 long time to run.
 
-Interactive tests are based on the
-:class:`~tests.interactive.interactive_test_base.InteractiveTestCase` class. This class offers
-functionality to ask the user to verify the result, take screenshots for later comparison and
-filter tests to perform non-interactive and sanity test runs.
-
 There are currently 3 types of interactive test cases:
     - tests that can only run in fully interactive mode as they require the user to perform an
       action in order for the test to continue. These tests are decorated with
@@ -41,70 +32,102 @@ There are currently 3 types of interactive test cases:
     - tests that can run without user interaction and that can compare results to screenshots from
       a previous run to determine whether they pass or fail. This is the default type.
 
-Annotations
------------
-Some control over test execution can be exerted by using annotations in the form of
-decorators. One function of annotations is to skip tests under certain conditions. For
-available test annotations see :mod:`~tests.annotations`.
-
 Running tests
 -------------
+The pyglet test suite is based on the `py.test framework <http://pytest.org>`_.
 
-Run using wrapper (preferred)
-'''''''''''''''''''''''''''''
-A wrapper is created to easily run a selection of tests or all tests. It also allows you
-to specify how interactive tests are run.
+It is preferred to use a virtual environment to run the tests. For instructions to set
+up virtual environments see :doc:`virtualenv`.
+Make sure the virtual environment for the Python version you want to test is active. It is
+preferred to run the tests on 2.7, 3.4 and 3.5 to make sure changes are compatible with all
+supported Python versions.
 
-To run using the wrapper::
+To run all tests, execute py.test in the root of the pyglet repository::
 
-    python -m tests.run <test suite> [<test suite> [...]]
+    py.test
 
-The available test suites are:
-    - ``unit``: Run the unit tests only
-    - ``integration``: Run the integration tests only
-    - ``interactive``: Run the interactive tests only
-    - ``automatic``: Run all tests. For interactive tests only run those tests marked as
-      able to run and verify without interaction.
-    - ``sanity``: Run all tests. For interactive tests only run those tests marked as
-      able to run without user interaction (not all might be able to really verify the
-      results, but at least offer a sanity check).
+You can also run just a single suite::
 
-You can combine the the names of the suites to create your own combination, e.g. to run
-only the unit and integration tests::
+    py.test tests/unit
+    py.test tests/integration
+    py.test tests/interactive
 
-    python -m tests.run unit integration
+For the interactive test suites, there are some extra command line switches for py.test:
+    - ``--non-interactive``: Only run the interactive tests that can only verify themselves using
+      screenshots. The screenshots are created when you run the tests in interactive mode, so you
+      will need to run the tests interactively once, before you can use this option;
+    - ``--sanity``: Do a sanity check by running as many interactive tests without user intervention.
+      Not all tests can run without intervention, so these tests will still be skipped. Mostly
+      useful to quickly check changes in code. Not all tests perform complete validation.
 
-When running the ``interactive`` suite (alone or combined with other suites), there are
-some additional options. You can choose to run in non-interactive mode. In this mode all
-tests that require either an action from the user to continue or that require the user to
-verify the results are skipped. Some tests that support verification using screenshots
-from a previous run will still run if these screenshots are available.
-To run in non-interactive mode use the ``--non-interactive`` or ``-n`` switch::
+Writing tests
+-------------
 
-    python -m tests.run interactive --non-interactive
-    python -m tests.run interactive -n
+Annotations
+'''''''''''
+Some control over test execution can be exerted by using annotations in the form of
+decorators. One function of annotations is to skip tests under certain conditions.
 
-You can also run in sanity mode. In this mode only tests that really require user
-interaction to be able to continue (so not just for verification) are skipped. Other tests
-run, but might not verify the results. This can be used to check for crashes/errors during
-execution of these tests.
-To run in sanity mode use the ``--sanity`` or ``-s`` switch::
+General annotations
+^^^^^^^^^^^^^^^^^^^
+General test annotations are available in the module :mod:`tests.annotations`.
 
-    python -m tests.run interactive --sanity
-    python -m tests.run interactive -s
+.. py:currentmodule:: tests.annotations
+.. py:decorator:: require_platform(platform)
 
-Run using unittest module
-'''''''''''''''''''''''''
-If you prefer to not use the wrapper, you can still run the tests using the builtin runner
-from Python (or one of the compatible alternatives). In this case you will lose some of the
-extra functionality provided by the wrapper, e.g. non-interactive running.
+   Only run the test on the given platform(s), skip on other platforms.
 
-To run using unittest directly for one of the suites::
+   :param list(str) platform: A list of platform identifiers as returned by
+       :data:`pyglet.options`. See also :class:`~tests.annotations.Platform`.
 
-    python -m unittest discover tests.unit
-    python -m unittest discover tests.integration
-    python -m unittest discover tests.interactive
+.. py:decorator:: skip_platform(platform)
 
-To run all tests::
+   Skip test on the given platform(s).
 
-    python -m unittest discover tests
+   :param list(str) platform: A list of platform identifiers as returned by
+       :data:`pyglet.options`. See also :class:`~tests.annotations.Platform`.
+
+.. autoclass:: tests.annotations.Platform
+   :members:
+
+.. py:decorator:: require_gl_extension(extension)
+
+   Skip the test if the given GL extension is not available.
+
+   :param str extension: Name of the extension required.
+
+Suite annotations
+^^^^^^^^^^^^^^^^^
+This is currently not used.
+
+.. py:decorator:: pytest.mark.unit
+
+   Test belongs to the unit test suite.
+
+.. py:decorator:: pytest.mark.integration
+
+   Test belongs to the integration test suite.
+
+.. py:decorator:: pytest.mark.interactive
+
+  Test belongs to the interactive test suite.
+
+Interactive test annotations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Interactive test cases can be marked with specific py.test marks. Currently
+the following marks are used:
+
+.. py:decorator:: pytest.mark.requires_user_action
+
+   Test requires user interaction to run. It needs to be skipped when running in
+   non-interactive or sanity mode.
+
+.. py:decorator:: pytest.mark.requires_user_validation
+
+   User validation is required to mark the test passed or failed. However the test
+   can run in sanity mode.
+
+.. py:decorator:: pytest.mark.only_interactive
+
+   For another reason the test can only run in interactive mode.
+

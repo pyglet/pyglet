@@ -361,6 +361,7 @@ def p_constant(p):
                 | CHARACTER_CONSTANT
     '''
     def _to_int(s):
+        s = s.rstrip('lLuU')
         if s.startswith('0x'):
             return int(s, base=16)
         elif s.startswith('0'):

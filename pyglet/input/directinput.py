@@ -160,7 +160,7 @@ class DirectInputDevice(base.Device):
                                    0)
         for event in events[:n_events.value]:
             index = event.dwOfs // 4
-            self.controls[index]._set_value(event.dwData)
+            self.controls[index].value = event.dwData
 
 _i_dinput = None
 
@@ -195,7 +195,8 @@ def get_devices(display=None):
     return _devices
 
 def _create_joystick(device):
-    if device._type in (dinput.DI8DEVTYPE_JOYSTICK, 
+    if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
+                        dinput.DI8DEVTYPE_1STPERSON,
                         dinput.DI8DEVTYPE_GAMEPAD):
         return base.Joystick(device)
 

@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Display positioned, scaled and rotated images.
+"""Display positioned, scaled and rotated images.
 
 A sprite is an instance of an image displayed on-screen.  Multiple sprites can
 display the same image at different positions on the screen.  Sprites can also
@@ -93,14 +93,14 @@ however a sprite can belong to at most one batch.  See the documentation for
 sprites within batches.
 
 :since: pyglet 1.1
-'''
-from builtins import map
+"""
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import math
 import sys
+import warnings
 
 from pyglet.gl import *
 from pyglet import clock
@@ -110,14 +110,16 @@ from pyglet import image
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+
 class SpriteGroup(graphics.Group):
-    '''Shared sprite rendering group.
+    """Shared sprite rendering group.
 
     The group is automatically coalesced with other sprite groups sharing the
     same parent group, texture and blend parameters.
-    '''
+    """
+
     def __init__(self, texture, blend_src, blend_dest, parent=None):
-        '''Create a sprite group.
+        """Create a sprite group.
 
         The group is created internally within `Sprite`; applications usually
         do not need to explicitly create it.
@@ -133,8 +135,7 @@ class SpriteGroup(graphics.Group):
                 ``GL_ONE_MINUS_SRC_ALPHA``.
             `parent` : `Group`
                 Optional parent group.
-
-        '''
+        """
         super(SpriteGroup, self).__init__(parent)
         self.texture = texture
         self.blend_src = blend_src
@@ -168,11 +169,13 @@ class SpriteGroup(graphics.Group):
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
+
 class Sprite(event.EventDispatcher):
-    '''Instance of an on-screen image.
+    """Instance of an on-screen image.
 
     See the module documentation for usage.
-    '''
+    """
+
     _batch = None
     _animation = None
     _rotation = 0
@@ -190,7 +193,7 @@ class Sprite(event.EventDispatcher):
                  group=None,
                  usage='dynamic',
                  subpixel=False):
-        '''Create a sprite.
+        """Create a sprite.
 
         :Parameters:
             `img` : `AbstractImage` or `Animation`
@@ -216,8 +219,7 @@ class Sprite(event.EventDispatcher):
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-
-        '''
+        """
         if batch is not None:
             self._batch = batch
 
@@ -247,12 +249,12 @@ class Sprite(event.EventDispatcher):
             pass
 
     def delete(self):
-        '''Force immediate removal of the sprite from video memory.
+        """Force immediate removal of the sprite from video memory.
 
         This is often necessary when using batches, as the Python garbage
         collector will not necessarily call the finalizer as soon as the
         sprite is garbage.
-        '''
+        """
         if self._animation:
             clock.unschedule(self._animate)
         self._vertex_list.delete()
@@ -268,7 +270,7 @@ class Sprite(event.EventDispatcher):
             self._frame_index = 0
             self.dispatch_event('on_animation_end')
             if self._vertex_list is None:
-                return # Deleted in event handler.
+                return  # Deleted in event handler.
 
         frame = self._animation.frames[self._frame_index]
         self._set_texture(frame.image.get_texture())
@@ -281,7 +283,20 @@ class Sprite(event.EventDispatcher):
         else:
             self.dispatch_event('on_animation_end')
 
-    def _set_batch(self, batch):
+    @property
+    def batch(self):
+        """Graphics batch.
+
+        The sprite can be migrated from one batch to another, or removed from
+        its batch (for individual drawing).  Note that this can be an expensive
+        operation.
+
+        :type: `Batch`
+        """
+        return self._batch
+
+    @batch.setter
+    def batch(self, batch):
         if self._batch == batch:
             return
 
@@ -293,50 +308,41 @@ class Sprite(event.EventDispatcher):
             self._batch = batch
             self._create_vertex_list()
 
-    def _get_batch(self):
-        return self._batch
+    @property
+    def group(self):
+        """Parent graphics group.
 
-    batch = property(_get_batch, _set_batch,
-                     doc='''Graphics batch.
+        The sprite can change its rendering group, however this can be an
+        expensive operation.
 
-    The sprite can be migrated from one batch to another, or removed from its
-    batch (for individual drawing).  Note that this can be an expensive
-    operation.
+        :type: `Group`
+        """
+        return self._group.parent
 
-    :type: `Batch`
-    ''')
-
-    def _set_group(self, group):
+    @group.setter
+    def group(self, group):
         if self._group.parent == group:
             return
-
         self._group = SpriteGroup(self._texture,
                                   self._group.blend_src,
                                   self._group.blend_dest,
                                   group)
-
         if self._batch is not None:
             self._batch.migrate(self._vertex_list, GL_QUADS, self._group,
                                 self._batch)
 
-    def _get_group(self):
-        return self._group.parent
+    @property
+    def image(self):
+        """Image or animation to display.
 
-    group = property(_get_group, _set_group,
-                     doc='''Parent graphics group.
-
-    The sprite can change its rendering group, however this can be an
-    expensive operation.
-
-    :type: `Group`
-    ''')
-
-    def _get_image(self):
+        :type: `AbstractImage` or `Animation`
+        """
         if self._animation:
             return self._animation
         return self._texture
 
-    def _set_image(self, img):
+    @image.setter
+    def image(self, img):
         if self._animation is not None:
             clock.unschedule(self._animate)
             self._animation = None
@@ -351,12 +357,6 @@ class Sprite(event.EventDispatcher):
         else:
             self._set_texture(img.get_texture())
         self._update_position()
-
-    image = property(_get_image, _set_image,
-                     doc='''Image or animation to display.
-
-    :type: `AbstractImage` or `Animation`
-    ''')
 
     def _set_texture(self, texture):
         if texture.id is not self._texture.id:
@@ -380,13 +380,11 @@ class Sprite(event.EventDispatcher):
         else:
             vertex_format = 'v2i/%s' % self._usage
         if self._batch is None:
-            self._vertex_list = graphics.vertex_list(4,
-                vertex_format, 
+            self._vertex_list = graphics.vertex_list(4, vertex_format,
                 'c4B', ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add(4, GL_QUADS, self._group,
-                vertex_format, 
-                'c4B', ('t3f', self._texture.tex_coords))
+                vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
         self._update_position()
         self._update_color()
 
@@ -434,8 +432,25 @@ class Sprite(event.EventDispatcher):
         r, g, b = self._rgb
         self._vertex_list.colors[:] = [r, g, b, int(self._opacity)] * 4
 
+    @property
+    def position(self):
+        """The (x, y) coordinates of the sprite, as a tuple.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the sprite.
+            `y` : int
+                Y coordinate of the sprite.
+        """
+        return self._x, self._y
+
+    @position.setter
+    def position(self, *pos):
+        self._x, self._y = pos[0]
+        self._update_position()
+
     def set_position(self, x, y):
-        '''Set the X and Y coordinates of the sprite simultaneously.
+        """Set the X and Y coordinates of the sprite simultaneously.
 
         :Parameters:
             `x` : int
@@ -443,156 +458,169 @@ class Sprite(event.EventDispatcher):
             `y` : int
                 Y coordinate of the sprite.
 
-        '''
+        :deprecated: Set the X, Y coordinates via sprite.position instead.
+        """
         self._x = x
         self._y = y
         self._update_position()
+        warnings.warn("Use position property instead.", DeprecationWarning)
 
-    position = property(lambda self: (self._x, self._y),
-                        lambda self, t: self.set_position(*t),
-                        doc='''The (x, y) coordinates of the sprite.
+    @property
+    def x(self):
+        """X coordinate of the sprite.
 
-    :type: (int, int)
-    ''')
+        :type: int
+        """
+        return self._x
 
-    def _set_x(self, x):
+    @x.setter
+    def x(self, x):
         self._x = x
         self._update_position()
 
-    x = property(lambda self: self._x, _set_x,
-                 doc='''X coordinate of the sprite.
+    @property
+    def y(self):
+        """Y coordinate of the sprite.
 
-    :type: int
-    ''')
+        :type: int
+        """
+        return self._y
 
-    def _set_y(self, y):
+    @y.setter
+    def y(self, y):
         self._y = y
         self._update_position()
 
-    y = property(lambda self: self._y, _set_y,
-                 doc='''Y coordinate of the sprite.
+    @property
+    def rotation(self):
+        """Clockwise rotation of the sprite, in degrees.
 
-    :type: int
-    ''')
+        The sprite image will be rotated about its image's (anchor_x, anchor_y)
+        position.
 
-    def _set_rotation(self, rotation):
+        :type: float
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation):
         self._rotation = rotation
         self._update_position()
 
-    rotation = property(lambda self: self._rotation, _set_rotation,
-                        doc='''Clockwise rotation of the sprite, in degrees.
+    @property
+    def scale(self):
+        """Scaling factor.
 
-    The sprite image will be rotated about its image's (anchor_x, anchor_y)
-    position.
+        A scaling factor of 1 (the default) has no effect.  A scale of 2 will
+        draw the sprite at twice the native size of its image.
 
-    :type: float
-    ''')
+        :type: float
+        """
+        return self._scale
 
-    def _set_scale(self, scale):
+    @scale.setter
+    def scale(self, scale):
         self._scale = scale
         self._update_position()
 
-    scale = property(lambda self: self._scale, _set_scale,
-                     doc='''Scaling factor.
+    @property
+    def width(self):
+        """Scaled width of the sprite.
 
-    A scaling factor of 1 (the default) has no effect.  A scale of 2 will draw
-    the sprite at twice the native size of its image.
+        Read-only.  Invariant under rotation.
 
-    :type: float
-    ''')
-
-    def _get_width(self):
+        :type: int
+        """
         if self._subpixel:
             return self._texture.width * self._scale
         else:
             return int(self._texture.width * self._scale)
 
-    width = property(_get_width,
-                     doc='''Scaled width of the sprite.
+    @property
+    def height(self):
+        """Scaled height of the sprite.
 
-    Read-only.  Invariant under rotation.
+        Read-only.  Invariant under rotation.
 
-    :type: int
-    ''')
-
-    def _get_height(self):
+        :type: int
+        """
         if self._subpixel:
             return self._texture.height * self._scale
         else:
             return int(self._texture.height * self._scale)
 
-    height = property(_get_height,
-                      doc='''Scaled height of the sprite.
+    @property
+    def opacity(self):
+        """Blend opacity.
 
-    Read-only.  Invariant under rotation.
+        This property sets the alpha component of the colour of the sprite's
+        vertices.  With the default blend mode (see the constructor), this
+        allows the sprite to be drawn with fractional opacity, blending with the
+        background.
 
-    :type: int
-    ''')
+        An opacity of 255 (the default) has no effect.  An opacity of 128 will
+        make the sprite appear translucent.
 
-    def _set_opacity(self, opacity):
+        :type: int
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
         self._opacity = opacity
         self._update_color()
 
-    opacity = property(lambda self: self._opacity, _set_opacity,
-                       doc='''Blend opacity.
+    @property
+    def color(self):
+        """Blend color.
 
-    This property sets the alpha component of the colour of the sprite's
-    vertices.  With the default blend mode (see the constructor), this
-    allows the sprite to be drawn with fractional opacity, blending with the
-    background.
+        This property sets the color of the sprite's vertices. This allows the
+        sprite to be drawn with a color tint.
 
-    An opacity of 255 (the default) has no effect.  An opacity of 128 will
-    make the sprite appear translucent.
+        The color is specified as an RGB tuple of integers '(red, green, blue)'.
+        Each color component must be in the range 0 (dark) to 255 (saturated).
 
-    :type: int
-    ''')
+        :type: (int, int, int)
+        """
+        return self._rgb
 
-    def _set_color(self, rgb):
+    @color.setter
+    def color(self, rgb):
         self._rgb = list(map(int, rgb))
         self._update_color()
 
-    color = property(lambda self: self._rgb, _set_color,
-                       doc='''Blend color.
+    @property
+    def visible(self):
+        """True if the sprite will be drawn.
 
-    This property sets the color of the sprite's vertices. This allows the
-    sprite to be drawn with a color tint.
-    
-    The color is specified as an RGB tuple of integers ``(red, green, blue)``.
-    Each color component must be in the range 0 (dark) to 255 (saturated).
-    
-    :type: (int, int, int)
-    ''')
+        :type: bool
+        """
+        return self._visible
 
-    def _set_visible(self, visible):
+    @visible.setter
+    def visible(self, visible):
         self._visible = visible
         self._update_position()
 
-    visible = property(lambda self: self._visible, _set_visible,
-                       '''True if the sprite will be drawn.
-
-    :type: bool
-    ''')
-
-
     def draw(self):
-        '''Draw the sprite at its current position.
+        """Draw the sprite at its current position.
 
         See the module documentation for hints on drawing multiple sprites
         efficiently.
-        '''
+        """
         self._group.set_state_recursive()
         self._vertex_list.draw(GL_QUADS)
         self._group.unset_state_recursive()
 
     if _is_epydoc:
         def on_animation_end(self):
-            '''The sprite animation reached the final frame.
+            """The sprite animation reached the final frame.
 
             The event is triggered only if the sprite has an animation, not an
             image.  For looping animations, the event is triggered each time
             the animation loops.
 
             :event:
-            '''
+            """
 
 Sprite.register_event_type('on_animation_end')

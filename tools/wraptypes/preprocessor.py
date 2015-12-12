@@ -1096,7 +1096,6 @@ class PreprocessorParser(yacc.Parser):
         try:
             open('test.h', 'a').close()
             output = Popen('cpp -v test.h', shell=True, stderr=PIPE).communicate()[1]
-            import pdb; pdb.set_trace()
         finally:
             os.remove('test.h')
         if output:

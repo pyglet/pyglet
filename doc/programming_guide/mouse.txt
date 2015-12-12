@@ -23,7 +23,7 @@ of the screen (note that this is "upside-down" compared with many other
 windowing toolkits, but is consistent with the default OpenGL projection in
 pyglet).
 
-.. figure:: mouse_coordinates.svg
+.. figure:: img/mouse_coordinates.svg
 
     The coordinate space for the mouse pointer.
 
@@ -157,62 +157,62 @@ on the window manager.
           - Windows XP
           - Mac OS X
         * - `CURSOR_DEFAULT`
-          - .. image:: cursor_win_default.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_default.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_CROSSHAIR`
-          - .. image:: cursor_win_crosshair.png
-          - .. image:: cursor_mac_crosshair.png
+          - .. image:: img/cursor_win_crosshair.png
+          - .. image:: img/cursor_mac_crosshair.png
         * - `CURSOR_HAND`
-          - .. image:: cursor_win_hand.png
-          - .. image:: cursor_mac_hand.png
+          - .. image:: img/cursor_win_hand.png
+          - .. image:: img/cursor_mac_hand.png
         * - `CURSOR_HELP`
-          - .. image:: cursor_win_help.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_help.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_NO`
-          - .. image:: cursor_win_no.png
-          - .. image:: cursor_mac_no.png
+          - .. image:: img/cursor_win_no.png
+          - .. image:: img/cursor_mac_no.png
         * - `CURSOR_SIZE`
-          - .. image:: cursor_win_size.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_size.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_SIZE_DOWN`
-          - .. image:: cursor_win_size_up_down.png
-          - .. image:: cursor_mac_size_down.png
+          - .. image:: img/cursor_win_size_up_down.png
+          - .. image:: img/cursor_mac_size_down.png
         * - `CURSOR_SIZE_DOWN_LEFT`
-          - .. image:: cursor_win_size_nesw.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_size_nesw.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_SIZE_DOWN_RIGHT`
-          - .. image:: cursor_win_size_nwse.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_size_nwse.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_SIZE_LEFT`
-          - .. image:: cursor_win_size_left_right.png
-          - .. image:: cursor_mac_size_left.png
+          - .. image:: img/cursor_win_size_left_right.png
+          - .. image:: img/cursor_mac_size_left.png
         * - `CURSOR_SIZE_LEFT_RIGHT`
-          - .. image:: cursor_win_size_left_right.png
-          - .. image:: cursor_mac_size_left_right.png
+          - .. image:: img/cursor_win_size_left_right.png
+          - .. image:: img/cursor_mac_size_left_right.png
         * - `CURSOR_SIZE_RIGHT`
-          - .. image:: cursor_win_size_left_right.png
-          - .. image:: cursor_mac_size_right.png
+          - .. image:: img/cursor_win_size_left_right.png
+          - .. image:: img/cursor_mac_size_right.png
         * - `CURSOR_SIZE_UP`
-          - .. image:: cursor_win_size_up_down.png
-          - .. image:: cursor_mac_size_up.png
+          - .. image:: img/cursor_win_size_up_down.png
+          - .. image:: img/cursor_mac_size_up.png
         * - `CURSOR_SIZE_UP_DOWN`
-          - .. image:: cursor_win_size_up_down.png
-          - .. image:: cursor_mac_size_up_down.png
+          - .. image:: img/cursor_win_size_up_down.png
+          - .. image:: img/cursor_mac_size_up_down.png
         * - `CURSOR_SIZE_UP_LEFT`
-          - .. image:: cursor_win_size_nwse.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_size_nwse.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_SIZE_UP_RIGHT`
-          - .. image:: cursor_win_size_nesw.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_size_nesw.png
+          - .. image:: img/cursor_mac_default.png
         * - `CURSOR_TEXT`
-          - .. image:: cursor_win_text.png
-          - .. image:: cursor_mac_text.png
+          - .. image:: img/cursor_win_text.png
+          - .. image:: img/cursor_mac_text.png
         * - `CURSOR_WAIT`
-          - .. image:: cursor_win_wait.png
-          - .. image:: cursor_mac_wait.png
+          - .. image:: img/cursor_win_wait.png
+          - .. image:: img/cursor_mac_wait.png
         * - `CURSOR_WAIT_ARROW`
-          - .. image:: cursor_win_wait_arrow.png
-          - .. image:: cursor_mac_default.png
+          - .. image:: img/cursor_win_wait_arrow.png
+          - .. image:: img/cursor_mac_default.png
 
 Alternatively, you can use your own image as the mouse cursor.  Use
 `pyglet.image.load` to load the image, then create an `ImageMouseCursor` with

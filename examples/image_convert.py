@@ -3,14 +3,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -40,9 +40,12 @@ Usage::
 
 '''
 
+from __future__ import print_function
+
 import sys
 
 import pyglet
+
 
 def convert(src, dest):
     if '.dds' in src.lower():
@@ -57,7 +60,7 @@ def convert(src, dest):
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
-        print __doc__
+        print(__doc__)
         sys.exit(1)
 
     src = sys.argv[1]

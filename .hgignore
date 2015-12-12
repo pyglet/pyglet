@@ -23,3 +23,8 @@ coverage_report/
 *.un~
 *.cache
 tools/*tab.py
+exprtab.py
+parser.out
+parsetab.py
+pptab.py
+strict_exprtab.py

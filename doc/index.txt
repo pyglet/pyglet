@@ -9,19 +9,19 @@ Windows, OS X and Linux.
 .. autosummary::
    :toctree: api/
    :template: package.rst
-   :hidden: 
+   :hidden:
 
    pyglet
-   tests
 
 Programming Guide
 ==================
+Every programmer starting to develop using pyglet, should start here.
 
 .. toctree::
    :maxdepth: 2
 
-   Chapters <programming_guide/index>
-   
+   Programming Guide <programming_guide/index>
+
 
 
 API Reference
@@ -33,19 +33,19 @@ API Reference
    api/pyglet
 
 
-Internals
-=========
+Development guide
+=================
+These documents describe details on how to develop pyglet itself further. Read these to get a more
+detailed insight in how pyglet is designed and how to help making pyglet even better.
 
 .. toctree::
    :maxdepth: 3
-   
-   internal/main
-   programming_guide/advanced
+
+   internal/virtualenv
    internal/gl
    internal/generated
    internal/wraptypes
    internal/dist
-   programming_guide/distribution
    internal/doc
    internal/testing
 

@@ -1,0 +1,135 @@
+Development environment
+=======================
+To develop pyglet, you need an environment with at least the following:
+   - python 2.7
+   - python 3.4 and/or 3.5
+   - py.test
+   - Your favorite Python editor or IDE
+
+Optionally you should also have:
+   - AVbin
+   - Pillow
+   - coverage
+
+It is preferred to create a virtual Python environment to develop in. It allows you to
+easily test on all Python version supported by pyglet, not pollute your local system
+with pyglet development dependencies and not have your local system interfere with
+pyglet developement. This section will show you how to set up a virtual environment
+for developing pyglet.
+
+Linux or Mac OSX
+----------------
+Setting up
+''''''''''
+Setting up a virtual environment is almost the same for Linux and OSX. First use your
+OS's package manager (apt, brew, etc) to install the following dependencies:
+   - Python 2.7
+   - Python 3.4 and/or 3.5
+   - pip (for each version of Python)
+
+[Optional] Make sure pip is the latest version (you might need to add sudo)::
+
+   pip install --upgrade pip
+
+Install virtualenv to create virtual environments (you might need to add sudo)::
+
+   pip install virtualenv
+
+Make a directory to hold our virtual environments::
+
+   mkdir venv
+
+Now repeat the following steps for each version of Python.
+
+Create a virtual environment (substitute the version number for the version of Python
+you are creating the environment for::
+
+   virtualenv -p python2.7 venv/py27
+
+Activate the virtual environment::
+
+   . venv/py27/bin/activate
+
+You will see the name of the virtual environment at the start of the command prompt.
+
+Now install required dependencies::
+
+   pip install pytest
+
+And optional dependencies::
+
+   pip install pytest-cov Pillow
+
+Using
+'''''
+To switch to a virtual environment run the following::
+
+   . venv/<name of environment>/bin/activate
+
+E.g.::
+
+   . venv/py34/bin/activate
+
+To get out of the virtual environment run::
+
+   deactivate
+
+Windows
+-------
+Setting up
+''''''''''
+Make sure you download and install:
+   - Python 2.7
+   - Python 3.4 and/or 3.5
+
+Pip should installed automatically with the latest Python installers. Make sure you do not
+choose to not install pip.
+
+Now open a command prompt.
+
+[Optional] Make sure pip is the latest version (you might need to add sudo)::
+
+   pip install --upgrade pip
+
+Install virtualenv to create virtual environments (you might need to add sudo)::
+
+   pip install virtualenv
+
+Make a directory to hold our virtual environments::
+
+   md venv
+
+Now repeat the following steps for each version of Python.
+
+Create a virtual environment (substitute the version number for the version of Python
+you are creating the environment for::
+
+   virtualenv -p python2.7 venv\py27
+
+Activate the virtual environment::
+
+   venv\py27\bin\activate
+
+You will see the name of the virtual environment at the start of the command prompt.
+
+Now install required dependencies::
+
+   pip install pytest
+
+And optional dependencies::
+
+   pip install pytest-cov Pillow
+
+Using
+'''''
+To switch to a virtual environment run the following::
+
+   venv\<name of environment>\bin\activate
+
+E.g.::
+
+   venv\py34\bin\activate
+
+To get out of the virtual environment run::
+
+   deactivate

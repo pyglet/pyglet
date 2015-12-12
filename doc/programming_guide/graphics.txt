@@ -46,6 +46,15 @@ The first and second arguments to the function give the number of vertices to
 draw and the primitive mode, respectively.  The third argument is a "data
 item", and gives the actual vertex data.
 
+However, because of the way the graphics API renders multiple primitives with 
+shared state, ``GL_POLYGON``, ``GL_LINE_LOOP`` and ``GL_TRIANGLE_FAN`` cannot
+be used --- the results are undefined.
+
+Alternatively, the ``NV_primitive_restart`` extension can be used if it is
+present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
+``GL_TRIANGLE_FAN``.   Unfortunately the extension is not provided by older
+video drivers, and requires indexed vertex lists.
+
 Because vertex data can be supplied in several forms, a "format string" is
 required.  In this case, the format string is ``"v2i"``, meaning the vertex
 position data has two components (2D) and int type.
@@ -81,6 +90,17 @@ shared vertices are reused with indexing::
 Note that the first argument gives the number of vertices in the data, not the
 number of indices (which is implicit on the length of the index list given in
 the third argument).
+
+When using ``GL_LINE_STRIP``, ``GL_TRIANGLE_STRIP`` or ``GL_QUAD_STRIP`` care
+must be taken to insert degenerate vertices at the beginning and end of each
+vertex list.  For example, given the vertex list::
+
+    A, B, C, D
+
+the correct vertex list to provide the vertex list is::
+
+    A, A, B, C, D, D
+
 
 Vertex attributes
 -----------------

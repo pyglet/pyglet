@@ -9,7 +9,7 @@ This example creates an OpenGL 3 context, prints the version string to stdout,
 and exits.
 
 At time of writing, only the beta nvidia driver on Windows and Linux support
-OpenGL 3, and requires an 8-series or higher.  
+OpenGL 3, and requires an 8-series or higher.
 
 On Windows, OpenGL 3 API must be explicitly enabled using the nvemulate tool
 [1].  Additionally, at time of writing the latest driver did not yet support
@@ -20,7 +20,9 @@ is 177.61.02 -- later drivers (177.67, 177.68, 177.7*, 177.8*, 180.06) seem to
 be missing the extensions.
 
 [1] http://developer.nvidia.com/object/nvemulate.html
-''' 
+'''
+
+from __future__ import print_function
 
 import pyglet
 
@@ -38,6 +40,6 @@ config = pyglet.gl.Config(major_version=3, minor_version=0)
 window = pyglet.window.Window(config=config, visible=False)
 
 # Print the version of the context created.
-print 'OpenGL version:', window.context.get_info().get_version()
+print('OpenGL version:', window.context.get_info().get_version())
 
 window.close()

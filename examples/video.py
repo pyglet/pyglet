@@ -3,14 +3,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -42,6 +42,8 @@ Usage::
 See the Programming Guide for a partial list of supported video formats.
 '''
 
+from __future__ import print_function
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
@@ -49,13 +51,13 @@ import sys
 import pyglet
 
 if len(sys.argv) < 2:
-    print __doc__
+    print(__doc__)
     sys.exit(1)
 
 source = pyglet.media.load(sys.argv[1])
 format = source.video_format
 if not format:
-    print 'No video track in this source.'
+    print('No video track in this source.')
     sys.exit(1)
 
 player = pyglet.media.Player()
@@ -63,6 +65,7 @@ player.queue(source)
 player.play()
 
 window = pyglet.window.Window(width=format.width, height=format.height)
+
 
 @window.event
 def on_draw():
