@@ -37,14 +37,11 @@ from __future__ import absolute_import
 from builtins import str
 
 import ctypes
-import heapq
 import threading
 import time
-import Queue
 import atexit
 
 from . import lib_openal as al
-from . import lib_alc as alc
 from .interface import OpenALException, format_map, OpenALDevice
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent

@@ -37,11 +37,6 @@ from __future__ import absolute_import
 from builtins import str
 
 import ctypes
-import heapq
-import threading
-import time
-import Queue
-import atexit
 from collections import defaultdict
 
 from . import lib_openal as al
@@ -51,6 +46,7 @@ from pyglet.media.exceptions import MediaException
 import pyglet
 _debug = pyglet.options['debug_media']
 _debug_buffers = pyglet.options.get('debug_media_buffers', False)
+
 
 class OpenALException(MediaException):
     def __init__(self, message=None, error_code=None, error_string=None):
