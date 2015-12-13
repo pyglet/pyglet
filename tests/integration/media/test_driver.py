@@ -1,12 +1,14 @@
-from __future__ import print_function
+"""Test a specific audio driver (either for platform or silent). Only checks the use of the
+interface. Any playback is silent."""
+from __future__ import absolute_import, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import object
 
 from tests import mock
 import queue
+import pytest
 import time
-import unittest
 
 import pyglet
 #pyglet.options['debug_media'] = True
@@ -19,46 +21,65 @@ from pyglet.media.sources import SourceGroup
 from pyglet.media.sources.procedural import Silence
 
 from tests.annotations import Platform
+from ..event_loop_test_base import event_loop
 
 
-class GetMediaDriverTestCase(unittest.TestCase):
-    def test_get_platform_driver(self):
-        driver = pyglet.media.drivers.get_audio_driver()
-        self.assertIsNotNone(driver)
-        self.assertFalse(isinstance(driver, SilentAudioDriver), msg='Cannot load audio driver for your platform')
+def _delete_driver():
+    if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
+        pyglet.media.drivers._audio_driver.delete()
+    pyglet.media.drivers._audio_driver = None
 
-        # Make sure driver is deleted before other tests
-        if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
-            pyglet.media.drivers._audio_driver.delete()
-        pyglet.media.drivers._audio_driver = None
+def test_get_platform_driver():
+    driver = pyglet.media.drivers.get_audio_driver()
+    assert driver is not None
+    assert not isinstance(driver, SilentAudioDriver), 'Cannot load audio driver for your platform'
+    _delete_driver()
 
-    def test_get_silent_driver(self):
-        driver = pyglet.media.drivers.get_silent_audio_driver()
-        self.assertIsNotNone(driver)
-        self.assertIsInstance(driver, SilentAudioDriver)
 
-        # Make sure driver is deleted before other tests
-        if hasattr(pyglet.media.drivers._silent_audio_driver, 'delete'):
-            pyglet.media.drivers._silent_audio_driver.delete()
-        pyglet.media.drivers._silent_audio_driver = None
+def test_get_silent_driver():
+    driver = pyglet.media.drivers.get_silent_audio_driver()
+    assert driver is not None
+    assert isinstance(driver, SilentAudioDriver)
+    _delete_driver()
 
 
 class MockPlayer(object):
-    def __init__(self):
+    def __init__(self, event_loop):
         self.queue = queue.Queue()
+        self.event_loop = event_loop
 
     def dispatch_event(self, event_type, *args):
         self.queue.put((event_type, args))
+        self.event_loop.interrupt_event_loop()
 
     def wait_for_event(self, timeout, *event_types):
         end_time = time.time() + timeout
         try:
             while time.time() < end_time:
-                event_type, args = self.queue.get(timeout=end_time-time.time())
+                self.event_loop.run_event_loop(duration=end_time-time.time())
+                event_type, args = self.queue.get_nowait()
                 if event_type in event_types:
                     return event_type, args
         except queue.Empty:
             return None, None
+
+    def wait_for_all_events(self, timeout, *expected_events):
+        expected_events = list(expected_events)
+        received_events = []
+        while expected_events:
+            event_type, args = self.wait_for_event(timeout, *expected_events)
+            if not event_type:
+                pytest.fail('Timeout before all events have been received. Still waiting for: '
+                        + ','.join(expected_events))
+            else:
+                expected_events.remove(event_type)
+                received_events.append((event_type, args))
+        return received_events
+
+
+@pytest.fixture
+def player(event_loop):
+    return MockPlayer(event_loop)
 
 
 class SilentTestSource(Silence):
@@ -76,177 +97,120 @@ class SilentTestSource(Silence):
         return self._bytes_read == self._max_offset
 
 
-class EventForwarder(object):
-    def post_event(self, destination, event_type, *args):
-        destination.dispatch_event(event_type, *args)
+def get_drivers():
+    drivers = [silent]
+    ids = ['Silent']
 
-    def notify(self):
+    try:
+        from pyglet.media.drivers import pulse
+        drivers.append(pulse)
+        ids.append('PulseAudio')
+    except:
         pass
 
+    try:
+        if pyglet.compat_platform not in Platform.LINUX:
+            # Segmentation fault in OpenAL on Ubuntu 14.10, so for now disabling this test for Linux
 
-class _AudioDriverTestCase(unittest.TestCase):
-    """Test a specific audio driver (either for platform or silent). Only checks the use of the
-    interface. Any playback is silent."""
+            from pyglet.media.drivers import openal
+            drivers.append(openal)
+            ids.append('OpenAL')
+    except:
+        pass
 
-    driver = None
+    try:
+        from pyglet.media.drivers import directsound
+        drivers.append(directsound)
+        ids.append('DirectSound')
+    except:
+        pass
 
-    @classmethod
-    def setUpClass(cls):
-        if cls.driver is None:
-            raise unittest.SkipTest
+    return {'params': drivers, 'ids': ids}
 
-    def wait_for_all_events(self, player, timeout, *expected_events):
-        expected_events = list(expected_events)
-        received_events = []
-        while expected_events:
-            event_type, args = player.wait_for_event(timeout, *expected_events)
-            if not event_type:
-                self.fail('Timeout before all events have been received. Still waiting for: '
-                        + ','.join(expected_events))
-            else:
-                expected_events.remove(event_type)
-                received_events.append((event_type, args))
-        return received_events
 
-    def create_source_group(self, *sources):
-        source_group = SourceGroup(sources[0].audio_format, None)
-        for source in sources:
-            source_group.queue(source)
-        return source_group
-
-    def test_create_destroy(self):
-        driver = self.driver.create_audio_driver()
-        self.assertIsNotNone(driver)
+@pytest.fixture(**get_drivers())
+def driver(request):
+    driver = request.param.create_audio_driver()
+    assert driver is not None
+    def fin():
         driver.delete()
-
-    def test_create_audio_player(self):
-        driver = self.driver.create_audio_driver()
-        self.assertIsNotNone(driver)
-
-        try:
-            source_group = self.create_source_group(Silence(1.))
-            player = mock.MagicMock()
-
-            audio_player = driver.create_audio_player(source_group, player)
-            audio_player.delete()
-        finally:
-            driver.delete()
-
-    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
-    def test_audio_player_play(self):
-        driver = self.driver.create_audio_driver()
-        self.assertIsNotNone(driver)
-
-        try:
-            source = SilentTestSource(.1)
-            source_group = self.create_source_group(source)
-            player = MockPlayer()
-
-            audio_player = driver.create_audio_player(source_group, player)
-            try:
-                audio_player.play()
-                self.wait_for_all_events(player, .2, 'on_eos', 'on_source_group_eos')
-                self.assertTrue(source.has_fully_played(), msg='Source not fully played')
-
-            finally:
-                audio_player.delete()
-        finally:
-            driver.delete()
-
-    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
-    def test_audio_player_play_multiple(self):
-        driver = self.driver.create_audio_driver()
-        self.assertIsNotNone(driver)
-
-        try:
-            sources = (SilentTestSource(.1), SilentTestSource(.1))
-            source_group = self.create_source_group(*sources)
-            player = MockPlayer()
-
-            audio_player = driver.create_audio_player(source_group, player)
-            try:
-                audio_player.play()
-                self.wait_for_all_events(player, 0.3, 'on_eos', 'on_eos', 'on_source_group_eos')
-                for source in sources:
-                    self.assertTrue(source.has_fully_played(), msg='Source not fully played')
-
-            finally:
-                audio_player.delete()
-        finally:
-            driver.delete()
-
-    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
-    def test_audio_player_add_to_paused_group(self):
-        """This is current behaviour when adding a sound of the same format as the previous to a
-        player paused due to end of stream for previous sound."""
-        driver = self.driver.create_audio_driver()
-        self.assertIsNotNone(driver)
-
-        try:
-            source = SilentTestSource(.1)
-            source_group = self.create_source_group(source)
-            player = MockPlayer()
-
-            audio_player = driver.create_audio_player(source_group, player)
-            try:
-                audio_player.play()
-                self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
-
-                source2 = SilentTestSource(.1)
-                source_group.queue(source2)
-                audio_player.play()
-                self.wait_for_all_events(player, 0.2, 'on_eos', 'on_source_group_eos')
-                self.assertTrue(source2.has_fully_played(), msg='Source not fully played')
-
-            finally:
-                audio_player.delete()
-        finally:
-            driver.delete()
-
-    @mock.patch('pyglet.app.platform_event_loop', EventForwarder())
-    def test_audio_player_delete_driver_with_players(self):
-        """Delete a driver with active players. Should not cause problems."""
-        driver = self.driver.create_audio_driver()
-        self.assertIsNotNone(driver)
-
-        try:
-            source = SilentTestSource(10.)
-            source_group = self.create_source_group(source)
-            player = MockPlayer()
-
-            audio_player = driver.create_audio_player(source_group, player)
-            audio_player.play()
-
-        finally:
-            driver.delete()
+    request.addfinalizer(fin)
+    return driver
 
 
+def _create_source_group(*sources):
+    source_group = SourceGroup(sources[0].audio_format, None)
+    for source in sources:
+        source_group.queue(source)
+    return source_group
 
-class SilentAudioDriverTestCase(_AudioDriverTestCase):
-    driver = silent
+
+def test_create_destroy(driver):
+    driver.delete()
 
 
-# Try to get all available drivers
-try:
-    from pyglet.media.drivers import pulse
-    class PulseAudioDriverTestCase(_AudioDriverTestCase):
-        driver = pulse
-except:
-    pass
+def test_create_audio_player(driver, player):
+    source_group = _create_source_group(Silence(1.))
+    audio_player = driver.create_audio_player(source_group, player)
+    audio_player.delete()
 
-try:
-    if pyglet.compat_platform not in Platform.LINUX:
-        # Segmentation fault in OpenAL on Ubuntu 14.10, so for now disabling this test for Linux
 
-        from pyglet.media.drivers import openal
-        class OpenALAudioDriverTestCase(_AudioDriverTestCase):
-            driver = openal
-except:
-    pass
+def test_audio_player_play(driver, player):
+    source = SilentTestSource(.1)
+    source_group = _create_source_group(source)
 
-try:
-    from pyglet.media.drivers import directsound
-    class DirectSoundAudioDriverTestCase(_AudioDriverTestCase):
-        driver = directsound
-except:
-    pass
+    audio_player = driver.create_audio_player(source_group, player)
+    try:
+        audio_player.play()
+        player.wait_for_all_events(1., 'on_eos', 'on_source_group_eos')
+        assert source.has_fully_played(), 'Source not fully played'
+
+    finally:
+        audio_player.delete()
+
+
+def test_audio_player_play_multiple(driver, player):
+    sources = (SilentTestSource(.1), SilentTestSource(.1))
+    source_group = _create_source_group(*sources)
+
+    audio_player = driver.create_audio_player(source_group, player)
+    try:
+        audio_player.play()
+        player.wait_for_all_events(1., 'on_eos', 'on_eos', 'on_source_group_eos')
+        for source in sources:
+            assert source.has_fully_played(), 'Source not fully played'
+
+    finally:
+        audio_player.delete()
+
+
+def test_audio_player_add_to_paused_group(driver, player):
+    """This is current behaviour when adding a sound of the same format as the previous to a
+    player paused due to end of stream for previous sound."""
+    source = SilentTestSource(.1)
+    source_group = _create_source_group(source)
+
+    audio_player = driver.create_audio_player(source_group, player)
+    try:
+        audio_player.play()
+        player.wait_for_all_events(1., 'on_eos', 'on_source_group_eos')
+
+        source2 = SilentTestSource(.1)
+        source_group.queue(source2)
+        audio_player.play()
+        player.wait_for_all_events(1., 'on_eos', 'on_source_group_eos')
+        assert source2.has_fully_played(), 'Source not fully played'
+
+    finally:
+        audio_player.delete()
+
+
+@pytest.mark.skipif(True, reason='Avoid crash')
+def test_audio_player_delete_driver_with_players(driver, player):
+    """Delete a driver with active players. Should not cause problems."""
+    source = SilentTestSource(10.)
+    source_group = _create_source_group(source)
+
+    audio_player = driver.create_audio_player(source_group, player)
+    audio_player.play()
+

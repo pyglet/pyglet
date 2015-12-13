@@ -555,10 +555,12 @@ class OpenALDriver(AbstractAudioDriver):
     def delete(self):
         self.worker.stop()
         with self.lock:
-            self.context.delete()
-            self.context = None
-            self.device.delete()
-            self.device = None
+            if self.context is not None:
+                self.context.delete()
+                self.context = None
+            if self.device is not None:
+                self.device.delete()
+                self.device = None
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()
