@@ -434,7 +434,6 @@ class Batch(object):
         else:
             domain = batch._get_domain(False, mode, group, formats)
         vertex_list.migrate(domain)
-        self._draw_list_dirty = True
 
     def _get_domain(self, indexed, mode, group, formats):
         if group is None:
