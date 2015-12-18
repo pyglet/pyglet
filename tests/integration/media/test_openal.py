@@ -14,6 +14,15 @@ except ImportError:
 pytestmark = pytest.mark.skipif(openal is None, reason='No OpenAL available.')
 
 
+def almost_equal(f1, f2, eps=0.0001):
+    return abs(f1 - f2) < eps
+
+
+def almost_equal_coords(c1, c2, eps=0.0001):
+    return all(almost_equal(f1, f2, eps) for f1, f2 in zip(c1, c2))
+
+
+
 def test_worker_add_remove_players():
     worker = openal.OpenALWorker()
     player1 = mock.MagicMock()
@@ -280,6 +289,7 @@ def test_source_queue_play_unqueue(context, filled_buffer):
     assert not source.is_paused
     assert not source.is_stopped
     assert source.buffers_processed == 0
+    assert source.buffers_queued == 1
     assert source.byte_offset == 0
 
     source.play()
@@ -305,6 +315,7 @@ def test_source_queue_play_unqueue(context, filled_buffer):
 
     source.unqueue_buffers()
     assert source.buffers_processed == 0
+    assert source.buffers_queued == 0
 
     assert not source.is_initial
     assert not source.is_playing
@@ -350,3 +361,97 @@ def test_source_pause_stop(filled_source):
     assert filled_source.is_stopped
 
 
+def test_source_prop_position(filled_source):
+    assert almost_equal_coords(filled_source.position, (0., 0., 0.))
+    filled_source.position = 1., 2., 3.
+    assert almost_equal_coords(filled_source.position, (1., 2., 3.))
+
+
+def test_source_prop_velocity(filled_source):
+    assert almost_equal_coords(filled_source.velocity, (0., 0., 0.))
+    filled_source.velocity = 1., 2., 3.
+    assert almost_equal_coords(filled_source.velocity, (1., 2., 3.))
+
+
+def test_source_prop_gain(filled_source):
+    assert almost_equal(filled_source.gain, 1.)
+    filled_source.gain = 8.5
+    assert almost_equal(filled_source.gain, 8.5)
+
+
+def test_source_prop_min_gain(filled_source):
+    assert almost_equal(filled_source.min_gain, 0.)
+    filled_source.min_gain = .5
+    assert almost_equal(filled_source.min_gain, .5)
+
+
+def test_source_prop_max_gain(filled_source):
+    assert almost_equal(filled_source.max_gain, 1.)
+    filled_source.max_gain = .8
+    assert almost_equal(filled_source.max_gain, .8)
+
+
+def test_source_prop_reference_distance(filled_source):
+    assert almost_equal(filled_source.reference_distance, 1.)
+    filled_source.reference_distance = 10.3
+    assert almost_equal(filled_source.reference_distance, 10.3)
+
+
+def test_source_prop_rolloff_factor(filled_source):
+    assert almost_equal(filled_source.rolloff_factor, 1.)
+    filled_source.rolloff_factor = 4.5
+    assert almost_equal(filled_source.rolloff_factor, 4.5)
+
+
+def test_source_prop_max_distance(filled_source):
+    assert filled_source.max_distance > 500.0  # No definition of MAX_FLOAT available, 1000.0 on OSX
+    filled_source.max_distance = 500.
+    assert almost_equal(filled_source.max_distance, 500.)
+
+
+def test_source_prop_pitch(filled_source):
+    assert almost_equal(filled_source.pitch, 1.)
+    filled_source.pitch = 3.14
+    assert almost_equal(filled_source.pitch, 3.14)
+
+
+def test_source_prop_direction(filled_source):
+    assert almost_equal_coords(filled_source.direction, (0., 0., 0.))
+    filled_source.direction = 1., 2., 3.
+    assert almost_equal_coords(filled_source.direction, (1., 2., 3.))
+
+
+def test_source_prop_cone_inner_angle(filled_source):
+    assert almost_equal(filled_source.cone_inner_angle, 360.)
+    filled_source.cone_inner_angle = 180.
+    assert almost_equal(filled_source.cone_inner_angle, 180.)
+
+
+def test_source_prop_cone_outer_angle(filled_source):
+    assert almost_equal(filled_source.cone_outer_angle, 360.)
+    filled_source.cone_outer_angle = 90.
+    assert almost_equal(filled_source.cone_outer_angle, 90.)
+
+
+def test_source_prop_cone_outer_gain(filled_source):
+    assert almost_equal(filled_source.cone_outer_gain, 0.)
+    filled_source.cone_outer_gain = .6
+    assert almost_equal(filled_source.cone_outer_gain, .6)
+
+
+def test_source_prop_sec_offset(filled_source):
+    assert almost_equal(filled_source.sec_offset, 0.)
+    filled_source.sec_offset = .1
+    assert almost_equal(filled_source.sec_offset, .1)
+
+
+def test_source_prop_sample_offset(filled_source):
+    assert almost_equal(filled_source.sample_offset, 0.)
+    filled_source.sample_offset = 5.
+    assert almost_equal(filled_source.sample_offset, 5.)
+
+
+def test_source_prop_byte_offset(filled_source):
+    assert almost_equal(filled_source.byte_offset, 0.)
+    filled_source.byte_offset = 8.
+    assert almost_equal(filled_source.byte_offset, 8.)
