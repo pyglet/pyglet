@@ -143,7 +143,7 @@ class OpenALDevice(OpenALObject):
     def get_extensions(self):
         extensions = alc.alcGetString(self._al_device, alc.ALC_EXTENSIONS)
         if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
-            return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(' ')]
+            return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(b' ')]
         else:
             return _split_nul_strings(extensions)
 
