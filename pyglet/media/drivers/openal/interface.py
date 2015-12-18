@@ -181,8 +181,10 @@ class OpenALSource(OpenALObject):
         al.alGenSources(1, self._al_source)
         self._check_error('Failed to create source.')
 
-        self._state = al.ALint()
+        self._state = None
         self._get_state()
+
+        self._owned_buffers = {}
 
     def __del__(self):
         self.delete()
@@ -195,9 +197,24 @@ class OpenALSource(OpenALObject):
             self._al_source = None
 
     @property
+    def is_initial(self):
+        self._get_state()
+        return self._state == al.AL_INITIAL
+
+    @property
     def is_playing(self):
         self._get_state()
-        return self._state.value == al.AL_PLAYING
+        return self._state == al.AL_PLAYING
+
+    @property
+    def is_paused(self):
+        self._get_state()
+        return self._state == al.AL_PAUSED
+
+    @property
+    def is_stopped(self):
+        self._get_state()
+        return self._state == al.AL_STOPPED
 
     @property
     def buffers_processed(self):
@@ -217,7 +234,13 @@ class OpenALSource(OpenALObject):
 
     def stop(self):
         al.alSourceStop(self._al_source)
-        self._check_error('Filed to stop source.')
+        self._check_error('Failed to stop source.')
+
+    def queue_buffer(self, buf):
+        assert buf.is_valid
+        al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buf.al_buffer))
+        self._check_error('Failed to queue buffer.')
+        self._add_buffer(buf)
 
     def unqueue_buffers(self):
         processed = self.buffers_processed
@@ -225,18 +248,45 @@ class OpenALSource(OpenALObject):
         al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
         self._check_error('Failed to unqueue buffers from source.')
         for buf in buffers:
-            self.buffer_pool.unqueue_buffer(buf)
+            self.context.buffer_pool.unqueue_buffer(self._pop_buffer(buf))
 
     def _get_state(self):
         if self._al_source is not None:
-            al.alGetSourcei(self._al_source, al.AL_SOURCE_STATE, self._state)
-            self._check_error('Failed to get source state.')
+            self._state = self._get_int(al.AL_SOURCE_STATE)
 
     def _get_int(self, key):
+        assert self._al_source is not None
         al_int = al.ALint()
         al.alGetSourcei(self._al_source, key, al_int)
         self._check_error('Failed to get value')
         return al_int.value
+
+    def _get_float(self, key):
+        assert self._al_source is not None
+        al_float = al.ALfloat()
+        al.alGetSourcef(self._al_source, key, al_float)
+
+    def _set_float(self, key, value):
+        assert self._al_source is not None
+        al.alSourcef(self._al_source, key, float(value))
+        self._check_error('Failed to set value.')
+
+    def _get_3floats(self, key):
+        assert self._al_source is not None
+
+    def _set_3floats(self, key, values):
+        assert self._al_source is not None
+        x, y, z = map(float, values)
+        al.alSource3f(self._al_source, key, x, y, z)
+        self._check_error('Failed to set value.')
+
+    def _add_buffer(self, buf):
+        self._owned_buffers[buf.name] = buf
+
+    def _pop_buffer(self, al_buffer):
+        buf = self._owned_buffers.pop(al_buffer, None)
+        assert buf is not None
+        return buf
 
 
 class OpenALBuffer(OpenALObject):
@@ -271,11 +321,26 @@ class OpenALBuffer(OpenALObject):
         assert self.is_valid
         return self._al_buffer
 
+    @property
+    def name(self):
+        assert self.is_valid
+        return self._al_buffer.value
+
     def delete(self):
         if self.is_valid:
             al.alDeleteBuffers(1, ctypes.byref(self._al_buffer))
             self._check_error('Error deleting buffer.')
             self._al_buffer = None
+
+    def data(self, audio_data, audio_format):
+        assert self.is_valid
+        al_format = format_map[(audio_format.channels, audio_format.sample_size)]
+        al.alBufferData(self._al_buffer,
+                        al_format,
+                        audio_data.data,
+                        audio_data.length,
+                        audio_format.sample_rate)
+        self._check_error('Failed to add data to buffer.')
 
 
 class OpenALBufferPool(object):

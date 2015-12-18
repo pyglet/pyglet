@@ -3,6 +3,8 @@ import pytest
 from tests import mock
 import time
 
+from pyglet.media.sources.procedural import Silence
+
 try:
     from pyglet.media.drivers import openal
 except ImportError:
@@ -134,18 +136,25 @@ def test_context_make_current(context):
     context.make_current()
 
 
-def test_source_create_delete(context):
-    source = context.create_source()
-    assert not source.is_playing
-    assert source.buffers_processed == 0
-    assert source.byte_offset == 0
-    source.delete()
+@pytest.fixture
+def buf():
+    return openal.interface.OpenALBuffer.create()
 
 
-def test_buffer_create_delete(context):
-    buf = openal.interface.OpenALBuffer.create()
+def test_buffer_create_delete(buf):
     assert buf.is_valid
     assert buf.al_buffer is not None
+    assert buf.name > 0
+    buf.delete()
+    assert not buf.is_valid
+
+
+def test_buffer_data(buf):
+    assert buf.is_valid
+    audio_source = Silence(1.)
+    buf.data(audio_source.get_audio_data(audio_source.audio_format.bytes_per_second),
+             audio_source.audio_format)
+    assert buf.is_valid
     buf.delete()
     assert not buf.is_valid
 
@@ -240,4 +249,104 @@ def test_bufferpool_invalidate_buffer_in_pool(buffer_pool):
     assert buf is not None
     assert buf.is_valid
     assert len(buffer_pool) == 0
+
+
+def test_source_create_delete(context):
+    source = context.create_source()
+    assert source.is_initial
+    assert not source.is_playing
+    assert not source.is_paused
+    assert not source.is_stopped
+    assert source.buffers_processed == 0
+    assert source.byte_offset == 0
+    source.delete()
+
+
+@pytest.fixture
+def filled_buffer(buf):
+    assert buf.is_valid
+    audio_source = Silence(1.)
+    buf.data(audio_source.get_audio_data(audio_source.audio_format.bytes_per_second),
+             audio_source.audio_format)
+    return buf
+
+
+def test_source_queue_play_unqueue(context, filled_buffer):
+    source = context.create_source()
+
+    source.queue_buffer(filled_buffer)
+    assert source.is_initial
+    assert not source.is_playing
+    assert not source.is_paused
+    assert not source.is_stopped
+    assert source.buffers_processed == 0
+    assert source.byte_offset == 0
+
+    source.play()
+    assert not source.is_initial
+    assert source.is_playing
+    assert not source.is_paused
+    assert not source.is_stopped
+    assert source.byte_offset == 0
+
+    end_time = time.time() + 1.5
+    while time.time() < end_time:
+        if source.byte_offset > 0:
+            break
+        time.sleep(.1)
+    assert source.byte_offset > 0
+
+    end_time = time.time() + 1.5
+    while time.time() < end_time:
+        if source.buffers_processed > 0:
+            break
+        time.sleep(.1)
+    assert source.buffers_processed == 1
+
+    source.unqueue_buffers()
+    assert source.buffers_processed == 0
+
+    assert not source.is_initial
+    assert not source.is_playing
+    assert not source.is_paused
+    assert source.is_stopped
+
+
+@pytest.fixture
+def filled_source(context, filled_buffer):
+    source = context.create_source()
+    source.queue_buffer(filled_buffer)
+    return source
+
+
+def test_source_pause_stop(filled_source):
+    assert filled_source.is_initial
+    assert not filled_source.is_playing
+    assert not filled_source.is_paused
+    assert not filled_source.is_stopped
+
+    filled_source.play()
+    assert not filled_source.is_initial
+    assert filled_source.is_playing
+    assert not filled_source.is_paused
+    assert not filled_source.is_stopped
+
+    filled_source.pause()
+    assert not filled_source.is_initial
+    assert not filled_source.is_playing
+    assert filled_source.is_paused
+    assert not filled_source.is_stopped
+
+    filled_source.play()
+    assert not filled_source.is_initial
+    assert filled_source.is_playing
+    assert not filled_source.is_paused
+    assert not filled_source.is_stopped
+
+    filled_source.stop()
+    assert not filled_source.is_initial
+    assert not filled_source.is_playing
+    assert not filled_source.is_paused
+    assert filled_source.is_stopped
+
 
