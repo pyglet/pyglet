@@ -455,3 +455,37 @@ def test_source_prop_byte_offset(filled_source):
     assert almost_equal(filled_source.byte_offset, 0.)
     filled_source.byte_offset = 8.
     assert almost_equal(filled_source.byte_offset, 8.)
+
+
+def test_listener_prop_position(context):
+    listener = openal.interface.OpenALListener()
+    assert almost_equal_coords(listener.position, (0., 0., 0.))
+    filled_source.position = 1., 2., 3.
+    #TODO assert almost_equal_coords(listener.position, (1., 2., 3.))
+
+
+def test_listener_prop_velocity(context):
+    listener = openal.interface.OpenALListener()
+    assert almost_equal_coords(listener.velocity, (0., 0., 0.))
+    filled_source.velocity = 1., 2., 3.
+    #TODO assert almost_equal_coords(listener.velocity, (1., 2., 3.))
+
+
+def test_listener_prop_gain(context):
+    listener = openal.interface.OpenALListener()
+    assert almost_equal(listener.gain, 1.)
+    filled_source.gain = 8.5
+    #TODO assert almost_equal(listener.gain, 8.5)
+
+
+def test_listener_prop_orientation(context):
+    listener = openal.interface.OpenALListener()
+    orientation = listener.orientation
+    assert almost_equal_coords(orientation.at, (0., 0., -1.))
+    assert almost_equal_coords(orientation.up, (0., 1., 0.))
+    listener.orientation = ((1., 2., 3.), (4., 5., 6.))
+    orientation = listener.orientation
+    assert almost_equal_coords(orientation.at, (1., 2., 3.))
+    assert almost_equal_coords(orientation.up, (4., 5., 6.))
+
+

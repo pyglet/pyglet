@@ -37,7 +37,7 @@ from __future__ import absolute_import
 from builtins import str
 
 import ctypes
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from . import lib_openal as al
 from . import lib_alc as alc
@@ -327,6 +327,75 @@ class OpenALSource(OpenALObject):
         buf = self._owned_buffers.pop(al_buffer, None)
         assert buf is not None
         return buf
+
+
+OpenALOrientation = namedtuple("OpenALOrientation", ['at', 'up'])
+
+
+class OpenALListener(OpenALObject):
+    def _float_source_property(attribute):
+        return property(lambda self: self._get_float(attribute),
+                        lambda self, value: self._set_float(attribute, value))
+
+    def _3floats_source_property(attribute):
+        return property(lambda self: self._get_3floats(attribute),
+                        lambda self, value: self._set_3floats(attribute, value))
+
+    position = _3floats_source_property(al.AL_POSITION)
+    velocity = _3floats_source_property(al.AL_VELOCITY)
+    gain = _float_source_property(al.AL_GAIN)
+
+    @property
+    def orientation(self):
+        values = self._get_float_vector(al.AL_ORIENTATION, 6)
+        return OpenALOrientation(values[0:3], values[3:6])
+
+    @orientation.setter
+    def orientation(self, values):
+        if len(values) == 2:
+            actual_values = values[0] + values[1]
+        elif len(values) == 6:
+            actual_values = values
+        else:
+            actual_values = []
+        if len(actual_values) != 6:
+            raise ValueError("Need 2 tuples of 3 or 1 tuple of 6.")
+        self._set_float_vector(al.AL_ORIENTATION, actual_values)
+
+
+    def _get_float(self, key):
+        al_float = al.ALfloat()
+        al.alGetListenerf(key, al_float)
+        self._check_error('Failed to get value')
+        return al_float.value
+
+    def _set_float(self, key, value):
+        al.alListenerf(key, float(value))
+        self._check_error('Failed to set value.')
+
+    def _get_3floats(self, key):
+        x = al.ALfloat()
+        y = al.ALfloat()
+        z = al.ALfloat()
+        al.alGetListener3f(key, x, y, z)
+        self._check_error('Failed to get value')
+        return x.value, y.value, z.value
+
+    def _set_3floats(self, key, values):
+        x, y, z = map(float, values)
+        al.alListener3f(key, x, y, z)
+        self._check_error('Failed to set value.')
+
+    def _get_float_vector(self, key, count):
+        al_float_vector = (al.ALfloat * count)()
+        al.alGetListenerfv(key, al_float_vector)
+        self._check_error('Failed to get value')
+        return [x for x in al_float_vector]
+
+    def _set_float_vector(self, key, values):
+        al_float_vector = (al.ALfloat * len(values))(*values)
+        al.alListenerfv(key, al_float_vector)
+        self._check_error('Failed to set value.')
 
 
 class OpenALBuffer(OpenALObject):
