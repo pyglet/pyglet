@@ -121,12 +121,9 @@ def get_drivers():
         pass
 
     try:
-        if pyglet.compat_platform not in Platform.LINUX:
-            # Segmentation fault in OpenAL on Ubuntu 14.10, so for now disabling this test for Linux
-
-            from pyglet.media.drivers import openal
-            drivers.append(openal)
-            ids.append('OpenAL')
+        from pyglet.media.drivers import openal
+        drivers.append(openal)
+        ids.append('OpenAL')
     except:
         pass
 
