@@ -11,8 +11,9 @@ import pytest
 import time
 
 import pyglet
-#pyglet.options['debug_media'] = True
-#pyglet.options['debug_media_buffers'] = True
+_debug = False
+pyglet.options['debug_media'] = _debug
+pyglet.options['debug_media_buffers'] = _debug
 
 import pyglet.app
 from pyglet.media.drivers import silent
@@ -49,6 +50,8 @@ class MockPlayer(object):
         self.event_loop = event_loop
 
     def dispatch_event(self, event_type, *args):
+        if _debug:
+            print('MockPlayer: event {} received @ {}'.format(event_type, time.time()))
         self.queue.put((event_type, args))
         self.event_loop.interrupt_event_loop()
 
@@ -56,6 +59,9 @@ class MockPlayer(object):
         end_time = time.time() + timeout
         try:
             while time.time() < end_time:
+                if _debug:
+                    print('MockPlayer: run for {} sec @ {}'.format(end_time-time.time(),
+                                                                   time.time()))
                 self.event_loop.run_event_loop(duration=end_time-time.time())
                 event_type, args = self.queue.get_nowait()
                 if event_type in event_types:
@@ -64,15 +70,21 @@ class MockPlayer(object):
             return None, None
 
     def wait_for_all_events(self, timeout, *expected_events):
+        if _debug:
+            print('Wait for events @ {}'.format(time.time()))
+        end_time = time.time() + timeout
         expected_events = list(expected_events)
         received_events = []
         while expected_events:
             event_type, args = self.wait_for_event(timeout, *expected_events)
-            if not event_type:
+            if _debug:
+                print('MockPlayer: got event {} @ {}'.format(event_type, time.time()))
+            if not event_type and time.time() >= end_time:
                 pytest.fail('Timeout before all events have been received. Still waiting for: '
                         + ','.join(expected_events))
             else:
-                expected_events.remove(event_type)
+                if event_type in expected_events:
+                    expected_events.remove(event_type)
                 received_events.append((event_type, args))
         return received_events
 
@@ -130,6 +142,8 @@ def get_drivers():
 
 @pytest.fixture(**get_drivers())
 def driver(request):
+    if _debug:
+        print('Create driver @ {}'.format(time.time()))
     driver = request.param.create_audio_driver()
     assert driver is not None
     def fin():
@@ -190,6 +204,8 @@ def test_audio_player_add_to_paused_group(driver, player):
     source = SilentTestSource(.1)
     source_group = _create_source_group(source)
 
+    if _debug:
+        print('Create player @ {}'.format(time.time()))
     audio_player = driver.create_audio_player(source_group, player)
     try:
         audio_player.play()

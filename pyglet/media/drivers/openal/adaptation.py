@@ -67,6 +67,8 @@ class OpenALWorker(MediaThread):
             # player's methods that would otherwise have to check that it's
             # still alive.
             with self.condition:
+                if _debug:
+                    print('OpenALWorker: woke up@{}'.format(time.time()))
                 if self.stopped:
                     break
                 sleep_time = -1
@@ -86,24 +88,30 @@ class OpenALWorker(MediaThread):
                     else:
                         sleep_time = self._nap_time
                 else:
+                    if _debug:
+                        print('OpenALWorker: No active players')
                     sleep_time = self._sleep_time
 
-            if sleep_time != -1:
-                self.sleep(sleep_time)
-            else:
-                # We MUST sleep, or we will starve pyglet's main loop.  It
-                # also looks like if we don't sleep enough, we'll starve out
-                # various updates that stop us from properly removing players
-                # that should be removed.
-                time.sleep(self._nap_time)
+                if sleep_time != -1:
+                    self.sleep(sleep_time)
+                else:
+                    # We MUST sleep, or we will starve pyglet's main loop.  It
+                    # also looks like if we don't sleep enough, we'll starve out
+                    # various updates that stop us from properly removing players
+                    # that should be removed.
+                    self.sleep(self._nap_time)
 
     def add(self, player):
         assert player is not None
+        if _debug:
+            print('OpenALWorker: player added')
         with self.condition:
             self.players.add(player)
             self.condition.notify()
 
     def remove(self, player):
+        if _debug:
+            print('OpenALWorker: player removed')
         with self.condition:
             if player in self.players:
                 self.players.remove(player)
@@ -375,11 +383,17 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             while write_size > self.min_buffer_size:
                 audio_data = self.source_group.get_audio_data(write_size)
                 if not audio_data:
+                    if _debug:
+                        print('No audio data left')
                     if self._has_underrun():
+                        if _debug:
+                            print('Underrun')
                         MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
                         MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(self.player)
                     break
 
+                if _debug:
+                    print('Writing {} bytes'.format(audio_data.length))
                 self._queue_events(audio_data)
                 self._queue_audio_data(audio_data)
                 write_size -= audio_data.length
@@ -487,6 +501,9 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
                 self._buffer_cursor + int(
                     (time.time() - self._buffer_system_time) * \
                         self.source_group.audio_format.bytes_per_second)
+
+            if _debug:
+                print('Play cursor at {} bytes'.format(self._play_cursor))
 
             self._dispatch_events()
 
