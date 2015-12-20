@@ -241,9 +241,6 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         # Desired play state (True even if stopped due to underrun)
         self._playing = False
 
-        # Has source group EOS been seen (and hence, event added to queue)?
-        self._eos = False
-
         self.refill(self._ideal_buffer_size)
 
     def __del__(self):
@@ -357,8 +354,6 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             self._update_play_cursor()
             write_size = self._ideal_buffer_size - \
                 (self._write_cursor - self._play_cursor)
-            if self._eos:
-                write_size = 0
 
         if _debug:
             print("Write size {} bytes".format(write_size))
@@ -374,26 +369,13 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             while write_size > self.min_buffer_size:
                 audio_data = self.source_group.get_audio_data(write_size)
                 if not audio_data:
-                    self._eos = True
-                    self._events.append(
-                        (self._write_cursor, MediaEvent(0, 'on_eos')))
-                    self._events.append(
-                        (self._write_cursor, MediaEvent(0, 'on_source_group_eos')))
+                    if self._has_underrun():
+                        MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
+                        MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(self.player)
                     break
 
-                for event in audio_data.events:
-                    cursor = self._write_cursor + event.timestamp * \
-                        self.source_group.audio_format.bytes_per_second
-                    self._events.append((cursor, event))
-
-                with self.driver:
-                    buf = self.driver.context.buffer_pool.get_buffer()
-                    buf.data(audio_data, self.source_group.audio_format)
-                    self.source.queue_buffer(buf)
-
-                self._write_cursor += audio_data.length
-                self._buffer_sizes.append(audio_data.length)
-                self._buffer_timestamps.append(audio_data.timestamp)
+                self._queue_events(audio_data)
+                self._queue_audio_data(audio_data)
                 write_size -= audio_data.length
 
             # Check for underrun stopping playback
@@ -402,6 +384,26 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                     if _debug:
                         print('underrun')
                     self.source.play()
+
+    def _queue_audio_data(self, audio_data):
+        with self.driver:
+            buf = self.driver.context.buffer_pool.get_buffer()
+            buf.data(audio_data, self.source_group.audio_format)
+            self.source.queue_buffer(buf)
+
+        self._write_cursor += audio_data.length
+        self._buffer_sizes.append(audio_data.length)
+        self._buffer_timestamps.append(audio_data.timestamp)
+
+    def _queue_events(self, audio_data):
+        for event in audio_data.events:
+            cursor = self._write_cursor + event.timestamp * \
+                self.source_group.audio_format.bytes_per_second
+            self._events.append((cursor, event))
+
+    def _has_underrun(self):
+        with self.driver:
+            return self.source.buffers_queued == 0
 
     def get_time(self):
         try:
