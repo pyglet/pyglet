@@ -155,7 +155,7 @@ def test_context_make_current(context):
 
 
 @pytest.fixture
-def buf():
+def buf(context):
     return openal.interface.OpenALBuffer.create()
 
 
@@ -178,8 +178,8 @@ def test_buffer_data(buf):
 
 
 @pytest.fixture
-def buffer_pool():
-    return openal.interface.OpenALBufferPool()
+def buffer_pool(context):
+    return context.buffer_pool
 
 def test_bufferpool_get_single_buffer(buffer_pool):
     assert len(buffer_pool) == 0
