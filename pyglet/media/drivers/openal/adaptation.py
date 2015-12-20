@@ -129,8 +129,6 @@ class OpenALDriver(AbstractAudioDriver):
         self.context = self.device.create_context()
         self.context.make_current()
 
-        self.have_1_1 = self.have_version(1, 1) and False
-
         self.lock = threading.Lock()
 
         self._listener = OpenALListener(self)
@@ -142,7 +140,7 @@ class OpenALDriver(AbstractAudioDriver):
 
     def create_audio_player(self, source_group, player):
         assert self.device is not None, "Device was closed"
-        if self.have_1_1:
+        if self.have_version(1, 1):
             player = OpenALAudioPlayer11(self, source_group, player)
         else:
             player = OpenALAudioPlayer10(self, source_group, player)
