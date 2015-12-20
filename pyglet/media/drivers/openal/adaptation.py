@@ -37,7 +37,6 @@ from __future__ import absolute_import
 import threading
 import time
 
-from .interface import OpenALException, format_map
 from . import interface
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
@@ -51,9 +50,6 @@ _debug_buffers = pyglet.options.get('debug_media_buffers', False)
 
 
 class OpenALWorker(MediaThread):
-    # Minimum size to bother refilling (bytes)
-    _min_write_size = 512
-
     # Time to wait if there are players, but they're all full.
     _nap_time = 0.05
 
@@ -85,7 +81,7 @@ class OpenALWorker(MediaThread):
                             player = p
                             write_size = s
 
-                    if write_size > self._min_write_size:
+                    if write_size > 0 and write_size > player.min_buffer_size:
                         player.refill(write_size)
                     else:
                         sleep_time = self._nap_time
@@ -102,6 +98,7 @@ class OpenALWorker(MediaThread):
                 time.sleep(self._nap_time)
 
     def add(self, player):
+        assert player is not None
         with self.condition:
             self.players.add(player)
             self.condition.notify()
@@ -200,7 +197,7 @@ class OpenALListener(AbstractListener):
 
 class OpenALAudioPlayer(AbstractAudioPlayer):
     #: Minimum size of an OpenAL buffer worth bothering with, in bytes
-    _min_buffer_size = 512
+    min_buffer_size = 512
 
     #: Aggregate (desired) buffer size, in bytes
     _ideal_buffer_size = 44800
@@ -209,14 +206,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         super(OpenALAudioPlayer, self).__init__(source_group, player)
         self.driver = driver
         self.source = driver.context.create_source()
-
-        audio_format = source_group.audio_format
-
-        try:
-            self._al_format = format_map[(audio_format.channels,
-                                          audio_format.sample_size)]
-        except KeyError:
-            raise OpenALException('Unsupported audio format.')
 
         # Lock policy: lock all instance vars (except constants).  (AL calls
         # are locked on context).
@@ -373,7 +362,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
     def _dispatch_events(self):
         with self._lock:
-            while self._events and self._events[0][0] < self._play_cursor:
+            while self._events and self._events[0][0] <= self._play_cursor:
                 _, event = self._events.pop(0)
                 event._sync_dispatch_to_player(self.player)
 
@@ -387,6 +376,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         if _debug:
             print("Write size {} bytes".format(write_size))
+        assert write_size >= 0
         return write_size
 
     def refill(self, write_size):
@@ -395,7 +385,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         with self._lock:
 
-            while write_size > self._min_buffer_size:
+            while write_size > self.min_buffer_size:
                 audio_data = self.source_group.get_audio_data(write_size)
                 if not audio_data:
                     self._eos = True

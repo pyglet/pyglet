@@ -27,7 +27,11 @@ def almost_equal_coords(c1, c2, eps=0.0001):
 def test_worker_add_remove_players():
     worker = openal.adaptation.OpenALWorker()
     player1 = mock.MagicMock()
+    player1.get_write_size.return_value = 0
+    type(player1).min_buffer_size = mock.PropertyMock(return_value=512)
     player2 = mock.MagicMock()
+    player2.get_write_size.return_value = 0
+    type(player2).min_buffer_size = mock.PropertyMock(return_value=512)
 
     worker.start()
     try:
@@ -47,6 +51,7 @@ def test_worker_refill_player():
     try:
         player = mock.MagicMock()
         player.get_write_size.return_value = 1024
+        type(player).min_buffer_size = mock.PropertyMock(return_value=512)
         worker.add(player)
 
         for _ in range(10):
@@ -68,6 +73,7 @@ def test_worker_do_not_refill_player():
     try:
         player = mock.MagicMock()
         player.get_write_size.return_value = 104
+        type(player).min_buffer_size = mock.PropertyMock(return_value=512)
         worker.add(player)
 
         for _ in range(10):
@@ -89,10 +95,12 @@ def test_worker_refill_multiple_players_refill_largest():
     try:
         player1 = mock.MagicMock()
         player1.get_write_size.return_value = 1024
+        type(player1).min_buffer_size = mock.PropertyMock(return_value=512)
         worker.add(player1)
 
         player2 = mock.MagicMock()
         player2.get_write_size.return_value = 768
+        type(player2).min_buffer_size = mock.PropertyMock(return_value=512)
         worker.add(player2)
 
         for _ in range(10):
