@@ -215,8 +215,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     #: Minimum size of an OpenAL buffer worth bothering with, in bytes
     min_buffer_size = 512
 
-    #: Aggregate (desired) buffer size, in bytes
-    _ideal_buffer_size = 44800
+    #: Aggregate (desired) buffer size, in seconds
+    _ideal_buffer_size = 1.
 
     def __init__(self, driver, source_group, player):
         super(OpenALAudioPlayer11, self).__init__(source_group, player)
@@ -255,7 +255,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         # Desired play state (True even if stopped due to underrun)
         self._playing = False
 
-        self.refill(self._ideal_buffer_size)
+        self.refill(self.ideal_buffer_size)
 
     def __del__(self):
         try:
@@ -276,6 +276,10 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             with self.driver.lock:
                 self.source.delete()
             self.source = None
+
+    @property
+    def ideal_buffer_size(self):
+        return int(self._ideal_buffer_size * self.source_group.audio_format.bytes_per_second)
 
     def play(self):
         if _debug:
@@ -366,7 +370,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def get_write_size(self):
         with self._lock:
             self._update_play_cursor()
-            write_size = self._ideal_buffer_size - \
+            write_size = self.ideal_buffer_size - \
                 (self._write_cursor - self._play_cursor)
 
         if _debug:
