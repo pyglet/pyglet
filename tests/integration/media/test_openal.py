@@ -7,6 +7,7 @@ from pyglet.media.sources.procedural import Silence
 
 try:
     from pyglet.media.drivers import openal
+    import pyglet.media.drivers.openal.adaptation
 except ImportError:
     openal = None
 
@@ -24,7 +25,7 @@ def almost_equal_coords(c1, c2, eps=0.0001):
 
 
 def test_worker_add_remove_players():
-    worker = openal.OpenALWorker()
+    worker = openal.adaptation.OpenALWorker()
     player1 = mock.MagicMock()
     player2 = mock.MagicMock()
 
@@ -40,7 +41,7 @@ def test_worker_add_remove_players():
 
 
 def test_worker_refill_player():
-    worker = openal.OpenALWorker()
+    worker = openal.adaptation.OpenALWorker()
     worker.start()
 
     try:
@@ -61,7 +62,7 @@ def test_worker_refill_player():
 
 
 def test_worker_do_not_refill_player():
-    worker = openal.OpenALWorker()
+    worker = openal.adaptation.OpenALWorker()
     worker.start()
 
     try:
@@ -82,7 +83,7 @@ def test_worker_do_not_refill_player():
 
 
 def test_worker_refill_multiple_players_refill_largest():
-    worker = openal.OpenALWorker()
+    worker = openal.adaptation.OpenALWorker()
     worker.start()
 
     try:
@@ -313,7 +314,8 @@ def test_source_queue_play_unqueue(context, filled_buffer):
         time.sleep(.1)
     assert source.buffers_processed == 1
 
-    source.unqueue_buffers()
+    processed = source.unqueue_buffers()
+    assert processed == 1
     assert source.buffers_processed == 0
     assert source.buffers_queued == 0
 

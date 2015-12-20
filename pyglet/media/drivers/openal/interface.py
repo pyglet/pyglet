@@ -271,11 +271,14 @@ class OpenALSource(OpenALObject):
 
     def unqueue_buffers(self):
         processed = self.buffers_processed
+        if _debug_buffers:
+            print("Processed buffer count: {}".format(processed))
         buffers = (al.ALuint * processed)()
         al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
         self._check_error('Failed to unqueue buffers from source.')
         for buf in buffers:
             self.context.buffer_pool.unqueue_buffer(self._pop_buffer(buf))
+        return processed
 
     def _get_state(self):
         if self._al_source is not None:
