@@ -11,7 +11,7 @@ import pytest
 import time
 
 import pyglet
-pyglet.options['debug_media'] = True
+#pyglet.options['debug_media'] = True
 #pyglet.options['debug_media_buffers'] = True
 
 import pyglet.app
