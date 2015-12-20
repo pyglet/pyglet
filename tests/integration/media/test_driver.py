@@ -205,7 +205,6 @@ def test_audio_player_add_to_paused_group(driver, player):
         audio_player.delete()
 
 
-@pytest.mark.skipif(True, reason='Avoid crash')
 def test_audio_player_delete_driver_with_players(driver, player):
     """Delete a driver with active players. Should not cause problems."""
     source = SilentTestSource(10.)

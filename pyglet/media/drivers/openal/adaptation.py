@@ -38,6 +38,7 @@ import threading
 import time
 
 from . import interface
+from pyglet.app import WeakSet
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
@@ -125,6 +126,7 @@ class OpenALDriver(AbstractAudioDriver):
         self.lock = threading.Lock()
 
         self._listener = OpenALListener(self)
+        self._players = WeakSet()
 
         # Start worker thread
         self.worker = OpenALWorker()
@@ -133,12 +135,16 @@ class OpenALDriver(AbstractAudioDriver):
     def create_audio_player(self, source_group, player):
         assert self.device is not None, "Device was closed"
         if self.have_1_1:
-            return OpenALAudioPlayer11(self, source_group, player)
+            player = OpenALAudioPlayer11(self, source_group, player)
         else:
-            return OpenALAudioPlayer10(self, source_group, player)
+            player = OpenALAudioPlayer10(self, source_group, player)
+        self._players.add(player)
+        return player
 
     def delete(self):
         self.worker.stop()
+        for player in self._players:
+            player.delete()
         with self.lock:
             if self.context is not None:
                 self.context.delete()
