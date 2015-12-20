@@ -177,6 +177,7 @@ class OpenALContext(OpenALObject):
 
     def delete(self):
         if self._al_context is not None:
+            self.buffer_pool.clear()
             # TODO: Check if this context is current
             alc.alcMakeContextCurrent(None)
             self.device.check_context_error('Failed to make context no longer current.')
