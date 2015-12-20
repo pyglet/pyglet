@@ -103,11 +103,15 @@ class CocoaEventLoop(PlatformEventLoop):
         ignoreState = CFSTR("ApplePersistenceIgnoreState")
         if not defaults.objectForKey_(ignoreState):
             defaults.setBool_forKey_(True, ignoreState)
+        self._finished_launching = False
 
     def start(self):
-        if not self.NSApp.isRunning():
+        if not self.NSApp.isRunning() and not self._finished_launching:
+            # finishLaunching should be called only once. However isRunning will not
+            # guard this, as we are not using the normal event loop.
             self.NSApp.finishLaunching()
             self.NSApp.activateIgnoringOtherApps_(True)
+            self._finished_launching = True
 
     def step(self, timeout=None):
         # Drain the old autorelease pool
