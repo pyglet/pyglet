@@ -451,18 +451,24 @@ def test_source_prop_cone_outer_gain(filled_source):
 
 def test_source_prop_sec_offset(filled_source):
     assert almost_equal(filled_source.sec_offset, 0.)
+    filled_source.play()
+    filled_source.pause()
     filled_source.sec_offset = .1
     assert almost_equal(filled_source.sec_offset, .1)
 
 
 def test_source_prop_sample_offset(filled_source):
     assert almost_equal(filled_source.sample_offset, 0.)
+    filled_source.play()
+    filled_source.pause()
     filled_source.sample_offset = 5.
     assert almost_equal(filled_source.sample_offset, 5.)
 
 
 def test_source_prop_byte_offset(filled_source):
     assert almost_equal(filled_source.byte_offset, 0.)
+    filled_source.play()
+    filled_source.pause()
     filled_source.byte_offset = 8.
     assert almost_equal(filled_source.byte_offset, 8.)
 
