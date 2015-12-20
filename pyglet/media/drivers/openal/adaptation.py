@@ -375,8 +375,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
         if _debug:
             print("Write size {} bytes".format(write_size))
-        assert write_size >= 0
-        return write_size
+        return max(0, write_size)
 
     def refill(self, write_size):
         if _debug:
