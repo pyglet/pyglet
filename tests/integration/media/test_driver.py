@@ -11,10 +11,10 @@ import pytest
 import time
 
 import pyglet
-#pyglet.options['debug_media'] = True
+pyglet.options['debug_media'] = True
 #pyglet.options['debug_media_buffers'] = True
 
-import pyglet.app  # Make sure it is loaded before patching it
+import pyglet.app
 from pyglet.media.drivers import silent
 from pyglet.media.drivers.silent import SilentAudioDriver
 from pyglet.media.sources import SourceGroup
