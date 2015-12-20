@@ -121,8 +121,8 @@ class OpenALDevice(OpenALObject):
 
     def delete(self):
         if self._al_device is not None:
-            alc.alcCloseDevice(self._al_device)
-            self.check_context_error('Failed to close device.')
+            if alc.alcCloseDevice(self._al_device) == alc.ALC_FALSE:
+                self._raise_context_error('Failed to close device.')
             self._al_device = None
 
     @property
@@ -163,6 +163,11 @@ class OpenALDevice(OpenALObject):
             raise OpenALException(message=message,
                                   error_code=error_code,
                                   error_string=str(error_string.value))
+
+    def _raise_context_error(self, message):
+        """Raise an exception. Try to check for OpenAL error code too."""
+        self.check_context_error(message)
+        raise OpenALException(message)
 
 
 class OpenALContext(OpenALObject):
