@@ -112,6 +112,7 @@ class OpenALDevice(OpenALObject):
     """OpenAL audio device."""
     def __init__(self, device_name=None):
         self._al_device = alc.alcOpenDevice(device_name)
+        self.check_context_error('Failed to open device.')
         if self._al_device is None:
             raise OpenALException('No OpenAL devices.')
 
@@ -121,6 +122,7 @@ class OpenALDevice(OpenALObject):
     def delete(self):
         if self._al_device is not None:
             alc.alcCloseDevice(self._al_device)
+            self.check_context_error('Failed to close device.')
             self._al_device = None
 
     @property
@@ -129,6 +131,7 @@ class OpenALDevice(OpenALObject):
 
     def create_context(self):
         al_context = alc.alcCreateContext(self._al_device, None)
+        self.check_context_error('Failed to create context')
         return OpenALContext(self, al_context)
 
     def get_version(self):
@@ -136,16 +139,30 @@ class OpenALDevice(OpenALObject):
         minor = alc.ALCint()
         alc.alcGetIntegerv(self._al_device, alc.ALC_MAJOR_VERSION,
                            ctypes.sizeof(major), major)
+        self.check_context_error('Failed to get version.')
         alc.alcGetIntegerv(self._al_device, alc.ALC_MINOR_VERSION,
                            ctypes.sizeof(minor), minor)
+        self.check_context_error('Failed to get version.')
         return major.value, minor.value
 
     def get_extensions(self):
         extensions = alc.alcGetString(self._al_device, alc.ALC_EXTENSIONS)
+        self.check_context_error('Failed to get extensions.')
         if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
             return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(b' ')]
         else:
             return _split_nul_strings(extensions)
+
+    def check_context_error(self, message=None):
+        """Check whether there is an OpenAL error and raise exception if present."""
+        error_code = alc.alcGetError(self._al_device)
+        if error_code != 0:
+            error_string = alc.alcGetString(self._al_device, error_code)
+            #TODO: Fix return type in generated code?
+            error_string = ctypes.cast(error_string, ctypes.c_char_p)
+            raise OpenALException(message=message,
+                                  error_code=error_code,
+                                  error_string=str(error_string.value))
 
 
 class OpenALContext(OpenALObject):
@@ -162,11 +179,14 @@ class OpenALContext(OpenALObject):
         if self._al_context is not None:
             # TODO: Check if this context is current
             alc.alcMakeContextCurrent(None)
+            self.device.check_context_error('Failed to make context no longer current.')
             alc.alcDestroyContext(self._al_context)
+            self.device.check_context_error('Failed to destroy context.')
             self._al_context = None
 
     def make_current(self):
         alc.alcMakeContextCurrent(self._al_context)
+        self.device.check_context_error('Failed to make context current.')
 
     def create_source(self):
         self.make_current()
