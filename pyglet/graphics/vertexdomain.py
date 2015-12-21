@@ -835,13 +835,13 @@ class IndexedVertexList(VertexList):
             region = old_domain.get_index_region(self.index_start, 
                                 self.index_count)
             old_indices = region.array
-            old_indices[:] = [i+diff for i in old_indices]
+            old_indices[:] = [i + diff for i in old_indices]
             region.invalidate()
                                                 
         # copy indices to new domain
         old = old_domain.get_index_region(self.index_start, self.index_count)
-	# must delloc before calling safe_index_alloc or else problems when same
-	# batch is migrated to because index_start changes after dealloc
+        # must delloc before calling safe_index_alloc or else problems when same
+        # batch is migrated to because index_start changes after dealloc
         old_domain.index_allocator.dealloc(self.index_start, self.index_count)
         new_start = self.domain._safe_index_alloc(self.index_count)
         new = self.domain.get_index_region(new_start, self.index_count)
