@@ -41,7 +41,6 @@ from . import interface
 from pyglet.app import WeakSet
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
-from pyglet.media.exceptions import MediaException
 from pyglet.media.listener import AbstractListener
 from pyglet.media.threads import MediaThread
 
@@ -265,13 +264,14 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         if _debug:
             print('OpenALAudioPlayer.delete()')
 
-        if not self.source:
-            return
-
-        self.driver.worker.remove(self)
-
         with self._lock:
-            with self.driver.lock:
+            if not self.source:
+                return
+
+            assert self.driver is not None
+            self.driver.worker.remove(self)
+
+            with self.driver:
                 self.source.delete()
             self.source = None
 
@@ -283,52 +283,54 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         if _debug:
             print('OpenALAudioPlayer.play()')
 
-        assert self.driver is not None
-        assert self.source is not None
+        with self._lock:
+            assert self.driver is not None
+            assert self.source is not None
 
-        with self.driver:
-            if not self.source.is_playing:
-                self.source.play()
-        self._playing = True
+            with self.driver:
+                if not self.source.is_playing:
+                    self.source.play()
+            self._playing = True
 
-        self.driver.worker.add(self)
+            self.driver.worker.add(self)
 
     def stop(self):
         if _debug:
             print('OpenALAudioPlayer.stop()')
 
-        assert self.driver is not None
-        assert self.source is not None
+        with self._lock:
+            assert self.driver is not None
+            assert self.source is not None
 
-        self._pause_timestamp = self.get_time()
+            self._pause_timestamp = self.get_time()
 
-        with self.driver:
-            self.source.pause()
-        self._playing = False
+            with self.driver:
+                self.source.pause()
+            self._playing = False
 
-        self.driver.worker.remove(self)
+            self.driver.worker.remove(self)
 
     def clear(self):
         if _debug:
             print('OpenALAudioPlayer.clear()')
 
-        assert self.driver is not None
-        assert self.source is not None
-
         with self._lock:
+            assert self.driver is not None
+            assert self.source is not None
+
             with self.driver:
                 self.source.stop()
-                self._playing = False
+            self._playing = False
 
-                del self._events[:]
-                self._underrun_timestamp = None
-                self._buffer_timestamps = [None for _ in self._buffer_timestamps]
+            del self._events[:]
+            self._underrun_timestamp = None
+            self._buffer_timestamps = [None for _ in self._buffer_timestamps]
 
     def _update_play_cursor(self):
-        assert self.driver is not None
-        assert self.source is not None
-
         with self._lock:
+            assert self.driver is not None
+            assert self.source is not None
+
             self._handle_processed_buffers()
 
             # Update play cursor using buffer cursor + estimate into current
