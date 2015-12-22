@@ -489,14 +489,15 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
         self._buffer_system_time = time.time()
 
     def play(self):
-        super(OpenALAudioPlayer10, self).play()
-        self._buffer_system_time = time.time()
+        with self._lock:
+            super(OpenALAudioPlayer10, self).play()
+            self._buffer_system_time = time.time()
 
     def _update_play_cursor(self):
-        assert self.driver is not None
-        assert self.source is not None
-
         with self._lock:
+            assert self.driver is not None
+            assert self.source is not None
+
             self._handle_processed_buffers()
 
             # Interpolate system time past buffer timestamp
