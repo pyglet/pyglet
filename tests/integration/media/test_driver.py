@@ -1,9 +1,6 @@
 """Test a specific audio driver (either for platform or silent). Only checks the use of the
 interface. Any playback is silent."""
 from __future__ import absolute_import, print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 
 from tests import mock
 import queue
