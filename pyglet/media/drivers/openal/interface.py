@@ -62,31 +62,6 @@ class OpenALException(MediaException):
                                                           self.error_string,
                                                           self.message)
 
-# TODO move functions into context/driver?
-
-def _split_nul_strings(s):
-    # NUL-separated list of strings, double-NUL-terminated.
-    nul = False
-    i = 0
-    while True:
-        if s[i] == '\0':
-            if nul:
-                break
-            else:
-                nul = True
-        else:
-            nul = False
-        i += 1
-    s = s[:i - 1]
-    return filter(None, [str(ss.strip()) for ss in s.split('\0')])
-
-format_map = {
-    (1,  8): al.AL_FORMAT_MONO8,
-    (1, 16): al.AL_FORMAT_MONO16,
-    (2,  8): al.AL_FORMAT_STEREO8,
-    (2, 16): al.AL_FORMAT_STEREO16,
-}
-
 class OpenALObject(object):
     """Base class for OpenAL objects."""
     @classmethod
@@ -151,7 +126,24 @@ class OpenALDevice(OpenALObject):
         if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
             return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(b' ')]
         else:
-            return _split_nul_strings(extensions)
+            return self._split_nul_strings(extensions)
+
+    @staticmethod
+    def _split_nul_strings(s):
+        # NUL-separated list of strings, double-NUL-terminated.
+        nul = False
+        i = 0
+        while True:
+            if s[i] == '\0':
+                if nul:
+                    break
+                else:
+                    nul = True
+            else:
+                nul = False
+            i += 1
+        s = s[:i - 1]
+        return filter(None, [str(ss.strip()) for ss in s.split('\0')])
 
     def check_context_error(self, message=None):
         """Check whether there is an OpenAL error and raise exception if present."""
@@ -428,6 +420,13 @@ class OpenALListener(OpenALObject):
 
 
 class OpenALBuffer(OpenALObject):
+    _format_map = {
+        (1,  8): al.AL_FORMAT_MONO8,
+        (1, 16): al.AL_FORMAT_MONO16,
+        (2,  8): al.AL_FORMAT_STEREO8,
+        (2, 16): al.AL_FORMAT_STEREO16,
+    }
+
     @classmethod
     def create(cls):
         cls._check_error('Before allocating buffer.')
@@ -472,7 +471,7 @@ class OpenALBuffer(OpenALObject):
 
     def data(self, audio_data, audio_format):
         assert self.is_valid
-        al_format = format_map[(audio_format.channels, audio_format.sample_size)]
+        al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
         al.alBufferData(self._al_buffer,
                         al_format,
                         audio_data.data,
