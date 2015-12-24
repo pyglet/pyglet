@@ -85,6 +85,9 @@ class MockPlayer(object):
                 received_events.append((event_type, args))
         return received_events
 
+    def wait(self, timeout):
+        self.event_loop.run_event_loop(duration=timeout)
+
 
 @pytest.fixture
 def player(event_loop):
@@ -94,16 +97,16 @@ def player(event_loop):
 class SilentTestSource(Silence):
     def __init__(self, duration, sample_rate=44800, sample_size=16):
         super(Silence, self).__init__(duration, sample_rate, sample_size)
-        self._bytes_read = 0
+        self.bytes_read = 0
 
-    def get_audio_data(self, bytes):
-        data = super(Silence, self).get_audio_data(bytes)
-        if data:
-            self._bytes_read += data.length
+    def get_audio_data(self, nbytes):
+        data = super(Silence, self).get_audio_data(nbytes)
+        if data is not None:
+            self.bytes_read += data.length
         return data
 
     def has_fully_played(self):
-        return self._bytes_read == self._max_offset
+        return self.bytes_read == self._max_offset
 
 
 def get_drivers():
@@ -222,4 +225,44 @@ def test_audio_player_delete_driver_with_players(driver, player):
 
     audio_player = driver.create_audio_player(source_group, player)
     audio_player.play()
+
+
+def test_audio_player_clear(driver, player):
+    """Test clearing all buffered data."""
+    source = SilentTestSource(10.)
+    source_group = _create_source_group(source)
+
+    audio_player = driver.create_audio_player(source_group, player)
+    try:
+        audio_player.play()
+        player.wait(.5)
+        assert 0. < audio_player.get_time() < 1.
+
+        audio_player.stop()
+        source.seek(5.)
+        audio_player.clear()
+        audio_player.play()
+        player.wait(.1)
+        assert 5. <= audio_player.get_time() < 10.
+
+    finally:
+        audio_player.delete()
+
+def test_audio_player_time(driver, player):
+    """Test retrieving current timestamp from player."""
+    source = SilentTestSource(10.)
+    source_group = _create_source_group(source)
+
+    audio_player = driver.create_audio_player(source_group, player)
+    try:
+        audio_player.play()
+        player.wait(.1)
+        last_time = audio_player.get_time()
+        assert 0. < last_time
+
+        player.wait(.1)
+        assert audio_player.get_time() > last_time
+
+    finally:
+        audio_player.delete()
 

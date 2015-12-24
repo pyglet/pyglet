@@ -371,7 +371,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         with self._lock:
             self._update_play_cursor()
             write_size = self.ideal_buffer_size - \
-                (self._write_cursor - self._play_cursor)
+                int(self._write_cursor - self._play_cursor)
 
         if _debug:
             print("Write size {} bytes".format(write_size))
@@ -429,17 +429,20 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             return self.source.buffers_queued == 0
 
     def get_time(self):
-        try:
-            buffer_timestamp = self._buffer_timestamps[0]
-        except IndexError:
-            return self._underrun_timestamp
+        if not self._buffer_timestamps:
+            timestamp = self._underrun_timestamp
+        else:
+            timestamp = self._buffer_timestamps[0]
 
-        if buffer_timestamp is None:
-            return None
+            if timestamp is not None:
+                self._update_play_cursor()
+                timestamp += ((self._play_cursor - self._buffer_cursor) /
+                    float(self.source_group.audio_format.bytes_per_second))
 
-        return buffer_timestamp + \
-            (self._play_cursor - self._buffer_cursor) / \
-                float(self.source_group.audio_format.bytes_per_second)
+        if _debug:
+            print('OpenALAudioPlayer: get_time = {}'.format(timestamp))
+
+        return timestamp
 
     def set_volume(self, volume):
         with self.driver:
