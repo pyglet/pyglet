@@ -86,7 +86,11 @@ class MockPlayer(object):
         return received_events
 
     def wait(self, timeout):
-        self.event_loop.run_event_loop(duration=timeout)
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            duration = max(.01, end_time-time.time())
+            self.event_loop.run_event_loop(duration=duration)
+        #assert time.time() - end_time < .1
 
 
 @pytest.fixture
@@ -236,7 +240,7 @@ def test_audio_player_clear(driver, player):
     try:
         audio_player.play()
         player.wait(.5)
-        assert 0. < audio_player.get_time() < 1.
+        assert 0. < audio_player.get_time() < 5.
 
         audio_player.stop()
         source.seek(5.)
@@ -256,12 +260,14 @@ def test_audio_player_time(driver, player):
     audio_player = driver.create_audio_player(source_group, player)
     try:
         audio_player.play()
-        player.wait(.1)
         last_time = audio_player.get_time()
-        assert 0. < last_time
-
-        player.wait(.1)
-        assert audio_player.get_time() > last_time
+        for _ in range(10):
+            player.wait(.1)
+            assert last_time < audio_player.get_time()
+            last_time = audio_player.get_time()
+            if _debug:
+                print('Time:', last_time)
+                print('Bytes read:', source.bytes_read)
 
     finally:
         audio_player.delete()

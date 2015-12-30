@@ -252,6 +252,9 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         # Desired play state (True even if stopped due to underrun)
         self._playing = False
 
+        # When clearing, the play cursor can be incorrect
+        self._clearing = False
+
         self.refill(self.ideal_buffer_size)
 
     def __del__(self):
@@ -264,13 +267,14 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         if _debug:
             print('OpenALAudioPlayer.delete()')
 
+        # Do not lock self._lock before calling this, or you risk a deadlock with worker
+        self.driver.worker.remove(self)
+
         with self._lock:
             if not self.source:
                 return
 
             assert self.driver is not None
-            self.driver.worker.remove(self)
-
             with self.driver:
                 self.source.delete()
             self.source = None
@@ -291,8 +295,9 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                 if not self.source.is_playing:
                     self.source.play()
             self._playing = True
+            self._clearing = False
 
-            self.driver.worker.add(self)
+        self.driver.worker.add(self)
 
     def stop(self):
         if _debug:
@@ -308,8 +313,6 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                 self.source.pause()
             self._playing = False
 
-            self.driver.worker.remove(self)
-
     def clear(self):
         if _debug:
             print('OpenALAudioPlayer.clear()')
@@ -320,11 +323,14 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
             with self.driver:
                 self.source.stop()
+                self.source.byte_offset = 0
             self._playing = False
+            self._clearing = True
 
             del self._events[:]
-            self._underrun_timestamp = None
-            self._buffer_timestamps = [None for _ in self._buffer_timestamps]
+            self._update_play_cursor()
+
+            self.refill(self.ideal_buffer_size)
 
     def _update_play_cursor(self):
         with self._lock:
@@ -336,7 +342,11 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             # Update play cursor using buffer cursor + estimate into current
             # buffer
             with self.driver:
-                self._play_cursor = self._buffer_cursor + self.source.byte_offset
+                if self._clearing:
+                    self._play_cursor = self._buffer_cursor
+                else:
+                    self._play_cursor = self._buffer_cursor + self.source.byte_offset
+            assert self._check_cursors()
 
             self._dispatch_events()
 
@@ -348,6 +358,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             if processed > 0:
                 if (len(self._buffer_timestamps) == processed
                         and self._buffer_timestamps[-1] is not None):
+                    if _debug:
+                        print('OpenALAudioPlayer: Underrun')
                     # Underrun, take note of timestamp.
                     # We check that the timestamp is not None, because otherwise
                     # our source could have been cleared.
@@ -355,11 +367,14 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                         self._buffer_timestamps[-1] + \
                         self._buffer_sizes[-1] / \
                             float(self.source_group.audio_format.bytes_per_second)
-                self._buffer_cursor += sum(self._buffer_sizes[:processed])
-                del self._buffer_sizes[:processed]
-                del self._buffer_timestamps[:processed]
+                self._update_buffer_cursor(processed)
 
         return processed
+
+    def _update_buffer_cursor(self, processed):
+        self._buffer_cursor += sum(self._buffer_sizes[:processed])
+        del self._buffer_sizes[:processed]
+        del self._buffer_timestamps[:processed]
 
     def _dispatch_events(self):
         with self._lock:
@@ -370,12 +385,14 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def get_write_size(self):
         with self._lock:
             self._update_play_cursor()
-            write_size = self.ideal_buffer_size - \
-                int(self._write_cursor - self._play_cursor)
+            buffer_size = int(self._write_cursor - self._play_cursor)
+
+        # Only write when current buffer size is smaller than ideal
+        write_size = max(self.ideal_buffer_size - buffer_size, 0)
 
         if _debug:
             print("Write size {} bytes".format(write_size))
-        return max(0, write_size)
+        return write_size
 
     def refill(self, write_size):
         if _debug:
@@ -399,6 +416,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                     print('Writing {} bytes'.format(audio_data.length))
                 self._queue_events(audio_data)
                 self._queue_audio_data(audio_data)
+                self._update_write_cursor(audio_data)
                 write_size -= audio_data.length
 
             # Check for underrun stopping playback
@@ -414,9 +432,11 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             buf.data(audio_data, self.source_group.audio_format)
             self.source.queue_buffer(buf)
 
+    def _update_write_cursor(self, audio_data):
         self._write_cursor += audio_data.length
         self._buffer_sizes.append(audio_data.length)
         self._buffer_timestamps.append(audio_data.timestamp)
+        assert self._check_cursors()
 
     def _queue_events(self, audio_data):
         for event in audio_data.events:
@@ -443,6 +463,18 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             print('OpenALAudioPlayer: get_time = {}'.format(timestamp))
 
         return timestamp
+
+    def _check_cursors(self):
+        assert self._play_cursor >= 0
+        assert self._buffer_cursor >= 0
+        assert self._write_cursor >= 0
+        assert self._buffer_cursor <= self._play_cursor
+        assert self._play_cursor <= self._write_cursor
+        if _debug:
+            print('Buffer[{}], Play[{}], Write[{}]'.format(self._buffer_cursor,
+                                                           self._play_cursor,
+                                                           self._write_cursor))
+        return True  # Return true so it can be called in an assert (and optimized out)
 
     def set_volume(self, volume):
         with self.driver:
@@ -508,6 +540,7 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
                 self._buffer_cursor + int(
                     (time.time() - self._buffer_system_time) * \
                         self.source_group.audio_format.bytes_per_second)
+            assert self._check_cursors()
 
             if _debug:
                 print('Play cursor at {} bytes'.format(self._play_cursor))
