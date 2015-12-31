@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-
-'''
-'''
 from __future__ import print_function
 from __future__ import division
 from future import standard_library
@@ -9,14 +5,13 @@ standard_library.install_aliases()
 from builtins import next
 from builtins import object
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
+import platform
+import queue
 import sys
 import threading
-import queue
 
 from pyglet import app
+from pyglet import compat_platform
 from pyglet import clock
 from pyglet import event
 
@@ -138,12 +133,12 @@ class EventLoop(event.EventDispatcher):
         self.dispatch_event('on_enter')
 
         self.is_running = True
-        if True: # TODO runtime option.
+        if compat_platform == 'win32' and int(platform.win32_ver()[0]) <= 5:
             self._run_estimated()
         else:
             self._run()
         self.is_running = False
-            
+
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
 
@@ -160,6 +155,11 @@ class EventLoop(event.EventDispatcher):
         '''Run-loop that continually estimates function mapping requested
         timeout to measured timeout using a least-squares linear regression.
         Suitable for oddball platforms (Windows).
+
+        XXX: There is no real relation between the timeout given by self.idle(), and used
+        to calculate the estimate, and the time actually spent waiting for events. I have
+        seen this cause a negative gradient, showing a negative relation. Then CPU use
+        runs out of control due to very small estimates.
         '''
         platform_event_loop = app.platform_event_loop
 
@@ -190,13 +190,6 @@ class EventLoop(event.EventDispatcher):
         XX = 0
         XY = 0
         n = 0
-
-        x, y = yield gradient, offset
-        X += x
-        Y += y
-        XX += x * x
-        XY += x * y
-        n += 1
 
         while True:
             x, y = yield gradient, offset
