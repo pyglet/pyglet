@@ -261,13 +261,17 @@ def test_audio_player_time(driver, player):
     try:
         audio_player.play()
         last_time = audio_player.get_time()
-        for _ in range(10):
+        # Needs to run until at least the initial buffer is processed. Ideal time is 1 sec, so run
+        # more than 1 sec.
+        for _ in range(15):
             player.wait(.1)
             assert last_time < audio_player.get_time()
             last_time = audio_player.get_time()
             if _debug:
+                print('='*80)
                 print('Time:', last_time)
                 print('Bytes read:', source.bytes_read)
+                print('='*80)
 
     finally:
         audio_player.delete()

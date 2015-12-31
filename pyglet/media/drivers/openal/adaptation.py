@@ -449,15 +449,22 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             return self.source.buffers_queued == 0
 
     def get_time(self):
-        if not self._buffer_timestamps:
-            timestamp = self._underrun_timestamp
-        else:
-            timestamp = self._buffer_timestamps[0]
+        with self._lock:
+            # Update first, might remove buffers
+            self._update_play_cursor()
 
-            if timestamp is not None:
-                self._update_play_cursor()
-                timestamp += ((self._play_cursor - self._buffer_cursor) /
-                    float(self.source_group.audio_format.bytes_per_second))
+            if not self._buffer_timestamps:
+                timestamp = self._underrun_timestamp
+                if _debug:
+                    print('OpenALAudioPlayer: Return underrun timestamp')
+            else:
+                timestamp = self._buffer_timestamps[0]
+                if _debug:
+                    print('OpenALAudioPlayer: Buffer timestamp: {}'.format(timestamp))
+
+                if timestamp is not None:
+                    timestamp += ((self._play_cursor - self._buffer_cursor) /
+                        float(self.source_group.audio_format.bytes_per_second))
 
         if _debug:
             print('OpenALAudioPlayer: get_time = {}'.format(timestamp))
