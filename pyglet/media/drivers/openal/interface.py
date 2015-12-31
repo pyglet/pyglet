@@ -41,6 +41,7 @@ from collections import defaultdict, namedtuple
 
 from . import lib_openal as al
 from . import lib_alc as alc
+import pyglet
 from pyglet.debug import debug_print
 from pyglet.media.exceptions import MediaException
 
