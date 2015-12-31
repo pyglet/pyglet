@@ -41,11 +41,10 @@ from collections import defaultdict, namedtuple
 
 from . import lib_openal as al
 from . import lib_alc as alc
+from pyglet.debug import debug_print
 from pyglet.media.exceptions import MediaException
 
-import pyglet
-_debug = pyglet.options['debug_media']
-_debug_buffers = pyglet.options.get('debug_media_buffers', False)
+_debug_media = debug_print('debug_media')
 
 
 class OpenALException(MediaException):
@@ -289,8 +288,7 @@ class OpenALSource(OpenALObject):
 
     def unqueue_buffers(self):
         processed = self.buffers_processed
-        if _debug_buffers:
-            print("Processed buffer count: {}".format(processed))
+        assert _debug_media("Processed buffer count: {}".format(processed))
         if processed > 0:
             buffers = (al.ALuint * processed)()
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)

@@ -59,7 +59,7 @@ def debug_print(enabled_or_option='debug'):
     if isinstance(enabled_or_option, bool):
         enabled = enabled_or_option
     else:
-        enabled = pyglet.options[enabled_or_option]
+        enabled = pyglet.options.get(enabled_or_option, False)
 
     if enabled:
         def _debug_print(*args, **kwargs):
