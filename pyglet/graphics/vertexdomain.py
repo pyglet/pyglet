@@ -827,8 +827,7 @@ class IndexedVertexList(VertexList):
         old_start = self.start
         old_domain = self.domain
         super(IndexedVertexList, self).migrate(domain)
-        new_domain = domain
-        
+
         # Note: this code renumber the indices of the *original* domain
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
@@ -836,19 +835,18 @@ class IndexedVertexList(VertexList):
             region = old_domain.get_index_region(self.index_start, 
                                 self.index_count)
             old_indices = region.array
-            old_indices[:] = map(lambda i: i + diff, old_indices)
+            old_indices[:] = [i + diff for i in old_indices]
             region.invalidate()
                                                 
         # copy indices to new domain
-        new_start = new_domain._safe_index_alloc(self.index_count)
         old = old_domain.get_index_region(self.index_start, self.index_count)
-        new = new_domain.get_index_region(new_start, self.index_count)
+        # must delloc before calling safe_index_alloc or else problems when same
+        # batch is migrated to because index_start changes after dealloc
+        old_domain.index_allocator.dealloc(self.index_start, self.index_count)
+        new_start = self.domain._safe_index_alloc(self.index_count)
+        new = self.domain.get_index_region(new_start, self.index_count)
         new.array[:] = old.array[:]
         new.invalidate()
-        
-        # deallocating indices creates odd behavior
-        #old_domain.index_allocator.dealloc(self.index_start, self.index_count)
-        self.domain = new_domain    # redundant but explicit
         
         self.index_start = new_start
         self._indices_cache_version = None
