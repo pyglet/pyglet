@@ -28,3 +28,4 @@ parser.out
 parsetab.py
 pptab.py
 strict_exprtab.py
+prof/
