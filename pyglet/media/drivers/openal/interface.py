@@ -124,7 +124,9 @@ class OpenALDevice(OpenALObject):
         extensions = alc.alcGetString(self._al_device, alc.ALC_EXTENSIONS)
         self.check_context_error('Failed to get extensions.')
         if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
-            return [str(x) for x in ctypes.cast(extensions, ctypes.c_char_p).value.split(b' ')]
+            return [x.decode('ascii')
+                    for x
+                    in ctypes.cast(extensions, ctypes.c_char_p).value.split(b' ')]
         else:
             return self._split_nul_strings(extensions)
 
@@ -134,7 +136,7 @@ class OpenALDevice(OpenALObject):
         nul = False
         i = 0
         while True:
-            if s[i] == '\0':
+            if s[i] == b'\0':
                 if nul:
                     break
                 else:
@@ -143,7 +145,7 @@ class OpenALDevice(OpenALObject):
                 nul = False
             i += 1
         s = s[:i - 1]
-        return filter(None, [str(ss.strip()) for ss in s.split('\0')])
+        return filter(None, [ss.strip().decode('ascii') for ss in s.split(b'\0')])
 
     def check_context_error(self, message=None):
         """Check whether there is an OpenAL error and raise exception if present."""
