@@ -5,7 +5,7 @@ import pytest
 from pyglet import gl, image
 
 from ...annotations import Platform, require_platform, require_gl_extension
-from ..event_loop_test_base import EventLoopFixture
+from ...base.event_loop import EventLoopFixture
 
 
 class ImageTestFixture(EventLoopFixture):

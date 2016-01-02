@@ -6,7 +6,7 @@ import pytest
 from pyglet import gl
 from pyglet import font
 
-from tests.interactive.event_loop_test_base import EventLoopFixture
+from tests.base.event_loop import EventLoopFixture
 
 
 class FontFixture(EventLoopFixture):

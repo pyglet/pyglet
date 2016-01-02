@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from builtins import range
 import pytest
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.base.interactive import InteractiveTestCase
 
 from pyglet import window
 from pyglet.window.event import WindowEventLogger

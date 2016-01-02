@@ -19,7 +19,6 @@ from pyglet.media.sources import SourceGroup
 from pyglet.media.sources.procedural import Silence
 
 from tests.annotations import Platform
-from ..event_loop_test_base import event_loop
 
 
 def _delete_driver():

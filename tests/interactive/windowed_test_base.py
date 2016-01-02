@@ -5,7 +5,7 @@ from inspect import cleandoc
 from pyglet import gl
 from pyglet.window import Window
 
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.base.interactive import InteractiveTestCase
 
 
 class WindowedTestCase(InteractiveTestCase):

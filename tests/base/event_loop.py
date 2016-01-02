@@ -12,7 +12,7 @@ from pyglet.text.document import FormattedDocument
 from pyglet.text.layout import TextLayout
 from pyglet.window import Window, key
 
-from .interactive_test_base import InteractiveFixture
+from .interactive import InteractiveFixture
 
 
 @pytest.fixture
