@@ -31,41 +31,44 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id$
 from __future__ import print_function
-from __future__ import absolute_import
-
-import atexit
-
-from .adaptation import OpenALDriver
 
 import pyglet
-_debug = pyglet.options['debug_media']
-_debug_buffers = pyglet.options.get('debug_media_buffers', False)
 
 
-_driver = None
+def debug_print(enabled_or_option='debug'):
+    """Get a debug printer that is enabled based on a boolean input or a pyglet option.
+    The debug print function returned should be used in an assert. This way it can be
+    optimized out when running python with the -O flag.
 
-def create_audio_driver(device_name=None):
-    global _driver
-    _driver = OpenALDriver(device_name)
-    if _debug:
-        print('OpenAL', _driver.get_version())
-    return _driver
+    Usage example::
 
+        from pyglet.debug import debug_print
+        _debug_media = debug_print('debug_media')
 
-def cleanup_audio_driver():
-    global _driver
+        def some_func():
+            assert _debug_media('My debug statement')
 
-    if _debug:
-        print("Cleaning up audio driver")
+    :parameters:
+        `enabled_or_options` : bool or str
+            If a bool is passed, debug printing is enabled if it is True. If str is passed
+            debug printing is enabled if the pyglet option with that name is True.
 
-    if _driver:
-        _driver.delete()
-        _driver = None
+    :returns: Function for debug printing.
+    """
+    if isinstance(enabled_or_option, bool):
+        enabled = enabled_or_option
+    else:
+        enabled = pyglet.options.get(enabled_or_option, False)
 
-    if _debug:
-        print("Cleaning done")
+    if enabled:
+        def _debug_print(*args, **kwargs):
+            print(*args, **kwargs)
+            return True
 
-atexit.register(cleanup_audio_driver)
+    else:
+        def _debug_print(*args, **kwargs):
+            return True
+
+    return _debug_print
 

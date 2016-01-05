@@ -194,8 +194,6 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
         if _debug:
             print('SilentAudioPlayer.delete')
         self._thread.stop()
-        with self._thread.condition:
-            self._thread.condition.notify()
 
     def play(self):
         if _debug:
@@ -206,7 +204,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             if not self._playing:
                 self._playing = True
                 self._update_time()
-                self._thread.condition.notify()
+            self._thread.notify()
 
     def stop(self):
         if _debug:
@@ -225,7 +223,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             self._event_buffer.clear()
             self._audio_buffer.clear()
             self._eos = False
-            self._thread.condition.notify()
+            self._thread.notify()
 
     def get_time(self):
         with self._thread.condition:
@@ -341,6 +339,10 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
                 if _debug:
                     print('SilentAudioPlayer(Worker).sleep', sleep_time)
                 self._thread.sleep(sleep_time)
+                if _debug:
+                    print('SilentAudioPlayer(Worker).wakeup')
+        if _debug:
+            print('SilentAudioPlayer(Worker) ended')
 
 
 class SilentTimeAudioPlayer(AbstractAudioPlayer):

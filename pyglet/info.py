@@ -177,10 +177,10 @@ def dump_al():
     except:
         print('OpenAL not available.')
         return
-    print('Library:', openal.al._lib)
+    print('Library:', openal.lib_openal._lib)
 
     driver = openal.create_audio_driver()
-    print('Version:', driver.get_version())
+    print('Version: {}.{}'.format(*driver.get_version()))
     print('Extensions:')
     for extension in driver.get_extensions():
         print('  ', extension)
