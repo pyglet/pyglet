@@ -1,6 +1,6 @@
 import pytest
 
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.interactive.interactive import InteractiveTestCase
 
 from pyglet import window
 from pyglet.gl import *

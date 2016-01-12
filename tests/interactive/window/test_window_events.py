@@ -11,7 +11,7 @@ from pyglet import gl
 from pyglet.window import key, Window
 from pyglet.window.event import WindowEventLogger
 
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.base.interactive import InteractiveTestCase
 from tests.interactive.window import window_util
 
 

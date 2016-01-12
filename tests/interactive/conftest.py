@@ -5,10 +5,6 @@ from __future__ import absolute_import
 import inspect
 import pytest
 
-# Import fixtures from other modules
-from .event_loop_test_base import event_loop
-from .interactive_test_base import interactive
-
 
 def pytest_collection_modifyitems(items, config):
     """Determine whether test should be skipped based on command-line options."""

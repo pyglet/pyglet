@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import division
 import pytest
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.base.interactive import InteractiveTestCase
 
 from pyglet.gl import *
 from pyglet import window

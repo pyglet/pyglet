@@ -1,6 +1,6 @@
 from builtins import range
 import pytest
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.base.interactive import InteractiveTestCase
 
 import pyglet
 from pyglet.text import caret, document, layout

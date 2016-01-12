@@ -4,7 +4,7 @@ import ctypes
 from tests import mock
 import os
 import unittest
-from tests.future_test import FutureTestCase
+from tests.base.future_test import FutureTestCase
 
 import pyglet
 from pyglet.media.events import MediaEvent

@@ -5,7 +5,7 @@ from pyglet import gl
 
 import pytest
 
-from tests.interactive.event_loop_test_base import EventLoopFixture
+from tests.base.event_loop import EventLoopFixture
 
 EMPTY = 0
 BLUE_RECTANGLE = 1

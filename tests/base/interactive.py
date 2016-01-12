@@ -11,7 +11,7 @@ import warnings
 import pyglet
 from pyglet.image import get_buffer_manager
 
-from ..base import PygletTestCase
+from .data import PygletTestCase
 
 try:
     # If the easygui package is available, use it to display popup questions, instead of using the
@@ -23,12 +23,13 @@ except:
     _has_gui = False
 
 local_dir = os.path.dirname(__file__)
+test_dir = os.path.normpath(os.path.join(local_dir, '..'))
 
-base_screenshot_path = os.path.join(local_dir, 'screenshots')
+base_screenshot_path = os.path.join(test_dir, 'interactive', 'screenshots')
 committed_screenshot_path = os.path.join(base_screenshot_path, 'committed')
 session_screenshot_path = os.path.join(base_screenshot_path, 'session')
 
-del local_dir
+del local_dir, test_dir
 
 
 class InteractiveFixture(object):

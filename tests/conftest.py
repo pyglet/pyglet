@@ -1,7 +1,5 @@
 from __future__ import absolute_import
-import pytest
 
-from .base import TestDataFixture
 
 def pytest_addoption(parser):
     """Add the special options for interactive tests."""
@@ -15,6 +13,8 @@ def pytest_addoption(parser):
                      )
 
 
-@pytest.fixture(scope="session")
-def test_data():
-    return TestDataFixture()
+# Import shared fixtures
+from .base.data import test_data
+from .base.event_loop import event_loop
+from .base.interactive import interactive
+

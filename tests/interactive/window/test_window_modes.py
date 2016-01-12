@@ -4,7 +4,7 @@ import pytest
 import time
 
 from tests.annotations import Platform, require_platform
-from tests.interactive.interactive_test_base import InteractiveTestCase
+from tests.base.interactive import InteractiveTestCase
 from tests.interactive.window import window_util
 
 from pyglet import window

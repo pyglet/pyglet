@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import unittest
 
-from ...base import PygletTestCase
+from ...base.data import PygletTestCase
 
 try:
     from pyglet.image.codecs import gdkpixbuf2
