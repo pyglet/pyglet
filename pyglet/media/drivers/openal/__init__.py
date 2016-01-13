@@ -106,17 +106,13 @@ class OpenALWorker(MediaThread):
 
             # Refill player with least write_size
             if self.players:
-                player = None
-                write_size = 0
-                for p in self.players:
-                    s = p.get_write_size()
-                    if s > write_size:
-                        player = p
-                        write_size = s
-
-                if write_size > self._min_write_size:
-                    player.refill(write_size)
-                else:
+                filled = False
+                for player in self.players:
+                    s = player.get_write_size()
+                    if s > self._min_write_size:
+                        player.refill(s)
+                        filled = True
+                if not filled:
                     sleep_time = self._nap_time
             else:
                 sleep_time = self._sleep_time
