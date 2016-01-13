@@ -32,10 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Events for `pyglet.window`.
+"""Events for `pyglet.window`.
 
 See `Window` for a description of the window event types.
-'''
+"""
 from __future__ import print_function
 from builtins import object
 
@@ -47,8 +47,9 @@ import sys
 from pyglet.window import key
 from pyglet.window import mouse
 
+
 class WindowExitHandler(object):
-    '''Determine if the window should be closed.
+    """Determine if the window should be closed.
 
     This event handler watches for the ESC key or the window close event
     and sets `self.has_exit` to True when either is pressed.  An instance
@@ -62,7 +63,7 @@ class WindowExitHandler(object):
         `has_exit` : bool
             True if the user wants to close the window.
 
-    '''
+    """
     has_exit = False
 
     def on_close(self):
@@ -72,8 +73,9 @@ class WindowExitHandler(object):
         if symbol == key.ESCAPE:
             self.has_exit = True
 
+
 class WindowEventLogger(object):
-    '''Print all events to a file.
+    """Print all events to a file.
 
     When this event handler is added to a window it prints out all events
     and their parameters; useful for debugging or discovering which events
@@ -84,15 +86,15 @@ class WindowEventLogger(object):
         win = window.Window()
         win.push_handlers(WindowEventLogger())
 
-    '''
+    """
     def __init__(self, logfile=None):
-        '''Create a `WindowEventLogger` which writes to `logfile`.
+        """Create a `WindowEventLogger` which writes to `logfile`.
 
         :Parameters:
             `logfile` : file-like object
                 The file to write to.  If unspecified, stdout will be used.
 
-        '''
+        """
         if logfile is None:
             logfile = sys.stdout
         self.file = logfile
@@ -123,7 +125,7 @@ class WindowEventLogger(object):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         print('on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
                             'buttons=%s, modifiers=%s)' % (
-              x, y, dx, dy, 
+              x, y, dx, dy,
               mouse.buttons_string(buttons), key.modifiers_string(modifiers)), file=self.file)
 
     def on_mouse_press(self, x, y, button, modifiers):
