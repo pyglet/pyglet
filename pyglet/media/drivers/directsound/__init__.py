@@ -25,7 +25,7 @@ def _db(gain):
     return max(-10000, min(int(1000 * math.log(min(gain, 1))), 0))
 
 class DirectSoundWorker(MediaThread):
-    _min_write_size = 9600
+    _min_write_size = 512
 
     # Time to wait if there are players, but they're all full.
     _nap_time = 0.05
@@ -57,17 +57,13 @@ class DirectSoundWorker(MediaThread):
             sleep_time = -1
 
             if self.players:
-                player = None
-                write_size = 0
-                for p in self.players:
-                    s = p.get_write_size()
-                    if s > write_size:
-                        player = p
-                        write_size = s
-
-                if write_size > self._min_write_size:
-                    player.refill(write_size)
-                else:
+                filled = False
+                for player in self.players:
+                    s = player.get_write_size()
+                    if s > self._min_write_size:
+                        player.refill(s)
+                        filled = True
+                if not filled:
                     sleep_time = self._nap_time
             else:
                 sleep_time = self._sleep_time
@@ -78,6 +74,12 @@ class DirectSoundWorker(MediaThread):
 
             if sleep_time != -1:
                 self.sleep(sleep_time)
+            else:
+                # We MUST sleep, or we will starve pyglet's main loop.  It
+                # also looks like if we don't sleep enough, we'll starve out
+                # various updates that stop us from properly removing players
+                # that should be removed.
+                time.sleep(self._nap_time)
 
         if _debug:
             print 'DirectSoundWorker exiting'
