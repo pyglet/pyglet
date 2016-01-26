@@ -558,13 +558,13 @@ class Win32Window(BaseWindow):
         image = best_image(_user32.GetSystemMetrics(SM_CXICON),
                            _user32.GetSystemMetrics(SM_CYICON))
         icon = get_icon(image)
-        _user32.SetClassLongW(self._hwnd, GCL_HICON, icon)
+        _user32.SetClassLongPtrW(self._hwnd, GCL_HICON, icon)
 
         # Set small icon
         image = best_image(_user32.GetSystemMetrics(SM_CXSMICON),
                            _user32.GetSystemMetrics(SM_CYSMICON))
         icon = get_icon(image)
-        _user32.SetClassLongW(self._hwnd, GCL_HICONSM, icon)
+        _user32.SetClassLongPtrW(self._hwnd, GCL_HICONSM, icon)
 
     # Private util
 
