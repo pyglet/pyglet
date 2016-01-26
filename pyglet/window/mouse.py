@@ -32,14 +32,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Mouse constants and utilities for pyglet.window.
-'''
-
+"""Mouse constants and utilities for pyglet.window.
+"""
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+
 def buttons_string(buttons):
-    '''Return a string describing a set of active mouse buttons.
+    """Return a string describing a set of active mouse buttons.
 
     Example::
 
@@ -51,7 +51,7 @@ def buttons_string(buttons):
             Bitwise combination of mouse button constants.
 
     :rtype: str
-    '''
+    """
     button_names = []
     if buttons & LEFT:
         button_names.append('LEFT')
