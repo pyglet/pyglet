@@ -85,30 +85,29 @@ Make sure you download and install:
 Pip should installed automatically with the latest Python installers. Make sure you do not
 choose to not install pip.
 
-Now open a command prompt.
+Now open a command prompt. Repeat the following steps for each version of Python (replace 2.7 with
+the version you want to use).
 
-[Optional] Make sure pip is the latest version (you might need to add sudo)::
+[Optional] Make sure pip is the latest version::
 
-   pip install --upgrade pip
+   py -2.7 -m pip install --upgrade pip
 
-Install virtualenv to create virtual environments (you might need to add sudo)::
+Install virtualenv to create virtual environments::
 
-   pip install virtualenv
+   py -2.7 -m pip install virtualenv
 
 Make a directory to hold our virtual environments::
 
    md venv
 
-Now repeat the following steps for each version of Python.
-
 Create a virtual environment (substitute the version number for the version of Python
 you are creating the environment for::
 
-   virtualenv -p python2.7 venv\py27
+   py -2.7 -m virtualenv venv\py27
 
 Activate the virtual environment::
 
-   venv\py27\bin\activate
+   venv\py27\Scripts\activate
 
 You will see the name of the virtual environment at the start of the command prompt.
 
@@ -124,11 +123,11 @@ Using
 '''''
 To switch to a virtual environment run the following::
 
-   venv\<name of environment>\bin\activate
+   venv\<name of environment>\Scripts\activate
 
 E.g.::
 
-   venv\py34\bin\activate
+   venv\py34\Scripts\activate
 
 To get out of the virtual environment run::
 
