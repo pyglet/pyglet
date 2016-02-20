@@ -11,16 +11,18 @@ def check_running():
     assert event_loop.is_running
 
 
-def test_start_stop():
+def test_start_stop(performance):
     event_loop.clock.schedule_once(lambda dt: check_running(), .1)
     event_loop.clock.schedule_once(lambda dt: event_loop.exit(), .2)
-    event_loop.run()
+    with performance.timer(1.):
+        event_loop.run()
     assert not event_loop.is_running
 
 
-def test_multiple_start_stop():
-    for _ in range(100):
-        test_start_stop()
+def test_multiple_start_stop(performance):
+    with performance.timer(30.):
+        for _ in range(100):
+            test_start_stop(performance)
     
 
 def test_events():
@@ -43,7 +45,7 @@ def test_on_window_close():
     assert not event_loop.is_running
 
 
-def test_sleep():
+def test_sleep(performance):
     def _sleep():
         event_loop.sleep(100.)
         _sleep.returned.set()
@@ -52,7 +54,8 @@ def test_sleep():
 
     event_loop.clock.schedule_once(lambda dt: thread.start(), .1)
     event_loop.clock.schedule_once(lambda dt: event_loop.exit(), .2)
-    event_loop.run()
+    with performance.timer(1.):
+        event_loop.run()
     assert not event_loop.is_running
     assert _sleep.returned.wait(1.)
 
