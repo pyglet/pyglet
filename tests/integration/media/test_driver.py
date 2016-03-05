@@ -245,7 +245,7 @@ def test_audio_player_clear(driver, player):
         source.seek(5.)
         audio_player.clear()
         audio_player.play()
-        player.wait(.1)
+        player.wait(.3)
         assert 5. <= audio_player.get_time() < 10.
 
     finally:
