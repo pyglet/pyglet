@@ -273,8 +273,8 @@ class PulseAudioContext(PulseAudioLockable):
             pa.pa_context_connect(self._pa_context, server, 0, None)
         )
 
-        while not self.is_failed and not self.is_ready:
-            with self:
+        with self:
+            while not self.is_failed and not self.is_ready:
                 self.wait()
         if self.is_failed:
             self.raise_error()
