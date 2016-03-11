@@ -36,6 +36,7 @@ from builtins import object
 # ----------------------------------------------------------------------------
 import time
 
+from pyglet.app import WeakSet
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.threads import MediaThread
@@ -378,9 +379,14 @@ class SilentTimeAudioPlayer(AbstractAudioPlayer):
 
 
 class SilentAudioDriver(AbstractAudioDriver):
+    def __init__(self):
+        self._players = WeakSet()
+
     def create_audio_player(self, source_group, player):
         if source_group.audio_format:
-            return SilentAudioPlayerPacketConsumer(source_group, player)
+            p = SilentAudioPlayerPacketConsumer(source_group, player)
+            self._players.add(p)
+            return p
         else:
             return SilentTimeAudioPlayer(source_group, player)
 
@@ -388,7 +394,8 @@ class SilentAudioDriver(AbstractAudioDriver):
         raise NotImplementedError('Silent audio driver does not support positional audio')
 
     def delete(self):
-        pass
+        for p in self._players:
+            p.delete()
 
 
 def create_audio_driver():
