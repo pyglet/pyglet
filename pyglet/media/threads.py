@@ -1,7 +1,3 @@
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -35,13 +31,19 @@ from builtins import object
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 
 import atexit
 import threading
+import time
 
 import pyglet
+from pyglet.debug import debug_print
 
-_debug = pyglet.options['debug_media']
+_debug = debug_print('debug_media')
 
 
 class MediaThread(object):
@@ -98,8 +100,7 @@ class MediaThread(object):
         notified.  It is the responsibility of the `run` method to check
         the value of `stop` after each sleep or wait and to return if set.
         """
-        if _debug:
-            print('MediaThread.stop()')
+        assert _debug('MediaThread.stop()')
         with self.condition:
             self.stopped = True
             self.condition.notify()
@@ -113,8 +114,7 @@ class MediaThread(object):
                 Time to wait, in seconds.
 
         """
-        if _debug:
-            print('MediaThread.sleep(%r)' % timeout)
+        assert _debug('MediaThread.sleep(%r)' % timeout)
         with self.condition:
             if not self.stopped:
                 self.condition.wait(timeout)
@@ -125,8 +125,7 @@ class MediaThread(object):
         If the thread is currently sleeping, it will be woken immediately,
         instead of waiting the full duration of the timeout.
         """
-        if _debug:
-            print('MediaThread.notify()')
+        assert _debug('MediaThread.notify()')
         with self.condition:
             self.condition.notify()
 
@@ -176,5 +175,73 @@ class WorkerThread(MediaThread):
 
     def _clear(self):
         del self._jobs[:]
+
+
+class PlayerWorker(MediaThread):
+    """
+    Worker thread for refilling players.
+    """
+    # Time to wait if there are players, but they're all full.
+    _nap_time = 0.05
+
+    # Time to wait if there are no players.
+    _sleep_time = None
+
+    def __init__(self):
+        super(PlayerWorker, self).__init__()
+        self.players = set()
+
+    def run(self):
+        while True:
+            # This is a big lock, but ensures a player is not deleted while
+            # we're processing it -- this saves on extra checks in the
+            # player's methods that would otherwise have to check that it's
+            # still alive.
+            with self.condition:
+                assert _debug('PlayerWorker: woke up@{}'.format(time.time()))
+                if self.stopped:
+                    break
+                sleep_time = -1
+
+                # Refill player with least write_size
+                if self.players:
+                    player = None
+                    write_size = 0
+                    for p in self.players:
+                        s = p.get_write_size()
+                        if s > write_size:
+                            player = p
+                            write_size = s
+
+                    if write_size > 0 and write_size > player.min_buffer_size:
+                        player.refill(write_size)
+                    else:
+                        sleep_time = self._nap_time
+                else:
+                    assert _debug('PlayerWorker: No active players')
+                    sleep_time = self._sleep_time
+
+                if sleep_time != -1:
+                    self.sleep(sleep_time)
+                else:
+                    # We MUST sleep, or we will starve pyglet's main loop.  It
+                    # also looks like if we don't sleep enough, we'll starve out
+                    # various updates that stop us from properly removing players
+                    # that should be removed.
+                    self.sleep(self._nap_time)
+
+    def add(self, player):
+        assert player is not None
+        assert _debug('PlayerWorker: player added')
+        with self.condition:
+            self.players.add(player)
+            self.condition.notify()
+
+    def remove(self, player):
+        assert _debug('PlayerWorker: player removed')
+        with self.condition:
+            if player in self.players:
+                self.players.remove(player)
+            self.condition.notify()
 
 

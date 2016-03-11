@@ -43,74 +43,9 @@ from pyglet.debug import debug_print
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.listener import AbstractListener
-from pyglet.media.threads import MediaThread
+from pyglet.media.threads import PlayerWorker
 
 _debug_media = debug_print('debug_media')
-
-
-class OpenALWorker(MediaThread):
-    # Time to wait if there are players, but they're all full.
-    _nap_time = 0.05
-
-    # Time to wait if there are no players.
-    _sleep_time = None
-
-    def __init__(self):
-        super(OpenALWorker, self).__init__()
-        self.players = set()
-
-    def run(self):
-        while True:
-            # This is a big lock, but ensures a player is not deleted while
-            # we're processing it -- this saves on extra checks in the
-            # player's methods that would otherwise have to check that it's
-            # still alive.
-            with self.condition:
-                assert _debug_media('OpenALWorker: woke up@{}'.format(time.time()))
-                if self.stopped:
-                    break
-                sleep_time = -1
-
-                # Refill player with least write_size
-                if self.players:
-                    player = None
-                    write_size = 0
-                    for p in self.players:
-                        s = p.get_write_size()
-                        if s > write_size:
-                            player = p
-                            write_size = s
-
-                    if write_size > 0 and write_size > player.min_buffer_size:
-                        player.refill(write_size)
-                    else:
-                        sleep_time = self._nap_time
-                else:
-                    assert _debug_media('OpenALWorker: No active players')
-                    sleep_time = self._sleep_time
-
-                if sleep_time != -1:
-                    self.sleep(sleep_time)
-                else:
-                    # We MUST sleep, or we will starve pyglet's main loop.  It
-                    # also looks like if we don't sleep enough, we'll starve out
-                    # various updates that stop us from properly removing players
-                    # that should be removed.
-                    self.sleep(self._nap_time)
-
-    def add(self, player):
-        assert player is not None
-        assert _debug_media('OpenALWorker: player added')
-        with self.condition:
-            self.players.add(player)
-            self.condition.notify()
-
-    def remove(self, player):
-        assert _debug_media('OpenALWorker: player removed')
-        with self.condition:
-            if player in self.players:
-                self.players.remove(player)
-            self.condition.notify()
 
 
 class OpenALDriver(AbstractAudioDriver):
@@ -130,7 +65,7 @@ class OpenALDriver(AbstractAudioDriver):
         self._players = WeakSet()
 
         # Start worker thread
-        self.worker = OpenALWorker()
+        self.worker = PlayerWorker()
         self.worker.start()
 
     def create_audio_player(self, source_group, player):
