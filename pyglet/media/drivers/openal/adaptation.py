@@ -413,7 +413,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
     def _queue_audio_data(self, audio_data):
         with self.driver:
-            buf = self.driver.context.buffer_pool.get_buffer()
+            buf = self.source.get_buffer()
             buf.data(audio_data, self.source_group.audio_format)
             self.source.queue_buffer(buf)
 

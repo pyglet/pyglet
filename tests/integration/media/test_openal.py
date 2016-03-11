@@ -155,8 +155,13 @@ def test_context_make_current(context):
 
 
 @pytest.fixture
-def buf(context):
-    return openal.interface.OpenALBuffer.create()
+def buffer_pool(context):
+    return openal.interface.OpenALBufferPool(context)
+
+
+@pytest.fixture
+def buf(buffer_pool):
+    return buffer_pool.get_buffer()
 
 
 def test_buffer_create_delete(buf):
@@ -176,10 +181,6 @@ def test_buffer_data(buf):
     buf.delete()
     assert not buf.is_valid
 
-
-@pytest.fixture
-def buffer_pool(context):
-    return context.buffer_pool
 
 def test_bufferpool_get_single_buffer(buffer_pool):
     assert len(buffer_pool) == 0
@@ -281,7 +282,13 @@ def test_source_create_delete(context):
 
 
 @pytest.fixture
-def filled_buffer(buf):
+def source(context):
+    return context.create_source()
+
+
+@pytest.fixture
+def filled_buffer(source):
+    buf = source.get_buffer()
     assert buf.is_valid
     audio_source = Silence(1.)
     buf.data(audio_source.get_audio_data(audio_source.audio_format.bytes_per_second),
@@ -334,8 +341,7 @@ def test_source_queue_play_unqueue(context, filled_buffer):
 
 
 @pytest.fixture
-def filled_source(context, filled_buffer):
-    source = context.create_source()
+def filled_source(source, filled_buffer):
     source.queue_buffer(filled_buffer)
     return source
 

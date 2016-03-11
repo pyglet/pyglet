@@ -169,14 +169,12 @@ class OpenALContext(OpenALObject):
         self.device = device
         self._al_context = al_context
         self.make_current()
-        self.buffer_pool = OpenALBufferPool()
 
     def __del__(self):
         self.delete()
 
     def delete(self):
         if self._al_context is not None:
-            self.buffer_pool.clear()
             # TODO: Check if this context is current
             alc.alcMakeContextCurrent(None)
             self.device.check_context_error('Failed to make context no longer current.')
@@ -196,6 +194,7 @@ class OpenALContext(OpenALObject):
 class OpenALSource(OpenALObject):
     def __init__(self, context):
         self.context = context
+        self.buffer_pool = OpenALBufferPool(context)
 
         self._al_source = al.ALuint()
         al.alGenSources(1, self._al_source)
@@ -214,6 +213,7 @@ class OpenALSource(OpenALObject):
             al.alDeleteSources(1, self._al_source)
             self._check_error('Failed to delete source.')
             # TODO: delete buffers in use
+            self.buffer_pool.clear()
             self._al_source = None
 
     @property
@@ -283,6 +283,9 @@ class OpenALSource(OpenALObject):
         al.alSourceStop(self._al_source)
         self._check_error('Failed to stop source.')
 
+    def get_buffer(self):
+        return self.buffer_pool.get_buffer()
+
     def queue_buffer(self, buf):
         assert buf.is_valid
         al.alSourceQueueBuffers(self._al_source, 1, ctypes.byref(buf.al_buffer))
@@ -297,7 +300,7 @@ class OpenALSource(OpenALObject):
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
             self._check_error('Failed to unqueue buffers from source.')
             for buf in buffers:
-                self.context.buffer_pool.unqueue_buffer(self._pop_buffer(buf))
+                self.buffer_pool.unqueue_buffer(self._pop_buffer(buf))
         return processed
 
     def _get_state(self):
@@ -429,16 +432,9 @@ class OpenALBuffer(OpenALObject):
         (2, 16): al.AL_FORMAT_STEREO16,
     }
 
-    @classmethod
-    def create(cls):
-        cls._check_error('Before allocating buffer.')
-        al_buffer = al.ALuint()
-        al.alGenBuffers(1, al_buffer)
-        cls._check_error('Error allocating buffer.')
-        return cls(al_buffer)
-
-    def __init__(self, al_buffer):
+    def __init__(self, al_buffer, context):
         self._al_buffer = al_buffer
+        self.context = context
         assert self.is_valid
 
     def __del__(self):
@@ -482,11 +478,12 @@ class OpenALBuffer(OpenALObject):
         self._check_error('Failed to add data to buffer.')
 
 
-class OpenALBufferPool(object):
+class OpenALBufferPool(OpenALObject):
     """At least Mac OS X doesn't free buffers when a source is deleted; it just
     detaches them from the source.  So keep our own recycled queue.
     """
-    def __init__(self):
+    def __init__(self, context):
+        self.context = context
         self._buffers = [] # list of free buffer names
 
     def __del__(self):
@@ -513,7 +510,7 @@ class OpenALBufferPool(object):
             if self._buffers:
                 b = self._buffers.pop()
             else:
-                b = OpenALBuffer.create()
+                b = self.create_buffer()
             if b.is_valid:
                 # Protect against implementations that DO free buffers
                 # when they delete a source - carry on.
@@ -526,4 +523,11 @@ class OpenALBufferPool(object):
         """A buffer has finished playing, free it."""
         if buf.is_valid:
             self._buffers.append(buf)
+
+    def create_buffer(self):
+        """Create a new buffer."""
+        al_buffer = al.ALuint()
+        al.alGenBuffers(1, al_buffer)
+        self._check_error('Error allocating buffer.')
+        return OpenALBuffer(al_buffer, self.context)
 
