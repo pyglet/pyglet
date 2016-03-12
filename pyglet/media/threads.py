@@ -203,19 +203,14 @@ class PlayerWorker(MediaThread):
                     break
                 sleep_time = -1
 
-                # Refill player with least write_size
                 if self.players:
-                    player = None
-                    write_size = 0
-                    for p in self.players:
-                        s = p.get_write_size()
-                        if s > write_size:
-                            player = p
-                            write_size = s
-
-                    if write_size > 0 and write_size > player.min_buffer_size:
-                        player.refill(write_size)
-                    else:
+                    filled = False
+                    for player in self.players:
+                        write_size = player.get_write_size()
+                        if write_size > player.min_buffer_size:
+                            player.refill(write_size)
+                            filled = True
+                    if not filled:
                         sleep_time = self._nap_time
                 else:
                     assert _debug('PlayerWorker: No active players')

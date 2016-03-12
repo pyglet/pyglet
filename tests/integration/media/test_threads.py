@@ -68,7 +68,7 @@ def test_worker_do_not_refill_player():
         worker.stop()
 
 
-def test_worker_refill_multiple_players_refill_largest():
+def test_worker_refill_multiple_players_refill_multiple():
     worker = PlayerWorker()
     worker.start()
 
@@ -84,12 +84,12 @@ def test_worker_refill_multiple_players_refill_largest():
         worker.add(player2)
 
         for _ in range(10):
-            if player1.get_write_size.called:
+            if player1.get_write_size.called and player2.get_write_size.called:
                 break
             time.sleep(.1)
 
         player1.refill.assert_called_with(1024)
-        assert not player2.called
+        player2.refill.assert_called_with(768)
 
     finally:
         worker.stop()
