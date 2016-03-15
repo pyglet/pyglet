@@ -394,8 +394,8 @@ class SilentAudioDriver(AbstractAudioDriver):
         raise NotImplementedError('Silent audio driver does not support positional audio')
 
     def delete(self):
-        for p in self._players:
-            p.delete()
+        while len(self._players) > 0:
+            self._players.pop().delete()
 
 
 def create_audio_driver():

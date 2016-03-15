@@ -102,6 +102,11 @@ class WeakSet(object):
         # Value might be removed already if this is during __del__ of the item.
         self._dict.pop(value, None)
 
+    def pop(self):
+        value = self._dict.keys()[0]
+        self._dict.pop(value)
+        return value
+
     def __iter__(self):
         for key in self._dict.keys():
             yield key
@@ -111,7 +116,6 @@ class WeakSet(object):
 
     def __len__(self):
         return len(self._dict)
-
 
 
 displays = WeakSet()
