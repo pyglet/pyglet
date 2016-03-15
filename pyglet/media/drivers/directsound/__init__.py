@@ -14,7 +14,7 @@ from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.exceptions import MediaException
 from pyglet.media.listener import AbstractListener
-from pyglet.media.threads import MediaThread
+from pyglet.media.threads import PlayerWorker
 from pyglet.window.win32 import _user32, _kernel32
 
 import pyglet
@@ -29,73 +29,6 @@ def _db(gain):
         return -10000
     return max(-10000, min(int(1000 * math.log(min(gain, 1))), 0))
 
-class DirectSoundWorker(MediaThread):
-    _min_write_size = 9600
-
-    # Time to wait if there are players, but they're all full.
-    _nap_time = 0.05
-
-    # Time to wait if there are no players.
-    _sleep_time = None
-
-    def __init__(self):
-        super(DirectSoundWorker, self).__init__()
-        self.players = set()
-
-    def run(self):
-        # This is a big lock, but ensures a player is not deleted while
-        # we're processing it -- this saves on extra checks in the
-        # player's methods that would otherwise have to check that it's
-        # still alive.
-        with self.condition:
-            while True:
-                if self.stopped:
-                    break
-                sleep_time = -1
-
-                if self.players:
-                    player = None
-                    write_size = 0
-                    for p in self.players:
-                        s = p.get_write_size()
-                        if s > write_size:
-                            player = p
-                            write_size = s
-
-                    if write_size > self._min_write_size:
-                        player.refill(write_size)
-                    else:
-                        sleep_time = self._nap_time
-                else:
-                    sleep_time = self._sleep_time
-
-                if sleep_time != -1:
-                    # self.sleep releases self.condition while asleep
-                    self.sleep(sleep_time)
-
-        if _debug:
-            print('DirectSoundWorker exiting')
-
-    def add(self, player):
-        if _debug:
-            print('DirectSoundWorker add', player)
-        with self.condition:
-            self.players.add(player)
-            self.condition.notify()
-        if _debug:
-            print('return DirectSoundWorker add', player)
-
-    def remove(self, player):
-        if _debug:
-            print('DirectSoundWorker remove', player)
-        with self.condition:
-            try:
-                self.players.remove(player)
-            except KeyError:
-                pass
-            self.condition.notify()
-        if _debug:
-            print('return DirectSoundWorker remove', player)
 
 class DirectSoundAudioPlayer(AbstractAudioPlayer):
     # How many bytes the ring buffer should be
@@ -105,6 +38,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     # DSound requires both to be set at once.
     _cone_inner_angle = 360
     _cone_outer_angle = 360
+
+    min_buffer_size = 9600
 
     def __init__(self, source_group, player):
         super(DirectSoundAudioPlayer, self).__init__(source_group, player)
@@ -226,7 +161,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def stop(self):
         if _debug:
             print('DirectSound stop')
-        driver.worker.remove(self)
 
         with self._lock:
             if self._playing:
@@ -458,7 +392,7 @@ class DirectSoundDriver(AbstractAudioDriver):
                                     ctypes.byref(self._listener)) 
 
         # Create worker thread
-        self.worker = DirectSoundWorker()
+        self.worker = PlayerWorker()
         self.worker.start()
 
     def __del__(self):
@@ -476,10 +410,12 @@ class DirectSoundDriver(AbstractAudioDriver):
 
     def delete(self):
         self.worker.stop()
-        self._buffer.Release()
-        self._buffer = None
-        self._listener.Release()
-        self._listener = None
+        if self._buffer is not None:
+            self._buffer.Release()
+            self._buffer = None
+        if self._listener is not None:
+            self._listener.Release()
+            self._listener = None
 
 
 class DirectSoundListener(AbstractListener):
