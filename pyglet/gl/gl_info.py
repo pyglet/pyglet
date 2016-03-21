@@ -164,6 +164,8 @@ class GLInfo(object):
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
+        if 'None' in self.version: 
+            return False 
         ver = '%s.0.0' % self.version.split(' ', 1)[0]
         imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
         return imajor > major or \
