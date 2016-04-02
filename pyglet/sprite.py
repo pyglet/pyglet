@@ -523,6 +523,35 @@ class Sprite(event.EventDispatcher):
         self._scale = scale
         self._update_position()
 
+    def change(self, x=None, y=None, rotation=None, scale=None):
+        """Change simultaneously the position, rotation and scale.
+
+        The reason for this extra method is performance only. If
+        the sprite changes two or the three components position,
+        rotation and scale at the same time, there will be a benefit
+        from calling this method, rather than using its position 
+        setter followed by its rotation setter for instance.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the sprite.
+            `y` : int
+                Y coordinate of the sprite.
+            `rotation` : float
+                Clockwise rotation of the sprite, in degrees.
+            `scale` : float
+                Scaling factor.
+        """
+        if self.x is not None:
+            self._x = x
+        if y is not None:
+            self._y = y
+        if rotation is not None:
+            self._rotation = rotation
+        if scale is not None:
+            self._scale = scale
+        self._update_position()
+
     @property
     def width(self):
         """Scaled width of the sprite.
