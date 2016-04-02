@@ -87,11 +87,12 @@ def _debug(msg):
     _debug_logfile.write(msg + '\n')
 
 class Win32GlyphRenderer(base.GlyphRenderer):
-    _bitmap = None
-    _dc = None
-    _bitmap_rect = None
+
 
     def __init__(self, font):
+        self._bitmap = None
+        self._dc = None
+        self._bitmap_rect = None
         super(Win32GlyphRenderer, self).__init__(font)
         self.font = font
 
@@ -240,6 +241,10 @@ class Win32Font(base.Font):
         self.ascent = metrics.tmAscent
         self.descent = -metrics.tmDescent
         self.max_glyph_width = metrics.tmMaxCharWidth
+        user32.ReleaseDC(0, dc)
+
+    def __del__(self):
+        gdi32.DeleteObject(self.hfont)
 
     @staticmethod
     def get_logfont(name, size, bold, italic, dpi):
@@ -300,6 +305,21 @@ class Rectf(ctypes.Structure):
     ]
 
 class GDIPlusGlyphRenderer(Win32GlyphRenderer):
+    def __del__(self):
+        try:
+            if self._matrix:
+                res = gdiplus.GdipDeleteMatrix(self._matrix)
+            if self._brush:
+                res = gdiplus.GdipDeleteBrush(self._brush)
+            if self._graphics:
+                res = gdiplus.GdipDeleteGraphics(self._graphics)
+            if self._bitmap:
+                res = gdiplus.GdipDisposeImage(self._bitmap)
+            if self._dc:
+                res = user32.ReleaseDC(0, self._dc)
+        except:
+            pass
+
     def _create_bitmap(self, width, height):
         self._data = (ctypes.c_byte * (4 * width * height))()
         self._bitmap = ctypes.c_void_p()
@@ -468,6 +488,10 @@ class GDIPlusFont(Win32Font):
         self._gdipfont = ctypes.c_void_p()
         gdiplus.GdipCreateFont(family, ctypes.c_float(size),
             style, unit, ctypes.byref(self._gdipfont))
+
+    def __del__(self):
+        super(GDIPlusFont, self).__del__()
+        result = gdiplus.GdipDeleteFont(self._gdipfont)
 
     @classmethod
     def add_font_data(cls, data):
