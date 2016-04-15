@@ -523,7 +523,7 @@ class Sprite(event.EventDispatcher):
         self._scale = scale
         self._update_position()
 
-    def change(self, x=None, y=None, rotation=None, scale=None):
+    def update(self, x=None, y=None, rotation=None, scale=None):
         """Change simultaneously the position, rotation and scale.
 
         The reason for this extra method is performance only. If
