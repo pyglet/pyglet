@@ -264,6 +264,7 @@ class Win32Font(base.Font):
         logfont.lfItalic = italic
         logfont.lfFaceName = asbytes(name)
         logfont.lfQuality = ANTIALIASED_QUALITY
+        user32.ReleaseDC(0, dc)
         return logfont
 
     @classmethod
@@ -370,6 +371,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         gdiplus.GdipStringFormatGetGenericTypographic(ctypes.byref(generic))
         format = ctypes.c_void_p()
         gdiplus.GdipCloneStringFormat(generic, ctypes.byref(format))
+        gdiplus.GdipDeleteStringFormat(generic)
 
         # Measure advance
         bbox = Rectf()
@@ -413,6 +415,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             self.font._gdipfont, ctypes.byref(rect), format,
             self._brush)
         gdiplus.GdipFlush(self._graphics, 1)
+        gdiplus.GdipDeleteStringFormat(format)
 
         bitmap_data = BitmapData()
         gdiplus.GdipBitmapLockBits(self._bitmap, 
@@ -488,6 +491,7 @@ class GDIPlusFont(Win32Font):
         self._gdipfont = ctypes.c_void_p()
         gdiplus.GdipCreateFont(family, ctypes.c_float(size),
             style, unit, ctypes.byref(self._gdipfont))
+        gdiplus.GdipDeleteFontFamily(family)
 
     def __del__(self):
         super(GDIPlusFont, self).__del__()
