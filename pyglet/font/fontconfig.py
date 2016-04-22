@@ -145,6 +145,7 @@ class FontConfig(object):
                             search_pattern.size,
                             search_pattern.bold,
                             search_pattern.italic)] = result_pattern
+        search_pattern._destroy()
         if len(self._search_cache) > self._cache_size:
             self._search_cache.popitem(last=False)[1].dispose()
 

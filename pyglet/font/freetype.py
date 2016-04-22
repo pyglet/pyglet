@@ -244,7 +244,15 @@ class FreeTypeFont(base.Font):
         self.italic = italic
         self.dpi = dpi or 96  # as of pyglet 1.1; pyglet 1.0 had 72.
 
+        self.face_from_file = None
         self._set_face(self._load_font_face())
+
+    def __del__(self):
+        if self.face_from_file:
+            try:
+                FT_Done_Face(self.face_from_file)
+            except:
+                pass
 
     def get_character_index(self, character):
         assert self.face
@@ -287,6 +295,7 @@ class FreeTypeFont(base.Font):
                 raise base.FontException('No filename for "%s"' % self.name)
 
             font_face = self._load_font_face_from_file(match.file)
+            self.face_from_file = font_face
 
         return font_face
 
