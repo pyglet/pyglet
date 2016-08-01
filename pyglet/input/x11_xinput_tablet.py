@@ -7,17 +7,18 @@ from __future__ import division
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import pyglet
-from pyglet.input.base import \
-    Tablet, TabletCanvas, TabletCursor, DeviceOpenException
-from pyglet.input.x11_xinput import \
-    get_devices, XInputWindowEventDispatcher, DeviceResponder
+from pyglet.input.base import Tablet, TabletCanvas
+from pyglet.input.base import TabletCursor, DeviceOpenException
+from pyglet.input.x11_xinput import XInputWindowEventDispatcher
+from pyglet.input.x11_xinput import get_devices, DeviceResponder
+
 
 try:
     from pyglet.libs.x11 import xinput as xi
     _have_xinput = True
 except:
     _have_xinput = False
+
 
 class XInputTablet(Tablet):
     name = 'XInput Tablet'
@@ -27,6 +28,7 @@ class XInputTablet(Tablet):
 
     def open(self, window):
         return XInputTabletCanvas(window, self.cursors)
+
 
 class XInputTabletCanvas(DeviceResponder, TabletCanvas):
     def __init__(self, window, cursors):
@@ -75,19 +77,22 @@ class XInputTabletCanvas(DeviceResponder, TabletCanvas):
         cursor = self._cursor_map.get(e.deviceid)
         self.dispatch_event('on_leave', cursor)
 
+
 class XInputTabletCursor(TabletCursor):
     def __init__(self, device):
         super(XInputTabletCursor, self).__init__(device.name)
         self.device = device
 
+
 def get_tablets(display=None):
     # Each cursor appears as a separate xinput device; find devices that look
     # like Wacom tablet cursors and amalgamate them into a single tablet. 
+    valid_names = ('stylus', 'cursor', 'eraser', 'wacom', 'pen', 'pad')
     cursors = []
     devices = get_devices(display)
     for device in devices:
-        if device.name in ('stylus', 'cursor', 'eraser') and \
-           len(device.axes) >= 3:
+        dev_name = device.name.lower().split()
+        if any(n in dev_name for n in valid_names) and len(device.axes) >= 3:
             cursors.append(XInputTabletCursor(device))
 
     if cursors:
