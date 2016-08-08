@@ -430,8 +430,6 @@ class AbstractDocument(event.EventDispatcher):
         self.dispatch_event('on_insert_text', start, text)
 
     def _insert_text(self, start, text, attributes):
-        if hasattr(text, "decode"):
-            text = text.decode('utf-8')
         self._text = u''.join((self._text[:start], text, self._text[start:]))
         len_text = len(text)
         for element in self._elements:
