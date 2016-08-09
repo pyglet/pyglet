@@ -96,9 +96,15 @@ class ProceduralSource(Source):
             self._offset &= 0xfffffffe
 
     def save(self, filename):
-        """Add a RIFF Wave header to raw PCM data, and save to disk.
+        """Save the audio PCM data to disk as a standard RIFF Wave.
 
-        :param filename: File name. Defaults to "riffwave.wav".
+        A standard RIFF wave header will be added to the raw PCM
+        audio data when it is saved to disk.
+
+        :Parameters:
+            `filename` : str
+                The file name to save as.
+
         """
         data = self._generate_data(self._max_offset, 0)
         header = struct.pack('<4sI8sIHHIIHH4sI',
@@ -205,7 +211,7 @@ class Square(ProceduralSource):
             value = -32768
             amplitude = 65535
             data = (ctypes.c_short * samples)()
-        period = self.audio_format.sample_rate / self.frequency // 2
+        period = self.audio_format.sample_rate // self.frequency // 2
         count = 0
         for i in range(samples):
             count += 1
