@@ -39,6 +39,7 @@ from pyglet.media.sources.base import Source, AudioFormat, AudioData
 import ctypes
 import os
 import math
+import struct
 
 
 def future_round(value):
@@ -57,6 +58,7 @@ class ProceduralSource(Source):
 
         self._offset = 0
         self._sample_rate = sample_rate
+        self._sample_size = sample_size
         self._bytes_per_sample = sample_size >> 3
         self._bytes_per_second = self._bytes_per_sample * sample_rate
         self._max_offset = int(self._bytes_per_second * self._duration)
@@ -92,6 +94,29 @@ class ProceduralSource(Source):
         # Align to sample
         if self._bytes_per_sample == 2:
             self._offset &= 0xfffffffe
+
+    def save(self, filename):
+        """Add a RIFF Wave header to raw PCM data, and save to disk.
+
+        :param filename: File name. Defaults to "riffwave.wav".
+        """
+        data = self._generate_data(self._max_offset, 0)
+        header = struct.pack('<4sI8sIHHIIHH4sI',
+                             b"RIFF",
+                             len(data) + 44 - 8,
+                             b"WAVEfmt ",
+                             16,                # Default for PCM
+                             1,                 # Default for PCM
+                             1,                 # Number of channels
+                             self._sample_rate,
+                             self._bytes_per_second,
+                             self._bytes_per_sample,
+                             self._sample_size,
+                             b"data",
+                             len(data))
+
+        with open(filename, "wb") as f:
+            f.write(b"".join([header, data]))
 
 
 class Silence(ProceduralSource):
@@ -164,7 +189,7 @@ class Saw(ProceduralSource):
 
 
 class Square(ProceduralSource):
-    def __init__(self, duration, frequency=440, duty_cycle=50, **kwargs):
+    def __init__(self, duration, frequency=440, **kwargs):
         super(Square, self).__init__(duration, **kwargs)
         self.frequency = frequency
 
