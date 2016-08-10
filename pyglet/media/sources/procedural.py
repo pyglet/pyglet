@@ -96,7 +96,7 @@ class ProceduralSource(Source):
             self._offset &= 0xfffffffe
 
     def save(self, filename):
-        """Save the audio PCM data to disk as a standard RIFF Wave.
+        """Save the audio to disk as a standard RIFF Wave.
 
         A standard RIFF wave header will be added to the raw PCM
         audio data when it is saved to disk.
@@ -212,11 +212,11 @@ class Square(ProceduralSource):
             value = -32768
             amplitude = 65535
             data = (ctypes.c_short * samples)()
-        period = self.audio_format.sample_rate // self.frequency // 2
+        period = self.audio_format.sample_rate / self.frequency / 2
         count = 0
         for i in range(samples):
             count += 1
-            if count == period:
+            if count >= period:
                 value = amplitude - value
                 count = 0
             data[i] = future_round(value)
