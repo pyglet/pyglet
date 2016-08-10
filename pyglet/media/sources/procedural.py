@@ -122,7 +122,8 @@ class ProceduralSource(Source):
                              len(data))
 
         with open(filename, "wb") as f:
-            f.write(b"".join([header, data]))
+            f.write(header)
+            f.write(data)
 
 
 class Silence(ProceduralSource):
