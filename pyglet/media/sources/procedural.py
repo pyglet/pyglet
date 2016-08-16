@@ -221,3 +221,37 @@ class Square(ProceduralSource):
                 count = 0
             data[i] = future_round(value)
         return data
+
+
+class FM(ProceduralSource):
+    def __init__(self, duration, carrier=440, modulator=440, mod_index=1, **kwargs):
+        super(FM, self).__init__(duration, **kwargs)
+        self.carrier = carrier
+        self.modulator = modulator
+        self.mod_index = mod_index
+
+    def _generate_data(self, num_bytes, offset):
+        if self._bytes_per_sample == 1:
+            start = offset
+            samples = num_bytes
+            bias = 127
+            amplitude = 127
+            data = (ctypes.c_ubyte * samples)()
+        else:
+            start = offset >> 1
+            samples = num_bytes >> 1
+            bias = 0
+            amplitude = 32767
+            data = (ctypes.c_short * samples)()
+        car_step = 2 * math.pi * self.carrier
+        mod_step = 2 * math.pi * self.modulator
+        mod_index = self.mod_index
+        sample_rate = self._sample_rate
+        # FM equation:  sin((2 * pi * carrier) + sin(2 * pi * modulator))
+        for i in range(samples):
+            increment = (i + start) / sample_rate
+            data[i] = future_round(
+                math.sin(car_step * increment +
+                         mod_index * math.sin(mod_step * increment))
+                * amplitude + bias)
+        return data
