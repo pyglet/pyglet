@@ -136,6 +136,7 @@ class FontConfig(object):
 
         result = search_pattern.match()
         self._add_to_search_cache(search_pattern, result)
+        search_pattern.dispose()
         return result
 
     def have_font(self, name):
