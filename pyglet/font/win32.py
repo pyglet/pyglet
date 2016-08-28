@@ -518,3 +518,25 @@ class GDIPlusFont(Win32Font):
             gdiplus.GdipNewPrivateFontCollection(
                 ctypes.byref(cls._private_fonts))
         gdiplus.GdipPrivateAddMemoryFont(cls._private_fonts, data, len(data))
+
+    @classmethod
+    def have_font(cls, name):
+        family = ctypes.c_void_p()
+
+        # Look in private collection first:
+        num_count = ctypes.c_int()
+        gdiplus.GdipGetFontCollectionFamilyCount(
+            cls._private_fonts, ctypes.byref(num_count))
+        gpfamilies = (ctypes.c_void_p * num_count.value)()
+        numFound = ctypes.c_int()
+        gdiplus.GdipGetFontCollectionFamilyList(
+            cls._private_fonts, num_count, gpfamilies, ctypes.byref(numFound))
+
+        font_name = ctypes.create_unicode_buffer(32)
+        for gpfamily in gpfamilies:
+            gdiplus.GdipGetFamilyName(gpfamily, font_name, 0)
+            if font_name.value == name:
+                return True
+        
+        # Else call parent class for system fonts
+        return super(GDIPlusFont, cls).have_font(name)
