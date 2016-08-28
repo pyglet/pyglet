@@ -374,18 +374,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         gdiplus.GdipDeleteStringFormat(generic)
 
         # Measure advance
-        bbox = Rectf()
-        flags = (StringFormatFlagsMeasureTrailingSpaces | 
-                 StringFormatFlagsNoClip | 
-                 StringFormatFlagsNoFitBlackBox)
-        gdiplus.GdipSetStringFormatFlags(format, flags)
-        gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
-            self.font._gdipfont, ctypes.byref(rect), format,
-            ctypes.byref(bbox), None, None)
-
-        lsb = 0
-        advance = int(math.ceil(bbox.width))
-
+        
         # XXX HACK HACK HACK
         # Windows GDI+ is a filthy broken toy.  No way to measure the bounding
         # box of a string, or to obtain LSB.  What a joke.
@@ -398,13 +387,37 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # 2.0 (WinForms) via the TextRenderer class; this has no C interface
         # though, so we're entirely screwed.
         # 
-        # So anyway, this hack bumps up the width if the font is italic;
-        # this compensates for some common fonts.  It's also a stupid waste of
-        # texture memory.
-    
-        width = advance
-        if self.font.italic:
-            width += width // 2
+        # So anyway, we first try to get the lsb and width from GDI
+        # GetCharABCWidthsW function. If it does not work (because we don't
+        # use a TrueType font), we try to use GdipMeasureString.
+        # Tests show that it's not working well for .fon fonts.
+
+        # GDI functions only work for a single character so we transform
+        # grapheme \r\n into \r
+        if text == '\r\n':
+            text = '\r'
+        abc = ABC()
+        # Check if ttf font.         
+        if gdi32.GetCharABCWidthsW(self._dc, 
+            ord(text), ord(text), byref(abc)):
+            lsb = abc.abcA
+            width = abc.abcB 
+            advance = abc.abcA + abc.abcB + abc.abcC
+            rect.x = -lsb
+        else:
+            # What font could this be ???
+            # Revert to the old way to check bounding box.
+            bbox = Rectf()
+            flags = (StringFormatFlagsMeasureTrailingSpaces | 
+                     StringFormatFlagsNoClip | 
+                     StringFormatFlagsNoFitBlackBox)
+            gdiplus.GdipSetStringFormatFlags(format, flags)
+            gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
+            self.font._gdipfont, ctypes.byref(rect), format,
+            ctypes.byref(bbox), None, None)
+            lsb = 0
+            advance = int(math.ceil(bbox.width))
+            width = advance
         
         # XXX END HACK HACK HACK
 
@@ -487,7 +500,6 @@ class GDIPlusFont(Win32Font):
             style |= FontStyleBold
         if italic:
             style |= FontStyleItalic
-        self.italic = italic # XXX needed for HACK HACK HACK
         self._gdipfont = ctypes.c_void_p()
         gdiplus.GdipCreateFont(family, ctypes.c_float(size),
             style, unit, ctypes.byref(self._gdipfont))
