@@ -44,7 +44,7 @@ import struct
 
 def future_round(value):
     """Function to have a round that functions the same on Py2 and Py3."""
-    # TODO: Check if future can replace this
+    # TODO: Check if future can replace this (as of August 2016, it cannot).
     return int(round(value))
 
 
@@ -127,11 +127,11 @@ class ProceduralSource(Source):
 
 
 class Silence(ProceduralSource):
-    def _generate_data(self, length, offset):
+    def _generate_data(self, num_bytes, offset):
         if self._bytes_per_sample == 1:
-            return '\127' * length
+            return '\127' * num_bytes
         else:
-            return '\0' * length
+            return '\0' * num_bytes
 
 
 class WhiteNoise(ProceduralSource):
