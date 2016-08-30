@@ -51,7 +51,7 @@ class ProceduralSourceTest(object):
 
     def _test_seek(self, source):
         seek_time = .5
-        bytes_left = source.audio_format.bytes_per_second *.5
+        bytes_left = source.audio_format.bytes_per_second * .5
         source.seek(seek_time)
         self._check_audio_data(source, bytes_left, .5)
 
@@ -74,4 +74,8 @@ class SawTest(ProceduralSourceTest, unittest.TestCase):
 
 class SquareTest(ProceduralSourceTest, unittest.TestCase):
     source_class = Square
+
+
+class FMTest(ProceduralSourceTest, unittest.TestCase):
+    source_class = FM
 
