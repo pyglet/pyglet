@@ -238,6 +238,20 @@ directly from an already-loaded :class:`~pyglet.media.Source`::
 
     explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
 
+Procedural Audio
+----------------
+
+In addition to loading audio files from disk, the `pyglet.media.procedural` module is available
+for creating various simple sounds. There are a variety of waveforms available:
+
+* ``pyglet.media.procedural.Sine``
+* ``pyglet.media.procedural.Saw``
+* ``pyglet.media.procedural.Square``
+* ``pyglet.media.procedural.FM``
+* ``pyglet.media.procedural.Silence``
+* ``pyglet.media.procedural.WhiteNoise``
+
+
 Simple audio playback
 ---------------------
 
