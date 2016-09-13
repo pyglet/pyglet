@@ -426,9 +426,13 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # Draw character to bitmap
         
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
-        gdiplus.GdipDrawString(self._graphics, ch, len_ch,
-            self.font._gdipfont, ctypes.byref(rect), format,
-            self._brush)
+        gdiplus.GdipDrawString(self._graphics, 
+                               ch,
+                               len_ch,
+                               self.font._gdipfont, 
+                               ctypes.byref(rect), 
+                               format,
+                               self._brush)
         gdiplus.GdipFlush(self._graphics, 1)
         gdiplus.GdipDeleteStringFormat(format)
 
