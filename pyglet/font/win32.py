@@ -397,9 +397,15 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
                  StringFormatFlagsNoClip | 
                  StringFormatFlagsNoFitBlackBox)
         gdiplus.GdipSetStringFormatFlags(format, flags)
-        gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
-        self.font._gdipfont, ctypes.byref(rect), format,
-        ctypes.byref(bbox), None, None)
+        gdiplus.GdipMeasureString(self._graphics, 
+                                  ch, 
+                                  len_ch,
+                                  self.font._gdipfont, 
+                                  ctypes.byref(rect), 
+                                  format,
+                                  ctypes.byref(bbox), 
+                                  None, 
+                                  None)
         lsb = 0
         advance = int(math.ceil(bbox.width))
         width = advance
