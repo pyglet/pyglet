@@ -387,11 +387,28 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # 2.0 (WinForms) via the TextRenderer class; this has no C interface
         # though, so we're entirely screwed.
         # 
-        # So anyway, we first try to get the lsb and width from GDI
-        # GetCharABCWidthsW function. If it does not work (because we don't
-        # use a TrueType font), we try to use GdipMeasureString.
-        # Tests show that it's not working well for .fon fonts.
+        # So anyway, we first try to get the width with GdipMeasureString.
+        # Then if it's a TrueType font, we use GetCharABCWidthsW to get the
+        # correct LSB. If it's a negative LSB, we move the layoutRect `rect`
+        # to the right so that the whole glyph is rendered on the surface.
 
+        bbox = Rectf()
+        flags = (StringFormatFlagsMeasureTrailingSpaces | 
+                 StringFormatFlagsNoClip | 
+                 StringFormatFlagsNoFitBlackBox)
+        gdiplus.GdipSetStringFormatFlags(format, flags)
+        gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
+        self.font._gdipfont, ctypes.byref(rect), format,
+        ctypes.byref(bbox), None, None)
+        lsb = 0
+        advance = int(math.ceil(bbox.width))
+        width = advance
+        # This hack bumps up the width if the font is italic;
+        # this compensates for some common fonts.  It's also a stupid 
+        # waste of texture memory.
+        if self.font.italic:
+            width += width // 2
+        
         # GDI functions only work for a single character so we transform
         # grapheme \r\n into \r
         if text == '\r\n':
@@ -401,24 +418,9 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         if gdi32.GetCharABCWidthsW(self._dc, 
             ord(text), ord(text), byref(abc)):
             lsb = abc.abcA
-            width = abc.abcB 
-            advance = abc.abcA + abc.abcB + abc.abcC
-            rect.x = -lsb
-        else:
-            # What font could this be ???
-            # Revert to the old way to check bounding box.
-            bbox = Rectf()
-            flags = (StringFormatFlagsMeasureTrailingSpaces | 
-                     StringFormatFlagsNoClip | 
-                     StringFormatFlagsNoFitBlackBox)
-            gdiplus.GdipSetStringFormatFlags(format, flags)
-            gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
-            self.font._gdipfont, ctypes.byref(rect), format,
-            ctypes.byref(bbox), None, None)
-            lsb = 0
-            advance = int(math.ceil(bbox.width))
-            width = advance
-        
+            if lsb < 0:
+                rect.x = -lsb
+
         # XXX END HACK HACK HACK
 
         # Draw character to bitmap
