@@ -49,7 +49,20 @@ def future_round(value):
 
 
 class ProceduralSource(Source):
+    """Procedurally generated sound source."""
+
     def __init__(self, duration, sample_rate=44800, sample_size=16):
+        """Create a procedurally defined waveform.
+
+        :Parameters:
+            `duration` : int, float
+                The length, in seconds, of audio that you wish to generate.
+            `sample_rate` : int
+                Samples per each second. CD quality is 44100, for example.
+            `sample_size` : int
+                The bit precision. Must be either 8 or 16.
+        """
+
         self._duration = float(duration)
         self.audio_format = AudioFormat(
             channels=1,
