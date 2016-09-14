@@ -62,7 +62,6 @@ class ProceduralSource(Source):
             `sample_size` : int
                 The bit precision. Must be either 8 or 16.
         """
-
         self._duration = float(duration)
         self.audio_format = AudioFormat(
             channels=1,
