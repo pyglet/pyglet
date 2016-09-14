@@ -52,13 +52,13 @@ class ProceduralSource(Source):
     """Procedurally generated sound source."""
 
     def __init__(self, duration, sample_rate=44800, sample_size=16):
-        """Create a procedurally defined waveform.
+        """A procedurally defined and generated waveform.
 
         :Parameters:
             `duration` : int, float
                 The length, in seconds, of audio that you wish to generate.
             `sample_rate` : int
-                Samples per each second. CD quality is 44100, for example.
+                Audio samples per second. (CD quality is 44100).
             `sample_size` : int
                 The bit precision. Must be either 8 or 16.
         """
@@ -80,6 +80,7 @@ class ProceduralSource(Source):
             self._max_offset &= 0xfffffffe
 
     def get_audio_data(self, num_bytes):
+        """Return `num_bytes` bytes of audio data."""
         num_bytes = min(num_bytes, self._max_offset - self._offset)
         if num_bytes <= 0:
             return None
@@ -140,6 +141,8 @@ class ProceduralSource(Source):
 
 
 class Silence(ProceduralSource):
+    """Create a flat, silent waveform."""
+
     def _generate_data(self, num_bytes, offset):
         if self._bytes_per_sample == 1:
             return '\127' * num_bytes
@@ -148,12 +151,28 @@ class Silence(ProceduralSource):
 
 
 class WhiteNoise(ProceduralSource):
+    """Create a randomized white noise waveform."""
+
     def _generate_data(self, num_bytes, offset):
         return os.urandom(num_bytes)
 
 
 class Sine(ProceduralSource):
+    """Create a smooth, sinusoidal waveform."""
+
     def __init__(self, duration, frequency=440, **kwargs):
+        """A procedurally generated sinusoid waveform.
+
+        :Parameters:
+            `duration` : int, float
+                The length, in seconds, of audio that you wish to generate.
+            `frequency` : int
+                The frequency, in Hz of the waveform you wish to produce.
+            `sample_rate` : int
+                Audio samples per second. (CD quality is 44100).
+            `sample_size` : int
+                The bit precision. Must be either 8 or 16.
+        """
         super(Sine, self).__init__(duration, **kwargs)
         self.frequency = frequency
         
@@ -177,7 +196,21 @@ class Sine(ProceduralSource):
 
 
 class Saw(ProceduralSource):
+    """Create a sawtooth style waveform."""
+
     def __init__(self, duration, frequency=440, **kwargs):
+        """A procedurally generated sawtooth waveform.
+
+        :Parameters:
+            `duration` : int, float
+                The length, in seconds, of audio that you wish to generate.
+            `frequency` : int
+                The frequency, in Hz of the waveform you wish to produce.
+            `sample_rate` : int
+                Audio samples per second. (CD quality is 44100).
+            `sample_size` : int
+                The bit precision. Must be either 8 or 16.
+        """
         super(Saw, self).__init__(duration, **kwargs)
         self.frequency = frequency
         
@@ -209,7 +242,21 @@ class Saw(ProceduralSource):
 
 
 class Square(ProceduralSource):
+    """Create a square (or pulse) waveform."""
+
     def __init__(self, duration, frequency=440, **kwargs):
+        """A procedurally generated square (or pulse) waveform.
+
+        :Parameters:
+            `duration` : int, float
+                The length, in seconds, of audio that you wish to generate.
+            `frequency` : int
+                The frequency, in Hz of the waveform you wish to produce.
+            `sample_rate` : int
+                Audio samples per second. (CD quality is 44100).
+            `sample_size` : int
+                The bit precision. Must be either 8 or 16.
+        """
         super(Square, self).__init__(duration, **kwargs)
         self.frequency = frequency
 
@@ -237,7 +284,30 @@ class Square(ProceduralSource):
 
 
 class FM(ProceduralSource):
+    """Create a frequency modulated waveform."""
+
     def __init__(self, duration, carrier=440, modulator=440, mod_index=1, **kwargs):
+        """A procedurally generated FM waveform.
+
+        This is a simplistic frequency modulated waveform, based on the
+        concepts by John Chowning. Basic sine waves are used for both
+        frequency carrier and modulator inputs, of which the frequencies can
+        be provided. The modulation index, or amplitude, can also be adjusted.
+
+        :Parameters:
+            `duration` : int, float
+                The length, in seconds, of audio that you wish to generate.
+            `carrier` : int
+                The carrier frequency, in Hz.
+            `modulator` : int
+                The modulator frequency, in Hz.
+            `mod_index` : int
+                The modulation index.
+            `sample_rate` : int
+                Audio samples per second. (CD quality is 44100).
+            `sample_size` : int
+                The bit precision. Must be either 8 or 16.
+        """
         super(FM, self).__init__(duration, **kwargs)
         self.carrier = carrier
         self.modulator = modulator
