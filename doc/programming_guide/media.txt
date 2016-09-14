@@ -251,6 +251,10 @@ for creating various simple sounds. There are a variety of waveforms available:
 * ``pyglet.media.procedural.Silence``
 * ``pyglet.media.procedural.WhiteNoise``
 
+At a minimum, you will need to specify the duration of the audio you wish to produce. You will also
+want to set the frequency (most waveforms will default to 440Hz). Some waveforms, such as the FM
+waveform, have additional parameters. More detail can be found in the API documentation for each.
+
 
 Simple audio playback
 ---------------------
