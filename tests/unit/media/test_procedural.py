@@ -13,9 +13,9 @@ del local_dir
 
 
 def get_test_data_file(*file_parts):
-    """
-    Get a file from the test data directory in an OS independent way. Supply relative file
-    name as you would in os.path.join().
+    """Get a file from the test data directory in an OS independent way.
+
+    Supply relative file name as you would in os.path.join().
     """
     return os.path.join(test_data_path, *file_parts)
 
