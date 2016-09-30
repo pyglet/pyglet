@@ -546,7 +546,7 @@ class GDIPlusFont(Win32Font):
 
         font_name = ctypes.create_unicode_buffer(32)
         for gpfamily in gpfamilies:
-            gdiplus.GdipGetFamilyName(gpfamily, font_name, 0)
+            gdiplus.GdipGetFamilyName(gpfamily, font_name, '\0')
             if font_name.value == name:
                 return True
         
