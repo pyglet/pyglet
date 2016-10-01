@@ -35,12 +35,7 @@ from __future__ import absolute_import
 
 from . import adaptation
 
-_driver = None
-
 
 def create_audio_driver():
-    global _driver
-    if _driver is None:
-        _driver = adaptation.DirectSoundDriver()
-    return _driver
+    return adaptation.DirectSoundDriver()
 
