@@ -87,11 +87,12 @@ def _debug(msg):
     _debug_logfile.write(msg + '\n')
 
 class Win32GlyphRenderer(base.GlyphRenderer):
-    _bitmap = None
-    _dc = None
-    _bitmap_rect = None
+
 
     def __init__(self, font):
+        self._bitmap = None
+        self._dc = None
+        self._bitmap_rect = None
         super(Win32GlyphRenderer, self).__init__(font)
         self.font = font
 
@@ -240,6 +241,10 @@ class Win32Font(base.Font):
         self.ascent = metrics.tmAscent
         self.descent = -metrics.tmDescent
         self.max_glyph_width = metrics.tmMaxCharWidth
+        user32.ReleaseDC(0, dc)
+
+    def __del__(self):
+        gdi32.DeleteObject(self.hfont)
 
     @staticmethod
     def get_logfont(name, size, bold, italic, dpi):
@@ -259,6 +264,7 @@ class Win32Font(base.Font):
         logfont.lfItalic = italic
         logfont.lfFaceName = asbytes(name)
         logfont.lfQuality = ANTIALIASED_QUALITY
+        user32.ReleaseDC(0, dc)
         return logfont
 
     @classmethod
@@ -300,6 +306,21 @@ class Rectf(ctypes.Structure):
     ]
 
 class GDIPlusGlyphRenderer(Win32GlyphRenderer):
+    def __del__(self):
+        try:
+            if self._matrix:
+                res = gdiplus.GdipDeleteMatrix(self._matrix)
+            if self._brush:
+                res = gdiplus.GdipDeleteBrush(self._brush)
+            if self._graphics:
+                res = gdiplus.GdipDeleteGraphics(self._graphics)
+            if self._bitmap:
+                res = gdiplus.GdipDisposeImage(self._bitmap)
+            if self._dc:
+                res = user32.ReleaseDC(0, self._dc)
+        except:
+            pass
+
     def _create_bitmap(self, width, height):
         self._data = (ctypes.c_byte * (4 * width * height))()
         self._bitmap = ctypes.c_void_p()
@@ -350,20 +371,10 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         gdiplus.GdipStringFormatGetGenericTypographic(ctypes.byref(generic))
         format = ctypes.c_void_p()
         gdiplus.GdipCloneStringFormat(generic, ctypes.byref(format))
+        gdiplus.GdipDeleteStringFormat(generic)
 
         # Measure advance
-        bbox = Rectf()
-        flags = (StringFormatFlagsMeasureTrailingSpaces | 
-                 StringFormatFlagsNoClip | 
-                 StringFormatFlagsNoFitBlackBox)
-        gdiplus.GdipSetStringFormatFlags(format, flags)
-        gdiplus.GdipMeasureString(self._graphics, ch, len_ch,
-            self.font._gdipfont, ctypes.byref(rect), format,
-            ctypes.byref(bbox), None, None)
-
-        lsb = 0
-        advance = int(math.ceil(bbox.width))
-
+        
         # XXX HACK HACK HACK
         # Windows GDI+ is a filthy broken toy.  No way to measure the bounding
         # box of a string, or to obtain LSB.  What a joke.
@@ -376,23 +387,60 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # 2.0 (WinForms) via the TextRenderer class; this has no C interface
         # though, so we're entirely screwed.
         # 
-        # So anyway, this hack bumps up the width if the font is italic;
-        # this compensates for some common fonts.  It's also a stupid waste of
-        # texture memory.
-    
+        # So anyway, we first try to get the width with GdipMeasureString.
+        # Then if it's a TrueType font, we use GetCharABCWidthsW to get the
+        # correct LSB. If it's a negative LSB, we move the layoutRect `rect`
+        # to the right so that the whole glyph is rendered on the surface.
+
+        bbox = Rectf()
+        flags = (StringFormatFlagsMeasureTrailingSpaces | 
+                 StringFormatFlagsNoClip | 
+                 StringFormatFlagsNoFitBlackBox)
+        gdiplus.GdipSetStringFormatFlags(format, flags)
+        gdiplus.GdipMeasureString(self._graphics, 
+                                  ch, 
+                                  len_ch,
+                                  self.font._gdipfont, 
+                                  ctypes.byref(rect), 
+                                  format,
+                                  ctypes.byref(bbox), 
+                                  None, 
+                                  None)
+        lsb = 0
+        advance = int(math.ceil(bbox.width))
         width = advance
+        # This hack bumps up the width if the font is italic;
+        # this compensates for some common fonts.  It's also a stupid 
+        # waste of texture memory.
         if self.font.italic:
             width += width // 2
         
+        # GDI functions only work for a single character so we transform
+        # grapheme \r\n into \r
+        if text == '\r\n':
+            text = '\r'
+        abc = ABC()
+        # Check if ttf font.         
+        if gdi32.GetCharABCWidthsW(self._dc, 
+            ord(text), ord(text), byref(abc)):
+            lsb = abc.abcA
+            if lsb < 0:
+                rect.x = -lsb
+
         # XXX END HACK HACK HACK
 
         # Draw character to bitmap
         
         gdiplus.GdipGraphicsClear(self._graphics, 0x00000000)
-        gdiplus.GdipDrawString(self._graphics, ch, len_ch,
-            self.font._gdipfont, ctypes.byref(rect), format,
-            self._brush)
+        gdiplus.GdipDrawString(self._graphics, 
+                               ch,
+                               len_ch,
+                               self.font._gdipfont, 
+                               ctypes.byref(rect), 
+                               format,
+                               self._brush)
         gdiplus.GdipFlush(self._graphics, 1)
+        gdiplus.GdipDeleteStringFormat(format)
 
         bitmap_data = BitmapData()
         gdiplus.GdipBitmapLockBits(self._bitmap, 
@@ -464,10 +512,14 @@ class GDIPlusFont(Win32Font):
             style |= FontStyleBold
         if italic:
             style |= FontStyleItalic
-        self.italic = italic # XXX needed for HACK HACK HACK
         self._gdipfont = ctypes.c_void_p()
         gdiplus.GdipCreateFont(family, ctypes.c_float(size),
             style, unit, ctypes.byref(self._gdipfont))
+        gdiplus.GdipDeleteFontFamily(family)
+
+    def __del__(self):
+        super(GDIPlusFont, self).__del__()
+        result = gdiplus.GdipDeleteFont(self._gdipfont)
 
     @classmethod
     def add_font_data(cls, data):
@@ -478,3 +530,25 @@ class GDIPlusFont(Win32Font):
             gdiplus.GdipNewPrivateFontCollection(
                 ctypes.byref(cls._private_fonts))
         gdiplus.GdipPrivateAddMemoryFont(cls._private_fonts, data, len(data))
+
+    @classmethod
+    def have_font(cls, name):
+        family = ctypes.c_void_p()
+
+        # Look in private collection first:
+        num_count = ctypes.c_int()
+        gdiplus.GdipGetFontCollectionFamilyCount(
+            cls._private_fonts, ctypes.byref(num_count))
+        gpfamilies = (ctypes.c_void_p * num_count.value)()
+        numFound = ctypes.c_int()
+        gdiplus.GdipGetFontCollectionFamilyList(
+            cls._private_fonts, num_count, gpfamilies, ctypes.byref(numFound))
+
+        font_name = ctypes.create_unicode_buffer(32)
+        for gpfamily in gpfamilies:
+            gdiplus.GdipGetFamilyName(gpfamily, font_name, '\0')
+            if font_name.value == name:
+                return True
+        
+        # Else call parent class for system fonts
+        return super(GDIPlusFont, cls).have_font(name)
