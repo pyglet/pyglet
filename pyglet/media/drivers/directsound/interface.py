@@ -1,3 +1,36 @@
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2008 Alex Holkner
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions 
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright 
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 """
 Pythonic interface to DirectSound.
 """
@@ -5,10 +38,12 @@ from collections import namedtuple
 import ctypes
 import math
 
+from pyglet.debug import debug_print
 from pyglet.window.win32 import _user32
 
 from . import lib_dsound as lib
 
+_debug_media = debug_print('debug_media')
 
 def _db(gain):
     """
@@ -43,6 +78,8 @@ def _check(hresult):
 
 class DirectSoundDriver(object):
     def __init__(self):
+        assert _debug_media('Constructing DirectSoundDriver')
+
         self._native_dsound = lib.IDirectSound()
         _check(
             lib.DirectSoundCreate(None, ctypes.byref(self._native_dsound), None)
@@ -57,32 +94,36 @@ class DirectSoundDriver(object):
         )
 
         self._buffer_factory = DirectSoundBufferFactory(self, self._native_dsound)
-        self._primary_buffer = self._buffer_factory.create_primary_buffer()
+        self.primary_buffer = self._buffer_factory.create_primary_buffer()
 
     def __del__(self):
-        del self._primary_buffer
+        assert _debug_media('Destroying DirectSoundDriver')
+        del self.primary_buffer
         self._native_dsound.Release()
 
     def create_buffer(self, audio_format):
         return self._buffer_factory.create_buffer(audio_format)
 
     def create_listener(self):
-        return self._primary_buffer.create_listener()
+        return self.primary_buffer.create_listener()
 
 
 class DirectSoundBufferFactory(object):
-    default_buffer_size = 44100 * 1
+    default_buffer_size = 2.0
 
     def __init__(self, driver, native_dsound):
         self.driver = driver
         self._native_dsound = native_dsound
 
     def create_buffer(self, audio_format):
+        buffer_size = int(audio_format.sample_rate * self.default_buffer_size)
+        wave_format = self._create_wave_format(audio_format)
+        buffer_desc = self._create_buffer_desc(wave_format, buffer_size)
         return DirectSoundBuffer(
                 self.driver,
-                self._create_buffer(self._create_buffer_desc(audio_format)),
+                self._create_buffer(buffer_desc),
                 audio_format,
-                self.default_buffer_size)
+                buffer_size)
 
     def create_primary_buffer(self):
         return DirectSoundBuffer(
@@ -110,21 +151,17 @@ class DirectSoundBufferFactory(object):
         return wfx
 
     @classmethod
-    def _create_buffer_desc(cls, audio_format, buffer_size=None):
-        buffer_size = buffer_size or cls.default_buffer_size
-
-        wfx = cls._create_wave_format(audio_format)
-
+    def _create_buffer_desc(cls, wave_format, buffer_size):
         dsbdesc = lib.DSBUFFERDESC()
         dsbdesc.dwSize = ctypes.sizeof(dsbdesc)
         dsbdesc.dwFlags = (lib.DSBCAPS_GLOBALFOCUS |
                            lib.DSBCAPS_GETCURRENTPOSITION2 |
                            lib.DSBCAPS_CTRLFREQUENCY |
                            lib.DSBCAPS_CTRLVOLUME)
-        if audio_format.channels == 1:
+        if wave_format.nChannels == 1:
             dsbdesc.dwFlags |= lib.DSBCAPS_CTRL3D
         dsbdesc.dwBufferBytes = buffer_size
-        dsbdesc.lpwfxFormat = ctypes.pointer(wfx)
+        dsbdesc.lpwfxFormat = ctypes.pointer(wave_format)
 
         return dsbdesc
 
@@ -154,8 +191,6 @@ class DirectSoundBuffer(object):
         else:
             self._native_buffer3d = None
 
-        # TODO Only for normal buffers: self._native_buffer.SetCurrentPosition(0)
-
     def __del__(self):
         if self._native_buffer is not None:
             self._native_buffer.Stop()
@@ -167,6 +202,7 @@ class DirectSoundBuffer(object):
 
     @property
     def volume(self):
+        # TODO Shouldn't _gain and _db be used in adaptation?
         vol = lib.LONG()
         _check(
             self._native_buffer.GetVolume(ctypes.byref(vol))
@@ -179,17 +215,19 @@ class DirectSoundBuffer(object):
             self._native_buffer.SetVolume(_db(value))
         )
 
+    _CurrentPosition = namedtuple('_CurrentPosition', ['play_cursor', 'write_cursor'])
+
     @property
     def current_position(self):
-        """Tuple of current play position and current write position."""
-        # TODO NamedTuple
+        """Tuple of current play position and current write position.
+        Only play position can be modified, so setter only accepts a single value."""
         play_cursor = lib.DWORD()
         write_cursor = lib.DWORD()
         _check(
-            self._native_buffer.GetCurrentPosition(ctypes.byref(play_cursor),
-                                                   ctypes.byref(write_cursor))
+            self._native_buffer.GetCurrentPosition(play_cursor,
+                                                   write_cursor)
         )
-        return play_cursor.value, write_cursor.value
+        return self._CurrentPosition(play_cursor.value, write_cursor.value)
 
     @current_position.setter
     def current_position(self, value):
@@ -200,6 +238,21 @@ class DirectSoundBuffer(object):
     @property
     def is3d(self):
         return self._native_buffer3d is not None
+
+    @property
+    def is_playing(self):
+        return (self._get_status() & lib.DSBSTATUS_PLAYING) != 0
+
+    @property
+    def is_buffer_lost(self):
+        return (self._get_status() & lib.DSBSTATUS_BUFFERLOST) != 0
+
+    def _get_status(self):
+        status = lib.DWORD()
+        _check(
+            self._native_buffer.GetStatus(status)
+        )
+        return status.value
 
     @property
     def position(self):
@@ -216,7 +269,6 @@ class DirectSoundBuffer(object):
     def position(self, position):
         if self.is3d:
             x, y, z = position
-            # TODO Correct in adaptation: x, y, -z
             _check(
                 self._native_buffer3d.SetPosition(x, y, z, lib.DS3D_IMMEDIATE)
             )
@@ -272,7 +324,6 @@ class DirectSoundBuffer(object):
     @frequency.setter
     def frequency(self, value):
         """The frequency, in samples per second, at which the buffer is playing."""
-        # TODO Translate from pitch (pitch * sample_rate = freq)
         _check(
             self._native_buffer.SetFrequency(value)
         )
@@ -291,7 +342,6 @@ class DirectSoundBuffer(object):
 
     @cone_orientation.setter
     def cone_orientation(self, value):
-        # TODO: Adaptation x, y, -z
         if self.is3d:
             x, y, z = value
             _check(
@@ -339,10 +389,10 @@ class DirectSoundBuffer(object):
             )
 
     def create_listener(self):
-        listener = lib.IDirectSound3DListener()
+        native_listener = lib.IDirectSound3DListener()
         self._native_buffer.QueryInterface(lib.IID_IDirectSound3DListener,
-                                           ctypes.byref(listener))
-        return DirectSoundListener(self, listener)
+                                           ctypes.byref(native_listener))
+        return DirectSoundListener(self, native_listener)
 
     def play(self):
         _check(
@@ -362,6 +412,7 @@ class DirectSoundBuffer(object):
             self.audio_length_2 = lib.DWORD()
 
     def lock(self, write_cursor, write_size):
+        assert _debug_media('DirectSoundBuffer.lock({}, {})'.format(write_cursor, write_size))
         pointer = self._WritePointer()
         _check(
             self._native_buffer.Lock(write_cursor,
@@ -384,26 +435,25 @@ class DirectSoundBuffer(object):
 
 
 class DirectSoundListener(object):
-    def __init__(self, buf, listener):
-        self.buffer = buf
-        self._listener = listener
+    def __init__(self, ds_buffer, native_listener):
+        self.ds_buffer = ds_buffer
+        self._native_listener = native_listener
 
     def __del__(self):
-        self._listener.Release()
+        self._native_listener.Release()
 
     @property
     def position(self):
         vector = lib.D3DVECTOR()
         _check(
-            self._listener.GetPosition(ctypes.byref(vector))
+            self._native_listener.GetPosition(ctypes.byref(vector))
         )
         return (vector.x, vector.y, vector.z)
 
     @position.setter
     def position(self, value):
-        # TODO do translation in adaptation (x, y, -z)
         _check(
-            self._listener.SetPosition(*(list(value) + [lib.DS3D_IMMEDIATE]))
+            self._native_listener.SetPosition(*(list(value) + [lib.DS3D_IMMEDIATE]))
         )
 
     @property
@@ -411,15 +461,14 @@ class DirectSoundListener(object):
         front = lib.D3DVECTOR()
         top = lib.D3DVECTOR()
         _check(
-            self._listener.GetOrientation(ctypes.byref(front), ctypes.byref(top))
+            self._native_listener.GetOrientation(ctypes.byref(front), ctypes.byref(top))
         )
         return (front.x, front.y, front.z, top.x, top.y, top.z)
 
     @orientation.setter
     def orientation(self, orientation):
-        # TODO do translation in adaptation (x, y, -z, ux, uy, -uz)
         _check(
-            self._listener.SetOrientation(*(list(orientation) + [lib.DS3D_IMMEDIATE]))
+            self._native_listener.SetOrientation(*(list(orientation) + [lib.DS3D_IMMEDIATE]))
         )
 
 

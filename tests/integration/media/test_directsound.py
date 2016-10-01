@@ -218,6 +218,7 @@ def test_buffer_play_stop(filled_buffer):
     assert filled_buffer.current_position[0] == 0
     filled_buffer.play()
     for _ in range(100):
+        assert filled_buffer.is_playing
         if filled_buffer.current_position[0] > 0:
             break
         else:
@@ -226,6 +227,7 @@ def test_buffer_play_stop(filled_buffer):
         pytest.fail("Did not advance position in buffer while playing.")
 
     filled_buffer.stop()
+    assert not filled_buffer.is_playing
     pos = filled_buffer.current_position
     for _ in range(10):
         assert filled_buffer.current_position == pos

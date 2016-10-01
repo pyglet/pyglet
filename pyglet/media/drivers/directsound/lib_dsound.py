@@ -31,7 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 import ctypes
 from pyglet import com
@@ -67,6 +66,13 @@ class WAVEFORMATEX(ctypes.Structure):
         ('wBitsPerSample', WORD),
         ('cbSize', WORD), 
     ]
+
+    def __repr__(self):
+        return 'WAVEFORMATEX(wFormatTag={}, nChannels={}, nSamplesPerSec={}, nAvgBytesPersec={}' \
+               ', nBlockAlign={}, wBitsPerSample={}, cbSize={})'.format(
+                       self.wFormatTag, self.nChannels, self.nSamplesPerSec,
+                       self.nAvgBytesPerSec, self.nBlockAlign, self.wBitsPerSample,
+                       self.cbSize)
 LPWAVEFORMATEX = ctypes.POINTER(WAVEFORMATEX)
 WAVE_FORMAT_PCM = 1
 
@@ -117,6 +123,11 @@ class DSBUFFERDESC(ctypes.Structure):
         ('dwReserved', DWORD),
         ('lpwfxFormat', LPWAVEFORMATEX),
     ]
+
+    def __repr__(self):
+        return 'DSBUFFERDESC(dwSize={}, dwFlags={}, dwBufferBytes={}, lpwfxFormat={})'.format(
+                self.dwSize, self.dwFlags, self.dwBufferBytes,
+                self.lpwfxFormat.contents if self.lpwfxFormat else None)
 LPDSBUFFERDESC = ctypes.POINTER(DSBUFFERDESC)
 
 class DS3DBUFFER(ctypes.Structure):
@@ -433,3 +444,7 @@ DSERR_BADSENDBUFFERGUID = 0x887810D2
 DSERR_FXUNAVAILABLE = 0x887810DC
 DSERR_OBJECTNOTFOUND = 0x88781161
 
+# Buffer status
+DSBSTATUS_PLAYING = 0x00000001
+DSBSTATUS_BUFFERLOST = 0x00000002
+DSBSTATUS_LOOPING = 0x00000004
