@@ -152,6 +152,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         with self._lock:
             if not self._playing:
+                self._get_audiodata()  # prebuffer if needed
                 self._playing = True
                 self._ds_buffer.play()
 
@@ -190,20 +191,14 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
                     self.write(audio_data, length)
                     write_size -= length
                 else:
-                    if self._has_underrun():
-                        assert _debug('underrun, stopping')
-                        self.stop()
-                        # TODO dispatch events in update_play_cursor
-                        self._dispatch_new_event('on_eos')
-                        self._dispatch_new_event('on_source_group_eos')
-                    else:
-                        assert _debug('write silence')
-                        self.write(None, write_size)
+                    assert _debug('write silence')
+                    self.write(None, write_size)
                     write_size = 0
 
     def _has_underrun(self):
+        print(self._eos_cursor, self._play_cursor, self._write_cursor)
         return (self._eos_cursor is not None
-                and self._play_cursor >= self._eos_cursor)
+                and self._play_cursor > self._eos_cursor)
 
     def _dispatch_new_event(self, event_name):
         MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
@@ -223,8 +218,23 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._add_audiodata_events(self._audiodata_buffer)
             self._add_audiodata_timestamp(self._audiodata_buffer)
 
-            #TODO Set the write cursor back to eos_cursor or play_cursor to prevent gaps
-            self._eos_cursor = None
+            if self._eos_cursor is not None:
+                # Set the write cursor back to eos_cursor or play_cursor to prevent gaps
+                if self._play_cursor < self._eos_cursor:
+                    cursor_diff = self._write_cursor - self._eos_cursor
+                    assert _debug_print('Moving cursor back', cursor_diff)
+                    self._write_cursor = self._eos_cursor
+                    self._write_cursor_ring -= cursor_diff
+                    self._write_cursor_ring %= self._buffer_size
+
+                else:
+                    cursor_diff = self._play_cursor - self._eos_cursor
+                    assert _debug_print('Moving cursor back', cursor_diff)
+                    self._write_cursor = self._play_cursor
+                    self._write_cursor_ring -= cursor_diff
+                    self._write_cursor_ring %= self._buffer_size
+
+                self._eos_cursor = None
         elif self._eos_cursor is None:
             assert _debug('No more audio data.')
             self._eos_cursor = self._write_cursor
@@ -233,6 +243,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         for event in audio_data.events:
             event_cursor = self._write_cursor + event.timestamp * \
                 self.source_group.audio_format.bytes_per_second
+            assert _debug('Adding event', event, 'at', event_cursor)
             self._events.append((event_cursor, event))
 
     def _add_audiodata_timestamp(self, audio_data):
@@ -250,7 +261,12 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._play_cursor += play_cursor_ring - self._play_cursor_ring
             self._play_cursor_ring = play_cursor_ring
 
-            # Dispatch pending events
+        self._dispatch_pending_events()
+        self._cleanup_timestamps()
+        self._check_underrun()
+
+    def _dispatch_pending_events(self):
+        with self._lock:
             pending_events = []
             while self._events and self._events[0][0] <= self._play_cursor:
                 _, event = self._events.pop(0)
@@ -258,12 +274,20 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             assert _debug('Dispatching pending events: {}'.format(pending_events))
             assert _debug('Remaining events: {}'.format(self._events))
 
-            # Remove expired timestamps
+        for event in pending_events:
+            event._sync_dispatch_to_player(self.player)
+
+    def _cleanup_timestamps(self):
+        with self._lock:
             while self._timestamps and self._timestamps[0][0] < self._play_cursor:
                 del self._timestamps[0]
 
-        for event in pending_events:
-            event._sync_dispatch_to_player(self.player)
+    def _check_underrun(self):
+        if self._playing and self._has_underrun():
+            assert _debug('underrun, stopping')
+            self.stop()
+            self._dispatch_new_event('on_eos')
+            self._dispatch_new_event('on_source_group_eos')
 
     def get_write_size(self):
         self.update_play_cursor()

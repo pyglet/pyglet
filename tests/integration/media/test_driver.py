@@ -18,8 +18,6 @@ from pyglet.media.drivers.silent import SilentAudioDriver
 from pyglet.media.sources import SourceGroup
 from pyglet.media.sources.procedural import Silence
 
-from tests.annotations import Platform
-
 
 def _delete_driver():
     if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
@@ -75,10 +73,10 @@ class MockPlayer(object):
             event_type, args = self.wait_for_event(timeout, *expected_events)
             if _debug:
                 print('MockPlayer: got event {} @ {}'.format(event_type, time.time()))
-            if not event_type and time.time() >= end_time:
+            if event_type is None and time.time() >= end_time:
                 pytest.fail('Timeout before all events have been received. Still waiting for: '
                         + ','.join(expected_events))
-            else:
+            elif event_type is not None:
                 if event_type in expected_events:
                     expected_events.remove(event_type)
                 received_events.append((event_type, args))
