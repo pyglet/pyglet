@@ -39,7 +39,6 @@ import threading
 from . import interface
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
-from pyglet.media.exceptions import MediaException
 from pyglet.media.listener import AbstractListener
 from pyglet.media.threads import PlayerWorker
 
@@ -50,10 +49,6 @@ _debug = pyglet.options['debug_media']
 def _convert_coordinates(coordinates):
     x, y, z = coordinates
     return (x, y, -z)
-
-
-class DirectSoundException(MediaException):
-    pass
 
 
 class DirectSoundAudioPlayer(AbstractAudioPlayer):

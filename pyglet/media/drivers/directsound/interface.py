@@ -42,6 +42,7 @@ from pyglet.debug import debug_print
 from pyglet.window.win32 import _user32
 
 from . import lib_dsound as lib
+from .exceptions import DirectSoundNativeError
 
 _debug_media = debug_print('debug_media')
 
@@ -61,14 +62,6 @@ def _db(gain):
 def _gain(db):
     """Convert 100ths of dB to linear gain."""
     return math.pow(10.0, float(db)/1000.0)
-
-
-class DirectSoundNativeError(Exception):
-    def __init__(self, hresult):
-        self.hresult = hresult
-
-    def __repr__(self):
-        return "{}: Error {}".format(self.__class__.__name__, self.hresult)
 
 
 def _check(hresult):
