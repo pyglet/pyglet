@@ -38,13 +38,13 @@ import math
 import threading
 
 from . import interface
+from pyglet.debug import debug_print
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.listener import AbstractListener
 from pyglet.media.threads import PlayerWorker
 
-import pyglet
-_debug = pyglet.options['debug_media']
+_debug = debug_print('debug_media')
 
 
 def _convert_coordinates(coordinates):
@@ -78,11 +78,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     min_buffer_size = 9600
 
-    def __init__(self, driver, source_group, player):
+    def __init__(self, driver, ds_driver, source_group, player):
         super(DirectSoundAudioPlayer, self).__init__(source_group, player)
 
-        self._driver = driver
-        self._ds_driver = driver._ds_driver
+        self.driver = driver
+        self._ds_driver = ds_driver
 
         # Locking strategy:
         # All DirectSound calls should be locked.  All instance vars relating
@@ -98,7 +98,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         # Up to one audio data may be buffered if too much data was received
         # from the source that could not be written immediately into the
         # buffer.  See refill().
-        self._next_audio_data = None
+        self._audiodata_buffer = None
 
         # Theoretical write and play cursors for an infinite buffer.  play
         # cursor is always <= write cursor (when equal, underrun is
@@ -140,100 +140,105 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             pass
 
     def delete(self):
-        if self._driver and self._driver.worker:
-            self._driver.worker.remove(self)
+        if self.driver and self.driver.worker:
+            self.driver.worker.remove(self)
 
         with self._lock:
             self._ds_buffer = None
 
-    def lock(self):
-        self._lock.acquire()
-
-    def unlock(self):
-        self._lock.release()
-
     def play(self):
-        if _debug:
-            print('DirectSound play')
-        self._driver.worker.add(self)
+        assert _debug('DirectSound play')
+        self.driver.worker.add(self)
 
         with self._lock:
             if not self._playing:
                 self._playing = True
                 self._ds_buffer.play()
-        if _debug:
-            print('return DirectSound play')
+
+        assert _debug('return DirectSound play')
 
     def stop(self):
-        if _debug:
-            print('DirectSound stop')
+        assert _debug('DirectSound stop')
 
         with self._lock:
             if self._playing:
                 self._playing = False
                 self._ds_buffer.stop()
-        if _debug:
-            print('return DirectSound stop')
+
+        assert _debug('return DirectSound stop')
 
     def clear(self):
-        if _debug:
-            print('DirectSound clear')
+        assert _debug('DirectSound clear')
         with self._lock:
             self._ds_buffer.current_position = 0
             self._play_cursor_ring = self._write_cursor_ring = 0
             self._play_cursor = self._write_cursor
             self._eos_cursor = None
-            self._next_audio_data = None
+            self._audiodata_buffer = None
             del self._events[:]
             del self._timestamps[:]
 
     def refill(self, write_size):
         with self._lock:
             while write_size > 0:
-                if _debug:
-                    print('refill, write_size =', write_size)
-                # Get next audio packet (or remains of last one)
-                if self._next_audio_data:
-                    audio_data = self._next_audio_data
-                    self._next_audio_data = None
-                else:
-                    audio_data = self.source_group.get_audio_data(write_size)
+                assert _debug('refill, write_size =', write_size)
+                audio_data = self._get_audiodata()
 
-                # Write it, or silence if there are no more packets
-                if audio_data:
-                    # Add events
-                    for event in audio_data.events:
-                        event_cursor = self._write_cursor + event.timestamp * \
-                            self.source_group.audio_format.bytes_per_second
-                        self._events.append((event_cursor, event))
-
-                    # Add timestamp (at end of this data packet)
-                    ts_cursor = self._write_cursor + audio_data.length
-                    self._timestamps.append(
-                        (ts_cursor, audio_data.timestamp + audio_data.duration))
-
-                    # Write data
-                    if _debug:
-                        print('write', audio_data.length)
+                if audio_data is not None:
+                    assert _debug('write', audio_data.length)
                     length = min(write_size, audio_data.length)
                     self.write(audio_data, length)
-                    if audio_data.length:
-                        self._next_audio_data = audio_data
                     write_size -= length
                 else:
-                    # Write silence
-                    if self._eos_cursor is None:
-                        self._eos_cursor = self._write_cursor
-                        self._events.append(
-                           (self._eos_cursor, MediaEvent(0, 'on_eos')))
-                        self._events.append(
-                           (self._eos_cursor, MediaEvent(0, 'on_source_group_eos')))
-                        self._events.sort()
-                    if self._write_cursor > self._eos_cursor + self._buffer_size:
+                    if self._has_underrun():
+                        assert _debug('underrun, stopping')
                         self.stop()
+                        # TODO dispatch events in update_play_cursor
+                        self._dispatch_new_event('on_eos')
+                        self._dispatch_new_event('on_source_group_eos')
                     else:
+                        assert _debug('write silence')
                         self.write(None, write_size)
                     write_size = 0
+
+    def _has_underrun(self):
+        return (self._eos_cursor is not None
+                and self._play_cursor >= self._eos_cursor)
+
+    def _dispatch_new_event(self, event_name):
+        MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
+
+    def _get_audiodata(self):
+        if self._audiodata_buffer is None or self._audiodata_buffer.length == 0:
+            self._get_new_audiodata()
+
+        return self._audiodata_buffer
+
+    def _get_new_audiodata(self):
+        assert _debug('Getting new audio data buffer.')
+        self._audiodata_buffer = self.source_group.get_audio_data(self._buffer_size)
+
+        if self._audiodata_buffer is not None:
+            assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
+            self._add_audiodata_events(self._audiodata_buffer)
+            self._add_audiodata_timestamp(self._audiodata_buffer)
+
+            #TODO Set the write cursor back to eos_cursor or play_cursor to prevent gaps
+            self._eos_cursor = None
+        elif self._eos_cursor is None:
+            assert _debug('No more audio data.')
+            self._eos_cursor = self._write_cursor
+
+    def _add_audiodata_events(self, audio_data):
+        for event in audio_data.events:
+            event_cursor = self._write_cursor + event.timestamp * \
+                self.source_group.audio_format.bytes_per_second
+            self._events.append((event_cursor, event))
+
+    def _add_audiodata_timestamp(self, audio_data):
+        ts_cursor = self._write_cursor + audio_data.length
+        self._timestamps.append(
+            (ts_cursor, audio_data.timestamp + audio_data.duration))
 
     def update_play_cursor(self):
         with self._lock:
@@ -250,9 +255,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             while self._events and self._events[0][0] <= self._play_cursor:
                 _, event = self._events.pop(0)
                 pending_events.append(event)
-            if _debug:
-                print('Dispatching pending events:', pending_events)
-                print('Remaining events:', self._events)
+            assert _debug('Dispatching pending events: {}'.format(pending_events))
+            assert _debug('Remaining events: {}'.format(self._events))
 
             # Remove expired timestamps
             while self._timestamps and self._timestamps[0][0] < self._play_cursor:
@@ -384,7 +388,7 @@ class DirectSoundDriver(AbstractAudioDriver):
 
     def create_audio_player(self, source_group, player):
         assert self._ds_driver is not None
-        return DirectSoundAudioPlayer(self, source_group, player)
+        return DirectSoundAudioPlayer(self, self._ds_driver, source_group, player)
 
     def get_listener(self):
         assert self._ds_driver is not None
