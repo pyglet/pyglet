@@ -36,7 +36,6 @@ Pythonic interface to DirectSound.
 """
 from collections import namedtuple
 import ctypes
-import math
 
 from pyglet.debug import debug_print
 from pyglet.window.win32 import _user32
@@ -45,24 +44,6 @@ from . import lib_dsound as lib
 from .exceptions import DirectSoundNativeError
 
 _debug_media = debug_print('debug_media')
-
-def _db(gain):
-    """
-    Convert linear gain in range [0.0, 1.0] to 100ths of dB.
-
-    Power gain = P1/P2
-    dB = 10 log(P1/P2)
-    dB * 100 = 1000 * log(power gain)
-    """
-    if gain <= 0:
-        return -10000
-    return max(-10000, min(int(1000 * math.log10(min(gain, 1))), 0))
-
-
-def _gain(db):
-    """Convert 100ths of dB to linear gain."""
-    return math.pow(10.0, float(db)/1000.0)
-
 
 def _check(hresult):
     if hresult != lib.DS_OK:
@@ -195,17 +176,16 @@ class DirectSoundBuffer(object):
 
     @property
     def volume(self):
-        # TODO Shouldn't _gain and _db be used in adaptation?
         vol = lib.LONG()
         _check(
             self._native_buffer.GetVolume(ctypes.byref(vol))
         )
-        return _gain(vol.value)
+        return vol.value
 
     @volume.setter
     def volume(self, value):
         _check(
-            self._native_buffer.SetVolume(_db(value))
+            self._native_buffer.SetVolume(value)
         )
 
     _CurrentPosition = namedtuple('_CurrentPosition', ['play_cursor', 'write_cursor'])

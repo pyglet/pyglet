@@ -34,6 +34,7 @@
 from __future__ import absolute_import, print_function
 
 import ctypes
+import math
 import threading
 
 from . import interface
@@ -49,6 +50,24 @@ _debug = pyglet.options['debug_media']
 def _convert_coordinates(coordinates):
     x, y, z = coordinates
     return (x, y, -z)
+
+
+def _gain2db(gain):
+    """
+    Convert linear gain in range [0.0, 1.0] to 100ths of dB.
+
+    Power gain = P1/P2
+    dB = 10 log(P1/P2)
+    dB * 100 = 1000 * log(power gain)
+    """
+    if gain <= 0:
+        return -10000
+    return max(-10000, min(int(1000 * math.log10(min(gain, 1))), 0))
+
+
+def _db2gain(db):
+    """Convert 100ths of dB to linear gain."""
+    return math.pow(10.0, float(db)/1000.0)
 
 
 class DirectSoundAudioPlayer(AbstractAudioPlayer):
@@ -294,7 +313,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def set_volume(self, volume):
         with self._lock:
-            self._ds_buffer.volume = volume
+            self._ds_buffer.volume = _gain2db(volume)
 
     def set_position(self, position):
         if self._ds_buffer.is3d:
@@ -339,7 +358,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def set_cone_outer_gain(self, cone_outer_gain):
         if self._ds_buffer.is3d:
-            volume = interface._db(cone_outer_gain)
+            volume = _gain2db(cone_outer_gain)
             with self._lock:
                 self._ds_buffer.cone_outside_volume = volume
 
@@ -385,7 +404,7 @@ class DirectSoundListener(AbstractListener):
 
     def _set_volume(self, volume):
         self._volume = volume
-        self._ds_buffer.volume = volume
+        self._ds_buffer.volume = _gain2db(volume)
 
     def _set_position(self, position):
         self._position = position
