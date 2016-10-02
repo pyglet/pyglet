@@ -214,29 +214,32 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         if self._audiodata_buffer is not None:
             assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
-            self._add_audiodata_events(self._audiodata_buffer)
-            self._add_audiodata_timestamp(self._audiodata_buffer)
 
             if self._eos_cursor is not None:
-                # Set the write cursor back to eos_cursor or play_cursor to prevent gaps
-                if self._play_cursor < self._eos_cursor:
-                    cursor_diff = self._write_cursor - self._eos_cursor
-                    assert _debug('Moving cursor back', cursor_diff)
-                    self._write_cursor = self._eos_cursor
-                    self._write_cursor_ring -= cursor_diff
-                    self._write_cursor_ring %= self._buffer_size
+                self._move_write_cursor_after_eos()
 
-                else:
-                    cursor_diff = self._play_cursor - self._eos_cursor
-                    assert _debug('Moving cursor back', cursor_diff)
-                    self._write_cursor = self._play_cursor
-                    self._write_cursor_ring -= cursor_diff
-                    self._write_cursor_ring %= self._buffer_size
-
-                self._eos_cursor = None
+            self._add_audiodata_events(self._audiodata_buffer)
+            self._add_audiodata_timestamp(self._audiodata_buffer)
+            self._eos_cursor = None
         elif self._eos_cursor is None:
             assert _debug('No more audio data.')
             self._eos_cursor = self._write_cursor
+
+    def _move_write_cursor_after_eos(self):
+        # Set the write cursor back to eos_cursor or play_cursor to prevent gaps
+        if self._play_cursor < self._eos_cursor:
+            cursor_diff = self._write_cursor - self._eos_cursor
+            assert _debug('Moving cursor back', cursor_diff)
+            self._write_cursor = self._eos_cursor
+            self._write_cursor_ring -= cursor_diff
+            self._write_cursor_ring %= self._buffer_size
+
+        else:
+            cursor_diff = self._play_cursor - self._eos_cursor
+            assert _debug('Moving cursor back', cursor_diff)
+            self._write_cursor = self._play_cursor
+            self._write_cursor_ring -= cursor_diff
+            self._write_cursor_ring %= self._buffer_size
 
     def _add_audiodata_events(self, audio_data):
         for event in audio_data.events:
