@@ -8,7 +8,8 @@ import pytest
 import random
 import time
 
-from pyglet.media.drivers.directsound.interface import DirectSoundDriver, DirectSoundBuffer, _db, _gain
+from pyglet.media.drivers.directsound.interface import DirectSoundDriver, DirectSoundBuffer
+from pyglet.media.drivers.directsound.adaptation import _gain2db, _db2gain
 from pyglet.media.sources import AudioFormat
 
 
@@ -28,24 +29,24 @@ def random_normalized_vector():
     length = math.sqrt(sum(x**2 for x in vector))
     return [x/length for x in vector]
 
-def test_db_gain_convert():
-    assert _db(0.0) == -10000
-    assert almost_equal(_gain(-10000), 0.0)
+def test_gain2db_gain_convert():
+    assert _gain2db(0.0) == -10000
+    assert almost_equal(_db2gain(-10000), 0.0)
 
-    assert _db(1.0) == 0
-    assert almost_equal(_gain(0), 1.0)
+    assert _gain2db(1.0) == 0
+    assert almost_equal(_db2gain(0), 1.0)
 
-    assert _db(-0.1) == -10000
-    assert _db(1.1) == 0
+    assert _gain2db(-0.1) == -10000
+    assert _gain2db(1.1) == 0
 
     x = 0.0
     while (x <= 1.0):
-        assert almost_equal(_gain(_db(x)), x, 0.01)
+        assert almost_equal(_db2gain(_gain2db(x)), x, 0.01)
         x += 0.01
 
     y = -10000
     while (y <= 0):
-        assert almost_equal(_db(_gain(y)), y, 1)
+        assert almost_equal(_gain2db(_db2gain(y)), y, 1)
         y += 10
 
 
@@ -115,8 +116,8 @@ def test_create_buffer(driver, audio_format):
 def test_buffer_volume(buffer_):
     vol = 0.0
     while vol <= 1.0:
-        listener.volume = vol
-        assert almost_equal(listener.volume, vol, 0.05)
+        listener.volume = _gain2db(vol)
+        assert almost_equal(listener.volume, _gain2db(vol), 0.05)
         vol += 0.05
 
 
@@ -192,7 +193,7 @@ def test_buffer_cone_angles(buffer_):
 
 def test_buffer_cone_outside_volume(buffer_):
     for _ in range(10):
-        volume = _db(random.uniform(0.0, 1.0))
+        volume = _gain2db(random.uniform(0.0, 1.0))
         buffer_.cone_outside_volume = volume
         if buffer_.is3d:
             assert almost_equal(buffer_.cone_outside_volume, volume)
@@ -218,6 +219,7 @@ def test_buffer_play_stop(filled_buffer):
     assert filled_buffer.current_position[0] == 0
     filled_buffer.play()
     for _ in range(100):
+        assert filled_buffer.is_playing
         if filled_buffer.current_position[0] > 0:
             break
         else:
@@ -226,6 +228,7 @@ def test_buffer_play_stop(filled_buffer):
         pytest.fail("Did not advance position in buffer while playing.")
 
     filled_buffer.stop()
+    assert not filled_buffer.is_playing
     pos = filled_buffer.current_position
     for _ in range(10):
         assert filled_buffer.current_position == pos
