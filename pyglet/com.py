@@ -31,7 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 '''Minimal Windows COM interface.
 
@@ -72,6 +71,10 @@ from builtins import object
 
 import ctypes
 import sys
+
+from pyglet.debug import debug_print
+
+_debug_com = debug_print('debug_com')
 
 if sys.platform != 'win32':
     raise ImportError('pyglet.com requires a Windows build of Python')
@@ -122,8 +125,14 @@ class COMMethodInstance(object):
 
     def __get__(self, obj, tp):
         if obj is not None:
-            return lambda *args: \
-                self.method.get_field()(self.i, self.name)(obj, *args)
+            def _call(*args):
+                assert _debug_com('COM: IN {}({}, {})'.format(self.name, obj.__class__.__name__, args))
+                ret = self.method.get_field()(self.i, self.name)(obj, *args)
+                assert _debug_com('COM: OUT {}({}, {})'.format(self.name, obj.__class__.__name__, args))
+                assert _debug_com('COM: RETURN {}'.format(ret))
+                return ret
+            return _call
+
         raise AttributeError()
 
 class COMInterface(ctypes.Structure):
