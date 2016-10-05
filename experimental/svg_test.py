@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-"""
-"""
+'''
+'''
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -16,20 +16,16 @@ from pyglet.gl import *
 import xml.dom
 import xml.dom.minidom
 
-
 class SmoothLineGroup(pyglet.graphics.Group):
-    @staticmethod
-    def set_state():
+    def set_state(self):
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(GL_LINE_SMOOTH)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE)
 
-    @staticmethod
-    def unset_state():
+    def unset_state(self):
         glPopAttrib()
-
 
 class Curve(object):
     PATH_RE = re.compile(r'([MLHVCSQTAZ])([^MLHVCSQTAZ]+)', re.IGNORECASE)
@@ -37,12 +33,10 @@ class Curve(object):
     FLOAT = r'(?:[\s,]*)([+-]?\d+(?:\.\d+)?)'
 
     HANDLERS = {}
-
-    def handle(self, rx, types, HANDLERS=HANDLERS):
+    def handle(char, rx, types, HANDLERS=HANDLERS):
         def register(function):
-            HANDLERS[self] = (rx and re.compile(rx), function, types)
+            HANDLERS[char] = (rx and re.compile(rx), function, types)
             return function
-
         return register
 
     def __init__(self, spec, batch):
@@ -53,9 +47,8 @@ class Curve(object):
         self.min_x = self.min_y = self.max_x = self.max_y = None
 
         for cmd, value in self.PATH_RE.findall(spec):
-            # print (cmd, value)
-            if not cmd:
-                continue
+            #print (cmd, value)
+            if not cmd: continue
             rx, handler, types = self.HANDLERS[cmd.upper()]
             if rx is None:
                 handler(self, cmd)
@@ -71,18 +64,14 @@ class Curve(object):
             self.min_x = self.max_x = x
             self.min_y = self.max_y = y
         else:
-            if self.min_x > x:
-                self.min_x = x
-            elif self.max_x < x:
-                self.max_x = x
-            if self.min_y > y:
-                self.min_y = y
-            elif self.max_y < y:
-                self.max_y = y
+            if self.min_x > x: self.min_x = x
+            elif self.max_x < x: self.max_x = x
+            if self.min_y > y: self.min_y = y
+            elif self.max_y < y: self.max_y = y
 
-    @handle('M', FLOAT * 2, (float, float))
+    @handle('M', FLOAT*2, (float, float))
     def moveto(self, cmd, points):
-        """Start a new sub-path at the given (x,y) coordinate. M (uppercase)
+        '''Start a new sub-path at the given (x,y) coordinate. M (uppercase)
         indicates that absolute coordinates will follow; m (lowercase)
         indicates that relative coordinates will follow. If a relative moveto
         (m) appears as the first element of the path, then it is treated as a
@@ -91,17 +80,18 @@ class Curve(object):
         commands.
 
         Parameters are (x y)+
-        """
-        points = [list(map(float, point)) for point in points]
+        '''
+        points = [map(float, point) for point in points]
         # XXX handle relative
         # XXX confirm that we always reset start here
         self.start = self.current = points[0]
         if len(points) > 2:
             self.lineto({'m': 'l', 'M': 'L'}[cmd], points[1:])
 
-    @handle('L', FLOAT * 2, (float, float))
+
+    @handle('L', FLOAT*2, (float, float))
     def lineto(self, cmd, points):
-        """Draw a line from the current point to the given (x,y) coordinate
+        '''Draw a line from the current point to the given (x,y) coordinate
         which becomes the new current point. L (uppercase) indicates that
         absolute coordinates will follow; l (lowercase) indicates that relative
         coordinates will follow. A number of coordinates pairs may be specified
@@ -109,21 +99,21 @@ class Curve(object):
         set to the final set of coordinates provided.
 
         Parameters are (x y)+
-        """
+        '''
         l = []
         self._determine_rect(*self.current)
         for point in points:
             cx, cy = self.current
-            x, y = list(map(float, point))
+            x, y = map(float, point)
             l.extend([cx, -cy])
             l.extend([x, -y])
             self.current = (x, y)
             self._determine_rect(x, y)
-        self.batch.add(len(l) // 2, GL_LINES, SmoothLineGroup(), ('v2f', l))
+        self.batch.add(len(l)/2, GL_LINES, SmoothLineGroup(), ('v2f', l))
 
     @handle('H', FLOAT, (float,))
     def horizontal_lineto(self, cmd, xvals):
-        """Draws a horizontal line from the current point (cpx, cpy) to (x,
+        '''Draws a horizontal line from the current point (cpx, cpy) to (x,
         cpy). H (uppercase) indicates that absolute coordinates will follow; h
         (lowercase) indicates that relative coordinates will follow. Multiple x
         values can be provided (although usually this doesn't make sense). At
@@ -131,7 +121,7 @@ class Curve(object):
         final value of x.
 
         Parameters are x+
-        """
+        '''
         cx, cy = self.current
         self._determine_rect(*self.current)
         x = float(xvals[-1])
@@ -139,9 +129,10 @@ class Curve(object):
         self.current = (x, cy)
         self._determine_rect(x, cy)
 
+
     @handle('V', FLOAT, (float,))
     def vertical_lineto(self, cmd, yvals):
-        """Draws a vertical line from the current point (cpx, cpy) to (cpx, y).
+        '''Draws a vertical line from the current point (cpx, cpy) to (cpx, y).
         V (uppercase) indicates that absolute coordinates will follow; v
         (lowercase) indicates that relative coordinates will follow. Multiple y
         values can be provided (although usually this doesn't make sense). At
@@ -149,7 +140,7 @@ class Curve(object):
         final value of y.
 
         Parameters are y+
-        """
+        '''
         cx, cy = self.current
         self._determine_rect(*self.current)
         y = float(yvals[-1])
@@ -157,16 +148,18 @@ class Curve(object):
         self.current = (cx, y)
         self._determine_rect(cx, y)
 
+
     @handle('Z', None, None)
     def closepath(self, cmd):
-        """Close the current subpath by drawing a straight line from the
+        '''Close the current subpath by drawing a straight line from the
         current point to current subpath's initial point.
-        """
+        '''
         self.batch.add(2, GL_LINES, SmoothLineGroup(), ('v2f', self.current + tuple(self.start)))
 
-    @handle('C', FLOAT * 6, (float,) * 6)
+
+    @handle('C', FLOAT*6, (float, )*6)
     def curveto(self, cmd, control_points):
-        """Draws a cubic Bézier curve from the current point to (x,y) using
+        '''Draws a cubic Bézier curve from the current point to (x,y) using
         (x1,y1) as the control point at the beginning of the curve and (x2,y2)
         as the control point at the end of the curve. C (uppercase) indicates
         that absolute coordinates will follow; c (lowercase) indicates that
@@ -176,39 +169,34 @@ class Curve(object):
         polybézier.
 
         Control points are (x1 y1 x2 y2 x y)+
-        """
+        '''
         l = []
-        last = None
+        last=None
         for entry in control_points:
-            x1, y1, x2, y2, x, y = list(map(float, entry))
+            x1, y1, x2, y2, x, y = map(float, entry)
             t = 0
             cx, cy = self.current
             self.last_control = (x2, y2)
             self.current = (x, y)
-            x1 *= 3
-            x2 *= 3
-            y1 *= 3
-            y2 *= 3
+            x1 *= 3; x2 *= 3
+            y1 *= 3; y2 *= 3
             while t <= 1.01:
-                a = t
-                a2 = a ** 2
-                a3 = a ** 3
-                b = 1 - t
-                b2 = b ** 2
-                b3 = b ** 3
-                px = cx * b3 + x1 * b2 * a + x2 * b * a2 + x * a3
-                py = cy * b3 + y1 * b2 * a + y2 * b * a2 + y * a3
+                a = t; a2 = a**2; a3 = a**3
+                b = 1 - t; b2 = b**2; b3 = b**3
+                px = cx*b3 + x1*b2*a + x2*b*a2 + x*a3
+                py = cy*b3 + y1*b2*a + y2*b*a2 + y*a3
                 if last is not None:
                     l.extend(last)
                     l.extend((px, -py))
                 last = (px, -py)
                 self._determine_rect(px, py)
                 t += 0.01
-        self.batch.add(len(l) // 2, GL_LINES, SmoothLineGroup(), ('v2f', l))
+        self.batch.add(len(l)/2, GL_LINES, SmoothLineGroup(), ('v2f', l))
 
-    @handle('S', FLOAT * 4, (float,) * 4)
+
+    @handle('S', FLOAT*4, (float, )*4)
     def smooth_curveto(self, cmd, control_points):
-        """Draws a cubic Bézier curve from the current point to (x,y). The
+        '''Draws a cubic Bézier curve from the current point to (x,y). The
         first control point is assumed to be the reflection of the second
         control point on the previous command relative to the current point.
         (If there is no previous command or if the previous command was not an
@@ -221,17 +209,16 @@ class Curve(object):
         becomes the final (x,y) coordinate pair used in the polybézier.
 
         Control points are (x2 y2 x y)+
-        """
+        '''
         assert self.last_control is not None, 'S must follow S or C'
 
         l = []
         last = None
         for entry in control_points:
-            x2, y2, x, y = list(map(float, entry))
+            x2, y2, x, y = map(float, entry)
 
             # Reflect last control point
-            cx, cy = self.current
-            lcx, lcy = self.last_control
+            cx, cy = self.current; lcx, lcy = self.last_control
             dx, dy = cx - lcx, cy - lcy
             x1, y1 = cx + dx, cy + dy
 
@@ -240,19 +227,13 @@ class Curve(object):
             self.last_control = (x2, y2)
             self.current = (x, y)
 
-            x1 *= 3
-            x2 *= 3
-            y1 *= 3
-            y2 *= 3
+            x1 *= 3; x2 *= 3
+            y1 *= 3; y2 *= 3
             while t <= 1.01:
-                a = t
-                a2 = a ** 2
-                a3 = a ** 3
-                b = 1 - t
-                b2 = b ** 2
-                b3 = b ** 3
-                px = cx * b3 + x1 * b2 * a + x2 * b * a2 + x * a3
-                py = cy * b3 + y1 * b2 * a + y2 * b * a2 + y * a3
+                a = t; a2 = a**2; a3 = a**3
+                b = 1 - t; b2 = b**2; b3 = b**3
+                px = cx*b3 + x1*b2*a + x2*b*a2 + x*a3
+                py = cy*b3 + y1*b2*a + y2*b*a2 + y*a3
                 if last is not None:
                     l.extend(last)
                     l.extend((px, -py))
@@ -260,11 +241,12 @@ class Curve(object):
                 self._determine_rect(px, py)
                 t += 0.01
         # degenerate vertices
-        self.batch.add(len(l) // 2, GL_LINES, SmoothLineGroup(), ('v2f', l))
+        self.batch.add(len(l)/2, GL_LINES, SmoothLineGroup(), ('v2f', l))
 
-    @handle('Q', FLOAT * 4, (float,) * 4)
+
+    @handle('Q', FLOAT*4, (float, )*4)
     def quadratic_curveto(self, cmd, control_points):
-        """Draws a quadratic Bézier curve from the current point to (x,y)
+        '''Draws a quadratic Bézier curve from the current point to (x,y)
         using (x1,y1) as the control point. Q (uppercase) indicates that
         absolute coordinates will follow; q (lowercase) indicates that
         relative coordinates will follow. Multiple sets of coordinates may
@@ -273,12 +255,13 @@ class Curve(object):
         the polybézier.
 
         Control points are (x1 y1 x y)+
-        """
+        '''
         raise NotImplementedError('not implemented')
 
-    @handle('T', FLOAT * 2, (float,) * 2)
+
+    @handle('T', FLOAT*2, (float, )*2)
     def smooth_quadratic_curveto(self, cmd, control_points):
-        """Draws a quadratic Bézier curve from the current point to (x,y).
+        '''Draws a quadratic Bézier curve from the current point to (x,y).
         The control point is assumed to be the reflection of the control
         point on the previous command relative to the current point. (If
         there is no previous command or if the previous command was not a
@@ -289,12 +272,13 @@ class Curve(object):
         the final (x,y) coordinate pair used in the polybézier.
 
         Control points are (x y)+
-        """
+        '''
         raise NotImplementedError('not implemented')
 
-    @handle('A', FLOAT * 3 + INT * 2 + FLOAT * 2, (float,) * 3 + (int,) * 2 + (float,) * 2)
+
+    @handle('A', FLOAT*3 + INT*2 + FLOAT*2, (float,)*3 + (int,)*2 + (float,)*2)
     def elliptical_arc(self, cmd, parameters):
-        """Draws an elliptical arc from the current point to (x, y). The
+        '''Draws an elliptical arc from the current point to (x, y). The
         size and orientation of the ellipse are defined by two radii (rx,
         ry) and an x-axis-rotation, which indicates how the ellipse as a
         whole is rotated relative to the current coordinate system. The
@@ -304,21 +288,16 @@ class Curve(object):
         calculations and help determine how the arc is drawn.
 
         Parameters are (rx ry x-axis-rotation large-arc-flag sweep-flag x y)+
-        """
+        '''
         raise NotImplementedError('not implemented')
 
 
 class SVG(object):
     def __init__(self, filename, rect=None):
-        self._rect = rect
-        self.scale_x = None
-        self.scale_y = None
-        self.translate_x = None
-        self.translate_y = None
         dom = xml.dom.minidom.parse(filename)
         tag = dom.documentElement
         if tag.tagName != 'svg':
-            raise ValueError('document is <%s> instead of <svg>' % tag.tagName)
+            raise ValueError('document is <%s> instead of <svg>'%tag.tagName)
 
         # generate all the drawing elements
         self.batch = pyglet.graphics.Batch()
@@ -335,47 +314,39 @@ class SVG(object):
 
         # determine or apply drawing rect
         if rect is None:
-            self._rect = (self.min_x, self.min_y,
-                          self.max_x - self.min_x,
-                          self.max_y - self.min_y)
+            self._rect = (self.min_x, self.min_y, self.max_x - self.min_x,
+                self.max_y - self.min_y)
+        else:
+            self.set_rect(rect)
 
-    @property
-    def rect(self):
-        return self._rect
-
-    @rect.setter
-    def rect(self, new_rect):
-        self._rect = new_rect
+    def set_rect(self, rect):
+        self._rect = rect
         # figure transform for display rect
-        self.translate_x, self.translate_y, rw, rh = new_rect
+        self.translate_x, self.translate_y, rw, rh = rect
         self.scale_x = abs(rw / float(self.max_x - self.min_x))
         self.scale_y = abs(rh / float(self.max_y - self.min_y))
+    rect = property(lambda self: self._rect, set_rect)
 
     def draw(self):
         glPushMatrix()
         if self._rect is not None:
             glScalef(self.scale_x, self.scale_y, 1)
-            glTranslatef(self.translate_x - self.min_x, self.translate_x - self.min_y, 0)
+            glTranslatef(self.translate_x-self.min_x, self.translate_x-self.min_y, 0)
         self.batch.draw()
         glPopMatrix()
 
-
-window = pyglet.window.Window(width=600, height=300, resizable=True)
+w = pyglet.window.Window(width=600, height=300, resizable=True)
 
 dirname = os.path.dirname(__file__)
 svg = SVG(os.path.join(dirname, 'hello_world.svg'), rect=(0, 0, 600, 300))
 
-
-@window.event
+@w.event
 def on_draw():
-    window.clear()
+    w.clear()
     svg.draw()
 
-
-@window.event
-def on_resize(w, h):
-    print("Resized")
-    svg.rect = svg.rect[:2] + (w, h)
-
+@w.event
+def on_resize(w, h): svg.rect = svg.rect[:2] + (w, h)
 
 pyglet.app.run()
+
