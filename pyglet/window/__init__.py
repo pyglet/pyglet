@@ -564,7 +564,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             caption = sys.argv[0]
             # Decode hack for Python2 unicode support:
             if hasattr(caption, "decode"):
-                caption = caption.decode("utf8")
+                try:
+                    caption = caption.decode("utf8")
+                except UnicodeDecodeError:
+                    caption = "pyglet"
         self._caption = caption
 
         from pyglet import app
