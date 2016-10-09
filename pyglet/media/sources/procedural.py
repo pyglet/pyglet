@@ -129,9 +129,9 @@ class ProceduralSource(Source):
 class Silence(ProceduralSource):
     def _generate_data(self, num_bytes, offset):
         if self._bytes_per_sample == 1:
-            return '\127' * num_bytes
+            return b'\127' * num_bytes
         else:
-            return '\0' * num_bytes
+            return b'\0' * num_bytes
 
 
 class WhiteNoise(ProceduralSource):

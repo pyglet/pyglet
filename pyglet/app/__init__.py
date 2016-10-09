@@ -103,8 +103,7 @@ class WeakSet(object):
         self._dict.pop(value, None)
 
     def pop(self):
-        value = self._dict.keys()[0]
-        self._dict.pop(value)
+        value, _ = self._dict.popitem()
         return value
 
     def __iter__(self):
