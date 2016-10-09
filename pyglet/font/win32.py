@@ -397,7 +397,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
                  StringFormatFlagsNoClip | 
                  StringFormatFlagsNoFitBlackBox)
         gdiplus.GdipSetStringFormatFlags(format, flags)
-        ret = gdiplus.GdipMeasureString(self._graphics, 
+        gdiplus.GdipMeasureString(self._graphics, 
                                   ch, 
                                   len_ch,
                                   self.font._gdipfont, 
@@ -409,9 +409,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         lsb = 0
         advance = int(math.ceil(bbox.width))
         width = advance
-        # if text == 'm':
-        #     import pdb; pdb.set_trace()
-
+        
         # This hack bumps up the width if the font is italic;
         # this compensates for some common fonts.  It's also a stupid 
         # waste of texture memory.
