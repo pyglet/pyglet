@@ -409,11 +409,14 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         lsb = 0
         advance = int(math.ceil(bbox.width))
         width = advance
+        
         # This hack bumps up the width if the font is italic;
         # this compensates for some common fonts.  It's also a stupid 
         # waste of texture memory.
         if self.font.italic:
             width += width // 2
+            # Do not enlarge more than the _rect width.
+            width = min(width, self._rect.Width) 
         
         # GDI functions only work for a single character so we transform
         # grapheme \r\n into \r
@@ -423,9 +426,11 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # Check if ttf font.         
         if gdi32.GetCharABCWidthsW(self._dc, 
             ord(text), ord(text), byref(abc)):
+            
             lsb = abc.abcA
             if lsb < 0:
                 rect.x = -lsb
+                width -= lsb
 
         # XXX END HACK HACK HACK
 
