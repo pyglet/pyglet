@@ -228,7 +228,7 @@ class FontConfigPattern(object):
         if not value:
             return
 
-        value  = value.encode('utf8')
+        value = value.encode('utf8')
 
         self._fontconfig.FcPatternAddString(self._pattern, name, asbytes(value))
 
@@ -342,6 +342,9 @@ class FontConfigSearchPattern(FontConfigPattern):
             return match_pattern
         else:
             return None
+
+    def dispose(self):
+        self._destroy()
 
 
 class FontConfigSearchResult(FontConfigPattern):
