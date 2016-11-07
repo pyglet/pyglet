@@ -119,7 +119,7 @@ class ProceduralSource(Source):
                 The file name to save as.
 
         """
-        data = self._generate_data(self._max_offset, 0)
+        data = self.get_audio_data(self._max_offset).get_string_data()
         header = struct.pack('<4sI8sIHHIIHH4sI',
                              b"RIFF",
                              len(data) + 44 - 8,
