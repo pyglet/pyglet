@@ -1,8 +1,45 @@
+from future.standard_library import install_aliases
+install_aliases()
+
 from builtins import object
+import queue
 import unittest
 import time
 
 from pyglet import window
+
+
+class EventSequenceFixture(object):
+    def __init__(self, event_loop):
+        self.event_loop = event_loop
+        self.listen_events = []
+        self.received_events = queue.Queue()
+
+    def create_window(self, **kwargs):
+        w = event_loop.create_window(**kwargs)
+        w.push_handlers(self)
+        return w
+
+    def wait_for_events(self, expected_events, incorrect_events):
+        if isinstance(expected_events, (tuple, list)):
+            self.listen_events = expected_events
+        else:
+            self.listen_events = [expected_events]
+
+        while True:
+            # check events
+            self.event_loop.run_event_loop()
+
+    def __getattr__(self, name):
+        if name.startswith('on_'):
+            return self._handle_event
+        else:
+            raise AttributeError()
+
+    def _handle_event(self, name, *args, **kwargs):
+        if name in self.listen_events:
+            q.put((name, args, kwargs))
+            self.event_loop.interrupt_event_loop()
 
 
 class EventSequenceTest(object):

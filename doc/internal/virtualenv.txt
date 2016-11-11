@@ -6,7 +6,11 @@ To develop pyglet, you need an environment with at least the following:
    - py.test
    - Your favorite Python editor or IDE
 
-Optionally you should also have:
+To generate documentation you also need:
+  - Sphinx
+  - Graphviz
+
+To use and test all pyglet functionality you should also have:
    - AVbin
    - Pillow
    - coverage
@@ -26,6 +30,7 @@ OS's package manager (apt, brew, etc) to install the following dependencies:
    - Python 2.7
    - Python 3.4 and/or 3.5
    - pip (for each version of Python)
+   - Graphviz (if you want to generate documentation)
 
 [Optional] Make sure pip is the latest version (you might need to add sudo)::
 
@@ -56,6 +61,10 @@ Now install required dependencies::
 
    pip install pytest
 
+Install the documentation generator::
+
+   pip install sphinx
+
 And optional dependencies::
 
    pip install pytest-cov Pillow
@@ -79,8 +88,9 @@ Windows
 Setting up
 ''''''''''
 Make sure you download and install:
-   - Python 2.7
-   - Python 3.4 and/or 3.5
+   - `Python 2.7 <http://www.python.org/downloads/windows/>`_
+   - `Python 3.4 and/or 3.5 <http://www.python.org/downloads/windows/>`_
+   - `Graphviz <http://www.graphviz.org/Download_windows.php>`_
 
 Pip should installed automatically with the latest Python installers. Make sure you do not
 choose to not install pip.
@@ -114,6 +124,10 @@ You will see the name of the virtual environment at the start of the command pro
 Now install required dependencies::
 
    pip install pytest
+
+Install the documentation generator::
+
+   pip install sphinx
 
 And optional dependencies::
 

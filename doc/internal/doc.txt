@@ -189,20 +189,17 @@ And to insert a reference to an anchor:
 Generation
 ----------
 
-The complete documentation can be generated using ``sphinx``.
-
-.. rubric:: Requirements
-
-* ``sphinx``: Documentation builder.
-* ``graphviz``: If you want to generate graphs.
-
+The complete documentation can be generated using ``sphinx``. Make sure you prepare your
+environment as stated in :doc:`virtualenv`.
 
 To build the documentation, execute::
 
    ./make.py docs
 
-If the build succeeds, the web pages are in ``_build/html``
+.. note ::
+   Due to a bug in Sphinx, documentation generation currently only works using Python 3.x.
 
+If the build succeeds, the web pages are in ``doc/_build/html``
 
 .. rubric:: Details
 
