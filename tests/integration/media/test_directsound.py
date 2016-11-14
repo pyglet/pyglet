@@ -8,10 +8,17 @@ import pytest
 import random
 import time
 
-from pyglet.media.drivers.directsound.interface import DirectSoundDriver, DirectSoundBuffer
-from pyglet.media.drivers.directsound.adaptation import _gain2db, _db2gain
 from pyglet.media.sources import AudioFormat
 
+try:
+    from pyglet.media.drivers import directsound
+    from pyglet.media.drivers.directsound.interface import DirectSoundDriver, DirectSoundBuffer
+    from pyglet.media.drivers.directsound.adaptation import _gain2db, _db2gain
+except ImportError:
+    directsound = None
+
+import pytest
+pytestmark = pytest.mark.skipif(directsound is None, reason='No DirectSound available.')
 
 def almost_equal(a, b, e=0.0001):
     assert abs(a-b) <= e
