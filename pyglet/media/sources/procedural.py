@@ -191,8 +191,8 @@ class Sine(ProceduralSource):
         return data
 
 
-class Saw(ProceduralSource):
-    """A procedurally generated sawtooth waveform.
+class Triangle(ProceduralSource):
+    """A procedurally generated triangle waveform.
 
     :Parameters:
         `duration` : float
@@ -205,7 +205,7 @@ class Saw(ProceduralSource):
             The bit precision. Must be either 8 or 16.
     """
     def __init__(self, duration, frequency=440, **kwargs):
-        super(Saw, self).__init__(duration, **kwargs)
+        super(Triangle, self).__init__(duration, **kwargs)
         self.frequency = frequency
         
     def _generate_data(self, num_bytes, offset):

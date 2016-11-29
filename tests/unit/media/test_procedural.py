@@ -102,8 +102,8 @@ class SineTest(ProceduralSourceTest, unittest.TestCase):
     source_class = Sine
 
 
-class SawTest(ProceduralSourceTest, unittest.TestCase):
-    source_class = Saw
+class TriangleTest(ProceduralSourceTest, unittest.TestCase):
+    source_class = Triangle
 
 
 class SquareTest(ProceduralSourceTest, unittest.TestCase):
