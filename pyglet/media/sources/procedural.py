@@ -235,6 +235,46 @@ class Triangle(ProceduralSource):
         return data
 
 
+class Sawtooth(ProceduralSource):
+    """A procedurally generated sawtooth waveform.
+
+    :Parameters:
+        `duration` : float
+            The length, in seconds, of audio that you wish to generate.
+        `frequency` : int
+            The frequency, in Hz of the waveform you wish to produce.
+        `sample_rate` : int
+            Audio samples per second. (CD quality is 44100).
+        `sample_size` : int
+            The bit precision. Must be either 8 or 16.
+    """
+    def __init__(self, duration, frequency=440, **kwargs):
+        super(Sawtooth, self).__init__(duration, **kwargs)
+        self.frequency = frequency
+
+    def _generate_data(self, num_bytes, offset):
+        # XXX TODO consider offset
+        if self._bytes_per_sample == 1:
+            samples = num_bytes
+            value = 127
+            maximum = 255
+            minimum = 0
+            data = (ctypes.c_ubyte * samples)()
+        else:
+            samples = num_bytes >> 1
+            value = 0
+            maximum = 32767
+            minimum = -32768
+            data = (ctypes.c_short * samples)()
+        step = (maximum - minimum) * self.frequency / self._sample_rate
+        for i in range(samples):
+            value += step
+            if value > maximum:
+                value = minimum
+            data[i] = _future_round(value)
+        return data
+
+
 class Square(ProceduralSource):
     """A procedurally generated square (or pulse) waveform.
 

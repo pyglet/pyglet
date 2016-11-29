@@ -106,6 +106,10 @@ class TriangleTest(ProceduralSourceTest, unittest.TestCase):
     source_class = Triangle
 
 
+class SawtoothTest(ProceduralSourceTest, unittest.TestCase):
+    source_class = Sawtooth
+
+
 class SquareTest(ProceduralSourceTest, unittest.TestCase):
     source_class = Square
 
