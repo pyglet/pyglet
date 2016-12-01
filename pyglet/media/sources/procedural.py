@@ -36,10 +36,13 @@ from builtins import range
 
 from pyglet.media.sources.base import Source, AudioFormat, AudioData
 
+from collections import deque
+
 import ctypes
 import os
 import math
 import struct
+import random
 
 
 def _future_round(value):
@@ -368,4 +371,36 @@ class FM(ProceduralSource):
                 math.sin(car_step * increment +
                          mod_index * math.sin(mod_step * increment))
                 * amplitude + bias)
+        return data
+
+
+class Digitar(ProceduralSource):
+    def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
+        super(Digitar, self).__init__(duration, **kwargs)
+        self.frequency = frequency
+        self.decay = decay
+
+    def _create_buffer(self):
+        period = int(self._sample_rate / self.frequency)
+        self._ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
+
+    def _generate_data(self, num_bytes, offset):
+        # TODO: consider how to implement seeking.
+        if offset == 0:
+            self._create_buffer()
+        if self._bytes_per_sample == 1:
+            samples = num_bytes
+            bias = 127
+            amplitude = 127
+            data = (ctypes.c_ubyte * samples)()
+        else:
+            samples = num_bytes >> 1
+            bias = 0
+            amplitude = 32767
+            data = (ctypes.c_short * samples)()
+        ring_buffer = self._ring_buffer
+        decay = self.decay
+        for i in range(samples):
+            data[i] = _future_round(ring_buffer[0] * amplitude + bias)
+            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
         return data
