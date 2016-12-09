@@ -404,3 +404,40 @@ class Digitar(ProceduralSource):
             data[i] = _future_round(ring_buffer[0] * amplitude + bias)
             ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
         return data
+
+
+def flat_envelope(amplitude=0.5):
+    framerate, length = yield
+    while True:
+        yield amplitude
+
+
+def linear_decay_envelope(peak=1.0):
+    framerate, length = yield
+    total_bytes = int(framerate * length)
+    for i in range(total_bytes):
+        yield (total_bytes - i) / total_bytes * peak
+
+
+def adsr_envelope(attack, decay, release, sustain_level=0.5):
+    framerate, length = yield
+    total_bytes = int(framerate * length)
+    attack_bytes = int(framerate * attack)
+    decay_bytes = int(framerate * decay)
+    release_bytes = int(framerate * release)
+    sustain_bytes = total_bytes - attack_bytes - decay_bytes - release_bytes
+    decay_step = (1 - sustain_level) / decay_bytes
+    release_step = sustain_level / release_bytes
+    # Attack:
+    for i in range(1, attack_bytes + 1):
+        yield i / attack_bytes
+    # Decay:
+    for i in range(1, decay_bytes + 1):
+        yield 1 - (i * decay_step)
+    # Sustain:
+    for i in range(1, sustain_bytes + 1):
+        yield sustain_level
+    # Release:
+    for i in range(1, release_bytes + 1):
+        yield sustain_level - (i * release_step)
+
