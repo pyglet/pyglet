@@ -383,25 +383,28 @@ class Square(ProceduralSource):
     def _generate_data(self, num_bytes, offset):
         # XXX TODO consider offset
         if self._bytes_per_sample == 1:
+            start = offset
             samples = num_bytes
-            value = 0
-            amplitude = 255
+            bias = 127
+            amplitude = 127
             data = (ctypes.c_ubyte * samples)()
         else:
+            start = offset >> 1
             samples = num_bytes >> 1
-            value = -32768
-            amplitude = 65535
+            bias = 0
+            amplitude = 32767
             data = (ctypes.c_short * samples)()
         period = self.audio_format.sample_rate / self.frequency / 2
         envelope = self._envelope_array
         env_offset = offset // self._bytes_per_sample
+        value = 1
         count = 0
         for i in range(samples):
-            count += 1
             if count >= period:
-                value = amplitude - value
+                value = -value
                 count = 0
-            data[i] = _future_round(value * envelope[i+env_offset])
+            count += 1
+            data[i] = _future_round(value * amplitude * envelope[i+env_offset] + bias)
         return data
 
 
