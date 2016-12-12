@@ -36,7 +36,7 @@ from builtins import range
 
 from pyglet.media.sources.base import Source, AudioFormat, AudioData
 
-from collections import deque, namedtuple
+from collections import deque
 
 import ctypes
 import os
@@ -51,14 +51,37 @@ def _future_round(value):
     return int(round(value))
 
 
-class FlatEnvelope(object):
+class Envelope(object):
+    """Base class for waveform envelopes"""
+
+    def build_envelope(self, sample_rate, duration):
+        raise NotImplementedError
+
+
+class FlatEnvelope(Envelope):
     def __init__(self, amplitude=0.5):
-        self.amplitude = amplitude
+        self.amplitude = max(min(1.0, amplitude), 0)
+
+    def build_envelope(self, sample_rate, duration):
+        amplitude = self.amplitude
+        total_bytes = int(sample_rate * duration)
+        envelope = []
+        for i in range(total_bytes):
+            envelope.append(amplitude)
+        return envelope
 
 
 class LinearDecayEnvelope(object):
     def __init__(self, peak=1.0):
-        self.peak = peak
+        self.peak = max(min(1.0, peak), 0)
+
+    def build_envelope(self, sample_rate, duration):
+        peak = self.peak
+        total_bytes = int(sample_rate * duration)
+        envelope = []
+        for i in range(total_bytes):
+            envelope.append((total_bytes - i) / total_bytes * peak)
+        return envelope
 
 
 class ADSREnvelope(object):
@@ -66,7 +89,27 @@ class ADSREnvelope(object):
         self.attack = attack
         self.decay = decay
         self.release = release
-        self.sustain_amplitude = sustain_amplitude
+        self.sustain_amplitude = max(min(1.0, sustain_amplitude), 0)
+
+    def build_envelope(self, sample_rate, duration):
+        sustain_amplitude = self.sustain_amplitude
+        total_bytes = int(sample_rate * duration)
+        attack_bytes = int(sample_rate * self.attack)
+        decay_bytes = int(sample_rate * self.decay)
+        release_bytes = int(sample_rate * self.release)
+        sustain_bytes = total_bytes - attack_bytes - decay_bytes - release_bytes
+        decay_step = (1 - sustain_amplitude) / decay_bytes
+        release_step = sustain_amplitude / release_bytes
+        envelope = []
+        for i in range(1, attack_bytes + 1):
+            envelope.append(i / attack_bytes)
+        for i in range(1, decay_bytes + 1):
+            envelope.append(1 - (i * decay_step))
+        for i in range(1, sustain_bytes + 1):
+            envelope.append(sustain_amplitude)
+        for i in range(1, release_bytes + 1):
+            envelope.append(sustain_amplitude - (i * release_step))
+        return envelope
 
 
 class ProceduralSource(Source):
@@ -94,19 +137,25 @@ class ProceduralSource(Source):
         self._bytes_per_sample = sample_size >> 3
         self._bytes_per_second = self._bytes_per_sample * sample_rate
         self._max_offset = int(self._bytes_per_second * self._duration)
+        self._envelope = envelope
         
         if self._bytes_per_sample == 2:
             self._max_offset &= 0xfffffffe
 
-        if type(envelope) == FlatEnvelope:
-            self._envelope = self._flat_envelope(envelope.amplitude)
-        elif type(envelope) == LinearDecayEnvelope:
-            self._envelope = self._linear_decay_envelope(envelope.peak)
-        elif type(envelope) == ADSREnvelope:
-            self._envelope = self._adsr_envelope(envelope.attack, envelope.decay,
-                                                 envelope.release, envelope.sustain_amplitude)
+        if self._envelope:
+            self._envelope_array = self._envelope.build_envelope(self._sample_rate, self._duration)
         else:
-            self._envelope = self._flat_envelope(amplitude=0.5)
+            self._envelope = FlatEnvelope(amplitude=1.0)
+            self._envelope_array = self._envelope.build_envelope(self._sample_rate, self._duration)
+
+    @property
+    def envelope(self):
+        return self._envelope
+
+    @envelope.setter
+    def envelope(self, envelope):
+        self._envelope = envelope
+        self._envelope_array = envelope.build_envelope(self._sample_rate, self._duration)
 
     def get_audio_data(self, num_bytes):
         """Return `num_bytes` bytes of audio data."""
@@ -149,6 +198,7 @@ class ProceduralSource(Source):
                 The file name to save as.
 
         """
+        self.seek(0)
         data = self.get_audio_data(self._max_offset).get_string_data()
         header = struct.pack('<4sI8sIHHIIHH4sI',
                              b"RIFF",
@@ -167,40 +217,6 @@ class ProceduralSource(Source):
         with open(filename, "wb") as f:
             f.write(header)
             f.write(data)
-
-    def _flat_envelope(self, amplitude=0.5):
-        total_bytes = int(self._sample_rate * self._duration)
-        envelope = []
-        for i in range(total_bytes):
-            envelope.append(amplitude)
-        return envelope
-
-    def _linear_decay_envelope(self, peak=1.0):
-        total_bytes = int(self._sample_rate * self._duration)
-        envelope = []
-        for i in range(total_bytes):
-            envelope.append((total_bytes - i) / total_bytes * peak)
-        return envelope
-
-    def _adsr_envelope(self, attack, decay, release, sustain_level=0.5):
-        sample_rate = self._sample_rate
-        total_bytes = int(sample_rate * self._duration)
-        attack_bytes = int(sample_rate * attack)
-        decay_bytes = int(sample_rate * decay)
-        release_bytes = int(sample_rate * release)
-        sustain_bytes = total_bytes - attack_bytes - decay_bytes - release_bytes
-        decay_step = (1 - sustain_level) / decay_bytes
-        release_step = sustain_level / release_bytes
-        envelope = []
-        for i in range(1, attack_bytes + 1):
-            envelope.append(i / attack_bytes)
-        for i in range(1, decay_bytes + 1):
-            envelope.append(1 - (i * decay_step))
-        for i in range(1, sustain_bytes + 1):
-            envelope.append(sustain_level)
-        for i in range(1, release_bytes + 1):
-            envelope.append(sustain_level - (i * release_step))
-        return envelope
 
 
 class Silence(ProceduralSource):
@@ -236,7 +252,7 @@ class Sine(ProceduralSource):
     def __init__(self, duration, frequency=440, **kwargs):
         super(Sine, self).__init__(duration, **kwargs)
         self.frequency = frequency
-        
+
     def _generate_data(self, num_bytes, offset):
         if self._bytes_per_sample == 1:
             start = offset
@@ -251,9 +267,11 @@ class Sine(ProceduralSource):
             amplitude = 32767
             data = (ctypes.c_short * samples)()
         step = self.frequency * (math.pi * 2) / self.audio_format.sample_rate
-        envelope = self._envelope
+        envelope = self._envelope_array
+        env_offset = offset // self._bytes_per_sample
         for i in range(samples):
-            data[i] = _future_round(math.sin(step * (i + start)) * amplitude * envelope[i + offset] + bias)
+            data[i] = _future_round(math.sin(step * (i + start)) *
+                                    amplitude * envelope[i+env_offset] + bias)
         return data
 
 
@@ -289,7 +307,8 @@ class Triangle(ProceduralSource):
             minimum = -32768
             data = (ctypes.c_short * samples)()
         step = (maximum - minimum) * 2 * self.frequency / self.audio_format.sample_rate
-        envelope = self._envelope
+        envelope = self._envelope_array
+        env_offset = offset // self._bytes_per_sample
         for i in range(samples):
             value += step
             if value > maximum:
@@ -298,7 +317,7 @@ class Triangle(ProceduralSource):
             if value < minimum:
                 value = minimum - (value - minimum)
                 step = -step
-            data[i] = _future_round(value * next(envelope))
+            data[i] = _future_round(value * envelope[i+env_offset])
         return data
 
 
@@ -334,12 +353,13 @@ class Sawtooth(ProceduralSource):
             minimum = -32768
             data = (ctypes.c_short * samples)()
         step = (maximum - minimum) * self.frequency / self._sample_rate
-        envelope = self._envelope
+        envelope = self._envelope_array
+        env_offset = offset // self._bytes_per_sample
         for i in range(samples):
             value += step
             if value > maximum:
                 value = minimum
-            data[i] = _future_round(value * next(envelope))
+            data[i] = _future_round(value * envelope[i+env_offset])
         return data
 
 
@@ -374,14 +394,15 @@ class Square(ProceduralSource):
             amplitude = 65535
             data = (ctypes.c_short * samples)()
         period = self.audio_format.sample_rate / self.frequency / 2
-        envelope = self._envelope
+        envelope = self._envelope_array
+        env_offset = offset // self._bytes_per_sample
         count = 0
         for i in range(samples):
             count += 1
             if count >= period:
                 value = amplitude - value
                 count = 0
-            data[i] = _future_round(value * next(envelope))
+            data[i] = _future_round(value * envelope[i+env_offset])
         return data
 
 
@@ -430,44 +451,45 @@ class FM(ProceduralSource):
         mod_step = 2 * math.pi * self.modulator
         mod_index = self.mod_index
         sample_rate = self._sample_rate
-        envelope = self._envelope
+        envelope = self._envelope_array
+        env_offset = offset // self._bytes_per_sample
         # FM equation:  sin((2 * pi * carrier) + sin(2 * pi * modulator))
         for i in range(samples):
             increment = (i + start) / sample_rate
             data[i] = _future_round(
                 math.sin(car_step * increment +
                          mod_index * math.sin(mod_step * increment))
-                * amplitude * next(envelope) + bias)
+                * amplitude * envelope[i+env_offset] + bias)
         return data
 
 
-class Digitar(ProceduralSource):
-    def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
-        super(Digitar, self).__init__(duration, **kwargs)
-        self.frequency = frequency
-        self.decay = decay
-
-    def _create_buffer(self):
-        period = int(self._sample_rate / self.frequency)
-        self._ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
-
-    def _generate_data(self, num_bytes, offset):
-        # TODO: consider how to implement seeking.
-        if offset == 0:
-            self._create_buffer()
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            bias = 127
-            amplitude = 127
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            bias = 0
-            amplitude = 32767
-            data = (ctypes.c_short * samples)()
-        ring_buffer = self._ring_buffer
-        decay = self.decay
-        for i in range(samples):
-            data[i] = _future_round(ring_buffer[0] * amplitude + bias)
-            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
-        return data
+# class Digitar(ProceduralSource):
+#     def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
+#         super(Digitar, self).__init__(duration, **kwargs)
+#         self.frequency = frequency
+#         self.decay = decay
+#
+#     def _create_buffer(self):
+#         period = int(self._sample_rate / self.frequency)
+#         self._ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
+#
+#     def _generate_data(self, num_bytes, offset):
+#         # TODO: consider how to implement seeking.
+#         if offset == 0:
+#             self._create_buffer()
+#         if self._bytes_per_sample == 1:
+#             samples = num_bytes
+#             bias = 127
+#             amplitude = 127
+#             data = (ctypes.c_ubyte * samples)()
+#         else:
+#             samples = num_bytes >> 1
+#             bias = 0
+#             amplitude = 32767
+#             data = (ctypes.c_short * samples)()
+#         ring_buffer = self._ring_buffer
+#         decay = self.decay
+#         for i in range(samples):
+#             data[i] = _future_round(ring_buffer[0] * amplitude + bias)
+#             ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+#         return data
