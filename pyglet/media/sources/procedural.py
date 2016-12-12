@@ -65,10 +65,7 @@ class FlatEnvelope(Envelope):
     def build_envelope(self, sample_rate, duration):
         amplitude = self.amplitude
         total_bytes = int(sample_rate * duration)
-        envelope = []
-        for i in range(total_bytes):
-            envelope.append(amplitude)
-        return envelope
+        return [amplitude for _ in range(total_bytes)]
 
 
 class LinearDecayEnvelope(object):
@@ -198,6 +195,7 @@ class ProceduralSource(Source):
                 The file name to save as.
 
         """
+        offset = self._offset
         self.seek(0)
         data = self.get_audio_data(self._max_offset).get_string_data()
         header = struct.pack('<4sI8sIHHIIHH4sI',
@@ -217,6 +215,7 @@ class ProceduralSource(Source):
         with open(filename, "wb") as f:
             f.write(header)
             f.write(data)
+        self._offset = offset
 
 
 class Silence(ProceduralSource):
