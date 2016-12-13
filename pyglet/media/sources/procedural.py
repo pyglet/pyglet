@@ -52,13 +52,19 @@ def _future_round(value):
 
 
 class Envelope(object):
-    """Base class for waveform envelopes"""
-
+    """Base class for ProceduralSource amplitude envelopes."""
     def build_envelope(self, sample_rate, duration):
         raise NotImplementedError
 
 
 class FlatEnvelope(Envelope):
+    """A flat envelope, providing basic amplitude setting.
+
+    :Parameters:
+        `amplitude` : float
+            The amplitude (volume) of the wave, from 0.0 to 1.0.
+            Values outside of this range will be clamped.
+    """
     def __init__(self, amplitude=0.5):
         self.amplitude = max(min(1.0, amplitude), 0)
 
@@ -69,6 +75,16 @@ class FlatEnvelope(Envelope):
 
 
 class LinearDecayEnvelope(object):
+    """A linearly decaying envelope.
+
+    This envelope linearly decays the amplitude from the peak value
+    to 0, over the length of the waveform.
+
+    :Parameters:
+        `peak` : float
+            The Initial peak value of the envelope, from 0.0 to 1.0.
+            Values outside of this range will be clamped.
+    """
     def __init__(self, peak=1.0):
         self.peak = max(min(1.0, peak), 0)
 
@@ -82,6 +98,24 @@ class LinearDecayEnvelope(object):
 
 
 class ADSREnvelope(object):
+    """A four part Attack, Decay, Suspend, Release envelope.
+
+    This is a four part ADSR envelope. The attack, decay, and release
+    parameters should be provided in seconds. For example, a value of
+    0.1 would be 100ms. The sustain_amplitude parameter affects the
+    sustain volume. This defaults to a value of 0.5, but can be provided
+    on a scale from 0.0 to 1.0.
+
+    :Parameters:
+        `attack` : float
+            The attack time, in seconds.
+        `decay` : float
+            The decay time, in seconds.
+        `release` : float
+            The release time, in seconds.
+        `sustain_amplitude` : float
+            The sustain amplitude (volume), from 0.0 to 1.0.
+    """
     def __init__(self, attack, decay, release, sustain_amplitude=0.5):
         self.attack = attack
         self.decay = decay
