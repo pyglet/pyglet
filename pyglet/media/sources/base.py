@@ -521,6 +521,9 @@ class SourceGroup(object):
             old_source = self._sources.pop(0)
             self.duration -= old_source.duration
 
+            if isinstance(old_source, StreamingSource):
+                del old_source
+
     def _get_loop(self):
         return self._loop
 
