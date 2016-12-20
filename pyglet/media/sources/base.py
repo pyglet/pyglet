@@ -378,6 +378,9 @@ class StreamingSource(Source):
         self._is_queued = True
         return self
 
+    def delete(self):
+        pass
+
 class StaticSource(Source):
     """A source that has been completely decoded in memory.  This source can
     be queued onto multiple players any number of times.
@@ -522,6 +525,7 @@ class SourceGroup(object):
             self.duration -= old_source.duration
 
             if isinstance(old_source, StreamingSource):
+                old_source.delete()
                 del old_source
 
     def _get_loop(self):

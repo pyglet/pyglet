@@ -336,7 +336,6 @@ class AVbinSource(StreamingSource):
         except:
             pass
 
-    # XXX TODO call this / add to source api
     def delete(self):
         if self.video_format:
             self._decode_thread.stop()
