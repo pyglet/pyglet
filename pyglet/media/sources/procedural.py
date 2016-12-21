@@ -74,7 +74,7 @@ class FlatEnvelope(Envelope):
         return [amplitude for _ in range(total_bytes)]
 
 
-class LinearDecayEnvelope(object):
+class LinearDecayEnvelope(Envelope):
     """A linearly decaying envelope.
 
     This envelope linearly decays the amplitude from the peak value
@@ -97,7 +97,7 @@ class LinearDecayEnvelope(object):
         return envelope
 
 
-class ADSREnvelope(object):
+class ADSREnvelope(Envelope):
     """A four part Attack, Decay, Suspend, Release envelope.
 
     This is a four part ADSR envelope. The attack, decay, and release
