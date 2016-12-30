@@ -413,7 +413,7 @@ class Sprite(event.EventDispatcher):
             dx = x1 * cr - y2 * sr + x
             dy = x1 * sr + y2 * cr + y
             vertices = [ax, ay, bx, by, cx, cy, dx, dy]
-        elif self._scale != 1.0:
+        elif self._scale_x != 1.0 or self._scale_y != 1.0:
             x1 = self._x - img.anchor_x * self._scale_x
             y1 = self._y - img.anchor_y * self._scale_y
             x2 = x1 + img.width * self._scale_x
@@ -523,10 +523,36 @@ class Sprite(event.EventDispatcher):
 
     @scale.setter
     def scale(self, scale):
-        if isinstance(scale, tuple):
-            self._scale_x, self._scale_y = scale
-        else:
+        if isinstance(scale, int) or isinstance(scale, float):
             self._scale_x = self.scale_y = scale
+        else:
+            self._scale_x, self._scale_y = scale
+        self._update_position()
+
+    @property
+    def scale_x(self):
+        """Horisontal scale factor of the sprite.
+
+        :type: float
+        """
+        return self._scale_x
+
+    @scale_x.setter
+    def scale_x(self, scale_x):
+        self._scale_x = scale_x
+        self._update_position()
+
+    @property
+    def scale_y(self):
+        """Vertical scale factor of the sprite.
+
+        :type: float
+        """
+        return self._scale_y
+
+    @scale_y.setter
+    def scale_y(self, scale_y):
+        self._scale_y = scale_y
         self._update_position()
 
     def update(self, x=None, y=None, rotation=None, scale=None):
@@ -555,10 +581,10 @@ class Sprite(event.EventDispatcher):
         if rotation is not None:
             self._rotation = rotation
         if scale is not None:
-            if isinstance(scale, tuple):
-                self._scale_x, self._scale_y = scale
-            else:
+            if isinstance(scale, int) or isinstance(scale, float):
                 self._scale_x = self.scale_y = scale
+            else:
+                self._scale_x, self._scale_y = scale
         self._update_position()
 
     @property
