@@ -8,7 +8,7 @@ import pytest
 import time
 
 import pyglet
-_debug = True
+_debug = False
 pyglet.options['debug_media'] = _debug
 pyglet.options['debug_media_buffers'] = _debug
 
