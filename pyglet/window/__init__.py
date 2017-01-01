@@ -580,10 +580,14 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.activate()
 
     def __del__(self):
-        # Always clean up the window when it is dereferenced.
+        # Always try to clean up the window when it is dereferenced.
         # Makes sure there are no dangling pointers or memory leaks.
-        self.close()
-            
+        # If the window is already closed, pass silently.
+        try:
+            self.close()
+        except TypeError:   # XXX  Avoid a NoneType error if already closed.
+            pass
+
     def __repr__(self):
         return '%s(width=%d, height=%d)' % \
             (self.__class__.__name__, self.width, self.height)
