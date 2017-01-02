@@ -13,7 +13,8 @@ from pyglet.window import mouse
 from pyglet import clock
 from ctypes import *
 from pyglet.window.event import *
-from pyglet.ext.model.geometric import tree_list
+# from pyglet.ext.model.geometric import tree_list
+from model.geometric import tree_list
 
 from pyglet.gl import *
 

@@ -12,7 +12,8 @@ import ctypes
 import pyglet
 
 from pyglet.gl import *
-from model import obj, geometric
+from model import obj
+
 
 w = pyglet.window.Window()
 
