@@ -26,7 +26,7 @@ window = pyglet.window.Window(fullscreen='-fs' in sys.argv, config=config)
 class Line(object):
     batch = pyglet.graphics.Batch()
     lines = batch.add(100, GL_LINES, None, ('v2f', (0.0,)  * 200), ('c4B', (255, ) * 400))
-    unallocated = range(100)
+    unallocated = list(range(100))
     active = []
 
     def __init__(self):
