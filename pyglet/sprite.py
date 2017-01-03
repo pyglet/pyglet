@@ -523,7 +523,7 @@ class Sprite(event.EventDispatcher):
 
     @scale.setter
     def scale(self, scale):
-        if isinstance(scale, int) or isinstance(scale, float):
+        if isinstance(scale, (int, float)):
             self._scale_x = self.scale_y = scale
         else:
             self._scale_x, self._scale_y = scale
@@ -573,6 +573,10 @@ class Sprite(event.EventDispatcher):
                 Clockwise rotation of the sprite, in degrees.
             `scale` : float or tuple of 2 floats
                 Scaling factor.
+            `scale_x` : float
+                Horisontal scaling factor.
+            `scale_y` : float
+                Vertical scaling factor.
         """
         if self.x is not None:
             self._x = x
