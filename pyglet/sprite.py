@@ -555,7 +555,7 @@ class Sprite(event.EventDispatcher):
         self._scale_y = scale_y
         self._update_position()
 
-    def update(self, x=None, y=None, rotation=None, scale=None):
+    def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Change simultaneously the position, rotation and scale.
 
         The reason for this extra method is performance only. If
@@ -581,10 +581,14 @@ class Sprite(event.EventDispatcher):
         if rotation is not None:
             self._rotation = rotation
         if scale is not None:
-            if isinstance(scale, int) or isinstance(scale, float):
+            if isinstance(scale, (int, float)):
                 self._scale_x = self.scale_y = scale
             else:
                 self._scale_x, self._scale_y = scale
+        if scale_x is not None:
+            self._scale_x = scale_x
+        if scale_y is not None:
+            self._scale_y = scale_y
         self._update_position()
 
     @property
