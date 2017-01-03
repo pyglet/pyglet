@@ -524,7 +524,7 @@ class Sprite(event.EventDispatcher):
     @scale.setter
     def scale(self, scale):
         if isinstance(scale, (int, float)):
-            self._scale_x = self.scale_y = scale
+            self._scale_x = self._scale_y = scale
         else:
             self._scale_x, self._scale_y = scale
         self._update_position()
@@ -586,7 +586,7 @@ class Sprite(event.EventDispatcher):
             self._rotation = rotation
         if scale is not None:
             if isinstance(scale, (int, float)):
-                self._scale_x = self.scale_y = scale
+                self._scale_x = self._scale_y = scale
             else:
                 self._scale_x, self._scale_y = scale
         if scale_x is not None:
