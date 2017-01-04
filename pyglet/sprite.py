@@ -512,21 +512,16 @@ class Sprite(event.EventDispatcher):
     def scale(self):
         """Scaling factor.
 
-        A tuple of length 2 that contains the scaling in the x and y axis.
-
         A scaling factor of 1 (the default) has no effect.  A scale of 2 will
         draw the sprite at twice the native size of its image.
 
-        :type: tuple of 2 floats
+        :type: float
         """
-        return self._scale_x, self._scale_y
+        return (self._scale_x + self._scale_y) / 2
 
     @scale.setter
     def scale(self, scale):
-        if isinstance(scale, (int, float)):
-            self._scale_x = self._scale_y = scale
-        else:
-            self._scale_x, self._scale_y = scale
+        self._scale_x = self._scale_y = scale
         self._update_position()
 
     @property
@@ -571,7 +566,7 @@ class Sprite(event.EventDispatcher):
                 Y coordinate of the sprite.
             `rotation` : float
                 Clockwise rotation of the sprite, in degrees.
-            `scale` : float or tuple of 2 floats
+            `scale` : float
                 Scaling factor.
             `scale_x` : float
                 Horisontal scaling factor.
@@ -585,10 +580,7 @@ class Sprite(event.EventDispatcher):
         if rotation is not None:
             self._rotation = rotation
         if scale is not None:
-            if isinstance(scale, (int, float)):
-                self._scale_x = self._scale_y = scale
-            else:
-                self._scale_x, self._scale_y = scale
+            self._scale_x = self._scale_y = scale
         if scale_x is not None:
             self._scale_x = scale_x
         if scale_y is not None:
