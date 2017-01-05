@@ -526,7 +526,10 @@ class Sprite(event.EventDispatcher):
 
     @property
     def scale_x(self):
-        """Horisontal scale factor of the sprite.
+        """Horizontal scaling factor.
+        
+         A scaling factor of 1 (the default) has no effect.  A scale of 2 will
+         draw the sprite at twice the native width of its image.
 
         :type: float
         """
@@ -539,7 +542,10 @@ class Sprite(event.EventDispatcher):
 
     @property
     def scale_y(self):
-        """Vertical scale factor of the sprite.
+        """Vertical scaling factor.
+        
+         A scaling factor of 1 (the default) has no effect.  A scale of 2 will
+         draw the sprite at twice the native height of its image.
 
         :type: float
         """
@@ -551,13 +557,12 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
-        """Change simultaneously the position, rotation and scale.
+        """Simultaneously change the position, rotation or scale.
 
-        The reason for this extra method is performance only. If
-        the sprite changes two or the three components position,
-        rotation and scale at the same time, there will be a benefit
-        from calling this method, rather than using its position
-        setter followed by its rotation setter for instance.
+        This method is provided for performance. In cases where
+        multiple Sprite attributes need to be updated at the same
+        time, it is more efficent to update them together using
+        the update method, rather than modifying them one by one.
 
         :Parameters:
             `x` : int
