@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -181,7 +181,8 @@ class Sprite(event.EventDispatcher):
     _rotation = 0
     _opacity = 255
     _rgb = (255, 255, 255)
-    _scale = 1.0
+    _scale_x = 1.0
+    _scale_y = 1.0
     _visible = True
     _vertex_list = None
 
@@ -393,10 +394,10 @@ class Sprite(event.EventDispatcher):
         if not self._visible:
             vertices = [0, 0, 0, 0, 0, 0, 0, 0]
         elif self._rotation:
-            x1 = -img.anchor_x * self._scale
-            y1 = -img.anchor_y * self._scale
-            x2 = x1 + img.width * self._scale
-            y2 = y1 + img.height * self._scale
+            x1 = -img.anchor_x * self._scale_x
+            y1 = -img.anchor_y * self._scale_y
+            x2 = x1 + img.width * self._scale_x
+            y2 = y1 + img.height * self._scale_y
             x = self._x
             y = self._y
 
@@ -412,11 +413,11 @@ class Sprite(event.EventDispatcher):
             dx = x1 * cr - y2 * sr + x
             dy = x1 * sr + y2 * cr + y
             vertices = [ax, ay, bx, by, cx, cy, dx, dy]
-        elif self._scale != 1.0:
-            x1 = self._x - img.anchor_x * self._scale
-            y1 = self._y - img.anchor_y * self._scale
-            x2 = x1 + img.width * self._scale
-            y2 = y1 + img.height * self._scale
+        elif self._scale_x != 1.0 or self._scale_y != 1.0:
+            x1 = self._x - img.anchor_x * self._scale_x
+            y1 = self._y - img.anchor_y * self._scale_y
+            x2 = x1 + img.width * self._scale_x
+            y2 = y1 + img.height * self._scale_y
             vertices = [x1, y1, x2, y1, x2, y2, x1, y2]
         else:
             x1 = self._x - img.anchor_x
@@ -516,20 +517,46 @@ class Sprite(event.EventDispatcher):
 
         :type: float
         """
-        return self._scale
+        return (self._scale_x + self._scale_y) / 2
 
     @scale.setter
     def scale(self, scale):
-        self._scale = scale
+        self._scale_x = self._scale_y = scale
         self._update_position()
 
-    def update(self, x=None, y=None, rotation=None, scale=None):
+    @property
+    def scale_x(self):
+        """Horisontal scale factor of the sprite.
+
+        :type: float
+        """
+        return self._scale_x
+
+    @scale_x.setter
+    def scale_x(self, scale_x):
+        self._scale_x = scale_x
+        self._update_position()
+
+    @property
+    def scale_y(self):
+        """Vertical scale factor of the sprite.
+
+        :type: float
+        """
+        return self._scale_y
+
+    @scale_y.setter
+    def scale_y(self, scale_y):
+        self._scale_y = scale_y
+        self._update_position()
+
+    def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Change simultaneously the position, rotation and scale.
 
         The reason for this extra method is performance only. If
         the sprite changes two or the three components position,
         rotation and scale at the same time, there will be a benefit
-        from calling this method, rather than using its position 
+        from calling this method, rather than using its position
         setter followed by its rotation setter for instance.
 
         :Parameters:
@@ -541,6 +568,10 @@ class Sprite(event.EventDispatcher):
                 Clockwise rotation of the sprite, in degrees.
             `scale` : float
                 Scaling factor.
+            `scale_x` : float
+                Horisontal scaling factor.
+            `scale_y` : float
+                Vertical scaling factor.
         """
         if self.x is not None:
             self._x = x
@@ -549,7 +580,11 @@ class Sprite(event.EventDispatcher):
         if rotation is not None:
             self._rotation = rotation
         if scale is not None:
-            self._scale = scale
+            self._scale_x = self._scale_y = scale
+        if scale_x is not None:
+            self._scale_x = scale_x
+        if scale_y is not None:
+            self._scale_y = scale_y
         self._update_position()
 
     @property
@@ -561,9 +596,9 @@ class Sprite(event.EventDispatcher):
         :type: int
         """
         if self._subpixel:
-            return self._texture.width * self._scale
+            return self._texture.width * abs(self._scale_x)
         else:
-            return int(self._texture.width * self._scale)
+            return int(self._texture.width * abs(self._scale_x))
 
     @property
     def height(self):
@@ -574,9 +609,9 @@ class Sprite(event.EventDispatcher):
         :type: int
         """
         if self._subpixel:
-            return self._texture.height * self._scale
+            return self._texture.height * abs(self._scale_y)
         else:
-            return int(self._texture.height * self._scale)
+            return int(self._texture.height * abs(self._scale_y))
 
     @property
     def opacity(self):
