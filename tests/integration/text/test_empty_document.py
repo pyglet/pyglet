@@ -1,4 +1,4 @@
-import unittest
+import pytest
 
 from pyglet import gl
 from pyglet import graphics
@@ -7,45 +7,39 @@ from pyglet.text import layout
 from pyglet import window
 
 
-class TestWindow(window.Window):
-    def __init__(self, doctype, *args, **kwargs):
-        super(TestWindow, self).__init__(*args, **kwargs)
 
-        self.batch = graphics.Batch()
-        self.document = doctype()
-        self.layout = layout.IncrementalTextLayout(self.document,
-            self.width, self.height, batch=self.batch)
+@pytest.fixture(params=[document.UnformattedDocument,
+                        document.FormattedDocument])
+def text_window(request):
+    class _TestWindow(window.Window):
+        def __init__(self, doctype, *args, **kwargs):
+            super(_TestWindow, self).__init__(*args, **kwargs)
 
-    def on_draw(self):
-        gl.glClearColor(1, 1, 1, 1)
-        self.clear()
-        self.batch.draw()
+            self.batch = graphics.Batch()
+            self.document = doctype()
+            self.layout = layout.IncrementalTextLayout(self.document,
+                self.width, self.height, batch=self.batch)
 
-    def set_bold(self):
-        self.document.set_style(0, len(self.document.text), {"bold": True})
+        def on_draw(self):
+            gl.glClearColor(1, 1, 1, 1)
+            self.clear()
+            self.batch.draw()
+
+        def set_bold(self):
+            self.document.set_style(0, len(self.document.text), {"bold": True})
+
+    return _TestWindow(request.param)
 
 
-class EmptyDocumentTest(unittest.TestCase):
-    """Test that an empty document doesn't break."""
-    def test_unformatted(self):
-        self.window = TestWindow(document.UnformattedDocument)
-        self.window.dispatch_events()
-        self.window.close()
+def test_empty_document(text_window):
+    """Empty text document can be rendered."""
+    text_window.dispatch_events()
+    text_window.close()
 
-    def test_formatted(self):
-        self.window = TestWindow(document.FormattedDocument)
-        self.window.dispatch_events()
-        self.window.close()
 
-    def test_bold_unformatted(self):
-        self.window = TestWindow(document.UnformattedDocument)
-        self.window.set_bold()
-        self.window.dispatch_events()
-        self.window.close()
-
-    def test_bold_formatted(self):
-        self.window = TestWindow(document.FormattedDocument)
-        self.window.set_bold()
-        self.window.dispatch_events()
-        self.window.close()
+def test_empty_document_bold(text_window):
+    """Empty text document can be rendered and attributes can be set."""
+    text_window.set_bold()
+    text_window.dispatch_events()
+    text_window.close()
 
