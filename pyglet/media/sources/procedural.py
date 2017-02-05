@@ -173,11 +173,10 @@ class ProceduralSource(Source):
         if self._bytes_per_sample == 2:
             self._max_offset &= 0xfffffffe
 
-        if self._envelope:
-            self._envelope_array = self._envelope.build_envelope(self._sample_rate, self._duration)
-        else:
+        if not self._envelope:
             self._envelope = FlatEnvelope(amplitude=1.0)
-            self._envelope_array = self._envelope.build_envelope(self._sample_rate, self._duration)
+
+        self._envelope_array = self._envelope.build_envelope(self._sample_rate, self._duration)
 
     @property
     def envelope(self):
@@ -428,15 +427,15 @@ class Square(ProceduralSource):
             bias = 0
             amplitude = 32767
             data = (ctypes.c_short * samples)()
-        period = self.audio_format.sample_rate / self.frequency / 2
+        half_period = self.audio_format.sample_rate / self.frequency / 2
         envelope = self._envelope_array
         env_offset = offset // self._bytes_per_sample
         value = 1
         count = 0
         for i in range(samples):
-            if count >= period:
+            if count >= half_period:
                 value = -value
-                count = 0
+                count %= half_period
             count += 1
             data[i] = _future_round(value * amplitude * envelope[i+env_offset] + bias)
         return data
