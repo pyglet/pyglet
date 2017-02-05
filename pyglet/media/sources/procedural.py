@@ -390,7 +390,7 @@ class Sawtooth(ProceduralSource):
         for i in range(samples):
             value += step
             if value > maximum:
-                value = minimum
+                value = minimum + (value % maximum)
             data[i] = _future_round(value * envelope[i+env_offset])
         return data
 
