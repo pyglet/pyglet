@@ -45,12 +45,6 @@ import struct
 import random
 
 
-def _future_round(value):
-    """Function to have a round that functions the same on Py2 and Py3."""
-    # TODO: Check if future can replace this (as of August 2016, it cannot).
-    return int(round(value))
-
-
 class Envelope(object):
     """Base class for ProceduralSource amplitude envelopes."""
     def build_envelope(self, sample_rate, duration):
@@ -302,7 +296,7 @@ class Sine(ProceduralSource):
         envelope = self._envelope_array
         env_offset = offset // self._bytes_per_sample
         for i in range(samples):
-            data[i] = _future_round(math.sin(step * (i + start)) *
+            data[i] = int(math.sin(step * (i + start)) *
                                     amplitude * envelope[i+env_offset] + bias)
         return data
 
@@ -349,7 +343,7 @@ class Triangle(ProceduralSource):
             if value < minimum:
                 value = minimum - (value - minimum)
                 step = -step
-            data[i] = _future_round(value * envelope[i+env_offset])
+            data[i] = int(value * envelope[i+env_offset])
         return data
 
 
@@ -391,7 +385,7 @@ class Sawtooth(ProceduralSource):
             value += step
             if value > maximum:
                 value = minimum + (value % maximum)
-            data[i] = _future_round(value * envelope[i+env_offset])
+            data[i] = int(value * envelope[i+env_offset])
         return data
 
 
@@ -437,7 +431,7 @@ class Square(ProceduralSource):
                 value = -value
                 count %= half_period
             count += 1
-            data[i] = _future_round(value * amplitude * envelope[i+env_offset] + bias)
+            data[i] = int(value * amplitude * envelope[i+env_offset] + bias)
         return data
 
 
@@ -491,10 +485,9 @@ class FM(ProceduralSource):
         # FM equation:  sin((2 * pi * carrier) + sin(2 * pi * modulator))
         for i in range(samples):
             increment = (i + start) / sample_rate
-            data[i] = _future_round(
-                math.sin(car_step * increment +
-                         mod_index * math.sin(mod_step * increment))
-                * amplitude * envelope[i+env_offset] + bias)
+            data[i] = int(math.sin(car_step * increment +
+                                   mod_index * math.sin(mod_step * increment))
+                          * amplitude * envelope[i+env_offset] + bias)
         return data
 
 
@@ -525,6 +518,6 @@ class FM(ProceduralSource):
 #         ring_buffer = self._ring_buffer
 #         decay = self.decay
 #         for i in range(samples):
-#             data[i] = _future_round(ring_buffer[0] * amplitude + bias)
+#             data[i] = int(ring_buffer[0] * amplitude + bias)
 #             ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
 #         return data
