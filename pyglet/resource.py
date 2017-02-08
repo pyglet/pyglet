@@ -100,8 +100,6 @@ import zipfile
 import pyglet
 from pyglet.compat import BytesIO
 
-from ctypes import c_int
-
 
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
@@ -298,7 +296,6 @@ class Loader(object):
             application script.
 
     """
-
     def __init__(self, path=None, script_home=None):
         """Create a loader for the given path.
 
@@ -327,18 +324,10 @@ class Loader(object):
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
-        self._max_texture_bin_size = self._get_texture_bin_size()
 
     def _require_index(self):
         if self._index is None:
             self.reindex()
-
-    @staticmethod
-    def _get_texture_bin_size():
-        # Query to find a suitable TextureBin size.
-        size = c_int()
-        pyglet.gl.glGetIntegerv(pyglet.gl.GL_MAX_TEXTURE_SIZE, size)
-        return min(4096, size.value // 2)
 
     def reindex(self):
         """Refresh the file index.
@@ -508,21 +497,20 @@ class Loader(object):
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        if width > 256 or height > 256:
+        if width > 512 or height > 512:
             return None
 
         # Group images with small height separately to larger height (as the
         # allocator can't stack within a single row).
         bin_size = 1
-        if height > 64:
+        if height > 256:
             bin_size = 2
 
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
             texture_bin = self._texture_atlas_bins[bin_size] =\
-                pyglet.image.atlas.TextureBin(self._max_texture_bin_size,
-                                              self._max_texture_bin_size)
+                pyglet.image.atlas.TextureBin()
 
         return texture_bin
 
