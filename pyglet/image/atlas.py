@@ -68,7 +68,7 @@ from ctypes import c_int
 import pyglet
 
 
-def _get_max_texture_size():
+def get_max_texture_size():
     """Query the maximum texture size available"""
     size = c_int()
     pyglet.gl.glGetIntegerv(pyglet.gl.GL_MAX_TEXTURE_SIZE, size)
@@ -195,7 +195,7 @@ class TextureAtlas(object):
                 Height of the underlying texture.
 
         """
-        max_texture_size = _get_max_texture_size()
+        max_texture_size = get_max_texture_size()
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
@@ -242,7 +242,7 @@ class TextureBin(object):
                 Height of texture atlases to create.
 
         """
-        max_texture_size = _get_max_texture_size()
+        max_texture_size = get_max_texture_size()
         texture_width = min(texture_width, max_texture_size)
         texture_height = min(texture_height, max_texture_size)
 

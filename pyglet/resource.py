@@ -497,13 +497,15 @@ class Loader(object):
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        if width > 512 or height > 512:
+        max_texture_size = pyglet.image.atlas.get_max_texture_size()
+        max_size = min(1024, max_texture_size / 2)
+        if width > max_size or height > max_size:
             return None
 
-        # Group images with small height separately to larger height (as the
-        # allocator can't stack within a single row).
+        # Group images with small height separately to larger height
+        # (as the allocator can't stack within a single row).
         bin_size = 1
-        if height > 256:
+        if height > max_size / 4:
             bin_size = 2
 
         try:
