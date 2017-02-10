@@ -8,6 +8,7 @@ from pyglet import window
 from pyglet import clock
 from pyglet.window import key
 
+
 @pytest.mark.requires_user_action
 class WINDOW_MULTISAMPLE(InteractiveTestCase):
     """Test that a window can have multisample.
@@ -33,6 +34,9 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
     soft_multisample = True
     multisample = False
     samples = 2
+
+    # This test does not work on all hardware, unless rendered to texture.
+    texture = pyglet.image.Texture.create(width, height, rectangle=True)
 
     def set_window(self):
         oldwindow = self.win
@@ -115,6 +119,16 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
         glVertex2f(size, size)
         glVertex2f(-size, size)
         glEnd()
+
+        # Render to texture, then blit to screen:
+        buffer = pyglet.image.get_buffer_manager().get_color_buffer()
+        self.texture.blit_into(buffer, 0, 0, 0)
+        glViewport(0, 0, self.width, self.height)
+        glClearColor(0, 0, 0, 1)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
+        glColor3f(1, 1, 1)
+        self.texture.blit(0, 0, width=self.width, height=self.height)
 
     def test_multisample(self):
         self.set_window()
