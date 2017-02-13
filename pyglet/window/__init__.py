@@ -585,7 +585,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # If the window is already closed, pass silently.
         try:
             self.close()
-        except TypeError:   # XXX  Avoid a NoneType error if already closed.
+        except:   # XXX  Avoid a NoneType error if already closed.
             pass
 
     def __repr__(self):
