@@ -42,7 +42,27 @@ import ctypes
 import os
 import math
 import struct
-import random
+
+
+class _LFSR(object):
+    """Linear Feedback Shift Register, for psuedo random numbers"""
+    def __init__(self, iterable):
+        self.base = iterable
+        self.shifted = deque(self.base)
+
+    def get(self):
+        base = self.shifted
+        feedback = base[-1] ^ base[-2]
+        base.rotate()
+        base[0] = feedback
+        return base[0]
+
+    def advance(self, positions):
+        for _ in range(positions):
+            self.get()
+
+    def reset(self):
+        self.shifted = deque(self.base)
 
 
 class Envelope(object):
@@ -435,6 +455,54 @@ class Square(ProceduralSource):
         return data
 
 
+# class Noise(ProceduralSource):
+#     """A pseudo-random Noise waveform.
+#
+#     :Parameters:
+#         `duration` : float
+#             The length, in seconds, of audio that you wish to generate.
+#         `frequency` : int
+#             The frequency, in Hz of the waveform you wish to produce.
+#         `sample_rate` : int
+#             Audio samples per second. (CD quality is 44100).
+#         `sample_size` : int
+#             The bit precision. Must be either 8 or 16.
+#     """
+#     def __init__(self, duration, frequency=440, **kwargs):
+#         super(Noise, self).__init__(duration, **kwargs)
+#         self.frequency = frequency
+#         self.lfsr = _LFSR([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+#
+#     def _generate_data(self, num_bytes, offset):
+#         # XXX TODO consider offset
+#         if self._bytes_per_sample == 1:
+#             start = offset
+#             samples = num_bytes
+#             bias = 0
+#             amplitude = 255
+#             data = (ctypes.c_ubyte * samples)()
+#         else:
+#             start = offset >> 1
+#             samples = num_bytes >> 1
+#             bias = -32768
+#             amplitude = 32767
+#             data = (ctypes.c_short * samples)()
+#         envelope = self._envelope_array
+#         env_offset = offset // self._bytes_per_sample
+#         period = self._sample_rate / self.frequency
+#         lfsr = self.lfsr
+#         lfsr.advance(start)
+#         counter = 0
+#         for i in range(samples):
+#             counter += 1
+#             if counter > period:
+#                 lfsr.reset()
+#                 counter = 0
+#             value = lfsr.get()
+#             data[i] = int(value * amplitude * envelope[i+env_offset] + bias)
+#         return data
+
+
 class FM(ProceduralSource):
     """A procedurally generated FM waveform.
 
@@ -491,33 +559,33 @@ class FM(ProceduralSource):
         return data
 
 
-# class Digitar(ProceduralSource):
-#     def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
-#         super(Digitar, self).__init__(duration, **kwargs)
-#         self.frequency = frequency
-#         self.decay = decay
-#
-#     def _create_buffer(self):
-#         period = int(self._sample_rate / self.frequency)
-#         self._ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
-#
-#     def _generate_data(self, num_bytes, offset):
-#         # TODO: consider how to implement seeking.
-#         if offset == 0:
-#             self._create_buffer()
-#         if self._bytes_per_sample == 1:
-#             samples = num_bytes
-#             bias = 127
-#             amplitude = 127
-#             data = (ctypes.c_ubyte * samples)()
-#         else:
-#             samples = num_bytes >> 1
-#             bias = 0
-#             amplitude = 32767
-#             data = (ctypes.c_short * samples)()
-#         ring_buffer = self._ring_buffer
-#         decay = self.decay
-#         for i in range(samples):
-#             data[i] = int(ring_buffer[0] * amplitude + bias)
-#             ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
-#         return data
+class Digitar(ProceduralSource):
+    def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
+        super(Digitar, self).__init__(duration, **kwargs)
+        self.frequency = frequency
+        self.decay = decay
+        self.lfsr = _LFSR([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+        period = int(self._sample_rate / self.frequency)
+        self.ring_buffer = deque([self.lfsr.get() for _ in range(period)], maxlen=period)
+
+    def _generate_data(self, num_bytes, offset):
+        # TODO: consider how to implement seeking.
+        if self._bytes_per_sample == 1:
+            start = offset
+            samples = num_bytes
+            bias = 127
+            amplitude = 127
+            data = (ctypes.c_ubyte * samples)()
+        else:
+            start = offset >> 1
+            samples = num_bytes >> 1
+            bias = 0
+            amplitude = 32767
+            data = (ctypes.c_short * samples)()
+        self.lfsr.advance(start)
+        ring_buffer = self.ring_buffer
+        decay = self.decay
+        for i in range(samples):
+            data[i] = int(ring_buffer[0] * amplitude + bias)
+            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+        return data
