@@ -560,6 +560,26 @@ class FM(ProceduralSource):
 
 
 class Digitar(ProceduralSource):
+    """A procedurally generated guitar-like waveform.
+
+    This generates a guitar-like waveform, based on the
+    Karplus-Strong algorithm. The sound is similar to a
+    plucked guitar string. The length of the sound depends
+    on the frequency, so lower frequencies should have a
+    longer `length` parameter to prevent cutting off abruptly.
+
+    :Parameters:
+        `duration` : float
+            The length, in seconds, of audio that you wish to generate.
+        `frequency` : int
+            The frequency, in Hz of the waveform you wish to produce.
+        `decay` : float
+            The decay rate of the effect. Defaults to 0.996.
+        `sample_rate` : int
+            Audio samples per second. (CD quality is 44100).
+        `sample_size` : int
+            The bit precision. Must be either 8 or 16.
+    """
     def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
         super(Digitar, self).__init__(duration, **kwargs)
         self.frequency = frequency
