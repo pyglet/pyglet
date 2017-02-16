@@ -562,11 +562,11 @@ class FM(ProceduralSource):
 class Digitar(ProceduralSource):
     """A procedurally generated guitar-like waveform.
 
-    This generates a guitar-like waveform, based on the
-    Karplus-Strong algorithm. The sound is similar to a
-    plucked guitar string. The length of the sound depends
-    on the frequency, so lower frequencies should have a
-    longer `length` parameter to prevent cutting off abruptly.
+    A guitar-like waveform, based on the Karplus-Strong algorithm.
+    The sound is similar to a plucked guitar string. Unlike other
+    Procedural Sources, the length of the sound varies depending
+    on the frequency. Lower frequencies require a longer
+    `length` parameter to prevent cutting off abruptly.
 
     :Parameters:
         `duration` : float
