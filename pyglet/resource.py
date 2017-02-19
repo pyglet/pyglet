@@ -296,7 +296,6 @@ class Loader(object):
             application script.
 
     """
-
     def __init__(self, path=None, script_home=None):
         """Create a loader for the given path.
 
@@ -498,22 +497,24 @@ class Loader(object):
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        if width > 128 or height > 128:
+        max_texture_size = pyglet.image.atlas.get_max_texture_size()
+        max_size = min(1024, max_texture_size / 2)
+        if width > max_size or height > max_size:
             return None
 
-        # Group images with small height separately to larger height (as the
-        # allocator can't stack within a single row).
+        # Group images with small height separately to larger height
+        # (as the allocator can't stack within a single row).
         bin_size = 1
-        if height > 32:
+        if height > max_size / 4:
             bin_size = 2
 
         try:
-            bin = self._texture_atlas_bins[bin_size]
+            texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            bin = self._texture_atlas_bins[bin_size] = \
+            texture_bin = self._texture_atlas_bins[bin_size] =\
                 pyglet.image.atlas.TextureBin()
 
-        return bin
+        return texture_bin
 
     def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True):
         """Load an image with optional transformation.
