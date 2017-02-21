@@ -119,3 +119,6 @@ class SquareTest(ProceduralSourceTest, unittest.TestCase):
 class FMTest(ProceduralSourceTest, unittest.TestCase):
     source_class = FM
 
+
+class DigitarTest(ProceduralSourceTest, unittest.TestCase):
+    source_class = Digitar

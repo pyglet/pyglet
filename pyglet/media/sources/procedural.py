@@ -42,27 +42,7 @@ import ctypes
 import os
 import math
 import struct
-
-
-class _LFSR(object):
-    """Linear Feedback Shift Register, for psuedo random numbers"""
-    def __init__(self, iterable):
-        self.base = iterable
-        self.shifted = deque(self.base)
-
-    def get(self):
-        base = self.shifted
-        feedback = base[-1] ^ base[-2]
-        base.rotate()
-        base[0] = feedback
-        return base[0]
-
-    def advance(self, positions):
-        for _ in range(positions):
-            self.get()
-
-    def reset(self):
-        self.shifted = deque(self.base)
+import random
 
 
 class Envelope(object):
@@ -317,7 +297,7 @@ class Sine(ProceduralSource):
         env_offset = offset // self._bytes_per_sample
         for i in range(samples):
             data[i] = int(math.sin(step * (i + start)) *
-                                    amplitude * envelope[i+env_offset] + bias)
+                          amplitude * envelope[i+env_offset] + bias)
         return data
 
 
@@ -563,9 +543,9 @@ class Digitar(ProceduralSource):
     """A procedurally generated guitar-like waveform.
 
     A guitar-like waveform, based on the Karplus-Strong algorithm.
-    The sound is similar to a plucked guitar string. Unlike other
-    Procedural Sources, the length of the sound varies depending
-    on the frequency. Lower frequencies require a longer
+    The sound is similar to a plucked guitar string. The resulting
+    sound decays over time, and so the actual length will vary
+    depending on the frequency. Lower frequencies require a longer
     `length` parameter to prevent cutting off abruptly.
 
     :Parameters:
@@ -584,12 +564,19 @@ class Digitar(ProceduralSource):
         super(Digitar, self).__init__(duration, **kwargs)
         self.frequency = frequency
         self.decay = decay
-        self.lfsr = _LFSR([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
-        period = int(self._sample_rate / self.frequency)
-        self.ring_buffer = deque([self.lfsr.get() for _ in range(period)], maxlen=period)
+        self.period = int(self._sample_rate / self.frequency)
+
+    def _advance(self, positions):
+        # XXX create fresh ring buffer, and advance if necessary.
+        period = self.period
+        random.seed(10)
+        ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
+        for _ in range(positions):
+            decay = self.decay
+            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+        self.ring_buffer = ring_buffer
 
     def _generate_data(self, num_bytes, offset):
-        # TODO: consider how to implement seeking.
         if self._bytes_per_sample == 1:
             start = offset
             samples = num_bytes
@@ -602,10 +589,9 @@ class Digitar(ProceduralSource):
             bias = 0
             amplitude = 32767
             data = (ctypes.c_short * samples)()
-        self.lfsr.advance(start)
+        self._advance(start)
         ring_buffer = self.ring_buffer
-        decay = self.decay
         for i in range(samples):
             data[i] = int(ring_buffer[0] * amplitude + bias)
-            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+            ring_buffer.append(self.decay * (ring_buffer[0] + ring_buffer[1]) / 2)
         return data
