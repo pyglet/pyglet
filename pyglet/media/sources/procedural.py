@@ -591,7 +591,8 @@ class Digitar(ProceduralSource):
             data = (ctypes.c_short * samples)()
         self._advance(start)
         ring_buffer = self.ring_buffer
+        decay = self.decay
         for i in range(samples):
             data[i] = int(ring_buffer[0] * amplitude + bias)
-            ring_buffer.append(self.decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
         return data
