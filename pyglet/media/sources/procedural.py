@@ -137,6 +137,42 @@ class ADSREnvelope(Envelope):
         return envelope
 
 
+class TremoloEnvelope(Envelope):
+    """A tremolo envelope, for modulation amplitude.
+
+    A tremolo envelope that modulates the amplitude of the
+    waveform with a sinusoidal pattern. The depth and rate
+    of modulation can be specified. Depth is calculated as
+    a percentage of the maximum amplitude. For example:
+    a depth of 0.2 and amplitude of 0.5 will fluctuate
+    the amplitude between 0.4 an 0.5.
+
+    :Parameters:
+        `depth` : float
+            The amount of fluctuation, from 0.0 to 1.0.
+        `rate` : float
+            The fluctuation frequency, in seconds.
+        `amplitude` : float
+            The peak amplitude (volume), from 0.0 to 1.0.
+    """
+    def __init__(self, depth, rate, amplitude=0.5):
+        self.depth = max(min(1.0, depth), 0)
+        self.rate = rate
+        self.amplitude = max(min(1.0, amplitude), 0)
+
+    def build_envelope(self, sample_rate, duration):
+        total_bytes = int(sample_rate * duration)
+        period = total_bytes / duration
+        max_amplitude = self.amplitude
+        min_amplitude = max(0, (1 - self.depth) * self.amplitude)
+        step = (math.pi * 2) / period / self.rate
+        envelope = []
+        for i in range(total_bytes):
+            value = math.sin(step * i)
+            envelope.append(value * (max_amplitude - min_amplitude) + min_amplitude)
+        return envelope
+
+
 class ProceduralSource(Source):
     """Base class for procedurally defined and generated waveforms.
 
@@ -297,7 +333,7 @@ class Sine(ProceduralSource):
         env_offset = offset // self._bytes_per_sample
         for i in range(samples):
             data[i] = int(math.sin(step * (i + start)) *
-                                    amplitude * envelope[i+env_offset] + bias)
+                          amplitude * envelope[i+env_offset] + bias)
         return data
 
 
@@ -435,6 +471,54 @@ class Square(ProceduralSource):
         return data
 
 
+# class Noise(ProceduralSource):
+#     """A pseudo-random Noise waveform.
+#
+#     :Parameters:
+#         `duration` : float
+#             The length, in seconds, of audio that you wish to generate.
+#         `frequency` : int
+#             The frequency, in Hz of the waveform you wish to produce.
+#         `sample_rate` : int
+#             Audio samples per second. (CD quality is 44100).
+#         `sample_size` : int
+#             The bit precision. Must be either 8 or 16.
+#     """
+#     def __init__(self, duration, frequency=440, **kwargs):
+#         super(Noise, self).__init__(duration, **kwargs)
+#         self.frequency = frequency
+#         self.lfsr = _LFSR([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+#
+#     def _generate_data(self, num_bytes, offset):
+#         # XXX TODO consider offset
+#         if self._bytes_per_sample == 1:
+#             start = offset
+#             samples = num_bytes
+#             bias = 0
+#             amplitude = 255
+#             data = (ctypes.c_ubyte * samples)()
+#         else:
+#             start = offset >> 1
+#             samples = num_bytes >> 1
+#             bias = -32768
+#             amplitude = 32767
+#             data = (ctypes.c_short * samples)()
+#         envelope = self._envelope_array
+#         env_offset = offset // self._bytes_per_sample
+#         period = self._sample_rate / self.frequency
+#         lfsr = self.lfsr
+#         lfsr.advance(start)
+#         counter = 0
+#         for i in range(samples):
+#             counter += 1
+#             if counter > period:
+#                 lfsr.reset()
+#                 counter = 0
+#             value = lfsr.get()
+#             data[i] = int(value * amplitude * envelope[i+env_offset] + bias)
+#         return data
+
+
 class FM(ProceduralSource):
     """A procedurally generated FM waveform.
 
@@ -491,33 +575,60 @@ class FM(ProceduralSource):
         return data
 
 
-# class Digitar(ProceduralSource):
-#     def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
-#         super(Digitar, self).__init__(duration, **kwargs)
-#         self.frequency = frequency
-#         self.decay = decay
-#
-#     def _create_buffer(self):
-#         period = int(self._sample_rate / self.frequency)
-#         self._ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
-#
-#     def _generate_data(self, num_bytes, offset):
-#         # TODO: consider how to implement seeking.
-#         if offset == 0:
-#             self._create_buffer()
-#         if self._bytes_per_sample == 1:
-#             samples = num_bytes
-#             bias = 127
-#             amplitude = 127
-#             data = (ctypes.c_ubyte * samples)()
-#         else:
-#             samples = num_bytes >> 1
-#             bias = 0
-#             amplitude = 32767
-#             data = (ctypes.c_short * samples)()
-#         ring_buffer = self._ring_buffer
-#         decay = self.decay
-#         for i in range(samples):
-#             data[i] = int(ring_buffer[0] * amplitude + bias)
-#             ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
-#         return data
+class Digitar(ProceduralSource):
+    """A procedurally generated guitar-like waveform.
+
+    A guitar-like waveform, based on the Karplus-Strong algorithm.
+    The sound is similar to a plucked guitar string. The resulting
+    sound decays over time, and so the actual length will vary
+    depending on the frequency. Lower frequencies require a longer
+    `length` parameter to prevent cutting off abruptly.
+
+    :Parameters:
+        `duration` : float
+            The length, in seconds, of audio that you wish to generate.
+        `frequency` : int
+            The frequency, in Hz of the waveform you wish to produce.
+        `decay` : float
+            The decay rate of the effect. Defaults to 0.996.
+        `sample_rate` : int
+            Audio samples per second. (CD quality is 44100).
+        `sample_size` : int
+            The bit precision. Must be either 8 or 16.
+    """
+    def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
+        super(Digitar, self).__init__(duration, **kwargs)
+        self.frequency = frequency
+        self.decay = decay
+        self.period = int(self._sample_rate / self.frequency)
+
+    def _advance(self, positions):
+        # XXX create fresh ring buffer, and advance if necessary.
+        period = self.period
+        random.seed(10)
+        ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
+        for _ in range(positions):
+            decay = self.decay
+            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+        self.ring_buffer = ring_buffer
+
+    def _generate_data(self, num_bytes, offset):
+        if self._bytes_per_sample == 1:
+            start = offset
+            samples = num_bytes
+            bias = 127
+            amplitude = 127
+            data = (ctypes.c_ubyte * samples)()
+        else:
+            start = offset >> 1
+            samples = num_bytes >> 1
+            bias = 0
+            amplitude = 32767
+            data = (ctypes.c_short * samples)()
+        self._advance(start)
+        ring_buffer = self.ring_buffer
+        decay = self.decay
+        for i in range(samples):
+            data[i] = int(ring_buffer[0] * amplitude + bias)
+            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
+        return data
