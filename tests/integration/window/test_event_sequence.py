@@ -52,6 +52,7 @@ class EventSequenceTest(object):
 
     def check_sequence(self, sequence, name):
         if self.next_sequence == 0 and sequence != 0:
+            print('received event before test start:', name)
             return
         if sequence == 0:
             self.start_time = time.time()
@@ -65,7 +66,7 @@ class EventSequenceTest(object):
 
     def check(self):
         self.assertTrue(time.time() - self.start_time < self.timeout,
-                        'Did not receive next expected event: %d' % self.last_sequence)
+                        'Did not receive next expected event: %d' % self.next_sequence)
         failed = getattr(self, 'failed', None)
         if failed:
             self.fail(failed)
@@ -85,6 +86,7 @@ class WindowShowEventSequenceTest(EventSequenceTest, unittest.TestCase):
         self.check_sequence(3, 'on_expose')
 
     def test_method(self):
+        window.Window._enable_event_queue = True
         win = window.Window(visible=False)
         try:
             win.dispatch_events()
@@ -112,6 +114,7 @@ class WindowCreateEventSequenceTest(EventSequenceTest, unittest.TestCase):
         self.check_sequence(3, 'on_expose')
 
     def test_method(self):
+        window.Window._enable_event_queue = True
         win = window.Window()
         try:
             win.push_handlers(self)
@@ -136,6 +139,7 @@ class WindowCreateFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCa
         self.check_sequence(3, 'on_expose')
 
     def test_method(self):
+        window.Window._enable_event_queue = True
         win = window.Window(fullscreen=True)
         try:
             win.push_handlers(self)
@@ -157,6 +161,7 @@ class WindowSetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCase)
         self.check_sequence(2, 'on_expose')
 
     def test_method(self):
+        window.Window._enable_event_queue = True
         win = window.Window()
         try:
             win.dispatch_events()
@@ -181,6 +186,7 @@ class WindowUnsetFullScreenEventSequenceTest(EventSequenceTest, unittest.TestCas
         self.check_sequence(2, 'on_expose')
 
     def test_method(self):
+        window.Window._enable_event_queue = True
         win = window.Window(fullscreen=True)
         try:
             win.dispatch_events()
