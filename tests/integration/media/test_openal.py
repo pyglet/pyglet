@@ -25,7 +25,9 @@ def almost_equal_coords(c1, c2, eps=0.0001):
 
 @pytest.fixture
 def device():
-    return openal.interface.OpenALDevice()
+    device = openal.interface.OpenALDevice()
+    yield device
+    device.delete()
 
 
 def test_device_create_delete(device):
@@ -55,7 +57,9 @@ def test_context_create_delete(device):
 
 @pytest.fixture
 def context(device):
-    return device.create_context()
+    context = device.create_context()
+    yield context
+    context.delete()
 
 
 def test_context_make_current(context):
@@ -64,12 +68,16 @@ def test_context_make_current(context):
 
 @pytest.fixture
 def buffer_pool(context):
-    return openal.interface.OpenALBufferPool(context)
+    pool = openal.interface.OpenALBufferPool(context)
+    yield pool
+    pool.clear()
 
 
 @pytest.fixture
 def buf(buffer_pool):
-    return buffer_pool.get_buffer()
+    buf = buffer_pool.get_buffer()
+    yield buf
+    buf.delete()
 
 
 def test_buffer_create_delete(buf):
@@ -191,7 +199,9 @@ def test_source_create_delete(context):
 
 @pytest.fixture
 def source(context):
-    return context.create_source()
+    source = context.create_source()
+    yield source
+    source.delete()
 
 
 @pytest.fixture
@@ -201,7 +211,8 @@ def filled_buffer(source):
     audio_source = Silence(1.)
     buf.data(audio_source.get_audio_data(audio_source.audio_format.bytes_per_second),
              audio_source.audio_format)
-    return buf
+    yield buf
+    source.buffer_pool.unqueue_buffer(buf)
 
 
 def test_source_queue_play_unqueue(context, filled_buffer):
