@@ -186,6 +186,11 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         # When clearing, the play cursor can be incorrect
         self._clearing = False
 
+        # Up to one audio data may be buffered if too much data was received
+        # from the source that could not be written immediately into the
+        # buffer.  See refill().
+        self._audiodata_buffer = None
+
         self.refill(self.ideal_buffer_size)
 
     def __del__(self):
@@ -254,6 +259,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             self._playing = False
             self._clearing = True
 
+            self._audiodata_buffer = None
             del self._events[:]
             self._update_play_cursor()
 
@@ -325,20 +331,15 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         with self._lock:
 
             while write_size > self.min_buffer_size:
-                audio_data = self.source_group.get_audio_data(write_size)
-                if not audio_data:
-                    assert _debug_media('No audio data left')
-                    if self._has_underrun():
-                        assert _debug_media('Underrun')
-                        MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
-                        MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(self.player)
+                audio_data = self._get_audiodata()
+
+                if audio_data is None:
                     break
 
-                assert _debug_media('Writing {} bytes'.format(audio_data.length))
-                self._queue_events(audio_data)
-                self._queue_audio_data(audio_data)
-                self._update_write_cursor(audio_data)
-                write_size -= audio_data.length
+                length = min(write_size, audio_data.length)
+                assert _debug_media('Writing {} bytes'.format(length))
+                self._queue_audio_data(audio_data, length)
+                write_size -= length
 
             # Check for underrun stopping playback
             with self.driver:
@@ -346,16 +347,38 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                     assert _debug_media('underrun')
                     self.source.play()
 
-    def _queue_audio_data(self, audio_data):
+    def _get_audiodata(self):
+        if self._audiodata_buffer is None or self._audiodata_buffer.length == 0:
+            self._get_new_audiodata()
+
+        return self._audiodata_buffer
+
+    def _get_new_audiodata(self):
+        assert _debug_media('Getting new audio data buffer.')
+        self._audiodata_buffer= self.source_group.get_audio_data(self.ideal_buffer_size)
+
+        if self._audiodata_buffer is not None:
+            assert _debug_media('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
+            self._queue_events(self._audiodata_buffer)
+        else:
+            assert _debug_media('No audio data left')
+            if self._has_underrun():
+                assert _debug_media('Underrun')
+                MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
+                MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(self.player)
+
+    def _queue_audio_data(self, audio_data, length):
         with self.driver:
             buf = self.source.get_buffer()
-            buf.data(audio_data, self.source_group.audio_format)
+            buf.data(audio_data, self.source_group.audio_format, length)
             self.source.queue_buffer(buf)
+        self._update_write_cursor(audio_data, length)
 
-    def _update_write_cursor(self, audio_data):
-        self._write_cursor += audio_data.length
-        self._buffer_sizes.append(audio_data.length)
+    def _update_write_cursor(self, audio_data, length):
+        self._write_cursor += length
+        self._buffer_sizes.append(length)
         self._buffer_timestamps.append(audio_data.timestamp)
+        audio_data.consume(length, self.source_group.audio_format)
         assert self._check_cursors()
 
     def _queue_events(self, audio_data):
