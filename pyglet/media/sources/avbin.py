@@ -43,6 +43,7 @@ import struct
 import ctypes
 import threading
 import time
+from collections import deque
 
 import pyglet
 from pyglet import image
@@ -55,13 +56,13 @@ from pyglet.media.exceptions import MediaFormatException
 from pyglet.media.threads import WorkerThread
 from pyglet.compat import asbytes, asbytes_filename
 
+from pyglet.media.sources import av
+# if pyglet.compat_platform.startswith('win') and struct.calcsize('P') == 8:
+#     av = 'avbin64'
+# else:
+#     av = 'avbin'
 
-if pyglet.compat_platform.startswith('win') and struct.calcsize('P') == 8:
-    av = 'avbin64'
-else:
-    av = 'avbin'
-
-av = pyglet.lib.load_library(av)
+# av = pyglet.lib.load_library(av)
 
 AVBIN_RESULT_ERROR = -1
 AVBIN_RESULT_OK = 0
@@ -153,39 +154,39 @@ class AVbinPacket(ctypes.Structure):
 AVbinLogCallback = ctypes.CFUNCTYPE(None,
     ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p)
 
-av.avbin_get_version.restype = ctypes.c_int
-av.avbin_get_ffmpeg_revision.restype = ctypes.c_int
-av.avbin_get_audio_buffer_size.restype = ctypes.c_size_t
-av.avbin_have_feature.restype = ctypes.c_int
-av.avbin_have_feature.argtypes = [ctypes.c_char_p]
+# av.avbin_get_version.restype = ctypes.c_int
+# av.avbin_get_ffmpeg_revision.restype = ctypes.c_int
+# av.avbin_get_audio_buffer_size.restype = ctypes.c_size_t
+# av.avbin_have_feature.restype = ctypes.c_int
+# av.avbin_have_feature.argtypes = [ctypes.c_char_p]
 
-av.avbin_init.restype = AVbinResult
-av.avbin_set_log_level.restype = AVbinResult
-av.avbin_set_log_level.argtypes = [AVbinLogLevel]
-av.avbin_set_log_callback.argtypes = [AVbinLogCallback]
+# av.avbin_init.restype = AVbinResult
+# av.avbin_set_log_level.restype = AVbinResult
+# av.avbin_set_log_level.argtypes = [AVbinLogLevel]
+# av.avbin_set_log_callback.argtypes = [AVbinLogCallback]
 
-av.avbin_open_filename.restype = AVbinFileP
-av.avbin_open_filename.argtypes = [ctypes.c_char_p]
-av.avbin_close_file.argtypes = [AVbinFileP]
-av.avbin_seek_file.argtypes = [AVbinFileP, Timestamp]
-av.avbin_file_info.argtypes = [AVbinFileP, ctypes.POINTER(AVbinFileInfo)]
-av.avbin_stream_info.argtypes = [AVbinFileP, ctypes.c_int,
-                                 ctypes.POINTER(AVbinStreamInfo8)]
+# av.avbin_open_filename.restype = AVbinFileP
+# av.avbin_open_filename.argtypes = [ctypes.c_char_p]
+# av.avbin_close_file.argtypes = [AVbinFileP]
+# av.avbin_seek_file.argtypes = [AVbinFileP, Timestamp]
+# av.avbin_file_info.argtypes = [AVbinFileP, ctypes.POINTER(AVbinFileInfo)]
+# av.avbin_stream_info.argtypes = [AVbinFileP, ctypes.c_int,
+#                                  ctypes.POINTER(AVbinStreamInfo8)]
 
-av.avbin_open_stream.restype = ctypes.c_void_p
-av.avbin_open_stream.argtypes = [AVbinFileP, ctypes.c_int]
-av.avbin_close_stream.argtypes = [AVbinStreamP]
+# av.avbin_open_stream.restype = ctypes.c_void_p
+# av.avbin_open_stream.argtypes = [AVbinFileP, ctypes.c_int]
+# av.avbin_close_stream.argtypes = [AVbinStreamP]
 
-av.avbin_read.argtypes = [AVbinFileP, ctypes.POINTER(AVbinPacket)]
-av.avbin_read.restype = AVbinResult
-av.avbin_decode_audio.restype = ctypes.c_int
-av.avbin_decode_audio.argtypes = [AVbinStreamP, 
-    ctypes.c_void_p, ctypes.c_size_t,
-    ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
-av.avbin_decode_video.restype = ctypes.c_int
-av.avbin_decode_video.argtypes = [AVbinStreamP, 
-    ctypes.c_void_p, ctypes.c_size_t,
-    ctypes.c_void_p]
+# av.avbin_read.argtypes = [AVbinFileP, ctypes.POINTER(AVbinPacket)]
+# av.avbin_read.restype = AVbinResult
+# av.avbin_decode_audio.restype = ctypes.c_int
+# av.avbin_decode_audio.argtypes = [AVbinStreamP, 
+#     ctypes.c_void_p, ctypes.c_size_t,
+#     ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
+# av.avbin_decode_video.restype = ctypes.c_int
+# av.avbin_decode_video.argtypes = [AVbinStreamP, 
+#     ctypes.c_void_p, ctypes.c_size_t,
+#     ctypes.c_void_p]
 
 
 if True:
@@ -246,9 +247,7 @@ class AVbinSource(StreamingSource):
         self._audio_stream = None
         self._audio_stream_index = -1
 
-        file_info = AVbinFileInfo()
-        file_info.structure_size = ctypes.sizeof(file_info)
-        av.avbin_file_info(self._file, ctypes.byref(file_info))
+        file_info = av.avbin_file_info(self._file)
         self._duration = timestamp_from_avbin(file_info.duration)
 
         self.info = SourceInfo()
@@ -263,9 +262,7 @@ class AVbinSource(StreamingSource):
 
         # Pick the first video and audio streams found, ignore others.
         for i in range(file_info.n_streams):
-            info = AVbinStreamInfo8()
-            info.structure_size = ctypes.sizeof(info)
-            av.avbin_stream_info(self._file, i, info)
+            info = av.avbin_stream_info(self._file, i)
 
             if (info.type == AVBIN_STREAM_TYPE_VIDEO and 
                 not self._video_stream):
@@ -281,10 +278,10 @@ class AVbinSource(StreamingSource):
                     self.video_format.sample_aspect = (
                         float(info.u.video.sample_aspect_num) /
                             info.u.video.sample_aspect_den)
-                if _have_frame_rate:
-                    self.video_format.frame_rate = (
-                        float(info.u.video.frame_rate_num) / 
-                            info.u.video.frame_rate_den)
+                # if _have_frame_rate:
+                #     self.video_format.frame_rate = (
+                #         float(info.u.video.frame_rate_num) / 
+                #             info.u.video.frame_rate_den)
                 self._video_stream = stream
                 self._video_stream_index = i
 
@@ -313,13 +310,12 @@ class AVbinSource(StreamingSource):
         # Timestamp of last video packet added to decoder queue.
         self._video_timestamp = 0
         self._buffered_audio_data = []
-
         if self.audio_format:
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.avbin_get_audio_buffer_size())()
-            
+        
         if self.video_format:
-            self._video_packets = []
+            self._video_packets = deque()
             self._decode_thread = WorkerThread()
             self._decode_thread.start()
             self._condition = threading.Condition()
@@ -356,7 +352,7 @@ class AVbinSource(StreamingSource):
                 packet.image = None
             self._condition.notify()
             self._condition.release()
-            del self._video_packets[:]
+            self._video_packets.clear()
 
             self._decode_thread.clear_jobs()
 
@@ -370,7 +366,6 @@ class AVbinSource(StreamingSource):
         # 'audio'; and packet is VideoPacket or AudioData.  In either case,
         # packet is buffered or queued for decoding; no further action is
         # necessary.  Returns (None, None) if packet was neither type.
-
         if self._packet.stream_index == self._video_stream_index:
             if self._packet.timestamp < 0:
                 # XXX TODO
@@ -476,7 +471,7 @@ class AVbinSource(StreamingSource):
             audio_packet_size -= used
 
             if size_out.value <= 0:
-                continue
+                break
 
             # XXX how did this ever work?  replaced with copy below
             # buffer = ctypes.string_at(self._audio_buffer, size_out)
@@ -546,7 +541,7 @@ class AVbinSource(StreamingSource):
             return
 
         if self._ensure_video_packets():
-            packet = self._video_packets.pop(0)
+            packet = self._video_packets.popleft()
             if _debug:
                 print('Waiting for', packet)
 
@@ -559,7 +554,6 @@ class AVbinSource(StreamingSource):
             if _debug:
                 print('Returning', packet)
             return packet.image
-
 av.avbin_init()
 if pyglet.options['debug_media']:
     _debug = True
@@ -568,4 +562,4 @@ else:
     _debug = False
     av.avbin_set_log_level(AVBIN_LOG_QUIET)
 
-_have_frame_rate = av.avbin_have_feature(asbytes('frame_rate'))
+# _have_frame_rate = av.avbin_have_feature(asbytes('frame_rate'))

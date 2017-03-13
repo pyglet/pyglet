@@ -103,7 +103,7 @@ def get_source_loader():
 
 _source_loader = None
 
-
+# TODO: Remove hack to force avbin
 def have_avbin():
     global _have_avbin
     if _have_avbin is None:
@@ -112,7 +112,8 @@ def have_avbin():
             _have_avbin = True
         except ImportError:
             _have_avbin = False
-    return _have_avbin
-
+    # return _have_avbin
+    return True
+    
 _have_avbin = None
 
