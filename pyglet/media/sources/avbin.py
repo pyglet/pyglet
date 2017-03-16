@@ -57,6 +57,14 @@ from pyglet.media.threads import WorkerThread
 from pyglet.compat import asbytes, asbytes_filename
 
 from pyglet.media.sources import av
+from pyglet.media.sources.av import (
+    AVBIN_STREAM_TYPE_UNKNOWN,
+    AVBIN_STREAM_TYPE_VIDEO,
+    AVBIN_STREAM_TYPE_AUDIO,
+    AVbinPacket,
+    AVBIN_RESULT_OK,
+    AVBIN_RESULT_ERROR
+    )
 # if pyglet.compat_platform.startswith('win') and struct.calcsize('P') == 8:
 #     av = 'avbin64'
 # else:
@@ -64,95 +72,95 @@ from pyglet.media.sources import av
 
 # av = pyglet.lib.load_library(av)
 
-AVBIN_RESULT_ERROR = -1
-AVBIN_RESULT_OK = 0
-AVbinResult = ctypes.c_int
+# AVBIN_RESULT_ERROR = -1
+# AVBIN_RESULT_OK = 0
+# AVbinResult = ctypes.c_int
 
-AVBIN_STREAM_TYPE_UNKNOWN = 0
-AVBIN_STREAM_TYPE_VIDEO = 1
-AVBIN_STREAM_TYPE_AUDIO = 2
-AVbinStreamType = ctypes.c_int
+# AVBIN_STREAM_TYPE_UNKNOWN = 0
+# AVBIN_STREAM_TYPE_VIDEO = 1
+# AVBIN_STREAM_TYPE_AUDIO = 2
+# AVbinStreamType = ctypes.c_int
 
-AVBIN_SAMPLE_FORMAT_U8 = 0
-AVBIN_SAMPLE_FORMAT_S16 = 1
-AVBIN_SAMPLE_FORMAT_S24 = 2
-AVBIN_SAMPLE_FORMAT_S32 = 3
-AVBIN_SAMPLE_FORMAT_FLOAT = 4
-AVbinSampleFormat = ctypes.c_int
+# AVBIN_SAMPLE_FORMAT_U8 = 0
+# AVBIN_SAMPLE_FORMAT_S16 = 1
+# AVBIN_SAMPLE_FORMAT_S24 = 2
+# AVBIN_SAMPLE_FORMAT_S32 = 3
+# AVBIN_SAMPLE_FORMAT_FLOAT = 4
+# AVbinSampleFormat = ctypes.c_int
 
-AVBIN_LOG_QUIET = -8
-AVBIN_LOG_PANIC = 0
-AVBIN_LOG_FATAL = 8
-AVBIN_LOG_ERROR = 16
-AVBIN_LOG_WARNING = 24
-AVBIN_LOG_INFO = 32
-AVBIN_LOG_VERBOSE = 40
-AVBIN_LOG_DEBUG = 48
-AVbinLogLevel = ctypes.c_int
+# AVBIN_LOG_QUIET = -8
+# AVBIN_LOG_PANIC = 0
+# AVBIN_LOG_FATAL = 8
+# AVBIN_LOG_ERROR = 16
+# AVBIN_LOG_WARNING = 24
+# AVBIN_LOG_INFO = 32
+# AVBIN_LOG_VERBOSE = 40
+# AVBIN_LOG_DEBUG = 48
+# AVbinLogLevel = ctypes.c_int
 
-AVbinFileP = ctypes.c_void_p
-AVbinStreamP = ctypes.c_void_p
+# AVbinFileP = ctypes.c_void_p
+# AVbinStreamP = ctypes.c_void_p
 
-Timestamp = ctypes.c_int64
+# Timestamp = ctypes.c_int64
 
-class AVbinFileInfo(ctypes.Structure):
-    _fields_ = [
-        ('structure_size', ctypes.c_size_t),
-        ('n_streams', ctypes.c_int),
-        ('start_time', Timestamp),
-        ('duration', Timestamp),
-        ('title', ctypes.c_char * 512),
-        ('author', ctypes.c_char * 512),
-        ('copyright', ctypes.c_char * 512),
-        ('comment', ctypes.c_char * 512),
-        ('album', ctypes.c_char * 512),
-        ('year', ctypes.c_int),
-        ('track', ctypes.c_int),
-        ('genre', ctypes.c_char * 32),
-    ]
+# class AVbinFileInfo(ctypes.Structure):
+#     _fields_ = [
+#         ('structure_size', ctypes.c_size_t),
+#         ('n_streams', ctypes.c_int),
+#         ('start_time', Timestamp),
+#         ('duration', Timestamp),
+#         ('title', ctypes.c_char * 512),
+#         ('author', ctypes.c_char * 512),
+#         ('copyright', ctypes.c_char * 512),
+#         ('comment', ctypes.c_char * 512),
+#         ('album', ctypes.c_char * 512),
+#         ('year', ctypes.c_int),
+#         ('track', ctypes.c_int),
+#         ('genre', ctypes.c_char * 32),
+#     ]
 
-class _AVbinStreamInfoVideo8(ctypes.Structure):
-    _fields_ = [
-        ('width', ctypes.c_uint),
-        ('height', ctypes.c_uint),
-        ('sample_aspect_num', ctypes.c_uint),
-        ('sample_aspect_den', ctypes.c_uint),
-        ('frame_rate_num', ctypes.c_uint),
-        ('frame_rate_den', ctypes.c_uint),
-    ]
+# class _AVbinStreamInfoVideo8(ctypes.Structure):
+#     _fields_ = [
+#         ('width', ctypes.c_uint),
+#         ('height', ctypes.c_uint),
+#         ('sample_aspect_num', ctypes.c_uint),
+#         ('sample_aspect_den', ctypes.c_uint),
+#         ('frame_rate_num', ctypes.c_uint),
+#         ('frame_rate_den', ctypes.c_uint),
+#     ]
 
-class _AVbinStreamInfoAudio8(ctypes.Structure):
-    _fields_ = [
-        ('sample_format', ctypes.c_int),
-        ('sample_rate', ctypes.c_uint),
-        ('sample_bits', ctypes.c_uint),
-        ('channels', ctypes.c_uint),
-    ]
+# class _AVbinStreamInfoAudio8(ctypes.Structure):
+#     _fields_ = [
+#         ('sample_format', ctypes.c_int),
+#         ('sample_rate', ctypes.c_uint),
+#         ('sample_bits', ctypes.c_uint),
+#         ('channels', ctypes.c_uint),
+#     ]
 
-class _AVbinStreamInfoUnion8(ctypes.Union):
-    _fields_ = [
-        ('video', _AVbinStreamInfoVideo8),
-        ('audio', _AVbinStreamInfoAudio8),
-    ]
+# class _AVbinStreamInfoUnion8(ctypes.Union):
+#     _fields_ = [
+#         ('video', _AVbinStreamInfoVideo8),
+#         ('audio', _AVbinStreamInfoAudio8),
+#     ]
 
-class AVbinStreamInfo8(ctypes.Structure):
-    _fields_ = [
-        ('structure_size', ctypes.c_size_t),
-        ('type', ctypes.c_int),
-        ('u', _AVbinStreamInfoUnion8)
-    ]
+# class AVbinStreamInfo8(ctypes.Structure):
+#     _fields_ = [
+#         ('structure_size', ctypes.c_size_t),
+#         ('type', ctypes.c_int),
+#         ('u', _AVbinStreamInfoUnion8)
+#     ]
 
-class AVbinPacket(ctypes.Structure):
-    _fields_ = [
-        ('structure_size', ctypes.c_size_t),
-        ('timestamp', Timestamp),
-        ('stream_index', ctypes.c_int),
-        ('data', ctypes.POINTER(ctypes.c_uint8)),
-        ('size', ctypes.c_size_t),
-    ]
+# class AVbinPacket(ctypes.Structure):
+#     _fields_ = [
+#         ('structure_size', ctypes.c_size_t),
+#         ('timestamp', Timestamp),
+#         ('stream_index', ctypes.c_int),
+#         ('data', ctypes.POINTER(ctypes.c_uint8)),
+#         ('size', ctypes.c_size_t),
+#     ]
 
-AVbinLogCallback = ctypes.CFUNCTYPE(None,
-    ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p)
+# AVbinLogCallback = ctypes.CFUNCTYPE(None,
+#     ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p)
 
 # av.avbin_get_version.restype = ctypes.c_int
 # av.avbin_get_ffmpeg_revision.restype = ctypes.c_int
@@ -515,12 +523,17 @@ class AVbinSource(StreamingSource):
             if _debug:
                 print('No video packets...')
             # Read ahead until we have another video packet
-            self._get_packet()
+            if not self._get_packet():
+                return False
             packet_type, _ = self._process_packet()
-            while packet_type and packet_type != 'video':
-                self._get_packet()
+            for i in range(15):
+            # while packet_type and packet_type != 'video':
+                if not self._get_packet():
+                    return False
                 packet_type, _ = self._process_packet()
-            if not packet_type:
+                if packet_type and packet_type == 'video':
+                    break
+            if packet_type is None or packet_type == 'audio':
                 return False
 
             if _debug:
@@ -557,9 +570,9 @@ class AVbinSource(StreamingSource):
 av.avbin_init()
 if pyglet.options['debug_media']:
     _debug = True
-    av.avbin_set_log_level(AVBIN_LOG_DEBUG)
+    # av.avbin_set_log_level(AVBIN_LOG_DEBUG)
 else:
     _debug = False
-    av.avbin_set_log_level(AVBIN_LOG_QUIET)
+    # av.avbin_set_log_level(AVBIN_LOG_QUIET)
 
 # _have_frame_rate = av.avbin_have_feature(asbytes('frame_rate'))

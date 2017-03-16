@@ -47,7 +47,7 @@ from pyglet.gl import *
 import pyglet
 from pyglet.window import key
 
-pyglet.options['debug_media'] = True
+pyglet.options['debug_media'] = False
 
 
 def draw_rect(x, y, width, height):
@@ -135,7 +135,10 @@ class Slider(Control):
                   self.THUMB_WIDTH, self.THUMB_HEIGHT)
 
     def coordinate_to_value(self, x):
-        return float(x - self.x) / self.width * (self.max - self.min) + self.min
+        value = float(x - self.x) / self.width * (self.max - self.min) + self.min
+        # value = max(self.min, min(value, self.max))
+        # print('coordinate_to_value', value)
+        return value
 
     def on_mouse_press(self, x, y, button, modifiers):
         value = self.coordinate_to_value(x)
@@ -218,6 +221,10 @@ class PlayerWindow(pyglet.window.Window):
     def on_eos(self):
         self.gui_update_state()
 
+    def on_player_eos(self):
+        self.gui_update_state()
+        pyglet.clock.schedule_once(lambda dt: None, 0.1)
+
     def gui_update_source(self):
         if self.player.source:
             source = self.player.source
@@ -287,6 +294,11 @@ class PlayerWindow(pyglet.window.Window):
             self.on_play_pause()
         elif symbol == key.ESCAPE:
             self.dispatch_event('on_close')
+        elif symbol == key.LEFT:
+            self.player.seek(0)
+        elif symbol == key.RIGHT:
+            self.player.seek(self.player.source.duration)
+
 
     def on_close(self):
         self.player.pause()

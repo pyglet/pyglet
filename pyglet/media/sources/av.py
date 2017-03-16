@@ -121,6 +121,9 @@ MAX_REORDER_DELAY = 16
 FF_INPUT_BUFFER_PADDING_SIZE = 32
 SWR_CH_MAX = 64
 
+INT64_MIN = -2**63+1
+INT64_MAX = 0x7FFFFFFFFFFFFFFF
+
 class AVbinFileInfo(Structure):
     _fields_ = [
         ('n_streams', c_int),
@@ -618,8 +621,9 @@ class SwsContext(Structure): pass
 class SwsFilter(Structure): pass
 
 class SwrContext(Structure): pass
-        
-AV_TIME_BASE_Q = AVRational(1, 1000000)
+   
+AV_TIME_BASE = 1000000  
+AV_TIME_BASE_Q = AVRational(1, AV_TIME_BASE)
 
 # Wrap FFmpeg functions. Only those needed.
 AVbinLogCallback = CFUNCTYPE(None,
@@ -698,6 +702,9 @@ avformat.av_read_frame.argtypes = [POINTER(AVFormatContext),
 avformat.av_seek_frame.restype = c_int
 avformat.av_seek_frame.argtypes = [POINTER(AVFormatContext),
         c_int, c_int64, c_int]
+avformat.avformat_seek_file.restype = c_int
+avformat.avformat_seek_file.argtypes = [POINTER(AVFormatContext),
+        c_int, c_int64, c_int64, c_int64, c_int]
 
 
 swscale.sws_getCachedContext.restype = POINTER(SwsContext)
@@ -926,14 +933,16 @@ def avbin_close_stream(stream):
     avcodec.avcodec_free_context(addressof(stream.codec_context))
 
 def avbin_seek_file(file, timestamp):
-    if not timestamp:
-        flags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_BYTE
-        if avformat.av_seek_frame(file.context, -1, 0, flags) < 0:
-            return AVBIN_RESULT_ERROR
-    else:
-        flags = AVSEEK_FLAG_BACKWARD
-        if avformat.av_seek_frame(file.context, -1, timestamp, flags) < 0:
-            return AVBIN_RESULT_ERROR
+    flags = AVSEEK_FLAG_BACKWARD
+    max_ts = file.context.contents.duration * AV_TIME_BASE
+    result = avformat.avformat_seek_file(file.context, -1, 0, timestamp, max_ts, flags)
+    if result < 0:
+        # buf = create_string_buffer(128)
+        # avutil.av_strerror(result, buf, 128)
+        # descr = buf.value
+        # raise FFmpegException('Error occured while seeking. ' +
+        #                       descr.decode())
+        return AVBIN_RESULT_ERROR
 
     for i in range(file.context.contents.nb_streams):   
         codec_context = file.context.contents.streams[i].contents.codec

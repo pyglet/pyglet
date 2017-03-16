@@ -179,7 +179,7 @@ class Player(pyglet.event.EventDispatcher):
         if self._audio_player:
             # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
             # player is not stopped
-            self._audio_player.stop()
+            # self._audio_player.stop()
             self._audio_player.clear()
         if self.source.video_format:
             self._last_video_timestamp = None
