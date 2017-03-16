@@ -1058,8 +1058,10 @@ def avbin_decode_video(stream, data_in, size_in, data_out):
         stream.frame, 
         byref(got_picture), 
         byref(packet))
+    if bytes_used < 0:
+        raise FFmpegException('Error decoding a video packet.')
     if not got_picture:
-        return -1
+        raise FFmpegException('No frame could be decompressed')
     
 
     avcodec.avpicture_fill(byref(picture_rgb), data_out, PIX_FMT_RGB24,

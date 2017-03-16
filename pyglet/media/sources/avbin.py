@@ -58,6 +58,7 @@ from pyglet.compat import asbytes, asbytes_filename
 
 from pyglet.media.sources import av
 from pyglet.media.sources.av import (
+    FFmpegException,
     AVBIN_STREAM_TYPE_UNKNOWN,
     AVBIN_STREAM_TYPE_VIDEO,
     AVBIN_STREAM_TYPE_AUDIO,
@@ -203,9 +204,8 @@ if True:
     # of a problem.
     def synchronize(func, lock):
         def f(*args):
-            lock.acquire()
-            result = func(*args)
-            lock.release()
+            with lock:
+                result = func(*args)
             return result
         return f 
 
@@ -317,7 +317,7 @@ class AVbinSource(StreamingSource):
 
         # Timestamp of last video packet added to decoder queue.
         self._video_timestamp = 0
-        self._buffered_audio_data = []
+        self._buffered_audio_data = deque()
         if self.audio_format:
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.avbin_get_audio_buffer_size())()
@@ -351,7 +351,7 @@ class AVbinSource(StreamingSource):
 
         self._audio_packet_size = 0
         del self._events[:]
-        del self._buffered_audio_data[:]
+        self._buffered_audio_data.clear()
 
         if self.video_format:
             self._video_timestamp = 0
@@ -409,7 +409,7 @@ class AVbinSource(StreamingSource):
 
     def get_audio_data(self, bytes):
         try:
-            audio_data = self._buffered_audio_data.pop(0)
+            audio_data = self._buffered_audio_data.popleft()
             audio_data_timeend = audio_data.timestamp + audio_data.duration
         except IndexError:
             audio_data = None
@@ -432,7 +432,7 @@ class AVbinSource(StreamingSource):
             if packet_type == 'video':
                 have_video_work = True
             elif not audio_data and packet_type == 'audio':
-                audio_data = self._buffered_audio_data.pop(0)
+                audio_data = self._buffered_audio_data.popleft()
                 if _debug:
                     print('Got requested audio packet at', audio_data.timestamp)
                 audio_data_timeend = audio_data.timestamp + audio_data.duration
@@ -467,11 +467,11 @@ class AVbinSource(StreamingSource):
             audio_packet_ptr = ctypes.cast(packet.data, ctypes.c_void_p)
             audio_packet_size = packet.size
 
-            used = av.avbin_decode_audio(self._audio_stream,
-                audio_packet_ptr, audio_packet_size,
-                self._audio_buffer, size_out)
-
-            if used < 0:
+            try:
+                used = av.avbin_decode_audio(self._audio_stream,
+                                    audio_packet_ptr, audio_packet_size,
+                                    self._audio_buffer, size_out)
+            except FFmpegException:
                 self._audio_packet_size = 0
                 break
 
@@ -500,10 +500,11 @@ class AVbinSource(StreamingSource):
         height = self.video_format.height
         pitch = width * 3
         buffer = (ctypes.c_uint8 * (pitch * height))()
-        result = av.avbin_decode_video(self._video_stream, 
-                                       packet.data, packet.size, 
-                                       buffer)
-        if result < 0:
+        try:
+            result = av.avbin_decode_video(self._video_stream, 
+                                           packet.data, packet.size, 
+                                           buffer)
+        except FFmpegException:
             image_data = None
         else:
             image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
