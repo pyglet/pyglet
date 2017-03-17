@@ -286,10 +286,9 @@ class AVbinSource(StreamingSource):
                     self.video_format.sample_aspect = (
                         float(info.u.video.sample_aspect_num) /
                             info.u.video.sample_aspect_den)
-                # if _have_frame_rate:
-                #     self.video_format.frame_rate = (
-                #         float(info.u.video.frame_rate_num) / 
-                #             info.u.video.frame_rate_den)
+                self.video_format.frame_rate = (
+                    float(info.u.video.frame_rate_num) / 
+                        info.u.video.frame_rate_den)
                 self._video_stream = stream
                 self._video_stream_index = i
 
@@ -310,10 +309,9 @@ class AVbinSource(StreamingSource):
                 self._audio_stream_index = i
 
         self._packet = AVbinPacket()
-        self._packet.structure_size = ctypes.sizeof(self._packet)
         self._packet.stream_index = -1
 
-        self._events = []
+        self._events = [] # They don't seem to be used!
 
         # Timestamp of last video packet added to decoder queue.
         self._video_timestamp = 0
