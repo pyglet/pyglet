@@ -42,11 +42,7 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet.lib
 from pyglet.media.exceptions import MediaFormatException
 from pyglet.compat import asbytes
-from pyglet.media.sources.ffmpeg.avcodec import *
-from pyglet.media.sources.ffmpeg.avutil import *
-from pyglet.media.sources.ffmpeg.avformat import *
-from pyglet.media.sources.ffmpeg.swresample import *
-from pyglet.media.sources.ffmpeg.swscale import *
+from pyglet.media.sources.ffmpeg import *
 
 AVBIN_RESULT_ERROR = -1
 AVBIN_RESULT_OK = 0

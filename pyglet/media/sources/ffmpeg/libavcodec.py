@@ -40,14 +40,14 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
     create_string_buffer, memmove)
 
 import pyglet.lib
-import pyglet.media.sources.ffmpeg.avutil
+from . import libavutil
 
 avcodec = pyglet.lib.load_library('avcodec-57')
 
 FF_INPUT_BUFFER_PADDING_SIZE = 32
 
 class AVPacketSideData(Structure): pass
-AVBufferRef = pyglet.media.sources.ffmpeg.avutil.AVBufferRef
+AVBufferRef = libavutil.AVBufferRef
 
 class AVPacket(Structure):
     _fields_ = [
@@ -66,7 +66,7 @@ class AVPacket(Structure):
     ]
 class AVCodecParserContext(Structure): pass
 
-AVRational = pyglet.media.sources.ffmpeg.avutil.AVRational
+AVRational = libavutil.AVRational
 class AVCodecParameters(Structure):
     _fields_ = [
         ('codec_type', c_int),
@@ -109,9 +109,9 @@ class AVCodec(Structure):
 class AVCodecContext(Structure): pass
 class RcOverride(Structure): pass
 class AVHWAccel(Structure): pass
-AVClass = pyglet.media.sources.ffmpeg.avutil.AVClass
-AVFrame = pyglet.media.sources.ffmpeg.avutil.AVFrame
-AV_NUM_DATA_POINTERS = pyglet.media.sources.ffmpeg.avutil.AV_NUM_DATA_POINTERS
+AVClass = libavutil.AVClass
+AVFrame = libavutil.AVFrame
+AV_NUM_DATA_POINTERS = libavutil.AV_NUM_DATA_POINTERS
 AVCodecContext._fields_ = [
         ('av_class', POINTER(AVClass)),
         ('log_level_offset', c_int),
@@ -319,7 +319,7 @@ class AVPicture(Structure):
 avcodec.av_packet_unref.argtypes = [POINTER(AVPacket)]
 avcodec.avcodec_find_decoder.restype = POINTER(AVCodec)
 avcodec.avcodec_find_decoder.argtypes = [c_int]
-AVDictionary = pyglet.media.sources.ffmpeg.avutil.AVDictionary
+AVDictionary = libavutil.AVDictionary
 avcodec.avcodec_open2.restype = c_int
 avcodec.avcodec_open2.argtypes = [POINTER(AVCodecContext),
             POINTER(AVCodec), 

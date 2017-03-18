@@ -40,8 +40,8 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
     create_string_buffer, memmove)
 
 import pyglet.lib
-import pyglet.media.sources.ffmpeg.avcodec
-import pyglet.media.sources.ffmpeg.avutil
+from . import libavcodec
+from . import libavutil
 
 avformat = pyglet.lib.load_library('avformat-57')
 
@@ -92,13 +92,13 @@ class AVFrac(Structure):
         ('den', c_int64),
     ]
 
-AVCodecContext = pyglet.media.sources.ffmpeg.avcodec.AVCodecContext
-AVPacketSideData = pyglet.media.sources.ffmpeg.avcodec.AVPacketSideData
-AVPacket = pyglet.media.sources.ffmpeg.avcodec.AVPacket
-AVCodecParserContext = pyglet.media.sources.ffmpeg.avcodec.AVCodecParserContext
-AVCodecParameters = pyglet.media.sources.ffmpeg.avcodec.AVCodecParameters
-AVRational = pyglet.media.sources.ffmpeg.avutil.AVRational
-AVDictionary = pyglet.media.sources.ffmpeg.avutil.AVDictionary
+AVCodecContext = libavcodec.AVCodecContext
+AVPacketSideData = libavcodec.AVPacketSideData
+AVPacket = libavcodec.AVPacket
+AVCodecParserContext = libavcodec.AVCodecParserContext
+AVCodecParameters = libavcodec.AVCodecParameters
+AVRational = libavutil.AVRational
+AVDictionary = libavutil.AVDictionary
 class AVStream(Structure):
     _fields_ = [
         ('index', c_int),
@@ -173,8 +173,8 @@ class AVIOInterruptCB(Structure):
 class AVFormatContext(Structure):
     pass
 
-AVClass = pyglet.media.sources.ffmpeg.avutil.AVClass
-AVCodec = pyglet.media.sources.ffmpeg.avcodec.AVCodec
+AVClass = libavutil.AVClass
+AVCodec = libavcodec.AVCodec
 AVFormatContext._fields_ = [
         ('av_class', POINTER(AVClass)),
         ('iformat', POINTER(AVInputFormat)),

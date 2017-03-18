@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 """FFmpeg wrapping"""
-# from .avcodec import *
-# from .avutil import *
-# from .avformat import *
-# from .swresample import *
-# from .swscale import *
+from .libavcodec import *
+from .libavutil import *
+from .libavformat import *
+from .libswresample import *
+from .libswscale import *
