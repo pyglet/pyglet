@@ -242,7 +242,7 @@ Procedural Audio
 ----------------
 
 In addition to loading audio files from disk, the `pyglet.media.procedural` module is available
-for creating various simple sounds. There are a variety of waveforms available:
+for simple audio synthesis. There are a variety of waveforms available:
 
 * ``pyglet.media.procedural.Sine``
 * ``pyglet.media.procedural.Saw``
@@ -250,11 +250,24 @@ for creating various simple sounds. There are a variety of waveforms available:
 * ``pyglet.media.procedural.FM``
 * ``pyglet.media.procedural.Silence``
 * ``pyglet.media.procedural.WhiteNoise``
+* ``pyglet.media.procedural.Digitar``
 
 At a minimum, you will need to specify the duration of the audio you wish to produce. You will also
 want to set the frequency (most waveforms will default to 440Hz). Some waveforms, such as the FM
 waveform, have additional parameters. More detail can be found in the API documentation for each.
 
+For more vibrant audio, a variety of standard envelopes are available. These envelopes affect the
+amplitude (volume), and make for more natural sounding waveforms. You first create an envelope
+instance, and then pass it in while creating any of the above waveforms. The same envelope instance
+can be passed to any number of waveforms, reducing duplicate code when creating multiple tones.
+If no envelope is used, all procedural classes will default to the FlatEnvelope of maximum volume,
+which esentially has no effect on the waveform. Check the API documentation of each Envelope
+to see which parameters are available.
+
+* ``pyglet.media.procedural.FlatEnvelope``
+* ``pyglet.media.procedural.LinearDecayEnvelope``
+* ``pyglet.media.procedural.ADSREnvelope``
+* ``pyglet.media.procedural.TremoloEnvelope``
 
 Simple audio playback
 ---------------------

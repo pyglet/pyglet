@@ -21,7 +21,7 @@ environment variable is used for each option:
         * - ``PYGLET_AUDIO``
           - ``audio``
           - List of strings
-          - ``directsound,opeanl,alsa,silent``
+          - ``directsound,openal,alsa,silent``
         * - ``PYGLET_DEBUG_GL``
           - ``debug_gl``
           - Boolean
