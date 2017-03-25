@@ -426,7 +426,11 @@ def avbin_decode_audio(stream, data_in, size_in, data_out, size_out):
         if size_out.value < data_size:
             raise FFmpegException('Output audio buffer is too small for current audio frame!')
 
-        channel_layout = avutil.av_get_default_channel_layout(stream.codec_context.contents.channels)
+        channels = stream.codec_context.contents.channels
+        channel_input = avutil.av_get_default_channel_layout(channels)
+        channels_out = min(2, channels)
+        channel_output = avutil.av_get_default_channel_layout(channels_out)
+
         sample_rate = stream.codec_context.contents.sample_rate
         sample_format = stream.frame.contents.format
         if sample_format in (AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_U8P):
@@ -441,8 +445,8 @@ def avbin_decode_audio(stream, data_in, size_in, data_out, size_out):
             raise FFmpegException('Audi format not supported.')
 
         swr_ctx = swresample.swr_alloc_set_opts(None, 
-            channel_layout, tgt_format,  sample_rate,
-            channel_layout, sample_format, sample_rate,
+            channel_output, tgt_format,  sample_rate,
+            channel_input, sample_format, sample_rate,
             0, None)
         if not swr_ctx or swresample.swr_init(swr_ctx) < 0:
             swresample.swr_free(swr_ctx)
@@ -453,7 +457,9 @@ def avbin_decode_audio(stream, data_in, size_in, data_out, size_out):
         len_data = swresample.swr_convert(swr_ctx, 
             byref(p_data_out), data_size, 
             data_in, stream.frame.contents.nb_samples)
-        size_out.value = len_data * stream.codec_context.contents.channels * avutil.av_get_bytes_per_sample(tgt_format)
+        size_out.value = (len_data * 
+                          channels_out * 
+                          avutil.av_get_bytes_per_sample(tgt_format))
         swresample.swr_free(swr_ctx)
     else:
         size_out.value = 0

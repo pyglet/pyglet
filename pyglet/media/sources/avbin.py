@@ -294,7 +294,6 @@ class AVbinSource(StreamingSource):
 
             elif (info.type == AVBIN_STREAM_TYPE_AUDIO and
                   info.u.audio.sample_bits in (8, 16) and
-                  info.u.audio.channels in (1, 2) and 
                   not self._audio_stream):
 
                 stream = av.avbin_open_stream(self._file, i)
@@ -302,7 +301,7 @@ class AVbinSource(StreamingSource):
                     continue
 
                 self.audio_format = AudioFormat(
-                    channels=info.u.audio.channels,
+                    channels=min(2, info.u.audio.channels),
                     sample_size=info.u.audio.sample_bits,
                     sample_rate=info.u.audio.sample_rate)
                 self._audio_stream = stream
