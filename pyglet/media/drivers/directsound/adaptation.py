@@ -331,6 +331,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._write_cursor_ring %= self._buffer_size
 
     def get_time(self):
+        self.update_play_cursor()
         with self._lock:
             if self._timestamps:
                 cursor, ts = self._timestamps[0]

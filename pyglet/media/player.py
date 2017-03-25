@@ -105,12 +105,7 @@ class Player(pyglet.event.EventDispatcher):
             if source.video_format:
                 if not self._texture:
                     self._create_texture()
-
-                if self.source.video_format.frame_rate:
-                    period = 1. / self.source.video_format.frame_rate
-                else:
-                    period = 1. / 30.
-                pyglet.clock.schedule_interval(self.update_texture, period)
+                pyglet.clock.schedule_once(self.update_texture, 0)
         else:
             if self._audio_player:
                 self._audio_player.stop()
@@ -264,12 +259,16 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         ts = self._groups[0].get_next_video_timestamp()
-        while ts is not None and ts < time:
+        while ts is not None and ts+0.04 < time: # Allow 40 ms difference
             self._groups[0].get_next_video_frame() # Discard frame
+            if _debug:
+                print("Frames discarded at timestamp {:.2f}. Missed by {:.2f}."
+                      " dt {:.2f} time {:.2f}".format(ts, time-ts, dt, time))
             ts = self._groups[0].get_next_video_timestamp()
 
         if ts is None:
             self._last_video_timestamp = None
+            pyglet.clock.schedule_once(self.update_texture, 1. / 30)
             return
 
         image = self._groups[0].get_next_video_frame()
@@ -278,6 +277,12 @@ class Player(pyglet.event.EventDispatcher):
                 self._create_texture()
             self._texture.blit_into(image, 0, 0, 0)
             self._last_video_timestamp = ts
+        ts = self._groups[0].get_next_video_timestamp()
+        if ts is None:
+            delay = 1. / 30
+        else:
+            delay = ts - time
+        pyglet.clock.schedule_once(self.update_texture, delay)
 
     def _player_property(name, doc=None):
         private_name = '_' + name
