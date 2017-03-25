@@ -38,12 +38,16 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p, 
     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union, 
     create_string_buffer, memmove)
+from sys import platform
 
 import pyglet.lib
 from . import libavcodec
 from . import libavutil
 
-avformat = pyglet.lib.load_library('avformat-57')
+if platform == 'win32':
+    avformat = pyglet.lib.load_library('avformat-57')
+else:
+    avformat = pyglet.lib.load_library('avformat')
 
 AVSEEK_FLAG_BACKWARD = 1 # ///< seek backward
 AVSEEK_FLAG_BYTE = 2     # ///< seeking based on position in bytes

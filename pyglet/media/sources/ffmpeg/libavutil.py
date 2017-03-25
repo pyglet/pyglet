@@ -38,10 +38,14 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p, 
     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union, 
     create_string_buffer, memmove)
+from sys import platform
 
 import pyglet.lib
 
-avutil = pyglet.lib.load_library('avutil-55')
+if platform == 'win32':
+    avutil = pyglet.lib.load_library('avutil-55')
+else:
+    avutil = pyglet.lib.load_library('avutil')
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0

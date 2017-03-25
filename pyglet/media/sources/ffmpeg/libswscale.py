@@ -38,10 +38,14 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p, 
     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union, 
     create_string_buffer, memmove)
+from sys import platform
 
 import pyglet.lib
 
-swscale = pyglet.lib.load_library('swscale-4')
+if platform == 'win32':
+    swscale = pyglet.lib.load_library('swscale-4')
+else:
+    swscale = pyglet.lib.load_library('swscale')
 
 SWS_FAST_BILINEAR = 1
 
