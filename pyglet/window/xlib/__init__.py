@@ -482,6 +482,9 @@ class XlibWindow(BaseWindow):
         del self.display._window_map[self._window]
         self._window = None
 
+        self._view_event_handlers.clear()
+        self._event_handlers.clear()
+
         if _have_utf8:
             xlib.XDestroyIC(self._x_ic)
             self._x_ic = None
