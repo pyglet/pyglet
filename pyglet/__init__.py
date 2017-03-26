@@ -176,6 +176,16 @@ if getattr(sys, 'frozen', None):
 #:
 #:     **Since:** pyglet 1.2
 #:
+#: ffmpeg_libs_win
+#:      A tuple containing the FFmpeg dll filenames for Windows. As on this
+#:      platform there is no standard way to find the dll files, and the
+#:      FFmpeg dll names have version number appended at the end, it's easier
+#:      for the developer to state what are the filenames, and hence giving
+#:      the version for each dll files. By default, the filenames are
+#:      'avcodec-57', 'avformat-57', 'avutil-55', 'swresample-2', 'swscale-4'
+#:
+#:     **Since:** pyglet 1.4
+#:
 options = {
     'audio': ('directsound', 'pulse', 'openal', 'silent'),
     'font': ('gdiplus', 'win32'), # ignored outside win32; win32 is deprecated
@@ -193,6 +203,8 @@ options = {
     'debug_trace_flush': True,
     'debug_win32': False,
     'debug_x11': False,
+    'ffmpeg_libs_win': ('avcodec-57', 'avformat-57', 'avutil-55', 
+                        'swresample-2', 'swscale-4'),
     'graphics_vbo': True,
     'shadow_window': True,
     'vsync': None,
@@ -219,6 +231,7 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
+    'ffmpeg_libs_win': tuple,
     'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,

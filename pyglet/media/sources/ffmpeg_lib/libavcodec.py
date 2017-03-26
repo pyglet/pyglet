@@ -38,13 +38,19 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p, 
     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union, 
     create_string_buffer, memmove)
-from sys import platform
 
+import pyglet
 import pyglet.lib
 from . import libavutil
 
-if platform == 'win32':
-    avcodec = pyglet.lib.load_library('avcodec-57')
+if pyglet.compat_platform == 'win32':
+    for libname in pyglet.options['ffmpeg_libs_win']:
+        if libname.startswith('avcodec'):
+            avcodec = pyglet.lib.load_library(libname)
+            break
+    else:
+        # As a last resort, try to load the dll with default name.
+        avcodec = pyglet.lib.load_library('avcodec')
 else:
     avcodec = pyglet.lib.load_library('avcodec')
 
