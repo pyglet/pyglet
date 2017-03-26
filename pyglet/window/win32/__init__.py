@@ -286,15 +286,22 @@ class Win32Window(BaseWindow):
             x, y, width, height, SWP_NOZORDER | SWP_NOOWNERZORDER)
 
     def close(self):
-        super(Win32Window, self).close()
         if not self._hwnd:
+            super(Win32Window, self).close()
             return
+
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassW(self._window_class.lpszClassName, 0)
+        
+        self._window_class = None
+        self._view_window_class = None
+        self._view_event_handlers.clear()
+        self._event_handlers.clear()
         self.set_mouse_platform_visible(True)
         self._hwnd = None
         self._dc = None
         self._wgl_context = None
+        super(Win32Window, self).close()
 
     def _get_vsync(self):
         return self.context.get_vsync()

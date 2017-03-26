@@ -782,6 +782,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self._context = None
         if app.event_loop:
             app.event_loop.dispatch_event('on_window_close', self)
+        self._event_queue = []
 
     def draw_mouse_cursor(self):
         """Draw the custom mouse cursor.
