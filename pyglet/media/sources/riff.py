@@ -197,7 +197,7 @@ class WaveSource(StreamingSource):
                 raise WAVEFormatException('Not a WAVE file')
             else:
                 raise WAVEFormatException(
-                    'AVbin is required to decode compressed media')
+                    'FFmpeg is required to decode compressed media')
 
         if format.wFormatTag != WAVE_FORMAT_PCM:
             raise WAVEFormatException('Unsupported WAVE format category')

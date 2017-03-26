@@ -89,7 +89,7 @@ class AudioFormat(object):
 class VideoFormat(object):
     """Video details.
 
-    An instance of this class is provided by sources with a video track.  You
+    An instance of this class is provided by sources with a video track. You
     should not modify the fields.
 
     Note that the sample aspect has no relation to the aspect ratio of the
@@ -106,9 +106,6 @@ class VideoFormat(object):
             Aspect ratio (width over height) of a single video pixel.
         `frame_rate` : float
             Frame rate (frames per second) of the video.
-
-            AVbin 8 or later is required, otherwise the frame rate will be
-            ``None``.
 
             **Since:** pyglet 1.2.
 

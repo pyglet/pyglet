@@ -31,7 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-"""Wrap FFmpeg using ctypes and provide a similar API to AVbin which is now
+"""Wrap FFmpeg using ctypes and provide a similar API to FFmpeg which is now
 unmaintained.
 """
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64, 
@@ -42,50 +42,50 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet.lib
 from pyglet.media.exceptions import MediaFormatException
 from pyglet.compat import asbytes
-from pyglet.media.sources.ffmpeg import *
+from pyglet.media.sources.ffmpeg_lib import *
 
-AVBIN_RESULT_ERROR = -1
-AVBIN_RESULT_OK = 0
-AVbinResult = c_int
+FFMPEG_RESULT_ERROR = -1
+FFMPEG_RESULT_OK = 0
+FFmpegResult = c_int
 
-AVBIN_STREAM_TYPE_UNKNOWN = 0
-AVBIN_STREAM_TYPE_VIDEO = 1
-AVBIN_STREAM_TYPE_AUDIO = 2
-AVbinStreamType = c_int
+FFMPEG_STREAM_TYPE_UNKNOWN = 0
+FFMPEG_STREAM_TYPE_VIDEO = 1
+FFMPEG_STREAM_TYPE_AUDIO = 2
+FFmpegStreamType = c_int
 
-AVBIN_SAMPLE_FORMAT_U8 = 0
-AVBIN_SAMPLE_FORMAT_S16 = 1
-AVBIN_SAMPLE_FORMAT_S32 = 2
-AVBIN_SAMPLE_FORMAT_FLOAT = 3
-AVBIN_SAMPLE_FORMAT_DOUBLE = 4
-AVBIN_SAMPLE_FORMAT_U8P = 5
-AVBIN_SAMPLE_FORMAT_S16P = 6
-AVBIN_SAMPLE_FORMAT_S32P = 7
-AVBIN_SAMPLE_FORMAT_FLTP = 8
-AVBIN_SAMPLE_FORMAT_DBLP = 9
-AVBIN_SAMPLE_FORMAT_S64 = 10
-AVBIN_SAMPLE_FORMAT_S64P = 11
-AVbinSampleFormat = c_int
+FFMPEG_SAMPLE_FORMAT_U8 = 0
+FFMPEG_SAMPLE_FORMAT_S16 = 1
+FFMPEG_SAMPLE_FORMAT_S32 = 2
+FFMPEG_SAMPLE_FORMAT_FLOAT = 3
+FFMPEG_SAMPLE_FORMAT_DOUBLE = 4
+FFMPEG_SAMPLE_FORMAT_U8P = 5
+FFMPEG_SAMPLE_FORMAT_S16P = 6
+FFMPEG_SAMPLE_FORMAT_S32P = 7
+FFMPEG_SAMPLE_FORMAT_FLTP = 8
+FFMPEG_SAMPLE_FORMAT_DBLP = 9
+FFMPEG_SAMPLE_FORMAT_S64 = 10
+FFMPEG_SAMPLE_FORMAT_S64P = 11
+FFmpegSampleFormat = c_int
 
-AVBIN_LOG_QUIET = -8
-AVBIN_LOG_PANIC = 0
-AVBIN_LOG_FATAL = 8
-AVBIN_LOG_ERROR = 16
-AVBIN_LOG_WARNING = 24
-AVBIN_LOG_INFO = 32
-AVBIN_LOG_VERBOSE = 40
-AVBIN_LOG_DEBUG = 48
-AVbinLogLevel = c_int
+FFMPEG_LOG_QUIET = -8
+FFMPEG_LOG_PANIC = 0
+FFMPEG_LOG_FATAL = 8
+FFMPEG_LOG_ERROR = 16
+FFMPEG_LOG_WARNING = 24
+FFMPEG_LOG_INFO = 32
+FFMPEG_LOG_VERBOSE = 40
+FFMPEG_LOG_DEBUG = 48
+FFmpegLogLevel = c_int
 
-AVbinFileP = c_void_p
-AVbinStreamP = c_void_p
+FFmpegFileP = c_void_p
+FFmpegStreamP = c_void_p
 
 Timestamp = c_int64
 
 INT64_MIN = -2**63+1
 INT64_MAX = 0x7FFFFFFFFFFFFFFF
 
-class AVbinFileInfo(Structure):
+class FFmpegFileInfo(Structure):
     _fields_ = [
         ('n_streams', c_int),
         ('start_time', Timestamp),
@@ -100,7 +100,7 @@ class AVbinFileInfo(Structure):
         ('genre', c_char * 32),
     ]
 
-class _AVbinStreamInfoVideo8(Structure):
+class _FFmpegStreamInfoVideo8(Structure):
     _fields_ = [
         ('width', c_uint),
         ('height', c_uint),
@@ -110,7 +110,7 @@ class _AVbinStreamInfoVideo8(Structure):
         ('frame_rate_den', c_uint),
     ]
 
-class _AVbinStreamInfoAudio8(Structure):
+class _FFmpegStreamInfoAudio8(Structure):
     _fields_ = [
         ('sample_format', c_int),
         ('sample_rate', c_uint),
@@ -118,19 +118,19 @@ class _AVbinStreamInfoAudio8(Structure):
         ('channels', c_uint),
     ]
 
-class _AVbinStreamInfoUnion8(Union):
+class _FFmpegStreamInfoUnion8(Union):
     _fields_ = [
-        ('video', _AVbinStreamInfoVideo8),
-        ('audio', _AVbinStreamInfoAudio8),
+        ('video', _FFmpegStreamInfoVideo8),
+        ('audio', _FFmpegStreamInfoAudio8),
     ]
 
-class AVbinStreamInfo8(Structure):
+class FFmpegStreamInfo8(Structure):
     _fields_ = [
         ('type', c_int),
-        ('u', _AVbinStreamInfoUnion8)
+        ('u', _FFmpegStreamInfoUnion8)
     ]
 
-class AVbinPacket(Structure):
+class FFmpegPacket(Structure):
     _fields_ = [
         ('timestamp', Timestamp),
         ('stream_index', c_int),
@@ -138,13 +138,13 @@ class AVbinPacket(Structure):
         ('size', c_size_t),
     ]
 
-class AVbinFile(Structure):
+class FFmpegFile(Structure):
     _fields_ = [
         ('context', POINTER(AVFormatContext)),
         ('packet', POINTER(AVPacket))
     ]
 
-class AVbinStream(Structure):
+class FFmpegStream(Structure):
     _fields_ = [
         ('type', c_int32),
         ('format_context', POINTER(AVFormatContext)),
@@ -158,41 +158,28 @@ class AVbinStream(Structure):
 class FFmpegException(MediaFormatException):
     pass
 
-def avbin_get_version():
+def ffmpeg_get_version():
     '''Return an informative version string of FFmpeg'''
     return avutil.av_version_info().decode()
 
-def avbin_get_audio_buffer_size():
+def ffmpeg_get_audio_buffer_size():
     '''Return the audio buffer size'''
     # TODO: Should be determined by code. See ffplay.c in FFmpeg to get some
     # ideas how to do that.
     return 192000
 
-# This AVbin function seems useless to me with the current wrapping we are 
-# doing. I leave it here for reference.
-
-# def avbin_have_feature(feature):
-#     if feature == 'frame_rate':
-#         # See note on avbin_have_feature() in avbin.h
-#         return False
-#     elif feature == 'options':
-#         return True
-#     elif feature == 'info':
-#         return True
-#     return False
-
-def avbin_init():
+def ffmpeg_init():
     '''Initialize libavformat and register all the muxers, demuxers and 
     protocols.'''
     avformat.av_register_all()
 
-def avbin_open_filename(filename):
+def ffmpeg_open_filename(filename):
     '''Open the media file.
 
-    :rtype: AVbinFile
+    :rtype: FFmpegFile
         :return: The structure containing all the information for the media.
     '''
-    file = AVbinFile()
+    file = FFmpegFile()
     result = avformat.avformat_open_input(byref(file.context), 
                                           filename, 
                                           None, 
@@ -206,13 +193,13 @@ def avbin_open_filename(filename):
 
     return file
 
-def avbin_close_file(file):
+def ffmpeg_close_file(file):
     '''Close the media file and free resources.'''
     if file.packet:
         avcodec.av_packet_unref(file.packet)
     avformat.avformat_close_input(byref(file.context))
 
-def avbin_file_info(file):
+def ffmpeg_file_info(file):
     '''Get information on the file:
 
         - number of streams
@@ -222,10 +209,10 @@ def avbin_file_info(file):
         - date
         - track
 
-    :rtype: AVbinFileInfo
+    :rtype: FFmpegFileInfo
         :return: The structure containing all the meta information.
     '''
-    info = AVbinFileInfo()
+    info = FFmpegFileInfo()
     info.n_streams = file.context.contents.nb_streams
     info.start_time = file.context.contents.start_time
     info.duration = file.context.contents.duration
@@ -272,14 +259,14 @@ def avbin_file_info(file):
 
     return info
 
-def avbin_stream_info(file, stream_index):
+def ffmpeg_stream_info(file, stream_index):
     '''Open the stream 
     '''
-    info = AVbinStreamInfo8()
+    info = FFmpegStreamInfo8()
     av_stream = file.context.contents.streams[stream_index].contents
     context = av_stream.codecpar.contents
     if context.codec_type == AVMEDIA_TYPE_VIDEO:
-        info.type = AVBIN_STREAM_TYPE_VIDEO
+        info.type = FFMPEG_STREAM_TYPE_VIDEO
         info.u.video.width = context.width
         info.u.video.height = context.height
         info.u.video.sample_aspect_num = context.sample_aspect_ratio.num
@@ -287,41 +274,41 @@ def avbin_stream_info(file, stream_index):
         info.u.video.frame_rate_num = av_stream.avg_frame_rate.num
         info.u.video.frame_rate_den = av_stream.avg_frame_rate.den
     elif context.codec_type == AVMEDIA_TYPE_AUDIO:
-        info.type = AVBIN_STREAM_TYPE_AUDIO
+        info.type = FFMPEG_STREAM_TYPE_AUDIO
         info.u.audio.sample_rate = context.sample_rate
         info.u.audio.channels = context.channels
         if context.format == AV_SAMPLE_FMT_U8:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_U8
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_U8
             info.u.audio.sample_bits = 8
         elif context.format == AV_SAMPLE_FMT_U8P:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_U8P
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_U8P
             info.u.audio.sample_bits = 8
         elif context.format == AV_SAMPLE_FMT_S16:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_S16
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_S16
             info.u.audio.sample_bits = 16
         elif context.format == AV_SAMPLE_FMT_S16P:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_S16P
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_S16P
             info.u.audio.sample_bits = 16
         elif context.format == AV_SAMPLE_FMT_S32:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_S32
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_S32
             info.u.audio.sample_bits = 32
         elif context.format == AV_SAMPLE_FMT_S32P:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_S32P
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_S32P
             info.u.audio.sample_bits = 32
         elif context.format == AV_SAMPLE_FMT_FLT:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_FLOAT
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_FLOAT
             info.u.audio.sample_bits = 16
         elif context.format == AV_SAMPLE_FMT_FLTP:
-            info.u.audio.sample_format = AVBIN_SAMPLE_FORMAT_FLTP
+            info.u.audio.sample_format = FFMPEG_SAMPLE_FORMAT_FLTP
             info.u.audio.sample_bits = 16
         else:
             info.u.audio.sample_format = -1
             info.u.audio.sample_bits = -1
     else:
-        info.type = AVBIN_STREAM_TYPE_UNKNOWN
+        info.type = FFMPEG_STREAM_TYPE_UNKNOWN
     return info
 
-def avbin_open_stream(file, index):
+def ffmpeg_open_stream(file, index):
     if not 0 <= index < file.context.contents.nb_streams:
         raise FFmpegException('index out of range. '
             'Only {} streams.'.format(file.context.contents.nb_streams))
@@ -340,7 +327,7 @@ def avbin_open_stream(file, index):
     result = avcodec.avcodec_open2(codec_context, codec, None)
     if result < 0:
         raise FFmpegException('Could not open the media with the codec.')
-    stream = AVbinStream()
+    stream = FFmpegStream()
     stream.format_context = file.context
     stream.codec_context = codec_context
     stream.type = codec_context.contents.codec_type
@@ -348,12 +335,12 @@ def avbin_open_stream(file, index):
 
     return stream
 
-def avbin_close_stream(stream):
+def ffmpeg_close_stream(stream):
     if stream.frame:
         avutil.av_frame_free(addressof(stream.frame))
     avcodec.avcodec_free_context(addressof(stream.codec_context))
 
-def avbin_seek_file(file, timestamp):
+def ffmpeg_seek_file(file, timestamp):
     flags = AVSEEK_FLAG_BACKWARD
     max_ts = file.context.contents.duration * AV_TIME_BASE
     result = avformat.avformat_seek_file(file.context, -1, 0, timestamp, max_ts, flags)
@@ -363,23 +350,23 @@ def avbin_seek_file(file, timestamp):
         # descr = buf.value
         # raise FFmpegException('Error occured while seeking. ' +
         #                       descr.decode())
-        return AVBIN_RESULT_ERROR
+        return FFMPEG_RESULT_ERROR
 
     for i in range(file.context.contents.nb_streams):   
         codec_context = file.context.contents.streams[i].contents.codec
         if codec_context and codec_context.contents.codec:
             avcodec.avcodec_flush_buffers(codec_context)
     
-    return AVBIN_RESULT_OK
+    return FFMPEG_RESULT_OK
 
-def avbin_read(file, packet):
+def ffmpeg_read(file, packet):
     if file.packet:
         avcodec.av_packet_unref(file.packet) # Is it the right way to free it?
     else:
         file.packet = avcodec.av_packet_alloc()
     result = avformat.av_read_frame(file.context, file.packet)
     if result < 0:
-        return AVBIN_RESULT_ERROR
+        return FFMPEG_RESULT_ERROR
     
     packet.timestamp = avutil.av_rescale_q(file.packet.contents.dts,
         file.context.contents.streams[file.packet.contents.stream_index].contents.time_base,
@@ -388,9 +375,9 @@ def avbin_read(file, packet):
     packet.stream_index = file.packet.contents.stream_index
     packet.data = file.packet.contents.data
     packet.size = file.packet.contents.size
-    return AVBIN_RESULT_OK
+    return FFMPEG_RESULT_OK
 
-def avbin_decode_audio(stream, data_in, size_in, data_out, size_out):
+def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out):
     if stream.type != AVMEDIA_TYPE_AUDIO:
         raise FFmpegException('Trying to decode audio on a non-audio stream.')
     inbuf = create_string_buffer(size_in + FF_INPUT_BUFFER_PADDING_SIZE)
@@ -467,7 +454,7 @@ def avbin_decode_audio(stream, data_in, size_in, data_out, size_out):
 
 
 
-def avbin_decode_video(stream, data_in, size_in, data_out):
+def ffmpeg_decode_video(stream, data_in, size_in, data_out):
     picture_rgb = AVPicture()
     width = stream.codec_context.contents.width
     height = stream.codec_context.contents.height
@@ -513,5 +500,5 @@ def avbin_decode_video(stream, data_in, size_in, data_out):
     swscale.sws_freeContext(img_convert_ctx)
     return bytes_used
 
-def avbin_set_log_level(dummy):
+def ffmpeg_set_log_level(dummy):
     pass

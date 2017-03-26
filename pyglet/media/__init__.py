@@ -34,7 +34,7 @@
 
 """Audio and video playback.
 
-pyglet can play WAV files, and if AVbin is installed, many other audio and
+pyglet can play WAV files, and if FFmpeg is installed, many other audio and
 video formats.
 
 Playback is handled by the `Player` class, which reads raw data from `Source`

@@ -72,10 +72,10 @@ class AbstractSourceLoader(with_metaclass(ABCMeta, object)):
         pass
 
 
-class AVbinSourceLoader(AbstractSourceLoader):
+class FFmpegSourceLoader(AbstractSourceLoader):
     def load(self, filename, file):
-        from .avbin import AVbinSource
-        return AVbinSource(filename, file)
+        from .ffmpeg import FFmpegSource
+        return FFmpegSource(filename, file)
 
 
 class RIFFSourceLoader(AbstractSourceLoader):
@@ -90,30 +90,28 @@ def get_source_loader():
     if _source_loader is not None:
         return _source_loader
 
-    if have_avbin():
-        _source_loader = AVbinSourceLoader()
+    if have_ffmpeg():
+        _source_loader = FFmpegSourceLoader()
         if _debug:
-            print('AVbin available, using to load media files')
+            print('FFmpeg available, using to load media files')
     else:
         _source_loader = RIFFSourceLoader()
         if _debug:
-            print('AVbin not available. Only supporting wave files.')
+            print('FFmpeg not available. Only supporting wave files.')
 
     return _source_loader
 
 _source_loader = None
 
-# TODO: Remove hack to force avbin
-def have_avbin():
-    global _have_avbin
-    if _have_avbin is None:
+def have_ffmpeg():
+    global _have_ffmpeg
+    if _have_ffmpeg is None:
         try:
-            from .avbin import AVbinSource
-            _have_avbin = True
+            from . import ffmpeg_lib
+            _have_ffmpeg = True
         except ImportError:
-            _have_avbin = False
-    # return _have_avbin
-    return True
+            _have_ffmpeg = False
+    return _have_ffmpeg
     
-_have_avbin = None
+_have_ffmpeg = None
 
