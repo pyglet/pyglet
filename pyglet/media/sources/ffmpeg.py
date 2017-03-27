@@ -210,6 +210,7 @@ class FFmpegSource(StreamingSource):
     def seek(self, timestamp):
         if _debug:
             print('FFmpeg seek', timestamp)
+        
         av.ffmpeg_seek_file(self._file, timestamp_to_ffmpeg(timestamp))
 
         self._audio_packet_size = 0
@@ -218,14 +219,12 @@ class FFmpegSource(StreamingSource):
 
         if self.video_format:
             self._video_timestamp = 0
-            self._condition.acquire()
-            for packet in self._video_packets:
-                packet.image = None
-            self._condition.notify()
-            self._condition.release()
+            with self._condition:
+                for packet in self._video_packets:
+                    packet.image = None
+                self._condition.notify()
             self._video_packets.clear()
-
-            self._decode_thread.clear_jobs()
+            self._decode_thread.clear_jobs()                
 
     def _get_packet(self):
         # Read a packet into self._packet.  Returns True if OK, False if no
@@ -375,9 +374,8 @@ class FFmpegSource(StreamingSource):
         packet.image = image_data
 
         # Notify get_next_video_frame() that another one is ready.
-        self._condition.acquire()
-        self._condition.notify()
-        self._condition.release()
+        with self._condition:
+            self._condition.notify()
 
     def _ensure_video_packets(self):
         """Process packets until a video packet has been queued (and begun
@@ -386,12 +384,9 @@ class FFmpegSource(StreamingSource):
         if not self._video_packets:
             if _debug:
                 print('No video packets...')
-            # Read ahead until we have another video packet
-            if not self._get_packet():
-                return False
-            packet_type, _ = self._process_packet()
+            # Read ahead until we have another video packet but quit reading
+            # after 15 frames, in case there is no more video packets
             for i in range(15):
-            # while packet_type and packet_type != 'video':
                 if not self._get_packet():
                     return False
                 packet_type, _ = self._process_packet()
@@ -423,10 +418,9 @@ class FFmpegSource(StreamingSource):
                 print('Waiting for', packet)
 
             # Block until decoding is complete
-            self._condition.acquire()
-            while packet.image == 0:
-                self._condition.wait()
-            self._condition.release()
+            with self._condition:
+                while packet.image == 0:
+                    self._condition.wait()
 
             if _debug:
                 print('Returning', packet)

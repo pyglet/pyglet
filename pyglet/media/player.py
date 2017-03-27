@@ -174,9 +174,9 @@ class Player(pyglet.event.EventDispatcher):
         if self._audio_player:
             # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
             # player is not stopped
-            # self._audio_player.stop()
             self._audio_player.clear()
         if self.source.video_format:
+            pyglet.clock.unschedule(self.update_texture)
             self._last_video_timestamp = None
             self.update_texture(time=time)
 
@@ -252,10 +252,14 @@ class Player(pyglet.event.EventDispatcher):
         if time is None:
             time = self._audio_player.get_time()
         if time is None:
+            if _debug:
+                print('In update_texture, _audio_player did not return a timestamp')
+            pyglet.clock.schedule_once(self.update_texture, 1. / 30)
             return
 
         if (self._last_video_timestamp is not None and 
             time <= self._last_video_timestamp):
+            pyglet.clock.schedule_once(self.update_texture, 1. / 30)
             return
 
         ts = self._groups[0].get_next_video_timestamp()
@@ -268,6 +272,8 @@ class Player(pyglet.event.EventDispatcher):
 
         if ts is None:
             self._last_video_timestamp = None
+            if _debug:
+                print("In update_texture. Not timestamp found. Scheduling in 1/30 s")
             pyglet.clock.schedule_once(self.update_texture, 1. / 30)
             return
 
@@ -282,6 +288,8 @@ class Player(pyglet.event.EventDispatcher):
             delay = 1. / 30
         else:
             delay = ts - time
+        if _debug:
+            print("Scheduling update_texture in {} sec".format(delay))
         pyglet.clock.schedule_once(self.update_texture, delay)
 
     def _player_property(name, doc=None):
