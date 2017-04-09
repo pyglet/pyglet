@@ -343,7 +343,8 @@ def ffmpeg_close_stream(stream):
 def ffmpeg_seek_file(file, timestamp):
     flags = AVSEEK_FLAG_BACKWARD
     max_ts = file.context.contents.duration * AV_TIME_BASE
-    result = avformat.avformat_seek_file(file.context, -1, 0, timestamp, max_ts, flags)
+
+    result = avformat.avformat_seek_file(file.context, -1, 0, timestamp, timestamp, flags)
     if result < 0:
         buf = create_string_buffer(128)
         avutil.av_strerror(result, buf, 128)
@@ -351,11 +352,6 @@ def ffmpeg_seek_file(file, timestamp):
         raise FFmpegException('Error occured while seeking. ' +
                               descr.decode())
 
-    for i in range(file.context.contents.nb_streams):   
-        codec_context = file.context.contents.streams[i].contents.codec
-        if codec_context and codec_context.contents.codec:
-            avcodec.avcodec_flush_buffers(codec_context)
-    
 def ffmpeg_read(file, packet):
     if file.packet:
         avcodec.av_packet_unref(file.packet) # Is it the right way to free it?

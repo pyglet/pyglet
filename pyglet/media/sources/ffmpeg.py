@@ -224,7 +224,7 @@ class FFmpegSource(StreamingSource):
                     packet.image = None
                 self._condition.notify()
             self._video_packets.clear()
-            self._decode_thread.clear_jobs()                
+            self._decode_thread.clear_jobs()
 
     def _get_packet(self):
         # Read a packet into self._packet.  Returns True if OK, False if no
@@ -372,6 +372,9 @@ class FFmpegSource(StreamingSource):
             image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
             
         packet.image = image_data
+
+        if _debug:
+            print('Decoding video packet at timestamp', packet.timestamp)
 
         # Notify get_next_video_frame() that another one is ready.
         with self._condition:

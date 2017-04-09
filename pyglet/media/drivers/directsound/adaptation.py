@@ -160,6 +160,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
+        if self.driver and self.driver.worker:
+            self.driver.worker.remove(self)
 
         with self._lock:
             if self._playing:
@@ -329,6 +331,24 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._write_cursor += length
             self._write_cursor_ring += length
             self._write_cursor_ring %= self._buffer_size
+
+    def seek(self, timestamp):
+        with self._lock:
+            while True:
+                audio_data = self._get_audiodata()
+                assert _debug("Seeking audio timestamp {:.2f} sec. "
+                        "Got audio packet starting at {:.2f} sec".format(
+                            timestamp, audio_data.timestamp))
+                if timestamp <= (audio_data.timestamp + audio_data.duration):
+                    break
+                
+                self._audiodata_buffer = None
+                del self._events[:]
+                del self._timestamps[:]
+
+            if audio_data is not None:
+                assert _debug('write', audio_data.length)
+                self.write(audio_data, audio_data.length)
 
     def get_time(self):
         self.update_play_cursor()

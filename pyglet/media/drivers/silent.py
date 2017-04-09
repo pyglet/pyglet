@@ -63,7 +63,7 @@ class SilentAudioPacket(object):
             return dt
 
     def is_empty(self):
-        return self.duration == 0
+        return self.duration < 1e-10
 
 
 class SilentAudioBuffer(object):
@@ -93,7 +93,7 @@ class SilentAudioBuffer(object):
             dt -= consumed
 
     def is_empty(self):
-        return self.duration <= 0
+        return self.duration <= 1e-10
 
     def get_current_timestamp(self):
         if self._packets:
@@ -226,6 +226,27 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             self._eos = False
             self._thread.notify()
 
+    def seek(self, timestamp):
+        with self._thread.condition:
+            bytes_to_read = int(self._buffer_time * 
+                                self.source_group.audio_format.bytes_per_second)
+            while True:
+                audio_data = self.source_group.get_audio_data(bytes_to_read)
+                if _debug:
+                    print("Seeking audio timestamp {:.2f} sec. "
+                        "Got audio packet starting at {:.2f} sec".format(
+                            timestamp, audio_data.timestamp))
+                if timestamp <= (audio_data.timestamp + audio_data.duration):
+                    break
+                
+            if audio_data is not None:
+                if _debug:
+                    print('Trying to buffer {:.2f} secs'.format(audio_data.duration))
+                self._add_audio_data(audio_data)
+            self._buffer_data()
+            self._update_time()
+            self._thread.condition.notify()
+
     def get_time(self):
         with self._thread.condition:
             result = self._audio_buffer.get_current_timestamp() + self._calculate_offset()
@@ -244,7 +265,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             self._audio_buffer.consume_audio_data(offset)
             self._update_time()
 
-            if self._audio_buffer.is_empty():
+            if offset > 0.0 and self._audio_buffer.is_empty():
                 if _debug:
                     print('Out of packets')
                 timestamp = self.get_time()
@@ -332,6 +353,10 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
                 if self._thread.stopped:
                     break
 
+                if not self._playing:
+                    self._thread.sleep(None)
+                    continue
+
                 self._consume_data()
                 self._dispatch_events()
                 self._buffer_data()
@@ -355,11 +380,14 @@ class SilentTimeAudioPlayer(AbstractAudioPlayer):
     # Also, seeking is broken because the timestamps aren't synchronized with
     # the source group.
 
-    _time = 0.0
-    _systime = None
+    def __init__(self, *args, **kwargs):
+        super(SilentTimeAudioPlayer, self).__init__(*args, **kwargs)
+        self._time = 0.0
+        self._systime = None
 
     def play(self):
         self._systime = time.time()
+        self.end_source = self.source_group.get_current_source().duration
 
     def stop(self):
         self._time = self.get_time()
@@ -371,11 +399,27 @@ class SilentTimeAudioPlayer(AbstractAudioPlayer):
     def clear(self):
         pass
 
+    def seek(self, timestamp):
+        self._time = timestamp
+
     def get_time(self):
         if self._systime is None:
-            return self._time
+            now = self._time
         else:
-            return time.time() - self._systime + self._time
+            now = time.time() - self._systime + self._time
+        if _debug:
+            print('Silent Audio get_time returns: {:.2f} sec'.format(now))
+        if now > self.end_source:
+            if _debug:
+                print('Silent Audio Player : End of source.')
+            self._time = self.end_source
+            self._systime = None
+            self._dispatch_new_event('on_eos')
+            self._dispatch_new_event('on_source_group_eos')
+        return now
+
+    def _dispatch_new_event(self, event_name):
+        MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
 
 
 class SilentAudioDriver(AbstractAudioDriver):

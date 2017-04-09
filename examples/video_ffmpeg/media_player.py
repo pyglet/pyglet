@@ -48,6 +48,7 @@ import pyglet
 from pyglet.window import key
 
 pyglet.options['debug_media'] = False
+# pyglet.options['audio'] = ('openal', 'pulse', 'silent')
 
 
 def draw_rect(x, y, width, height):

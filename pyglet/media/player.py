@@ -163,6 +163,8 @@ class Player(pyglet.event.EventDispatcher):
     next = next_source  # old API, worked badly with 2to3
 
     def seek(self, time):
+        playing = self._playing
+        self.pause()
         if not self.source:
             return
 
@@ -175,10 +177,12 @@ class Player(pyglet.event.EventDispatcher):
             # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
             # player is not stopped
             self._audio_player.clear()
+            self._audio_player.seek(time)
         if self.source.video_format:
-            pyglet.clock.unschedule(self.update_texture)
             self._last_video_timestamp = None
             self.update_texture(time=time)
+            pyglet.clock.unschedule(self.update_texture)
+        self._set_playing(playing)
 
     def _create_audio_player(self):
         assert not self._audio_player
@@ -267,7 +271,7 @@ class Player(pyglet.event.EventDispatcher):
             self._groups[0].get_next_video_frame() # Discard frame
             if _debug:
                 print("Frames discarded at timestamp {:.2f}. Missed by {:.2f}."
-                      " dt {:.2f} time {:.2f}".format(ts, time-ts, dt, time))
+                      " time {:.2f}".format(ts, time-ts, time))
             ts = self._groups[0].get_next_video_timestamp()
 
         if ts is None:
@@ -289,7 +293,7 @@ class Player(pyglet.event.EventDispatcher):
         else:
             delay = ts - time
         if _debug:
-            print("Scheduling update_texture in {} sec".format(delay))
+            print("Scheduling update_texture in {:.2f} sec".format(delay))
         pyglet.clock.schedule_once(self.update_texture, delay)
 
     def _player_property(name, doc=None):

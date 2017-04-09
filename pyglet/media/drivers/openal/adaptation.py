@@ -368,6 +368,26 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         with self.driver:
             return self.source.buffers_queued == 0
 
+    def seek(self, timestamp):
+        with self._lock:
+            while True:
+                audio_data = self.source_group.get_audio_data(self.ideal_buffer_size)
+                assert _debug_media("Seeking audio timestamp {:.2f} sec. "
+                        "Got audio packet starting at {:.2f} sec".format(
+                            timestamp, audio_data.timestamp))
+                if timestamp <= (audio_data.timestamp + audio_data.duration):
+                    break
+                
+                del self._events[:]
+                del self._buffer_sizes
+                del self._buffer_timestamps[:]
+
+            if audio_data is not None:
+                assert _debug_media('Writing {} bytes'.format(audio_data.length))
+                self._queue_events(audio_data)
+                self._queue_audio_data(audio_data)
+                self._update_write_cursor(audio_data)
+
     def get_time(self):
         with self._lock:
             # Update first, might remove buffers
