@@ -173,6 +173,37 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                     print('PulseAudioPlayer: trigger timing info update')
                 self._time_sync_operation = self.stream.update_timing_info(self._process_events)
 
+    def seek(self, timestamp):
+        self._current_audio_data = None
+        nbytes = 1 * self.source_group.audio_format.bytes_per_second
+        while True:
+            # Find audio packet at timestamp
+            audio_data = self.source_group.get_audio_data(nbytes)
+            if timestamp <= (audio_data.timestamp + audio_data.duration):
+                break
+
+        self._current_audio_data = audio_data
+        if _debug:
+            print('PulseAudioPlayer: Requested to write %d bytes to stream' % nbytes)
+
+        seek_mode = pa.PA_SEEK_RELATIVE
+        if self._clear_write:
+            seek_mode = pa.PA_SEEK_RELATIVE_ON_READ
+            self._clear_write = False
+            if _debug:
+                print('PulseAudioPlayer: Clear buffer')
+
+        write_length = audio_data.length
+        consumption = self.stream.write(audio_data, write_length, seek_mode)
+
+        self._read_index_valid = True
+        self._timestamps.append((self._write_index, audio_data.timestamp))
+        self._write_index += consumption
+
+        if _debug:
+            print('PulseAudioPlayer: Actually wrote %d bytes to stream' % consumption)
+        self._consume_audio_data(consumption)
+
     def _get_audio_data(self, nbytes=None):
         if self._current_audio_data is None and self.source_group is not None:
             # Always try to buffer at least 1 second of audio data
