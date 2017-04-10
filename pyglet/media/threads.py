@@ -205,7 +205,7 @@ class PlayerWorker(MediaThread):
 
                 if self.players:
                     filled = False
-                    for player in self.players:
+                    for player in self.players.copy():
                         write_size = player.get_write_size()
                         if write_size > player.min_buffer_size:
                             player.refill(write_size)
