@@ -395,7 +395,7 @@ class Sprite(event.EventDispatcher):
         scale_x = self._scale * self.scale_x
         scale_y = self._scale * self.scale_y
         if not self._visible:
-            vertices = [0, 0, 0, 0, 0, 0, 0, 0]
+            vertices = (0, 0, 0, 0, 0, 0, 0, 0)
         elif self._rotation:
             x1 = -img.anchor_x * scale_x
             y1 = -img.anchor_y * scale_y
@@ -415,21 +415,24 @@ class Sprite(event.EventDispatcher):
             cy = x2 * sr + y2 * cr + y
             dx = x1 * cr - y2 * sr + x
             dy = x1 * sr + y2 * cr + y
-            vertices = [ax, ay, bx, by, cx, cy, dx, dy]
+            vertices = (ax, ay, bx, by, cx, cy, dx, dy)
         elif scale_x != 1.0 or scale_y != 1.0:
             x1 = self._x - img.anchor_x * scale_x
             y1 = self._y - img.anchor_y * scale_y
             x2 = x1 + img.width * scale_x
             y2 = y1 + img.height * scale_y
-            vertices = [x1, y1, x2, y1, x2, y2, x1, y2]
+            vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
         else:
             x1 = self._x - img.anchor_x
             y1 = self._y - img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
-            vertices = [x1, y1, x2, y1, x2, y2, x1, y2]
+            vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
         if not self._subpixel:
-            vertices = [int(v) for v in vertices]
+            vertices = (int(vertices[0]), int(vertices[1]),
+                        int(vertices[2]), int(vertices[3]),
+                        int(vertices[4]), int(vertices[5]),
+                        int(vertices[6]), int(vertices[7]))
         self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
