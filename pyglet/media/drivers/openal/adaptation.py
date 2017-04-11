@@ -230,6 +230,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug_media('OpenALAudioPlayer.stop()')
+        if self.driver and self.driver.worker:
+            self.driver.worker.remove(self)
 
         with self._lock:
             assert self.driver is not None
