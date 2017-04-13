@@ -388,11 +388,12 @@ class ColorAttribute(AbstractAttribute):
         super(ColorAttribute, self).__init__(count, gl_type)
 
     def enable(self):
-        glEnableClientState(GL_COLOR_ARRAY)
+        pass
+        # glEnableClientState(GL_COLOR_ARRAY)       GL3
 
     def set_pointer(self, pointer):
-        glColorPointer(self.count, self.gl_type, self.stride,
-                       self.offset + pointer)
+        pass
+        # glColorPointer(self.count, self.gl_type, self.stride, self.offset + pointer)
 
 
 class EdgeFlagAttribute(AbstractAttribute):
@@ -519,11 +520,12 @@ class VertexAttribute(AbstractAttribute):
         super(VertexAttribute, self).__init__(count, gl_type)
 
     def enable(self):
-        glEnableClientState(GL_VERTEX_ARRAY)
+        pass
+        # glEnableClientState(GL_VERTEX_ARRAY)          GL3
 
     def set_pointer(self, pointer):
-        glVertexPointer(self.count, self.gl_type, self.stride,
-                        self.offset + pointer)
+        pass
+        # glVertexPointer(self.count, self.gl_type, self.stride, self.offset + pointer)     GL3
 
 
 class GenericAttribute(AbstractAttribute):

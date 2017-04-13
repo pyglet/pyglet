@@ -235,5 +235,11 @@ class ShaderProgram:
 
     def draw(self, mode, size):
         glBindVertexArray(self._vertex_array)
-        glDrawArrays(mode, 0, size)
+        # glDrawArrays(mode, 0, size)
+
+        primcount = 1
+        starts = (GLint * primcount)()
+        sizes = (GLsizei * primcount)(size)
+        glMultiDrawArrays(mode, starts, sizes, primcount)
+
         glBindVertexArray(0)

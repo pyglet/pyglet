@@ -223,6 +223,7 @@ class ImageMouseCursor(MouseCursor):
         self.hot_y = hot_y
 
     def draw(self, x, y):
+        # TODO: fix this for OpenGL Core
         gl.glPushAttrib(gl.GL_ENABLE_BIT | gl.GL_CURRENT_BIT)
         gl.glColor4f(1, 1, 1, 1)
         gl.glEnable(gl.GL_BLEND)
@@ -508,10 +509,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             screen = display.get_default_screen()
 
         if not config:
-            for template_config in [
-                gl.Config(double_buffer=True, depth_size=24),
-                gl.Config(double_buffer=True, depth_size=16),
-                None]:
+            for template_config in [gl.Config(double_buffer=True, depth_size=24),
+                                    gl.Config(double_buffer=True, depth_size=16), None]:
                 try:
                     config = screen.get_best_config(template_config)
                     break
@@ -745,10 +744,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         width = max(1, width)
         height = max(1, height)
         gl.glViewport(0, 0, width, height)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(0, width, 0, height, -1, 1)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        # gl.glMatrixMode(gl.GL_PROJECTION)             GL3
+        # gl.glLoadIdentity()
+        # gl.glOrtho(0, width, 0, height, -1, 1)
+        # gl.glMatrixMode(gl.GL_MODELVIEW)
 
     def on_close(self):
         """Default on_close handler."""
@@ -799,6 +798,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         # Draw mouse cursor if set and visible.
         # XXX leaves state in modelview regardless of starting state
+
+        # TODO: fix this for OpenGL Core
+
         if (self._mouse_cursor.drawable and
             self._mouse_visible and
             self._mouse_in_window):

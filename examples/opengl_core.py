@@ -65,10 +65,8 @@ program.upload_data(vertices, "color", 4, ctypes.sizeof(VERTEX), VERTEX.color.of
 #   TESTS !
 ##########################################################
 
-vertex_list = pyglet.graphics.vertex_list(2, ('v2i', (10, 15, 30, 35)),
+vertex_list = pyglet.graphics.vertex_list(2, ('v3f', (10, 15, 5, 30, 35, 5)),
                                              ('c3B', (0, 0, 255, 0, 255, 0)))
-
-# vertex_list.draw(pyglet.gl.GL_POINTS)
 
 
 ###########################################################
@@ -92,10 +90,10 @@ def on_mouse_scroll(x, y, mouse, direction):
 # defaul Window.on_resize method. This is due to legacy
 # OpenGL functions that it normally calls.
 #############################################################
-@window.event
-def on_resize(w, h):
-    glViewport(0, 0, w, h)
-    return pyglet.event.EVENT_HANDLED
+# @window.event
+# def on_resize(w, h):
+#     glViewport(0, 0, w, h)
+#     return pyglet.event.EVENT_HANDLED
 
 
 ###########################################################
@@ -109,10 +107,7 @@ def on_draw():
         window.clear()
         program.draw(mode=GL_TRIANGLES, size=3)
 
-    # program.use_program()
-    # window.clear()
-    # program.draw(mode=GL_TRIANGLES, size=3)
-    # program.stop_program()
+        vertex_list.draw(pyglet.gl.GL_LINES)
 
 if __name__ == "__main__":
     pyglet.app.run()
