@@ -1,6 +1,6 @@
 import pyglet
 from pyglet.gl import *
-from pyglet.graphics.shader import ShaderProgram
+from pyglet.graphics.shader import Shader, ShaderProgram
 
 import ctypes
 
@@ -9,7 +9,7 @@ window = pyglet.window.Window(width=960, height=540, resizable=True, config=conf
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
 
-vertex_shader = """#version 330
+vertex_source = """#version 330
     in vec3 position;
     in vec4 color;
 
@@ -25,7 +25,7 @@ vertex_shader = """#version 330
     }
 """
 
-fragment_shader = """#version 330
+fragment_source = """#version 330
     in vec4 vertex_color;
     out vec4 final_color;
 
@@ -48,7 +48,9 @@ class VERTEX(ctypes.Structure):
 #########################
 # Create a shader program
 #########################
-program = ShaderProgram(vertex_shader, fragment_shader, debug=True)
+vertex_shader = Shader(vertex_source, shader_type="vertex")
+fragment_shader = Shader(fragment_source, shader_type="fragment")
+program = ShaderProgram(vertex_shader, fragment_shader)
 
 ##########################################################
 # Create some vertex instances, and upload them to the GPU
@@ -66,16 +68,11 @@ program['zoom'] = 5.0
 
 
 ##########################################################
-# Modify the "zoom" Uniform value when pressing UP or DOWN
+# Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
 @window.event
-def on_key_press(symbol, modifiers):
-    global zoom
-    if symbol == pyglet.window.key.UP:
-        program['zoom'] -= 0.5
-
-    elif symbol == pyglet.window.key.DOWN:
-        program['zoom'] += 0.5
+def on_mouse_scroll(x, y, mouse, direction):
+    program['zoom'] += direction / 4
 
 
 #############################################################
