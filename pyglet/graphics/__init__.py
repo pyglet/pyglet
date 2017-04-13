@@ -33,7 +33,7 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-'''Low-level graphics rendering.
+"""Low-level graphics rendering.
 
 This module provides an efficient low-level abstraction over OpenGL.  It gives
 very good performance for rendering OpenGL primitives; far better than the
@@ -156,7 +156,7 @@ present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
 video drivers, and requires indexed vertex lists.
 
 :since: pyglet 1.1
-'''
+"""
 from __future__ import print_function
 from builtins import zip
 from builtins import object
@@ -173,8 +173,9 @@ from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
+
 def draw(size, mode, *data):
-    '''Draw a primitive immediately.
+    """Draw a primitive immediately.
 
     :Parameters:
         `size` : int
@@ -186,7 +187,7 @@ def draw(size, mode, *data):
             Attribute formats and data.  See the module summary for 
             details.
 
-    '''
+    """
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
     buffers = []
@@ -204,11 +205,12 @@ def draw(size, mode, *data):
 
     glDrawArrays(mode, 0, size)
     glFlush()
-        
+
     glPopClientAttrib()
 
+
 def draw_indexed(size, mode, indices, *data):
-    '''Draw a primitive with indexed vertices immediately.
+    """Draw a primitive with indexed vertices immediately.
 
     :Parameters:
         `size` : int
@@ -220,14 +222,13 @@ def draw_indexed(size, mode, indices, *data):
         `data` : data items
             Attribute formats and data.  See the module summary for details.
 
-    '''
+    """
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
     buffers = []
-    for format, array in data:
-        attribute = vertexattribute.create_attribute(format)
-        assert size == len(array) // attribute.count, \
-            'Data for %s is incorrect length' % format
+    for fmt, array in data:
+        attribute = vertexattribute.create_attribute(fmt)
+        assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
         buffer = vertexbuffer.create_mappable_buffer(
             size * attribute.stride, vbo=False)
 
@@ -249,23 +250,25 @@ def draw_indexed(size, mode, indices, *data):
     index_array = (index_c_type * len(indices))(*indices)
     glDrawElements(mode, len(indices), index_type, index_array)
     glFlush()
-    
+
     glPopClientAttrib()
 
+
 def _parse_data(data):
-    '''Given a list of data items, returns (formats, initial_arrays).'''
+    """Given a list of data items, returns (formats, initial_arrays)."""
     assert data, 'No attribute formats given'
 
     # Return tuple (formats, initial_arrays).
     formats = []
     initial_arrays = []
-    for i, format in enumerate(data):
-        if isinstance(format, tuple):
-            format, array = format
+    for i, fmt in enumerate(data):
+        if isinstance(fmt, tuple):
+            fmt, array = fmt
             initial_arrays.append((i, array))
-        formats.append(format)
+        formats.append(fmt)
     formats = tuple(formats)
     return formats, initial_arrays
+
 
 def _get_default_batch():
     shared_object_space = gl.current_context.object_space
@@ -275,8 +278,9 @@ def _get_default_batch():
         shared_object_space.pyglet_graphics_default_batch = Batch()
         return shared_object_space.pyglet_graphics_default_batch
 
+
 def vertex_list(count, *data):
-    '''Create a `VertexList` not associated with a batch, group or mode.
+    """Create a `VertexList` not associated with a batch, group or mode.
 
     :Parameters:
         `count` : int
@@ -286,13 +290,14 @@ def vertex_list(count, *data):
             module summary for details.
 
     :rtype: `VertexList`
-    '''
+    """
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by the app.
     return _get_default_batch().add(count, 0, None, *data)
 
+
 def vertex_list_indexed(count, indices, *data):
-    '''Create an `IndexedVertexList` not associated with a batch, group or mode.
+    """Create an `IndexedVertexList` not associated with a batch, group or mode.
 
     :Parameters:
         `count` : int
@@ -304,13 +309,14 @@ def vertex_list_indexed(count, indices, *data):
             module summary for details.
 
     :rtype: `IndexedVertexList`
-    '''
+    """
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by the app.
     return _get_default_batch().add_indexed(count, 0, None, indices, *data)
 
+
 class Batch(object):
-    '''Manage a collection of vertex lists for batched rendering.
+    """Manage a collection of vertex lists for batched rendering.
 
     Vertex lists are added to a `Batch` using the `add` and `add_indexed`
     methods.  An optional group can be specified along with the vertex list,
@@ -319,9 +325,10 @@ class Batch(object):
     sent to the graphics card in a single operation.
 
     Call `VertexList.delete` to remove a vertex list from the batch.
-    '''
+    """
+
     def __init__(self):
-        '''Create a graphics batch.'''
+        """Create a graphics batch."""
         # Mapping to find domain.  
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
@@ -336,17 +343,17 @@ class Batch(object):
         self._draw_list_dirty = False
 
     def invalidate(self):
-        '''Force the batch to update the draw list.
+        """Force the batch to update the draw list.
 
         This method can be used to force the batch to re-compute the draw list
         when the ordering of groups has changed.
 
         :since: pyglet 1.2
-        '''
+        """
         self._draw_list_dirty = True
 
     def add(self, count, mode, group, *data):
-        '''Add a vertex list to the batch.
+        """Add a vertex list to the batch.
 
         :Parameters:
             `count` : int
@@ -362,10 +369,10 @@ class Batch(object):
                 the module summary for details.
 
         :rtype: `VertexList`
-        '''
+        """
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, group, formats)
-            
+
         # Create vertex list and initialize
         vlist = domain.create(count)
         for i, array in initial_arrays:
@@ -374,7 +381,7 @@ class Batch(object):
         return vlist
 
     def add_indexed(self, count, mode, group, indices, *data):
-        '''Add an indexed vertex list to the batch.
+        """Add an indexed vertex list to the batch.
 
         :Parameters:
             `count` : int
@@ -392,10 +399,10 @@ class Batch(object):
                 the module summary for details.
 
         :rtype: `IndexedVertexList`
-        '''
+        """
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(True, mode, group, formats)
-            
+
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
         start = vlist.start
@@ -403,10 +410,10 @@ class Batch(object):
         for i, array in initial_arrays:
             vlist._set_attribute_data(i, array)
 
-        return vlist 
+        return vlist
 
     def migrate(self, vertex_list, mode, group, batch):
-        '''Migrate a vertex list to another batch and/or group.
+        """Migrate a vertex list to another batch and/or group.
 
         `vertex_list` and `mode` together identify the vertex list to migrate.
         `group` and `batch` are new owners of the vertex list after migration.  
@@ -427,7 +434,7 @@ class Batch(object):
             `batch` : `Batch`
                 The batch to migrate to (or the current batch).
 
-        '''
+        """
         formats = vertex_list.domain.__formats
         if isinstance(vertex_list, vertexdomain.IndexedVertexList):
             domain = batch._get_domain(True, mode, group, formats)
@@ -438,7 +445,7 @@ class Batch(object):
     def _get_domain(self, indexed, mode, group, formats):
         if group is None:
             group = null_group
-        
+
         # Batch group
         if group not in self.group_map:
             self._add_group(group)
@@ -457,7 +464,7 @@ class Batch(object):
                 domain = vertexdomain.create_domain(*formats)
             domain.__formats = formats
             domain_map[key] = domain
-            self._draw_list_dirty = True 
+            self._draw_list_dirty = True
 
         return domain
 
@@ -474,9 +481,9 @@ class Batch(object):
         self._draw_list_dirty = True
 
     def _update_draw_list(self):
-        '''Visit group tree in preorder and create a list of bound methods
+        """Visit group tree in preorder and create a list of bound methods
         to call.
-        '''
+        """
 
         def visit(group):
             draw_list = []
@@ -549,10 +556,10 @@ class Batch(object):
         print('Draw list for %r:' % self)
         for group in self.top_groups:
             dump(group)
-        
+
     def draw(self):
-        '''Draw the batch.
-        '''
+        """Draw the batch.
+        """
         if self._draw_list_dirty:
             self._update_draw_list()
 
@@ -560,7 +567,7 @@ class Batch(object):
             func()
 
     def draw_subset(self, vertex_lists):
-        '''Draw only some vertex lists in the batch.
+        """Draw only some vertex lists in the batch.
 
         The use of this method is highly discouraged, as it is quite
         inefficient.  Usually an application can be redesigned so that batches
@@ -573,7 +580,8 @@ class Batch(object):
             `vertex_lists` : sequence of `VertexList` or `IndexedVertexList`
                 Vertex lists to draw.
 
-        '''
+        """
+
         # Horrendously inefficient.
         def visit(group):
             group.set_state()
@@ -598,81 +606,87 @@ class Batch(object):
         for group in self.top_groups:
             visit(group)
 
+
 class Group(object):
-    '''Group of common OpenGL state.
+    """Group of common OpenGL state.
 
     Before a vertex list is rendered, its group's OpenGL state is set; as are
     that state's ancestors' states.  This can be defined arbitrarily on
     subclasses; the default state change has no effect, and groups vertex
     lists only in the order in which they are drawn.
-    '''
+    """
+
     def __init__(self, parent=None):
-        '''Create a group.
+        """Create a group.
 
         :Parameters:
             `parent` : `Group`
                 Group to contain this group; its state will be set before this
                 state's.
 
-        '''
+        """
         self.parent = parent
 
     def __lt__(self, other):
         return hash(self) < hash(other)
 
     def set_state(self):
-        '''Apply the OpenGL state change.  
+        """Apply the OpenGL state change.  
         
-        The default implementation does nothing.'''
+        The default implementation does nothing."""
         pass
 
     def unset_state(self):
-        '''Repeal the OpenGL state change.
+        """Repeal the OpenGL state change.
         
-        The default implementation does nothing.'''
+        The default implementation does nothing."""
         pass
 
     def set_state_recursive(self):
-        '''Set this group and its ancestry.
+        """Set this group and its ancestry.
 
         Call this method if you are using a group in isolation: the
         parent groups will be called in top-down order, with this class's
         `set` being called last.
-        '''
+        """
         if self.parent:
             self.parent.set_state_recursive()
         self.set_state()
 
     def unset_state_recursive(self):
-        '''Unset this group and its ancestry.
+        """Unset this group and its ancestry.
 
         The inverse of `set_state_recursive`.
-        '''
+        """
         self.unset_state()
         if self.parent:
             self.parent.unset_state_recursive()
 
+
 class NullGroup(Group):
-    '''The default group class used when ``None`` is given to a batch.
+    """The default group class used when ``None`` is given to a batch.
 
     This implementation has no effect.
-    '''
+    """
     pass
+
 
 #: The default group.
 #:
 #: :type: `Group`
 null_group = NullGroup()
 
+
 class TextureGroup(Group):
-    '''A group that enables and binds a texture.
+    """A group that enables and binds a texture.
 
     Texture groups are equal if their textures' targets and names are equal.
-    '''
+    """
+
     # Don't use this, create your own group classes that are more specific.
     # This is just an example.
     def __init__(self, texture, parent=None):
-        '''Create a texture group.
+        """Create a texture group.
 
         :Parameters:
             `texture` : `Texture`
@@ -680,7 +694,7 @@ class TextureGroup(Group):
             `parent` : `Group`
                 Parent group.
 
-        '''
+        """
         super(TextureGroup, self).__init__(parent)
         self.texture = texture
 
@@ -696,20 +710,22 @@ class TextureGroup(Group):
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
-            self.texture.target == other.texture.target and
-            self.texture.id == other.texture.id and
-            self.parent == other.parent)
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id and
+                self.parent == other.parent)
 
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
+
 class OrderedGroup(Group):
-    '''A group with partial order.
+    """A group with partial order.
 
     Ordered groups with a common parent are rendered in ascending order of
     their ``order`` field.  This is a useful way to render multiple layers of
     a scene within a single batch.
-    '''
+    """
+
     # This can be useful as a top-level group, or as a superclass for other
     # groups that need to be ordered.
     #
@@ -717,7 +733,7 @@ class OrderedGroup(Group):
     # known order even if they don't know about each other or share any known
     # group.
     def __init__(self, order, parent=None):
-        '''Create an ordered group.
+        """Create an ordered group.
 
         :Parameters:
             `order` : int
@@ -725,7 +741,7 @@ class OrderedGroup(Group):
             `parent` : `Group`
                 Parent of this group.
 
-        '''
+        """
         super(OrderedGroup, self).__init__(parent)
         self.order = order
 
@@ -736,8 +752,8 @@ class OrderedGroup(Group):
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
-            self.order == other.order and
-            self.parent == other.parent)
+                self.order == other.order and
+                self.parent == other.parent)
 
     def __hash__(self):
         return hash((self.order, self.parent))

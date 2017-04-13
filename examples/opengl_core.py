@@ -73,6 +73,8 @@ program['zoom'] = 5.0
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
     program['zoom'] += direction / 4
+    if program['zoom'] < 0:
+        program['zoom'] = 0
 
 
 #############################################################
