@@ -61,6 +61,16 @@ vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
 program.upload_data(vertices, "position", 3, ctypes.sizeof(VERTEX), VERTEX.position.offset)
 program.upload_data(vertices, "color", 4, ctypes.sizeof(VERTEX), VERTEX.color.offset)
 
+##########################################################
+#   TESTS !
+##########################################################
+
+vertex_list = pyglet.graphics.vertex_list(2, ('v2i', (10, 15, 30, 35)),
+                                             ('c3B', (0, 0, 255, 0, 255, 0)))
+
+# vertex_list.draw(pyglet.gl.GL_POINTS)
+
+
 ###########################################################
 # Set the "zoom" uniform value.
 ###########################################################
@@ -73,8 +83,8 @@ program['zoom'] = 5.0
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
     program['zoom'] += direction / 4
-    if program['zoom'] < 0:
-        program['zoom'] = 0
+    if program['zoom'] < 0.1:
+        program['zoom'] = 0.1
 
 
 #############################################################

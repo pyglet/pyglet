@@ -59,7 +59,8 @@ class ShaderProgram:
         self._variable_dict = {}
         self._parse_all_variables()
 
-    def _get_program_log(self, program_id):
+    @staticmethod
+    def _get_program_log(program_id):
         result = c_int(0)
         # glGetProgramiv(program_id, GL_LINK_STATUS, byref(result))
         # glGetProgramiv(program_id, GL_ATTACHED_SHADERS, byref(result))

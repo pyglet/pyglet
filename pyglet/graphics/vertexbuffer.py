@@ -237,14 +237,14 @@ class VertexBufferObject(AbstractBuffer):
         vbo_id = GLuint()
         glGenBuffers(1, vbo_id)
         self.id = vbo_id.value
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)        GL3
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
-        glPopClientAttrib()
+        # glPopClientAttrib()                                   GL3
 
-        global _workaround_vbo_finish
-        if pyglet.gl.current_context._workaround_vbo_finish:
-            _workaround_vbo_finish = True
+        # global _workaround_vbo_finish                         GL3
+        # if pyglet.gl.current_context._workaround_vbo_finish:  GL3
+        #     _workaround_vbo_finish = True                     GL3
 
     def bind(self):
         glBindBuffer(self.target, self.id)
@@ -369,8 +369,10 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
 
         self.size = size
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, self.data, self.usage)
+
         glPopClientAttrib()
 
         self._dirty_min = sys.maxsize
