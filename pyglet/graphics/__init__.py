@@ -193,10 +193,9 @@ def draw(size, mode, *data):
     buffers = []
     for format, array in data:
         attribute = vertexattribute.create_attribute(format)
-        assert size == len(array) // attribute.count, \
-            'Data for %s is incorrect length' % format
-        buffer = vertexbuffer.create_mappable_buffer(
-            size * attribute.stride, vbo=False)
+        assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % format
+
+        buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride, vbo=False)
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()

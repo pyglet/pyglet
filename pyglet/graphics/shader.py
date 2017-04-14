@@ -2,14 +2,18 @@ from pyglet.gl import *
 from ctypes import *
 
 
+_shader_types = {
+    'vertex': GL_VERTEX_SHADER,
+    'fragment': GL_FRAGMENT_SHADER,
+}
+
+
 class Shader:
     def __init__(self, source_string, shader_type):
         self._source = source_string
-        if shader_type == 'vertex':
-            self.shader_type = GL_VERTEX_SHADER
-        elif shader_type == 'fragment':
-            self.shader_type = GL_FRAGMENT_SHADER
-        else:
+        try:
+            self.shader_type = _shader_types[shader_type]
+        except KeyError:
             raise TypeError("Only vertex and fragment staders are supported")
         self.id = self._compile_shader()
 
