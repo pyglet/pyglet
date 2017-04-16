@@ -234,17 +234,25 @@ class VertexBufferObject(AbstractBuffer):
         self.usage = usage
         self._context = pyglet.gl.current_context
 
+        #####################################
+        #   Need to bind Vertex Array Object:
+        #####################################
+        # glBindVertexArray(self._vertex_array)
+
         vbo_id = GLuint()
         glGenBuffers(1, vbo_id)
         self.id = vbo_id.value
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)        GL3
+
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
-        # glPopClientAttrib()                                   GL3
 
-        # global _workaround_vbo_finish                         GL3
-        # if pyglet.gl.current_context._workaround_vbo_finish:  GL3
-        #     _workaround_vbo_finish = True                     GL3
+        #############################################
+        #   Looks to be enabled in generic attribute:
+        #############################################
+        # glVertexAttribPointer(location, size, attr_type, False, stride, vert_pointer)
+        # glEnableVertexAttribArray(location)
+
+        glBindVertexArray(0)
 
     def bind(self):
         glBindBuffer(self.target, self.id)

@@ -65,8 +65,8 @@ program.upload_data(vertices, "color", 4, ctypes.sizeof(VERTEX), VERTEX.color.of
 #   TESTS !
 ##########################################################
 
-vertex_list = pyglet.graphics.vertex_list(2, ('v3f', (10, 15, 5, 30, 35, 5)),
-                                             ('c3B', (0, 0, 255, 0, 255, 0)))
+# vertex_list = pyglet.graphics.vertex_list(2, ('v3f', (10, 15, 5, 30, 35, 5)),
+#                                              ('c3B', (0, 0, 255, 0, 255, 0)))
 
 
 ###########################################################
@@ -107,7 +107,8 @@ def on_draw():
         window.clear()
         program.draw(mode=GL_TRIANGLES, size=3)
 
-        vertex_list.draw(pyglet.gl.GL_LINES)
+        # pyglet.graphics.draw(2, GL_LINES, ('v2i', (10, 15, 30, 35)), ('c3B', (0, 0, 255, 0, 255, 0)))
+        pyglet.graphics.draw(2, GL_LINES, ('v3f', (10, 15, 0, 30, 35, 0)))
 
 if __name__ == "__main__":
     pyglet.app.run()

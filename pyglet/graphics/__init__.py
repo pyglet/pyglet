@@ -188,12 +188,16 @@ def draw(size, mode, *data):
             details.
 
     """
-    glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+
+    # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)            GL3
 
     buffers = []
-    for format, array in data:
-        attribute = vertexattribute.create_attribute(format)
-        assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % format
+    for fmt, array in data:
+        attribute = vertexattribute.create_attribute(fmt)
+
+        print(attribute)
+
+        assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride, vbo=False)
 
@@ -205,7 +209,7 @@ def draw(size, mode, *data):
     glDrawArrays(mode, 0, size)
     glFlush()
 
-    glPopClientAttrib()
+    # glPopClientAttrib()                                       GL3
 
 
 def draw_indexed(size, mode, indices, *data):

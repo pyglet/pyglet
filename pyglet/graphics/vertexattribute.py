@@ -245,6 +245,10 @@ def create_attribute(fmt):
     gl_type = _gl_types[match.group('type')]
     generic_index = match.group('generic_index')
     texcoord_texture = match.group('texcoord_texture')
+
+    # All attributes are generic now:
+    generic_index = True
+
     if generic_index:
         normalized = match.group('generic_normalized')
         attr_class = GenericAttribute
@@ -254,6 +258,9 @@ def create_attribute(fmt):
         args = int(texcoord_texture), count, gl_type
     else:
         name = match.group('name')
+
+        print(name)
+
         attr_class = _attribute_classes[name]
         if attr_class._fixed_count:
             assert count == attr_class._fixed_count, \
