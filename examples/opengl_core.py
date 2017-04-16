@@ -58,8 +58,8 @@ program = ShaderProgram(vertex_shader, fragment_shader)
 vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
                         ((0.6, -0.5, 0.0), (0.0, 1.0, 0.0, 1.0)),
                         ((0.0, 0.5, 0.0), (0.0, 0.0, 1.0, 1.0)))
-program.upload_data(vertices, "position", 3, ctypes.sizeof(VERTEX), VERTEX.position.offset)
-program.upload_data(vertices, "color", 4, ctypes.sizeof(VERTEX), VERTEX.color.offset)
+# program.upload_data(vertices, "position", 3, ctypes.sizeof(VERTEX), VERTEX.position.offset)
+# program.upload_data(vertices, "color", 4, ctypes.sizeof(VERTEX), VERTEX.color.offset)
 
 ##########################################################
 #   TESTS !
@@ -85,17 +85,6 @@ def on_mouse_scroll(x, y, mouse, direction):
         program['zoom'] = 0.1
 
 
-#############################################################
-# When using an OpenGL Core profile, you must override the
-# defaul Window.on_resize method. This is due to legacy
-# OpenGL functions that it normally calls.
-#############################################################
-# @window.event
-# def on_resize(w, h):
-#     glViewport(0, 0, w, h)
-#     return pyglet.event.EVENT_HANDLED
-
-
 ###########################################################
 # Shader Programs can be used as context managers as shown
 # below. You can also manually call the use_program and
@@ -105,10 +94,15 @@ def on_mouse_scroll(x, y, mouse, direction):
 def on_draw():
     with program:
         window.clear()
-        program.draw(mode=GL_TRIANGLES, size=3)
 
-        # pyglet.graphics.draw(2, GL_LINES, ('v2i', (10, 15, 30, 35)), ('c3B', (0, 0, 255, 0, 255, 0)))
-        pyglet.graphics.draw(2, GL_LINES, ('v3f', (10, 15, 0, 30, 35, 0)))
+        # program.draw(mode=GL_TRIANGLES, size=3)
+
+        # pyglet.graphics.draw(2, GL_LINES, ('v2i', (10, 15, 30, 35)),
+        #                                   ('c3B', (0, 0, 255, 0, 255, 0)))
+
+        pyglet.graphics.draw(2, GL_LINES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0)),
+                                          ('c3b', (255, 255, 255, 255, 255, 255)))
+
 
 if __name__ == "__main__":
     pyglet.app.run()

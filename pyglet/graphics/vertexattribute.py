@@ -246,8 +246,10 @@ def create_attribute(fmt):
     generic_index = match.group('generic_index')
     texcoord_texture = match.group('texcoord_texture')
 
+    #####################################
     # All attributes are generic now:
     generic_index = True
+    #####################################
 
     if generic_index:
         normalized = match.group('generic_normalized')
@@ -258,8 +260,6 @@ def create_attribute(fmt):
         args = int(texcoord_texture), count, gl_type
     else:
         name = match.group('name')
-
-        print(name)
 
         attr_class = _attribute_classes[name]
         if attr_class._fixed_count:
@@ -545,10 +545,12 @@ class GenericAttribute(AbstractAttribute):
 
     def enable(self):
         glEnableVertexAttribArray(self.index)
+        # print("VertexAttrib index: {}".format(self.index))
 
     def set_pointer(self, pointer):
-        glVertexAttribPointer(self.index, self.count, self.gl_type,
-                              self.normalized, self.stride,
+        # print(self.index, self.count, self.gl_type, self.normalized, self.stride, self.offset + pointer)
+
+        glVertexAttribPointer(self.index, self.count, self.gl_type, self.normalized, self.stride,
                               self.offset + pointer)
 
 

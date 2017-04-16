@@ -237,8 +237,6 @@ class VertexBufferObject(AbstractBuffer):
         #####################################
         #   Need to bind Vertex Array Object:
         #####################################
-        # glBindVertexArray(self._vertex_array)
-
         vbo_id = GLuint()
         glGenBuffers(1, vbo_id)
         self.id = vbo_id.value
@@ -251,8 +249,6 @@ class VertexBufferObject(AbstractBuffer):
         #############################################
         # glVertexAttribPointer(location, size, attr_type, False, stride, vert_pointer)
         # glEnableVertexAttribArray(location)
-
-        glBindVertexArray(0)
 
     def bind(self):
         glBindBuffer(self.target, self.id)

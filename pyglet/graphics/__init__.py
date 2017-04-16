@@ -190,12 +190,13 @@ def draw(size, mode, *data):
     """
 
     # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)            GL3
+    vao_id = GLuint()
+    glGenVertexArrays(1, vao_id)
+    glBindVertexArray(vao_id)
 
     buffers = []
     for fmt, array in data:
         attribute = vertexattribute.create_attribute(fmt)
-
-        print(attribute)
 
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
@@ -207,9 +208,9 @@ def draw(size, mode, *data):
         buffers.append(buffer)
 
     glDrawArrays(mode, 0, size)
-    glFlush()
 
     # glPopClientAttrib()                                       GL3
+    glBindVertexArray(0)
 
 
 def draw_indexed(size, mode, indices, *data):
