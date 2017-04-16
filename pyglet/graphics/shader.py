@@ -10,11 +10,10 @@ _shader_types = {
 
 class Shader:
     def __init__(self, source_string, shader_type):
-        self._source = source_string
-        try:
-            self.shader_type = _shader_types[shader_type]
-        except KeyError:
+        if shader_type not in _shader_types.keys():
             raise TypeError("Only vertex and fragment staders are supported")
+        self._source = source_string
+        self.shader_type = _shader_types[shader_type]
         self.id = self._compile_shader()
 
     def _compile_shader(self):
@@ -51,12 +50,9 @@ class Shader:
 
 class ShaderProgram:
     """OpenGL Shader Program"""
-    def __init__(self, vertex_shader, fragment_shader):
-        self._vertex = vertex_shader.id
-        self._fragment = fragment_shader.id
-        self.id = self._link_program()
+    def __init__(self, *shaders):
+        self.id = self._link_program(shaders)
         self._program_active = False
-
         # TODO: move these out of this module eventually?
         self._vertex_array = self._create_vertex_array()
         # self._vertex_buffers = []
@@ -77,10 +73,10 @@ class ShaderProgram:
         else:
             print("Program linked successfully")
 
-    def _link_program(self):
+    def _link_program(self, shaders):
         program_id = glCreateProgram()
-        glAttachShader(program_id, self._vertex)
-        glAttachShader(program_id, self._fragment)
+        for shader in shaders:
+            glAttachShader(program_id, shader.id)
         glLinkProgram(program_id)
         self._get_program_log(program_id)
         return program_id
