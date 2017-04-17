@@ -8,30 +8,30 @@ config = pyglet.gl.Config(double_buffer=True, buffer_size=24, major_version=3, m
 window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
-
+# TODO: remove vertex_colors override:
 vertex_source = """#version 330
-    in vec3 position;
-    in vec4 color;
+    in vec3 vertices;
+    in vec4 colors;
 
     uniform float zoom;
 
-    out vec4 vertex_color;
+    out vec4 vertex_colors;
 
     void main()
     {
-        gl_Position = vec4(position.x, position.y, position.z, zoom);
-        // vertex_color = vec4(1.0, 0.5, 0.2, 1.0);
-        vertex_color = color;
+        gl_Position = vec4(vertices.x, vertices.y, vertices.z, zoom);
+        // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        vertex_colors = colors;
     }
 """
 
 fragment_source = """#version 330
-    in vec4 vertex_color;
-    out vec4 final_color;
+    in vec4 vertex_colors;
+    out vec4 final_colors;
 
     void main()
     {
-        final_color = vertex_color;
+        final_colors = vertex_colors;
     }
 """
 
@@ -41,8 +41,8 @@ fragment_source = """#version 330
 ##################################
 class VERTEX(ctypes.Structure):
     _fields_ = [
-        ('position', GLfloat * 3),
-        ('color', GLfloat * 4),
+        ('vertices', GLfloat * 3),
+        ('colors', GLfloat * 4),
     ]
 
 #########################
@@ -52,22 +52,24 @@ vertex_shader = Shader(vertex_source, shader_type="vertex")
 fragment_shader = Shader(fragment_source, shader_type="fragment")
 program = ShaderProgram(vertex_shader, fragment_shader)
 
+program.use_program()
+print("Program ID: {}".format(program.id))
+
 ##########################################################
 # Create some vertex instances, and upload them to the GPU
 ##########################################################
 vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
                         ((0.6, -0.5, 0.0), (0.0, 1.0, 0.0, 1.0)),
                         ((0.0, 0.5, 0.0), (0.0, 0.0, 1.0, 1.0)))
-# program.upload_data(vertices, "position", 3, ctypes.sizeof(VERTEX), VERTEX.position.offset)
-# program.upload_data(vertices, "color", 4, ctypes.sizeof(VERTEX), VERTEX.color.offset)
+# program.upload_data(vertices, "vertices", 3, ctypes.sizeof(VERTEX), VERTEX.vertices.offset)
+# program.upload_data(vertices, "colors", 4, ctypes.sizeof(VERTEX), VERTEX.colors.offset)
 
 ##########################################################
 #   TESTS !
 ##########################################################
 
-# vertex_list = pyglet.graphics.vertex_list(2, ('v3f', (10, 15, 5, 30, 35, 5)),
-#                                              ('c3B', (0, 0, 255, 0, 255, 0)))
-
+vertex_list = pyglet.graphics.vertex_list(2, ('v3f', (-0.6, -0.5, 0, 0.6, -0.5, 0)),
+                                             ('c3B', (255, 0, 255, 0, 255, 255)))
 
 ###########################################################
 # Set the "zoom" uniform value.
@@ -97,12 +99,10 @@ def on_draw():
 
         # program.draw(mode=GL_TRIANGLES, size=3)
 
-        # pyglet.graphics.draw(2, GL_LINES, ('v2i', (10, 15, 30, 35)),
-        #                                   ('c3B', (0, 0, 255, 0, 255, 0)))
+        # vertex_list.draw(GL_LINES)
 
-        pyglet.graphics.draw(2, GL_LINES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0)),
-                                          ('c3b', (255, 255, 255, 255, 255, 255)))
-
+        # pyglet.graphics.draw(2, GL_LINES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0)),
+        #                                   ('c3b', (255, 255, 255, 255, 255, 255)))
 
 if __name__ == "__main__":
     pyglet.app.run()

@@ -221,6 +221,11 @@ def serialize_attributes(count, attributes):
         attribute.offset = offset
         offset += count * attribute.stride
 
+############################
+#  TEMP
+ATTRIB_INDEX = 0
+############################
+
 
 def create_attribute(fmt):
     """Create a vertex attribute description from a format string.
@@ -246,10 +251,16 @@ def create_attribute(fmt):
     generic_index = match.group('generic_index')
     texcoord_texture = match.group('texcoord_texture')
 
+    """
     #####################################
     # All attributes are generic now:
-    generic_index = True
+    normalized = match.group('generic_normalized')
+    attr_class = GenericAttribute
+    global ATTRIB_INDEX
+    args = ATTRIB_INDEX, normalized, count, gl_type
+    ATTRIB_INDEX += 1
     #####################################
+    """
 
     if generic_index:
         normalized = match.group('generic_normalized')
@@ -394,13 +405,15 @@ class ColorAttribute(AbstractAttribute):
         assert count in (3, 4), 'Color attributes must have count of 3 or 4'
         super(ColorAttribute, self).__init__(count, gl_type)
 
+        attr_name = self.plural.encode('utf8')
+        self.location = glGetAttribLocation(3, ctypes.create_string_buffer(attr_name))
+
     def enable(self):
-        pass
-        # glEnableClientState(GL_COLOR_ARRAY)       GL3
+        glEnableVertexAttribArray(self.location)
 
     def set_pointer(self, pointer):
-        pass
-        # glColorPointer(self.count, self.gl_type, self.stride, self.offset + pointer)
+        glVertexAttribPointer(self.location, self.count, self.gl_type, False, self.stride,
+                              self.offset + pointer)
 
 
 class EdgeFlagAttribute(AbstractAttribute):
@@ -520,19 +533,20 @@ class VertexAttribute(AbstractAttribute):
     plural = 'vertices'
 
     def __init__(self, count, gl_type):
-        assert count > 1, \
-            'Vertex attribute must have count of 2, 3 or 4'
-        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE), \
+        assert count > 1, 'Vertex attribute must have count of 2, 3 or 4'
+        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE),\
             'Vertex attribute must have signed type larger than byte'
         super(VertexAttribute, self).__init__(count, gl_type)
 
+        attr_name = self.plural.encode('utf8')
+        self.location = glGetAttribLocation(3, ctypes.create_string_buffer(attr_name))
+
     def enable(self):
-        pass
-        # glEnableClientState(GL_VERTEX_ARRAY)          GL3
+        glEnableVertexAttribArray(self.location)
 
     def set_pointer(self, pointer):
-        pass
-        # glVertexPointer(self.count, self.gl_type, self.stride, self.offset + pointer)     GL3
+        glVertexAttribPointer(self.location, self.count, self.gl_type, False, self.stride,
+                              self.offset + pointer)
 
 
 class GenericAttribute(AbstractAttribute):
@@ -548,18 +562,16 @@ class GenericAttribute(AbstractAttribute):
         # print("VertexAttrib index: {}".format(self.index))
 
     def set_pointer(self, pointer):
-        # print(self.index, self.count, self.gl_type, self.normalized, self.stride, self.offset + pointer)
-
         glVertexAttribPointer(self.index, self.count, self.gl_type, self.normalized, self.stride,
                               self.offset + pointer)
 
 
 _attribute_classes = {
     'c': ColorAttribute,
-    'e': EdgeFlagAttribute,
-    'f': FogCoordAttribute,
-    'n': NormalAttribute,
-    's': SecondaryColorAttribute,
-    't': TexCoordAttribute,
+    # 'e': EdgeFlagAttribute,
+    # 'f': FogCoordAttribute,
+    # 'n': NormalAttribute,
+    # 's': SecondaryColorAttribute,
+    # 't': TexCoordAttribute,
     'v': VertexAttribute,
 }

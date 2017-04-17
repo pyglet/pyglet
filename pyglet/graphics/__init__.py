@@ -196,20 +196,24 @@ def draw(size, mode, *data):
 
     buffers = []
     for fmt, array in data:
+        print("got here")
         attribute = vertexattribute.create_attribute(fmt)
 
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride, vbo=False)
+        buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
         buffers.append(buffer)
 
-    glDrawArrays(mode, 0, size)
+    primcount = 1
+    starts = (GLint * primcount)()
+    sizes = (GLsizei * primcount)(size)
+    glMultiDrawArrays(mode, starts, sizes, primcount)
+    # glDrawArrays(mode, 0, size)
 
-    # glPopClientAttrib()                                       GL3
     glBindVertexArray(0)
 
 
@@ -364,7 +368,8 @@ class Batch(object):
                 The number of vertices in the list.
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``,    shared_object_space = gl.current_context.object_space
+ etc.
                 See the module summary for additional information.
             `group` : `Group`
                 Group of the vertex list, or ``None`` if no group is required.
