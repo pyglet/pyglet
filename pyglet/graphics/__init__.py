@@ -188,7 +188,7 @@ def draw(size, mode, *data):
             details.
 
     """
-
+    # Create and bind a throwaway VAO
     vao_id = GLuint()
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
@@ -212,6 +212,7 @@ def draw(size, mode, *data):
         buffers.append(buffer)      # Don't garbage collect it.
 
     glDrawArrays(mode, 0, size)
+    # Unbind the VAO after drawing:
     glBindVertexArray(0)
 
 
