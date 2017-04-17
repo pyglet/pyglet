@@ -263,10 +263,12 @@ class VertexBufferObject(AbstractBuffer):
         glPopClientAttrib()
 
     def set_data_region(self, data, start, length):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+
         glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
-        glPopClientAttrib()
+
+        # glPopClientAttrib()
 
     def map(self, invalidate=False):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -372,12 +374,12 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
 
         self.size = size
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, self.data, self.usage)
 
-        glPopClientAttrib()
+        # glPopClientAttrib()
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0

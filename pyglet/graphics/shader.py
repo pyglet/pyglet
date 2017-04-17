@@ -54,8 +54,7 @@ class ShaderProgram:
         self.id = self._link_program(shaders)
         self._program_active = False
         # TODO: move these out of this module eventually?
-        self._vertex_array = self._create_vertex_array()
-        # self._vertex_buffers = []
+        self._vao_id = self._create_vertex_array()
 
         self._variable_dict = {}
         self._parse_all_variables()
@@ -226,9 +225,10 @@ class ShaderProgram:
             return      # TODO: raise an exception
         attr_type = GL_FLOAT    # TODO: query this
 
-        glBindVertexArray(self._vertex_array)
+        glBindVertexArray(self._vao_id)
         vertex_buffer = self._create_vertex_buffer()
         # self._vertex_buffers.append(vertex_buffer)
+
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.value)
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW)
 
@@ -238,11 +238,15 @@ class ShaderProgram:
         glBindVertexArray(0)
 
     def draw(self, mode, size):
-        glBindVertexArray(self._vertex_array)
-
-        primcount = 1
-        starts = (GLint * primcount)()
-        sizes = (GLsizei * primcount)(size)
-        glMultiDrawArrays(mode, starts, sizes, primcount)
-
+        glBindVertexArray(self._vao_id)
+        glDrawArrays(mode, 0, size)
         glBindVertexArray(0)
+
+        # glBindVertexArray(self._vertex_array)
+        #
+        # primcount = 1
+        # starts = (GLint * primcount)()
+        # sizes = (GLsizei * primcount)(size)
+        # glMultiDrawArrays(mode, starts, sizes, primcount)
+        #
+        # glBindVertexArray(0)

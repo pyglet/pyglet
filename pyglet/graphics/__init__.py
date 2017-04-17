@@ -189,31 +189,29 @@ def draw(size, mode, *data):
 
     """
 
-    # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)            GL3
     vao_id = GLuint()
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
+    print("Created and bound VAO")
 
     buffers = []
     for fmt, array in data:
-        print("got here")
         attribute = vertexattribute.create_attribute(fmt)
+        print("Created Attribute:", attribute)
 
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
+        # buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
+        buffer = vertexbuffer.create_buffer(size * attribute.stride)
+        print("Created buffer:", buffer)
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
-        buffers.append(buffer)
 
-    primcount = 1
-    starts = (GLint * primcount)()
-    sizes = (GLsizei * primcount)(size)
-    glMultiDrawArrays(mode, starts, sizes, primcount)
-    # glDrawArrays(mode, 0, size)
+        buffers.append(buffer)      # Don't garbage collect it.
 
+    glDrawArrays(mode, 0, size)
     glBindVertexArray(0)
 
 

@@ -8,7 +8,7 @@ config = pyglet.gl.Config(double_buffer=True, buffer_size=24, major_version=3, m
 window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
-# TODO: remove vertex_colors override:
+
 vertex_source = """#version 330
     in vec3 vertices;
     in vec4 colors;
@@ -20,8 +20,8 @@ vertex_source = """#version 330
     void main()
     {
         gl_Position = vec4(vertices.x, vertices.y, vertices.z, zoom);
-        // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
+        // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
     }
 """
 
@@ -58,9 +58,9 @@ print("Program ID: {}".format(program.id))
 ##########################################################
 # Create some vertex instances, and upload them to the GPU
 ##########################################################
-vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
-                        ((0.6, -0.5, 0.0), (0.0, 1.0, 0.0, 1.0)),
-                        ((0.0, 0.5, 0.0), (0.0, 0.0, 1.0, 1.0)))
+# vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
+#                         ((0.6, -0.5, 0.0), (0.0, 1.0, 0.0, 1.0)),
+#                         ((0.0, 0.5, 0.0), (0.0, 0.0, 1.0, 1.0)))
 # program.upload_data(vertices, "vertices", 3, ctypes.sizeof(VERTEX), VERTEX.vertices.offset)
 # program.upload_data(vertices, "colors", 4, ctypes.sizeof(VERTEX), VERTEX.colors.offset)
 
@@ -68,8 +68,8 @@ vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
 #   TESTS !
 ##########################################################
 
-vertex_list = pyglet.graphics.vertex_list(2, ('v3f', (-0.6, -0.5, 0, 0.6, -0.5, 0)),
-                                             ('c3B', (255, 0, 255, 0, 255, 255)))
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
+                                             ('c3B', (1, 0, 1, 0, 1, 1, 0, 1, 1)))
 
 ###########################################################
 # Set the "zoom" uniform value.
@@ -96,13 +96,11 @@ def on_mouse_scroll(x, y, mouse, direction):
 def on_draw():
     with program:
         window.clear()
-
         # program.draw(mode=GL_TRIANGLES, size=3)
-
         # vertex_list.draw(GL_LINES)
 
-        # pyglet.graphics.draw(2, GL_LINES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0)),
-        #                                   ('c3b', (255, 255, 255, 255, 255, 255)))
+        pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
+                                              ('c3B', (1, 0, 0,  0, 1, 0,  0, 0, 1)))
 
 if __name__ == "__main__":
     pyglet.app.run()
