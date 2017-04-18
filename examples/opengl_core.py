@@ -81,14 +81,13 @@ def on_mouse_scroll(x, y, mouse, direction):
 def on_draw():
     with program:
         window.clear()
-        # program.draw(mode=GL_TRIANGLES, size=3)
-        # vertex_list.draw(GL_LINES)
-
         pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
                                               ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
         pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-1, -1, 0,  -0.3, -1, 0,  -0.6, 0.2, 0)),
                                               ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
+        # TODO: fix the Domain.draw method
+        # vertex_list.draw(GL_TRIANGLES)
 
 if __name__ == "__main__":
     pyglet.app.run()

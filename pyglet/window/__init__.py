@@ -248,12 +248,14 @@ def _PlatformEventHandler(data):
         List of data applied to the function (permitting multiple decorators
         on the same method).
     """
+
     def _event_wrapper(f):
         f._platform_event = True
         if not hasattr(f, '_platform_event_data'):
             f._platform_event_data = []
         f._platform_event_data.append(data)
         return f
+
     return _event_wrapper
 
 
@@ -266,6 +268,7 @@ class _WindowMetaclass(type):
     """Sets the _platform_event_names class variable on the window
     subclass.
     """
+
     def __init__(cls, name, bases, dict):
         cls._platform_event_names = set()
         for base in bases:
@@ -320,7 +323,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: The window style for tool windows.
     WINDOW_STYLE_TOOL = 'tool'
     #: A window style without any decoration.
-    WINDOW_STYLE_BORDERLESS = 'borderless' 
+    WINDOW_STYLE_BORDERLESS = 'borderless'
 
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
@@ -417,15 +420,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _mouse_in_window = False
 
     _event_queue = None
-    _enable_event_queue = True    # overridden by EventLoop.
-    _allow_dispatch_event = False # controlled by dispatch_events stack frame
+    _enable_event_queue = True  # overridden by EventLoop.
+    _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
     # Class attributes
 
     _default_width = 640
     _default_height = 480
 
-    def __init__(self, 
+    def __init__(self,
                  width=None,
                  height=None,
                  caption=None,
@@ -509,8 +512,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             screen = display.get_default_screen()
 
         if not config:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24),
-                                    gl.Config(double_buffer=True, depth_size=16), None]:
+            for template_config in [
+                gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+                None]:
                 try:
                     config = screen.get_best_config(template_config)
                     break
@@ -584,12 +589,12 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # If the window is already closed, pass silently.
         try:
             self.close()
-        except:   # XXX  Avoid a NoneType error if already closed.
+        except:  # XXX  Avoid a NoneType error if already closed.
             pass
 
     def __repr__(self):
         return '%s(width=%d, height=%d)' % \
-            (self.__class__.__name__, self.width, self.height)
+               (self.__class__.__name__, self.width, self.height)
 
     def _create(self):
         raise NotImplementedError('abstract')
@@ -667,10 +672,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
                 **Since:** pyglet 1.2
         """
-        if (fullscreen == self._fullscreen and 
-            (screen is None or screen is self._screen) and
-            (width is None or width == self._width) and
-            (height is None or height == self._height)):
+        if (fullscreen == self._fullscreen and
+                (screen is None or screen is self._screen) and
+                (width is None or width == self._width) and
+                (height is None or height == self._height)):
             return
 
         if not self._fullscreen:
@@ -758,9 +763,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     def on_key_press(self, symbol, modifiers):
         """Default on_key_press handler."""
-        if symbol == key.ESCAPE and not (modifiers & ~(key.MOD_NUMLOCK | 
-                                                       key.MOD_CAPSLOCK | 
-                                                       key.MOD_SCROLLLOCK)):
+        if symbol == key.ESCAPE and not (modifiers & ~(key.MOD_NUMLOCK |
+                                                           key.MOD_CAPSLOCK |
+                                                           key.MOD_SCROLLLOCK)):
             self.dispatch_event('on_close')
 
     def close(self):
@@ -802,8 +807,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # TODO: fix this for OpenGL Core
 
         if (self._mouse_cursor.drawable and
-            self._mouse_visible and
-            self._mouse_in_window):
+                self._mouse_visible and
+                self._mouse_in_window):
             gl.glMatrixMode(gl.GL_PROJECTION)
             gl.glPushMatrix()
             gl.glLoadIdentity()
@@ -1047,7 +1052,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def set_visible(self, visible=True):    
+    def set_visible(self, visible=True):
         """Show or hide the window.
 
         :Parameters:
@@ -1219,7 +1224,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         buffer.  The window must be the active context (see `switch_to`).
         """
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    
+
     def dispatch_event(self, *args):
         if not self._enable_event_queue or self._allow_dispatch_event:
             if EventDispatcher.dispatch_event(self, *args) != False:
@@ -1435,7 +1440,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
             :event:
             """
-                
+
         def on_mouse_scroll(x, y, scroll_x, scroll_y):
             """The mouse wheel was scrolled.
 
@@ -1630,6 +1635,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
+
 BaseWindow.register_event_type('on_key_press')
 BaseWindow.register_event_type('on_key_release')
 BaseWindow.register_event_type('on_text')
@@ -1690,7 +1696,7 @@ class FPSDisplay(object):
     def __init__(self, window):
         from time import time
         from pyglet.text import Label
-        self.label = Label('', x=10, y=10, 
+        self.label = Label('', x=10, y=10,
                            font_size=24, bold=True,
                            color=(127, 127, 127, 127))
 
@@ -1744,7 +1750,7 @@ class FPSDisplay(object):
         gl.glPushMatrix()
         gl.glLoadIdentity()
         gl.glOrtho(0, self.window.width, 0, self.window.height, -1, 1)
-        
+
         self.label.draw()
 
         gl.glPopMatrix()
@@ -1756,13 +1762,14 @@ class FPSDisplay(object):
         self.update()
         self._window_flip()
 
+
 if _is_epydoc:
     # We are building documentation
     Window = BaseWindow
     Window.__name__ = 'Window'
     del BaseWindow
 
-    
+
 else:
     # Try to determine which platform to use.
     if pyglet.compat_platform == 'darwin':
@@ -1775,8 +1782,8 @@ else:
     else:
         # XXX HACK around circ problem, should be fixed after removal of
         # shadow nonsense
-        #pyglet.window = sys.modules[__name__]
-        #import key, mouse
+        # pyglet.window = sys.modules[__name__]
+        # import key, mouse
 
         from pyglet.window.xlib import XlibWindow as Window
 
@@ -1802,6 +1809,7 @@ class Platform(object):
 
     :deprecated: Use `pyglet.canvas.Display`
     """
+
     def get_display(self, name):
         """Get a display device by name.
 
@@ -1837,6 +1845,7 @@ class Platform(object):
         """
         return pyglet.canvas.get_display()
 
+
 if _is_epydoc:
     class Display(object):
         """A display device supporting one or more screens.
@@ -1846,6 +1855,7 @@ if _is_epydoc:
 
         :deprecated: Use `pyglet.canvas.Display`.
         """
+
         def __init__(self):
             raise NotImplementedError('deprecated')
 
@@ -1881,10 +1891,8 @@ else:
     Display = pyglet.canvas.Display
     Screen = pyglet.canvas.Screen
 
-
 # XXX remove
 # Create shadow window. (trickery is for circular import)
 if not _is_epydoc:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()
-

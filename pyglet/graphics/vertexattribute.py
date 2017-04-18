@@ -397,10 +397,12 @@ class VertexAttribute(AbstractAttribute):
             'Vertex attribute must have signed type larger than byte'
         super(VertexAttribute, self).__init__(count, gl_type)
 
-        attr_name = self.plural.encode('utf8')
-        self.location = glGetAttribLocation(3, ctypes.create_string_buffer(attr_name))
+        self.attr_name = self.plural.encode('utf8')
+        self.location = None
 
     def enable(self):
+        if not self.location:
+            self.location = glGetAttribLocation(3, ctypes.create_string_buffer(self.attr_name))
         glEnableVertexAttribArray(self.location)
 
     def set_pointer(self, pointer):
@@ -417,10 +419,12 @@ class ColorAttribute(AbstractAttribute):
         assert count in (3, 4), 'Color attributes must have count of 3 or 4'
         super(ColorAttribute, self).__init__(count, gl_type)
 
-        attr_name = self.plural.encode('utf8')
-        self.location = glGetAttribLocation(3, ctypes.create_string_buffer(attr_name))
+        self.attr_name = self.plural.encode('utf8')
+        self.location = None
 
     def enable(self):
+        if not self.location:
+            self.location = glGetAttribLocation(3, ctypes.create_string_buffer(self.attr_name))
         glEnableVertexAttribArray(self.location)
 
     def set_pointer(self, pointer):
