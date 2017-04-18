@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from pyglet.gl import *
 from ctypes import *
 
@@ -6,6 +8,9 @@ _shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'fragment': GL_FRAGMENT_SHADER,
 }
+
+Uniform = namedtuple('Uniform', 'location uniform_type')
+Attribute = namedtuple('Attribute', 'location attribute_type')
 
 
 class Shader:
@@ -54,10 +59,11 @@ class ShaderProgram:
         self.id = self._link_program(shaders)
         self._program_active = False
         # TODO: move these out of this module eventually?
-        self._vao_id = self._create_vertex_array()
-
-        self._variable_dict = {}
-        self._parse_all_variables()
+        # self._vao_id = self._create_vertex_array()
+        self._uniforms = {}
+        self._attributes = {}
+        self._parse_all_uniforms()
+        self._parse_all_attributes()
 
     @staticmethod
     def _get_program_log(program_id):
@@ -105,14 +111,14 @@ class ShaderProgram:
     ############################################################
 
     def __setitem__(self, key, value):
-        if key not in self._variable_dict:
+        if key not in self._uniforms:
             raise KeyError("variable name was not found")
         # TODO: unset the program afterwards, if it wasn't active?
         if not self._program_active:
-            self.use_program()
+            raise ValueError("Shader Program is not active.")
 
-        location = self._variable_dict[key]['location']
-        variable_type = self._variable_dict[key]['var_type']
+        location = self._uniforms[key].location
+        uniform_type = self._uniforms[key].uniform_type
         # TODO: support setting other types
         try:
             glUniform1f(location, value)
@@ -121,41 +127,40 @@ class ShaderProgram:
 
     def __getitem__(self, item):
 
-        if item not in self._variable_dict:
-            raise KeyError("variable name was not found")
+        if item not in self._uniforms:
+            raise KeyError("Uniform name was not found")
 
-        location = self._variable_dict[item]['location']
-        variable_type = self._variable_dict[item]['var_type']
+        location = self._uniforms[item].location
+        variable_type = self._uniforms[item].uniform_type
         # TODO: support retrieving other types
         fetched_uniform = GLfloat()
         glGetUniformfv(self.id, location, fetched_uniform)
 
         return fetched_uniform.value
 
-    def _create_vertex_buffer(self):
-        vertex_buffer = GLuint(0)
-        glGenBuffers(1, vertex_buffer)
-        return vertex_buffer
+    # def _create_vertex_buffer(self):
+    #     vertex_buffer = GLuint()
+    #     glGenBuffers(1, vertex_buffer)
+    #     return vertex_buffer
+    #
+    # def _create_vertex_array(self):
+    #     vertex_array = GLuint()
+    #     glGenVertexArrays(1, vertex_array)
+    #     return vertex_array
 
-    def _create_vertex_array(self):
-        vertex_array = GLuint(0)
-        glGenVertexArrays(1, vertex_array)
-        return vertex_array
-
-    def _parse_all_variables(self):
-        # TODO: fill in other useful values
-        for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
-            attrib_name = self.get_active_attrib(i)
-            attrib_type = self.get_attrib_type(attrib_name)
-            location = self.get_attrib_location(attrib_name)
-            self._variable_dict[attrib_name] = dict(var_type=attrib_type,
-                                                    location=location)
+    def _parse_all_uniforms(self):
         for i in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
             uniform_name = self.get_active_uniform(i)
             uniform_type = self.get_uniform_type(uniform_name)
             location = self.get_uniform_location(uniform_name)
-            self._variable_dict[uniform_name] = dict(var_type=uniform_type,
-                                                     location=location)
+            self._uniforms[uniform_name] = Uniform(location, uniform_type)
+
+    def _parse_all_attributes(self):
+        for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
+            attrib_name = self.get_active_attrib(i)
+            attrib_type = self.get_attrib_type(attrib_name)
+            location = self.get_attrib_location(attrib_name)
+            self._attributes[attrib_name] = Attribute(location, attrib_type)
 
     def get_num_active(self, variable_type):
         """Get the number of active variables of the passed type.
@@ -219,34 +224,34 @@ class ShaderProgram:
     def get_uniform_location(self, name):
         return glGetUniformLocation(self.id, create_string_buffer(name.encode('ascii')))
 
-    def upload_data(self, vertices, name, size=3, stride=0, vert_pointer=0):
-        location = self.get_attrib_location(name)
-        if location == -1:
-            return      # TODO: raise an exception
-        attr_type = GL_FLOAT    # TODO: query this
-
-        glBindVertexArray(self._vao_id)
-        vertex_buffer = self._create_vertex_buffer()
-        # self._vertex_buffers.append(vertex_buffer)
-
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.value)
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW)
-
-        glVertexAttribPointer(location, size, attr_type, False, stride, vert_pointer)
-
-        glEnableVertexAttribArray(location)
-        glBindVertexArray(0)
-
-    def draw(self, mode, size):
-        glBindVertexArray(self._vao_id)
-        glDrawArrays(mode, 0, size)
-        glBindVertexArray(0)
-
-        # glBindVertexArray(self._vertex_array)
-        #
-        # primcount = 1
-        # starts = (GLint * primcount)()
-        # sizes = (GLsizei * primcount)(size)
-        # glMultiDrawArrays(mode, starts, sizes, primcount)
-        #
-        # glBindVertexArray(0)
+    # def upload_data(self, vertices, name, size=3, stride=0, vert_pointer=0):
+    #     location = self.get_attrib_location(name)
+    #     if location == -1:
+    #         return      # TODO: raise an exception
+    #     attr_type = GL_FLOAT    # TODO: query this
+    #
+    #     glBindVertexArray(self._vao_id)
+    #     vertex_buffer = self._create_vertex_buffer()
+    #     # self._vertex_buffers.append(vertex_buffer)
+    #
+    #     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.value)
+    #     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW)
+    #
+    #     glVertexAttribPointer(location, size, attr_type, False, stride, vert_pointer)
+    #
+    #     glEnableVertexAttribArray(location)
+    #     glBindVertexArray(0)
+    #
+    # def draw(self, mode, size):
+    #     glBindVertexArray(self._vao_id)
+    #     glDrawArrays(mode, 0, size)
+    #     glBindVertexArray(0)
+    #
+    #     # glBindVertexArray(self._vertex_array)
+    #     #
+    #     # primcount = 1
+    #     # starts = (GLint * primcount)()
+    #     # sizes = (GLsizei * primcount)(size)
+    #     # glMultiDrawArrays(mode, starts, sizes, primcount)
+    #     #
+    #     # glBindVertexArray(0)

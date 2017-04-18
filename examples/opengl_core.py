@@ -9,7 +9,7 @@ window = pyglet.window.Window(width=960, height=540, resizable=True, config=conf
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
 
-vertex_source = """#version 330
+vertex_source = """#version 330 core
     in vec3 vertices;
     in vec4 colors;
 
@@ -25,7 +25,7 @@ vertex_source = """#version 330
     }
 """
 
-fragment_source = """#version 330
+fragment_source = """#version 330 core
     in vec4 vertex_colors;
     out vec4 final_colors;
 
@@ -34,16 +34,6 @@ fragment_source = """#version 330
         final_colors = vertex_colors;
     }
 """
-
-
-##################################
-# Define a simple Vertex Structure
-##################################
-class VERTEX(ctypes.Structure):
-    _fields_ = [
-        ('vertices', GLfloat * 3),
-        ('colors', GLfloat * 4),
-    ]
 
 #########################
 # Create a shader program
@@ -56,20 +46,14 @@ program.use_program()
 print("Program ID: {}".format(program.id))
 
 ##########################################################
-# Create some vertex instances, and upload them to the GPU
-##########################################################
-# vertices = (VERTEX * 3)(((-0.6, -0.5, 0.0), (1.0, 0.0, 0.0, 1.0)),
-#                         ((0.6, -0.5, 0.0), (0.0, 1.0, 0.0, 1.0)),
-#                         ((0.0, 0.5, 0.0), (0.0, 0.0, 1.0, 1.0)))
-# program.upload_data(vertices, "vertices", 3, ctypes.sizeof(VERTEX), VERTEX.vertices.offset)
-# program.upload_data(vertices, "colors", 4, ctypes.sizeof(VERTEX), VERTEX.colors.offset)
-
-##########################################################
 #   TESTS !
 ##########################################################
 
 vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
                                              ('c3B', (1, 0, 1, 0, 1, 1, 0, 1, 1)))
+
+# TODO: update image library to fix this:
+# label = pyglet.text.Label("test label")
 
 ###########################################################
 # Set the "zoom" uniform value.
@@ -82,6 +66,7 @@ program['zoom'] = 5.0
 ##########################################################
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
+    program.use_program()
     program['zoom'] += direction / 4
     if program['zoom'] < 0.1:
         program['zoom'] = 0.1
@@ -100,7 +85,10 @@ def on_draw():
         # vertex_list.draw(GL_LINES)
 
         pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
-                                              ('c3B', (1, 0, 0,  0, 1, 0,  0, 0, 1)))
+                                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
+
+        pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-1, -1, 0,  -0.3, -1, 0,  -0.6, 0.2, 0)),
+                                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
 if __name__ == "__main__":
     pyglet.app.run()

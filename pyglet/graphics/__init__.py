@@ -192,18 +192,15 @@ def draw(size, mode, *data):
     vao_id = GLuint()
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
-    print("Created and bound VAO")
 
     buffers = []
     for fmt, array in data:
         attribute = vertexattribute.create_attribute(fmt)
-        print("Created Attribute:", attribute)
-
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
+        # TODO: fix mappable_buffer, or discard if it's pointless here.
         # buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
         buffer = vertexbuffer.create_buffer(size * attribute.stride)
-        print("Created buffer:", buffer)
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
@@ -212,8 +209,11 @@ def draw(size, mode, *data):
         buffers.append(buffer)      # Don't garbage collect it.
 
     glDrawArrays(mode, 0, size)
-    # Unbind the VAO after drawing:
+
+    # Discard everything after drawing:
+    del buffers
     glBindVertexArray(0)
+    glDeleteVertexArrays(1, vao_id)
 
 
 def draw_indexed(size, mode, indices, *data):
@@ -230,6 +230,7 @@ def draw_indexed(size, mode, indices, *data):
             Attribute formats and data.  See the module summary for details.
 
     """
+    # TODO: Update this for GL3:
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
     buffers = []
@@ -349,6 +350,21 @@ class Batch(object):
         self._draw_list = []
         self._draw_list_dirty = False
 
+        self.vao_id = self._create_vao()
+
+    @staticmethod
+    def _create_vao():
+        vao_id = GLuint()
+        glGenVertexArrays(1, vao_id)
+        return vao_id
+
+    def bind_vao(self):
+        glBindVertexArray(self.vao_id)
+
+    @staticmethod
+    def unbind_vao():
+        glBindVertexArray(0)
+
     def invalidate(self):
         """Force the batch to update the draw list.
 
@@ -367,8 +383,8 @@ class Batch(object):
                 The number of vertices in the list.
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``,    shared_object_space = gl.current_context.object_space
- etc.
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, 
+                shared_object_space = gl.current_context.object_space etc.
                 See the module summary for additional information.
             `group` : `Group`
                 Group of the vertex list, or ``None`` if no group is required.
@@ -568,11 +584,15 @@ class Batch(object):
     def draw(self):
         """Draw the batch.
         """
+        glBindVertexArray(self.vao_id)
+
         if self._draw_list_dirty:
             self._update_draw_list()
 
         for func in self._draw_list:
             func()
+
+        glBindVertexArray(0)
 
     def draw_subset(self, vertex_lists):
         """Draw only some vertex lists in the batch.

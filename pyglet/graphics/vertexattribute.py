@@ -251,16 +251,7 @@ def create_attribute(fmt):
     generic_index = match.group('generic_index')
     texcoord_texture = match.group('texcoord_texture')
 
-    """
-    #####################################
-    # All attributes are generic now:
-    normalized = match.group('generic_normalized')
-    attr_class = GenericAttribute
-    global ATTRIB_INDEX
-    args = ATTRIB_INDEX, normalized, count, gl_type
-    ATTRIB_INDEX += 1
-    #####################################
-    """
+    # TODO: update documentation to remove cruft.
 
     if generic_index:
         normalized = match.group('generic_normalized')
@@ -275,8 +266,7 @@ def create_attribute(fmt):
         attr_class = _attribute_classes[name]
         if attr_class._fixed_count:
             assert count == attr_class._fixed_count, \
-                'Attributes named "%s" must have count of %d' % (
-                    name, attr_class._fixed_count)
+                'Attributes named "%s" must have count of %d' % (name, attr_class._fixed_count)
             args = (gl_type,)
         else:
             args = (count, gl_type)
@@ -311,7 +301,7 @@ class AbstractAttribute(object):
         self.offset = 0
 
     def enable(self):
-        """Enable the attribute using ``glEnableClientState``."""
+        """Enable the attribute using ``glEnableVertexAttribArray``."""
         raise NotImplementedError('abstract')
 
     def set_pointer(self, offset):
@@ -394,6 +384,28 @@ class AbstractAttribute(object):
             # interleaved
             region = self.get_region(buffer, start, count)
             region[:] = data
+
+
+class VertexAttribute(AbstractAttribute):
+    """Vertex coordinate attribute."""
+
+    plural = 'vertices'
+
+    def __init__(self, count, gl_type):
+        assert count > 1, 'Vertex attribute must have count of 2, 3 or 4'
+        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE),\
+            'Vertex attribute must have signed type larger than byte'
+        super(VertexAttribute, self).__init__(count, gl_type)
+
+        attr_name = self.plural.encode('utf8')
+        self.location = glGetAttribLocation(3, ctypes.create_string_buffer(attr_name))
+
+    def enable(self):
+        glEnableVertexAttribArray(self.location)
+
+    def set_pointer(self, pointer):
+        glVertexAttribPointer(self.location, self.count, self.gl_type, False, self.stride,
+                              self.offset + pointer)
 
 
 class ColorAttribute(AbstractAttribute):
@@ -525,28 +537,6 @@ class MultiTexCoordAttribute(AbstractAttribute):
     def set_pointer(self, pointer):
         glTexCoordPointer(self.count, self.gl_type, self.stride,
                           self.offset + pointer)
-
-
-class VertexAttribute(AbstractAttribute):
-    """Vertex coordinate attribute."""
-
-    plural = 'vertices'
-
-    def __init__(self, count, gl_type):
-        assert count > 1, 'Vertex attribute must have count of 2, 3 or 4'
-        assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE),\
-            'Vertex attribute must have signed type larger than byte'
-        super(VertexAttribute, self).__init__(count, gl_type)
-
-        attr_name = self.plural.encode('utf8')
-        self.location = glGetAttribLocation(3, ctypes.create_string_buffer(attr_name))
-
-    def enable(self):
-        glEnableVertexAttribArray(self.location)
-
-    def set_pointer(self, pointer):
-        glVertexAttribPointer(self.location, self.count, self.gl_type, False, self.stride,
-                              self.offset + pointer)
 
 
 class GenericAttribute(AbstractAttribute):
