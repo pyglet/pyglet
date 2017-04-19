@@ -2,7 +2,7 @@ import pyglet
 from pyglet.gl import *
 from pyglet.graphics.shader import Shader, ShaderProgram
 
-import ctypes
+import os
 
 # config = pyglet.gl.Config(major_version=3, minor_version=3)
 window = pyglet.window.Window(width=540, height=540, resizable=True)
@@ -12,27 +12,33 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
-    in vec4 tex_coords;
+    in vec2 tex_coords;
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
 
     uniform float zoom;
-
-    out vec4 vertex_colors;
 
     void main()
     {
         gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
         vertex_colors = colors;
         // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        texture_coords = tex_coords;
     }
 """
 
 fragment_source = """#version 330 core
     in vec4 vertex_colors;
+    in vec2 texture_coords;
     out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
 
     void main()
     {
-        final_colors = vertex_colors;
+        //final_colors = vertex_colors;
+        final_colors = texture(our_texture, texture_coords) * vertex_colors;
     }
 """
 
@@ -51,21 +57,22 @@ print("Program ID: {}".format(program.id))
 # vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
 #                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
-batch = pyglet.graphics.Batch()
-batch.add(3, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  -1, 1, 0)),
-                                 ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
+batch = pyglet.graphics.Batch()          # bl, tr, tl, bl, tr, rb
+batch.add(6, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  -1, 1, 0,  -1, -1, 0,  1, 1, 0,  1, -1, 0)),
+                                 ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
+                                 ('t2f', (0, 0,  1, 1,  0, 1,  0, 0,  1, 1,  1, 0)))
 
-batch.add(3, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  1, -1, 0)),
-                                 ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
+# batch.add(3, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  1, -1, 0)),
+#                                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 
 # TODO: update image library to fix this:
 # label = pyglet.text.Label("test label")
-# pyglet.resource.path.append("examples")
-# pyglet.resource.reindex()
-# img = pyglet.resource.image("pyglet.png")
 
-
+# TODO: Add code to send the proper data to the uniform.
+os.chdir('..')
+img = pyglet.image.load("examples/pyglet.png")
+tex = img.texture
 
 ###########################################################
 # Set the "zoom" uniform value.
@@ -99,7 +106,7 @@ def on_draw():
 
         # vertex_list.draw(GL_TRIANGLES)
 
-        # batch.draw()
+        batch.draw()
 
 if __name__ == "__main__":
     pyglet.app.run()

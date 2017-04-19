@@ -511,12 +511,17 @@ class TexCoordAttribute(AbstractAttribute):
             'Texture coord attribute must have non-byte signed type'
         super(TexCoordAttribute, self).__init__(count, gl_type)
 
+        self.attr_name = self.plural.encode('utf8')
+        self.location = None
+
     def enable(self):
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+        if not self.location:
+            self.location = glGetAttribLocation(3, ctypes.create_string_buffer(self.attr_name))
+        glEnableVertexAttribArray(self.location)
 
     def set_pointer(self, pointer):
-        glTexCoordPointer(self.count, self.gl_type, self.stride,
-                          self.offset + pointer)
+        glVertexAttribPointer(self.location, self.count, self.gl_type, False, self.stride,
+                              self.offset + pointer)
 
     def convert_to_multi_tex_coord_attribute(self):
         """Changes the class of the attribute to `MultiTexCoordAttribute`.
@@ -566,6 +571,6 @@ _attribute_classes = {
     # 'f': FogCoordAttribute,
     # 'n': NormalAttribute,
     # 's': SecondaryColorAttribute,
-    # 't': TexCoordAttribute,
+    't': TexCoordAttribute,
     'v': VertexAttribute,
 }

@@ -66,7 +66,7 @@ class ShaderProgram:
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
-        self._parse_all_attributes()
+        # self._parse_all_attributes()
 
     @staticmethod
     def _get_program_log(program_id):

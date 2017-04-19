@@ -351,6 +351,7 @@ class Batch(object):
         self._draw_list_dirty = False
 
         self.vao_id = self._create_vao()
+        print("Batch CREATED!")
 
     @staticmethod
     def _create_vao():
