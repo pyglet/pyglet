@@ -4,9 +4,11 @@ from pyglet.gl import *
 from ctypes import *
 
 
+# TODO: test other shader types, and update pyglet GL bindings if necessary.
 _shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'fragment': GL_FRAGMENT_SHADER,
+    # 'geometry': GL_GEOMETRY_SHADER,
 }
 
 Uniform = namedtuple('Uniform', 'location uniform_type')
@@ -14,9 +16,10 @@ Attribute = namedtuple('Attribute', 'location attribute_type')
 
 
 class Shader:
+    # TODO: create proper Exception for failed compilation.
     def __init__(self, source_string, shader_type):
         if shader_type not in _shader_types.keys():
-            raise TypeError("Only vertex and fragment staders are supported")
+            raise TypeError("Only vertex and fragment staders are currently supported")
         self._source = source_string
         self.shader_type = _shader_types[shader_type]
         self.id = self._compile_shader()
@@ -30,6 +33,7 @@ class Shader:
         # shader id, count, string, length:
         glShaderSource(shader_id, 1, source_buffer_pointer, source_length)
         glCompileShader(shader_id)
+        # TODO: use the pyglet debug settings
         self._get_shader_log(shader_id)
         return shader_id
 
@@ -42,7 +46,7 @@ class Shader:
         result_str = create_string_buffer(log_length.value)
         glGetShaderInfoLog(shader_id, log_length, None, result_str)
         if result_str.value:
-            print("Error compiling shader: {}".format(result_str.value))
+            print("Error compiling shader: {}".format(result_str.value.decode('utf8')))
         else:
             print("Shader compiled successfully.")
 
@@ -59,7 +63,6 @@ class ShaderProgram:
         self.id = self._link_program(shaders)
         self._program_active = False
         # TODO: move these out of this module eventually?
-        # self._vao_id = self._create_vertex_array()
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
@@ -113,9 +116,8 @@ class ShaderProgram:
     def __setitem__(self, key, value):
         if key not in self._uniforms:
             raise KeyError("variable name was not found")
-        # TODO: unset the program afterwards, if it wasn't active?
         if not self._program_active:
-            raise ValueError("Shader Program is not active.")
+            raise Exception("Shader Program is not active.")
 
         location = self._uniforms[key].location
         uniform_type = self._uniforms[key].uniform_type
@@ -126,7 +128,6 @@ class ShaderProgram:
             raise
 
     def __getitem__(self, item):
-
         if item not in self._uniforms:
             raise KeyError("Uniform name was not found")
 
@@ -137,16 +138,6 @@ class ShaderProgram:
         glGetUniformfv(self.id, location, fetched_uniform)
 
         return fetched_uniform.value
-
-    # def _create_vertex_buffer(self):
-    #     vertex_buffer = GLuint()
-    #     glGenBuffers(1, vertex_buffer)
-    #     return vertex_buffer
-    #
-    # def _create_vertex_array(self):
-    #     vertex_array = GLuint()
-    #     glGenVertexArrays(1, vertex_array)
-    #     return vertex_array
 
     def _parse_all_uniforms(self):
         for i in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
@@ -227,8 +218,8 @@ class ShaderProgram:
     # def upload_data(self, vertices, name, size=3, stride=0, vert_pointer=0):
     #     location = self.get_attrib_location(name)
     #     if location == -1:
-    #         return      # TODO: raise an exception
-    #     attr_type = GL_FLOAT    # TODO: query this
+    #         return
+    #     attr_type = GL_FLOAT
     #
     #     glBindVertexArray(self._vao_id)
     #     vertex_buffer = self._create_vertex_buffer()
@@ -241,7 +232,7 @@ class ShaderProgram:
     #
     #     glEnableVertexAttribArray(location)
     #     glBindVertexArray(0)
-    #
+
     # def draw(self, mode, size):
     #     glBindVertexArray(self._vao_id)
     #     glDrawArrays(mode, 0, size)

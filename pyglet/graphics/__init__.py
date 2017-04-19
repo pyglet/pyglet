@@ -610,6 +610,8 @@ class Batch(object):
 
         """
 
+        glBindVertexArray(self.vao_id)
+
         # Horrendously inefficient.
         def visit(group):
             group.set_state()
@@ -633,6 +635,8 @@ class Batch(object):
         self.top_groups.sort()
         for group in self.top_groups:
             visit(group)
+
+        glBindVertexArray(0)
 
 
 class Group(object):

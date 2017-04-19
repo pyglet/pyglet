@@ -297,35 +297,32 @@ class VertexDomain(object):
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         """
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)        GL3
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
-        # if vertexbuffer._workaround_vbo_finish:               GL3
-        #     glFinish()
 
         if vertex_list is not None:
-            pass
-            # glDrawArrays(mode, vertex_list.start, vertex_list.count)
+            print("Direct draw vertlist")
+            glDrawArrays(mode, vertex_list.start, vertex_list.count)
         else:
             starts, sizes = self.allocator.get_allocated_regions()
             primcount = len(starts)
             if primcount == 0:
                 pass
             elif primcount == 1:
+                print("Domain draw primcount 1")
                 # Common case
                 glDrawArrays(mode, starts[0], sizes[0])
             else:
+                print("Domain draw primcount > 1")
                 starts = (GLint * primcount)(*starts)
                 sizes = (GLsizei * primcount)(*sizes)
                 glMultiDrawArrays(mode, starts, sizes, primcount)
 
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
-
-        # glPopClientAttrib()                   GL3
 
     def _is_empty(self):
         return not self.allocator.starts
@@ -727,15 +724,16 @@ class IndexedVertexDomain(VertexDomain):
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         """
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)        GL3
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
         self.index_buffer.bind()
-        if vertexbuffer._workaround_vbo_finish:
-            glFinish()
+        # if vertexbuffer._workaround_vbo_finish:               GL3
+        #     glFinish()
 
         if vertex_list is not None:
             glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
@@ -765,7 +763,8 @@ class IndexedVertexDomain(VertexDomain):
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
-        glPopClientAttrib()
+
+        # glPopClientAttrib()                                              GL3
 
 
 class IndexedVertexList(VertexList):
