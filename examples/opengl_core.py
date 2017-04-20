@@ -58,9 +58,11 @@ print("Program ID: {}".format(program.id))
 #                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
 batch = pyglet.graphics.Batch()          # bl, tr, tl, bl, tr, rb
-batch.add(6, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  -1, 1, 0,  -1, -1, 0,  1, 1, 0,  1, -1, 0)),
-                                 ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
-                                 ('t2f', (0, 0,  1, 1,  0, 1,  0, 0,  1, 1,  1, 0)))
+batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 3, 1, 2, 3],
+                  ('v3f', (0.5, 0.5, 0,  0.5, -0.5, 0,  -0.5, -0.5, 0,  -0.5, 0.5, 0)),
+                  ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)),
+                  ('t2f', (1, 1,  1, 0,  0, 0,  0, 1,)))
+
 
 # batch.add(3, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  1, -1, 0)),
 #                                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
@@ -78,7 +80,7 @@ tex = img.texture
 # Set the "zoom" uniform value.
 ###########################################################
 program.use_program()
-program['zoom'] = 5.0
+program['zoom'] = 2
 
 
 ##########################################################
@@ -100,6 +102,7 @@ def on_mouse_scroll(x, y, mouse, direction):
 @window.event
 def on_draw():
     with program:
+        glClearColor(0.2, 0.3, 0.3, 1)
         window.clear()
         # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
         #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))

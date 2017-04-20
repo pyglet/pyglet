@@ -1687,8 +1687,6 @@ class Texture(AbstractImage):
             t[9], t[10], t[11], 1.,
             x1, y2, z, 1.)
 
-        print(self.tex_coords, array[:])
-
         # glPushAttrib(GL_ENABLE_BIT)
         # glEnable(self.target)
         glBindTexture(self.target, self.id)

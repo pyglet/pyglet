@@ -200,7 +200,7 @@ def draw(size, mode, *data):
 
         # TODO: fix mappable_buffer, or discard if it's pointless here.
         # buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
-        buffer = vertexbuffer.create_buffer(size * attribute.stride)
+        buffer = vertexbuffer.create_buffer(size * attribute.stride)    # Because mappable is broken
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
@@ -230,15 +230,18 @@ def draw_indexed(size, mode, indices, *data):
             Attribute formats and data.  See the module summary for details.
 
     """
-    # TODO: Update this for GL3:
-    glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+    # Create and bind a throwaway VAO
+    vao_id = GLuint()
+    glGenVertexArrays(1, vao_id)
+    glBindVertexArray(vao_id)
 
     buffers = []
     for fmt, array in data:
         attribute = vertexattribute.create_attribute(fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
-        buffer = vertexbuffer.create_mappable_buffer(
-            size * attribute.stride, vbo=False)
+        # TODO: fix mappable_buffer, or discard if it's pointless here.
+        # buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
+        buffer = vertexbuffer.create_buffer(size * attribute.stride)    # Because mappable is broken
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
@@ -259,7 +262,10 @@ def draw_indexed(size, mode, indices, *data):
     glDrawElements(mode, len(indices), index_type, index_array)
     glFlush()
 
-    glPopClientAttrib()
+    # Discard everything after drawing:
+    del buffers
+    glBindVertexArray(0)
+    glDeleteVertexArrays(1, vao_id)
 
 
 def _parse_data(data):
