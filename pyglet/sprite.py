@@ -145,12 +145,12 @@ class SpriteGroup(graphics.Group):
         glEnable(self.texture.target)
         glBindTexture(self.texture.target, self.texture.id)
 
-        glPushAttrib(GL_COLOR_BUFFER_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(self.blend_src, self.blend_dest)
+        # glPushAttrib(GL_COLOR_BUFFER_BIT)
+        # glEnable(GL_BLEND)
+        # glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self):
-        glPopAttrib()
+        # glPopAttrib()
         glDisable(self.texture.target)
 
     def __repr__(self):
@@ -297,18 +297,18 @@ class Sprite(event.EventDispatcher):
         """
         return self._batch
 
-    @batch.setter
-    def batch(self, batch):
-        if self._batch == batch:
-            return
-
-        if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_QUADS, self._group, batch)
-            self._batch = batch
-        else:
-            self._vertex_list.delete()
-            self._batch = batch
-            self._create_vertex_list()
+    # @batch.setter
+    # def batch(self, batch):
+    #     if self._batch == batch:
+    #         return
+    #
+    #     if batch is not None and self._batch is not None:
+    #         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
+    #         self._batch = batch
+    #     else:
+    #         self._vertex_list.delete()
+    #         self._batch = batch
+    #         self._create_vertex_list()
 
     @property
     def group(self):
@@ -321,17 +321,17 @@ class Sprite(event.EventDispatcher):
         """
         return self._group.parent
 
-    @group.setter
-    def group(self, group):
-        if self._group.parent == group:
-            return
-        self._group = SpriteGroup(self._texture,
-                                  self._group.blend_src,
-                                  self._group.blend_dest,
-                                  group)
-        if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_QUADS, self._group,
-                                self._batch)
+    # @group.setter
+    # def group(self, group):
+    #     if self._group.parent == group:
+    #         return
+    #     self._group = SpriteGroup(self._texture,
+    #                               self._group.blend_src,
+    #                               self._group.blend_dest,
+    #                               group)
+    #     if self._batch is not None:
+    #         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group,
+    #                             self._batch)
 
     @property
     def image(self):
@@ -382,12 +382,13 @@ class Sprite(event.EventDispatcher):
         else:
             vertex_format = 'v2i/%s' % self._usage
         if self._batch is None:
-            self._vertex_list = graphics.vertex_list(4, vertex_format,
-                'c4B', ('t3f', self._texture.tex_coords))
+            self._vertex_list = graphics.vertex_list_indexed(
+                4, [0, 1, 2, 0, 2, 3], vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
         else:
-            self._vertex_list = self._batch.add(4, GL_QUADS, self._group,
+            self._vertex_list = self._batch.add_indexed(
+                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
                 vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
-        self._update_position()
+        # self._update_position()
         self._update_color()
 
     def _update_position(self):
@@ -684,7 +685,7 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         self._group.set_state_recursive()
-        self._vertex_list.draw(GL_QUADS)
+        self._vertex_list.draw(GL_TRIANGLES)
         self._group.unset_state_recursive()
 
     if _is_epydoc:

@@ -53,28 +53,26 @@ print("Program ID: {}".format(program.id))
 ##########################################################
 #   TESTS !
 ##########################################################
+# TODO: update image library to fix this:
+# label = pyglet.text.Label("test label")
+
 
 # vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
 #                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
-batch = pyglet.graphics.Batch()          # bl, tr, tl, bl, tr, rb
-batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 3, 1, 2, 3],
-                  ('v3f', (0.5, 0.5, 0,  0.5, -0.5, 0,  -0.5, -0.5, 0,  -0.5, 0.5, 0)),
-                  ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)),
-                  ('t2f', (1, 1,  1, 0,  0, 0,  0, 1,)))
+batch = pyglet.graphics.Batch()
 
-
-# batch.add(3, GL_TRIANGLES, None, ('v3f', (-1, -1, 0,  1, 1, 0,  1, -1, 0)),
-#                                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
-
-
-# TODO: update image library to fix this:
-# label = pyglet.text.Label("test label")
+# batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
+#                   ('v3f', (-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0)),
+#                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
+#                   ('t3f', (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)))
 
 # TODO: Add code to send the proper data to the uniform.
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
-tex = img.texture
+# tex = img.texture
+
+sprite = pyglet.sprite.Sprite(img=img, batch=batch)
 
 ###########################################################
 # Set the "zoom" uniform value.
@@ -109,7 +107,11 @@ def on_draw():
 
         # vertex_list.draw(GL_TRIANGLES)
 
+        # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+        #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)))
+
         batch.draw()
+
 
 if __name__ == "__main__":
     pyglet.app.run()
