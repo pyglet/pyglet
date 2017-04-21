@@ -232,13 +232,17 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
+    // TODO: make these a vec2
+    uniform float width;
+    uniform float height;
     uniform float zoom;
 
     void main()
     {
-    
         // gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
-        gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
+        gl_Position = vec4(vertices.x / width - 1,
+                           vertices.y / height -1,
+                           vertices.z, vertices.w * zoom);
         // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;

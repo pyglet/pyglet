@@ -27,7 +27,11 @@ batch = pyglet.graphics.Batch()
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
 # tex = img.texture
-sprite = pyglet.sprite.Sprite(img=img, x=-1, y=-1, batch=batch)
+sprite = pyglet.sprite.Sprite(img=img, x=100, y=100, batch=batch)
+sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
+sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
+sprite4 = pyglet.sprite.Sprite(img=img, x=300, y=200, batch=batch)
+sprite5 = pyglet.sprite.Sprite(img=img, x=300, y=300, batch=batch)
 
 
 ###########################################################
