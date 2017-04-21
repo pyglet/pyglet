@@ -170,6 +170,7 @@ import pyglet
 from pyglet.gl import *
 from pyglet import gl
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
+from pyglet.graphics.shader import Shader, ShaderProgram, vertex_source, fragment_source
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
@@ -192,6 +193,8 @@ def draw(size, mode, *data):
     vao_id = GLuint()
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
+    # Activate shader program:
+    default_group.set_state()
 
     buffers = []
     for fmt, array in data:
@@ -210,6 +213,8 @@ def draw(size, mode, *data):
 
     glDrawArrays(mode, 0, size)
 
+    # Deactivate shader program:
+    default_group.unset_state()
     # Discard everything after drawing:
     del buffers
     glBindVertexArray(0)
@@ -234,6 +239,8 @@ def draw_indexed(size, mode, indices, *data):
     vao_id = GLuint()
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
+    # Activate shader program:
+    default_group.set_state()
 
     buffers = []
     for fmt, array in data:
@@ -262,6 +269,8 @@ def draw_indexed(size, mode, indices, *data):
     glDrawElements(mode, len(indices), index_type, index_array)
     glFlush()
 
+    # Deactivate shader program:
+    default_group.unset_state()
     # Discard everything after drawing:
     del buffers
     glBindVertexArray(0)
@@ -306,7 +315,7 @@ def vertex_list(count, *data):
     :rtype: `VertexList`
     """
     # Note that mode=0 because the default batch is never drawn: vertex lists
-    # returned from this function are drawn directly by the app.
+    # returned from this function are drawn directly by their draw() method.
     return _get_default_batch().add(count, 0, None, *data)
 
 
@@ -325,7 +334,7 @@ def vertex_list_indexed(count, indices, *data):
     :rtype: `IndexedVertexList`
     """
     # Note that mode=0 because the default batch is never drawn: vertex lists
-    # returned from this function are drawn directly by the app.
+    # returned from this function are drawn directly by their draw() method.
     return _get_default_batch().add_indexed(count, 0, None, indices, *data)
 
 
@@ -356,14 +365,12 @@ class Batch(object):
         self._draw_list = []
         self._draw_list_dirty = False
 
-        self.vao_id = self._create_vao()
-        print("Batch CREATED!")
-
-    @staticmethod
-    def _create_vao():
+        # TODO: document the presence of one VAO per Batch.
         vao_id = GLuint()
         glGenVertexArrays(1, vao_id)
-        return vao_id
+        self.vao_id = vao_id
+        # TODO: remove this:
+        print("Batch CREATED!")
 
     def bind_vao(self):
         glBindVertexArray(self.vao_id)
@@ -475,7 +482,7 @@ class Batch(object):
 
     def _get_domain(self, indexed, mode, group, formats):
         if group is None:
-            group = null_group
+            group = default_group
 
         # Batch group
         if group not in self.group_map:
@@ -702,18 +709,30 @@ class Group(object):
             self.parent.unset_state_recursive()
 
 
-class NullGroup(Group):
+class DefaultGroup(Group):
     """The default group class used when ``None`` is given to a batch.
 
     This implementation has no effect.
     """
-    pass
+    def __init__(self, parent=None):
+        super(DefaultGroup, self).__init__(parent)
+        self._vert_shader = Shader(vertex_source, 'vertex')
+        self._frag_shader = Shader(fragment_source, 'fragment')
+        self.shader_program = ShaderProgram(self._vert_shader, self._frag_shader)
+        # TODO: remove this:
+        print("Created DefaultGroup!")
+
+    def set_state(self):
+        self.shader_program.use_program()
+
+    def unset_state(self):
+        self.shader_program.stop_program()
 
 
 #: The default group.
 #:
 #: :type: `Group`
-null_group = NullGroup()
+default_group = DefaultGroup()
 
 
 class TextureGroup(Group):
@@ -738,10 +757,12 @@ class TextureGroup(Group):
         self.texture = texture
 
     def set_state(self):
+        # TODO: fix this for GL3:
         glEnable(self.texture.target)
         glBindTexture(self.texture.target, self.texture.id)
 
     def unset_state(self):
+        # TODO: fix this for GL3:
         glDisable(self.texture.target)
 
     def __hash__(self):

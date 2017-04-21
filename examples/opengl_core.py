@@ -1,54 +1,9 @@
-import pyglet
-from pyglet.gl import *
-from pyglet.graphics.shader import Shader, ShaderProgram
-
 import os
+import pyglet
 
-# config = pyglet.gl.Config(major_version=3, minor_version=3)
+
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
-
-
-vertex_source = """#version 330 core
-    in vec4 vertices;
-    in vec4 colors;
-    in vec2 tex_coords;
-    out vec4 vertex_colors;
-    out vec2 texture_coords;
-
-    uniform float zoom;
-
-    void main()
-    {
-        gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
-        vertex_colors = colors;
-        // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
-        texture_coords = tex_coords;
-    }
-"""
-
-fragment_source = """#version 330 core
-    in vec4 vertex_colors;
-    in vec2 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2D our_texture;
-
-
-    void main()
-    {
-        //final_colors = vertex_colors;
-        final_colors = texture(our_texture, texture_coords) * vertex_colors;
-    }
-"""
-
-#########################
-# Create a shader program
-#########################
-vertex_shader = Shader(vertex_source, shader_type="vertex")
-fragment_shader = Shader(fragment_source, shader_type="fragment")
-program = ShaderProgram(vertex_shader, fragment_shader)
-print("Program ID: {}".format(program.id))
 
 ##########################################################
 #   TESTS !
@@ -67,29 +22,30 @@ batch = pyglet.graphics.Batch()
 #                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
 #                   ('t3f', (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)))
 
+
 # TODO: Add code to send the proper data to the uniform.
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
 # tex = img.texture
+sprite = pyglet.sprite.Sprite(img=img, x=-1, y=-1, batch=batch)
 
-sprite = pyglet.sprite.Sprite(img=img, batch=batch)
 
 ###########################################################
 # Set the "zoom" uniform value.
 ###########################################################
-program.use_program()
-program['zoom'] = 2
+# program.use_program()
+# program['zoom'] = 2
 
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
-@window.event
-def on_mouse_scroll(x, y, mouse, direction):
-    program.use_program()
-    program['zoom'] += direction / 4
-    if program['zoom'] < 0.1:
-        program['zoom'] = 0.1
+# @window.event
+# def on_mouse_scroll(x, y, mouse, direction):
+#     program.use_program()
+#     program['zoom'] += direction / 4
+#     if program['zoom'] < 0.1:
+#         program['zoom'] = 0.1
 
 
 ###########################################################
@@ -99,19 +55,18 @@ def on_mouse_scroll(x, y, mouse, direction):
 ###########################################################
 @window.event
 def on_draw():
-    with program:
-        glClearColor(0.2, 0.3, 0.3, 1)
-        window.clear()
-        # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
-        #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
+    window.clear()
+    # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
+    #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
-        # vertex_list.draw(GL_TRIANGLES)
+    # vertex_list.draw(GL_TRIANGLES)
 
-        # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-        #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)))
+    # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+    #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)))
 
-        batch.draw()
+    batch.draw()
 
 
 if __name__ == "__main__":
+    pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
     pyglet.app.run()

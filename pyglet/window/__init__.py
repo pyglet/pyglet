@@ -749,6 +749,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         width = max(1, width)
         height = max(1, height)
         gl.glViewport(0, 0, width, height)
+
         # gl.glMatrixMode(gl.GL_PROJECTION)             GL3
         # gl.glLoadIdentity()
         # gl.glOrtho(0, width, 0, height, -1, 1)
@@ -1217,7 +1218,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         pass
 
-    def clear(self):
+    @staticmethod
+    def clear():
         """Clear the window.
 
         This is a convenience method for clearing the color and depth
@@ -1736,6 +1738,7 @@ class FPSDisplay(object):
         self.label.text = '%.2f' % fps
 
     def draw(self):
+        # TODO: fix this for GL3:
         """Draw the label.
 
         The OpenGL state is assumed to be at default values, except

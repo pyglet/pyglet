@@ -11,22 +11,19 @@ _shader_types = {
     # 'geometry': GL_GEOMETRY_SHADER,
 }
 
-Uniform = namedtuple('Uniform', 'location uniform_type')
-Attribute = namedtuple('Attribute', 'location attribute_type')
-
 
 class Shader:
     # TODO: create proper Exception for failed compilation.
     def __init__(self, source_string, shader_type):
         if shader_type not in _shader_types.keys():
-            raise TypeError("Only vertex and fragment staders are currently supported")
+            raise TypeError("Only 'vertex' and 'fragment' shaders are supported")
         self._source = source_string
-        self.shader_type = _shader_types[shader_type]
+        self.shader_type = shader_type
         self.id = self._compile_shader()
 
     def _compile_shader(self):
         shader_source = self._source.encode("utf8")
-        shader_id = glCreateShader(self.shader_type)
+        shader_id = glCreateShader(_shader_types[self.shader_type])
         source_buffer = c_char_p(shader_source)
         source_buffer_pointer = cast(pointer(source_buffer), POINTER(POINTER(c_char)))
         source_length = c_int(len(shader_source) + 1)
@@ -51,6 +48,8 @@ class Shader:
             print("Shader compiled successfully.")
 
     def __del__(self):
+        # TODO: remove this:
+        print("Destroyed Shader: {0}.".format(self.shader_type))
         try:
             glDeleteShader(self.id)
         except ImportError:
@@ -59,6 +58,10 @@ class Shader:
 
 class ShaderProgram:
     """OpenGL Shader Program"""
+
+    Uniform = namedtuple('Uniform', 'location uniform_type')
+    Attribute = namedtuple('Attribute', 'location attribute_type')
+
     def __init__(self, *shaders):
         self.id = self._link_program(shaders)
         self._program_active = False
@@ -79,7 +82,7 @@ class ShaderProgram:
         if result_str.value:
             print("Error linking program: {}".format(result_str.value))
         else:
-            print("Program linked successfully")
+            print("Program linked successfully.")
 
     def _link_program(self, shaders):
         program_id = glCreateProgram()
@@ -104,18 +107,20 @@ class ShaderProgram:
         self.stop_program()
 
     def __del__(self):
+        # TODO: remove this:
+        print("Destroyed Shader Program.")
         try:
             glDeleteProgram(self.id)
         except ImportError:
             pass
 
     ############################################################
-    # Temporary methods that might better fit in another module:
+    # Improve the getting and setting of differnt uniform types:
     ############################################################
 
     def __setitem__(self, key, value):
         if key not in self._uniforms:
-            raise KeyError("variable name was not found")
+            raise KeyError("Uniform name was not found.")
         if not self._program_active:
             raise Exception("Shader Program is not active.")
 
@@ -129,7 +134,7 @@ class ShaderProgram:
 
     def __getitem__(self, item):
         if item not in self._uniforms:
-            raise KeyError("Uniform name was not found")
+            raise KeyError("Uniform name was not found.")
 
         location = self._uniforms[item].location
         variable_type = self._uniforms[item].uniform_type
@@ -144,14 +149,14 @@ class ShaderProgram:
             uniform_name = self.get_active_uniform(i)
             uniform_type = self.get_uniform_type(uniform_name)
             location = self.get_uniform_location(uniform_name)
-            self._uniforms[uniform_name] = Uniform(location, uniform_type)
+            self._uniforms[uniform_name] = self.Uniform(location, uniform_type)
 
     def _parse_all_attributes(self):
         for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
             attrib_name = self.get_active_attrib(i)
             attrib_type = self.get_attrib_type(attrib_name)
             location = self.get_attrib_location(attrib_name)
-            self._attributes[attrib_name] = Attribute(location, attrib_type)
+            self._attributes[attrib_name] = self.Attribute(location, attrib_type)
 
     def get_num_active(self, variable_type):
         """Get the number of active variables of the passed type.
@@ -166,7 +171,7 @@ class ShaderProgram:
     def get_attrib_type(self, name):
         location = self.get_attrib_location(name)
         if location == -1:
-            print("Attribute name not found!")
+            print("Attribute name not found.")
         else:
             buf_size = 128
             size = GLint()
@@ -178,7 +183,7 @@ class ShaderProgram:
     def get_uniform_type(self, name):
         location = self.get_uniform_location(name)
         if location == -1:
-            print("Uniform name not found!")
+            print("Uniform name was not found.")
         else:
             buf_size = 128
             size = GLint()
@@ -215,34 +220,42 @@ class ShaderProgram:
     def get_uniform_location(self, name):
         return glGetUniformLocation(self.id, create_string_buffer(name.encode('ascii')))
 
-    # def upload_data(self, vertices, name, size=3, stride=0, vert_pointer=0):
-    #     location = self.get_attrib_location(name)
-    #     if location == -1:
-    #         return
-    #     attr_type = GL_FLOAT
-    #
-    #     glBindVertexArray(self._vao_id)
-    #     vertex_buffer = self._create_vertex_buffer()
-    #     # self._vertex_buffers.append(vertex_buffer)
-    #
-    #     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.value)
-    #     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW)
-    #
-    #     glVertexAttribPointer(location, size, attr_type, False, stride, vert_pointer)
-    #
-    #     glEnableVertexAttribArray(location)
-    #     glBindVertexArray(0)
 
-    # def draw(self, mode, size):
-    #     glBindVertexArray(self._vao_id)
-    #     glDrawArrays(mode, 0, size)
-    #     glBindVertexArray(0)
-    #
-    #     # glBindVertexArray(self._vertex_array)
-    #     #
-    #     # primcount = 1
-    #     # starts = (GLint * primcount)()
-    #     # sizes = (GLsizei * primcount)(size)
-    #     # glMultiDrawArrays(mode, starts, sizes, primcount)
-    #     #
-    #     # glBindVertexArray(0)
+# gl_Position = vec4(position.x * 2.0 / screen_width - 1.0,
+#                    position.y * -2.0 / screen_height + 1.0,
+#                    0.0, 1.0)
+
+vertex_source = """#version 330 core
+    in vec4 vertices;
+    in vec4 colors;
+    in vec2 tex_coords;
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
+
+    uniform float zoom;
+
+    void main()
+    {
+    
+        // gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
+        gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
+        // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+fragment_source = """#version 330 core
+    in vec4 vertex_colors;
+    in vec2 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+
+    void main()
+    {
+        // final_colors = vertex_colors;
+        final_colors = texture(our_texture, texture_coords) * vertex_colors;
+    }
+"""

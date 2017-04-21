@@ -64,7 +64,7 @@ _enable_vbo = pyglet.options['graphics_vbo']
 _workaround_vbo_finish = False
 
 
-def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True):
+def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
     """Create a buffer of vertex data.
 
     :Parameters:
@@ -83,7 +83,7 @@ def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True)
     return VertexBufferObject(size, target, usage)
 
 
-def create_mappable_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True):
+def create_mappable_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
     """Create a mappable buffer of vertex data.
 
     :Parameters:
@@ -234,21 +234,13 @@ class VertexBufferObject(AbstractBuffer):
         self.usage = usage
         self._context = pyglet.gl.current_context
 
-        #####################################
-        #   Need to bind Vertex Array Object:
-        #####################################
         vbo_id = GLuint()
         glGenBuffers(1, vbo_id)
         self.id = vbo_id.value
 
+        # TODO: see if this needs to be done here:
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
-
-        #############################################
-        #   Looks to be enabled in generic attribute:
-        #############################################
-        # glVertexAttribPointer(location, size, attr_type, False, stride, vert_pointer)
-        # glEnableVertexAttribArray(location)
 
     def bind(self):
         glBindBuffer(self.target, self.id)
@@ -263,12 +255,8 @@ class VertexBufferObject(AbstractBuffer):
         glPopClientAttrib()
 
     def set_data_region(self, data, start, length):
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-
         glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
-
-        # glPopClientAttrib()
 
     def map(self, invalidate=False):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -301,7 +289,9 @@ class VertexBufferObject(AbstractBuffer):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # TODO: test this since stubbing out legacy GL code
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+
         glBindBuffer(self.target, self.id)
         data = glMapBuffer(self.target, GL_READ_ONLY)
         ctypes.memmove(temp, data, min(size, self.size))
@@ -309,7 +299,7 @@ class VertexBufferObject(AbstractBuffer):
 
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
-        glPopClientAttrib()
+        # glPopClientAttrib()
 
 
 class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
@@ -374,6 +364,8 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
 
         self.size = size
+
+        # TODO: test this since stubbing out legacy GL code
         # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
 
         glBindBuffer(self.target, self.id)

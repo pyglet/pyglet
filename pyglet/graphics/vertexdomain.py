@@ -188,7 +188,7 @@ class VertexDomain(object):
                 # Create non-interleaved buffer
                 attributes.append(attribute)
                 attribute.buffer = vertexbuffer.create_mappable_buffer(
-                    attribute.stride * self.allocator.capacity, usage=usage, vbo=vbo)
+                    attribute.stride * self.allocator.capacity, usage=usage)
                 attribute.buffer.element_size = attribute.stride
                 attribute.buffer.attributes = (attribute,)
                 self.buffer_attributes.append(
@@ -312,6 +312,7 @@ class VertexDomain(object):
             if primcount == 0:
                 pass
             elif primcount == 1:
+                # TODO: remove print statements:
                 print("Domain draw primcount 1")
                 # Common case
                 glDrawArrays(mode, starts[0], sizes[0])
@@ -328,8 +329,7 @@ class VertexDomain(object):
         return not self.allocator.starts
 
     def __repr__(self):
-        return '<%s@%x %s>' % (self.__class__.__name__, id(self),
-                               self.allocator)
+        return '<%s@%x %s>' % (self.__class__.__name__, id(self), self.allocator)
 
 
 class VertexList(object):

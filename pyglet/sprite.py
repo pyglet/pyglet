@@ -111,7 +111,7 @@ from pyglet import image
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
-class SpriteGroup(graphics.Group):
+class SpriteGroup(graphics.DefaultGroup):
     """Shared sprite rendering group.
 
     The group is automatically coalesced with other sprite groups sharing the
@@ -142,16 +142,20 @@ class SpriteGroup(graphics.Group):
         self.blend_dest = blend_dest
 
     def set_state(self):
-        glEnable(self.texture.target)
+        super(SpriteGroup, self).set_state()
+        self.shader_program['zoom'] = 50
+
+        # glEnable(self.texture.target)
         glBindTexture(self.texture.target, self.texture.id)
 
+        # TODO: replicate this part:
         # glPushAttrib(GL_COLOR_BUFFER_BIT)
         # glEnable(GL_BLEND)
         # glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self):
-        # glPopAttrib()
-        glDisable(self.texture.target)
+        glBindTexture(self.texture.target, 0)
+        super(SpriteGroup, self).unset_state()
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.texture)
@@ -297,18 +301,18 @@ class Sprite(event.EventDispatcher):
         """
         return self._batch
 
-    # @batch.setter
-    # def batch(self, batch):
-    #     if self._batch == batch:
-    #         return
-    #
-    #     if batch is not None and self._batch is not None:
-    #         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
-    #         self._batch = batch
-    #     else:
-    #         self._vertex_list.delete()
-    #         self._batch = batch
-    #         self._create_vertex_list()
+    @batch.setter
+    def batch(self, batch):
+        if self._batch == batch:
+            return
+
+        if batch is not None and self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
+            self._batch = batch
+        else:
+            self._vertex_list.delete()
+            self._batch = batch
+            self._create_vertex_list()
 
     @property
     def group(self):
@@ -321,17 +325,16 @@ class Sprite(event.EventDispatcher):
         """
         return self._group.parent
 
-    # @group.setter
-    # def group(self, group):
-    #     if self._group.parent == group:
-    #         return
-    #     self._group = SpriteGroup(self._texture,
-    #                               self._group.blend_src,
-    #                               self._group.blend_dest,
-    #                               group)
-    #     if self._batch is not None:
-    #         self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group,
-    #                             self._batch)
+    @group.setter
+    def group(self, group):
+        if self._group.parent == group:
+            return
+        self._group = SpriteGroup(self._texture,
+                                  self._group.blend_src,
+                                  self._group.blend_dest,
+                                  group)
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self):
@@ -388,7 +391,7 @@ class Sprite(event.EventDispatcher):
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
                 vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
-        # self._update_position()
+        self._update_position()
         self._update_color()
 
     def _update_position(self):
@@ -534,7 +537,7 @@ class Sprite(event.EventDispatcher):
     @property
     def scale_x(self):
         """Horizontal scaling factor.
-        
+
          A scaling factor of 1 (the default) has no effect.  A scale of 2 will
          draw the sprite at twice the native width of its image.
 
@@ -550,7 +553,7 @@ class Sprite(event.EventDispatcher):
     @property
     def scale_y(self):
         """Vertical scaling factor.
-        
+
          A scaling factor of 1 (the default) has no effect.  A scale of 2 will
          draw the sprite at twice the native height of its image.
 
@@ -698,5 +701,6 @@ class Sprite(event.EventDispatcher):
 
             :event:
             """
+
 
 Sprite.register_event_type('on_animation_end')
