@@ -4,13 +4,24 @@ This major release takes Python 3 support to the next level. The entire codebase
 with both Python 2 and Python 3 without the need for 2to3. This should make it easier to develop
 pyglet and pyglet apps for both Python versions.
 
-The rest of this release is focussed on code quality and test coverage. No new features were added.
+The rest of this release is focussed on code quality and test coverage. There were no API breaking
+changes, and a few minor improvements to the Sprite and Procedural Audio modules. 
 
 Improvements
 ------------
+- Improved font rendering for fonts with negative bearing (#99)
+- Sprites now have `scale_x` and `scale_y` attributes, allowing for aspect ratio changes. The 
+  existing `scale` attribute still controlls overall scaling.
 
 Bugfixes
 --------
+- Limit the minimum window size 1x1 pixel, preventing an OpenGL exception (#49).
+- Font module no longer leaks memory when text is changed (#66).
+- Fix crash on Python 2 when sys.argv[0] has non-ASCII characters (#74).
+- Windows: Fix crash when opening multiple windows in succession (#81).
+- Windows: Fix local font loading (#100).
+- Prevent memory leak from orphaned StreamingSources in long running applications (#103).
+- Windows: Fix kerning regression (#115)
 
 Pyglet 1.2.3                                                                                        
 ============                                                                                        
