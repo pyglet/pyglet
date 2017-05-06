@@ -4,14 +4,23 @@ This major release takes Python 3 support to the next level. The entire codebase
 with both Python 2 and Python 3 without the need for 2to3. This should make it easier to develop
 pyglet and pyglet apps for both Python versions.
 
-The rest of this release is focussed on code quality and test coverage. There were no API breaking
-changes, and a few minor improvements to the Sprite and Procedural Audio modules. 
+The rest of this release is focussed on code quality and test coverage. There are no API breaking
+changes, but a few minor additions.  Procedural Audio modules. 
 
 Improvements
 ------------
 - Improved font rendering for fonts with negative bearing (#99)
 - Sprites now have `scale_x` and `scale_y` attributes, allowing for aspect ratio changes. The 
-  existing `scale` attribute still controlls overall scaling.
+  existing `scale` attribute sets the overall scaling, and functions as before.
+- Sprites have a new `update` method which allows simultaneous changing of position, scale, and
+  rotation. This reduces some overhead when changing multiple attributes at once.
+- The procedural audio module is now in a usable state. This module allows synthesis of basic
+  waveforms, such as sine, square, triangle, sawtooth, and simple FM (sine only). In addition,
+  several basic amplitude envelopes are now available to apply to generated audio. These include
+  ADSR, linear decay, tremolo, and flat.
+- The pyglet.resources module now defaults to a 2048x2048 texture for it's texture atlas, but
+  will fall back to the maximum available size if necessary.
+- All modern Joysticks should now be detected on Linux and Windows.
 
 Bugfixes
 --------
@@ -20,6 +29,7 @@ Bugfixes
 - Fix crash on Python 2 when sys.argv[0] has non-ASCII characters (#74).
 - Windows: Fix crash when opening multiple windows in succession (#81).
 - Windows: Fix local font loading (#100).
+- Windows: Italic fonts no longer render parts of their neighbors.
 - Prevent memory leak from orphaned StreamingSources in long running applications (#103).
 - Windows: Fix kerning regression (#115)
 
