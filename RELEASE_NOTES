@@ -5,7 +5,14 @@ with both Python 2 and Python 3 without the need for 2to3. This should make it e
 pyglet and pyglet apps for both Python versions.
 
 The rest of this release is focussed on code quality and test coverage. There are no API breaking
-changes, but a few minor additions.  Procedural Audio modules. 
+changes, but a few minor additions.
+
+New features
+------------
+- The procedural audio module is now in a usable state. This module allows synthesis of basic
+  waveforms, such as sine, square, triangle, sawtooth, and simple FM (sine only). In addition,
+  several basic amplitude envelopes are now available to apply to generated audio. These include
+  ADSR, linear decay, tremolo, and flat.
 
 Improvements
 ------------
@@ -14,13 +21,11 @@ Improvements
   existing `scale` attribute sets the overall scaling, and functions as before.
 - Sprites have a new `update` method which allows simultaneous changing of position, scale, and
   rotation. This reduces some overhead when changing multiple attributes at once.
-- The procedural audio module is now in a usable state. This module allows synthesis of basic
-  waveforms, such as sine, square, triangle, sawtooth, and simple FM (sine only). In addition,
-  several basic amplitude envelopes are now available to apply to generated audio. These include
-  ADSR, linear decay, tremolo, and flat.
 - The pyglet.resources module now defaults to a 2048x2048 texture for it's texture atlas, but
   will fall back to the maximum available size if necessary.
 - All modern Joysticks should now be detected on Linux and Windows.
+- Refactored and reimplemented pyglet.media. Many improvements to stability. Different drivers
+  should now behave more similar.
 
 Bugfixes
 --------
