@@ -580,18 +580,18 @@ class Sprite(event.EventDispatcher):
             `scale` : float
                 Scaling factor.
             `scale_x` : float
-                Horisontal scaling factor.
+                Horizontal scaling factor.
             `scale_y` : float
                 Vertical scaling factor.
         """
-        if self.x is not None:
+        if x is not None:
             self._x = x
         if y is not None:
             self._y = y
         if rotation is not None:
             self._rotation = rotation
         if scale is not None:
-            self._scale_x = self._scale_y = scale
+            self._scale = scale
         if scale_x is not None:
             self._scale_x = scale_x
         if scale_y is not None:
