@@ -584,7 +584,7 @@ class Sprite(event.EventDispatcher):
             `scale_y` : float
                 Vertical scaling factor.
         """
-        if self.x is not None:
+        if x is not None:
             self._x = x
         if y is not None:
             self._y = y
