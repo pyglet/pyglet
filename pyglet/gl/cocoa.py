@@ -6,7 +6,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import platform 
+import platform
 
 from pyglet.gl.base import Config, CanvasConfig, Context
 
@@ -60,7 +60,7 @@ os_x_release = {
     }
 
 def os_x_version():
-    version = tuple(platform.release().split('.'))
+    version = tuple([int(v) for v in platform.release().split('.')])
 
     # ensure we return a tuple
     if len(version) > 0:
@@ -73,7 +73,7 @@ _os_x_version = os_x_version()
 _gl_attributes = {
     'double_buffer': NSOpenGLPFADoubleBuffer,
     'stereo': NSOpenGLPFAStereo,
-    'buffer_size': NSOpenGLPFAColorSize, 
+    'buffer_size': NSOpenGLPFAColorSize,
     'sample_buffers': NSOpenGLPFASampleBuffers,
     'samples': NSOpenGLPFASamples,
     'aux_buffers': NSOpenGLPFAAuxBuffers,
@@ -98,7 +98,7 @@ _gl_attributes = {
 
 # NSOpenGL constants which do not require a value.
 _boolean_gl_attributes = frozenset([
-    NSOpenGLPFAAllRenderers, 
+    NSOpenGLPFAAllRenderers,
     NSOpenGLPFADoubleBuffer,
     NSOpenGLPFAStereo,
     NSOpenGLPFAMinimumPolicy,
@@ -112,8 +112,8 @@ _boolean_gl_attributes = frozenset([
 ])
 
 # Attributes for which no NSOpenGLPixelFormatAttribute name exists.
-# We could probably compute actual values for these using 
-# NSOpenGLPFAColorSize / 4 and NSOpenGLFAAccumSize / 4, but I'm not that 
+# We could probably compute actual values for these using
+# NSOpenGLPFAColorSize / 4 and NSOpenGLFAAccumSize / 4, but I'm not that
 # confident I know what I'm doing.
 _fake_gl_attributes = {
     'red_size': 0,
@@ -148,10 +148,10 @@ class CocoaConfig(Config):
         # from fullscreen without losing the context.  Also must supply the
         # NSOpenGLPFAScreenMask attribute with appropriate display ID.
         # Note that these attributes aren't necessary to render in fullscreen
-        # on Mac OS X 10.6, because there we are simply rendering into a 
+        # on Mac OS X 10.6, because there we are simply rendering into a
         # screen sized window.  See:
         # http://developer.apple.com/library/mac/#documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_fullscreen/opengl_cgl.html%23//apple_ref/doc/uid/TP40001987-CH210-SW6
-        # Otherwise, make sure we refer to the correct Profile for OpenGL (Core or 
+        # Otherwise, make sure we refer to the correct Profile for OpenGL (Core or
         # Legacy) on Lion and afterwards
         if _os_x_version < os_x_release['snow_leopard']:
             attrs.append(NSOpenGLPFAFullScreen)
@@ -183,7 +183,7 @@ class CocoaConfig(Config):
         attrsArrayType = c_uint32 * len(attrs)
         attrsArray = attrsArrayType(*attrs)
         pixel_format = NSOpenGLPixelFormat.alloc().initWithAttributes_(attrsArray)
-       
+
         # Return the match list.
         if pixel_format is None:
             return []
@@ -203,7 +203,7 @@ class CocoaCanvasConfig(CanvasConfig):
             vals = c_int()
             self._pixel_format.getValues_forAttribute_forVirtualScreen_(byref(vals), attr, 0)
             setattr(self, name, vals.value)
-        
+
         # Set these attributes so that we can run pyglet.info.
         for name, value in _fake_gl_attributes.items():
             setattr(self, name, value)
@@ -226,7 +226,7 @@ class CocoaCanvasConfig(CanvasConfig):
             else:
                 setattr(self, "major_version", 2)
                 setattr(self, "minor_version", 1)
- 
+
     def create_context(self, share):
         # Determine the shared NSOpenGLContext.
         if share:
@@ -294,6 +294,6 @@ class CocoaContext(Context):
         vals = c_int()
         self._nscontext.getValues_forParameter_(byref(vals), NSOpenGLCPSwapInterval)
         return vals.value
-        
+
     def flip(self):
         self._nscontext.flushBuffer()

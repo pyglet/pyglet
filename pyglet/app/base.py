@@ -17,26 +17,27 @@ from pyglet import event
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+
 class PlatformEventLoop(object):
-    ''' Abstract class, implementation depends on platform.
+    """ Abstract class, implementation depends on platform.
     
     :since: pyglet 1.2
-    '''
+    """
     def __init__(self):
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
         self._is_running.clear()
 
     def is_running(self):  
-        '''Return True if the event loop is currently processing, or False
+        """Return True if the event loop is currently processing, or False
         if it is blocked or not activated.
 
         :rtype: bool
-        '''
+        """
         return self._is_running.is_set()
 
     def post_event(self, dispatcher, event, *args):
-        '''Post an event into the main application thread.
+        """Post an event into the main application thread.
 
         The event is queued internally until the `run` method's thread
         is able to dispatch the event.  This method can be safely called
@@ -55,15 +56,15 @@ class PlatformEventLoop(object):
             `args` : sequence
                 Arguments to pass to the event handlers.
 
-        '''
+        """
         self._event_queue.put((dispatcher, event, args))
         self.notify()
 
     def dispatch_posted_events(self):
-        '''Immediately dispatch all pending events.
+        """Immediately dispatch all pending events.
 
         Normally this is called automatically by the runloop iteration.
-        '''
+        """
         while True:
             try:
                 dispatcher, event, args = self._event_queue.get(False)
@@ -73,19 +74,19 @@ class PlatformEventLoop(object):
             dispatcher.dispatch_event(event, *args)
 
     def notify(self):
-        '''Notify the event loop that something needs processing.
+        """Notify the event loop that something needs processing.
 
         If the event loop is blocked, it will unblock and perform an iteration
         immediately.  If the event loop is running, another iteration is
         scheduled for immediate execution afterwards.
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def start(self):
         pass
 
     def step(self, timeout=None):
-        ''':TODO: in mac/linux: return True if didn't time out'''
+        """:TODO: in mac/linux: return True if didn't time out"""
         raise NotImplementedError('abstract')
 
     def set_timer(self, func, interval):
@@ -94,8 +95,9 @@ class PlatformEventLoop(object):
     def stop(self):
         pass
 
+
 class EventLoop(event.EventDispatcher):
-    '''The main run loop of the application.
+    """The main run loop of the application.
 
     Calling `run` begins the application event loop, which processes
     operating system events, calls `pyglet.clock.tick` to call scheduled
@@ -107,7 +109,7 @@ class EventLoop(event.EventDispatcher):
     in some other way.  You should not in general override `run`, as
     this method contains platform-specific code that ensures the application
     remains responsive to the user while keeping CPU usage to a minimum.
-    '''
+    """
 
     _has_exit_condition = None
     _has_exit = False
@@ -118,13 +120,13 @@ class EventLoop(event.EventDispatcher):
         self.is_running = False
 
     def run(self):
-        '''Begin processing events, scheduled functions and window updates.
+        """Begin processing events, scheduled functions and window updates.
 
         This method returns when `has_exit` is set to True.
 
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
-        '''
+        """
         self.has_exit = False
         self._legacy_setup()
 
@@ -133,7 +135,8 @@ class EventLoop(event.EventDispatcher):
         self.dispatch_event('on_enter')
 
         self.is_running = True
-        if compat_platform == 'win32' and int(platform.win32_ver()[0]) <= 5:
+        legacy_platforms = ('XP', '2000', '2003Server', 'post2003')
+        if compat_platform == 'win32' and platform.win32_ver()[0] in legacy_platforms:
             self._run_estimated()
         else:
             self._run()
@@ -143,16 +146,16 @@ class EventLoop(event.EventDispatcher):
         platform_event_loop.stop()
 
     def _run(self):
-        '''The simplest standard run loop, using constant timeout.  Suitable
+        """The simplest standard run loop, using constant timeout.  Suitable
         for well-behaving platforms (Mac, Linux and some Windows).
-        '''
+        """
         platform_event_loop = app.platform_event_loop
         while not self.has_exit:
             timeout = self.idle()
             platform_event_loop.step(timeout)
 
     def _run_estimated(self):
-        '''Run-loop that continually estimates function mapping requested
+        """Run-loop that continually estimates function mapping requested
         timeout to measured timeout using a least-squares linear regression.
         Suitable for oddball platforms (Windows).
 
@@ -160,7 +163,7 @@ class EventLoop(event.EventDispatcher):
         to calculate the estimate, and the time actually spent waiting for events. I have
         seen this cause a negative gradient, showing a negative relation. Then CPU use
         runs out of control due to very small estimates.
-        '''
+        """
         platform_event_loop = app.platform_event_loop
 
         predictor = self._least_squares()
@@ -178,8 +181,7 @@ class EventLoop(event.EventDispatcher):
                 print('Timeout = %f, Estimate = %f' % (timeout, estimate))
 
             t = time()
-            if not platform_event_loop.step(estimate) and estimate != 0.0 and \
-                    estimate is not None:
+            if not platform_event_loop.step(estimate) and estimate != 0.0 and estimate is not None:
                 dt = time() - t
                 gradient, offset = predictor.send((dt, estimate))
 
@@ -218,7 +220,7 @@ class EventLoop(event.EventDispatcher):
             window.dispatch_pending_events()
 
     def enter_blocking(self):
-        '''Called by pyglet internal processes when the operating system
+        """Called by pyglet internal processes when the operating system
         is about to block due to a user interaction.  For example, this
         is common when the user begins resizing or moving a window.
 
@@ -230,14 +232,14 @@ class EventLoop(event.EventDispatcher):
         as documented.
 
         :since: pyglet 1.2
-        '''
+        """
         timeout = self.idle()
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
     def exit_blocking(self):
-        '''Called by pyglet internal processes when the blocking operation
+        """Called by pyglet internal processes when the blocking operation
         completes.  See `enter_blocking`.
-        '''
+        """
         app.platform_event_loop.set_timer(None, None)
 
     def _blocking_timer(self):
@@ -245,7 +247,7 @@ class EventLoop(event.EventDispatcher):
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
     def idle(self):
-        '''Called during each iteration of the event loop.
+        """Called during each iteration of the event loop.
 
         The method is called immediately after any window events (i.e., after
         any user input).  The method can return a duration after which
@@ -268,7 +270,7 @@ class EventLoop(event.EventDispatcher):
         :rtype: float
         :return: The number of seconds before the idle method should
             be called again, or `None` to block for user input.
-        '''
+        """
         dt = self.clock.update_time()
         redraw_all = self.clock.call_scheduled_functions(dt)
 
@@ -295,29 +297,35 @@ class EventLoop(event.EventDispatcher):
         self._has_exit_condition.notify()
         self._has_exit_condition.release()
 
-    has_exit = property(_get_has_exit, _set_has_exit,
-                        doc='''Flag indicating if the event loop will exit in
-    the next iteration.  When set, all waiting threads are interrupted (see
-    `sleep`).
+    @property
+    def has_exit(self):
+        """Flag indicating if the event loop will exit in
+        the next iteration.  When set, all waiting threads are interrupted (see
+        `sleep`).
+        
+        Thread-safe since pyglet 1.2.
     
-    Thread-safe since pyglet 1.2.
+        :see: `exit`
+        :type: bool
+        """
+        return self._get_has_exit()
 
-    :see: `exit`
-    :type: bool
-    ''')
+    @has_exit.setter
+    def has_exit(self, value):
+        self._set_has_exit(value)
 
     def exit(self):
-        '''Safely exit the event loop at the end of the current iteration.
+        """Safely exit the event loop at the end of the current iteration.
 
         This method is a thread-safe equivalent for for setting `has_exit` to
         ``True``.  All waiting threads will be interrupted (see
         `sleep`).
-        '''
+        """
         self._set_has_exit(True)
         app.platform_event_loop.notify()
 
     def sleep(self, timeout):
-        '''Wait for some amount of time, or until the `has_exit` flag is
+        """Wait for some amount of time, or until the `has_exit` flag is
         set or `exit` is called.
 
         This method is thread-safe.
@@ -329,9 +337,8 @@ class EventLoop(event.EventDispatcher):
         :since: pyglet 1.2
 
         :rtype: bool
-        :return: ``True`` if the `has_exit` flag is now set, otherwise
-            ``False``.
-        '''
+        :return: ``True`` if the `has_exit` flag is set, otherwise ``False``.
+        """
         self._has_exit_condition.acquire()
         self._has_exit_condition.wait(timeout)
         result = self._has_exit
@@ -339,13 +346,13 @@ class EventLoop(event.EventDispatcher):
         return result
 
     def on_window_close(self, window):
-        '''Default window close handler.'''
+        """Default window close handler."""
         if len(app.windows) == 0:
             self.exit()
 
     if _is_epydoc:
         def on_window_close(self, window):
-            '''A window was closed.
+            """A window was closed.
 
             This event is dispatched when a window is closed.  It is not
             dispatched if the window's close button was pressed but the
@@ -356,27 +363,27 @@ class EventLoop(event.EventDispatcher):
             other policy.
 
             :event:
-            '''
+            """
 
         def on_enter(self):
-            '''The event loop is about to begin.
+            """The event loop is about to begin.
 
             This is dispatched when the event loop is prepared to enter
             the main run loop, and represents the last chance for an 
             application to initialise itself.
 
             :event:
-            '''
+            """
 
         def on_exit(self):
-            '''The event loop is about to exit.
+            """The event loop is about to exit.
 
             After dispatching this event, the `run` method returns (the
             application may not actually exit if you have more code
             following the `run` invocation).
 
             :event:
-            '''
+            """
 
 EventLoop.register_event_type('on_window_close')
 EventLoop.register_event_type('on_enter')
