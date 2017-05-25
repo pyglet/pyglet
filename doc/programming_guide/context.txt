@@ -236,25 +236,25 @@ created based on the values of these properties:
         available.  They are almost universally available on older hardware,
         though, where the newer techniques are not possible.
 
-If you wish to work working with OpenGL directly, you can request a higher
-level context. This is useful for shader programs and other programmable
-pipeline workflows allowed by modern OpenGL. Please be aware, however, that
-pyglet uses mostly legacy OpenGL functionality for many of it's internal
-modules (such as the text, graphics, and sprite). Requesting a higher context
-may prevent usage of these modules.
+If you wish to work with OpenGL directly, you can request a higher level context.
+This is required if you wish to work with the modern OpenGL programmable pipeline.
+Please note, however, that pyglet uses legacy OpenGL functionality for many of it's
+internal modules (such as the text, graphics, and sprite modules).
+Requesting a higher version context may prevent usage of these modules.
 
     ``major_version``
-        This will be either 3 or 4.
+        This will be either 3 or 4, for an OpenGL 3.x or 4.x context.
     ``minor_version``
-        The minor version you wish to request.
+        The minimum requested minor version of the context. In many cases,
+        the OpenGL driver may return a higher version than requested.
     ``forward_compatible``
-        Setting this to `True` will ask the driver to leave out legacy OpenGL
-        features from the context. This is generally not needed or recommended.
+        Setting this to `True` will ask the driver to exclude legacy OpenGL
+        features from the context. Khronos does not recommend this option.
 
 .. note::
    To request a higher higher version OpenGL context on Mac OSX, it is necessary
    to disable the pyglet shadow context. To do this, set the pyglet option
-   ``pyglet.options['shadow_window']`` to ``False`` before creating a ``Window``.
+   ``pyglet.options['shadow_window']`` to ``False`` before creating a Window.
 
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
