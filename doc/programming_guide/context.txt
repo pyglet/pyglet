@@ -236,6 +236,26 @@ created based on the values of these properties:
         available.  They are almost universally available on older hardware,
         though, where the newer techniques are not possible.
 
+If you wish to work working with OpenGL directly, you can request a higher
+level context. This is useful for shader programs and other programmable
+pipeline workflows allowed by modern OpenGL. Please be aware, however, that
+pyglet uses mostly legacy OpenGL functionality for many of it's internal
+modules (such as the text, graphics, and sprite). Requesting a higher context
+may prevent usage of these modules.
+
+    ``major_version``
+        This will be either 3 or 4.
+    ``minor_version``
+        The minor version you wish to request.
+    ``forward_compatible``
+        Setting this to `True` will ask the driver to leave out legacy OpenGL
+        features from the context. This is generally not needed or recommended.
+
+.. note::
+   To request a higher higher version OpenGL context on Mac OSX, it is necessary
+   to disable the pyglet shadow context. To do this, set the pyglet option
+   ``pyglet.options['shadow_window']`` to ``False`` before creating a ``Window``.
+
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 

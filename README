@@ -9,9 +9,10 @@ and other visually-rich applications for Windows, Mac OS X and Linux.
 Requirements
 ------------
 
-pyglet runs with Python 2.6+ and also with Python 3 through 2to3 tool (which
-is executed automatically when installing). pyglet works on the following
-operating systems:
+pyglet runs under Python 2.7, and 3.4+. The entire codebase is fully 2/3 dual
+compatible, making use of the future module for backwards compatibility with
+legacy Python. Being written in pure Python, it also works on other Python
+interpreters such as PyPy. pyglet works on the following operating systems:
 
 * Windows XP or later
 * Mac OS X 10.3 or later
@@ -24,17 +25,14 @@ operating systems:
 Installation
 ------------
 
-If you're reading this README from a source distribution, install pyglet
-with:
+If you're reading this README from a source distribution, you can install
+pyglet with:
 
     python setup.py install
 
-This is required for Python 3 as the code needs to be processed by 2to3  
-during the installation.
-
-For Python 2 there are no compilation steps during the installation; if
-you prefer, you can simply add this directory to your PYTHONPATH and use
-pyglet without installing it.
+There are no compilation steps during the installation; if you prefer,
+you can simply add this directory to your PYTHONPATH and use pyglet without
+installing it. You can also copy pyglet directly into your project folder.
 
 The documentation is available online at pyglet.org, but if you want to
 build the documentation yourself, please check the README file in the doc
@@ -50,14 +48,14 @@ Please join us on the mailing list at:
 
     http://groups.google.com/group/pyglet-users
 
-For more information and an RSS news feed, visit http://www.pyglet.org
+For more information, visit http://www.pyglet.org
 
 Testing
 -------
 
-Because of its interactive nature pyglet uses a custom test runner which is
-invoked with:
+pyglet makes use of pytest for it's test suite.
 
-    % python tests/test.py
+    % py.test tests/
 
-The test runner is described in more detail in the tests/test.py docstring.
+Please check the documentation for more information about running and writing
+tests.
