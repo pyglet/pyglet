@@ -90,6 +90,9 @@ def skip_member(member, obj):
     if ".cocoa" in module: return True
     if ".xlib" in module: return True
 
+    # these are just imports from future :-(
+    if member in {'division', 'print_function'}: return True
+
     if module=="pyglet.input.evdev_constants": return True
     if module=="pyglet.window.key":
         if member==member.upper(): return True

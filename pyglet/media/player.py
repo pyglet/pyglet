@@ -47,112 +47,6 @@ _debug = pyglet.options['debug_media']
 
 class Player(pyglet.event.EventDispatcher):
     """High-level sound and video player.
-
-    .. inheritance-diagram:: Player
-
-    .. autoattribute:: event_types
-
-    .. py:attribute:: time
-
-        Read-only. Current playback time of the current source.
-
-        The playback time is a float expressed in seconds, with 0.0 being the
-        beginning of the sound. The playback time returned represents the time
-        encoded in the source, and may not reflect actual time passed due to pitch
-        shifting or pausing.
-
-    .. py:attribute:: source
-
-        Read-only. The current :py:class:`Source`, or ``None``.
-
-    .. py:attribute:: playing
-
-        Read-only. Determine if the player state is playing.
-
-        The *playing* property is irrespective of whether or not there is
-        actually a source to play. If *playing* is ``True`` and a source is
-        queued, it will begin playing immediately. If *playing* is ``False``,
-        it is implied that the player is paused. There is no other possible
-        state.
-
-    .. py:attribute:: volume
-
-        The volume level of sound playback.
-
-        The nominal level is 1.0, and 0.0 is silence.
-
-        The volume level is affected by the distance from the listener (if
-        positioned).
-
-    .. py:attribute:: position
-
-        The position of the sound in 3D space.
-
-        The position is given as a tuple of floats (x, y, z). The unit
-        defaults to meters, but can be modified with the listener properties.
-
-    .. py:attribute:: min_distance
-
-        The distance beyond which the sound volume drops by half, and within
-        which no attenuation is applied.
-
-        The minimum distance controls how quickly a sound is attenuated as it
-        moves away from the listener. The gain is clamped at the nominal value
-        within the min distance. By default the value is 1.0.
-
-        The unit defaults to meters, but can be modified with the listener properties.
-
-    .. py:attribute:: max_distance
-
-        The distance at which no further attenuation is applied.
-
-        When the distance from the listener to the player is greater than this
-        value, attenuation is calculated as if the distance were value. By
-        default the maximum distance is infinity.
-
-        The unit defaults to meters, but can be modified with the listener
-        properties.
-
-    .. py:attribute:: pitch
-
-        The pitch shift to apply to the sound.
-
-        The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
-        and play twice as fast. A pitch of 0.5 will sound one octave lower, and
-        play twice as slow. A pitch of 0.0 is not permitted.
-
-    .. py:attribute:: cone_orientation
-
-        The direction of the sound in 3D space.
-
-        The direction is specified as a tuple of floats (x, y, z), and has no
-        unit. The default direction is (0, 0, -1). Directional effects are only
-        noticeable if the other cone properties are changed from their default
-        values.
-
-    .. py:attribute:: cone_inner_angle
-
-       The interior angle of the inner cone.
-
-        The angle is given in degrees, and defaults to 360. When the listener
-        is positioned within the volume defined by the inner cone, the sound is
-        played at normal gain (see :py:attr:`volume`).
-
-    .. py:attribute:: cone_outer_angle
-
-       The interior angle of the outer cone.
-
-        The angle is given in degrees, and defaults to 360. When the listener
-        is positioned within the volume defined by the outer cone, but outside
-        the volume defined by the inner cone, the gain applied is a smooth
-        interpolation between :py:attr:`volume` and :py:attr:`cone_outer_gain`.
-
-    .. py:attribute:: cone_outer_gain
-
-       The gain applied outside the cone.
-
-        When the listener is positioned outside the volume defined by the outer
-        cone, this gain is applied instead of :py:attr:`volume`.
     """
 
     _last_video_timestamp = None
@@ -230,6 +124,20 @@ class Player(pyglet.event.EventDispatcher):
                 self._audio_player.stop()
 
             pyglet.clock.unschedule(self.update_texture)
+
+    def _get_playing(self):
+        """
+        Read-only. Determine if the player state is playing.
+
+        The *playing* property is irrespective of whether or not there is
+        actually a source to play. If *playing* is ``True`` and a source is
+        queued, it will begin playing immediately. If *playing* is ``False``,
+        it is implied that the player is paused. There is no other possible
+        state.
+        """
+        return self._playing
+
+    playing = property(_get_playing)
 
     def play(self):
         """
@@ -348,15 +256,22 @@ class Player(pyglet.event.EventDispatcher):
         _set('cone_outer_gain')
 
     def _get_source(self):
+        """Read-only. The current :py:class:`Source`, or ``None``."""
         if not self._groups:
             return None
         return self._groups[0].get_current_source()
 
     source = property(_get_source)
 
-    playing = property(lambda self: self._playing)
-
     def _get_time(self):
+        """
+        Read-only. Current playback time of the current source.
+
+        The playback time is a float expressed in seconds, with 0.0 being the
+        beginning of the sound. The playback time returned represents the time
+        encoded in the source, and may not reflect actual time passed due to 
+        pitch shifting or pausing.
+        """
         time = None
         if self._playing and self._audio_player:
             time = self._audio_player.get_time()
@@ -438,15 +353,76 @@ class Player(pyglet.event.EventDispatcher):
 
         return property(_player_property_get, _player_property_set, doc=doc)
 
-    volume = _player_property('volume')
-    min_distance = _player_property('min_distance')
-    max_distance = _player_property('max_distance')
-    position = _player_property('position')
-    pitch = _player_property('pitch')
-    cone_orientation = _player_property('cone_orientation')
-    cone_inner_angle = _player_property('cone_inner_angle')
-    cone_outer_angle = _player_property('cone_outer_angle')
-    cone_outer_gain = _player_property('cone_outer_gain')
+    volume = _player_property('volume', doc="""
+    The volume level of sound playback.
+
+    The nominal level is 1.0, and 0.0 is silence.
+
+    The volume level is affected by the distance from the listener (if
+    positioned).
+    """)
+    min_distance = _player_property('min_distance', doc="""
+    The distance beyond which the sound volume drops by half, and within
+    which no attenuation is applied.
+
+    The minimum distance controls how quickly a sound is attenuated as it
+    moves away from the listener. The gain is clamped at the nominal value
+    within the min distance. By default the value is 1.0.
+
+    The unit defaults to meters, but can be modified with the listener properties.
+    """)
+    max_distance = _player_property('max_distance', doc="""
+    The distance at which no further attenuation is applied.
+
+    When the distance from the listener to the player is greater than this
+    value, attenuation is calculated as if the distance were value. By
+    default the maximum distance is infinity.
+
+    The unit defaults to meters, but can be modified with the listener
+    properties.
+    """)
+    position = _player_property('position', doc="""
+    The position of the sound in 3D space.
+
+    The position is given as a tuple of floats (x, y, z). The unit
+    defaults to meters, but can be modified with the listener properties.
+    """)
+    pitch = _player_property('pitch', doc="""
+    The pitch shift to apply to the sound.
+
+    The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
+    and play twice as fast. A pitch of 0.5 will sound one octave lower, and
+    play twice as slow. A pitch of 0.0 is not permitted.
+    """)
+    cone_orientation = _player_property('cone_orientation', doc="""
+    The direction of the sound in 3D space.
+
+    The direction is specified as a tuple of floats (x, y, z), and has no
+    unit. The default direction is (0, 0, -1). Directional effects are only
+    noticeable if the other cone properties are changed from their default
+    values.
+    """)
+    cone_inner_angle = _player_property('cone_inner_angle', doc="""
+    The interior angle of the inner cone.
+
+    The angle is given in degrees, and defaults to 360. When the listener
+    is positioned within the volume defined by the inner cone, the sound is
+    played at normal gain (see :py:attr:`volume`).
+    """)
+    cone_outer_angle = _player_property('cone_outer_angle', doc="""
+    The interior angle of the outer cone.
+
+    The angle is given in degrees, and defaults to 360. When the listener
+    is positioned within the volume defined by the outer cone, but outside
+    the volume defined by the inner cone, the gain applied is a smooth
+    interpolation between :py:attr:`volume` and :py:attr:`cone_outer_gain`.
+    """)
+    cone_outer_gain = _player_property('cone_outer_gain', doc="""
+    The gain applied outside the cone.
+
+    When the listener is positioned outside the volume defined by the outer
+    cone, this gain is applied instead of :py:attr:`volume`.
+    """)
 
     # Events
 
