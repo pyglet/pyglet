@@ -70,15 +70,15 @@ class ShaderProgram:
         self._attributes = {}
         self._parse_all_uniforms()
         # self._parse_all_attributes()
+        self._get_program_log()
 
-    @staticmethod
-    def _get_program_log(program_id):
+    def _get_program_log(self):
         result = c_int(0)
         # glGetProgramiv(program_id, GL_LINK_STATUS, byref(result))
         # glGetProgramiv(program_id, GL_ATTACHED_SHADERS, byref(result))
-        glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, byref(result))
+        glGetProgramiv(self.id, GL_INFO_LOG_LENGTH, byref(result))
         result_str = create_string_buffer(result.value)
-        glGetProgramInfoLog(program_id, result, None, result_str)
+        glGetProgramInfoLog(self.id, result, None, result_str)
         if result_str.value:
             print("Error linking program: {}".format(result_str.value))
         else:
@@ -89,7 +89,6 @@ class ShaderProgram:
         for shader in shaders:
             glAttachShader(program_id, shader.id)
         glLinkProgram(program_id)
-        self._get_program_log(program_id)
         return program_id
 
     def use_program(self):
@@ -242,7 +241,8 @@ vertex_source = """#version 330 core
         // gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
         gl_Position = vec4(vertices.x / width - 1,
                            vertices.y / height -1,
-                           vertices.z, vertices.w * zoom);
+                           vertices.z,
+                           vertices.w * zoom);
         // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;
