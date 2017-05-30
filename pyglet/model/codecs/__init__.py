@@ -1,5 +1,4 @@
 import os.path
-from pyglet import compat_platform
 
 
 _decoders = []              # List of registered ModelDecoders
@@ -101,10 +100,8 @@ def add_default_model_codecs():
     # Add the codecs we know about.  These should be listed in order of
     # preference.  This is called automatically by pyglet.model.
 
-    # TODO: add a real codec here
     try:
-        from pyglet.model.codecs import dds
-        add_encoders(dds)
-        add_decoders(dds)
+        from pyglet.model.codecs import obj
+        add_decoders(obj)
     except ImportError:
         pass

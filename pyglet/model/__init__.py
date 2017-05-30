@@ -1,5 +1,7 @@
 from pyglet.model import codecs as _codecs
 from pyglet.compat import BytesIO
+from pyglet.gl import GL_TRIANGLES
+from pyglet import graphics
 
 
 def load(filename, file=None, decoder=None):
@@ -46,6 +48,53 @@ def load(filename, file=None, decoder=None):
             raise first_exception
     finally:
         file.close()
+
+
+class ModelData(object):
+
+    def __init__(self, meshes, materials=None):
+        self.meshes = meshes
+        self.materials = materials
+
+
+class Model(object):
+    def __init__(self, obj, batch=None, x=0, y=0, z=0):
+        self._batch = batch
+        self._x = x
+        self._y = y
+        self._z = z
+        self._vertex_lists = []
+
+        self.obj = obj
+
+        self.materials = self.obj.materials
+        self.meshes = self.obj.meshes
+        self.mesh_list = self.obj.mesh_list
+
+        for mesh in self.mesh_list:
+            for group in mesh.materials:
+                if self._batch:
+                    self._vertex_lists.append(self._batch.add(
+                        len(group.vertices) // 3, GL_TRIANGLES,
+                        group.material,
+                        ('v3f/static', tuple(group.vertices)),
+                        ('n3f/static', tuple(group.normals)),
+                        ('t2f/static', tuple(group.tex_coords))))
+                else:
+                    self._vertex_lists.append(graphics.vertex_list(
+                        len(group.vertices) // 3,
+                        ('v3f/static', tuple(group.vertices)),
+                        ('n3f/static', tuple(group.normals)),
+                        ('t2f/static', tuple(group.tex_coords))))
+
+    def draw(self):
+        # Very slow.
+        for i, mesh in enumerate(self.mesh_list):
+            for material in mesh.materials:
+                material.material.set_state_recursive()
+                self._vertex_lists[i].draw(GL_TRIANGLES)
+            for material in mesh.materials:
+                material.material.unset_state_recursive()
 
 
 _codecs.add_default_model_codecs()
