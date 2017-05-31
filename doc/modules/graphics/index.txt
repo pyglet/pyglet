@@ -1,0 +1,14 @@
+pyglet.graphics
+===============================================================
+
+.. toctree::
+   :maxdepth: 1
+
+   allocation
+   vertexattribute
+   vertexbuffer
+   vertexdomain
+
+.. automodule:: pyglet.graphics
+  :members:
+  :undoc-members:

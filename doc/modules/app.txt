@@ -4,3 +4,12 @@ pyglet.app
 .. automodule:: pyglet.app
   :members:
   :undoc-members:
+
+.. autoclass:: EventLoop
+  :members:
+  :undoc-members:
+
+.. autoclass:: PlatformEventLoop
+  :members:
+  :undoc-members:
+

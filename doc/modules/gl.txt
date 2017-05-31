@@ -10,7 +10,13 @@ pyglet.gl
 .. autoclass:: GLException
 
 .. autoclass:: ObjectSpace
+  :members:
+  :undoc-members:
 
 .. autoclass:: CanvasConfig
+  :members:
+  :undoc-members:
 
 .. autoclass:: Context
+  :members:
+  :undoc-members:

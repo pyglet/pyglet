@@ -103,11 +103,3 @@ else:
         from pyglet.canvas.xlib import XlibDisplay as Display
         from pyglet.canvas.xlib import XlibScreen as Screen
         from pyglet.canvas.xlib import XlibCanvas as Canvas
-
-__all__ = [
-    'get_display',
-    'Display',
-    'Screen',
-    'Canvas',
-    'ScreenMode',
-]

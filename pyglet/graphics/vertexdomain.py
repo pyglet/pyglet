@@ -46,14 +46,14 @@ containing vertex indices.  This buffer is grown separately and has no size
 relation to the attribute buffers.
 
 Applications can create vertices (and optionally, indices) within a domain
-with the `VertexDomain.create` method.  This returns a `VertexList`
-representing the list of vertices created.  The vertex attribute data within
-the group can be modified, and the changes will be made to the underlying
-buffers automatically.
+with the :py:meth:`VertexDomain.create` method.  This returns a
+:py:class:`VertexList` representing the list of vertices created.  The vertex
+attribute data within the group can be modified, and the changes will be made
+to the underlying buffers automatically.
 
 The entire domain can be efficiently drawn in one step with the
-`VertexDomain.draw` method, assuming all the vertices comprise primitives of
-the same OpenGL primitive mode.
+:py:meth:`VertexDomain.draw` method, assuming all the vertices comprise
+primitives of the same OpenGL primitive mode.
 '''
 from builtins import zip
 from builtins import range
@@ -127,11 +127,11 @@ def create_attribute_usage(format):
 
 def create_domain(*attribute_usage_formats):
     '''Create a vertex domain covering the given attribute usage formats.
-    See documentation for `create_attribute_usage` and
-    `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
-    these format strings.
+    See documentation for :py:func:`create_attribute_usage` and
+    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
+    of these format strings.
 
-    :rtype: `VertexDomain`
+    :rtype: :py:class:`VertexDomain`
     '''
     attribute_usages = [create_attribute_usage(f) \
                         for f in attribute_usage_formats]
@@ -139,11 +139,11 @@ def create_domain(*attribute_usage_formats):
 
 def create_indexed_domain(*attribute_usage_formats):
     '''Create an indexed vertex domain covering the given attribute usage
-    formats.  See documentation for `create_attribute_usage` and
-    `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
-    these format strings.
+    formats.  See documentation for :py:class:`create_attribute_usage` and
+    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
+    of these format strings.
 
-    :rtype: `VertexDomain`
+    :rtype: :py:class:`VertexDomain`
     '''
     attribute_usages = [create_attribute_usage(f) \
                         for f in attribute_usage_formats]
@@ -152,8 +152,8 @@ def create_indexed_domain(*attribute_usage_formats):
 class VertexDomain(object):
     '''Management of a set of vertex lists.
 
-    Construction of a vertex domain is usually done with the `create_domain`
-    function.
+    Construction of a vertex domain is usually done with the
+    :py:func:`create_domain` function.
     '''
     _version = 0
     _initial_count = 16
@@ -268,13 +268,13 @@ class VertexDomain(object):
             return self.allocator.realloc(start, count, new_count)
 
     def create(self, count):
-        '''Create a `VertexList` in this domain.
+        '''Create a :py:class:`VertexList` in this domain.
 
         :Parameters:
             `count` : int
                 Number of vertices to create.
 
-        :rtype: `VertexList`
+        :rtype: :py:class:`VertexList`
         '''
         start = self._safe_alloc(count)
         return VertexList(self, start, count)
@@ -285,13 +285,13 @@ class VertexDomain(object):
         If `vertex_list` is not specified, all vertices in the domain are
         drawn.  This is the most efficient way to render primitives.
 
-        If `vertex_list` specifies a `VertexList`, only primitives in that
-        list will be drawn.
+        If `vertex_list` specifies a :py:class:`VertexList`, only primitives in
+        that list will be drawn.
 
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : `VertexList`
+            `vertex_list` : :py:class:`VertexList`
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         '''
@@ -334,8 +334,8 @@ class VertexDomain(object):
                                self.allocator)
 
 class VertexList(object):
-    '''A list of vertices within a `VertexDomain`.  Use
-    `VertexDomain.create` to construct this list.
+    '''A list of vertices within a :py:class:`VertexDomain`.  Use
+    :py:meth:`VertexDomain.create` to construct this list.
     '''
 
     def __init__(self, domain, start, count):
@@ -354,7 +354,7 @@ class VertexList(object):
     def get_domain(self):
         '''Get the domain this vertex list belongs to.
 
-        :rtype: `VertexDomain`
+        :rtype: :py:class:`VertexDomain`
         '''
         return self.domain
 
@@ -407,7 +407,7 @@ class VertexList(object):
         parent state of some vertices).
 
         :Parameters:
-            `domain` : `VertexDomain`
+            `domain` : :py:class:`VertexDomain`
                 Domain to migrate this vertex list to.
 
         '''
@@ -679,7 +679,7 @@ class IndexedVertexDomain(VertexDomain):
             return self.index_allocator.realloc(start, count, new_count)
 
     def create(self, count, index_count):
-        '''Create an `IndexedVertexList` in this domain.
+        '''Create an :py:class:`IndexedVertexList` in this domain.
 
         :Parameters:
             `count` : int
@@ -714,13 +714,13 @@ class IndexedVertexDomain(VertexDomain):
         If `vertex_list` is not specified, all vertices in the domain are
         drawn.  This is the most efficient way to render primitives.
 
-        If `vertex_list` specifies a `VertexList`, only primitives in that
-        list will be drawn.
+        If `vertex_list` specifies a :py:class:`VertexList`, only primitives in
+        that list will be drawn.
 
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : `IndexedVertexList`
+            `vertex_list` : :py:class:`IndexedVertexList`
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         '''
@@ -765,8 +765,8 @@ class IndexedVertexDomain(VertexDomain):
         glPopClientAttrib()
 
 class IndexedVertexList(VertexList):
-    '''A list of vertices within an `IndexedVertexDomain` that are indexed.
-    Use `IndexedVertexDomain.create` to construct this list.
+    '''A list of vertices within an :py:class:`IndexedVertexDomain` that are
+    indexed. Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     '''
     def __init__(self, domain, start, count, index_start, index_count):
         super(IndexedVertexList, self).__init__(domain, start, count)
@@ -820,7 +820,7 @@ class IndexedVertexList(VertexList):
         to change parent state of some vertices).
 
         :Parameters:
-            `domain` : `IndexedVertexDomain`
+            `domain` : :py:class:`IndexedVertexDomain`
                 Indexed domain to migrate this vertex list to.
 
         '''
