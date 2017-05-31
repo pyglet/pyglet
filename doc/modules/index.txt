@@ -1,0 +1,9 @@
+pyglet
+===========================================================
+
+.. automodule:: pyglet
+
+.. toctree::
+   :maxdepth: 1
+
+   app

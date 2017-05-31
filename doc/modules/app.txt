@@ -1,0 +1,6 @@
+pyglet.app
+===============================================================
+
+.. automodule:: pyglet.app
+  :members:
+  :undoc-members:

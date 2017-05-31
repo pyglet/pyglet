@@ -61,16 +61,6 @@ default policy is to wait until all windows are closed)::
         event_loop.exit()
 
 :since: pyglet 1.1
-
-
-:attr:`event_loop` is the global event loop.  Applications can replace this
-with their own subclass of :class:`EventLoop` before calling 
-:meth:`EventLoop.run`.
-
-:attr:`platform_event_loop` is the platform-dependent event loop. 
-Applications must not subclass or replace this :class:`PlatformEventLoop` 
-object.
-
 '''
 from builtins import object
 
@@ -180,6 +170,15 @@ else:
 
 
 event_loop = EventLoop()
+"""The global event loop.  Applications can replace this
+with their own subclass of :class:`EventLoop` before calling 
+:meth:`EventLoop.run`.
+"""
 
 platform_event_loop = PlatformEventLoop()
+
+"""The platform-dependent event loop. 
+Applications must not subclass or replace this :class:`PlatformEventLoop` 
+object.
+"""
 
