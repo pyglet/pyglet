@@ -1,0 +1,50 @@
+pyglet.input
+===============================================================
+
+.. automodule:: pyglet.input
+  :members:
+  :undoc-members:
+
+.. autoclass:: Device
+  :members:
+  :undoc-members:
+
+.. autoclass:: Control
+  :members:
+  :undoc-members:
+
+.. autoclass:: RelativeAxis
+  :members:
+  :undoc-members:
+
+.. autoclass:: AbsoluteAxis
+  :members:
+  :undoc-members:
+
+.. autoclass:: Button
+  :members:
+  :undoc-members:
+
+.. autoclass:: Joystick
+  :members:
+  :undoc-members:
+
+.. autoclass:: AppleRemote
+  :members:
+  :undoc-members:
+
+.. autoclass:: Tablet
+  :members:
+  :undoc-members:
+
+.. autoclass:: DeviceException
+  :members:
+  :undoc-members:
+
+.. autoclass:: DeviceOpenException
+  :members:
+  :undoc-members:
+
+.. autoclass:: DeviceExclusiveException
+  :members:
+  :undoc-members:

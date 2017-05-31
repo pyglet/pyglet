@@ -41,6 +41,8 @@ cleaned up.
    modules/gl
    modules/graphics/index
    modules/image/index
+   modules/info
+   modules/input
 
 
 API Reference
