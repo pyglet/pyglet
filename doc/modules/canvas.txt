@@ -1,0 +1,6 @@
+pyglet.canvas
+===============================================================
+
+.. automodule:: pyglet.canvas
+  :members:
+  :undoc-members:

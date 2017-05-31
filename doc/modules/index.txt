@@ -7,3 +7,4 @@ pyglet
    :maxdepth: 1
 
    app
+   canvas

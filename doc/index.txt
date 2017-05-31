@@ -39,10 +39,10 @@ cleaned up.
 API Reference
 ==============
 
-.. toctree::
-   :maxdepth: 10
+.. .. toctree::
+      :maxdepth: 10
 
-   api/pyglet
+..    api/pyglet
 
 
 Development guide
