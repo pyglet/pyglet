@@ -182,3 +182,16 @@ Applications must not subclass or replace this :class:`PlatformEventLoop`
 object.
 """
 
+__all__ = [
+    'run',
+    'exit',
+    'displays',
+    'event_loop',
+    'platform_event_loop',
+    'windows',
+    'EventLoop',
+    'PlatformEventLoop',
+    'AppException',
+    'WeakSet',
+]
+
