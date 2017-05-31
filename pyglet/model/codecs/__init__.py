@@ -22,7 +22,7 @@ class ModelDecoder(object):
         """
         return []
 
-    def decode(self, file, filename):
+    def decode(self, file, filename, batch):
         """Decode the given file object and return an instance of `Model`.
         Throws ModelDecodeException if there is an error.  filename
         can be a file type hint.

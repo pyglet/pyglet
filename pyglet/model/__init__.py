@@ -4,7 +4,7 @@ from pyglet.gl import GL_TRIANGLES
 from pyglet import graphics
 
 
-def load(filename, file=None, decoder=None):
+def load(filename, file=None, decoder=None, batch=None):
     """Load a 3D model from a file.
 
     :Parameters:
@@ -17,10 +17,11 @@ def load(filename, file=None, decoder=None):
             If unspecified, all decoders that are registered for the filename
             extension are tried.  If none succeed, the exception from the
             first decoder is raised.
+        `batch` : Batch or None
+            An optional Batch instance to add this model to. 
 
     :rtype: Model
     """
-
     if not file:
         file = open(filename, 'rb')
 
@@ -29,13 +30,13 @@ def load(filename, file=None, decoder=None):
 
     try:
         if decoder:
-            return decoder.decode(file, filename)
+            return decoder.decode(file, filename, batch)
         else:
             first_exception = None
             for decoder in _codecs.get_decoders(filename):
                 try:
-                    image = decoder.decode(file, filename)
-                    return image
+                    model = decoder.decode(file, filename, batch)
+                    return model
                 except _codecs.ModelDecodeException as e:
                     if (not first_exception or
                                 first_exception.exception_priority < e.exception_priority):
@@ -48,13 +49,6 @@ def load(filename, file=None, decoder=None):
             raise first_exception
     finally:
         file.close()
-
-
-class ModelData(object):
-
-    def __init__(self, meshes, materials=None):
-        self.meshes = meshes
-        self.materials = materials
 
 
 class Model(object):

@@ -3,24 +3,7 @@ from pyglet import graphics
 from pyglet.gl import *
 
 from pyglet.model.codecs import ModelDecoder
-from pyglet.model import ModelData
-
-
-class OBJModelDecoder(ModelDecoder):
-
-    def get_file_extensions(self):
-        return ['.obj']
-
-    def decode(self, file, filename):
-        pass
-        # return ModelData()
-
-
-def get_decoders():
-    return [OBJModelDecoder()]
-
-
-######################################################
+from pyglet.model import Model
 
 
 class ModelMaterialGroup(pyglet.graphics.Group):
@@ -86,8 +69,8 @@ class Mesh(object):
 
 
 class Obj(object):
-
-    def __init__(self, filename, file=None, path=None):
+    # TODO: handle filename/file/path parameters
+    def __init__(self, filename, file=None):
         self.materials = {}
         self.meshes = {}        # Name mapping
         self.mesh_list = []     # Also includes anonymous meshes
@@ -95,9 +78,7 @@ class Obj(object):
         if file is None:
             file = open(filename, 'r')
 
-        if path is None:
-            path = os.path.dirname(filename)
-        self.path = path
+        self.path = os.path.dirname(filename)
 
         mesh = None
         material_set = None
@@ -227,3 +208,18 @@ class Obj(object):
             except BaseException as ex:
                 print('Parse error in {0}.'.format((filename, ex)))
 
+
+###################################################
+
+class OBJModelDecoder(ModelDecoder):
+    def get_file_extensions(self):
+        return ['.obj']
+
+    def decode(self, file, filename, batch):
+        # TODO: add exception handling
+        obj = Obj(filename=filename)
+        return Model(obj=obj, batch=batch)
+
+
+def get_decoders():
+    return [OBJModelDecoder()]
