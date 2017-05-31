@@ -1,0 +1,6 @@
+pyglet.sprite
+===============================================================
+
+.. automodule:: pyglet.sprite
+  :members:
+  :undoc-members:

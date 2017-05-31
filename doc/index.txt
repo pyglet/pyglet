@@ -45,6 +45,8 @@ cleaned up.
    modules/input
    modules/media
    modules/resource
+   modules/sprite
+   modules/text/index
 
 
 API Reference
