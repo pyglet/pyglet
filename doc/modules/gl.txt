@@ -1,0 +1,16 @@
+pyglet.gl
+===============================================================
+
+.. currentmodule:: pyglet.gl
+
+.. automodule:: pyglet.gl
+  :members:
+  :undoc-members:
+
+.. autoclass:: GLException
+
+.. autoclass:: ObjectSpace
+
+.. autoclass:: CanvasConfig
+
+.. autoclass:: Context

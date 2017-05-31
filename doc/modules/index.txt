@@ -8,3 +8,7 @@ pyglet
 
    app
    canvas
+   clock
+   event
+   font
+   gl

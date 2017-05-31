@@ -44,7 +44,7 @@ Manually loading fonts is only required in the following situations:
 * When manually rendering fonts;
 * When using the deprecated font rendering in :mod:`pyglet.font.text`.
 
-You are encouraged to use :mod:`pyglet.text` for actual test rendering. Classes in this module will
+You are encouraged to use :mod:`pyglet.text` for actual text rendering. Classes in this module will
 handle font loading for you, so manual loading is not required.
 
 pyglet will automatically load any system-installed fonts.  You can add additional fonts

@@ -457,3 +457,5 @@ class EventDispatcher(object):
                 self.set_handler(name, func)
                 return func
             return decorator
+
+__all__ = ['EventException', 'EventDispatcher']
