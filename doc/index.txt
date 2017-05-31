@@ -40,6 +40,7 @@ cleaned up.
    modules/font
    modules/gl
    modules/graphics/index
+   modules/image/index
 
 
 API Reference

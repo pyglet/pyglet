@@ -1,4 +1,4 @@
-pyglet.graphics
+pyglet.image
 ===============================================================
 
 .. rubric:: Submodules
@@ -6,13 +6,10 @@ pyglet.graphics
 .. toctree::
    :maxdepth: 1
 
-   allocation
-   vertexattribute
-   vertexbuffer
-   vertexdomain
+   atlas
 
 .. rubric:: Details
 
-.. automodule:: pyglet.graphics
+.. automodule:: pyglet.image
   :members:
   :undoc-members:

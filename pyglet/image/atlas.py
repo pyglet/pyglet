@@ -34,9 +34,9 @@
 
 """Group multiple small images into larger textures.
 
-This module is used by `pyglet.resource` to efficiently pack small images into
-larger textures.  `TextureAtlas` maintains one texture; `TextureBin` manages a
-collection of atlases of a given size.
+This module is used by :py:mod:`pyglet.resource` to efficiently pack small
+images into larger textures.  `TextureAtlas` maintains one texture;
+:py:class:`TextureBin` manages a collection of atlases of a given size.
 
 Example usage::
 
@@ -49,10 +49,10 @@ Example usage::
     car_texture = bin.add(car_image)
     boat_texture = bin.add(boat_image)
 
-The result of `TextureBin.add` is a `TextureRegion` containing the image.
-Once added, an image cannot be removed from a bin (or an atlas); nor can a
-list of images be obtained from a given bin or atlas -- it is the
-application's responsibility to keep track of the regions returned by the
+The result of :py:meth:`TextureBin.add` is a :py:class:`TextureRegion`
+containing the image. Once added, an image cannot be removed from a bin (or an 
+atlas); nor can a list of images be obtained from a given bin or atlas -- it is 
+the application's responsibility to keep track of the regions returned by the
 ``add`` methods.
 
 :since: pyglet 1.1
