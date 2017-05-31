@@ -44,6 +44,7 @@ cleaned up.
    modules/info
    modules/input
    modules/media
+   modules/resource
 
 
 API Reference
