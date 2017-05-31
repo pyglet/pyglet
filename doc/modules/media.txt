@@ -1,0 +1,33 @@
+pyglet.media
+===============================================================
+
+.. currentmodule:: pyglet.media
+
+.. automodule:: pyglet.media
+  :members:
+  :undoc-members:
+
+.. autofunction:: get_audio_driver
+
+.. automodule:: pyglet.media.exceptions
+  :members:
+  :undoc-members:
+
+.. rubric:: Submodules
+
+You may import everything here from :mod:`pyglet.media` directly, but the docs
+are in the submodules.
+
+pyglet.media.player
+-------------------
+
+.. automodule:: pyglet.media.player
+  :members:
+  :undoc-members:
+
+pyglet.media.sources
+--------------------
+
+.. automodule:: pyglet.media.sources
+  :members:
+  :undoc-members:

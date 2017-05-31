@@ -43,6 +43,7 @@ cleaned up.
    modules/image/index
    modules/info
    modules/input
+   modules/media
 
 
 API Reference
