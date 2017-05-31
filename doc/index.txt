@@ -47,6 +47,7 @@ cleaned up.
    modules/resource
    modules/sprite
    modules/text/index
+   modules/window
 
 
 API Reference

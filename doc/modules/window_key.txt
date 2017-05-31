@@ -1,0 +1,6 @@
+pyglet.window.key
+===============================================================
+
+.. automodule:: pyglet.window.key
+  :members:
+  :undoc-members:

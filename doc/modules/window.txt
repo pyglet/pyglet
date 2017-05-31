@@ -1,0 +1,15 @@
+pyglet.window
+===============================================================
+
+.. rubric:: Submodules
+
+.. toctree::
+   :maxdepth: 1
+
+   window_key
+
+.. rubric:: Details
+
+.. automodule:: pyglet.window
+  :members:
+  :undoc-members:
