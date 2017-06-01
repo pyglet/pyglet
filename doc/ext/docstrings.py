@@ -111,8 +111,8 @@ def modify_docstrings(app, what, name, obj, options, lines,
             lines.insert(i,"")
             lines.insert(i,"")
 
-        elif line.strip().startswith(":since:"):
-            lines[i] = lines[i].replace(u':since:',
+        elif line.strip().startswith(".. versionadded::"):
+            lines[i] = lines[i].replace(u'.. versionadded::',
                                 u'.. note:: Since')
             lines.insert(i+1,"")
             lines.insert(i,"")

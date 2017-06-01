@@ -76,7 +76,7 @@ note that no control list is available; instead, calling :py:meth:`Tablet.open`
 returns a :py:class:`TabletCanvas` onto which you should set your event
 handlers.
 
-:since: pyglet 1.2
+.. versionadded:: 1.2
 
 """
 from __future__ import absolute_import

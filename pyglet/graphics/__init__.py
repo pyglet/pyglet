@@ -155,7 +155,7 @@ present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
 ``GL_TRIANGLE_FAN``.   Unfortunately the extension is not provided by older
 video drivers, and requires indexed vertex lists.
 
-:since: pyglet 1.1
+.. versionadded:: pyglet 1.1
 '''
 from __future__ import print_function
 from builtins import zip
@@ -341,7 +341,7 @@ class Batch(object):
         This method can be used to force the batch to re-compute the draw list
         when the ordering of groups has changed.
 
-        :since: pyglet 1.2
+        .. versionadded:: pyglet 1.2
         '''
         self._draw_list_dirty = True
 

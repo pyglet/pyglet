@@ -62,7 +62,7 @@ properties determine the sprite's rotation, scale and opacity.
 By default sprite coordinates are restricted to integer values to avoid
 sub-pixel artifacts.  If you require to use floats, for example for smoother
 animations, you can set the ``subpixel`` parameter to ``True`` when creating
-the sprite (:since: pyglet 1.2).
+the sprite (.. versionadded:: pyglet 1.2).
 
 The sprite's positioning, rotation and scaling all honor the original
 image's anchor (anchor_x, anchor_y).
@@ -92,7 +92,7 @@ however a sprite can belong to at most one batch.  See the documentation for
 `pyglet.graphics` for more details on batched rendering, and grouping of
 sprites within batches.
 
-:since: pyglet 1.1
+.. versionadded:: pyglet 1.1
 """
 
 __docformat__ = 'restructuredtext'

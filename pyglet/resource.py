@@ -81,7 +81,7 @@ platforms.
 The default path is ``['.']``.  If you modify the path, you must call
 :py:func:`reindex`.
 
-:since: pyglet 1.1
+.. versionadded:: pyglet 1.1
 """
 from future import standard_library
 

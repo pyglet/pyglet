@@ -58,7 +58,7 @@ The API documentation is generated from the source code docstrings.
              description
 
       
-      :since: pyglet 1.2
+      .. versionadded:: pyglet 1.2
 
       '''
 
@@ -124,7 +124,7 @@ Pyglet has some special roles.
           - Shows
         * - ``:deprecated: Do not use``
           - .. warning:: Deprecated. Do not use
-        * - ``:since: 1.2``
+        * - ``.. versionadded:: 1.2``
           - .. note:: Since 1.2
 
 .. _guide_doc_ref:

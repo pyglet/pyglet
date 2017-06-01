@@ -34,7 +34,7 @@
 
 """Interface classes for `pyglet.input`.
 
-:since: pyglet 1.2
+.. versionadded:: pyglet 1.2
 """
 from __future__ import division
 from builtins import object

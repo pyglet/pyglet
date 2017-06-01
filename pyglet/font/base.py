@@ -120,7 +120,7 @@ def get_grapheme_clusters(text):
         `text` : unicode
             String to cluster.
 
-    :since: pyglet 1.1.2
+    .. versionadded:: pyglet 1.1.2
 
     :rtype: List of `unicode`
     :return: List of Unicode grapheme clusters

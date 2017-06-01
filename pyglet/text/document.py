@@ -161,7 +161,7 @@ All style attributes (including those not present in a document) default to
 ``None`` (including the so-called "boolean" styles listed above).  The meaning
 of a ``None`` style is style- and application-dependent. 
 
-:since: pyglet 1.1
+.. versionadded:: pyglet 1.1
 """
 from builtins import next
 from builtins import object

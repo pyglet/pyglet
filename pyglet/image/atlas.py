@@ -55,7 +55,7 @@ atlas); nor can a list of images be obtained from a given bin or atlas -- it is
 the application's responsibility to keep track of the regions returned by the
 ``add`` methods.
 
-:since: pyglet 1.1
+.. versionadded:: pyglet 1.1
 """
 from __future__ import division
 from builtins import object
