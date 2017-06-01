@@ -2,40 +2,59 @@ pyglet.input
 ===============================================================
 
 .. automodule:: pyglet.input
-  :members:
-  :undoc-members:
+
+Classes
+-------
 
 .. autoclass:: Device
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: Control
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: RelativeAxis
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: AbsoluteAxis
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: Button
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: Joystick
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: AppleRemote
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: Tablet
-  :members:
   :undoc-members:
+  :show-inheritance:
+
+Functions
+---------
+
+.. autofunction:: get_apple_remote
+.. autofunction:: get_devices
+.. autofunction:: get_joysticks
+.. autofunction:: get_tablets
+
+Exceptions
+----------
 
 .. autoclass:: DeviceException
   :members:
