@@ -22,6 +22,7 @@ def load(filename, file=None, decoder=None, batch=None):
 
     :rtype: Model
     """
+
     if not file:
         file = open(filename, 'rb')
 
@@ -52,43 +53,41 @@ def load(filename, file=None, decoder=None, batch=None):
 
 
 class Model(object):
+
+    _own_batch = False
+
     def __init__(self, obj, batch=None, x=0, y=0, z=0):
+        if not batch:
+            batch = graphics.Batch()
+            self._own_batch = True
         self._batch = batch
+
         self._x = x
         self._y = y
         self._z = z
         self._vertex_lists = []
 
-        self.obj = obj
-
-        self.materials = self.obj.materials
-        self.meshes = self.obj.meshes
-        self.mesh_list = self.obj.mesh_list
+        self.mesh_list = obj.mesh_list
 
         for mesh in self.mesh_list:
-            for group in mesh.materials:
-                if self._batch:
-                    self._vertex_lists.append(self._batch.add(
-                        len(group.vertices) // 3, GL_TRIANGLES,
-                        group.material,
-                        ('v3f/static', tuple(group.vertices)),
-                        ('n3f/static', tuple(group.normals)),
-                        ('t2f/static', tuple(group.tex_coords))))
-                else:
-                    self._vertex_lists.append(graphics.vertex_list(
-                        len(group.vertices) // 3,
-                        ('v3f/static', tuple(group.vertices)),
-                        ('n3f/static', tuple(group.normals)),
-                        ('t2f/static', tuple(group.tex_coords))))
+            for material in mesh.materials:
+                self._vertex_lists.append(self._batch.add(len(material.vertices) // 3,
+                                                          GL_TRIANGLES,
+                                                          material.group,
+                                                          ('v3f/static', material.vertices),
+                                                          ('n3f/static', material.normals),
+                                                          ('t2f/static', material.tex_coords)))
+
+        # for mesh in self.mesh_list:
+        #     # print(m.name, m.materials)
+        #     for mat in mesh.materials:
+        #         print(mat.group.name, mat.group)
 
     def draw(self):
-        # Very slow.
-        for i, mesh in enumerate(self.mesh_list):
-            for material in mesh.materials:
-                material.material.set_state_recursive()
-                self._vertex_lists[i].draw(GL_TRIANGLES)
-            for material in mesh.materials:
-                material.material.unset_state_recursive()
+        if self._own_batch:
+            self._batch.draw()
+        else:
+            self._batch.draw_subset(self._vertex_lists)
 
 
 _codecs.add_default_model_codecs()

@@ -6,7 +6,7 @@ from pyglet.model.codecs import ModelDecoder
 from pyglet.model import Model
 
 
-class ModelMaterialGroup(pyglet.graphics.Group):
+class MaterialGroup(pyglet.graphics.Group):
     diffuse = [.8, .8, .8]
     ambient = [.2, .2, .2]
     specular = [0., 0., 0.]
@@ -17,7 +17,7 @@ class ModelMaterialGroup(pyglet.graphics.Group):
 
     def __init__(self, name, **kwargs):
         self.name = name
-        super(ModelMaterialGroup, self).__init__(**kwargs)
+        super(MaterialGroup, self).__init__(**kwargs)
 
     def set_state(self, face=GL_FRONT_AND_BACK):
         if self.texture:
@@ -39,7 +39,7 @@ class ModelMaterialGroup(pyglet.graphics.Group):
 
     def __eq__(self, other):
         if self.texture is None:
-            return super(ModelMaterialGroup, self).__eq__(other)
+            return super(MaterialGroup, self).__eq__(other)
         return (self.__class__ is other.__class__ and
                 self.texture.id == other.texture.id and
                 self.texture.target == other.texture.target and
@@ -47,13 +47,13 @@ class ModelMaterialGroup(pyglet.graphics.Group):
 
     def __hash__(self):
         if self.texture is None:
-            return super(ModelMaterialGroup, self).__hash__()
+            return super(MaterialGroup, self).__hash__()
         return hash((self.texture.id, self.texture.target))
 
 
 class MaterialSet(object):
-    def __init__(self, material):
-        self.material = material
+    def __init__(self, group):
+        self.group = group
 
         # Interleaved array of floats in GL_T2F_N3F_V3F format
         self.vertices = []
@@ -72,7 +72,6 @@ class Obj(object):
     # TODO: handle filename/file/path parameters
     def __init__(self, filename, file=None):
         self.materials = {}
-        self.meshes = {}        # Name mapping
         self.mesh_list = []     # Also includes anonymous meshes
 
         if file is None:
@@ -82,7 +81,7 @@ class Obj(object):
 
         mesh = None
         material_set = None
-        material = None
+        group = None
 
         vertices = [[0., 0., 0.]]
         normals = [[0., 0., 0.]]
@@ -104,26 +103,25 @@ class Obj(object):
             elif values[0] == 'mtllib':
                 self.load_material_library(values[1])
             elif values[0] in ('usemtl', 'usemat'):
-                material = self.materials.get(values[1], None)
-                if material is None:
+                group = self.materials.get(values[1], None)
+                if group is None:
                     print('Unknown material: %s' % values[1])
                 if mesh is not None:
-                    material_set = MaterialSet(material)
+                    material_set = MaterialSet(group)
                     mesh.materials.append(material_set)
             elif values[0] == 'o':
                 mesh = Mesh(values[1])
-                self.meshes[mesh.name] = mesh
                 self.mesh_list.append(mesh)
                 material_set = None
             elif values[0] == 'f':
                 if mesh is None:
                     mesh = Mesh('')
                     self.mesh_list.append(mesh)
-                if material is None:
+                if group is None:
                     # FIXME
-                    material = ModelMaterialGroup("<unknown>")
+                    group = MaterialGroup("<unknown>")
                 if material_set is None:
-                    material_set = MaterialSet(material)
+                    material_set = MaterialSet(group)
                     mesh.materials.append(material_set)
 
                 # For fan triangulation, remember first and latest vertices
@@ -165,13 +163,10 @@ class Obj(object):
                     tlast = tex_coords[t_index]
                     vlast = vertices[v_index]
 
-    def open_material_file(self, filename):
-        '''Override for loading from archive/network etc.'''
-        return open(os.path.join(self.path, filename), 'r')
-
     def load_material_library(self, filename):
+
         material = None
-        file = self.open_material_file(filename)
+        file = open(os.path.join(self.path, filename), 'r')
 
         for line in file:
             if line.startswith('#'):
@@ -181,7 +176,7 @@ class Obj(object):
                 continue
 
             if values[0] == 'newmtl':
-                material = ModelMaterialGroup(values[1])
+                material = MaterialGroup(values[1])
                 self.materials[material.name] = material
             elif material is None:
                 print('Expected "newmtl" in %s' % filename)
@@ -217,9 +212,15 @@ class OBJModelDecoder(ModelDecoder):
 
     def decode(self, file, filename, batch):
         # TODO: add exception handling
+
         obj = Obj(filename=filename)
+
         return Model(obj=obj, batch=batch)
 
 
 def get_decoders():
     return [OBJModelDecoder()]
+
+
+def get_encoders():
+    return []
