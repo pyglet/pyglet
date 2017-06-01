@@ -39,13 +39,13 @@ class PlatformEventLoop(object):
     def post_event(self, dispatcher, event, *args):
         """Post an event into the main application thread.
 
-        The event is queued internally until the `run` method's thread
+        The event is queued internally until the :py:meth:`run` method's thread
         is able to dispatch the event.  This method can be safely called
         from any thread.
 
-        If the method is called from the `run` method's thread (for example,
-        from within an event handler), the event may be dispatched within
-        the same runloop iteration or the next one; the choice is
+        If the method is called from the :py:meth:`run` method's thread (for 
+        example, from within an event handler), the event may be dispatched 
+        within the same runloop iteration or the next one; the choice is
         nondeterministic.
 
         :Parameters:
@@ -100,13 +100,13 @@ class EventLoop(event.EventDispatcher):
     """The main run loop of the application.
 
     Calling `run` begins the application event loop, which processes
-    operating system events, calls `pyglet.clock.tick` to call scheduled
-    functions and calls `pyglet.window.Window.on_draw` and
-    `pyglet.window.Window.flip` to update window contents.
+    operating system events, calls :py:func:`pyglet.clock.tick` to call 
+    scheduled functions and calls :py:meth:`pyglet.window.Window.on_draw` and
+    :py:meth:`pyglet.window.Window.flip` to update window contents.
 
-    Applications can subclass `EventLoop` and override certain methods
+    Applications can subclass :py:class:`EventLoop` and override certain methods
     to integrate another framework's run loop, or to customise processing
-    in some other way.  You should not in general override `run`, as
+    in some other way.  You should not in general override :py:meth:`run`, as
     this method contains platform-specific code that ensures the application
     remains responsive to the user while keeping CPU usage to a minimum.
     """
@@ -122,7 +122,7 @@ class EventLoop(event.EventDispatcher):
     def run(self):
         """Begin processing events, scheduled functions and window updates.
 
-        This method returns when `has_exit` is set to True.
+        This method returns when :py:attr:`has_exit` is set to True.
 
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
@@ -228,8 +228,8 @@ class EventLoop(event.EventDispatcher):
         an OS timer on the platform event loop, which will continue to
         be invoked during the blocking operation.
 
-        The default implementation ensures that `idle` continues to be called
-        as documented.
+        The default implementation ensures that :py:meth:`idle` continues to be
+        called as documented.
 
         :since: pyglet 1.2
         """
@@ -238,7 +238,7 @@ class EventLoop(event.EventDispatcher):
 
     def exit_blocking(self):
         """Called by pyglet internal processes when the blocking operation
-        completes.  See `enter_blocking`.
+        completes.  See :py:meth:`enter_blocking`.
         """
         app.platform_event_loop.set_timer(None, None)
 
@@ -259,13 +259,13 @@ class EventLoop(event.EventDispatcher):
         second, or immediately after any user events.
 
         The default implementation dispatches the
-        `pyglet.window.Window.on_draw` event for all windows and uses
-        `pyglet.clock.tick` and `pyglet.clock.get_sleep_time` on the default
-        clock to determine the return value.
+        :py:meth:`pyglet.window.Window.on_draw` event for all windows and uses
+        :py:func:`pyglet.clock.tick` and :py:func:`pyglet.clock.get_sleep_time`
+        on the default clock to determine the return value.
 
         This method should be overridden by advanced users only.  To have
         code execute at regular intervals, use the
-        `pyglet.clock.schedule` methods.
+        :py:func:`pyglet.clock.schedule` methods.
 
         :rtype: float
         :return: The number of seconds before the idle method should
@@ -301,7 +301,7 @@ class EventLoop(event.EventDispatcher):
     def has_exit(self):
         """Flag indicating if the event loop will exit in
         the next iteration.  When set, all waiting threads are interrupted (see
-        `sleep`).
+        :py:meth:`sleep`).
         
         Thread-safe since pyglet 1.2.
     
@@ -317,16 +317,16 @@ class EventLoop(event.EventDispatcher):
     def exit(self):
         """Safely exit the event loop at the end of the current iteration.
 
-        This method is a thread-safe equivalent for for setting `has_exit` to
-        ``True``.  All waiting threads will be interrupted (see
-        `sleep`).
+        This method is a thread-safe equivalent for for setting 
+        :py:attr:`has_exit` to ``True``.  All waiting threads will be
+        interrupted (see :py:meth:`sleep`).
         """
         self._set_has_exit(True)
         app.platform_event_loop.notify()
 
     def sleep(self, timeout):
-        """Wait for some amount of time, or until the `has_exit` flag is
-        set or `exit` is called.
+        """Wait for some amount of time, or until the :py:attr:`has_exit` flag
+        is set or :py:meth:`exit` is called.
 
         This method is thread-safe.
 
@@ -358,9 +358,9 @@ class EventLoop(event.EventDispatcher):
             dispatched if the window's close button was pressed but the
             window did not close.
 
-            The default handler calls `exit` if no more windows are open.  You
-            can override this handler to base your application exit on some
-            other policy.
+            The default handler calls :py:meth:`exit` if no more windows are
+            open.  You can override this handler to base your application exit
+            on some other policy.
 
             :event:
             """
@@ -369,7 +369,7 @@ class EventLoop(event.EventDispatcher):
             """The event loop is about to begin.
 
             This is dispatched when the event loop is prepared to enter
-            the main run loop, and represents the last chance for an 
+            the main run loop, and represents the last chance for an
             application to initialise itself.
 
             :event:
@@ -378,9 +378,9 @@ class EventLoop(event.EventDispatcher):
         def on_exit(self):
             """The event loop is about to exit.
 
-            After dispatching this event, the `run` method returns (the
+            After dispatching this event, the :py:meth:`run` method returns (the
             application may not actually exit if you have more code
-            following the `run` invocation).
+            following the :py:meth:`run` invocation).
 
             :event:
             """

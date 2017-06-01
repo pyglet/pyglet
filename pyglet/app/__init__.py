@@ -169,11 +169,10 @@ else:
 
 
 
+#: The global event loop.  Applications can replace this
+#: with their own subclass of :class:`EventLoop` before calling 
+#: :meth:`EventLoop.run`.
 event_loop = EventLoop()
-"""The global event loop.  Applications can replace this
-with their own subclass of :class:`EventLoop` before calling 
-:meth:`EventLoop.run`.
-"""
 
 platform_event_loop = PlatformEventLoop()
 
