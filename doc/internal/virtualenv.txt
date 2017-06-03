@@ -1,19 +1,29 @@
 Development environment
 =======================
+
 To develop pyglet, you need an environment with at least the following:
+
    - python 2.7
    - python 3.4 and/or 3.5
-   - py.test
+   - `py.test <https://pytest.org>`_
    - Your favorite Python editor or IDE
 
 To generate documentation you also need:
-  - Sphinx
-  - Graphviz
+
+  - `Sphinx <https://sphinx-doc.org>`_
+  - `Graphviz`_
 
 To use and test all pyglet functionality you should also have:
-   - AVbin
-   - Pillow
-   - coverage
+
+   - `AVbin <http://avbin.github.io/>`_
+   - `Pillow <https://pillow.readthedocs.io>`_
+   - `coverage <https://coverage.readthedocs.io>`_
+
+.. note::
+
+  The easiest way to keep track of all that is to use `pyenv <https://github.com/pyenv/pyenv>`_ and `virtual environments <http://python-guide-pt-br.readthedocs.io/en/latest/dev/virtualenvs/>`_. If you understand those, you don't need this guide.
+
+  But if you're new to all this, the rest of this guide will get you started.
 
 It is preferred to create a virtual Python environment to develop in. It allows you to
 easily test on all Python version supported by pyglet, not pollute your local system
@@ -23,10 +33,13 @@ for developing pyglet.
 
 Linux or Mac OSX
 ----------------
+
 Setting up
 ''''''''''
-Setting up a virtual environment is almost the same for Linux and OSX. First use your
+
+Setting up a virtual environment is almost the same for Linux and OS X. First, use your
 OS's package manager (apt, brew, etc) to install the following dependencies:
+
    - Python 2.7
    - Python 3.4 and/or 3.5
    - pip (for each version of Python)
@@ -85,9 +98,12 @@ To get out of the virtual environment run::
 
 Windows
 -------
+
 Setting up
 ''''''''''
+
 Make sure you download and install:
+
    - `Python 2.7 <http://www.python.org/downloads/windows/>`_
    - `Python 3.4 and/or 3.5 <http://www.python.org/downloads/windows/>`_
    - `Graphviz <http://www.graphviz.org/Download_windows.php>`_
@@ -135,6 +151,7 @@ And optional dependencies::
 
 Using
 '''''
+
 To switch to a virtual environment run the following::
 
    venv\<name of environment>\Scripts\activate

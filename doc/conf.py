@@ -140,7 +140,7 @@ write_build(data, 'build.rst')
 
 # -- SPHINX STANDARD OPTIONS ---------------------------------------------------
 
-autosummary_generate = True
+autosummary_generate = False
 
 # -- General configuration -----------------------------------------------------
 #
@@ -159,7 +159,6 @@ needs_sphinx = '1.3'
 extensions = ['sphinx.ext.autodoc',
               'ext.sphinx_mod',
               'ext.docstrings',
-              'ext.autosummary',
               'sphinx.ext.inheritance_diagram', 
               'sphinx.ext.todo']
 

@@ -8,8 +8,6 @@ from pyglet import window
 
 class Display(object):
     '''A display device supporting one or more screens.
-
-    :guide:`displays`
     
     .. versionadded:: pyglet 1.2
     '''
@@ -97,8 +95,6 @@ class Screen(object):
     
     Use :func:`~Display.get_screens` or :func:`~Display.get_default_screen`
     to obtain an instance of this class.
-
-    :guide:`screens`
     '''
 
     def __init__(self, display, x, y, width, height):

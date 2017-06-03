@@ -1,7 +1,13 @@
 Documentation
-*************
+=============
 
-This is the ``pyglet`` documentation, generated with ``sphinx``. 
+This is the pyglet documentation, generated with `Sphinx`_.
+
+.. _Sphinx: https://sphinx-doc.org
+
+.. _reStructuredText: http://www.sphinx-doc.org/en/stable/rest.html
+
+.. _autodoc: http://www.sphinx-doc.org/en/stable/ext/autodoc.html
 
 Details:
 
@@ -15,31 +21,21 @@ Details:
 Writing documentation
 ---------------------
 
-``pyglet`` uses reStructuredText markup language for both 
-the Programming Guide and the docstrings embedded in the code.
+Familiarize yourself with `Sphinx`_ and `reStructuredText`_.
 
 Literature 
-==========
+^^^^^^^^^^
 
+The home page is ``pyglet/doc/index.rst``. This file create three toctrees:
 
-It is divided into several files, which are organized by ``toctree`` directives .
-
-The entry point for all the documentation is ``pyglet/doc/index.txt``, which calls to:
-
-* ``pyglet/doc/programming_guide``: The first page of the programming guide.
-
-* ``pyglet/doc/internal``: 
-  Documentation for those working on Pyglet itself, such as how to make a release 
-  or how the ctypes library is used.
-
-.. seealso::
-
-   * `Sphinx: reStructuredText Primer <http://sphinx.pocoo.org/rest.html>`_ 
+* The programming guide
+* The API docs
+* The development guide, which you are reading now
 
 Source code
-===========
+-----------
 
-The API documentation is generated from the source code docstrings.
+The API documentation is generated from the source code docstrings via `autodoc`_ and a few custom extensions.
 
 
 :Example:
@@ -92,100 +88,33 @@ The API documentation is generated from the source code docstrings.
           '''
 
       def _get_property1(self):
-          '''Getter Method 
+          '''Getter Method contains docstrings for a property
           
           :return: property1 value
           :rtype: property1 type
           '''
 
       def _set_property1(self, value):
-          '''Setter Method 
-          
-          :param value: property1 value # This is the ReST style
-          :type value: property1 type   # But you can use :parameters:
+          '''Setter Method docstrings are ignored
           '''
    
       property1 = property(_get_property1, _set_property1,
-                        doc='''Short description
-   
-      This is another attribute.
-
-      :type: type
-      :see: something else
-      ''')
+                        doc='''Override docstring here if you want''')
 
 
-Pyglet has some special roles.
+Pyglet has a special role for deprecations, ``:deprecated:``.
 
     .. list-table::
         :header-rows: 1
 
         * - Source
-          - Shows
+          - Output
         * - ``:deprecated: Do not use``
           - .. warning:: Deprecated. Do not use
 
-.. _guide_doc_ref:
 
-Internal references
-===================
-
-To cross-reference to any documented API member, use the following roles:
-
-    .. list-table::
-        :header-rows: 1
-
-        * - Source
-          - Reference
-        * - ``:mod:`pyglet.app```
-          - The :mod:`pyglet.app` module
-        * - ``:func:`~pyglet.app.run```
-          - The :func:`~pyglet.app.run` function
-        * - ``:class:`~pyglet.window.Window```
-          - The :class:`~pyglet.window.Window` class
-        * - ``:meth:`~pyglet.window.Window.close```
-          - The :meth:`~pyglet.window.Window.close` method
-        * - ``:attr:`~pyglet.window.Window.fullscreen```
-          - The :attr:`~pyglet.window.Window.fullscreen` attribute
-        
-
-.. note:: Use ``~`` to show only the last part.
-
-.. _my_anchor:
-
-You can link to arbitrary locations in any document using ``:ref:``,
-but pyglet has a special role ``:guide:`` for this guide.
-
-A section header of the guide can have an anchor like this::
-
-   .. _guide_doc_ref:
-
-   Internal references
-   ===================
-
-
-It is also possible to put an anchor anywhere::
-
-   .. _my_anchor:
-
-   My anchor.
-
-
-And to insert a reference to an anchor:
-
-    .. list-table::
-        :header-rows: 1
-
-        * - Source
-          - Shows
-        * - ``:guide:`doc_ref```
-          - .. seealso:: Programming Guide - :ref:`guide_doc_ref`
-        * - ``:ref:`My Anchor<my_anchor>```
-          - :ref:`My Anchor<my_anchor>`
-
-
-Generation
-----------
+Building
+--------
 
 The complete documentation can be generated using ``sphinx``. Make sure you prepare your
 environment as stated in :doc:`virtualenv`.
@@ -197,12 +126,9 @@ To build the documentation, execute::
 .. note ::
    Due to a bug in Sphinx, documentation generation currently only works using Python 3.x.
 
-If the build succeeds, the web pages are in ``doc/_build/html``
+If the build succeeds, the web pages are in ``doc/_build/html``.
 
-.. rubric:: Details
+HTML Theme
+----------
 
-.. toctree::
-   :maxdepth: 1
-
-   doc_generation
-
+The custom sphinx theme is in the ``ext/theme`` folder.
