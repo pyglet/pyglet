@@ -381,7 +381,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: update.
     #:
     #: :type: bool
-    #: .. versionadded:: pyglet 1.1
+    #: .. versionadded:: 1.1
     invalid = True
 
     #: Legacy invalidation flag introduced in pyglet 1.2: set by all event
@@ -660,13 +660,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 previous window size when windowed, or the screen size if
                 fullscreen.
 
-                **Since:** pyglet 1.2
+                .. versionadded:: 1.2
             `height` : int
                 Optional height of the window.  If unspecified, defaults to
                 the previous window size when windowed, or the screen size if
                 fullscreen.
 
-                **Since:** pyglet 1.2
+                .. versionadded:: 1.2
         """
         if (fullscreen == self._fullscreen and 
             (screen is None or screen is self._screen) and
@@ -1624,7 +1624,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             this event is triggered; a resize or expose event may have
             invalidated the framebuffer since the last time it was drawn.
 
-            .. versionadded:: pyglet 1.1
+            .. versionadded:: 1.1
 
             :event:
             """

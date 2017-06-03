@@ -96,7 +96,7 @@ however a sprite can belong to at most one batch.  See the documentation for
 `pyglet.graphics` for more details on batched rendering, and grouping of
 sprites within batches.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 """
 
 __docformat__ = 'restructuredtext'

@@ -70,7 +70,7 @@ Refer to the Programming Guide for advanced usage of the document and layout
 classes, including interactive editing, embedding objects within documents and
 creating scrollable layouts.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 """
 from builtins import object
 

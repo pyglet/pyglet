@@ -150,7 +150,7 @@ entire paragraph, otherwise results are undefined.
 Other attributes can be used to store additional style information within the
 document; they will be ignored by the built-in text classes.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 """
 from __future__ import division
 from builtins import zip

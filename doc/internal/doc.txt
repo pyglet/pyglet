@@ -54,7 +54,7 @@ The API documentation is generated from the source code docstrings via `autodoc`
              description
 
       
-      .. versionadded:: pyglet 1.2
+      .. versionadded:: 1.2
 
       '''
 

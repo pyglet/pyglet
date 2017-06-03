@@ -339,7 +339,7 @@ class AbstractImage(object):
 
         :rtype: `ImageData`
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve image data for %r' % self)
 
@@ -389,10 +389,10 @@ class AbstractImage(object):
             `force_rectangle` : bool
                 True if the texture must be created as a rectangle.
 
-                **Since:** pyglet 1.1.4.
+                .. versionadded:: 1.1.4.
         :rtype: `Texture`
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve texture for %r' % self)
 
@@ -416,7 +416,7 @@ class AbstractImage(object):
 
         :rtype: `Texture`
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
@@ -531,7 +531,7 @@ class AbstractImageSequence(object):
 
         :rtype: `TextureSequence`
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise NotImplementedError('abstract')
 
@@ -557,7 +557,7 @@ class AbstractImageSequence(object):
 
         :rtype: `Animation`
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         return Animation.from_image_sequence(self, period, loop)
 
@@ -587,7 +587,7 @@ class AbstractImageSequence(object):
 
         :rtype: Iterator
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise NotImplementedError('abstract')
 
@@ -753,7 +753,7 @@ class ImageData(AbstractImage):
                 Number of bytes per row.  Negative values indicate a
                 top-to-bottom arrangement.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
 
         :rtype: sequence of bytes, or str
         """
@@ -773,7 +773,7 @@ class ImageData(AbstractImage):
             `data` : str or sequence of bytes
                 Image data.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         self._current_format = format
         self._current_pitch = pitch
@@ -830,12 +830,12 @@ class ImageData(AbstractImage):
                 ``True`` if a rectangle can be created; see
                 `AbstractImage.get_texture`.
 
-                **Since:** pyglet 1.1
+                .. versionadded:: 1.1
             `force_rectangle` : bool
                 ``True`` if a rectangle must be created; see
                 `AbstractImage.get_texture`.
 
-                **Since:** pyglet 1.1.4
+                .. versionadded:: 1.1.4
 
         :rtype: cls or cls.region_class
         """
@@ -870,7 +870,7 @@ class ImageData(AbstractImage):
 
         :rtype: `Texture`
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
@@ -1516,7 +1516,7 @@ class Texture(AbstractImage):
                 ``True`` if a rectangular texture is required.  See
                 `AbstractImage.get_texture`.  
                 
-                **Since:** pyglet 1.1.4.
+                .. versionadded:: 1.1.4.
             `min_filter` : int
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
             `mag_filter` : int
@@ -1524,7 +1524,7 @@ class Texture(AbstractImage):
 
         :rtype: `Texture`
         
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         """
         target = GL_TEXTURE_2D
         if rectangle or force_rectangle:

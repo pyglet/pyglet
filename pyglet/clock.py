@@ -274,7 +274,7 @@ class Clock(_ClockBase):
         This updates the clock's internal measure of time and returns
         the difference since the last update (or since the clock was created).
 
-        .. versionadded:: pyglet 1.2
+        .. versionadded:: 1.2
 
         :rtype: float
         :return: The number of seconds since the last `update_time`, or 0
@@ -296,7 +296,7 @@ class Clock(_ClockBase):
     def call_scheduled_functions(self, dt):
         '''Call scheduled functions that elapsed on the last `update_time`.
 
-        .. versionadded:: pyglet 1.2
+        .. versionadded:: 1.2
 
         :Parameters:
             dt : float
@@ -468,7 +468,7 @@ class Clock(_ClockBase):
         :return: Time until the next scheduled event in seconds, or ``None``
             if there is no event scheduled.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         '''
         if self._schedule_items or not sleep_idle:
             if not self.period_limit:
@@ -676,7 +676,7 @@ class Clock(_ClockBase):
         graphics animations out of phase; for example, multiple flags
         waving in the wind.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
 
         :Parameters:
             `func` : function
@@ -774,7 +774,7 @@ def get_sleep_time(sleep_idle):
     :return: Time until the next scheduled event in seconds, or ``None``
         if there is no event scheduled.
 
-    .. versionadded:: pyglet 1.1
+    .. versionadded:: 1.1
     '''
     return _default.get_sleep_time(sleep_idle)
 
@@ -850,7 +850,7 @@ def schedule_interval_soft(func, interval, *args, **kwargs):
 
     :see: `Clock.schedule_interval_soft`
 
-    .. versionadded:: pyglet 1.1
+    .. versionadded:: 1.1
 
     :Parameters:
         `func` : function
@@ -959,7 +959,7 @@ class ClockDisplay(object):
         resource drain.  Call this method to unschedule the update method
         and allow the ClockDisplay to be garbage collected.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
         '''
         self.clock.unschedule(self.update_text)
 

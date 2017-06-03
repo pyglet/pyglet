@@ -60,7 +60,7 @@ default policy is to wait until all windows are closed)::
     def on_window_close(window):
         event_loop.exit()
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 '''
 from builtins import object
 
