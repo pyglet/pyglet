@@ -1,7 +1,7 @@
 Installation
 ============
 
-.. note:: These instructions apply to pyglet |release|.
+.. note:: These instructions apply to pyglet |version|.
 
 To play compressed audio and video files (anything but WAV), you will need
 `AVBin <http://avbin.github.io/>`_.

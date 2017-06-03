@@ -91,6 +91,7 @@ making pyglet even better.
 .. toctree::
    :maxdepth: 3
 
+   internal/contributing
    internal/virtualenv
    internal/testing
    internal/doc
