@@ -41,7 +41,7 @@ typical immediate-mode usage and, on modern graphics cards, better than using
 display lists in many cases.  The module is used internally by other areas of
 pyglet.
 
-See the :ref:`programming-guide` for details on how to use this graphics API.
+See the :ref:`programming-guide-graphics` for details on how to use this graphics API.
 
 Batches and groups
 ==================
