@@ -215,7 +215,7 @@ class OBJModelDecoder(ModelDecoder):
 
         obj = Obj(filename=filename)
 
-        return Model(obj=obj, batch=batch)
+        return Model(meshes=obj.mesh_list, batch=batch)
 
 
 def get_decoders():

@@ -56,7 +56,7 @@ class Model(object):
 
     _own_batch = False
 
-    def __init__(self, obj, batch=None, x=0, y=0, z=0):
+    def __init__(self, meshes, batch=None, x=0, y=0, z=0):
         if not batch:
             batch = graphics.Batch()
             self._own_batch = True
@@ -67,9 +67,7 @@ class Model(object):
         self._z = z
         self._vertex_lists = []
 
-        self.mesh_list = obj.mesh_list
-
-        for mesh in self.mesh_list:
+        for mesh in meshes:
             for material in mesh.materials:
                 self._vertex_lists.append(self._batch.add(len(material.vertices) // 3,
                                                           GL_TRIANGLES,
@@ -78,10 +76,24 @@ class Model(object):
                                                           ('n3f/static', material.normals),
                                                           ('t2f/static', material.tex_coords)))
 
-        # for mesh in self.mesh_list:
-        #     # print(m.name, m.materials)
-        #     for mat in mesh.materials:
-        #         print(mat.group.name, mat.group)
+    def update(self, x=None, y=None, z=None):
+        """Shift """
+        # TODO: optimize this mess
+        if x:
+            for vlist in self._vertex_lists:
+                verts = vlist.vertices[:]
+                verts[0::3] = [v + x for v in verts[0::3]]
+                vlist.vertices[:] = verts
+        if y:
+            for vlist in self._vertex_lists:
+                verts = vlist.vertices[:]
+                verts[1::3] = [v + y for v in verts[1::3]]
+                vlist.vertices[:] = verts
+        if z:
+            for vlist in self._vertex_lists:
+                verts = vlist.vertices[:]
+                verts[2::3] = [v + z for v in verts[2::3]]
+                vlist.vertices[:] = verts
 
     def draw(self):
         if self._own_batch:
