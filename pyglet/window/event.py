@@ -58,13 +58,10 @@ class WindowExitHandler(object):
 
     :deprecated: This class's functionality is provided directly on `Window`
         in pyglet 1.1.
-
-    :Ivariables:
-        `has_exit` : bool
-            True if the user wants to close the window.
-
     """
+
     has_exit = False
+    """True if the user wants to close the window."""
 
     def on_close(self):
         self.has_exit = True

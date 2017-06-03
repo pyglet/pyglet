@@ -74,7 +74,7 @@ def ReST_Ivariable(lines):
     for line in lines[1:]:
         rest.append(line[indent:])
     if len(part)>1:
-        rest.append(":type "+name+": "+part[1].strip().lstrip())
+        rest.append(":vartype "+name+": "+part[1].strip().lstrip())
     return rest
 
 

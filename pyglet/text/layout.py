@@ -1466,7 +1466,7 @@ class TextLayout(object):
     x = property(_get_x, _set_x,
                  doc="""X coordinate of the layout.
 
-    See also `anchor_x`.
+    See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`.
 
     :type: int
     """)

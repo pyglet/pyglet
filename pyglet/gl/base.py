@@ -108,7 +108,7 @@ class Config(object):
     def get_gl_attributes(self):
         '''Return a list of attributes set on this config.
 
-        :rtype: list of tuple (name, value)
+        :rtype: list of tuple ``(name, value)``
         :return: All attributes, with unset attributes having a value of
             ``None``.
         '''

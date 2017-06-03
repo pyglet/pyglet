@@ -192,7 +192,7 @@ class MouseCursor(object):
 
 
 class DefaultMouseCursor(MouseCursor):
-    """The default mouse cursor used by the operating system."""
+    """The default mouse cursor #sed by the operating system."""
     drawable = False
 
 
@@ -297,15 +297,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     To render into a window, you must first call `switch_to`, to make
     it the current OpenGL context.  If you use only one window in the
     application, there is no need to do this.
-
-    :Ivariables:
-        `has_exit` : bool
-            True if the user has attempted to close the window.
-
-            :deprecated: Windows are closed immediately by the default
-                `on_close` handler when `pyglet.app.event_loop` is being
-                used.
-
     """
 
     # Filled in by metaclass with the names of all methods on this (sub)class
@@ -368,6 +359,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: The "wait" mouse cursor combined with an arrow.
     CURSOR_WAIT_ARROW = 'wait_arrow'
 
+    #: True if the user has attempted to close the window.
+    #:
+    #: :deprecated: Windows are closed immediately by the default
+    #:      `on_close` handler when `pyglet.app.event_loop` is being
+    #:      used.
     has_exit = False
 
     #: Window display contents validity.  The `pyglet.app` event loop

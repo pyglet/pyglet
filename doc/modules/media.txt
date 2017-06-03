@@ -56,7 +56,6 @@ Classes
 
 .. autoclass:: Source
   :members:
-  :undoc-members:
 
 .. autoclass:: StreamingSource
   :members:

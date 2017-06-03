@@ -185,7 +185,7 @@ def add_file(font):
     other place where you normally specify a font.
 
     :Parameters:
-        `font` : str or file
+        `font` : str or file-like object
             Filename or file-like object to load fonts from.
 
     """
