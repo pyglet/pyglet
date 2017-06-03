@@ -124,8 +124,6 @@ Pyglet has some special roles.
           - Shows
         * - ``:deprecated: Do not use``
           - .. warning:: Deprecated. Do not use
-        * - ``.. versionadded:: 1.2``
-          - .. note:: Since 1.2
 
 .. _guide_doc_ref:
 
