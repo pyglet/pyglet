@@ -1,30 +1,67 @@
-``pyglet`` Documentation Index
-------------------------------
+pyglet Documentation
+====================
 
-Pyglet is a pure python cross-platform application framework intended for game
-development. It supports windowing, user interface event handling, OpenGL
-graphics, loading images and videos and playing sounds and music. It works on
-Windows, OS X and Linux.
+**pyglet** is a cross-platform windowing and multimedia library for Python
+intended for game development. It supports windowing, user interface event 
+handling, OpenGL graphics, loading images and videos, and playing sounds
+and music. It works on Windows, OS X and Linux.
 
-.. autosummary::
-   :toctree: api/
-   :template: package.rst
-   :hidden:
+Some of the features of pyglet are:
 
-   pyglet
+* **No external dependencies or installation requirements.** For most 
+  application and game requirements, pyglet needs nothing else besides Python,
+  simplifying distribution and installation.
+* **Take advantage of multiple windows and multi-monitor desktops.** pyglet
+  allows you to use as many windows as you need, and is fully aware of
+  multi-monitor setups for use with fullscreen games.
+* **Load images, sound, music and video in almost any format.** pyglet can
+  optionally use AVbin to play back audio formats such as MP3, OGG/Vorbis and
+  WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
+* **pyglet is provided under the BSD open-source license**, allowing you to 
+  use it for both commercial and other open-source projects with very little
+  restriction.
+* **Supports Python 2 and 3.** Pick your favorite!
+
+Please join us on the `mailing list`_!
+
+.. _mailing list: http://groups.google.com/group/pyglet-users
 
 Programming Guide
-==================
-Every programmer starting to develop using pyglet, should start here.
+-----------------
+
+The pyglet Programming Guide provides in-depth documentation for writing
+applications that use pyglet.  Many topics described here reference the pyglet
+API reference, provided separately.
+
+If this is your first time reading about pyglet, we suggest you start at
+:doc:`programming_guide/quickstart`.
 
 .. toctree::
    :maxdepth: 2
 
-   Programming Guide <programming_guide/index>
-
+   programming_guide/installation
+   programming_guide/quickstart
+   programming_guide/context
+   programming_guide/gl
+   programming_guide/graphics
+   programming_guide/windowing
+   programming_guide/eventloop
+   programming_guide/events
+   programming_guide/keyboard
+   programming_guide/mouse
+   programming_guide/input
+   programming_guide/time
+   programming_guide/text
+   programming_guide/image
+   programming_guide/media
+   programming_guide/resources
+   programming_guide/options
+   programming_guide/debug
+   programming_guide/advanced
+   programming_guide/features1.1
 
 API Reference
-=============
+-------------
 
 .. toctree::
    :maxdepth: 2
@@ -45,11 +82,11 @@ API Reference
    modules/text/index
    modules/window
 
-
-Development guide
-=================
-These documents describe details on how to develop pyglet itself further. Read these to get a more
-detailed insight in how pyglet is designed and how to help making pyglet even better.
+Development Guide
+-----------------
+These documents describe details on how to develop pyglet itself further. Read
+these to get a more detailed insight in how pyglet is designed and how to help
+making pyglet even better.
 
 .. toctree::
    :maxdepth: 3
@@ -62,15 +99,11 @@ detailed insight in how pyglet is designed and how to help making pyglet even be
    internal/generated
    internal/wraptypes
 
-
-
-
 Related Documentation
-======================
+---------------------
 
 * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
 * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
 * `AVbin Documentation <http://avbin.github.com/AVbin/Docs.html>`_
 * `ctypes Reference <http://docs.python.org/lib/module-ctypes.html>`_
 * `Python Documentation <http://docs.python.org/>`_
-
