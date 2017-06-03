@@ -795,7 +795,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         is affected.
 
         There is little need to override this method; instead, subclass
-        ``MouseCursor`` and provide your own ``draw`` method.
+        :py:class:`MouseCursor` and provide your own
+        :py:meth:`~MouseCursor.draw` method.
         """
         # Draw mouse cursor if set and visible.
         # XXX leaves state in modelview regardless of starting state
@@ -876,7 +877,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def display(self):
         """The display this window belongs to.  Read-only.
 
-        :type: `Display`
+        :type: :py:class:`Display`
         """
         return self._display
 
@@ -884,7 +885,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def screen(self):
         """The screen this window is fullscreen in.  Read-only.
 
-        :type: `Screen`
+        :type: :py:class:`Screen`
         """
         return self._screen
 
@@ -892,7 +893,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def config(self):
         """A GL config describing the context of this window.  Read-only.
 
-        :type: `pyglet.gl.Config`
+        :type: :py:class:`pyglet.gl.Config`
         """
         return self._config
 
@@ -900,7 +901,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def context(self):
         """The OpenGL context attached to this window.  Read-only.
 
-        :type: `pyglet.gl.Context`
+        :type: :py:class:`pyglet.gl.Context`
         """
         return self._context
 
@@ -1786,7 +1787,7 @@ def get_platform():
 
     :deprecated: Use `pyglet.canvas.Display`.
 
-    :rtype: `Platform`
+    :rtype: :py:class:`Platform`
     :return: The platform instance.
     """
     return Platform()

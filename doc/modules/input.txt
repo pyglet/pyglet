@@ -3,6 +3,8 @@ pyglet.input
 
 .. automodule:: pyglet.input
 
+.. currentmodule:: pyglet.input
+
 Classes
 -------
 
@@ -12,9 +14,15 @@ Classes
   :show-inheritance:
 
 .. autoclass:: Control
-  :members:
-  :undoc-members:
   :show-inheritance:
+
+  .. rubric:: Events
+
+  .. automethod:: on_change
+
+  .. rubric:: Attributes
+
+  .. autoattribute:: value
 
 .. autoclass:: RelativeAxis
   :members:
@@ -27,26 +35,52 @@ Classes
   :show-inheritance:
 
 .. autoclass:: Button
-  :members:
-  :undoc-members:
   :show-inheritance:
+
+  .. rubric:: Events
+
+  .. automethod:: on_press
+  .. automethod:: on_release
+
+  .. rubric:: Attributes
+
+  .. autoattribute:: value
 
 .. autoclass:: Joystick
-  :members:
-  :undoc-members:
   :show-inheritance:
 
+  .. rubric:: Methods
+
+  .. automethod:: open
+  .. automethod:: close
+
+  .. rubric:: Events
+
+  .. automethod:: on_joyaxis_motion
+  .. automethod:: on_joyhat_motion
+  .. automethod:: on_joybutton_press
+  .. automethod:: on_joybutton_release
+
 .. autoclass:: AppleRemote
-  :members:
-  :undoc-members:
   :show-inheritance:
+
+  .. rubric:: Methods
+
+  .. automethod:: open
+  .. automethod:: close
+
+  .. rubric:: Events
+
+  .. automethod:: on_button_press
+  .. automethod:: on_button_release
 
 .. autoclass:: Tablet
   :undoc-members:
-  :show-inheritance:
 
 Functions
 ---------
+
+.. currentmodule:: pyglet.input
 
 .. autofunction:: get_apple_remote
 .. autofunction:: get_devices

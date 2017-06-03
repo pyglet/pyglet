@@ -56,16 +56,20 @@ draw event handler::
 
     pyglet.app.run()
 
-The sprite can be moved by modifying the ``x`` and ``y`` properties.  Other
-properties determine the sprite's rotation, scale and opacity.
+The sprite can be moved by modifying the :py:attr:`~pyglet.sprite.Sprite.x` and 
+:py:attr:`~pyglet.sprite.Sprite.y` properties.  Other
+properties determine the sprite's :py:attr:`~pyglet.sprite.Sprite.rotation`,
+:py:attr:`~pyglet.sprite.Sprite.scale` and
+:py:attr:`~pyglet.sprite.Sprite.opacity`.
 
 By default sprite coordinates are restricted to integer values to avoid
 sub-pixel artifacts.  If you require to use floats, for example for smoother
 animations, you can set the ``subpixel`` parameter to ``True`` when creating
-the sprite (.. versionadded:: pyglet 1.2).
+the sprite (:since: pyglet 1.2).
 
 The sprite's positioning, rotation and scaling all honor the original
-image's anchor (anchor_x, anchor_y).
+image's anchor (:py:attr:`~pyglet.image.AbstractImage.anchor_x`,
+:py:attr:`~pyglet.image.AbstractImage.anchor_y`).
 
 
 Drawing multiple sprites
@@ -293,7 +297,7 @@ class Sprite(event.EventDispatcher):
         its batch (for individual drawing).  Note that this can be an expensive
         operation.
 
-        :type: `Batch`
+        :type: :py:class:`pyglet.graphics.Batch`
         """
         return self._batch
 
@@ -317,7 +321,7 @@ class Sprite(event.EventDispatcher):
         The sprite can change its rendering group, however this can be an
         expensive operation.
 
-        :type: `Group`
+        :type: :py:class:`pyglet.graphics.Group`
         """
         return self._group.parent
 
@@ -337,7 +341,8 @@ class Sprite(event.EventDispatcher):
     def image(self):
         """Image or animation to display.
 
-        :type: `AbstractImage` or `Animation`
+        :type: :py:class:`~pyglet.image.AbstractImage` or
+               :py:class:`~pyglet.image.Animation`
         """
         if self._animation:
             return self._animation
