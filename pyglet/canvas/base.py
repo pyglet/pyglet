@@ -36,15 +36,15 @@ class Display(object):
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
-        screen to be accessed through a single pyglet `Display`.
+        screen to be accessed through a single pyglet`~pyglet.canvas.Display`
 
         On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
         ignored; there is only a single display device on these systems.
 
         :Parameters:
-            `name` : str
+            name : str
                 The name of the display to connect to.
-            `x_screen` : int
+            x_screen : int
                 The X11 screen number to use.
 
         '''
@@ -53,7 +53,7 @@ class Display(object):
     def get_screens(self):
         '''Get the available screens.
 
-        A typical multi-monitor workstation comprises one :class:`Display` 
+        A typical multi-monitor workstation comprises one :class`~pyglet.canvas.Display`
         with multiple :class:`Screen` s.  This method returns a list of 
         screens which can be enumerated to select one for full-screen display.
 

@@ -101,10 +101,10 @@ def get_apple_remote(display=None):
     be used with Mac OS X.
 
     :Parameters:
-        `display` : `Display`
+        display : `~pyglet.canvas.Display`
             Currently ignored.
 
-    :rtype: `AppleRemote`
+    :rtype: AppleRemote
     :return: The remote device, or `None` if the computer does not support it.
     """
     return None
@@ -114,24 +114,24 @@ if _is_epydoc:
         """Get a list of all attached input devices.
 
         :Parameters:
-            `display` : `Display`
+            display : `~pyglet.canvas.Display`
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display
                 device.
 
-        :rtype: list of `Device`
+        :rtype: list of :py:class:`Device`
         """
 
     def get_joysticks(display=None):
         """Get a list of attached joysticks.
 
         :Parameters:
-            `display` : `Display`
+            display : `~pyglet.canvas.Display`
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display
                 device.
 
-        :rtype: list of `Joystick`
+        :rtype: list of :py:class:`Joystick`
         """
 
     def get_tablets(display=None):
@@ -144,12 +144,12 @@ if _is_epydoc:
         is undefined if more than one is attached.
 
         :Parameters:
-            `display` : `Display`
+            display : `~pyglet.canvas.Display`
                 The display device to query for input devices.  Ignored on Mac
                 OS X and Windows.  On Linux, defaults to the default display
                 device.
 
-        :rtype: list of `Tablet`
+        :rtype: list of :py:class:`Tablet`
         """
 
 else:

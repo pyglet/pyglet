@@ -62,14 +62,14 @@ ways to control the context that is created:
       screen = display.get_screens()[screen_number]
       window = pyglet.window.Window(screen=screen)
 
-* Specify a `Display` using the ``display`` argument.  The default screen on
+* Specify a`~pyglet.canvas.Display`using the ``display`` argument.  The default screen on
   this display will be used to obtain a context using the default template
   configuration::
 
       display = platform.get_display(display_name)
       window = pyglet.window.Window(display=display)
 
-If a template `Config` is given, a `Screen` or `Display` may also be
+If a template `Config` is given, a `Screen` or`~pyglet.canvas.Display`may also be
 specified; however any other combination of parameters overconstrains the
 configuration and some parameters will be ignored.
 
