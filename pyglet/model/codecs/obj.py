@@ -6,7 +6,7 @@ from pyglet.model.codecs import ModelDecoder
 from pyglet.model import Model
 
 
-class MaterialGroup(pyglet.graphics.Group):
+class MaterialGroup(graphics.Group):
     diffuse = [.8, .8, .8]
     ambient = [.2, .2, .2]
     specular = [0., 0., 0.]
@@ -68,142 +68,147 @@ class Mesh(object):
         self.materials = []
 
 
-class Obj(object):
-    # TODO: handle filename/file/path parameters
-    def __init__(self, filename, file=None):
-        self.materials = {}
-        self.mesh_list = []     # Also includes anonymous meshes
+def load_material_library(path, filename):
 
-        if file is None:
-            file = open(filename, 'r')
+    file = open(os.path.join(path, filename), 'r')
 
-        self.path = os.path.dirname(filename)
+    materials = {}
 
-        mesh = None
-        material_set = None
-        group = None
+    for line in file:
+        if line.startswith('#'):
+            continue
+        values = line.split()
+        if not values:
+            continue
 
-        vertices = [[0., 0., 0.]]
-        normals = [[0., 0., 0.]]
-        tex_coords = [[0., 0.]]
+        if values[0] == 'newmtl':
+            material = MaterialGroup(values[1])
+            materials[material.name] = material
+        elif material is None:
+            print('Expected "newmtl" in %s' % filename)
+            continue
 
-        for line in file:
-            if line.startswith('#'):
-                continue
-            values = line.split()
-            if not values:
-                continue
+        try:
+            if values[0] == 'Kd':
+                material.diffuse = list(map(float, values[1:]))
+            elif values[0] == 'Ka':
+                material.ambient = list(map(float, values[1:]))
+            elif values[0] == 'Ks':
+                material.specular = list(map(float, values[1:]))
+            elif values[0] == 'Ke':
+                material.emissive = list(map(float, values[1:]))
+            elif values[0] == 'Ns':
+                material.shininess = float(values[1])
+            elif values[0] == 'd':
+                material.opacity = float(values[1])
+            elif values[0] == 'map_Kd':
+                try:
+                    material.texture = pyglet.resource.image(values[1]).texture
+                except BaseException as ex:
+                    print('Could not load texture %s: %s' % (values[1], ex))
+        except BaseException as ex:
+            print('Parse error in {0}.'.format((filename, ex)))
 
-            if values[0] == 'v':
-                vertices.append(list(map(float, values[1:4])))
-            elif values[0] == 'vn':
-                normals.append(list(map(float, values[1:4])))
-            elif values[0] == 'vt':
-                tex_coords.append(list(map(float, values[1:3])))
-            elif values[0] == 'mtllib':
-                self.load_material_library(values[1])
-            elif values[0] in ('usemtl', 'usemat'):
-                group = self.materials.get(values[1], None)
-                if group is None:
-                    print('Unknown material: %s' % values[1])
-                if mesh is not None:
-                    material_set = MaterialSet(group)
-                    mesh.materials.append(material_set)
-            elif values[0] == 'o':
-                mesh = Mesh(values[1])
-                self.mesh_list.append(mesh)
-                material_set = None
-            elif values[0] == 'f':
-                if mesh is None:
-                    mesh = Mesh('')
-                    self.mesh_list.append(mesh)
-                if group is None:
-                    # FIXME
-                    group = MaterialGroup("<unknown>")
-                if material_set is None:
-                    material_set = MaterialSet(group)
-                    mesh.materials.append(material_set)
-
-                # For fan triangulation, remember first and latest vertices
-                n1 = None
-                nlast = None
-                t1 = None
-                tlast = None
-                v1 = None
-                vlast = None
-                # points = []
-                for i, v in enumerate(values[1:]):
-                    v_index, t_index, n_index = \
-                        (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
-                    if v_index < 0:
-                        v_index += len(vertices) - 1
-                    if t_index < 0:
-                        t_index += len(tex_coords) - 1
-                    if n_index < 0:
-                        n_index += len(normals) - 1
-                    # vertex = tex_coords[t_index] + \
-                    #         normals[n_index] + \
-                    #         vertices[v_index]
-
-                    material_set.normals += normals[n_index]
-                    material_set.tex_coords += tex_coords[t_index]
-                    material_set.vertices += vertices[v_index]
-
-                    if i >= 3:
-                        # Triangulate
-                        material_set.normals += n1 + nlast
-                        material_set.tex_coords += t1 + tlast
-                        material_set.vertices += v1 + vlast
-
-                    if i == 0:
-                        n1 = normals[n_index]
-                        t1 = tex_coords[t_index]
-                        v1 = vertices[v_index]
-                    nlast = normals[n_index]
-                    tlast = tex_coords[t_index]
-                    vlast = vertices[v_index]
-
-    def load_material_library(self, filename):
-
-        material = None
-        file = open(os.path.join(self.path, filename), 'r')
-
-        for line in file:
-            if line.startswith('#'):
-                continue
-            values = line.split()
-            if not values:
-                continue
-
-            if values[0] == 'newmtl':
-                material = MaterialGroup(values[1])
-                self.materials[material.name] = material
-            elif material is None:
-                print('Expected "newmtl" in %s' % filename)
-                continue
-
-            try:
-                if values[0] == 'Kd':
-                    material.diffuse = list(map(float, values[1:]))
-                elif values[0] == 'Ka':
-                    material.ambient = list(map(float, values[1:]))
-                elif values[0] == 'Ks':
-                    material.specular = list(map(float, values[1:]))
-                elif values[0] == 'Ke':
-                    material.emissive = list(map(float, values[1:]))
-                elif values[0] == 'Ns':
-                    material.shininess = float(values[1])
-                elif values[0] == 'd':
-                    material.opacity = float(values[1])
-                elif values[0] == 'map_Kd':
-                    try:
-                        material.texture = pyglet.resource.image(values[1]).texture
-                    except BaseException as ex:
-                        print('Could not load texture %s: %s' % (values[1], ex))
-            except BaseException as ex:
-                print('Parse error in {0}.'.format((filename, ex)))
+    return materials
 
 
+def parse_obj_file(filename, file=None):
+    materials = {}
+    mesh_list = []  # Also includes anonymous meshes
+
+    if file is None:
+        file = open(filename, 'r')
+
+    path = os.path.dirname(filename)
+
+    mesh = None
+    material_set = None
+    group = None
+
+    vertices = [[0., 0., 0.]]
+    normals = [[0., 0., 0.]]
+    tex_coords = [[0., 0.]]
+
+    for line in file:
+        if line.startswith('#'):
+            continue
+        values = line.split()
+        if not values:
+            continue
+
+        if values[0] == 'v':
+            vertices.append(list(map(float, values[1:4])))
+        elif values[0] == 'vn':
+            normals.append(list(map(float, values[1:4])))
+        elif values[0] == 'vt':
+            tex_coords.append(list(map(float, values[1:3])))
+        elif values[0] == 'mtllib':
+            materials = load_material_library(path, values[1])
+        elif values[0] in ('usemtl', 'usemat'):
+            group = materials.get(values[1], None)
+            if group is None:
+                print('Unknown material: %s' % values[1])
+            if mesh is not None:
+                material_set = MaterialSet(group)
+                mesh.materials.append(material_set)
+        elif values[0] == 'o':
+            mesh = Mesh(values[1])
+            mesh_list.append(mesh)
+            material_set = None
+        elif values[0] == 'f':
+            if mesh is None:
+                mesh = Mesh('')
+                mesh_list.append(mesh)
+            if group is None:
+                # FIXME
+                group = MaterialGroup("<unknown>")
+            if material_set is None:
+                material_set = MaterialSet(group)
+                mesh.materials.append(material_set)
+
+            # For fan triangulation, remember first and latest vertices
+            n1 = None
+            nlast = None
+            t1 = None
+            tlast = None
+            v1 = None
+            vlast = None
+            # points = []
+            for i, v in enumerate(values[1:]):
+                v_index, t_index, n_index = \
+                    (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
+                if v_index < 0:
+                    v_index += len(vertices) - 1
+                if t_index < 0:
+                    t_index += len(tex_coords) - 1
+                if n_index < 0:
+                    n_index += len(normals) - 1
+                # vertex = tex_coords[t_index] + \
+                #         normals[n_index] + \
+                #         vertices[v_index]
+
+                material_set.normals += normals[n_index]
+                material_set.tex_coords += tex_coords[t_index]
+                material_set.vertices += vertices[v_index]
+
+                if i >= 3:
+                    # Triangulate
+                    material_set.normals += n1 + nlast
+                    material_set.tex_coords += t1 + tlast
+                    material_set.vertices += v1 + vlast
+
+                if i == 0:
+                    n1 = normals[n_index]
+                    t1 = tex_coords[t_index]
+                    v1 = vertices[v_index]
+                nlast = normals[n_index]
+                tlast = tex_coords[t_index]
+                vlast = vertices[v_index]
+    return mesh_list
+
+
+###################################################
+#   Decoder definitions start here:
 ###################################################
 
 class OBJModelDecoder(ModelDecoder):
@@ -213,9 +218,9 @@ class OBJModelDecoder(ModelDecoder):
     def decode(self, file, filename, batch):
         # TODO: add exception handling
 
-        obj = Obj(filename=filename)
+        mesh_list = parse_obj_file(filename)
 
-        return Model(meshes=obj.mesh_list, batch=batch)
+        return Model(meshes=mesh_list, batch=batch)
 
 
 def get_decoders():

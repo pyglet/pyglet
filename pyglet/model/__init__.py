@@ -77,7 +77,7 @@ class Model(object):
                                                           ('t2f/static', material.tex_coords)))
 
     def update(self, x=None, y=None, z=None):
-        """Shift """
+        """Shift entire model on the x, y or z axis."""
         # TODO: optimize this mess
         if x:
             for vlist in self._vertex_lists:
