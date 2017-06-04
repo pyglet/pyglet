@@ -105,7 +105,7 @@ application that opens an empty window can be written with::
 
     pyglet.app.run()
 
-Note the new `on_draw` event, which makes it easy to specify different drawing
+Note the new :py:meth:`~pyglet.window.Window.on_draw` event, which makes it easy to specify different drawing
 functions for each window.  The :py:mod:`pyglet.app` event loop takes care of
 dispatching events, ticking the clock, calling the draw function and flipping
 the window buffer.
@@ -133,7 +133,7 @@ interacted with without blocking the application.
 
 **It is highly recommended that all applications use the event loop.**  The
 loop can be extended if you need to add additional hooks or integrate with
-another package.  Applications continuing to use `Window.dispatch_events`
+another package.  Applications continuing to use :py:meth:`~pyglet.window.Window.dispatch_events`
 gain no advantage, but suffer from poorer response, increased CPU usage and
 artifacts during window resizing and moving.
 
@@ -248,7 +248,7 @@ control over the event stack than :py:meth:`~pyglet.event.EventDispatcher.pop_ha
 
 The ``@event`` decorator has been fixed so that it no longer overrides
 existing event handlers on the object, which fixes the common problem of
-handling the `on_resize` event.  For example, the following now works without
+handling the :py:meth:`~pyglet.window.Window.on_resize` event.  For example, the following now works without
 any surprises (in pyglet 1.0 this would override the default handler, which
 sets up a default, necessary viewport and projection)::
 

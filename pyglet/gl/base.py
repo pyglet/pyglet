@@ -363,7 +363,7 @@ class Context(object):
     def delete_buffer(self, buffer_id):
         '''Safely delete a buffer object belonging to this context.
 
-        This method behaves similarly to `delete_texture`, though for
+        This method behaves similarly to :py:func:`~pyglet.text.document.AbstractDocument.delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
 
         :Parameters:

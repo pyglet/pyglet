@@ -46,7 +46,7 @@ Three layout classes are provided:
     and even querying some properties, will cause the entire document
     to be laid out again.
 
-`ScrollableTextLayout`
+:py:class:`~pyglet.text.layout.ScrollableTextLayout`
     Based on :py:func:`~pyglet.text.layout.TextLayout`.
 
     A separate group is used for layout which crops the contents of the
@@ -54,8 +54,8 @@ Three layout classes are provided:
     layout can be "scrolled" within that rectangle with the ``view_x`` and
     ``view_y`` properties.
 
-`IncrementalTextLayout`
-    Based on `ScrollableTextLayout`.
+:py:class:`~pyglet.text.layout.IncrementalTextLayout`
+    Based on :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     When the layout or document are modified, only the affected regions
     are laid out again.  This permits efficient interactive editing and
@@ -68,8 +68,8 @@ Three layout classes are provided:
     Additionally, this class provides methods for locating the position of a
     caret in the document, and for displaying interactive text selections.
 
-All three layout classes can be used with either `UnformattedDocument` or
-`FormattedDocument`, and can be either single-line or ``multiline``.  The
+All three layout classes can be used with either :py:class:`~pyglet.text.document.UnformattedDocument` or
+:py:class:`~pyglet.text.document.FormattedDocument`, and can be either single-line or ``multiline``.  The
 combinations of these options effectively provides 12 different text display
 possibilities.
 
@@ -548,7 +548,7 @@ class TextLayoutGroup(graphics.Group):
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
-    """Top-level rendering group for `ScrollableTextLayout`.
+    """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     The group maintains internal state for setting the clipping planes and
     view transform for scrolling.  Because the group has internal state
@@ -719,7 +719,7 @@ class TextLayout(object):
 
     The benefit of this class is that texture state is shared between
     all layouts of this class.  The time to draw one :py:func:`~pyglet.text.layout.TextLayout` may be
-    roughly the same as the time to draw one `IncrementalTextLayout`; but
+    roughly the same as the time to draw one :py:class:`~pyglet.text.layout.IncrementalTextLayout`; but
     drawing ten :py:func:`~pyglet.text.layout.TextLayout` objects in one batch is much faster than drawing
     ten incremental or scrollable text layouts.
 
@@ -921,7 +921,7 @@ class TextLayout(object):
     document = property(_get_document, _set_document,
                         doc="""Document to display.
  
-     For `IncrementalTextLayout` it is far more efficient to modify a document
+     For :py:class:`~pyglet.text.layout.IncrementalTextLayout` it is far more efficient to modify a document
      in-place than to replace the document instance on the layout.
  
      :type: `AbstractDocument`
@@ -1776,7 +1776,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
-    Unlike :py:func:`~pyglet.text.layout.TextLayout` and `ScrollableTextLayout`, this class generates
+    Unlike :py:func:`~pyglet.text.layout.TextLayout` and :py:class:`~pyglet.text.layout.ScrollableTextLayout`, this class generates
     vertex lists only for lines of text that are visible.  As the document is
     scrolled, vertex lists are deleted and created as appropriate to keep
     video memory usage to a minimum and improve rendering speed.

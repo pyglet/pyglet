@@ -81,15 +81,15 @@ functions.
         * - | `pyglet.text.load` 
             | mimetype = ``text/plain``
           - `pyglet.resource.text`
-          - `UnformattedDocument`
+          - :py:class:`~pyglet.text.document.UnformattedDocument`
         * - | `pyglet.text.load`
             | mimetype = ``text/html``
           - `pyglet.resource.html`
-          - `FormattedDocument`
+          - :py:class:`~pyglet.text.document.FormattedDocument`
         * - | `pyglet.text.load`
             | mimetype = ``text/vnd.pyglet-attributed``
           - `pyglet.resource.attributed`
-          - `FormattedDocument`
+          - :py:class:`~pyglet.text.document.FormattedDocument`
         * - `pyglet.font.add_file`
           - `pyglet.resource.add_font`
           - ``None``

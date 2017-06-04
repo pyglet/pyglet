@@ -301,11 +301,11 @@ class Joystick(EventDispatcher):
     range [-1.0, 1.0]. 
 
     To receive events when the value of an axis changes, attach an 
-    on_joyaxis_motion event handler to the joystick.  The `Joystick` instance,
+    on_joyaxis_motion event handler to the joystick.  The :py:class:`~pyglet.input.Joystick` instance,
     axis name, and current value are passed as parameters to this event.
 
     To handle button events, you should attach on_joybutton_press and 
-    on_joy_button_release event handlers to the joystick.  Both the `Joystick`
+    on_joy_button_release event handlers to the joystick.  Both the :py:class:`~pyglet.input.Joystick`
     instance and the index of the changed button are passed as parameters to 
     these events.
 

@@ -62,7 +62,7 @@ The framerate can be limited::
 
     clock.set_fps_limit(60)
 
-This causes `clock` to sleep during each `tick` in an attempt to keep the
+This causes :py:class:`~pyglet.clock.Clock` to sleep during each `tick` in an attempt to keep the
 number of ticks (frames) per second below 60.
 
 The implementation uses platform-dependent high-resolution sleep functions
@@ -120,7 +120,7 @@ within the __init__ method.
 Using multiple clocks
 =====================
 
-The clock functions are all relayed to an instance of `Clock` which is
+The clock functions are all relayed to an instance of :py:class:`~pyglet.clock.Clock` which is
 initialised with the module.  You can get this instance to use directly::
 
     clk = clock.get_default()
@@ -718,7 +718,7 @@ _default = Clock()
 def set_default(default):
     '''Set the default clock to use for all module-level functions.
 
-    By default an instance of `Clock` is used.
+    By default an instance of :py:class:`~pyglet.clock.Clock` is used.
 
     :Parameters:
         `default` : `Clock`
@@ -729,7 +729,7 @@ def set_default(default):
 
 
 def get_default():
-    '''Return the `Clock` instance that is used by all module-level
+    '''Return the :py:class:`~pyglet.clock.Clock` instance that is used by all module-level
     clock functions.
 
     :rtype: `Clock`
@@ -953,7 +953,7 @@ class ClockDisplay(object):
     def unschedule(self):
         '''Remove the display from its clock's schedule.
 
-        `ClockDisplay` uses `Clock.schedule_interval` to periodically update
+        :py:class:`~pyglet.clock.ClockDisplay` uses `Clock.schedule_interval` to periodically update
         its display label.  Even if the ClockDisplay is not being used any
         more, its update method will still be scheduled, which can be a
         resource drain.  Call this method to unschedule the update method

@@ -90,7 +90,7 @@ Resizing the window
 -------------------
 
 pyglet sets up the viewport and an orthographic projection on each window
-automatically.  It does this in a default `on_resize` handler defined on
+automatically.  It does this in a default :py:meth:`~pyglet.window.Window.on_resize` handler defined on
 :py:class:`~pyglet.window.Window`::
 
     @window.event
@@ -114,7 +114,7 @@ event with your own; for example::
         glMatrixMode(GL_MODELVIEW)
         return pyglet.event.EVENT_HANDLED
 
-Note that the `on_resize` handler is called for a window the first time
+Note that the :py:meth:`~pyglet.window.Window.on_resize` handler is called for a window the first time
 it is displayed, as well as any time it is later resized.
 
 Error checking

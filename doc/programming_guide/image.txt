@@ -642,7 +642,7 @@ details.
 Displaying images
 -----------------
 
-Images should be drawn into a window in the window's `on_draw` event handler.
+Images should be drawn into a window in the window's :py:meth:`~pyglet.window.Window.on_draw` event handler.
 Usually a "sprite" should be created for each appearance of the image
 on-screen.  Images can also be drawn directly without creating a sprite.
 

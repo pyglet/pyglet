@@ -38,7 +38,7 @@
 Abstract representation
 =======================
 
-Styled text in pyglet is represented by one of the `AbstractDocument` classes,
+Styled text in pyglet is represented by one of the :py:class:`~pyglet.text.document.AbstractDocument` classes,
 which manage the state representation of text and style independently of how
 it is loaded or rendered.  
 
@@ -84,16 +84,16 @@ http://unicode.org/reports/tr13/tr13-5.html.
 Document classes
 ================
 
-Any class implementing `AbstractDocument` provides an interface to a
+Any class implementing :py:class:`~pyglet.text.document.AbstractDocument` provides an interface to a
 document model as described above.  In theory a structured document such as
 HTML or XML could export this model, though the classes provided by pyglet
 implement only unstructured documents.
 
-The `UnformattedDocument` class assumes any styles set are set over the entire
+The :py:class:`~pyglet.text.document.UnformattedDocument` class assumes any styles set are set over the entire
 document.  So, regardless of the range specified when setting a ``"bold"``
 style attribute, for example, the entire document will receive that style.
 
-The `FormattedDocument` class implements the document model directly, using
+The :py:class:`~pyglet.text.document.FormattedDocument` class implements the document model directly, using
 the `RunList` class to represent style runs efficiently.
 
 Style attributes
@@ -267,8 +267,8 @@ class AbstractDocument(event.EventDispatcher):
 
     This class can be overridden to interface pyglet with a third-party
     document format.  It may be easier to implement the document format in
-    terms of one of the supplied concrete classes `FormattedDocument` or
-    `UnformattedDocument`. 
+    terms of one of the supplied concrete classes :py:class:`~pyglet.text.document.FormattedDocument` or
+    :py:class:`~pyglet.text.document.UnformattedDocument`. 
     """
     _previous_paragraph_re = re.compile(u'\n[^\n\u2029]*$')
     _next_paragraph_re = re.compile(u'[\n\u2029]')
@@ -284,8 +284,8 @@ class AbstractDocument(event.EventDispatcher):
     def text(self):
         """Document text.
 
-        For efficient incremental updates, use the `insert_text` and
-        `delete_text` methods instead of replacing this property.
+        For efficient incremental updates, use the :py:func:`~pyglet.text.document.AbstractDocument.insert_text` and
+        :py:func:`~pyglet.text.document.AbstractDocument.delete_text` methods instead of replacing this property.
 
         :type: str
         """
@@ -630,7 +630,7 @@ class FormattedDocument(AbstractDocument):
     """Simple implementation of a document that maintains text formatting.
 
     Changes to text style are applied according to the description in
-    `AbstractDocument`.  All styles default to ``None``.
+    :py:class:`~pyglet.text.document.AbstractDocument`.  All styles default to ``None``.
     """
 
     def __init__(self, text=''):

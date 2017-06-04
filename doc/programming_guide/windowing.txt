@@ -173,13 +173,13 @@ Windows XP and Mac OS X 10.4 are shown below.
         * - Style
           - Windows XP
           - Mac OS X
-        * - `WINDOW_STYLE_DEFAULT`
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_DEFAULT`
           - .. image:: img/window_xp_default.png
           - .. image:: img/window_osx_default.png
-        * - `WINDOW_STYLE_DIALOG`
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_DIALOG`
           - .. image:: img/window_xp_dialog.png
           - .. image:: img/window_osx_dialog.png
-        * - `WINDOW_STYLE_TOOL`
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
           - .. image:: img/window_xp_tool.png
           - .. image:: img/window_osx_tool.png
 
@@ -196,7 +196,7 @@ behaviour may not be consistent across Windows, Linux and Mac OS X.
 The appearance and behaviour of windows in Linux will vary greatly depending
 on the distribution, window manager and user preferences.
 
-Borderless windows (`WINDOW_STYLE_BORDERLESS`) are not decorated by the
+Borderless windows (:py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`) are not decorated by the
 operating system at all, and have no way to be resized or moved around the
 desktop.  These are useful for implementing splash screens or custom window
 borders.

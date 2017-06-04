@@ -354,6 +354,8 @@ change the indices.
 .. [#multitex] Only texture coordinates for texture unit 0 are accessible
     through this attribute.
 
+.. _guide_batched-rendering:
+
 Batched rendering
 -----------------
 
