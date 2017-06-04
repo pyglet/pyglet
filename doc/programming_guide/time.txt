@@ -5,6 +5,8 @@ pyglet's `clock` module provides functionality for scheduling functions for
 periodic or one-shot future execution and for calculating and displaying
 the application frame rate.
 
+.. _guide_calling-functions-periodically:
+
 Calling functions periodically
 ------------------------------
 
