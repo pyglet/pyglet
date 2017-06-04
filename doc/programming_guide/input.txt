@@ -5,9 +5,6 @@ Pyglet's `input` module allows you to accept input from any USB human
 interface device (HID).  High level interfaces are provided for
 working with joysticks and with the Apple Remote.
 
-.. contents::
-    :local:
-
 Using joysticks
 ---------------
 

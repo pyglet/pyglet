@@ -66,6 +66,7 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
+   modules/pyglet
    modules/app
    modules/canvas
    modules/clock

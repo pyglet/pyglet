@@ -8,10 +8,7 @@ classes easily.
 
 Throughout this documentation, an "event dispatcher" is an object that has
 events it needs to notify other objects about, and an "event handler" is some
-code that can be attached to a dispatcher.
-
-.. contents::
-    :local:
+code that can be attached to a dispatcher.:
 
 Setting event handlers
 ----------------------

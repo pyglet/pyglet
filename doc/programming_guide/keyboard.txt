@@ -21,9 +21,6 @@ style cannot receive keyboard focus.
 It is not possible to use pyglet's keyboard or text events without a window;
 consider using Python built-in functions such as ``raw_input`` instead.
 
-.. contents::
-    :local:
-
 Keyboard events
 ---------------
 

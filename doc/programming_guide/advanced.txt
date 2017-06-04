@@ -1,8 +1,5 @@
 Advanced topics
-===============
-
-.. contents::
-    :local:
+===============:
 
 Environment settings
 --------------------

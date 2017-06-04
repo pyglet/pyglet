@@ -4,10 +4,7 @@ Appendix: Migrating to pyglet 1.1
 pyglet 1.1 introduces new features for rendering high performance graphics and
 text, is more convenient to use, and integrates better with the operating
 system.  Some of the existing interfaces have also been redesigned slightly to
-conform with standard Python practice or to fix design flaws.  
-
-.. contents::
-    :local:
+conform with standard Python practice or to fix design flaws.
 
 Compatibility and deprecation
 -----------------------------

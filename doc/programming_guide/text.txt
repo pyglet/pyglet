@@ -11,9 +11,6 @@ Text rendering is performed with the `text` module, which can display
 word-wrapped formatted text.  There is also support for interactive editing of
 text on-screen with a caret.
 
-.. contents::
-    :local:
-
 Simple text rendering
 ---------------------
 

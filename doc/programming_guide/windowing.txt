@@ -5,9 +5,6 @@ A `Window` in pyglet corresponds to a top-level window provided by the
 operating system.  Windows can be floating (overlapped with other application
 windows) or fullscreen.
 
-.. contents::
-    :local:
-
 Creating a window
 -----------------
 

@@ -12,9 +12,6 @@ otherwise manipulated.
 pyglet also provides an efficient and comprehensive `Sprite` class, for
 displaying images on the screen with an optional transform.
 
-.. contents::
-    :local:
-
 .. _Python Imaging Library: http://www.pythonware.com/products/pil/
 
 Loading an image

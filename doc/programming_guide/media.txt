@@ -16,9 +16,6 @@ files only.  This may be sufficient for many applications that require only a
 small number of short sounds, in which case those applications need not
 distribute AVbin.
 
-.. contents::
-    :local:
-
 .. _AVbin: http://code.google.com/p/avbin
 
 .. _openal.org: http://www.openal.org/downloads.html
