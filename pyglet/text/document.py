@@ -263,7 +263,7 @@ class InlineElement(object):
 
 
 class AbstractDocument(event.EventDispatcher):
-    """Abstract document interface used by all `pyglet.text` classes.
+    """Abstract document interface used by all :py:mod:`pyglet.text` classes.
 
     This class can be overridden to interface pyglet with a third-party
     document format.  It may be easier to implement the document format in

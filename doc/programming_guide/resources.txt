@@ -66,10 +66,10 @@ functions.
         * - ``open``
           - `pyglet.resource.file`
           - File-like object
-        * - `pyglet.image.load`
+        * - :py:func:`pyglet.image.load`
           - `pyglet.resource.image`
           - `Texture` or `TextureRegion`
-        * - `pyglet.image.load`
+        * - :py:func:`pyglet.image.load`
           - `pyglet.resource.texture`
           - `Texture`
         * - `pyglet.image.load_animation`

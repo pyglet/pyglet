@@ -362,7 +362,7 @@ class StreamingSource(Source):
 
     is_queued = property(lambda self: self._is_queued,
                          doc="""Determine if this source has been queued
-        on a `Player` yet.
+        on a :py:class:`~pyglet.media.player.Player` yet.
 
         Read-only.
 

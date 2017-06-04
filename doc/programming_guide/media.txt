@@ -376,7 +376,7 @@ disruption.
 Incorporating video
 -------------------
 
-When a `Player` is playing back a source with video, use the :meth:`~pyglet.media.Player.get_texture`
+When a :py:class:`~pyglet.media.player.Player` is playing back a source with video, use the :meth:`~pyglet.media.Player.get_texture`
 method to obtain the video frame image.  This can be used to display
 the current video image syncronised with the audio track, for example::
 
@@ -397,7 +397,7 @@ pyglet uses OpenAL for audio playback, which includes many features for
 positioning sound within a 3D space.  This is particularly effective with a
 surround-sound setup, but is also applicable to stereo systems.
 
-A `Player` in pyglet has an associated position in 3D space --
+A :py:class:`~pyglet.media.player.Player` in pyglet has an associated position in 3D space --
 that is, it is equivalent to an OpenAL "source".  The properties for setting
 these parameters are described in more detail in the API documentation; see
 for example `Player.position` and `Player.pitch`.

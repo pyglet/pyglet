@@ -91,7 +91,7 @@ Resizing the window
 
 pyglet sets up the viewport and an orthographic projection on each window
 automatically.  It does this in a default `on_resize` handler defined on
-`Window`::
+:py:class:`~pyglet.window.Window`::
 
     @window.event
     def on_resize(width, height):

@@ -42,7 +42,7 @@ The example demonstrates the most common uses of text rendering:
 * The actual text is drawn with the `Label.draw` method.  Labels can also be
   added to a graphics batch; see `Graphics` for details.
 
-The `HTMLLabel` class is used similarly, but accepts an HTML formatted string
+The :py:func:`~pyglet.text.HTMLLabel` class is used similarly, but accepts an HTML formatted string
 instead of parameters describing the style.  This allows the label to display
 text with mixed style::
 
@@ -56,8 +56,8 @@ See `Formatted text` for details on the subset of HTML that is supported.
 The document/layout model
 -------------------------
 
-The `Label` class demonstrated above presents a simplified interface to
-pyglet's complete text rendering capabilities.  The underlying `TextLayout`
+The :py:func:`~pyglet.text.Label` class demonstrated above presents a simplified interface to
+pyglet's complete text rendering capabilities.  The underlying :py:func:`~pyglet.text.layout.TextLayout`
 and `AbstractDocument` classes provide a "model/view" interface to all of
 pyglet's text features.
 
@@ -94,24 +94,24 @@ efficient (when coupled with an appropriate layout; see below) to use the
 Layouts
 ^^^^^^^
 
-The actual layout and rendering of a document is performed by the `TextLayout`
+The actual layout and rendering of a document is performed by the :py:func:`~pyglet.text.layout.TextLayout`
 classes.  This split exists to reduce the complexity of the code, and to allow
 a single document to be displayed in multiple layouts simultaneously (in other
 words, many layouts can display one document).
 
-Each of the `TextLayout` classes perform layout in the same way, but represent
+Each of the :py:func:`~pyglet.text.layout.TextLayout` classes perform layout in the same way, but represent
 a trade-off in efficiency of update against efficiency of drawing and memory
 usage.
 
-The base `TextLayout` class uses little memory, and shares its graphics
-group with other `TextLayout` instances in the same batch (see `Batched
+The base :py:func:`~pyglet.text.layout.TextLayout` class uses little memory, and shares its graphics
+group with other :py:func:`~pyglet.text.layout.TextLayout` instances in the same batch (see `Batched
 rendering`).  When the text or style of the document is modified, or the
 layout constraints change (for example, the width of the layout changes), the
 entire text layout is recalculated.  This is a potentially expensive
-operation, especially for long documents.  This makes `TextLayout` suitable
+operation, especially for long documents.  This makes :py:func:`~pyglet.text.layout.TextLayout` suitable
 for relatively short or unchanging documents.
 
-`ScrollableTextLayout` is a small extension to `TextLayout` that clips the
+`ScrollableTextLayout` is a small extension to :py:func:`~pyglet.text.layout.TextLayout` that clips the
 text to a specified view rectangle, and allows text to be scrolled within that
 rectangle without performing the layout calculuation again.  Because of this
 clipping rectangle the graphics group cannot be shared with other text
@@ -177,7 +177,7 @@ hyperlink).
 Character styles
 ^^^^^^^^^^^^^^^^
 
-The following character styles are recognised by all `TextLayout` classes.
+The following character styles are recognised by all :py:func:`~pyglet.text.layout.TextLayout` classes.
 
 Where an attribute is marked "as a distance" the value is assumed to be
 in pixels if given as an int or float, otherwise a string of the form
@@ -214,7 +214,7 @@ Paragraph styles
 ^^^^^^^^^^^^^^^^
 
 Although `FormattedDocument` does not distinguish between character- and
-paragraph-level styles, `TextLayout` interprets the following styles only at
+paragraph-level styles, :py:func:`~pyglet.text.layout.TextLayout` interprets the following styles only at
 the paragraph level.  You should take care to set these styles for complete
 paragraphs only, for example, by using `FormattedDocument.set_paragraph_style`.
 
@@ -397,7 +397,7 @@ HTML
 ^^^^
 
 While attributed text gives access to all of the features of
-`FormattedDocument` and `TextLayout`, it is quite verbose and difficult
+`FormattedDocument` and :py:func:`~pyglet.text.layout.TextLayout`, it is quite verbose and difficult
 produce text in.  For convenience, pyglet provides an HTML 4.01 decoder that
 can translate a small, commonly used subset of HTML into a
 `FormattedDocument`.  
@@ -434,8 +434,8 @@ used to render HTML images included with the ``IMG`` tag.  There is currently
 no support for floating or absolutely-positioned elements.
 
 Elements must subclass `InlineElement` and override the `place` and `remove`
-methods.  These methods are called by `TextLayout` when the element becomes
-or ceases to be visible.  For `TextLayout` and `ScrollableTextLayout`, this is
+methods.  These methods are called by :py:func:`~pyglet.text.layout.TextLayout` when the element becomes
+or ceases to be visible.  For :py:func:`~pyglet.text.layout.TextLayout` and `ScrollableTextLayout`, this is
 when the element is added or removed from the document; but for
 `IncrementalTextLayout` the methods are also called as the element scrolls in
 and out of the viewport.
@@ -567,7 +567,7 @@ that operating system.  However, application developers can be assured that
 font sizes remain consistent in pyglet across platforms.
 
 The DPI can be specified directly in the `pyglet.font.load` function, and as
-an argument to the `TextLayout` constructor.
+an argument to the :py:func:`~pyglet.text.layout.TextLayout` constructor.
 
 Determining font size
 ^^^^^^^^^^^^^^^^^^^^^

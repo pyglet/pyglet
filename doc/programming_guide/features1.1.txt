@@ -33,7 +33,7 @@ The following minor changes have been made for design or efficiency reasons.
 Applications which no longer need to support pyglet 1.0 should make the
 appropriate changes to ensure the deprecated methods are not called.
 
-The ``dispatch_events`` method on `Player` and the equivalent function on the
+The ``dispatch_events`` method on :py:class:`~pyglet.media.player.Player` and the equivalent function on the
 `pyglet.media` module should no longer be called.  In pyglet 1.1, media
 objects schedule an update function on `pyglet.clock` at an appropriate
 interval.  New applications using media are required to call
@@ -93,7 +93,7 @@ Besides being somewhat repetitious to type, this type of event loop is
 difficult to extend with more windows, and exausts all available system
 resources, even if the application is not doing anything.
 
-The new `pyglet.app` module provides an application event loop that is
+The new :py:mod:`pyglet.app` module provides an application event loop that is
 less demanding of the CPU yet more responsive to user events.  A complete
 application that opens an empty window can be written with::
 
@@ -106,7 +106,7 @@ application that opens an empty window can be written with::
     pyglet.app.run()
 
 Note the new `on_draw` event, which makes it easy to specify different drawing
-functions for each window.  The `pyglet.app` event loop takes care of
+functions for each window.  The :py:mod:`pyglet.app` event loop takes care of
 dispatching events, ticking the clock, calling the draw function and flipping
 the window buffer.
 
@@ -211,9 +211,9 @@ or vertical flipping, or 90-degree rotation.
 New text features
 -----------------
 
-The `pyglet.text` module can render formatted text efficiently.  A new class
+The :py:mod:`pyglet.text` module can render formatted text efficiently.  A new class
 `Label` supercedes the old `pyglet.font.Text` class (which is now actually
-implemented in terms of `Label`).  The "Hello, World" application can now be
+implemented in terms of :py:func:`~pyglet.text.Label`).  The "Hello, World" application can now be
 written::
 
     window = pyglet.window.Window()
@@ -243,8 +243,8 @@ WYSIWYG text editor.
 Other new features
 ------------------
 
-`EventDispatcher` now has a `remove_handlers` method which provides finer
-control over the event stack than `pop_handlers`. 
+:py:class:`~pyglet.event.EventDispatcher` now has a `remove_handlers` method which provides finer
+control over the event stack than :py:meth:`~pyglet.event.EventDispatcher.pop_handlers`. 
 
 The ``@event`` decorator has been fixed so that it no longer overrides
 existing event handlers on the object, which fixes the common problem of
@@ -259,7 +259,7 @@ sets up a default, necessary viewport and projection)::
 A variant of `clock.schedule_interval`, `clock.schedule_interval_soft` has
 been added.  This is for functions that need to be called periodically at a
 given interval, but do not need to schedule the period immediately.    Soft
-interval scheduling is used by the `pyglet.media` module to distribute the
+interval scheduling is used by the :py:mod:`pyglet.media` module to distribute the
 work of decoding video and audio data over time, rather than stalling the CPU
 periodically.  Games could use soft interval scheduling to spread the
 regular computational requirements of multiple agents out over time.
@@ -272,7 +272,7 @@ application developer to ensure their fonts work at arbitrary resolutions.  In
 pyglet 1.1 the default DPI is set at 96 across all platforms.  It can still be
 overridden explicitly by the application if desired.
 
-Video sources in `pyglet.media` can now be stepped through frame-by-frame:
+Video sources in :py:mod:`pyglet.media` can now be stepped through frame-by-frame:
 individual image frames can be extracted without needing to play back the
 video in realtime.
 

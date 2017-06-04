@@ -2,22 +2,22 @@ Images
 ======
 
 pyglet provides functions for loading and saving images in various formats
-using native operating system services.  pyglet can also work with the `Python
-Imaging Library`_ (PIL) for access to more file formats.
+using native operating system services.  pyglet can also work with `Pillow`_
+for access to more file formats.
 
 Loaded images can be efficiently provided to OpenGL as a texture, and OpenGL
 textures and framebuffers can be retrieved as pyglet images to be saved or
 otherwise manipulated.
 
-pyglet also provides an efficient and comprehensive `Sprite` class, for
+pyglet also provides an efficient and comprehensive :py:class:`~pyglet.sprite.Sprite` class, for
 displaying images on the screen with an optional transform.
 
-.. _Python Imaging Library: http://www.pythonware.com/products/pil/
+.. _Pillow: https://pillow.readthedocs.io
 
 Loading an image
 ----------------
 
-Images can be loaded using the `pyglet.image.load` function::
+Images can be loaded using the :py:func:`pyglet.image.load` function::
 
     kitten = pyglet.image.load('kitten.png')
 
@@ -185,7 +185,7 @@ any format it supports can be written.
 Working with images
 -------------------
 
-The `pyglet.image.load` function returns an `AbstractImage`.  The actual class
+The :py:func:`pyglet.image.load` function returns an `AbstractImage`.  The actual class
 of the object depends on the decoder that was used, but all images support the
 following attributes:
 
@@ -549,7 +549,7 @@ manually from a list of images or an image sequence using the class methods
 into a texture bin for efficient access.
 
 Individual frames can be accessed by the application for use with any kind of
-rendering, or the entire animation can be used directly with a `Sprite` (see
+rendering, or the entire animation can be used directly with a :py:class:`~pyglet.sprite.Sprite` (see
 next section).
 
 The following example loads a GIF animation and packs the images in that

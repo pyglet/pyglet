@@ -664,7 +664,7 @@ class Clock(_ClockBase):
         functions so as to distribute CPU more load evenly over time.
 
         This is useful for functions that need to be called regularly,
-        but not relative to the initial start time.  `pyglet.media`
+        but not relative to the initial start time.  :py:mod:`pyglet.media`
         does this for scheduling audio buffer updates, which need to occur
         regularly -- if all audio updates are scheduled at the same time
         (for example, mixing several tracks of a music score, or playing

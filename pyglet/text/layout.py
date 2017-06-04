@@ -47,7 +47,7 @@ Three layout classes are provided:
     to be laid out again.
 
 `ScrollableTextLayout`
-    Based on `TextLayout`.
+    Based on :py:func:`~pyglet.text.layout.TextLayout`.
 
     A separate group is used for layout which crops the contents of the
     layout to the layout rectangle.  Additionally, the contents of the
@@ -531,10 +531,10 @@ class _InvalidRange(object):
 #                       TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
 class TextLayoutGroup(graphics.Group):
-    """Top-level rendering group for `TextLayout`.
+    """Top-level rendering group for :py:func:`~pyglet.text.layout.TextLayout`.
 
     The blend function is set for glyph rendering (``GL_SRC_ALPHA`` /
-    ``GL_ONE_MINUS_SRC_ALPHA``).  The group is shared by all `TextLayout`
+    ``GL_ONE_MINUS_SRC_ALPHA``).  The group is shared by all :py:func:`~pyglet.text.layout.TextLayout`
     instances as it has no internal state.
     """
 
@@ -718,12 +718,12 @@ class TextLayout(object):
     document again and regenerate all vertex lists.
 
     The benefit of this class is that texture state is shared between
-    all layouts of this class.  The time to draw one `TextLayout` may be
+    all layouts of this class.  The time to draw one :py:func:`~pyglet.text.layout.TextLayout` may be
     roughly the same as the time to draw one `IncrementalTextLayout`; but
-    drawing ten `TextLayout` objects in one batch is much faster than drawing
+    drawing ten :py:func:`~pyglet.text.layout.TextLayout` objects in one batch is much faster than drawing
     ten incremental or scrollable text layouts.
 
-    `Label` and `HTMLLabel` provide a convenient interface to this class.
+    :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.HTMLLabel` provide a convenient interface to this class.
 
     :Ivariables:
         `content_width` : int
@@ -1650,7 +1650,7 @@ class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport.
 
     This class does not display a scrollbar or handle scroll events; it merely
-    clips the text that would be drawn in `TextLayout` to the bounds of the
+    clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout` to the bounds of the
     layout given by `x`, `y`, `width` and `height`; and offsets the text by a
     scroll offset.
 
@@ -1776,7 +1776,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
-    Unlike `TextLayout` and `ScrollableTextLayout`, this class generates
+    Unlike :py:func:`~pyglet.text.layout.TextLayout` and `ScrollableTextLayout`, this class generates
     vertex lists only for lines of text that are visible.  As the document is
     scrolled, vertex lists are deleted and created as appropriate to keep
     video memory usage to a minimum and improve rendering speed.

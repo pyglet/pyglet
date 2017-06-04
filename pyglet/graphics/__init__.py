@@ -50,7 +50,7 @@ Without even needing to understand the details on how to draw primitives with
 the graphics API, developers can make use of `Batch` and `Group`
 objects to improve performance of sprite and text rendering.
 
-The `Sprite`, `Label` and `TextLayout` classes all accept a ``batch`` and
+The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.layout.TextLayout` classes all accept a ``batch`` and
 ``group`` parameter in their constructors.  A batch manages a set of objects
 that will be drawn all at once, and a group describes the manner in which an
 object is drawn.

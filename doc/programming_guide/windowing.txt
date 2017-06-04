@@ -201,7 +201,7 @@ operating system at all, and have no way to be resized or moved around the
 desktop.  These are useful for implementing splash screens or custom window
 borders.
 
-You can specify the style of the window in the `Window` constructor.  Once
+You can specify the style of the window in the :py:class:`~pyglet.window.Window` constructor.  Once
 created, the window style cannot be altered::
 
     window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
@@ -278,6 +278,8 @@ hidden the :py:meth:`~pyglet.window.Window.on_hide` event is triggered.  On Wind
 will only occur when you manually change the visibility of the window or when
 the window is minimized or restored.  On Mac OS X the user can also hide or
 show the window (affecting visibility) using the Command+H shortcut.
+
+.. _guide_subclassing-window:
 
 Subclassing Window
 ------------------

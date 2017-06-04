@@ -74,7 +74,7 @@ Creating a game window
 
 Use `Window.set_exclusive_mouse` to hide the mouse cursor and receive relative
 mouse movement events.  Specify ``fullscreen=True`` as a keyword argument to
-the `Window` constructor to render to the entire screen rather than opening a
+the :py:class:`~pyglet.window.Window` constructor to render to the entire screen rather than opening a
 window::
 
     win = Window(fullscreen=True)
@@ -366,7 +366,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #:      used.
     has_exit = False
 
-    #: Window display contents validity.  The `pyglet.app` event loop
+    #: Window display contents validity.  The :py:mod:`pyglet.app` event loop
     #: examines every window each iteration and only dispatches the `on_draw`
     #: event to windows that have `invalid` set.  By default, windows always
     #: have `invalid` set to ``True``.
@@ -1666,13 +1666,13 @@ class FPSDisplay(object):
 
             fps_display.draw()
 
-    The style and position of the display can be modified via the `label`
+    The style and position of the display can be modified via the :py:func:`~pyglet.text.Label`
     attribute.  Different text can be substituted by overriding the
     `set_fps` method.  The display can be set to update more or less often 
     by setting the `update_period` attribute.
 
     :Ivariables:
-        `label` : Label
+        :py:func:`~pyglet.text.Label` : Label
             The text label displaying the framerate. 
 
     """

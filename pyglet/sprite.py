@@ -125,7 +125,7 @@ class SpriteGroup(graphics.Group):
     def __init__(self, texture, blend_src, blend_dest, parent=None):
         """Create a sprite group.
 
-        The group is created internally within `Sprite`; applications usually
+        The group is created internally within :py:class:`~pyglet.sprite.Sprite`; applications usually
         do not need to explicitly create it.
 
         :Parameters:
