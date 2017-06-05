@@ -1672,7 +1672,7 @@ class FPSDisplay(object):
     by setting the `update_period` attribute.
 
     :Ivariables:
-        :py:func:`~pyglet.text.Label` : Label
+        `label` : Label
             The text label displaying the framerate. 
 
     """

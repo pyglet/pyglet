@@ -202,7 +202,7 @@ class Sprite(event.EventDispatcher):
         """Create a sprite.
 
         :Parameters:
-            `img` : `AbstractImage` or `Animation`
+            `img` : :py:class:`~pyglet.image.AbstractImage` or `Animation`
                 Image or animation to display.
             `x` : int
                 X coordinate of the sprite.

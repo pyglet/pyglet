@@ -37,7 +37,7 @@
 
 Three layout classes are provided:
 
-`TextLayout`
+:py:class:`~pyglet.text.layout.TextLayout`
     The entire document is laid out before it is rendered.  The layout will
     be grouped with other layouts in the same batch (allowing for efficient
     rendering of multiple layouts).
@@ -88,7 +88,7 @@ of ``"px"`` (pixels), ``"pt"`` (points), ``"pc"`` (picas), ``"cm"``
 is 18 pixels.
 
 ``font_name``
-    Font family name, as given to `pyglet.font.load`.
+    Font family name, as given to :py:func:`pyglet.font.load`.
 ``font_size``
     Font size, in points.
 ``bold``
@@ -1786,7 +1786,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     further reduce the amount of processing required.
 
     The layout can also display a text selection (text with a different
-    background color).  The `Caret` class implements a visible text cursor and
+    background color).  The :py:class:`~pyglet.text.caret.Caret` class implements a visible text cursor and
     provides event handlers for scrolling, selecting and editing text in an
     incremental text layout.
     """

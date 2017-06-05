@@ -572,7 +572,7 @@ class AbstractImageSequence(object):
         """Replace one or more images in the sequence.
         
         :Parameters:
-            `image` : `AbstractImage`
+            `image` : :py:class:`~pyglet.image.AbstractImage`
                 The replacement image.  The actual instance may not be used,
                 depending on this implementation.
 
@@ -862,7 +862,7 @@ class ImageData(AbstractImage):
     def get_mipmapped_texture(self):
         """Return a Texture with mipmaps.  
         
-        If `set_mipmap_image` has been called with at least one image, the set
+        If :py:class:`~pyglet.image.set_mipmap_Image` has been called with at least one image, the set
         of images defined will be used.  Otherwise, mipmaps will be
         automatically generated.
 
@@ -1920,7 +1920,7 @@ class Texture3D(Texture, UniformTextureSequence):
 class TileableTexture(Texture):
     """A texture that can be tiled efficiently.
 
-    Use `create_for_image` classmethod to construct.
+    Use :py:class:`~pyglet.image.create_for_Image` classmethod to construct.
     """
 
     def __init__(self, width, height, target, id):
@@ -2031,7 +2031,7 @@ class BufferManager(object):
     def get_color_buffer(self):
         """Get the color buffer.
 
-        :rtype: `ColorBufferImage`
+        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
         """
         viewport = self.get_viewport()
         viewport_width = viewport[2]
@@ -2048,7 +2048,7 @@ class BufferManager(object):
         If not aux buffers are available, `ImageException` is raised.  Buffers
         are released when they are garbage collected.
         
-        :rtype: `ColorBufferImage`
+        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
         """
         if not self.free_aux_buffers:
             raise ImageException('No free aux buffer is available.')
@@ -2068,7 +2068,7 @@ class BufferManager(object):
     def get_depth_buffer(self):
         """Get the depth buffer.
 
-        :rtype: `DepthBufferImage`
+        :rtype: :py:class:`~pyglet.image.DepthBufferImage`
         """
         viewport = self.get_viewport()
         viewport_width = viewport[2]
@@ -2605,7 +2605,7 @@ class Animation(object):
         """Create an animation from a list of images and a constant framerate.
 
         :Parameters:
-            `sequence` : list of `AbstractImage`
+            `sequence` : list of :py:class:`~pyglet.image.AbstractImage`
                 Images that make up the animation, in sequence.
             `period` : float
                 Number of seconds to display each image.
@@ -2628,7 +2628,7 @@ class AnimationFrame(object):
         """Create an animation frame from an image.
 
         :Parameters:
-            `image` : `AbstractImage`
+            `image` : :py:class:`~pyglet.image.AbstractImage`
                 The image of this frame.
             `duration` : float
                 Number of seconds to display the frame, or ``None`` if it is

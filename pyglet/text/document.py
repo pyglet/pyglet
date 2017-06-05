@@ -67,7 +67,7 @@ This can be useful to tag areas of interest in a document, or maintain
 references back to the source material.
 
 As well as text, the document can contain arbitrary elements represented by
-`InlineElement`.  An inline element behaves like a single character in the
+:py:class:`~pyglet.text.document.InlineElement`.  An inline element behaves like a single character in the
 documented, but can be rendered by the application.
 
 Paragraph breaks
@@ -102,7 +102,7 @@ Style attributes
 The following character style attribute names are recognised by pyglet:
 
 ``font_name``
-    Font family name, as given to `pyglet.font.load`.
+    Font family name, as given to :py:func:`pyglet.font.load`.
 ``font_size``
     Font size, in points.
 ``bold``
@@ -390,7 +390,7 @@ class AbstractDocument(event.EventDispatcher):
         :Parameters:
             `dpi` : float
                 Optional resolution to construct fonts at.  See
-                `pyglet.font.load`.
+                :py:func:`pyglet.font.load`.
 
         :rtype: `AbstractRunIterator`
         """
@@ -406,7 +406,7 @@ class AbstractDocument(event.EventDispatcher):
                 Character position of document to query.
             `dpi` : float
                 Optional resolution to construct fonts at.  See
-                `pyglet.font.load`.
+                :py:func:`pyglet.font.load`.
 
         :rtype: `pyglet.font.Font`
         :return: The font at the given position.
@@ -461,13 +461,13 @@ class AbstractDocument(event.EventDispatcher):
     def insert_element(self, position, element, attributes=None):
         """Insert a element into the document.
 
-        See the `InlineElement` class documentation for details of
+        See the :py:class:`~pyglet.text.document.InlineElement` class documentation for details of
         usage.
 
         :Parameters:
             `position` : int
                 Character insertion point within document.
-            `element` : `InlineElement`
+            `element` : :py:class:`~pyglet.text.document.InlineElement`
                 Element to insert.
             `attributes` : dict
                 Optional dictionary giving named style attributes of the
@@ -488,7 +488,7 @@ class AbstractDocument(event.EventDispatcher):
             `position` : int
                 Position in the document of the element.
 
-        :rtype: `InlineElement`
+        :rtype: :py:class:`~pyglet.text.document.InlineElement`
         """
         for element in self._elements:
             if element._position == position:

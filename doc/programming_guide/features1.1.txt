@@ -39,7 +39,7 @@ objects schedule an update function on `pyglet.clock` at an appropriate
 interval.  New applications using media are required to call
 `pyglet.clock.tick` periodically.
 
-The `AbstractImage` properties ``texture``, ``image_data``, and so on have
+The :py:class:`~pyglet.image.AbstractImage` properties ``texture``, ``image_data``, and so on have
 been replaced with equivalent methods ``get_texture``, ``get_image_data``,
 etc.
 

@@ -185,7 +185,7 @@ any format it supports can be written.
 Working with images
 -------------------
 
-The :py:func:`pyglet.image.load` function returns an `AbstractImage`.  The actual class
+The :py:func:`pyglet.image.load` function returns an :py:class:`~pyglet.image.AbstractImage`.  The actual class
 of the object depends on the decoder that was used, but all images support the
 following attributes:
 
@@ -221,15 +221,15 @@ The AbstractImage hierarchy
 ---------------------------
 
 The following sections deal with the various concrete image classes.  All
-images subclass `AbstractImage`, which provides the basic interface described
+images subclass :py:class:`~pyglet.image.AbstractImage`, which provides the basic interface described
 in previous sections.
 
 .. figure:: img/abstract_image.svg
 
-    The `AbstractImage` class hierarchy.
+    The :py:class:`~pyglet.image.AbstractImage` class hierarchy.
 
 An image of any class can be converted into a `Texture` or `ImageData` using
-the `get_texture` and `get_image_data` methods defined on `AbstractImage`.  For
+the `get_texture` and `get_image_data` methods defined on :py:class:`~pyglet.image.AbstractImage`.  For
 example, to load an image and work with it as an OpenGL texture::
 
     kitten = pyglet.image.load('kitten.png').get_texture()
@@ -260,7 +260,7 @@ converted into other classes:
         * - `CompressedImageData`
           - ``glCompressedTexImage2D`` [2]_
           - N/A [3]_
-        * - `BufferImage`
+        * - :py:class:`~pyglet.image.BufferImage`
           - ``glCopyTexSubImage2D`` [4]_
           - ``glReadPixels``
 
@@ -580,22 +580,22 @@ Buffer images
 -------------
 
 pyglet provides a basic representation of the framebuffer as components of the
-`AbstractImage` hierarchy.  At this stage this representation is based off
+:py:class:`~pyglet.image.AbstractImage` hierarchy.  At this stage this representation is based off
 OpenGL 1.1, and there is no support for newer features such as framebuffer
 objects.  Of course, this doesn't prevent you using framebuffer objects in
 your programs -- `pyglet.gl` provides this functionality -- just that they are
-not represented as `AbstractImage` types.
+not represented as :py:class:`~pyglet.image.AbstractImage` types.
 
 .. figure:: img/buffer_image.svg
     
-    The `BufferImage` hierarchy.
+    The :py:class:`~pyglet.image.BufferImage` hierarchy.
 
 A framebuffer consists of
 
-* One or more colour buffers, represented by `ColorBufferImage`
-* An optional depth buffer, represented by `DepthBufferImage`
+* One or more colour buffers, represented by :py:class:`~pyglet.image.ColorBufferImage`
+* An optional depth buffer, represented by :py:class:`~pyglet.image.DepthBufferImage`
 * An optional stencil buffer, with each bit represented by `BufferImageMask`
-* Any number of auxilliary buffers, also represented by `ColorBufferImage`
+* Any number of auxilliary buffers, also represented by :py:class:`~pyglet.image.ColorBufferImage`
 
 You cannot create the buffer images directly; instead you must obtain
 instances via the `BufferManager`.  Use `get_buffer_manager` to
@@ -768,7 +768,7 @@ OpenGL imaging
 This section assumes you are familiar with texture mapping in OpenGL (for
 example, chapter 9 of the `OpenGL Programming Guide`_).
 
-To create a texture from any `AbstractImage`, call `get_texture`::
+To create a texture from any :py:class:`~pyglet.image.AbstractImage`, call `get_texture`::
 
     kitten = image.load('kitten.jpg')
     texture = kitten.get_texture()

@@ -214,7 +214,7 @@ class TextureAtlas(object):
         for the image.
 
         :Parameters:
-            `img` : `AbstractImage`
+            `img` : :py:class:`~pyglet.image.AbstractImage`
                 The image to add.
 
         :rtype: `TextureRegion`
@@ -260,7 +260,7 @@ class TextureBin(object):
         ``texture_width`` and ``texture_height``.
 
         :Parameters:
-            `img` : `AbstractImage`
+            `img` : :py:class:`~pyglet.image.AbstractImage`
                 The image to add.
 
         :rtype: `TextureRegion`

@@ -110,7 +110,7 @@ class Caret(object):
         be drawn explicitly.
 
         :Parameters:
-            `layout` : `TextLayout`
+            `layout` : :py:class:`~pyglet.text.layout.TextLayout`
                 Layout to control.
             `batch` : `Batch`
                 Graphics batch to add vertices to.

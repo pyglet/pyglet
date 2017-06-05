@@ -311,7 +311,7 @@ class DocumentLabel(layout.TextLayout):
     def font_name(self):
         """Font family name.
 
-        The font name, as passed to `pyglet.font.load`.  A list of names can
+        The font name, as passed to :py:func:`pyglet.font.load`.  A list of names can
         optionally be given: the first matching font will be used.
 
         :type: str or list
