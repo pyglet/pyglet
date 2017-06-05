@@ -11,7 +11,7 @@ class Display(object):
 
     :guide:`displays`
     
-    :since: pyglet 1.2
+    .. versionadded:: pyglet 1.2
     '''
 
     name = None
@@ -188,7 +188,7 @@ class Screen(object):
 
         :rtype: list of :class:`ScreenMode`
 
-        :since: pyglet 1.2
+        .. versionadded:: pyglet 1.2
         '''
         raise NotImplementedError('abstract')
 
@@ -197,7 +197,7 @@ class Screen(object):
 
         :rtype: :class:`ScreenMode`
 
-        :since: pyglet 1.2
+        .. versionadded:: pyglet 1.2
         '''
         raise NotImplementedError('abstract')
 
@@ -215,7 +215,7 @@ class Screen(object):
 
         :rtype: :class:`ScreenMode`
 
-        :since: pyglet 1.2
+        .. versionadded:: pyglet 1.2
         '''
         # Best mode is one with smallest resolution larger than width/height,
         # with depth and refresh rate equal to current mode.
@@ -277,7 +277,7 @@ class ScreenMode(object):
     The :attr:`depth` and :attr:`rate` variables may be ``None`` if the 
     operating system does not provide relevant data.
 
-    :since: pyglet 1.2
+    .. versionadded:: pyglet 1.2
 
     '''
 
@@ -321,7 +321,7 @@ class Canvas(object):
     Canvases are used internally by pyglet to represent drawing areas --
     either within a window or full-screen.
 
-    :since: pyglet 1.2
+    .. versionadded:: pyglet 1.2
     '''
     def __init__(self, display):
         '''

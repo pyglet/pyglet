@@ -105,6 +105,9 @@ _source_loader = None
 
 
 def have_avbin():
+    """Returns ``True`` iff AVBin is installed and accessible on the user's
+    system.
+    """
     global _have_avbin
     if _have_avbin is None:
         try:

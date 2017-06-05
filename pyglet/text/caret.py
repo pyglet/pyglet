@@ -45,7 +45,7 @@ Example usage::
     my_caret = caret.Caret(my_layout)
     my_window.push_handlers(my_caret)
 
-:since: pyglet 1.1
+.. versionadded:: pyglet 1.1
 '''
 from builtins import object
 

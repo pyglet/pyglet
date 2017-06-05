@@ -117,7 +117,7 @@ class Config(object):
     def match(self, canvas):
         '''Return a list of matching complete configs for the given canvas.
 
-        :since: pyglet 1.2
+        .. versionadded:: pyglet 1.2
 
         :Parameters:
             `canvas` : `Canvas`
@@ -168,7 +168,7 @@ class CanvasConfig(Config):
 
     Use `Config.match` to obtain an instance of this class.
 
-    :since: pyglet 1.2
+    .. versionadded:: pyglet 1.2
 
     :Ivariables:
         `canvas` : `Canvas`
@@ -370,7 +370,7 @@ class Context(object):
             `buffer_id` : int
                 The OpenGL name of the buffer to delete.
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         '''
         if self.object_space is gl.current_context.object_space and False:
             id = gl.GLuint(buffer_id)
@@ -381,7 +381,7 @@ class Context(object):
     def get_info(self):
         '''Get the OpenGL information for this context.
 
-        :since: pyglet 1.2
+        .. versionadded:: pyglet 1.2
 
         :rtype: `GLInfo`
         '''

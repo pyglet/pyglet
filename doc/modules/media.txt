@@ -1,0 +1,85 @@
+pyglet.media
+===============================================================
+
+.. currentmodule:: pyglet.media
+
+.. automodule:: pyglet.media
+
+Classes
+-------
+
+.. autoclass:: pyglet.media.player.Player
+
+  .. rubric:: Methods
+
+  .. automethod:: play
+  .. automethod:: pause
+  .. automethod:: queue
+  .. automethod:: seek
+  .. automethod:: seek_next_frame
+  .. automethod:: get_texture
+  .. automethod:: next_source
+  .. automethod:: delete
+  .. automethod:: update_texture
+  .. automethod:: next
+
+  .. rubric:: Events
+
+  .. automethod:: on_eos
+  .. automethod:: on_player_eos
+  .. automethod:: on_source_group_eos
+
+  .. rubric:: Attributes
+
+  .. autoattribute:: cone_inner_angle
+  .. autoattribute:: cone_outer_angle
+  .. autoattribute:: cone_orientation
+  .. autoattribute:: cone_outer_gain
+  .. autoattribute:: min_distance
+  .. autoattribute:: max_distance
+  .. autoattribute:: pitch
+  .. autoattribute:: playing
+  .. autoattribute:: position
+  .. autoattribute:: source
+  .. autoattribute:: time
+  .. autoattribute:: volume
+
+.. autoclass:: pyglet.media.player.PlayerGroup
+
+  .. automethod:: play
+  .. automethod:: pause
+
+.. autoclass:: AudioFormat
+.. autoclass:: VideoFormat
+.. autoclass:: AudioData
+.. autoclass:: SourceInfo
+
+.. autoclass:: Source
+  :members:
+  :undoc-members:
+
+.. autoclass:: StreamingSource
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+.. autoclass:: StaticSource
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+.. autoclass:: SourceGroup
+  :members:
+  :undoc-members:
+
+Functions
+---------
+
+.. autofunction:: get_audio_driver
+
+Exceptions
+----------
+
+.. automodule:: pyglet.media.exceptions
+  :members:
+  :undoc-members:

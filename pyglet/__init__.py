@@ -65,6 +65,8 @@ import os
 import sys
 import warnings
 
+if 'sphinx' in sys.modules:
+    setattr(sys, 'is_epydoc', True)
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 #: The release version of this pyglet installation.

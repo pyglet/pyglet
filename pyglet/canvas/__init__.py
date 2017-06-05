@@ -55,7 +55,7 @@ sizes and virtual positions on the desktop.
 The size of a screen is determined by its current mode, which can be changed
 by the application; see the documentation for :class:`Screen`.
 
-:since: pyglet 1.2
+.. versionadded:: pyglet 1.2
 '''
 
 import sys
@@ -68,7 +68,7 @@ def get_display():
     returned. Otherwise, a default :class:`Display` is created and returned.  
     If multiple display connections are active, an arbitrary one is returned.
 
-    :since: pyglet 1.2
+    .. versionadded:: pyglet 1.2
 
     :rtype: :class:`Display`
     '''

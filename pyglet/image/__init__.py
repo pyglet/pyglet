@@ -339,7 +339,7 @@ class AbstractImage(object):
 
         :rtype: `ImageData`
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         raise ImageException('Cannot retrieve image data for %r' % self)
 
@@ -392,7 +392,7 @@ class AbstractImage(object):
                 **Since:** pyglet 1.1.4.
         :rtype: `Texture`
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         raise ImageException('Cannot retrieve texture for %r' % self)
 
@@ -416,7 +416,7 @@ class AbstractImage(object):
 
         :rtype: `Texture`
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
@@ -531,7 +531,7 @@ class AbstractImageSequence(object):
 
         :rtype: `TextureSequence`
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         raise NotImplementedError('abstract')
 
@@ -557,7 +557,7 @@ class AbstractImageSequence(object):
 
         :rtype: `Animation`
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         return Animation.from_image_sequence(self, period, loop)
 
@@ -587,7 +587,7 @@ class AbstractImageSequence(object):
 
         :rtype: Iterator
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         raise NotImplementedError('abstract')
 
@@ -753,7 +753,7 @@ class ImageData(AbstractImage):
                 Number of bytes per row.  Negative values indicate a
                 top-to-bottom arrangement.
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
 
         :rtype: sequence of bytes, or str
         """
@@ -773,7 +773,7 @@ class ImageData(AbstractImage):
             `data` : str or sequence of bytes
                 Image data.
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         self._current_format = format
         self._current_pitch = pitch
@@ -870,7 +870,7 @@ class ImageData(AbstractImage):
 
         :rtype: `Texture`
 
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
@@ -1524,7 +1524,7 @@ class Texture(AbstractImage):
 
         :rtype: `Texture`
         
-        :since: pyglet 1.1
+        .. versionadded:: pyglet 1.1
         """
         target = GL_TEXTURE_2D
         if rectangle or force_rectangle:
