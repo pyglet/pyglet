@@ -467,7 +467,7 @@ class AbstractDocument(event.EventDispatcher):
         :Parameters:
             `position` : int
                 Character insertion point within document.
-            `element` : :py:class:`~pyglet.text.document.InlineElement`
+            `element` : `~pyglet.text.document.InlineElement`
                 Element to insert.
             `attributes` : dict
                 Optional dictionary giving named style attributes of the

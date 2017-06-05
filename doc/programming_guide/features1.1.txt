@@ -43,7 +43,7 @@ The :py:class:`~pyglet.image.AbstractImage` properties ``texture``, ``image_data
 been replaced with equivalent methods ``get_texture``, ``get_image_data``,
 etc.
 
-The `ImageData` properties `data`, `format` and `pitch`, which together were
+The :py:class:`~pyglet.image.ImageData` properties `data`, `format` and `pitch`, which together were
 used to extract pixel data from an image, have been replaced with a single
 function ``get_data``.  The `format` and `pitch` properties should now be used
 only to determine the current format and pitch of the image.
@@ -147,7 +147,7 @@ is difficult to do correctly across all platforms, considering the effects of
 a changing working directory and various distribution packages such as
 setuptools, py2exe and py2app.
 
-The new `pyglet.resource` module implements the correct logic for all these
+The new :py:mod:`pyglet.resource` module implements the correct logic for all these
 cases, making it simple to load resources that belong to a specific module or
 the application as a whole.  A resource path can be set that is indexed once,
 and can include filesystem directories, Python module paths and ZIP files.
@@ -173,7 +173,7 @@ The resource module efficiently packs multiple small images into larger
 textures, so there is less need for artists to create sprite sheets themselves
 for efficient rendering.  Images and textures are also cached automatically.
 
-See `Application resources` for more details.
+See :ref:`guide_resources` for more details.
 
 New graphics features
 ---------------------
@@ -191,20 +191,20 @@ the *batch* features of the new graphics API, multiple sprites can be drawn in
 one go very quickly.  See `Sprites` for details.
 
 The `pyglet.image.load_animation` function can load animated GIF images.
-These are returned as an `Animation`, which exposes the individual image
+These are returned as an :py:class:`~pyglet.image.Animation`, which exposes the individual image
 frames and timings.  Animations can also be played directly on a sprite in
-place of an image.  The `Animations` chapter describes how to use them.
+place of an image.  The :py:class:`~pyglet.image.Animations` chapter describes how to use them.
 
 The `pyglet.image.atlas` module packs multiple images into larger textures for
-efficient rendering.  The `pyglet.resource` module uses this module for small
+efficient rendering.  The :py:mod:`pyglet.resource` module uses this module for small
 images automatically, but you can use it directly even if you're not making
-use of `pyglet.resource`.  See `Texture bins and atlases` for details.
+use of :py:mod:`pyglet.resource`.  See `Texture bins and atlases` for details.
 
 Images now have ``anchor_x`` and ``anchor_y`` attributes, which specify a
 point from which the image should be drawn.  The sprite module also uses the
 anchor point as the center of rotation.
 
-Textures have a `get_transform` method for retrieving a `TextureRegion` that
+Textures have a `get_transform` method for retrieving a :py:class:`~pyglet.image.TextureRegion` that
 refers to the same texture data in video memory, but with optional horizontal
 or vertical flipping, or 90-degree rotation.
 

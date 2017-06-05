@@ -731,13 +731,13 @@ class TextLayout(object):
             the desired width if word-wrapping failed.
         `content_height` : int
             Calculated height of the text in the layout.
-        `top_group` : `Group`
+        `top_group` : `~pyglet.graphics.Group`
             Top-level rendering group.
-        `background_group` : `Group`
+        `background_group` : `~pyglet.graphics.Group`
             Rendering group for background color.
-        `foreground_group` : `Group`
+        `foreground_group` : `~pyglet.graphics.Group`
             Rendering group for glyphs.
-        `foreground_decoration_group` : `Group`
+        `foreground_decoration_group` : `~pyglet.graphics.Group`
             Rendering group for glyph underlines.
 
     """
@@ -773,9 +773,9 @@ class TextLayout(object):
                 If True, text is wrapped only if the `wrap_lines` is True.
             `dpi` : float
                 Font resolution; defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add this layout to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional rendering group to parent all groups this text layout
                 uses.  Note that layouts with different
                 rendered simultaneously in a batch.
@@ -816,7 +816,7 @@ class TextLayout(object):
         If no Batch is assigned, an internal Batch is 
         created and used.
 
-        :type: `Batch`
+        :type: :py:class:`~pyglet.graphics.Batch`
         
         """
         return self._batch

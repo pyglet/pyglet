@@ -520,7 +520,7 @@ class Loader(object):
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
-        packed into a `TextureBin` if it is an appropriate size for packing.
+        packed into a :py:class:`~pyglet.image.atlas.TextureBin` if it is an appropriate size for packing.
         This is more efficient than loading images into separate textures.
 
         :Parameters:
@@ -541,7 +541,7 @@ class Loader(object):
 
         :rtype: `Texture`
         :return: A complete texture if the image is large or not in an atlas,
-            otherwise a `TextureRegion` of a texture atlas.
+            otherwise a :py:class:`~pyglet.image.TextureRegion` of a texture atlas.
         """
         self._require_index()
         if name in self._cached_images:
@@ -572,7 +572,7 @@ class Loader(object):
                 The returned image will be rotated clockwise by the given
                 number of degrees (a multiple of 90).
 
-        :rtype: `Animation`
+        :rtype: :py:class:`~pyglet.image.Animation`
         """
         self._require_index()
         try:
@@ -619,7 +619,7 @@ class Loader(object):
         This is useful for debugging and profiling only.
 
         :rtype: list
-        :return: List of `TextureBin`
+        :return: List of :py:class:`~pyglet.image.atlas.TextureBin`
         """
         self._require_index()
         return list(self._texture_atlas_bins.values())
@@ -659,7 +659,7 @@ class Loader(object):
         """Load a texture.
 
         The named image will be loaded as a single OpenGL texture.  If the
-        dimensions of the image are not powers of 2 a `TextureRegion` will
+        dimensions of the image are not powers of 2 a :py:class:`~pyglet.image.TextureRegion` will
         be returned.
 
         :Parameters:

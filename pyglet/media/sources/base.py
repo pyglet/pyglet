@@ -271,7 +271,7 @@ class Source(object):
         return player
 
     def get_animation(self):
-        """Import all video frames into memory as an `Animation`.
+        """Import all video frames into memory as an :py:class:`~pyglet.image.Animation`.
 
         An empty animation will be returned if the source has no video.
         Otherwise, the animation will contain all unplayed video frames (the

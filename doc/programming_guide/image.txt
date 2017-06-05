@@ -22,14 +22,14 @@ Images can be loaded using the :py:func:`pyglet.image.load` function::
     kitten = pyglet.image.load('kitten.png')
 
 If the image is distributed with your application, consider using the
-`pyglet.resource` module (see `Application resources`).
+:py:mod:`pyglet.resource` module (see  :ref:`guide_resources`).
 
-Without any additional arguments, `load` will attempt to load the
+Without any additional arguments, :py:func:`pyglet.image.load` will attempt to load the
 filename specified using any available image decoder.  This will allow you to
 load PNG, GIF, JPEG, BMP and DDS files, and possibly other files as well,
 depending on your operating system and additional installed modules (see the
 next section for details).  If the image cannot be loaded, an
-`ImageDecodeException` will be raised.
+:py:class:`~pyglet.image.codecs.ImageDecodeException` will be raised.
 
 You can load an image from any file-like object providing a `read` method by
 specifying the `file` keyword parameter::
@@ -68,10 +68,10 @@ pyglet provides the following image decoders:
           - ``QuickTimeImageDecoder``
           - Uses Mac OS X QuickTime to decode images.
 
-Each of these classes registers itself with `pyglet.image` with the filename
-extensions it supports.  The `load` function will try each image decoder with
+Each of these classes registers itself with :py:mod:`pyglet.image` with the filename
+extensions it supports.  The :py:func:`~pyglet.image.load` function will try each image decoder with
 a matching file extension first, before attempting the other decoders.  Only
-if every image decoder fails to load an image will `ImageDecodeException` be
+if every image decoder fails to load an image will :py:class:`~pyglet.image.codecs.ImageDecodeException` be
 raised (the origin of the exception will be the first decoder that was
 attempted).
 
@@ -89,11 +89,11 @@ Supported image formats
 -----------------------
 
 The following table lists the image formats that can be loaded on each
-operating system.  If PIL is installed, any additional formats it supports can
-also be read.  See the `Python Imaging Library Handbook`_ for a list of such
+operating system.  If Pillow is installed, any additional formats it supports can
+also be read.  See the `Pillow docs`_ for a list of such
 formats.
 
-.. _Python Imaging Library Handbook: http://www.pythonware.com/library/pil/handbook/index.htm
+.. _Pillow docs: http://pillow.readthedocs.io/
 
     .. list-table::
         :header-rows: 1
@@ -203,7 +203,7 @@ intrinsic anchor point.  The anchor point is used to align the image to a
 point in space when drawing it.
 
 You may only want to use a portion of the complete image.  You can use the
-`get_region` method to return an image of a rectangular region of a source
+:py:meth:`~pyglet.image.AbstractImage.get_region` method to return an image of a rectangular region of a source
 image::
 
     image_part = kitten.get_region(x=10, y=10, width=100, height=100)
@@ -228,8 +228,8 @@ in previous sections.
 
     The :py:class:`~pyglet.image.AbstractImage` class hierarchy.
 
-An image of any class can be converted into a `Texture` or `ImageData` using
-the `get_texture` and `get_image_data` methods defined on :py:class:`~pyglet.image.AbstractImage`.  For
+An image of any class can be converted into a :py:class:`~pyglet.image.Texture` or :py:class:`~pyglet.image.ImageData` using
+the `get_texture` and :py:meth:`~pyglet.image.ImageData.get_image_data` methods defined on :py:class:`~pyglet.image.AbstractImage`.  For
 example, to load an image and work with it as an OpenGL texture::
 
     kitten = pyglet.image.load('kitten.png').get_texture()
@@ -245,19 +245,19 @@ converted into other classes:
         * - Original class
           - ``.get_texture()``
           - ``.get_image_data()``
-        * - `Texture`
+        * - :py:class:`~pyglet.image.Texture`
           - No change
           - ``glGetTexImage2D``
-        * - `TextureRegion`
+        * - :py:class:`~pyglet.image.TextureRegion`
           - No change
           - ``glGetTexImage2D``, crop resulting image.
-        * - `ImageData`
+        * - :py:class:`~pyglet.image.ImageData`
           - ``glTexImage2D`` [1]_
           - No change
-        * - `ImageDataRegion`
+        * - :py:class:`~pyglet.image.ImageDataRegion`
           - ``glTexImage2D`` [1]_
           - No change
-        * - `CompressedImageData`
+        * - :py:class:`~pyglet.image.CompressedImageData`
           - ``glCompressedTexImage2D`` [2]_
           - N/A [3]_
         * - :py:class:`~pyglet.image.BufferImage`
@@ -269,32 +269,32 @@ You should try to avoid conversions which use ``glGetTexImage2D`` or
 transferring data in the "wrong" direction of the video bus, especially on
 older hardware.
 
-.. [1]  `ImageData` caches the texture for future use, so there is no
-        performance penalty for repeatedly blitting an `ImageData`.
+.. [1]  :py:class:`~pyglet.image.ImageData` caches the texture for future use, so there is no
+        performance penalty for repeatedly blitting an :py:class:`~pyglet.image.ImageData`.
 
 .. [2]  If the required texture compression extension is not present, the
         image is decompressed in memory and then supplied to OpenGL via
         ``glTexImage2D``.
 
-.. [3]  It is not currently possible to retrieve `ImageData` for compressed
+.. [3]  It is not currently possible to retrieve :py:class:`~pyglet.image.ImageData` for compressed
         texture images.  This feature may be implemented in a future release
         of pyglet.  One workaround is to create a texture from the compressed
         image, then read the image data from the texture; i.e.,
         ``compressed_image.get_texture().get_image_data()``.
 
-.. [4]  `BufferImageMask` cannot be converted to `Texture`.
+.. [4]  :py:class:`~pyglet.image.BufferImageMask` cannot be converted to :py:class:`~pyglet.image.Texture`.
 
 Accessing or providing pixel data
 ---------------------------------
 
-The `ImageData` class represents an image as a string or sequence of pixel
+The :py:class:`~pyglet.image.ImageData` class represents an image as a string or sequence of pixel
 data, or as a ctypes pointer.  Details such as the pitch and component layout
-are also stored in the class.  You can access an `ImageData` object for any
-image with `get_image_data`::
+are also stored in the class.  You can access an :py:class:`~pyglet.image.ImageData` object for any
+image with :py:meth:`~pyglet.image.ImageData.get_image_data`::
 
     kitten = pyglet.image.load('kitten.png').get_image_data()
 
-The design of `ImageData` is to allow applications to access the detail in the
+The design of :py:class:`~pyglet.image.ImageData` is to allow applications to access the detail in the
 format they prefer, rather than having to understand the many formats that
 each operating system and OpenGL make use of.
 
@@ -340,7 +340,7 @@ data use `set_data`, again specifying the format and pitch::
 
     kitten.set_data('RGB', kitten.width * 3, data)
 
-You can also create `ImageData` directly, by providing each of these
+You can also create :py:class:`~pyglet.image.ImageData` directly, by providing each of these
 attributes to the constructor.  This is any easy way to load textures into
 OpenGL from other programs or libraries.
 
@@ -430,7 +430,7 @@ for the explosion animation in the *Astraea* example.
     An image consisting of eight animation frames arranged in a grid.
 
 This image has one row and eight columns.  This is all the information you
-need to create an `ImageGrid` with::
+need to create an :py:class:`~pyglet.image.ImageGrid` with::
 
     explosion = pyglet.image.load('explosion.png')
     explosion_seq = pyglet.image.ImageGrid(explosion, 1, 8)
@@ -454,19 +454,19 @@ the following obtains the first four frames in the animation::
 
     start_frames = explosion_seq[:4]
 
-For efficient rendering, you should use a `TextureGrid`.  This uses a single
+For efficient rendering, you should use a :py:class:`~pyglet.image.TextureGrid`.  This uses a single
 texture for the grid, and each individual image returned from a slice will be
-a `TextureRegion`::
+a :py:class:`~pyglet.image.TextureRegion`::
 
     explosion_tex_seq = image.TextureGrid(explosion_seq)
 
-Because `TextureGrid` is also a `Texture`, you can use it either as individual
+Because :py:class:`~pyglet.image.TextureGrid` is also a :py:class:`~pyglet.image.Texture`, you can use it either as individual
 images or as the whole grid at once.
 
 3D textures
 ^^^^^^^^^^^
 
-`TextureGrid` is extremely efficient for drawing many sprites from a single
+:py:class:`~pyglet.image.TextureGrid` is extremely efficient for drawing many sprites from a single
 texture.  One problem you may encounter, however, is bleeding between adjacent
 images.  
 
@@ -480,9 +480,9 @@ each image frame.  This will not solve the problem if you are using
 mipmapping, however.  At this stage you will need a 3D texture.
 
 You can create a 3D texture from any sequence of images, or from an
-`ImageGrid`.  The images must all be of the same dimension, however they need
-not be powers of two (pyglet takes care of this by returning `TextureRegion`
-as with a regular `Texture`).
+:py:class:`~pyglet.image.ImageGrid`.  The images must all be of the same dimension, however they need
+not be powers of two (pyglet takes care of this by returning :py:class:`~pyglet.image.TextureRegion`
+as with a regular :py:class:`~pyglet.image.Texture`).
 
 In the following example, the explosion texture from above is uploaded into a
 3D texture::
@@ -490,11 +490,11 @@ In the following example, the explosion texture from above is uploaded into a
     explosion_3d = pyglet.image.Texture3D.create_for_image_grid(explosion_seq)
 
 You could also have stored each image as a separate file and used
-`Texture3D.create_for_images` to create the 3D texture.
+:py:meth:`pyglet.image.Texture3D.create_for_images` to create the 3D texture.
 
-Once created, a 3D texture behaves like any other `ImageSequence`; slices
-return `TextureRegion` for an image plane within the texture.  Unlike a
-`TextureGrid`, though, you cannot blit a `Texture3D` in its entirety.
+Once created, a 3D texture behaves like any other :py:class:`~pyglet.image.AbstractImageSequence`; slices
+return :py:class:`~pyglet.image.TextureRegion` for an image plane within the texture.  Unlike a
+:py:class:`~pyglet.image.TextureGrid`, though, you cannot blit a :py:class:`~pyglet.image.Texture3D` in its entirety.
 
 Texture bins and atlases
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -504,18 +504,18 @@ images of the appropriate format, and the contained images all have the same
 size.  However it is often simpler to keep individual images as separate files
 on disk, and only combine them into larger textures at runtime for efficiency.
 
-A `TextureAtlas` is initially an empty texture, but images of any size can be
+A :py:class:`~pyglet.image.atlas.TextureAtlas` is initially an empty texture, but images of any size can be
 added to it at any time.  The atlas takes care of tracking the "free" areas
 within the texture, and of placing images at appropriate locations within the
 texture to avoid overlap.
 
-It's possible for a `TextureAtlas` to run out of space for new images, so
+It's possible for a :py:class:`~pyglet.image.atlas.TextureAtlas` to run out of space for new images, so
 applications will need to either know the correct size of the texture to
 allocate initally, or maintain multiple atlases as each one fills up.
 
-The `TextureBin` class provides a simple means to manage multiple atlases.
+The :py:class:`~pyglet.image.atlas.TextureBin` class provides a simple means to manage multiple atlases.
 The following example loads a list of images, then inserts those images into a
-texture bin.  The resulting list is a list of `TextureRegion` images that map
+texture bin.  The resulting list is a list of :py:class:`~pyglet.image.TextureRegion` images that map
 into the larger shared texture atlases::
 
     images = [
@@ -527,7 +527,7 @@ into the larger shared texture atlases::
     bin = pyglet.image.atlas.TextureBin()
     images = [bin.add(image) for image in images]
 
-The `pyglet.resource` module (see `Application resources`) uses texture bins
+The :py:mod:`pyglet.resource` module (see :ref:`guide_resources`) uses texture bins
 internally to efficiently pack images automatically.
 
 Animations
@@ -536,16 +536,16 @@ Animations
 While image sequences and atlases provide storage for related images, they
 alone are not enough to describe a complete animation.  
 
-The `Animation` class manages a list of `AnimationFrame` objects, each of
+The :py:class:`~pyglet.image.Animation` class manages a list of :py:class:`~pyglet.image.AnimationFrame` objects, each of
 which references an image and a duration, in seconds.  The storage of 
 the images is up to the application developer: they can each be discrete, or
 packed into a texture atlas, or any other technique.
 
 An animation can be loaded directly from a GIF 89a image file with
-`load_animation` (supported on Linux, Mac OS X and Windows) or constructed
+:py:func:`~pyglet.image.load_animation` (supported on Linux, Mac OS X and Windows) or constructed
 manually from a list of images or an image sequence using the class methods
 (in which case the timing information will also need to be provided).  The
-`add_to_texture_bin` method provides a convenient way to pack the image frames
+:py:func:`~pyglet.image.Animation.add_to_texture_bin` method provides a convenient way to pack the image frames
 into a texture bin for efficient access.
 
 Individual frames can be accessed by the application for use with any kind of
@@ -569,8 +569,8 @@ the window::
 
     pyglet.app.run()
 
-When animations are loaded with `pyglet.resource` (see `Application
-resources`) the frames are automatically packed into a texture bin.
+When animations are loaded with :py:mod:`pyglet.resource` (see
+:ref:`guide_resources`) the frames are automatically packed into a texture bin.
 
 This example program is located in
 `examples/programming_guide/animation.py`, along with a sample GIF animation
@@ -583,7 +583,7 @@ pyglet provides a basic representation of the framebuffer as components of the
 :py:class:`~pyglet.image.AbstractImage` hierarchy.  At this stage this representation is based off
 OpenGL 1.1, and there is no support for newer features such as framebuffer
 objects.  Of course, this doesn't prevent you using framebuffer objects in
-your programs -- `pyglet.gl` provides this functionality -- just that they are
+your programs -- :py:mod:`pyglet.gl` provides this functionality -- just that they are
 not represented as :py:class:`~pyglet.image.AbstractImage` types.
 
 .. figure:: img/buffer_image.svg
@@ -594,11 +594,11 @@ A framebuffer consists of
 
 * One or more colour buffers, represented by :py:class:`~pyglet.image.ColorBufferImage`
 * An optional depth buffer, represented by :py:class:`~pyglet.image.DepthBufferImage`
-* An optional stencil buffer, with each bit represented by `BufferImageMask`
+* An optional stencil buffer, with each bit represented by :py:class:`~pyglet.image.BufferImageMask`
 * Any number of auxilliary buffers, also represented by :py:class:`~pyglet.image.ColorBufferImage`
 
 You cannot create the buffer images directly; instead you must obtain
-instances via the `BufferManager`.  Use `get_buffer_manager` to
+instances via the :py:class:`~pyglet.image.BufferManager`.  Use :py:func:`~pyglet.image.get_buffer_manager` to
 get this singleton::
 
     buffers = image.get_buffer_manager()
@@ -610,7 +610,7 @@ inaccessible, and stereo contexts are not supported by the buffer manager)::
 
 This buffer can be treated like any other image.  For example, you could copy
 it to a texture, obtain its pixel data, save it to a file, and so on.  Using
-the `texture` attribute is particularly useful, as it allows you to perform
+the :py:attr:`~pyglet.image.AbstractImage.texture` attribute is particularly useful, as it allows you to perform
 multipass rendering effects without needing a render-to-texture extension.
 
 The depth buffer can be obtained similarly::
@@ -618,7 +618,7 @@ The depth buffer can be obtained similarly::
     depth_buffer = buffers.get_depth_buffer()
 
 When a depth buffer is converted to a texture, the class used will be a
-`DepthTexture`, suitable for use with shadow map techniques.
+:py:class:`~pyglet.image.DepthTexture`, suitable for use with shadow map techniques.
 
 The auxilliary buffers and stencil bits are obtained by requesting one, which
 will then be marked as "in-use".  This permits multiple libraries and your
@@ -654,7 +654,7 @@ can share the same image; for example, hundreds of bullet sprites might share
 the same bullet image.
 
 A sprite is constructed given an image or animation, and drawn with the
-`Sprite.draw` method::
+:py:meth:`~pyglet.sprite.Sprite.draw` method::
 
     sprite = pyglet.sprite.Sprite(image)    
 
@@ -676,7 +676,7 @@ screen::
     # Call update 60 times a second
     pyglet.clock.schedule_interval(update, 1/60.)
 
-If you need to draw many sprites, use a `Batch` to draw them all at once.
+If you need to draw many sprites, use a :py:class:`~pyglet.graphics.Batch` to draw them all at once.
 This is far more efficient than calling `draw` on each of them in a loop::
 
     batch = pyglet.graphics.Batch()
@@ -694,7 +694,7 @@ When sprites are collected into a batch, no guarantee is made about the order
 in which they will be drawn.  If you need to ensure some sprites are drawn
 before others (for example, landscape tiles might be drawn before character
 sprites, which might be drawn before some particle effect sprites), use two or
-more `OrderedGroup` objects to specify the draw order::
+more :py:class:`~pyglet.graphics.OrderedGroup` objects to specify the draw order::
 
     batch = pyglet.graphics.Batch()
     background = pyglet.graphics.OrderedGroup(0)
@@ -715,7 +715,7 @@ See the `Graphics` section for more details on batch and group rendering.
 
 For best performance, try to collect all batch images into as few textures as
 possible; for example, by loading images with `pyglet.resource.image` (see 
-`Application resources`) or with `Texture bins and atlases`).
+:ref:`guide_resources`) or with `Texture bins and atlases`).
 
 Simple image blitting
 ^^^^^^^^^^^^^^^^^^^^^
@@ -773,11 +773,11 @@ To create a texture from any :py:class:`~pyglet.image.AbstractImage`, call `get_
     kitten = image.load('kitten.jpg')
     texture = kitten.get_texture()
 
-Textures are automatically created and used by `ImageData` when blitted.  It
+Textures are automatically created and used by :py:class:`~pyglet.image.ImageData` when blitted.  It
 is useful to use textures directly when aiming for high performance or 3D
 applications.
 
-The `Texture` class represents any texture object.  The `target` attribute
+The :py:class:`~pyglet.image.Texture` class represents any texture object.  The `target` attribute
 gives the texture target (for example, ``GL_TEXTURE_2D``) and `id` the texture
 name.  For example, to bind a texture::
 
@@ -791,11 +791,11 @@ that are powers of two (i.e., 1, 2, 4, 8, 16, ...).  Because of this
 restriction, pyglet will always create textures of these dimensions (there are
 several non-conformant post-2.0 implementations).  This could have unexpected
 results for a user blitting a texture loaded from a file of non-standard
-dimensions.  To remedy this, pyglet returns a `TextureRegion` of the larger
+dimensions.  To remedy this, pyglet returns a :py:class:`~pyglet.image.TextureRegion` of the larger
 texture corresponding to just the part of the texture covered by the original
 image.
 
-A `TextureRegion` has an `owner` attribute that references the larger texture.
+A :py:class:`~pyglet.image.TextureRegion` has an `owner` attribute that references the larger texture.
 The following session demonstrates this::
 
     >>> rgba = image.load('tests/image/rgba.png')
@@ -807,7 +807,7 @@ The following session demonstrates this::
     <Texture 256x512>           # The owning texture has power-2 dimensions
     >>> 
 
-A `TextureRegion` defines a `tex_coords` attribute that gives the texture
+A :py:class:`~pyglet.image.TextureRegion` defines a `tex_coords` attribute that gives the texture
 coordinates to use for a quad mapping the whole image.  `tex_coords` is a
 4-tuple of 3-tuple of floats; i.e., each texture coordinate is given in 3
 dimensions.  The following code can be used to render a quad for a texture

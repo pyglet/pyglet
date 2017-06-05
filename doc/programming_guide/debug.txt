@@ -80,10 +80,10 @@ The ``graphics_vbo`` option enables the use of vertex buffer objects in
 debugging the ``graphics`` module as well as isolating code for determining if
 a video driver is faulty.
 
-The ``debug_graphics_batch`` option causes all `Batch` objects to dump their
+The ``debug_graphics_batch`` option causes all :py:class:`~pyglet.graphics.Batch` objects to dump their
 rendering tree to standard output before drawing, after any change (so two
 drawings of the same tree will only dump once).  This is useful to debug
-applications making use of `Group` and `Batch` rendering.
+applications making use of :py:class:`~pyglet.graphics.Group` and :py:class:`~pyglet.graphics.Batch` rendering.
 
 Error checking
 ^^^^^^^^^^^^^^

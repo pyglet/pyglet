@@ -160,3 +160,5 @@ Exceptions
 ----------
 
 .. autoclass:: ImageException
+.. autoclass:: pyglet.image.codecs.ImageEncodeException
+.. autoclass:: pyglet.image.codecs.ImageDecodeException

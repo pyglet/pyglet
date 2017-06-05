@@ -263,9 +263,9 @@ class DocumentLabel(layout.TextLayout):
                 characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
 
         """
@@ -441,9 +441,9 @@ class Label(DocumentLabel):
                 characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
 
         """
@@ -500,9 +500,9 @@ class HTMLLabel(DocumentLabel):
                 and line breaks.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
 
         """

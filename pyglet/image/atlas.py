@@ -35,7 +35,7 @@
 """Group multiple small images into larger textures.
 
 This module is used by :py:mod:`pyglet.resource` to efficiently pack small
-images into larger textures.  `TextureAtlas` maintains one texture;
+images into larger textures.  :py:class:`~pyglet.image.atlas.TextureAtlas` maintains one texture;
 :py:class:`TextureBin` manages a collection of atlases of a given size.
 
 Example usage::
@@ -208,16 +208,16 @@ class TextureAtlas(object):
 
         This method will fail if the given image cannot be transferred
         directly to a texture (for example, if it is another texture).
-        `ImageData` is the usual image type for this method.
+        :py:class:`~pyglet.image.ImageData` is the usual image type for this method.
 
         `AllocatorException` will be raised if there is no room in the atlas
         for the image.
 
         :Parameters:
-            `img` : :py:class:`~pyglet.image.AbstractImage`
+            `img` : `~pyglet.image.AbstractImage`
                 The image to add.
 
-        :rtype: `TextureRegion`
+        :rtype: :py:class:`~pyglet.image.TextureRegion`
         :return: The region of the atlas containing the newly added image.
         """
         x, y = self.allocator.alloc(img.width, img.height)
@@ -229,7 +229,7 @@ class TextureAtlas(object):
 class TextureBin(object):
     """Collection of texture atlases.
 
-    `TextureBin` maintains a collection of texture atlases, and creates new
+    :py:class:`~pyglet.image.atlas.TextureBin` maintains a collection of texture atlases, and creates new
     ones as necessary to accommodate images added to the bin.
     """
     def __init__(self, texture_width=2048, texture_height=2048):
@@ -260,10 +260,10 @@ class TextureBin(object):
         ``texture_width`` and ``texture_height``.
 
         :Parameters:
-            `img` : :py:class:`~pyglet.image.AbstractImage`
+            `img` : `~pyglet.image.AbstractImage`
                 The image to add.
 
-        :rtype: `TextureRegion`
+        :rtype: :py:class:`~pyglet.image.TextureRegion`
         :return: The region of an atlas containing the newly added image.
         """
         for atlas in list(self.atlases):

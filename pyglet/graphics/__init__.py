@@ -47,7 +47,7 @@ Batches and groups
 ==================
 
 Without even needing to understand the details on how to draw primitives with
-the graphics API, developers can make use of `Batch` and `Group`
+the graphics API, developers can make use of :py:class:`~pyglet.graphics.Batch` and :py:class:`~pyglet.graphics.Group`
 objects to improve performance of sprite and text rendering.
 
 The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.layout.TextLayout` classes all accept a ``batch`` and
@@ -312,7 +312,7 @@ def vertex_list_indexed(count, indices, *data):
 class Batch(object):
     '''Manage a collection of vertex lists for batched rendering.
 
-    Vertex lists are added to a `Batch` using the `add` and `add_indexed`
+    Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the `add` and `add_indexed`
     methods.  An optional group can be specified along with the vertex list,
     which gives the OpenGL state required for its rendering.  Vertex lists
     with shared mode and group are allocated into adjacent areas of memory and
@@ -355,7 +355,7 @@ class Batch(object):
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
                 See the module summary for additional information.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Group of the vertex list, or ``None`` if no group is required.
             `data` : data items
                 Attribute formats and initial data for the vertex list.  See
@@ -383,7 +383,7 @@ class Batch(object):
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
                 See the module summary for additional information.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Group of the vertex list, or ``None`` if no group is required.
             `indices` : sequence
                 Sequence of integers giving indices into the vertex list.
@@ -422,9 +422,9 @@ class Batch(object):
                 A vertex list currently belonging to this batch.
             `mode` : int
                 The current GL drawing mode of the vertex list.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 The new group to migrate to.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 The batch to migrate to (or the current batch).
 
         '''
@@ -610,7 +610,7 @@ class Group(object):
         '''Create a group.
 
         :Parameters:
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Group to contain this group; its state will be set before this
                 state's.
 
@@ -661,7 +661,7 @@ class NullGroup(Group):
 
 #: The default group.
 #:
-#: :type: `Group`
+#: :type: :py:class:`~pyglet.graphics.Group`
 null_group = NullGroup()
 
 class TextureGroup(Group):
@@ -675,9 +675,9 @@ class TextureGroup(Group):
         '''Create a texture group.
 
         :Parameters:
-            `texture` : `Texture`
+            `texture` : `~pyglet.image.Texture`
                 Texture to bind.
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Parent group.
 
         '''
@@ -722,7 +722,7 @@ class OrderedGroup(Group):
         :Parameters:
             `order` : int
                 Order of this group.
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Parent of this group.
 
         '''

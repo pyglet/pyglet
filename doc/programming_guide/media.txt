@@ -167,7 +167,7 @@ Audio and video files are loaded in the same way, using the
     source = pyglet.media.load('explosion.wav')
 
 If the media file is bundled with the application, consider using the resource
-module (see `Application resources`).
+module (see :ref:`guide_resources`).
 
 The result of loading a media file is a :class:`~pyglet.media.Source` object.  This object provides
 useful information about the type of media encoded in the file, and serves as

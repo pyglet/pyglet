@@ -418,8 +418,8 @@ before drawing vertex lists, and then::
 
 afterwards to avoid interfering with later drawing commands.
 
-With a `Group` these state changes can be encapsulated and associated with the
-vertex lists they affect.  Subclass `Group` and override the `Group.set_state`
+With a :py:class:`~pyglet.graphics.Group` these state changes can be encapsulated and associated with the
+vertex lists they affect.  Subclass :py:class:`~pyglet.graphics.Group` and override the `Group.set_state`
 and `Group.unset_state` methods to perform the required state changes::
 
     class CustomGroup(pyglet.graphics.Group):
@@ -438,7 +438,7 @@ An instance of this group can now be attached to vertex lists in the batch::
         ('c3B', (0, 0, 255, 0, 255, 0))
     )
 
-The `Batch` ensures that the appropriate ``set_state`` and ``unset_state``
+The :py:class:`~pyglet.graphics.Batch` ensures that the appropriate ``set_state`` and ``unset_state``
 methods are called before and after the vertex lists that use them.
 
 Hierarchical state
@@ -498,7 +498,7 @@ example demonstrates this::
     batch.add(4, GL_QUADS, TextureBindGroup(texture2), 'v2f', 't2f')
     batch.add(4, GL_QUADS, TextureBindGroup(texture1), 'v2f', 't2f')
 
-Note the use of an ``__eq__`` method on the group to allow `Batch` to merge
+Note the use of an ``__eq__`` method on the group to allow :py:class:`~pyglet.graphics.Batch` to merge
 the two ``TextureBindGroup`` identical instances.
 
 Sorting vertex lists
