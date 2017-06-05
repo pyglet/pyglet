@@ -1,6 +1,8 @@
 Advanced topics
 ===============:
 
+.. _guide_environment-settings:
+
 Environment settings
 --------------------
 

@@ -276,7 +276,7 @@ def _get_default_batch():
         return shared_object_space.pyglet_graphics_default_batch
 
 def vertex_list(count, *data):
-    '''Create a `VertexList` not associated with a batch, group or mode.
+    '''Create a :py:class:`~pyglet.graphics.vertexdomain.VertexList` not associated with a batch, group or mode.
 
     :Parameters:
         `count` : int
@@ -285,7 +285,7 @@ def vertex_list(count, *data):
             Attribute formats and initial data for the vertex list.  See the
             module summary for details.
 
-    :rtype: `VertexList`
+    :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
     '''
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by the app.
@@ -361,7 +361,7 @@ class Batch(object):
                 Attribute formats and initial data for the vertex list.  See
                 the module summary for details.
 
-        :rtype: `VertexList`
+        :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         '''
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, group, formats)
@@ -418,7 +418,7 @@ class Batch(object):
         `batch` can remain unchanged if only a group change is desired.
         
         :Parameters:
-            `vertex_list` : `VertexList`
+            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
                 A vertex list currently belonging to this batch.
             `mode` : int
                 The current GL drawing mode of the vertex list.

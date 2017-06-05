@@ -291,7 +291,7 @@ class VertexDomain(object):
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : `VertexList`
+            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         '''

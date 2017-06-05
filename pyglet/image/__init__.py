@@ -403,7 +403,7 @@ class AbstractImage(object):
         Changes to the returned instance may or may not be reflected in this
         image.
 
-        :deprecated: Use `get_texture`.
+        :deprecated: Use :py:meth:`~pyglet.image.AbstractImage.get_texture`.
 
         :type: :py:class:`~pyglet.image.Texture`
         """
@@ -2519,7 +2519,7 @@ class Animation(object):
     duration of ``None``.
 
     :Ivariables:
-        `frames` : list of :py:class:`~pyglet.image.AnimationFrame`
+        `frames` : list of `~pyglet.image.AnimationFrame`
             The frames that make up the animation.
 
     """
@@ -2528,7 +2528,7 @@ class Animation(object):
         """Create an animation directly from a list of frames.
 
         :Parameters:
-            `frames` : list of :py:class:`~pyglet.image.AnimationFrame`
+            `frames` : list of `~pyglet.image.AnimationFrame`
                 The frames that make up the animation.
 
         """
@@ -2605,7 +2605,7 @@ class Animation(object):
         """Create an animation from a list of images and a constant framerate.
 
         :Parameters:
-            `sequence` : list of :py:class:`~pyglet.image.AbstractImage`
+            `sequence` : list of `~pyglet.image.AbstractImage`
                 Images that make up the animation, in sequence.
             `period` : float
                 Number of seconds to display each image.

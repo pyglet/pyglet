@@ -69,7 +69,7 @@ any of these strings, giving the preference order for each driver:
 
 You must set the ``audio`` option before importing :mod:`pyglet.media`.  You can
 alternatively set it through an environment variable; see 
-`Environment settings`.
+:ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
 driver.

@@ -229,7 +229,7 @@ in previous sections.
     The :py:class:`~pyglet.image.AbstractImage` class hierarchy.
 
 An image of any class can be converted into a :py:class:`~pyglet.image.Texture` or :py:class:`~pyglet.image.ImageData` using
-the `get_texture` and :py:meth:`~pyglet.image.ImageData.get_image_data` methods defined on :py:class:`~pyglet.image.AbstractImage`.  For
+the :py:meth:`~pyglet.image.AbstractImage.get_texture` and :py:meth:`~pyglet.image.ImageData.get_image_data` methods defined on :py:class:`~pyglet.image.AbstractImage`.  For
 example, to load an image and work with it as an OpenGL texture::
 
     kitten = pyglet.image.load('kitten.png').get_texture()
@@ -496,6 +496,8 @@ Once created, a 3D texture behaves like any other :py:class:`~pyglet.image.Abstr
 return :py:class:`~pyglet.image.TextureRegion` for an image plane within the texture.  Unlike a
 :py:class:`~pyglet.image.TextureGrid`, though, you cannot blit a :py:class:`~pyglet.image.Texture3D` in its entirety.
 
+.. _guide_texture-bins-and-atlases:
+
 Texture bins and atlases
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -677,7 +679,7 @@ screen::
     pyglet.clock.schedule_interval(update, 1/60.)
 
 If you need to draw many sprites, use a :py:class:`~pyglet.graphics.Batch` to draw them all at once.
-This is far more efficient than calling `draw` on each of them in a loop::
+This is far more efficient than calling :py:meth:`~pyglet.sprite.Sprite.draw` on each of them in a loop::
 
     batch = pyglet.graphics.Batch()
 
@@ -711,17 +713,17 @@ more :py:class:`~pyglet.graphics.OrderedGroup` objects to specify the draw order
         window.clear()
         batch.draw()
 
-See the `Graphics` section for more details on batch and group rendering.
+See the :ref:`programming-guide-graphics` section for more details on batch and group rendering.
 
 For best performance, try to collect all batch images into as few textures as
-possible; for example, by loading images with `pyglet.resource.image` (see 
-:ref:`guide_resources`) or with `Texture bins and atlases`).
+possible; for example, by loading images with :py:func:`pyglet.resource.image` (see 
+:ref:`guide_resources`) or with :ref:`guide_texture-bins-and-atlases`).
 
 Simple image blitting
 ^^^^^^^^^^^^^^^^^^^^^
 
 A simple but less efficient way to draw an image directly into a window is
-with the `blit` method::
+with the :py:meth:`~pyglet.image.AbstractImage.blit` method::
 
     @window.event
     def on_draw():
@@ -735,7 +737,7 @@ image.  For example, to center the image at ``(x, y)``::
     kitten.anchor_y = kitten.height // 2
     kitten.blit(x, y)
 
-You can also specify an optional `z` component to the `blit` method.  This has
+You can also specify an optional `z` component to the :py:meth:`~pyglet.image.AbstractImage.blit` method.  This has
 no effect unless you have changed the default projection or enabled depth
 testing.  In the following example, the second image is drawn *behind* the
 first, even though it is drawn after it::
@@ -768,7 +770,7 @@ OpenGL imaging
 This section assumes you are familiar with texture mapping in OpenGL (for
 example, chapter 9 of the `OpenGL Programming Guide`_).
 
-To create a texture from any :py:class:`~pyglet.image.AbstractImage`, call `get_texture`::
+To create a texture from any :py:class:`~pyglet.image.AbstractImage`, call :py:meth:`~pyglet.image.AbstractImage.get_texture`::
 
     kitten = image.load('kitten.jpg')
     texture = kitten.get_texture()
@@ -777,8 +779,8 @@ Textures are automatically created and used by :py:class:`~pyglet.image.ImageDat
 is useful to use textures directly when aiming for high performance or 3D
 applications.
 
-The :py:class:`~pyglet.image.Texture` class represents any texture object.  The `target` attribute
-gives the texture target (for example, ``GL_TEXTURE_2D``) and `id` the texture
+The :py:class:`~pyglet.image.Texture` class represents any texture object.  The :py:attr:`~pyglet.image.TextureRegion.target` attribute
+gives the texture target (for example, ``GL_TEXTURE_2D``) and :py:attr:`~pyglet.image.TextureRegion.id` the texture
 name.  For example, to bind a texture::
 
     glBindTexture(texture.target, texture.id)
@@ -807,8 +809,8 @@ The following session demonstrates this::
     <Texture 256x512>           # The owning texture has power-2 dimensions
     >>> 
 
-A :py:class:`~pyglet.image.TextureRegion` defines a `tex_coords` attribute that gives the texture
-coordinates to use for a quad mapping the whole image.  `tex_coords` is a
+A :py:class:`~pyglet.image.TextureRegion` defines a :py:attr:`~pyglet.image.TextureRegion.tex_coords` attribute that gives the texture
+coordinates to use for a quad mapping the whole image.  :py:attr:`~pyglet.image.TextureRegion.tex_coords` is a
 4-tuple of 3-tuple of floats; i.e., each texture coordinate is given in 3
 dimensions.  The following code can be used to render a quad for a texture
 region::
@@ -831,9 +833,9 @@ region::
     glDrawArrays(GL_QUADS, 0, 4)
     glPopClientAttrib()
 
-The `Texture.blit` method does this.
+The :py:meth:`~pyglet.image.Texture.blit` method does this.
 
-Use the ``Texture.create`` method to create either a texture region from a
+Use the :py:meth:`pyglet.image.Texture.create` method to create either a texture region from a
 larger power-2 sized texture, or a texture with the exact dimensions using 
 the ``GL_texture_rectangle_ARB`` extension.
 
@@ -868,7 +870,7 @@ their OpenGL counterparts.  For example, an image with format ``"RG"`` will use
 averaged from the red and green components, and the alpha channel will be
 empty (maximal).
 
-Use the ``Texture.create`` class method to create a texture with a specific
+Use the :py:meth:`pyglet.image.Texture.create` class method to create a texture with a specific
 internal format.
 
 .. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
@@ -890,4 +892,4 @@ window::
 
     pyglet.image.get_buffer_manager().get_color_buffer().save('screenshot.png')
 
-Note that images can only be saved in the PNG format unless PIL is installed.
+Note that images can only be saved in the PNG format unless Pillow is installed.

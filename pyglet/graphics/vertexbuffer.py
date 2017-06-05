@@ -291,7 +291,7 @@ class VertexBufferObject(AbstractBuffer):
 
     This class does not implement :py:class:`AbstractMappable`, and so has no
     :py:meth:`~AbstractMappable.get_region` method.  See 
-    :py;class:`MappableVertexBufferObject` for a VBO class
+    :py:class:`MappableVertexBufferObject` for a VBO class
     that does implement :py:meth:`~AbstractMappable.get_region`.
     '''
 
