@@ -12,6 +12,18 @@ _shader_types = {
 }
 
 
+_lookup = {
+    GL_FLOAT: GLfloat,
+    GL_FLOAT_VEC2: GLfloat,
+    GL_FLOAT_VEC3: GLfloat,
+    GL_FLOAT_VEC4: GLfloat,
+    GL_INT: GLint,
+    GL_INT_VEC2: GLint,
+    GL_INT_VEC3: GLint,
+    GL_INT_VEC4: GLint,
+}
+
+
 class Shader:
     # TODO: create proper Exception for failed compilation.
     def __init__(self, source_string, shader_type):
@@ -69,7 +81,7 @@ class ShaderProgram:
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
-        # self._parse_all_attributes()
+        self._parse_all_attributes()
         self._get_program_log()
 
     def _get_program_log(self):
@@ -238,12 +250,12 @@ vertex_source = """#version 330 core
 
     void main()
     {
-        // gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
-        gl_Position = vec4(vertices.x / width - 1,
-                           vertices.y / height -1,
-                           vertices.z,
-                           vertices.w * zoom);
-        // vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
+        //gl_Position = vec4(vertices.x / width - 1,
+        //                   vertices.y / height -1,
+        //                   vertices.z,
+        //                   vertices.w * zoom);
+        //vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;
     }
@@ -259,7 +271,7 @@ fragment_source = """#version 330 core
 
     void main()
     {
-        // final_colors = vertex_colors;
-        final_colors = texture(our_texture, texture_coords) * vertex_colors;
+        final_colors = vertex_colors;
+        // final_colors = texture(our_texture, texture_coords) * vertex_colors;
     }
 """

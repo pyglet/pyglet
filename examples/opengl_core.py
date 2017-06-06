@@ -1,5 +1,6 @@
 import os
 import pyglet
+from pyglet.gl import *
 
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
@@ -8,7 +9,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 #   TESTS !
 ##########################################################
-# TODO: update image library to fix this:
+# TODO: update text module to fix this:
 # label = pyglet.text.Label("test label")
 
 
@@ -17,29 +18,28 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 
 batch = pyglet.graphics.Batch()
 
-# batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-#                   ('v3f', (-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0)),
-#                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
-#                   ('t3f', (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)))
+batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
+                  ('v3f', (-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0)),
+                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),)
+                  # ('t3f', (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)))
 
 
 # TODO: Add code to send the proper data to the uniform.
 os.chdir('..')
-img = pyglet.image.load("examples/pyglet.png")
-# tex = img.texture
-sprite = pyglet.sprite.Sprite(img=img, x=100, y=100, batch=batch)
-sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
-sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
-sprite4 = pyglet.sprite.Sprite(img=img, x=300, y=200, batch=batch)
-sprite5 = pyglet.sprite.Sprite(img=img, x=300, y=300, batch=batch)
+# img = pyglet.image.load("examples/pyglet.png")
+# # tex = img.texture
+# sprite = pyglet.sprite.Sprite(img=img, x=100, y=100, batch=batch)
+# sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
+# sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
+# sprite4 = pyglet.sprite.Sprite(img=img, x=300, y=200, batch=batch)
+# sprite5 = pyglet.sprite.Sprite(img=img, x=300, y=300, batch=batch)
 
 
 ###########################################################
 # Set the "zoom" uniform value.
 ###########################################################
-# program.use_program()
-# program['zoom'] = 2
-
+pyglet.graphics.default_group.shader_program.use_program()
+pyglet.graphics.default_group.shader_program['zoom'] = 2
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
@@ -66,7 +66,8 @@ def on_draw():
     # vertex_list.draw(GL_TRIANGLES)
 
     # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-    #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)))
+    #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)),
+    #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
     batch.draw()
 
