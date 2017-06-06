@@ -387,7 +387,7 @@ class StaticSource(Source):
     """
     
     def __init__(self, source):
-        """Construct a `StaticSource` for the data in `source`.
+        """Construct a :py:class:`~pyglet.media.StaticSource` for the data in `source`.
 
         :Parameters:
             `source` : `Source`
@@ -429,7 +429,7 @@ class StaticSource(Source):
         raise RuntimeError('StaticSource cannot be queued.')
 
 class StaticMemorySource(StaticSource):
-    """Helper class for default implementation of `StaticSource`.  Do not use
+    """Helper class for default implementation of :py:class:`~pyglet.media.StaticSource`.  Do not use
     directly."""
 
     def __init__(self, data, audio_format):

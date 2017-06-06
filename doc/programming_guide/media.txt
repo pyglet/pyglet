@@ -25,7 +25,7 @@ Audio drivers
 
 pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio.  Only one 
 of these drivers can be used in an application, and this must be selected 
-before the :mod:`pyglet.media` module is loaded.  The available drivers depend on 
+before the :py:mod:`pyglet.media` module is loaded.  The available drivers depend on 
 your operating system:
 
     .. list-table::
@@ -44,7 +44,7 @@ your operating system:
           - 
           - Pulseaudio
 
-The audio driver can be set through the ``audio`` key of the :data:`pyglet.options`
+The audio driver can be set through the ``audio`` key of the :py:data:`pyglet.options`
 dictionary.  For example::
 
     pyglet.options['audio'] = ('openal', 'silent')
@@ -162,19 +162,19 @@ Loading media
 -------------
 
 Audio and video files are loaded in the same way, using the
-:func:`pyglet.media.load` function, providing a filename::
+:py:func:`pyglet.media.load` function, providing a filename::
 
     source = pyglet.media.load('explosion.wav')
 
 If the media file is bundled with the application, consider using the resource
 module (see :ref:`guide_resources`).
 
-The result of loading a media file is a :class:`~pyglet.media.Source` object.  This object provides
+The result of loading a media file is a :py:class:`~pyglet.media.Source` object.  This object provides
 useful information about the type of media encoded in the file, and serves as
 an opaque object used for playing back the file (described in the next
 section).
 
-The `load` function will raise a :class:`~pyglet.media.MediaException` if the format is unknown.
+The :py:func:`~pyglet.media.load` function will raise a :py:class:`~pyglet.media.exceptions.MediaException` if the format is unknown.
 `IOError` may also be raised if the file could not be read from disk.  Future
 versions of pyglet will also support reading from arbitrary file-like objects,
 however a valid filename must currently be given.
@@ -182,16 +182,16 @@ however a valid filename must currently be given.
 The length of the media file is given by the `duration` property, which
 returns the media's length in seconds.
 
-Audio metadata is provided in the source's :attr:`~pyglet.media.Source.audio_format` attribute, which is
+Audio metadata is provided in the source's :py:attr:`~pyglet.media.Source.audio_format` attribute, which is
 `None` for silent videos.  This metadata is not generally useful to
-applications.  See the :class:`~pyglet.media.AudioFormat` class documentation for details.  
+applications.  See the :py:class:`~pyglet.media.AudioFormat` class documentation for details.  
 
-Video metadata is provided in the source's :attr:`~pyglet.media.Source.video_format` attribute, which is
+Video metadata is provided in the source's :py:attr:`~pyglet.media.Source.video_format` attribute, which is
 `None` for audio files.  It is recommended that this attribute is checked
 before attempting play back a video file -- if a movie file has a readable
 audio track but unknown video format it will appear as an audio file.
 
-You can use the video metadata, described in a :class:`~pyglet.media.VideoFormat` object, to set up
+You can use the video metadata, described in a :py:class:`~pyglet.media.VideoFormat` object, to set up
 display of the video before beginning playback.  The attributes are as
 follows:
 
@@ -238,16 +238,16 @@ directly from an already-loaded :class:`~pyglet.media.Source`::
 Procedural Audio
 ----------------
 
-In addition to loading audio files from disk, the `pyglet.media.procedural` module is available
+In addition to loading audio files from disk, the :py:mod:`pyglet.media.sources.procedural` module is available
 for simple audio synthesis. There are a variety of waveforms available:
 
-* ``pyglet.media.procedural.Sine``
-* ``pyglet.media.procedural.Saw``
-* ``pyglet.media.procedural.Square``
-* ``pyglet.media.procedural.FM``
-* ``pyglet.media.procedural.Silence``
-* ``pyglet.media.procedural.WhiteNoise``
-* ``pyglet.media.procedural.Digitar``
+* :py:class:`~pyglet.media.sources.procedural.Sine`
+* :py:class:`~pyglet.media.sources.procedural.Sawtooth`
+* :py:class:`~pyglet.media.sources.procedural.Square`
+* :py:class:`~pyglet.media.sources.procedural.FM`
+* :py:class:`~pyglet.media.sources.procedural.Silence`
+* :py:class:`~pyglet.media.sources.procedural.WhiteNoise`
+* :py:class:`~pyglet.media.sources.procedural.Digitar`
 
 At a minimum, you will need to specify the duration of the audio you wish to produce. You will also
 want to set the frequency (most waveforms will default to 440Hz). Some waveforms, such as the FM
@@ -261,10 +261,10 @@ If no envelope is used, all procedural classes will default to the FlatEnvelope 
 which esentially has no effect on the waveform. Check the API documentation of each Envelope
 to see which parameters are available.
 
-* ``pyglet.media.procedural.FlatEnvelope``
-* ``pyglet.media.procedural.LinearDecayEnvelope``
-* ``pyglet.media.procedural.ADSREnvelope``
-* ``pyglet.media.procedural.TremoloEnvelope``
+* :py:class:`~pyglet.media.sources.procedural.FlatEnvelope`
+* :py:class:`~pyglet.media.sources.procedural.LinearDecayEnvelope`
+* :py:class:`~pyglet.media.sources.procedural.ADSREnvelope`
+* :py:class:`~pyglet.media.sources.procedural.TremoloEnvelope`
 
 Simple audio playback
 ---------------------
@@ -280,15 +280,19 @@ method of any :class:`~pyglet.media.Source` to play it immediately and completel
     explosion = pyglet.media.load('explosion.wav', streaming=False)
     explosion.play()
 
-You can call `play` on any `Source`, not just `StaticSource`.
+You can call :py:meth:`~pyglet.media.Source.play` on any
+:py:class:`~pyglet.media.Source`, not just
+:py:class:`~pyglet.media.StaticSource`.
 
-The return value of `Source.play` is a :class:`~pyglet.media.Player`, which can either be
+The return value of :py:meth:`~pyglet.media.Source.play` is a
+:py:class:`~pyglet.media.player.Player`, which can either be
 discarded, or retained to maintain control over the sound's playback.
 
 Controlling playback
 --------------------
 
-You can implement many functions common to a media player using the :class:`~pyglet.media.Player`
+You can implement many functions common to a media player using the 
+:py:class:`~pyglet.media.player.Player`
 class.  Use of this class is also necessary for video playback.  There are no
 parameters to its construction::
 
@@ -300,9 +304,9 @@ dequeued (until it is removed automatically once complete).  The main use of
 this queuing mechanism is to facilitate "gapless" transitions between playback
 of media files.
 
-A :class:`~pyglet.media.StreamingSource` can only ever be queued on one player, and only once on
-that player.  :class:`~pyglet.media.StaticSource` objects can be queued any number of times on any
-number of players.  Recall that a `StaticSource` can be created by passing
+A :py:class:`~pyglet.media.StreamingSource` can only ever be queued on one player, and only once on
+that player.  :py:class:`~pyglet.media.StaticSource` objects can be queued any number of times on any
+number of players.  Recall that a :py:class:`~pyglet.media.StaticSource` can be created by passing
 ``streaming=False`` to the `load` method.
 
 In the following example, two sounds are queued onto a player::
@@ -310,7 +314,7 @@ In the following example, two sounds are queued onto a player::
     player.queue(source1)
     player.queue(source2)
 
-Playback begins with the player's `play` method is called::
+Playback begins with the player's :py:meth:`~pyglet.media.Player.play` method is called::
 
     player.play()
 
@@ -321,15 +325,15 @@ Standard controls for controlling playback are provided by these methods:
 
         * - Method
           - Description
-        * - `play`
+        * - :py:meth:`~pyglet.media.Player.play`
           - Begin or resume playback of the current source.
-        * - `pause`
+        * - :py:meth:`~pyglet.media.Player.pause`
           - Pause playback of the current source.
-        * - `next_source`
+        * - :py:meth:`~pyglet.media.Player.next_source`
           - Dequeue the current source and move to the next one immediately.
-            `next` can also be used but it is deprecated because of
+            :py:meth:`~pyglet.media.Player.next` can also be used but it is deprecated because of
             incompatibilities with Python 3.
-        * - `seek`
+        * - :py:meth:`~pyglet.media.Player.seek`
           - Seek to a specific time within the current source.
 
 Note that there is no `stop` method.  If you do not need to resume playback,
@@ -343,31 +347,30 @@ There are several properties that describe the player's current state:
         
         * - Property
           - Description
-        * - `time`
+        * - :py:attr:`~pyglet.media.Player.time`
           - The current playback position within the current source, in
-            seconds.  This is read-only (but see the `seek` method).
-        * - `playing`
+            seconds.  This is read-only (but see the :py:meth:`~pyglet.media.Player.seek` method).
+        * - :py:attr:`~pyglet.media.Player.playing`
           - True if the player is currently playing, False if there are no
             sources queued or the player is paused.  This is read-only (but
-            see the `pause` and `play` methods).
-        * - `source`
+            see the :py:meth:`~pyglet.media.Player.pause` and :py:meth:`~pyglet.media.Player.play` methods).
+        * - :py:attr:`~pyglet.media.Player.source`
           - A reference to the current source being played.  This is
-            read-only (but see the `queue` method).
-        * - `volume`
+            read-only (but see the :py:meth:`~pyglet.media.Player.queue` method).
+        * - :py:attr:`~pyglet.media.Player.volume`
           - The audio level, expressed as a float from 0 (mute) to 1 (normal
             volume).  This can be set at any time.
 
 When a player reaches the end of the current source, by default it will move
 immediately to the next queued source.  If there are no more sources, playback
 stops until another is queued.  There are several other possible behaviours,
-which can be controlled on `SourceGroup` objects.
+which can be controlled on :py:class:`~pyglet.media.SourceGroup` objects.
 
 A :class:`~pyglet.media.SourceGroup` contains multiple media sources with the same audio and video 
 format. Behaviour on reaching the end of the current source can be controlled
-through the :attr:`~pyglet.media.SourceGroup.loop` and
-:attr:`~pyglet.media.SourceGroup.advance_after_eos` attributes.
+through the :attr:`~pyglet.media.SourceGroup.loop` attribute.
 
-You can change a `SourceGroup`'s `loop` and `advance_after_eos` at any time, 
+You can change a :py:class:`~pyglet.media.SourceGroup`'s :py:attr:`~pyglet.media.SourceGroup.loop` attribute at any time, 
 but be aware that unless sufficient time is given for the future data to be 
 decoded and buffered there may be a stutter or gap in playback.  If set well 
 in advance of the end of the source (say, several seconds), there will be no 
@@ -400,15 +403,17 @@ surround-sound setup, but is also applicable to stereo systems.
 A :py:class:`~pyglet.media.player.Player` in pyglet has an associated position in 3D space --
 that is, it is equivalent to an OpenAL "source".  The properties for setting
 these parameters are described in more detail in the API documentation; see
-for example `Player.position` and `Player.pitch`.
+for example :py:attr:`~pyglet.media.Player.position` and :py:attr:`~pyglet.media.Player.pitch`.
 
 The OpenAL "listener" object is provided by the audio driver. To obtain the
 listener for the current audio driver::
 
     pyglet.media.get_audio_driver().get_listener()
 
-This provides similar properties such as `Listener.position`, 
-`Listener.forward_orientation` and `Listener.up_orientation` that describe the 
+This provides similar properties such as
+:py:attr:`~pyglet.media.listener.AbstractListener.position`,
+:py:attr:`~pyglet.media.listener.AbstractListener.forward_orientation` and
+:py:attr:`~pyglet.media.listener.AbstractListener.up_orientation` that describe the 
 position of the user in 3D space.
 
 Note that only mono sounds can be positioned.  Stereo sounds will play back as

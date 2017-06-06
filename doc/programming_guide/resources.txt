@@ -77,7 +77,7 @@ functions.
         * - `pyglet.image.load_animation`
           - `pyglet.resource.animation`
           - :py:class:`~pyglet.image.Animation`
-        * - `pyglet.media.load`
+        * - :py:func:`pyglet.media.load`
           - `pyglet.resource.media`
           - `Source`
         * - | `pyglet.text.load` 
