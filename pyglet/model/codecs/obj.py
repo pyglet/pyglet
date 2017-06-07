@@ -3,52 +3,71 @@ from pyglet import graphics
 from pyglet.gl import *
 
 from pyglet.model.codecs import ModelDecoder
-from pyglet.model import Model
+from pyglet.model import ModelException, Model
 
 
-class MaterialGroup(graphics.Group):
-    diffuse = [.8, .8, .8]
-    ambient = [.2, .2, .2]
-    specular = [0., 0., 0.]
-    emission = [0., 0., 0.]
-    shininess = 0.
-    opacity = 1.
-    texture = None
+class TexturedMaterialGroup(graphics.Group):
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity, texture):
+        super(TexturedMaterialGroup, self).__init__()
         self.name = name
-        super(MaterialGroup, self).__init__(**kwargs)
+        self._diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
+        self._ambient = (GLfloat * 4)(*(ambient + [opacity]))
+        self._specular = (GLfloat * 4)(*(specular + [opacity]))
+        self._emission = (GLfloat * 4)(*(emission + [opacity]))
+        self._shininess = shininess
+        self.texture = texture
 
     def set_state(self, face=GL_FRONT_AND_BACK):
-        if self.texture:
-            glEnable(self.texture.target)
-            glBindTexture(self.texture.target, self.texture.id)
-        else:
-            glDisable(GL_TEXTURE_2D)
-
-        glMaterialfv(face, GL_DIFFUSE, (GLfloat * 4)(*(self.diffuse + [self.opacity])))
-        glMaterialfv(face, GL_AMBIENT, (GLfloat * 4)(*(self.ambient + [self.opacity])))
-        glMaterialfv(face, GL_SPECULAR, (GLfloat * 4)(*(self.specular + [self.opacity])))
-        glMaterialfv(face, GL_EMISSION, (GLfloat * 4)(*(self.emission + [self.opacity])))
-        glMaterialf(face, GL_SHININESS, self.shininess)
+        glEnable(self.texture.target)
+        glBindTexture(self.texture.target, self.texture.id)
+        glMaterialfv(face, GL_DIFFUSE, self._diffuse)
+        glMaterialfv(face, GL_AMBIENT, self._ambient)
+        glMaterialfv(face, GL_SPECULAR, self._specular)
+        glMaterialfv(face, GL_EMISSION, self._emission)
+        glMaterialf(face, GL_SHININESS, self._shininess)
 
     def unset_state(self):
-        if self.texture:
-            glDisable(self.texture.target)
+        glDisable(self.texture.target)
         glDisable(GL_COLOR_MATERIAL)
 
     def __eq__(self, other):
-        if self.texture is None:
-            return super(MaterialGroup, self).__eq__(other)
         return (self.__class__ is other.__class__ and
                 self.texture.id == other.texture.id and
                 self.texture.target == other.texture.target and
                 self.parent == other.parent)
 
     def __hash__(self):
-        if self.texture is None:
-            return super(MaterialGroup, self).__hash__()
         return hash((self.texture.id, self.texture.target))
+
+
+class MaterialGroup(graphics.Group):
+
+    def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity):
+        super(MaterialGroup, self).__init__()
+        self.name = name
+        self._diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
+        self._ambient = (GLfloat * 4)(*(ambient + [opacity]))
+        self._specular = (GLfloat * 4)(*(specular + [opacity]))
+        self._emission = (GLfloat * 4)(*(emission + [opacity]))
+        self._shininess = shininess
+
+    def set_state(self, face=GL_FRONT_AND_BACK):
+        glDisable(GL_TEXTURE_2D)
+        glMaterialfv(face, GL_DIFFUSE, self._diffuse)
+        glMaterialfv(face, GL_AMBIENT, self._ambient)
+        glMaterialfv(face, GL_SPECULAR, self._specular)
+        glMaterialfv(face, GL_EMISSION, self._emission)
+        glMaterialf(face, GL_SHININESS, self._shininess)
+
+    def unset_state(self):
+        glDisable(GL_COLOR_MATERIAL)
+
+    def __eq__(self, other):
+        return super(MaterialGroup, self).__eq__(other)
+
+    def __hash__(self):
+        return super(MaterialGroup, self).__hash__()
 
 
 class MaterialSet(object):
@@ -72,6 +91,15 @@ def load_material_library(path, filename):
 
     file = open(os.path.join(path, filename), 'r')
 
+    material_name = None
+    diffuse = [0.8, 0.8, 0.8]
+    ambient = [1.0, 1.0, 1.0]
+    specular = [0.0, 0.0, 0.0]
+    emission = [0.0, 0.0, 0.0]
+    shininess = 0.0
+    opacity = 1.0
+    texture = None
+
     materials = {}
 
     for line in file:
@@ -82,39 +110,47 @@ def load_material_library(path, filename):
             continue
 
         if values[0] == 'newmtl':
-            material = MaterialGroup(values[1])
-            materials[material.name] = material
-        elif material is None:
-            print('Expected "newmtl" in %s' % filename)
-            continue
+            material_name = values[1]
+        elif material_name is None:
+            raise ModelException('Expected "newmtl" in %s' % filename)
 
         try:
             if values[0] == 'Kd':
-                material.diffuse = list(map(float, values[1:]))
+                diffuse = list(map(float, values[1:]))
             elif values[0] == 'Ka':
-                material.ambient = list(map(float, values[1:]))
+                ambient = list(map(float, values[1:]))
             elif values[0] == 'Ks':
-                material.specular = list(map(float, values[1:]))
+                specular = list(map(float, values[1:]))
             elif values[0] == 'Ke':
-                material.emissive = list(map(float, values[1:]))
+                emission = list(map(float, values[1:]))
             elif values[0] == 'Ns':
-                material.shininess = float(values[1])
+                shininess = float(values[1])
             elif values[0] == 'd':
-                material.opacity = float(values[1])
+                opacity = float(values[1])
             elif values[0] == 'map_Kd':
                 try:
-                    material.texture = pyglet.resource.image(values[1]).texture
+                    texture = pyglet.resource.image(values[1]).texture
                 except BaseException as ex:
-                    print('Could not load texture %s: %s' % (values[1], ex))
+                    raise ModelException('Could not load texture %s: %s' % (values[1], ex))
+
+            if texture:
+                group = TexturedMaterialGroup(material_name, diffuse, ambient, specular,
+                                              emission, shininess, opacity, texture)
+            else:
+                group = MaterialGroup(material_name, diffuse, ambient, specular,
+                                      emission, shininess, opacity)
+
+            materials[material_name] = group
+
         except BaseException as ex:
-            print('Parse error in {0}.'.format((filename, ex)))
+            raise ModelException('Parse error in {0}.'.format((filename, ex)))
 
     return materials
 
 
 def parse_obj_file(filename, file=None):
     materials = {}
-    mesh_list = []  # Also includes anonymous meshes
+    mesh_list = []
 
     if file is None:
         file = open(filename, 'r')
@@ -160,8 +196,7 @@ def parse_obj_file(filename, file=None):
                 mesh = Mesh('')
                 mesh_list.append(mesh)
             if group is None:
-                # FIXME
-                group = MaterialGroup("<unknown>")
+                raise ModelException('Unable to create Material Group')
             if material_set is None:
                 material_set = MaterialSet(group)
                 mesh.materials.append(material_set)
@@ -204,6 +239,7 @@ def parse_obj_file(filename, file=None):
                 nlast = normals[n_index]
                 tlast = tex_coords[t_index]
                 vlast = vertices[v_index]
+
     return mesh_list
 
 
@@ -216,11 +252,25 @@ class OBJModelDecoder(ModelDecoder):
         return ['.obj']
 
     def decode(self, file, filename, batch):
-        # TODO: add exception handling
+        if not batch:
+            batch = pyglet.graphics.Batch()
+            own_batch = True
+        else:
+            own_batch = False
 
         mesh_list = parse_obj_file(filename)
+        vertex_lists = []
 
-        return Model(meshes=mesh_list, batch=batch)
+        for mesh in mesh_list:
+            for material in mesh.materials:
+                vertex_lists.append(batch.add(len(material.vertices) // 3,
+                                              GL_TRIANGLES,
+                                              material.group,
+                                              ('v3f/static', material.vertices),
+                                              ('n3f/static', material.normals),
+                                              ('t2f/static', material.tex_coords)))
+
+        return Model(vertex_lists, batch, own_batch=own_batch)
 
 
 def get_decoders():

@@ -4,6 +4,10 @@ from pyglet.gl import GL_TRIANGLES
 from pyglet import graphics
 
 
+class ModelException(Exception):
+    pass
+
+
 def load(filename, file=None, decoder=None, batch=None):
     """Load a 3D model from a file.
 
@@ -54,43 +58,26 @@ def load(filename, file=None, decoder=None, batch=None):
 
 class Model(object):
 
-    _own_batch = False
-
-    def __init__(self, meshes, batch=None, x=0, y=0, z=0):
-        if not batch:
-            batch = graphics.Batch()
-            self._own_batch = True
+    def __init__(self, vertex_lists, batch, own_batch=False):
         self._batch = batch
-
-        self._x = x
-        self._y = y
-        self._z = z
-        self._vertex_lists = []
-
-        for mesh in meshes:
-            for material in mesh.materials:
-                self._vertex_lists.append(self._batch.add(len(material.vertices) // 3,
-                                                          GL_TRIANGLES,
-                                                          material.group,
-                                                          ('v3f/static', material.vertices),
-                                                          ('n3f/static', material.normals),
-                                                          ('t2f/static', material.tex_coords)))
+        self._own_batch = own_batch
+        self.vertex_lists = vertex_lists
 
     def update(self, x=None, y=None, z=None):
         """Shift entire model on the x, y or z axis."""
         # TODO: optimize this mess
         if x:
-            for vlist in self._vertex_lists:
+            for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
                 verts[0::3] = [v + x for v in verts[0::3]]
                 vlist.vertices[:] = verts
         if y:
-            for vlist in self._vertex_lists:
+            for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
                 verts[1::3] = [v + y for v in verts[1::3]]
                 vlist.vertices[:] = verts
         if z:
-            for vlist in self._vertex_lists:
+            for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
                 verts[2::3] = [v + z for v in verts[2::3]]
                 vlist.vertices[:] = verts
@@ -99,7 +86,7 @@ class Model(object):
         if self._own_batch:
             self._batch.draw()
         else:
-            self._batch.draw_subset(self._vertex_lists)
+            self._batch.draw_subset(self.vertex_lists)
 
 
 _codecs.add_default_model_codecs()
