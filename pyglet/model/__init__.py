@@ -1,6 +1,6 @@
 from pyglet.model import codecs as _codecs
 from pyglet.compat import BytesIO
-from pyglet.gl import GL_TRIANGLES
+from pyglet.gl import *
 from pyglet import graphics
 
 
@@ -65,7 +65,6 @@ class Model(object):
 
     def update(self, x=None, y=None, z=None):
         """Shift entire model on the x, y or z axis."""
-        # TODO: optimize this mess
         if x:
             for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
@@ -87,6 +86,70 @@ class Model(object):
             self._batch.draw()
         else:
             self._batch.draw_subset(self.vertex_lists)
+
+
+class TexturedMaterialGroup(graphics.Group):
+
+    def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity, texture):
+        super(TexturedMaterialGroup, self).__init__()
+        self.name = name
+        self._diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
+        self._ambient = (GLfloat * 4)(*(ambient + [opacity]))
+        self._specular = (GLfloat * 4)(*(specular + [opacity]))
+        self._emission = (GLfloat * 4)(*(emission + [opacity]))
+        self._shininess = shininess
+        self.texture = texture
+
+    def set_state(self, face=GL_FRONT_AND_BACK):
+        glEnable(self.texture.target)
+        glBindTexture(self.texture.target, self.texture.id)
+        glMaterialfv(face, GL_DIFFUSE, self._diffuse)
+        glMaterialfv(face, GL_AMBIENT, self._ambient)
+        glMaterialfv(face, GL_SPECULAR, self._specular)
+        glMaterialfv(face, GL_EMISSION, self._emission)
+        glMaterialf(face, GL_SHININESS, self._shininess)
+
+    def unset_state(self):
+        glDisable(self.texture.target)
+        glDisable(GL_COLOR_MATERIAL)
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self.texture.id == other.texture.id and
+                self.texture.target == other.texture.target and
+                self.parent == other.parent)
+
+    def __hash__(self):
+        return hash((self.texture.id, self.texture.target))
+
+
+class MaterialGroup(graphics.Group):
+
+    def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity):
+        super(MaterialGroup, self).__init__()
+        self.name = name
+        self._diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
+        self._ambient = (GLfloat * 4)(*(ambient + [opacity]))
+        self._specular = (GLfloat * 4)(*(specular + [opacity]))
+        self._emission = (GLfloat * 4)(*(emission + [opacity]))
+        self._shininess = shininess
+
+    def set_state(self, face=GL_FRONT_AND_BACK):
+        glDisable(GL_TEXTURE_2D)
+        glMaterialfv(face, GL_DIFFUSE, self._diffuse)
+        glMaterialfv(face, GL_AMBIENT, self._ambient)
+        glMaterialfv(face, GL_SPECULAR, self._specular)
+        glMaterialfv(face, GL_EMISSION, self._emission)
+        glMaterialf(face, GL_SHININESS, self._shininess)
+
+    def unset_state(self):
+        glDisable(GL_COLOR_MATERIAL)
+
+    def __eq__(self, other):
+        return super(MaterialGroup, self).__eq__(other)
+
+    def __hash__(self):
+        return super(MaterialGroup, self).__hash__()
 
 
 _codecs.add_default_model_codecs()
