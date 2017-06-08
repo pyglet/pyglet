@@ -178,7 +178,7 @@ See :ref:`guide_resources` for more details.
 New graphics features
 ---------------------
 
-The `pyglet.graphics` module is a low-level abstraction of OpenGL vertex
+The :py:mod:`pyglet.graphics` module is a low-level abstraction of OpenGL vertex
 arrays and buffer objects.  It is intended for use by developers who are
 already very familiar with OpenGL and are after the best performance possible.
 pyglet uses this module internally to implement its new sprite module and the
