@@ -125,7 +125,7 @@ def get_script_home():
     When the script is being run by a Python profiler, this function
     may return the directory where the profiler is running instead of
     the directory of the real script. To workaround this behaviour the
-    full path to the real script can be specified in `pyglet.resource.path`.
+    full path to the real script can be specified in :py:attr:`pyglet.resource.path`.
 
     :rtype: str
     """
