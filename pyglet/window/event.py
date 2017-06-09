@@ -32,9 +32,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Events for `pyglet.window`.
+"""Events for :py:mod:`pyglet.window`.
 
-See `Window` for a description of the window event types.
+See :py:class:`~pyglet.window.Window` for a description of the window event types.
 """
 from __future__ import print_function
 from builtins import object
@@ -56,15 +56,12 @@ class WindowExitHandler(object):
     of this class is automatically attached to all new `pyglet.window.Window`
     objects.
 
-    :deprecated: This class's functionality is provided directly on `Window`
+    :deprecated: This class's functionality is provided directly on :py:class:`~pyglet.window.Window`
         in pyglet 1.1.
-
-    :Ivariables:
-        `has_exit` : bool
-            True if the user wants to close the window.
-
     """
+
     has_exit = False
+    """True if the user wants to close the window."""
 
     def on_close(self):
         self.has_exit = True

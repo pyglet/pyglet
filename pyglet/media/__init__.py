@@ -37,43 +37,43 @@
 pyglet can play WAV files, and if AVbin is installed, many other audio and
 video formats.
 
-Playback is handled by the `Player` class, which reads raw data from `Source`
-objects and provides methods for pausing, seeking, adjusting the volume, and
-so on.  The `Player` class implements the best available audio device
-(currently, only OpenAL is supported)::
+Playback is handled by the :py:class:`Player` class, which reads raw data from
+:py:class:`Source` objects and provides methods for pausing, seeking, adjusting
+the volume, and so on. The :py:class:`Player` class implements the best
+available audio device (currently, only OpenAL is supported)::
 
     player = Player()
 
-A `Source` is used to decode arbitrary audio and video files.  It is
+A :py:class:`Source` is used to decode arbitrary audio and video files.  It is
 associated with a single player by "queuing" it::
 
     source = load('background_music.mp3')
     player.queue(source)
 
-Use the `Player` to control playback.
+Use the :py:class:`Player` to control playback.
 
-If the source contains video, the `Source.video_format` attribute will be
-non-None, and the `Player.texture` attribute will contain the current video
-image synchronised to the audio.
+If the source contains video, the :py:meth:`Source.video_format` attribute will
+be non-None, and the :py:attr:`Player.texture` attribute will contain the
+current video image synchronised to the audio.
 
 Decoding sounds can be processor-intensive and may introduce latency,
 particularly for short sounds that must be played quickly, such as bullets or
 explosions.  You can force such sounds to be decoded and retained in memory
-rather than streamed from disk by wrapping the source in a `StaticSource`::
+rather than streamed from disk by wrapping the source in a
+:py:class:`StaticSource`::
 
     bullet_sound = StaticSource(load('bullet.wav'))
 
-The other advantage of a `StaticSource` is that it can be queued on any number
-of players, and so played many times simultaneously.
+The other advantage of a :py:class:`StaticSource` is that it can be queued on
+any number of players, and so played many times simultaneously.
 
 pyglet relies on Python's garbage collector to release resources when a player
 has finished playing a source. In this way some operations that could affect
 the application performance can be delayed.
 
-The player provides a `Player.delete()` method that can be used to release
-resources immediately. Also an explicit call to `gc.collect()`can be used to
-collect unused resources.
-
+The player provides a :py:meth:`Player.delete` method that can be used to
+release resources immediately. Also an explicit call to ``gc.collect()`` can be
+used to collect unused resources.
 """
 
 # Collect public interface from all submodules/packages

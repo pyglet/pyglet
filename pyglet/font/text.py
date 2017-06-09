@@ -261,13 +261,7 @@ class Text(object):
     Text can be word-wrapped by specifying a `width` to wrap into.  If the
     width is not specified, it gives the width of the text as laid out.
 
-    :Ivariables:
-        `x` : int
-            X coordinate of the text
-        `y` : int
-            Y coordinate of the text
-
-    :deprecated: Use `pyglet.text.Label`.
+    :deprecated: Use :py:class:`pyglet.text.Label`.
     '''
     # Alignment constants
 
@@ -405,6 +399,7 @@ class Text(object):
             self._layout.x = self.x
 
     def _get_x(self):
+        """X coordinate of the text"""
         return self._x
 
     def _set_x(self, x):
@@ -414,6 +409,7 @@ class Text(object):
     x = property(_get_x, _set_x)
 
     def _get_y(self):
+        """Y coordinate of the text"""
         return self._layout.y
 
     def _set_y(self, y):

@@ -288,3 +288,17 @@ img.logo {
     margin: 0px 0px 10px 0px;
 
 }
+
+pre, tt, code {
+    font-family: 'Consolas', 'Menlo', 'Deja Vu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+}
+
+/* Specific API doc styles */
+
+dt {
+    font-size: 1.2rem;
+}
+
+dl.class dl > dt {
+    font-size: 1.0rem;
+}
