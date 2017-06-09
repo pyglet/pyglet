@@ -32,7 +32,7 @@ def load_material_library(path, filename):
     ambient = [1.0, 1.0, 1.0]
     specular = [0.0, 0.0, 0.0]
     emission = [0.0, 0.0, 0.0]
-    shininess = 0.0
+    shininess = 100.0
     opacity = 1.0
     texture = None
 
@@ -101,6 +101,15 @@ def parse_obj_file(filename, file=None):
     normals = [[0., 0., 0.]]
     tex_coords = [[0., 0.]]
 
+    diffuse = [1.0, 1.0, 1.0]
+    ambient = [1.0, 1.0, 1.0]
+    specular = [1.0, 1.0, 1.0]
+    emission = [0.0, 0.0, 0.0]
+    shininess = 100.0
+    opacity = 1.0
+    default_group = MaterialGroup("Default", diffuse, ambient,
+                                  specular, emission, shininess, opacity)
+
     for line in file:
         if line.startswith('#'):
             continue
@@ -117,9 +126,7 @@ def parse_obj_file(filename, file=None):
         elif values[0] == 'mtllib':
             materials = load_material_library(path, values[1])
         elif values[0] in ('usemtl', 'usemat'):
-            group = materials.get(values[1], None)
-            if group is None:
-                print('Unknown material: %s' % values[1])
+            group = materials.get(values[1], default_group)
             if mesh is not None:
                 material_set = MaterialSet(group)
                 mesh.materials.append(material_set)
@@ -132,7 +139,7 @@ def parse_obj_file(filename, file=None):
                 mesh = Mesh('')
                 mesh_list.append(mesh)
             if group is None:
-                raise ModelException('Unable to create Material Group')
+                group = default_group
             if material_set is None:
                 material_set = MaterialSet(group)
                 mesh.materials.append(material_set)
