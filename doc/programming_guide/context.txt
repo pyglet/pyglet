@@ -6,10 +6,6 @@ applications the information described here is far too low-level to be of any
 concern, however more advanced applications can take advantage of the complete
 control pyglet provides.
 
-.. contents::
-    :local:
-
-
 Displays, screens, configs and contexts
 ---------------------------------------
 
@@ -54,7 +50,7 @@ provided to you by the system.
 
 pyglet simplifies the process of selecting one of the system's configs by
 allowing you to create a "template" config which specifies only the values you
-are interested in.  See `Simple context configuration` for details.
+are interested in.  See :ref:`guide_simple-context-configuration` for details.
 
 
 .. _guide_displays:
@@ -272,6 +268,8 @@ or config, pyglet will use a template config with the following properties:
         * - depth_size
           - 24
 
+.. _guide_simple-context-configuration:
+
 Simple context configuration
 ----------------------------
 
@@ -291,8 +289,8 @@ For example, to create a window with an alpha channel::
     window = pyglet.window.Window(config=config)
 
 It is sometimes necessary to create the context yourself, rather than letting
-the :class:`~pyglet.window.Window` constructor do this for you.  In this case 
-use :meth:`~pyglet.cancas.Screen.get_best_config` to obtain a "complete"
+the :py::class:`~pyglet.window.Window` constructor do this for you.  In this case 
+use :py::meth:`~pyglet.canvas.Screen.get_best_config` to obtain a "complete"
 config, which you can then use to create the context::
 
     platform = pyglet.window.get_platform()
@@ -387,7 +385,7 @@ the old one and lose all the objects already created, you can
 
 pyglet defines an :class:`~pyglet.gl.ObjectSpace`: a representation of a 
 collection of objects used by one or more contexts.  Each context has a single
-object space, accessible via its :attr:`~pyglet.gl.Context.object_space` 
+object space, accessible via its :py:attr:`~pyglet.gl.base.Context.object_space` 
 attribute.
 
 By default, all contexts share the same object space as long as at least one
@@ -412,7 +410,7 @@ space) in the :class:`~pyglet.gl.Context` constructor.
 It can be useful to keep track of which object space an object was created in.
 For example, when you load a font, pyglet caches the textures used and reuses
 them; but only if the font is being loaded on the same object space.  The
-easiest way to do this is to set your own attributes on the `ObjectSpace`
+easiest way to do this is to set your own attributes on the :py:class:`~pyglet.gl.ObjectSpace`
 object.
 
 In the following example, an attribute is set on the object space indicating
@@ -424,4 +422,4 @@ you can check for this attribute to determine if you need to load them again::
     object_space.my_game_objects_loaded = True
 
 Avoid using attribute names on :class:`~pyglet.gl.ObjectSpace` that begin with
-``"pyglet"``,they may conflict with an internal module.
+``"pyglet"``, as they may conflict with an internal module.

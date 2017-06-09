@@ -37,7 +37,7 @@
 
 The region allocator is used to allocate vertex indices within a vertex
 domain's  multiple buffers.  ("Buffer" refers to any abstract buffer presented
-by `pyglet.graphics.vertexbuffer`.
+by :py:mod:`pyglet.graphics.vertexbuffer`.
  
 The allocator will at times request more space from the buffers. The current
 policy is to double the buffer size when there is not enough room to fulfil an

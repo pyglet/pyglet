@@ -6,9 +6,6 @@ All pyglet windows can recieve input from a 3 button mouse with a
 operating system, but you can override this and request either a different
 cursor shape or provide your own image or animation.
 
-.. contents::
-    :local:
-
 Mouse events
 ------------
 
@@ -27,7 +24,7 @@ pyglet).
 
     The coordinate space for the mouse pointer.
 
-The most basic mouse event is `on_mouse_motion` which is dispatched every time
+The most basic mouse event is :py:meth:`~pyglet.window.Window.on_mouse_motion` which is dispatched every time
 the mouse moves::
 
     def on_mouse_motion(x, y, dx, dy):
@@ -41,7 +38,7 @@ movement.  This is not necessarily once for every pixel moved -- the operating
 system typically samples the mouse at a fixed frequency, and it is easy to
 move the mouse faster than this.  Conversely, if your application is not
 processing events fast enough you may find that several queued-up mouse events
-are dispatched in a single `Window.dispatch_events` call.  There is no need to
+are dispatched in a single :py:meth:`~pyglet.window.Window.dispatch_events` call.  There is no need to
 concern yourself with either of these issues; the latter rarely causes
 problems, and the former can not be avoided.
 
@@ -69,10 +66,10 @@ released, or the mouse is moved while any button is held down::
     def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
         pass
 
-The `x`, `y`, `dx` and `dy` parameters are as for the `on_mouse_motion` event.
+The `x`, `y`, `dx` and `dy` parameters are as for the :py:meth:`~pyglet.window.Window.on_mouse_motion` event.
 The press and release events do not require `dx` and `dy` parameters as they
 would be zero in this case.  The `modifiers` parameter is as for the keyboard
-events, see `Working with the keyboard`.
+events, see :ref:`guide_working-with-the-keyboard`.
 
 The `button` parameter signifies which mouse button was pressed, and is one of
 the following constants::
@@ -81,7 +78,7 @@ the following constants::
     pyglet.window.mouse.MIDDLE
     pyglet.window.mouse.RIGHT
 
-The `buttons` parameter in `on_mouse_drag` is a bitwise combination of all the
+The `buttons` parameter in :py:meth:`~pyglet.window.Window.on_mouse_drag` is a bitwise combination of all the
 mouse buttons currently held down.  For example, to test if the user is
 performing a drag gesture with the left button::
 
@@ -93,7 +90,7 @@ performing a drag gesture with the left button::
 
 When the user begins a drag operation (i.e., pressing and holding a mouse
 button and then moving the mouse), the window in which they began the drag
-will continue to receive the `on_mouse_drag` event as long as the button is
+will continue to receive the :py:meth:`~pyglet.window.Window.on_mouse_drag` event as long as the button is
 held down.  This is true even if the mouse leaves the window.  You generally
 do not need to handle this specially: it is a convention among all operating
 systems that dragging is a gesture rather than a direct manipulation of the
@@ -107,10 +104,10 @@ There are events for when the mouse enters or leaves a window::
     def on_mouse_leave(x, y):
         pass
 
-The coordinates for `on_mouse_leave` will lie outside of your window.  These
+The coordinates for :py:meth:`~pyglet.window.Window.on_mouse_leave` will lie outside of your window.  These
 events are not dispatched while a drag operation is taking place.
 
-The mouse scroll wheel generates the `on_mouse_scroll` event::
+The mouse scroll wheel generates the :py:meth:`~pyglet.window.Window.on_mouse_scroll` event::
 
     def on_mouse_scroll(x, y, scroll_x, scroll_y):
         pass
@@ -128,18 +125,18 @@ Changing the mouse cursor
 The mouse cursor can be set to one of the operating system cursors, a custom
 image, or hidden completely.  The change to the cursor will be applicable only
 to the window you make the change to.  To hide the mouse cursor, call
-`Window.set_mouse_visible`::
+:py:meth:`~pyglet.window.Window.set_mouse_visible`::
 
     window = pyglet.window.Window()
     window.set_mouse_visible(False)
 
 This can be useful if the mouse would obscure text that the user is typing.
 If you are hiding the mouse cursor for use in a game environment, consider
-making the mouse exclusive instead; see `Mouse exclusivity`, below.
+making the mouse exclusive instead; see :ref:`guide_mouse-exclusivity`, below.
 
-Use `Window.set_mouse_cursor` to change the appearance of the mouse cursor.
-A mouse cursor is an instance of `MouseCursor`.  You can obtain the operating
-system-defined cursors with `Window.get_system_mouse_cursor`::
+Use :py:meth:`~pyglet.window.Window.set_mouse_cursor` to change the appearance of the mouse cursor.
+A mouse cursor is an instance of :py:class:`~pyglet.window.MouseCursor`.  You can obtain the operating
+system-defined cursors with :py:meth:`~pyglet.window.Window.get_system_mouse_cursor`::
 
     cursor = window.get_system_mouse_cursor(win.CURSOR_HELP)
     window.set_mouse_cursor(cursor)
@@ -215,7 +212,8 @@ on the window manager.
           - .. image:: img/cursor_mac_default.png
 
 Alternatively, you can use your own image as the mouse cursor.  Use
-`pyglet.image.load` to load the image, then create an `ImageMouseCursor` with
+:py:func:`pyglet.image.load` to load the image, then create an 
+:py:class:`~pyglet.window.ImageMouseCursor` with
 the image and "hot-spot" of the cursor.  The hot-spot is the point of the
 image that corresponds to the actual pointer location on screen, for example,
 the point of the arrow::
@@ -226,9 +224,11 @@ the point of the arrow::
 
 You can even render a mouse cursor directly with OpenGL.  You could draw a
 3-dimensional cursor, or a particle trail, for example.  To do this, subclass
-`MouseCursor` and implement your own draw method.  The draw method will be
+:py:class:`~pyglet.window.MouseCursor` and implement your own draw method.  The draw method will be
 called with the default pyglet window projection, even if you are using
 another projection in the rest of your application.
+
+.. _guide_mouse-exclusivity:
 
 Mouse exclusivity
 -----------------
@@ -243,7 +243,7 @@ application.  Because there is no longer a mouse cursor, the `x` and `y`
 parameters of the mouse events are meaningless; you should use only the `dx`
 and `dy` parameters to determine how the mouse was moved.
 
-Activate mouse exclusive mode with `set_exclusive_mouse`::
+Activate mouse exclusive mode with :py:meth:`~pyglet.window.Window.set_exclusive_mouse`::
 
     window = pyglet.window.Window()
     window.set_exclusive_mouse(True)

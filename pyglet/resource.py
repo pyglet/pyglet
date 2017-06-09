@@ -39,23 +39,23 @@ problematic in Python, as the working directory is not necessarily the same
 directory as the application's script files.
 
 This module allows applications to specify a search path for resources.
-Relative paths are taken to be relative to the application's __main__ module.
-ZIP files can appear on the path; they will be searched inside.  The resource
-module also behaves as expected when applications are bundled using py2exe or
-py2app.
+Relative paths are taken to be relative to the application's ``__main__``
+module. ZIP files can appear on the path; they will be searched inside.  The
+resource module also behaves as expected when applications are bundled using py2exe or py2app.
 
-As well as providing file references (with the `file` function), the resource
-module also contains convenience functions for loading images, textures,
-fonts, media and documents.
+As well as providing file references (with the :py:func:`file` function), the
+resource module also contains convenience functions for loading images,
+textures, fonts, media and documents.
 
 3rd party modules or packages not bound to a specific application should
-construct their own `Loader` instance and override the path to use the
+construct their own :py:class:`Loader` instance and override the path to use the
 resources in the module's directory.
 
 Path format
 ^^^^^^^^^^^
 
-The resource path `path` (see also `Loader.__init__` and `Loader.path`)
+The resource path :py:attr:`path` (see also :py:meth:`Loader.__init__` and
+:py:meth:`Loader.path`)
 is a list of locations to search for resources.  Locations are searched in the
 order given in the path.  If a location is not valid (for example, if the
 directory does not exist), it is skipped.
@@ -79,9 +79,9 @@ This avoids a common programmer error when porting applications between
 platforms.
 
 The default path is ``['.']``.  If you modify the path, you must call
-`reindex`.
+:py:func:`reindex`.
 
-:since: pyglet 1.1
+.. versionadded:: 1.1
 """
 from future import standard_library
 
@@ -125,7 +125,7 @@ def get_script_home():
     When the script is being run by a Python profiler, this function
     may return the directory where the profiler is running instead of
     the directory of the real script. To workaround this behaviour the
-    full path to the real script can be specified in `pyglet.resource.path`.
+    full path to the real script can be specified in :py:attr:`pyglet.resource.path`.
 
     :rtype: str
     """
@@ -520,7 +520,7 @@ class Loader(object):
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
-        packed into a `TextureBin` if it is an appropriate size for packing.
+        packed into a :py:class:`~pyglet.image.atlas.TextureBin` if it is an appropriate size for packing.
         This is more efficient than loading images into separate textures.
 
         :Parameters:
@@ -541,7 +541,7 @@ class Loader(object):
 
         :rtype: `Texture`
         :return: A complete texture if the image is large or not in an atlas,
-            otherwise a `TextureRegion` of a texture atlas.
+            otherwise a :py:class:`~pyglet.image.TextureRegion` of a texture atlas.
         """
         self._require_index()
         if name in self._cached_images:
@@ -572,7 +572,7 @@ class Loader(object):
                 The returned image will be rotated clockwise by the given
                 number of degrees (a multiple of 90).
 
-        :rtype: `Animation`
+        :rtype: :py:class:`~pyglet.image.Animation`
         """
         self._require_index()
         try:
@@ -619,7 +619,7 @@ class Loader(object):
         This is useful for debugging and profiling only.
 
         :rtype: list
-        :return: List of `TextureBin`
+        :return: List of :py:class:`~pyglet.image.atlas.TextureBin`
         """
         self._require_index()
         return list(self._texture_atlas_bins.values())
@@ -659,7 +659,7 @@ class Loader(object):
         """Load a texture.
 
         The named image will be loaded as a single OpenGL texture.  If the
-        dimensions of the image are not powers of 2 a `TextureRegion` will
+        dimensions of the image are not powers of 2 a :py:class:`~pyglet.image.TextureRegion` will
         be returned.
 
         :Parameters:

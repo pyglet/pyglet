@@ -1,0 +1,14 @@
+This is an example of a custom image codec.
+Custom codecs can be created and added at runtime
+in your application, allowing you to add support
+for loading specialized image and animation formats.
+
+This codec adds support for the Aseprite binary
+format, which is a popular software for creating
+animated sprites.
+
+https://www.aseprite.org/
+https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md
+
+This codec is fairly complete, with the limitation
+of only supporting "normal" blending mode for layers.

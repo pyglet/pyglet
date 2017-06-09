@@ -55,7 +55,7 @@ def load(filename, file=None, streaming=True):
         `file` : file-like object
             Not yet supported.
         `streaming` : bool
-            If False, a `StaticSource` will be returned; otherwise (default) a
+            If False, a :py:class:`~pyglet.media.StaticSource` will be returned; otherwise (default) a
             `StreamingSource` is created.
 
     :rtype: `Source`
@@ -105,6 +105,9 @@ _source_loader = None
 
 
 def have_avbin():
+    """Returns ``True`` iff AVBin is installed and accessible on the user's
+    system.
+    """
     global _have_avbin
     if _have_avbin is None:
         try:
