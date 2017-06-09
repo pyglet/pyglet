@@ -77,7 +77,7 @@ Drawing multiple sprites
 
 Sprites can be "batched" together and drawn at once more quickly than if each
 of their ``draw`` methods were called individually.  The following example
-creates one hundred ball sprites and adds each of them to a `Batch`.  The
+creates one hundred ball sprites and adds each of them to a :py:class:`~pyglet.graphics.Batch`.  The
 entire batch of sprites is then drawn in one call::
 
     batch = pyglet.graphics.Batch()
@@ -93,10 +93,10 @@ entire batch of sprites is then drawn in one call::
 
 Sprites can be freely modified in any way even after being added to a batch,
 however a sprite can belong to at most one batch.  See the documentation for
-`pyglet.graphics` for more details on batched rendering, and grouping of
+:py:mod:`pyglet.graphics` for more details on batched rendering, and grouping of
 sprites within batches.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 """
 
 __docformat__ = 'restructuredtext'
@@ -125,11 +125,11 @@ class SpriteGroup(graphics.Group):
     def __init__(self, texture, blend_src, blend_dest, parent=None):
         """Create a sprite group.
 
-        The group is created internally within `Sprite`; applications usually
+        The group is created internally within :py:class:`~pyglet.sprite.Sprite`; applications usually
         do not need to explicitly create it.
 
         :Parameters:
-            `texture` : `Texture`
+            `texture` : `~pyglet.image.Texture`
                 The (top-level) texture containing the sprite image.
             `blend_src` : int
                 OpenGL blend source mode; for example,
@@ -137,7 +137,7 @@ class SpriteGroup(graphics.Group):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
         super(SpriteGroup, self).__init__(parent)
@@ -202,7 +202,7 @@ class Sprite(event.EventDispatcher):
         """Create a sprite.
 
         :Parameters:
-            `img` : `AbstractImage` or `Animation`
+            `img` : `~pyglet.image.AbstractImage` or `~pyglet.image.Animation`
                 Image or animation to display.
             `x` : int
                 X coordinate of the sprite.
@@ -214,9 +214,9 @@ class Sprite(event.EventDispatcher):
             `blend_dest` : int
                 OpenGL blend destination mode.  The default is suitable for
                 compositing sprites drawn from back-to-front.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the sprite to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional parent group of the sprite.
             `usage` : str
                 Vertex buffer object usage hint, one of ``"none"``,

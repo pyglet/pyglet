@@ -70,7 +70,7 @@ Refer to the Programming Guide for advanced usage of the document and layout
 classes, including interactive editing, embedding objects within documents and
 creating scrollable layouts.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 """
 from builtins import object
 
@@ -263,9 +263,9 @@ class DocumentLabel(layout.TextLayout):
                 characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
 
         """
@@ -311,7 +311,7 @@ class DocumentLabel(layout.TextLayout):
     def font_name(self):
         """Font family name.
 
-        The font name, as passed to `pyglet.font.load`.  A list of names can
+        The font name, as passed to :py:func:`pyglet.font.load`.  A list of names can
         optionally be given: the first matching font will be used.
 
         :type: str or list
@@ -441,9 +441,9 @@ class Label(DocumentLabel):
                 characters.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
 
         """
@@ -500,9 +500,9 @@ class HTMLLabel(DocumentLabel):
                 and line breaks.  You must also set the width of the label.
             `dpi` : float
                 Resolution of the fonts in this layout.  Defaults to 96.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add the label to.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Optional graphics group to use.
 
         """

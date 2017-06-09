@@ -147,7 +147,7 @@ if getattr(sys, 'frozen', None):
 #:     must be loaded after the window using them was created).  Recommended
 #:     for advanced developers only.
 #:
-#:     **Since:** pyglet 1.1
+#:     .. versionadded:: 1.1
 #: vsync
 #:     If set, the `pyglet.window.Window.vsync` property is ignored, and
 #:     this option overrides it (to either force vsync on or off).  If unset,
@@ -161,14 +161,14 @@ if getattr(sys, 'frozen', None):
 #:     X11 servers supporting the Xsync extension with a window manager
 #:     that implements the _NET_WM_SYNC_REQUEST protocol.
 #:
-#:     **Since:** pyglet 1.1
+#:     .. versionadded:: 1.1
 #: darwin_cocoa
 #:     If True, the Cocoa-based pyglet implementation is used as opposed to
 #:     the 32-bit Carbon implementation.  When python is running in 64-bit mode
 #:     on Mac OS X 10.6 or later, this option is set to True by default.
 #:     Otherwise the Carbon implementation is preferred.
 #:
-#:     **Since:** pyglet 1.2
+#:     .. versionadded:: 1.2
 #:
 #: search_local_libs
 #:     If False, pyglet won't try to search for libraries in the script
@@ -176,7 +176,7 @@ if getattr(sys, 'frozen', None):
 #:     library instead of the system installed version. This option is set
 #:     to True by default.
 #:
-#:     **Since:** pyglet 1.2
+#:     .. versionadded:: 1.2
 #:
 options = {
     'audio': ('directsound', 'pulse', 'openal', 'silent'),

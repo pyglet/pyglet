@@ -6,7 +6,7 @@ import sys
 import shutil
 import inspect
 import webbrowser
-from subprocess import call, check_output
+from subprocess import call
 
 THIS_DIR = op.dirname(op.abspath(__file__))
 DOC_DIR = op.join(THIS_DIR, 'doc')
@@ -20,8 +20,7 @@ def clean():
             DIST_DIR,
             op.join(THIS_DIR, '_build'),
             op.join(THIS_DIR, 'pyglet.egg-info')]
-    files = [op.join(DOC_DIR, 'internal', 'build.rst'),
-             op.join(DOC_DIR, 'internal', 'blacklist.rst')]
+    files = [op.join(DOC_DIR, 'internal', 'build.rst')]
     for d in dirs:
         print('   Removing:', d)
         shutil.rmtree(d, ignore_errors=True)

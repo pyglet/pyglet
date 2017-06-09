@@ -110,7 +110,7 @@ class VideoFormat(object):
             AVbin 8 or later is required, otherwise the frame rate will be
             ``None``.
 
-            **Since:** pyglet 1.2.
+            .. versionadded:: 1.2.
 
     """
     
@@ -207,7 +207,7 @@ class SourceInfo(object):
         `genre` : str
             Genre
 
-    .. versionadded:: pyglet 1.2
+    .. versionadded:: 1.2
     """
 
     title = ''
@@ -233,7 +233,7 @@ class Source(object):
             Source metadata such as title, artist, etc; or None if the
             information is not available.
 
-            **Since:** pyglet 1.2
+            .. versionadded:: 1.2
     """
 
     _duration = None
@@ -271,7 +271,7 @@ class Source(object):
         return player
 
     def get_animation(self):
-        """Import all video frames into memory as an `Animation`.
+        """Import all video frames into memory as an :py:class:`~pyglet.image.Animation`.
 
         An empty animation will be returned if the source has no video.
         Otherwise, the animation will contain all unplayed video frames (the
@@ -281,7 +281,7 @@ class Source(object):
         This method is unsuitable for videos running longer than a
         few seconds.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
 
         :rtype: `pyglet.image.Animation`
         """
@@ -305,7 +305,7 @@ class Source(object):
     def get_next_video_timestamp(self):
         """Get the timestamp of the next video frame.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
 
         :rtype: float
         :return: The next timestamp, or ``None`` if there are no more video
@@ -320,7 +320,7 @@ class Source(object):
         or corrupted when this method is called unless the application has
         made a copy of it.
 
-        .. versionadded:: pyglet 1.1
+        .. versionadded:: 1.1
 
         :rtype: `pyglet.image.AbstractImage`
         :return: The next video frame image, or ``None`` if the video frame
@@ -362,7 +362,7 @@ class StreamingSource(Source):
 
     is_queued = property(lambda self: self._is_queued,
                          doc="""Determine if this source has been queued
-        on a `Player` yet.
+        on a :py:class:`~pyglet.media.player.Player` yet.
 
         Read-only.
 
@@ -387,7 +387,7 @@ class StaticSource(Source):
     """
     
     def __init__(self, source):
-        """Construct a `StaticSource` for the data in `source`.
+        """Construct a :py:class:`~pyglet.media.StaticSource` for the data in `source`.
 
         :Parameters:
             `source` : `Source`
@@ -429,7 +429,7 @@ class StaticSource(Source):
         raise RuntimeError('StaticSource cannot be queued.')
 
 class StaticMemorySource(StaticSource):
-    """Helper class for default implementation of `StaticSource`.  Do not use
+    """Helper class for default implementation of :py:class:`~pyglet.media.StaticSource`.  Do not use
     directly."""
 
     def __init__(self, data, audio_format):

@@ -291,7 +291,7 @@ class VertexDomain(object):
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : :py:class:`VertexList`
+            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         '''
@@ -407,7 +407,7 @@ class VertexList(object):
         parent state of some vertices).
 
         :Parameters:
-            `domain` : :py:class:`VertexDomain`
+            `domain` : `VertexDomain`
                 Domain to migrate this vertex list to.
 
         '''
@@ -720,7 +720,7 @@ class IndexedVertexDomain(VertexDomain):
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : :py:class:`IndexedVertexList`
+            `vertex_list` : `IndexedVertexList`
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         '''
@@ -820,7 +820,7 @@ class IndexedVertexList(VertexList):
         to change parent state of some vertices).
 
         :Parameters:
-            `domain` : :py:class:`IndexedVertexDomain`
+            `domain` : `IndexedVertexDomain`
                 Indexed domain to migrate this vertex list to.
 
         '''

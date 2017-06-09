@@ -181,11 +181,11 @@ def add_file(font):
 
     The font format is platform-dependent, but is typically a TrueType font
     file containing a single font face. Note that to use a font added with this method,
-    you should pass the face name (not the file name) to :meth:`pyglet.font.load` or any
+    you should pass the face name (not the file name) to :meth::py:func:`pyglet.font.load` or any
     other place where you normally specify a font.
 
     :Parameters:
-        `font` : str or file
+        `font` : str or file-like object
             Filename or file-like object to load fonts from.
 
     """

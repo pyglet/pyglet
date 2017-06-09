@@ -1,3 +1,5 @@
+.. _quickstart:
+
 Writing a pyglet application
 ============================
 
@@ -5,9 +7,6 @@ Getting started with a new library or framework can be daunting, especially
 when presented with a large amount of reference material to read.  This
 chapter gives a very quick introduction to pyglet without covering any of the
 details.
-
-.. contents::
-    :local:
 
 Hello, World
 ------------

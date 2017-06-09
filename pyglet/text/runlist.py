@@ -33,7 +33,7 @@
 # ----------------------------------------------------------------------------
 '''Run list encoding utilities.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 '''
 from builtins import str
 from builtins import zip

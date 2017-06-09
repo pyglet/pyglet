@@ -113,7 +113,7 @@ _is_epydoc = hasattr(_sys, 'is_epydoc') and _sys.is_epydoc
 #:
 #: :type: `Context`
 #:
-#: .. versionadded:: pyglet 1.1
+#: .. versionadded:: 1.1
 current_context = None
 
 def get_current_context():

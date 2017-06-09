@@ -33,7 +33,7 @@
 # ----------------------------------------------------------------------------
 '''Document formats.
 
-.. versionadded:: pyglet 1.1
+.. versionadded:: 1.1
 '''
 
 __docformat__ = 'restructuredtext'

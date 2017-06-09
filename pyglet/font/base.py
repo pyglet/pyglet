@@ -120,7 +120,7 @@ def get_grapheme_clusters(text):
         `text` : unicode
             String to cluster.
 
-    .. versionadded:: pyglet 1.1.2
+    .. versionadded:: 1.1.2
 
     :rtype: List of `unicode`
     :return: List of Unicode grapheme clusters
@@ -270,7 +270,7 @@ class FontException(Exception):
 class Font(object):
     '''Abstract font class able to produce glyphs.
 
-    To construct a font, use `pyglet.font.load`, which will instantiate the
+    To construct a font, use :py:func:`pyglet.font.load`, which will instantiate the
     platform-specific font class.
 
     Internally, this class is used by the platform classes to manage the set
@@ -307,7 +307,7 @@ class Font(object):
         the font registry.
 
         There is no way to instantiate a font given the data directly, you
-        must use `pyglet.font.load` specifying the font name.
+        must use :py:func:`pyglet.font.load` specifying the font name.
         '''
         pass
 

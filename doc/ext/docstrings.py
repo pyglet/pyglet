@@ -38,9 +38,9 @@ def process_block(converter, lines, start):
             break
         if level<current:
             blocks.append([line])
-            block += 1    
+            block += 1
         else:
-            blocks[block].append(line) 
+            blocks[block].append(line)
         current = level
 
     result = []
@@ -74,7 +74,7 @@ def ReST_Ivariable(lines):
     for line in lines[1:]:
         rest.append(line[indent:])
     if len(part)>1:
-        rest.append(":type "+name+": "+part[1].strip().lstrip())
+        rest.append(":vartype "+name+": "+part[1].strip().lstrip())
     return rest
 
 
@@ -97,38 +97,28 @@ def modify_docstrings(app, what, name, obj, options, lines,
         line = lines[i]
         if ":parameters:" in line.lower():
             convert(ReST_parameter, i)
-            
+
         elif ":Ivariables:" in line:
             convert(ReST_Ivariable, i)
 
-        elif ":guide:" in line:
-            lines[i] = lines[i].replace(u':guide:`',
-                        u'.. seealso:: Programming Guide - :ref:`guide_')
-            
         elif ":deprecated:" in line:
             lines[i] = lines[i].replace(u':deprecated:',
                                 u'.. warning:: Deprecated.')
             lines.insert(i,"")
             lines.insert(i,"")
-            
-        elif line.strip().startswith("**since:**"):
-            lines[i] = lines[i].replace(u'**since:**',
-                                u'.. note:: Since')
-            lines.insert(i+1,"")
-            lines.insert(i,"")
-            
+
         elif ":event:" in line.lower():
             lines[i] = lines[i].replace(u':event:', u'.. event mark')
 
         i += 1
 
-            
+
     if _debug and original!=lines:
         title = what + " " +name
         debug(["\n",title, "-"*len(title)])
         debug(["Original:", ""]+original)
         debug(["Redacted:", ""]+lines)
-            
+
 
 def setup(app):
     app.connect('autodoc-process-docstring', modify_docstrings)

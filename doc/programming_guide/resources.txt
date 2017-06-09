@@ -1,3 +1,5 @@
+.. _guide_resources:
+
 Application resources
 =====================
 
@@ -34,7 +36,7 @@ file instead of the working directory::
 This, besides being tedious to write, still does not work for resources within
 ZIP files, and can be troublesome in projects that span multiple packages.
 
-The `pyglet.resource` module solves this problem elegantly::
+The :py:mod:`pyglet.resource` module solves this problem elegantly::
 
     image = pyglet.resource.image('logo.png')
 
@@ -44,7 +46,7 @@ the behaviour can be customised.
 Loading resources
 -----------------
 
-Use the `pyglet.resource` module when files shipped with the application need
+Use the :py:mod:`pyglet.resource` module when files shipped with the application need
 to be loaded.  For example, instead of writing::
 
     data_file = open('file.txt')
@@ -64,43 +66,43 @@ functions.
           - Resource function
           - Type
         * - ``open``
-          - `pyglet.resource.file`
+          - :py:func:`pyglet.resource.file`
           - File-like object
-        * - `pyglet.image.load`
-          - `pyglet.resource.image`
-          - `Texture` or `TextureRegion`
-        * - `pyglet.image.load`
-          - `pyglet.resource.texture`
-          - `Texture`
+        * - :py:func:`pyglet.image.load`
+          - :py:func:`pyglet.resource.image`
+          - :py:class:`~pyglet.image.Texture` or :py:class:`~pyglet.image.TextureRegion`
+        * - :py:func:`pyglet.image.load`
+          - :py:func:`pyglet.resource.texture`
+          - :py:class:`~pyglet.image.Texture`
         * - `pyglet.image.load_animation`
-          - `pyglet.resource.animation`
-          - `Animation`
-        * - `pyglet.media.load`
-          - `pyglet.resource.media`
+          - :py:func:`pyglet.resource.animation`
+          - :py:class:`~pyglet.image.Animation`
+        * - :py:func:`pyglet.media.load`
+          - :py:func:`pyglet.resource.media`
           - `Source`
-        * - | `pyglet.text.load` 
+        * - | :py:func:`pyglet.text.load` 
             | mimetype = ``text/plain``
-          - `pyglet.resource.text`
-          - `UnformattedDocument`
-        * - | `pyglet.text.load`
+          - :py:func:`pyglet.resource.text`
+          - :py:class:`~pyglet.text.document.UnformattedDocument`
+        * - | :py:func:`pyglet.text.load`
             | mimetype = ``text/html``
-          - `pyglet.resource.html`
-          - `FormattedDocument`
-        * - | `pyglet.text.load`
+          - :py:func:`pyglet.resource.html`
+          - :py:class:`~pyglet.text.document.FormattedDocument`
+        * - | :py:func:`pyglet.text.load`
             | mimetype = ``text/vnd.pyglet-attributed``
-          - `pyglet.resource.attributed`
-          - `FormattedDocument`
-        * - `pyglet.font.add_file`
-          - `pyglet.resource.add_font`
+          - :py:func:`pyglet.resource.attributed`
+          - :py:class:`~pyglet.text.document.FormattedDocument`
+        * - :py:func:`pyglet.font.add_file`
+          - :py:func:`pyglet.resource.add_font`
           - ``None``
 
-`pyglet.resource.texture` is for loading stand-alone textures, and would be
+:py:func:`pyglet.resource.texture` is for loading stand-alone textures, and would be
 required when using the texture for a 3D model.  
 
-`pyglet.resource.image` is optimised for loading sprite-like images that can
+:py:func:`pyglet.resource.image` is optimised for loading sprite-like images that can
 have their texture coordinates adjusted.  The resource module attempts to pack
 small images into larger textures (called an atlas) for efficient rendering
-(which is why the return type of this function can be `TextureRegion`).
+(which is why the return type of this function can be :py:class:`~pyglet.image.TextureRegion`).
 
 Resource locations
 ^^^^^^^^^^^^^^^^^^
@@ -109,9 +111,9 @@ Some resource files reference other files by name.  For example, an HTML
 document can contain ``<img src="image.png" />`` elements.  In this case your
 application needs to locate ``image.png`` relative to the original HTML file.
 
-Use `pyglet.resource.location` to get a `Location` object describing the
+Use :py:func:`pyglet.resource.location` to get a :py:class:`~pyglet.resource.Location` object describing the
 location of an application resource.  This location might be a file system
-directory or a directory within a ZIP file.  The `Location` object can
+directory or a directory within a ZIP file.  The :py:class:`~pyglet.resource.Location` object can
 directly open files by name, so your application does not need to distinguish
 between these cases.
 
@@ -135,9 +137,9 @@ Specifying the resource path
 ----------------------------
 
 By default, only the script home directory is searched (the directory
-containing the ``__main__`` module).  You can set `pyglet.resource.path` to a
+containing the ``__main__`` module).  You can set :py:attr:`pyglet.resource.path` to a
 list of locations to search in order.  This list is indexed, so after
-modifying it you will need to call `pyglet.resource.reindex`.
+modifying it you will need to call :py:func:`pyglet.resource.reindex`.
 
 Each item in the path list is either a path relative to the script home, or
 the name of a Python module preceded with an ampersand (``@``).  For example,
@@ -165,21 +167,21 @@ following example uses the directory containing the hypothetical
 Multiple loaders
 ----------------
 
-A `Loader` encapsulates a complete resource path and cache.  This lets your
+A :py:class:`~pyglet.resource.Loader` encapsulates a complete resource path and cache.  This lets your
 application cleanly separate resource loading of different modules.  Loaders
 are constructed for a given search path, and exposes the same methods as the
-global `pyglet.resource` module functions.
+global :py:mod:`pyglet.resource` module functions.
 
 For example, if a module needs to load its own graphics but does not want to
 interfere with the rest of the application's resource loading, it would create
-its own `Loader` with a local search path::
+its own :py:class:`~pyglet.resource.Loader` with a local search path::
 
     loader = pyglet.resource.Loader(['@' + __name__])
     image = loader.image('logo.png')
 
 This is particularly suitable for "plugin" modules.
 
-You can also use a `Loader` instance to load a set of resources relative to
+You can also use a :py:class:`~pyglet.resource.Loader` instance to load a set of resources relative to
 some user-specified document directory.  The following example creates a
 loader for a directory specified on the command line::
 
@@ -188,7 +190,7 @@ loader for a directory specified on the command line::
     loader = pyglet.resource.Loader(script_home=[home])
 
 This is the only way that absolute directories and resources not bundled with
-an application should be used with `pyglet.resource`.
+an application should be used with :py:mod:`pyglet.resource`.
 
 Saving user preferences
 -----------------------
@@ -198,7 +200,7 @@ within ZIP files, it is usually not feasible to save user preferences, high
 score lists, and so on within the application directory (or worse, the working
 directory).
 
-The `pyglet.resource.get_settings_path` function returns a directory suitable
+The :py:func:`pyglet.resource.get_settings_path` function returns a directory suitable
 for writing arbitrary user-centric data.  The directory used follows the
 operating system's convention:
 

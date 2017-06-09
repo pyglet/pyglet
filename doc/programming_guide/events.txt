@@ -1,30 +1,27 @@
 The pyglet event framework
 ==========================
 
-The `pyglet.window`, `pyglet.media`, `pyglet.app` and `pyglet.text` modules
+The :py:mod:`pyglet.window`, :py:mod:`pyglet.media`, :py:mod:`pyglet.app` and :py:mod:`pyglet.text` modules
 make use of a consistent event pattern, which provides several ways to attach
 event handlers to objects.  You can also reuse this pattern in your own
 classes easily.
 
 Throughout this documentation, an "event dispatcher" is an object that has
 events it needs to notify other objects about, and an "event handler" is some
-code that can be attached to a dispatcher.
-
-.. contents::
-    :local:
+code that can be attached to a dispatcher.:
 
 Setting event handlers
 ----------------------
 
 An event handler is simply a function with a formal parameter list
-corresponding to the event type.  For example, the `Window.on_resize` event
+corresponding to the event type.  For example, the :py:meth:`pyglet.window.Window.on_resize` event
 has the parameters ``(width, height)``, so an event handler for this event
 could be::
 
     def on_resize(width, height):
         pass
 
-The `Window` class subclasses `EventDispatcher`, which enables it to have
+The :py:class:`~pyglet.window.Window` class subclasses :py:class:`~pyglet.event.EventDispatcher`, which enables it to have
 event handlers attached to it.  The simplest way to attach an event handler is
 to set the corresponding attribute on the object::
 
@@ -36,7 +33,7 @@ to set the corresponding attribute on the object::
 
 While this technique is straight-forward, it requires you to write the name of
 the event three times for the one function, which can get tiresome.  pyglet
-provides a shortcut using the `event` decorator::
+provides a shortcut using the :py:class:`~pyglet.event.EventDispatcher.event` decorator::
 
     window = window.Window()
 
@@ -49,7 +46,7 @@ object.  If the object already had an event handler, using ``@event`` will add
 the handler to the object, rather than replacing it.  The next section
 describes this functionality in detail.
 
-As shown in `Subclassing Window`, you can also attach event handlers by
+As shown in :ref:`guide_subclassing-window`, you can also attach event handlers by
 subclassing the event dispatcher and adding the event handler as a method::
 
     class MyWindow(pyglet.window.Window):
@@ -60,11 +57,11 @@ Stacking event handlers
 -----------------------
 
 It is often convenient to attach more than one event handler for an event.
-`EventDispatcher` allows you to stack event handlers upon one another, rather
+:py:class:`~pyglet.event.EventDispatcher` allows you to stack event handlers upon one another, rather
 than replacing them outright.  The event will propogate from the top of the
 stack to the bottom, but can be stopped by any handler along the way.
 
-To push an event handler onto the stack, use the `push_handlers` method::
+To push an event handler onto the stack, use the :py:meth:`~pyglet.event.EventDispatcher.push_handlers` method::
 
     def on_key_press(symbol, modifiers):
         if symbol == key.SPACE
@@ -73,7 +70,7 @@ To push an event handler onto the stack, use the `push_handlers` method::
     window.push_handlers(on_key_press)
 
 As a convenience, the ``@event`` decorator can be used as an alternative to
-`push_handlers`::
+:py:meth:`~pyglet.event.EventDispatcher.push_handlers`::
 
     @window.event
     def on_key_press(symbol, modifiers):
@@ -84,7 +81,7 @@ One use for pushing handlers instead of setting them is to handle different
 parameterisations of events in different functions.  In the above example, if
 the spacebar is pressed, the laser will be fired.  After the event handler
 returns control is passed to the next handler on the stack, which on a
-`Window` is a function that checks for the ESC key and sets the ``has_exit``
+:py:class:`~pyglet.window.Window` is a function that checks for the ESC key and sets the ``has_exit``
 attribute if it is pressed.  By pushing the event handler instead of setting
 it, the application keeps the default behaviour while adding additional
 functionality.
@@ -100,7 +97,7 @@ onto the window, will prevent the escape key from exiting the program::
     window.push_handlers(on_key_press)
 
 You can push more than one event handler at a time, which is especially useful
-when coupled with the ``pop_handlers`` function.  In the following example,
+when coupled with the :py:meth:`~pyglet.event.EventDispatcher.pop_handlers` function.  In the following example,
 when the game starts some additional event handlers are pushed onto the stack.
 When the game ends (perhaps returning to some menu screen) the handlers are
 popped off in one go::
@@ -121,7 +118,7 @@ popped off in one go::
 
 Note that you do not specify which handlers to pop off the stack -- the entire
 top "level" (consisting of all handlers specified in a single call to
-`push_handlers`) is popped.
+:py:meth:`~pyglet.event.EventDispatcher.push_handlers`) is popped.
 
 You can apply the same pattern in an object-oriented fashion by grouping
 related event handlers in a single class.  In the following example, a
@@ -148,15 +145,15 @@ pushed on and popped off of a window::
 Creating your own event dispatcher
 ----------------------------------
 
-pyglet provides only the `Window` and `Player` event dispatchers, but
+pyglet provides only the :py:class:`~pyglet.window.Window` and :py:class:`~pyglet.media.player.Player` event dispatchers, but
 exposes a public interface for creating and dispatching your own events.
 
 The steps for creating an event dispatcher are:
 
-1. Subclass `EventDispatcher`
-2. Call the `register_event_type` class method on your subclass for each
+1. Subclass :py:class:`~pyglet.event.EventDispatcher`
+2. Call the :py:meth:`~pyglet.event.EventDispatcher. register_event_type` class method on your subclass for each
    event your subclass will recognise.
-3. Call `dispatch_event` to create and dispatch an event as needed.
+3. Call :py:meth:`~pyglet.event.EventDispatcher. dispatch_event` to create and dispatch an event as needed.
 
 In the following example, a hypothetical GUI widget provides several events::
 
@@ -190,13 +187,13 @@ Event handlers can then be attached as described in the preceding sections::
     
     widget.push_handlers(on_clicked=override_on_clicked)
 
-The `EventDispatcher` takes care of propogating the event to all attached
+The :py:class:`~pyglet.event.EventDispatcher` takes care of propogating the event to all attached
 handlers or ignoring it if there are no handlers for that event.
 
 There is zero instance overhead on objects that have no event handlers
 attached (the event stack is created only when required).  This makes
-`EventDispatcher` suitable for use even on light-weight objects that may not
-always have handlers.  For example, `Player` is an `EventDispatcher`
+:py:class:`~pyglet.event.EventDispatcher` suitable for use even on light-weight objects that may not
+always have handlers.  For example, :py:class:`~pyglet.media.player.Player` is an :py:class:`~pyglet.event.EventDispatcher`
 even though potentially hundreds of these objects may be created and destroyed
 each second, and most will not need an event handler.
 
@@ -209,7 +206,7 @@ large software projects; for example, Java's AWT and Swing GUI toolkits and the
 Python ``logging`` module; and is fundamental to any Model-View-Controller
 architecture.
 
-`EventDispatcher` can be used to easily add observerable components to your
+:py:class:`~pyglet.event.EventDispatcher` can be used to easily add observerable components to your
 application.  The following example recreates the `ClockTimer` example from
 `Design Patterns` (pages 300-301), though without needing the bulky
 ``Attach``, ``Detach`` and ``Notify`` methods::
@@ -245,40 +242,3 @@ object construction any relationships between subjects and observers can be
 created.
 
 .. _Observer design pattern: Gamma, et al., `Design Patterns` Addison-Wesley 1994
-
-Documenting events
-^^^^^^^^^^^^^^^^^^
-
-pyglet uses a modified version of `Epydoc`_ to construct its API
-documentation.  One of these modifications is the inclusion of an "Events"
-summary for event dispatchers.  If you plan on releasing your code as a
-library for others to use, you may want to consider using the same tool to
-document code.
-
-The patched version of Epydoc is included in the pyglet repository under
-``trunk/tools/epydoc`` (it is not included in distributions).  It has
-special notation for document event methods, and allows conditional
-execution when introspecting source code.
-
-If the ``sys.is_epydoc`` attribute exists and is ``True``, the module is
-currently being introspected for documentation.  pyglet places event
-documentation only within this conditional, to prevent extraneous methods
-appearing on the class.
-
-To document an event, create a method with the event's signature and add a
-blank ``event`` field to the docstring::
-
-    import sys
-
-    class MyDispatcher(object):
-        if getattr(sys, 'is_epydoc'):
-            def on_update():
-                '''The object was updated.
-
-                :event:
-                '''
-
-Note that the event parameters should not include ``self``.  The function will
-appear in the "Events" table and not as a method.
-
-.. _Epydoc: http://epydoc.sourceforge.net/

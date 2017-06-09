@@ -7,7 +7,6 @@ pyglet.*.log
 .DS_Store
 doc/api
 doc/internal/build.rst
-doc/internal/blacklist.rst
 website/dist
 build
 dist

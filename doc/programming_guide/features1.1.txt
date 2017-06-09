@@ -4,10 +4,7 @@ Appendix: Migrating to pyglet 1.1
 pyglet 1.1 introduces new features for rendering high performance graphics and
 text, is more convenient to use, and integrates better with the operating
 system.  Some of the existing interfaces have also been redesigned slightly to
-conform with standard Python practice or to fix design flaws.  
-
-.. contents::
-    :local:
+conform with standard Python practice or to fix design flaws.
 
 Compatibility and deprecation
 -----------------------------
@@ -36,17 +33,17 @@ The following minor changes have been made for design or efficiency reasons.
 Applications which no longer need to support pyglet 1.0 should make the
 appropriate changes to ensure the deprecated methods are not called.
 
-The ``dispatch_events`` method on `Player` and the equivalent function on the
+The ``dispatch_events`` method on :py:class:`~pyglet.media.player.Player` and the equivalent function on the
 `pyglet.media` module should no longer be called.  In pyglet 1.1, media
 objects schedule an update function on `pyglet.clock` at an appropriate
 interval.  New applications using media are required to call
 `pyglet.clock.tick` periodically.
 
-The `AbstractImage` properties ``texture``, ``image_data``, and so on have
+The :py:class:`~pyglet.image.AbstractImage` properties ``texture``, ``image_data``, and so on have
 been replaced with equivalent methods ``get_texture``, ``get_image_data``,
 etc.
 
-The `ImageData` properties `data`, `format` and `pitch`, which together were
+The :py:class:`~pyglet.image.ImageData` properties `data`, `format` and `pitch`, which together were
 used to extract pixel data from an image, have been replaced with a single
 function ``get_data``.  The `format` and `pitch` properties should now be used
 only to determine the current format and pitch of the image.
@@ -96,7 +93,7 @@ Besides being somewhat repetitious to type, this type of event loop is
 difficult to extend with more windows, and exausts all available system
 resources, even if the application is not doing anything.
 
-The new `pyglet.app` module provides an application event loop that is
+The new :py:mod:`pyglet.app` module provides an application event loop that is
 less demanding of the CPU yet more responsive to user events.  A complete
 application that opens an empty window can be written with::
 
@@ -108,8 +105,8 @@ application that opens an empty window can be written with::
 
     pyglet.app.run()
 
-Note the new `on_draw` event, which makes it easy to specify different drawing
-functions for each window.  The `pyglet.app` event loop takes care of
+Note the new :py:meth:`~pyglet.window.Window.on_draw` event, which makes it easy to specify different drawing
+functions for each window.  The :py:mod:`pyglet.app` event loop takes care of
 dispatching events, ticking the clock, calling the draw function and flipping
 the window buffer.
 
@@ -136,7 +133,7 @@ interacted with without blocking the application.
 
 **It is highly recommended that all applications use the event loop.**  The
 loop can be extended if you need to add additional hooks or integrate with
-another package.  Applications continuing to use `Window.dispatch_events`
+another package.  Applications continuing to use :py:meth:`~pyglet.window.Window.dispatch_events`
 gain no advantage, but suffer from poorer response, increased CPU usage and
 artifacts during window resizing and moving.
 
@@ -150,7 +147,7 @@ is difficult to do correctly across all platforms, considering the effects of
 a changing working directory and various distribution packages such as
 setuptools, py2exe and py2app.
 
-The new `pyglet.resource` module implements the correct logic for all these
+The new :py:mod:`pyglet.resource` module implements the correct logic for all these
 cases, making it simple to load resources that belong to a specific module or
 the application as a whole.  A resource path can be set that is indexed once,
 and can include filesystem directories, Python module paths and ZIP files.
@@ -176,12 +173,12 @@ The resource module efficiently packs multiple small images into larger
 textures, so there is less need for artists to create sprite sheets themselves
 for efficient rendering.  Images and textures are also cached automatically.
 
-See `Application resources` for more details.
+See :ref:`guide_resources` for more details.
 
 New graphics features
 ---------------------
 
-The `pyglet.graphics` module is a low-level abstraction of OpenGL vertex
+The :py:mod:`pyglet.graphics` module is a low-level abstraction of OpenGL vertex
 arrays and buffer objects.  It is intended for use by developers who are
 already very familiar with OpenGL and are after the best performance possible.
 pyglet uses this module internally to implement its new sprite module and the
@@ -194,29 +191,29 @@ the *batch* features of the new graphics API, multiple sprites can be drawn in
 one go very quickly.  See `Sprites` for details.
 
 The `pyglet.image.load_animation` function can load animated GIF images.
-These are returned as an `Animation`, which exposes the individual image
+These are returned as an :py:class:`~pyglet.image.Animation`, which exposes the individual image
 frames and timings.  Animations can also be played directly on a sprite in
-place of an image.  The `Animations` chapter describes how to use them.
+place of an image.  The :py:class:`~pyglet.image.Animations` chapter describes how to use them.
 
 The `pyglet.image.atlas` module packs multiple images into larger textures for
-efficient rendering.  The `pyglet.resource` module uses this module for small
+efficient rendering.  The :py:mod:`pyglet.resource` module uses this module for small
 images automatically, but you can use it directly even if you're not making
-use of `pyglet.resource`.  See `Texture bins and atlases` for details.
+use of :py:mod:`pyglet.resource`.  See `Texture bins and atlases` for details.
 
 Images now have ``anchor_x`` and ``anchor_y`` attributes, which specify a
 point from which the image should be drawn.  The sprite module also uses the
 anchor point as the center of rotation.
 
-Textures have a `get_transform` method for retrieving a `TextureRegion` that
+Textures have a `get_transform` method for retrieving a :py:class:`~pyglet.image.TextureRegion` that
 refers to the same texture data in video memory, but with optional horizontal
 or vertical flipping, or 90-degree rotation.
 
 New text features
 -----------------
 
-The `pyglet.text` module can render formatted text efficiently.  A new class
+The :py:mod:`pyglet.text` module can render formatted text efficiently.  A new class
 `Label` supercedes the old `pyglet.font.Text` class (which is now actually
-implemented in terms of `Label`).  The "Hello, World" application can now be
+implemented in terms of :py:func:`~pyglet.text.Label`).  The "Hello, World" application can now be
 written::
 
     window = pyglet.window.Window()
@@ -246,12 +243,12 @@ WYSIWYG text editor.
 Other new features
 ------------------
 
-`EventDispatcher` now has a `remove_handlers` method which provides finer
-control over the event stack than `pop_handlers`. 
+:py:class:`~pyglet.event.EventDispatcher` now has a `remove_handlers` method which provides finer
+control over the event stack than :py:meth:`~pyglet.event.EventDispatcher.pop_handlers`. 
 
 The ``@event`` decorator has been fixed so that it no longer overrides
 existing event handlers on the object, which fixes the common problem of
-handling the `on_resize` event.  For example, the following now works without
+handling the :py:meth:`~pyglet.window.Window.on_resize` event.  For example, the following now works without
 any surprises (in pyglet 1.0 this would override the default handler, which
 sets up a default, necessary viewport and projection)::
 
@@ -262,7 +259,7 @@ sets up a default, necessary viewport and projection)::
 A variant of `clock.schedule_interval`, `clock.schedule_interval_soft` has
 been added.  This is for functions that need to be called periodically at a
 given interval, but do not need to schedule the period immediately.    Soft
-interval scheduling is used by the `pyglet.media` module to distribute the
+interval scheduling is used by the :py:mod:`pyglet.media` module to distribute the
 work of decoding video and audio data over time, rather than stalling the CPU
 periodically.  Games could use soft interval scheduling to spread the
 regular computational requirements of multiple agents out over time.
@@ -275,7 +272,7 @@ application developer to ensure their fonts work at arbitrary resolutions.  In
 pyglet 1.1 the default DPI is set at 96 across all platforms.  It can still be
 overridden explicitly by the application if desired.
 
-Video sources in `pyglet.media` can now be stepped through frame-by-frame:
+Video sources in :py:mod:`pyglet.media` can now be stepped through frame-by-frame:
 individual image frames can be extracted without needing to play back the
 video in realtime.
 
