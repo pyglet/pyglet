@@ -12,15 +12,10 @@ _shader_types = {
 }
 
 
-_lookup = {
-    GL_FLOAT: GLfloat,
-    GL_FLOAT_VEC2: GLfloat,
-    GL_FLOAT_VEC3: GLfloat,
-    GL_FLOAT_VEC4: GLfloat,
-    GL_INT: GLint,
-    GL_INT_VEC2: GLint,
-    GL_INT_VEC3: GLint,
-    GL_INT_VEC4: GLint,
+_uniform_types = {
+    GL_INT: glGetUniformiv,
+    GL_FLOAT: glGetUniformfv,
+    GL_FLOAT_VEC2: glGetUniformfv,
 }
 
 
@@ -71,7 +66,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    Uniform = namedtuple('Uniform', 'location uniform_type')
+    Uniform = namedtuple('Uniform', 'location uniform_type, getter, setter')
     Attribute = namedtuple('Attribute', 'location attribute_type')
 
     def __init__(self, *shaders):
@@ -135,32 +130,35 @@ class ShaderProgram:
         if not self._program_active:
             raise Exception("Shader Program is not active.")
 
-        location = self._uniforms[key].location
+        uniform = self._uniforms[key]
         uniform_type = self._uniforms[key].uniform_type
         # TODO: support setting other types
         try:
-            glUniform1f(location, value)
+            glUniform1f(uniform.location, value)
         except GLException:
             raise
 
     def __getitem__(self, item):
         if item not in self._uniforms:
             raise KeyError("Uniform name was not found.")
+        uniform = self._uniforms[item]
+        # retrieved = GLfloat()
+        retrieved = (GLfloat * 4)()
+        uniform.getter(self.id, uniform.location, retrieved)
 
-        location = self._uniforms[item].location
-        variable_type = self._uniforms[item].uniform_type
-        # TODO: support retrieving other types
-        fetched_uniform = GLfloat()
-        glGetUniformfv(self.id, location, fetched_uniform)
-
-        return fetched_uniform.value
+        return retrieved[0:1]
 
     def _parse_all_uniforms(self):
         for i in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
             uniform_name = self.get_active_uniform(i)
-            uniform_type = self.get_uniform_type(uniform_name)
             location = self.get_uniform_location(uniform_name)
-            self._uniforms[uniform_name] = self.Uniform(location, uniform_type)
+            uniform_type = self.get_uniform_type(uniform_name)
+            try:
+                getter = _uniform_types[uniform_type]
+            except KeyError:
+                raise GLException("Unsupported Uniform type")
+
+            self._uniforms[uniform_name] = self.Uniform(location, uniform_type, getter, None)
 
     def _parse_all_attributes(self):
         for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
@@ -170,10 +168,10 @@ class ShaderProgram:
             self._attributes[attrib_name] = self.Attribute(location, attrib_type)
 
     def get_num_active(self, variable_type):
-        """Get the number of active variables of the passed type.
+        """Get the number of active variables of the passed GL type.
 
         :param variable_type: Either GL_ACTIVE_ATTRIBUTES, or GL_ACTIVE_UNIFORMS
-        :return:
+        :return: int: number of active types of this kind
         """
         num_active = GLint(0)
         glGetProgramiv(self.id, variable_type, byref(num_active))
@@ -182,7 +180,7 @@ class ShaderProgram:
     def get_attrib_type(self, name):
         location = self.get_attrib_location(name)
         if location == -1:
-            print("Attribute name not found.")
+            raise GLException("Could not find Attribute named: {0}".format(name))
         else:
             buf_size = 128
             size = GLint()
@@ -194,7 +192,7 @@ class ShaderProgram:
     def get_uniform_type(self, name):
         location = self.get_uniform_location(name)
         if location == -1:
-            print("Uniform name was not found.")
+            raise GLException("Could not find Uniform named: {0}".format(name))
         else:
             buf_size = 128
             size = GLint()
@@ -244,18 +242,19 @@ vertex_source = """#version 330 core
     out vec2 texture_coords;
 
     // TODO: make these a vec2
-    uniform float width;
-    uniform float height;
+    // uniform float width;
+    // uniform float height;
+    uniform vec2 size;
     uniform float zoom;
 
     void main()
     {
-        gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
-        //gl_Position = vec4(vertices.x / width - 1,
-        //                   vertices.y / height -1,
-        //                   vertices.z,
-        //                   vertices.w * zoom);
-        //vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        //gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
+        gl_Position = vec4(vertices.x / size.x - 1,
+                           vertices.y / size.y -1,
+                           vertices.z,
+                           vertices.w * zoom);
+        vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;
     }
