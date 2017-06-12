@@ -31,9 +31,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 try:
     import pyglet
-    print "Generating pyglet %s Documentation" % (pyglet.version)
-except:
-    print "ERROR: pyglet not found"
+    print("Generating pyglet %s Documentation" % (pyglet.version))
+except ImportError:
+    print("ERROR: pyglet not found")
     sys.exit(1)
 
 
@@ -128,7 +128,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyglet'
-copyright = u'2006-2015, Alex Holkner'
+copyright = u'2006-2017, Alex Holkner'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

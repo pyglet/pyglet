@@ -60,12 +60,13 @@ Displays
 
 The system may actually support several different sets of configs, depending
 on which display device is being used.  For example, a computer with two video
-cards would have not support the same configs on each card.  Another example
+cards may not support the same configs on each card.  Another example
 is using X11 remotely: the display device will support different
 configurations than the local driver.  Even a single video card on the local
-computer may support different configs for the two monitors plugged in.
+computer may support different configs for two monitors plugged in.
 
-In pyglet, a :class:`~pyglet.canvas.Display` is a collection of "screens" attached to a single display device.  On Linux, the display device corresponds 
+In pyglet, a :class:`~pyglet.canvas.Display` is a collection of "screens"
+attached to a single display device.  On Linux, the display device corresponds
 to the X11 display
 being used.  On Windows and Mac OS X, there is only one display (as these
 operating systems present multiple video cards as a single virtual device).
@@ -103,7 +104,7 @@ a projector are common cases where more than one screen will be present.
 In the following example the screens of a dual-head workstation are listed::
 
     >>> for screen in display.get_screens():
-    ...     print screen
+    ...     print(screen)
     ... 
     XlibScreen(screen=0, x=1280, y=0, width=1280, height=1024, xinerama=1)
     XlibScreen(screen=0, x=0, y=0, width=1280, height=1024, xinerama=1)
@@ -234,15 +235,15 @@ created based on the values of these properties:
 
 If you wish to work with OpenGL directly, you can request a higher level context.
 This is required if you wish to work with the modern OpenGL programmable pipeline.
-Please note, however, that pyglet uses legacy OpenGL functionality for many of it's
-internal modules (such as the text, graphics, and sprite modules).
-Requesting a higher version context may prevent usage of these modules.
+Please note, however, that pyglet currently uses legacy OpenGL functionality for
+many of it's internal modules (such as the text, graphics, and sprite modules).
+Requesting a higher version context will currently prevent usage of these modules.
 
     ``major_version``
         This will be either 3 or 4, for an OpenGL 3.x or 4.x context.
     ``minor_version``
-        The minimum requested minor version of the context. In many cases,
-        the OpenGL driver may return a higher version than requested.
+        The requested minor version of the context. In some cases, the OpenGL
+        driver may return a higher version than requested.
     ``forward_compatible``
         Setting this to `True` will ask the driver to exclude legacy OpenGL
         features from the context. Khronos does not recommend this option.
@@ -289,8 +290,8 @@ For example, to create a window with an alpha channel::
     window = pyglet.window.Window(config=config)
 
 It is sometimes necessary to create the context yourself, rather than letting
-the :py::class:`~pyglet.window.Window` constructor do this for you.  In this case 
-use :py::meth:`~pyglet.canvas.Screen.get_best_config` to obtain a "complete"
+the :class:`~pyglet.window.Window` constructor do this for you.  In this case
+use :meth:`~pyglet.canvas.Screen.get_best_config` to obtain a "complete"
 config, which you can then use to create the context::
 
     platform = pyglet.window.get_platform()
