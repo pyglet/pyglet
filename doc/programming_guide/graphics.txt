@@ -3,13 +3,12 @@
 Graphics
 ========
 
-At the lowest level, pyglet uses OpenGL to draw in windows.  The OpenGL
-interface is exposed via the :py:mod:`pyglet.gl` module (see :ref:`guide_gl`).
+At the lowest level, pyglet uses OpenGL to draw graphics in program windows.
+The OpenGL interface is exposed via the :py:mod:`pyglet.gl` module (see :ref:`guide_gl`).
 
-However, using the OpenGL interface directly for drawing graphics is difficult
-and inefficient.  The :py:mod:`pyglet.graphics` module provides a simpler means for
-drawing graphics that uses vertex arrays and vertex buffer objects internally
-to deliver better performance.
+Using the OpenGL interface directly, however, can be difficult to do efficiently.
+The :py:mod:`pyglet.graphics` module provides a simpler means for drawing graphics
+that uses vertex arrays and vertex buffer objects internally to deliver better performance.
 
 Drawing primitives
 ------------------
@@ -28,14 +27,15 @@ denoted by the constants
 * ``pyglet.gl.GL_QUAD_STRIP``
 * ``pyglet.gl.GL_POLYGON``
 
-See the `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_ for a description of each of mode.
+See the `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_ for a
+description of each of mode.
 
 Each primitive is made up of one or more vertices.  Each vertex is specified
 with either 2, 3 or 4 components (for 2D, 3D, or non-homogeneous coordinates).
 The data type of each component can be either int or float.
 
-Use :py:func:`pyglet.graphics.draw` to draw a primitive.  The following example draws
-two points at coordinates (10, 15) and (30, 35)::
+Use :py:func:`pyglet.graphics.draw` to directly draw a primitive.
+The following example draws two points at coordinates (10, 15) and (30, 35)::
 
     pyglet.graphics.draw(2, pyglet.gl.GL_POINTS, 
         ('v2i', (10, 15, 30, 35))
@@ -377,11 +377,11 @@ no arguments::
 
     batch = pyglet.graphics.Batch()
 
-Vertex lists can now be created with the :py:meth:`~pyglet.graphics.Batch.add` and :py:meth:`~pyglet.graphics.Batch.add_indexed`
-methods instead of :py:func:`pyglet.graphics.vertex_list` and
-:py:func:`pyglet.graphics.vertex_list_indexed` functions.  Unlike the module functions,
-these methods accept a ``mode`` parameter (the primitive mode) and a ``group``
-parameter (described below).
+Vertex lists can now be created with the :py:meth:`~pyglet.graphics.Batch.add` and
+:py:meth:`~pyglet.graphics.Batch.add_indexed` methods instead of
+:py:func:`pyglet.graphics.vertex_list` and :py:func:`pyglet.graphics.vertex_list_indexed`
+functions.  Unlike the module functions, these methods accept a ``mode`` parameter
+(the primitive mode) and a ``group`` parameter (described below).
 
 The two coloured points from previous pages can be added to a batch as a
 single vertex list with::
@@ -400,7 +400,10 @@ section.  However, instead of calling ``VertexList.draw`` to draw it, call
 For batches containing many vertex lists this gives a significant performance
 improvement over drawing individual vertex lists.
 
-To remove a vertex list from a batch, call ``VertexList.delete()``.
+To remove a vertex list from a batch, call ``VertexList.delete()``. If you
+don't need to modify or delete vertex lists after adding them to the batch,
+you can simply ignore the return value of the :py:meth:`~pyglet.graphics.Batch.add` and
+:py:meth:`~pyglet.graphics.Batch.add_indexed` methods.
 
 Setting the OpenGL state
 ^^^^^^^^^^^^^^^^^^^^^^^^

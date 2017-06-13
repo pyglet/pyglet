@@ -50,10 +50,10 @@ Finally, call::
 
     pyglet.app.run()
 
-To let pyglet respond to application events such as the mouse and keyboard.
-Your event handlers will now be called as required, and the 
-:func:`~pyglet.app.run` method will return only when all application windows have 
-been closed.
+To enter pyglet's default event loop, and let pyglet respond to application
+events such as the mouse and keyboard. Your event handlers will now be called as
+required, and the :func:`~pyglet.app.run` method will return only when all
+application windows have been closed.
 
 Note that earlier versions of pyglet required the application developer to
 write their own event-handling runloop.  This is still possible, but
@@ -62,9 +62,9 @@ discouraged; see `The application event loop` for details.
 Image viewer
 ------------
 
-Most games will need to load and display images on the screen.  In this
-example we'll load an image from the application's directory and display it
-within the window::
+Most games and applications will need to load and display images on the screen.
+In this example we'll load an image from the application's directory and display
+it within the window::
 
     import pyglet
 
@@ -78,10 +78,10 @@ within the window::
 
     pyglet.app.run()
 
-We used the :func:`~pyglet.resource.image` function to load the image, which
-automatically locates the file relative to the source file (rather than the
-working directory).  To load an image not bundled with the application (for
-example, specified on the command line, you would use 
+We used the :func:`~pyglet.resource.image` function of :mod:`pyglet.resource`
+to load the image, which automatically locates the file relative to the source
+file (rather than the working directory). To load an image not bundled with
+the application (for example, specified on the command line, you would use
 :func:`pyglet.image.load`).
 
 The :meth:`~pyglet.image.AbstractImage.blit` method draws the image.  The 
@@ -104,7 +104,7 @@ attach event handlers for these events as well::
 
     @window.event
     def on_key_press(symbol, modifiers):
-        print 'A key was pressed'
+        print('A key was pressed')
 
     @window.event
     def on_draw():
@@ -123,11 +123,11 @@ The key symbols are defined in :mod:`pyglet.window.key`::
     @window.event
     def on_key_press(symbol, modifiers):
         if symbol == key.A:
-            print 'The "A" key was pressed.'
+            print('The "A" key was pressed.')
         elif symbol == key.LEFT:
-            print 'The left arrow key was pressed.'
+            print('The left arrow key was pressed.')
         elif symbol == key.ENTER:
-            print 'The enter key was pressed.'
+            print('The enter key was pressed.')
 
 See the :mod:`pyglet.window.key` documentation for a complete list of key 
 symbols.
@@ -139,14 +139,14 @@ Mouse events are handled in a similar way::
     @window.event
     def on_mouse_press(x, y, button, modifiers):
         if button == mouse.LEFT:
-            print 'The left mouse button was pressed.'
+            print('The left mouse button was pressed.')
 
 The ``x`` and ``y`` parameters give the position of the mouse when the button
 was pressed, relative to the lower-left corner of the window.
 
-There are more than 20 event types that you can handle on a window.  The
-easiest way to find the event name and parameters you need is to add the
-following line to your program::
+There are more than 20 event types that you can handle on a window. An easy
+way to find the event names and parameters you need is to add the following
+line to your program::
 
     window.push_handlers(pyglet.window.event.WindowEventLogger())
 
@@ -159,7 +159,7 @@ An example program using keyboard and mouse events is in
 Playing sounds and music
 ------------------------
 
-pyglet makes it easy to play and mix multiple sounds together in your game.
+pyglet makes it easy to play and mix multiple sounds together.
 The following example plays an MP3 file [#mp3]_::
 
     import pyglet
@@ -172,11 +172,14 @@ The following example plays an MP3 file [#mp3]_::
 As with the image loading example presented earlier, 
 :func:`~pyglet.resource.media` locates the sound file in the application's 
 directory (not the working directory).  If you know the actual filesystem path
-(either relative or absolute), use :func:`~pyglet.media.load`.
+(either relative or absolute), use :func:`pyglet.media.load`.
 
-Short sounds, such as a gunfire shot used in a game, should be decoded in
-memory before they are used, so that they play more immediately and incur less
-of a CPU performance penalty.  Specify ``streaming=False`` in this case::
+By default, audio is streamed when playing. This works well for longer music
+tracks. Short sounds, such as a gunfire shot used in a game, should instead be
+fully decoded in memory before they are used. This allows them to play more
+immediately and incur less of a CPU performance penalty. It also allows playing
+the same sound repeatedly without reloading it.
+Specify ``streaming=False`` in this case::
 
     sound = pyglet.resource.media('shot.wav', streaming=False)
     sound.play()

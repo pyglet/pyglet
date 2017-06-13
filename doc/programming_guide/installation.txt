@@ -15,7 +15,9 @@ install it like any other Python library:
 
 If you're installing pyglet into your global ``site-packages`` directory, you
 might need to add ``sudo``. But you shouldn't do that; instead, create a
-`venv <https://docs.python.org/3/library/venv.html>`_.
+`venv <https://docs.python.org/3/library/venv.html>`_. Alternatively, you can
+simply copy pyglet directly into your project folder, and use it without any
+installation.
 
 Running the examples
 --------------------

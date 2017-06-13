@@ -1,10 +1,11 @@
 pyglet Documentation
 ====================
 
-**pyglet** is a cross-platform windowing and multimedia library for Python
-intended for game development. It supports windowing, user interface event 
-handling, OpenGL graphics, loading images and videos, and playing sounds
-and music. It works on Windows, OS X and Linux.
+**pyglet** is a cross-platform windowing and multimedia library for Python,
+intended for developing games and other visually rich applications. It supports
+windowing, user interface event handling, OpenGL graphics, loading images
+and videos, and playing sounds and music. **pyglet** works on Windows, OS X
+and Linux.
 
 Some of the features of pyglet are:
 
@@ -13,7 +14,7 @@ Some of the features of pyglet are:
   simplifying distribution and installation.
 * **Take advantage of multiple windows and multi-monitor desktops.** pyglet
   allows you to use as many windows as you need, and is fully aware of
-  multi-monitor setups for use with fullscreen games.
+  multi-monitor setups for use with fullscreen games and applications.
 * **Load images, sound, music and video in almost any format.** pyglet can
   optionally use AVbin to play back audio formats such as MP3, OGG/Vorbis and
   WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
@@ -31,7 +32,7 @@ Programming Guide
 
 The pyglet Programming Guide provides in-depth documentation for writing
 applications that use pyglet.  Many topics described here reference the pyglet
-API reference, provided separately.
+API reference, which is listed below.
 
 If this is your first time reading about pyglet, we suggest you start at
 :doc:`programming_guide/quickstart`.
@@ -86,8 +87,8 @@ API Reference
 Development Guide
 -----------------
 These documents describe details on how to develop pyglet itself further. Read
-these to get a more detailed insight in how pyglet is designed and how to help
-making pyglet even better.
+these to get a more detailed insight into how pyglet is designed, and how to
+help make pyglet even better.
 
 .. toctree::
    :maxdepth: 2
@@ -107,5 +108,5 @@ Related Documentation
 * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
 * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
 * `AVbin Documentation <http://avbin.github.com/AVbin/Docs.html>`_
-* `ctypes Reference <http://docs.python.org/lib/module-ctypes.html>`_
+* `ctypes Reference <http://docs.python.org/3/library/ctypes.html>`_
 * `Python Documentation <http://docs.python.org/>`_
