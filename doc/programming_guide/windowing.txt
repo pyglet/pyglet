@@ -85,7 +85,7 @@ you can optionally specify another screen to use instead.  For example, the
 following code creates a fullscreen window on the secondary screen::
 
     screens = display.get_screens()
-    window = pyglet.window.Window(fullscreen=True, screens[1])
+    window = pyglet.window.Window(fullscreen=True, screen=screens[1])
 
 There is no way to create a fullscreen window that spans more than one window
 (for example, if you wanted to create an immersive 3D environment across
@@ -110,9 +110,9 @@ windows always have the width and height of the screen they fill.
 
 You can specify the size of a window as the first two arguments to the window
 constructor.  In the following example, a window is created with a width of
-800 pixels and a height of 600 pixels::
+1280 pixels and a height of 720 pixels::
 
-    window = pyglet.window.Window(800, 600)
+    window = pyglet.window.Window(1280, 720)
 
 The "size" of a window refers to the drawable space within it, excluding any
 additional borders or title bar drawn by the operating system.
@@ -137,7 +137,7 @@ by the user with the :py:meth:`~pyglet.window.Window.set_minimum_size` and
 The window can also be resized programatically (even if the window is not
 user-resizable) with the :py:meth:`~pyglet.window.Window.set_size` method::
 
-    window.set_size(800, 600)
+    window.set_size(1280, 720)
 
 The window will initially be positioned by the operating system.  Typically,
 it will use its own algorithm to locate the window in a place that does not
@@ -165,13 +165,13 @@ Window style
 
 Non-fullscreen windows can be created in one of four styles: default, dialog,
 tool or borderless.  Examples of the appearances of each of these styles under
-Windows XP and Mac OS X 10.4 are shown below.
+Windows and Mac OS X 10.4 are shown below.
 
     .. list-table::
         :header-rows: 1
 
         * - Style
-          - Windows XP
+          - Windows
           - Mac OS X
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_DEFAULT`
           - .. image:: img/window_xp_default.png
@@ -196,13 +196,13 @@ behaviour may not be consistent across Windows, Linux and Mac OS X.
 The appearance and behaviour of windows in Linux will vary greatly depending
 on the distribution, window manager and user preferences.
 
-Borderless windows (:py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`) are not decorated by the
-operating system at all, and have no way to be resized or moved around the
-desktop.  These are useful for implementing splash screens or custom window
-borders.
+Borderless windows (:py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS`)
+are not decorated by the operating system at all, and have no way to be resized
+or moved around the desktop.  These are useful for implementing splash screens
+or custom window borders.
 
-You can specify the style of the window in the :py:class:`~pyglet.window.Window` constructor.  Once
-created, the window style cannot be altered::
+You can specify the style of the window in the :py:class:`~pyglet.window.Window`
+constructor.  Once created, the window style cannot be altered::
 
     window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
 
