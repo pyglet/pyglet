@@ -2,15 +2,16 @@ Images
 ======
 
 pyglet provides functions for loading and saving images in various formats
-using native operating system services.  pyglet can also work with `Pillow`_
-for access to more file formats.
+using native operating system services.  If the `Pillow`_ library is installed,
+it can also be used for supporting additional formats.  Finally, pyglet has
+built-in codecs for loading PNG and BMP without external dependencies.
 
 Loaded images can be efficiently provided to OpenGL as a texture, and OpenGL
 textures and framebuffers can be retrieved as pyglet images to be saved or
 otherwise manipulated.
 
-pyglet also provides an efficient and comprehensive :py:class:`~pyglet.sprite.Sprite` class, for
-displaying images on the screen with an optional transform.
+pyglet also provides an efficient and comprehensive :py:class:`~pyglet.sprite.Sprite` class,
+for displaying images on the screen with an optional transform (such as scaling and rotation).
 
 .. _Pillow: https://pillow.readthedocs.io
 
@@ -38,7 +39,7 @@ specifying the `file` keyword parameter::
     kitten = pyglet.image.load('kitten.png', file=kitten_stream)
 
 In this case the filename ``kitten.png`` is optional, but gives a hint to the
-decoder as to the file type (it is otherwise unused).
+decoder as to the file type (it is otherwise unused when a file object is provided).
 
 pyglet provides the following image decoders:
 
@@ -61,12 +62,15 @@ pyglet provides the following image decoders:
         * - ``pyglet.image.codecs.pil``
           - ``PILImageDecoder``
           - Wrapper interface around PIL Image class.
-        * - ``pyglet.image.codecs.png``
-          - ``PNGImageDecoder``
-          - PNG decoder written in pure Python.
         * - ``pyglet.image.codecs.quicktime``
           - ``QuickTimeImageDecoder``
           - Uses Mac OS X QuickTime to decode images.
+        * - ``pyglet.image.codecs.png``
+          - ``PNGImageDecoder``
+          - BMP decoder written in pure Python.
+        * - ``pyglet.image.codecs.bmp``
+          - ``BMPImageDecoder``
+          - BMP decoder written in pure Python.
 
 Each of these classes registers itself with :py:mod:`pyglet.image` with the filename
 extensions it supports.  The :py:func:`~pyglet.image.load` function will try each image decoder with
@@ -100,7 +104,7 @@ formats.
 
         * - Extension
           - Description
-          - Windows XP
+          - Windows
           - Mac OS X
           - Linux [#linux]_
         * - ``.bmp``
@@ -561,12 +565,13 @@ the window::
     animation = pyglet.image.load_animation('animation.gif')
     bin = pyglet.image.atlas.TextureBin()
     animation.add_to_texture_bin(bin)
-    sprite = pyglet.sprite.Sprite(animation)
+    sprite = pyglet.sprite.Sprite(img=animation)
 
     window = pyglet.window.Window()
 
     @window.event
     def on_draw():
+        window.clear()
         sprite.draw()
 
     pyglet.app.run()
@@ -644,32 +649,32 @@ details.
 Displaying images
 -----------------
 
-Images should be drawn into a window in the window's :py:meth:`~pyglet.window.Window.on_draw` event handler.
-Usually a "sprite" should be created for each appearance of the image
-on-screen.  Images can also be drawn directly without creating a sprite.
+Images should be drawn into a window in the window's :py:meth:`~pyglet.window.Window.on_draw`
+event handler.  Usually a "sprite" should be created for each appearance of the image
+on-screen.  For simple use cases, Images can also be drawn directly without creating a sprite.
 
 Sprites
 ^^^^^^^
 
-A sprite is an instance of an image displayed in the window.  Multiple sprites
-can share the same image; for example, hundreds of bullet sprites might share
+A Sprite is a more full featured class for displaying instances of Images in the window.
+Multiple sprites can share the same image; for example, hundreds of bullet sprites might share
 the same bullet image.
 
-A sprite is constructed given an image or animation, and drawn with the
+A Sprite is constructed given an image or animation, and can be drawn with the
 :py:meth:`~pyglet.sprite.Sprite.draw` method::
 
-    sprite = pyglet.sprite.Sprite(image)    
+    sprite = pyglet.sprite.Sprite(img=image)
 
     @window.event
     def on_draw():
         window.clear()
         sprite.draw()
 
-Sprites have properties for setting the position, rotation, scale, opacity,
-color tint and visibility of the displayed image.  Sprites automatically
-handle displaying the most up-to-date frame of an animation.  The following
-example uses a scheduled function to gradually move the sprite across the
-screen::
+In comparison to an Image, Sprites also have properties for setting the position,
+rotation, opacity, color tint, visibility, and vertical and horizontal scaling of the
+displayed image.  If created with an animation, Sprites automatically handle displaying
+the most up-to-date frame of the animation.  The following example uses a scheduled function
+to gradually move the Sprite across the screen::
 
     def update(dt):
         # Move 10 pixels per second
@@ -678,8 +683,9 @@ screen::
     # Call update 60 times a second
     pyglet.clock.schedule_interval(update, 1/60.)
 
-If you need to draw many sprites, use a :py:class:`~pyglet.graphics.Batch` to draw them all at once.
-This is far more efficient than calling :py:meth:`~pyglet.sprite.Sprite.draw` on each of them in a loop::
+If you need to draw many sprites, using a :py:class:`~pyglet.graphics.Batch` to draw them
+all at once is strongly recommended.  This is far more efficient than calling
+:py:meth:`~pyglet.sprite.Sprite.draw` on each of them in a loop::
 
     batch = pyglet.graphics.Batch()
 
@@ -713,11 +719,16 @@ more :py:class:`~pyglet.graphics.OrderedGroup` objects to specify the draw order
         window.clear()
         batch.draw()
 
-See the :ref:`programming-guide-graphics` section for more details on batch and group rendering.
+For best performance, you should use as few batches and groups as required.
+(See the :ref:`programming-guide-graphics` section for more details on batch and group rendering).
+This will reduce the number of internal and OpenGL operations for drawing each frame.
 
-For best performance, try to collect all batch images into as few textures as
-possible; for example, by loading images with :py:func:`pyglet.resource.image` (see 
-:ref:`guide_resources`) or with :ref:`guide_texture-bins-and-atlases`).
+In addition, try to combine your images into as few textures as possible; for example,
+by loading images with :py:func:`pyglet.resource.image` (see :ref:`guide_resources`)
+or with :ref:`guide_texture-bins-and-atlases`).  A common pitfall is to use the
+:py:func:`pyglet.image.load` method to load a large number of images seperately.
+This will cause a seperate texture to be created for each, resulting in a lot of
+OpenGL texture binding overhead for each frame.
 
 Simple image blitting
 ^^^^^^^^^^^^^^^^^^^^^
@@ -737,8 +748,8 @@ image.  For example, to center the image at ``(x, y)``::
     kitten.anchor_y = kitten.height // 2
     kitten.blit(x, y)
 
-You can also specify an optional `z` component to the :py:meth:`~pyglet.image.AbstractImage.blit` method.  This has
-no effect unless you have changed the default projection or enabled depth
+You can also specify an optional `z` component to the :py:meth:`~pyglet.image.AbstractImage.blit`
+method.  This has no effect unless you have changed the default projection or enabled depth
 testing.  In the following example, the second image is drawn *behind* the
 first, even though it is drawn after it::
 
@@ -873,7 +884,7 @@ empty (maximal).
 Use the :py:meth:`pyglet.image.Texture.create` class method to create a texture with a specific
 internal format.
 
-.. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
+.. _OpenGL Programming Guide: http://www.glprogramming.com/red/
 
 Saving an image
 ---------------
@@ -892,4 +903,4 @@ window::
 
     pyglet.image.get_buffer_manager().get_color_buffer().save('screenshot.png')
 
-Note that images can only be saved in the PNG format unless Pillow is installed.
+Note that images can only be saved in the PNG format unless the Pillow library is installed.

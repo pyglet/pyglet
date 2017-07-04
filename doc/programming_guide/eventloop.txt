@@ -1,3 +1,5 @@
+.. _programming-guide-eventloop:
+
 The application event loop
 ==========================
 

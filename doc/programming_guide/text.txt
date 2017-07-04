@@ -1,11 +1,11 @@
 Displaying text
 ===============
 
-pyglet provides the :py:mod:`~pyglet.font` module for rendering high-quality antialiased
-Unicode glyphs efficiently.  Any installed font on the operating system is seen 
-by pyglet, or you can supply your own font with your application.  
+pyglet provides the :py:mod:`~pyglet.font` module for efficiently rendering high-quality
+antialiased Unicode glyphs.  pyglet can use any installed font on the operating system,
+or you can provide your own font with your application.
 
-Notice that not all font formats are supported, see :ref:`guide_supported-font-formats`
+Please note that not all font formats are supported, see :ref:`guide_supported-font-formats`
 
 Text rendering is performed with the :py:mod:`~pyglet.text` module, which can display
 word-wrapped formatted text.  There is also support for interactive editing of
@@ -39,8 +39,9 @@ The example demonstrates the most common uses of text rendering:
 * The position of the text is given by the ``x`` and ``y`` coordinates.  The
   meaning of these coordinates is given by the ``anchor_x`` and ``anchor_y``
   parameters.
-* The actual text is drawn with the :py:meth:`pyglet.text.Label.draw` method.  Labels can also be
-  added to a graphics batch; see :ref:`programming-guide-graphics` for details.
+* The actual drawing of the text to the screen is done with the :py:meth:`pyglet.text.Label.draw`
+  method.  Labels can also be added to a graphics batch; see :ref:`guide_batched-rendering`
+  for details.
 
 The :py:func:`~pyglet.text.HTMLLabel` class is used similarly, but accepts an HTML formatted string
 instead of parameters describing the style.  This allows the label to display
@@ -648,7 +649,7 @@ The list of supported formats is shown in the table below.
         :header-rows: 1
 
         * - Font Format
-          - Windows XP
+          - Windows
           - Mac OS X
           - Linux (FreeType)
         * - TrueType (.ttf)
