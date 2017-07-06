@@ -1,0 +1,6 @@
+.. _programming-guide-game:
+
+In-depth game example
+=====================
+
+Coming soon!

@@ -59,6 +59,7 @@ If this is your first time reading about pyglet, we suggest you start at
    programming_guide/options
    programming_guide/debug
    programming_guide/advanced
+   programming_guide/examplegame
 
 API Reference
 -------------

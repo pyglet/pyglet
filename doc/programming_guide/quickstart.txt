@@ -35,7 +35,7 @@ arguments are used to set the font, position and anchorage of the label::
                               anchor_x='center', anchor_y='center')
 
 An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window to 
-give it a chance to redraw its contents.  pyglet provides several ways to attach 
+give it a chance to redraw its contents.  pyglet provides several ways to attach
 event handlers to objects; a simple way is to use a decorator::
 
     @window.event
@@ -50,14 +50,14 @@ Finally, call::
 
     pyglet.app.run()
 
-To enter pyglet's default event loop, and let pyglet respond to application
+This will enter pyglet's default event loop, and let pyglet respond to application
 events such as the mouse and keyboard. Your event handlers will now be called as
 required, and the :func:`~pyglet.app.run` method will return only when all
 application windows have been closed.
 
-Note that earlier versions of pyglet required the application developer to
-write their own event-handling runloop.  This is still possible, but
-discouraged; see `The application event loop` for details.
+If you are coming from another library, you may be used to writing your own event
+loop.  This is possible to do with pyglet as well, but it is generally discouraged;
+see `The application event loop` for details.
 
 Image viewer
 ------------
@@ -69,7 +69,7 @@ it within the window::
     import pyglet
 
     window = pyglet.window.Window()
-    image = pyglet.resource.image('kitten.jpg')
+    image = pyglet.resource.image('kitten.png')
 
     @window.event
     def on_draw():
@@ -80,7 +80,7 @@ it within the window::
 
 We used the :func:`~pyglet.resource.image` function of :mod:`pyglet.resource`
 to load the image, which automatically locates the file relative to the source
-file (rather than the working directory). To load an image not bundled with
+file (rather than the working directory).  To load an image not bundled with
 the application (for example, specified on the command line, you would use
 :func:`pyglet.image.load`).
 
@@ -195,23 +195,25 @@ demonstrates playing many short audio samples simultaneously, as in a game.
 Where to next?
 --------------
 
-The examples presented in this chapter should have given you enough
-information to get started writing simple arcade and point-and-click-based
-games.
+The examples above have shown you how to display something on the screen,
+and perform a few basic tasks.  You're probably left with a lot of questions
+about these examples, but don't worry. The remainder of this programming guide
+goes into quite technical detail on many of pyglet's features.  If you're
+an experienced developer, you can probably dive right into the sections that
+interest you.
 
-The remainder of this programming guide goes into quite technical detail
-regarding some of pyglet's features.  While getting started, it's recommended
-that you skim the beginning of each chapter but not attempt to read through
-the entire guide from start to finish.
+For new users, it might be daunting to read through everything all at once.
+In that case, we recommend browsing through the beginnings of each chapter,
+and then having a look at a more in-depth example project. You can find an
+example of a 2D game in the :ref:`programming-guide-game` section.
 
-To write 3D applications or achieve optimal performance in your 2D
-applications you'll need to work with OpenGL directly.  The canonical
-references for OpenGL are `The OpenGL Programming Guide`_ and 
-`The OpenGL Shading Language`_.
+To write advanced 3D applications or achieve optimal performance in your 2D
+applications, you'll need to work with OpenGL directly.  If you only want to
+work with OpenGL primitives, but want something slightly higher-level, have a
+look at the :ref:`programming-guide-graphics` module.
 
 There are numerous examples of pyglet applications in the ``examples/``
-directory of the documentation and source distributions.  Keep checking
-http://www.pyglet.org/ for more examples and tutorials as they are written.
+directory of the documentation and source distributions.  If you get
+stuck, or have any questions, join us on the `mailing list`_!
 
-.. _The OpenGL Programming Guide: http://opengl.org/documentation/books/#the_opengl_programming_guide_the_official_guide_to_learning_opengl_version
-.. _The OpenGL Shading Language: http://opengl.org/documentation/books/#the_opengl_shading_language_2nd_edition
+.. _mailing list: http://groups.google.com/group/pyglet-users
