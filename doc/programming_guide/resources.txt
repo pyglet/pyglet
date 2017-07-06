@@ -74,13 +74,13 @@ functions.
         * - :py:func:`pyglet.image.load`
           - :py:func:`pyglet.resource.texture`
           - :py:class:`~pyglet.image.Texture`
-        * - `pyglet.image.load_animation`
+        * - :py:func:`pyglet.image.load_animation`
           - :py:func:`pyglet.resource.animation`
           - :py:class:`~pyglet.image.Animation`
         * - :py:func:`pyglet.media.load`
           - :py:func:`pyglet.resource.media`
-          - `Source`
-        * - | :py:func:`pyglet.text.load` 
+          - :py:class:`~pyglet.media.Source`
+        * - | :py:func:`pyglet.text.load`
             | mimetype = ``text/plain``
           - :py:func:`pyglet.resource.text`
           - :py:class:`~pyglet.text.document.UnformattedDocument`
@@ -96,13 +96,14 @@ functions.
           - :py:func:`pyglet.resource.add_font`
           - ``None``
 
-:py:func:`pyglet.resource.texture` is for loading stand-alone textures, and would be
-required when using the texture for a 3D model.  
+:py:func:`pyglet.resource.texture` is for loading stand-alone textures. This can be
+useful when using the texture for a 3D model, or generally working with OpenGL directly.
 
 :py:func:`pyglet.resource.image` is optimised for loading sprite-like images that can
 have their texture coordinates adjusted.  The resource module attempts to pack
-small images into larger textures (called an atlas) for efficient rendering
-(which is why the return type of this function can be :py:class:`~pyglet.image.TextureRegion`).
+small images into larger texture atlases (explained in :ref:`guide_texture-bins-and-atlases`)
+for efficient rendering (which is why the return type of this function can be
+:py:class:`~pyglet.image.TextureRegion`).
 
 Resource locations
 ^^^^^^^^^^^^^^^^^^
