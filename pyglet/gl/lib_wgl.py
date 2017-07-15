@@ -70,6 +70,13 @@ except AttributeError:
 
 class_slots = ['name', 'requires', 'suggestions', 'ftype','func']
 
+def makeWGLFunction(func):
+    class WGLFunction(object):
+        __slots__ = class_slots
+        __call__ = func
+        
+    return WGLFunction
+
 class WGLFunctionProxy(object):
     __slots__ = class_slots
 
@@ -94,11 +101,7 @@ class WGLFunctionProxy(object):
             self.func = missing_function(
                 self.name, self.requires, self.suggestions)
 
-        class WGLFunction(object):
-            __slots__ = class_slots
-            __call__ = self.func
-
-        self.__class__ = WGLFunction
+        self.__class__ = makeWGLFunction(self.func)
         
         return self.func(*args, **kwargs)
 
