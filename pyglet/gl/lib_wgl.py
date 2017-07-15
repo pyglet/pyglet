@@ -98,7 +98,7 @@ class WGLFunctionProxy(object):
             self.func = missing_function(
                 self.name, self.requires, self.suggestions)
         self.__class__ = WGLFunction
-        return self.__call__(*args, **kwargs)
+        return self.func(*args, **kwargs)
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
