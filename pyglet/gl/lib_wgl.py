@@ -71,9 +71,6 @@ except AttributeError:
 class WGLFunction(object):
     __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
     
-    def __init__(self,func):
-        self.func=func
-    
     def __call__(self,*a,**ka):
         return self.func(*a,**ka)
 
