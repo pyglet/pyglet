@@ -68,8 +68,18 @@ try:
 except AttributeError:
     _have_get_proc_address = False
 
+class WGLFunction(object):
+    __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
+    
+    def __init__(self,func):
+        self.func=func
+    
+    def __call__(self,*a,**ka):
+        return self.func(*a,**ka)
+
 class WGLFunctionProxy(object):
     __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
+
     def __init__(self, name, ftype, requires, suggestions):
         assert _have_get_proc_address
         self.name = name
@@ -79,9 +89,7 @@ class WGLFunctionProxy(object):
         self.func = None
 
     def __call__(self, *args, **kwargs):
-        if self.func:
-            return self.func(*args, **kwargs)
-
+        print ('Adding',self.name)
         from pyglet.gl import current_context
         if not current_context:
             raise Exception(
@@ -93,8 +101,8 @@ class WGLFunctionProxy(object):
         else:
             self.func = missing_function(
                 self.name, self.requires, self.suggestions)
-        result = self.func(*args, **kwargs) 
-        return result
+        self.__class__ = WGLFunction
+        return self.__call__(*args, **kwargs)
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
