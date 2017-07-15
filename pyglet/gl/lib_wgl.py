@@ -89,7 +89,6 @@ class WGLFunctionProxy(object):
         self.func = None
 
     def __call__(self, *args, **kwargs):
-        print ('Adding',self.name)
         from pyglet.gl import current_context
         if not current_context:
             raise Exception(
