@@ -68,14 +68,10 @@ try:
 except AttributeError:
     _have_get_proc_address = False
 
-class WGLFunction(object):
-    __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
-    
-    def __call__(self,*a,**ka):
-        return self.func(*a,**ka)
+class_slots = ['name', 'requires', 'suggestions', 'ftype','func']
 
 class WGLFunctionProxy(object):
-    __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
+    __slots__ = class_slots
 
     def __init__(self, name, ftype, requires, suggestions):
         assert _have_get_proc_address
@@ -97,7 +93,13 @@ class WGLFunctionProxy(object):
         else:
             self.func = missing_function(
                 self.name, self.requires, self.suggestions)
+
+        class WGLFunction(object):
+            __slots__ = class_slots
+            __call__ = self.func
+
         self.__class__ = WGLFunction
+        
         return self.func(*args, **kwargs)
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
