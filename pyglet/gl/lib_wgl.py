@@ -68,8 +68,14 @@ try:
 except AttributeError:
     _have_get_proc_address = False
 
+class WGLFunction(object):
+    __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
+    
+    def __call__(self,*a,**ka):
+        return self.func(*a,**ka)
+
 class WGLFunctionProxy(object):
-    __slots__ = ['name', 'requires', 'suggestions', 'ftype']
+    __slots__ = ['name', 'requires', 'suggestions', 'ftype', 'func']
 
     def __init__(self, name, ftype, requires, suggestions):
         assert _have_get_proc_address
@@ -77,7 +83,7 @@ class WGLFunctionProxy(object):
         self.ftype = ftype
         self.requires = requires
         self.suggestions = suggestions
-        #self.func = None
+        self.func = None
 
     def __call__(self, *args, **kwargs):
         from pyglet.gl import current_context
@@ -86,13 +92,13 @@ class WGLFunctionProxy(object):
                 'Call to function "%s" before GL context created' % self.name)
         address = wglGetProcAddress(asbytes(self.name))
         if cast(address, POINTER(c_int)):  # check cast because address is func
-            func = cast(address, self.ftype)
-            decorate_function(func, self.name)
+            self.func = cast(address, self.ftype)
+            decorate_function(self.func, self.name)
         else:
-            func = missing_function(
+            self.func = missing_function(
                 self.name, self.requires, self.suggestions)
-        self = func
-        return func(*args, **kwargs)
+        self.__class__ = WGLFunction
+        return self.__call__(*args, **kwargs)
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
