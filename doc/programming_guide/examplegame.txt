@@ -3,4 +3,100 @@
 In-depth game example
 =====================
 
-Coming soon!
+This tutorial will walk you through the steps of writing a simple Asteroids clone.
+It is assumed that the reader is familiar with writing and running Python programs.  This
+is not a programming tutorial, but it should hopefully be clear enough even if you're a
+relative beginner.  If you get stuck, first have a look at the relevant sections of the
+programming guide.  If something is still not clear, let us know!
+
+Basic graphics
+--------------
+
+The first version of our Asteroids clone will simply show a score of zero, a label showing
+the name of the program, three randomly placed asteroids, and the player’s ship.
+Nothing will move.
+
+Setting up
+^^^^^^^^^^
+
+First things first, make sure you have pyglet installed.  Next, create a folder for your new
+project, called "mygame", or something similar.  Inside that folder, create a file named
+asteroids.py, which will be our main file.  Lastly, create another folder called "resources".
+This is where we will store all of the images for our game.
+
+Getting a window
+^^^^^^^^^^^^^^^^
+
+To set up a window, simply import pyglet, create a new instance of :class:`pyglet.window.Window`,
+and call pyglet.app.run().
+
+    import pyglet
+    game_window = pyglet.window.Window()
+
+    if __name__ == '__main__':
+        pyglet.app.run()
+
+When you run the code above, you should see a window full of junk that goes away when
+you press Esc.
+
+Loading and displaying an image
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Since our images will reside in a directory other than the example’s root directory,
+we need to tell pyglet where to find them:
+
+    import pyglet
+    pyglet.resource.path.append('resources')
+    pyglet.resource.reindex()
+
+pyglet's :mod:`pyglet.resource` module takes all of the hard work out of finding and loading
+game resources such as images, sounds, etc..  All that you need to do is tell it where to look,
+and reindex it.  Once that's done, you can easily load any image by name with the
+:func:`~pyglet.resource.image` function of the resource module::
+
+    player_image = pyglet.resource.image("player.png")
+    bullet_image = pyglet.resource.image("bullet.png")
+    asteroid_image = pyglet.resource.image("asteroid.png")
+
+Centering the images
+^^^^^^^^^^^^^^^^^^^^
+
+Pyglet will draw all images from their lower left corner by default.  We don’t want this
+behavior for our images, which need to rotate around their centers.  All we have to do to fix
+this problem is set their anchor points:
+
+    def center_image(image):
+        """Sets an image's anchor point to its center"""
+        image.anchor_x = image.width // 2
+        image.anchor_y = image.height // 2
+
+Now we can just call center_image() on all our loaded images:
+
+    center_image(player_image)
+    center_image(bullet_image)
+    center_image(asteroid_image)
+
+Remember that the center_image() function must be defined before it can be called at the
+module level.  Also, note that zero degrees points directly to the right in pyglet, so the images
+are all drawn with their front pointing to the right.
+
+
+Basic motion
+------------
+
+To be completed!
+
+Giving the player something to do
+---------------------------------
+
+To be completed!
+
+Collision response
+------------------
+
+To be completed!
+
+Next steps
+----------
+
+To be completed!
