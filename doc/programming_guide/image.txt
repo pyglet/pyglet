@@ -3,15 +3,19 @@ Images
 
 pyglet provides functions for loading and saving images in various formats
 using native operating system services.  If the `Pillow`_ library is installed,
-it can also be used for supporting additional formats.  Finally, pyglet has
-built-in codecs for loading PNG and BMP without external dependencies.
+many additional formats can be supported.   pyglet also includes built-in codecs
+for loading PNG and BMP without external dependencies.
 
 Loaded images can be efficiently provided to OpenGL as a texture, and OpenGL
 textures and framebuffers can be retrieved as pyglet images to be saved or
 otherwise manipulated.
 
-pyglet also provides an efficient and comprehensive :py:class:`~pyglet.sprite.Sprite` class,
-for displaying images on the screen with an optional transform (such as scaling and rotation).
+If you've done any game or graphics programming, you're probably familiar with the
+concept of "sprites".  pyglet also provides an efficient and comprehensive
+:py:class:`~pyglet.sprite.Sprite` class, for displaying images on the screen with
+an optional transform (such as scaling and rotation). If you're planning to do
+anything with images that involves movement and placement on screen, you'll likely
+want to use sprites.
 
 .. _Pillow: https://pillow.readthedocs.io
 
@@ -22,7 +26,7 @@ Images can be loaded using the :py:func:`pyglet.image.load` function::
 
     kitten = pyglet.image.load('kitten.png')
 
-If the image is distributed with your application, consider using the
+If you are distributing your application with included images, consider using the
 :py:mod:`pyglet.resource` module (see  :ref:`guide_resources`).
 
 Without any additional arguments, :py:func:`pyglet.image.load` will attempt to load the
@@ -73,11 +77,11 @@ pyglet provides the following image decoders:
           - BMP decoder written in pure Python.
 
 Each of these classes registers itself with :py:mod:`pyglet.image` with the filename
-extensions it supports.  The :py:func:`~pyglet.image.load` function will try each image decoder with
-a matching file extension first, before attempting the other decoders.  Only
-if every image decoder fails to load an image will :py:class:`~pyglet.image.codecs.ImageDecodeException` be
-raised (the origin of the exception will be the first decoder that was
-attempted).
+extensions it supports.  The :py:func:`~pyglet.image.load` function will try each image
+decoder with a matching file extension first, before attempting the other decoders.  Only
+if every image decoder fails to load an image will
+:py:class:`~pyglet.image.codecs.ImageDecodeException` be raised (the origin of the exception
+will be the first decoder that was attempted).
 
 You can override this behaviour and specify a particular decoding instance to
 use.  For example, in the following example the pure Python PNG decoder is
@@ -189,9 +193,9 @@ any format it supports can be written.
 Working with images
 -------------------
 
-The :py:func:`pyglet.image.load` function returns an :py:class:`~pyglet.image.AbstractImage`.  The actual class
-of the object depends on the decoder that was used, but all images support the
-following attributes:
+The :py:func:`pyglet.image.load` function returns an :py:class:`~pyglet.image.AbstractImage`.
+The actual class of the object depends on the decoder that was used, but all loaded images
+will have the following attributes:
 
 `width`
     The width of the image, in pixels.
@@ -207,8 +211,8 @@ intrinsic anchor point.  The anchor point is used to align the image to a
 point in space when drawing it.
 
 You may only want to use a portion of the complete image.  You can use the
-:py:meth:`~pyglet.image.AbstractImage.get_region` method to return an image of a rectangular region of a source
-image::
+:py:meth:`~pyglet.image.AbstractImage.get_region` method to return an image
+of a rectangular region of a source image::
 
     image_part = kitten.get_region(x=10, y=10, width=100, height=100)
 
@@ -225,16 +229,18 @@ The AbstractImage hierarchy
 ---------------------------
 
 The following sections deal with the various concrete image classes.  All
-images subclass :py:class:`~pyglet.image.AbstractImage`, which provides the basic interface described
-in previous sections.
+images subclass :py:class:`~pyglet.image.AbstractImage`, which provides the basic
+interface described in previous sections.
 
 .. figure:: img/abstract_image.svg
 
     The :py:class:`~pyglet.image.AbstractImage` class hierarchy.
 
-An image of any class can be converted into a :py:class:`~pyglet.image.Texture` or :py:class:`~pyglet.image.ImageData` using
-the :py:meth:`~pyglet.image.AbstractImage.get_texture` and :py:meth:`~pyglet.image.ImageData.get_image_data` methods defined on :py:class:`~pyglet.image.AbstractImage`.  For
-example, to load an image and work with it as an OpenGL texture::
+An image of any class can be converted into a :py:class:`~pyglet.image.Texture` or
+:py:class:`~pyglet.image.ImageData` using the :py:meth:`~pyglet.image.AbstractImage.get_texture`
+and :py:meth:`~pyglet.image.ImageData.get_image_data` methods defined on
+:py:class:`~pyglet.image.AbstractImage`.  For example, to load an image and work with
+it as an OpenGL texture::
 
     kitten = pyglet.image.load('kitten.png').get_texture()
 
@@ -338,7 +344,7 @@ discarded)::
     kitten = kitten.get_image_data()
     data = kitten.get_data('RGB', kitten.width * 3)
 
-`data` always returns a string, however it can be set to a ctypes array,
+`data` always returns a string, however pixel data can be set from a ctypes array,
 stdlib array, list of byte data, string, or ctypes pointer.  To set the image
 data use `set_data`, again specifying the format and pitch::
 
@@ -542,8 +548,9 @@ Animations
 While image sequences and atlases provide storage for related images, they
 alone are not enough to describe a complete animation.  
 
-The :py:class:`~pyglet.image.Animation` class manages a list of :py:class:`~pyglet.image.AnimationFrame` objects, each of
-which references an image and a duration, in seconds.  The storage of 
+The :py:class:`~pyglet.image.Animation` class manages a list of
+:py:class:`~pyglet.image.AnimationFrame` objects, each of
+which references an image and a duration (in seconds).  The storage of
 the images is up to the application developer: they can each be discrete, or
 packed into a texture atlas, or any other technique.
 
@@ -649,18 +656,21 @@ details.
 Displaying images
 -----------------
 
-Images should be drawn into a window in the window's :py:meth:`~pyglet.window.Window.on_draw`
-event handler.  Usually a "sprite" should be created for each appearance of the image
-on-screen.  For simple use cases, Images can also be drawn directly without creating a sprite.
+Image drawing is usually done in the window's :py:meth:`~pyglet.window.Window.on_draw`
+event handler.  It is possible to draw individual images directly, but usually you will
+want to create a "sprite" for each appearance of the image on-screen.
 
 Sprites
 ^^^^^^^
 
 A Sprite is a more full featured class for displaying instances of Images in the window.
-Multiple sprites can share the same image; for example, hundreds of bullet sprites might share
-the same bullet image.
+While Image and Animation instances are mostly concerned with the image data (size, pixels, etc.),
+Sprites also include additional properties. These include x/y location, scale, rotation,
+opacity, color tint, visibility, and both horizontal and vertical scaling.  Multiple sprites
+can share the same image; for example, hundreds of bullet sprites might share the same bullet
+image.
 
-A Sprite is constructed given an image or animation, and can be drawn with the
+A Sprite is constructed given an image or animation, and can be directly drawn with the
 :py:meth:`~pyglet.sprite.Sprite.draw` method::
 
     sprite = pyglet.sprite.Sprite(img=image)
@@ -670,9 +680,7 @@ A Sprite is constructed given an image or animation, and can be drawn with the
         window.clear()
         sprite.draw()
 
-In comparison to an Image, Sprites also have properties for setting the position,
-rotation, opacity, color tint, visibility, and vertical and horizontal scaling of the
-displayed image.  If created with an animation, Sprites automatically handle displaying
+If created with an animation, sprites automatically handle displaying
 the most up-to-date frame of the animation.  The following example uses a scheduled function
 to gradually move the Sprite across the screen::
 
@@ -726,15 +734,15 @@ This will reduce the number of internal and OpenGL operations for drawing each f
 In addition, try to combine your images into as few textures as possible; for example,
 by loading images with :py:func:`pyglet.resource.image` (see :ref:`guide_resources`)
 or with :ref:`guide_texture-bins-and-atlases`).  A common pitfall is to use the
-:py:func:`pyglet.image.load` method to load a large number of images seperately.
-This will cause a seperate texture to be created for each, resulting in a lot of
-OpenGL texture binding overhead for each frame.
+:py:func:`pyglet.image.load` method to load a large number of images.  This will cause a seperate
+texture to be created for each image loaded, resulting in a lot of OpenGL texture binding overhead
+for each frame.
 
 Simple image blitting
 ^^^^^^^^^^^^^^^^^^^^^
 
-A simple but less efficient way to draw an image directly into a window is
-with the :py:meth:`~pyglet.image.AbstractImage.blit` method::
+Drawing images directly is less efficient, but may be adequate for simple cases.
+Images can be drawn into a window with the :py:meth:`~pyglet.image.AbstractImage.blit` method::
 
     @window.event
     def on_draw():

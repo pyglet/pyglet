@@ -5,8 +5,8 @@ Writing a pyglet application
 
 Getting started with a new library or framework can be daunting, especially
 when presented with a large amount of reference material to read.  This
-chapter gives a very quick introduction to pyglet without covering any of the
-details.
+chapter gives a very quick introduction to pyglet without going into too much
+detail.
 
 Hello, World
 ------------
@@ -34,7 +34,7 @@ arguments are used to set the font, position and anchorage of the label::
                               x=window.width//2, y=window.height//2,
                               anchor_x='center', anchor_y='center')
 
-An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window to 
+An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window to
 give it a chance to redraw its contents.  pyglet provides several ways to attach
 event handlers to objects; a simple way is to use a decorator::
 
@@ -51,13 +51,13 @@ Finally, call::
     pyglet.app.run()
 
 This will enter pyglet's default event loop, and let pyglet respond to application
-events such as the mouse and keyboard. Your event handlers will now be called as
+events such as the mouse and keyboard.  Your event handlers will now be called as
 required, and the :func:`~pyglet.app.run` method will return only when all
 application windows have been closed.
 
 If you are coming from another library, you may be used to writing your own event
 loop.  This is possible to do with pyglet as well, but it is generally discouraged;
-see `The application event loop` for details.
+see :ref:`programming-guide-eventloop` for details.
 
 Image viewer
 ------------
@@ -198,13 +198,13 @@ Where to next?
 The examples above have shown you how to display something on the screen,
 and perform a few basic tasks.  You're probably left with a lot of questions
 about these examples, but don't worry. The remainder of this programming guide
-goes into quite technical detail on many of pyglet's features.  If you're
+goes into greater technical detail on many of pyglet's features.  If you're
 an experienced developer, you can probably dive right into the sections that
 interest you.
 
 For new users, it might be daunting to read through everything all at once.
-In that case, we recommend browsing through the beginnings of each chapter,
-and then having a look at a more in-depth example project. You can find an
+If you feel overwhelmed, we recommend browsing through the beginnings of each
+chapter, and then having a look at a more in-depth example project. You can find an
 example of a 2D game in the :ref:`programming-guide-game` section.
 
 To write advanced 3D applications or achieve optimal performance in your 2D
