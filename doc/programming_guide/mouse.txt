@@ -24,8 +24,8 @@ pyglet).
 
     The coordinate space for the mouse pointer.
 
-The most basic mouse event is :py:meth:`~pyglet.window.Window.on_mouse_motion` which is dispatched every time
-the mouse moves::
+The most basic mouse event is :py:meth:`~pyglet.window.Window.on_mouse_motion`
+which is dispatched every time the mouse moves::
 
     def on_mouse_motion(x, y, dx, dy):
         pass
@@ -38,9 +38,9 @@ movement.  This is not necessarily once for every pixel moved -- the operating
 system typically samples the mouse at a fixed frequency, and it is easy to
 move the mouse faster than this.  Conversely, if your application is not
 processing events fast enough you may find that several queued-up mouse events
-are dispatched in a single :py:meth:`~pyglet.window.Window.dispatch_events` call.  There is no need to
-concern yourself with either of these issues; the latter rarely causes
-problems, and the former can not be avoided.
+are dispatched in a single :py:meth:`~pyglet.window.Window.dispatch_events` call.
+There is no need to concern yourself with either of these issues; the latter rarely
+causes problems, and the former can not be avoided.
 
 Many games are not concerned with the actual position of the mouse cursor, and
 only need to know in which direction the mouse has moved.  For example, the
@@ -66,7 +66,8 @@ released, or the mouse is moved while any button is held down::
     def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
         pass
 
-The `x`, `y`, `dx` and `dy` parameters are as for the :py:meth:`~pyglet.window.Window.on_mouse_motion` event.
+The `x`, `y`, `dx` and `dy` parameters are as for the
+:py:meth:`~pyglet.window.Window.on_mouse_motion` event.
 The press and release events do not require `dx` and `dy` parameters as they
 would be zero in this case.  The `modifiers` parameter is as for the keyboard
 events, see :ref:`guide_working-with-the-keyboard`.
@@ -78,9 +79,9 @@ the following constants::
     pyglet.window.mouse.MIDDLE
     pyglet.window.mouse.RIGHT
 
-The `buttons` parameter in :py:meth:`~pyglet.window.Window.on_mouse_drag` is a bitwise combination of all the
-mouse buttons currently held down.  For example, to test if the user is
-performing a drag gesture with the left button::
+The `buttons` parameter in :py:meth:`~pyglet.window.Window.on_mouse_drag`
+is a bitwise combination of all the mouse buttons currently held down.  For example,
+to test if the user is performing a drag gesture with the left button::
 
     from pyglet.window import mouse
 
@@ -90,11 +91,11 @@ performing a drag gesture with the left button::
 
 When the user begins a drag operation (i.e., pressing and holding a mouse
 button and then moving the mouse), the window in which they began the drag
-will continue to receive the :py:meth:`~pyglet.window.Window.on_mouse_drag` event as long as the button is
-held down.  This is true even if the mouse leaves the window.  You generally
-do not need to handle this specially: it is a convention among all operating
-systems that dragging is a gesture rather than a direct manipulation of the
-user interface widget.
+will continue to receive the :py:meth:`~pyglet.window.Window.on_mouse_drag`
+event as long as the button is held down.  This is true even if the mouse leaves
+the window.  You generally do not need to handle this specially: it is a convention
+among all operating systems that dragging is a gesture rather than a direct
+manipulation of the user interface widget.
 
 There are events for when the mouse enters or leaves a window::
 
@@ -104,8 +105,8 @@ There are events for when the mouse enters or leaves a window::
     def on_mouse_leave(x, y):
         pass
 
-The coordinates for :py:meth:`~pyglet.window.Window.on_mouse_leave` will lie outside of your window.  These
-events are not dispatched while a drag operation is taking place.
+The coordinates for :py:meth:`~pyglet.window.Window.on_mouse_leave` will lie outside of your window.
+These events are not dispatched while a drag operation is taking place.
 
 The mouse scroll wheel generates the :py:meth:`~pyglet.window.Window.on_mouse_scroll` event::
 

@@ -21,14 +21,12 @@ the device::
         joystick = joysticks[0]
     joystick.open()
 
-You may immediately begin querying the state of the joystick by
-looking at its attributes.  The current position of the joystick is
-recorded in its 'x' and 'y' attributes, both of which are normalized
-to values within the range of -1 to 1.  For the x-axis, `x` = -1 means
-the joystick is pushed all the way to the left and `x` = 1 means the
-joystick is pushed to the right.  For the y-axis, a value of `y` = -1
-means that the joystick is pushed up and a value of `y` = 1 means that
-the joystick is pushed down.
+The current position of the joystick is recorded in its 'x' and 'y'
+attributes, both of which are normalized to values within the range
+of -1 to 1.  For the x-axis, `x` = -1 means the joystick is pushed
+all the way to the left and `x` = 1 means the joystick is pushed to the right.
+For the y-axis, a value of `y` = -1 means that the joystick is pushed up
+and a value of `y` = 1 means that the joystick is pushed down.
 
 If your joystick has two analog controllers, the position of the
 second controller is typically given by `z` and `rz`, where `z` is the
@@ -38,26 +36,26 @@ The state of the joystick buttons is contained in the `buttons`
 attribute as a list of boolean values.  A True value indicates that
 the corresponding button is being pressed.  While buttons may be
 labeled A, B, X, or Y on the physical joystick, they are simply
-referred to by their index when accessing the `buttons` list.  There
-is no way to know which button index corresponds to which physical
-button on the device without simply testing the particular joystick.
-So it is a good idea to let users change button assignments.
+referred to by their index when accessing the `buttons` list. There
+is no easy way to know which button index corresponds to which
+physical button on the device without testing the particular joystick,
+so it is a good idea to let users change button assignments.
 
 Each open joystick dispatches events when the joystick changes state.
-For buttons, there is the :py:meth:`~pyglet.input.Joystick.on_joybutton_press` event which is sent
-whenever any of the joystick's buttons are pressed::
+For buttons, there is the :py:meth:`~pyglet.input.Joystick.on_joybutton_press`
+event which is sent whenever any of the joystick's buttons are pressed::
 
     def on_joybutton_press(joystick, button):
         pass
 
-and the :py:meth:`~pyglet.input.Joystick.on_joybutton_release` event which is sent whenever any of the
-joystick's buttons are released::
+and the :py:meth:`~pyglet.input.Joystick.on_joybutton_release` event which is
+sent whenever any of the joystick's buttons are released::
  
     def on_joybutton_release(joystick, button):
         pass
 
-The :py:class:`~pyglet.input.Joystick` parameter is the :py:class:`~pyglet.input.Joystick` instance whose buttons
-changed state (useful if you have multiple joysticks connected).
+The :py:class:`~pyglet.input.Joystick` parameter is the :py:class:`~pyglet.input.Joystick`
+instance whose buttons changed state (useful if you have multiple joysticks connected).
 The `button` parameter signifies which button changed and is simply an
 integer value, the index of the corresponding button in the `buttons`
 list. 
@@ -94,6 +92,10 @@ A good way to use the joystick event handlers might be to define them
 within a controller class and then call::
 
     joystick.push_handlers(my_controller)
+
+Please note that you need a running application event loop for the joystick
+button an axis values to be properly updated. See the :ref:`programming-guide-eventloop`
+section for more details on how to start an event loop.
 
 
 Using the Apple Remote
