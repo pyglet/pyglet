@@ -24,9 +24,10 @@ Audio drivers
 -------------
 
 pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio.  Only one 
-of these drivers can be used in an application, and this must be selected 
-before the :py:mod:`pyglet.media` module is loaded.  The available drivers depend on 
-your operating system:
+ofthese drivers can be used in an application.  In most cases you won't need to concern
+yourself with choosing a driver, but you can manually select one if desired.  This
+must be done before the :py:mod:`pyglet.media` module is loaded.  The available drivers
+depend on your operating system:
 
     .. list-table::
         :header-rows: 1
@@ -47,11 +48,12 @@ your operating system:
 The audio driver can be set through the ``audio`` key of the :py:data:`pyglet.options`
 dictionary.  For example::
 
-    pyglet.options['audio'] = ('openal', 'silent')
+    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', silent')
 
-This tells pyglet to use the OpenAL driver if it is available, and to
-ignore all audio output if it is not.  The ``audio`` option can be a list of
-any of these strings, giving the preference order for each driver:
+This tells pyglet to try using the OpenAL driver first, and if not available to try Pulseaudio
+and DirectSound in that order.  If all else fails, the silent driver will be used.
+The ``audio`` option can be a list of any of these strings, giving the preference order for each
+driver:
 
     .. list-table::
         :header-rows: 1
@@ -77,9 +79,9 @@ driver.
 DirectSound
 ^^^^^^^^^^^
 
-DirectSound is available only on Windows, and is installed by default on
-Windows XP and later.  pyglet uses only DirectX 7 features.  On Windows Vista
-DirectSound does not support hardware audio mixing or surround sound.
+DirectSound is available only on Windows, and is installed by default.
+pyglet uses only DirectX 7 features.  On Windows Vista, DirectSound does not support
+hardware audio mixing or surround sound.
 
 OpenAL
 ^^^^^^
@@ -238,8 +240,8 @@ directly from an already-loaded :class:`~pyglet.media.Source`::
 Procedural Audio
 ----------------
 
-In addition to loading audio files from disk, the :py:mod:`pyglet.media.sources.procedural` module is available
-for simple audio synthesis. There are a variety of waveforms available:
+In addition to loading audio files, the :py:mod:`pyglet.media.procedural` module is available
+for simple audio synthesis.  There are several basic waveforms available:
 
 * :py:class:`~pyglet.media.sources.procedural.Sine`
 * :py:class:`~pyglet.media.sources.procedural.Sawtooth`
@@ -249,22 +251,32 @@ for simple audio synthesis. There are a variety of waveforms available:
 * :py:class:`~pyglet.media.sources.procedural.WhiteNoise`
 * :py:class:`~pyglet.media.sources.procedural.Digitar`
 
-At a minimum, you will need to specify the duration of the audio you wish to produce. You will also
-want to set the frequency (most waveforms will default to 440Hz). Some waveforms, such as the FM
-waveform, have additional parameters. More detail can be found in the API documentation for each.
+The module documentation for each will provide more information on constructing them, but at
+a minimum you will need to specify the duration.  You will also want to set the frequency
+(most waveforms will default to 440Hz). Some waveforms, such as the FM, have additional parameters.
 
-For more vibrant audio, a variety of standard envelopes are available. These envelopes affect the
-amplitude (volume), and make for more natural sounding waveforms. You first create an envelope
-instance, and then pass it in while creating any of the above waveforms. The same envelope instance
-can be passed to any number of waveforms, reducing duplicate code when creating multiple tones.
-If no envelope is used, all procedural classes will default to the FlatEnvelope of maximum volume,
-which esentially has no effect on the waveform. Check the API documentation of each Envelope
-to see which parameters are available.
+For shaping the waveforms, several simple envelopes are available.  These envelopes affect
+the amplitude (volume), and can make for more natural sounding tones.  You first create an envelope
+instance, and then pass it into the constructor of any of the above waveforms.  The same envelope
+instance can be passed to any number of waveforms, reducing duplicate code when creating multiple
+sounds.  If no envelope is used, all procedural classes will default to the FlatEnvelope of maximum
+volume, which esentially has no effect on the sound.  Check the module documentation of each
+Envelope to see which parameters are available.
 
 * :py:class:`~pyglet.media.sources.procedural.FlatEnvelope`
 * :py:class:`~pyglet.media.sources.procedural.LinearDecayEnvelope`
 * :py:class:`~pyglet.media.sources.procedural.ADSREnvelope`
 * :py:class:`~pyglet.media.sources.procedural.TremoloEnvelope`
+
+An example of creating an envelope and waveforms::
+
+    adsr = pyglet.media.procedural.ADSREnvelope(0.05, 0.2, 0.1)
+
+    saw = pyglet.media.procedural.Sawtooth(duration=1.0, frequency=220, envelope=adsr)
+    fm = pyglet.media.procedural.FM(3, carrier=440, modulator=2, mod_index=22, envelope=adsr)
+
+The waveforms you create with the procedural module can be played like any other loaded sound.
+See the next sections for more detail on playback.
 
 Simple audio playback
 ---------------------
@@ -396,17 +408,16 @@ versions of pyglet may use multiple texture objects.
 Positional audio
 ----------------
 
-pyglet uses OpenAL for audio playback, which includes many features for
-positioning sound within a 3D space.  This is particularly effective with a
-surround-sound setup, but is also applicable to stereo systems.
+pyglet includes features for positioning sound within a 3D space.  This is particularly
+effective with a surround-sound setup, but is also applicable to stereo systems.
 
 A :py:class:`~pyglet.media.player.Player` in pyglet has an associated position in 3D space --
 that is, it is equivalent to an OpenAL "source".  The properties for setting
 these parameters are described in more detail in the API documentation; see
 for example :py:attr:`~pyglet.media.Player.position` and :py:attr:`~pyglet.media.Player.pitch`.
 
-The OpenAL "listener" object is provided by the audio driver. To obtain the
-listener for the current audio driver::
+A "listener" object is provided by the audio driver. To obtain the listener for the current
+audio driver::
 
     pyglet.media.get_audio_driver().get_listener()
 

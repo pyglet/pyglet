@@ -12,8 +12,8 @@ window appears above all others and may be decorated differently, though this
 is platform-specific (for example, Unix window managers sometimes couple
 keyboard focus with the mouse pointer).
 
-You can request keyboard focus for a window with the :py:meth:`~pyglet.window.Window.activate` method, but
-you should not rely on this -- it may simply provide a visual cue to the user
+You can request keyboard focus for a window with the :py:meth:`~pyglet.window.Window.activate`
+method, but you should not rely on this -- it may simply provide a visual cue to the user
 indicating that the window requires user input, without actually getting
 focus.
 
@@ -23,12 +23,13 @@ Windows created with the
 style cannot receive keyboard focus.
 
 It is not possible to use pyglet's keyboard or text events without a window;
-consider using Python built-in functions such as ``raw_input`` instead.
+consider using Python built-in functions such as ``input`` instead.
 
 Keyboard events
 ---------------
 
-The :py:meth:`~pyglet.window.Window.on_key_press` and :py:meth:`~pyglet.window.Window.on_key_release` events are fired when
+The :py:meth:`~pyglet.window.Window.on_key_press` and
+:py:meth:`~pyglet.window.Window.on_key_release` events are fired when
 any key on the keyboard is pressed or released, respectively.  These events
 are not affected by "key repeat" -- once a key is pressed there are no more
 events for that key until it is released.
