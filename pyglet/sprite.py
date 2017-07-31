@@ -612,9 +612,9 @@ class Sprite(event.EventDispatcher):
         :type: int
         """
         if self._subpixel:
-            return self._texture.width * abs(self._scale_x)
+            return self._texture.width * abs(self._scale_x) * abs(self._scale)
         else:
-            return int(self._texture.width * abs(self._scale_x))
+            return int(self._texture.width * abs(self._scale_x) * abs(self._scale))
 
     @property
     def height(self):
@@ -625,9 +625,9 @@ class Sprite(event.EventDispatcher):
         :type: int
         """
         if self._subpixel:
-            return self._texture.height * abs(self._scale_y)
+            return self._texture.height * abs(self._scale_y) * abs(self._scale)
         else:
-            return int(self._texture.height * abs(self._scale_y))
+            return int(self._texture.height * abs(self._scale_y) * abs(self._scale))
 
     @property
     def opacity(self):
