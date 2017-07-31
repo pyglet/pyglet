@@ -545,6 +545,7 @@ class Win32Window(BaseWindow):
                 byref(dataptr), None, 0)
             _user32.ReleaseDC(None, hdc)
 
+            image = image.get_image_data()
             data = image.get_data(format, pitch)
             memmove(dataptr, data, len(data))
 
