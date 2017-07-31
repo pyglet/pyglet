@@ -1,4 +1,4 @@
-"""
+'''
 win32priority.py
 A set of utilies to patch Pyglet to provide more precise event timing on Windows.
 
@@ -27,29 +27,29 @@ The following options are provided:
 
     patch_event_loop: Replaces the default event loop with one that is more amenable
         to an application where you're firing the main event loop by way of the
-        scheduler. If you use this, you'll need to manually call window.flip() in your
-        draw routine.
+        scheduler. If you use this, you'll need to manually call window.switch_to() and
+        window.flip() in your draw routine.
 
-"""
-
+'''
 
 def priority_patch(
-        pin_thread=True,
-        pin_thread_mask=0x01,
-        set_switch_interval=True,
-        switch_interval_value=1. / 65.,
-        raise_priority=True,
-        priority_class=0x080,
-        patch_timer=True,
-        pin_process=False,
-        patch_event_loop=False,
+    pin_thread = True,
+    pin_thread_mask = 0x01,
+    set_switch_interval = True,
+    switch_interval_value = 1./65.,
+    raise_priority=True,
+    priority_class = 0x080,
+    patch_timer=True,
+    pin_process = False,
+    patch_event_loop=False,
 ):
+
     import ctypes
     try:
         _winmm = ctypes.windll.winmm
     except AttributeError:
         raise NotImplementedError("This is not a Win32 compatible platform.")
-
+    
     if set_switch_interval:
         import sys
         sys.setswitchinterval(switch_interval_value)
@@ -64,28 +64,26 @@ def priority_patch(
         k32.SetPriorityClass(-1, priority_class)
 
     import pyglet
-
+    
     if pin_thread:
-        k32.SetThreadAffinityMask(pyglet.app.platform_event_loop._event_thread, pin_thread_mask)
+        k32.SetThreadAffinityMask(pyglet.app.platform_event_loop._event_thread,pin_thread_mask)
 
     if pin_process:
         k32.SetProcessAffinityMask(k32.GetCurrentProcess(), 1)
 
     if patch_event_loop:
-        class Loop(pyglet.app.EventLoop):
-            def idle(self):
-                self.clock.call_scheduled_functions(self.clock.update_time())
-                return self.clock.get_sleep_time(True)
-
-        loop = Loop()
-        pyglet.app.event_loop = loop
+        def idle(self):
+            self.clock.call_scheduled_functions(self.clock.update_time())
+            return self.clock.get_sleep_time(True)
+        
+        pyglet.app.EventLoop.idle = idle
 
     if patch_timer:
-        old_step = pyglet.app.base.EventLoop._run_estimated
+        old_step = pyglet.clock.Clock.sleep
 
         def new_step(*a, **ka):
             time_start(_1)
-            old_step(*a, **ka)
+            old_step(*a,**ka)
             time_stop(_1)
 
-        pyglet.app.base.EventLoop._run_estimated = new_step
+        pyglet.clock.Clock.sleep=new_step
