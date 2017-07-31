@@ -706,7 +706,7 @@ class Clock(_ClockBase):
         # 2. set interval to 0               -- item will be removed from heap eventually
         for item in set(item for item in self._schedule_interval_items if item.func == func):
             item.interval = 0
-            item.func = lambda x: x
+            item.func = lambda x, *args, **kwargs: x
 
         self._schedule_items = [i for i in self._schedule_items if i.func != func]
 

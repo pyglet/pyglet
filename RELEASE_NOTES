@@ -43,6 +43,7 @@ Bugfixes
 - Windows: Italic fonts no longer render parts of their neighbors.
 - Prevent memory leak from orphaned StreamingSources in long running applications (#103).
 - Windows: Fix kerning regression (#115)
+- Windows: Window.set_icon no longer fails when given a Texture instead of ImageData (#136)
 
 Pyglet 1.2.3                                                                                        
 ============                                                                                        
