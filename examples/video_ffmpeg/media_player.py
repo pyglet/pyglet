@@ -32,16 +32,30 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+"""
+Usage
 
-'''Audio and video player with simple GUI controls.
-'''
+    media_player.py [options] <filename> [<filename> ...]
+
+Plays the audio / video files listed as arguments, optionally
+collecting debug info
+
+Options
+    --debug : saves sequence of internal state as a binary *.dbg
+    --outfile : filename to store the debug info, defaults to filename.dbg
+
+The raw data captured in the .dbg can be rendered as human readable
+using the script report.py
+"""
 
 from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
+import os
 import sys
+import buffered_logger as bl
 
 from pyglet.gl import *
 import pyglet
@@ -221,6 +235,7 @@ class PlayerWindow(pyglet.window.Window):
 
     def on_eos(self):
         self.gui_update_state()
+        pyglet.clock.schedule_once(self.auto_close, 0.1)
 
     def on_player_eos(self):
         self.gui_update_state()
@@ -300,9 +315,11 @@ class PlayerWindow(pyglet.window.Window):
         elif symbol == key.RIGHT:
             self.player.seek(self.player.source.duration)
 
-
     def on_close(self):
         self.player.pause()
+        self.close()
+
+    def auto_close(self, dt):
         self.close()
 
     def on_play_pause(self):
@@ -330,14 +347,12 @@ class PlayerWindow(pyglet.window.Window):
             control.draw()
 
 
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Usage: media_player.py <filename> [<filename> ...]')
-        sys.exit(1)
-
+def main(target, dbg_file, debug):
+    set_logging_parameters(target, dbg_file, debug)
     have_video = False
 
     for filename in sys.argv[1:]:
+        print("filename:", filename)
         player = pyglet.media.Player()
         window = PlayerWindow(player)
 
@@ -349,6 +364,7 @@ if __name__ == '__main__':
         window.set_visible(True)
         window.set_default_video_size()
 
+        # this is an async call
         player.play()
         window.gui_update_state()
 
@@ -356,3 +372,54 @@ if __name__ == '__main__':
         pyglet.clock.schedule_interval(lambda dt: None, 0.2)
 
     pyglet.app.run()
+
+
+def set_logging_parameters(target_file, dbg_file, debug):
+    if not debug:
+        bl.logger = None
+        return
+    if dbg_file is None:
+        dbg_file = target_file + ".dbg"
+    else:
+        dbg_dir = os.path.dirname(dbg_file)
+        if dbg_dir and not os.path.isdir(dbg_dir):
+            os.mkdir(dbg_dir)
+    bl.logger = bl.BufferedLogger(dbg_file)
+    from instrumentation import mp_events
+    # allow to detect crashes by prewriting a crash file, if no crash
+    # it will be overwrited by the captured data
+    sample = os.path.basename(target_file)
+    bl.logger.log("version", mp_events["version"])
+    bl.logger.log("crash", sample)
+    bl.logger.save_log_entries_as_pickle()    
+    bl.logger.clear()
+    # start the real capture data
+    bl.logger.log("version", mp_events["version"])
+    bl.logger.log("mp.im", sample)
+
+def usage():
+    print(__doc__)
+    sys.exit(1)
+
+def sysargs_to_mainargs():
+    """builds main args from sys.argv"""
+    if len(sys.argv) < 2:
+        usage()
+    debug = False
+    dbg_file = None
+    for i in range(2):
+        if sys.argv[1].startswith("--"):
+            a = sys.argv.pop(1)
+            if a.startswith("--debug"):
+                debug = True
+            elif a.startswith("--outfile="):
+                dbg_file = a[len("--outfile="):]
+            else:
+                print("Error unknown option:", a)
+                usage()
+    target_file = sys.argv[1]
+    return target_file, dbg_file, debug
+
+if __name__ == '__main__':
+    target_file, dbg_file, debug = sysargs_to_mainargs() 
+    main(target_file, dbg_file, debug)

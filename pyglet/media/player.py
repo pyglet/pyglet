@@ -34,6 +34,8 @@ from builtins import object
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+import buffered_logger as bl
+
 
 import pyglet
 from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
@@ -100,6 +102,9 @@ class Player(pyglet.event.EventDispatcher):
         if playing and source:
             if not self._audio_player:
                 self._create_audio_player()
+                if bl.logger is not None:
+                    bl.logger.init_wall_time()
+                    bl.logger.log("p.P._sp", 0.0)
             self._audio_player.play()
 
             if source.video_format:
@@ -168,8 +173,8 @@ class Player(pyglet.event.EventDispatcher):
         if not self.source:
             return
 
-        if _debug:
-            print('Player.seek(%r)' % time)
+        if bl.logger is not None:
+            bl.logger.log("p.P.sk", time)
 
         self._paused_time = time
         self.source.seek(time)
@@ -253,32 +258,43 @@ class Player(pyglet.event.EventDispatcher):
         self.seek(time)
 
     def update_texture(self, dt=None, time=None):
+        if bl.logger is not None:
+            bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
         if time is None:
             time = self._audio_player.get_time()
+            if bl.logger is not None:
+                bl.logger.log("p.P.ut.1.2", time)
         if time is None:
-            if _debug:
-                print('In update_texture, _audio_player did not return a timestamp')
-            pyglet.clock.schedule_once(self.update_texture, 1. / 30)
+            if bl.logger is not None:
+                delay = 1. / 30
+                bl.logger.log("p.P.ut.1.3", delay)
+            pyglet.clock.schedule_once(self.update_texture, delay)
             return
 
         if (self._last_video_timestamp is not None and 
             time <= self._last_video_timestamp):
-            pyglet.clock.schedule_once(self.update_texture, 1. / 30)
+            delay = 1. / 30
+            if bl.logger is not None:
+                bl.logger.log("p.P.ut.1.4", delay)
+            pyglet.clock.schedule_once(self.update_texture, delay)
             return
 
         ts = self._groups[0].get_next_video_timestamp()
         while ts is not None and ts+0.04 < time: # Allow 40 ms difference
             self._groups[0].get_next_video_frame() # Discard frame
-            if _debug:
-                print("Frames discarded at timestamp {:.2f}. Missed by {:.2f}."
-                      " time {:.2f}".format(ts, time-ts, time))
+            if bl.logger is not None:
+                bl.logger.log("p.P.ut.1.5", ts)
             ts = self._groups[0].get_next_video_timestamp()
+
+        if bl.logger is not None:
+            bl.logger.log("p.P.ut.1.6", ts)
 
         if ts is None:
             self._last_video_timestamp = None
-            if _debug:
-                print("In update_texture. Not timestamp found. Scheduling in 1/30 s")
-            pyglet.clock.schedule_once(self.update_texture, 1. / 30)
+            delay = 1./ 30
+            if bl.logger is not None:
+                bl.logger.log("p.P.ut.1.7", delay)
+            pyglet.clock.schedule_once(self.update_texture, delay)
             return
 
         image = self._groups[0].get_next_video_frame()
@@ -287,13 +303,17 @@ class Player(pyglet.event.EventDispatcher):
                 self._create_texture()
             self._texture.blit_into(image, 0, 0, 0)
             self._last_video_timestamp = ts
+        elif bl.logger is not None:
+            bl.logger.log("p.P.ut.1.8")
+        
         ts = self._groups[0].get_next_video_timestamp()
         if ts is None:
             delay = 1. / 30
         else:
             delay = ts - time
-        if _debug:
-            print("Scheduling update_texture in {:.2f} sec".format(delay))
+
+        if bl.logger is not None:
+            bl.logger.log("p.P.ut.1.9", delay, ts)
         pyglet.clock.schedule_once(self.update_texture, delay)
 
     def _player_property(name, doc=None):
@@ -327,8 +347,7 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         """
-        if _debug:
-            print('Player.on_player_eos')
+        pass
 
     def on_source_group_eos(self):
         """The current source group ran out of data.
@@ -347,8 +366,9 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         """
-        if _debug:
-            print('Player.on_eos')
+        if bl.logger is not None:
+            bl.logger.log("p.P.oe")
+            bl.logger.close()
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
