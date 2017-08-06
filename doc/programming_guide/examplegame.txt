@@ -459,9 +459,9 @@ new event handler, it looks for these two methods, among others.
     import math
     from pyglet.window import key
     from . import physicalobject, resources
-    ...
+
     class Player(physicalobject.PhysicalObject)
-        ...
+
         def on_key_press(self, symbol, modifiers):
             if symbol == key.UP:
                 self.keys['up'] = True
@@ -668,7 +668,7 @@ Here’s the setup for the loops, which belongs in `update()`.  It simply iterat
 pairs without doing anything::
 
     for i in range(len(game_objects)):
-        for j in xrange(i+1, len(game_objects)):
+        for j in range(i+1, len(game_objects)):
             obj_1 = game_objects[i]
             obj_2 = game_objects[j]
 
@@ -847,7 +847,7 @@ The Player class will be the only class that fires bullets, so let’s open it u
 module, and add a bullet_speed attribute to its constructor::
 
     ...
-    import bullet
+    from . import bullet
 
     class Player(physicalobject.PhysicalObject):
         def __init__(self, *args, **kwargs):
@@ -999,17 +999,16 @@ the superclass’s method::
 
 Now we can say that if it’s supposed to die, and it’s big enough, then we should create two or
 three new asteroids with random rotations and velocities.  We should add the old asteroid’s
-velocity to the new ones to make it look like they come from the same object.
-
+velocity to the new ones to make it look like they come from the same object::
 
     import random
-    ...
-    class Asteroid...
+
+    class Asteroid(object):
         def handle_collision_with(self, other_object):
             super(Asteroid, self).handle_collision_with(other_object)
             if self.dead and self.scale > 0.25:
                 num_asteroids = random.randint(2, 3)
-                for i in xrange(num_asteroids):
+                for i in range(num_asteroids):
                     new_asteroid = Asteroid(x=self.x, y=self.y, batch=self.batch)
                     new_asteroid.rotation = random.randint(0, 360)
                     new_asteroid.velocity_x = (random.random() * 70 + self.velocity_x)
@@ -1036,7 +1035,7 @@ Then write the update() method::
 The last thing we need to do is go over to load.py and have the asteroid() method create a new
 Asteroid instead of a PhysicalObject::
 
-    import asteroid
+    from . import asteroid
 
     def asteroids(num_asteroids, player_position, batch=None):
         ...

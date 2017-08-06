@@ -118,7 +118,7 @@ Listed here are a few third party libraries that you might find useful when
 developing your project.  Please direct any questions to the respective authors.
 If you would like to have your library listed here, let us know!
 
-:`glooey -  An object-oriented GUI library for pyglet <http://glooey.readthedocs.io/en/latest/index.html>`_:
+`glooey -  An object-oriented GUI library for pyglet <http://glooey.readthedocs.io/en/latest/index.html>`_
     Every game needs a user interface that matches its look and feel. The purpose of glooey
     is to help you make such an interface.  Towards this end, glooey provides 7 powerful
     placement widgets, a label widget, an image widget, 3 different button widgets, a text
@@ -127,7 +127,7 @@ If you would like to have your library listed here, let us know!
     customized, and glooey comes with built-in fantasy, puzzle, and 8-bit themes to prove it
     (and to help you hit the ground running if your game fits one of those genres).
 
-:`PyShaders - Pythonic OpenGL shader wrapper for python <https://github.com/gabdube/pyshaders>`_:
+`PyShaders - Pythonic OpenGL shader wrapper for python <https://github.com/gabdube/pyshaders>`_
     Pyshaders aims to completely wraps the opengl2.1 shader api in a python module.
     Pyshaders provides a pythonic OOP api that hides the lower level (ctypes) calls.
     Pyshaders provides a high level api and a low level api, and it can be integrated easily
