@@ -144,6 +144,6 @@ project listed here, let us know!
     Cocos2d is an open source software framework. It can be used to build games, apps and
     other cross platform GUI based interactive programs.
 
-`Arcade - A 2D library for game development focusing on simplicity <https://bitbucket.org/pcraven/arcade>`_
+`Arcade - A 2D library for game development focusing on simplicity <http://arcade.academy/>`_
     Arcade builds on Pyglet with a focus to make creating 2D arcade games simple and easy
     for hobbyists and new programmers.
