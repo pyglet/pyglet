@@ -78,7 +78,7 @@ To push an event handler onto the stack,
 use the :py:meth:`~pyglet.event.EventDispatcher.push_handlers` method::
 
     def on_key_press(symbol, modifiers):
-        if symbol == key.SPACE
+        if symbol == key.SPACE:
             fire_laser()
 
     window.push_handlers(on_key_press)
