@@ -9,7 +9,7 @@ control pyglet provides.
 Displays, screens, configs and contexts
 ---------------------------------------
 
-.. figure:: img/context_flow.svg
+.. figure:: img/context_flow.png
 
     Flow of construction, from the singleton Platform to a newly
     created Window with its Context.
@@ -116,7 +116,7 @@ and ``xinerama`` attributes are specific to Linux, but the
 :attr:`~pyglet.canvas.Screen.width` and :attr:`~pyglet.canvas.Screen.height` attributes are present on all screens, and describe the screen's geometry, as 
 shown below.
 
-.. figure:: img/screens.svg
+.. figure:: img/screens.png
     
     Example arrangement of screens and their reported geometry.  Note that the
     primary display (marked "1") is positioned on the right, according to this
