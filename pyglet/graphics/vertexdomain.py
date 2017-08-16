@@ -732,8 +732,6 @@ class IndexedVertexDomain(VertexDomain):
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
         self.index_buffer.bind()
-        # if vertexbuffer._workaround_vbo_finish:               GL3
-        #     glFinish()
 
         if vertex_list is not None:
             glDrawElements(mode, vertex_list.index_count, self.index_gl_type,

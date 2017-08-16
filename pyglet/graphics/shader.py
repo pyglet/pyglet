@@ -4,6 +4,9 @@ from pyglet.gl import *
 from ctypes import *
 
 
+_debug_gl_shaders = pyglet.options['debug_gl_shaders']
+
+
 # TODO: test other shader types, and update pyglet GL bindings if necessary.
 _shader_types = {
     'vertex': GL_VERTEX_SHADER,
@@ -20,47 +23,62 @@ _uniform_types = {
 
 
 class Shader:
-    # TODO: create proper Exception for failed compilation.
     def __init__(self, source_string, shader_type):
         if shader_type not in _shader_types.keys():
-            raise TypeError("Only 'vertex' and 'fragment' shaders are supported")
+            raise TypeError("The `shader_type` must be 'vertex' or 'fragment'.")
         self._source = source_string
-        self.shader_type = shader_type
-        self.id = self._compile_shader()
+        self.type = shader_type
+        self._id = self._compile_shader()
+
+    @property
+    def id(self):
+        return self._id
 
     def _compile_shader(self):
         shader_source = self._source.encode("utf8")
-        shader_id = glCreateShader(_shader_types[self.shader_type])
+        shader_id = glCreateShader(_shader_types[self.type])
         source_buffer = c_char_p(shader_source)
         source_buffer_pointer = cast(pointer(source_buffer), POINTER(POINTER(c_char)))
         source_length = c_int(len(shader_source) + 1)
+
         # shader id, count, string, length:
         glShaderSource(shader_id, 1, source_buffer_pointer, source_length)
         glCompileShader(shader_id)
-        # TODO: use the pyglet debug settings
-        self._get_shader_log(shader_id)
-        return shader_id
 
-    @staticmethod
-    def _get_shader_log(shader_id):
         status = c_int(0)
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, byref(status))
+
+        if _debug_gl_shaders:
+            self._print_shader_log(shader_id)
+
+        if status.value != GL_TRUE:
+            raise GLException("The {0} shader failed to compile. "
+                              "Set `pyglet.options['debug_gl_shaders'] = True` "
+                              "for more information.".format(self.type))
+
+        return shader_id
+
+    def _print_shader_log(self, shader_id):
         log_length = c_int(0)
         glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, byref(log_length))
         result_str = create_string_buffer(log_length.value)
         glGetShaderInfoLog(shader_id, log_length, None, result_str)
         if result_str.value:
-            print("Error compiling shader: {}".format(result_str.value.decode('utf8')))
+            print("OpenGL returned the following message when compiling the {0} shader: "
+                  "\n{1}".format(self.type, result_str.value.decode('utf8')))
         else:
-            print("Shader compiled successfully.")
+            print("Compiled {0} shader successfully.".format(self.type))
 
     def __del__(self):
-        # TODO: remove this:
-        print("Destroyed Shader: {0}.".format(self.shader_type))
         try:
-            glDeleteShader(self.id)
-        except ImportError:
+            glDeleteShader(self._id)
+            # There are potentially several different exceptions that could
+            # be raised here, none of them are vital to catch when deleting.
+        except:
             pass
+
+        if _debug_gl_shaders:
+            print("Destroyed {0} shader object.".format(self.type))
 
 
 class ShaderProgram:
@@ -70,28 +88,40 @@ class ShaderProgram:
     Attribute = namedtuple('Attribute', 'location attribute_type')
 
     def __init__(self, *shaders):
-        self.id = self._link_program(shaders)
-        self._program_active = False
-        # TODO: move these out of this module eventually?
+        self._id = self._link_program(shaders)
+        self._active = False
+
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
         self._parse_all_attributes()
-        self._get_program_log()
+
+        if _debug_gl_shaders:
+            self._get_program_log()
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def active(self):
+        return self._active
 
     def _get_program_log(self):
         result = c_int(0)
         # glGetProgramiv(program_id, GL_LINK_STATUS, byref(result))
         # glGetProgramiv(program_id, GL_ATTACHED_SHADERS, byref(result))
-        glGetProgramiv(self.id, GL_INFO_LOG_LENGTH, byref(result))
+        glGetProgramiv(self._id, GL_INFO_LOG_LENGTH, byref(result))
         result_str = create_string_buffer(result.value)
-        glGetProgramInfoLog(self.id, result, None, result_str)
+        glGetProgramInfoLog(self._id, result, None, result_str)
         if result_str.value:
-            print("Error linking program: {}".format(result_str.value))
+            print("OpenGL returned the following message when linking the program: "
+                  "\n{0}".format(result_str.value))
         else:
             print("Program linked successfully.")
 
     def _link_program(self, shaders):
+        # TODO: catch exceptions when linking Program:
         program_id = glCreateProgram()
         for shader in shaders:
             glAttachShader(program_id, shader.id)
@@ -99,12 +129,12 @@ class ShaderProgram:
         return program_id
 
     def use_program(self):
-        glUseProgram(self.id)
-        self._program_active = True
+        glUseProgram(self._id)
+        self._active = True
 
     def stop_program(self):
         glUseProgram(0)
-        self._program_active = False
+        self._active = False
 
     def __enter__(self):
         self.use_program()
@@ -113,12 +143,15 @@ class ShaderProgram:
         self.stop_program()
 
     def __del__(self):
-        # TODO: remove this:
-        print("Destroyed Shader Program.")
         try:
-            glDeleteProgram(self.id)
-        except ImportError:
+            glDeleteProgram(self._id)
+        # There are potentially several different exceptions that could
+        # be raised here, none of them are vital to catch when deleting.
+        except:
             pass
+
+        if _debug_gl_shaders:
+            print("Destroyed Shader Program.")
 
     ############################################################
     # Improve the getting and setting of differnt uniform types:
@@ -127,7 +160,7 @@ class ShaderProgram:
     def __setitem__(self, key, value):
         if key not in self._uniforms:
             raise KeyError("Uniform name was not found.")
-        if not self._program_active:
+        if not self._active:
             raise Exception("Shader Program is not active.")
 
         uniform = self._uniforms[key]
@@ -144,7 +177,7 @@ class ShaderProgram:
         uniform = self._uniforms[item]
         # retrieved = GLfloat()
         retrieved = (GLfloat * 4)()
-        uniform.getter(self.id, uniform.location, retrieved)
+        uniform.getter(self._id, uniform.location, retrieved)
 
         return retrieved[0:1]
 
@@ -174,7 +207,7 @@ class ShaderProgram:
         :return: int: number of active types of this kind
         """
         num_active = GLint(0)
-        glGetProgramiv(self.id, variable_type, byref(num_active))
+        glGetProgramiv(self._id, variable_type, byref(num_active))
         return num_active.value
 
     def get_attrib_type(self, name):
@@ -186,7 +219,7 @@ class ShaderProgram:
             size = GLint()
             attr_type = GLenum()
             name_buf = create_string_buffer(buf_size)
-            glGetActiveAttrib(self.id, location, buf_size, None, size, attr_type, name_buf)
+            glGetActiveAttrib(self._id, location, buf_size, None, size, attr_type, name_buf)
             return attr_type.value
 
     def get_uniform_type(self, name):
@@ -198,7 +231,7 @@ class ShaderProgram:
             size = GLint()
             uni_type = GLenum()
             name_buf = create_string_buffer(buf_size)
-            glGetActiveUniform(self.id, location, buf_size, None, size, uni_type, name_buf)
+            glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
             return uni_type.value
 
     def get_active_attrib(self, index):
@@ -207,7 +240,7 @@ class ShaderProgram:
         attr_type = c_uint(0)
         name_buf = create_string_buffer(buf_size)
         try:
-            glGetActiveAttrib(self.id, index, buf_size, None, size, attr_type, name_buf)
+            glGetActiveAttrib(self._id, index, buf_size, None, size, attr_type, name_buf)
             return name_buf.value.decode()
         except GLException:
             return None
@@ -218,16 +251,16 @@ class ShaderProgram:
         attr_type = c_uint(0)
         name_buf = create_string_buffer(buf_size)
         try:
-            glGetActiveUniform(self.id, index, buf_size, None, size, attr_type, name_buf)
+            glGetActiveUniform(self._id, index, buf_size, None, size, attr_type, name_buf)
             return name_buf.value.decode()
         except GLException:
             return None
 
     def get_attrib_location(self, name):
-        return glGetAttribLocation(self.id, create_string_buffer(name.encode('ascii')))
+        return glGetAttribLocation(self._id, create_string_buffer(name.encode('ascii')))
 
     def get_uniform_location(self, name):
-        return glGetUniformLocation(self.id, create_string_buffer(name.encode('ascii')))
+        return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
 
 
 # gl_Position = vec4(position.x * 2.0 / screen_width - 1.0,

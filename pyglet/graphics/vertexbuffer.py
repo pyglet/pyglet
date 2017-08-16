@@ -55,14 +55,6 @@ import sys
 import pyglet
 from pyglet.gl import *
 
-_enable_vbo = pyglet.options['graphics_vbo']
-
-# Enable workaround permanently if any VBO is created on a context that has
-# this workaround.  (On systems with multiple contexts where one is
-# unaffected, the workaround will be enabled unconditionally on all of the
-# contexts anyway.  This is completely unlikely anyway).
-_workaround_vbo_finish = False
-
 
 def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
     """Create a buffer of vertex data.
