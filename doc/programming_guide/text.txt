@@ -62,7 +62,7 @@ pyglet's complete text rendering capabilities.  The underlying :py:func:`~pyglet
 and :py:class:`~pyglet.text.document.AbstractDocument` classes provide a "model/view" interface to all of
 pyglet's text features.
 
-    .. image:: img/text_classes.svg
+    .. image:: img/text_classes.png
 
 Documents
 ^^^^^^^^^
@@ -583,7 +583,7 @@ the attributes::
 
 These measurements are shown in the diagram below.
 
-.. figure:: img/font_metrics.svg
+.. figure:: img/font_metrics.png
     
     Font metrics.  Note that the descent is usually negative as it descends
     below the baseline.
