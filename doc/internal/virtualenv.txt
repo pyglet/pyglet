@@ -52,7 +52,7 @@ Make a directory somewhere to hold our virtual environments::
     mkdir pyglet-venv
 
 Next, we'll create the virtual environments for each version of python. We'll put them
-both inside the "pygletvenv" folder, to keep things in one place.  Remember that the
+both inside the "pyglet-venv" folder, to keep things in one place.  Remember that the
 library names are different for Python 2 and 3::
 
     python2 -m virtualenv pyglet-venv/py2
@@ -105,9 +105,7 @@ Make sure you download and install:
     - `Graphviz <http://www.graphviz.org/Download_windows.php>`_
 
 Pip should be installed by default with the latest Python installers.  Make sure you do not
-uncheck the install pip option.
-
-When ready, open a command prompt.
+uncheck the option.  When finished installing, open a command prompt.
 
 To create virtual environments, ``venv`` is included in the standard library since
 Python 3.3.  For Python 2.7 only, you will need to install the ``virtualenv`` package::
@@ -119,7 +117,7 @@ Make a directory somewhere to hold our virtual environments::
     md pyglet-venv
 
 Next, we'll create the virtual environments for each version of python. We'll put them
-both inside the "pygletvenv" folder, to keep things in one place.  Remember that the
+both inside the "pyglet-venv" folder, to keep things in one place.  Remember that the
 library names are different for Python 2 and 3::
 
     py -2 -m virtualenv pyglet-venv\py2
