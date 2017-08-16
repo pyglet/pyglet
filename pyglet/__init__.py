@@ -202,6 +202,7 @@ _option_types = {
     'debug_gl': bool,
     'debug_gl_trace': bool,
     'debug_gl_trace_args': bool,
+    'debug_gl_shaders': bool,
     'debug_graphics_batch': bool,
     'debug_lib': bool,
     'debug_media': bool,
@@ -212,12 +213,12 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
-    'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
     'darwin_cocoa': bool,
+    'search_local_libs': bool
 }
 
 
