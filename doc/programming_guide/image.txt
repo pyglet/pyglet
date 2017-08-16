@@ -232,7 +232,7 @@ The following sections deal with the various concrete image classes.  All
 images subclass :py:class:`~pyglet.image.AbstractImage`, which provides the basic
 interface described in previous sections.
 
-.. figure:: img/abstract_image.svg
+.. figure:: img/abstract_image.png
 
     The :py:class:`~pyglet.image.AbstractImage` class hierarchy.
 
@@ -424,7 +424,7 @@ such a composite image as if it were a simple Python sequence.  Discrete
 images can also be packed into one or more larger textures with texture bins
 and atlases.
 
-.. figure:: img/image_sequence.svg
+.. figure:: img/image_sequence.png
 
     The AbstractImageSequence class hierarchy.
 
@@ -454,7 +454,7 @@ images::
 Images with more than one row can be accessed either as a single-dimensional
 sequence, or as a (row, column) tuple; as shown in the following diagram.
 
-.. figure:: img/image_grid.svg
+.. figure:: img/image_grid.png
 
     An image grid with several rows and columns, and the slices that can be
     used to access it.
@@ -600,7 +600,7 @@ objects.  Of course, this doesn't prevent you using framebuffer objects in
 your programs -- :py:mod:`pyglet.gl` provides this functionality -- just that they are
 not represented as :py:class:`~pyglet.image.AbstractImage` types.
 
-.. figure:: img/buffer_image.svg
+.. figure:: img/buffer_image.png
     
     The :py:class:`~pyglet.image.BufferImage` hierarchy.
 

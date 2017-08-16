@@ -153,7 +153,7 @@ Note that unlike the usual coordinate system in pyglet, the window location is
 relative to the top-left corner of the desktop, as shown in the following
 diagram:
 
-.. figure:: img/window_location.svg
+.. figure:: img/window_location.png
 
     The position and size of the window relative to the desktop.
 

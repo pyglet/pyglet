@@ -20,7 +20,7 @@ of the screen (note that this is "upside-down" compared with many other
 windowing toolkits, but is consistent with the default OpenGL projection in
 pyglet).
 
-.. figure:: img/mouse_coordinates.svg
+.. figure:: img/mouse_coordinates.png
 
     The coordinate space for the mouse pointer.
 
