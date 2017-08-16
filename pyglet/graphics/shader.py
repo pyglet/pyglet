@@ -19,32 +19,34 @@ _uniform_getters = {
     GL_INT: glGetUniformiv,
     GL_FLOAT: glGetUniformfv,
     GL_FLOAT_VEC2: glGetUniformfv,
+    GL_FLOAT_VEC3: glGetUniformfv,
 }
 
 _uniform_setters = {
-    GL_FLOAT: glUniform1fv,
-    GL_FLOAT_VEC2: glUniform2fv,
-    GL_FLOAT_VEC3: glUniform3fv,
-    GL_FLOAT_VEC4: glUniform4fv,
+    # getter + size
+    GL_FLOAT: (glUniform1fv, 1),
+    GL_FLOAT_VEC2: (glUniform2fv, 2),
+    GL_FLOAT_VEC3: (glUniform3fv, 3),
+    GL_FLOAT_VEC4: (glUniform4fv, 4),
 
-    GL_INT: glUniform1iv,
-    GL_INT_VEC2: glUniform2iv,
-    GL_INT_VEC3: glUniform3iv,
-    GL_INT_VEC4: glUniform4iv,
+    GL_INT: (glUniform1iv, 1),
+    GL_INT_VEC2: (glUniform2iv, 2),
+    GL_INT_VEC3: (glUniform3iv, 3),
+    GL_INT_VEC4: (glUniform4iv, 4),
 
     # TODO: test/implement these:
-    GL_FLOAT_MAT2: glUniformMatrix2fv,
-    GL_FLOAT_MAT3: glUniformMatrix3fv,
-    GL_FLOAT_MAT4: glUniformMatrix4fv,
-
-    GL_FLOAT_MAT2x3: glUniformMatrix2x3fv,
-    GL_FLOAT_MAT2x4: glUniformMatrix2x4fv,
-
-    GL_FLOAT_MAT3x2: glUniformMatrix3x2fv,
-    GL_FLOAT_MAT3x4: glUniformMatrix3x4fv,
-
-    GL_FLOAT_MAT4x2: glUniformMatrix4x2fv,
-    GL_FLOAT_MAT4x3: glUniformMatrix4x3fv,
+    # GL_FLOAT_MAT2: glUniformMatrix2fv,
+    # GL_FLOAT_MAT3: glUniformMatrix3fv,
+    # GL_FLOAT_MAT4: glUniformMatrix4fv,
+    #
+    # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv,
+    # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv,
+    #
+    # GL_FLOAT_MAT3x2: glUniformMatrix3x2fv,
+    # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv,
+    #
+    # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv,
+    # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv,
 }
 
 
@@ -75,25 +77,24 @@ class Shader:
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, byref(status))
 
         if _debug_gl_shaders:
-            self._print_shader_log(shader_id)
+            print(self._get_shader_log(shader_id))
 
         if status.value != GL_TRUE:
             raise GLException("The {0} shader failed to compile. "
-                              "Set `pyglet.options['debug_gl_shaders'] = True` "
-                              "for more information.".format(self.type))
+                              "\n{1}".format(self.type, self._get_shader_log(shader_id)))
 
         return shader_id
 
-    def _print_shader_log(self, shader_id):
+    def _get_shader_log(self, shader_id):
         log_length = c_int(0)
         glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, byref(log_length))
         result_str = create_string_buffer(log_length.value)
         glGetShaderInfoLog(shader_id, log_length, None, result_str)
         if result_str.value:
-            print("OpenGL returned the following message when compiling the {0} shader: "
-                  "\n{1}".format(self.type, result_str.value.decode('utf8')))
+            return ("OpenGL returned the following message when compiling the {0} shader: "
+                    "\n{1}".format(self.type, result_str.value.decode('utf8')))
         else:
-            print("Compiled {0} shader successfully.".format(self.type))
+            return "Compiled {0} shader successfully.".format(self.type)
 
     def __del__(self):
         try:
@@ -110,7 +111,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    Uniform = namedtuple('Uniform', 'location uniform_type, getter, setter')
+    Uniform = namedtuple('Uniform', 'location, getter, setter')
     Attribute = namedtuple('Attribute', 'location attribute_type')
 
     def __init__(self, *shaders):
@@ -183,17 +184,15 @@ class ShaderProgram:
     # Improve the getting and setting of differnt uniform types:
     ############################################################
 
-    def __setitem__(self, key, values):
+    def __setitem__(self, key, *values):
         if key not in self._uniforms:
             raise KeyError("Uniform name was not found.")
         if not self._active:
             raise Exception("Shader Program is not active.")
 
         uniform = self._uniforms[key]
-        # TODO: store and use proper setter function
         try:
-            # uniform.setter(uniform.location, values)
-            glUniform1f(uniform.location, values)
+            uniform.setter(values)
         except GLException:
             raise
 
@@ -210,22 +209,21 @@ class ShaderProgram:
 
     def _parse_all_uniforms(self):
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name = self.get_active_uniform(index)
+            uniform_name, uniform_type, uniform_size = self.query_uniform(index)
             location = self.get_uniform_location(uniform_name)
-            uniform_type = self.get_uniform_type(uniform_name)
-            uniform_size = self.get_uniform_size(uniform_name)
 
             try:
                 getter = _uniform_getters[uniform_type]
-                setter = _uniform_setters[uniform_type]
+                func, length = _uniform_setters[uniform_type]
+                setter = lambda value: func(location, length, (GLfloat * length)(*value))
             except KeyError:
                 raise GLException("Unsupported Uniform type")
 
-            self._uniforms[uniform_name] = self.Uniform(location, uniform_type, getter, setter)
+            self._uniforms[uniform_name] = self.Uniform(location, getter, setter)
 
     def _parse_all_attributes(self):
         for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
-            attrib_name = self.get_active_attrib(i)
+            attrib_name = self.get_attrib_name(i)
             attrib_type = self.get_attrib_type(attrib_name)
             location = self.get_attrib_location(attrib_name)
             self._attributes[attrib_name] = self.Attribute(location, attrib_type)
@@ -252,7 +250,7 @@ class ShaderProgram:
             glGetActiveAttrib(self._id, location, buf_size, None, size, attr_type, name_buf)
             return attr_type.value
 
-    def get_active_attrib(self, index):
+    def get_attrib_name(self, index):
         buf_size = 128
         size = c_int(0)
         attr_type = c_uint(0)
@@ -263,7 +261,10 @@ class ShaderProgram:
         except GLException:
             return None
 
-    def get_active_uniform(self, index):
+    def get_attrib_location(self, name):
+        return glGetAttribLocation(self._id, create_string_buffer(name.encode('ascii')))
+
+    def get_uniform_name(self, index):
         buf_size = 128
         size = c_int(0)
         attr_type = c_uint(0)
@@ -273,9 +274,6 @@ class ShaderProgram:
             return name_buf.value.decode()
         except GLException:
             return None
-
-    def get_attrib_location(self, name):
-        return glGetAttribLocation(self._id, create_string_buffer(name.encode('ascii')))
 
     def get_uniform_location(self, name):
         return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
@@ -304,6 +302,17 @@ class ShaderProgram:
             glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
             return size.value
 
+    def query_uniform(self, index):
+        buf_size = 128
+        usize = GLint()
+        utype = GLenum()
+        uname = create_string_buffer(buf_size)
+        try:
+            glGetActiveUniform(self._id, index, buf_size, None, usize, utype, uname)
+            return uname.value.decode(), utype.value, usize.value
+        except GLException:
+            raise
+
 # gl_Position = vec4(position.x * 2.0 / screen_width - 1.0,
 #                    position.y * -2.0 / screen_height + 1.0,
 #                    0.0, 1.0)
@@ -316,20 +325,19 @@ vertex_source = """#version 330 core
     out vec2 texture_coords;
 
     // TODO: make these a vec2
-    // uniform float width;
-    // uniform float height;
-    uniform vec2 size;
+    uniform float width;
+    uniform float height;
+    uniform vec3 size;
     uniform float zoom;
 
     void main()
     {
-        gl_Position = vec4(vertices.x / size.x - 1,
-                           vertices.y / size.y -1,
-                           vertices.z,
-                           vertices.w * zoom);
-
         gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
-
+        
+        //gl_Position = vec4(vertices.x / size.x - 1,
+        //                   vertices.y / size.y -1,
+        //                   vertices.z,
+        //                   vertices.w * zoom);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
