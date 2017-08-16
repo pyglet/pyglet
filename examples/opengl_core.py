@@ -3,6 +3,8 @@ import pyglet
 from pyglet.gl import *
 
 
+pyglet.options['debug_gl_shaders'] = True
+
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
@@ -13,8 +15,8 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 # label = pyglet.text.Label("test label")
 
 
-# vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
-#                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
+                                             ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
 batch = pyglet.graphics.Batch()
 
@@ -38,18 +40,21 @@ os.chdir('..')
 ###########################################################
 # Set the "zoom" uniform value.
 ###########################################################
-pyglet.graphics.default_group.shader_program.use_program()
-pyglet.graphics.default_group.shader_program['zoom'] = 2
+program = pyglet.graphics.default_group.shader_program
+program.use_program()
+program['zoom'] = 2
+
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
-# @window.event
-# def on_mouse_scroll(x, y, mouse, direction):
-#     program.use_program()
-#     program['zoom'] += direction / 4
-#     if program['zoom'] < 0.1:
-#         program['zoom'] = 0.1
+@window.event
+def on_mouse_scroll(x, y, mouse, direction):
+    if not program.active:
+        program.use_program()
+    program['zoom'] += direction / 4
+    if program['zoom'] < 0.1:
+        program['zoom'] = 0.1
 
 
 ###########################################################
@@ -62,7 +67,7 @@ def on_draw():
     window.clear()
     # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
     #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
-
+    # TODO: fix drawing vertex_lists
     # vertex_list.draw(GL_TRIANGLES)
 
     # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
@@ -74,4 +79,5 @@ def on_draw():
 
 if __name__ == "__main__":
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
+    # del pyglet.graphics.default_group._vert_shader
     pyglet.app.run()

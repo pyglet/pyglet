@@ -15,10 +15,36 @@ _shader_types = {
 }
 
 
-_uniform_types = {
+_uniform_getters = {
     GL_INT: glGetUniformiv,
     GL_FLOAT: glGetUniformfv,
     GL_FLOAT_VEC2: glGetUniformfv,
+}
+
+_uniform_setters = {
+    GL_FLOAT: glUniform1fv,
+    GL_FLOAT_VEC2: glUniform2fv,
+    GL_FLOAT_VEC3: glUniform3fv,
+    GL_FLOAT_VEC4: glUniform4fv,
+
+    GL_INT: glUniform1iv,
+    GL_INT_VEC2: glUniform2iv,
+    GL_INT_VEC3: glUniform3iv,
+    GL_INT_VEC4: glUniform4iv,
+
+    # TODO: test/implement these:
+    GL_FLOAT_MAT2: glUniformMatrix2fv,
+    GL_FLOAT_MAT3: glUniformMatrix3fv,
+    GL_FLOAT_MAT4: glUniformMatrix4fv,
+
+    GL_FLOAT_MAT2x3: glUniformMatrix2x3fv,
+    GL_FLOAT_MAT2x4: glUniformMatrix2x4fv,
+
+    GL_FLOAT_MAT3x2: glUniformMatrix3x2fv,
+    GL_FLOAT_MAT3x4: glUniformMatrix3x4fv,
+
+    GL_FLOAT_MAT4x2: glUniformMatrix4x2fv,
+    GL_FLOAT_MAT4x3: glUniformMatrix4x3fv,
 }
 
 
@@ -157,21 +183,22 @@ class ShaderProgram:
     # Improve the getting and setting of differnt uniform types:
     ############################################################
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, values):
         if key not in self._uniforms:
             raise KeyError("Uniform name was not found.")
         if not self._active:
             raise Exception("Shader Program is not active.")
 
         uniform = self._uniforms[key]
-        uniform_type = self._uniforms[key].uniform_type
-        # TODO: support setting other types
+        # TODO: store and use proper setter function
         try:
-            glUniform1f(uniform.location, value)
+            # uniform.setter(uniform.location, values)
+            glUniform1f(uniform.location, values)
         except GLException:
             raise
 
     def __getitem__(self, item):
+        # TODO: update this
         if item not in self._uniforms:
             raise KeyError("Uniform name was not found.")
         uniform = self._uniforms[item]
@@ -179,19 +206,22 @@ class ShaderProgram:
         retrieved = (GLfloat * 4)()
         uniform.getter(self._id, uniform.location, retrieved)
 
-        return retrieved[0:1]
+        return retrieved[0]
 
     def _parse_all_uniforms(self):
-        for i in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name = self.get_active_uniform(i)
+        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
+            uniform_name = self.get_active_uniform(index)
             location = self.get_uniform_location(uniform_name)
             uniform_type = self.get_uniform_type(uniform_name)
+            uniform_size = self.get_uniform_size(uniform_name)
+
             try:
-                getter = _uniform_types[uniform_type]
+                getter = _uniform_getters[uniform_type]
+                setter = _uniform_setters[uniform_type]
             except KeyError:
                 raise GLException("Unsupported Uniform type")
 
-            self._uniforms[uniform_name] = self.Uniform(location, uniform_type, getter, None)
+            self._uniforms[uniform_name] = self.Uniform(location, uniform_type, getter, setter)
 
     def _parse_all_attributes(self):
         for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
@@ -222,18 +252,6 @@ class ShaderProgram:
             glGetActiveAttrib(self._id, location, buf_size, None, size, attr_type, name_buf)
             return attr_type.value
 
-    def get_uniform_type(self, name):
-        location = self.get_uniform_location(name)
-        if location == -1:
-            raise GLException("Could not find Uniform named: {0}".format(name))
-        else:
-            buf_size = 128
-            size = GLint()
-            uni_type = GLenum()
-            name_buf = create_string_buffer(buf_size)
-            glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
-            return uni_type.value
-
     def get_active_attrib(self, index):
         buf_size = 128
         size = c_int(0)
@@ -262,6 +280,29 @@ class ShaderProgram:
     def get_uniform_location(self, name):
         return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
 
+    def get_uniform_type(self, name):
+        location = self.get_uniform_location(name)
+        if location == -1:
+            raise GLException("Could not find Uniform named: {0}".format(name))
+        else:
+            buf_size = 128
+            size = GLint()
+            uni_type = GLenum()
+            name_buf = create_string_buffer(buf_size)
+            glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
+            return uni_type.value
+
+    def get_uniform_size(self, name):
+        location = self.get_uniform_location(name)
+        if location == -1:
+            raise GLException("Could not find Uniform named: {0}".format(name))
+        else:
+            buf_size = 128
+            size = GLint()
+            uni_type = GLenum()
+            name_buf = create_string_buffer(buf_size)
+            glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
+            return size.value
 
 # gl_Position = vec4(position.x * 2.0 / screen_width - 1.0,
 #                    position.y * -2.0 / screen_height + 1.0,
@@ -282,11 +323,14 @@ vertex_source = """#version 330 core
 
     void main()
     {
-        //gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
         gl_Position = vec4(vertices.x / size.x - 1,
                            vertices.y / size.y -1,
                            vertices.z,
                            vertices.w * zoom);
+
+        gl_Position = vec4(vertices.x, vertices.y, vertices.z, vertices.w * zoom);
+
+
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -298,7 +342,7 @@ fragment_source = """#version 330 core
     in vec2 texture_coords;
     out vec4 final_colors;
 
-    uniform sampler2D our_texture;
+    // uniform sampler2D our_texture;
 
 
     void main()
