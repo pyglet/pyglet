@@ -146,12 +146,9 @@ class SpriteGroup(graphics.DefaultGroup):
         self.blend_dest = blend_dest
 
         self.set_state()
-        self.shader_program['width'] = 540
-        self.shader_program['height'] = 540
 
     def set_state(self):
         super(SpriteGroup, self).set_state()
-        self.shader_program['zoom'] = 1
 
         # glEnable(self.texture.target)
         glBindTexture(self.texture.target, self.texture.id)

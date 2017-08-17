@@ -3,7 +3,7 @@ import pyglet
 from pyglet.gl import *
 
 
-pyglet.options['debug_gl_shaders'] = True
+# pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
@@ -20,16 +20,19 @@ vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5,
 
 batch = pyglet.graphics.Batch()
 
+
+def create_quad_vertex_list(x, y, z, width, height):
+    return x, y, z, x + width, y, z, x + width, y + height, z, x, y + height, z
+
+
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('v3f', (-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0)),
-                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),)
-                  # ('t3f', (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)))
+                  ('v3f', create_quad_vertex_list(200, 200, 0, 100, 100)),
+                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 
 # TODO: Add code to send the proper data to the uniform.
-os.chdir('..')
+# os.chdir('..')
 # img = pyglet.image.load("examples/pyglet.png")
-# # tex = img.texture
 # sprite = pyglet.sprite.Sprite(img=img, x=100, y=100, batch=batch)
 # sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
 # sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
@@ -42,7 +45,10 @@ os.chdir('..')
 ###########################################################
 program = pyglet.graphics.default_group.shader_program
 program.use_program()
-program['zoom'] = 2
+# program['zoom'] = 1
+program['size'] = window.width, window.height
+print("zoom", program['zoom'])
+print("size", program['size'])
 
 
 ##########################################################
