@@ -77,7 +77,6 @@ _gl_usages = {
     'static': GL_STATIC_DRAW,
     'dynamic': GL_DYNAMIC_DRAW,
     'stream': GL_STREAM_DRAW,
-    'none': GL_STREAM_DRAW_ARB,  # Force no VBO
 }
 
 
@@ -93,17 +92,16 @@ def _nearest_pow2(v):
     return v + 1
 
 
-def create_attribute_usage(format):
+def create_attribute_usage(shader_program_id, format):
     """Create an attribute and usage pair from a format string.  The
     format string is as documented in `pyglet.graphics.vertexattribute`, with
     the addition of an optional usage component::
 
-        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream' | 'none') )?
+        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream') )?
 
     If the usage is not given it defaults to 'dynamic'.  The usage corresponds
     to the OpenGL VBO usage hint, and for ``static`` also indicates a
-    preference for interleaved arrays.  If ``none`` is specified a buffer
-    object is not created, and vertex data is stored in system memory.
+    preference for interleaved arrays.
 
     Some examples:
 
@@ -116,19 +114,18 @@ def create_attribute_usage(format):
     """
     match = _usage_format_re.match(format)
     attribute_format = match.group('attribute')
-    attribute = vertexattribute.create_attribute(attribute_format)
+    attribute = vertexattribute.create_attribute(shader_program_id, attribute_format)
     usage = match.group('usage')
     if usage:
-        vbo = not usage == 'none'
         usage = _gl_usages[usage]
     else:
         usage = GL_DYNAMIC_DRAW
-        vbo = True
+    vbo = True
 
-    return (attribute, usage, vbo)
+    return attribute, usage, vbo
 
 
-def create_domain(*attribute_usage_formats):
+def create_domain(shader_program_id, *attribute_usage_formats):
     """Create a vertex domain covering the given attribute usage formats.
     See documentation for `create_attribute_usage` and
     `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
@@ -136,11 +133,12 @@ def create_domain(*attribute_usage_formats):
 
     :rtype: `VertexDomain`
     """
-    attribute_usages = [create_attribute_usage(f) for f in attribute_usage_formats]
+    attribute_usages = [create_attribute_usage(shader_program_id, f)
+                        for f in attribute_usage_formats]
     return VertexDomain(attribute_usages)
 
 
-def create_indexed_domain(*attribute_usage_formats):
+def create_indexed_domain(shader_program_id, *attribute_usage_formats):
     """Create an indexed vertex domain covering the given attribute usage
     formats.  See documentation for `create_attribute_usage` and
     `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
@@ -148,7 +146,8 @@ def create_indexed_domain(*attribute_usage_formats):
 
     :rtype: `VertexDomain`
     """
-    attribute_usages = [create_attribute_usage(f) for f in attribute_usage_formats]
+    attribute_usages = [create_attribute_usage(shader_program_id, f)
+                        for f in attribute_usage_formats]
     return IndexedVertexDomain(attribute_usages)
 
 
@@ -312,12 +311,9 @@ class VertexDomain(object):
             if primcount == 0:
                 pass
             elif primcount == 1:
-                # TODO: remove print statements:
-                print("Domain draw primcount 1")
                 # Common case
                 glDrawArrays(mode, starts[0], sizes[0])
             else:
-                print("Domain draw primcount > 1")
                 starts = (GLint * primcount)(*starts)
                 sizes = (GLsizei * primcount)(*sizes)
                 glMultiDrawArrays(mode, starts, sizes, primcount)
@@ -724,8 +720,6 @@ class IndexedVertexDomain(VertexDomain):
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         """
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)        GL3
-
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -761,8 +755,6 @@ class IndexedVertexDomain(VertexDomain):
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
-
-        # glPopClientAttrib()                                              GL3
 
 
 class IndexedVertexList(VertexList):

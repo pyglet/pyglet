@@ -497,9 +497,9 @@ class Batch(object):
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.create_indexed_domain(*formats)
+                domain = vertexdomain.create_indexed_domain(group.shader_program.id, *formats)
             else:
-                domain = vertexdomain.create_domain(*formats)
+                domain = vertexdomain.create_domain(group.shader_program.id, *formats)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True
@@ -668,7 +668,7 @@ class Group(object):
         :Parameters:
             `parent` : `Group`
                 Group to contain this group; its state will be set before this
-                state's.
+                state's.vertex_source
 
         """
         self.parent = parent
@@ -719,6 +719,7 @@ class DefaultGroup(Group):
         self._vert_shader = Shader(vertex_source, 'vertex')
         self._frag_shader = Shader(fragment_source, 'fragment')
         self.shader_program = ShaderProgram(self._vert_shader, self._frag_shader)
+
         # TODO: remove this:
         print("Created DefaultGroup!")
 

@@ -338,13 +338,13 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    uniform vec2 size;
+    uniform vec2 window_size;
     uniform float zoom = 1.0;
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / size.x - 1.0,
-                           vertices.y * 2.0 / size.y - 1.0,
+        gl_Position = vec4(vertices.x * 2.0 / window_size.x - 1.0,
+                           vertices.y * 2.0 / window_size.y - 1.0,
                            vertices.z,
                            vertices.w * zoom);
 
@@ -359,7 +359,7 @@ fragment_source = """#version 330 core
     in vec2 texture_coords;
     out vec4 final_colors;
 
-    // uniform sampler2D our_texture;
+    uniform sampler2D our_texture;
 
 
     void main()
