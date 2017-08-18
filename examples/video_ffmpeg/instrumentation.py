@@ -10,7 +10,7 @@ Responsabilities
 
 # events definition
 mp_events = {
-    "version": 1.0,
+    "version": 1.1,
 #   <evname>: {
 #       "desc": <description used in reports to mention the event>,
 #       "update_names": <list of names of fields updated>,
@@ -47,26 +47,26 @@ mp_events = {
 
     "p.P.ut.1.0": {
         "desc": "Enter update_texture",
-        "update_names": ["evname", "pyglet_dt", "target_time", "wall_time"],
+        "update_names": ["evname", "pyglet_dt", "current_time", "wall_time"],
         "other_fields": [],
         "test_cases": [("p.P.ut.1.0", 0.02, 2.31, 1.21),
                        ("p.P.ut.1.0", 0.02, None, 1.21),
                        ("p.P.ut.1.0", None, 2.31, 1.21)]
         },
     "p.P.ut.1.2": {
-        "desc": "Set target_time from audio_time because target_time was None,",
-        "update_names": ["evname", "target_time"],
+        "desc": "Set current_time from audio_time because current_time was None,",
+        "update_names": ["evname", "current_time"],
         "other_fields": [],
         "test_cases": [("p.P.ut.1.2", 2.31), ("p.P.ut.1.2", None)]
         },
     "p.P.ut.1.3": {
-        "desc": "Early return doing nothing because target_time and audio_time were both None",
+        "desc": "Early return doing nothing because current_time and audio_time were both None",
         "update_names": ["evname", "rescheduling_time"],
         "other_fields": [],
         "test_cases": [("p.P.ut.1.3",)]
         },
     "p.P.ut.1.4": {
-        "desc": "Early return doing nothing because target_time <= video_time, ",
+        "desc": "Early return doing nothing because current_time <= video_time, ",
         "update_names": ["evname", "rescheduling_time"],
         "other_fields": ["video_time"],
         "test_cases": [("p.P.ut.1.4", 1.21)]
@@ -74,7 +74,7 @@ mp_events = {
     "p.P.ut.1.5": {
         "desc": "Discard video frame too old,",
         "update_names": ["evname", "video_time"],
-        "other_fields": ["target_time"],
+        "other_fields": ["current_time"],
         "test_cases": [("p.P.ut.1.5", 1.21)]
         },
     "p.P.ut.1.6": {
@@ -138,7 +138,7 @@ class MediaPlayerStateIterator(object):
         "evnum": -1,  # synthetic, ordinal last event processed
         "sample": None,
         "wall_time": None,
-        "target_time": None,
+        "current_time": None,
         "seek_to_time": None,
         "pyglet_dt": None,
         "video_time": None,
@@ -198,7 +198,7 @@ class TimelineBuilder(object):
     def pre(self, event, st):
         if event[0] == "p.P.ut.1.0":
             p = (st["wall_time"], st["pyglet_time"], st["video_time"],
-                 st["target_time"], st["frame_num"], st["rescheduling_time"])
+                 st["current_time"], st["frame_num"], st["rescheduling_time"])
             self.timeline.append(p)
 
     def get_timeline(self):
