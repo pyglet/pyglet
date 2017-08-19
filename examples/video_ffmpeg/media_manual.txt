@@ -141,10 +141,10 @@ Here's a little more detail on what's going on with audio/video decoding:
 Current problem
 ================
 
-The media player has some noticible stuttering - especially on Linux platforms. Tests
-on the Windows platform already show that DirectSound doesn't provide a consistent
-audio time - which causes audio and video to fall out of sync. Frames are then skipped,
-and this creates unpleasant visual effects.
+The media player has some noticible stuttering - especially on Linux platforms.
+Tests on the Windows platform already show that DirectSound doesn't provide a
+consistent audio time - which causes audio and video to fall out of sync. Frames
+are then skipped, and this creates unpleasant visual effects.
 
 
 Proposed solution
@@ -155,9 +155,9 @@ both the video and the audio play. There is already existing code for playing
 video without audio data: `SilentTimeAudioPlayer` found in
 media/drivers/silent.py.
 
-As a first step,  I'd make the video synchronize with the proposed master clock and
-leave the audio untouched. I'd then work on synchronizing
-the audio with the master clock as a second step.
+As a first step,  I'd make the video synchronize with the proposed master clock
+andleave the audio untouched. I'd then work on synchronizing the audio with the
+master clock as a second step.
 
 It's easy enough to synchronize video with the master clock as it's only a
 matter of delaying the video texture enough to match its timestamp with the
@@ -172,7 +172,8 @@ shorter or longer (clipped or padded) depending on what is needed.
 Helpful tools
 =============
 I've found that using the binary ffprobe is a good way to explore the content
-of a media file. Here's a couple of things which might be interesting and helpful:
+of a media file. Here's a couple of things which might be
+interesting and helpful:
 
 ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames
 
