@@ -6,65 +6,64 @@ TOC
 
 Domain knowledge
 ================
-This tutorial http://dranger.com/ffmpeg/ffmpeg.html is a good intro to build
+This tutorial http://dranger.com/ffmpeg/ffmpeg.html is a good intro for building
 some domain knowledge. Bear in mind that the tutorial is rather old, and
-some ffmpeg functions became deprecated. But the basics are still valid.
+some ffmpeg functions have become deprecated - but the basics are still valid.
 
 
 Current code architecture
 =========================
-The overview of the media code is the following.
+The overview of the media code is the following:
 
 Source
 ------
 Found in media/sources folder.
 
-Sources represent the data containing the media information. It could be
-coming from the disk or created in memory. Its responsability is to read the
-data and provide audio and/or video data out of its stream. So it's bascically
-a *producer*. One of the implementations of a `StreamingSource` is the 
-`FFmpegSource`. It implements the `Source` base class by calling functions 
-found in media/sources/av.py which offer the basic functionalities for 
-handling media streams, like opening a file, reading stream info, reading
-a packet and decoding audio and video packets.
+Sources represent data containing media information. They can
+come from disk or be created in memory. A Sources' responsibility is to read
+data into and provide audio and/or video data out of its stream. Essentially, it's
+a *producer*. One implementation of a `StreamingSource` is `FFmpegSource`.
+It implements the `Source` base class by calling functions
+found in media/sources/av.py which offer basic functionalities for
+handling media streams, such as opening a file, reading stream info, reading
+a packet, and decoding audio and video packets.
 
 Player
 ------
 Found in media/player.py
 
-The player is the main object that drives the source. It maintains a queue of 
-sources that it can play sequentially. Its responsabilities are to play, pause,
-seek into the source.
+The player is the main object that drives the source. It maintains a queue of
+sources that it can play sequentially. Its responsibilities are to play, pause,
+and seek into the source.
 
 If the source contains audio, the Player will instantiate an `AudioPlayer` by
-asking the `SoundDriver` to instantiate the appropriate `AudioPlayer`. The 
-`AudioDriver` is a singleton created according to which drivers are available
-on a given plateform. Currently supported sound drivers are: DirectSound, 
-Pulse and AudioAL.
+asking the `SoundDriver` to create an appropriate `AudioPlayer` for the given platform. The
+`AudioDriver` is a singleton created according to which drivers are available.
+Currently supported sound drivers are: DirectSound, Pulse and AudioAL.
 
-Finally if the source contains video, the Player has a `texture` property 
-with the current video frame. 
+Finally, if the source contains video, the Player has a `texture` property
+with the current video frame.
 
 AudioPlayer
 -----------
 Found in media/drivers
 
-The AudioPlayer is responsible only for the audio data. It can read, pause
-and seek into the `Source` and can report the current audio time.
+The AudioPlayer is responsible only for the audio data. It can read, pause,
+and seek into the `Source` - and can report the current audio time.
 
-In order to accomplish this, the audio player keeps a reference to the
+In order to accomplish these tasks, the audio player keeps a reference to the
 `AudioDriver` singleton.
 
 AudioDriver
 -----------
 Found in media/drivers
 
-The AudioDriver is the wrapper around the low level sound driver available
-on the plateform. It's a singleton. It can create an `AudioPlayer` appropriate
-for the current AudioDriver.
+The AudioDriver is a wrapper around the low-level sound driver available
+on the platform. It's a singleton. It can create an `AudioPlayer` appropriate
+for the current `AudioDriver`.
 
 It contains a `PlayerWorker` which is responsible for constantly filling up
-all the created `AudioPlayer` sound buffers using their `Source` data. It's
-implemented using a Thread which iterates over each players and fills their
-corresponding sound buffer. As the `AudioBuffer` is a singleton, so is this
+all created `AudioPlayer` sound buffers using their `Source` data. It is
+implemented using a Thread that iterates over each player and fills its
+corresponding sound buffer. Just as the `AudioBuffer` is a singleton - so is this
 `PlayerWorker`.
