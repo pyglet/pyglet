@@ -1,4 +1,6 @@
 syntax: glob
+.hgrc
+*~
 *.pyc
 *.pyo
 _build
