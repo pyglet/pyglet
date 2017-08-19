@@ -3,13 +3,21 @@ Pyglet media player documentation
 TOC
     Domain knowledge
     Current code architecture
+    Current problems
+    Proposed solution
+    Helpful tools
 
 Domain knowledge
 ================
-This tutorial http://dranger.com/ffmpeg/ffmpeg.html is a good intro for building
-some domain knowledge. Bear in mind that the tutorial is rather old, and
-some ffmpeg functions have become deprecated - but the basics are still valid.
+This tutorial http://dranger.com/ffmpeg/ffmpeg.html is a good intro for 
+building some domain knowledge. Bear in mind that the tutorial is rather old, 
+and some ffmpeg functions have become deprecated - but the basics are still 
+valid.
 
+In FFmpeg base code there is a player called ffplay.c which is also a very
+good way to see how they manage things. Particularly they use some newer
+FFmpeg functions while the current pyglet media code still uses deprecated
+functions.
 
 Current code architecture
 =========================
@@ -19,10 +27,10 @@ Source
 ------
 Found in media/sources folder.
 
-Sources represent data containing media information. They can
+`Source`s represent data containing media information. They can
 come from disk or be created in memory. A Sources' responsibility is to read
-data into and provide audio and/or video data out of its stream. Essentially, it's
-a *producer*. One implementation of a `StreamingSource` is `FFmpegSource`.
+data into and provide audio and/or video data out of its stream. Essentially, 
+it's a *producer*. One implementation of a `StreamingSource` is `FFmpegSource`.
 It implements the `Source` base class by calling functions
 found in media/sources/av.py which offer basic functionalities for
 handling media streams, such as opening a file, reading stream info, reading
@@ -33,13 +41,14 @@ Player
 Found in media/player.py
 
 The player is the main object that drives the source. It maintains a queue of
-sources that it can play sequentially. Its responsibilities are to play, pause,
+sources that it can play sequentially. Its responsibilities are to play, pause
 and seek into the source.
 
 If the source contains audio, the Player will instantiate an `AudioPlayer` by
-asking the `SoundDriver` to create an appropriate `AudioPlayer` for the given platform. The
-`AudioDriver` is a singleton created according to which drivers are available.
-Currently supported sound drivers are: DirectSound, Pulse and AudioAL.
+asking the `SoundDriver` to create an appropriate `AudioPlayer` for the given 
+platform. The `AudioDriver` is a singleton created according to which drivers 
+are available. Currently supported sound drivers are: DirectSound, Pulse and 
+AudioAL.
 
 Finally, if the source contains video, the Player has a `texture` property
 with the current video frame.
@@ -48,7 +57,7 @@ AudioPlayer
 -----------
 Found in media/drivers
 
-The AudioPlayer is responsible only for the audio data. It can read, pause,
+The `AudioPlayer` is responsible only for the audio data. It can read, pause,
 and seek into the `Source` - and can report the current audio time.
 
 In order to accomplish these tasks, the audio player keeps a reference to the
@@ -65,5 +74,106 @@ for the current `AudioDriver`.
 It contains a `PlayerWorker` which is responsible for constantly filling up
 all created `AudioPlayer` sound buffers using their `Source` data. It is
 implemented using a Thread that iterates over each player and fills its
-corresponding sound buffer. Just as the `AudioBuffer` is a singleton - so is this
-`PlayerWorker`.
+corresponding sound buffer. Just as the `AudioBuffer` is a singleton - so is 
+this `PlayerWorker`. The thread normally sleeps. When one `Player` plays, it
+adds its `AudioPlayer` to the `PlayerWorker` set of players. This wakes up
+the thread which start to fill up repeatedly the `AudioPlayer` sound buffer.
+
+Normal operation of the `Player`
+--------------------------------
+The client code normally instantiate a media player this way:
+
+```python
+player = pyglet.media.Player()
+source = pyglet.media.load(filename)
+player.queue(source)
+player.play()
+```
+
+When the client code runs `player.play()` here is what is going on. First the
+player check if the media has some audio. Let's say it has. It will check if
+it already has an `AudioPlayer`. It would not have one in this case as it has
+not been playing anything yet. So it will get the global `SoundDriver` and
+ask it to instantiate a new `AudioPlayer`. Then the newly created `AudioPlayer`
+would run its `play` code. It will place itself in the `SoundDriver`'s 
+`PlayerWorker` set of players and wake up that thread. The `PlayerWorker` 
+thread would iterate over this only audio player in the set and ask it to 
+refill its audio buffer until it's full. It would then sleep a bit and check 
+again if there is enough empty space in the audio player sound buffer to 
+refill it.
+
+When audio data is required by the `AudioPlayer`, it will ask its `Source` to 
+check its buffered audio data queue for available audio data. If the queue is
+empty, it will read the next packet from the stream. There is no guarantee 
+that it will be an audio packet, it could be a video packet. 
+
+If the packet is a video frame, the source will place the packet in its video 
+queue and launch a thread to decode the video packet. Once the thread finishes 
+decoding the video packet, it will attach the resulting texture to the packet 
+`image` attribute.
+
+If the packet is an audio packet, it will be immediately decoded and added to
+the buffered audio data queue.
+
+Continuing with the `player.play()` method, after calling the `play` method
+of its `AudioPlayer` it would schedule its `update_texture` method in pyglet
+event loop. That method is responsible for retrieving the next video image 
+with its timestamp and synchronize it with the audio. It achieves this goal by
+asking the current audio time from the `AudioPlayer`. It compares this time
+with the next image timestamp and reschedule itself with the right delay
+to update its `texture` property at the appropriate time. If for some reasons
+the next video image timestamp is in the past of the current audio time, that
+image is skipped until an image with an appropriate timestamp is found.
+
+Current problems
+================
+
+The media player shows some stutterness, especially on Linux platforms. Tests
+made on Windows already shows that DirectSound does not provide a consistent
+audio time. This obviously causes some frames to be skipped and creates this
+unpleasing visual effect.
+
+Proposed solution
+=================
+
+It would be better to have an external master clock which would synchronize
+both the video and the audio play. There exists already some code for playing
+video without audio data: `SilentTimeAudioPlayer` found in 
+media/drivers/silent.py.
+
+As a first step I would make the video synchronize with the master clock and
+leave the audio untouched. As a second step I would work on synchronizing
+the audio with the master clock.
+
+It's easy enough to synchronize video with the master clock as it's only a 
+matter of delaying enough the video texture to match its timestamp with the
+master clock.
+
+For the audio, synchronizing is a bit more difficult, as we cannot pause or 
+make the audio go faster. There is a FFmpeg function called 
+`swr_set_compensation` which would allow the decoded audio to be slightly
+shorter or longer depending on what is needed.
+
+Helpful tools
+=============
+I found out that using the binary ffprobe is a good way to explore the content
+of a media file. Here are a couple of things which might be interesting.
+
+ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames
+
+This will show information about each frame in the file. You can select to
+only show audio or video frame with this flag
+
+ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames -select_streams v
+
+You can use `v` for video and `a` for audio.
+
+You can also ask to only see a handful of frame information this way
+
+ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames 
+-select_streams v -show_entries frame=pkt_pts,pict_type
+
+And finally you can get a more compact view with the additional flag
+
+ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames 
+-select_streams v -show_entries frame=pkt_pts,pict_type -of compact
