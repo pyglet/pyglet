@@ -145,22 +145,22 @@ class SpriteGroup(graphics.DefaultGroup):
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
-        self.set_state()
+        # self.set_state()
 
     def set_state(self):
-        super(SpriteGroup, self).set_state()
+        # super(SpriteGroup, self).set_state()
+        self.shader_program.use_program()
 
-        # glEnable(self.texture.target)
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
-
         # TODO: replicate this part:
-        # glPushAttrib(GL_COLOR_BUFFER_BIT)
         # glEnable(GL_BLEND)
         # glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
-        super(SpriteGroup, self).unset_state()
+        # super(SpriteGroup, self).unset_state()
+        self.shader_program.stop_program()
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.texture)
@@ -693,9 +693,11 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
+        # self._group.shader_program.use_program()
         self._group.set_state_recursive()
         self._vertex_list.draw(GL_TRIANGLES)
         self._group.unset_state_recursive()
+        # self._group.shader_program.stop_program()
 
     if _is_epydoc:
         def on_animation_end(self):

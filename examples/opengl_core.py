@@ -26,16 +26,21 @@ def create_quad_vertex_list(x, y, z, width, height):
 
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('v3f', create_quad_vertex_list(200, 200, 0, 100, 100)),
+                  ('v3f', create_quad_vertex_list(200, 200, 0, 55, 55)),
+                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
+                  ('t2f', (0, 0,  1, 0,  1, 1,  0, 1)))
+
+batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
+                  ('v2f', (40, 40, 40+50, 40, 40+50, 40+50, 40, 40+50)),
                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 
 # TODO: Add code to send the proper data to the uniform.
-# os.chdir('..')
-# img = pyglet.image.load("examples/pyglet.png")
-# sprite = pyglet.sprite.Sprite(img=img, x=100, y=100, batch=batch)
-# sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
-# sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
+os.chdir('..')
+img = pyglet.image.load("examples/pyglet.png")
+sprite = pyglet.sprite.Sprite(img=img, x=10, y=10, batch=batch)
+sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
+sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
 # sprite4 = pyglet.sprite.Sprite(img=img, x=300, y=200, batch=batch)
 # sprite5 = pyglet.sprite.Sprite(img=img, x=300, y=300, batch=batch)
 
@@ -45,10 +50,11 @@ batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
 ###########################################################
 program = pyglet.graphics.default_group.shader_program
 program.use_program()
-# program['zoom'] = 1
-program['size'] = window.width, window.height
+program['window_size'] = window.width, window.height
+
 print("zoom", program['zoom'])
-print("size", program['size'])
+print("size", program['window_size'])
+print("texture loc", program['our_texture'])
 
 
 ##########################################################
@@ -58,15 +64,13 @@ print("size", program['size'])
 def on_mouse_scroll(x, y, mouse, direction):
     if not program.active:
         program.use_program()
-    program['zoom'] += direction / 4
+    program['zoom'] += direction / 32
     if program['zoom'] < 0.1:
         program['zoom'] = 0.1
 
 
 ###########################################################
-# Shader Programs can be used as context managers as shown
-# below. You can also manually call the use_program and
-# stop_program methods on the Program object, as needed.
+#
 ###########################################################
 @window.event
 def on_draw():
@@ -80,10 +84,12 @@ def on_draw():
     #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
+    # glActiveTexture(GL_TEXTURE0)
+    # glBindTexture(img.texture.target, img.texture.id)
+
     batch.draw()
 
 
 if __name__ == "__main__":
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
-    # del pyglet.graphics.default_group._vert_shader
     pyglet.app.run()

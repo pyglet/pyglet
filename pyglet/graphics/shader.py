@@ -31,6 +31,8 @@ _uniform_setters = {
     GL_FLOAT_VEC3: (GLfloat, glUniform3fv, 3, 1),
     GL_FLOAT_VEC4: (GLfloat, glUniform4fv, 4, 1),
 
+    GL_SAMPLER_2D: (GLint, glUniform1i, 1, 1),
+
     # TODO: test/implement these:
     # GL_FLOAT_MAT2: glUniformMatrix2fv,
     # GL_FLOAT_MAT3: glUniformMatrix3fv,
@@ -364,7 +366,7 @@ fragment_source = """#version 330 core
 
     void main()
     {
-        final_colors = vertex_colors;
-        // final_colors = texture(our_texture, texture_coords) * vertex_colors;
+        // final_colors = vertex_colors;
+        final_colors = texture(our_texture, texture_coords) * vertex_colors;
     }
 """
