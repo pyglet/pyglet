@@ -35,7 +35,7 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 import buffered_logger as bl
-
+import time
 
 import pyglet
 from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
@@ -75,7 +75,8 @@ class Player(pyglet.event.EventDispatcher):
         # Desired play state (not an indication of actual state).
         self._playing = False
 
-        self._paused_time = 0.0
+        self._time = 0.0
+        self._systime = None
 
     def queue(self, source):
         if isinstance(source, SourceGroup):
@@ -111,11 +112,14 @@ class Player(pyglet.event.EventDispatcher):
                 if not self._texture:
                     self._create_texture()
                 pyglet.clock.schedule_once(self.update_texture, 0)
+            self._systime = time.time()
         else:
             if self._audio_player:
                 self._audio_player.stop()
 
             pyglet.clock.unschedule(self.update_texture)
+            self._time = self._get_time()
+            self._systime = None
 
     def play(self): 
         self._set_playing(True)
@@ -123,11 +127,11 @@ class Player(pyglet.event.EventDispatcher):
     def pause(self):
         self._set_playing(False)
 
-        if self._audio_player:
-            time = self._audio_player.get_time()
-            time = self._groups[0].translate_timestamp(time)
-            if time is not None:
-                self._paused_time = time
+        # if self._audio_player:
+        #     time = self._audio_player.get_time()
+        #     time = self._groups[0].translate_timestamp(time)
+        #     if time is not None:
+        #         self._time = time
 
     def delete(self):
         self.pause()
@@ -176,7 +180,7 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.sk", time)
 
-        self._paused_time = time
+        self._time = time
         self.source.seek(time)
         if self._audio_player:
             # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
@@ -227,15 +231,20 @@ class Player(pyglet.event.EventDispatcher):
     playing = property(lambda self: self._playing)
 
     def _get_time(self):
-        time = None
-        if self._playing and self._audio_player:
-            time = self._audio_player.get_time()
-            time = self._groups[0].translate_timestamp(time)
-
-        if time is None:
-            return self._paused_time
+        if self._systime is None:
+            now = self._time
         else:
-            return time
+            now = time.time() - self._systime + self._time
+        return now
+        # time = None
+        # if self._playing and self._audio_player:
+        #     time = self._audio_player.get_time()
+        #     time = self._groups[0].translate_timestamp(time)
+
+        # if time is None:
+        #     return self._time
+        # else:
+        #     return time
 
     time = property(_get_time)
 
@@ -261,15 +270,15 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
         if time is None:
-            time = self._audio_player.get_time()
+            time = self.time
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.2", time)
-        if time is None:
-            if bl.logger is not None:
-                delay = 1. / 30
-                bl.logger.log("p.P.ut.1.3", delay)
-            pyglet.clock.schedule_once(self.update_texture, delay)
-            return
+        # if time is None:
+        #     if bl.logger is not None:
+        #         delay = 1. / 30
+        #         bl.logger.log("p.P.ut.1.3", delay)
+        #     pyglet.clock.schedule_once(self.update_texture, delay)
+        #     return
 
         if (self._last_video_timestamp is not None and 
             time <= self._last_video_timestamp):
