@@ -145,11 +145,8 @@ class SpriteGroup(graphics.DefaultGroup):
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
-        # self.set_state()
-
     def set_state(self):
-        # super(SpriteGroup, self).set_state()
-        self.shader_program.use_program()
+        super(SpriteGroup, self).set_state()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -157,10 +154,13 @@ class SpriteGroup(graphics.DefaultGroup):
         # glEnable(GL_BLEND)
         # glBlendFunc(self.blend_src, self.blend_dest)
 
+        print("zoom", self.shader_program['zoom'])
+        print("size", self.shader_program['window_size'])
+        print("texture loc", self.shader_program['our_texture'])
+
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
-        # super(SpriteGroup, self).unset_state()
-        self.shader_program.stop_program()
+        super(SpriteGroup, self).unset_state()
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.texture)

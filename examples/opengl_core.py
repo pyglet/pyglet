@@ -38,11 +38,21 @@ batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
 # TODO: Add code to send the proper data to the uniform.
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
+red = pyglet.image.SolidColorImagePattern((255, 0, 0, 255)).create_image(50, 50)
+green = pyglet.image.SolidColorImagePattern((0, 255, 0, 255)).create_image(50, 50)
+blue = pyglet.image.SolidColorImagePattern((0, 0, 255, 255)).create_image(50, 50)
+white = pyglet.image.SolidColorImagePattern((255, 255, 255, 255)).create_image(50, 50)
+
 sprite = pyglet.sprite.Sprite(img=img, x=10, y=10, batch=batch)
-sprite2 = pyglet.sprite.Sprite(img=img, x=200, y=200, batch=batch)
-sprite3 = pyglet.sprite.Sprite(img=img, x=300, y=100, batch=batch)
-# sprite4 = pyglet.sprite.Sprite(img=img, x=300, y=200, batch=batch)
-# sprite5 = pyglet.sprite.Sprite(img=img, x=300, y=300, batch=batch)
+spritex = pyglet.sprite.Sprite(img=img, x=20, y=20, batch=batch)
+spritey = pyglet.sprite.Sprite(img=img, x=30, y=30, batch=batch)
+spritez = pyglet.sprite.Sprite(img=img, x=40, y=40, batch=batch)
+spritea = pyglet.sprite.Sprite(img=img, x=50, y=50, batch=batch)
+
+# sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=100, batch=batch)
+# sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=200, batch=batch)
+# sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=300, batch=batch)
+# sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=400, batch=batch)
 
 
 ###########################################################
@@ -67,6 +77,7 @@ def on_mouse_scroll(x, y, mouse, direction):
     program['zoom'] += direction / 32
     if program['zoom'] < 0.1:
         program['zoom'] = 0.1
+    program.stop_program()
 
 
 ###########################################################
@@ -88,6 +99,11 @@ def on_draw():
     # glBindTexture(img.texture.target, img.texture.id)
 
     batch.draw()
+
+    for c in batch._draw_list:
+        print(c)
+
+    print(len(batch._draw_list))
 
 
 if __name__ == "__main__":

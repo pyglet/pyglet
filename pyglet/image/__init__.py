@@ -196,7 +196,7 @@ def load(filename, file=None, decoder=None):
                     return image
                 except _codecs.ImageDecodeException as e:
                     if (not first_exception or
-                                first_exception.exception_priority < e.exception_priority):
+                            first_exception.exception_priority < e.exception_priority):
                         first_exception = e
                     file.seek(0)
 
@@ -713,8 +713,7 @@ class ImageData(AbstractImage):
         self._set_format(fmt)
 
     def _get_data(self):
-        if self._current_pitch != self.pitch or \
-                        self._current_format != self.format:
+        if self._current_pitch != self.pitch or self._current_format != self.format:
             self._current_data = self._convert(self.format, self.pitch)
             self._current_format = self.format
             self._current_pitch = self.pitch
@@ -840,14 +839,13 @@ class ImageData(AbstractImage):
         :rtype: cls or cls.region_class
         """
         internalformat = self._get_internalformat(self.format)
-        texture = cls.create(self.width, self.height, internalformat,
-                             rectangle, force_rectangle)
+        texture = cls.create(self.width, self.height, internalformat, rectangle, force_rectangle)
+
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        self.blit_to_texture(texture.target, texture.level,
-                             self.anchor_x, self.anchor_y, 0, None)
+        self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, None)
 
         return texture
 
@@ -947,49 +945,16 @@ class ImageData(AbstractImage):
         data_pitch = abs(self._current_pitch)
 
         # Determine pixel format from format string
-        matrix = None
         format, type = self._get_gl_format_and_type(data_format)
         if format is None:
-            if (len(data_format) in (3, 4) and
-                    gl_info.have_extension('GL_ARB_imaging')):
-                # Construct a color matrix to convert to GL_RGBA
-                def component_column(component):
-                    try:
-                        pos = 'RGBA'.index(component)
-                        return [0] * pos + [1] + [0] * (3 - pos)
-                    except ValueError:
-                        return [0, 0, 0, 0]
+            data_format = {1: 'L',
+                           2: 'LA',
+                           3: 'RGB',
+                           4: 'RGBA'}.get(len(data_format))
+            format, type = self._get_gl_format_and_type(data_format)
 
-                # pad to avoid index exceptions
-                lookup_format = data_format + 'XXX'
-                matrix = (component_column(lookup_format[0]) +
-                          component_column(lookup_format[1]) +
-                          component_column(lookup_format[2]) +
-                          component_column(lookup_format[3]))
-                format = {
-                    3: GL_RGB,
-                    4: GL_RGBA}.get(len(data_format))
-                type = GL_UNSIGNED_BYTE
-
-                glMatrixMode(GL_COLOR)
-                glPushMatrix()
-                glLoadMatrixf((GLfloat * 16)(*matrix))
-            else:
-                # Need to convert data to a standard form
-                data_format = {
-                    1: 'L',
-                    2: 'LA',
-                    3: 'RGB',
-                    4: 'RGBA'}.get(len(data_format))
-                format, type = self._get_gl_format_and_type(data_format)
-
-        # Workaround: don't use GL_UNPACK_ROW_LENGTH
-        if gl.current_context._workaround_unpack_row_length:
-            data_pitch = self.width * len(data_format)
-
-        # Get data in required format (hopefully will be the same format it's
-        # already in, unless that's an obscure format, upside-down or the
-        # driver is old).
+        # Get data in required format (hopefully will be the same format it's already
+        # in, unless that's an obscure format, upside-down or the driver is old).
         data = self._convert(data_format, data_pitch)
 
         if data_pitch & 0x1:
@@ -999,6 +964,7 @@ class ImageData(AbstractImage):
         else:
             alignment = 4
         row_length = data_pitch // len(data_format)
+
         # glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)         GL3
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
@@ -1024,12 +990,6 @@ class ImageData(AbstractImage):
                             self.width, self.height,
                             format, type,
                             data)
-
-        # glPopClientAttrib()                               GL3
-
-        if matrix:
-            glPopMatrix()
-            glMatrixMode(GL_MODELVIEW)
 
         # Flush image upload before data get GC'd.
         glFlush()
@@ -1071,14 +1031,12 @@ class ImageData(AbstractImage):
             elif len(current_format) == 4:
                 swap_pattern = self._swap4_pattern
             else:
-                raise ImageException(
-                    'Current image format is wider than 32 bits.')
+                raise ImageException('Current image format is wider than 32 bits.')
 
             packed_pitch = self.width * len(current_format)
             if abs(self._current_pitch) != packed_pitch:
                 # Pitch is wider than pixel data, need to go row-by-row.
-                rows = re.findall(
-                    asbytes('.') * abs(self._current_pitch), data, re.DOTALL)
+                rows = re.findall(asbytes('.') * abs(self._current_pitch), data, re.DOTALL)
                 rows = [swap_pattern.sub(repl, r[:packed_pitch]) for r in rows]
                 data = asbytes('').join(rows)
             else:
@@ -1092,13 +1050,11 @@ class ImageData(AbstractImage):
             diff = abs(current_pitch) - abs(pitch)
             if diff > 0:
                 # New pitch is shorter than old pitch, chop bytes off each row
-                pattern = re.compile(
-                    asbytes('(%s)%s' % ('.' * abs(pitch), '.' * diff)), re.DOTALL)
+                pattern = re.compile(asbytes('(%s)%s' % ('.' * abs(pitch), '.' * diff)), re.DOTALL)
                 data = pattern.sub(asbytes(r'\1'), data)
             elif diff < 0:
                 # New pitch is longer than old pitch, add '0' bytes to each row
-                pattern = re.compile(
-                    asbytes('(%s)' % ('.' * abs(current_pitch))), re.DOTALL)
+                pattern = re.compile(asbytes('(%s)' % ('.' * abs(current_pitch))), re.DOTALL)
                 pad = '.' * -diff
                 data = pattern.sub(asbytes(r'\1%s' % pad), data)
 
@@ -1564,6 +1520,8 @@ class Texture(AbstractImage):
                      GL_RGBA, GL_UNSIGNED_BYTE,
                      blank)
 
+        glGenerateMipmap(GL_TEXTURE_2D)
+
         texture = cls(texture_width, texture_height, target, tex_id.value)
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
@@ -1763,8 +1721,7 @@ class Texture(AbstractImage):
         elif rotate == 90:
             bl, br, tr, tl = br, tr, tl, bl
             transform.anchor_x, transform.anchor_y = \
-                transform.anchor_y, \
-                transform.width - transform.anchor_x
+                transform.anchor_y, transform.width - transform.anchor_x
         elif rotate == 180:
             bl, br, tr, tl = tr, tl, bl, br
             transform.anchor_x = transform.width - transform.anchor_x
@@ -1772,13 +1729,11 @@ class Texture(AbstractImage):
         elif rotate == 270:
             bl, br, tr, tl = tl, bl, br, tr
             transform.anchor_x, transform.anchor_y = \
-                transform.height - transform.anchor_y, \
-                transform.anchor_x
+                transform.height - transform.anchor_y, transform.anchor_x
         else:
             assert False, 'Only 90 degree rotations are supported.'
         if rotate in (90, 270):
-            transform.width, transform.height = \
-                transform.height, transform.width
+            transform.width, transform.height = transform.height, transform.width
         transform._set_tex_coords_order(bl, br, tr, tl)
         return transform
 
@@ -1787,12 +1742,10 @@ class Texture(AbstractImage):
                       self.tex_coords[3:6],
                       self.tex_coords[6:9],
                       self.tex_coords[9:])
-        self.tex_coords = \
-            tex_coords[bl] + tex_coords[br] + tex_coords[tr] + tex_coords[tl]
+        self.tex_coords = tex_coords[bl] + tex_coords[br] + tex_coords[tr] + tex_coords[tl]
 
         order = self.tex_coords_order
-        self.tex_coords_order = \
-            (order[bl], order[br], order[tr], order[tl])
+        self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
 
 
 class TextureRegion(Texture):
@@ -1801,8 +1754,7 @@ class TextureRegion(Texture):
     """
 
     def __init__(self, x, y, z, width, height, owner):
-        super(TextureRegion, self).__init__(
-            width, height, owner.target, owner.id)
+        super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
 
         self.x = x
         self.y = y

@@ -365,12 +365,11 @@ class Batch(object):
         self._draw_list = []
         self._draw_list_dirty = False
 
-        # TODO: document the presence of one VAO per Batch.
-        vao_id = GLuint()
-        glGenVertexArrays(1, vao_id)
-        self.vao_id = vao_id
+        self.vao_id = GLuint()
+        glGenVertexArrays(1, self.vao_id)
+
         # TODO: remove this:
-        print("Batch CREATED!")
+        print("Batch created! VAO ID: {}".format(self.vao_id.value))
 
     def bind_vao(self):
         glBindVertexArray(self.vao_id)
