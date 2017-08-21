@@ -15,8 +15,8 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 # label = pyglet.text.Label("test label")
 
 
-vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
-                                             ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
+# vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
+#                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
 batch = pyglet.graphics.Batch()
 
@@ -31,7 +31,7 @@ batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
                   ('t2f', (0, 0,  1, 0,  1, 1,  0, 1)))
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('v2f', (40, 40, 40+50, 40, 40+50, 40+50, 40, 40+50)),
+                  ('v2f', (400, 400, 400+50, 400, 400+50, 400+50, 400, 400+50)),
                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 
@@ -43,16 +43,21 @@ green = pyglet.image.SolidColorImagePattern((0, 255, 0, 255)).create_image(50, 5
 blue = pyglet.image.SolidColorImagePattern((0, 0, 255, 255)).create_image(50, 50)
 white = pyglet.image.SolidColorImagePattern((255, 255, 255, 255)).create_image(50, 50)
 
-sprite = pyglet.sprite.Sprite(img=img, x=10, y=10, batch=batch)
-spritex = pyglet.sprite.Sprite(img=img, x=20, y=20, batch=batch)
-spritey = pyglet.sprite.Sprite(img=img, x=30, y=30, batch=batch)
-spritez = pyglet.sprite.Sprite(img=img, x=40, y=40, batch=batch)
-spritea = pyglet.sprite.Sprite(img=img, x=50, y=50, batch=batch)
+sprites = [
+    pyglet.sprite.Sprite(img=img, x=60, y=80, batch=batch),
+    pyglet.sprite.Sprite(img=img, x=110, y=90, batch=batch),
+    pyglet.sprite.Sprite(img=img, x=160, y=100, batch=batch),
+    pyglet.sprite.Sprite(img=img, x=210, y=110, batch=batch),
+]
 
-# sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=100, batch=batch)
-# sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=200, batch=batch)
-# sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=300, batch=batch)
-# sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=400, batch=batch)
+for sprite in sprites:
+    sprite.image.anchor_x = sprite.width // 2
+    sprite.image.anchor_y = sprite.height // 2
+
+sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=100, batch=batch)
+sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=200, batch=batch)
+sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=300, batch=batch)
+sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=400, batch=batch)
 
 
 ###########################################################
@@ -62,9 +67,9 @@ program = pyglet.graphics.default_group.shader_program
 program.use_program()
 program['window_size'] = window.width, window.height
 
-print("zoom", program['zoom'])
-print("size", program['window_size'])
-print("texture loc", program['our_texture'])
+# print("zoom", program['zoom'])
+# print("size", program['window_size'])
+# print("texture loc", program['our_texture'])
 
 
 ##########################################################
@@ -100,12 +105,18 @@ def on_draw():
 
     batch.draw()
 
-    for c in batch._draw_list:
-        print(c)
+    # for c in batch._draw_list:
+    #     print(c)
+    #
+    # print(len(batch._draw_list))
 
-    print(len(batch._draw_list))
+
+def update(dt):
+    for sprite in sprites:
+        sprite.rotation += 100 * dt % 360
 
 
 if __name__ == "__main__":
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
+    pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()

@@ -132,7 +132,7 @@ class ShaderProgram:
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
-        self._parse_all_attributes()
+        # self._parse_all_attributes()
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -367,6 +367,6 @@ fragment_source = """#version 330 core
     void main()
     {
         // final_colors = vertex_colors;
-        final_colors = texture(our_texture, texture_coords) * vertex_colors;
+        final_colors = texture(our_texture, texture_coords) + vertex_colors;
     }
 """

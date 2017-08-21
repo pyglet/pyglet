@@ -115,6 +115,45 @@ from pyglet import image
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
+vertex_source = """#version 330 core
+    in vec4 vertices;
+    in vec4 colors;
+    in vec2 tex_coords;
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
+
+    uniform vec2 window_size;
+    uniform float zoom = 1.0;
+
+    void main()
+    {
+        gl_Position = vec4(vertices.x * 2.0 / window_size.x - 1.0,
+                           vertices.y * 2.0 / window_size.y - 1.0,
+                           vertices.z,
+                           vertices.w * zoom);
+
+        vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+fragment_source = """#version 330 core
+    in vec4 vertex_colors;
+    in vec2 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+
+    void main()
+    {
+        // final_colors = vertex_colors;
+        final_colors = texture(our_texture, texture_coords) * vertex_colors;
+    }
+"""
+
+
 class SpriteGroup(graphics.DefaultGroup):
     """Shared sprite rendering group.
 
@@ -144,19 +183,21 @@ class SpriteGroup(graphics.DefaultGroup):
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
+        self._vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+        self._frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+        self.shader_program = graphics.shader.ShaderProgram(self._vert_shader, self._frag_shader)
+        self.shader_program.use_program()
+        self.shader_program['window_size'] = 540, 540
 
     def set_state(self):
         super(SpriteGroup, self).set_state()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
+
         # TODO: replicate this part:
         # glEnable(GL_BLEND)
         # glBlendFunc(self.blend_src, self.blend_dest)
-
-        print("zoom", self.shader_program['zoom'])
-        print("size", self.shader_program['window_size'])
-        print("texture loc", self.shader_program['our_texture'])
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)

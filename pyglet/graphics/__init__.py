@@ -711,7 +711,7 @@ class Group(object):
 class DefaultGroup(Group):
     """The default group class used when ``None`` is given to a batch.
 
-    This implementation has no effect.
+    This
     """
     def __init__(self, parent=None):
         super(DefaultGroup, self).__init__(parent)
