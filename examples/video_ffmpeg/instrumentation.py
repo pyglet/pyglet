@@ -10,7 +10,7 @@ Responsabilities
 
 # events definition
 mp_events = {
-    "version": 1.0,
+    "version": 1.1,
 #   <evname>: {
 #       "desc": <description used in reports to mention the event>,
 #       "update_names": <list of names of fields updated>,
@@ -47,26 +47,32 @@ mp_events = {
 
     "p.P.ut.1.0": {
         "desc": "Enter update_texture",
-        "update_names": ["evname", "pyglet_dt", "target_time", "wall_time"],
+        "update_names": ["evname", "pyglet_dt", "current_time", "wall_time"],
         "other_fields": [],
         "test_cases": [("p.P.ut.1.0", 0.02, 2.31, 1.21),
                        ("p.P.ut.1.0", 0.02, None, 1.21),
                        ("p.P.ut.1.0", None, 2.31, 1.21)]
         },
+##    "p.P.ut.1.2": {
+##        "desc": "Set current_time from audio_time because current_time was None,",
+##        "update_names": ["evname", "current_time"],
+##        "other_fields": [],
+##        "test_cases": [("p.P.ut.1.2", 2.31), ("p.P.ut.1.2", None)]
+##        },
     "p.P.ut.1.2": {
-        "desc": "Set target_time from audio_time because target_time was None,",
-        "update_names": ["evname", "target_time"],
+        "desc": "Set current_time, ",
+        "update_names": ["evname", "current_time", "audio_time"],
         "other_fields": [],
-        "test_cases": [("p.P.ut.1.2", 2.31), ("p.P.ut.1.2", None)]
+        "test_cases": [("p.P.ut.1.2", 2.31, 2.33), ("p.P.ut.1.2", None, 2.33), ("p.P.ut.1.2", 2.31, None)]
         },
     "p.P.ut.1.3": {
-        "desc": "Early return doing nothing because target_time and audio_time were both None",
+        "desc": "Early return doing nothing because current_time and audio_time were both None",
         "update_names": ["evname", "rescheduling_time"],
         "other_fields": [],
         "test_cases": [("p.P.ut.1.3",)]
         },
     "p.P.ut.1.4": {
-        "desc": "Early return doing nothing because target_time <= video_time, ",
+        "desc": "Early return doing nothing because current_time <= video_time, ",
         "update_names": ["evname", "rescheduling_time"],
         "other_fields": ["video_time"],
         "test_cases": [("p.P.ut.1.4", 1.21)]
@@ -74,7 +80,7 @@ mp_events = {
     "p.P.ut.1.5": {
         "desc": "Discard video frame too old,",
         "update_names": ["evname", "video_time"],
-        "other_fields": ["target_time"],
+        "other_fields": ["current_time"],
         "test_cases": [("p.P.ut.1.5", 1.21)]
         },
     "p.P.ut.1.6": {
@@ -138,7 +144,8 @@ class MediaPlayerStateIterator(object):
         "evnum": -1,  # synthetic, ordinal last event processed
         "sample": None,
         "wall_time": None,
-        "target_time": None,
+        "current_time": None,
+        "audio_time": None,
         "seek_to_time": None,
         "pyglet_dt": None,
         "video_time": None,
@@ -197,8 +204,8 @@ class TimelineBuilder(object):
 
     def pre(self, event, st):
         if event[0] == "p.P.ut.1.0":
-            p = (st["wall_time"], st["pyglet_time"], st["video_time"],
-                 st["target_time"], st["frame_num"], st["rescheduling_time"])
+            p = (st["wall_time"], st["pyglet_time"], st["audio_time"],
+                 st["current_time"], st["frame_num"], st["rescheduling_time"])
             self.timeline.append(p)
 
     def get_timeline(self):
@@ -215,17 +222,17 @@ def timeline_postprocessing(timeline):
         Extra lists are built for the vars with nones, each list with one point
         for each None in the form (wall_time, prev_value).
     """
-    video_time_nones = []
+    current_time_nones = []
     audio_time_nones = []
-    old_video_time = 0
+    old_current_time = 0
     old_audio_time = 0
     filtered_timeline = []
-    for wall_time, pt, video_time, audio_time, fnum, rt in timeline:
-        if video_time is None:
-            video_time = old_video_time
-            video_time_nones.append((wall_time, old_video_time))
+    for wall_time, pt, audio_time, current_time, fnum, rt in timeline:
+        if current_time is None:
+            current_time = old_current_time
+            current_time_nones.append((wall_time, old_current_time))
         else:
-            old_video_time = video_time
+            current_time_time = current_time
 
         if audio_time is None:
             audio_time = old_audio_time
@@ -233,9 +240,9 @@ def timeline_postprocessing(timeline):
         else:
             old_audio_time = audio_time
 
-        filtered_timeline.append((wall_time, pt, video_time, audio_time, fnum, rt))
+        filtered_timeline.append((wall_time, pt, audio_time, current_time, fnum, rt))
 
-    return filtered_timeline, video_time_nones, audio_time_nones
+    return filtered_timeline, current_time_nones, audio_time_nones
 
 
 # works for buffered log, needs other implementation if unbuffered
@@ -264,6 +271,7 @@ class CountBads(object):
         anomalies_description = {evname: d[evname]["desc"] for evname in self.bads}
         anomalies_description["scheduling_in_past"] = "Scheduling in the past"
         return anomalies_description
+    
 
     def preprocessing(self, recorded_events):
         """
@@ -274,22 +282,12 @@ class CountBads(object):
         """
         recorded_events = list(recorded_events)
         if (len(recorded_events) > 9 and
-            recorded_events[-2][0] == "p.P.ut.1.3" and
-            recorded_events[-5][0] == "p.P.ut.1.7" and
-            recorded_events[-9][0] == "p.P.ut.1.7"
+            recorded_events[-2][0] == "p.P.ut.1.7" and
+            recorded_events[-6][0] == "p.P.ut.1.7" and
+            recorded_events[-10][0] == "p.P.ut.1.7"
             ):
-            del recorded_events[-9]
-            del recorded_events[-5]
-            del recorded_events[-2]
-
-        elif (len(recorded_events) > 5 and
-              recorded_events[-1][0] == "p.P.oe" and
-              recorded_events[-2][0] == "p.P.ut.1.3" and  # anomaly
-              recorded_events[-3][0] == "p.P.ut.1.2" and
-              recorded_events[-4][0] == "p.P.ut.1.0" and
-              recorded_events[-5][0] == "p.P.ut.1.7"  # anomaly
-              ):
-            del recorded_events[-5]
+            del recorded_events[-10]
+            del recorded_events[-6]
             del recorded_events[-2]
 
         elif (len(recorded_events) > 6 and
@@ -300,7 +298,7 @@ class CountBads(object):
             del recorded_events[-2]
 
         elif (len(recorded_events) > 2 and
-              recorded_events[-2][0] in {"p.P.ut.1.7", "p.P.ut.1.3"}
+              recorded_events[-2][0] == "p.P.ut.1.7"
               ):
             del recorded_events[-2]
 

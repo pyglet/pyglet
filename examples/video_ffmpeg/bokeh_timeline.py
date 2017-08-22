@@ -59,12 +59,12 @@ def bokeh_render_timeline(pathserv, sample):
 
 
 def unpack_timeline(timeline_postprocessed):
-    timeline, video_time_nones, audio_time_nones = timeline_postprocessed
-    (wall_times, pyglet_times, video_times,
-     audio_times, frame_nums, rescheds) = zip(*timeline)
+    timeline, current_time_nones, audio_time_nones = timeline_postprocessed
+    (wall_times, pyglet_times, audio_times, current_times,
+     frame_nums, rescheds) = zip(*timeline)
 
-    if video_time_nones:
-        x_vnones, y_vnones = zip(*video_time_nones)
+    if current_time_nones:
+        x_vnones, y_vnones = zip(*current_time_nones)
     else:
         x_vnones, y_vnones = [], []
 
@@ -73,16 +73,16 @@ def unpack_timeline(timeline_postprocessed):
     else:
         x_anones, y_anones = [], []
 
-    return (wall_times, pyglet_times, video_times,
-            audio_times, frame_nums, rescheds,
+    return (wall_times, pyglet_times, audio_times,
+            current_times, frame_nums, rescheds,
             x_vnones, y_vnones,
             x_anones, y_anones)
 
 
 def make_plot(info, outfile):
     # prepare some data
-    (wall_times, pyglet_times, video_times,
-     audio_times, frame_nums, rescheds,
+    (wall_times, pyglet_times, audio_times,
+     current_times, frame_nums, rescheds,
      x_vnones, y_vnones,
      x_anones, y_anones) = info
 
@@ -99,11 +99,11 @@ def make_plot(info, outfile):
 
     # add some renderers
     p.line(wall_times, wall_times, legend="wall_time")
-    p.line(wall_times, pyglet_times, legend="pyglet_time", line_width=3)
-    p.line(wall_times, video_times, legend="video_times", line_color="red")
+    #p.line(wall_times, pyglet_times, legend="pyglet_time", line_width=3)
+    p.line(wall_times, current_times, legend="current_times", line_color="red")
     p.line(wall_times, audio_times, legend="audio_times", line_color="orange", line_dash="4 4")
 
-    p.circle(x_vnones, y_vnones, legend="video time nones", fill_color="green", size=8)
+    p.circle(x_vnones, y_vnones, legend="current time nones", fill_color="green", size=8)
     p.circle(x_anones, y_anones, legend="audio time nones", fill_color="red", size=6)
 
     # secondary y-axis for frame_num

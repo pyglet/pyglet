@@ -272,7 +272,7 @@ class Player(pyglet.event.EventDispatcher):
         if time is None:
             time = self.time
             if bl.logger is not None:
-                bl.logger.log("p.P.ut.1.2", time)
+                bl.logger.log("p.P.ut.1.2", time, self._audio_player.get_time())
         # if time is None:
         #     if bl.logger is not None:
         #         delay = 1. / 30
