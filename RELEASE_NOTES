@@ -32,6 +32,7 @@ Improvements
   "Unknown" under the active window list in the environment. The window class hints are set
   to the same name as the Window caption, but will fall back to "pyglet" if the Window caption
   contains non-ascii characters.
+- Vastly improved documentation and programming guide.
 
 Bugfixes
 --------
