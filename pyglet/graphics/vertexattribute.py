@@ -430,7 +430,7 @@ class ColorAttribute(AbstractAttribute):
 
     def set_pointer(self, pointer):
         if self.location is not -1:
-            glVertexAttribPointer(self.location, self.count, self.gl_type, False, self.stride,
+            glVertexAttribPointer(self.location, self.count, self.gl_type, True, self.stride,
                                   self.offset + pointer)
 
 

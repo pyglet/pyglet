@@ -27,17 +27,17 @@ def create_quad_vertex_list(x, y, z, width, height):
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
                   ('v3f', create_quad_vertex_list(200, 200, 0, 55, 55)),
-                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)),
-                  ('t2f', (0, 0,  1, 0,  1, 1,  0, 1)))
+                  ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
                   ('v2f', (400, 400, 400+50, 400, 400+50, 400+50, 400, 400+50)),
                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 
-# TODO: Add code to send the proper data to the uniform.
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
+img.anchor_x = img.width // 2
+img.anchor_y = img.height // 2
 red = pyglet.image.SolidColorImagePattern((255, 0, 0, 255)).create_image(50, 50)
 green = pyglet.image.SolidColorImagePattern((0, 255, 0, 255)).create_image(50, 50)
 blue = pyglet.image.SolidColorImagePattern((0, 0, 255, 255)).create_image(50, 50)
@@ -49,10 +49,6 @@ sprites = [
     pyglet.sprite.Sprite(img=img, x=160, y=100, batch=batch),
     pyglet.sprite.Sprite(img=img, x=210, y=110, batch=batch),
 ]
-
-for sprite in sprites:
-    sprite.image.anchor_x = sprite.width // 2
-    sprite.image.anchor_y = sprite.height // 2
 
 sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=100, batch=batch)
 sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=200, batch=batch)

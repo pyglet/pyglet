@@ -356,7 +356,7 @@ class Batch(object):
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
 
-        # Mapping of group to list of children.
+        # Mapping of group to list of children
         self.group_children = {}
 
         # List of top-level groups
@@ -365,18 +365,12 @@ class Batch(object):
         self._draw_list = []
         self._draw_list_dirty = False
 
+        # Each Batch encompasses one VAO
         self.vao_id = GLuint()
         glGenVertexArrays(1, self.vao_id)
 
-        # TODO: remove this:
-        print("Batch created! VAO ID: {}".format(self.vao_id.value))
-
-    def bind_vao(self):
-        glBindVertexArray(self.vao_id)
-
-    @staticmethod
-    def unbind_vao():
-        glBindVertexArray(0)
+        if _debug_graphics_batch:
+            print("Batch created. VAO ID: {}".format(self.vao_id.value))
 
     def invalidate(self):
         """Force the batch to update the draw list.
@@ -595,8 +589,7 @@ class Batch(object):
             dump(group)
 
     def draw(self):
-        """Draw the batch.
-        """
+        """Draw the batch."""
         glBindVertexArray(self.vao_id)
 
         if self._draw_list_dirty:
@@ -708,19 +701,19 @@ class Group(object):
             self.parent.unset_state_recursive()
 
 
-class DefaultGroup(Group):
+class ShaderGroup(Group):
     """The default group class used when ``None`` is given to a batch.
 
     This
     """
     def __init__(self, parent=None):
-        super(DefaultGroup, self).__init__(parent)
+        super(ShaderGroup, self).__init__(parent)
         self._vert_shader = Shader(vertex_source, 'vertex')
         self._frag_shader = Shader(fragment_source, 'fragment')
         self.shader_program = ShaderProgram(self._vert_shader, self._frag_shader)
 
-        # TODO: remove this:
-        print("Created DefaultGroup!")
+        if _debug_graphics_batch:
+            print("Created ShaderGroup. ShaderProgram ID: {0}".format(self.shader_program.id))
 
     def set_state(self):
         self.shader_program.use_program()
@@ -732,7 +725,7 @@ class DefaultGroup(Group):
 #: The default group.
 #:
 #: :type: `Group`
-default_group = DefaultGroup()
+default_group = ShaderGroup()
 
 
 class TextureGroup(Group):

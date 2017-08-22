@@ -148,13 +148,12 @@ fragment_source = """#version 330 core
 
     void main()
     {
-        // final_colors = vertex_colors;
         final_colors = texture(our_texture, texture_coords) * vertex_colors;
     }
 """
 
 
-class SpriteGroup(graphics.DefaultGroup):
+class SpriteGroup(graphics.ShaderGroup):
     """Shared sprite rendering group.
 
     The group is automatically coalesced with other sprite groups sharing the
@@ -190,14 +189,14 @@ class SpriteGroup(graphics.DefaultGroup):
         self.shader_program['window_size'] = 540, 540
 
     def set_state(self):
-        super(SpriteGroup, self).set_state()
+        # super(SpriteGroup, self).set_state()
+        self.shader_program.set_state()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
 
-        # TODO: replicate this part:
-        # glEnable(GL_BLEND)
-        # glBlendFunc(self.blend_src, self.blend_dest)
+        glEnable(GL_BLEND)
+        glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
@@ -734,11 +733,10 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        # self._group.shader_program.use_program()
+        # TODO: Test this, and fix if necessary
         self._group.set_state_recursive()
         self._vertex_list.draw(GL_TRIANGLES)
         self._group.unset_state_recursive()
-        # self._group.shader_program.stop_program()
 
     if _is_epydoc:
         def on_animation_end(self):
