@@ -189,8 +189,7 @@ class SpriteGroup(graphics.ShaderGroup):
         self.shader_program['window_size'] = 540, 540
 
     def set_state(self):
-        # super(SpriteGroup, self).set_state()
-        self.shader_program.set_state()
+        self.shader_program.use_program()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -200,7 +199,7 @@ class SpriteGroup(graphics.ShaderGroup):
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
-        super(SpriteGroup, self).unset_state()
+        self.shader_program.stop_program()
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.texture)

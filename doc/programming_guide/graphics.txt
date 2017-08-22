@@ -564,5 +564,6 @@ Shader program details
 * VAOs are generated at the Batch level.
 * Groups are used to segregate shader programs. Group set/unset state_calls
   are used to activate and deactivate these programs.
-* Only one texture unit (GL_TEXTURE0) is currently being used by the image module.
+* Only one texture unit (GL_TEXTURE0) is currently being used by the image module,.
+  and therefore textures.
 

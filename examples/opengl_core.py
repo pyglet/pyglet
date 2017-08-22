@@ -36,6 +36,7 @@ batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
 
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
+# img = pyglet.image.load_animation("test.gif")
 img.anchor_x = img.width // 2
 img.anchor_y = img.height // 2
 red = pyglet.image.SolidColorImagePattern((255, 0, 0, 255)).create_image(50, 50)
