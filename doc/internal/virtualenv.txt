@@ -18,6 +18,10 @@ To use and test all pyglet functionality you should also have:
     - `Pillow <https://pillow.readthedocs.io>`_
     - `coverage <https://coverage.readthedocs.io>`_
 
+To build packages for distribution you need to install:
+
+    - `wheel <https://bitbucket.org/pypa/wheel/>`_
+
 It is preferred to create a Python virtual environment to develop in.  This allows you
 to easily test on all Python versions supported by pyglet, not pollute your local system
 with pyglet development dependencies, and not have your local system interfere with
@@ -84,7 +88,7 @@ Install the documentation generator::
 
 And optional dependencies::
 
-    pip install pytest-cov Pillow
+    pip install pytest-cov Pillow wheel
 
 Finishing
 '''''''''
@@ -149,7 +153,7 @@ Install the documentation generator::
 
 And optional dependencies::
 
-   pip install pytest-cov Pillow
+   pip install pytest-cov Pillow wheel
 
 Finishing
 '''''''''
