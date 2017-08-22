@@ -10,6 +10,14 @@ import sys
 import time
 import datetime
 
+def write_build(data, filename):
+    with open(os.path.join('internal', filename), 'w') as f:
+        f.write(".. list-table::\n")
+        f.write("   :widths: 50 50\n")
+        f.write("\n")
+        for var, val in data:
+            f.write("   * - "+var+"\n     - "+val+"\n")
+
 sys.is_epydoc = True
 
 document_modules = ["pyglet"]
@@ -17,17 +25,15 @@ document_modules = ["pyglet"]
 # Patched extensions base path.
 sys.path.insert(0, os.path.abspath('.'))
 
-from ext.sphinx_mod import find_all_modules, write_build, write_blacklist
-
 # import the pyglet package.
 sys.path.insert(0, os.path.abspath('..'))
 
 
 try:
     import pyglet
-    print "Generating pyglet %s Documentation" % (pyglet.version)
-except:
-    print "ERROR: pyglet not found"
+    print("Generating pyglet %s Documentation" % (pyglet.version))
+except ImportError:
+    print("ERROR: pyglet not found")
     sys.exit(1)
 
 
@@ -78,66 +84,14 @@ skip_modules = {"pyglet": {
                      },
                }
 
-
-# Things that should not be documented
-
-def skip_member(member, obj):
-
-    module = obj.__name__
-
-    if ".win32" in module: return True
-    if ".carbon" in module: return True
-    if ".cocoa" in module: return True
-    if ".xlib" in module: return True
-
-    if module=="pyglet.input.evdev_constants": return True
-    if module=="pyglet.window.key":
-        if member==member.upper(): return True
-
-    if module=="pyglet.gl.glu": return True
-    if module.startswith("pyglet.gl.glext_"): return True
-    if module.startswith("pyglet.gl.gl_ext_"): return True
-    if module.startswith("pyglet.gl.glxext_"): return True
-    if module.startswith("pyglet.image.codecs."): return True
-
-    if module!="pyglet.gl.gl":
-        if member in ["DEFAULT_MODE", "current_context"]:
-            return True
-
-    if member.startswith("PFN"): return True
-    if member.startswith("GL_"): return True
-    if member.startswith("GLU_"): return True
-    if member.startswith("RTLD_"): return True
-    if member=="GLvoid": return True
-    if len(member)>4:
-        if member.startswith("gl") and member[2]==member[2].upper():
-            return True
-        if member.startswith("glu") and member[3]==member[3].upper():
-            return True
-
-    return False
-
-
-
-# autosummary generation filter
-sys.skip_member = skip_member
-
-# find modules
-sys.all_submodules = find_all_modules(document_modules, skip_modules)
-
-# Write dynamic rst text files
-write_blacklist(skip_modules["pyglet"], "blacklist.rst")
-
 now = datetime.datetime.fromtimestamp(time.time())
 data = (("Date", now.strftime("%Y/%m/%d %H:%M:%S")),
         ("pyglet version", pyglet.version))
 write_build(data, 'build.rst')
 
-
-
 # -- SPHINX STANDARD OPTIONS ---------------------------------------------------
 
-autosummary_generate = True
+autosummary_generate = False
 
 # -- General configuration -----------------------------------------------------
 #
@@ -154,9 +108,7 @@ needs_sphinx = '1.3'
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
-              'ext.sphinx_mod',
               'ext.docstrings',
-              'ext.autosummary',
               'sphinx.ext.inheritance_diagram', 
               'sphinx.ext.todo']
 
@@ -199,7 +151,7 @@ release = pyglet.version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', '_templates']
+exclude_patterns = ['_build', '_templates', 'api']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -250,7 +202,7 @@ html_logo = "_static/logo.png"
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = 'favicon.ico'
+html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

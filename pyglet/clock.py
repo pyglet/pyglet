@@ -62,7 +62,7 @@ The framerate can be limited::
 
     clock.set_fps_limit(60)
 
-This causes `clock` to sleep during each `tick` in an attempt to keep the
+This causes :py:class:`~pyglet.clock.Clock` to sleep during each `tick` in an attempt to keep the
 number of ticks (frames) per second below 60.
 
 The implementation uses platform-dependent high-resolution sleep functions
@@ -120,7 +120,7 @@ within the __init__ method.
 Using multiple clocks
 =====================
 
-The clock functions are all relayed to an instance of `Clock` which is
+The clock functions are all relayed to an instance of :py:class:`~pyglet.clock.Clock` which is
 initialised with the module.  You can get this instance to use directly::
 
     clk = clock.get_default()
@@ -274,7 +274,7 @@ class Clock(_ClockBase):
         This updates the clock's internal measure of time and returns
         the difference since the last update (or since the clock was created).
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
 
         :rtype: float
         :return: The number of seconds since the last `update_time`, or 0
@@ -296,7 +296,7 @@ class Clock(_ClockBase):
     def call_scheduled_functions(self, dt):
         '''Call scheduled functions that elapsed on the last `update_time`.
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
 
         :Parameters:
             dt : float
@@ -468,7 +468,7 @@ class Clock(_ClockBase):
         :return: Time until the next scheduled event in seconds, or ``None``
             if there is no event scheduled.
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         '''
         if self._schedule_items or not sleep_idle:
             if not self.period_limit:
@@ -664,7 +664,7 @@ class Clock(_ClockBase):
         functions so as to distribute CPU more load evenly over time.
 
         This is useful for functions that need to be called regularly,
-        but not relative to the initial start time.  `pyglet.media`
+        but not relative to the initial start time.  :py:mod:`pyglet.media`
         does this for scheduling audio buffer updates, which need to occur
         regularly -- if all audio updates are scheduled at the same time
         (for example, mixing several tracks of a music score, or playing
@@ -676,7 +676,7 @@ class Clock(_ClockBase):
         graphics animations out of phase; for example, multiple flags
         waving in the wind.
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
 
         :Parameters:
             `func` : function
@@ -706,7 +706,7 @@ class Clock(_ClockBase):
         # 2. set interval to 0               -- item will be removed from heap eventually
         for item in set(item for item in self._schedule_interval_items if item.func == func):
             item.interval = 0
-            item.func = lambda x: x
+            item.func = lambda x, *args, **kwargs: x
 
         self._schedule_items = [i for i in self._schedule_items if i.func != func]
 
@@ -718,7 +718,7 @@ _default = Clock()
 def set_default(default):
     '''Set the default clock to use for all module-level functions.
 
-    By default an instance of `Clock` is used.
+    By default an instance of :py:class:`~pyglet.clock.Clock` is used.
 
     :Parameters:
         `default` : `Clock`
@@ -729,7 +729,7 @@ def set_default(default):
 
 
 def get_default():
-    '''Return the `Clock` instance that is used by all module-level
+    '''Return the :py:class:`~pyglet.clock.Clock` instance that is used by all module-level
     clock functions.
 
     :rtype: `Clock`
@@ -774,7 +774,7 @@ def get_sleep_time(sleep_idle):
     :return: Time until the next scheduled event in seconds, or ``None``
         if there is no event scheduled.
 
-    :since: pyglet 1.1
+    .. versionadded:: 1.1
     '''
     return _default.get_sleep_time(sleep_idle)
 
@@ -850,7 +850,7 @@ def schedule_interval_soft(func, interval, *args, **kwargs):
 
     :see: `Clock.schedule_interval_soft`
 
-    :since: pyglet 1.1
+    .. versionadded:: 1.1
 
     :Parameters:
         `func` : function
@@ -953,13 +953,13 @@ class ClockDisplay(object):
     def unschedule(self):
         '''Remove the display from its clock's schedule.
 
-        `ClockDisplay` uses `Clock.schedule_interval` to periodically update
+        :py:class:`~pyglet.clock.ClockDisplay` uses `Clock.schedule_interval` to periodically update
         its display label.  Even if the ClockDisplay is not being used any
         more, its update method will still be scheduled, which can be a
         resource drain.  Call this method to unschedule the update method
         and allow the ClockDisplay to be garbage collected.
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         '''
         self.clock.unschedule(self.update_text)
 

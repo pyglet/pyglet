@@ -1,125 +1,143 @@
 Development environment
 =======================
+
 To develop pyglet, you need an environment with at least the following:
-   - python 2.7
-   - python 3.4 and/or 3.5
-   - py.test
-   - Your favorite Python editor or IDE
+
+    - Python 3.4+ and Python 2.7
+    - `py.test <https://pytest.org>`_
+    - Your favorite Python editor or IDE
 
 To generate documentation you also need:
-  - Sphinx
-  - Graphviz
+
+    - `Sphinx <https://sphinx-doc.org>`_
+    - `Graphviz`_
 
 To use and test all pyglet functionality you should also have:
-   - AVbin
-   - Pillow
-   - coverage
 
-It is preferred to create a virtual Python environment to develop in. It allows you to
-easily test on all Python version supported by pyglet, not pollute your local system
-with pyglet development dependencies and not have your local system interfere with
-pyglet developement. This section will show you how to set up a virtual environment
-for developing pyglet.
+    - `AVbin <http://avbin.github.io/>`_
+    - `Pillow <https://pillow.readthedocs.io>`_
+    - `coverage <https://coverage.readthedocs.io>`_
+
+It is preferred to create a Python virtual environment to develop in.  This allows you
+to easily test on all Python versions supported by pyglet, not pollute your local system
+with pyglet development dependencies, and not have your local system interfere with
+pyglet developement.  All dependencies you install while inside an activated virtual
+environment will remain isolated inside that environment.  When you're finished, you can
+simply delete it.
+
+This section will show you how to set up and use virtual environments.  If you're already
+familiar with this, you can probably skip the rest of this page.
 
 Linux or Mac OSX
 ----------------
+
 Setting up
 ''''''''''
-Setting up a virtual environment is almost the same for Linux and OSX. First use your
+
+Setting up a virtual environment is almost the same for Linux and OS X. First, use your
 OS's package manager (apt, brew, etc) to install the following dependencies:
-   - Python 2.7
-   - Python 3.4 and/or 3.5
-   - pip (for each version of Python)
-   - Graphviz (if you want to generate documentation)
 
-[Optional] Make sure pip is the latest version (you might need to add sudo)::
+    - Python 3.4+ and Python 2.7
+    - pip (for each version of Python)
+    - Graphviz (if you want to generate documentation)
 
-   pip install --upgrade pip
+To create virtual environments, ``venv`` is included in the standard library since
+Python 3.3. For Python 2.7, you will need to install the ``virtualenv`` package
+(you might need to add sudo)::
 
-Install virtualenv to create virtual environments (you might need to add sudo)::
+    pip install virtualenv
 
-   pip install virtualenv
+Make a directory somewhere to hold our virtual environments::
 
-Make a directory to hold our virtual environments::
+    mkdir pyglet-venv
 
-   mkdir venv
+Next, we'll create the virtual environments for each version of python. We'll put them
+both inside the "pyglet-venv" folder, to keep things in one place.  Remember that the
+library names are different for Python 2 and 3::
 
-Now repeat the following steps for each version of Python.
+    python2 -m virtualenv pyglet-venv/py2
+    python3 -m venv pyglet-venv/py3
 
-Create a virtual environment (substitute the version number for the version of Python
-you are creating the environment for::
+Once the virtual environments have been created, the next step is to activate one of them.
+You'll then install the dependencies, which will be isolated inside that virtual environment.
+Only one can be active at a time, so perform the following steps one one at a time::
 
-   virtualenv -p python2.7 venv/py27
+Activate whichever virtual environment you wish to use::
 
-Activate the virtual environment::
-
-   . venv/py27/bin/activate
+    pyglet-venv/py2/bin/activate
+    # or
+    pyglet-venv/py3/bin/activate
 
 You will see the name of the virtual environment at the start of the command prompt.
 
+[Optional] Make sure pip is the latest version::
+
+    pip install --upgrade pip
+
 Now install required dependencies::
 
-   pip install pytest
+    pip install pytest
 
 Install the documentation generator::
 
-   pip install sphinx
+    pip install sphinx
 
 And optional dependencies::
 
-   pip install pytest-cov Pillow
+    pip install pytest-cov Pillow
 
-Using
-'''''
-To switch to a virtual environment run the following::
-
-   . venv/<name of environment>/bin/activate
-
-E.g.::
-
-   . venv/py34/bin/activate
-
+Finishing
+'''''''''
 To get out of the virtual environment run::
 
    deactivate
 
+
 Windows
 -------
+
 Setting up
 ''''''''''
+
 Make sure you download and install:
-   - `Python 2.7 <http://www.python.org/downloads/windows/>`_
-   - `Python 3.4 and/or 3.5 <http://www.python.org/downloads/windows/>`_
-   - `Graphviz <http://www.graphviz.org/Download_windows.php>`_
 
-Pip should installed automatically with the latest Python installers. Make sure you do not
-choose to not install pip.
+    - `Python 3.4+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
+    - `Graphviz <http://www.graphviz.org/Download_windows.php>`_
 
-Now open a command prompt. Repeat the following steps for each version of Python (replace 2.7 with
-the version you want to use).
+Pip should be installed by default with the latest Python installers.  Make sure you do not
+uncheck the option.  When finished installing, open a command prompt.
 
-[Optional] Make sure pip is the latest version::
+To create virtual environments, ``venv`` is included in the standard library since
+Python 3.3.  For Python 2.7 only, you will need to install the ``virtualenv`` package::
 
-   py -2.7 -m pip install --upgrade pip
+    py -2 -m pip install virtualenv
 
-Install virtualenv to create virtual environments::
+Make a directory somewhere to hold our virtual environments::
 
-   py -2.7 -m pip install virtualenv
+    md pyglet-venv
 
-Make a directory to hold our virtual environments::
+Next, we'll create the virtual environments for each version of python. We'll put them
+both inside the "pyglet-venv" folder, to keep things in one place.  Remember that the
+library names are different for Python 2 and 3::
 
-   md venv
+    py -2 -m virtualenv pyglet-venv\py2
+    py -3 -m venv pyglet-venv\py3
 
-Create a virtual environment (substitute the version number for the version of Python
-you are creating the environment for::
-
-   py -2.7 -m virtualenv venv\py27
+Once the virtual environments have been created, the next step is to activate one of them.
+You'll then install the dependencies, which will be isolated inside that virtual environment.
+Only one can be active at a time, so perform the following steps one one at a time.
 
 Activate the virtual environment::
 
-   venv\py27\Scripts\activate
+   pyglet-venv\py2\Scripts\activate
+   # or
+   pyglet-venv\py3\Scripts\activate
 
 You will see the name of the virtual environment at the start of the command prompt.
+
+[Optional] Make sure pip is the latest version::
+
+   pip install --upgrade pip
 
 Now install required dependencies::
 
@@ -133,15 +151,8 @@ And optional dependencies::
 
    pip install pytest-cov Pillow
 
-Using
-'''''
-To switch to a virtual environment run the following::
-
-   venv\<name of environment>\Scripts\activate
-
-E.g.::
-
-   venv\py34\Scripts\activate
+Finishing
+'''''''''
 
 To get out of the virtual environment run::
 

@@ -337,30 +337,30 @@ class AbstractImage(object):
         Changes to the returned instance may or may not be reflected in this
         image.
 
-        :rtype: `ImageData`
+        :rtype: :py:class:`~pyglet.image.ImageData`
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve image data for %r' % self)
 
     @property
     def image_data(self):
-        """An `ImageData` view of this image.  
+        """An :py:class:`~pyglet.image.ImageData` view of this image.  
         
         Changes to the returned instance may or may not be reflected in this
         image.  Read-only.
 
-        :deprecated: Use `get_image_data`.
+        :deprecated: Use :py:meth:`~pyglet.image.ImageData.get_image_data`.
 
-        :type: `ImageData`
+        :type: :py:class:`~pyglet.image.ImageData`
         """
         return self.get_image_data()
 
     def get_texture(self, rectangle=False, force_rectangle=False):
-        """A `Texture` view of this image.  
+        """A :py:class:`~pyglet.image.Texture` view of this image.  
 
         By default, textures are created with dimensions that are powers of
-        two.  Smaller images will return a `TextureRegion` that covers just
+        two.  Smaller images will return a :py:class:`~pyglet.image.TextureRegion` that covers just
         the image portion of the larger texture.  This restriction is required
         on older video cards, and for compressed textures, or where texture
         repeat modes will be used, or where mipmapping is desired.
@@ -389,34 +389,34 @@ class AbstractImage(object):
             `force_rectangle` : bool
                 True if the texture must be created as a rectangle.
 
-                **Since:** pyglet 1.1.4.
-        :rtype: `Texture`
+                .. versionadded:: 1.1.4.
+        :rtype: :py:class:`~pyglet.image.Texture`
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve texture for %r' % self)
 
     @property
     def texture(self):
-        """Get a `Texture` view of this image.  
+        """Get a :py:class:`~pyglet.image.Texture` view of this image.  
         
         Changes to the returned instance may or may not be reflected in this
         image.
 
-        :deprecated: Use `get_texture`.
+        :deprecated: Use :py:meth:`~pyglet.image.AbstractImage.get_texture`.
 
-        :type: `Texture`
+        :type: :py:class:`~pyglet.image.Texture`
         """
         return self.get_texture()
 
     def get_mipmapped_texture(self):
-        """Retrieve a `Texture` instance with all mipmap levels filled in.
+        """Retrieve a :py:class:`~pyglet.image.Texture` instance with all mipmap levels filled in.
 
         Requires that image dimensions be powers of 2. 
 
-        :rtype: `Texture`
+        :rtype: :py:class:`~pyglet.image.Texture`
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
 
@@ -429,7 +429,7 @@ class AbstractImage(object):
 
         :deprecated: Use `get_mipmapped_texture`.
 
-        :type: `Texture`
+        :type: :py:class:`~pyglet.image.Texture`
         """
         return self.get_mipmapped_texture()
 
@@ -531,7 +531,7 @@ class AbstractImageSequence(object):
 
         :rtype: `TextureSequence`
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise NotImplementedError('abstract')
 
@@ -555,9 +555,9 @@ class AbstractImageSequence(object):
             `loop` : bool
                 If True, the animation will loop continuously.
 
-        :rtype: `Animation`
+        :rtype: :py:class:`~pyglet.image.Animation`
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         return Animation.from_image_sequence(self, period, loop)
 
@@ -572,7 +572,7 @@ class AbstractImageSequence(object):
         """Replace one or more images in the sequence.
         
         :Parameters:
-            `image` : `AbstractImage`
+            `image` : `~pyglet.image.AbstractImage`
                 The replacement image.  The actual instance may not be used,
                 depending on this implementation.
 
@@ -587,7 +587,7 @@ class AbstractImageSequence(object):
 
         :rtype: Iterator
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         raise NotImplementedError('abstract')
 
@@ -595,8 +595,8 @@ class AbstractImageSequence(object):
 class TextureSequence(AbstractImageSequence):
     """Interface for a sequence of textures.
 
-    Typical implementations store multiple `TextureRegion` s within one
-    `Texture` so as to minimise state changes.
+    Typical implementations store multiple :py:class:`~pyglet.image.TextureRegion` s within one
+    :py:class:`~pyglet.image.Texture` so as to minimise state changes.
     """
 
     def get_texture_sequence(self):
@@ -753,7 +753,7 @@ class ImageData(AbstractImage):
                 Number of bytes per row.  Negative values indicate a
                 top-to-bottom arrangement.
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
 
         :rtype: sequence of bytes, or str
         """
@@ -773,7 +773,7 @@ class ImageData(AbstractImage):
             `data` : str or sequence of bytes
                 Image data.
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         self._current_format = format
         self._current_pitch = pitch
@@ -830,12 +830,12 @@ class ImageData(AbstractImage):
                 ``True`` if a rectangle can be created; see
                 `AbstractImage.get_texture`.
 
-                **Since:** pyglet 1.1
+                .. versionadded:: 1.1
             `force_rectangle` : bool
                 ``True`` if a rectangle must be created; see
                 `AbstractImage.get_texture`.
 
-                **Since:** pyglet 1.1.4
+                .. versionadded:: 1.1.4
 
         :rtype: cls or cls.region_class
         """
@@ -862,15 +862,15 @@ class ImageData(AbstractImage):
     def get_mipmapped_texture(self):
         """Return a Texture with mipmaps.  
         
-        If `set_mipmap_image` has been called with at least one image, the set
+        If :py:class:`~pyglet.image.set_mipmap_Image` has been called with at least one image, the set
         of images defined will be used.  Otherwise, mipmaps will be
         automatically generated.
 
         The texture dimensions must be powers of 2 to use mipmaps.
 
-        :rtype: `Texture`
+        :rtype: :py:class:`~pyglet.image.Texture`
 
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
@@ -1498,7 +1498,7 @@ class Texture(AbstractImage):
 
         If `rectangle` is ``False`` or the appropriate driver extensions are
         not available, a larger texture than requested will be created, and
-        a `TextureRegion` corresponding to the requested size will be
+        a :py:class:`~pyglet.image.TextureRegion` corresponding to the requested size will be
         returned.
 
         :Parameters:
@@ -1516,15 +1516,15 @@ class Texture(AbstractImage):
                 ``True`` if a rectangular texture is required.  See
                 `AbstractImage.get_texture`.  
                 
-                **Since:** pyglet 1.1.4.
+                .. versionadded:: 1.1.4.
             `min_filter` : int
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
             `mag_filter` : int
                 The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
 
-        :rtype: `Texture`
+        :rtype: :py:class:`~pyglet.image.Texture`
         
-        :since: pyglet 1.1
+        .. versionadded:: 1.1
         """
         target = GL_TEXTURE_2D
         if rectangle or force_rectangle:
@@ -1607,7 +1607,7 @@ class Texture(AbstractImage):
             `mag_filter` : int
                 The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
 
-        :rtype: `Texture`
+        :rtype: :py:class:`~pyglet.image.Texture`
         """
         if target not in (GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_RECTANGLE_ARB):
             width = _nearest_pow2(min_width)
@@ -1652,7 +1652,7 @@ class Texture(AbstractImage):
             `z` : int
                 For 3D textures, the image slice to retrieve.
 
-        :rtype: `ImageData`
+        :rtype: :py:class:`~pyglet.image.ImageData`
         """
         glBindTexture(self.target, self.id)
 
@@ -1680,11 +1680,11 @@ class Texture(AbstractImage):
         
         Changes to the returned instance will not be reflected in this
         texture.  If the texture is a 3D texture, the first image will be 
-        returned.  See also `get_image_data`.  Read-only.
+        returned.  See also :py:meth:`~pyglet.image.ImageData.get_image_data`.  Read-only.
 
-        :deprecated: Use `get_image_data`.
+        :deprecated: Use :py:meth:`~pyglet.image.ImageData.get_image_data`.
         
-        :type: `ImageData`
+        :type: :py:class:`~pyglet.image.ImageData`
         """
         return self.get_image_data()
 
@@ -1731,7 +1731,7 @@ class Texture(AbstractImage):
         """Create a copy of this image applying a simple transformation.
 
         The transformation is applied to the texture coordinates only;
-        `get_image_data` will return the untransformed data.  The
+        :py:meth:`~pyglet.image.ImageData.get_image_data` will return the untransformed data.  The
         transformation is applied around the anchor point.
 
         :Parameters:
@@ -1743,7 +1743,7 @@ class Texture(AbstractImage):
                 Degrees of clockwise rotation of the returned image.  Only 
                 90-degree increments are supported.
 
-        :rtype: `TextureRegion`
+        :rtype: :py:class:`~pyglet.image.TextureRegion`
         """
         transform = self.get_region(0, 0, self.width, self.height)
         bl, br, tr, tl = 0, 1, 2, 3
@@ -1920,7 +1920,7 @@ class Texture3D(Texture, UniformTextureSequence):
 class TileableTexture(Texture):
     """A texture that can be tiled efficiently.
 
-    Use `create_for_image` classmethod to construct.
+    Use :py:class:`~pyglet.image.create_for_Image` classmethod to construct.
     """
 
     def __init__(self, width, height, target, id):
@@ -1997,7 +1997,7 @@ class DepthTexture(Texture):
 class BufferManager(object):
     """Manages the set of framebuffers for a context.
 
-    Use `get_buffer_manager` to obtain the instance of this class for the
+    Use :py:func:`~pyglet.image.get_buffer_manager` to obtain the instance of this class for the
     current context.
     """
 
@@ -2031,7 +2031,7 @@ class BufferManager(object):
     def get_color_buffer(self):
         """Get the color buffer.
 
-        :rtype: `ColorBufferImage`
+        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
         """
         viewport = self.get_viewport()
         viewport_width = viewport[2]
@@ -2048,7 +2048,7 @@ class BufferManager(object):
         If not aux buffers are available, `ImageException` is raised.  Buffers
         are released when they are garbage collected.
         
-        :rtype: `ColorBufferImage`
+        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
         """
         if not self.free_aux_buffers:
             raise ImageException('No free aux buffer is available.')
@@ -2068,7 +2068,7 @@ class BufferManager(object):
     def get_depth_buffer(self):
         """Get the depth buffer.
 
-        :rtype: `DepthBufferImage`
+        :rtype: :py:class:`~pyglet.image.DepthBufferImage`
         """
         viewport = self.get_viewport()
         viewport_width = viewport[2]
@@ -2086,7 +2086,7 @@ class BufferManager(object):
         buffer.  If no bits are free, `ImageException` is raised.  Bits are
         released when the bitmask buffer is garbage collected.
 
-        :rtype: `BufferImageMask`
+        :rtype: :py:class:`~pyglet.image.BufferImageMask`
         """
         if not self.free_stencil_bits:
             raise ImageException('No free stencil bits are available.')
@@ -2107,7 +2107,7 @@ class BufferManager(object):
 def get_buffer_manager():
     """Get the buffer manager for the current OpenGL context.
     
-    :rtype: `BufferManager`
+    :rtype: :py:class:`~pyglet.image.BufferManager`
     """
     context = gl.current_context
     if not hasattr(context, 'image_buffer_manager'):
@@ -2238,12 +2238,12 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 
     The grid can be accessed either as a complete image, or as a sequence
     of images.  The most useful applications are to access the grid
-    as a `TextureGrid`::
+    as a :py:class:`~pyglet.image.TextureGrid`::
 
         image_grid = ImageGrid(...)
         texture_grid = image_grid.get_texture_sequence()
 
-    or as a `Texture3D`::
+    or as a :py:class:`~pyglet.image.Texture3D`::
 
         image_grid = ImageGrid(...)
         texture_3d = Texture3D.create_for_image_grid(image_grid)
@@ -2340,13 +2340,13 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
 class TextureGrid(TextureRegion, UniformTextureSequence):
     """A texture containing a regular grid of texture regions.
 
-    To construct, create an `ImageGrid` first::
+    To construct, create an :py:class:`~pyglet.image.ImageGrid` first::
 
         image_grid = ImageGrid(...)
         texture_grid = TextureGrid(image_grid)
 
     The texture grid can be accessed as a single texture, or as a sequence
-    of `TextureRegion`.  When accessing as a sequence, you can specify
+    of :py:class:`~pyglet.image.TextureRegion`.  When accessing as a sequence, you can specify
     integer indexes, in which the images are arranged in rows from the
     bottom-left to the top-right::
 
@@ -2519,7 +2519,7 @@ class Animation(object):
     duration of ``None``.
 
     :Ivariables:
-        `frames` : list of `AnimationFrame`
+        `frames` : list of `~pyglet.image.AnimationFrame`
             The frames that make up the animation.
 
     """
@@ -2528,7 +2528,7 @@ class Animation(object):
         """Create an animation directly from a list of frames.
 
         :Parameters:
-            `frames` : list of `AnimationFrame`
+            `frames` : list of `~pyglet.image.AnimationFrame`
                 The frames that make up the animation.
 
         """
@@ -2536,13 +2536,13 @@ class Animation(object):
         self.frames = frames
 
     def add_to_texture_bin(self, bin):
-        """Add the images of the animation to a `TextureBin`.
+        """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
 
         The animation frames are modified in-place to refer to the texture bin
         regions.
 
         :Parameters:
-            `bin` : `TextureBin`
+            `bin` : `~pyglet.image.atlas.TextureBin`
                 Texture bin to upload animation frames into.
 
         """
@@ -2565,7 +2565,7 @@ class Animation(object):
                 Degrees of clockwise rotation of the returned animation.  Only
                 90-degree increments are supported.
 
-        :rtype: `Animation`
+        :rtype: :py:class:`~pyglet.image.Animation`
         """
         frames = [AnimationFrame(frame.image.get_texture().get_transform(flip_x, flip_y, rotate),
                                  frame.duration) for frame in self.frames]
@@ -2605,14 +2605,14 @@ class Animation(object):
         """Create an animation from a list of images and a constant framerate.
 
         :Parameters:
-            `sequence` : list of `AbstractImage`
+            `sequence` : list of `~pyglet.image.AbstractImage`
                 Images that make up the animation, in sequence.
             `period` : float
                 Number of seconds to display each image.
             `loop` : bool
                 If True, the animation will loop continuously.
 
-        :rtype: `Animation`
+        :rtype: :py:class:`~pyglet.image.Animation`
         """
         frames = [AnimationFrame(image, period) for image in sequence]
         if not loop:
@@ -2628,7 +2628,7 @@ class AnimationFrame(object):
         """Create an animation frame from an image.
 
         :Parameters:
-            `image` : `AbstractImage`
+            `image` : `~pyglet.image.AbstractImage`
                 The image of this frame.
             `duration` : float
                 Number of seconds to display the frame, or ``None`` if it is

@@ -1,13 +1,12 @@
 Advanced topics
 ===============
 
-.. contents::
-    :local:
+.. _guide_environment-settings:
 
 Environment settings
 --------------------
 
-Options in the `pyglet.options` dictionary can have defaults set through the
+Options in the :py:attr:`pyglet.options` dictionary can have defaults set through the
 operating system's environment variable.  The following table shows which
 environment variable is used for each option:
 
@@ -15,7 +14,7 @@ environment variable is used for each option:
         :header-rows: 1
 
         * - Environment variable
-          - `pyglet.options` key
+          - :py:attr:`pyglet.options` key
           - Type
           - Default value
         * - ``PYGLET_AUDIO``

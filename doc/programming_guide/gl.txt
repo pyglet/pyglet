@@ -1,3 +1,5 @@
+.. _guide_gl:
+
 The OpenGL interface
 ====================
 
@@ -17,16 +19,13 @@ without using ctypes, in which case you should investigate `PyOpenGL`_.
 `PyOpenGL`_ provides similar functionality with a more "Pythonic" interface,
 and will work with pyglet without any modification.
 
-.. contents::
-    :local:
-
 .. _PyOpenGL: http://pyopengl.sourceforge.net/
 
 Using OpenGL
 ------------
 
 Documentation of OpenGL and GLU are provided at the `OpenGL website`_ and
-(more comprehensively) in the `OpenGL Programming Guide`_.
+(more comprehensively) in the `OpenGL Programming SDK`_.
 
 Importing the package gives access to OpenGL, GLU, and all OpenGL registered
 extensions.   This is sufficient for all but the most advanced uses of
@@ -64,14 +63,13 @@ one-dimensional ``ctypes`` array of ``GLfloat``::
 
     window = pyglet.window.Window()
 
-    vertices = [
-        0, 0,
-        window.width, 0,
-        window.width, window.height]
-    vertices_gl = (GLfloat * len(vertices))(*vertices)
+    vertices = [0, 0,
+                window.width, 0,
+                window.width, window.height]
+    vertices_gl_array = (GLfloat * len(vertices))(*vertices)
 
     glEnableClientState(GL_VERTEX_ARRAY)
-    glVertexPointer(2, GL_FLOAT, 0, vertices_gl)
+    glVertexPointer(2, GL_FLOAT, 0, vertices_gl_array)
 
     @window.event
     def on_draw():
@@ -85,14 +83,14 @@ Similar array constructions can be used to create data for vertex buffer
 objects, texture data, polygon stipple data and the map functions.
 
 .. _OpenGL Website: http://www.opengl.org
-.. _OpenGL Programming Guide: http://opengl.org/documentation/red_book/
+.. _OpenGL Programming SDK: http://www.opengl.org/sdk
 
 Resizing the window
 -------------------
 
 pyglet sets up the viewport and an orthographic projection on each window
-automatically.  It does this in a default `on_resize` handler defined on
-`Window`::
+automatically.  It does this in a default :py:meth:`~pyglet.window.Window.on_resize`
+handler defined on :py:class:`~pyglet.window.Window`::
 
     @window.event
     def on_resize(width, height):
@@ -115,8 +113,8 @@ event with your own; for example::
         glMatrixMode(GL_MODELVIEW)
         return pyglet.event.EVENT_HANDLED
 
-Note that the `on_resize` handler is called for a window the first time
-it is displayed, as well as any time it is later resized.
+Note that the :py:meth:`~pyglet.window.Window.on_resize` handler is called for
+a window the first time it is displayed, as well as any time it is later resized.
 
 Error checking
 --------------
@@ -179,12 +177,12 @@ share the same texture objects, display lists, shader programs, and so on,
 by default [#objects]_.  Each context has its own state and framebuffers.
 
 There is always an active context (unless there are no windows).  When using
-`pyglet.app.run` for the application event loop, pyglet ensures that
-the correct window is the active context before dispatching the `on_draw`
-or `on_resize` events.  
+:py:func:`pyglet.app.run` for the application event loop, pyglet ensures that
+the correct window is the active context before dispatching the :py:meth:`~pyglet.window.Window.on_draw`
+or :py:meth:`~pyglet.window.Window.on_resize` events.  
 
 In other cases, you can explicitly set the active context with
-`Window.switch_to`.
+:py:class:`pyglet.window.Window.switch_to`.
 
 .. [#objects] Sometimes objects and lists cannot be shared between contexts; for
               example, when the contexts are provided by different video
@@ -210,7 +208,7 @@ operating system::
         from pyglet.gl.agl import *
         aglCreatePbuffer(...)
 
-Alternativally you can use ``pyglet.compat_platform`` to support platforms that are
+Alternativally you can use :py:attr:`pyglet.compat_platform` to support platforms that are
 compatible with platforms not officially supported by pyglet. For example
 FreeBSD systems will appear as ``linux-compat`` in ``pyglet.compat_platform``.
 

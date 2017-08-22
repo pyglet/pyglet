@@ -72,9 +72,9 @@ returns when all open windows are closed)::
 Creating a game window
 ----------------------
 
-Use `Window.set_exclusive_mouse` to hide the mouse cursor and receive relative
+Use :py:meth:`~pyglet.window.Window.set_exclusive_mouse` to hide the mouse cursor and receive relative
 mouse movement events.  Specify ``fullscreen=True`` as a keyword argument to
-the `Window` constructor to render to the entire screen rather than opening a
+the :py:class:`~pyglet.window.Window` constructor to render to the entire screen rather than opening a
 window::
 
     win = Window(fullscreen=True)
@@ -192,7 +192,7 @@ class MouseCursor(object):
 
 
 class DefaultMouseCursor(MouseCursor):
-    """The default mouse cursor used by the operating system."""
+    """The default mouse cursor #sed by the operating system."""
     drawable = False
 
 
@@ -297,15 +297,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     To render into a window, you must first call `switch_to`, to make
     it the current OpenGL context.  If you use only one window in the
     application, there is no need to do this.
-
-    :Ivariables:
-        `has_exit` : bool
-            True if the user has attempted to close the window.
-
-            :deprecated: Windows are closed immediately by the default
-                `on_close` handler when `pyglet.app.event_loop` is being
-                used.
-
     """
 
     # Filled in by metaclass with the names of all methods on this (sub)class
@@ -368,20 +359,25 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: The "wait" mouse cursor combined with an arrow.
     CURSOR_WAIT_ARROW = 'wait_arrow'
 
+    #: True if the user has attempted to close the window.
+    #:
+    #: :deprecated: Windows are closed immediately by the default
+    #:      :py:meth:`~pyglet.window.Window.on_close` handler when `pyglet.app.event_loop` is being
+    #:      used.
     has_exit = False
 
-    #: Window display contents validity.  The `pyglet.app` event loop
-    #: examines every window each iteration and only dispatches the `on_draw`
+    #: Window display contents validity.  The :py:mod:`pyglet.app` event loop
+    #: examines every window each iteration and only dispatches the :py:meth:`~pyglet.window.Window.on_draw`
     #: event to windows that have `invalid` set.  By default, windows always
     #: have `invalid` set to ``True``.
     #:
     #: You can prevent redundant redraws by setting this variable to ``False``
-    #: in the window's `on_draw` handler, and setting it to True again in
+    #: in the window's :py:meth:`~pyglet.window.Window.on_draw` handler, and setting it to True again in
     #: response to any events that actually do require a window contents
     #: update.
     #:
     #: :type: bool
-    #: :since: pyglet 1.1
+    #: .. versionadded:: 1.1
     invalid = True
 
     #: Legacy invalidation flag introduced in pyglet 1.2: set by all event
@@ -614,7 +610,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         is undefined after this operation.
 
         Windows are double-buffered by default.  This method is called
-        automatically by `EventLoop` after the `on_draw` event.
+        automatically by `EventLoop` after the :py:meth:`~pyglet.window.Window.on_draw` event.
         """
         raise NotImplementedError('abstract')
 
@@ -660,13 +656,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 previous window size when windowed, or the screen size if
                 fullscreen.
 
-                **Since:** pyglet 1.2
+                .. versionadded:: 1.2
             `height` : int
                 Optional height of the window.  If unspecified, defaults to
                 the previous window size when windowed, or the screen size if
                 fullscreen.
 
-                **Since:** pyglet 1.2
+                .. versionadded:: 1.2
         """
         if (fullscreen == self._fullscreen and 
             (screen is None or screen is self._screen) and
@@ -795,7 +791,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         is affected.
 
         There is little need to override this method; instead, subclass
-        ``MouseCursor`` and provide your own ``draw`` method.
+        :py:class:`MouseCursor` and provide your own
+        :py:meth:`~MouseCursor.draw` method.
         """
         # Draw mouse cursor if set and visible.
         # XXX leaves state in modelview regardless of starting state
@@ -876,7 +873,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def display(self):
         """The display this window belongs to.  Read-only.
 
-        :type: `Display`
+        :type: :py:class:`Display`
         """
         return self._display
 
@@ -884,7 +881,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def screen(self):
         """The screen this window is fullscreen in.  Read-only.
 
-        :type: `Screen`
+        :type: :py:class:`Screen`
         """
         return self._screen
 
@@ -892,7 +889,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def config(self):
         """A GL config describing the context of this window.  Read-only.
 
-        :type: `pyglet.gl.Config`
+        :type: :py:class:`pyglet.gl.Config`
         """
         return self._config
 
@@ -900,7 +897,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def context(self):
         """The OpenGL context attached to this window.  Read-only.
 
-        :type: `pyglet.gl.Context`
+        :type: :py:class:`pyglet.gl.Context`
         """
         return self._context
 
@@ -1246,7 +1243,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             In pyglet 1.0 the default handler sets `has_exit` to ``True`` if
             the ``ESC`` key is pressed.
 
-            In pyglet 1.1 the default handler dispatches the `on_close`
+            In pyglet 1.1 the default handler dispatches the :py:meth:`~pyglet.window.Window.on_close`
             event if the ``ESC`` key is pressed.
 
             :Parameters:
@@ -1273,8 +1270,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_text(text):
             """The user input some text.
 
-            Typically this is called after `on_key_press` and before
-            `on_key_release`, but may also be called multiple times if the key
+            Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
+            :py:meth:`~pyglet.window.Window.on_key_release`, but may also be called multiple times if the key
             is held down (key repeating); or called without key presses if
             another input method was used (e.g., a pen input).
 
@@ -1292,8 +1289,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_text_motion(motion):
             """The user moved the text input cursor.
 
-            Typically this is called after `on_key_press` and before
-            `on_key_release`, but may also be called multiple times if the key
+            Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
+            :py:meth:`~pyglet.window.Window.on_key_release`, but may also be called multiple times if the key
             is help down (key repeating).
 
             You should always use this method for moving the text input cursor
@@ -1301,7 +1298,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             mappings, and key repeats are handled correctly.
 
             The values that `motion` can take are defined in
-            `pyglet.window.key`:
+            :py:mod:`pyglet.window.key`:
 
             * MOTION_UP
             * MOTION_RIGHT
@@ -1329,16 +1326,16 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             """The user moved the text input cursor while extending the
             selection.
 
-            Typically this is called after `on_key_press` and before
-            `on_key_release`, but may also be called multiple times if the key
+            Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
+            :py:meth:`~pyglet.window.Window.on_key_release`, but may also be called multiple times if the key
             is help down (key repeating).
 
             You should always use this method for responding to text selection
-            events rather than the raw `on_key_press`, as different platforms
+            events rather than the raw :py:meth:`~pyglet.window.Window.on_key_press`, as different platforms
             have different default keyboard mappings, and key repeats are
             handled correctly.
 
-            The values that `motion` can take are defined in `pyglet.window.key`:
+            The values that `motion` can take are defined in :py:mod:`pyglet.window.key`:
 
             * MOTION_UP
             * MOTION_RIGHT
@@ -1623,7 +1620,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             this event is triggered; a resize or expose event may have
             invalidated the framebuffer since the last time it was drawn.
 
-            :since: pyglet 1.1
+            .. versionadded:: 1.1
 
             :event:
             """
@@ -1658,7 +1655,7 @@ class FPSDisplay(object):
 
     This is a convenience class to aid in profiling and debugging.  Typical
     usage is to create an `FPSDisplay` for each window, and draw the display
-    at the end of the windows' `on_draw` event handler::
+    at the end of the windows' :py:meth:`~pyglet.window.Window.on_draw` event handler::
 
         window = pyglet.window.Window()
         fps_display = FPSDisplay(window)
@@ -1669,7 +1666,7 @@ class FPSDisplay(object):
 
             fps_display.draw()
 
-    The style and position of the display can be modified via the `label`
+    The style and position of the display can be modified via the :py:func:`~pyglet.text.Label`
     attribute.  Different text can be substituted by overriding the
     `set_fps` method.  The display can be set to update more or less often 
     by setting the `update_period` attribute.
@@ -1786,7 +1783,7 @@ def get_platform():
 
     :deprecated: Use `pyglet.canvas.Display`.
 
-    :rtype: `Platform`
+    :rtype: :py:class:`Platform`
     :return: The platform instance.
     """
     return Platform()

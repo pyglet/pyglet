@@ -38,7 +38,7 @@
 Abstract representation
 =======================
 
-Styled text in pyglet is represented by one of the `AbstractDocument` classes,
+Styled text in pyglet is represented by one of the :py:class:`~pyglet.text.document.AbstractDocument` classes,
 which manage the state representation of text and style independently of how
 it is loaded or rendered.  
 
@@ -67,7 +67,7 @@ This can be useful to tag areas of interest in a document, or maintain
 references back to the source material.
 
 As well as text, the document can contain arbitrary elements represented by
-`InlineElement`.  An inline element behaves like a single character in the
+:py:class:`~pyglet.text.document.InlineElement`.  An inline element behaves like a single character in the
 documented, but can be rendered by the application.
 
 Paragraph breaks
@@ -84,16 +84,16 @@ http://unicode.org/reports/tr13/tr13-5.html.
 Document classes
 ================
 
-Any class implementing `AbstractDocument` provides an interface to a
+Any class implementing :py:class:`~pyglet.text.document.AbstractDocument` provides an interface to a
 document model as described above.  In theory a structured document such as
 HTML or XML could export this model, though the classes provided by pyglet
 implement only unstructured documents.
 
-The `UnformattedDocument` class assumes any styles set are set over the entire
+The :py:class:`~pyglet.text.document.UnformattedDocument` class assumes any styles set are set over the entire
 document.  So, regardless of the range specified when setting a ``"bold"``
 style attribute, for example, the entire document will receive that style.
 
-The `FormattedDocument` class implements the document model directly, using
+The :py:class:`~pyglet.text.document.FormattedDocument` class implements the document model directly, using
 the `RunList` class to represent style runs efficiently.
 
 Style attributes
@@ -102,7 +102,7 @@ Style attributes
 The following character style attribute names are recognised by pyglet:
 
 ``font_name``
-    Font family name, as given to `pyglet.font.load`.
+    Font family name, as given to :py:func:`pyglet.font.load`.
 ``font_size``
     Font size, in points.
 ``bold``
@@ -161,7 +161,7 @@ All style attributes (including those not present in a document) default to
 ``None`` (including the so-called "boolean" styles listed above).  The meaning
 of a ``None`` style is style- and application-dependent. 
 
-:since: pyglet 1.1
+.. versionadded:: 1.1
 """
 from builtins import next
 from builtins import object
@@ -263,12 +263,12 @@ class InlineElement(object):
 
 
 class AbstractDocument(event.EventDispatcher):
-    """Abstract document interface used by all `pyglet.text` classes.
+    """Abstract document interface used by all :py:mod:`pyglet.text` classes.
 
     This class can be overridden to interface pyglet with a third-party
     document format.  It may be easier to implement the document format in
-    terms of one of the supplied concrete classes `FormattedDocument` or
-    `UnformattedDocument`. 
+    terms of one of the supplied concrete classes :py:class:`~pyglet.text.document.FormattedDocument` or
+    :py:class:`~pyglet.text.document.UnformattedDocument`. 
     """
     _previous_paragraph_re = re.compile(u'\n[^\n\u2029]*$')
     _next_paragraph_re = re.compile(u'[\n\u2029]')
@@ -284,8 +284,8 @@ class AbstractDocument(event.EventDispatcher):
     def text(self):
         """Document text.
 
-        For efficient incremental updates, use the `insert_text` and
-        `delete_text` methods instead of replacing this property.
+        For efficient incremental updates, use the :py:func:`~pyglet.text.document.AbstractDocument.insert_text` and
+        :py:func:`~pyglet.text.document.AbstractDocument.delete_text` methods instead of replacing this property.
 
         :type: str
         """
@@ -390,7 +390,7 @@ class AbstractDocument(event.EventDispatcher):
         :Parameters:
             `dpi` : float
                 Optional resolution to construct fonts at.  See
-                `pyglet.font.load`.
+                :py:func:`pyglet.font.load`.
 
         :rtype: `AbstractRunIterator`
         """
@@ -406,7 +406,7 @@ class AbstractDocument(event.EventDispatcher):
                 Character position of document to query.
             `dpi` : float
                 Optional resolution to construct fonts at.  See
-                `pyglet.font.load`.
+                :py:func:`pyglet.font.load`.
 
         :rtype: `pyglet.font.Font`
         :return: The font at the given position.
@@ -461,13 +461,13 @@ class AbstractDocument(event.EventDispatcher):
     def insert_element(self, position, element, attributes=None):
         """Insert a element into the document.
 
-        See the `InlineElement` class documentation for details of
+        See the :py:class:`~pyglet.text.document.InlineElement` class documentation for details of
         usage.
 
         :Parameters:
             `position` : int
                 Character insertion point within document.
-            `element` : `InlineElement`
+            `element` : `~pyglet.text.document.InlineElement`
                 Element to insert.
             `attributes` : dict
                 Optional dictionary giving named style attributes of the
@@ -488,7 +488,7 @@ class AbstractDocument(event.EventDispatcher):
             `position` : int
                 Position in the document of the element.
 
-        :rtype: `InlineElement`
+        :rtype: :py:class:`~pyglet.text.document.InlineElement`
         """
         for element in self._elements:
             if element._position == position:
@@ -630,7 +630,7 @@ class FormattedDocument(AbstractDocument):
     """Simple implementation of a document that maintains text formatting.
 
     Changes to text style are applied according to the description in
-    `AbstractDocument`.  All styles default to ``None``.
+    :py:class:`~pyglet.text.document.AbstractDocument`.  All styles default to ``None``.
     """
 
     def __init__(self, text=''):
