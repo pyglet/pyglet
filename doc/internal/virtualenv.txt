@@ -64,9 +64,9 @@ Only one can be active at a time, so perform the following steps one one at a ti
 
 Activate whichever virtual environment you wish to use::
 
-    pyglet-venv/py2/bin/activate
+    . pyglet-venv/py2/bin/activate
     # or
-    pyglet-venv/py3/bin/activate
+    . pyglet-venv/py3/bin/activate
 
 You will see the name of the virtual environment at the start of the command prompt.
 
