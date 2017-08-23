@@ -157,7 +157,7 @@ fragment_source = """#version 330 core
 """
 
 
-class SpriteGroup(graphics.ShaderGroup):
+class SpriteGroup(graphics.Group):
     """Shared sprite rendering group.
 
     The group is automatically coalesced with other sprite groups sharing the

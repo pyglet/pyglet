@@ -71,14 +71,12 @@ class Shader:
         return self._id
 
     def _compile_shader(self):
-        shader_source = self._source.encode("utf8")
-        shader_id = glCreateShader(_shader_types[self.type])
-        source_buffer = c_char_p(shader_source)
-        source_buffer_pointer = cast(pointer(source_buffer), POINTER(POINTER(c_char)))
-        source_length = c_int(len(shader_source) + 1)
+        shader_source_utf8 = self._source.encode("utf8")
+        source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
+        source_length = c_int(len(shader_source_utf8))
 
-        # shader id, count, string, length:
-        glShaderSource(shader_id, 1, source_buffer_pointer, source_length)
+        shader_id = glCreateShader(_shader_types[self.type])
+        glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
         status = c_int(0)
@@ -283,43 +281,18 @@ class ShaderProgram:
     def get_attrib_location(self, name):
         return glGetAttribLocation(self._id, create_string_buffer(name.encode('ascii')))
 
-    def get_uniform_name(self, index):
+    def get_uniform_block_name(self, index):
         buf_size = 128
         size = c_int(0)
-        attr_type = c_uint(0)
         name_buf = create_string_buffer(buf_size)
         try:
-            glGetActiveUniform(self._id, index, buf_size, None, size, attr_type, name_buf)
+            glGetActiveUniformBlockName(self._id, index, buf_size, size, name_buf)
             return name_buf.value.decode()
         except GLException:
             return None
 
     def get_uniform_location(self, name):
         return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
-
-    def get_uniform_type(self, name):
-        location = self.get_uniform_location(name)
-        if location == -1:
-            raise GLException("Could not find Uniform named: {0}".format(name))
-        else:
-            buf_size = 128
-            size = GLint()
-            uni_type = GLenum()
-            name_buf = create_string_buffer(buf_size)
-            glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
-            return uni_type.value
-
-    def get_uniform_size(self, name):
-        location = self.get_uniform_location(name)
-        if location == -1:
-            raise GLException("Could not find Uniform named: {0}".format(name))
-        else:
-            buf_size = 128
-            size = GLint()
-            uni_type = GLenum()
-            name_buf = create_string_buffer(buf_size)
-            glGetActiveUniform(self._id, location, buf_size, None, size, uni_type, name_buf)
-            return size.value
 
     def query_uniform(self, index):
         buf_size = 128
@@ -342,6 +315,13 @@ vertex_source = """#version 330 core
 
     uniform vec2 window_size;
     uniform float zoom = 1.0;
+
+    uniform WindowBlock
+    {
+        vec2 size;
+        vec2 aspect;
+        float zooom;
+    } window;
 
     void main()
     {
