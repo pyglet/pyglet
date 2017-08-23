@@ -284,7 +284,7 @@ class Font(object):
     '''
     texture_width = 256
     texture_height = 256
-    texture_internalformat = GL_ALPHA
+    texture_internalformat = GL_R8
 
     # These should also be set by subclass when known
     ascent = 0
