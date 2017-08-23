@@ -11,7 +11,7 @@ _debug_gl_shaders = pyglet.options['debug_gl_shaders']
 _shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'fragment': GL_FRAGMENT_SHADER,
-    # 'geometry': GL_GEOMETRY_SHADER,
+    'geometry': GL_GEOMETRY_SHADER,
 }
 
 _uniform_getters = {
@@ -20,7 +20,7 @@ _uniform_getters = {
 }
 
 _uniform_setters = {
-    # gl_type, setter, length, count
+    # uniform type: (gl_type, setter, length, count)
     GL_INT: (GLint, glUniform1iv, 1, 1),
     GL_INT_VEC2: (GLint, glUniform2iv, 2, 1),
     GL_INT_VEC3: (GLint, glUniform3iv, 3, 1),
@@ -49,13 +49,10 @@ _uniform_setters = {
 }
 
 
-def create_getter_function(program_id, location, gl_type, length):
-
-    gl_getter_func = _uniform_getters[gl_type]
+def create_getter_function(program_id, location, gl_getter, buffer, length):
 
     def getter_func():
-        buffer = (gl_type * length)()
-        gl_getter_func(program_id, location, buffer)
+        gl_getter(program_id, location, buffer)
         return buffer[0] if length == 1 else buffer[:]
 
     return getter_func
@@ -122,7 +119,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    Uniform = namedtuple('Uniform', 'location, getter, setter, attrs')
+    Uniform = namedtuple('Uniform', 'location, getter, setter, buffer, attrs')
     Attribute = namedtuple('Attribute', 'location attribute_type')
 
     def __init__(self, *shaders):
@@ -197,16 +194,17 @@ class ShaderProgram:
 
         try:
             uniform = self._uniforms[key]
-        except KeyError("Uniform name was not found."):
+        except KeyError("Uniform with the name `{0}` was not found.".format(key)):
             raise
 
         try:
-            gl_type, length, count = uniform.attrs
+            length, count, ptr = uniform.attrs
+
             if length == 1:
-                uniform.setter(uniform.location, length, (gl_type * length)(values))
+                uniform.buffer[0] = values
+                uniform.setter(uniform.location, count, ptr)
             else:
-                # array = (gl_type * length)(*values)
-                ptr = cast((gl_type * length)(*values), POINTER(gl_type))
+                uniform.buffer[:] = values
                 uniform.setter(uniform.location, count, ptr)
         except GLException:
             raise
@@ -214,7 +212,7 @@ class ShaderProgram:
     def __getitem__(self, item):
         try:
             uniform = self._uniforms[item]
-        except KeyError("Uniform name was not found."):
+        except KeyError("Uniform with the name `{0}` was not found.".format(item)):
             raise
 
         try:
@@ -228,17 +226,19 @@ class ShaderProgram:
             location = self.get_uniform_location(uniform_name)
 
             try:
-                gl_type, gl_set_func, length, count = _uniform_setters[uniform_type]
+                gl_type, gl_setter, length, count = _uniform_setters[uniform_type]
 
-                getter = create_getter_function(self._id, location, gl_type, length)
-                # setter = create_setter_function(uniform_type, location)
+                buffer = (gl_type * length)()
+                ptr = cast(buffer, POINTER(gl_type))
+                attrs = length, count, ptr
 
-                attrs = gl_type, length, count
+                gl_getter = _uniform_getters[gl_type]
+                getter = create_getter_function(self._id, location, gl_getter, buffer, length)
 
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(uniform_type))
 
-            self._uniforms[uniform_name] = self.Uniform(location, getter, gl_set_func, attrs)
+            self._uniforms[uniform_name] = self.Uniform(location, getter, gl_setter, buffer, attrs)
 
     def _parse_all_attributes(self):
         for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
@@ -250,8 +250,8 @@ class ShaderProgram:
     def get_num_active(self, variable_type):
         """Get the number of active variables of the passed GL type.
 
-        :param variable_type: Either GL_ACTIVE_ATTRIBUTES, or GL_ACTIVE_UNIFORMS
-        :return: int: number of active types of this kind
+        :param variable_type: GL_ACTIVE_ATTRIBUTES, GL_ACTIVE_UNIFORMS, etc.
+        :return: int: number of active types of the queried type
         """
         num_active = GLint(0)
         glGetProgramiv(self._id, variable_type, byref(num_active))

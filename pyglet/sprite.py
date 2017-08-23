@@ -116,9 +116,13 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
 vertex_source = """#version 330 core
+    // The `in` attributes are specifically named so that
+    // they match the graphics.vertexattribute module.
+
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
+
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
@@ -163,8 +167,8 @@ class SpriteGroup(graphics.ShaderGroup):
     def __init__(self, texture, blend_src, blend_dest, parent=None):
         """Create a sprite group.
 
-        The group is created internally within :py:class:`~pyglet.sprite.Sprite`; applications usually
-        do not need to explicitly create it.
+        The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
+        is created; applications usually do not need to explicitly create it.
 
         :Parameters:
             `texture` : `~pyglet.image.Texture`
@@ -410,7 +414,6 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture):
-        print(texture, texture.id)
         self._group.texture = texture
         self._vertex_list.tex_coords[:] = texture.tex_coords
         self._texture = texture
