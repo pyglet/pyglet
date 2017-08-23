@@ -187,6 +187,7 @@ class SpriteGroup(graphics.ShaderGroup):
         self.shader_program = graphics.shader.ShaderProgram(self._vert_shader, self._frag_shader)
         self.shader_program.use_program()
         self.shader_program['window_size'] = 540, 540
+        self.shader_program.stop_program()
 
     def set_state(self):
         self.shader_program.use_program()
@@ -409,19 +410,9 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture):
-        if texture.id is not self._texture.id:
-            self._group = SpriteGroup(texture,
-                                      self._group.blend_src,
-                                      self._group.blend_dest,
-                                      self._group.parent)
-            if self._batch is None:
-                self._vertex_list.tex_coords[:] = texture.tex_coords
-            else:
-                self._vertex_list.delete()
-                self._texture = texture
-                self._create_vertex_list()
-        else:
-            self._vertex_list.tex_coords[:] = texture.tex_coords
+        print(texture, texture.id)
+        self._group.texture = texture
+        self._vertex_list.tex_coords[:] = texture.tex_coords
         self._texture = texture
 
     def _create_vertex_list(self):
