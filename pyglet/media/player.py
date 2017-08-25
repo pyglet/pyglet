@@ -35,7 +35,6 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 import buffered_logger as bl
-import time
 
 import pyglet
 from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
@@ -45,6 +44,7 @@ from pyglet.media.sources.base import SourceGroup, StaticSource
 
 _debug = pyglet.options['debug_media']
 
+clock = pyglet.clock.get_default()
 
 class Player(pyglet.event.EventDispatcher):
     """High-level sound and video player.
@@ -106,13 +106,15 @@ class Player(pyglet.event.EventDispatcher):
                 if bl.logger is not None:
                     bl.logger.init_wall_time()
                     bl.logger.log("p.P._sp", 0.0)
+            write_size = self._audio_player.get_write_size()
+            self._audio_player.refill(write_size)
             self._audio_player.play()
 
             if source.video_format:
                 if not self._texture:
                     self._create_texture()
                 pyglet.clock.schedule_once(self.update_texture, 0)
-            self._systime = time.time()
+            self._systime = clock.time()
         else:
             if self._audio_player:
                 self._audio_player.stop()
@@ -234,7 +236,7 @@ class Player(pyglet.event.EventDispatcher):
         if self._systime is None:
             now = self._time
         else:
-            now = time.time() - self._systime + self._time
+            now = clock.time() - self._systime + self._time
         return now
         # time = None
         # if self._playing and self._audio_player:
