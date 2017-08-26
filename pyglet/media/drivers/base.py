@@ -103,6 +103,14 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         """
         # TODO determine which source within group
 
+    @abstractmethod
+    def prefill_audio(self):
+        """Prefill the audio buffer with audio data.
+
+        This method is called before the audio player starts in order to 
+        reduce the time it takes to fill the whole audio buffer.
+        """
+
     def set_volume(self, volume):
         """See `Player.volume`."""
         pass

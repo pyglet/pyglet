@@ -446,3 +446,5 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         with self.stream:
             self.stream.update_sample_rate(int(pitch * self.sample_rate)).wait()
 
+    def prefill_audio(self):
+        self._write_to_stream(nbytes=None)

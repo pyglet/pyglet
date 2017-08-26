@@ -413,6 +413,10 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             with self._lock:
                 self._ds_buffer.cone_outside_volume = volume
 
+    def prefill_audio(self):
+        write_size = self.get_write_size()
+        self.refill(write_size)
+
 
 class DirectSoundDriver(AbstractAudioDriver):
     def __init__(self):
