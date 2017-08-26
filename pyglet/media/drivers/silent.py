@@ -370,6 +370,9 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
         if _debug:
             print('SilentAudioPlayer(Worker) ended')
 
+    def prefill_audio(self):
+        self._buffer_data()
+
 
 class SilentTimeAudioPlayer(AbstractAudioPlayer):
     # Note that when using this player (automatic if playing back video with
@@ -421,6 +424,8 @@ class SilentTimeAudioPlayer(AbstractAudioPlayer):
     def _dispatch_new_event(self, event_name):
         MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
 
+    def prefill_audio(self):
+        pass
 
 class SilentAudioDriver(AbstractAudioDriver):
     def __init__(self):

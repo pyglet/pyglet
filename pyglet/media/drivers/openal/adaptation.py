@@ -496,3 +496,6 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
             if processed > 0:
                 self._buffer_system_time = time.time()
 
+    def prefill_audio(self):
+        write_size = self.get_write_size()
+        self.refill(write_size)

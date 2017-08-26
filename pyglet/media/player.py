@@ -106,8 +106,7 @@ class Player(pyglet.event.EventDispatcher):
                 if bl.logger is not None:
                     bl.logger.init_wall_time()
                     bl.logger.log("p.P._sp", 0.0)
-            write_size = self._audio_player.get_write_size()
-            self._audio_player.refill(write_size)
+            self._audio_player.prefill_audio()
             self._audio_player.play()
 
             if source.video_format:
