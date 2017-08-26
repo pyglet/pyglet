@@ -133,13 +133,17 @@ If you would like to have your library listed here, let us know!
     Pyshaders provides a high level api and a low level api, and it can be integrated easily
     with existing code because it does not occlude the underlying opengl values.
 
-Projects based on pyglet
-------------------------
+Projects using pyglet
+---------------------
 
 pyglet is a fairly lightweight library, which makes it ideal to build upon.  Listed here are
 a few projects that take advantage of pyglet "under the hood".  If you would like to have your
 project listed here, let us know!
 
 `cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://http://python.cocos2d.org/index.html>`_
+    Cocos2d is an open source software framework. It can be used to build games, apps and
+    other cross platform GUI based interactive programs.
 
-`Arcade - Arcade Game Library is a wrapper on top of OpenGL <https://bitbucket.org/pcraven/arcade>`_
+`Arcade - A 2D library for game development focusing on simplicity <http://arcade.academy/>`_
+    Arcade builds on Pyglet with a focus to make creating 2D arcade games simple and easy
+    for hobbyists and new programmers.
