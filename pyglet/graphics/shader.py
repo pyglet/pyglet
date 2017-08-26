@@ -58,7 +58,23 @@ def create_getter_function(program_id, location, gl_getter, buffer, length):
     return getter_func
 
 
+def create_setter_function(location, gl_setter, buffer, length, count, ptr):
+
+    if length == 1:
+        def setter_func(value):
+            buffer[0] = value
+            gl_setter(location, count, ptr)
+    else:
+        def setter_func(values):
+            buffer[:] = values
+            gl_setter(location, count, ptr)
+
+    return setter_func
+
+
 class Shader:
+    """OpenGL Shader object"""
+
     def __init__(self, source_string, shader_type):
         if shader_type not in _shader_types.keys():
             raise TypeError("The `shader_type` must be 'vertex' or 'fragment'.")
@@ -112,6 +128,10 @@ class Shader:
 
         if _debug_gl_shaders:
             print("Destroyed {0} shader object.".format(self.type))
+
+    def __repr__(self):
+        type_name = self.type.capitalize()
+        return "{0} {1} id({2})".format(type_name, self.__class__.__name__, self.id)
 
 
 class ShaderProgram:
@@ -186,7 +206,7 @@ class ShaderProgram:
         if _debug_gl_shaders:
             print("Destroyed Shader Program.")
 
-    def __setitem__(self, key, values):
+    def __setitem__(self, key, value):
         if not self._active:
             raise Exception("Shader Program is not active.")
 
@@ -196,14 +216,7 @@ class ShaderProgram:
             raise
 
         try:
-            length, count, ptr = uniform.attrs
-
-            if length == 1:
-                uniform.buffer[0] = values
-                uniform.setter(uniform.location, count, ptr)
-            else:
-                uniform.buffer[:] = values
-                uniform.setter(uniform.location, count, ptr)
+            uniform.setter(value)
         except GLException:
             raise
 
@@ -233,10 +246,12 @@ class ShaderProgram:
                 gl_getter = _uniform_getters[gl_type]
                 getter = create_getter_function(self._id, location, gl_getter, buffer, length)
 
+                setter = create_setter_function(location, gl_setter, buffer, length, count, ptr)
+
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(uniform_type))
 
-            self._uniforms[uniform_name] = self.Uniform(location, getter, gl_setter, buffer, attrs)
+            self._uniforms[uniform_name] = self.Uniform(location, getter, setter, buffer, attrs)
 
     def _parse_all_attributes(self):
         for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
@@ -304,6 +319,9 @@ class ShaderProgram:
             return uname.value.decode(), utype.value, usize.value
         except GLException:
             raise
+
+    def __repr__(self):
+        return "{0} id({1})".format(self.__class__.__name__, self.id)
 
 
 vertex_source = """#version 330 core
