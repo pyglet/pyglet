@@ -143,8 +143,12 @@ def dump_pyglet_info(pathserv):
 # assumes the cwd hits into pyglet clone under test
 def dump_hg_changeset(pathserv):
     fname = pathserv.special_raw_filename("pyglet_hg_revision")
-    subprocess.call(["hg", "parents", "--encoding", "utf8", ">", fname],
-                    shell=True,
+    # win needs shell=True to locate the 'hg'
+    shell = (sys.platform == "win32")
+    with open(fname, "w", encoding="utf8") as outfile:
+        subprocess.call(["hg", "parents", "--encoding", "utf8"],
+                    shell=shell,
+                    stdout=outfile,
                     timeout=5.0)
 
 
