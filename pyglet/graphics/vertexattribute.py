@@ -356,8 +356,7 @@ class AbstractAttribute(object):
             elem_offset = self.offset // ctypes.sizeof(self.c_type)
             ptr_type = ctypes.POINTER(self.c_type * (count * elem_stride - elem_offset))
             region = buffer.get_region(byte_start, byte_size, ptr_type)
-            return vertexbuffer.IndirectArrayRegion(
-                region, array_count, self.count, elem_stride)
+            return vertexbuffer.IndirectArrayRegion(region, array_count, self.count, elem_stride)
 
     def set_region(self, buffer, start, count, data):
         """Set the data over a region of the buffer.

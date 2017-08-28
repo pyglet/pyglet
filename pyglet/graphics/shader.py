@@ -1,5 +1,6 @@
-from collections import namedtuple
+import pyglet
 
+from collections import namedtuple
 from pyglet.gl import *
 from ctypes import *
 
@@ -130,8 +131,7 @@ class Shader:
             print("Destroyed {0} shader object.".format(self.type))
 
     def __repr__(self):
-        type_name = self.type.capitalize()
-        return "{0} {1} id({2})".format(type_name, self.__class__.__name__, self.id)
+        return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
 
 
 class ShaderProgram:
@@ -321,7 +321,7 @@ class ShaderProgram:
             raise
 
     def __repr__(self):
-        return "{0} id({1})".format(self.__class__.__name__, self.id)
+        return "{0}(id={1})".format(self.__class__.__name__, self.id)
 
 
 vertex_source = """#version 330 core

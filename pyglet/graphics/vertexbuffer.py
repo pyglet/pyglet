@@ -63,12 +63,9 @@ def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
         `size` : int
             Size of the buffer, in bytes
         `target` : int
-            OpenGL target buffer
+            OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
         `usage` : int
-            OpenGL usage constant
-        `vbo` : bool
-            True if a `VertexBufferObject` should be created if the driver
-            supports it; otherwise only a `VertexArray` is created.
+            OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
 
     :rtype: `AbstractBuffer`
     """
@@ -82,12 +79,9 @@ def create_mappable_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
         `size` : int
             Size of the buffer, in bytes
         `target` : int
-            OpenGL target buffer
+            OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
         `usage` : int
-            OpenGL usage constant
-        `vbo` : bool
-            True if a `VertexBufferObject` should be created if the driver
-            supports it; otherwise only a `VertexArray` is created.
+            OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
 
     :rtype: `AbstractBuffer` with `AbstractMappable`
     """
@@ -321,8 +315,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
             if size == self.size:
                 glBufferData(self.target, self.size, self.data, self.usage)
             else:
-                glBufferSubData(self.target, self._dirty_min, size,
-                                self.data_ptr + self._dirty_min)
+                glBufferSubData(self.target, self._dirty_min, size, self.data_ptr + self._dirty_min)
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
 
@@ -357,13 +350,8 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
 
         self.size = size
 
-        # TODO: test this since stubbing out legacy GL code
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, self.data, self.usage)
-
-        # glPopClientAttrib()
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
@@ -474,8 +462,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
         elif stop < 0:
             stop = self.size + stop
 
-        assert step == 1 or step % count == 0, \
-            'Step must be multiple of component count'
+        assert step == 1 or step % count == 0, 'Step must be multiple of component count'
 
         data_start = (start // count) * self.stride + start % count
         data_stop = (stop // count) * self.stride + stop % count
@@ -484,14 +471,10 @@ class IndirectArrayRegion(AbstractBufferRegion):
         #  TODO stepped getitem is probably wrong, see setitem for correct.
         value_step = step * count
 
-        # ctypes does not support stepped slicing, so do the work in a list
-        # and copy it back.
-        data = self.region.array[:]
         value = [0] * ((stop - start) // step)
         stride = self.stride
         for i in range(count):
-            value[i::value_step] = \
-                data[data_start + i:data_stop + i:data_step]
+            value[i::value_step] = self.region.array[data_start + i:data_stop + i:data_step]
         return value
 
     def __setitem__(self, index, value):
@@ -512,25 +495,19 @@ class IndirectArrayRegion(AbstractBufferRegion):
         elif stop < 0:
             stop = self.size + stop
 
-        assert step == 1 or step % count == 0, \
-            'Step must be multiple of component count'
+        assert step == 1 or step % count == 0, 'Step must be multiple of component count'
 
         data_start = (start // count) * self.stride + start % count
         data_stop = (stop // count) * self.stride + stop % count
 
-        # ctypes does not support stepped slicing, so do the work in a list
-        # and copy it back.
-        data = self.region.array[:]
         if step == 1:
             data_step = self.stride
             value_step = count
             for i in range(count):
-                data[data_start + i:data_stop + i:data_step] = \
-                    value[i::value_step]
+                self.region.array[data_start + i:data_stop + i:data_step] = value[i::value_step]
         else:
             data_step = (step // count) * self.stride
-            data[data_start:data_stop:data_step] = value
-        self.region.array[:] = data
+            self.region.array[data_start:data_stop:data_step] = value
 
     def invalidate(self):
         self.region.invalidate()
