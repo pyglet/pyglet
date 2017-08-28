@@ -52,9 +52,14 @@ _uniform_setters = {
 
 def create_getter_function(program_id, location, gl_getter, buffer, length):
 
-    def getter_func():
-        gl_getter(program_id, location, buffer)
-        return buffer[0] if length == 1 else buffer[:]
+    if length == 1:
+        def getter_func():
+            gl_getter(program_id, location, buffer)
+            return buffer[0]
+    else:
+        def getter_func():
+            gl_getter(program_id, location, buffer)
+            return buffer[:]
 
     return getter_func
 
@@ -137,8 +142,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    Uniform = namedtuple('Uniform', 'location, getter, setter, buffer, attrs')
-    Attribute = namedtuple('Attribute', 'location attribute_type')
+    Uniform = namedtuple('Uniform', 'getter, setter')
 
     def __init__(self, *shaders):
         self._id = self._link_program(shaders)
@@ -147,7 +151,7 @@ class ShaderProgram:
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
-        # self._parse_all_attributes()
+        self._parse_all_uniform_blocks()
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -203,9 +207,6 @@ class ShaderProgram:
         except:
             pass
 
-        if _debug_gl_shaders:
-            print("Destroyed Shader Program.")
-
     def __setitem__(self, key, value):
         if not self._active:
             raise Exception("Shader Program is not active.")
@@ -231,35 +232,6 @@ class ShaderProgram:
         except GLException:
             raise
 
-    def _parse_all_uniforms(self):
-        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name, uniform_type, uniform_size = self.query_uniform(index)
-            location = self.get_uniform_location(uniform_name)
-
-            try:
-                gl_type, gl_setter, length, count = _uniform_setters[uniform_type]
-
-                buffer = (gl_type * length)()
-                ptr = cast(buffer, POINTER(gl_type))
-                attrs = length, count, ptr
-
-                gl_getter = _uniform_getters[gl_type]
-                getter = create_getter_function(self._id, location, gl_getter, buffer, length)
-
-                setter = create_setter_function(location, gl_setter, buffer, length, count, ptr)
-
-            except KeyError:
-                raise GLException("Unsupported Uniform type {0}".format(uniform_type))
-
-            self._uniforms[uniform_name] = self.Uniform(location, getter, setter, buffer, attrs)
-
-    def _parse_all_attributes(self):
-        for i in range(self.get_num_active(GL_ACTIVE_ATTRIBUTES)):
-            attrib_name = self.get_attrib_name(i)
-            attrib_type = self.get_attrib_type(attrib_name)
-            location = self.get_attrib_location(attrib_name)
-            self._attributes[attrib_name] = self.Attribute(location, attrib_type)
-
     def get_num_active(self, variable_type):
         """Get the number of active variables of the passed GL type.
 
@@ -270,31 +242,44 @@ class ShaderProgram:
         glGetProgramiv(self._id, variable_type, byref(num_active))
         return num_active.value
 
-    def get_attrib_type(self, name):
-        location = self.get_attrib_location(name)
-        if location == -1:
-            raise GLException("Could not find Attribute named: {0}".format(name))
-        else:
-            buf_size = 128
-            size = GLint()
-            attr_type = GLenum()
-            name_buf = create_string_buffer(buf_size)
-            glGetActiveAttrib(self._id, location, buf_size, None, size, attr_type, name_buf)
-            return attr_type.value
+    def _parse_all_uniforms(self):
+        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
+            uniform_name, uniform_type, uniform_size = self.query_uniform(index)
+            location = self.get_uniform_location(uniform_name)
 
-    def get_attrib_name(self, index):
-        buf_size = 128
-        size = c_int(0)
-        attr_type = c_uint(0)
-        name_buf = create_string_buffer(buf_size)
-        try:
-            glGetActiveAttrib(self._id, index, buf_size, None, size, attr_type, name_buf)
-            return name_buf.value.decode()
-        except GLException:
-            return None
+            if location == -1:      # Skip uniforms that may be in Uniform Blocks
+                continue
 
-    def get_attrib_location(self, name):
-        return glGetAttribLocation(self._id, create_string_buffer(name.encode('ascii')))
+            try:
+                gl_type, gl_setter, length, count = _uniform_setters[uniform_type]
+                gl_getter = _uniform_getters[gl_type]
+
+                # Create mini-buffer for getters and setters:
+                buffer = (gl_type * length)()
+                ptr = cast(buffer, POINTER(gl_type))
+
+                # Create custom dedicated getters and setters for each uniform:
+                getter = create_getter_function(self._id, location, gl_getter, buffer, length)
+                setter = create_setter_function(location, gl_setter, buffer, length, count, ptr)
+
+                if _debug_gl_shaders:
+                    print("uniform name: {0}, type: {1}, size: {2}, location: {3}, length: {4}, "
+                          "count: {5}".format(uniform_name, uniform_type,
+                                              uniform_size, location, length, count))
+
+            except KeyError:
+                raise GLException("Unsupported Uniform type {0}".format(uniform_type))
+
+            self._uniforms[uniform_name] = self.Uniform(getter, setter)
+
+    def _parse_all_uniform_blocks(self):
+        for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
+            name = self.get_uniform_block_name(index)
+            num_uniforms = GLint()
+            glGetActiveUniformBlockiv(
+                self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_uniforms)
+            for uniform_index in range(num_uniforms.value):
+                pass
 
     def get_uniform_block_name(self, index):
         buf_size = 128
@@ -310,9 +295,9 @@ class ShaderProgram:
         return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
 
     def query_uniform(self, index):
-        buf_size = 128
         usize = GLint()
         utype = GLenum()
+        buf_size = 192
         uname = create_string_buffer(buf_size)
         try:
             glGetActiveUniform(self._id, index, buf_size, None, usize, utype, uname)
@@ -337,16 +322,16 @@ vertex_source = """#version 330 core
     uniform WindowBlock
     {
         vec2 size;
-        vec2 aspect;
+        float aspect;
         float zooom;
     } window;
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window_size.x - 1.0,
-                           vertices.y * 2.0 / window_size.y - 1.0,
+        gl_Position = vec4(vertices.x * 2.0 / window_size.x - 1.0 + window.aspect,
+                           vertices.y * 2.0 / window_size.y - 1.0 + window.aspect,
                            vertices.z,
-                           vertices.w * zoom);
+                           vertices.w * zoom + window.zooom);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
@@ -361,10 +346,8 @@ fragment_source = """#version 330 core
 
     uniform sampler2D our_texture;
 
-
     void main()
     {
-        // final_colors = vertex_colors;
         final_colors = texture(our_texture, texture_coords) + vertex_colors;
     }
 """
