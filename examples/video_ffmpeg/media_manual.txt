@@ -6,6 +6,7 @@ TOC
     Current problems
     Proposed solution
     Helpful tools
+    Convert video to mkv
 
 Domain knowledge
 ================
@@ -193,3 +194,9 @@ Finally, you can get a more compact view with the additional 'compact' flag:
 
 ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames
 -select_streams v -show_entries frame=pkt_pts,pict_type -of compact
+
+Convert video to mkv
+====================
+ffmpeg -i <original_video> -c:v libx264 -preset slow -profile:v high -crf 18 
+-coder 1 -pix_fmt yuv420p -movflags +faststart -g 30 -bf 2 -c:a aac -b:a 384k 
+-profile:a aac_low <outputfilename.mkv>
