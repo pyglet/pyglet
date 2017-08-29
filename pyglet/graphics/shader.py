@@ -273,13 +273,31 @@ class ShaderProgram:
             self._uniforms[uniform_name] = self.Uniform(getter, setter)
 
     def _parse_all_uniform_blocks(self):
+        block_uniforms = []
+        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
+            uniform_name, uniform_type, uniform_size = self.query_uniform(index)
+            location = self.get_uniform_location(uniform_name)
+            if location == -1:
+                block_uniforms.append(uniform_name)
+        print(block_uniforms)
+
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
-            num_uniforms = GLint()
-            glGetActiveUniformBlockiv(
-                self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_uniforms)
-            for uniform_index in range(num_uniforms.value):
-                pass
+            number = GLint()
+            size = GLint()
+            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_DATA_SIZE, size)
+            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, number)
+
+            print("UniBlockname:", name, number.value, size.value)
+
+            num = number.value
+
+            indices = (GLuint * num)(*list(range(num)))
+            offsets = (GLint * num)()
+            offsets_ptr = cast(addressof(offsets), POINTER(GLint))
+            glGetActiveUniformsiv(self._id, num, indices, GL_UNIFORM_OFFSET, offsets_ptr)
+
+            print(indices[:], offsets[:])
 
     def get_uniform_block_name(self, index):
         buf_size = 128
