@@ -231,7 +231,7 @@ class FFmpegSource(StreamingSource):
         # more packets are in stream.
         return av.ffmpeg_read(self._file, self._packet) == FFMPEG_RESULT_OK
 
-    def _process_packet(self):
+    def _process_packet(self, player=None):
         # Returns (packet_type, packet), where packet_type = 'video' or
         # 'audio'; and packet is VideoPacket or AudioData.  In either case,
         # packet is buffered or queued for decoding; no further action is
@@ -260,7 +260,7 @@ class FFmpegSource(StreamingSource):
             return 'video', video_packet
 
         elif self._packet.stream_index == self._audio_stream_index:
-            audio_data = self._decode_audio_packet()
+            audio_data = self._decode_audio_packet(player)
             if audio_data:
                 if _debug:
                     print('Got an audio packet at', audio_data.timestamp)
@@ -269,7 +269,7 @@ class FFmpegSource(StreamingSource):
 
         return None, None
 
-    def get_audio_data(self, bytes):
+    def get_audio_data(self, bytes, player):
         try:
             audio_data = self._buffered_audio_data.popleft()
             audio_data_timeend = audio_data.timestamp + audio_data.duration
@@ -289,7 +289,7 @@ class FFmpegSource(StreamingSource):
             if not self._get_packet():
                 break
 
-            packet_type, packet = self._process_packet()
+            packet_type, packet = self._process_packet(player)
 
             if packet_type == 'video':
                 have_video_work = True
@@ -321,7 +321,7 @@ class FFmpegSource(StreamingSource):
             print('remaining events are', self._events)
         return audio_data
 
-    def _decode_audio_packet(self):
+    def _decode_audio_packet(self, player): # Need wanted_nb_samples
         packet = self._packet
         size_out = ctypes.c_int(len(self._audio_buffer))
 
@@ -332,7 +332,8 @@ class FFmpegSource(StreamingSource):
             try:
                 used = av.ffmpeg_decode_audio(self._audio_stream,
                                     audio_packet_ptr, audio_packet_size,
-                                    self._audio_buffer, size_out)
+                                    self._audio_buffer, size_out,
+                                    player)
             except FFmpegException:
                 self._audio_packet_size = 0
                 break
@@ -348,6 +349,7 @@ class FFmpegSource(StreamingSource):
 
             # XXX to actually copy the data.. but it never used to crash, so
             # maybe I'm  missing something
+            
             buffer = ctypes.create_string_buffer(size_out.value)
             ctypes.memmove(buffer, self._audio_buffer, len(buffer))
             buffer = buffer.raw

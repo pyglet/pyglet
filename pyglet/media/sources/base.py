@@ -538,7 +538,7 @@ class SourceGroup(object):
     :type: bool
     """)
 
-    def get_audio_data(self, bytes):
+    def get_audio_data(self, bytes, player):
         """Get next audio packet.
 
         :Parameters:
@@ -551,7 +551,7 @@ class SourceGroup(object):
 
         if not self._sources:
             return None
-        data = self._sources[0].get_audio_data(bytes)
+        data = self._sources[0].get_audio_data(bytes, player)
         eos = False
         while not data:
             eos = True
@@ -569,7 +569,7 @@ class SourceGroup(object):
                 else:
                     return None
 
-            data = self._sources[0].get_audio_data(bytes) # TODO method rename
+            data = self._sources[0].get_audio_data(bytes, player) # TODO method rename
 
         data.timestamp += self._timestamp_offset
         if eos:

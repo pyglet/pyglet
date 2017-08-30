@@ -370,7 +370,7 @@ def ffmpeg_read(file, packet):
     packet.size = file.packet.contents.size
     return FFMPEG_RESULT_OK
 
-def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out):
+def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
     if stream.type != AVMEDIA_TYPE_AUDIO:
         raise FFmpegException('Trying to decode audio on a non-audio stream.')
     inbuf = create_string_buffer(size_in + FF_INPUT_BUFFER_PADDING_SIZE)
@@ -422,7 +422,16 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out):
         elif sample_format in (AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP):
             tgt_format = AV_SAMPLE_FMT_S16
         else:
-            raise FFmpegException('Audi format not supported.')
+            raise FFmpegException('Audio format not supported.')
+
+        if player:
+            diff = player._synchronize_audio()
+            nb_samples = stream.frame.contents.nb_samples
+            wanted_nb_samples = nb_samples + diff * player.source_group.audio_format.sample_rate
+            min_nb_samples = (nb_samples * (100 - player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
+            max_nb_samples = (nb_samples * (100 + player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
+            wanted_nb_samples = min(max(wanted_nb_samples, min_nb_samples), max_nb_samples)
+            wanted_nb_samples = int(wanted_nb_samples)
 
         swr_ctx = swresample.swr_alloc_set_opts(None, 
             channel_output, tgt_format,  sample_rate,
@@ -431,6 +440,14 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out):
         if not swr_ctx or swresample.swr_init(swr_ctx) < 0:
             swresample.swr_free(swr_ctx)
             raise FFmpegException('Cannot create sample rate converter.')
+        if player and wanted_nb_samples != nb_samples:
+            res = swresample.swr_set_compensation(
+                swr_ctx,
+                (wanted_nb_samples - nb_samples),
+                wanted_nb_samples
+            )
+            if res < 0:
+                raise FFmpegException('swr_set_compensation failed.')
 
         data_in = stream.frame.contents.extended_data
         p_data_out = cast(data_out, POINTER(c_uint8))
