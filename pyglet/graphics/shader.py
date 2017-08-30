@@ -151,7 +151,6 @@ class ShaderProgram:
         self._uniforms = {}
         self._attributes = {}
         self._parse_all_uniforms()
-        self._parse_all_uniform_blocks()
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -272,32 +271,45 @@ class ShaderProgram:
 
             self._uniforms[uniform_name] = self.Uniform(getter, setter)
 
-    def _parse_all_uniform_blocks(self):
+    def get_all_uniform_blocks(self):
         block_uniforms = []
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
             uniform_name, uniform_type, uniform_size = self.query_uniform(index)
             location = self.get_uniform_location(uniform_name)
             if location == -1:
                 block_uniforms.append(uniform_name)
-        print(block_uniforms)
+
+        uniform_blocks = []
 
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
-            number = GLint()
-            size = GLint()
-            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_DATA_SIZE, size)
-            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, number)
+            num_active = GLint()
+            block_data_size = GLint()
+            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
 
-            print("UniBlockname:", name, number.value, size.value)
+            # print("UniBlockname:", name, num_active.value, block_data_size.value)
 
-            num = number.value
+            # Query the indices and offsets of the uniforms:
+            indices = (GLuint * num_active.value)()
+            offsets = (GLint * len(indices))()
 
-            indices = (GLuint * num)(*list(range(num)))
-            offsets = (GLint * num)()
+            indices_ptr = cast(addressof(indices), POINTER(GLint))
             offsets_ptr = cast(addressof(offsets), POINTER(GLint))
-            glGetActiveUniformsiv(self._id, num, indices, GL_UNIFORM_OFFSET, offsets_ptr)
 
-            print(indices[:], offsets[:])
+            glGetActiveUniformBlockiv(
+                self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+            glGetActiveUniformsiv(
+                self._id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
+
+            uniform_blocks.append({'name': name,
+                                   'block_index': index,
+                                   'active_uniforms': num_active.value,
+                                   'block_size': block_data_size.value,
+                                   'uniforms': block_uniforms,
+                                   'indices': indices[:],
+                                   'offsets': offsets[:]})
+        return uniform_blocks
 
     def get_uniform_block_name(self, index):
         buf_size = 128
