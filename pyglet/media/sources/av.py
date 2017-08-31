@@ -406,6 +406,7 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
         if size_out.value < data_size:
             raise FFmpegException('Output audio buffer is too small for current audio frame!')
 
+        nb_samples = stream.frame.contents.nb_samples
         channels = stream.codec_context.contents.channels
         channel_input = avutil.av_get_default_channel_layout(channels)
         channels_out = min(2, channels)
@@ -424,9 +425,10 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
         else:
             raise FFmpegException('Audio format not supported.')
 
+        bytes_per_sample = avutil.av_get_bytes_per_sample(tgt_format)
+
         if player:
             diff = player._synchronize_audio()
-            nb_samples = stream.frame.contents.nb_samples
             wanted_nb_samples = nb_samples + diff * player.source_group.audio_format.sample_rate
             min_nb_samples = (nb_samples * (100 - player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
             max_nb_samples = (nb_samples * (100 + player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
@@ -440,6 +442,7 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
         if not swr_ctx or swresample.swr_init(swr_ctx) < 0:
             swresample.swr_free(swr_ctx)
             raise FFmpegException('Cannot create sample rate converter.')
+
         if player and wanted_nb_samples != nb_samples:
             res = swresample.swr_set_compensation(
                 swr_ctx,
@@ -451,12 +454,27 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
 
         data_in = stream.frame.contents.extended_data
         p_data_out = cast(data_out, POINTER(c_uint8))
-        len_data = swresample.swr_convert(swr_ctx, 
-            byref(p_data_out), data_size, 
-            data_in, stream.frame.contents.nb_samples)
-        size_out.value = (len_data * 
-                          channels_out * 
-                          avutil.av_get_bytes_per_sample(tgt_format))
+
+        out_samples = swresample.swr_get_out_samples(swr_ctx, nb_samples)
+        total_samples_out = swresample.swr_convert(swr_ctx, 
+                byref(p_data_out), out_samples, 
+                data_in, nb_samples)
+        while True:
+            # We loop because there could be some more samples buffered in
+            # SwrContext. We advance the pointer where we write our samples.
+            offset = (total_samples_out * channels_out * bytes_per_sample)
+            p_data_offset = cast(
+                addressof(p_data_out.contents) + offset, 
+                POINTER(c_uint8)
+                )
+            samples_out = swresample.swr_convert(swr_ctx, 
+                byref(p_data_offset), out_samples-total_samples_out, None, 0)
+            if samples_out == 0:
+                # No more samples. We can continue.
+                break
+            total_samples_out += samples_out
+
+        size_out.value = (total_samples_out * channels_out * bytes_per_sample)
         swresample.swr_free(swr_ctx)
     else:
         size_out.value = 0

@@ -70,9 +70,11 @@ swresample.swr_convert.argtypes = [POINTER(SwrContext),
         c_int,
         POINTER(POINTER(c_uint8)),
         c_int]
-swresample.swr_set_compensation.restype = int
+swresample.swr_set_compensation.restype = c_int
 swresample.swr_set_compensation.argtypes = [POINTER(SwrContext),
                                             c_int, c_int]
+swresample.swr_get_out_samples.restype = c_int
+swresample.swr_get_out_samples.argtypes = [POINTER(SwrContext), c_int]  
 
 __all__ = [
 'swresample',
