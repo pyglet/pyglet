@@ -428,7 +428,7 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
         bytes_per_sample = avutil.av_get_bytes_per_sample(tgt_format)
 
         if player:
-            diff = player._synchronize_audio()
+            diff = player.get_audio_time_diff()
             wanted_nb_samples = nb_samples + diff * player.source_group.audio_format.sample_rate
             min_nb_samples = (nb_samples * (100 - player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
             max_nb_samples = (nb_samples * (100 + player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)

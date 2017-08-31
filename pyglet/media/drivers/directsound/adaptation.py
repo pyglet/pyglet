@@ -78,13 +78,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     min_buffer_size = 9600
 
-    # Audio synchronization constants
-    AUDIO_DIFF_AVG_NB = 20
-    # no A-V correction is done if too big error
-    AV_NOSYNC_THRESHOLD = 10.0
-    SAMPLE_CORRECTION_PERCENT_MAX = 10
-
-
     def __init__(self, driver, ds_driver, source_group, player):
         super(DirectSoundAudioPlayer, self).__init__(source_group, player)
 
@@ -138,12 +131,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         self._ds_buffer.current_position = 0
 
-        # Audio synchronization
-        self.audio_diff_avg_count = 0
-        self.audio_diff_cum = 0.0
-        self.audio_diff_avg_coef = math.exp(math.log10(0.01) / self.AUDIO_DIFF_AVG_NB)
-        self.audio_diff_threshold = 0.1 # Experimental. ffplay computes it differently
-        
         self.refill(self._buffer_size)
 
     def __del__(self):
@@ -209,23 +196,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
                     assert _debug('write silence')
                     self.write(None, write_size)
                     write_size = 0
-
-    def _synchronize_audio(self):
-        audio_time = self.get_time() or 0
-        p_time = self.player.time
-        diff = audio_time - self.player.time
-        if abs(diff) < self.AV_NOSYNC_THRESHOLD:
-            self.audio_diff_cum = diff + self.audio_diff_cum * self.audio_diff_avg_coef
-            if self.audio_diff_avg_count < self.AUDIO_DIFF_AVG_NB:
-                self.audio_diff_avg_count += 1
-            else:
-                avg_diff = self.audio_diff_cum * (1 - self.audio_diff_avg_coef)
-                if abs(avg_diff) > self.audio_diff_threshold:
-                    return avg_diff
-        else:
-            self.audio_diff_avg_count = self.audio_diff_cum = 0
-        return 0.0
-
 
     def _has_underrun(self):
         return (self._eos_cursor is not None
