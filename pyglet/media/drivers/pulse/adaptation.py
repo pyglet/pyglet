@@ -178,7 +178,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         nbytes = 1 * self.source_group.audio_format.bytes_per_second
         while True:
             # Find audio packet at timestamp
-            audio_data = self.source_group.get_audio_data(nbytes)
+            audio_data = self.source_group.get_audio_data(nbytes, self)
             if timestamp <= (audio_data.timestamp + audio_data.duration):
                 break
 
@@ -214,7 +214,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 nbytes = min(min_bytes, nbytes)
             if _debug:
                 print('PulseAudioPlayer: Try to get {} bytes of audio data'.format(nbytes))
-            self._current_audio_data = self.source_group.get_audio_data(nbytes)
+            self._current_audio_data = self.source_group.get_audio_data(nbytes, self)
             self._schedule_events()
         if _debug:
             if self._current_audio_data is None:

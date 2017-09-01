@@ -327,7 +327,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         with self._lock:
 
             while write_size > self.min_buffer_size:
-                audio_data = self.source_group.get_audio_data(write_size)
+                audio_data = self.source_group.get_audio_data(write_size, self)
                 if not audio_data:
                     assert _debug_media('No audio data left')
                     if self._has_underrun():
@@ -373,7 +373,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def seek(self, timestamp):
         with self._lock:
             while True:
-                audio_data = self.source_group.get_audio_data(self.ideal_buffer_size)
+                audio_data = self.source_group.get_audio_data(self.ideal_buffer_size, self)
                 assert _debug_media("Seeking audio timestamp {:.2f} sec. "
                         "Got audio packet starting at {:.2f} sec".format(
                             timestamp, audio_data.timestamp))
@@ -457,6 +457,10 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         with self.driver:
             self.source.cone_outer_gain = cone_outer_gain
 
+    def prefill_audio(self):
+        write_size = self.get_write_size()
+        self.refill(write_size)
+
 
 class OpenALAudioPlayer10(OpenALAudioPlayer11):
     """Player compatible with OpenAL version 1.0. This version needs to interpolate
@@ -495,7 +499,3 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
             processed = super(OpenALAudioPlayer10, self)._handle_processed_buffers()
             if processed > 0:
                 self._buffer_system_time = time.time()
-
-    def prefill_audio(self):
-        write_size = self.get_write_size()
-        self.refill(write_size)
