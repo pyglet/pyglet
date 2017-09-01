@@ -116,7 +116,7 @@ class Player(pyglet.event.EventDispatcher):
             self._systime = clock.time()
             # Add a delay to de-synchronize the audio
             # Negative number means audio runs ahead.
-            self._systime += -0.3
+            # self._systime += -0.3
         else:
             if self._audio_player:
                 self._audio_player.stop()

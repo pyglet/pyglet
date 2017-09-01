@@ -67,7 +67,9 @@ from pyglet.media.sources.av import (
     FFMPEG_RESULT_ERROR
     )
 
-if True:
+# import cProfile
+
+if False:
     # XXX lock all ffmpeg calls.  not clear from ffmpeg documentation if this
     # is necessary.  leaving it on while debugging to rule out the possiblity
     # of a problem.
@@ -187,8 +189,8 @@ class FFmpegSource(StreamingSource):
         
         if self.video_format:
             self._video_packets = deque()
-            self._decode_thread = WorkerThread()
-            self._decode_thread.start()
+            # self._decode_thread = WorkerThread()
+            # self._decode_thread.start()
             self._condition = threading.Condition()
 
     def __del__(self):
@@ -204,8 +206,9 @@ class FFmpegSource(StreamingSource):
             pass
 
     def delete(self):
-        if self.video_format:
-            self._decode_thread.stop()
+        # if self.video_format:
+        #     self._decode_thread.stop()
+        pass
 
     def seek(self, timestamp):
         if _debug:
@@ -217,6 +220,7 @@ class FFmpegSource(StreamingSource):
         del self._events[:]
         self._buffered_audio_data.clear()
 
+
         if self.video_format:
             self._video_timestamp = 0
             with self._condition:
@@ -224,7 +228,7 @@ class FFmpegSource(StreamingSource):
                     packet.image = None
                 self._condition.notify()
             self._video_packets.clear()
-            self._decode_thread.clear_jobs()
+            # self._decode_thread.clear_jobs()
 
     def _get_packet(self):
         # Read a packet into self._packet.  Returns True if OK, False if no
@@ -254,9 +258,6 @@ class FFmpegSource(StreamingSource):
             self._video_timestamp = max(self._video_timestamp,
                                         video_packet.timestamp)
             self._video_packets.append(video_packet)
-            self._decode_thread.put_job(
-                lambda: self._decode_video_packet(video_packet))
-
             return 'video', video_packet
 
         elif self._packet.stream_index == self._audio_stream_index:
@@ -280,8 +281,6 @@ class FFmpegSource(StreamingSource):
         if _debug:
             print('get_audio_data')
 
-        have_video_work = False
-
         # Keep reading packets until we have an audio packet and all the
         # associated video packets have been enqueued on the decoder thread.
         while not audio_data or (
@@ -291,18 +290,11 @@ class FFmpegSource(StreamingSource):
 
             packet_type, packet = self._process_packet(player)
 
-            if packet_type == 'video':
-                have_video_work = True
-            elif not audio_data and packet_type == 'audio':
+            if not audio_data and packet_type == 'audio':
                 audio_data = self._buffered_audio_data.popleft()
                 if _debug:
                     print('Got requested audio packet at', audio_data.timestamp)
                 audio_data_timeend = audio_data.timestamp + audio_data.duration
-
-        if have_video_work:
-            # Give decoder thread a chance to run before we return this audio
-            # data.
-            time.sleep(0)
 
         if not audio_data:
             if _debug:
@@ -321,7 +313,7 @@ class FFmpegSource(StreamingSource):
             print('remaining events are', self._events)
         return audio_data
 
-    def _decode_audio_packet(self, player): # Need wanted_nb_samples
+    def _decode_audio_packet(self, player):
         packet = self._packet
         size_out = ctypes.c_int(len(self._audio_buffer))
 
@@ -360,6 +352,12 @@ class FFmpegSource(StreamingSource):
             return AudioData(buffer, len(buffer), timestamp, duration, []) 
 
     def _decode_video_packet(self, packet):
+        # # Some timing and profiling
+        # pr = cProfile.Profile()
+        # pr.enable()
+        # clock = pyglet.clock.get_default()
+        # t0 = clock.time()
+
         width = self.video_format.width
         height = self.video_format.height
         pitch = width * 3
@@ -378,9 +376,13 @@ class FFmpegSource(StreamingSource):
         if _debug:
             print('Decoding video packet at timestamp', packet.timestamp)
 
-        # Notify get_next_video_frame() that another one is ready.
-        with self._condition:
-            self._condition.notify()
+        # t2 = clock.time()
+        # pr.disable()
+        # print("Time in _decode_video_packet: {:.4f} s for timestamp {} s".format(t2-t0, packet.timestamp))
+        # if t2-t0 > 0.01:
+        #     import pstats
+        #     ps = pstats.Stats(pr).sort_stats("cumulative")
+        #     ps.print_stats()
 
     def _ensure_video_packets(self):
         """Process packets until a video packet has been queued (and begun
@@ -422,10 +424,7 @@ class FFmpegSource(StreamingSource):
             if _debug:
                 print('Waiting for', packet)
 
-            # Block until decoding is complete
-            with self._condition:
-                while packet.image == 0:
-                    self._condition.wait()
+            self._decode_video_packet(packet)
 
             if _debug:
                 print('Returning', packet)
