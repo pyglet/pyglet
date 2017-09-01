@@ -42,6 +42,7 @@ from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
 from pyglet.media.sources.base import SourceGroup, StaticSource
 
+
 _debug = pyglet.options['debug_media']
 
 clock = pyglet.clock.get_default()
@@ -109,11 +110,11 @@ class Player(pyglet.event.EventDispatcher):
             self._audio_player.prefill_audio()
             self._audio_player.play()
 
+            self._systime = clock.time()
             if source.video_format:
                 if not self._texture:
                     self._create_texture()
                 pyglet.clock.schedule_once(self.update_texture, 0)
-            self._systime = clock.time()
             # Add a delay to de-synchronize the audio
             # Negative number means audio runs ahead.
             # self._systime += -0.3
@@ -125,8 +126,8 @@ class Player(pyglet.event.EventDispatcher):
             self._time = self._get_time()
             self._systime = None
 
-    def play(self): 
-        self._set_playing(True)
+    def play(self):
+       self._set_playing(True)
 
     def pause(self):
         self._set_playing(False)
@@ -292,8 +293,10 @@ class Player(pyglet.event.EventDispatcher):
             pyglet.clock.schedule_once(self.update_texture, delay)
             return
 
+        frame_rate = self._groups[0].video_format.frame_rate
+        frame_time = 1 / frame_rate
         ts = self._groups[0].get_next_video_timestamp()
-        while ts is not None and ts+0.04 < time: # Allow 40 ms difference
+        while ts is not None and ts + frame_time < time: # Allow up to frame_time difference
             self._groups[0].get_next_video_frame() # Discard frame
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.5", ts)
