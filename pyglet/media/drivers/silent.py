@@ -227,11 +227,13 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
             self._thread.notify()
 
     def seek(self, timestamp):
+        self.audio_diff_avg_count = 0
+        self.audio_diff_cum = 0.0
         with self._thread.condition:
             bytes_to_read = int(self._buffer_time * 
                                 self.source_group.audio_format.bytes_per_second)
             while True:
-                audio_data = self.source_group.get_audio_data(bytes_to_read)
+                audio_data = self.source_group.get_audio_data(bytes_to_read, 0.0)
                 if _debug:
                     print("Seeking audio timestamp {:.2f} sec. "
                         "Got audio packet starting at {:.2f} sec".format(
@@ -296,7 +298,7 @@ class SilentAudioPlayerPacketConsumer(AbstractAudioPlayer):
                 # Pull audio data from source
                 if _debug:
                     print('Trying to buffer %d bytes (%r secs)' % (bytes_to_read, secs))
-                audio_data = self.source_group.get_audio_data(bytes_to_read)
+                audio_data = self.source_group.get_audio_data(bytes_to_read, 0.0)
                 if not audio_data:
                     self._eos = True
                     break

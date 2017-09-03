@@ -327,7 +327,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         with self._lock:
 
             while write_size > self.min_buffer_size:
-                audio_data = self.source_group.get_audio_data(write_size, self)
+                compensation_time = self.get_audio_time_diff()
+                audio_data = self.source_group.get_audio_data(write_size, compensation_time)
                 if not audio_data:
                     assert _debug_media('No audio data left')
                     if self._has_underrun():
@@ -371,9 +372,11 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             return self.source.buffers_queued == 0
 
     def seek(self, timestamp):
+        self.audio_diff_avg_count = 0
+        self.audio_diff_cum = 0.0
         with self._lock:
             while True:
-                audio_data = self.source_group.get_audio_data(self.ideal_buffer_size, self)
+                audio_data = self.source_group.get_audio_data(self.ideal_buffer_size, 0.0)
                 assert _debug_media("Seeking audio timestamp {:.2f} sec. "
                         "Got audio packet starting at {:.2f} sec".format(
                             timestamp, audio_data.timestamp))

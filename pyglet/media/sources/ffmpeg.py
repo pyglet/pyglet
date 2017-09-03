@@ -235,7 +235,7 @@ class FFmpegSource(StreamingSource):
         # more packets are in stream.
         return av.ffmpeg_read(self._file, self._packet) == FFMPEG_RESULT_OK
 
-    def _process_packet(self, player=None):
+    def _process_packet(self, compensation_time=0.0):
         # Returns (packet_type, packet), where packet_type = 'video' or
         # 'audio'; and packet is VideoPacket or AudioData.  In either case,
         # packet is buffered or queued for decoding; no further action is
@@ -261,7 +261,7 @@ class FFmpegSource(StreamingSource):
             return 'video', video_packet
 
         elif self._packet.stream_index == self._audio_stream_index:
-            audio_data = self._decode_audio_packet(player)
+            audio_data = self._decode_audio_packet(compensation_time)
             if audio_data:
                 if _debug:
                     print('Got an audio packet at', audio_data.timestamp)
@@ -270,7 +270,7 @@ class FFmpegSource(StreamingSource):
 
         return None, None
 
-    def get_audio_data(self, bytes, player):
+    def get_audio_data(self, bytes, compensation_time=0.0):
         try:
             audio_data = self._buffered_audio_data.popleft()
             audio_data_timeend = audio_data.timestamp + audio_data.duration
@@ -288,7 +288,7 @@ class FFmpegSource(StreamingSource):
             if not self._get_packet():
                 break
 
-            packet_type, packet = self._process_packet(player)
+            packet_type, packet = self._process_packet(compensation_time)
 
             if not audio_data and packet_type == 'audio':
                 audio_data = self._buffered_audio_data.popleft()
@@ -313,7 +313,7 @@ class FFmpegSource(StreamingSource):
             print('remaining events are', self._events)
         return audio_data
 
-    def _decode_audio_packet(self, player):
+    def _decode_audio_packet(self, compensation_time):
         packet = self._packet
         size_out = ctypes.c_int(len(self._audio_buffer))
 
@@ -325,7 +325,7 @@ class FFmpegSource(StreamingSource):
                 used = av.ffmpeg_decode_audio(self._audio_stream,
                                     audio_packet_ptr, audio_packet_size,
                                     self._audio_buffer, size_out,
-                                    player)
+                                    compensation_time)
             except FFmpegException:
                 self._audio_packet_size = 0
                 break

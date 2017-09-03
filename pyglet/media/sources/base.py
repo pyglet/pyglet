@@ -337,12 +337,15 @@ class Source(object):
         Default implementation returns self."""
         return self
 
-    def get_audio_data(self, bytes):
+    def get_audio_data(self, bytes, compensation_time=0.0):
         """Get next packet of audio data.
 
         :Parameters:
             `bytes` : int
                 Maximum number of bytes of data to return.
+            `compensation_time` : float
+                Time in sec to compensate due to a difference between the
+                master clock and the audio clock.
 
         :rtype: `AudioData`
         :return: Next packet of audio data, or None if there is no (more)
@@ -422,7 +425,7 @@ class StaticSource(Source):
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
 
-    def get_audio_data(self, bytes):
+    def get_audio_data(self, bytes, compensation_time=0.0):
         raise RuntimeError('StaticSource cannot be queued.')
 
 class StaticMemorySource(StaticSource):
@@ -448,7 +451,7 @@ class StaticMemorySource(StaticSource):
 
         self._file.seek(offset)
 
-    def get_audio_data(self, bytes):
+    def get_audio_data(self, bytes, compensation_time=0.0):
         offset = self._file.tell()
         timestamp = float(offset) / self.audio_format.bytes_per_second
 
@@ -538,12 +541,15 @@ class SourceGroup(object):
     :type: bool
     """)
 
-    def get_audio_data(self, bytes, player):
+    def get_audio_data(self, bytes, compensation_time=0.0):
         """Get next audio packet.
 
         :Parameters:
             `bytes` : int
                 Hint for preferred size of audio packet; may be ignored.
+            `compensation_time` : float
+                Time in sec to compensate due to a difference between the
+                master clock and the audio clock.
 
         :rtype: `AudioData`
         :return: Audio data, or None if there is no more data.
@@ -551,7 +557,7 @@ class SourceGroup(object):
 
         if not self._sources:
             return None
-        data = self._sources[0].get_audio_data(bytes, player)
+        data = self._sources[0].get_audio_data(bytes, compensation_time)
         eos = False
         while not data:
             eos = True

@@ -44,8 +44,6 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
     AUDIO_DIFF_AVG_NB = 20
     # no audio correction is done if too big error
     AV_NOSYNC_THRESHOLD = 10.0
-    # Max increase/decrease of original sample size
-    SAMPLE_CORRECTION_PERCENT_MAX = 10
 
     def __init__(self, source_group, player):
         """Create a new audio player.
@@ -149,7 +147,8 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
                 if abs(avg_diff) > self.audio_diff_threshold:
                     return avg_diff
         else:
-            self.audio_diff_avg_count = self.audio_diff_cum = 0
+            self.audio_diff_avg_count = 0
+            self.audio_diff_cum = 0.0
         return 0.0
 
     def set_volume(self, volume):

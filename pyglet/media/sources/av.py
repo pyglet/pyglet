@@ -85,6 +85,9 @@ Timestamp = c_int64
 INT64_MIN = -2**63+1
 INT64_MAX = 0x7FFFFFFFFFFFFFFF
 
+# Max increase/decrease of original sample size
+SAMPLE_CORRECTION_PERCENT_MAX = 10
+
 class FFmpegFileInfo(Structure):
     _fields_ = [
         ('n_streams', c_int),
@@ -370,7 +373,7 @@ def ffmpeg_read(file, packet):
     packet.size = file.packet.contents.size
     return FFMPEG_RESULT_OK
 
-def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
+def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, compensation_time):
     if stream.type != AVMEDIA_TYPE_AUDIO:
         raise FFmpegException('Trying to decode audio on a non-audio stream.')
     inbuf = create_string_buffer(size_in + FF_INPUT_BUFFER_PADDING_SIZE)
@@ -427,13 +430,11 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
 
         bytes_per_sample = avutil.av_get_bytes_per_sample(tgt_format)
 
-        if player:
-            diff = player.get_audio_time_diff()
-            wanted_nb_samples = nb_samples + diff * player.source_group.audio_format.sample_rate
-            min_nb_samples = (nb_samples * (100 - player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
-            max_nb_samples = (nb_samples * (100 + player.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
-            wanted_nb_samples = min(max(wanted_nb_samples, min_nb_samples), max_nb_samples)
-            wanted_nb_samples = int(wanted_nb_samples)
+        wanted_nb_samples = nb_samples + compensation_time * sample_rate
+        min_nb_samples = (nb_samples * (100 - SAMPLE_CORRECTION_PERCENT_MAX) / 100)
+        max_nb_samples = (nb_samples * (100 + SAMPLE_CORRECTION_PERCENT_MAX) / 100)
+        wanted_nb_samples = min(max(wanted_nb_samples, min_nb_samples), max_nb_samples)
+        wanted_nb_samples = int(wanted_nb_samples)
 
         swr_ctx = swresample.swr_alloc_set_opts(None, 
             channel_output, tgt_format,  sample_rate,
@@ -443,7 +444,7 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, player):
             swresample.swr_free(swr_ctx)
             raise FFmpegException('Cannot create sample rate converter.')
 
-        if player and wanted_nb_samples != nb_samples:
+        if wanted_nb_samples != nb_samples:
             res = swresample.swr_set_compensation(
                 swr_ctx,
                 (wanted_nb_samples - nb_samples),

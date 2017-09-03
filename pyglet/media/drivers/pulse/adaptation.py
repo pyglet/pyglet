@@ -174,11 +174,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 self._time_sync_operation = self.stream.update_timing_info(self._process_events)
 
     def seek(self, timestamp):
+        self.audio_diff_avg_count = 0
+        self.audio_diff_cum = 0.0
         self._current_audio_data = None
         nbytes = 1 * self.source_group.audio_format.bytes_per_second
         while True:
             # Find audio packet at timestamp
-            audio_data = self.source_group.get_audio_data(nbytes, self)
+            audio_data = self.source_group.get_audio_data(nbytes, 0.0)
             if timestamp <= (audio_data.timestamp + audio_data.duration):
                 break
 
@@ -214,7 +216,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 nbytes = min(min_bytes, nbytes)
             if _debug:
                 print('PulseAudioPlayer: Try to get {} bytes of audio data'.format(nbytes))
-            self._current_audio_data = self.source_group.get_audio_data(nbytes, self)
+            compensation_time = self.get_audio_time_diff()
+            self._current_audio_data = self.source_group.get_audio_data(nbytes, compensation_time)
             self._schedule_events()
         if _debug:
             if self._current_audio_data is None:

@@ -214,7 +214,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         assert _debug('Getting new audio data buffer.')
         # Pass a reference of ourself to allow the audio decoding to get time
         # information for synchronization.
-        self._audiodata_buffer = self.source_group.get_audio_data(self._buffer_size, self)
+        compensation_time = self.get_audio_time_diff()
+        self._audiodata_buffer = self.source_group.get_audio_data(self._buffer_size, compensation_time)
 
         if self._audiodata_buffer is not None:
             assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
@@ -335,6 +336,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._write_cursor_ring %= self._buffer_size
 
     def seek(self, timestamp):
+        self.audio_diff_avg_count = 0
+        self.audio_diff_cum = 0.0
         with self._lock:
             while True:
                 audio_data = self._get_audiodata()
