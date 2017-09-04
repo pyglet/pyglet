@@ -109,6 +109,15 @@ class VideoPacket(object):
         self.id = self._next_id
         self.__class__._next_id += 1
 
+
+class AudioPacket(object):
+    def __init__(self, packet):
+        self.timestamp = timestamp_from_ffmpeg(packet.timestamp)
+        self.data = (ctypes.c_uint8 * packet.size)()
+        self.size = packet.size
+        ctypes.memmove(self.data, packet.data, self.size)
+
+
 class FFmpegSource(StreamingSource):
     def __init__(self, filename, file=None):
         if file is not None:
@@ -182,16 +191,19 @@ class FFmpegSource(StreamingSource):
 
         # Timestamp of last video packet added to decoder queue.
         self._video_timestamp = 0
-        self._buffered_audio_data = deque()
+
+        self.audioq = deque()
+        self._max_len_audioq = 50 # Need to figure out a correct amount
         if self.audio_format:
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.ffmpeg_get_audio_buffer_size())()
         
         if self.video_format:
-            self._video_packets = deque()
-            # self._decode_thread = WorkerThread()
-            # self._decode_thread.start()
-            self._condition = threading.Condition()
+            self.videoq = deque()
+            self._max_len_videoq = 25 # Need to figure out a correct amount
+        # Flag to determine if the _fillq method was already scheduled
+        self._fillq_scheduled = False
+        self._fillq()
 
     def __del__(self):
         if _debug:
@@ -215,31 +227,110 @@ class FFmpegSource(StreamingSource):
             print('FFmpeg seek', timestamp)
         
         av.ffmpeg_seek_file(self._file, timestamp_to_ffmpeg(timestamp))
-
-        self._audio_packet_size = 0
         del self._events[:]
-        self._buffered_audio_data.clear()
+        self._clear_video_audio_queues()
+        self._fillq()
+        # Consume video and audio packets until we arrive at the correct
+        # timestamp location
+        while True:
+            if self.audioq[0].timestamp < self.videoq[0].timestamp:
+                if self.audioq[0].timestamp <= timestamp < self.audioq[1].timestamp:
+                    break
+                else:
+                    self._get_audio_packet()
+            else:
+                if self.videoq[0].timestamp <= timestamp < self.videoq[1].timestamp:
+                    break
+                else:
+                    self.get_next_video_frame()
+            if len(self.audioq) == 1 or len(self.videoq) == 1:
+                # No more packets to read.
+                # The queues are only left with 1 packet each because we have
+                # reached then end of the stream.
+                break
 
+    def _append_audio_data(self, audio_data):
+        self.audioq.append(audio_data)
+        assert len(self.audioq) <= self._max_len_audioq
 
-        if self.video_format:
-            self._video_timestamp = 0
-            with self._condition:
-                for packet in self._video_packets:
-                    packet.image = None
-                self._condition.notify()
-            self._video_packets.clear()
-            # self._decode_thread.clear_jobs()
+    def _append_video_packet(self, video_packet):
+        self.videoq.append(video_packet)
+        assert len(self.videoq) <= self._max_len_audioq
+
+    def _get_audio_packet(self):
+        """Take an audio packet from the queue.
+
+        This function will schedule its `_fillq` function to fill up
+        the queues if space is available. Multiple calls to this method will
+        only result in one scheduled call to `_fillq`.
+        """
+        audio_data = self.audioq.popleft()
+        low_lvl = self._check_low_level()
+        if not low_lvl and not self._fillq_scheduled:
+            pyglet.clock.schedule_once(lambda dt:self._fillq(), 0)
+            self._fillq_scheduled = True
+        return audio_data
+
+    def _get_video_packet(self):
+        """Take an video packet from the queue.
+
+        This function will schedule its `_fillq` function to fill up
+        the queues if space is available. Multiple calls to this method will
+        only result in one scheduled call to `_fillq`.
+        """
+        video_packet = self.videoq.popleft()
+        low_lvl = self._check_low_level()
+        if not low_lvl and not self._fillq_scheduled:
+            pyglet.clock.schedule_once(lambda dt:self._fillq(), 0)
+            self._fillq_scheduled = True
+        return video_packet
+
+    def _clear_video_audio_queues(self):
+        "Empty both audio and video queues."
+        self.audioq.clear()
+        self.videoq.clear()
+
+    def _fillq(self):
+        "Fill up both Audio and Video queues if space is available in both"
+        # We clear our flag.
+        self._fillq_scheduled = False
+        while (len(self.audioq) < self._max_len_audioq and
+               len(self.videoq) < self._max_len_videoq):
+            if self._get_packet():
+                self._process_packet()
+            else:
+                break
+            # Should maybe record that end of stream is reached in an
+            # instance member.
+
+    def _check_low_level(self):
+        """Check if both audio and video queues are getting very low.
+
+        If one of them has less than 2 elements, we fill the queue immediately
+        with new packets. We don't wait for a scheduled call because we need
+        them immediately.
+
+        This would normally happens only during seek operations where we
+        consume many packets to find the correct timestamp.
+        """
+        if len(self.audioq) < 2 or len(self.videoq) < 2:
+            assert len(self.audioq) < self._max_len_audioq
+            assert len(self.videoq) < self._max_len_audioq
+            self._fillq()
+            return True
+        return False
 
     def _get_packet(self):
         # Read a packet into self._packet.  Returns True if OK, False if no
         # more packets are in stream.
         return av.ffmpeg_read(self._file, self._packet) == FFMPEG_RESULT_OK
 
-    def _process_packet(self, compensation_time=0.0):
-        # Returns (packet_type, packet), where packet_type = 'video' or
-        # 'audio'; and packet is VideoPacket or AudioData.  In either case,
-        # packet is buffered or queued for decoding; no further action is
-        # necessary.  Returns (None, None) if packet was neither type.
+    def _process_packet(self):
+        """Process the packet that has been just read.
+
+        Determines whether it's a video or audio packet and queue it in the
+        appropriate queue.
+        """
         if self._packet.stream_index == self._video_stream_index:
             if self._packet.timestamp < 0:
                 # XXX TODO
@@ -247,7 +338,11 @@ class FFmpegSource(StreamingSource):
                 # some containers (OGG?).  See
                 # http://www.dranger.com/ffmpeg/tutorial05.html
                 # For now we just drop these frames.
-                return None, None
+                # New note: not sure this is a valid comment. B frames will
+                # have a correct pts and are re-ordered by the decoder.
+                # Wonder if this is ever happening...
+                # TODO: check if we ever get a negative timestamp
+                return
 
             video_packet = VideoPacket(self._packet)
 
@@ -257,48 +352,30 @@ class FFmpegSource(StreamingSource):
 
             self._video_timestamp = max(self._video_timestamp,
                                         video_packet.timestamp)
-            self._video_packets.append(video_packet)
-            return 'video', video_packet
+            self._append_video_packet(video_packet)
+            return video_packet
 
         elif self._packet.stream_index == self._audio_stream_index:
-            audio_data = self._decode_audio_packet(compensation_time)
-            if audio_data:
-                if _debug:
-                    print('Got an audio packet at', audio_data.timestamp)
-                self._buffered_audio_data.append(audio_data)
-                return 'audio', audio_data
-
-        return None, None
-
+            audio_packet = AudioPacket(self._packet)
+            self._append_audio_data(audio_packet)
+            return audio_packet
+          
     def get_audio_data(self, bytes, compensation_time=0.0):
         try:
-            audio_data = self._buffered_audio_data.popleft()
-            audio_data_timeend = audio_data.timestamp + audio_data.duration
+            audio_packet = self._get_audio_packet()
         except IndexError:
             audio_data = None
             audio_data_timeend = self._video_timestamp + 1
+        else:
+            audio_data = self._decode_audio_packet(audio_packet, compensation_time)
+            audio_data_timeend = audio_data.timestamp + audio_data.duration
 
         if _debug:
             print('get_audio_data')
 
-        # Keep reading packets until we have an audio packet and all the
-        # associated video packets have been enqueued on the decoder thread.
-        while not audio_data or (
-            self._video_stream and self._video_timestamp < audio_data_timeend):
-            if not self._get_packet():
-                break
-
-            packet_type, packet = self._process_packet(compensation_time)
-
-            if not audio_data and packet_type == 'audio':
-                audio_data = self._buffered_audio_data.popleft()
-                if _debug:
-                    print('Got requested audio packet at', audio_data.timestamp)
-                audio_data_timeend = audio_data.timestamp + audio_data.duration
-
         if not audio_data:
             if _debug:
-                print('get_audio_data returning None')
+                print('No more audio data. get_audio_data returning None')
             return None
 
         while self._events and self._events[0].timestamp <= audio_data_timeend:
@@ -313,8 +390,7 @@ class FFmpegSource(StreamingSource):
             print('remaining events are', self._events)
         return audio_data
 
-    def _decode_audio_packet(self, compensation_time):
-        packet = self._packet
+    def _decode_audio_packet(self, packet, compensation_time):
         size_out = ctypes.c_int(len(self._audio_buffer))
 
         while True:
@@ -327,7 +403,6 @@ class FFmpegSource(StreamingSource):
                                     self._audio_buffer, size_out,
                                     compensation_time)
             except FFmpegException:
-                self._audio_packet_size = 0
                 break
 
             audio_packet_ptr.value += used
@@ -335,20 +410,13 @@ class FFmpegSource(StreamingSource):
 
             if size_out.value <= 0:
                 break
-
-            # XXX how did this ever work?  replaced with copy below
-            # buffer = ctypes.string_at(self._audio_buffer, size_out)
-
-            # XXX to actually copy the data.. but it never used to crash, so
-            # maybe I'm  missing something
             
             buffer = ctypes.create_string_buffer(size_out.value)
             ctypes.memmove(buffer, self._audio_buffer, len(buffer))
             buffer = buffer.raw
 
             duration = float(len(buffer)) / self.audio_format.bytes_per_second
-            self._audio_packet_timestamp = \
-                timestamp = timestamp_from_ffmpeg(packet.timestamp)
+            timestamp = packet.timestamp
             return AudioData(buffer, len(buffer), timestamp, duration, []) 
 
     def _decode_video_packet(self, packet):
@@ -384,51 +452,28 @@ class FFmpegSource(StreamingSource):
         #     ps = pstats.Stats(pr).sort_stats("cumulative")
         #     ps.print_stats()
 
-    def _ensure_video_packets(self):
-        """Process packets until a video packet has been queued (and begun
-        decoding).  Return False if EOS.
-        """
-        if not self._video_packets:
-            if _debug:
-                print('No video packets...')
-            # Read ahead until we have another video packet but quit reading
-            # after 15 frames, in case there is no more video packets
-            for i in range(15):
-                if not self._get_packet():
-                    return False
-                packet_type, _ = self._process_packet()
-                if packet_type and packet_type == 'video':
-                    break
-            if packet_type is None or packet_type == 'audio':
-                return False
-
-            if _debug:
-                print('Queued packet', _)
-        return True
-
     def get_next_video_timestamp(self):
         if not self.video_format:
             return
 
-        if self._ensure_video_packets():
-            if _debug:
-                print('Next video timestamp is', self._video_packets[0].timestamp)
-            return self._video_packets[0].timestamp
+        if self.videoq:
+            ts = self.videoq[0].timestamp
+        else:
+            ts = None
+        if _debug:
+            print('Next video timestamp is', ts)
+        return ts
 
     def get_next_video_frame(self):
         if not self.video_format:
             return
 
-        if self._ensure_video_packets():
-            packet = self._video_packets.popleft()
-            if _debug:
-                print('Waiting for', packet)
+        video_packet = self._get_video_packet()
+        self._decode_video_packet(video_packet)
 
-            self._decode_video_packet(packet)
-
-            if _debug:
-                print('Returning', packet)
-            return packet.image
+        if _debug:
+            print('Returning', video_packet)
+        return video_packet.image
 
 av.ffmpeg_init()
 if pyglet.options['debug_media']:
