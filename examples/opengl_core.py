@@ -58,21 +58,11 @@ sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=400, batch=batch)
 
 
 ###########################################################
-# Set the "zoom" uniform value.
+# Set some uniform values
 ###########################################################
 program = pyglet.graphics.default_group.shader_program
 program.use_program()
-program['window_size'] = window.width, window.height
-
-# print("zoom", program['zoom'])
-# print("size", program['window_size'])
-# print("texture loc", program['our_texture'])
-
-block = program.get_all_uniform_blocks()[0]
-size = block['block_size']
-# buf = pyglet.graphics.vertexbuffer.create_mappable_buffer(size, target=GL_UNIFORM_BUFFER)
-buf = pyglet.graphics.vertexbuffer.create_buffer(size, target=GL_UNIFORM_BUFFER)
-glBindBufferBase(GL_UNIFORM_BUFFER, block['block_index'], buf.id)
+# program['window_size'] = window.width, window.height
 
 
 ##########################################################
@@ -82,11 +72,18 @@ glBindBufferBase(GL_UNIFORM_BUFFER, block['block_index'], buf.id)
 def on_mouse_scroll(x, y, mouse, direction):
     if not program.active:
         program.use_program()
-    # program['zoom'] += direction / 32
-    # if program['zoom'] < 0.1:
-    #     program['zoom'] = 0.1
-    data = (GLfloat * 4)(3)
-    buf.set_data_region(data, 12, 4)
+    program['zoom'] += direction / 32
+    if program['zoom'] < 0.1:
+        program['zoom'] = 0.1
+
+
+@window.event
+def on_resize(width, height):
+    ubo = pyglet.graphics.default_group.shader_program.uniform_blocks['WindowBlock']
+    size = 8
+    data = (gl.GLfloat * size)(width, height)
+    ubo.buffer.set_data_region(data, 0, size)
+    ubo.buffer.bind()
 
 
 ###########################################################
@@ -104,14 +101,9 @@ def on_draw():
     #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
-    # buf.set_data_region(data, 4, len(data))      # <-- data, start, length:
-
-    buf.bind()
+    # buf.bind()
     batch.draw()
-    buf.unbind()
-
-    # print(program.get_all_uniform_blocks())
-    # print(sprite2._group.shader_program.get_all_uniform_blocks())
+    # buf.unbind()
 
 
 def update(dt):

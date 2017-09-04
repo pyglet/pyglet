@@ -1,8 +1,10 @@
+from collections import namedtuple
+from ctypes import *
+
 import pyglet
 
-from collections import namedtuple
+from pyglet.graphics.vertexbuffer import create_buffer
 from pyglet.gl import *
-from ctypes import *
 
 
 _debug_gl_shaders = pyglet.options['debug_gl_shaders']
@@ -50,7 +52,7 @@ _uniform_setters = {
 }
 
 
-def create_getter_function(program_id, location, gl_getter, buffer, length):
+def _create_getter_function(program_id, location, gl_getter, buffer, length):
 
     if length == 1:
         def getter_func():
@@ -64,7 +66,7 @@ def create_getter_function(program_id, location, gl_getter, buffer, length):
     return getter_func
 
 
-def create_setter_function(location, gl_setter, buffer, length, count, ptr):
+def _create_setter_function(location, gl_setter, buffer, length, count, ptr):
 
     if length == 1:
         def setter_func(value):
@@ -76,6 +78,9 @@ def create_setter_function(location, gl_setter, buffer, length, count, ptr):
             gl_setter(location, count, ptr)
 
     return setter_func
+
+
+Uniform = namedtuple('Uniform', 'getter, setter')
 
 
 class Shader:
@@ -142,15 +147,14 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    Uniform = namedtuple('Uniform', 'getter, setter')
-
     def __init__(self, *shaders):
         self._id = self._link_program(shaders)
         self._active = False
 
         self._uniforms = {}
-        self._attributes = {}
+        self.uniform_blocks = {}
         self._parse_all_uniforms()
+        self._parse_all_uniform_blocks()
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -254,62 +258,44 @@ class ShaderProgram:
                 gl_getter = _uniform_getters[gl_type]
 
                 # Create mini-buffer for getters and setters:
+                # TODO: see if this is
                 buffer = (gl_type * length)()
                 ptr = cast(buffer, POINTER(gl_type))
 
                 # Create custom dedicated getters and setters for each uniform:
-                getter = create_getter_function(self._id, location, gl_getter, buffer, length)
-                setter = create_setter_function(location, gl_setter, buffer, length, count, ptr)
+                getter = _create_getter_function(self._id, location, gl_getter, buffer, length)
+                setter = _create_setter_function(location, gl_setter, buffer, length, count, ptr)
 
                 if _debug_gl_shaders:
-                    print("uniform name: {0}, type: {1}, size: {2}, location: {3}, length: {4}, "
+                    print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4}, "
                           "count: {5}".format(uniform_name, uniform_type,
                                               uniform_size, location, length, count))
 
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(uniform_type))
 
-            self._uniforms[uniform_name] = self.Uniform(getter, setter)
+            self._uniforms[uniform_name] = Uniform(getter, setter)
 
-    def get_all_uniform_blocks(self):
-        block_uniforms = []
-        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name, uniform_type, uniform_size = self.query_uniform(index)
-            location = self.get_uniform_location(uniform_name)
-            if location == -1:
-                block_uniforms.append(uniform_name)
+    def _parse_all_uniform_blocks(self):
+        p_id = self._id
 
-        uniform_blocks = []
+        # block_uniforms = []
+
+        # for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
+        #     uniform_name, uniform_type, uniform_size = self.query_uniform(index)
+        #     location = self.get_uniform_location(uniform_name)
+        #     if location == -1:
+        #         block_uniforms.append(uniform_name)
 
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
             num_active = GLint()
             block_data_size = GLint()
-            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
-            glGetActiveUniformBlockiv(self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
+            glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+            glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
 
-            # print("UniBlockname:", name, num_active.value, block_data_size.value)
-
-            # Query the indices and offsets of the uniforms:
-            indices = (GLuint * num_active.value)()
-            offsets = (GLint * len(indices))()
-
-            indices_ptr = cast(addressof(indices), POINTER(GLint))
-            offsets_ptr = cast(addressof(offsets), POINTER(GLint))
-
-            glGetActiveUniformBlockiv(
-                self._id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
-            glGetActiveUniformsiv(
-                self._id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
-
-            uniform_blocks.append({'name': name,
-                                   'block_index': index,
-                                   'active_uniforms': num_active.value,
-                                   'block_size': block_data_size.value,
-                                   'uniforms': block_uniforms,
-                                   'indices': indices[:],
-                                   'offsets': offsets[:]})
-        return uniform_blocks
+            ubo = UniformBufferObject(p_id, name, index, block_data_size.value)
+            self.uniform_blocks[name] = ubo
 
     def get_uniform_block_name(self, index):
         buf_size = 128
@@ -339,6 +325,43 @@ class ShaderProgram:
         return "{0}(id={1})".format(self.__class__.__name__, self.id)
 
 
+class UniformBufferObject:
+
+    def __init__(self, program_id, name, index, size):
+        self.program_id = program_id
+        self.name = name
+        self.index = index
+        self.buffer = create_buffer(size, target=GL_UNIFORM_BUFFER)
+        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
+        self._uniforms = self._parse_all_uniforms()
+
+    def _parse_all_uniforms(self):
+        p_id = self.program_id
+        index = self.index
+
+        # Query the number of active Uniforms:
+        num_active = GLint()
+        indices = (GLuint * num_active.value)()
+        indices_ptr = cast(addressof(indices), POINTER(GLint))
+        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
+        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+
+        # Create objects and pointers for query values:
+        offsets = (GLint * num_active.value)()
+        gl_types = (GLuint * num_active.value)()
+        offsets_ptr = cast(addressof(offsets), POINTER(GLint))
+        gl_types_ptr = cast(addressof(gl_types), POINTER(GLint))
+
+        # Query the indices, offsets, and types uniforms:
+        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
+        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
+
+        return indices, offsets, gl_types
+
+    def __repr__(self):
+        return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
+
+
 vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
@@ -346,7 +369,7 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    uniform vec2 window_size;
+    // uniform vec2 window_size;
     uniform float zoom = 1.0;
 
     uniform WindowBlock
@@ -358,10 +381,10 @@ vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window_size.x - 1.0 + window.aspect,
-                           vertices.y * 2.0 / window_size.y - 1.0 + window.aspect,
+        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0 + window.aspect,
+                           vertices.y * 2.0 / window.size.y - 1.0 + window.aspect,
                            vertices.z,
-                           vertices.w * zoom + window.zooom);
+                           vertices.w * zoom);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
