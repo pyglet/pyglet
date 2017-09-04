@@ -165,11 +165,12 @@ def ffmpeg_get_version():
     '''Return an informative version string of FFmpeg'''
     return avutil.av_version_info().decode()
 
-def ffmpeg_get_audio_buffer_size():
-    '''Return the audio buffer size'''
-    # TODO: Should be determined by code. See ffplay.c in FFmpeg to get some
-    # ideas how to do that.
-    return 192000
+def ffmpeg_get_audio_buffer_size(audio_format):
+    '''Return the audio buffer size
+
+    Buffer size can accomodate 1 sec of audio data.
+    '''
+    return audio_format.bytes_per_second
 
 def ffmpeg_init():
     '''Initialize libavformat and register all the muxers, demuxers and 
@@ -188,7 +189,7 @@ def ffmpeg_open_filename(filename):
                                           None, 
                                           None)
     if result != 0:
-        raise FFmpegException('Error opening file ' + filename)
+        raise FFmpegException('Error opening file ' + filename.decode("utf8"))
 
     result = avformat.avformat_find_stream_info(file.context, None)
     if result < 0:

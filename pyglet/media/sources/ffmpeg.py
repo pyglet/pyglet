@@ -193,14 +193,17 @@ class FFmpegSource(StreamingSource):
         self._video_timestamp = 0
 
         self.audioq = deque()
+        
+        # Make queue big enough to accomodate 1.2 sec?
         self._max_len_audioq = 50 # Need to figure out a correct amount
         if self.audio_format:
+            # Buffer 1 sec worth of audio
             self._audio_buffer = \
-                (ctypes.c_uint8 * av.ffmpeg_get_audio_buffer_size())()
+                (ctypes.c_uint8 * av.ffmpeg_get_audio_buffer_size(self.audio_format))()
         
         if self.video_format:
             self.videoq = deque()
-            self._max_len_videoq = 25 # Need to figure out a correct amount
+            self._max_len_videoq = 50 # Need to figure out a correct amount
         # Flag to determine if the _fillq method was already scheduled
         self._fillq_scheduled = False
         self._fillq()
@@ -417,7 +420,8 @@ class FFmpegSource(StreamingSource):
 
             duration = float(len(buffer)) / self.audio_format.bytes_per_second
             timestamp = packet.timestamp
-            return AudioData(buffer, len(buffer), timestamp, duration, []) 
+            return AudioData(buffer, len(buffer), timestamp, duration, [])
+        return AudioData(b"", 0, 0, 0, []) 
 
     def _decode_video_packet(self, packet):
         # # Some timing and profiling

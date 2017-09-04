@@ -108,12 +108,14 @@ class Player(pyglet.event.EventDispatcher):
                     bl.logger.init_wall_time()
                     bl.logger.log("p.P._sp", 0.0)
             self._audio_player.prefill_audio()
-            self._audio_player.play()
 
-            self._systime = clock.time()
             if source.video_format:
                 if not self._texture:
                     self._create_texture()
+            
+            self._audio_player.play()
+            self._systime = clock.time()
+            if source.video_format:
                 pyglet.clock.schedule_once(self.update_texture, 0)
             # Add a delay to de-synchronize the audio
             # Negative number means audio runs ahead.
