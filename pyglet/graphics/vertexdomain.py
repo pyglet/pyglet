@@ -186,7 +186,7 @@ class VertexDomain(object):
             else:
                 # Create non-interleaved buffer
                 attributes.append(attribute)
-                attribute.buffer = vertexbuffer.create_mappable_buffer(
+                attribute.buffer = vertexbuffer.create_buffer(
                     attribute.stride * self.allocator.capacity, usage=usage)
                 attribute.buffer.element_size = attribute.stride
                 attribute.buffer.attributes = (attribute,)
@@ -197,7 +197,7 @@ class VertexDomain(object):
         if static_attributes:
             vertexattribute.interleave_attributes(static_attributes)
             stride = static_attributes[0].stride
-            buffer = vertexbuffer.create_mappable_buffer(
+            buffer = vertexbuffer.create_buffer(
                 stride * self.allocator.capacity, usage=GL_STATIC_DRAW)
             buffer.element_size = stride
             self.buffer_attributes.append(
@@ -648,7 +648,7 @@ class IndexedVertexDomain(VertexDomain):
         self.index_gl_type = index_gl_type
         self.index_c_type = vertexattribute._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = vertexbuffer.create_mappable_buffer(
+        self.index_buffer = vertexbuffer.create_buffer(
             self.index_allocator.capacity * self.index_element_size,
             target=GL_ELEMENT_ARRAY_BUFFER)
 

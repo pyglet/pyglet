@@ -68,6 +68,12 @@ program['window_size'] = window.width, window.height
 # print("size", program['window_size'])
 # print("texture loc", program['our_texture'])
 
+block = program.get_all_uniform_blocks()[0]
+size = block['block_size']
+# buf = pyglet.graphics.vertexbuffer.create_mappable_buffer(size, target=GL_UNIFORM_BUFFER)
+buf = pyglet.graphics.vertexbuffer.create_buffer(size, target=GL_UNIFORM_BUFFER)
+glBindBufferBase(GL_UNIFORM_BUFFER, block['block_index'], buf.id)
+
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
@@ -76,10 +82,11 @@ program['window_size'] = window.width, window.height
 def on_mouse_scroll(x, y, mouse, direction):
     if not program.active:
         program.use_program()
-    program['zoom'] += direction / 32
-    if program['zoom'] < 0.1:
-        program['zoom'] = 0.1
-    program.stop_program()
+    # program['zoom'] += direction / 32
+    # if program['zoom'] < 0.1:
+    #     program['zoom'] = 0.1
+    data = (GLfloat * 4)(3)
+    buf.set_data_region(data, 12, 4)
 
 
 ###########################################################
@@ -97,15 +104,14 @@ def on_draw():
     #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
-    # glActiveTexture(GL_TEXTURE0)
-    # glBindTexture(img.texture.target, img.texture.id)
+    # buf.set_data_region(data, 4, len(data))      # <-- data, start, length:
 
+    buf.bind()
     batch.draw()
+    buf.unbind()
 
-    # for c in batch._draw_list:
-    #     print(c)
-    #
-    # print(len(batch._draw_list))
+    # print(program.get_all_uniform_blocks())
+    # print(sprite2._group.shader_program.get_all_uniform_blocks())
 
 
 def update(dt):
@@ -114,6 +120,6 @@ def update(dt):
 
 
 if __name__ == "__main__":
-    pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
-    pyglet.clock.schedule_interval(update, 1/60)
+    # pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
+    # pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()

@@ -33,10 +33,9 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-"""Byte abstractions of Vertex Buffer Objects and vertex arrays.
+"""Byte abstractions of OpenGL Buffer Objects.
 
-Use `create_buffer` or `create_mappable_buffer` to create a Vertex Buffer
-Object, or a vertex array if VBOs are not supported by the current context.
+Use `create_buffer` to create a Buffer Object.
 
 Buffers can optionally be created "mappable" (incorporating the
 `AbstractMappable` mix-in).  In this case the buffer provides a ``get_region``
@@ -56,8 +55,8 @@ import pyglet
 from pyglet.gl import *
 
 
-def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
-    """Create a buffer of vertex data.
+def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, mappable=True):
+    """Create a buffer object for vertex or other data.
 
     :Parameters:
         `size` : int
@@ -66,26 +65,15 @@ def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
             OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
         `usage` : int
             OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
+        `mappable` : bool
+            True to create a mappable buffer (defaults to True)
 
-    :rtype: `AbstractBuffer`
+    :rtype: `AbstractBuffer` or `AbstractBuffer` with `AbstractMappable`
     """
-    return VertexBufferObject(size, target, usage)
-
-
-def create_mappable_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW):
-    """Create a mappable buffer of vertex data.
-
-    :Parameters:
-        `size` : int
-            Size of the buffer, in bytes
-        `target` : int
-            OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
-        `usage` : int
-            OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
-
-    :rtype: `AbstractBuffer` with `AbstractMappable`
-    """
-    return MappableVertexBufferObject(size, target, usage)
+    if mappable:
+        return MappableBufferObject(size, target, usage)
+    else:
+        return BufferObject(size, target, usage)
 
 
 class AbstractBuffer(object):
@@ -202,7 +190,7 @@ class AbstractMappable(object):
         raise NotImplementedError('abstract')
 
 
-class VertexBufferObject(AbstractBuffer):
+class BufferObject(AbstractBuffer):
     """Lightweight representation of an OpenGL VBO.
 
     The data in the buffer is not replicated in any system memory (unless it
@@ -210,7 +198,7 @@ class VertexBufferObject(AbstractBuffer):
     possibly performance, updates to the buffer are relatively slow.
 
     This class does not implement `AbstractMappable`, and so has no
-    ``get_region`` method.  See `MappableVertexBufferObject` for a VBO class
+    ``get_region`` method.  See `MappableBufferObject` for a VBO class
     that does implement ``get_region``.
     """
 
@@ -288,7 +276,7 @@ class VertexBufferObject(AbstractBuffer):
         # glPopClientAttrib()
 
 
-class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
+class MappableBufferObject(BufferObject, AbstractMappable):
     """A VBO with system-memory backed store.
 
     Updates to the data via `set_data`, `set_data_region` and `map` will be
@@ -301,7 +289,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
     """
 
     def __init__(self, size, target, usage):
-        super(MappableVertexBufferObject, self).__init__(size, target, usage)
+        super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
         self._dirty_min = sys.maxsize
@@ -309,7 +297,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
 
     def bind(self):
         # Commit pending data
-        super(MappableVertexBufferObject, self).bind()
+        super(MappableBufferObject, self).bind()
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
@@ -320,7 +308,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
             self._dirty_max = 0
 
     def set_data(self, data):
-        super(MappableVertexBufferObject, self).set_data(data)
+        super(MappableBufferObject, self).set_data(data)
         ctypes.memmove(self.data, data, self.size)
         self._dirty_min = 0
         self._dirty_max = self.size
@@ -340,7 +328,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
 
     def get_region(self, start, size, ptr_type):
         array = ctypes.cast(self.data_ptr + start, ptr_type).contents
-        return VertexBufferObjectRegion(self, start, start + size, array)
+        return BufferObjectRegion(self, start, start + size, array)
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -378,7 +366,7 @@ class AbstractBufferRegion(object):
         pass
 
 
-class VertexBufferObjectRegion(AbstractBufferRegion):
+class BufferObjectRegion(AbstractBufferRegion):
     """A mapped region of a VBO."""
 
     def __init__(self, buffer, start, end, array):
@@ -391,17 +379,6 @@ class VertexBufferObjectRegion(AbstractBufferRegion):
         buffer = self.buffer
         buffer._dirty_min = min(buffer._dirty_min, self.start)
         buffer._dirty_max = max(buffer._dirty_max, self.end)
-
-
-class VertexArrayRegion(AbstractBufferRegion):
-    """A mapped region of a vertex array.
-
-    The `invalidate` method is a no-op but is provided in order to present
-    a consistent interface with `VertexBufferObjectRegion`.
-    """
-
-    def __init__(self, array):
-        self.array = array
 
 
 class IndirectArrayRegion(AbstractBufferRegion):

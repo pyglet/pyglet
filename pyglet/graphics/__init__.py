@@ -201,9 +201,7 @@ def draw(size, mode, *data):
         attribute = vertexattribute.create_attribute(default_group.shader_program.id, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        # TODO: fix this with mappable_buffer, or leave it as-is because it's disposable anyway.
-        # buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
-        buffer = vertexbuffer.create_buffer(size * attribute.stride)    # Because mappable is broken
+        buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
@@ -247,9 +245,7 @@ def draw_indexed(size, mode, indices, *data):
         attribute = vertexattribute.create_attribute(default_group.shader_program.id, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        # TODO: fix this with mappable_buffer, or leave it as-is because it's disposable anyway.
-        # buffer = vertexbuffer.create_mappable_buffer(size * attribute.stride)
-        buffer = vertexbuffer.create_buffer(size * attribute.stride)    # Because mappable is broken
+        buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
 
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()

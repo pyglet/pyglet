@@ -33,7 +33,7 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-"""Memory allocation algorithm for vertex arrays and buffers.
+"""Memory allocation algorithm for vertex buffers.
 
 The region allocator is used to allocate vertex indices within a vertex
 domain's  multiple buffers.  ("Buffer" refers to any abstract buffer presented
@@ -155,8 +155,7 @@ class Allocator(object):
         if size == 0:
             return 0
 
-        # return start
-        # or raise AllocatorMemoryException
+        # return start, or raise AllocatorMemoryException
 
         if not self.starts:
             if size <= self.capacity:
@@ -168,8 +167,7 @@ class Allocator(object):
 
         # Allocate in a free space
         free_start = self.starts[0] + self.sizes[0]
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(self.starts[1:], self.sizes[1:])):
+        for i, (alloc_start, alloc_size) in enumerate(zip(self.starts[1:], self.sizes[1:])):
             # Danger!  
             # i is actually index - 1 because of slicing above...
             # starts[i]   points to the block before this free space
@@ -183,8 +181,7 @@ class Allocator(object):
                 del self.sizes[i + 1]
                 return free_start
             elif free_size > size:
-                # Increase size of previous block to intrude into this free
-                # space.
+                # Increase size of previous block to intrude into this free space.
                 self.sizes[i] += size
                 return free_start
             free_start = alloc_start + alloc_size
@@ -224,8 +221,7 @@ class Allocator(object):
         elif size == 0:
             return self.alloc(new_size)
 
-        # return start
-        # or raise AllocatorMemoryException
+        # return start or raise AllocatorMemoryException
 
         # Truncation is the same as deallocating the tail cruft
         if new_size < size:
@@ -244,16 +240,15 @@ class Allocator(object):
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
         if size == alloc_size - p:
-            # Region is at end of block.  Find how much free space is after
-            # it.
+            # Region is at end of block.  Find how much free space is after it.
             is_final_block = i == len(self.starts) - 1
             if not is_final_block:
                 free_size = self.starts[i + 1] - (start + size)
             else:
                 free_size = self.capacity - (start + size)
 
-            # TODO If region is an entire block being an island in free space, 
-            # can possibly extend in both directions.
+            # TODO: If region is an entire block being an island in free space,
+            #       can possibly extend in both directions.
 
             if free_size == new_size - size and not is_final_block:
                 # Merge block with next (region is expanded in place to
@@ -300,8 +295,7 @@ class Allocator(object):
         assert self.starts
 
         # Find which block needs to be split
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(*(self.starts, self.sizes))):
+        for i, (alloc_start, alloc_size) in enumerate(zip(*(self.starts, self.sizes))):
             p = start - alloc_start
             if p >= 0 and size <= alloc_size - p:
                 break
@@ -366,8 +360,7 @@ class Allocator(object):
         # Variation of search for free block.
         total_free = 0
         free_start = self.starts[0] + self.sizes[0]
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(self.starts[1:], self.sizes[1:])):
+        for i, (alloc_start, alloc_size) in enumerate(zip(self.starts[1:], self.sizes[1:])):
             total_free += alloc_start - free_start
             free_start = alloc_start + alloc_size
 
