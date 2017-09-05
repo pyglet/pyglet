@@ -133,7 +133,8 @@ class AVFrame(Structure):
         ('side_data', POINTER(POINTER(AVFrameSideData))),
         ('nb_side_data', c_int)
     ]
-AV_TIME_BASE = 1000000  
+AV_NOPTS_VALUE = -0x8000000000000000
+AV_TIME_BASE = 1000000
 AV_TIME_BASE_Q = AVRational(1, AV_TIME_BASE)
 
 avutil.av_version_info.restype = c_char_p
@@ -178,6 +179,7 @@ __all__ = [
 'AV_SAMPLE_FMT_S64P',
 'AV_NUM_DATA_POINTERS',
 'AV_PIX_FMT_RGB24',
+'AV_NOPTS_VALUE',
 'AV_TIME_BASE',
 'AV_TIME_BASE_Q',
 'AVFrame',

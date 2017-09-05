@@ -42,6 +42,7 @@ from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
 from pyglet.media.sources.base import SourceGroup, StaticSource
 
+# import cProfile
 
 _debug = pyglet.options['debug_media']
 
@@ -78,6 +79,9 @@ class Player(pyglet.event.EventDispatcher):
 
         self._time = 0.0
         self._systime = None
+
+        # self.pr = cProfile.Profile()
+        
 
     def queue(self, source):
         if isinstance(source, SourceGroup):
@@ -274,6 +278,12 @@ class Player(pyglet.event.EventDispatcher):
         self.seek(time)
 
     def update_texture(self, dt=None, time=None):
+        # self.pr.disable()
+        # if dt > 0.05:
+        #     print("update_texture dt:", dt)
+        #     import pstats
+        #     ps = pstats.Stats(self.pr).sort_stats("cumulative")
+        #     ps.print_stats()
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
         if time is None:
@@ -333,6 +343,7 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.9", delay, ts)
         pyglet.clock.schedule_once(self.update_texture, delay)
+        # self.pr.enable()
 
     def _player_property(name, doc=None):
         private_name = '_' + name
