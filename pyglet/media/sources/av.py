@@ -365,12 +365,11 @@ def ffmpeg_read(file, packet):
     if result < 0:
         return FFMPEG_RESULT_ERROR
     
-    if file.packet.contents.pts == AV_NOPTS_VALUE:
+    if file.packet.contents.dts != AV_NOPTS_VALUE:
         pts = file.packet.contents.dts
-    elif file.packet.contents.dts == AV_NOPTS_VALUE:
-        pts = 0
     else:
-        pts = file.packet.contents.dts
+        pts = 0
+
     packet.timestamp = avutil.av_rescale_q(pts,
         file.context.contents.streams[file.packet.contents.stream_index].contents.time_base,
         AV_TIME_BASE_Q)
