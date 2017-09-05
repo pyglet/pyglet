@@ -68,14 +68,16 @@ def _create_getter_function(program_id, location, gl_getter, buffer, length):
 
 def _create_setter_function(location, gl_setter, buffer, length, count, ptr):
 
-    if length == 1:
+    if length == 1 and count == 1:
         def setter_func(value):
             buffer[0] = value
             gl_setter(location, count, ptr)
-    else:
+    elif length > 1 and count == 1:
         def setter_func(values):
             buffer[:] = values
             gl_setter(location, count, ptr)
+    else:
+        raise NotImplementedError("Uniform type not yet supported.")
 
     return setter_func
 
