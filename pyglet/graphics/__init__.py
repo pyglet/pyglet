@@ -170,7 +170,8 @@ import pyglet
 from pyglet.gl import *
 from pyglet import gl
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
-from pyglet.graphics.shader import Shader, ShaderProgram, vertex_source, fragment_source
+from pyglet.graphics.shader import Shader, ShaderProgram, UniformBufferObject
+from pyglet.graphics.shader import vertex_source, fragment_source
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
@@ -700,19 +701,22 @@ class Group(object):
 
 class ShaderGroup(Group):
     """The default group class used when ``None`` is given to a batch.
-
-    This
     """
-    def __init__(self, parent=None):
+    def __init__(self, *shaders, parent=None):
         super(ShaderGroup, self).__init__(parent)
-        self._vert_shader = Shader(vertex_source, 'vertex')
-        self._frag_shader = Shader(fragment_source, 'fragment')
-        self.shader_program = ShaderProgram(self._vert_shader, self._frag_shader)
+        self.shader_program = ShaderProgram(*shaders)
+        self.buffer_objects = {}
+
+        for block in self.shader_program.uniform_blocks.values():
+            buffer_object = UniformBufferObject(block)
+            self.buffer_objects[block.name] = buffer_object
 
         if _debug_graphics_batch:
             print("Created ShaderGroup. ShaderProgram ID: {0}".format(self.shader_program.id))
 
     def set_state(self):
+        for buffer_obj in self.buffer_objects.values():
+            buffer_obj.buffer.bind()
         self.shader_program.use_program()
 
     def unset_state(self):
@@ -721,8 +725,10 @@ class ShaderGroup(Group):
 
 #: The default group.
 #:
-#: :type: `Group`
-default_group = ShaderGroup()
+#: :type: `ShaderGroup`
+_default_vert_shader = Shader(vertex_source, 'vertex')
+_default_frag_shader = Shader(fragment_source, 'fragment')
+default_group = ShaderGroup(_default_vert_shader, _default_frag_shader)
 
 
 class TextureGroup(Group):
@@ -747,12 +753,10 @@ class TextureGroup(Group):
         self.texture = texture
 
     def set_state(self):
-        # TODO: fix this for GL3:
-        glEnable(self.texture.target)
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
 
     def unset_state(self):
-        # TODO: fix this for GL3:
         glDisable(self.texture.target)
 
     def __hash__(self):

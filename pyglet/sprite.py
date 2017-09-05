@@ -116,8 +116,8 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
 vertex_source = """#version 330 core
-    // The `in` attributes are specifically named so that
-    // they match the graphics.vertexattribute module.
+    // The `in` attributes are specifically named so that they
+    // match those created by the graphics.vertexattribute module.
 
     in vec4 vertices;
     in vec4 colors;
@@ -126,15 +126,20 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    uniform vec2 window_size;
-    uniform float zoom = 1.0;
+    uniform WindowBlock
+    {
+        vec2 size;
+        float aspect;
+        float zoom;
+    } window;
+
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window_size.x - 1.0,
-                           vertices.y * 2.0 / window_size.y - 1.0,
+        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                           vertices.y * 2.0 / window.size.y - 1.0,
                            vertices.z,
-                           vertices.w * zoom);
+                           vertices.w * window.zoom + 1);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
@@ -189,9 +194,10 @@ class SpriteGroup(graphics.Group):
         self._vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
         self._frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
         self.shader_program = graphics.shader.ShaderProgram(self._vert_shader, self._frag_shader)
-        self.shader_program.use_program()
-        self.shader_program['window_size'] = 540, 540
-        self.shader_program.stop_program()
+
+        buffer_obj = graphics.default_group.buffer_objects['WindowBlock']
+        buffer_obj.bind_buffer_base(self.shader_program.uniform_blocks['WindowBlock'].index)
+        buffer_obj.buffer.bind()
 
     def set_state(self):
         self.shader_program.use_program()

@@ -5,7 +5,7 @@ from pyglet.gl import *
 
 # pyglet.options['debug_gl_shaders'] = True
 
-window = pyglet.window.Window(width=540, height=540, resizable=True)
+window = pyglet.window.Window(width=960, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
 ##########################################################
@@ -26,7 +26,7 @@ def create_quad_vertex_list(x, y, z, width, height):
 
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('v3f', create_quad_vertex_list(200, 200, 0, 55, 55)),
+                  ('v3f', create_quad_vertex_list(480, 270, 0, 50, 50)),
                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
@@ -36,7 +36,6 @@ batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
 
 os.chdir('..')
 img = pyglet.image.load("examples/pyglet.png")
-# img = pyglet.image.load_animation("test.gif")
 img.anchor_x = img.width // 2
 img.anchor_y = img.height // 2
 red = pyglet.image.SolidColorImagePattern((255, 0, 0, 255)).create_image(50, 50)
@@ -60,30 +59,30 @@ sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=400, batch=batch)
 ###########################################################
 # Set some uniform values
 ###########################################################
-program = pyglet.graphics.default_group.shader_program
-program.use_program()
-# program['window_size'] = window.width, window.height
-
+ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
+data = (gl.GLfloat * 4)(0)
+ubo.buffer.set_data_region(data, 12, 4)
+ubo.buffer.bind()
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
+zoom = 0
+
+
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
-    if not program.active:
-        program.use_program()
-    program['zoom'] += direction / 32
-    if program['zoom'] < 0.1:
-        program['zoom'] = 0.1
+    global zoom
+    zoom += direction / 32
+
+    data = (gl.GLfloat * 4)(zoom)
+    ubo.buffer.set_data_region(data, 12, 4)
 
 
 @window.event
 def on_resize(width, height):
-    ubo = pyglet.graphics.default_group.shader_program.uniform_blocks['WindowBlock']
-    size = 8
-    data = (gl.GLfloat * size)(width, height)
-    ubo.buffer.set_data_region(data, 0, size)
-    ubo.buffer.bind()
+    data = (gl.GLfloat * 8)(width, height)
+    ubo.buffer.set_data_region(data, 0, 8)
 
 
 ###########################################################
@@ -112,6 +111,6 @@ def update(dt):
 
 
 if __name__ == "__main__":
-    # pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
-    # pyglet.clock.schedule_interval(update, 1/60)
+    pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
+    pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()

@@ -216,8 +216,8 @@ class ShaderProgram:
 
         try:
             uniform = self._uniforms[key]
-        except KeyError("Uniform with the name `{0}` was not found.".format(key)):
-            raise
+        except KeyError:
+            raise Exception("Uniform with the name `{0}` was not found.".format(key))
 
         try:
             uniform.setter(value)
@@ -227,8 +227,8 @@ class ShaderProgram:
     def __getitem__(self, item):
         try:
             uniform = self._uniforms[item]
-        except KeyError("Uniform with the name `{0}` was not found.".format(item)):
-            raise
+        except KeyError:
+            raise Exception("Uniform with the name `{0}` was not found.".format(item))
 
         try:
             return uniform.getter()
@@ -294,8 +294,8 @@ class ShaderProgram:
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
 
-            ubo = UniformBufferObject(p_id, name, index, block_data_size.value)
-            self.uniform_blocks[name] = ubo
+            block = UniformBlock(p_id, name, index, block_data_size.value)
+            self.uniform_blocks[name] = block
 
     def get_uniform_block_name(self, index):
         buf_size = 128
@@ -325,17 +325,15 @@ class ShaderProgram:
         return "{0}(id={1})".format(self.__class__.__name__, self.id)
 
 
-class UniformBufferObject:
-
+class UniformBlock:
     def __init__(self, program_id, name, index, size):
         self.program_id = program_id
         self.name = name
         self.index = index
-        self.buffer = create_buffer(size, target=GL_UNIFORM_BUFFER)
-        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
-        self._uniforms = self._parse_all_uniforms()
+        self.size = size
+        self._uniforms = self.parse_all_uniforms()
 
-    def _parse_all_uniforms(self):
+    def parse_all_uniforms(self):
         p_id = self.program_id
         index = self.index
 
@@ -356,11 +354,24 @@ class UniformBufferObject:
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
 
-        return indices, offsets, gl_types
+        return offsets, gl_types
+
+    def __repr__(self):
+        return "{0}(name={1})".format(self.__class__.__name__, self.name)
+
+
+class UniformBufferObject:
+    def __init__(self, uniform_block):
+        assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
+        self.block = uniform_block
+        self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
+        self.bind_buffer_base(self.block.index)
+
+    def bind_buffer_base(self, index):
+        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
 
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
-
 
 vertex_source = """#version 330 core
     in vec4 vertices;
@@ -369,22 +380,19 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    // uniform vec2 window_size;
-    uniform float zoom = 1.0;
-
     uniform WindowBlock
     {
         vec2 size;
         float aspect;
-        float zooom;
+        float zoom;
     } window;
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0 + window.aspect,
-                           vertices.y * 2.0 / window.size.y - 1.0 + window.aspect,
+        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                           vertices.y * 2.0 / window.size.y - 1.0,
                            vertices.z,
-                           vertices.w * zoom);
+                           vertices.w * window.zoom + 1);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
