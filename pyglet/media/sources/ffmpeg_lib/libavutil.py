@@ -131,7 +131,16 @@ class AVFrame(Structure):
         ('extended_buf', POINTER(POINTER(AVBufferRef))),
         ('nb_extended_buf', c_int),
         ('side_data', POINTER(POINTER(AVFrameSideData))),
-        ('nb_side_data', c_int)
+        ('nb_side_data', c_int),
+        ('flags', c_int),
+        ('color_range', c_int),
+        ('color_primaries', c_int),
+        ('color_trc', c_int),
+        ('colorspace', c_int),
+        ('chroma_location', c_int),
+        ('best_effort_timestamp', c_int64),
+        ('pkt_pos', c_int64),
+        ('pkt_duration', c_int64)
     ]
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
@@ -155,6 +164,9 @@ avutil.av_get_bytes_per_sample.restype = c_int
 avutil.av_get_bytes_per_sample.argtypes = [c_int]
 avutil.av_strerror.restype = c_int
 avutil.av_strerror.argtypes = [c_int, c_char_p, c_size_t]
+avutil.av_frame_get_best_effort_timestamp.restype = c_int64
+avutil.av_frame_get_best_effort_timestamp.argtypes = [POINTER(AVFrame)]
+
 
 __all__ = [
 'avutil',
@@ -183,4 +195,5 @@ __all__ = [
 'AV_TIME_BASE',
 'AV_TIME_BASE_Q',
 'AVFrame',
+'AVRational'
 ]

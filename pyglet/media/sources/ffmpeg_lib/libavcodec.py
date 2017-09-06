@@ -327,6 +327,10 @@ class AVPicture(Structure):
         ('linesize', c_int * AV_NUM_DATA_POINTERS)
     ]
 avcodec.av_packet_unref.argtypes = [POINTER(AVPacket)]
+avcodec.av_packet_free.argtypes = [POINTER(POINTER(AVPacket))]
+avcodec.av_packet_clone.restype = POINTER(AVPacket)
+avcodec.av_packet_clone.argtypes = [POINTER(AVPacket)]
+avcodec.av_packet_move_ref.argtypes = [POINTER(AVPacket), POINTER(AVPacket)]
 avcodec.avcodec_find_decoder.restype = POINTER(AVCodec)
 avcodec.avcodec_find_decoder.argtypes = [c_int]
 AVDictionary = libavutil.AVDictionary

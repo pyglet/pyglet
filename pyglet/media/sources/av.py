@@ -143,8 +143,7 @@ class FFmpegPacket(Structure):
 
 class FFmpegFile(Structure):
     _fields_ = [
-        ('context', POINTER(AVFormatContext)),
-        ('packet', POINTER(AVPacket))
+        ('context', POINTER(AVFormatContext))
     ]
 
 class FFmpegStream(Structure):
@@ -153,6 +152,7 @@ class FFmpegStream(Structure):
         ('format_context', POINTER(AVFormatContext)),
         ('codec_context', POINTER(AVCodecContext)),
         ('frame', POINTER(AVFrame)),
+        ('time_base', AVRational)
     ]
 
 
@@ -199,8 +199,6 @@ def ffmpeg_open_filename(filename):
 
 def ffmpeg_close_file(file):
     '''Close the media file and free resources.'''
-    if file.packet:
-        avcodec.av_packet_unref(file.packet)
     avformat.avformat_close_input(byref(file.context))
 
 def ffmpeg_file_info(file):
@@ -336,13 +334,14 @@ def ffmpeg_open_stream(file, index):
     stream.codec_context = codec_context
     stream.type = codec_context.contents.codec_type
     stream.frame = avutil.av_frame_alloc()
+    stream.time_base = file.context.contents.streams[index].contents.time_base
 
     return stream
 
 def ffmpeg_close_stream(stream):
     if stream.frame:
-        avutil.av_frame_free(addressof(stream.frame))
-    avcodec.avcodec_free_context(addressof(stream.codec_context))
+        avutil.av_frame_free(byref(stream.frame))
+    avcodec.avcodec_free_context(byref(stream.codec_context))
 
 def ffmpeg_seek_file(file, timestamp):
     flags = AVSEEK_FLAG_BACKWARD
@@ -357,38 +356,18 @@ def ffmpeg_seek_file(file, timestamp):
                               descr.decode())
 
 def ffmpeg_read(file, packet):
-    if file.packet:
-        avcodec.av_packet_unref(file.packet) # Is it the right way to free it?
-    else:
-        file.packet = avcodec.av_packet_alloc()
-    result = avformat.av_read_frame(file.context, file.packet)
+    avcodec.av_packet_unref(packet)
+    result = avformat.av_read_frame(file.context, packet)
     if result < 0:
         return FFMPEG_RESULT_ERROR
-    
-    if file.packet.contents.dts != AV_NOPTS_VALUE:
-        pts = file.packet.contents.dts
-    else:
-        pts = 0
 
-    packet.timestamp = avutil.av_rescale_q(pts,
-        file.context.contents.streams[file.packet.contents.stream_index].contents.time_base,
-        AV_TIME_BASE_Q)
-    tb = file.context.contents.streams[file.packet.contents.stream_index].contents.time_base
-    packet.stream_index = file.packet.contents.stream_index
-    packet.data = file.packet.contents.data
-    packet.size = file.packet.contents.size
     return FFMPEG_RESULT_OK
 
-def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, compensation_time):
+def ffmpeg_decode_audio(stream, packet, data_out, size_out, compensation_time):
+    data_in = packet.data
+    size_in = packet.size
     if stream.type != AVMEDIA_TYPE_AUDIO:
         raise FFmpegException('Trying to decode audio on a non-audio stream.')
-    inbuf = create_string_buffer(size_in + FF_INPUT_BUFFER_PADDING_SIZE)
-    memmove(inbuf, data_in, size_in)
-    
-    packet = AVPacket()
-    avcodec.av_init_packet(byref(packet))
-    packet.data.contents = inbuf
-    packet.size = size_in
 
     got_frame = c_int(0)
     bytes_used = avcodec.avcodec_decode_audio4(
@@ -487,20 +466,13 @@ def ffmpeg_decode_audio(stream, data_in, size_in, data_out, size_out, compensati
         size_out.value = 0
     return bytes_used
 
-
-
-def ffmpeg_decode_video(stream, data_in, size_in, data_out):
+def ffmpeg_decode_video(stream, packet, data_out):
     picture_rgb = AVPicture()
     width = stream.codec_context.contents.width
     height = stream.codec_context.contents.height
     if stream.type != AVMEDIA_TYPE_VIDEO:
         raise FFmpegException('Trying to decode video on a non-video stream.')
-    inbuf = create_string_buffer(size_in + FF_INPUT_BUFFER_PADDING_SIZE)
-    memmove(inbuf, data_in, size_in)
-    packet = AVPacket()
-    avcodec.av_init_packet(byref(packet))
-    packet.data.contents = inbuf
-    packet.size = size_in
+    
     got_picture = c_int(0)
     bytes_used = avcodec.avcodec_decode_video2(
         stream.codec_context, 
@@ -512,7 +484,6 @@ def ffmpeg_decode_video(stream, data_in, size_in, data_out):
     if not got_picture:
         raise FFmpegException('No frame could be decompressed')
     
-
     avcodec.avpicture_fill(byref(picture_rgb), data_out, AV_PIX_FMT_RGB24,
         width, height)
     
@@ -537,3 +508,38 @@ def ffmpeg_decode_video(stream, data_in, size_in, data_out):
 
 def ffmpeg_set_log_level(dummy):
     pass
+
+def ffmpeg_get_packet_pts(file, packet):
+    if packet.contents.dts != AV_NOPTS_VALUE:
+        pts = packet.contents.dts
+    else:
+        pts = 0
+
+    timestamp = avutil.av_rescale_q(pts,
+        file.context.contents.streams[packet.contents.stream_index].contents.time_base,
+        AV_TIME_BASE_Q)
+    return timestamp
+
+def ffmpeg_get_frame_ts(stream):
+    ts = avutil.av_frame_get_best_effort_timestamp(stream.frame)
+    timestamp = avutil.av_rescale_q(ts,
+        stream.time_base,
+        AV_TIME_BASE_Q)
+    return timestamp
+
+def ffmpeg_init_packet():
+    p = avcodec.av_packet_alloc()
+    if not p:
+        raise MemoryError("Could not allocate AVPacket.")
+    return p
+
+def ffmpeg_free_packet(packet):
+    avcodec.av_packet_free(byref(packet))
+
+def ffmpeg_unref_packet(packet):
+    avcodec.av_packet_unref(byref(packet))
+
+def ffmpeg_transfer_packet(dst, src):
+    avcodec.av_packet_move_ref(dst, src)
+
+
