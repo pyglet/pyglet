@@ -705,30 +705,31 @@ class ShaderGroup(Group):
     def __init__(self, *shaders, parent=None):
         super(ShaderGroup, self).__init__(parent)
         self.shader_program = ShaderProgram(*shaders)
-        self.buffer_objects = {}
-
-        for block in self.shader_program.uniform_blocks.values():
-            buffer_object = UniformBufferObject(block)
-            self.buffer_objects[block.name] = buffer_object
 
         if _debug_graphics_batch:
             print("Created ShaderGroup. ShaderProgram ID: {0}".format(self.shader_program.id))
 
     def set_state(self):
-        for buffer_obj in self.buffer_objects.values():
-            buffer_obj.buffer.bind()
         self.shader_program.use_program()
 
     def unset_state(self):
         self.shader_program.stop_program()
 
 
-#: The default group.
-#:
-#: :type: `ShaderGroup`
-_default_vert_shader = Shader(vertex_source, 'vertex')
-_default_frag_shader = Shader(fragment_source, 'fragment')
-default_group = ShaderGroup(_default_vert_shader, _default_frag_shader)
+class _DefaultGroup(ShaderGroup):
+    def __init__(self, *shaders):
+        super(_DefaultGroup, self).__init__(*shaders)
+
+        self.buffer_objects = {}
+
+        for block in self.shader_program.uniform_blocks.values():
+            buffer_object = UniformBufferObject(block)
+            self.buffer_objects[block.name] = buffer_object
+
+    def set_state(self):
+        for buffer_obj in self.buffer_objects.values():
+            buffer_obj.buffer.bind()
+        self.shader_program.use_program()
 
 
 class TextureGroup(Group):
@@ -814,3 +815,8 @@ class OrderedGroup(Group):
 
     def __repr__(self):
         return '%s(%d)' % (self.__class__.__name__, self.order)
+
+#: The default group.
+_default_vert_shader = Shader(vertex_source, 'vertex')
+_default_frag_shader = Shader(fragment_source, 'fragment')
+default_group = _DefaultGroup(_default_vert_shader, _default_frag_shader)
