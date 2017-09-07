@@ -252,14 +252,17 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
             with self.driver:
                 self.source.stop()
+                self.source.clear()
                 self.source.byte_offset = 0
             self._playing = False
             self._clearing = True
 
+            self._buffer_cursor = 0
+            self._play_cursor = 0
+            self._write_cursor = 0
             del self._events[:]
-            self._update_play_cursor()
-
-            self.refill(self.ideal_buffer_size)
+            del self._buffer_sizes[:]
+            del self._buffer_timestamps[:]
 
     def _update_play_cursor(self):
         with self._lock:
@@ -382,11 +385,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                             timestamp, audio_data.timestamp))
                 if timestamp <= (audio_data.timestamp + audio_data.duration):
                     break
-                
-                del self._events[:]
-                del self._buffer_sizes
-                del self._buffer_timestamps[:]
-
+                    
             if audio_data is not None:
                 assert _debug_media('Writing {} bytes'.format(audio_data.length))
                 self._queue_events(audio_data)
