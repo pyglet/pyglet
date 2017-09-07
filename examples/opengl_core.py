@@ -5,7 +5,7 @@ from pyglet.gl import *
 
 # pyglet.options['debug_gl_shaders'] = True
 
-window = pyglet.window.Window(width=960, height=540, resizable=True)
+window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
 ##########################################################
@@ -15,8 +15,8 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 # label = pyglet.text.Label("test label")
 
 
-# vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
-#                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (5, 5, 0,  15, 5, 0,  10, 15, 0)),
+                                             ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
 batch = pyglet.graphics.Batch()
 
@@ -50,19 +50,16 @@ sprites = [
     pyglet.sprite.Sprite(img=img, x=210, y=110, batch=batch),
 ]
 
-sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=100, batch=batch)
-sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=200, batch=batch)
-sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=300, batch=batch)
-sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=400, batch=batch)
+sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=400, batch=batch)
+sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=300, batch=batch)
+sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=200, batch=batch)
+sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 
 
 ###########################################################
 # Set some uniform values
 ###########################################################
-ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
-data = (gl.GLfloat * 4)(0)
-ubo.buffer.set_data_region(data, 12, 4)
-ubo.buffer.bind()
+# ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
@@ -70,19 +67,21 @@ ubo.buffer.bind()
 zoom = 0
 
 
-@window.event
-def on_mouse_scroll(x, y, mouse, direction):
-    global zoom
-    zoom += direction / 32
+# @window.event
+# def on_mouse_scroll(x, y, mouse, direction):
+#     global zoom
+#     zoom += direction / 32
+#
+#     # ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
+#     data = (gl.GLfloat * 4)(zoom)
+#     ubo.buffer.set_data_region(data, 12, 4)
 
-    data = (gl.GLfloat * 4)(zoom)
-    ubo.buffer.set_data_region(data, 12, 4)
 
-
-@window.event
-def on_resize(width, height):
-    data = (gl.GLfloat * 8)(width, height)
-    ubo.buffer.set_data_region(data, 0, 8)
+# @window.event
+# def on_resize(width, height):
+#     # ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
+#     data = (gl.GLfloat * 8)(width, height)
+#     ubo.buffer.set_data_region(data, 0, 8)
 
 
 ###########################################################
@@ -91,18 +90,18 @@ def on_resize(width, height):
 @window.event
 def on_draw():
     window.clear()
-    # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (-0.6, -0.5, 0,  0.6, -0.5, 0,  0, 0.5, 0)),
+
+    # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
     #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
+
     # TODO: fix drawing vertex_lists
     # vertex_list.draw(GL_TRIANGLES)
 
     # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-    #                              ('v2i', (-1, -1,   1, -1,   1, 1,   -1, 1)),
+    #                              ('v2i', (300, 300,   400, 300,   400, 400,   300, 400)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
-    # buf.bind()
     batch.draw()
-    # buf.unbind()
 
 
 def update(dt):

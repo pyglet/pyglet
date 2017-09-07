@@ -368,7 +368,7 @@ class Batch(object):
         glGenVertexArrays(1, self.vao_id)
 
         if _debug_graphics_batch:
-            print("Batch created. VAO ID: {}".format(self.vao_id.value))
+            print("Batch created. VAO ID: {0}".format(self.vao_id.value))
 
     def invalidate(self):
         """Force the batch to update the draw list.
@@ -700,8 +700,6 @@ class Group(object):
 
 
 class ShaderGroup(Group):
-    """The default group class used when ``None`` is given to a batch.
-    """
     def __init__(self, *shaders, parent=None):
         super(ShaderGroup, self).__init__(parent)
         self.shader_program = ShaderProgram(*shaders)
@@ -717,6 +715,8 @@ class ShaderGroup(Group):
 
 
 class _DefaultGroup(ShaderGroup):
+    """The default group class used when ``None`` is given to a batch.
+    """
     def __init__(self, *shaders):
         super(_DefaultGroup, self).__init__(*shaders)
 
@@ -730,6 +730,11 @@ class _DefaultGroup(ShaderGroup):
         for buffer_obj in self.buffer_objects.values():
             buffer_obj.buffer.bind()
         self.shader_program.use_program()
+
+    def unset_state(self):
+        self.shader_program.stop_program()
+        for buffer_obj in self.buffer_objects.values():
+            buffer_obj.buffer.unbind()
 
 
 class TextureGroup(Group):

@@ -746,6 +746,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         height = max(1, height)
         gl.glViewport(0, 0, width, height)
 
+        # TODO: Check if this could cause trouble if it's not yet ready:
         ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
         data = (gl.GLfloat * 8)(width, height)
         ubo.buffer.set_data_region(data, 0, 8)
@@ -760,8 +761,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def on_key_press(self, symbol, modifiers):
         """Default on_key_press handler."""
         if symbol == key.ESCAPE and not (modifiers & ~(key.MOD_NUMLOCK |
-                                                           key.MOD_CAPSLOCK |
-                                                           key.MOD_SCROLLLOCK)):
+                                                       key.MOD_CAPSLOCK |
+                                                       key.MOD_SCROLLLOCK)):
             self.dispatch_event('on_close')
 
     def close(self):
