@@ -44,7 +44,7 @@ Manually loading fonts is only required in the following situations:
 * When manually rendering fonts;
 * When using the deprecated font rendering in :mod:`pyglet.font.text`.
 
-You are encouraged to use :mod:`pyglet.text` for actual test rendering. Classes in this module will
+You are encouraged to use :mod:`pyglet.text` for actual text rendering. Classes in this module will
 handle font loading for you, so manual loading is not required.
 
 pyglet will automatically load any system-installed fonts.  You can add additional fonts
@@ -181,11 +181,11 @@ def add_file(font):
 
     The font format is platform-dependent, but is typically a TrueType font
     file containing a single font face. Note that to use a font added with this method,
-    you should pass the face name (not the file name) to :meth:`pyglet.font.load` or any
+    you should pass the face name (not the file name) to :meth::py:func:`pyglet.font.load` or any
     other place where you normally specify a font.
 
     :Parameters:
-        `font` : str or file
+        `font` : str or file-like object
             Filename or file-like object to load fonts from.
 
     """

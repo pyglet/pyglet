@@ -10,7 +10,7 @@ VERSION=`grep 'VERSION =' setup.py | cut -d "'" -f2`
 python setup.py sdist --formats=gztar,zip
 
 # Wheels
-python3 setup.py bdist_wheel 
+python setup.py bdist_wheel 
 
 # Build docs archive
 rm dist/pyglet-docs-$VERSION.zip

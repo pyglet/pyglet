@@ -6,23 +6,27 @@ Tests for pyglet are divided into 3 suites.
 
 Unit tests
 ''''''''''
+
 Unit tests only cover a single unit of code or a combination of a limited number of units. No
 resource intensive computations should be included. These tests should run in limited time without
 any user interaction.
 
 Integration tests
 '''''''''''''''''
+
 Integration tests cover the integration of components of pyglet into the whole of pyglet and
 the integration into the supported systems. Like unit tests these tests do not require user
 interaction, but they can take longer to run due to access to system resources.
 
 Interactive tests
 '''''''''''''''''
+
 Interactive tests require the user to verify whether the test is successful and in some cases
 require the user to perform actions in order for the test to continue. These tests can take a
 long time to run.
 
 There are currently 3 types of interactive test cases:
+
     - tests that can only run in fully interactive mode as they require the user to perform an
       action in order for the test to continue. These tests are decorated with
       :func:`~tests.interactive.interactive_test_base.requires_user_action`.
@@ -34,6 +38,7 @@ There are currently 3 types of interactive test cases:
 
 Running tests
 -------------
+
 The pyglet test suite is based on the `py.test framework <http://pytest.org>`_.
 
 It is preferred to use a virtual environment to run the tests. For instructions to set
@@ -53,6 +58,7 @@ You can also run just a single suite::
     py.test tests/interactive
 
 For the interactive test suites, there are some extra command line switches for py.test:
+
     - ``--non-interactive``: Only run the interactive tests that can only verify themselves using
       screenshots. The screenshots are created when you run the tests in interactive mode, so you
       will need to run the tests interactively once, before you can use this option;
@@ -65,11 +71,13 @@ Writing tests
 
 Annotations
 '''''''''''
+
 Some control over test execution can be exerted by using annotations in the form of
 decorators. One function of annotations is to skip tests under certain conditions.
 
 General annotations
 ^^^^^^^^^^^^^^^^^^^
+
 General test annotations are available in the module :mod:`tests.annotations`.
 
 .. py:currentmodule:: tests.annotations
@@ -98,6 +106,7 @@ General test annotations are available in the module :mod:`tests.annotations`.
 
 Suite annotations
 ^^^^^^^^^^^^^^^^^
+
 This is currently not used.
 
 .. py:decorator:: pytest.mark.unit
@@ -114,6 +123,7 @@ This is currently not used.
 
 Interactive test annotations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Interactive test cases can be marked with specific py.test marks. Currently
 the following marks are used:
 

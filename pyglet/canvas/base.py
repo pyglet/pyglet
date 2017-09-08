@@ -8,10 +8,8 @@ from pyglet import window
 
 class Display(object):
     '''A display device supporting one or more screens.
-
-    :guide:`displays`
     
-    :since: pyglet 1.2
+    .. versionadded:: 1.2
     '''
 
     name = None
@@ -38,15 +36,15 @@ class Display(object):
         Note that TwinView, Xinerama, xrandr and other extensions present
         multiple monitors on a single X screen; this is usually the preferred
         mechanism for working with multiple monitors under X11 and allows each
-        screen to be accessed through a single pyglet `Display`.
+        screen to be accessed through a single pyglet`~pyglet.canvas.Display`
 
         On platforms other than X11, :attr:`name` and :attr:`x_screen` are 
         ignored; there is only a single display device on these systems.
 
         :Parameters:
-            `name` : str
+            name : str
                 The name of the display to connect to.
-            `x_screen` : int
+            x_screen : int
                 The X11 screen number to use.
 
         '''
@@ -55,7 +53,7 @@ class Display(object):
     def get_screens(self):
         '''Get the available screens.
 
-        A typical multi-monitor workstation comprises one :class:`Display` 
+        A typical multi-monitor workstation comprises one :class`~pyglet.canvas.Display`
         with multiple :class:`Screen` s.  This method returns a list of 
         screens which can be enumerated to select one for full-screen display.
 
@@ -97,8 +95,6 @@ class Screen(object):
     
     Use :func:`~Display.get_screens` or :func:`~Display.get_default_screen`
     to obtain an instance of this class.
-
-    :guide:`screens`
     '''
 
     def __init__(self, display, x, y, width, height):
@@ -188,7 +184,7 @@ class Screen(object):
 
         :rtype: list of :class:`ScreenMode`
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
         '''
         raise NotImplementedError('abstract')
 
@@ -197,7 +193,7 @@ class Screen(object):
 
         :rtype: :class:`ScreenMode`
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
         '''
         raise NotImplementedError('abstract')
 
@@ -215,7 +211,7 @@ class Screen(object):
 
         :rtype: :class:`ScreenMode`
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
         '''
         # Best mode is one with smallest resolution larger than width/height,
         # with depth and refresh rate equal to current mode.
@@ -277,7 +273,7 @@ class ScreenMode(object):
     The :attr:`depth` and :attr:`rate` variables may be ``None`` if the 
     operating system does not provide relevant data.
 
-    :since: pyglet 1.2
+    .. versionadded:: 1.2
 
     '''
 
@@ -321,7 +317,7 @@ class Canvas(object):
     Canvases are used internally by pyglet to represent drawing areas --
     either within a window or full-screen.
 
-    :since: pyglet 1.2
+    .. versionadded:: 1.2
     '''
     def __init__(self, display):
         '''

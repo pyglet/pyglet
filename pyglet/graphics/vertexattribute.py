@@ -35,15 +35,15 @@
 
 '''Access byte arrays as arrays of vertex attributes.
 
-Use `create_attribute` to create an attribute accessor given a simple format
-string.  Alternatively, the classes may be constructed directly.
+Use :py:func:`create_attribute` to create an attribute accessor given a
+simple format string.  Alternatively, the classes may be constructed directly.
 
 Attribute format strings
 ========================
 
 An attribute format string specifies the format of a vertex attribute.  Format
-strings are accepted by the `create_attribute` function as well as most
-methods in the `pyglet.graphics` module.
+strings are accepted by the :py:func:`create_attribute` function as well as most
+methods in the :py:mod:`pyglet.graphics` module.
 
 Format strings have the following (BNF) syntax::
 

@@ -391,6 +391,8 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # Then if it's a TrueType font, we use GetCharABCWidthsW to get the
         # correct LSB. If it's a negative LSB, we move the layoutRect `rect`
         # to the right so that the whole glyph is rendered on the surface.
+        # For positive LSB, we let the renderer render the correct white
+        # space and we don't pass the LSB info to the Glyph.set_bearings
 
         bbox = Rectf()
         flags = (StringFormatFlagsMeasureTrailingSpaces | 
@@ -422,6 +424,7 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # grapheme \r\n into \r
         if text == '\r\n':
             text = '\r'
+
         abc = ABC()
         # Check if ttf font.         
         if gdi32.GetCharABCWidthsW(self._dc, 
@@ -429,9 +432,10 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             
             lsb = abc.abcA
             if lsb < 0:
+                # Negative LSB: we shift the layout rect to the right
+                # Otherwise we will cut the left part of the glyph
                 rect.x = -lsb
                 width -= lsb
-
         # XXX END HACK HACK HACK
 
         # Draw character to bitmap
@@ -464,6 +468,8 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             'BGRA', buffer, -bitmap_data.Stride)
 
         glyph = self.font.create_glyph(image)
+        # Only pass negative LSB info
+        lsb = min(lsb, 0)
         glyph.set_bearings(-self.font.descent, lsb, advance)
 
         return glyph

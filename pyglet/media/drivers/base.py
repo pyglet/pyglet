@@ -156,7 +156,7 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         pass
 
     def set_position(self, position):
-        """See `Player.position`."""
+        """See :py:attr:`~pyglet.media.Player.position`."""
         pass
 
     def set_min_distance(self, min_distance):
@@ -168,7 +168,7 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         pass
 
     def set_pitch(self, pitch):
-        """See `Player.pitch`."""
+        """See :py:attr:`~pyglet.media.Player.pitch`."""
         pass
 
     def set_cone_orientation(self, cone_orientation):

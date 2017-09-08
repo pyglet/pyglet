@@ -1,46 +1,99 @@
-``pyglet`` Documentation Index
-------------------------------
+pyglet Documentation
+====================
 
-Pyglet is a pure python cross-platform application framework intended for game
-development. It supports windowing, user interface event handling, OpenGL
-graphics, loading images and videos and playing sounds and music. It works on
-Windows, OS X and Linux.
+**pyglet** is a cross-platform windowing and multimedia library for Python,
+intended for developing games and other visually rich applications. It supports
+windowing, user interface event handling, OpenGL graphics, loading images
+and videos, and playing sounds and music. **pyglet** works on Windows, OS X
+and Linux.
 
-.. autosummary::
-   :toctree: api/
-   :template: package.rst
-   :hidden:
+Some of the features of pyglet are:
 
-   pyglet
+* **No external dependencies or installation requirements.** For most 
+  application and game requirements, pyglet needs nothing else besides Python,
+  simplifying distribution and installation.
+* **Take advantage of multiple windows and multi-monitor desktops.** pyglet
+  allows you to use as many windows as you need, and is fully aware of
+  multi-monitor setups for use with fullscreen games and applications.
+* **Load images, sound, music and video in almost any format.** pyglet can
+  optionally use AVbin to play back audio formats such as MP3, OGG/Vorbis and
+  WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
+* **pyglet is provided under the BSD open-source license**, allowing you to 
+  use it for both commercial and other open-source projects with very little
+  restriction.
+* **Supports Python 2 and 3.** Pick your favorite!
+
+Please join us on the `mailing list`_!
+
+.. _mailing list: http://groups.google.com/group/pyglet-users
 
 Programming Guide
-==================
-Every programmer starting to develop using pyglet, should start here.
+-----------------
+
+The pyglet Programming Guide provides in-depth documentation for writing
+applications using pyglet.  Many topics described here reference the pyglet
+API reference, which is listed below.
+
+If this is your first time reading about pyglet, we suggest you start at
+:doc:`programming_guide/quickstart`.
 
 .. toctree::
    :maxdepth: 2
 
-   Programming Guide <programming_guide/index>
-
-
+   programming_guide/installation
+   programming_guide/quickstart
+   programming_guide/context
+   programming_guide/gl
+   programming_guide/graphics
+   programming_guide/windowing
+   programming_guide/eventloop
+   programming_guide/events
+   programming_guide/keyboard
+   programming_guide/mouse
+   programming_guide/input
+   programming_guide/time
+   programming_guide/text
+   programming_guide/image
+   programming_guide/media
+   programming_guide/resources
+   programming_guide/options
+   programming_guide/debug
+   programming_guide/advanced
+   programming_guide/examplegame
 
 API Reference
-==============
+-------------
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   api/pyglet
+   modules/pyglet
+   modules/app
+   modules/canvas
+   modules/clock
+   modules/event
+   modules/font
+   modules/gl
+   modules/graphics/index
+   modules/image/index
+   modules/info
+   modules/input
+   modules/media
+   modules/resource
+   modules/sprite
+   modules/text/index
+   modules/window
 
-
-Development guide
-=================
-These documents describe details on how to develop pyglet itself further. Read these to get a more
-detailed insight in how pyglet is designed and how to help making pyglet even better.
+Development Guide
+-----------------
+These documents describe details on how to develop pyglet itself further.  Read
+these to get a more detailed insight into how pyglet is designed, and how to
+help make pyglet even better.  Get in touch if you would like to contribute!
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
+   internal/contributing
    internal/virtualenv
    internal/testing
    internal/doc
@@ -49,15 +102,48 @@ detailed insight in how pyglet is designed and how to help making pyglet even be
    internal/generated
    internal/wraptypes
 
-
-
-
 Related Documentation
-======================
+---------------------
 
 * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
 * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
 * `AVbin Documentation <http://avbin.github.com/AVbin/Docs.html>`_
-* `ctypes Reference <http://docs.python.org/lib/module-ctypes.html>`_
+* `ctypes Reference <http://docs.python.org/3/library/ctypes.html>`_
 * `Python Documentation <http://docs.python.org/>`_
 
+Third party libraries
+---------------------
+
+Listed here are a few third party libraries that you might find useful when
+developing your project.  Please direct any questions to the respective authors.
+If you would like to have your library listed here, let us know!
+
+`glooey -  An object-oriented GUI library for pyglet <http://glooey.readthedocs.io/en/latest/index.html>`_
+    Every game needs a user interface that matches its look and feel. The purpose of glooey
+    is to help you make such an interface.  Towards this end, glooey provides 7 powerful
+    placement widgets, a label widget, an image widget, 3 different button widgets, a text
+    entry widget, a variety of scroll boxes and bars, 4 different dialog box widgets, and a
+    variety of other miscellaneous widgets.  The appearance of any widget can be trivially
+    customized, and glooey comes with built-in fantasy, puzzle, and 8-bit themes to prove it
+    (and to help you hit the ground running if your game fits one of those genres).
+
+`PyShaders - Pythonic OpenGL shader wrapper for python <https://github.com/gabdube/pyshaders>`_
+    Pyshaders aims to completely wraps the opengl2.1 shader api in a python module.
+    Pyshaders provides a pythonic OOP api that hides the lower level (ctypes) calls.
+    Pyshaders provides a high level api and a low level api, and it can be integrated easily
+    with existing code because it does not occlude the underlying opengl values.
+
+Projects using pyglet
+---------------------
+
+pyglet is a fairly lightweight library, which makes it ideal to build upon.  Listed here are
+a few projects that take advantage of pyglet "under the hood".  If you would like to have your
+project listed here, let us know!
+
+`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://http://python.cocos2d.org/index.html>`_
+    Cocos2d is an open source software framework. It can be used to build games, apps and
+    other cross platform GUI based interactive programs.
+
+`Arcade - A 2D library for game development focusing on simplicity <http://arcade.academy/>`_
+    Arcade builds on Pyglet with a focus to make creating 2D arcade games simple and easy
+    for hobbyists and new programmers.
