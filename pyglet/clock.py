@@ -721,9 +721,6 @@ class Clock(_ClockBase):
             item.interval = 0
             item.func = lambda x, *args, **kwargs: x
 
-            item.interval = 0
-            item.func = lambda x, *args, **kwargs: x
-
         self._schedule_items = [i for i in self._schedule_items if i.func != func]
 
 
