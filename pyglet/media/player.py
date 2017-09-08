@@ -85,7 +85,7 @@ class Player(pyglet.event.EventDispatcher):
         
 
     def queue(self, source):
-		"""
+        """
         Queue the source on this player.
 
         If the player has no source, the player will be paused immediately on this source.
@@ -139,7 +139,7 @@ class Player(pyglet.event.EventDispatcher):
             pyglet.clock.unschedule(self.update_texture)
             self._time = self._get_time()
             self._systime = None
-	def _get_playing(self):
+    def _get_playing(self):
         """
         Read-only. Determine if the player state is playing.
 
@@ -154,12 +154,12 @@ class Player(pyglet.event.EventDispatcher):
     playing = property(_get_playing)
 
     def play(self):
-		"""
+        """
         Begin playing the current source.
 
         This has no effect if the player is already playing.
         """
-       self._set_playing(True)
+        self._set_playing(True)
 
     def pause(self):
         """
@@ -283,12 +283,12 @@ class Player(pyglet.event.EventDispatcher):
     source = property(_get_source)
 
     def _get_time(self):
-		"""
+        """
         Read-only. Current playback time of the current source.
 
         The playback time is a float expressed in seconds, with 0.0 being the
         beginning of the media. The playback time returned represents the 
-		player master clock time.
+        player master clock time.
         """
         if self._systime is None:
             now = self._time
@@ -323,6 +323,9 @@ class Player(pyglet.event.EventDispatcher):
         """
         return self._texture
 
+    def get_texture(self):
+        return self._texture
+
     def seek_next_frame(self):
         """Step forwards one video frame in the current Source.
         """
@@ -332,7 +335,7 @@ class Player(pyglet.event.EventDispatcher):
         self.seek(time)
 
     def update_texture(self, dt=None, time=None):
-		"""Manually update the texture from the current source. This happens
+        """Manually update the texture from the current source. This happens
         automatically, so you shouldn't need to call this method.
         """
         # self.pr.disable()
@@ -510,7 +513,7 @@ class Player(pyglet.event.EventDispatcher):
 
         :event:
         """
-		if _debug:
+        if _debug:
             print('Player.on_eos')
         if bl.logger is not None:
             bl.logger.log("p.P.oe")

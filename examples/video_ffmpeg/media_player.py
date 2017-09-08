@@ -298,7 +298,8 @@ class PlayerWindow(pyglet.window.Window):
             self.video_height = height
             self.video_width = height * video_aspect
         self.video_x = (width - self.video_width) / 2
-        self.video_y = (height - self.video_height) / 2 + self.GUI_HEIGHT
+        self.video_y = (height - self.video_height) / 2 + \
+                        self.GUI_HEIGHT + self.video_height
 
     def on_mouse_press(self, x, y, button, modifiers):
         for control in self.controls:
@@ -336,10 +337,11 @@ class PlayerWindow(pyglet.window.Window):
 
         # Video
         if self.player.source and self.player.source.video_format:
-            self.player.get_texture().blit(self.video_x,
-                                           self.video_y,
-                                           width=self.video_width,
-                                           height=self.video_height)
+            video_texture = self.player.get_texture()
+            video_texture.blit(self.video_x,
+                               self.video_y,
+                               width=self.video_width,
+                               height=self.video_height)
 
         # GUI
         self.slider.value = self.player.time
