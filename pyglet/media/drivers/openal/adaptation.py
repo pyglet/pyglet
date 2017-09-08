@@ -184,12 +184,13 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def delete(self):
         assert _debug_media('OpenALAudioPlayer.delete()')
 
-            if not self.source:
-                return
+        if not self.source:
+            return
 
-            assert self.driver is not None
-            self.source.delete()
-            self.source = None
+        assert self.driver is not None
+        self.source.delete()
+        self.source = None
+        pyglet.clock.unschedule(self._check_refill)
 
     @property
     def ideal_buffer_size(self):
@@ -227,11 +228,12 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         assert self.source is not None
 
         self.source.stop()
+        self._handle_processed_buffers()
         self.source.clear()
         self.source.byte_offset = 0
         self._playing = False
         self._clearing = True
-		self._audiodata_buffer = None
+        self._audiodata_buffer = None
 
         self._buffer_cursor = 0
         self._play_cursor = 0
@@ -318,7 +320,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             assert _debug_media('underrun')
             self.source.play()
 
-	def _get_audiodata(self):
+    def _get_audiodata(self):
         if self._audiodata_buffer is None or self._audiodata_buffer.length == 0:
             self._get_new_audiodata()
 
@@ -327,7 +329,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def _get_new_audiodata(self):
         assert _debug_media('Getting new audio data buffer.')
         compensation_time = self.get_audio_time_diff()
-		self._audiodata_buffer= self.source_group.get_audio_data(self.ideal_buffer_size, compensation_time)
+        self._audiodata_buffer= self.source_group.get_audio_data(self.ideal_buffer_size, compensation_time)
 
         if self._audiodata_buffer is not None:
             assert _debug_media('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
@@ -344,13 +346,13 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         buf = self.source.get_buffer()
         buf.data(audio_data, self.source_group.audio_format, length)
         self.source.queue_buffer(buf)
-		self._update_write_cursor(audio_data, length)
+        self._update_write_cursor(audio_data, length)
 
     def _update_write_cursor(self, audio_data, length):
         self._write_cursor += length
         self._buffer_sizes.append(length)
         self._buffer_timestamps.append(audio_data.timestamp)
-		audio_data.consume(length, self.source_group.audio_format)
+        audio_data.consume(length, self.source_group.audio_format)
         assert self._check_cursors()
 
     def _queue_events(self, audio_data):
@@ -377,7 +379,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             assert _debug_media('Writing {} bytes'.format(audio_data.length))
             self._queue_events(audio_data)
             self._queue_audio_data(audio_data, audio_data.length)
-            self._update_write_cursor(audio_data, audio_data.length)
+
 
     def get_time(self):
         # Update first, might remove buffers

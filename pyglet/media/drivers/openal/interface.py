@@ -284,7 +284,7 @@ class OpenALSource(OpenALObject):
         self._check_error('Failed to stop source.')
 
     def clear(self):
-        self._set_int(al.AL_BUFFER, 0)
+        self._set_int(al.AL_BUFFER, al.AL_NONE)
         while self._owned_buffers:
             buf_name, buf = self._owned_buffers.popitem()
             self.buffer_pool.unqueue_buffer(buf)
