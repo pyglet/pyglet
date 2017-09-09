@@ -266,7 +266,7 @@ class FFmpegSource(StreamingSource):
         return audio_data
 
     def _get_video_packet(self):
-        """Take an video packet from the queue.
+        """Take a video packet from the queue.
 
         This function will schedule its `_fillq` function to fill up
         the queues if space is available. Multiple calls to this method will
@@ -439,9 +439,16 @@ class FFmpegSource(StreamingSource):
             return
 
         if self.videoq:
-            video_packet = self.videoq[0]
-            if video_packet.image == 0:
-                self._decode_video_packet(video_packet)    
+            while True:
+                # We skip video packets which are not video frames
+                # This happens in mkv files for the first few frames.
+                video_packet = self.videoq[0]
+                if video_packet.image == 0:
+                    self._decode_video_packet(video_packet)
+                if video_packet.image is not None:
+                    break
+                self._get_video_packet()
+
             ts = video_packet.timestamp
         else:
             ts = None
@@ -454,9 +461,14 @@ class FFmpegSource(StreamingSource):
         if not self.video_format:
             return
 
-        video_packet = self._get_video_packet()
-        if video_packet.image == 0:
-            self._decode_video_packet(video_packet)
+        while True:
+            # We skip video packets which are not video frames
+            # This happens in mkv files for the first few frames.
+            video_packet = self._get_video_packet()
+            if video_packet.image == 0:
+                self._decode_video_packet(video_packet)
+            if video_packet.image is not None:
+                    break
 
         if _debug:
             print('Returning', video_packet)
