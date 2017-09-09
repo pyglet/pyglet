@@ -109,6 +109,7 @@ AVCodecParserContext = libavcodec.AVCodecParserContext
 AVCodecParameters = libavcodec.AVCodecParameters
 AVRational = libavutil.AVRational
 AVDictionary = libavutil.AVDictionary
+AVFrame = libavutil.AVFrame
 class AVStream(Structure):
     _fields_ = [
         ('index', c_int),
@@ -291,6 +292,9 @@ avformat.av_seek_frame.argtypes = [POINTER(AVFormatContext),
 avformat.avformat_seek_file.restype = c_int
 avformat.avformat_seek_file.argtypes = [POINTER(AVFormatContext),
         c_int, c_int64, c_int64, c_int64, c_int]
+avformat.av_guess_frame_rate.restype = AVRational
+avformat.av_guess_frame_rate.argtypes = [POINTER(AVFormatContext), 
+        POINTER(AVStream), POINTER(AVFrame)]
 
 __all__ = [
 'avformat',

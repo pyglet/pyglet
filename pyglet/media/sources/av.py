@@ -273,8 +273,9 @@ def ffmpeg_stream_info(file, stream_index):
         info.u.video.height = context.height
         info.u.video.sample_aspect_num = context.sample_aspect_ratio.num
         info.u.video.sample_aspect_den = context.sample_aspect_ratio.den
-        info.u.video.frame_rate_num = av_stream.avg_frame_rate.num
-        info.u.video.frame_rate_den = av_stream.avg_frame_rate.den
+        frame_rate = avformat.av_guess_frame_rate(file.context, av_stream, None)
+        info.u.video.frame_rate_num = frame_rate.num
+        info.u.video.frame_rate_den = frame_rate.den
     elif context.codec_type == AVMEDIA_TYPE_AUDIO:
         info.type = FFMPEG_STREAM_TYPE_AUDIO
         info.u.audio.sample_rate = context.sample_rate
