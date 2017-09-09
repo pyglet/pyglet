@@ -176,35 +176,23 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def seek(self, timestamp):
         self.audio_diff_avg_count = 0
         self.audio_diff_cum = 0.0
-        self._current_audio_data = None
         nbytes = 1 * self.source_group.audio_format.bytes_per_second
         while True:
-            # Find audio packet at timestamp
-            audio_data = self.source_group.get_audio_data(nbytes, 0.0)
-            if timestamp <= (audio_data.timestamp + audio_data.duration):
+            audio_data = self.get_audio_data()
+             assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
+            
+            if (audio_data is None or
+                timestamp <= (audio_data.timestamp + audio_data.duration)):
                 break
+            
+            assert _debug("Got audio packet starting at {:.2f} sec. "
+                           "Skipping it.".format(audio_data.timestamp))
 
-        self._current_audio_data = audio_data
-        if _debug:
-            print('PulseAudioPlayer: Requested to write %d bytes to stream' % nbytes)
+            self._audiodata_buffer = None
 
-        seek_mode = pa.PA_SEEK_RELATIVE
-        if self._clear_write:
-            seek_mode = pa.PA_SEEK_RELATIVE_ON_READ
-            self._clear_write = False
-            if _debug:
-                print('PulseAudioPlayer: Clear buffer')
-
-        write_length = audio_data.length
-        consumption = self.stream.write(audio_data, write_length, seek_mode)
-
-        self._read_index_valid = True
-        self._timestamps.append((self._write_index, audio_data.timestamp))
-        self._write_index += consumption
-
-        if _debug:
-            print('PulseAudioPlayer: Actually wrote %d bytes to stream' % consumption)
-        self._consume_audio_data(consumption)
+        if audio_data is not None:
+            assert _debug_media('Writing {} bytes'.format(audio_data.length))
+            self._write_to_stream(audio_data.length)
 
     def _get_audio_data(self, nbytes=None):
         if self._current_audio_data is None and self.source_group is not None:

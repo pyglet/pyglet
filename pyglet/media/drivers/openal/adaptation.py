@@ -368,12 +368,17 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         self.audio_diff_avg_count = 0
         self.audio_diff_cum = 0.0
         while True:
-            audio_data = self.source_group.get_audio_data(self.ideal_buffer_size, 0.0)
-            assert _debug_media("Seeking audio timestamp {:.2f} sec. "
-                    "Got audio packet starting at {:.2f} sec".format(
-                        timestamp, audio_data.timestamp))
-            if timestamp <= (audio_data.timestamp + audio_data.duration):
+            audio_data = self._get_audiodata()
+            assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
+            
+            if (audio_data is None or
+                timestamp <= (audio_data.timestamp + audio_data.duration)):
                 break
+            
+            assert _debug("Got audio packet starting at {:.2f} sec. "
+                           "Skipping it.".format(audio_data.timestamp))
+
+            self._audiodata_buffer = None
 
         if audio_data is not None:
             assert _debug_media('Writing {} bytes'.format(audio_data.length))

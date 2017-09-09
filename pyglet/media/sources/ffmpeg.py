@@ -220,6 +220,10 @@ class FFmpegSource(StreamingSource):
         del self._events[:]
         self._clear_video_audio_queues()
         self._fillq()
+        # If we seek to the end of the video, we could have only 1 packet or
+        # none.
+        if len(self.audioq) < 2 or len(self.videoq) < 2:
+            return
         # Consume video and audio packets until we arrive at the correct
         # timestamp location
         while True:

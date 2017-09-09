@@ -318,15 +318,16 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self.audio_diff_cum = 0.0
         while True:
             audio_data = self._get_audiodata()
-            assert _debug("Seeking audio timestamp {:.2f} sec. "
-                    "Got audio packet starting at {:.2f} sec".format(
-                        timestamp, audio_data.timestamp))
-            if timestamp <= (audio_data.timestamp + audio_data.duration):
+            assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
+            
+            if (audio_data is None or
+                timestamp <= (audio_data.timestamp + audio_data.duration)):
                 break
             
+            assert _debug("Got audio packet starting at {:.2f} sec. "
+                           "Skipping it.".format(audio_data.timestamp))
+            
             self._audiodata_buffer = None
-            del self._events[:]
-            del self._timestamps[:]
 
         if audio_data is not None:
             assert _debug('write', audio_data.length)
