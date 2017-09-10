@@ -179,7 +179,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         nbytes = 1 * self.source_group.audio_format.bytes_per_second
         while True:
             audio_data = self.get_audio_data()
-             assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
+            assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
             
             if (audio_data is None or
                 timestamp <= (audio_data.timestamp + audio_data.duration)):

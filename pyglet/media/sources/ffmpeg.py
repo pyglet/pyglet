@@ -425,7 +425,7 @@ class FFmpegSource(StreamingSource):
         video_packet.image = image_data
 
         if _debug:
-            print('Decoding video packet at timestamp', packet.timestamp)
+            print('Decoding video packet at timestamp', video_packet.timestamp)
 
         # t2 = clock.time()
         # pr.disable()
