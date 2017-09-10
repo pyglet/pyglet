@@ -133,6 +133,7 @@ class FFmpegSource(StreamingSource):
         self._video_stream_index = -1
         self._audio_stream = None
         self._audio_stream_index = -1
+        self._audio_format = None
 
         file_info = av.ffmpeg_file_info(self._file)
         self._duration = timestamp_from_ffmpeg(file_info.duration)
@@ -185,17 +186,16 @@ class FFmpegSource(StreamingSource):
         self._packet = av.ffmpeg_init_packet()
         self._events = [] # They don't seem to be used!
 
+        self.audioq = deque()        
+        # Make queue big enough to accomodate 1.2 sec?
+        self._max_len_audioq = 50 # Need to figure out a correct amount
         if self.audio_format:
-            self.audioq = deque()        
-            # Make queue big enough to accomodate 1.2 sec?
-            self._max_len_audioq = 50 # Need to figure out a correct amount
             # Buffer 1 sec worth of audio
             self._audio_buffer = \
                 (ctypes.c_uint8 * av.ffmpeg_get_audio_buffer_size(self.audio_format))()
         
-        if self.video_format:
-            self.videoq = deque()
-            self._max_len_videoq = 50 # Need to figure out a correct amount
+        self.videoq = deque()
+        self._max_len_videoq = 50 # Need to figure out a correct amount
         
         # Flag to determine if the _fillq method was already scheduled
         self._fillq_scheduled = False
@@ -338,7 +338,8 @@ class FFmpegSource(StreamingSource):
             self._append_video_packet(video_packet)
             return video_packet
 
-        elif self._packet.contents.stream_index == self._audio_stream_index:
+        elif (self.audio_format and
+              self._packet.contents.stream_index == self._audio_stream_index):
             audio_packet = AudioPacket(self._packet, timestamp)
             self._append_audio_data(audio_packet)
             return audio_packet
@@ -474,6 +475,17 @@ class FFmpegSource(StreamingSource):
             print('Returning', video_packet)
 
         return video_packet.image
+
+    @property
+    def audio_format(self):
+        return self._audio_format
+
+    @audio_format.setter
+    def audio_format(self, value):
+        self._audio_format = value
+        if value is None:
+            self.audioq.clear()
+    
 
 av.ffmpeg_init()
 if pyglet.options['debug_media']:

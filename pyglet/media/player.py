@@ -38,7 +38,7 @@ from builtins import object
 import buffered_logger as bl
 
 import pyglet
-from pyglet.media.drivers import get_audio_driver, get_silent_audio_driver
+from pyglet.media.drivers import get_audio_driver
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
 from pyglet.media.sources.base import SourceGroup, StaticSource
@@ -114,18 +114,22 @@ class Player(pyglet.event.EventDispatcher):
         source = self.source
 
         if playing and source:
-            if not self._audio_player:
-                self._create_audio_player()
-                if bl.logger is not None:
-                    bl.logger.init_wall_time()
-                    bl.logger.log("p.P._sp", 0.0)
-            self._audio_player.prefill_audio()
+            if source.audio_format:
+                if self._audio_player is None:
+                    self._create_audio_player()
+                if self._audio_player:
+                    self._audio_player.prefill_audio()
 
+            if bl.logger is not None:
+                bl.logger.init_wall_time()
+                bl.logger.log("p.P._sp", 0.0)
+            
             if source.video_format:
                 if not self._texture:
                     self._create_texture()
             
-            self._audio_player.play()
+            if self._audio_player:
+                self._audio_player.play()
             self._systime = clock.time()
             if source.video_format:
                 pyglet.clock.schedule_once(self.update_texture, 0)
@@ -139,6 +143,7 @@ class Player(pyglet.event.EventDispatcher):
             pyglet.clock.unschedule(self.update_texture)
             self._time = self._get_time()
             self._systime = None
+            
     def _get_playing(self):
         """
         Read-only. Determine if the player state is playing.
@@ -251,11 +256,12 @@ class Player(pyglet.event.EventDispatcher):
         assert self._groups
 
         group = self._groups[0]
-        audio_format = group.audio_format
-        if audio_format:
-            audio_driver = get_audio_driver()
-        else:
-            audio_driver = get_silent_audio_driver()
+        audio_driver = get_audio_driver()
+        if audio_driver is None:
+            # Failed to find a valid audio driver
+            self.source.audio_format = None
+            return
+        
         self._audio_player = audio_driver.create_audio_player(group, self)
 
         _class = self.__class__
@@ -295,15 +301,6 @@ class Player(pyglet.event.EventDispatcher):
         else:
             now = clock.time() - self._systime + self._time
         return now
-        # time = None
-        # if self._playing and self._audio_player:
-        #     time = self._audio_player.get_time()
-        #     time = self._groups[0].translate_timestamp(time)
-
-        # if time is None:
-        #     return self._time
-        # else:
-        #     return time
 
     time = property(_get_time)
 
@@ -349,7 +346,12 @@ class Player(pyglet.event.EventDispatcher):
         if time is None:
             time = self.time
             if bl.logger is not None:
-                bl.logger.log("p.P.ut.1.2", time, self._audio_player.get_time())
+                bl.logger.log(
+                    "p.P.ut.1.2",
+                    time,
+                    self._audio_player.get_time() if self._audio_player else 0
+                )
+
         # if time is None:
         #     if bl.logger is not None:
         #         delay = 1. / 30
@@ -366,9 +368,9 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         frame_rate = self._groups[0].video_format.frame_rate
-        frame_time = 1 / frame_rate
+        frame_duration = 1 / frame_rate
         ts = self._groups[0].get_next_video_timestamp()
-        while ts is not None and ts + frame_time < time: # Allow up to frame_time difference
+        while ts is not None and ts + frame_duration < time: # Allow up to frame_duration difference
             self._groups[0].get_next_video_frame() # Discard frame
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.5", ts)
@@ -379,10 +381,10 @@ class Player(pyglet.event.EventDispatcher):
 
         if ts is None:
             self._last_video_timestamp = None
-            delay = 1./ 30
             if bl.logger is not None:
-                bl.logger.log("p.P.ut.1.7", delay)
-            pyglet.clock.schedule_once(self.update_texture, delay)
+                bl.logger.log("p.P.ut.1.7", frame_duration)
+            
+            pyglet.clock.schedule_once(self._video_finished, frame_duration)
             return
 
         image = self._groups[0].get_next_video_frame()
@@ -404,6 +406,12 @@ class Player(pyglet.event.EventDispatcher):
             bl.logger.log("p.P.ut.1.9", delay, ts)
         pyglet.clock.schedule_once(self.update_texture, delay)
         # self.pr.enable()
+
+    def _video_finished(self, dt):
+        if self._audio_player is None:
+            self.dispatch_event("on_eos")
+            self.dispatch_event("on_source_group_eos")
+
 
     def _player_property(name, doc=None):
         private_name = '_' + name
