@@ -60,6 +60,8 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
     _local_lib_paths = [script_path, os.path.join(script_path, 'lib'),]
+    if pyglet.compat_platform == 'win32':
+        os.environ["PATH"] += os.pathsep + os.pathsep.join(_local_lib_paths)
 else:
     _local_lib_paths = None
 

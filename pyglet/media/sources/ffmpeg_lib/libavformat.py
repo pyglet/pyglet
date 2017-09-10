@@ -44,16 +44,7 @@ import pyglet.lib
 from . import libavcodec
 from . import libavutil
 
-if pyglet.compat_platform == 'win32':
-    for libname in pyglet.options['ffmpeg_libs_win']:
-        if libname.startswith('avformat'):
-            avformat = pyglet.lib.load_library(libname)
-            break
-    else:
-        # As a last resort, try to load the dll with default name.
-        avformat = pyglet.lib.load_library('avformat')
-else:
-    avformat = pyglet.lib.load_library('avformat')
+avformat = pyglet.lib.load_library('avformat', win32='avformat-57')
 
 AVSEEK_FLAG_BACKWARD = 1 # ///< seek backward
 AVSEEK_FLAG_BYTE = 2     # ///< seeking based on position in bytes

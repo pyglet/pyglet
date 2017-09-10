@@ -42,16 +42,7 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet
 import pyglet.lib
 
-if pyglet.compat_platform == 'win32':
-    for libname in pyglet.options['ffmpeg_libs_win']:
-        if libname.startswith('swscale'):
-            swscale = pyglet.lib.load_library(libname)
-            break
-    else:
-        # As a last resort, try to load the dll with default name.
-        swscale = pyglet.lib.load_library('swscale')
-else:
-    swscale = pyglet.lib.load_library('swscale')
+swscale = pyglet.lib.load_library('swscale', win32='swscale-4')
 
 SWS_FAST_BILINEAR = 1
 

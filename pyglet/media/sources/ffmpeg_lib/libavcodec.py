@@ -43,16 +43,7 @@ import pyglet
 import pyglet.lib
 from . import libavutil
 
-if pyglet.compat_platform == 'win32':
-    for libname in pyglet.options['ffmpeg_libs_win']:
-        if libname.startswith('avcodec'):
-            avcodec = pyglet.lib.load_library(libname)
-            break
-    else:
-        # As a last resort, try to load the dll with default name.
-        avcodec = pyglet.lib.load_library('avcodec')
-else:
-    avcodec = pyglet.lib.load_library('avcodec')
+avcodec = pyglet.lib.load_library('avcodec', win32='avcodec-57')
 
 FF_INPUT_BUFFER_PADDING_SIZE = 32
 
