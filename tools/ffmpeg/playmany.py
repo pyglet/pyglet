@@ -13,6 +13,7 @@ playlist will be played, otherwise all files in samples_dir.
 
 """
 
+import os
 import subprocess
 import sys
 
@@ -60,7 +61,7 @@ def core_play_many(pathserv, playlist_gen, timeout=120):
 
         print("playmany playing:", filename)
 
-        cmdline = ["media_player.py",
+        cmdline = [os.path.join(fs.get_media_player_path(), "media_player.py"),
                    "--debug",
                    "--outfile=" + dbg_file,
                    filename]

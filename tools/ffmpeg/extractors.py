@@ -1,14 +1,12 @@
 """
 Responsabilities
 
-Analyzes a media_player recording to build specific info on behalf of reporters
+Containers with helper functions to analyze media_player recording(s)
 
-Uses 'instrumentation' to get input data about the media_player state sequence
-seen while playing a sample
-
-Defines object types to collect some specific info about a replay.
+Commands 'compare' and 'summarize' uses them to build its reports.
 
 """
+
 import os
 
 import fs

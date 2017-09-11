@@ -27,7 +27,7 @@ import os
 import sys
 
 import fs
-import instrumentation as ins
+from pyglet.media import instrumentation as ins
 import playmany
 import retry_crashed
 import summarize

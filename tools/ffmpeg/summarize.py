@@ -16,7 +16,7 @@ import sys
 
 import extractors
 import fs
-import instrumentation as ins
+from pyglet.media import instrumentation as ins
 import mpexceptions
 import report
 import reports

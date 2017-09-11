@@ -25,7 +25,7 @@ import os
 import sys
 
 import fs
-import instrumentation as ins
+from pyglet.media import instrumentation as ins
 import mpexceptions
 import playmany
 

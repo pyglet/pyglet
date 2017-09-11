@@ -1,4 +1,4 @@
-import instrumentation as ins
+from pyglet.media import instrumentation as ins
 
 def test_no_unknown_state_fields_in_mp_events():
     all_fields = ins.MediaPlayerStateIterator.fields.keys()

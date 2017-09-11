@@ -26,7 +26,7 @@ NOTE: .csv sample is currently not implemented
 
 import sys
 
-import instrumentation as ins
+from pyglet.media import instrumentation as ins
 import fs
 import mpexceptions
 

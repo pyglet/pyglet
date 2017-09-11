@@ -55,11 +55,11 @@ __version__ = '$Id: $'
 
 import os
 import sys
-import buffered_logger as bl
 
 from pyglet.gl import *
 import pyglet
 from pyglet.window import key
+from pyglet.media import buffered_logger as bl
 
 pyglet.options['debug_media'] = False
 # pyglet.options['audio'] = ('openal', 'pulse', 'silent')
@@ -387,7 +387,7 @@ def set_logging_parameters(target_file, dbg_file, debug):
         if dbg_dir and not os.path.isdir(dbg_dir):
             os.mkdir(dbg_dir)
     bl.logger = bl.BufferedLogger(dbg_file)
-    from instrumentation import mp_events
+    from pyglet.media.instrumentation import mp_events
     # allow to detect crashes by prewriting a crash file, if no crash
     # it will be overwrited by the captured data
     sample = os.path.basename(target_file)

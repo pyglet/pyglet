@@ -35,9 +35,9 @@ from builtins import object
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import buffered_logger as bl
 
 import pyglet
+from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
