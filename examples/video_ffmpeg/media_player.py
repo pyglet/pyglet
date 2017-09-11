@@ -288,7 +288,6 @@ class PlayerWindow(pyglet.window.Window):
         video_width, video_height = self.get_video_size()
         if video_width == 0 or video_height == 0:
             return
-
         display_aspect = width / float(height)
         video_aspect = video_width / float(video_height)
         if video_aspect > display_aspect:
@@ -299,7 +298,7 @@ class PlayerWindow(pyglet.window.Window):
             self.video_width = height * video_aspect
         self.video_x = (width - self.video_width) / 2
         self.video_y = (height - self.video_height) / 2 + \
-                        self.GUI_HEIGHT + self.video_height
+                        self.GUI_HEIGHT + video_height
 
     def on_mouse_press(self, x, y, button, modifiers):
         for control in self.controls:
@@ -347,7 +346,6 @@ class PlayerWindow(pyglet.window.Window):
         self.slider.value = self.player.time
         for control in self.controls:
             control.draw()
-
 
 def main(target, dbg_file, debug):
     set_logging_parameters(target, dbg_file, debug)
