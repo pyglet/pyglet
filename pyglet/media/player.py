@@ -53,7 +53,6 @@ class Player(pyglet.event.EventDispatcher):
     """High-level sound and video player.
     """
 
-    _last_video_timestamp = None
     _texture = None
 
     # Spacialisation attributes, preserved between audio players
@@ -246,7 +245,6 @@ class Player(pyglet.event.EventDispatcher):
             self._audio_player.clear()
             self._audio_player.seek(time)
         if self.source.video_format:
-            self._last_video_timestamp = None
             pyglet.clock.unschedule(self.update_texture)
             self.update_texture(time=time)
         self._set_playing(playing)
@@ -362,14 +360,6 @@ class Player(pyglet.event.EventDispatcher):
         #     pyglet.clock.schedule_once(self.update_texture, delay)
         #     return
 
-        if (self._last_video_timestamp is not None and 
-            time <= self._last_video_timestamp):
-            delay = 1. / 30
-            if bl.logger is not None:
-                bl.logger.log("p.P.ut.1.4", delay)
-            pyglet.clock.schedule_once(self.update_texture, delay)
-            return
-
         frame_rate = self._groups[0].video_format.frame_rate
         frame_duration = 1 / frame_rate
         ts = self._groups[0].get_next_video_timestamp()
@@ -383,7 +373,6 @@ class Player(pyglet.event.EventDispatcher):
             bl.logger.log("p.P.ut.1.6", ts)
 
         if ts is None:
-            self._last_video_timestamp = None
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.7", frame_duration)
             
@@ -395,7 +384,6 @@ class Player(pyglet.event.EventDispatcher):
             if self._texture is None:
                 self._create_texture()
             self._texture.blit_into(image, 0, 0, 0)
-            self._last_video_timestamp = ts
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
         
