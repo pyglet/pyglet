@@ -344,6 +344,7 @@ class Player(pyglet.event.EventDispatcher):
         #     ps.print_stats()
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
+        group = self._groups[0]
         if time is None:
             time = self.time
             if bl.logger is not None:
@@ -360,26 +361,27 @@ class Player(pyglet.event.EventDispatcher):
         #     pyglet.clock.schedule_once(self.update_texture, delay)
         #     return
 
-        frame_rate = self._groups[0].video_format.frame_rate
+        frame_rate = group.video_format.frame_rate
         frame_duration = 1 / frame_rate
-        ts = self._groups[0].get_next_video_timestamp()
+        ts = group.get_next_video_timestamp()
         while ts is not None and ts + frame_duration < time: # Allow up to frame_duration difference
-            self._groups[0].get_next_video_frame() # Discard frame
+            group.get_next_video_frame() # Discard frame
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.5", ts)
-            ts = self._groups[0].get_next_video_timestamp()
+            ts = group.get_next_video_timestamp()
 
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.6", ts)
 
         if ts is None:
+            # No more video frames to show. End of video stream.
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.7", frame_duration)
             
-            pyglet.clock.schedule_once(self._video_finished, frame_duration)
+            pyglet.clock.schedule_once(self._video_finished, 0)
             return
 
-        image = self._groups[0].get_next_video_frame()
+        image = group.get_next_video_frame()
         if image is not None:
             if self._texture is None:
                 self._create_texture()
@@ -387,9 +389,9 @@ class Player(pyglet.event.EventDispatcher):
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
         
-        ts = self._groups[0].get_next_video_timestamp()
+        ts = group.get_next_video_timestamp()
         if ts is None:
-            delay = 1. / 30
+            delay = frame_duration
         else:
             delay = ts - time
 
