@@ -309,6 +309,12 @@ class Player(pyglet.event.EventDispatcher):
         self._texture = pyglet.image.Texture.create(
             video_format.width, video_format.height, rectangle=True)
         self._texture = self._texture.get_transform(flip_y=True)
+        # After flipping the texture along the y axis, the anchor_y is set
+        # to the top of the image. We want to keep it at the bottom.
+        self._texture.anchor_y = 0
+        return self._texture
+
+    def get_texture(self):
         """
         Get the texture for the current video frame.
 
@@ -318,9 +324,6 @@ class Player(pyglet.event.EventDispatcher):
 
         :return: :py:class:`pyglet.image.Texture`
         """
-        return self._texture
-
-    def get_texture(self):
         return self._texture
 
     def seek_next_frame(self):

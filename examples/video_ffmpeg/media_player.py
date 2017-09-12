@@ -298,7 +298,7 @@ class PlayerWindow(pyglet.window.Window):
             self.video_width = height * video_aspect
         self.video_x = (width - self.video_width) / 2
         self.video_y = (height - self.video_height) / 2 + \
-                        self.GUI_HEIGHT + video_height
+                        self.GUI_HEIGHT
 
     def on_mouse_press(self, x, y, button, modifiers):
         for control in self.controls:
