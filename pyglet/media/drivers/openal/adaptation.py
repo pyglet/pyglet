@@ -43,7 +43,6 @@ from pyglet.debug import debug_print
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.listener import AbstractListener
-from pyglet.media.threads import PlayerWorker
 
 _debug_media = debug_print('debug_media')
 

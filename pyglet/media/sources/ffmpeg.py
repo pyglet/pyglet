@@ -280,7 +280,6 @@ def ffmpeg_close_stream(stream):
 def ffmpeg_seek_file(file, timestamp):
     flags = AVSEEK_FLAG_BACKWARD
     max_ts = file.context.contents.duration * AV_TIME_BASE
-
     result = avformat.avformat_seek_file(file.context, -1, 0, timestamp, timestamp, flags)
     if result < 0:
         buf = create_string_buffer(128)
@@ -508,12 +507,12 @@ class FFmpegSource(StreamingSource):
         self._fillq()
         # If we seek to the end of the video, we could have only 1 packet or
         # none.
-        if len(self.audioq) < 2 or len(self.videoq) < 2:
+        if (self.audio_format and len(self.audioq) < 2) or len(self.videoq) < 2:
             return
         # Consume video and audio packets until we arrive at the correct
         # timestamp location
         while True:
-            if self.audioq[0].timestamp < self.videoq[0].timestamp:
+            if self.audio_format and self.audioq[0].timestamp < self.videoq[0].timestamp:
                 if self.audioq[0].timestamp <= timestamp < self.audioq[1].timestamp:
                     break
                 else:
@@ -523,7 +522,7 @@ class FFmpegSource(StreamingSource):
                     break
                 else:
                     self.get_next_video_frame()
-            if len(self.audioq) == 1 or len(self.videoq) == 1:
+            if (self.audio_format and len(self.audioq) == 1) or len(self.videoq) == 1:
                 # No more packets to read.
                 # The queues are only left with 1 packet each because we have
                 # reached then end of the stream.
@@ -885,7 +884,7 @@ class FFmpegSource(StreamingSource):
         self._audio_format = value
         if value is None:
             self.audioq.clear()
-    
+
 
 ffmpeg_init()
 if pyglet.options['debug_media']:

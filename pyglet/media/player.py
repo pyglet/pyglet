@@ -247,8 +247,8 @@ class Player(pyglet.event.EventDispatcher):
             self._audio_player.seek(time)
         if self.source.video_format:
             self._last_video_timestamp = None
-            self.update_texture(time=time)
             pyglet.clock.unschedule(self.update_texture)
+            self.update_texture(time=time)
         self._set_playing(playing)
 
     def _create_audio_player(self):
