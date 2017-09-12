@@ -141,6 +141,10 @@ class Slider(Control):
     THUMB_HEIGHT = 10
     GROOVE_HEIGHT = 2
 
+    def __init__(self, parent, *args, **kwargs):
+        super(Slider, self).__init__(parent, *args, **kwargs)
+        self._player_playing = parent.player.playing
+
     def draw(self):
         center_y = self.y + self.height / 2
         draw_rect(self.x, center_y - self.GROOVE_HEIGHT / 2,
@@ -185,15 +189,14 @@ class PlayerWindow(pyglet.window.Window):
                                            visible=False,
                                            resizable=True)
         self.player = player
+        self._player_playing = False
         self.player.push_handlers(self)
         # TODO compat #self.player.eos_action = self.player.EOS_PAUSE
 
         self.slider = Slider(self)
+        self.slider.push_handlers(self)
         self.slider.x = self.GUI_PADDING
         self.slider.y = self.GUI_PADDING * 2 + self.GUI_BUTTON_HEIGHT
-        self.slider.on_begin_scroll = lambda: player.pause()
-        self.slider.on_end_scroll = lambda: player.play()
-        self.slider.on_change = lambda value: player.seek(value)
 
         self.play_pause_button = TextButton(self)
         self.play_pause_button.x = self.GUI_PADDING
@@ -346,6 +349,17 @@ class PlayerWindow(pyglet.window.Window):
         self.slider.value = self.player.time
         for control in self.controls:
             control.draw()
+
+    def on_begin_scroll(self):
+        self._player_playing = self.player.playing
+        self.player.pause()
+
+    def on_change(self, value):
+        self.player.seek(value)
+
+    def on_end_scroll(self):
+        if self._player_playing:
+            self.player.play()
 
 def main(target, dbg_file, debug):
     set_logging_parameters(target, dbg_file, debug)
