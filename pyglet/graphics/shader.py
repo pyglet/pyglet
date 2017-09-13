@@ -292,8 +292,9 @@ class ShaderProgram:
             location = self.get_uniform_location(uniform_name)
             if location == -1:
                 block_name, uniform_name = uniform_name.split(".")
-                # TODO: pass these to the UniformBlock
-                block_uniforms[block_name] = (uniform_name, index, u_size)
+                if block_name not in block_uniforms:
+                    block_uniforms[block_name] = {}
+                block_uniforms[block_name][index] = (uniform_name, u_size, u_type)
 
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
@@ -302,7 +303,7 @@ class ShaderProgram:
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
 
-            block = UniformBlock(p_id, name, index, block_data_size.value)
+            block = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
             self.uniform_blocks[name] = block
 
     def get_uniform_block_name(self, index):
@@ -334,14 +335,15 @@ class ShaderProgram:
 
 
 class UniformBlock:
-    def __init__(self, program_id, name, index, size):
+    def __init__(self, program_id, name, index, size, uniforms):
         self.program_id = program_id
         self.name = name
         self.index = index
         self.size = size
-        self._uniforms = self.parse_all_uniforms()
+        self._uniforms = uniforms
+        self._introspect_uniforms()
 
-    def parse_all_uniforms(self):
+    def _introspect_uniforms(self):
         p_id = self.program_id
         index = self.index
 
@@ -362,7 +364,10 @@ class UniformBlock:
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
 
-        return offsets, gl_types
+        sizes = offsets[:] + self.size
+
+        for offset, gl_type in zip(offsets, gl_types):
+            print(offset, gl_type)
 
     def __repr__(self):
         return "{0}(name={1})".format(self.__class__.__name__, self.name)
