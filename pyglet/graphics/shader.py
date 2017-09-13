@@ -36,11 +36,11 @@ _uniform_setters = {
 
     GL_SAMPLER_2D: (GLint, glUniform1i, 1, 1),
 
+    GL_FLOAT_MAT2: (GLfloat, glUniformMatrix2fv, 4, 1),
+    GL_FLOAT_MAT3: (GLfloat, glUniformMatrix3fv, 6, 1),
+    GL_FLOAT_MAT4: (GLfloat, glUniformMatrix4fv, 16, 1),
+
     # TODO: test/implement these:
-    # GL_FLOAT_MAT2: glUniformMatrix2fv,
-    # GL_FLOAT_MAT3: glUniformMatrix3fv,
-    # GL_FLOAT_MAT4: glUniformMatrix4fv,
-    #
     # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv,
     # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv,
     #
@@ -52,7 +52,7 @@ _uniform_setters = {
 }
 
 
-def _create_getter_function(program_id, location, gl_getter, buffer, length):
+def _create_getter_func(program_id, location, gl_getter, buffer, length):
 
     if length == 1:
         def getter_func():
@@ -66,9 +66,14 @@ def _create_getter_function(program_id, location, gl_getter, buffer, length):
     return getter_func
 
 
-def _create_setter_function(location, gl_setter, buffer, length, count, ptr):
+def _create_setter_func(location, gl_setter, buffer, length, count, ptr, is_matrix):
 
-    if length == 1 and count == 1:
+    if is_matrix:
+        def setter_func(value):
+            buffer[:] = value
+            gl_setter(location, count, GL_FALSE, ptr)
+
+    elif length == 1 and count == 1:
         def setter_func(value):
             buffer[0] = value
             gl_setter(location, count, ptr)
@@ -76,6 +81,7 @@ def _create_setter_function(location, gl_setter, buffer, length, count, ptr):
         def setter_func(values):
             buffer[:] = values
             gl_setter(location, count, ptr)
+
     else:
         raise NotImplementedError("Uniform type not yet supported.")
 
@@ -155,8 +161,8 @@ class ShaderProgram:
 
         self._uniforms = {}
         self.uniform_blocks = {}
-        self._parse_all_uniforms()
-        self._parse_all_uniform_blocks()
+        self._introspect_uniforms()
+        self._introspect_uniform_blocks()
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -171,8 +177,6 @@ class ShaderProgram:
 
     def _get_program_log(self):
         result = c_int(0)
-        # glGetProgramiv(program_id, GL_LINK_STATUS, byref(result))
-        # glGetProgramiv(program_id, GL_ATTACHED_SHADERS, byref(result))
         glGetProgramiv(self._id, GL_INFO_LOG_LENGTH, byref(result))
         result_str = create_string_buffer(result.value)
         glGetProgramInfoLog(self._id, result, None, result_str)
@@ -247,47 +251,49 @@ class ShaderProgram:
         glGetProgramiv(self._id, variable_type, byref(num_active))
         return num_active.value
 
-    def _parse_all_uniforms(self):
+    def _introspect_uniforms(self):
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name, uniform_type, uniform_size = self.query_uniform(index)
-            location = self.get_uniform_location(uniform_name)
+            uniform_name, u_type, u_size = self.query_uniform(index)
+            loc = self.get_uniform_location(uniform_name)
 
-            if location == -1:      # Skip uniforms that may be in Uniform Blocks
+            if loc == -1:      # Skip uniforms that may be in Uniform Blocks
                 continue
 
             try:
-                gl_type, gl_setter, length, count = _uniform_setters[uniform_type]
+                gl_type, gl_setter, length, count = _uniform_setters[u_type]
                 gl_getter = _uniform_getters[gl_type]
 
+                is_matrix = u_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4)
+
                 # Create mini-buffer for getters and setters:
-                # TODO: see if this is
                 buffer = (gl_type * length)()
                 ptr = cast(buffer, POINTER(gl_type))
 
                 # Create custom dedicated getters and setters for each uniform:
-                getter = _create_getter_function(self._id, location, gl_getter, buffer, length)
-                setter = _create_setter_function(location, gl_setter, buffer, length, count, ptr)
+                getter = _create_getter_func(self._id, loc, gl_getter, buffer, length)
+                setter = _create_setter_func(loc, gl_setter, buffer, length, count, ptr, is_matrix)
 
                 if _debug_gl_shaders:
-                    print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4}, "
-                          "count: {5}".format(uniform_name, uniform_type,
-                                              uniform_size, location, length, count))
+                    print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4},"
+                          " count: {5}".format(uniform_name, u_type, u_size, loc, length, count))
 
             except KeyError:
-                raise GLException("Unsupported Uniform type {0}".format(uniform_type))
+                raise GLException("Unsupported Uniform type {0}".format(u_type))
 
             self._uniforms[uniform_name] = Uniform(getter, setter)
 
-    def _parse_all_uniform_blocks(self):
+    def _introspect_uniform_blocks(self):
         p_id = self._id
 
-        # block_uniforms = []
+        block_uniforms = {}
 
-        # for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-        #     uniform_name, uniform_type, uniform_size = self.query_uniform(index)
-        #     location = self.get_uniform_location(uniform_name)
-        #     if location == -1:
-        #         block_uniforms.append(uniform_name)
+        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
+            uniform_name, u_type, u_size = self.query_uniform(index)
+            location = self.get_uniform_location(uniform_name)
+            if location == -1:
+                block_name, uniform_name = uniform_name.split(".")
+                # TODO: pass these to the UniformBlock
+                block_uniforms[block_name] = (uniform_name, index, u_size)
 
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
@@ -375,12 +381,15 @@ class UniformBufferObject:
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
 
+
 vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
     out vec4 vertex_colors;
     out vec2 texture_coords;
+
+    uniform mat4 testmatrix = mat4(1.0);
 
     uniform WindowBlock
     {
@@ -391,10 +400,10 @@ vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                           vertices.y * 2.0 / window.size.y - 1.0,
-                           vertices.z,
-                           vertices.w * window.zoom + 1);
+        gl_Position = testmatrix * vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                                   vertices.y * 2.0 / window.size.y - 1.0,
+                                   vertices.z,
+                                   vertices.w * window.zoom + 1);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;

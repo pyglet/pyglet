@@ -64,17 +64,19 @@ sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
-zoom = 0
+zoom = 1
 
 
-# @window.event
-# def on_mouse_scroll(x, y, mouse, direction):
-#     global zoom
-#     zoom += direction / 32
-#
-#     # ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
-#     data = (gl.GLfloat * 4)(zoom)
-#     ubo.buffer.set_data_region(data, 12, 4)
+@window.event
+def on_mouse_scroll(x, y, mouse, direction):
+    global zoom
+    zoom += direction / 8
+    values = [zoom, 0.0, 0.0, 0.0,
+              0.0, zoom, 0.0, 0.0,
+              0.0, 0.0, zoom, 0.0,
+              0.0, 0.0, 0.0, 1.0]
+    pyglet.graphics.default_group.shader_program.use_program()
+    pyglet.graphics.default_group.shader_program['testmatrix'] = values
 
 
 # @window.event
@@ -106,7 +108,7 @@ def on_draw():
 
 def update(dt):
     for sprite in sprites:
-        sprite.rotation += 100 * dt % 360
+        sprite.rotation += 10 * dt % 360
 
 
 if __name__ == "__main__":
