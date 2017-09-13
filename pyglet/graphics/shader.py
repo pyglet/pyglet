@@ -294,7 +294,10 @@ class ShaderProgram:
                 block_name, uniform_name = uniform_name.split(".")
                 if block_name not in block_uniforms:
                     block_uniforms[block_name] = {}
-                block_uniforms[block_name][index] = (uniform_name, u_size, u_type)
+
+                gl_type, _, _, _ = _uniform_setters[u_type]
+
+                block_uniforms[block_name][index] = (uniform_name, gl_type)
 
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
@@ -340,12 +343,27 @@ class UniformBlock:
         self.name = name
         self.index = index
         self.size = size
-        self._uniforms = uniforms
+        self.uniforms = uniforms
+
+    def __repr__(self):
+        return "{0}(name={1})".format(self.__class__.__name__, self.name)
+
+
+class UniformBufferObject:
+    def __init__(self, uniform_block):
+        assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
+        self.block = uniform_block
+        self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
+        self.bind_buffer_base(self.block.index)
         self._introspect_uniforms()
+        self.uniforms = {}
+
+    def bind_buffer_base(self, index):
+        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
 
     def _introspect_uniforms(self):
-        p_id = self.program_id
-        index = self.index
+        p_id = self.block.program_id
+        index = self.block.index
 
         # Query the number of active Uniforms:
         num_active = GLint()
@@ -364,24 +382,15 @@ class UniformBlock:
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
 
-        sizes = offsets[:] + self.size
+        offsets = offsets[:] + [self.block.size]
 
-        for offset, gl_type in zip(offsets, gl_types):
-            print(offset, gl_type)
+        for i in range(num_active.value):
+            u_name, gl_type = self.block.uniforms[i]
+            start = offsets[i]
+            size = offsets[i+1] - start
+            ptr_type = POINTER(gl_type * size)
 
-    def __repr__(self):
-        return "{0}(name={1})".format(self.__class__.__name__, self.name)
-
-
-class UniformBufferObject:
-    def __init__(self, uniform_block):
-        assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
-        self.block = uniform_block
-        self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
-        self.bind_buffer_base(self.block.index)
-
-    def bind_buffer_base(self, index):
-        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
+            # TODO: create UBO setters and getters
 
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)

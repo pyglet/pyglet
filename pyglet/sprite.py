@@ -213,7 +213,7 @@ class SpriteGroup(graphics.Group):
         self.shader_program.stop_program()
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.texture)
+        return "{0}({1})".format(self.__class__.__name__, self.texture)
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and

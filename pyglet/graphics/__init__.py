@@ -719,17 +719,15 @@ class _DefaultGroup(ShaderGroup):
     """
     def __init__(self, *shaders):
         super(_DefaultGroup, self).__init__(*shaders)
-
         self.buffer_objects = {}
 
         for block in self.shader_program.uniform_blocks.values():
-            buffer_object = UniformBufferObject(block)
-            self.buffer_objects[block.name] = buffer_object
+            self.buffer_objects[block.name] = UniformBufferObject(block)
 
     def set_state(self):
+        self.shader_program.use_program()
         for buffer_obj in self.buffer_objects.values():
             buffer_obj.buffer.bind()
-        self.shader_program.use_program()
 
     def unset_state(self):
         self.shader_program.stop_program()
