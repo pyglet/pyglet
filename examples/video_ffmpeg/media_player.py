@@ -141,10 +141,6 @@ class Slider(Control):
     THUMB_HEIGHT = 10
     GROOVE_HEIGHT = 2
 
-    def __init__(self, parent, *args, **kwargs):
-        super(Slider, self).__init__(parent, *args, **kwargs)
-        self._player_playing = parent.player.playing
-
     def draw(self):
         center_y = self.y + self.height / 2
         draw_rect(self.x, center_y - self.GROOVE_HEIGHT / 2,
@@ -236,13 +232,16 @@ class PlayerWindow(pyglet.window.Window):
             i += 1
             x += screen_button.width + self.GUI_PADDING
 
-    def on_eos(self):
+    def on_player_next_source(self):
         self.gui_update_state()
-        pyglet.clock.schedule_once(self.auto_close, 0.1)
+        self.gui_update_source()
+        self.set_default_video_size()
+        return True
 
     def on_player_eos(self):
         self.gui_update_state()
-        pyglet.clock.schedule_once(lambda dt: None, 0.1)
+        pyglet.clock.schedule_once(self.auto_close, 0.1)
+        return True
 
     def gui_update_source(self):
         if self.player.source:
@@ -316,7 +315,7 @@ class PlayerWindow(pyglet.window.Window):
         elif symbol == key.LEFT:
             self.player.seek(0)
         elif symbol == key.RIGHT:
-            self.player.seek(self.player.source.duration)
+            self.player.next_source()
 
     def on_close(self):
         self.player.pause()
@@ -363,30 +362,24 @@ class PlayerWindow(pyglet.window.Window):
 
 def main(target, dbg_file, debug):
     set_logging_parameters(target, dbg_file, debug)
-    have_video = False
 
+    player = pyglet.media.Player()
+    window = PlayerWindow(player)
+    
     for filename in sys.argv[1:]:
-        print("filename:", filename)
-        player = pyglet.media.Player()
-        window = PlayerWindow(player)
-
         source = pyglet.media.load(filename)
         player.queue(source)
-        have_video = have_video or bool(source.video_format)
 
-        window.gui_update_source()
-        window.set_visible(True)
-        window.set_default_video_size()
+    window.gui_update_source()
+    window.set_visible(True)
+    window.set_default_video_size()
 
-        # this is an async call
-        player.play()
-        window.gui_update_state()
-
-    if not have_video:
-        pyglet.clock.schedule_interval(lambda dt: None, 0.2)
+    # this is an async call
+    player.play()
+    player.loop = True
+    window.gui_update_state()
 
     pyglet.app.run()
-
 
 def set_logging_parameters(target_file, dbg_file, debug):
     if not debug:

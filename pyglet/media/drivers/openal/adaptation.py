@@ -226,6 +226,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         assert self.driver is not None
         assert self.source is not None
 
+        super(OpenALAudioPlayer11, self).clear()
         self.source.stop()
         self._handle_processed_buffers()
         self.source.clear()
@@ -338,7 +339,6 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             if self._has_underrun():
                 assert _debug_media('Underrun')
                 MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
-                MediaEvent(0, 'on_source_group_eos')._sync_dispatch_to_player(self.player)
 
 
     def _queue_audio_data(self, audio_data, length):

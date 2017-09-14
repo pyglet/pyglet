@@ -278,7 +278,6 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self._write_to_stream()
         else:
             self._add_event_at_write_index('on_eos')
-            self._add_event_at_write_index('on_source_group_eos')
 
     def _process_events(self):
         if _debug:
@@ -334,7 +333,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def clear(self):
         if _debug:
             print('PulseAudioPlayer.clear')
-
+        super(PulseAudioPlayer, self).clear()
         self._clear_write = True
         self._write_index = self._get_read_index()
         self._timestamps = []

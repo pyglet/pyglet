@@ -151,6 +151,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def clear(self):
         assert _debug('DirectSound clear')
+        super(DirectSoundAudioPlayer, self).clear()
         self._ds_buffer.current_position = 0
         self._play_cursor_ring = self._write_cursor_ring = 0
         self._play_cursor = self._write_cursor
@@ -273,7 +274,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             assert _debug('underrun, stopping')
             self.stop()
             self._dispatch_new_event('on_eos')
-            self._dispatch_new_event('on_source_group_eos')
 
     def get_write_size(self):
         self.update_play_cursor()

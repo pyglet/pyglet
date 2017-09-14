@@ -94,6 +94,8 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
 
         The player should be stopped before calling this method.
         """
+        self.audio_diff_avg_count = 0
+        self.audio_diff_cum = 0.0
 
     @abstractmethod
     def seek(self, timestamp):

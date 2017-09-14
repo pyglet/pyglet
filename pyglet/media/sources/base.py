@@ -37,6 +37,7 @@ from builtins import object
 
 import ctypes
 import sys
+from collections import deque
 
 import pyglet
 from pyglet.compat import bytes_type, BytesIO
@@ -74,6 +75,8 @@ class AudioFormat(object):
         self.bytes_per_second = self.bytes_per_sample * sample_rate
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return (self.channels == other.channels and 
                 self.sample_size == other.sample_size and
                 self.sample_rate == other.sample_rate)
@@ -117,6 +120,14 @@ class VideoFormat(object):
         self.sample_aspect = sample_aspect
         self.frame_rate = None
 
+    def __eq__(self, other):
+        if isinstance(other, VideoFormat):
+            return self.width == other.width and \
+                   self.height == other.height and \
+                   self.sample_aspect == other.sample_aspect and \
+                   self.frame_rate == other.frame_rate
+        return False
+
 class AudioData(object):
     """A single packet of audio data.
 
@@ -142,6 +153,15 @@ class AudioData(object):
         self.timestamp = timestamp
         self.duration = duration
         self.events = events
+
+    def __eq__(self, other):
+        if isinstance(other, AudioData):
+            return self.data == other.data and \
+                   self.length == other.length and \
+                   self.timestamp == other.timestamp and \
+                   self.duration == other.duration and \
+                   self.events == other.events
+        return False
 
     def consume(self, bytes, audio_format):
         """Remove some data from beginning of packet.  All events are
@@ -470,26 +490,22 @@ class StaticMemorySource(StaticSource):
 
 class SourceGroup(object):
     """Read data from a queue of sources, with support for looping.  All
-    sources must share the same audio format.
+    sources must share the same audio  and video format.
     
     :Ivariables:
         `audio_format` : `AudioFormat`
             Required audio format for queued sources.
+        `video_format` : `VideoFormat`
+            Required video format for queued sources.
 
     """
 
     # TODO can sources list go empty?  what behaviour (ignore or error)?
 
-    _advance_after_eos = False
-    _loop = False
-
     def __init__(self, audio_format, video_format):
         self.audio_format = audio_format
         self.video_format = video_format
-        self.duration = 0.
-        self._timestamp_offset = 0.
-        self._dequeued_durations = []
-        self._sources = []
+        self._sources = deque()
 
     def seek(self, time):
         if self._sources:
@@ -497,18 +513,16 @@ class SourceGroup(object):
 
     def queue(self, source):
         source = source._get_queue_source()
-        assert(source.audio_format == self.audio_format)
+        assert(source.audio_format == self.audio_format and
+               source.video_format == self.video_format)
         self._sources.append(source)
-        self.duration += source.duration
 
     def has_next(self):
         return len(self._sources) > 1
 
     def next_source(self, immediate=True):
-        if immediate:
-            self._advance()
-        else:
-            self._advance_after_eos = True
+        if self._sources:
+            self._sources.popleft()
 
     #: :deprecated: Use `next_source` instead.
     next = next_source  # old API, worked badly with 2to3
@@ -516,30 +530,6 @@ class SourceGroup(object):
     def get_current_source(self):
         if self._sources:
             return self._sources[0]
-
-    def _advance(self):
-        if self._sources:
-            self._timestamp_offset += self._sources[0].duration
-            self._dequeued_durations.insert(0, self._sources[0].duration)
-            old_source = self._sources.pop(0)
-            self.duration -= old_source.duration
-
-            if isinstance(old_source, StreamingSource):
-                old_source.delete()
-                del old_source
-
-    def _get_loop(self):
-        return self._loop
-
-    def _set_loop(self, loop):
-        self._loop = loop        
-
-    loop = property(_get_loop, _set_loop, 
-                    doc="""Loop the current source indefinitely or until 
-    `next` is called.  Initially False.
-
-    :type: bool
-    """)
 
     def get_audio_data(self, bytes, compensation_time=0.0):
         """Get next audio packet.
@@ -558,47 +548,7 @@ class SourceGroup(object):
         if not self._sources:
             return None
         data = self._sources[0].get_audio_data(bytes, compensation_time)
-        eos = False
-        while not data:
-            eos = True
-            if self._loop and not self._advance_after_eos:
-                self._timestamp_offset += self._sources[0].duration
-                self._dequeued_durations.insert(0, self._sources[0].duration)
-                self._sources[0].seek(0)
-            else:
-                self._advance_after_eos = False
-
-                # Advance source if there's something to advance to.
-                # Otherwise leave last source paused at EOS.
-                if len(self._sources) > 1:
-                    self._advance()
-                else:
-                    return None
-
-            data = self._sources[0].get_audio_data(bytes, player) # TODO method rename
-
-        data.timestamp += self._timestamp_offset
-        if eos:
-            if _debug:
-                print('adding on_eos event to audio data')
-            data.events.append(MediaEvent(0, 'on_eos'))
         return data
-
-    def translate_timestamp(self, timestamp):
-        """Get source-relative timestamp for the audio player's timestamp."""
-        # XXX 
-        if timestamp is None:
-            return None
-
-        timestamp = timestamp - self._timestamp_offset
-        if timestamp < 0:
-            # _dequeued_durations is already ordered last to first
-            for duration in self._dequeued_durations:
-                timestamp += duration
-                if timestamp > 0:
-                    break
-            assert timestamp >= 0, 'Timestamp beyond dequeued source memory'
-        return timestamp
 
     def get_next_video_timestamp(self):
         """Get the timestamp of the next video frame.
@@ -607,25 +557,16 @@ class SourceGroup(object):
         :return: The next timestamp, or ``None`` if there are no more video
             frames.
         """
-        # TODO track current video source independently from audio source for
-        # better prebuffering.
         if not self._sources:
             return None
         timestamp = self._sources[0].get_next_video_timestamp()
-        if timestamp is not None: 
-            timestamp += self._timestamp_offset
         return timestamp
 
     def get_next_video_frame(self):
         """Get the next video frame.
 
-        Video frames may share memory: the previous frame may be invalidated
-        or corrupted when this method is called unless the application has
-        made a copy of it.
-
         :rtype: `pyglet.image.AbstractImage`
-        :return: The next video frame image, or ``None`` if the video frame
-            could not be decoded or there are no more video frames.
+        :return: The next video frame image.
         """
         if self._sources:
             return self._sources[0].get_next_video_frame()
