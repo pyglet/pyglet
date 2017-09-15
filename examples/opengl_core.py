@@ -78,12 +78,10 @@ def on_mouse_scroll(x, y, mouse, direction):
     pyglet.graphics.default_group.shader_program.use_program()
     pyglet.graphics.default_group.shader_program['testmatrix'] = values
 
-
 # @window.event
 # def on_resize(width, height):
-#     # ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
-#     data = (gl.GLfloat * 8)(width, height)
-#     ubo.buffer.set_data_region(data, 0, 8)
+#     ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
+#     ubo.uniforms['size'](width, height)
 
 
 ###########################################################

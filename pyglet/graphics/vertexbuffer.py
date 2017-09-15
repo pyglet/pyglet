@@ -367,7 +367,7 @@ class AbstractBufferRegion(object):
 
 
 class BufferObjectRegion(AbstractBufferRegion):
-    """A mapped region of a VBO."""
+    """A mapped region of a BufferObject."""
 
     def __init__(self, buffer, start, end, array):
         self.buffer = buffer

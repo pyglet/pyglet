@@ -52,34 +52,34 @@ _uniform_setters = {
 }
 
 
-def _create_getter_func(program_id, location, gl_getter, buffer, length):
+def _create_getter_func(program_id, location, gl_getter, c_array, length):
 
     if length == 1:
         def getter_func():
-            gl_getter(program_id, location, buffer)
-            return buffer[0]
+            gl_getter(program_id, location, c_array)
+            return c_array[0]
     else:
         def getter_func():
-            gl_getter(program_id, location, buffer)
-            return buffer[:]
+            gl_getter(program_id, location, c_array)
+            return c_array[:]
 
     return getter_func
 
 
-def _create_setter_func(location, gl_setter, buffer, length, count, ptr, is_matrix):
+def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix):
 
     if is_matrix:
         def setter_func(value):
-            buffer[:] = value
+            c_array[:] = value
             gl_setter(location, count, GL_FALSE, ptr)
 
     elif length == 1 and count == 1:
         def setter_func(value):
-            buffer[0] = value
+            c_array[0] = value
             gl_setter(location, count, ptr)
     elif length > 1 and count == 1:
         def setter_func(values):
-            buffer[:] = values
+            c_array[:] = values
             gl_setter(location, count, ptr)
 
     else:
@@ -265,13 +265,13 @@ class ShaderProgram:
 
                 is_matrix = u_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4)
 
-                # Create mini-buffer for getters and setters:
-                buffer = (gl_type * length)()
-                ptr = cast(buffer, POINTER(gl_type))
+                # Create persistant mini c_array for getters and setters:
+                c_array = (gl_type * length)()
+                ptr = cast(c_array, POINTER(gl_type))
 
                 # Create custom dedicated getters and setters for each uniform:
-                getter = _create_getter_func(self._id, loc, gl_getter, buffer, length)
-                setter = _create_setter_func(loc, gl_setter, buffer, length, count, ptr, is_matrix)
+                getter = _create_getter_func(self._id, loc, gl_getter, c_array, length)
+                setter = _create_setter_func(loc, gl_setter, c_array, length, count, ptr, is_matrix)
 
                 if _debug_gl_shaders:
                     print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4},"
@@ -295,9 +295,9 @@ class ShaderProgram:
                 if block_name not in block_uniforms:
                     block_uniforms[block_name] = {}
 
-                gl_type, _, _, _ = _uniform_setters[u_type]
+                gl_type, _, length, _ = _uniform_setters[u_type]
 
-                block_uniforms[block_name][index] = (uniform_name, gl_type)
+                block_uniforms[block_name][index] = (uniform_name, gl_type, length)
 
         for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self.get_uniform_block_name(index)
@@ -355,8 +355,7 @@ class UniformBufferObject:
         self.block = uniform_block
         self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
         self.bind_buffer_base(self.block.index)
-        self._introspect_uniforms()
-        self.uniforms = {}
+        self.view = self._introspect_uniforms()
 
     def bind_buffer_base(self, index):
         glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
@@ -384,16 +383,46 @@ class UniformBufferObject:
 
         offsets = offsets[:] + [self.block.size]
 
+        view = View(self.buffer)
+
         for i in range(num_active.value):
-            u_name, gl_type = self.block.uniforms[i]
+            u_name, gl_type, length = self.block.uniforms[i]
             start = offsets[i]
             size = offsets[i+1] - start
-            ptr_type = POINTER(gl_type * size)
+            view.add_property(u_name, gl_type, start, size, length)
 
-            # TODO: create UBO setters and getters
+        return view
+
+    def __enter__(self):
+        # Return the view to the user in a `with` context:
+        return self.view
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
+
+
+class View:
+    def __init__(self, buffer):
+        self._buffer = buffer
+
+    def add_property(self, u_name, gl_type, start, size, length):
+        if length == 1:
+            setter = lambda s, value: self._set_single(gl_type, start, size, value)
+        else:
+            setter = lambda s, value: self._set_multi(gl_type, start, size, value)
+
+        setattr(self.__class__, u_name, property(fset=setter))
+
+    def _set_single(self, gl_type, start, size, value):
+        data = (gl_type * size)(value)
+        self._buffer.set_data_region(data, start, size)
+
+    def _set_multi(self, gl_type, start, size, value):
+        data = (gl_type * size)(*value)
+        self._buffer.set_data_region(data, start, size)
 
 
 vertex_source = """#version 330 core
