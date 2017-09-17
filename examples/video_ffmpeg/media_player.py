@@ -376,7 +376,6 @@ def main(target, dbg_file, debug):
 
     # this is an async call
     player.play()
-    player.loop = True
     window.gui_update_state()
 
     pyglet.app.run()

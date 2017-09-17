@@ -56,9 +56,9 @@ class PulseAudioDriver(AbstractAudioDriver):
         self._players = pyglet.app.WeakSet()
         self._listener = PulseAudioListener(self)
 
-    def create_audio_player(self, source_group, player):
+    def create_audio_player(self, playlist, player):
         assert self.context is not None
-        player = PulseAudioPlayer(source_group, player, self)
+        player = PulseAudioPlayer(playlist, player, self)
         self._players.add(player)
         return player
 
@@ -127,8 +127,8 @@ class PulseAudioListener(AbstractListener):
 class PulseAudioPlayer(AbstractAudioPlayer):
     _volume = 1.0
 
-    def __init__(self, source_group, player, driver):
-        super(PulseAudioPlayer, self).__init__(source_group, player)
+    def __init__(self, playlist, player, driver):
+        super(PulseAudioPlayer, self).__init__(playlist, player)
         self.driver = driver
         self.context = driver.context
 
@@ -145,7 +145,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         self._time_sync_operation = None
 
-        audio_format = source_group.audio_format
+        audio_format = playlist.audio_format
         assert audio_format
 
         with self.context.mainloop:
@@ -176,7 +176,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def seek(self, timestamp):
         self.audio_diff_avg_count = 0
         self.audio_diff_cum = 0.0
-        nbytes = 1 * self.source_group.audio_format.bytes_per_second
+        nbytes = 1 * self.playlist.audio_format.bytes_per_second
         while True:
             audio_data = self.get_audio_data()
             assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
@@ -195,9 +195,9 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self._write_to_stream(audio_data.length)
 
     def _get_audio_data(self, nbytes=None):
-        if self._current_audio_data is None and self.source_group is not None:
+        if self._current_audio_data is None and self.playlist is not None:
             # Always try to buffer at least 1 second of audio data
-            min_bytes = 1 * self.source_group.audio_format.bytes_per_second
+            min_bytes = 1 * self.playlist.audio_format.bytes_per_second
             if nbytes is None:
                 nbytes = min_bytes
             else:
@@ -205,7 +205,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             if _debug:
                 print('PulseAudioPlayer: Try to get {} bytes of audio data'.format(nbytes))
             compensation_time = self.get_audio_time_diff()
-            self._current_audio_data = self.source_group.get_audio_data(nbytes, compensation_time)
+            self._current_audio_data = self.playlist.get_audio_data(nbytes, compensation_time)
             self._schedule_events()
         if _debug:
             if self._current_audio_data is None:
@@ -222,13 +222,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             if nbytes == self._current_audio_data.length:
                 self._current_audio_data = None
             else:
-                self._current_audio_data.consume(nbytes, self.source_group.audio_format)
+                self._current_audio_data.consume(nbytes, self.playlist.audio_format)
 
     def _schedule_events(self):
         if self._current_audio_data is not None:
             for event in self._current_audio_data.events:
                 event_index = self._write_index + event.timestamp * \
-                    self.source_group.audio_format.bytes_per_second
+                    self.playlist.audio_format.bytes_per_second
                 if _debug:
                     print('PulseAudioPlayer: Schedule event at index {}'.format(event_index))
                 self._events.append((event_index, event))
@@ -417,7 +417,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         except IndexError:
             pass
 
-        bytes_per_second = self.source_group.audio_format.bytes_per_second
+        bytes_per_second = self.playlist.audio_format.bytes_per_second
         time = timestamp + (read_index - write_index) / float(bytes_per_second)
 
         if _debug:

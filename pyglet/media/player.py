@@ -43,7 +43,7 @@ from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
-from pyglet.media.sources.base import SourceGroup, StaticSource
+from pyglet.media.sources.base import PlayList, StaticSource
 
 # import cProfile
 
@@ -109,9 +109,7 @@ class Player(pyglet.event.EventDispatcher):
     _cone_outer_gain = 1.
 
     def __init__(self):
-        # List of queued source groups
-        self._groups = deque()
-
+        self._playlist = PlayList()
         self._audio_player = None
 
         # Desired play state (not an indication of actual state).
@@ -134,19 +132,7 @@ class Player(pyglet.event.EventDispatcher):
 
         :param pyglet.media.Source source: The source to queue.
         """
-        if isinstance(source, SourceGroup):
-            self._groups.append(source)
-        else:
-            if (self._groups and
-                source.audio_format == self._groups[-1].audio_format and
-                source.video_format == self._groups[-1].video_format):
-                self._groups[-1].queue(source)
-            else:
-                group = SourceGroup(source.audio_format, source.video_format)
-                group.queue(source)
-                self._groups.append(group)
-        # If self._playing was set to True and we had no source, queueing
-        # this source will start it off immediately
+        self._playlist.queue(source)
         self._set_playing(self._playing)
 
     def _set_playing(self, playing):
@@ -229,42 +215,37 @@ class Player(pyglet.event.EventDispatcher):
             self._audio_player.delete()
             self._audio_player = None
 
-        self._groups.clear()
-
     def next_source(self):
         """
         Move immediately to the next queued source.
 
         There may be a gap in playback while the audio buffer is refilled.
         """
-        if not self._groups:
-            return
 
         was_playing = self._playing
         self.pause()
         self._mclock.reset()
 
-        group = self._groups[0]
+        group = self._playlist
         if group.has_next():
-            self._audio_player.clear()
+            old_audio_format = group.audio_format
+            old_video_format = group.video_format
             group.next_source()
-        else:
-            self.dispatch_event('on_source_group_eos')
-            if self.source.video_format:
+            if old_audio_format == group.audio_format:
+                self._audio_player.clear()
+            else:
+                self._audio_player.delete()
+                self._audio_player = None
+            if old_video_format != group.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
-            if self._audio_player:
-                self._audio_player.delete()
-                self._audio_player = None
-
-            self._groups.popleft()
-        
-        if self._groups:
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
         else:
             self.dispatch_event('on_player_eos')
+            self.dispatch_event('on_playlist_exhausted') # Not really needed anymore...
+
 
     #: :deprecated: Use `next_source` instead.
     next = next_source  # old API, worked badly with 2to3
@@ -291,22 +272,22 @@ class Player(pyglet.event.EventDispatcher):
             self._audio_player.clear()
             self._audio_player.seek(time)
         if self.source.video_format:
-            pyglet.clock.unschedule(self.update_texture)
             self.update_texture(time=time)
+            pyglet.clock.unschedule(self.update_texture)
         self._set_playing(playing)
 
     def _create_audio_player(self):
         assert not self._audio_player
-        assert self._groups
+        assert self.source
 
-        group = self._groups[0]
+        _playlist = self._playlist
         audio_driver = get_audio_driver()
         if audio_driver is None:
             # Failed to find a valid audio driver
             self.source.audio_format = None
             return
         
-        self._audio_player = audio_driver.create_audio_player(group, self)
+        self._audio_player = audio_driver.create_audio_player(_playlist, self)
 
         _class = self.__class__
         def _set(name):
@@ -326,9 +307,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def _get_source(self):
         """Read-only. The current :py:class:`Source`, or ``None``."""
-        if not self._groups:
-            return None
-        return self._groups[0].get_current_source()
+        return self._playlist.get_current_source()
 
     source = property(_get_source)
 
@@ -369,7 +348,7 @@ class Player(pyglet.event.EventDispatcher):
     def seek_next_frame(self):
         """Step forwards one video frame in the current Source.
         """
-        time = self._groups[0].get_next_video_timestamp()
+        time = self._playlist.get_next_video_timestamp()
         if time is None:
             return
         self.seek(time)
@@ -386,7 +365,7 @@ class Player(pyglet.event.EventDispatcher):
         #     ps.print_stats()
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
-        group = self._groups[0]
+        _playlist = self._playlist
         if time is None:
             time = self.time
             if bl.logger is not None:
@@ -396,14 +375,14 @@ class Player(pyglet.event.EventDispatcher):
                     self._audio_player.get_time() if self._audio_player else 0
                 )
 
-        frame_rate = group.video_format.frame_rate
+        frame_rate = _playlist.video_format.frame_rate
         frame_duration = 1 / frame_rate
-        ts = group.get_next_video_timestamp()
+        ts = _playlist.get_next_video_timestamp()
         while ts is not None and ts + frame_duration < time: # Allow up to frame_duration difference
-            group.get_next_video_frame() # Discard frame
+            _playlist.get_next_video_frame() # Discard frame
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.5", ts)
-            ts = group.get_next_video_timestamp()
+            ts = _playlist.get_next_video_timestamp()
 
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.6", ts)
@@ -416,7 +395,7 @@ class Player(pyglet.event.EventDispatcher):
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
 
-        image = group.get_next_video_frame()
+        image = _playlist.get_next_video_frame()
         if image is not None:
             if self._texture is None:
                 self._create_texture()
@@ -424,7 +403,7 @@ class Player(pyglet.event.EventDispatcher):
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
         
-        ts = group.get_next_video_timestamp()
+        ts = _playlist.get_next_video_timestamp()
         if ts is None:
             delay = frame_duration
         else:
@@ -523,26 +502,26 @@ class Player(pyglet.event.EventDispatcher):
     # Events
 
     def on_player_eos(self):
-        """The player ran out of sources.
+        """The player ran out of sources. The playlist is empty.
 
         :event:
         """
         if _debug:
             print('Player.on_player_eos')
 
-    def on_source_group_eos(self):
-        """The current source group ran out of data.
+    def on_playlist_exhausted(self):
+        """The current playlist ran out of data.
 
         :event:
         """
         if _debug:
-            print('Player.on_source_group_eos')
+            print('Player.on_playlist_exhausted')
 
     def on_eos(self):
         """The current source ran out of data.
 
-        The default behaviour is to advance to the next source  in the group 
-        or the next source group if possible.
+        The default behaviour is to advance to the next source  in the 
+        playlist.
 
         :event:
         """
@@ -557,7 +536,7 @@ class Player(pyglet.event.EventDispatcher):
             self.next_source()
 
     def on_player_next_source(self):
-        """The player starts to play the next source in the queue
+        """The player starts to play the next source in the playlist
 
         :event:
         """
@@ -565,7 +544,7 @@ class Player(pyglet.event.EventDispatcher):
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
-Player.register_event_type('on_source_group_eos')
+Player.register_event_type('on_playlist_exhausted')
 Player.register_event_type('on_player_next_source')
 
 

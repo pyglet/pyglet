@@ -45,17 +45,17 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
     # no audio correction is done if too big error
     AV_NOSYNC_THRESHOLD = 10.0
 
-    def __init__(self, source_group, player):
+    def __init__(self, playlist, player):
         """Create a new audio player.
 
         :Parameters:
-            `source_group` : `SourceGroup`
+            `playlist` : `PlayList`
                 Source group to play from.
             `player` : `Player`
                 Player to receive EOS and video frame sync events.
 
         """
-        self.source_group = source_group
+        self.playlist = playlist
         self.player = player
 
         # Audio synchronization
@@ -192,7 +192,7 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
 
 class AbstractAudioDriver(with_metaclass(ABCMeta, object)):
     @abstractmethod
-    def create_audio_player(self, source_group, player):
+    def create_audio_player(self, playlist, player):
         pass
 
     @abstractmethod

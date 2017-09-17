@@ -345,7 +345,7 @@ class Source(object):
         """
         pass
 
-    # Internal methods that SourceGroup calls on the source:
+    # Internal methods that PlayList calls on the source:
 
     def seek(self, timestamp):
         """Seek to given timestamp."""
@@ -488,23 +488,15 @@ class StaticMemorySource(StaticSource):
         duration = float(len(data)) / self.audio_format.bytes_per_second
         return AudioData(data, len(data), timestamp, duration, [])
 
-class SourceGroup(object):
-    """Read data from a queue of sources, with support for looping.  All
-    sources must share the same audio  and video format.
-    
-    :Ivariables:
-        `audio_format` : `AudioFormat`
-            Required audio format for queued sources.
-        `video_format` : `VideoFormat`
-            Required video format for queued sources.
-
+class PlayList(object):
+    """Represents a queue of sources.
     """
 
     # TODO can sources list go empty?  what behaviour (ignore or error)?
 
-    def __init__(self, audio_format, video_format):
-        self.audio_format = audio_format
-        self.video_format = video_format
+    def __init__(self):
+        self.audio_format = None
+        self.video_format = None
         self._sources = deque()
 
     def seek(self, time):
@@ -512,22 +504,47 @@ class SourceGroup(object):
             self._sources[0].seek(time)
 
     def queue(self, source):
+        """Add the source to the queue.
+
+        :Parameters:
+            `source`: :class:`~pyglet.media.Source`
+                The source to queue.
+        """
         source = source._get_queue_source()
-        assert(source.audio_format == self.audio_format and
-               source.video_format == self.video_format)
+        if not self._sources:
+            # The first queued source will determine the initial playlist
+            # audio and video format.
+            # These are updated each time `next_source` is called.
+            self.audio_format = source.audio_format
+            self.video_format = source.video_format
         self._sources.append(source)
 
     def has_next(self):
+        """Check if there is a source behind the current one
+
+        :rtype: `bool`
+        """
         return len(self._sources) > 1
 
-    def next_source(self, immediate=True):
+    def next_source(self):
+        """Discard the current source and place the next one on top of the
+        playlist.
+        """
         if self._sources:
             self._sources.popleft()
+        if self._sources:
+            source = self._sources[0]
+            self.audio_format = source.audio_format
+            self.video_format = source.video_format
 
     #: :deprecated: Use `next_source` instead.
     next = next_source  # old API, worked badly with 2to3
 
     def get_current_source(self):
+        """Get the current source on the playlist
+
+        :rtype: :class:`~pyglet.media.Source`
+        """
         if self._sources:
             return self._sources[0]
 
@@ -535,14 +552,14 @@ class SourceGroup(object):
         """Get next audio packet.
 
         :Parameters:
-            `bytes` : int
+            `bytes` : `int`
                 Hint for preferred size of audio packet; may be ignored.
-            `compensation_time` : float
+            `compensation_time` : `float`
                 Time in sec to compensate due to a difference between the
                 master clock and the audio clock.
 
-        :rtype: `AudioData`
-        :return: Audio data, or None if there is no more data.
+        :rtype: :class:`AudioData`
+        :return: :class:`AudioData`, or None if there is no more data.
         """
 
         if not self._sources:
@@ -551,10 +568,10 @@ class SourceGroup(object):
         return data
 
     def get_next_video_timestamp(self):
-        """Get the timestamp of the next video frame.
+        """Get the timestamp of the next video frame for the current source.
 
-        :rtype: float
-        :return: The next timestamp, or ``None`` if there are no more video
+        :rtype: `float`
+        :return: The next timestamp, or `None` if there are no more video
             frames.
         """
         if not self._sources:
@@ -565,7 +582,7 @@ class SourceGroup(object):
     def get_next_video_frame(self):
         """Get the next video frame.
 
-        :rtype: `pyglet.image.AbstractImage`
+        :rtype: :class:`pyglet.image.AbstractImage`
         :return: The next video frame image.
         """
         if self._sources:
