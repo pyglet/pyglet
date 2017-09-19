@@ -41,5 +41,3 @@ def get_audio_driver():
     return _audio_driver
 
 _audio_driver = None
-_silent_audio_driver = None
-

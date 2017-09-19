@@ -35,6 +35,7 @@ from __future__ import absolute_import, print_function
 
 import ctypes
 import math
+import weakref
 
 import pyglet
 from . import interface
@@ -80,6 +81,9 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def __init__(self, driver, ds_driver, playlist, player):
         super(DirectSoundAudioPlayer, self).__init__(playlist, player)
 
+        # We keep here a strong reference because the AudioDriver is anyway
+        # a singleton object which will only be deleted when the application
+        # shuts down. The AudioDriver does not keep a ref to the AudioPlayer.
         self.driver = driver
         self._ds_driver = ds_driver
 
@@ -124,6 +128,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._ds_buffer.current_position = 0
 
         self.refill(self._buffer_size)
+
+    def __del__(self):
+        assert _debug("Delete DirectSoundAudioPlayer")
+        # We decrease the IDirectSound refcount
+        self.driver._ds_driver._native_dsound.Release()
 
     def delete(self):
         pyglet.clock.unschedule(self._check_refill)
@@ -400,14 +409,14 @@ class DirectSoundDriver(AbstractAudioDriver):
         assert self._ds_listener is not None
 
     def __del__(self):
-        try:
-            if self._ds_driver:
-                self.delete()
-        except:
-            pass
+        self.delete()
 
     def create_audio_player(self, playlist, player):
         assert self._ds_driver is not None
+        # We increase IDirectSound refcount for each AudioPlayer instantiated
+        # This makes sure the AudioPlayer still has a valid _native_dsound to
+        # clean-up itself during tear-down.
+        self._ds_driver._native_dsound.AddRef()
         return DirectSoundAudioPlayer(self, self._ds_driver, playlist, player)
 
     def get_listener(self):
@@ -416,14 +425,17 @@ class DirectSoundDriver(AbstractAudioDriver):
         return DirectSoundListener(self._ds_listener, self._ds_driver.primary_buffer)
 
     def delete(self):
+        assert _debug("Delete DirectSoundDriver")
+        # Make sure the _ds_listener is deleted before the _ds_driver
         self._ds_listener = None
-        self._ds_driver = None
-
 
 class DirectSoundListener(AbstractListener):
     def __init__(self, ds_listener, ds_buffer):
         self._ds_listener = ds_listener
         self._ds_buffer = ds_buffer
+
+    def __del__(self):
+        assert _debug("Delete DirectSoundListener")
 
     def _set_volume(self, volume):
         self._volume = volume

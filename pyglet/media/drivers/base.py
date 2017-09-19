@@ -34,6 +34,7 @@
 from abc import ABCMeta, abstractmethod
 import math
 from future.utils import with_metaclass
+import weakref
 
 
 class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
@@ -55,8 +56,11 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
                 Player to receive EOS and video frame sync events.
 
         """
-        self.playlist = playlist
-        self.player = player
+        # We only keep weakref to the player and its playlist to avoid
+        # circular references. It's the player who owns the playlist and
+        # the audio_player
+        self.playlist = weakref.proxy(playlist)
+        self.player = weakref.proxy(player)
 
         # Audio synchronization
         self.audio_diff_avg_count = 0

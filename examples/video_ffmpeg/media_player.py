@@ -55,6 +55,7 @@ __version__ = '$Id: $'
 
 import os
 import sys
+import weakref
 
 from pyglet.gl import *
 import pyglet
@@ -80,7 +81,7 @@ class Control(pyglet.event.EventDispatcher):
 
     def __init__(self, parent):
         super(Control, self).__init__()
-        self.parent = parent
+        self.parent = weakref.proxy(parent)
 
     def hit_test(self, x, y):
         return (self.x < x < self.x + self.width and
@@ -184,10 +185,12 @@ class PlayerWindow(pyglet.window.Window):
         super(PlayerWindow, self).__init__(caption='Media Player',
                                            visible=False,
                                            resizable=True)
-        self.player = player
+        # We only keep a weakref to player as we are about to push ourself
+        # as a handler which would then create a circular reference between
+        # player and window.
+        self.player = weakref.proxy(player)
         self._player_playing = False
         self.player.push_handlers(self)
-        # TODO compat #self.player.eos_action = self.player.EOS_PAUSE
 
         self.slider = Slider(self)
         self.slider.push_handlers(self)
@@ -201,7 +204,6 @@ class PlayerWindow(pyglet.window.Window):
         self.play_pause_button.width = 45
         self.play_pause_button.on_press = self.on_play_pause
 
-        win = self
         self.window_button = TextButton(self)
         self.window_button.x = self.play_pause_button.x + \
                                self.play_pause_button.width + self.GUI_PADDING
@@ -209,7 +211,7 @@ class PlayerWindow(pyglet.window.Window):
         self.window_button.height = self.GUI_BUTTON_HEIGHT
         self.window_button.width = 90
         self.window_button.text = 'Windowed'
-        self.window_button.on_press = lambda: win.set_fullscreen(False)
+        self.window_button.on_press = lambda: self.set_fullscreen(False)
 
         self.controls = [
             self.slider,
@@ -227,7 +229,7 @@ class PlayerWindow(pyglet.window.Window):
             screen_button.width = 80
             screen_button.text = 'Screen %d' % (i + 1)
             screen_button.on_press = \
-                (lambda s: lambda: win.set_fullscreen(True, screen=s))(screen)
+                lambda screen=screen: self.set_fullscreen(True, screen)
             self.controls.append(screen_button)
             i += 1
             x += screen_button.width + self.GUI_PADDING

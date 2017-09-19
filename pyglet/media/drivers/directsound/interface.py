@@ -36,6 +36,7 @@ Pythonic interface to DirectSound.
 """
 from collections import namedtuple
 import ctypes
+import weakref
 
 from pyglet.debug import debug_print
 from pyglet.window.win32 import _user32
@@ -43,7 +44,7 @@ from pyglet.window.win32 import _user32
 from . import lib_dsound as lib
 from .exceptions import DirectSoundNativeError
 
-_debug_media = debug_print('debug_media')
+_debug = debug_print('debug_media')
 
 def _check(hresult):
     if hresult != lib.DS_OK:
@@ -52,7 +53,7 @@ def _check(hresult):
 
 class DirectSoundDriver(object):
     def __init__(self):
-        assert _debug_media('Constructing DirectSoundDriver')
+        assert _debug('Constructing DirectSoundDriver')
 
         self._native_dsound = lib.IDirectSound()
         _check(
@@ -67,12 +68,12 @@ class DirectSoundDriver(object):
             self._native_dsound.SetCooperativeLevel(hwnd, lib.DSSCL_NORMAL)
         )
 
-        self._buffer_factory = DirectSoundBufferFactory(self, self._native_dsound)
+        self._buffer_factory = DirectSoundBufferFactory(self._native_dsound)
         self.primary_buffer = self._buffer_factory.create_primary_buffer()
 
     def __del__(self):
-        assert _debug_media('Destroying DirectSoundDriver')
-        del self.primary_buffer
+        assert _debug("Delete interface.DirectSoundDriver")
+        self.primary_buffer = None
         self._native_dsound.Release()
 
     def create_buffer(self, audio_format):
@@ -85,23 +86,25 @@ class DirectSoundDriver(object):
 class DirectSoundBufferFactory(object):
     default_buffer_size = 2.0
 
-    def __init__(self, driver, native_dsound):
-        self.driver = driver
-        self._native_dsound = native_dsound
+    def __init__(self, native_dsound):
+        # We only keep a weakref to native_dsound which is owned by
+        # interface.DirectSoundDriver
+        self._native_dsound = weakref.proxy(native_dsound)
+
+    def __del__(self):
+        assert _debug("Delete interface.DirectSoundBufferFactory")
 
     def create_buffer(self, audio_format):
         buffer_size = int(audio_format.sample_rate * self.default_buffer_size)
         wave_format = self._create_wave_format(audio_format)
         buffer_desc = self._create_buffer_desc(wave_format, buffer_size)
         return DirectSoundBuffer(
-                self.driver,
                 self._create_buffer(buffer_desc),
                 audio_format,
                 buffer_size)
 
     def create_primary_buffer(self):
         return DirectSoundBuffer(
-                self,
                 self._create_buffer(self._create_primary_buffer_desc()),
                 None,
                 0)
@@ -151,8 +154,7 @@ class DirectSoundBufferFactory(object):
         return buffer_desc
 
 class DirectSoundBuffer(object):
-    def __init__(self, driver, native_buffer, audio_format, buffer_size):
-        self.driver = driver
+    def __init__(self, native_buffer, audio_format, buffer_size):
         self.audio_format = audio_format
         self.buffer_size = buffer_size
 
@@ -166,6 +168,7 @@ class DirectSoundBuffer(object):
             self._native_buffer3d = None
 
     def __del__(self):
+        assert _debug("Delete interface.DirectSoundBuffer")
         if self._native_buffer is not None:
             self._native_buffer.Stop()
             self._native_buffer.Release()
@@ -385,7 +388,7 @@ class DirectSoundBuffer(object):
             self.audio_length_2 = lib.DWORD()
 
     def lock(self, write_cursor, write_size):
-        assert _debug_media('DirectSoundBuffer.lock({}, {})'.format(write_cursor, write_size))
+        assert _debug('DirectSoundBuffer.lock({}, {})'.format(write_cursor, write_size))
         pointer = self._WritePointer()
         _check(
             self._native_buffer.Lock(write_cursor,
@@ -409,10 +412,13 @@ class DirectSoundBuffer(object):
 
 class DirectSoundListener(object):
     def __init__(self, ds_buffer, native_listener):
-        self.ds_buffer = ds_buffer
+        # We only keep a weakref to ds_buffer as it is owned by
+        # interface.DirectSound or a DirectSoundAudioPlayer
+        self.ds_buffer = weakref.proxy(ds_buffer)
         self._native_listener = native_listener
 
     def __del__(self):
+        assert _debug("Delete interface.DirectSoundListener")
         self._native_listener.Release()
 
     @property
