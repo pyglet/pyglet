@@ -35,6 +35,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import time
+import weakref
 
 import pyglet
 from . import interface
@@ -44,7 +45,7 @@ from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.listener import AbstractListener
 
-_debug_media = debug_print('debug_media')
+_debug = debug_print('debug_media')
 
 
 class OpenALDriver(AbstractAudioDriver):
@@ -59,7 +60,10 @@ class OpenALDriver(AbstractAudioDriver):
         self.context.make_current()
 
         self._listener = OpenALListener(self)
-        self._players = WeakSet()
+
+    def __del__(self):
+        assert _debug("Delete OpenALDriver")
+        self.delete()
 
     def create_audio_player(self, playlist, player):
         assert self.device is not None, "Device was closed"
@@ -67,12 +71,9 @@ class OpenALDriver(AbstractAudioDriver):
             player = OpenALAudioPlayer11(self, playlist, player)
         else:
             player = OpenALAudioPlayer10(self, playlist, player)
-        self._players.add(player)
         return player
 
     def delete(self):
-        for player in self._players:
-            player.delete()
         if self.context is not None:
             self.context.delete()
             self.context = None
@@ -100,8 +101,11 @@ class OpenALDriver(AbstractAudioDriver):
 
 class OpenALListener(AbstractListener):
     def __init__(self, driver):
-        self._driver = driver
+        self._driver = weakref.proxy(driver)
         self._al_listener = interface.OpenALListener()
+
+    def __del__(self):
+        assert _debug("Delete OpenALListener")
 
     def _set_volume(self, volume):
         with self._driver:
@@ -175,14 +179,10 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         self.refill(self.ideal_buffer_size)
 
     def __del__(self):
-        try:
-            self.delete()
-        except:
-            pass
+        assert _debug("Delete OpenALAudioPlayer")
+        self.delete()
 
     def delete(self):
-        assert _debug_media('OpenALAudioPlayer.delete()')
-
         if not self.source:
             return
 
@@ -196,7 +196,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         return int(self._ideal_buffer_size * self.playlist.audio_format.bytes_per_second)
 
     def play(self):
-        assert _debug_media('OpenALAudioPlayer.play()')
+        assert _debug('OpenALAudioPlayer.play()')
 
         assert self.driver is not None
         assert self.source is not None
@@ -209,7 +209,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
 
     def stop(self):
-        assert _debug_media('OpenALAudioPlayer.stop()')
+        assert _debug('OpenALAudioPlayer.stop()')
         pyglet.clock.unschedule(self._check_refill)
 
         assert self.driver is not None
@@ -221,7 +221,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         self._playing = False
 
     def clear(self):
-        assert _debug_media('OpenALAudioPlayer.clear()')
+        assert _debug('OpenALAudioPlayer.clear()')
 
         assert self.driver is not None
         assert self.source is not None
@@ -269,7 +269,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         if processed > 0:
             if (len(self._buffer_timestamps) == processed
                     and self._buffer_timestamps[-1] is not None):
-                assert _debug_media('OpenALAudioPlayer: Underrun')
+                assert _debug('OpenALAudioPlayer: Underrun')
                 # Underrun, take note of timestamp.
                 # We check that the timestamp is not None, because otherwise
                 # our source could have been cleared.
@@ -298,11 +298,11 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         # Only write when current buffer size is smaller than ideal
         write_size = max(self.ideal_buffer_size - buffer_size, 0)
 
-        assert _debug_media("Write size {} bytes".format(write_size))
+        assert _debug("Write size {} bytes".format(write_size))
         return write_size
 
     def refill(self, write_size):
-        assert _debug_media('refill', write_size)
+        assert _debug('refill', write_size)
 
         while write_size > self.min_buffer_size:
             audio_data = self._get_audiodata()
@@ -311,13 +311,13 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                 break
 
             length = min(write_size, audio_data.length)
-            assert _debug_media('Writing {} bytes'.format(length))
+            assert _debug('Writing {} bytes'.format(length))
             self._queue_audio_data(audio_data, length)
             write_size -= length
 
         # Check for underrun stopping playback
         if self._playing and not self.source.is_playing:
-            assert _debug_media('underrun')
+            assert _debug('underrun')
             self.source.play()
 
     def _get_audiodata(self):
@@ -327,17 +327,17 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         return self._audiodata_buffer
 
     def _get_new_audiodata(self):
-        assert _debug_media('Getting new audio data buffer.')
+        assert _debug('Getting new audio data buffer.')
         compensation_time = self.get_audio_time_diff()
         self._audiodata_buffer= self.playlist.get_audio_data(self.ideal_buffer_size, compensation_time)
 
         if self._audiodata_buffer is not None:
-            assert _debug_media('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
+            assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
             self._queue_events(self._audiodata_buffer)
         else:
-            assert _debug_media('No audio data left')
+            assert _debug('No audio data left')
             if self._has_underrun():
-                assert _debug_media('Underrun')
+                assert _debug('Underrun')
                 MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
 
 
@@ -380,7 +380,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             self._audiodata_buffer = None
 
         if audio_data is not None:
-            assert _debug_media('Writing {} bytes'.format(audio_data.length))
+            assert _debug('Writing {} bytes'.format(audio_data.length))
             self._queue_events(audio_data)
             self._queue_audio_data(audio_data, audio_data.length)
 
@@ -391,16 +391,16 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
         if not self._buffer_timestamps:
             timestamp = self._underrun_timestamp
-            assert _debug_media('OpenALAudioPlayer: Return underrun timestamp')
+            assert _debug('OpenALAudioPlayer: Return underrun timestamp')
         else:
             timestamp = self._buffer_timestamps[0]
-            assert _debug_media('OpenALAudioPlayer: Buffer timestamp: {}'.format(timestamp))
+            assert _debug('OpenALAudioPlayer: Buffer timestamp: {}'.format(timestamp))
 
             if timestamp is not None:
                 timestamp += ((self._play_cursor - self._buffer_cursor) /
                     float(self.playlist.audio_format.bytes_per_second))
 
-        assert _debug_media('OpenALAudioPlayer: get_time = {}'.format(timestamp))
+        assert _debug('OpenALAudioPlayer: get_time = {}'.format(timestamp))
 
         return timestamp
 
@@ -410,7 +410,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         assert self._write_cursor >= 0
         assert self._buffer_cursor <= self._play_cursor
         assert self._play_cursor <= self._write_cursor
-        assert _debug_media('Buffer[{}], Play[{}], Write[{}]'.format(self._buffer_cursor,
+        assert _debug('Buffer[{}], Play[{}], Write[{}]'.format(self._buffer_cursor,
                                                                      self._play_cursor,
                                                                      self._write_cursor))
         return True  # Return true so it can be called in an assert (and optimized out)
@@ -455,7 +455,7 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
 
         # OpenAL 1.0 timestamp interpolation: system time of current buffer
         # playback (best guess)
-        self._buffer_system_time = time.time()
+        self._buffer_system_time = time.time() # TODO replace with pyglet.clock
 
     def play(self):
         super(OpenALAudioPlayer10, self).play()
@@ -473,7 +473,7 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
                 (time.time() - self._buffer_system_time) * \
                     self.playlist.audio_format.bytes_per_second)
         assert self._check_cursors()
-        assert _debug_media('Play cursor at {} bytes'.format(self._play_cursor))
+        assert _debug('Play cursor at {} bytes'.format(self._play_cursor))
 
         self._dispatch_events()
 

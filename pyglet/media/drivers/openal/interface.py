@@ -45,7 +45,7 @@ import pyglet
 from pyglet.debug import debug_print
 from pyglet.media.exceptions import MediaException
 
-_debug_media = debug_print('debug_media')
+_debug = debug_print('debug_media')
 
 
 class OpenALException(MediaException):
@@ -92,6 +92,7 @@ class OpenALDevice(OpenALObject):
             raise OpenALException('No OpenAL devices.')
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALDevice")
         self.delete()
 
     def delete(self):
@@ -166,11 +167,12 @@ class OpenALDevice(OpenALObject):
 
 class OpenALContext(OpenALObject):
     def __init__(self, device, al_context):
-        self.device = device
+        self.device = weakref.proxy(device)
         self._al_context = al_context
         self.make_current()
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALContext")
         self.delete()
 
     def delete(self):
@@ -193,8 +195,8 @@ class OpenALContext(OpenALObject):
 
 class OpenALSource(OpenALObject):
     def __init__(self, context):
-        self.context = context
-        self.buffer_pool = OpenALBufferPool(context)
+        self.context = weakref.proxy(context)
+        self.buffer_pool = OpenALBufferPool(self.context)
 
         self._al_source = al.ALuint()
         al.alGenSources(1, self._al_source)
@@ -206,6 +208,7 @@ class OpenALSource(OpenALObject):
         self._owned_buffers = {}
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALSource")
         self.delete()
 
     def delete(self):
@@ -300,7 +303,7 @@ class OpenALSource(OpenALObject):
 
     def unqueue_buffers(self):
         processed = self.buffers_processed
-        assert _debug_media("Processed buffer count: {}".format(processed))
+        assert _debug("Processed buffer count: {}".format(processed))
         if processed > 0:
             buffers = (al.ALuint * processed)()
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
@@ -444,6 +447,7 @@ class OpenALBuffer(OpenALObject):
         assert self.is_valid
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALBuffer")
         self.delete()
 
     @property
@@ -494,6 +498,7 @@ class OpenALBufferPool(OpenALObject):
         self._buffers = [] # list of free buffer names
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALBufferPool")
         self.clear()
 
     def __len__(self):
