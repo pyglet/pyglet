@@ -588,7 +588,7 @@ class Batch(object):
 
     def draw(self):
         """Draw the batch."""
-        glBindVertexArray(self.vao_id)
+        glBindVertexArray(self.vao_id.value)
 
         if self._draw_list_dirty:
             self._update_draw_list()
@@ -703,26 +703,13 @@ class ShaderGroup(Group):
     def __init__(self, *shaders, parent=None):
         super(ShaderGroup, self).__init__(parent)
         self.shader_program = ShaderProgram(*shaders)
-
-        if _debug_graphics_batch:
-            print("Created ShaderGroup. ShaderProgram ID: {0}".format(self.shader_program.id))
-
-    def set_state(self):
-        self.shader_program.use_program()
-
-    def unset_state(self):
-        self.shader_program.stop_program()
-
-
-class _DefaultGroup(ShaderGroup):
-    """The default group class used when ``None`` is given to a batch.
-    """
-    def __init__(self, *shaders):
-        super(_DefaultGroup, self).__init__(*shaders)
         self.buffer_objects = {}
 
         for block in self.shader_program.uniform_blocks.values():
             self.buffer_objects[block.name] = UniformBufferObject(block)
+
+        if _debug_graphics_batch:
+            print("Created ShaderGroup. ShaderProgram ID: {0}".format(self.shader_program.id))
 
     def set_state(self):
         self.shader_program.use_program()
@@ -819,7 +806,8 @@ class OrderedGroup(Group):
     def __repr__(self):
         return '%s(%d)' % (self.__class__.__name__, self.order)
 
+
 #: The default group.
 _default_vert_shader = Shader(vertex_source, 'vertex')
 _default_frag_shader = Shader(fragment_source, 'fragment')
-default_group = _DefaultGroup(_default_vert_shader, _default_frag_shader)
+default_group = ShaderGroup(_default_vert_shader, _default_frag_shader)

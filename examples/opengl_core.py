@@ -15,7 +15,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 # label = pyglet.text.Label("test label")
 
 
-vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (5, 5, 0,  15, 5, 0,  10, 15, 0)),
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (5, 5, 0,  150, 5, 0,  75, 150, 0)),
                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
 batch = pyglet.graphics.Batch()
@@ -94,7 +94,9 @@ def on_draw():
     # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
     #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
-    # TODO: fix drawing vertex_lists
+    # TODO: fix drawing vertex arrays directly without manually binding these:
+    # glBindVertexArray(pyglet.graphics._get_default_batch().vao_id)
+    # pyglet.graphics.default_group.set_state()
     # vertex_list.draw(GL_TRIANGLES)
 
     # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],

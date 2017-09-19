@@ -92,7 +92,7 @@ def _nearest_pow2(v):
     return v + 1
 
 
-def create_attribute_usage(shader_program_id, format):
+def create_attribute_usage(shader_program_id, fmt):
     """Create an attribute and usage pair from a format string.  The
     format string is as documented in `pyglet.graphics.vertexattribute`, with
     the addition of an optional usage component::
@@ -112,7 +112,7 @@ def create_attribute_usage(shader_program_id, format):
 
     :return: attribute, usage
     """
-    match = _usage_format_re.match(format)
+    match = _usage_format_re.match(fmt)
     attribute_format = match.group('attribute')
     attribute = vertexattribute.create_attribute(shader_program_id, attribute_format)
     usage = match.group('usage')
@@ -175,8 +175,7 @@ class VertexDomain(object):
         attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
         for attribute, usage, vbo in attribute_usages:
-            if (have_multi_texcoord and
-                    isinstance(attribute, vertexattribute.TexCoordAttribute)):
+            if (have_multi_texcoord and isinstance(attribute, vertexattribute.TexCoordAttribute)):
                 attribute.convert_to_multi_tex_coord_attribute()
 
             if usage == GL_STATIC_DRAW:
@@ -190,8 +189,7 @@ class VertexDomain(object):
                     attribute.stride * self.allocator.capacity, usage=usage)
                 attribute.buffer.element_size = attribute.stride
                 attribute.buffer.attributes = (attribute,)
-                self.buffer_attributes.append(
-                    (attribute.buffer, (attribute,)))
+                self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
         # Create buffer for interleaved data
         if static_attributes:
@@ -231,8 +229,7 @@ class VertexDomain(object):
                 self.attribute_names['multi_tex_coords'].insert(texture, attribute)
             else:
                 name = attribute.plural
-                assert name not in self.attributes, \
-                    'More than one "%s" attribute given' % name
+                assert name not in self.attributes, 'More than one "%s" attribute given' % name
                 self.attribute_names[name] = attribute
 
     def __del__(self):
@@ -303,7 +300,6 @@ class VertexDomain(object):
                 attribute.set_pointer(attribute.buffer.ptr)
 
         if vertex_list is not None:
-            print("Direct draw vertlist")
             glDrawArrays(mode, vertex_list.start, vertex_list.count)
         else:
             starts, sizes = self.allocator.get_allocated_regions()
