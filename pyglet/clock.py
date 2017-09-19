@@ -267,6 +267,7 @@ class Clock(_ClockBase):
 
         self._schedule_items = []
         self._schedule_interval_items = []
+        self._current_interval_item = None
 
     def update_time(self):
         '''Get the elapsed time since the last call to `update_time`.
@@ -330,7 +331,7 @@ class Clock(_ClockBase):
 
         # NOTE: there is no special handling required to manage things
         #       that are scheduled during this loop, due to the heap
-        item = None
+        self._current_interval_item = item = None
         get_soft_next_ts = self._get_soft_next_ts
         while interval_items:
 
@@ -341,6 +342,11 @@ class Clock(_ClockBase):
                 item = heappop(interval_items)
             else:
                 item = heappushpop(interval_items, item)
+
+            # a scheduled function may try and unschedule itself
+            # so we need to keep a reference to the current
+            # item no longer on heap to be able to check
+            self._current_interval_item = item
 
             # if next item is scheduled in the future then break
             if item.next_ts > now:
@@ -374,7 +380,7 @@ class Clock(_ClockBase):
                         item.last_ts = item.next_ts - item.interval
             else:
                 # not an interval, so this item will not be rescheduled
-                item = None
+                self._current_interval_item = item = None
 
         if item is not None:
             heappush(interval_items, item)
@@ -701,10 +707,17 @@ class Clock(_ClockBase):
                 The function to remove from the schedule.
 
         '''
+        # check all the scheduled interval items on the heap
+        # as well as the currently scheduled func in case it is trying to
+        # unschedule itself.
+        interval_items = set(item for item in self._schedule_interval_items if item.func == func)
+        if self._current_interval_item and self._current_interval_item.func == func:
+            interval_items.add(self._current_interval_item)
+
         # clever remove item without disturbing the heap:
         # 1. set function to an empty lambda -- original function is not called
         # 2. set interval to 0               -- item will be removed from heap eventually
-        for item in set(item for item in self._schedule_interval_items if item.func == func):
+        for item in interval_items:
             item.interval = 0
             item.func = lambda x, *args, **kwargs: x
 
