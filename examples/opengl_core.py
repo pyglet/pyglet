@@ -4,6 +4,7 @@ from pyglet.gl import *
 
 
 # pyglet.options['debug_gl_shaders'] = True
+pyglet.options['debug_gl_trace_args'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
@@ -75,8 +76,12 @@ def on_mouse_scroll(x, y, mouse, direction):
               0.0, zoom, 0.0, 0.0,
               0.0, 0.0, zoom, 0.0,
               0.0, 0.0, 0.0, 1.0]
-    pyglet.graphics.default_group.shader_program.use_program()
-    pyglet.graphics.default_group.shader_program['testmatrix'] = values
+    # pyglet.graphics.default_group.shader_program.use_program()
+    # pyglet.graphics.default_group.shader_program['testmatrix'] = values
+    ubo = pyglet.graphics.default_group.buffer_objects["WindowBlock"]
+    with ubo as view:
+        view.transform[:] = values
+
 
 # @window.event
 # def on_resize(width, height):
@@ -113,5 +118,5 @@ def update(dt):
 
 if __name__ == "__main__":
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
-    pyglet.clock.schedule_interval(update, 1/60)
+    pyglet.clock.schedule_interval(update, 1/30)
     pyglet.app.run()

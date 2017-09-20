@@ -356,6 +356,8 @@ class UniformBufferObject:
         self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
         self.bind_buffer_base(self.block.index)
         self.view = self._introspect_uniforms()
+        self.view_ptr = pointer(self.view)
+        self.view_size = sizeof(self.view)
 
     def bind_buffer_base(self, index):
         glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
@@ -374,55 +376,52 @@ class UniformBufferObject:
         # Create objects and pointers for query values:
         offsets = (GLint * num_active.value)()
         gl_types = (GLuint * num_active.value)()
+        mat_stride = (GLuint * num_active.value)()
         offsets_ptr = cast(addressof(offsets), POINTER(GLint))
         gl_types_ptr = cast(addressof(gl_types), POINTER(GLint))
+        stride_ptr = cast(addressof(mat_stride), POINTER(GLint))
 
         # Query the indices, offsets, and types uniforms:
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
+        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
 
         offsets = offsets[:] + [self.block.size]
-
-        view = View(self.buffer)
+        args = []
 
         for i in range(num_active.value):
             u_name, gl_type, length = self.block.uniforms[i]
             start = offsets[i]
             size = offsets[i+1] - start
-            view.add_property(u_name, gl_type, start, size, length)
+            c_type_size = sizeof(gl_type)
+            actual_size = c_type_size * length
+            padding = size - actual_size
+            # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
 
-        return view
+            arg = (u_name, gl_type*length) if length > 1 else (u_name, gl_type)
+            args.append(arg)
+
+            # print(f"start: {start}  size/actual_size: {size},{actual_size}  padding: {padding}  "
+            #       f"length: {length}  arg: {arg}  actualsize/ctype_size:{actual_size/c_type_size}")
+
+            if padding > 0:
+                padding_bytes = padding // c_type_size
+                args.append(('_padding' + str(i), gl_type * padding_bytes))
+
+        repr_fn = lambda self: str(dict(self._fields_))
+        view = type(self.block.name + 'View', (Structure,), {'_fields_': args, '__repr__': repr_fn})
+
+        return view()
 
     def __enter__(self):
         # Return the view to the user in a `with` context:
         return self.view
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.buffer.set_data_region(self.view_ptr, 0, self.view_size)
 
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
-
-
-class View:
-    def __init__(self, buffer):
-        self._buffer = buffer
-
-    def add_property(self, u_name, gl_type, start, size, length):
-        if length == 1:
-            setter = lambda s, value: self._set_single(gl_type, start, size, value)
-        else:
-            setter = lambda s, value: self._set_multi(gl_type, start, size, value)
-
-        setattr(self.__class__, u_name, property(fset=setter))
-
-    def _set_single(self, gl_type, start, size, value):
-        data = (gl_type * size)(value)
-        self._buffer.set_data_region(data, start, size)
-
-    def _set_multi(self, gl_type, start, size, value):
-        data = (gl_type * size)(*value)
-        self._buffer.set_data_region(data, start, size)
 
 
 vertex_source = """#version 330 core
@@ -439,14 +438,15 @@ vertex_source = """#version 330 core
         vec2 size;
         float aspect;
         float zoom;
+        mat4 transform;
     } window;
 
     void main()
     {
-        gl_Position = testmatrix * vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                                   vertices.y * 2.0 / window.size.y - 1.0,
-                                   vertices.z,
-                                   vertices.w * window.zoom + 1);
+        gl_Position = window.transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                                         vertices.y * 2.0 / window.size.y - 1.0,
+                                         vertices.z,
+                                         vertices.w * window.zoom + 1);
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;

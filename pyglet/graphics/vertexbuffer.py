@@ -191,7 +191,7 @@ class AbstractMappable(object):
 
 
 class BufferObject(AbstractBuffer):
-    """Lightweight representation of an OpenGL VBO.
+    """Lightweight representation of an OpenGL Buffer Object.
 
     The data in the buffer is not replicated in any system memory (unless it
     is done so by the video driver).  While this can improve memory usage and
@@ -223,10 +223,8 @@ class BufferObject(AbstractBuffer):
         glBindBuffer(self.target, 0)
 
     def set_data(self, data):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, data, self.usage)
-        glPopClientAttrib()
 
     def set_data_region(self, data, start, length):
         glBindBuffer(self.target, self.id)
