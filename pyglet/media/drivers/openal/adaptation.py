@@ -74,12 +74,8 @@ class OpenALDriver(AbstractAudioDriver):
         return player
 
     def delete(self):
-        if self.context is not None:
-            self.context.delete()
-            self.context = None
-        if self.device is not None:
-            self.device.delete()
-            self.device = None
+        # Delete the context first
+        self.context = None
 
     def have_version(self, major, minor):
         return (major, minor) <= self.get_version()

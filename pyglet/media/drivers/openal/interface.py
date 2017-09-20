@@ -38,6 +38,7 @@ from builtins import str
 
 import ctypes
 from collections import defaultdict, namedtuple
+import weakref
 
 from . import lib_openal as al
 from . import lib_alc as alc
@@ -167,7 +168,7 @@ class OpenALDevice(OpenALObject):
 
 class OpenALContext(OpenALObject):
     def __init__(self, device, al_context):
-        self.device = weakref.proxy(device)
+        self.device = device
         self._al_context = al_context
         self.make_current()
 
