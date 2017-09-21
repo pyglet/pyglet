@@ -195,10 +195,6 @@ class SpriteGroup(graphics.Group):
         self._frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
         self.shader_program = graphics.shader.ShaderProgram(self._vert_shader, self._frag_shader)
 
-        buffer_obj = graphics.default_group.buffer_objects['WindowBlock']
-        buffer_obj.bind_buffer_base(self.shader_program.uniform_blocks['WindowBlock'].index)
-        buffer_obj.buffer.bind()
-
     def set_state(self):
         self.shader_program.use_program()
 
@@ -478,10 +474,7 @@ class Sprite(event.EventDispatcher):
             y2 = y1 + img.height
             vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
         if not self._subpixel:
-            vertices = (int(vertices[0]), int(vertices[1]),
-                        int(vertices[2]), int(vertices[3]),
-                        int(vertices[4]), int(vertices[5]),
-                        int(vertices[6]), int(vertices[7]))
+            vertices = tuple(map(int, vertices))
         self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):

@@ -364,9 +364,9 @@ class _GlyphBox(_AbstractBox):
         for start, end, color in context.colors_iter.ranges(i, i + n_glyphs):
             if color is None:
                 color = (0, 0, 0, 255)
-            colors.extend(color * ((end - start) * 4))
+            colors.extend(color * ((end - start) * 6))
 
-        vertex_list = layout.batch.add(n_glyphs * 4, GL_QUADS, group,
+        vertex_list = layout.batch.add(n_glyphs * 6, GL_TRIANGLES, group,
                                        ('v2f/dynamic', vertices),
                                        ('t3f/dynamic', tex_coords),
                                        ('c4B/dynamic', colors))

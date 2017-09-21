@@ -12,7 +12,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 #   TESTS !
 ##########################################################
 # TODO: update text module to fix this:
-# label = pyglet.text.Label("test label")
+# label = pyglet.text.Label("test", x=5, y=5)
 
 
 vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (5, 5, 0,  150, 5, 0,  75, 150, 0)),
