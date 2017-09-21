@@ -427,7 +427,7 @@ class VertexList(object):
         self._tex_coords_cache_version = None
         self._vertices_cache_version = None
 
-    def _set_attribute_data(self, i, data):
+    def set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
         # TODO without region
         region = attribute.get_region(attribute.buffer, self.start, self.count)
@@ -841,7 +841,7 @@ class IndexedVertexList(VertexList):
         self.index_start = new_start
         self._indices_cache_version = None
 
-    def _set_index_data(self, data):
+    def set_index_data(self, data):
         # TODO without region
         region = self.domain.get_index_region(
             self.index_start, self.index_count)

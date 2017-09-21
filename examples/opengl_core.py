@@ -3,8 +3,7 @@ import pyglet
 from pyglet.gl import *
 
 
-# pyglet.options['debug_gl_shaders'] = True
-pyglet.options['debug_gl_trace_args'] = True
+pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
