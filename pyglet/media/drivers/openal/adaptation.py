@@ -179,13 +179,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         self.delete()
 
     def delete(self):
-        if not self.source:
-            return
-
-        assert self.driver is not None
-        self.source.delete()
-        self.source = None
         pyglet.clock.unschedule(self._check_refill)
+        self.source = None
 
     @property
     def ideal_buffer_size(self):

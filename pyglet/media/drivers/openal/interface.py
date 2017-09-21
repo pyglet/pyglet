@@ -196,7 +196,7 @@ class OpenALContext(OpenALObject):
 
 class OpenALSource(OpenALObject):
     def __init__(self, context):
-        self.context = weakref.proxy(context)
+        self.context = weakref.ref(context)
         self.buffer_pool = OpenALBufferPool(self.context)
 
         self._al_source = al.ALuint()
@@ -213,7 +213,8 @@ class OpenALSource(OpenALObject):
         self.delete()
 
     def delete(self):
-        if self._al_source is not None:
+        if self.context() and self._al_source is not None:
+            # Only delete source if the context still exists
             al.alDeleteSources(1, self._al_source)
             self._check_error('Failed to delete source.')
             # TODO: delete buffers in use
@@ -473,7 +474,7 @@ class OpenALBuffer(OpenALObject):
         return self._al_buffer.value
 
     def delete(self):
-        if self.is_valid:
+        if self.context() and self.is_valid:
             al.alDeleteBuffers(1, ctypes.byref(self._al_buffer))
             self._check_error('Error deleting buffer.')
             self._al_buffer = None
