@@ -134,8 +134,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def __init__(self, playlist, player, driver):
         super(PulseAudioPlayer, self).__init__(playlist, player)
-        self.driver = driver
-        self.context = driver.context
+        self.driver = weakref.ref(driver)
+        self.context = weakref.proxy(driver.context)
 
         self._events = []
         self._timestamps = []  # List of (ref_time, timestamp)
@@ -305,7 +305,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         assert _debug('Delete PulseAudioPlayer')
 
         self.stream.pop_handlers()
-        if self.driver.mainloop is None:
+        driver = self.driver()
+        if driver is None:
+            assert _debug('PulseAudioDriver has been garbage collected.')
+            self.stream = None
+            return
+
+        if driver.mainloop is None:
             assert _debug('PulseAudioDriver already deleted. '
                       'PulseAudioPlayer could not clean up properly.')
             return
@@ -407,7 +413,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         self._volume = volume
 
         if self.stream:
-            volume *= self.driver._listener._volume
+            driver = self.driver()
+            volume *= driver._listener._volume
             with self.context:
                 self.context.set_input_volume(self.stream, volume).wait()
 
