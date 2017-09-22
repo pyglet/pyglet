@@ -60,9 +60,9 @@ import weakref
 from pyglet.gl import *
 import pyglet
 from pyglet.window import key
-from pyglet.media import buffered_logger as bl
 
 pyglet.options['debug_media'] = False
+from pyglet.media import buffered_logger as bl
 # pyglet.options['audio'] = ('openal', 'pulse', 'silent')
 
 

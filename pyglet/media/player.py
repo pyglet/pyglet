@@ -123,6 +123,9 @@ class Player(pyglet.event.EventDispatcher):
         self.loop = False
 
         # self.pr = cProfile.Profile()
+
+    def __del__(self):
+        self.delete()
         
     def queue(self, source):
         """
@@ -210,7 +213,6 @@ class Player(pyglet.event.EventDispatcher):
     def delete(self):
         """Tear down the player and any child objects."""
         self.pause()
-
         if self._audio_player:
             self._audio_player.delete()
             self._audio_player = None
