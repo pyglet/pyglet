@@ -241,6 +241,10 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         seek_mode = pa.PA_SEEK_RELATIVE
         if self._clear_write:
+            # When seeking, the stream.writable_size will be 0.
+            # So we force at least 4096 bytes to overwrite the Buffer
+            # starting at read index
+            nbytes = max(4096, nbytes)
             seek_mode = pa.PA_SEEK_RELATIVE_ON_READ
             self._clear_write = False
             assert _debug('PulseAudioPlayer: Clear buffer')
