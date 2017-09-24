@@ -272,7 +272,6 @@ class Player(pyglet.event.EventDispatcher):
             # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
             # player is not stopped
             self._audio_player.clear()
-            self._audio_player.seek(time)
         if self.source.video_format:
             self.update_texture(time=time)
             pyglet.clock.unschedule(self.update_texture)

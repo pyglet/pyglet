@@ -102,14 +102,6 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         self.audio_diff_cum = 0.0
 
     @abstractmethod
-    def seek(self, timestamp):
-        """Seek forward the source until timestamp is found.
-
-        All audio packets found before are discarded. All video packets found
-        are queued for decoding.
-        """
-
-    @abstractmethod
     def get_time(self):
         """Return approximation of current playback time within current source.
 

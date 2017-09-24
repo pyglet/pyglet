@@ -516,22 +516,42 @@ class FFmpegSource(StreamingSource):
 
         # Consume video and audio packets until we arrive at the correct
         # timestamp location
-        while True:
-            if self.audio_format and self.audioq[0].timestamp < self.videoq[0].timestamp:
-                if self.audioq[0].timestamp <= timestamp < self.audioq[1].timestamp:
+        if not self.audio_format:
+            while len(self.videoq) > 1:
+                # We only advance if there is at least 2 packets in the queue
+                # The queue is only left with 1 packet if we have reached the
+                #  end of the stream.
+                if timestamp < self.videoq[1].timestamp:
+                    break
+                else:
+                    self.get_next_video_frame(skip_empty_frame=False)
+        
+        elif not self.video_format:
+            while len(self.audioq) > 1:
+                # We only advance if there is at least 2 packets in the queue
+                # The queue is only left with 1 packet if we have reached the
+                #  end of the stream.
+                if timestamp < self.audioq[1].timestamp:
                     break
                 else:
                     self._get_audio_packet()
-            else:
-                if self.videoq[0].timestamp <= timestamp < self.videoq[1].timestamp:
-                    break
+        
+        else:
+            while len(self.audioq) > 1 and len(self.videoq) > 1:
+                # We only advance if there is at least 2 packets in the queue
+                # The queue is only left with 1 packet if we have reached the
+                #  end of the stream.
+                audioq_is_first = self.audioq[0].timestamp < self.videoq[0].timestamp
+                correct_audio_pos = timestamp < self.audioq[1].timestamp
+                correct_video_pos = timestamp < self.videoq[1].timestamp
+                if audioq_is_first and not correct_audio_pos:
+                    self._get_audio_packet()
+
+                elif not correct_video_pos:
+                    self.get_next_video_frame(skip_empty_frame=False)
+
                 else:
-                    self.get_next_video_frame()
-            if (self.audio_format and len(self.audioq) == 1) or len(self.videoq) == 1:
-                # No more packets to read.
-                # The queues are only left with 1 packet each because we have
-                # reached then end of the stream.
-                break
+                    break
 
     def _append_audio_data(self, audio_data):
         self.audioq.append(audio_data)
@@ -864,7 +884,7 @@ class FFmpegSource(StreamingSource):
             print('Next video timestamp is', ts)
         return ts
 
-    def get_next_video_frame(self):
+    def get_next_video_frame(self, skip_empty_frame=True):
         if not self.video_format:
             return
 
@@ -874,8 +894,8 @@ class FFmpegSource(StreamingSource):
             video_packet = self._get_video_packet()
             if video_packet.image == 0:
                 self._decode_video_packet(video_packet)
-            if video_packet.image is not None:
-                    break
+            if video_packet.image is not None or not skip_empty_frame:
+                break
 
         if _debug:
             print('Returning', video_packet)

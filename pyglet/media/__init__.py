@@ -40,7 +40,7 @@ video formats.
 Playback is handled by the :py:class:`Player` class, which reads raw data from
 :py:class:`Source` objects and provides methods for pausing, seeking, adjusting
 the volume, and so on. The :py:class:`Player` class implements the best
-available audio device (currently, only OpenAL is supported)::
+available audio device ::
 
     player = Player()
 

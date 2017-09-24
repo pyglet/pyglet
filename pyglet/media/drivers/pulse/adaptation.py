@@ -176,27 +176,6 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 assert _debug('PulseAudioPlayer: trigger timing info update')
                 self._time_sync_operation = self.stream.update_timing_info(self._process_events)
 
-    def seek(self, timestamp):
-        self.audio_diff_avg_count = 0
-        self.audio_diff_cum = 0.0
-        nbytes = 1 * self.playlist.audio_format.bytes_per_second
-        while True:
-            audio_data = self._get_audio_data()
-            assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
-            
-            if (audio_data is None or
-                timestamp <= (audio_data.timestamp + audio_data.duration)):
-                break
-            
-            assert _debug("Got audio packet starting at {:.2f} sec. "
-                           "Skipping it.".format(audio_data.timestamp))
-
-            self._current_audio_data = None
-
-        if audio_data is not None:
-            assert _debug('Writing {} bytes'.format(audio_data.length))
-            self._write_to_stream(audio_data.length)
-
     def _get_audio_data(self, nbytes=None):
         if self._current_audio_data is None and self.playlist is not None:
             # Always try to buffer at least 1 second of audio data

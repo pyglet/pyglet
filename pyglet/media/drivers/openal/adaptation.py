@@ -354,28 +354,6 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def _has_underrun(self):
         return self.source.buffers_queued == 0
 
-    def seek(self, timestamp):
-        self.audio_diff_avg_count = 0
-        self.audio_diff_cum = 0.0
-        while True:
-            audio_data = self._get_audiodata()
-            assert _debug("Seeking audio timestamp {:.2f} sec.".format(timestamp))
-            
-            if (audio_data is None or
-                timestamp <= (audio_data.timestamp + audio_data.duration)):
-                break
-            
-            assert _debug("Got audio packet starting at {:.2f} sec. "
-                           "Skipping it.".format(audio_data.timestamp))
-
-            self._audiodata_buffer = None
-
-        if audio_data is not None:
-            assert _debug('Writing {} bytes'.format(audio_data.length))
-            self._queue_events(audio_data)
-            self._queue_audio_data(audio_data, audio_data.length)
-
-
     def get_time(self):
         # Update first, might remove buffers
         self._update_play_cursor()
