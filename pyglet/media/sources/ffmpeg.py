@@ -488,7 +488,13 @@ class FFmpegSource(StreamingSource):
 
         # Flag to determine if the _fillq method was already scheduled
         self._fillq_scheduled = False
-        self.seek(0)
+        self._fillq()
+        # Don't understand why, but some files show that seeking without
+        # reading the first few packets results in a seeking where we lose
+        # many packets at the beginning. 
+        # We only seek back to 0 for media which have a start_time > 0
+        if self.start_time > 0:
+            self.seek(0.0)
 
     def __del__(self):
         if _debug:
