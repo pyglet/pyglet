@@ -277,10 +277,13 @@ def ffmpeg_close_stream(stream):
         avutil.av_frame_free(byref(stream.frame))
     avcodec.avcodec_free_context(byref(stream.codec_context))
 
-def ffmpeg_seek_file(file, timestamp):
-    flags = AVSEEK_FLAG_BACKWARD
+def ffmpeg_seek_file(file, timestamp,):
+    flags = 0
     max_ts = file.context.contents.duration * AV_TIME_BASE
-    result = avformat.avformat_seek_file(file.context, -1, 0, timestamp, timestamp, flags)
+    result = avformat.avformat_seek_file(
+        file.context, -1 , 0,
+        timestamp, timestamp, flags
+    )
     if result < 0:
         buf = create_string_buffer(128)
         avutil.av_strerror(result, buf, 128)
@@ -393,7 +396,6 @@ class FFmpegSource(StreamingSource):
         self.audio_convert_ctx = POINTER(SwrContext)()
 
         file_info = ffmpeg_file_info(self._file)
-        self._duration = timestamp_from_ffmpeg(file_info.duration)
 
         self.info = SourceInfo()
         self.info.title = file_info.title
@@ -480,9 +482,13 @@ class FFmpegSource(StreamingSource):
         self.videoq = deque()
         self._max_len_videoq = 50 # Need to figure out a correct amount
         
+        self.start_time = self._get_start_time()
+        self._duration = timestamp_from_ffmpeg(file_info.duration)
+        self._duration -= self.start_time
+
         # Flag to determine if the _fillq method was already scheduled
         self._fillq_scheduled = False
-        self._fillq()
+        self.seek(0)
 
     def __del__(self):
         if _debug:
@@ -500,15 +506,14 @@ class FFmpegSource(StreamingSource):
     def seek(self, timestamp):
         if _debug:
             print('FFmpeg seek', timestamp)
-        
-        ffmpeg_seek_file(self._file, timestamp_to_ffmpeg(timestamp))
+        ffmpeg_seek_file(
+            self._file, 
+            timestamp_to_ffmpeg(timestamp+self.start_time)
+        )
         del self._events[:]
         self._clear_video_audio_queues()
         self._fillq()
-        # If we seek to the end of the video, we could have only 1 packet or
-        # none.
-        if (self.audio_format and len(self.audioq) < 2) or len(self.videoq) < 2:
-            return
+
         # Consume video and audio packets until we arrive at the correct
         # timestamp location
         while True:
@@ -594,7 +599,7 @@ class FFmpegSource(StreamingSource):
         """
         if len(self.audioq) < 2 or len(self.videoq) < 2:
             assert len(self.audioq) < self._max_len_audioq
-            assert len(self.videoq) < self._max_len_audioq
+            assert len(self.videoq) < self._max_len_videoq
             self._fillq()
             return True
         return False
@@ -612,6 +617,7 @@ class FFmpegSource(StreamingSource):
         """
         timestamp = ffmpeg_get_packet_pts(self._file, self._packet)
         timestamp = timestamp_from_ffmpeg(timestamp)
+        timestamp -= self.start_time
 
         if self._packet.contents.stream_index == self._video_stream_index:
             video_packet = VideoPacket(self._packet, timestamp)
@@ -781,7 +787,8 @@ class FFmpegSource(StreamingSource):
         else:
             image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
             timestamp = ffmpeg_get_frame_ts(self._video_stream)            
-            video_packet.timestamp = timestamp_from_ffmpeg(timestamp)
+            timestamp = timestamp_from_ffmpeg(timestamp)
+            video_packet.timestamp = timestamp - self.start_time
             
         video_packet.image = image_data
 
@@ -874,6 +881,29 @@ class FFmpegSource(StreamingSource):
             print('Returning', video_packet)
 
         return video_packet.image
+
+    def _get_start_time(self):
+        def streams():
+            format_context = self._file.context
+            for idx in (self._video_stream_index, self._audio_stream_index):
+                if idx is None:
+                    continue
+                stream = format_context.contents.streams[idx].contents
+                yield stream
+        
+        def start_times(streams):
+            yield 0
+            for stream in streams: 
+                start = stream.start_time
+                if start == AV_NOPTS_VALUE:
+                    yield 0
+                start_time = avutil.av_rescale_q(start,
+                                                 stream.time_base,
+                                                 AV_TIME_BASE_Q)
+                start_time = timestamp_from_ffmpeg(start_time)
+                yield start_time
+        
+        return max(start_times(streams()))
 
     @property
     def audio_format(self):

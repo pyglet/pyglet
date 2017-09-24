@@ -62,8 +62,8 @@ import pyglet
 from pyglet.window import key
 
 pyglet.options['debug_media'] = False
-from pyglet.media import buffered_logger as bl
 # pyglet.options['audio'] = ('openal', 'pulse', 'silent')
+from pyglet.media import buffered_logger as bl
 
 
 def draw_rect(x, y, width, height):

@@ -258,7 +258,8 @@ class Player(pyglet.event.EventDispatcher):
         will be clamped to the end.
         """
         playing = self._playing
-        self.pause()
+        if playing:
+            self.pause()
         if not self.source:
             return
 
