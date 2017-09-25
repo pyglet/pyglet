@@ -141,6 +141,11 @@ class Slider(Control):
     THUMB_WIDTH = 6
     THUMB_HEIGHT = 10
     GROOVE_HEIGHT = 2
+    RESPONSIVNESS = 0.3
+
+    def __init__(self, *args, **kwargs):
+        super(Slider, self).__init__(*args, **kwargs)
+        self.seek_value = None
 
     def draw(self):
         center_y = self.y + self.height / 2
@@ -152,8 +157,6 @@ class Slider(Control):
 
     def coordinate_to_value(self, x):
         value = float(x - self.x) / self.width * (self.max - self.min) + self.min
-        # value = max(self.min, min(value, self.max))
-        # print('coordinate_to_value', value)
         return value
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -161,14 +164,32 @@ class Slider(Control):
         self.capture_events()
         self.dispatch_event('on_begin_scroll')
         self.dispatch_event('on_change', value)
+        pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVNESS)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        # On some platforms, on_mouse_drag is triggered with a high frequency.
+        # Seeking takes some time (~200ms). Asking for a seek at every 
+        # on_mouse_drag event would starve the event loop. 
+        # Instead we only record the last mouse position and we
+        # schedule seek_request to dispatch the on_change event in the future.
+        # This will allow subsequent on_mouse_drag to change the seek_value
+        # without triggering yet the on_change event.
         value = min(max(self.coordinate_to_value(x), self.min), self.max)
-        self.dispatch_event('on_change', value)
+        if self.seek_value is None:
+            # We have processed the last recorded mouse position.
+            # We re-schedule seek_request
+            pyglet.clock.schedule_once(self.seek_request, self.RESPONSIVNESS)
+        self.seek_value = value
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.release_events()
         self.dispatch_event('on_end_scroll')
+
+    def seek_request(self, dt):
+        if self.seek_value is not None:
+            self.dispatch_event('on_change', self.seek_value)
+            self.seek_value = None
+
 
 Slider.register_event_type('on_begin_scroll')
 Slider.register_event_type('on_end_scroll')
