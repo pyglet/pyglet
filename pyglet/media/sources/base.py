@@ -497,6 +497,7 @@ class PlayList(object):
     def __init__(self):
         self.audio_format = None
         self.video_format = None
+        self.duration = 0.0
         self._sources = deque()
 
     def seek(self, time):
@@ -518,6 +519,7 @@ class PlayList(object):
             self.audio_format = source.audio_format
             self.video_format = source.video_format
         self._sources.append(source)
+        self.duration += source.duration
 
     def has_next(self):
         """Check if there is a source behind the current one
@@ -531,7 +533,8 @@ class PlayList(object):
         playlist.
         """
         if self._sources:
-            self._sources.popleft()
+            old_source = self._sources.popleft()
+            self.duration -= old_source.duration
         if self._sources:
             source = self._sources[0]
             self.audio_format = source.audio_format
