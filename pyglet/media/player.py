@@ -36,20 +36,17 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from collections import deque
-
 import pyglet
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
-from pyglet.media.events import MediaEvent
-from pyglet.media.exceptions import MediaException
-from pyglet.media.sources.base import PlayList, StaticSource
+from pyglet.media.sources.base import PlayList
 
 # import cProfile
 
 _debug = pyglet.options['debug_media']
 
 clock = pyglet.clock.get_default()
+
 
 class MasterClock(object):
     def __init__(self):
@@ -116,7 +113,7 @@ class Player(pyglet.event.EventDispatcher):
         self._playing = False
 
         self._mclock = MasterClock()
-        #: Loop the current source indefinitely or until 
+        #: Loop the current source indefinitely or until
         #: :py:meth:`Player.next_source` is called.  Initially False.
         #:
         #: :type: bool
@@ -126,12 +123,13 @@ class Player(pyglet.event.EventDispatcher):
 
     def __del__(self):
         self.delete()
-        
+
     def queue(self, source):
         """
         Queue the source on this player.
 
-        If the player has no source, the player will be paused immediately on this source.
+        If the player has no source, the player will be paused immediately
+        on this source.
 
         :param pyglet.media.Source source: The source to queue.
         """
@@ -227,23 +225,25 @@ class Player(pyglet.event.EventDispatcher):
         self.pause()
         self._mclock.reset()
 
-        group = self._playlist
-        if group.has_next():
-            old_audio_format = group.audio_format
-            old_video_format = group.video_format
-            group.next_source()
-            if old_audio_format == group.audio_format:
+        playlist = self._playlist
+        if playlist.has_next():
+            old_audio_format = playlist.audio_format
+            old_video_format = playlist.video_format
+            playlist.next_source()
+            if old_audio_format == playlist.audio_format:
                 self._audio_player.clear()
             else:
                 self._audio_player.delete()
                 self._audio_player = None
-            if old_video_format != group.video_format:
+            if old_video_format != playlist.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
         else:
+            self.delete()
+            playlist.next_source()
             self.dispatch_event('on_player_eos')
             self.dispatch_event('on_playlist_exhausted') # Not really needed anymore...
 
@@ -429,6 +429,9 @@ class Player(pyglet.event.EventDispatcher):
 
         def _player_property_get(self):
             return getattr(self, private_name)
+
+        return property(_player_property_get, _player_property_set, doc=doc)
+
     volume = _player_property('volume', doc="""
     The volume level of sound playback.
 

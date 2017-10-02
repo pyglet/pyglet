@@ -4,6 +4,7 @@ import ctypes
 from tests import mock
 import os
 import random
+from collections import deque
 from tests.base.future_test import FutureTestCase
 
 import pyglet
@@ -30,11 +31,6 @@ class PlayerTestCase(FutureTestCase):
         self.mock_audio_driver = self.mock_get_audio_driver.return_value
         self.mock_audio_driver_player = self.mock_audio_driver.create_audio_player.return_value
 
-        self._get_silent_audio_driver_patcher = mock.patch('pyglet.media.player.get_silent_audio_driver')
-        self.mock_get_silent_audio_driver = self._get_silent_audio_driver_patcher.start()
-        self.mock_silent_audio_driver = self.mock_get_silent_audio_driver.return_value
-        self.mock_silent_audio_driver_player = self.mock_silent_audio_driver.create_audio_player.return_value
-
         self._clock_patcher = mock.patch('pyglet.clock')
         self.mock_clock = self._clock_patcher.start()
 
@@ -44,18 +40,16 @@ class PlayerTestCase(FutureTestCase):
         # Need to do this as side_effect instead of return_value, or reset_mock will recurse
         self.mock_texture.get_transform.side_effect = lambda flip_y: self.mock_texture
 
-        self.current_playing_source_group = None
+        self.current_play_list = None
 
     def tearDown(self):
         self._get_audio_driver_patcher.stop()
-        self._get_silent_audio_driver_patcher.stop()
         self._clock_patcher.stop()
         self._texture_patcher.stop()
 
     def reset_mocks(self):
         # These mocks will recursively reset their children
         self.mock_get_audio_driver.reset_mock()
-        self.mock_get_silent_audio_driver.reset_mock()
         self.mock_clock.reset_mock()
         self.mock_texture_create.reset_mock()
 
@@ -65,6 +59,8 @@ class PlayerTestCase(FutureTestCase):
         type(mock_source).video_format = mock.PropertyMock(return_value=video_format)
         type(mock_source._get_queue_source.return_value).audio_format = mock.PropertyMock(return_value=audio_format)
         type(mock_source._get_queue_source.return_value).video_format = mock.PropertyMock(return_value=video_format)
+        if video_format:
+            mock_source.video_format.frame_rate = 30
         return mock_source
 
     def set_video_data_for_mock_source(self, mock_source, timestamp_data_pairs):
@@ -104,29 +100,25 @@ class PlayerTestCase(FutureTestCase):
         """Assert that a driver specific audio player is created to play back given sources"""
         self._assert_player_created_for(self.mock_get_audio_driver, self.mock_audio_driver, *sources)
 
-    def assert_silent_driver_player_created_for(self, *sources):
-        """Assert that a silent audio player is created for given sources."""
-        self._assert_player_created_for(self.mock_get_silent_audio_driver, self.mock_silent_audio_driver, *sources)
-
     def _assert_player_created_for(self, mock_get_audio_driver, mock_audio_driver, *sources):
         mock_get_audio_driver.assert_called_once_with()
         self.assertEqual(mock_audio_driver.create_audio_player.call_count, 1)
         call_args = mock_audio_driver.create_audio_player.call_args
-        self.assertIsInstance(call_args[0][0], SourceGroup)
+        self.assertIsInstance(call_args[0][0], PlayList)
         self.assertIs(call_args[0][1], self.player)
 
-        self.current_playing_source_group = call_args[0][0]
-        self.assert_in_current_playing_source_group(*sources)
+        self.current_play_list = call_args[0][0]
+        self.assert_in_current_play_list(*sources)
 
     def assert_no_new_driver_player_created(self):
         """Assert that no new driver specific audio player is created."""
         self.assertFalse(self.mock_get_audio_driver.called, msg='No new audio driver should be created')
 
-    def assert_in_current_playing_source_group(self, *sources):
-        self.assertIsNotNone(self.current_playing_source_group, msg='No previous call to create driver player')
+    def assert_in_current_play_list(self, *sources):
+        self.assertIsNotNone(self.current_play_list, msg='No previous call to create driver player')
 
-        queue_sources = [source._get_queue_source.return_value for source in sources]
-        self.assertListEqual(self.current_playing_source_group._sources, queue_sources)
+        queue_sources = deque(source._get_queue_source.return_value for source in sources)
+        self.assertSequenceEqual(self.current_play_list._sources, queue_sources)
 
     def assert_driver_player_destroyed(self):
         self.mock_audio_driver_player.delete.assert_called_once_with()
@@ -161,14 +153,14 @@ class PlayerTestCase(FutureTestCase):
     def assert_texture_not_updated(self):
         self.assertFalse(self.mock_texture.blit_into.called)
 
-    def assert_update_texture_scheduled(self, period):
-        self.mock_clock.schedule_interval.assert_called_once_with(self.player.update_texture, period)
+    def assert_update_texture_scheduled(self):
+        self.mock_clock.schedule_once.assert_called_once_with(self.player.update_texture, 0)
 
     def assert_update_texture_unscheduled(self):
-        self.mock_clock.unschedule.assert_called_once_with(self.player.update_texture)
+        self.mock_clock.unschedule.assert_called_with(self.player.update_texture)
 
-    def pretend_driver_player_at_time(self, t):
-        self.mock_audio_driver_player.get_time.return_value = t
+    def pretend_player_at_time(self, t):
+        self.player._mclock.set_time(t)
 
     def pretend_silent_driver_player_at_time(self, t):
         self.mock_silent_audio_driver_player.get_time.return_value = t
@@ -222,14 +214,15 @@ class PlayerTestCase(FutureTestCase):
         self.assert_not_playing_yet(mock_source1)
 
         self.player.play()
-        self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_created_for(mock_source1, 
+            mock_source2, mock_source3)
         self.assert_driver_player_started()
         self.assert_now_playing(mock_source1)
 
         self.reset_mocks()
         self.player.next_source()
         self.assert_driver_player_destroyed()
-        self.assert_driver_player_created_for(mock_source2)
+        self.assert_driver_player_created_for(mock_source2, mock_source3)
         self.assert_driver_player_started()
         self.assert_now_playing(mock_source2)
 
@@ -259,19 +252,19 @@ class PlayerTestCase(FutureTestCase):
 
         self.reset_mocks()
         self.player.next_source()
-        self.assert_in_current_playing_source_group(mock_source2, mock_source3)
+        self.assert_in_current_play_list(mock_source2, mock_source3)
         self.assert_driver_player_not_destroyed()
         self.assert_no_new_driver_player_created()
         self.assert_now_playing(mock_source2)
 
         self.reset_mocks()
         self.player.next_source()
-        self.assert_in_current_playing_source_group(mock_source3)
+        self.assert_in_current_play_list(mock_source3)
         self.assert_driver_player_not_destroyed()
         self.assert_no_new_driver_player_created()
         self.assert_now_playing(mock_source3)
 
-    def test_on_eos_ignored(self):
+    def test_on_eos(self):
         """The player receives on_eos for every source, but does not need to do anything."""
         mock_source1 = self.create_mock_source(self.audio_format_1, None)
         mock_source2 = self.create_mock_source(self.audio_format_1, None)
@@ -288,35 +281,10 @@ class PlayerTestCase(FutureTestCase):
         self.reset_mocks()
         self.player.dispatch_event('on_eos')
         self.assert_driver_player_not_destroyed()
-        # The following is not completely realistic, in normal cases the source group would have
-        # advanced to the next source, but in this case we want to see it is also not manually
-        # advanced by the player
-        self.assert_in_current_playing_source_group(mock_source1, mock_source2, mock_source3)
+        self.assert_in_current_play_list(mock_source2, mock_source3)
 
-    def test_on_source_group_eos_advance_to_next_group(self):
-        """If a source group is depleted and a next group is available, start a new player for
-        the next group."""
-        mock_source1 = self.create_mock_source(self.audio_format_1, None)
-        mock_source2 = self.create_mock_source(self.audio_format_2, None)
-        mock_source3 = self.create_mock_source(self.audio_format_3, None)
-
-        self.player.queue(mock_source1)
-        self.player.queue(mock_source2)
-        self.player.queue(mock_source3)
-        self.assert_not_playing_yet(mock_source1)
-
-        self.player.play()
-        self.assert_driver_player_created_for(mock_source1)
-        self.assert_driver_player_started()
-
-        self.reset_mocks()
-        self.player.dispatch_event('on_source_group_eos')
-        self.assert_driver_player_destroyed()
-        self.assert_driver_player_created_for(mock_source2)
-        self.assert_now_playing(mock_source2)
-
-    def test_player_stops_after_last_group_eos(self):
-        """If the last or only source group is eos, the player stops."""
+    def test_player_stops_after_last_eos(self):
+        """If the last playlist source is eos, the player stops."""
         mock_source = self.create_mock_source(self.audio_format_1, None)
         self.player.queue(mock_source)
         self.assert_not_playing_yet(mock_source)
@@ -327,29 +295,35 @@ class PlayerTestCase(FutureTestCase):
         self.assert_now_playing(mock_source)
 
         self.reset_mocks()
-        self.player.dispatch_event('on_source_group_eos')
+        self.player.dispatch_event('on_eos')
         self.assert_driver_player_destroyed()
         self.assert_not_playing(None)
 
     def test_eos_events(self):
-        """Test receiving various eos events: on source eos, on source group eos and on player eos.
+        """Test receiving various eos events: on source eos, 
+        on playlist exhausted and on player eos and on player next source.
         """
         on_eos_mock = mock.MagicMock(return_value=None)
         self.player.event('on_eos')(on_eos_mock)
-        on_source_group_eos_mock = mock.MagicMock(return_value=None)
-        self.player.event('on_source_group_eos')(on_source_group_eos_mock)
+        on_playlist_exhausted_mock = mock.MagicMock(return_value=None)
+        self.player.event('on_playlist_exhausted')(on_playlist_exhausted_mock)
         on_player_eos_mock = mock.MagicMock(return_value=None)
         self.player.event('on_player_eos')(on_player_eos_mock)
+        on_player_next_source_mock = mock.MagicMock(return_value=None)
+        self.player.event('on_player_next_source')(on_player_next_source_mock)
 
         def reset_eos_mocks():
             on_eos_mock.reset_mock()
-            on_source_group_eos_mock.reset_mock()
+            on_playlist_exhausted_mock.reset_mock()
             on_player_eos_mock.reset_mock()
+            on_player_next_source_mock.reset_mock()
 
-        def assert_eos_events_received(on_eos=False, on_source_group_eos=False, on_player_eos=False):
+        def assert_eos_events_received(on_eos=False, on_playlist_exhausted=False, 
+                on_player_eos=False, on_player_next_source=False):
             self.assertEqual(on_eos_mock.called, on_eos)
-            self.assertEqual(on_source_group_eos_mock.called, on_source_group_eos)
+            self.assertEqual(on_playlist_exhausted_mock.called, on_playlist_exhausted)
             self.assertEqual(on_player_eos_mock.called, on_player_eos)
+            self.assertEqual(on_player_next_source_mock.called, on_player_next_source)
 
         mock_source1 = self.create_mock_source(self.audio_format_1, None)
         mock_source2 = self.create_mock_source(self.audio_format_1, None)
@@ -361,32 +335,24 @@ class PlayerTestCase(FutureTestCase):
         self.assert_not_playing_yet(mock_source1)
 
         self.player.play()
-        self.assert_driver_player_created_for(mock_source1, mock_source2)
+        self.assert_driver_player_created_for(mock_source1, mock_source2, mock_source3)
 
         self.reset_mocks()
         reset_eos_mocks()
         # Pretend the current source in the group was eos and next source started
-        self.current_playing_source_group.next_source()
         self.player.dispatch_event('on_eos')
         self.assert_driver_player_not_destroyed()
-        assert_eos_events_received(on_eos=True)
+        assert_eos_events_received(on_eos=True, on_player_next_source=True)
+        self.assertEqual(len(self.current_play_list._sources), 2)
 
+        # Pretend playlist is exhausted. Should be no more sources to play.
+        self.player.dispatch_event('on_eos')
         self.reset_mocks()
         reset_eos_mocks()
-        # Pretend current source group is eos, triggers player to play next source group on a new
-        # player
-        self.player.dispatch_event('on_source_group_eos')
-        self.assert_driver_player_destroyed()
-        self.assert_driver_player_created_for(mock_source3)
-        assert_eos_events_received(on_source_group_eos=True)
-
-        self.reset_mocks()
-        reset_eos_mocks()
-        # Pretend current source group is eos. Should be no more source groups to play.
-        self.player.dispatch_event('on_source_group_eos')
-        self.assert_driver_player_destroyed()
+        self.player.dispatch_event('on_eos')
         self.assert_not_playing(None)
-        assert_eos_events_received(on_source_group_eos=True, on_player_eos=True)
+        assert_eos_events_received(on_eos=True, on_playlist_exhausted=True, 
+            on_player_eos=True)
 
     def test_pause_resume(self):
         """A stream can be paused. After that play will resume where paused."""
@@ -398,21 +364,18 @@ class PlayerTestCase(FutureTestCase):
         self.assert_now_playing(mock_source)
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.5)
+        self.pretend_player_at_time(0.5)
         self.player.pause()
         self.assert_driver_player_stopped()
         self.assert_driver_player_not_destroyed()
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.6)
-        self.assertEqual(self.player.time, 0.5, msg='While paused, player should returned paused time')
-
-        self.reset_mocks()
         self.player.play()
+        self.assertAlmostEqual(self.player.time, 0.5, places=2,
+            msg='While playing, player should return time from driver player')
         self.assert_driver_player_started()
         self.assert_no_new_driver_player_created()
         self.assert_now_playing(mock_source)
-        self.assertEqual(self.player.time, 0.6, msg='While playing, player should return time from driver player')
 
     def test_delete(self):
         """Test clean up of the player when delete() is called."""
@@ -426,13 +389,12 @@ class PlayerTestCase(FutureTestCase):
         self.assert_not_playing_yet(mock_source1)
 
         self.player.play()
-        self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_created_for(mock_source1, mock_source2, mock_source3)
         self.assert_driver_player_started()
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(1.)
+        self.pretend_player_at_time(1.)
         self.player.delete()
-        self.assert_driver_player_stopped()
         self.assert_driver_player_destroyed()
 
     def test_empty_player(self):
@@ -462,8 +424,10 @@ class PlayerTestCase(FutureTestCase):
         self.player.delete()
 
     def test_set_player_properties_before_playing(self):
-        """When setting player properties before a driver specific player is created, these settings
-        should be propagated after creating the player."""
+        """When setting player properties before a driver specific player is 
+        created, these settings should be propagated after creating the 
+        player.
+        """
         mock_source1 = self.create_mock_source(self.audio_format_1, None)
         mock_source2 = self.create_mock_source(self.audio_format_2, None)
         self.player.queue(mock_source1)
@@ -494,7 +458,7 @@ class PlayerTestCase(FutureTestCase):
 
         self.reset_mocks()
         self.player.play()
-        self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_created_for(mock_source1, mock_source2)
         self.assert_now_playing(mock_source1)
         assert_properties_set()
 
@@ -505,8 +469,8 @@ class PlayerTestCase(FutureTestCase):
         assert_properties_set()
 
     def test_set_player_properties_while_playing(self):
-        """When setting player properties while playing, the properties should be propagated to the
-        driver specific player right away."""
+        """When setting player properties while playing, the properties should 
+        be propagated to the driver specific player right away."""
         mock_source1 = self.create_mock_source(self.audio_format_1, None)
         mock_source2 = self.create_mock_source(self.audio_format_2, None)
         self.player.queue(mock_source1)
@@ -515,7 +479,7 @@ class PlayerTestCase(FutureTestCase):
 
         self.reset_mocks()
         self.player.play()
-        self.assert_driver_player_created_for(mock_source1)
+        self.assert_driver_player_created_for(mock_source1, mock_source2)
         self.assert_now_playing(mock_source1)
 
         self.reset_mocks()
@@ -592,36 +556,10 @@ class PlayerTestCase(FutureTestCase):
         # Clear buffers for immediate result
         self.assert_driver_player_cleared()
 
-    def test_queue_source_group(self):
-        """Source groups can also be queued. They are added as is without checking compatibility
-        with the current source group."""
-        mock_source1 = self.create_mock_source(self.audio_format_1, None)
-        mock_source2 = self.create_mock_source(self.audio_format_1, None)
-        mock_source3 = self.create_mock_source(self.audio_format_1, None)
-        group = SourceGroup(self.audio_format_1, None)
-        group.queue(mock_source2)
-        group.queue(mock_source3)
-
-        self.player.queue(mock_source1)
-        self.player.queue(group)
-        self.assert_not_playing_yet(mock_source1)
-
-        self.reset_mocks()
-        self.player.play()
-        self.assert_driver_player_created_for(mock_source1)
-        self.assert_driver_player_started()
-        self.assert_now_playing(mock_source1)
-
-        self.reset_mocks()
-        self.player.next_source()
-        self.assert_driver_player_destroyed()
-        self.assert_driver_player_created_for(mock_source2, mock_source3)
-        self.assert_driver_player_started()
-        self.assert_now_playing(mock_source2)
-
     def test_video_queue_and_play(self):
-        """Sources can also include video. Instead of using a player to continuously play the video
-        a texture is updated on a fixed interval."""
+        """Sources can also include video. Instead of using a player to 
+        continuously play the video, a texture is updated based on the
+        video packet timestamp."""
         mock_source = self.create_mock_source(self.audio_format_1, self.video_format_1)
         self.set_video_data_for_mock_source(mock_source, [(0.2, 'a')])
         self.player.queue(mock_source)
@@ -633,66 +571,28 @@ class PlayerTestCase(FutureTestCase):
         self.assert_driver_player_started()
         self.assert_now_playing(mock_source)
         self.assert_new_texture_created(self.video_format_1)
-        self.assert_update_texture_scheduled(1 / 30)
+        self.assert_update_texture_scheduled()
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.2)
+        self.pretend_player_at_time(0.2)
         self.player.update_texture()
         self.assert_texture_updated('a')
         self.assertIs(self.player.get_texture(), self.mock_texture)
 
-    def test_video_peek_before_play(self):
-        """Before starting to play a video source, we can peek and see a frame. It will then
-        wait for the next frame when play has started."""
-        mock_source = self.create_mock_source(self.audio_format_1, self.video_format_1)
-        self.set_video_data_for_mock_source(mock_source, [(0.1, 'a'), (0.2, 'b')])
-        self.player.queue(mock_source)
-        self.assert_not_playing_yet(mock_source)
-
-        self.reset_mocks()
-        self.player.update_texture(time=0.1)
-        self.assert_new_texture_created(self.video_format_1)
-        self.assert_not_playing_yet(mock_source)
-        self.assert_texture_updated('a')
-
-        self.reset_mocks()
-        self.player.play()
-        self.assert_now_playing(mock_source)
-        self.assert_update_texture_scheduled(1 / 30)
-        self.assert_no_new_texture_created()
-        self.assert_texture_not_updated()
-
-        self.reset_mocks()
-        self.pretend_driver_player_at_time(0.0)
-        self.player.update_texture()
-        self.assert_no_new_texture_created()
-        self.assert_texture_not_updated()
-
-        self.reset_mocks()
-        self.pretend_driver_player_at_time(0.1)
-        self.player.update_texture()
-        self.assert_no_new_texture_created()
-        self.assert_texture_not_updated()
-
-        self.reset_mocks()
-        self.pretend_driver_player_at_time(0.2)
-        self.player.update_texture()
-        self.assert_no_new_texture_created()
-        self.assert_texture_updated('b')
-
     def test_video_seek(self):
-        """Sources with video can also be seeked. This will cause the audio source to seek and
-        video will follow the timestamps."""
+        """Sources with video can also be seeked. It's the Source 
+        responsibility to present the Player with audio and video at the
+        correct time."""
         mock_source = self.create_mock_source(self.audio_format_1, self.video_format_1)
         self.set_video_data_for_mock_source(mock_source, [(0.0, 'a'), (0.1, 'b'), (0.2, 'c'),
                                                           (0.3, 'd'), (0.4, 'e'), (0.5, 'f')])
         self.player.queue(mock_source)
         self.player.play()
         self.assert_new_texture_created(self.video_format_1)
-        self.assert_update_texture_scheduled(1 / 30)
+        self.assert_update_texture_scheduled()
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.0)
+        self.pretend_player_at_time(0.0)
         self.player.update_texture()
         self.assert_texture_updated('a')
 
@@ -703,17 +603,13 @@ class PlayerTestCase(FutureTestCase):
         self.assert_texture_updated('d')
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.3)
-        self.player.update_texture()
-        self.assert_texture_not_updated()
-
-        self.reset_mocks()
-        self.pretend_driver_player_at_time(0.4)
+        self.pretend_player_at_time(0.4)
         self.player.update_texture()
         self.assert_texture_updated('e')
 
     def test_video_frame_rate(self):
-        """Videos with different framerates need to be rescheduled at the clock."""
+        """Videos texture are scheduled according to the video packet 
+        timestamp."""
         mock_source1 = self.create_mock_source(self.audio_format_1, self.video_format_1)
         mock_source2 = self.create_mock_source(self.audio_format_1, self.video_format_2)
         self.player.queue(mock_source1)
@@ -721,13 +617,13 @@ class PlayerTestCase(FutureTestCase):
 
         self.player.play()
         self.assert_new_texture_created(self.video_format_1)
-        self.assert_update_texture_scheduled(1 / 30)
+        self.assert_update_texture_scheduled()
 
         self.reset_mocks()
         self.player.next_source()
         self.assert_new_texture_created(self.video_format_2)
         self.assert_update_texture_unscheduled()
-        self.assert_update_texture_scheduled(1 / 25)
+        self.assert_update_texture_scheduled()
 
     def test_video_seek_next_frame(self):
         """It is possible to jump directly to the next frame of video and adjust the audio player
@@ -737,10 +633,10 @@ class PlayerTestCase(FutureTestCase):
         self.player.queue(mock_source)
         self.player.play()
         self.assert_new_texture_created(self.video_format_1)
-        self.assert_update_texture_scheduled(1 / 30)
+        self.assert_update_texture_scheduled()
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.0)
+        self.pretend_player_at_time(0.0)
         self.player.update_texture()
         self.assert_texture_updated('a')
 
@@ -757,20 +653,20 @@ class PlayerTestCase(FutureTestCase):
         self.player.queue(mock_source)
         self.player.play()
         self.assert_new_texture_created(self.video_format_1)
-        self.assert_update_texture_scheduled(1 / 30)
+        self.assert_update_texture_scheduled()
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.0)
+        self.pretend_player_at_time(0.0)
         self.player.update_texture()
         self.assert_texture_updated('a')
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.1)
+        self.pretend_player_at_time(0.1)
         self.player.update_texture()
         self.assert_texture_updated('b')
 
         self.reset_mocks()
-        self.pretend_driver_player_at_time(0.2)
+        self.pretend_player_at_time(0.2)
         self.player.update_texture()
         self.assert_texture_not_updated()
 
@@ -779,20 +675,13 @@ class PlayerTestCase(FutureTestCase):
         self.assert_texture_not_updated()
 
     def test_video_without_audio(self):
-        """It is possible to have videos without audio streams. A special audio driver will take
-        care of providing the timing."""
+        """It is possible to have videos without audio streams."""
         mock_source = self.create_mock_source(None, self.video_format_1)
         self.player.queue(mock_source)
         self.player.play()
         self.assert_new_texture_created(self.video_format_1)
-        self.assert_update_texture_scheduled(1 / 30)
+        self.assert_update_texture_scheduled()
         self.assert_no_new_driver_player_created()
-        self.assert_silent_driver_player_created_for(mock_source)
-
-        self.reset_mocks()
-        self.pretend_silent_driver_player_at_time(1.)
-        self.player.delete()
-        self.assert_silent_driver_player_destroyed()
 
 
 class PlayerGroupTestCase(FutureTestCase):
