@@ -168,7 +168,10 @@ class DirectSoundBuffer(object):
             self._native_buffer3d = None
 
     def __del__(self):
-        assert _debug("Delete interface.DirectSoundBuffer")
+        self.delete()
+
+    def delete(self):
+        assert _debug("Delete interface.DirectSoundBuffer from AudioFormat {}".format(self.audio_format))
         if self._native_buffer is not None:
             self._native_buffer.Stop()
             self._native_buffer.Release()
@@ -418,8 +421,13 @@ class DirectSoundListener(object):
         self._native_listener = native_listener
 
     def __del__(self):
+        self.delete()
+
+    def delete(self):
         assert _debug("Delete interface.DirectSoundListener")
-        self._native_listener.Release()
+        if self._native_listener:
+            self._native_listener.Release()
+            self._native_listener = None
 
     @property
     def position(self):

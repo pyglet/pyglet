@@ -9,6 +9,9 @@ import random
 import time
 
 from pyglet.media.sources import AudioFormat
+import pyglet
+_debug = False
+pyglet.options['debug_media'] = _debug
 
 try:
     from pyglet.media.drivers import directsound
@@ -81,14 +84,17 @@ def audio_format_3d(request):
 
 @pytest.fixture
 def buffer_(driver, audio_format):
-    return driver.create_buffer(audio_format)
+    buffer = driver.create_buffer(audio_format)
+    yield buffer
+    buffer.delete()
 
 
 @pytest.fixture
 def buffer_3d(driver, audio_format_3d):
-    buf = driver.create_buffer(audio_format_3d)
-    assert buf.is3d
-    return buf
+    buffer = driver.create_buffer(audio_format_3d)
+    assert buffer.is3d
+    yield buffer
+    buffer.delete()
 
 
 @pytest.fixture
@@ -107,7 +113,9 @@ def filled_buffer(audio_format, buffer_):
 
 @pytest.fixture
 def listener(driver):
-    return driver.create_listener()
+    listener = driver.create_listener()
+    yield listener
+    listener.delete()
 
 
 def test_driver_create():
@@ -126,6 +134,8 @@ def test_buffer_volume(buffer_):
         listener.volume = _gain2db(vol)
         assert almost_equal(listener.volume, _gain2db(vol), 0.05)
         vol += 0.05
+
+
 
 
 def test_buffer_current_position_empty_buffer(buffer_):
