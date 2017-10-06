@@ -474,7 +474,7 @@ class OpenALBuffer(OpenALObject):
         return self._al_buffer.value
 
     def delete(self):
-        if self.context() and self.is_valid:
+        if self._al_buffer is not None and self.context() and self.is_valid:
             al.alDeleteBuffers(1, ctypes.byref(self._al_buffer))
             self._check_error('Error deleting buffer.')
             self._al_buffer = None

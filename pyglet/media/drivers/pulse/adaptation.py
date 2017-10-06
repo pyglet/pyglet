@@ -376,8 +376,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def get_time(self):
         if not self._read_index_valid:
-            assert _debug('get_time <_read_index_valid = False> -> None')
-            return
+            assert _debug('get_time <_read_index_valid = False> -> 0')
+            return 0
 
         t_info = self._get_timing_info()
         read_index = t_info.read_index

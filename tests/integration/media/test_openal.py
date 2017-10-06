@@ -2,7 +2,11 @@ from builtins import str, isinstance
 import pytest
 from tests import mock
 import time
+import weakref
 
+import pyglet
+_debug = False
+pyglet.options['debug_media'] = _debug
 from pyglet.media.sources.procedural import Silence
 
 try:
@@ -68,7 +72,8 @@ def test_context_make_current(context):
 
 @pytest.fixture
 def buffer_pool(context):
-    pool = openal.interface.OpenALBufferPool(context)
+    weak_context = weakref.ref(context)
+    pool = openal.interface.OpenALBufferPool(weak_context)
     yield pool
     pool.clear()
 
