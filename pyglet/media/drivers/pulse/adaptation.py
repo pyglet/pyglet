@@ -402,7 +402,6 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         # when we wrote the write index the first time. See _write_to_stream
         dt += t_info.transport_usec * 2
         dt -= t_info.sink_usec
-        dt = max(0, dt)
         # We convert back to seconds
         dt /= 1000000
         time = timestamp + dt

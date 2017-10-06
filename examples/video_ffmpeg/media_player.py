@@ -373,13 +373,16 @@ class PlayerWindow(pyglet.window.Window):
             control.draw()
 
     def on_begin_scroll(self):
+        print('on_begin_scroll')
         self._player_playing = self.player.playing
         self.player.pause()
 
     def on_change(self, value):
+        print('on_change')
         self.player.seek(value)
 
     def on_end_scroll(self):
+        print('on_end_scroll')
         if self._player_playing:
             self.player.play()
 
