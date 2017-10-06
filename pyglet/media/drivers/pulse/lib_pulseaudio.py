@@ -326,12 +326,10 @@ class struct_pa_timing_info(Structure):
         'configured_source_usec',
         'since_underrun',
     ]
+
 class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
+    _fields_ = [("tv_sec", c_long),
+                ("tv_usec", c_long)]
 
 struct_pa_timing_info._fields_ = [
     ('timestamp', struct_timeval),

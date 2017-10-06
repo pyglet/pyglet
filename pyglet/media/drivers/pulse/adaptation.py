@@ -367,12 +367,22 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         assert _debug('_get_write_index ->', write_index)
         return write_index
 
+    def _get_timing_info(self):
+        with self.stream:
+            self.stream.update_timing_info().wait().delete()
+
+        timing_info = self.stream.get_timing_info()
+        return timing_info
+
     def get_time(self):
         if not self._read_index_valid:
             assert _debug('get_time <_read_index_valid = False> -> None')
             return
 
-        read_index = self._get_read_index()
+        t_info = self._get_timing_info()
+        read_index = t_info.read_index
+        transport_usec = t_info.transport_usec
+        sink_usec = t_info.sink_usec
 
         write_index = 0
         timestamp = 0.0
@@ -387,7 +397,15 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             pass
 
         bytes_per_second = self.playlist.audio_format.bytes_per_second
-        time = timestamp + (read_index - write_index) / float(bytes_per_second)
+        dt = (read_index - write_index) / float(bytes_per_second) * 1000000
+        # We add 2x the transport time because we didn't take it into account
+        # when we wrote the write index the first time. See _write_to_stream
+        dt += t_info.transport_usec * 2
+        dt -= t_info.sink_usec
+        dt = max(0, dt)
+        # We convert back to seconds
+        dt /= 1000000
+        time = timestamp + dt
 
         assert _debug('get_time ->', time)
         return time
