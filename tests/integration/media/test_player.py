@@ -15,61 +15,11 @@ pyglet.options['debug_media_buffers'] = _debug
 
 from pyglet.media import Player
 from pyglet.media.sources.procedural import Silence
+from .mock_player import MockPlayer
 
 
-class PlayerTest(Player):
-    def __init__(self, event_loop):
-        self.event_loop = event_loop
-        self.events = []
-        super(PlayerTest, self).__init__()
-
-    def dispatch_event(self, event_type, *args):
-        super(PlayerTest, self).dispatch_event(event_type, *args)
-        if _debug:
-            print('PlayerTest: event {} received @ {}'.format(event_type, time.time()))
-        self.events.append((event_type, args))
-        self.event_loop.interrupt_event_loop()
-
-    def wait_for_event(self, timeout, *event_types):
-        end_time = time.time() + timeout
-
-        while time.time() < end_time:
-            if _debug:
-                print('PlayerTest: run for {} sec @ {}'.format(end_time-time.time(),
-                                                               time.time()))
-            self.event_loop.run_event_loop(duration=end_time-time.time())
-            if not self.events:
-                continue
-            event_type, args = self.events.pop()
-            if event_type in event_types:
-                return event_type, args
-        return None, None
-
-    def wait_for_all_events(self, timeout, *expected_events):
-        if _debug:
-            print('Wait for events @ {}'.format(time.time()))
-        end_time = time.time() + timeout
-        expected_events = list(expected_events)
-        received_events = []
-        while expected_events:
-            event_type, args = self.wait_for_event(timeout, *expected_events)
-            if _debug:
-                print('PlayerTest: got event {} @ {}'.format(event_type, time.time()))
-            if event_type is None and time.time() >= end_time:
-                pytest.fail('Timeout before all events have been received. Still waiting for: '
-                        + ','.join(expected_events))
-            elif event_type is not None:
-                if event_type in expected_events:
-                    expected_events.remove(event_type)
-                received_events.append((event_type, args))
-        return received_events
-
-    def wait(self, timeout):
-        end_time = time.time() + timeout
-        while time.time() < end_time:
-            duration = max(.01, end_time-time.time())
-            self.event_loop.run_event_loop(duration=duration)
-        #assert time.time() - end_time < .1
+class PlayerTest(MockPlayer, Player):
+    pass
 
 
 @pytest.fixture

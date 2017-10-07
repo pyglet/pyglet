@@ -148,9 +148,10 @@ class PulseAudioMainLoop(object):
         """Construct a new context in this mainloop."""
         assert self._pa_mainloop is not None
         app_name = self._get_app_name()
-        return pa.pa_context_new(self._pa_mainloop,
-                                 app_name.encode('ASCII')
-                                 )
+        context = pa.pa_context_new(self._pa_mainloop,
+                                    app_name.encode('ASCII')
+                                    )
+        return context
 
     def _get_app_name(self):
         """Get the application name as advertised to the pulseaudio server."""
@@ -224,6 +225,7 @@ class PulseAudioContext(PulseAudioLockable):
             while self.state is not None and not self.is_terminated:
                 self.wait()
 
+            self._disconnect_callbacks()
             pa.pa_context_unref(self._pa_context)
             self._pa_context = None
 
@@ -348,6 +350,12 @@ class PulseAudioContext(PulseAudioLockable):
         pa.pa_context_set_state_callback(self._pa_context,
                                          self._state_cb_func, None)
 
+    def _disconnect_callbacks(self):
+        self._state_cb_func = None
+        pa.pa_context_set_state_callback(self._pa_context,
+                                         pa.pa_context_notify_cb_t(0),
+                                         None)
+
     def _state_callback(self, context, userdata):
         self.state = pa.pa_context_get_state(self._pa_context)
         assert _debug('PulseAudioContext: state changed to {}'.format(
@@ -420,8 +428,8 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
                 while not (self.is_terminated or self.is_failed):
                     self.wait()
 
+        self._disconnect_callbacks()
         pa.pa_stream_unref(self._pa_stream)
-        self._diconnect_callbacks()
         self._pa_stream = None
 
     @property
@@ -593,10 +601,20 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         pa.pa_stream_set_write_callback(self._pa_stream, self._cb_write, None)
         pa.pa_stream_set_state_callback(self._pa_stream, self._cb_state, None)
 
-    def _diconnect_callbacks(self):
+    def _disconnect_callbacks(self):
         self._cb_underflow = None
         self._cb_write = None
         self._cb_state = None
+
+        pa.pa_stream_set_underflow_callback(self._pa_stream,
+                                            pa.pa_stream_notify_cb_t(0),
+                                            None)
+        pa.pa_stream_set_write_callback(self._pa_stream,
+                                        pa.pa_stream_request_cb_t(0),
+                                        None)
+        pa.pa_stream_set_state_callback(self._pa_stream,
+                                        pa.pa_stream_notify_cb_t(0),
+                                        None)
 
     def _underflow_callback(self, stream, userdata):
         assert _debug("PulseAudioStream: underflow")
