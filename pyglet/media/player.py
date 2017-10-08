@@ -406,6 +406,7 @@ class Player(pyglet.event.EventDispatcher):
         else:
             delay = ts - time
 
+        delay = max(0.0, delay)
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.9", delay, ts)
         pyglet.clock.schedule_once(self.update_texture, delay)
