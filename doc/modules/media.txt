@@ -36,7 +36,8 @@ Classes
 
   .. automethod:: on_eos
   .. automethod:: on_player_eos
-  .. automethod:: on_source_group_eos
+  .. automethod:: on_playlist_exhausted
+  .. automethod:: on_player_next_source
 
   .. rubric:: Attributes
 
@@ -76,7 +77,7 @@ Classes
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: SourceGroup
+.. autoclass:: PlayList
   :members:
   :undoc-members:
 

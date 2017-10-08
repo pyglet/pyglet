@@ -7,16 +7,16 @@ mixing and surround-sound 3D positioning.  Video is played into OpenGL
 textures, and so can be easily be manipulated in real-time by applications 
 and incorporated into 3D environments.
 
-Decoding of compressed audio and video is provided by `AVbin`_, an optional
-component available for Linux, Windows and Mac OS X. AVbin needs to be installed 
-separately.
+Decoding of compressed audio and video is provided by `FFmpeg`_, an optional
+component available for Linux, Windows and Mac OS X. FFmpeg needs to be 
+installed separately.
 
-If AVbin is not present, pyglet will fall back to reading uncompressed WAV
+If FFmpeg is not present, pyglet will fall back to reading uncompressed WAV
 files only.  This may be sufficient for many applications that require only a
 small number of short sounds, in which case those applications need not
-distribute AVbin.
+distribute FFmpeg.
 
-.. _AVbin: http://code.google.com/p/avbin
+.. _FFmpeg: https://www.ffmpeg.org/download.html
 
 .. _openal.org: http://www.openal.org/downloads.html
 
@@ -24,10 +24,10 @@ Audio drivers
 -------------
 
 pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio.  Only one 
-ofthese drivers can be used in an application.  In most cases you won't need to concern
-yourself with choosing a driver, but you can manually select one if desired.  This
-must be done before the :py:mod:`pyglet.media` module is loaded.  The available drivers
-depend on your operating system:
+of these drivers can be used in an application. In most cases you won't need 
+to concern yourself with choosing a driver, but you can manually select one if
+desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
+The available drivers depend on your operating system:
 
     .. list-table::
         :header-rows: 1
@@ -45,15 +45,15 @@ depend on your operating system:
           - 
           - Pulseaudio
 
-The audio driver can be set through the ``audio`` key of the :py:data:`pyglet.options`
-dictionary.  For example::
+The audio driver can be set through the ``audio`` key of the 
+:py:data:`pyglet.options` dictionary. For example::
 
-    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', silent')
+    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', 'silent')
 
-This tells pyglet to try using the OpenAL driver first, and if not available to try Pulseaudio
-and DirectSound in that order.  If all else fails, the silent driver will be used.
-The ``audio`` option can be a list of any of these strings, giving the preference order for each
-driver:
+This tells pyglet to try using the OpenAL driver first, and if not available 
+to try Pulseaudio and DirectSound in that order. If all else fails, no driver
+will be instantiated. The ``audio`` option can be a list of any of these 
+strings, giving the preference order for each driver:
 
     .. list-table::
         :header-rows: 1
@@ -69,8 +69,8 @@ driver:
         * - ``silent``
           - No audio output
 
-You must set the ``audio`` option before importing :mod:`pyglet.media`.  You can
-alternatively set it through an environment variable; see 
+You must set the ``audio`` option before importing :mod:`pyglet.media`. You 
+can alternatively set it through an environment variable; see 
 :ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
@@ -80,20 +80,21 @@ DirectSound
 ^^^^^^^^^^^
 
 DirectSound is available only on Windows, and is installed by default.
-pyglet uses only DirectX 7 features.  On Windows Vista, DirectSound does not support
-hardware audio mixing or surround sound.
+pyglet uses only DirectX 7 features. On Windows Vista, DirectSound does not 
+support hardware audio mixing or surround sound.
 
 OpenAL
 ^^^^^^
 
 OpenAL is included with Mac OS X.  Windows users can download a generic driver
-from `openal.org`_, or from their sound device's manufacturer.  Linux users can
-use the reference implementation also provided by Creative.  For example,
-Ubuntu users can ``apt-get install openal``.  ALUT is not required.  pyglet makes use
-of OpenAL 1.1 features if available, but will also work with OpenAL 1.0.
+from `openal.org`_, or from their sound device's manufacturer. Linux users can
+use the reference implementation also provided by Creative. For example,
+Ubuntu users can ``apt-get install openal``.  ALUT is not required.  pyglet 
+makes use of OpenAL 1.1 features if available, but will also work with 
+OpenAL 1.0.
 
 Due to a long-standing bug in the reference implementation of OpenAL, stereo
-audio is downmixed to mono on Linux.  This does not affect Windows or Mac OS X
+audio is downmixed to mono on Linux. This does not affect Windows or Mac OS X
 users.
 
 Pulse
@@ -124,12 +125,12 @@ in preference to the OpenAL driver (this is the default).
 Supported media types
 ---------------------
 
-If AVbin is not installed, only uncompressed RIFF/WAV files encoded with
+If FFmpeg is not installed, only uncompressed RIFF/WAV files encoded with
 linear PCM can be read.
 
-With AVbin, many common and less-common formats are supported.  Due to the
+With FFmpeg, many common and less-common formats are supported.  Due to the
 large number of combinations of audio and video codecs, options, and container
-formats, it is difficult to provide a complete yet useful list.  Some of the
+formats, it is difficult to provide a complete yet useful list. Some of the
 supported audio formats are:
 
 * AU
@@ -151,14 +152,13 @@ Some of the supported video formats are:
 * Xvid
 * WMV
 
-For a complete list, see the AVbin sources.  Otherwise, it is probably simpler
-to simply try playing back your target file with the ``media_player.py``
-example.
+For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
+to try playing back your target file with the ``media_player.py`` example.
 
-New versions of AVbin as they are released may support additional formats, or
-fix errors in the current implementation.  AVbin is completely future- and
-backward-compatible, so no change to pyglet is needed to use a newer version
-of AVbin -- just install it in place of the old version.
+New versions of FFmpeg as they are released may support additional formats, or
+fix errors in the current implementation. Currently a C bindings was written
+with ctypes using FFmpeg v3.3. Future versions of FFmpeg might need a rewrite
+of the binding.
 
 Loading media
 -------------

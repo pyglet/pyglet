@@ -100,7 +100,7 @@ class VideoFormat(object):
     should be displayed at 1280x480.  It is the responsibility of the
     application to perform this scaling.
 
-    :Ivariables:
+    :Parameters:
         `width` : int
             Width of video image, in pixels.
         `height` : int
@@ -133,7 +133,7 @@ class AudioData(object):
 
     This class is used internally by pyglet.
 
-    :Ivariables:
+    :Parameters:
         `data` : str or ctypes array or pointer
             Sample data.
         `length` : int
@@ -239,7 +239,7 @@ class SourceInfo(object):
 class Source(object):
     """An audio and/or video source.
 
-    :Ivariables:
+    :Parameters:
         `audio_format` : `AudioFormat`
             Format of the audio in this source, or None if the source is
             silent.
@@ -247,10 +247,9 @@ class Source(object):
             Format of the video in this source, or None if there is no
             video.
         `info` : `SourceInfo`
-            Source metadata such as title, artist, etc; or None if the
-            information is not available.
-
             .. versionadded:: 1.2
+                Source metadata such as title, artist, etc; or None if the
+                information is not available.
     """
 
     _duration = None
