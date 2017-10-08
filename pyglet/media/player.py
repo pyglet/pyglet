@@ -270,7 +270,7 @@ class Player(pyglet.event.EventDispatcher):
             # player is not stopped
             self._audio_player.clear()
         if self.source.video_format:
-            self.update_texture(time=time)
+            self.update_texture()
             pyglet.clock.unschedule(self.update_texture)
         self._set_playing(playing)
 
@@ -351,7 +351,7 @@ class Player(pyglet.event.EventDispatcher):
             return
         self.seek(time)
 
-    def update_texture(self, dt=None, time=None):
+    def update_texture(self, dt=None):
         """Manually update the texture from the current source. This happens
         automatically, so you shouldn't need to call this method.
         """
@@ -364,14 +364,13 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
         _playlist = self._playlist
-        if time is None:
-            time = self.time
-            if bl.logger is not None:
-                bl.logger.log(
-                    "p.P.ut.1.2",
-                    time,
-                    self._audio_player.get_time() if self._audio_player else 0
-                )
+        time = self.time
+        if bl.logger is not None:
+            bl.logger.log(
+                "p.P.ut.1.2",
+                time,
+                self._audio_player.get_time() if self._audio_player else 0
+            )
 
         frame_rate = _playlist.video_format.frame_rate
         frame_duration = 1 / frame_rate
