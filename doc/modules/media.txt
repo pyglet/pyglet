@@ -18,6 +18,7 @@ Classes
 -------
 
 .. autoclass:: pyglet.media.player.Player
+  :members: loop
 
   .. rubric:: Methods
 

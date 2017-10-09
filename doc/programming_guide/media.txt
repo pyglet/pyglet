@@ -1,9 +1,9 @@
 Sound and video
 ===============
 
-pyglet can play many audio and video formats.  Audio is played back with
+pyglet can play many audio and video formats. Audio is played back with
 either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated 
-mixing and surround-sound 3D positioning.  Video is played into OpenGL 
+mixing and surround-sound 3D positioning. Video is played into OpenGL 
 textures, and so can be easily be manipulated in real-time by applications 
 and incorporated into 3D environments.
 
@@ -12,7 +12,7 @@ component available for Linux, Windows and Mac OS X. FFmpeg needs to be
 installed separately.
 
 If FFmpeg is not present, pyglet will fall back to reading uncompressed WAV
-files only.  This may be sufficient for many applications that require only a
+files only. This may be sufficient for many applications that require only a
 small number of short sounds, in which case those applications need not
 distribute FFmpeg.
 
@@ -23,7 +23,7 @@ distribute FFmpeg.
 Audio drivers
 -------------
 
-pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio.  Only one 
+pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio. Only one 
 of these drivers can be used in an application. In most cases you won't need 
 to concern yourself with choosing a driver, but you can manually select one if
 desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
@@ -86,10 +86,10 @@ support hardware audio mixing or surround sound.
 OpenAL
 ^^^^^^
 
-OpenAL is included with Mac OS X.  Windows users can download a generic driver
+OpenAL is included with Mac OS X. Windows users can download a generic driver
 from `openal.org`_, or from their sound device's manufacturer. Linux users can
 use the reference implementation also provided by Creative. For example,
-Ubuntu users can ``apt-get install openal``.  ALUT is not required.  pyglet 
+Ubuntu users can ``apt-get install openal``. ALUT is not required. pyglet 
 makes use of OpenAL 1.1 features if available, but will also work with 
 OpenAL 1.0.
 
@@ -107,7 +107,7 @@ Linux Issues
 ^^^^^^^^^^^^
 
 Linux users have the option of choosing between OpenAL and Pulse for audio
-output.  Unfortunately OpenAL has severe limitations that are outside the 
+output. Unfortunately OpenAL has severe limitations that are outside the 
 scope of pyglet's control.
 
 If your application can manage without stereo playback, you should use the 
@@ -119,7 +119,7 @@ If your application needs stereo playback, consider using the Pulse driver
 in preference to the OpenAL driver (this is the default).
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
-    distributions.  It can be downloaded separately from your audio device
+    distributions. It can be downloaded separately from your audio device
     manufacturer or `openal.org <http://www.openal.org/downloads.html>`_
 
 Supported media types
@@ -128,7 +128,7 @@ Supported media types
 If FFmpeg is not installed, only uncompressed RIFF/WAV files encoded with
 linear PCM can be read.
 
-With FFmpeg, many common and less-common formats are supported.  Due to the
+With FFmpeg, many common and less-common formats are supported. Due to the
 large number of combinations of audio and video codecs, options, and container
 formats, it is difficult to provide a complete yet useful list. Some of the
 supported audio formats are:
@@ -160,6 +160,25 @@ fix errors in the current implementation. Currently a C bindings was written
 with ctypes using FFmpeg v3.3. Future versions of FFmpeg might need a rewrite
 of the binding.
 
+FFmpeg installation
+-------------------
+
+You can install FFmpeg for your platform by following the instructions found
+in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page.
+
+For Mac OS and Linux, the library is usually installed system-wide. For 
+Windows users, it's not recommended to install the library in one of the 
+windows sub-folders.
+
+Instead we recommend to use the :py:data:`pyglet.options`
+``search_local_libs``::
+    
+    import pyglet
+    pyglet.options['search_local_libs'] = True
+
+This will allow pyglet to find the FFmpeg binaries in the ``lib`` folder 
+located in your running script folder.
+
 Loading media
 -------------
 
@@ -168,34 +187,38 @@ Audio and video files are loaded in the same way, using the
 
     source = pyglet.media.load('explosion.wav')
 
-If the media file is bundled with the application, consider using the resource
-module (see :ref:`guide_resources`).
+If the media file is bundled with the application, consider using the
+:py:mod:`~pyglet.resource` module (see :ref:`guide_resources`).
 
-The result of loading a media file is a :py:class:`~pyglet.media.Source` object.  This object provides
-useful information about the type of media encoded in the file, and serves as
-an opaque object used for playing back the file (described in the next
-section).
+The result of loading a media file is a 
+:py:class:`~pyglet.media.Source` object. This object provides useful 
+information about the type of media encoded in the file, and serves as an 
+opaque object used for playing back the file (described in the next section).
 
-The :py:func:`~pyglet.media.load` function will raise a :py:class:`~pyglet.media.exceptions.MediaException` if the format is unknown.
-`IOError` may also be raised if the file could not be read from disk.  Future
-versions of pyglet will also support reading from arbitrary file-like objects,
-however a valid filename must currently be given.
+The :py:func:`~pyglet.media.load` function will raise a
+:py:class:`~pyglet.media.exceptions.MediaException` if the format is unknown.
+``IOError`` may also be raised if the file could not be read from disk.
+Future versions of pyglet will also support reading from arbitrary file-like
+objects, however a valid filename must currently be given.
 
-The length of the media file is given by the `duration` property, which
-returns the media's length in seconds.
+The length of the media file is given by the
+:py:class:`~pyglet.media.Source.duration` property, which returns the media's
+length in seconds.
 
-Audio metadata is provided in the source's :py:attr:`~pyglet.media.Source.audio_format` attribute, which is
-`None` for silent videos.  This metadata is not generally useful to
-applications.  See the :py:class:`~pyglet.media.AudioFormat` class documentation for details.  
+Audio metadata is provided in the source's
+:py:attr:`~pyglet.media.Source.audio_format` attribute, which is ``None`` for
+silent videos. This metadata is not generally useful to applications. See
+the :py:class:`~pyglet.media.AudioFormat` class documentation for details.
 
-Video metadata is provided in the source's :py:attr:`~pyglet.media.Source.video_format` attribute, which is
-`None` for audio files.  It is recommended that this attribute is checked
-before attempting play back a video file -- if a movie file has a readable
-audio track but unknown video format it will appear as an audio file.
+Video metadata is provided in the source's
+:py:attr:`~pyglet.media.Source.video_format` attribute, which is ``None`` for
+audio files. It is recommended that this attribute is checked before
+attempting play back a video file -- if a movie file has a readable audio
+track but unknown video format it will appear as an audio file.
 
-You can use the video metadata, described in a :py:class:`~pyglet.media.VideoFormat` object, to set up
-display of the video before beginning playback.  The attributes are as
-follows:
+You can use the video metadata, described in a
+:py:class:`~pyglet.media.VideoFormat` object, to set up display of the video
+before beginning playback. The attributes are as follows:
 
     .. list-table::
         :header-rows: 1
@@ -208,7 +231,7 @@ follows:
           - The aspect ratio of each video pixel.
 
 You must take care to apply the sample aspect ratio to the video image size
-for display purposes.  The following code determines the display size for a
+for display purposes. The following code determines the display size for a
 given video format::
 
     def get_video_size(width, height, sample_aspect):
@@ -221,19 +244,20 @@ given video format::
 
 Media files are not normally read entirely from disk; instead, they are
 streamed into the decoder, and then into the audio buffers and video memory
-only when needed.  This reduces the startup time of loading a file and reduces
+only when needed. This reduces the startup time of loading a file and reduces
 the memory requirements of the application.
 
 However, there are times when it is desirable to completely decode an audio
-file in memory first.  For example, a sound that will be played many times
-(such as a bullet or explosion) should only be decoded once.  You can instruct
+file in memory first. For example, a sound that will be played many times
+(such as a bullet or explosion) should only be decoded once. You can instruct
 pyglet to completely decode an audio file into memory at load time::
 
     explosion = pyglet.media.load('explosion.wav', streaming=False)
 
-The resulting source is an instance of :class:`~pyglet.media.StaticSource`, which provides the same
-interface as a streaming source.  You can also construct a :class:`~pyglet.media.StaticSource`
-directly from an already-loaded :class:`~pyglet.media.Source`::
+The resulting source is an instance of :class:`~pyglet.media.StaticSource`,
+which provides the same interface as a :class:`~pyglet.media.StreamingSource`.
+You can also construct a :class:`~pyglet.media.StaticSource` directly from an
+already- loaded :class:`~pyglet.media.Source`::
 
     explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
 
@@ -241,7 +265,7 @@ Procedural Audio
 ----------------
 
 In addition to loading audio files, the :py:mod:`pyglet.media.procedural` module is available
-for simple audio synthesis.  There are several basic waveforms available:
+for simple audio synthesis. There are several basic waveforms available:
 
 * :py:class:`~pyglet.media.sources.procedural.Sine`
 * :py:class:`~pyglet.media.sources.procedural.Sawtooth`
@@ -252,15 +276,15 @@ for simple audio synthesis.  There are several basic waveforms available:
 * :py:class:`~pyglet.media.sources.procedural.Digitar`
 
 The module documentation for each will provide more information on constructing them, but at
-a minimum you will need to specify the duration.  You will also want to set the frequency
+a minimum you will need to specify the duration. You will also want to set the frequency
 (most waveforms will default to 440Hz). Some waveforms, such as the FM, have additional parameters.
 
-For shaping the waveforms, several simple envelopes are available.  These envelopes affect
-the amplitude (volume), and can make for more natural sounding tones.  You first create an envelope
-instance, and then pass it into the constructor of any of the above waveforms.  The same envelope
+For shaping the waveforms, several simple envelopes are available. These envelopes affect
+the amplitude (volume), and can make for more natural sounding tones. You first create an envelope
+instance, and then pass it into the constructor of any of the above waveforms. The same envelope
 instance can be passed to any number of waveforms, reducing duplicate code when creating multiple
-sounds.  If no envelope is used, all procedural classes will default to the FlatEnvelope of maximum
-volume, which esentially has no effect on the sound.  Check the module documentation of each
+sounds. If no envelope is used, all procedural classes will default to the FlatEnvelope of maximum
+volume, which esentially has no effect on the sound. Check the module documentation of each
 Envelope to see which parameters are available.
 
 * :py:class:`~pyglet.media.sources.procedural.FlatEnvelope`
@@ -282,11 +306,11 @@ Simple audio playback
 ---------------------
 
 Many applications, especially games, need to play sounds in their entirety
-without needing to keep track of them.  For example, a sound needs to be
+without needing to keep track of them. For example, a sound needs to be
 played when the player's space ship explodes, but this sound never needs to
 have its volume adjusted, or be rewound, or interrupted.
 
-pyglet provides a simple interface for this kind of use-case.  Call the :meth:`~pyglet.media.Source.play`
+pyglet provides a simple interface for this kind of use-case. Call the :meth:`~pyglet.media.Source.play`
 method of any :class:`~pyglet.media.Source` to play it immediately and completely::
 
     explosion = pyglet.media.load('explosion.wav', streaming=False)
@@ -305,28 +329,30 @@ Controlling playback
 
 You can implement many functions common to a media player using the 
 :py:class:`~pyglet.media.player.Player`
-class.  Use of this class is also necessary for video playback.  There are no
+class. Use of this class is also necessary for video playback. There are no
 parameters to its construction::
 
     player = pyglet.media.Player()
 
-A player will play any source that is "queued" on it.  Any number of sources
+A player will play any source that is *queued* on it. Any number of sources
 can be queued on a single player, but once queued, a source can never be
-dequeued (until it is removed automatically once complete).  The main use of
-this queuing mechanism is to facilitate "gapless" transitions between playback
-of media files.
+dequeued (until it is removed automatically once complete). The main use of
+this queueing mechanism is to facilitate "gapless" transitions between
+playback of media files.
 
-A :py:class:`~pyglet.media.StreamingSource` can only ever be queued on one player, and only once on
-that player.  :py:class:`~pyglet.media.StaticSource` objects can be queued any number of times on any
-number of players.  Recall that a :py:class:`~pyglet.media.StaticSource` can be created by passing
-``streaming=False`` to the `load` method.
+A :py:class:`~pyglet.media.StreamingSource` can only ever be queued on one
+player, and only once on that player. :py:class:`~pyglet.media.StaticSource`
+objects can be queued any number of times on any number of players. Recall
+that a :py:class:`~pyglet.media.StaticSource` can be created by passing
+``streaming=False`` to the :py:func:`pyglet.media.load` method.
 
 In the following example, two sounds are queued onto a player::
 
     player.queue(source1)
     player.queue(source2)
 
-Playback begins with the player's :py:meth:`~pyglet.media.Player.play` method is called::
+Playback begins with the player's :py:meth:`~pyglet.media.Player.play` method
+is called::
 
     player.play()
 
@@ -348,8 +374,8 @@ Standard controls for controlling playback are provided by these methods:
         * - :py:meth:`~pyglet.media.Player.seek`
           - Seek to a specific time within the current source.
 
-Note that there is no `stop` method.  If you do not need to resume playback,
-simply pause playback and discard the player and source objects.  Using the
+Note that there is no `stop` method. If you do not need to resume playback,
+simply pause playback and discard the player and source objects. Using the
 :meth:`~pyglet.media.Player.next_source` method does not guarantee gapless playback.
 
 There are several properties that describe the player's current state:
@@ -361,46 +387,53 @@ There are several properties that describe the player's current state:
           - Description
         * - :py:attr:`~pyglet.media.Player.time`
           - The current playback position within the current source, in
-            seconds.  This is read-only (but see the :py:meth:`~pyglet.media.Player.seek` method).
+            seconds. This is read-only (but see the :py:meth:`~pyglet.media.Player.seek` method).
         * - :py:attr:`~pyglet.media.Player.playing`
           - True if the player is currently playing, False if there are no
-            sources queued or the player is paused.  This is read-only (but
+            sources queued or the player is paused. This is read-only (but
             see the :py:meth:`~pyglet.media.Player.pause` and :py:meth:`~pyglet.media.Player.play` methods).
         * - :py:attr:`~pyglet.media.Player.source`
-          - A reference to the current source being played.  This is
+          - A reference to the current source being played. This is
             read-only (but see the :py:meth:`~pyglet.media.Player.queue` method).
         * - :py:attr:`~pyglet.media.Player.volume`
           - The audio level, expressed as a float from 0 (mute) to 1 (normal
-            volume).  This can be set at any time.
+            volume). This can be set at any time.
+        * - :py:attr:`~pyglet.media.player.Player.loop`
+          - ``True`` if the current source must be repeated when reaching the
+            end. If set to ``False``, the next queued source will play when
+            reaching the end.
 
 When a player reaches the end of the current source, by default it will move
-immediately to the next queued source.  If there are no more sources, playback
-stops until another is queued.  There are several other possible behaviours,
-which can be controlled on :py:class:`~pyglet.media.SourceGroup` objects.
+immediately to the next queued source. If there are no more sources, playback
+stops until another source is queued. The :class:`~pyglet.media.player.Player`
+has a :py:attr:`~pyglet.media.player.Player.loop` attribute which determines
+the player behaviour when the current source reaches the end. If
+:py:attr:`~pyglet.media.player.Player.loop` is ``False`` (default) the
+:class:`~pyglet.media.player.Player` starts to play the next queued source.
+Otherwise the :class:`~pyglet.media.player.Player` re-plays the current source
+until either :py:attr:`~pyglet.media.player.Player.loop` is set to ``False``
+or :py:meth:`~pyglet.media.Player.next_source` is called.
 
-A :class:`~pyglet.media.SourceGroup` contains multiple media sources with the same audio and video 
-format. Behaviour on reaching the end of the current source can be controlled
-through the :attr:`~pyglet.media.SourceGroup.loop` attribute.
-
-You can change a :py:class:`~pyglet.media.SourceGroup`'s :py:attr:`~pyglet.media.SourceGroup.loop` attribute at any time, 
-but be aware that unless sufficient time is given for the future data to be 
-decoded and buffered there may be a stutter or gap in playback.  If set well 
-in advance of the end of the source (say, several seconds), there will be no 
-disruption.
+You can change the :py:attr:`~pyglet.media.player.Player.loop` attribute at
+any time,  but be aware that unless sufficient time is given for the future
+data to be  decoded and buffered there may be a stutter or gap in playback.
+If set well  in advance of the end of the source (say, several seconds), there
+will be no  disruption.
 
 Incorporating video
 -------------------
 
-When a :py:class:`~pyglet.media.player.Player` is playing back a source with video, use the :meth:`~pyglet.media.Player.get_texture`
-method to obtain the video frame image.  This can be used to display
-the current video image syncronised with the audio track, for example::
+When a :py:class:`~pyglet.media.player.Player` is playing back a source with
+video, use the :meth:`~pyglet.media.Player.get_texture` method to obtain the
+video frame image. This can be used to display the current video image
+syncronised with the audio track, for example::
 
     @window.event
     def on_draw():
         player.get_texture().blit(0, 0)
 
-The texture is an instance of :class:`pyglet.image.Texture`, with an internal format
-of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``.  While the
+The texture is an instance of :class:`pyglet.image.Texture`, with an internal
+format of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``. While the
 texture will typically be created only once and subsequentally updated each
 frame, you should make no such assumption in your application -- future
 versions of pyglet may use multiple texture objects.
@@ -408,24 +441,26 @@ versions of pyglet may use multiple texture objects.
 Positional audio
 ----------------
 
-pyglet includes features for positioning sound within a 3D space.  This is particularly
-effective with a surround-sound setup, but is also applicable to stereo systems.
+pyglet includes features for positioning sound within a 3D space. This is
+particularly effective with a surround-sound setup, but is also applicable to
+stereo systems.
 
-A :py:class:`~pyglet.media.player.Player` in pyglet has an associated position in 3D space --
-that is, it is equivalent to an OpenAL "source".  The properties for setting
-these parameters are described in more detail in the API documentation; see
-for example :py:attr:`~pyglet.media.Player.position` and :py:attr:`~pyglet.media.Player.pitch`.
+A :py:class:`~pyglet.media.player.Player` in pyglet has an associated position
+in 3D space -- that is, it is equivalent to an OpenAL "source". The properties
+for setting these parameters are described in more detail in the API
+documentation; see for example :py:attr:`~pyglet.media.Player.position` and
+:py:attr:`~pyglet.media.Player.pitch`.
 
-A "listener" object is provided by the audio driver. To obtain the listener for the current
-audio driver::
+A "listener" object is provided by the audio driver. To obtain the listener
+for the current audio driver::
 
     pyglet.media.get_audio_driver().get_listener()
 
 This provides similar properties such as
 :py:attr:`~pyglet.media.listener.AbstractListener.position`,
 :py:attr:`~pyglet.media.listener.AbstractListener.forward_orientation` and
-:py:attr:`~pyglet.media.listener.AbstractListener.up_orientation` that describe the 
-position of the user in 3D space.
+:py:attr:`~pyglet.media.listener.AbstractListener.up_orientation` that
+describe the  position of the user in 3D space.
 
-Note that only mono sounds can be positioned.  Stereo sounds will play back as
+Note that only mono sounds can be positioned. Stereo sounds will play back as
 normal, and only their volume and pitch properties will affect the sound.

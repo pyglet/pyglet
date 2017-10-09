@@ -114,7 +114,7 @@ class Player(pyglet.event.EventDispatcher):
 
         self._mclock = MasterClock()
         #: Loop the current source indefinitely or until
-        #: :py:meth:`Player.next_source` is called.  Initially False.
+        #: :py:meth:`~Player.next_source` is called. Defaults to ``False``.
         #:
         #: :type: bool
         self.loop = False
