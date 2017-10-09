@@ -159,16 +159,17 @@ def dump_media():
     import pyglet.media
     print('audio driver:', pyglet.media.get_audio_driver())
 
-def dump_avbin():
-    '''Dump AVbin info.'''
-    try:
-        import pyglet.media.avbin
-        print('Library:', pyglet.media.avbin.av)
-        print('AVbin version:', pyglet.media.avbin.av.avbin_get_version())
-        print('FFmpeg revision:', \
-            pyglet.media.avbin.av.avbin_get_ffmpeg_revision())
-    except:
-        print('AVbin not available.')
+def dump_ffmpeg():
+    '''Dump FFmpeg info.'''
+    import pyglet
+    pyglet.options['search_local_libs'] = True
+    import pyglet.media
+
+    if pyglet.media.have_ffmpeg():
+        from pyglet.media.sources.ffmpeg import get_version
+        print('FFmpeg version:', get_version())
+    else:
+        print('FFmpeg not available.')
 
 def dump_al():
     '''Dump OpenAL info.'''
@@ -217,7 +218,7 @@ def dump():
     _try_dump('pyglet.gl.glu_info', dump_glu)
     _try_dump('pyglet.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
-    _try_dump('pyglet.media.avbin', dump_avbin)
+    _try_dump('pyglet.media.ffmpeg', dump_ffmpeg)
     _try_dump('pyglet.media.drivers.openal', dump_al)
     _try_dump('pyglet.input.wintab', dump_wintab)
 
