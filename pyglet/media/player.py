@@ -128,10 +128,12 @@ class Player(pyglet.event.EventDispatcher):
         """
         Queue the source on this player.
 
-        If the player has no source, the player will be paused immediately
-        on this source.
+        If the player has no source, the player will start to play immediately
+        or pause depending on its :attr:`.playing` attribute.
 
-        :param pyglet.media.Source source: The source to queue.
+        :Parameters:
+            `source`: ~pyglet.media.Source
+                The source to queue.
         """
         self._playlist.queue(source)
         self._set_playing(self._playing)
@@ -181,7 +183,7 @@ class Player(pyglet.event.EventDispatcher):
 
         The *playing* property is irrespective of whether or not there is
         actually a source to play. If *playing* is ``True`` and a source is
-        queued, it will begin playing immediately. If *playing* is ``False``,
+        queued, it will begin to play immediately. If *playing* is ``False``,
         it is implied that the player is paused. There is no other possible
         state.
         """
@@ -206,10 +208,15 @@ class Player(pyglet.event.EventDispatcher):
         self._set_playing(False)
 
     def delete(self):
-        """Tear down the player and any child objects."""
+        """Release the resources acquired by this player.
+
+        The internal audio player and the texture will be deleted.
+        """
         if self._audio_player:
             self._audio_player.delete()
             self._audio_player = None
+        if self._texture:
+            self._texture = None
 
     def next_source(self):
         """
@@ -253,6 +260,11 @@ class Player(pyglet.event.EventDispatcher):
         Seek for playback to the indicated timestamp in seconds on the current
         source. If the timestamp is outside the duration of the source, it
         will be clamped to the end.
+
+        :Parameters:
+            `time`: float
+                The time where to seek in the source, clamped to the beginning
+                and end of the source.
         """
         playing = self._playing
         if playing:
@@ -304,7 +316,7 @@ class Player(pyglet.event.EventDispatcher):
         _set('cone_outer_gain')
 
     def _get_source(self):
-        """Read-only. The current :py:class:`Source`, or ``None``."""
+        """Read-only. The current :class:`Source`, or ``None``."""
         return self._playlist.get_current_source()
 
     source = property(_get_source)
@@ -315,7 +327,8 @@ class Player(pyglet.event.EventDispatcher):
 
         The playback time is a float expressed in seconds, with 0.0 being the
         beginning of the media. The playback time returned represents the 
-        player master clock time.
+        player master clock time which is used to synchronize both the audio
+        and the video.
         """
         return self._mclock.get_time()
 
@@ -344,7 +357,7 @@ class Player(pyglet.event.EventDispatcher):
         return self._texture
 
     def seek_next_frame(self):
-        """Step forwards one video frame in the current Source.
+        """Step forwards one video frame in the current source.
         """
         time = self._playlist.get_next_video_timestamp()
         if time is None:
@@ -354,6 +367,10 @@ class Player(pyglet.event.EventDispatcher):
     def update_texture(self, dt=None):
         """Manually update the texture from the current source. This happens
         automatically, so you shouldn't need to call this method.
+
+        :Parameters:
+            `dt`: float
+                The time elapsed since the last call to ``update_texture``.
         """
         # self.pr.disable()
         # if dt > 0.05:
@@ -521,8 +538,11 @@ class Player(pyglet.event.EventDispatcher):
     def on_eos(self):
         """The current source ran out of data.
 
-        The default behaviour is to advance to the next source  in the 
-        playlist.
+        The default behaviour is to advance to the next source in the
+        playlist if the :attr:`.loop` attribute is set to ``False``.
+        If :attr:`.loop` attribute is set to ``True``, the current source
+        will start to play again until :meth:`next_source` is called or
+        :attr:`.loop` is set to ``False``.
 
         :event:
         """
@@ -537,7 +557,10 @@ class Player(pyglet.event.EventDispatcher):
             self.next_source()
 
     def on_player_next_source(self):
-        """The player starts to play the next source in the playlist
+        """The player starts to play the next queued source in the playlist.
+
+        This is a useful event for adjusting the window size to the new
+        source :class:`VideoFormat` for example.
 
         :event:
         """
