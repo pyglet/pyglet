@@ -249,8 +249,6 @@ class Player(pyglet.event.EventDispatcher):
             self.delete()
             playlist.next_source()
             self.dispatch_event('on_player_eos')
-            self.dispatch_event('on_playlist_exhausted') # Not really needed anymore...
-
 
     #: :deprecated: Use `next_source` instead.
     next = next_source  # old API, worked badly with 2to3
@@ -527,14 +525,6 @@ class Player(pyglet.event.EventDispatcher):
         if _debug:
             print('Player.on_player_eos')
 
-    def on_playlist_exhausted(self):
-        """The current playlist ran out of data.
-
-        :event:
-        """
-        if _debug:
-            print('Player.on_playlist_exhausted')
-
     def on_eos(self):
         """The current source ran out of data.
 
@@ -568,7 +558,6 @@ class Player(pyglet.event.EventDispatcher):
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
-Player.register_event_type('on_playlist_exhausted')
 Player.register_event_type('on_player_next_source')
 
 

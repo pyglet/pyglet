@@ -305,8 +305,6 @@ class PlayerTestCase(FutureTestCase):
         """
         on_eos_mock = mock.MagicMock(return_value=None)
         self.player.event('on_eos')(on_eos_mock)
-        on_playlist_exhausted_mock = mock.MagicMock(return_value=None)
-        self.player.event('on_playlist_exhausted')(on_playlist_exhausted_mock)
         on_player_eos_mock = mock.MagicMock(return_value=None)
         self.player.event('on_player_eos')(on_player_eos_mock)
         on_player_next_source_mock = mock.MagicMock(return_value=None)
@@ -314,14 +312,12 @@ class PlayerTestCase(FutureTestCase):
 
         def reset_eos_mocks():
             on_eos_mock.reset_mock()
-            on_playlist_exhausted_mock.reset_mock()
             on_player_eos_mock.reset_mock()
             on_player_next_source_mock.reset_mock()
 
-        def assert_eos_events_received(on_eos=False, on_playlist_exhausted=False, 
-                on_player_eos=False, on_player_next_source=False):
+        def assert_eos_events_received(on_eos=False, on_player_eos=False, 
+                                       on_player_next_source=False):
             self.assertEqual(on_eos_mock.called, on_eos)
-            self.assertEqual(on_playlist_exhausted_mock.called, on_playlist_exhausted)
             self.assertEqual(on_player_eos_mock.called, on_player_eos)
             self.assertEqual(on_player_next_source_mock.called, on_player_next_source)
 
@@ -351,8 +347,7 @@ class PlayerTestCase(FutureTestCase):
         reset_eos_mocks()
         self.player.dispatch_event('on_eos')
         self.assert_not_playing(None)
-        assert_eos_events_received(on_eos=True, on_playlist_exhausted=True, 
-            on_player_eos=True)
+        assert_eos_events_received(on_eos=True, on_player_eos=True)
 
     def test_pause_resume(self):
         """A stream can be paused. After that play will resume where paused."""
