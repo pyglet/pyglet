@@ -117,6 +117,8 @@ class Player(pyglet.event.EventDispatcher):
         #: :py:meth:`~Player.next_source` is called. Defaults to ``False``.
         #:
         #: :type: bool
+        #:
+        #: .. versionadded:: 1.4
         self.loop = False
 
         # self.pr = cProfile.Profile()
@@ -564,23 +566,16 @@ Player.register_event_type('on_player_next_source')
 class PlayerGroup(object):
     """Group of players that can be played and paused simultaneously.
 
-    :Ivariables:
-        `players` : list of `Player`
-            Players in this group.
+    Create a player group for the given list of players.
 
+    All players in the group must currently not belong to any other group.
+
+    :Parameters:
+        `players` : [Player]
+            List of :class:`.Player` s in this group.
     """
 
     def __init__(self, players):
-        """Create a player group for the given set of players.
-
-        All players in the group must currently not belong to any other
-        group.
-
-        :Parameters:
-            `players` : Sequence of `Player`
-                Players to add to this group.
-
-        """
         self.players = list(players)
 
     def play(self):

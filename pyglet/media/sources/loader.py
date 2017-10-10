@@ -55,10 +55,11 @@ def load(filename, file=None, streaming=True):
         `file` : file-like object
             Not yet supported.
         `streaming` : bool
-            If False, a :py:class:`~pyglet.media.StaticSource` will be returned; otherwise (default) a
-            `StreamingSource` is created.
+            If ``False``, a :py:class:`~pyglet.media.StaticSource` will be
+            returned; otherwise (default) a
+            :class:`~pyglet.media.StreamingSource` is created.
 
-    :rtype: `Source`
+    :rtype: Source
     """
     source = get_source_loader().load(filename, file)
     if not streaming:

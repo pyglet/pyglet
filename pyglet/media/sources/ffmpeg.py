@@ -129,7 +129,7 @@ def ffmpeg_open_filename(filename):
     '''Open the media file.
 
     :rtype: FFmpegFile
-        :return: The structure containing all the information for the media.
+    :return: The structure containing all the information for the media.
     '''
     file = FFmpegFile() # TODO: delete this structure and use directly AVFormatContext
     result = avformat.avformat_open_input(byref(file.context), 
@@ -160,7 +160,7 @@ def ffmpeg_file_info(file):
         - track
 
     :rtype: FileInfo
-        :return: The file info instance containing all the meta information.
+    :return: The file info instance containing all the meta information.
     '''
     info = FileInfo()
     info.n_streams = file.context.contents.nb_streams

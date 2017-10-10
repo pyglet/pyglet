@@ -54,7 +54,7 @@ class AudioFormat(object):
     should not modify the fields, as they are used internally to describe the
     format of data provided by the source.
 
-    :Ivariables:
+    :Parameters:
         `channels` : int
             The number of channels: 1 for mono or 2 for stereo (pyglet does
             not yet support surround-sound sources).
@@ -62,7 +62,6 @@ class AudioFormat(object):
             Bits per sample; only 8 or 16 are supported.
         `sample_rate` : int
             Samples per second (in Hertz).
-
     """
 
     def __init__(self, channels, sample_size, sample_rate):
@@ -92,7 +91,7 @@ class AudioFormat(object):
 class VideoFormat(object):
     """Video details.
 
-    An instance of this class is provided by sources with a video track. You
+    An instance of this class is provided by sources with a video stream. You
     should not modify the fields.
 
     Note that the sample aspect has no relation to the aspect ratio of the
@@ -142,10 +141,9 @@ class AudioData(object):
             Time of the first sample, in seconds.
         `duration` : float
             Total data duration, in seconds.
-        `events` : list of MediaEvent
-            List of events contained within this packet.  Events are
+        `events` : list of `MediaEvent`
+            List of events contained within this packet. Events are
             timestamped relative to this audio packet.
-
     """
     def __init__(self, data, length, timestamp, duration, events):
         self.data = data
@@ -164,7 +162,7 @@ class AudioData(object):
         return False
 
     def consume(self, bytes, audio_format):
-        """Remove some data from beginning of packet.  All events are
+        """Remove some data from beginning of packet. All events are
         cleared."""
         self.events = ()
         if bytes >= self.length:
@@ -190,7 +188,11 @@ class AudioData(object):
         self.timestamp += bytes / float(audio_format.bytes_per_second)
 
     def get_string_data(self):
-        """Return data as a string. (Python 3: return as bytes)"""
+        """Return data as a string. (Python 3: return as bytes)
+
+        :rtype: str (Python 2), bytes (Python 3)
+        :return: data as a (byte)string
+        """
         if self.data is None:
             return b''
 
@@ -278,7 +280,7 @@ class Source(object):
         This is a convenience method which creates a Player for
         this source and plays it immediately.
 
-        :rtype: `Player`
+        :rtype: Player
         """
         from pyglet.media.player import Player  # XXX Nasty circular dependency
         player = Player()
@@ -287,11 +289,13 @@ class Source(object):
         return player
 
     def get_animation(self):
-        """Import all video frames into memory as an :py:class:`~pyglet.image.Animation`.
+        """
+        Import all video frames into memory as an 
+        :py:class:`~pyglet.image.Animation`.
 
         An empty animation will be returned if the source has no video.
         Otherwise, the animation will contain all unplayed video frames (the
-        entire source, if it has not been queued on a player).  After creating
+        entire source, if it has not been queued on a player). After creating
         the animation, the source will be at EOS.
 
         This method is unsuitable for videos running longer than a
@@ -299,7 +303,7 @@ class Source(object):
 
         .. versionadded:: 1.1
 
-        :rtype: `pyglet.image.Animation`
+        :rtype: pyglet.image.Animation
         """
         from pyglet.image import Animation, AnimationFrame
         if not self.video_format:
@@ -332,13 +336,9 @@ class Source(object):
     def get_next_video_frame(self):
         """Get the next video frame.
 
-        Video frames may share memory: the previous frame may be invalidated
-        or corrupted when this method is called unless the application has
-        made a copy of it.
-
         .. versionadded:: 1.1
 
-        :rtype: `pyglet.image.AbstractImage`
+        :rtype: pyglet.image.AbstractImage
         :return: The next video frame image, or ``None`` if the video frame
             could not be decoded or there are no more video frames.
         """
@@ -347,7 +347,13 @@ class Source(object):
     # Internal methods that PlayList calls on the source:
 
     def seek(self, timestamp):
-        """Seek to given timestamp."""
+        """Seek to given timestamp.
+
+        :Parameters:
+            `timestamp`: float
+                Time where to seek in the source. The ``timestamp`` will be
+                clamped to the duration of the source. 
+        """
         raise CannotSeekException()
 
     def _get_queue_source(self):
@@ -366,7 +372,7 @@ class Source(object):
                 Time in sec to compensate due to a difference between the
                 master clock and the audio clock.
 
-        :rtype: `AudioData`
+        :rtype: AudioData
         :return: Next packet of audio data, or None if there is no (more)
             data.
         """
@@ -391,28 +397,32 @@ class StreamingSource(Source):
     def _get_queue_source(self):
         """Return the `Source` to be used as the queue source for a player.
 
-        Default implementation returns self."""
+        Default implementation returns self.
+
+        :rtype: Source
+        """
         if self._is_queued:
             raise MediaException('This source is already queued on a player.')
         self._is_queued = True
         return self
 
     def delete(self):
+        """Release the resources held by this StreamingSource"""
         pass
 
 class StaticSource(Source):
     """A source that has been completely decoded in memory.  This source can
     be queued onto multiple players any number of times.
+
+    Construct a :py:class:`~pyglet.media.StaticSource` for the data in 
+    ``source``.
+
+        :Parameters:
+            `source` : Source
+                The source to read and decode audio and video data from.
     """
     
     def __init__(self, source):
-        """Construct a :py:class:`~pyglet.media.StaticSource` for the data in `source`.
-
-        :Parameters:
-            `source` : `Source`
-                The source to read and decode audio and video data from.
-
-        """
         source = source._get_queue_source()
         if source.video_format:
             raise NotImplementedError(
@@ -445,11 +455,30 @@ class StaticSource(Source):
             return StaticMemorySource(self._data, self.audio_format)
 
     def get_audio_data(self, bytes, compensation_time=0.0):
+        """The StaticSource does not provide audio data.
+
+        When the StaticSource is queued on a
+        :class:`~pyglet.media.player.Player`, it creates a
+        :class:`.StaticMemorySource` containing its internal audio data and
+        audio format.
+
+        :raises RuntimeError:
+        """
         raise RuntimeError('StaticSource cannot be queued.')
 
-class StaticMemorySource(StaticSource):
-    """Helper class for default implementation of :py:class:`~pyglet.media.StaticSource`.  Do not use
-    directly."""
+class StaticMemorySource(StaticSource):     
+    """
+    Helper class for default implementation of
+    :py:class:`~pyglet.media.StaticSource`. Do not use directly.
+
+    This class is used internally by pyglet.
+
+    :Parameters:
+        `data`: AudioData
+            The audio data.
+        `audio_format`: AudioFormat
+            The audio format.
+    """ 
 
     def __init__(self, data, audio_format):
         """Construct a memory source over the given data buffer.
@@ -460,6 +489,12 @@ class StaticMemorySource(StaticSource):
         self._duration = len(data) / float(audio_format.bytes_per_second)
 
     def seek(self, timestamp):
+        """Seek to given timestamp.
+
+        :Parameters:
+            `timestamp`: float
+                Time where to seek in the source.
+        """
         offset = int(timestamp * self.audio_format.bytes_per_second)
 
         # Align to sample
@@ -471,6 +506,18 @@ class StaticMemorySource(StaticSource):
         self._file.seek(offset)
 
     def get_audio_data(self, bytes, compensation_time=0.0):
+        """Get next packet of audio data.
+
+        :Parameters:
+            `bytes` : int
+                Maximum number of bytes of data to return.
+            `compensation_time` : float
+                Not used in this class.
+
+        :rtype: AudioData
+        :return: Next packet of audio data, or None if there is no (more)
+            data.
+        """
         offset = self._file.tell()
         timestamp = float(offset) / self.audio_format.bytes_per_second
 
@@ -487,8 +534,13 @@ class StaticMemorySource(StaticSource):
         duration = float(len(data)) / self.audio_format.bytes_per_second
         return AudioData(data, len(data), timestamp, duration, [])
 
+
 class PlayList(object):
     """Represents a queue of sources.
+
+    This class is used internally by pyglet.
+
+    .. versionadded:: 1.4
     """
 
     # TODO can sources list go empty?  what behaviour (ignore or error)?
@@ -523,7 +575,7 @@ class PlayList(object):
     def has_next(self):
         """Check if there is a source behind the current one
 
-        :rtype: `bool`
+        :rtype: bool
         """
         return len(self._sources) > 1
 
@@ -572,7 +624,7 @@ class PlayList(object):
     def get_next_video_timestamp(self):
         """Get the timestamp of the next video frame for the current source.
 
-        :rtype: `float`
+        :rtype: float
         :return: The next timestamp, or `None` if there are no more video
             frames.
         """

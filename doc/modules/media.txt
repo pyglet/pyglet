@@ -37,7 +37,6 @@ Classes
 
   .. automethod:: on_eos
   .. automethod:: on_player_eos
-  .. automethod:: on_playlist_exhausted
   .. automethod:: on_player_next_source
 
   .. rubric:: Attributes
@@ -60,6 +59,8 @@ Classes
   .. automethod:: play
   .. automethod:: pause
 
+.. autoclass:: pyglet.media.sources.PlayList
+
 .. autoclass:: AudioFormat
 .. autoclass:: VideoFormat
 .. autoclass:: AudioData
@@ -78,9 +79,10 @@ Classes
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: PlayList
+.. autoclass:: pyglet.media.sources.base.StaticMemorySource
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: pyglet.media.listener.AbstractListener
   :members:
