@@ -14,7 +14,7 @@ To generate documentation you also need:
 
 To use and test all pyglet functionality you should also have:
 
-    - `AVbin <http://avbin.github.io/>`_
+    - `FFmpeg <https://www.ffmpeg.org/download.html>`_
     - `Pillow <https://pillow.readthedocs.io>`_
     - `coverage <https://coverage.readthedocs.io>`_
 
