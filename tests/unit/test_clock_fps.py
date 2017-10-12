@@ -41,17 +41,19 @@ class ClockTimingTestCase(unittest.TestCase):
         Because we are measuring time differences, we
         expect a small error (1%) from the expected value.
         """
+        pyclock = clock.get_default()
         sleep_time = 0.2
+
 
         # initialize internal counter
         clock.tick()
 
         # test between initialization and first tick
-        time.sleep(sleep_time)
+        pyclock.sleep(sleep_time * 1e6)
         delta_time_1 = clock.tick()
 
         # test between non-initialization tick and next tick
-        time.sleep(sleep_time)
+        pyclock.sleep(sleep_time * 1e6)
         delta_time_2 = clock.tick()
 
         self.assertAlmostEqual(delta_time_1, sleep_time, delta=0.01*sleep_time)
@@ -87,15 +89,16 @@ class ClockTimingTestCase(unittest.TestCase):
         ticks = 20
         fps_limit = 60
         expected_delta_time = ticks*1./fps_limit
+        pyclock = clock.get_default()
 
         clock.set_fps_limit(fps_limit)
 
-        t1 = time.time()
+        t1 = pyclock.time()
         # Initializes the timer state.
         clock.tick()
         for i in range(ticks):
             clock.tick()
-        t2 = time.time()
+        t2 = pyclock.time()
 
         computed_time_delta = t2 - t1
 
