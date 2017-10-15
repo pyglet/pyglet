@@ -146,7 +146,6 @@ import time
 import ctypes
 from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
-from collections import deque
 
 import pyglet.lib
 from pyglet import compat_platform
@@ -157,33 +156,22 @@ __version__ = '$Id$'
 
 
 if compat_platform in ('win32', 'cygwin'):
-    # Windows timer resolution is by default typically 1/64 beats per sec
-    # which is 15.6 ms. See https://stackoverflow.com/a/22862989/893822
-    # A timer precision of 1 ms should be enough for our need. So we are
-    # using the multimedia timer interface to set a better timer resolution.
-    # See https://msdn.microsoft.com/en-us/library/windows/desktop/dd742877(v=vs.85).aspx
+    # Win32 Sleep function is only 10-millisecond resolution, so instead
+    # use a waitable timer object, which has up to 100-nanosecond resolution
+    # (hardware and implementation dependent, of course).
+    _kernel32 = ctypes.windll.kernel32
 
-    class TIMECAPS(ctypes.Structure):
-        _fields_ = [("wPeriodMin",ctypes.c_uint),
-                    ("wPeriodMax",ctypes.c_uint)
-                   ]
 
     class _ClockBase(object):
-        _winmm = ctypes.windll.winmm
-
         def __init__(self):
-            tc = TIMECAPS()
-            # Get the minimum period resolution
-            self._winmm.timeGetDevCaps(ctypes.byref(tc), ctypes.sizeof(tc))
-            self.target_resolution = max(1, tc.wPeriodMin)
-            self._winmm.timeBeginPeriod(self.target_resolution)
+            self._timer = _kernel32.CreateWaitableTimerA(None, True, None)
 
         def sleep(self, microseconds):
-            delay_sec = microseconds / 1e6
-            time.sleep(delay_sec)
+            delay = ctypes.c_longlong(int(-microseconds * 10))
+            _kernel32.SetWaitableTimer(self._timer, ctypes.byref(delay),
+                                       0, ctypes.c_void_p(), ctypes.c_void_p(), False)
+            _kernel32.WaitForSingleObject(self._timer, 0xffffffff)
 
-        def __del__(self):
-            self._winmm.timeEndPeriod(self.target_resolution)
 
     _default_time_function = time.clock
 
@@ -272,7 +260,7 @@ class Clock(_ClockBase):
         self.time = time_function
         self.next_ts = self.time()
         self.last_ts = None
-        self.times = deque()
+        self.times = []
 
         self.set_fps_limit(fps_limit)
         self.cumulative_time = 0
@@ -297,7 +285,7 @@ class Clock(_ClockBase):
             delta_t = 0
         else:
             delta_t = ts - self.last_ts
-            self.times.appendleft(delta_t)
+            self.times.insert(0, delta_t)
             if len(self.times) > self.window_size:
                 self.cumulative_time -= self.times.pop()
         self.cumulative_time += delta_t
