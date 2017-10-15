@@ -60,8 +60,8 @@ class ClockTimingTestCase(unittest.TestCase):
         sleep(sleep_time)
         delta_time_2 = clock.tick()
 
-        self.assertAlmostEqual(delta_time_1, sleep_time, delta=0.015*sleep_time)
-        self.assertAlmostEqual(delta_time_2, sleep_time, delta=0.015*sleep_time)
+        self.assertAlmostEqual(delta_time_1, sleep_time, delta=0.01*sleep_time)
+        self.assertAlmostEqual(delta_time_2, sleep_time, delta=0.01*sleep_time)
 
     def test_compute_fps(self):
         """
