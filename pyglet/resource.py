@@ -130,7 +130,11 @@ def get_script_home():
     :rtype: str
     """
     frozen = getattr(sys, 'frozen', None)
-    if frozen in ('windows_exe', 'console_exe'):
+    meipass = getattr(sys, '_MEIPASS', None)
+    if meipass:
+        # PyInstaller
+        return meipass
+    elif frozen in ('windows_exe', 'console_exe'):
         return os.path.dirname(sys.executable)
     elif frozen == 'macosx_app':
         # py2app
