@@ -47,35 +47,12 @@ mp_events = {
 
     "p.P.ut.1.0": {
         "desc": "Enter update_texture",
-        "update_names": ["evname", "pyglet_dt", "current_time", "wall_time"],
+        "update_names": ["evname", "pyglet_dt", "current_time", 
+                         "audio_time", "wall_time"],
         "other_fields": [],
-        "test_cases": [("p.P.ut.1.0", 0.02, 2.31, 1.21),
-                       ("p.P.ut.1.0", 0.02, None, 1.21),
-                       ("p.P.ut.1.0", None, 2.31, 1.21)]
-        },
-##    "p.P.ut.1.2": {
-##        "desc": "Set current_time from audio_time because current_time was None,",
-##        "update_names": ["evname", "current_time"],
-##        "other_fields": [],
-##        "test_cases": [("p.P.ut.1.2", 2.31), ("p.P.ut.1.2", None)]
-##        },
-    "p.P.ut.1.2": {
-        "desc": "Set current_time, ",
-        "update_names": ["evname", "current_time", "audio_time"],
-        "other_fields": [],
-        "test_cases": [("p.P.ut.1.2", 2.31, 2.33), ("p.P.ut.1.2", None, 2.33), ("p.P.ut.1.2", 2.31, None)]
-        },
-    "p.P.ut.1.3": {
-        "desc": "Early return doing nothing because current_time and audio_time were both None",
-        "update_names": ["evname", "rescheduling_time"],
-        "other_fields": [],
-        "test_cases": [("p.P.ut.1.3",)]
-        },
-    "p.P.ut.1.4": {
-        "desc": "Early return doing nothing because current_time <= video_time, ",
-        "update_names": ["evname", "rescheduling_time"],
-        "other_fields": ["video_time"],
-        "test_cases": [("p.P.ut.1.4", 1.21)]
+        "test_cases": [("p.P.ut.1.0", 0.02, 2.31, 2.28, 1.21),
+                       ("p.P.ut.1.0", 0.02, None, 2.28, 1.21),
+                       ("p.P.ut.1.0", None, 2.31, 2.28, 1.21)]
         },
     "p.P.ut.1.5": {
         "desc": "Discard video frame too old,",
@@ -84,7 +61,7 @@ mp_events = {
         "test_cases": [("p.P.ut.1.5", 1.21)]
         },
     "p.P.ut.1.6": {
-        "desc": "Set video_time,",
+        "desc": "Current video frame,",
         "update_names": ["evname", "video_time"],
         "other_fields": [],
         "test_cases": [("p.P.ut.1.6", 1.21)]
@@ -119,9 +96,7 @@ mp_events = {
     }
 
 # events to examine for defects detection
-mp_bads = {"crash", "p.P.ut.1.3", "p.P.ut.1.4", "p.P.ut.1.5",
-           "p.P.ut.1.7", "p.P.ut.1.8"
-           }
+mp_bads = {"crash", "p.P.ut.1.5", "p.P.ut.1.7", "p.P.ut.1.8"}
 
 
 class MediaPlayerStateIterator(object):

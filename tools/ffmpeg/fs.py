@@ -19,7 +19,7 @@ import mpexceptions
 
 def get_media_player_path():
     here = os.path.basename(os.path.abspath(__file__))
-    path = os.path.join("..", "..", "examples", "video_ffmpeg")
+    path = os.path.join("..", "..", "examples")
     mp_path = os.path.abspath(path)
     return mp_path
 
