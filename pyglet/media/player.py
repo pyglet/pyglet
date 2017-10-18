@@ -95,10 +95,37 @@ class MasterClock(object):
         self._time = value
 
 
+class _PlayerProperty(object):
+    """Descriptor for Player attributes to forward to the AudioPlayer.
+
+    We want the Player to have attributes like volume, pitch, etc. These are
+    actually implemented by the AudioPlayer. So this descriptor will forward
+    an assignement to one of the attributes to the AudioPlayer. For example
+    `player.volume = 0.5` will call `player._audio_player.set_volume(0.5)`.
+
+    The Player class has default values at the class level which are retrieved
+    if not found on the instance.
+    """
+
+    def __init__(self, attribute, doc=None):
+        self.attribute = attribute
+        self.__doc__ = doc or ''
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        if '_' + self.attribute in obj.__dict__:
+            return obj.__dict__['_' + self.attribute]
+        return getattr(objtype, '_' + self.attribute)
+
+    def __set__(self, obj, value):
+        obj.__dict__['_' + self.attribute] = value
+        if obj._audio_player:
+            getattr(obj._audio_player, 'set_' + self.attribute)(value)
+
+
 class Player(pyglet.event.EventDispatcher):
     """High-level sound and video player."""
-
-    _texture = None
 
     # Spacialisation attributes, preserved between audio players
     _volume = 1.0
@@ -118,6 +145,7 @@ class Player(pyglet.event.EventDispatcher):
         self._playlist = PlayList()
         self._audio_player = None
 
+        self._texture = None
         # Desired play state (not an indication of actual state).
         self._playing = False
 
@@ -189,7 +217,8 @@ class Player(pyglet.event.EventDispatcher):
             pyglet.clock.unschedule(self.update_texture)
             self._mclock.pause()
 
-    def _get_playing(self):
+    @property
+    def playing(self):
         """
         Read-only. Determine if the player state is playing.
 
@@ -200,8 +229,6 @@ class Player(pyglet.event.EventDispatcher):
         state.
         """
         return self._playing
-
-    playing = property(_get_playing)
 
     def play(self):
         """
@@ -309,30 +336,20 @@ class Player(pyglet.event.EventDispatcher):
 
         self._audio_player = audio_driver.create_audio_player(_playlist, self)
 
-        _class = self.__class__
+        # Set the audio player attributes
+        for attr in ('volume', 'min_distance', 'max_distance', 'position',
+                     'pitch', 'cone_orientation', 'cone_inner_angle',
+                     'cone_outer_angle', 'cone_outer_gain'):
+            value = getattr(self, attr)
+            setattr(self, attr, value)
 
-        def _set(name):
-            private_name = '_' + name
-            value = getattr(self, private_name)
-            if value != getattr(_class, private_name):
-                getattr(self._audio_player, 'set_' + name)(value)
-        _set('volume')
-        _set('min_distance')
-        _set('max_distance')
-        _set('position')
-        _set('pitch')
-        _set('cone_orientation')
-        _set('cone_inner_angle')
-        _set('cone_outer_angle')
-        _set('cone_outer_gain')
-
-    def _get_source(self):
+    @property
+    def source(self):
         """Read-only. The current :class:`Source`, or ``None``."""
         return self._playlist.get_current_source()
 
-    source = property(_get_source)
-
-    def _get_time(self):
+    @property
+    def time(self):
         """
         Read-only. Current playback time of the current source.
 
@@ -342,8 +359,6 @@ class Player(pyglet.event.EventDispatcher):
         and the video.
         """
         return self._mclock.get_time()
-
-    time = property(_get_time)
 
     def _create_texture(self):
         video_format = self.source.video_format
@@ -443,21 +458,7 @@ class Player(pyglet.event.EventDispatcher):
         if self._audio_player is None:
             self.dispatch_event("on_eos")
 
-    def _player_property(name, doc=None):
-        private_name = '_' + name
-        set_name = 'set_' + name
-
-        def _player_property_set(self, value):
-            setattr(self, private_name, value)
-            if self._audio_player:
-                getattr(self._audio_player, set_name)(value)
-
-        def _player_property_get(self):
-            return getattr(self, private_name)
-
-        return property(_player_property_get, _player_property_set, doc=doc)
-
-    volume = _player_property('volume', doc="""
+    volume = _PlayerProperty('volume', doc="""
     The volume level of sound playback.
 
     The nominal level is 1.0, and 0.0 is silence.
@@ -465,7 +466,7 @@ class Player(pyglet.event.EventDispatcher):
     The volume level is affected by the distance from the listener (if
     positioned).
     """)
-    min_distance = _player_property('min_distance', doc="""
+    min_distance = _PlayerProperty('min_distance', doc="""
     The distance beyond which the sound volume drops by half, and within
     which no attenuation is applied.
 
@@ -475,7 +476,7 @@ class Player(pyglet.event.EventDispatcher):
 
     The unit defaults to meters, but can be modified with the listener
     properties. """)
-    max_distance = _player_property('max_distance', doc="""
+    max_distance = _PlayerProperty('max_distance', doc="""
     The distance at which no further attenuation is applied.
 
     When the distance from the listener to the player is greater than this
@@ -485,20 +486,20 @@ class Player(pyglet.event.EventDispatcher):
     The unit defaults to meters, but can be modified with the listener
     properties.
     """)
-    position = _player_property('position', doc="""
+    position = _PlayerProperty('position', doc="""
     The position of the sound in 3D space.
 
     The position is given as a tuple of floats (x, y, z). The unit
     defaults to meters, but can be modified with the listener properties.
     """)
-    pitch = _player_property('pitch', doc="""
+    pitch = _PlayerProperty('pitch', doc="""
     The pitch shift to apply to the sound.
 
     The nominal pitch is 1.0. A pitch of 2.0 will sound one octave higher,
     and play twice as fast. A pitch of 0.5 will sound one octave lower, and
     play twice as slow. A pitch of 0.0 is not permitted.
     """)
-    cone_orientation = _player_property('cone_orientation', doc="""
+    cone_orientation = _PlayerProperty('cone_orientation', doc="""
     The direction of the sound in 3D space.
 
     The direction is specified as a tuple of floats (x, y, z), and has no
@@ -506,14 +507,14 @@ class Player(pyglet.event.EventDispatcher):
     noticeable if the other cone properties are changed from their default
     values.
     """)
-    cone_inner_angle = _player_property('cone_inner_angle', doc="""
+    cone_inner_angle = _PlayerProperty('cone_inner_angle', doc="""
     The interior angle of the inner cone.
 
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the inner cone, the sound is
     played at normal gain (see :attr:`volume`).
     """)
-    cone_outer_angle = _player_property('cone_outer_angle', doc="""
+    cone_outer_angle = _PlayerProperty('cone_outer_angle', doc="""
     The interior angle of the outer cone.
 
     The angle is given in degrees, and defaults to 360. When the listener
@@ -521,14 +522,13 @@ class Player(pyglet.event.EventDispatcher):
     the volume defined by the inner cone, the gain applied is a smooth
     interpolation between :attr:`volume` and :attr:`cone_outer_gain`.
     """)
-    cone_outer_gain = _player_property('cone_outer_gain', doc="""
+    cone_outer_gain = _PlayerProperty('cone_outer_gain', doc="""
     The gain applied outside the cone.
 
     When the listener is positioned outside the volume defined by the outer
     cone, this gain is applied instead of :attr:`volume`.
     """)
 
-    del _player_property
     # Events
 
     def on_player_eos(self):
@@ -569,6 +569,7 @@ class Player(pyglet.event.EventDispatcher):
         :event:
         """
         pass
+
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
