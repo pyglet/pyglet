@@ -49,26 +49,34 @@ clock = pyglet.clock.get_default()
 
 
 class MasterClock(object):
+    """Master clock object.
+
+    This is a simple clock object which tracks the time elapsed. It can be
+    paused and reset.
+    """
+
     def __init__(self):
+        """Initialize the clock with time 0."""
         self._time = 0.0
         self._systime = None
 
     def play(self):
+        """Start the clock."""
         self._systime = clock.time()
 
     def pause(self):
+        """Pause the clock."""
         self._time = self.get_time()
         self._systime = None
 
     def reset(self):
+        """Reset the clock to 0."""
         self._time = 0.0
         if self._systime is not None:
             self._systime = clock.time()
 
     def get_time(self):
-        """
-        Current master clock time.
-        """
+        """Current master clock time."""
         if self._systime is None:
             now = self._time
         else:
@@ -79,16 +87,16 @@ class MasterClock(object):
         """
         Set the master clock time.
 
-        :param float value: The new 
-            :py:class:`~pyglet.media.player.MasterClock` time.
+        :Parameters:
+            `value`: float
+                The new :class:`~pyglet.media.player.MasterClock` time.
         """
         self.reset()
         self._time = value
 
 
 class Player(pyglet.event.EventDispatcher):
-    """High-level sound and video player.
-    """
+    """High-level sound and video player."""
 
     _texture = None
 
@@ -106,6 +114,7 @@ class Player(pyglet.event.EventDispatcher):
     _cone_outer_gain = 1.
 
     def __init__(self):
+        """Initialize the Player with a PlayList and a MasterClock."""
         self._playlist = PlayList()
         self._audio_player = None
 
@@ -114,7 +123,7 @@ class Player(pyglet.event.EventDispatcher):
 
         self._mclock = MasterClock()
         #: Loop the current source indefinitely or until
-        #: :py:meth:`~Player.next_source` is called. Defaults to ``False``.
+        #: :meth:`~Player.next_source` is called. Defaults to ``False``.
         #:
         #: :type: bool
         #:
@@ -124,6 +133,7 @@ class Player(pyglet.event.EventDispatcher):
         # self.pr = cProfile.Profile()
 
     def __del__(self):
+        """Release the Player resources."""
         self.delete()
 
     def queue(self, source):
@@ -141,8 +151,8 @@ class Player(pyglet.event.EventDispatcher):
         self._set_playing(self._playing)
 
     def _set_playing(self, playing):
-        #stopping = self._playing and not playing
-        #starting = not self._playing and playing
+        # stopping = self._playing and not playing
+        # starting = not self._playing and playing
 
         self._playing = playing
         source = self.source
@@ -158,11 +168,11 @@ class Player(pyglet.event.EventDispatcher):
             if bl.logger is not None:
                 bl.logger.init_wall_time()
                 bl.logger.log("p.P._sp", 0.0)
-            
+
             if source.video_format:
                 if not self._texture:
                     self._create_texture()
-            
+
             if self._audio_player:
                 self._audio_player.play()
             if source.video_format:
@@ -178,7 +188,7 @@ class Player(pyglet.event.EventDispatcher):
 
             pyglet.clock.unschedule(self.update_texture)
             self._mclock.pause()
-            
+
     def _get_playing(self):
         """
         Read-only. Determine if the player state is playing.
@@ -226,7 +236,6 @@ class Player(pyglet.event.EventDispatcher):
 
         There may be a gap in playback while the audio buffer is refilled.
         """
-
         was_playing = self._playing
         self.pause()
         self._mclock.reset()
@@ -257,9 +266,10 @@ class Player(pyglet.event.EventDispatcher):
 
     def seek(self, time):
         """
-        Seek for playback to the indicated timestamp in seconds on the current
-        source. If the timestamp is outside the duration of the source, it
-        will be clamped to the end.
+        Seek for playback to the indicated timestamp on the current source.
+
+        Timestamp is expressed in seconds. If the timestamp is outside the
+        duration of the source, it will be clamped to the end.
 
         :Parameters:
             `time`: float
@@ -278,8 +288,8 @@ class Player(pyglet.event.EventDispatcher):
         self._mclock.set_time(time)
         self.source.seek(time)
         if self._audio_player:
-            # XXX: According to docstring in AbstractAudioPlayer this cannot be called when the
-            # player is not stopped
+            # XXX: According to docstring in AbstractAudioPlayer this cannot
+            # be called when the player is not stopped
             self._audio_player.clear()
         if self.source.video_format:
             self.update_texture()
@@ -296,13 +306,14 @@ class Player(pyglet.event.EventDispatcher):
             # Failed to find a valid audio driver
             self.source.audio_format = None
             return
-        
+
         self._audio_player = audio_driver.create_audio_player(_playlist, self)
 
         _class = self.__class__
+
         def _set(name):
             private_name = '_' + name
-            value = getattr(self, private_name) 
+            value = getattr(self, private_name)
             if value != getattr(_class, private_name):
                 getattr(self._audio_player, 'set_' + name)(value)
         _set('volume')
@@ -326,7 +337,7 @@ class Player(pyglet.event.EventDispatcher):
         Read-only. Current playback time of the current source.
 
         The playback time is a float expressed in seconds, with 0.0 being the
-        beginning of the media. The playback time returned represents the 
+        beginning of the media. The playback time returned represents the
         player master clock time which is used to synchronize both the audio
         and the video.
         """
@@ -352,21 +363,21 @@ class Player(pyglet.event.EventDispatcher):
         as multiple textures might be used. The return value will be None if
         there is no video in the current source.
 
-        :return: :py:class:`pyglet.image.Texture`
+        :return: :class:`pyglet.image.Texture`
         """
         return self._texture
 
     def seek_next_frame(self):
-        """Step forwards one video frame in the current source.
-        """
+        """Step forwards one video frame in the current source."""
         time = self._playlist.get_next_video_timestamp()
         if time is None:
             return
         self.seek(time)
 
     def update_texture(self, dt=None):
-        """Manually update the texture from the current source. This happens
-        automatically, so you shouldn't need to call this method.
+        """Manually update the texture from the current source.
+
+        This happens automatically, so you shouldn't need to call this method.
 
         :Parameters:
             `dt`: float
@@ -378,22 +389,21 @@ class Player(pyglet.event.EventDispatcher):
         #     import pstats
         #     ps = pstats.Stats(self.pr).sort_stats("cumulative")
         #     ps.print_stats()
-        if bl.logger is not None:
-            bl.logger.log("p.P.ut.1.0", dt, time, bl.logger.rebased_wall_time())
         _playlist = self._playlist
         time = self.time
         if bl.logger is not None:
             bl.logger.log(
-                "p.P.ut.1.2",
-                time,
-                self._audio_player.get_time() if self._audio_player else 0
+                "p.P.ut.1.0", dt, time,
+                self._audio_player.get_time() if self._audio_player else 0,
+                bl.logger.rebased_wall_time()
             )
 
         frame_rate = _playlist.video_format.frame_rate
         frame_duration = 1 / frame_rate
         ts = _playlist.get_next_video_timestamp()
-        while ts is not None and ts + frame_duration < time: # Allow up to frame_duration difference
-            _playlist.get_next_video_frame() # Discard frame
+        # Allow up to frame_duration difference
+        while ts is not None and ts + frame_duration < time:
+            _playlist.get_next_video_frame()  # Discard frame
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.5", ts)
             ts = _playlist.get_next_video_timestamp()
@@ -405,7 +415,7 @@ class Player(pyglet.event.EventDispatcher):
             # No more video frames to show. End of video stream.
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.7", frame_duration)
-            
+
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
 
@@ -416,7 +426,7 @@ class Player(pyglet.event.EventDispatcher):
             self._texture.blit_into(image, 0, 0, 0)
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
-        
+
         ts = _playlist.get_next_video_timestamp()
         if ts is None:
             delay = frame_duration
@@ -436,6 +446,7 @@ class Player(pyglet.event.EventDispatcher):
     def _player_property(name, doc=None):
         private_name = '_' + name
         set_name = 'set_' + name
+
         def _player_property_set(self, value):
             setattr(self, private_name, value)
             if self._audio_player:
@@ -462,8 +473,8 @@ class Player(pyglet.event.EventDispatcher):
     moves away from the listener. The gain is clamped at the nominal value
     within the min distance. By default the value is 1.0.
 
-    The unit defaults to meters, but can be modified with the listener properties.
-    """)
+    The unit defaults to meters, but can be modified with the listener
+    properties. """)
     max_distance = _player_property('max_distance', doc="""
     The distance at which no further attenuation is applied.
 
@@ -500,7 +511,7 @@ class Player(pyglet.event.EventDispatcher):
 
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the inner cone, the sound is
-    played at normal gain (see :py:attr:`volume`).
+    played at normal gain (see :attr:`volume`).
     """)
     cone_outer_angle = _player_property('cone_outer_angle', doc="""
     The interior angle of the outer cone.
@@ -508,15 +519,16 @@ class Player(pyglet.event.EventDispatcher):
     The angle is given in degrees, and defaults to 360. When the listener
     is positioned within the volume defined by the outer cone, but outside
     the volume defined by the inner cone, the gain applied is a smooth
-    interpolation between :py:attr:`volume` and :py:attr:`cone_outer_gain`.
+    interpolation between :attr:`volume` and :attr:`cone_outer_gain`.
     """)
     cone_outer_gain = _player_property('cone_outer_gain', doc="""
     The gain applied outside the cone.
 
     When the listener is positioned outside the volume defined by the outer
-    cone, this gain is applied instead of :py:attr:`volume`.
+    cone, this gain is applied instead of :attr:`volume`.
     """)
 
+    del _player_property
     # Events
 
     def on_player_eos(self):
@@ -576,12 +588,12 @@ class PlayerGroup(object):
     """
 
     def __init__(self, players):
+        """Initialize the PlayerGroup with the players."""
         self.players = list(players)
 
     def play(self):
-        """Begin playing all players in the group simultaneously.
-        """
-        audio_players = [p._audio_player \
+        """Begin playing all players in the group simultaneously."""
+        audio_players = [p._audio_player
                          for p in self.players if p._audio_player]
         if audio_players:
             audio_players[0]._play_group(audio_players)
@@ -589,13 +601,10 @@ class PlayerGroup(object):
             player.play()
 
     def pause(self):
-        """Pause all players in the group simultaneously.
-        """
-        audio_players = [p._audio_player \
+        """Pause all players in the group simultaneously."""
+        audio_players = [p._audio_player
                          for p in self.players if p._audio_player]
         if audio_players:
             audio_players[0]._stop_group(audio_players)
         for player in self.players:
             player.pause()
-
-
