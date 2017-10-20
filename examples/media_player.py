@@ -362,7 +362,7 @@ class PlayerWindow(pyglet.window.Window):
 
         # Video
         if self.player.source and self.player.source.video_format:
-            video_texture = self.player.get_texture()
+            video_texture = self.player.texture
             video_texture.blit(self.video_x,
                                self.video_y,
                                width=self.video_width,

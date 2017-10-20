@@ -424,13 +424,13 @@ Incorporating video
 -------------------
 
 When a :py:class:`~pyglet.media.player.Player` is playing back a source with
-video, use the :meth:`~pyglet.media.Player.get_texture` method to obtain the
+video, use the :attr:`~pyglet.media.Player.texture` property to obtain the
 video frame image. This can be used to display the current video image
 syncronised with the audio track, for example::
 
     @window.event
     def on_draw():
-        player.get_texture().blit(0, 0)
+        player.texture.blit(0, 0)
 
 The texture is an instance of :class:`pyglet.image.Texture`, with an internal
 format of either ``GL_TEXTURE_2D`` or ``GL_TEXTURE_RECTANGLE_ARB``. While the

@@ -572,7 +572,7 @@ class PlayerTestCase(FutureTestCase):
         self.pretend_player_at_time(0.2)
         self.player.update_texture()
         self.assert_texture_updated('a')
-        self.assertIs(self.player.get_texture(), self.mock_texture)
+        self.assertIs(self.player.texture, self.mock_texture)
 
     def test_video_seek(self):
         """Sources with video can also be seeked. It's the Source 
