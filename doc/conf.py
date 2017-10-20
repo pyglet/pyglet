@@ -121,7 +121,8 @@ needs_sphinx = '1.3'
 extensions = ['sphinx.ext.autodoc',
               'ext.docstrings',
               'sphinx.ext.inheritance_diagram', 
-              'sphinx.ext.todo']
+              'sphinx.ext.todo',
+              'sphinx.ext.napoleon']
 
 autodoc_member_order='groupwise'
 
