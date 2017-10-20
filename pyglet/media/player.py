@@ -87,9 +87,9 @@ class MasterClock(object):
         """
         Set the master clock time.
 
-        :Parameters:
-            `value`: float
-                The new :class:`~pyglet.media.player.MasterClock` time.
+        Args:
+            value (float): The new :class:`~pyglet.media.player.MasterClock`
+                time.
         """
         self.reset()
         self._time = value
@@ -171,9 +171,8 @@ class Player(pyglet.event.EventDispatcher):
         If the player has no source, the player will start to play immediately
         or pause depending on its :attr:`.playing` attribute.
 
-        :Parameters:
-            `source`: ~pyglet.media.Source
-                The source to queue.
+        Args:
+            source (Source): The source to queue.
         """
         self._playlist.queue(source)
         self._set_playing(self._playing)
@@ -220,7 +219,7 @@ class Player(pyglet.event.EventDispatcher):
     @property
     def playing(self):
         """
-        Read-only. Determine if the player state is playing.
+        bool: Read-only. Determine if the player state is playing.
 
         The *playing* property is irrespective of whether or not there is
         actually a source to play. If *playing* is ``True`` and a source is
@@ -298,10 +297,9 @@ class Player(pyglet.event.EventDispatcher):
         Timestamp is expressed in seconds. If the timestamp is outside the
         duration of the source, it will be clamped to the end.
 
-        :Parameters:
-            `time`: float
-                The time where to seek in the source, clamped to the beginning
-                and end of the source.
+        Args:
+            time (float): The time where to seek in the source, clamped to the
+                beginning and end of the source.
         """
         playing = self._playing
         if playing:
@@ -345,13 +343,13 @@ class Player(pyglet.event.EventDispatcher):
 
     @property
     def source(self):
-        """Read-only. The current :class:`Source`, or ``None``."""
+        """Source: Read-only. The current :class:`Source`, or ``None``."""
         return self._playlist.get_current_source()
 
     @property
     def time(self):
         """
-        Read-only. Current playback time of the current source.
+        float: Read-only. Current playback time of the current source.
 
         The playback time is a float expressed in seconds, with 0.0 being the
         beginning of the media. The playback time returned represents the
@@ -370,6 +368,17 @@ class Player(pyglet.event.EventDispatcher):
         self._texture.anchor_y = 0
         return self._texture
 
+    @property
+    def texture(self):
+        """
+        :class:`pyglet.image.Texture`: Get the texture for the current video frame.
+
+        You should call this method every time you display a frame of video,
+        as multiple textures might be used. The return value will be None if
+        there is no video in the current source.
+        """
+        return self._texture
+
     def get_texture(self):
         """
         Get the texture for the current video frame.
@@ -378,9 +387,13 @@ class Player(pyglet.event.EventDispatcher):
         as multiple textures might be used. The return value will be None if
         there is no video in the current source.
 
-        :return: :class:`pyglet.image.Texture`
+        Returns:
+            :class:`pyglet.image.Texture`
+
+        .. deprecated:: 1.4
+                Use :attr:`~texture` instead
         """
-        return self._texture
+        return self.texture
 
     def seek_next_frame(self):
         """Step forwards one video frame in the current source."""
@@ -394,9 +407,9 @@ class Player(pyglet.event.EventDispatcher):
 
         This happens automatically, so you shouldn't need to call this method.
 
-        :Parameters:
-            `dt`: float
-                The time elapsed since the last call to ``update_texture``.
+        Args:
+            dt (float): The time elapsed since the last call to
+                ``update_texture``.
         """
         # self.pr.disable()
         # if dt > 0.05:
@@ -583,9 +596,8 @@ class PlayerGroup(object):
 
     All players in the group must currently not belong to any other group.
 
-    :Parameters:
-        `players` : [Player]
-            List of :class:`.Player` s in this group.
+    Args:
+        players (List[Player]): List of :class:`.Player` s in this group.
     """
 
     def __init__(self, players):

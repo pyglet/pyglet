@@ -51,6 +51,7 @@ Classes
   .. autoattribute:: playing
   .. autoattribute:: position
   .. autoattribute:: source
+  .. autoattribute:: texture
   .. autoattribute:: time
   .. autoattribute:: volume
 
