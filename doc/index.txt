@@ -102,6 +102,7 @@ help make pyglet even better.  Get in touch if you would like to contribute!
    internal/generated
    internal/wraptypes
    internal/media_manual
+   internal/media_logging_manual
 
 Related Documentation
 ---------------------
