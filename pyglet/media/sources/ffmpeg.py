@@ -54,7 +54,7 @@ from pyglet.media.sources.base import \
     AudioData, SourceInfo
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaFormatException
-from pyglet.compat import asbytes, asbytes_filename
+from pyglet.compat import asbytes, asbytes_filename, asstr
 from pyglet.media.sources.ffmpeg_lib import *
 
 # import cProfile
@@ -169,7 +169,7 @@ def ffmpeg_file_info(file):
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('title'), None, 0)
     if entry:
-        info.title = entry.contents.value 
+        info.title = asstr(entry.contents.value )
 
     entry = avutil.av_dict_get(file.context.contents.metadata, 
                                asbytes('artist'), 
@@ -181,19 +181,19 @@ def ffmpeg_file_info(file):
                                None, 
                                0)
     if entry:
-        info.author = entry.contents.value
+        info.author = asstr(entry.contents.value)
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('copyright'), None, 0)
     if entry:
-        info.copyright = entry.contents.value
+        info.copyright = asstr(entry.contents.value)
     
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('comment'), None, 0)
     if entry:
-        info.comment = entry.contents.value
+        info.comment = asstr(entry.contents.value)
     
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('album'), None, 0)
     if entry:
-        info.album = entry.contents.value
+        info.album = asstr(entry.contents.value)
     
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('date'), None, 0)
     if entry:
@@ -201,11 +201,11 @@ def ffmpeg_file_info(file):
     
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('track'), None, 0)
     if entry:
-        info.track = entry.contents.value
+        info.track = asstr(entry.contents.value)
     
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('genre'), None, 0)
     if entry:
-        info.genre = entry.contents.value
+        info.genre = asstr(entry.contents.value)
 
     return info
 
