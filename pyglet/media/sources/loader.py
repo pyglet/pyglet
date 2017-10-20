@@ -4,14 +4,14 @@ from builtins import object
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -46,20 +46,18 @@ _debug = pyglet.options['debug_media']
 def load(filename, file=None, streaming=True):
     """Load a source from a file.
 
-    Currently the `file` argument is not supported; media files must exist
+    Currently the ``file`` argument is not supported; media files must exist
     as real paths.
 
-    :Parameters:
-        `filename` : str
-            Filename of the media file to load.
-        `file` : file-like object
-            Not yet supported.
-        `streaming` : bool
-            If ``False``, a :py:class:`~pyglet.media.StaticSource` will be
-            returned; otherwise (default) a
+    Args:
+        filename (str): Filename of the media file to load.
+        file (file-like object): Not yet supported.
+        streaming (bool): If ``False``, a
+            :class:`StaticSource` will be returned; otherwise (default) a
             :class:`~pyglet.media.StreamingSource` is created.
 
-    :rtype: Source
+    Returns:
+        :class:`Source`
     """
     source = get_source_loader().load(filename, file)
     if not streaming:
@@ -104,7 +102,15 @@ def get_source_loader():
 
 _source_loader = None
 
+
 def have_ffmpeg():
+    """Check if FFmpeg library is available.
+
+    Returns:
+        bool: True if FFmpeg is found.
+
+    .. versionadded:: 1.4
+    """
     global _have_ffmpeg
     if _have_ffmpeg is None:
         try:
@@ -113,6 +119,5 @@ def have_ffmpeg():
         except ImportError:
             _have_ffmpeg = False
     return _have_ffmpeg
-    
-_have_ffmpeg = None
 
+_have_ffmpeg = None

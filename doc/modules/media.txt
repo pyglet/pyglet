@@ -65,7 +65,10 @@ Classes
 .. autoclass:: AudioFormat
 .. autoclass:: VideoFormat
 .. autoclass:: AudioData
+    :members:
+
 .. autoclass:: SourceInfo
+    :members:
 
 .. autoclass:: Source
   :members:
@@ -89,11 +92,15 @@ Classes
   :members:
   :undoc-members:
 
+.. autoclass:: pyglet.media.events.MediaEvent
+    :members:
+
 Functions
 ---------
 
 .. autofunction:: get_audio_driver
 .. autofunction:: load
+.. autofunction:: have_ffmpeg
 
 Exceptions
 ----------
