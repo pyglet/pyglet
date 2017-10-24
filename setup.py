@@ -62,6 +62,6 @@ setup_info = dict(
 )
 
 # if is_wheel:
-#     setup_info['install_requires'] = ['future']
+setup_info['install_requires'] = ['future']
 
 setup(**setup_info)
