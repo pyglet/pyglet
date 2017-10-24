@@ -14,7 +14,7 @@ is_wheel = 'bdist_wheel' in sys.argv
 
 excluded = []
 # Exclude the future module if Python 3
-if is_wheel and sys.version_info.major == 3:
+if sys.version_info.major == 3:
     excluded.append('extlibs.future')
 
 
