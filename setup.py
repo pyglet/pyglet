@@ -11,11 +11,12 @@ for Windows, Mac OS X and Linux.'''
 
 # The source dist comes with batteries included, the wheel can use pip to get the rest
 is_wheel = 'bdist_wheel' in sys.argv
+print("wheel", is_wheel)
 
-packages = ['pyglet']
-# Include future for Python 2
-if is_wheel and sys.version_info.major == 2:
-    packages.append('extlibs.future')
+packages = ['pyglet', 'extlibs.future']
+
+if is_wheel and sys.version_info.major == 3:
+    packages.remove('extlibs.future')
 
 
 setup_info = dict(
