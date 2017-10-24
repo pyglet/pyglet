@@ -170,7 +170,7 @@ class QuartzFont(base.Font):
         if 0 in fonts:
             return fonts[0]
         # Otherwise return whatever we have.
-        return fonts.values()[0]
+        return list(fonts.values())[0]
 
 
     def _create_font_descriptor(self, family_name, traits):
