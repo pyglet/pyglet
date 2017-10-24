@@ -51,7 +51,7 @@ setup_info = dict(
     ],
 
     # Package info
-    packages=packages,
+    packages=find_packages(packages),
 
     # Add _ prefix to the names of temporary build dirs
     options={
