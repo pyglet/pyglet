@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import os
-import shutil
 import sys
 from setuptools import setup, find_packages
 
@@ -15,14 +13,17 @@ for Windows, Mac OS X and Linux.'''
 is_wheel = 'bdist_wheel' in sys.argv
 
 excluded = []
-if is_wheel:
+# Exclude the future module if Python 3
+if is_wheel and sys.version_info.major == 3:
     excluded.append('extlibs.future')
+
 
 def exclude_package(pkg):
     for exclude in excluded:
         if pkg.startswith(exclude):
             return True
     return False
+
 
 def create_package_list(base_package):
     return ([base_package] +
