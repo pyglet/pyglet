@@ -11,7 +11,7 @@ for Windows, Mac OS X and Linux.'''
 
 # The source dist comes with batteries included, the wheel can use pip to get the rest
 is_wheel = 'bdist_wheel' in sys.argv
-print("wheel", is_wheel)
+print(sys.argv)
 
 packages = ['pyglet', 'extlibs.future']
 
@@ -51,7 +51,7 @@ setup_info = dict(
     ],
 
     # Package info
-    packages=find_packages(packages),
+    packages=packages,
 
     # Add _ prefix to the names of temporary build dirs
     options={
