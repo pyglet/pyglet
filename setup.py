@@ -13,10 +13,10 @@ for Windows, Mac OS X and Linux.'''
 is_wheel = 'bdist_wheel' in sys.argv
 print(sys.argv)
 
-packages = ['pyglet', 'extlibs.future']
+packages = ['pyglet', 'pyglet.extlibs.future']
 
 if is_wheel and sys.version_info.major == 3:
-    packages.remove('extlibs.future')
+    packages.remove('pyglet.extlibs.future')
 
 
 setup_info = dict(
