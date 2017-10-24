@@ -12,25 +12,10 @@ for Windows, Mac OS X and Linux.'''
 # The source dist comes with batteries included, the wheel can use pip to get the rest
 is_wheel = 'bdist_wheel' in sys.argv
 
-excluded = []
-# Exclude the future module if Python 3
-if sys.version_info.major == 3:
-    excluded.append('extlibs.future')
-
-
-def exclude_package(pkg):
-    for exclude in excluded:
-        if pkg.startswith(exclude):
-            return True
-    return False
-
-
-def create_package_list(base_package):
-    return ([base_package] +
-            [base_package + '.' + pkg
-             for pkg
-             in find_packages(base_package)
-             if not exclude_package(pkg)])
+packages = ['pyglet']
+# Include future for Python 2
+if is_wheel and sys.version_info.major == 2:
+    packages.append('extlibs.future')
 
 
 setup_info = dict(
@@ -65,7 +50,7 @@ setup_info = dict(
     ],
 
     # Package info
-    packages=create_package_list('pyglet'),
+    packages=packages,
 
     # Add _ prefix to the names of temporary build dirs
     options={
@@ -75,7 +60,7 @@ setup_info = dict(
     zip_safe=True,
 )
 
-if is_wheel:
-    setup_info['install_requires'] = ['future']
+# if is_wheel:
+#     setup_info['install_requires'] = ['future']
 
 setup(**setup_info)
