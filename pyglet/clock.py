@@ -710,7 +710,7 @@ class Clock(_ClockBase):
 
         # if the _current_interval_item was set, add it to be checked
         if self._current_interval_item:
-            interval_items.add(self._current_interval_item)
+            valid_items.add(self._current_interval_item)
 
         for item in valid_items:
             item.interval = 0
