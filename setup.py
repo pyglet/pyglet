@@ -9,14 +9,23 @@ long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
 for Windows, Mac OS X and Linux.'''
 
-# The source dist comes with batteries included, the wheel can use pip to get the rest
+# The source dist comes with batteries included, the wheel can use pip to get the rest.
 is_wheel = 'bdist_wheel' in sys.argv
-print(sys.argv)
 
-packages = ['pyglet', 'pyglet.extlibs.future']
 
-if is_wheel and sys.version_info.major == 3:
-    packages.remove('pyglet.extlibs.future')
+# The pyglet.extlibs.future package is not detected by find_packages,
+# so it must be included as flat files (if installing from source).
+
+if is_wheel:
+    bundle_extlibs_future = False
+    requirements = ['future']
+else:
+    bundle_extlibs_future = True
+    requirements = []
+
+
+def create_package_list(base_package):
+    return [base_package] + [base_package + '.' + pkg for pkg in find_packages(base_package)]
 
 
 setup_info = dict(
@@ -51,17 +60,15 @@ setup_info = dict(
     ],
 
     # Package info
-    packages=packages,
+    packages=create_package_list('pyglet'),
+    include_package_data=bundle_extlibs_future,
+    install_requires=requirements,
 
-    # Add _ prefix to the names of temporary build dirs
-    options={
-        'build': {'build_base': '_build'},
-        #        'sdist': {'dist_dir': '_dist'},
-    },
+    # Add underscore prefix to the names of temporary build dirs
+    options={'build': {'build_base': '_build'}},
+
     zip_safe=True,
 )
 
-# if is_wheel:
-setup_info['install_requires'] = ['future']
 
 setup(**setup_info)
