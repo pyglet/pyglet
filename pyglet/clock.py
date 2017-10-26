@@ -708,9 +708,9 @@ class Clock(_ClockBase):
                           for item in self._schedule_interval_items
                           if item.func == func)
 
-        # if the _current_interval_item was set, add it to be checked
-        if self._current_interval_item:
-            valid_items.add(self._current_interval_item)
+        if self._schedule_interval_items:
+            if self._schedule_interval_items.func == func:
+                valid_items.add(self._schedule_interval_items)
 
         for item in valid_items:
             item.interval = 0
