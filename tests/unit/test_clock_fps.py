@@ -11,6 +11,12 @@ import unittest
 
 from pyglet import clock
 
+def sleep(seconds):
+    "Busy sleep on the CPU which is very precise"
+    pyclock = clock.get_default()
+    start = pyclock.time()
+    while pyclock.time() - start < seconds:
+        pass
 
 class ClockTimingTestCase(unittest.TestCase):
 
@@ -47,11 +53,11 @@ class ClockTimingTestCase(unittest.TestCase):
         clock.tick()
 
         # test between initialization and first tick
-        time.sleep(sleep_time)
+        sleep(sleep_time)
         delta_time_1 = clock.tick()
 
         # test between non-initialization tick and next tick
-        time.sleep(sleep_time)
+        sleep(sleep_time)
         delta_time_2 = clock.tick()
 
         self.assertAlmostEqual(delta_time_1, sleep_time, delta=0.01*sleep_time)
@@ -90,12 +96,14 @@ class ClockTimingTestCase(unittest.TestCase):
 
         clock.set_fps_limit(fps_limit)
 
-        t1 = time.time()
+        pyclock = clock.get_default()
+        t1 = pyclock.time()
         # Initializes the timer state.
         clock.tick()
         for i in range(ticks):
             clock.tick()
-        t2 = time.time()
+
+        t2 = pyclock.time()
 
         computed_time_delta = t2 - t1
 
