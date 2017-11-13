@@ -4276,21 +4276,23 @@ QS_TIMER = 16
 QS_PAINT = 32
 QS_SENDMESSAGE = 64
 QS_HOTKEY = 128
-QS_MOUSE = (QS_MOUSEMOVE     | \
-                            QS_MOUSEBUTTON)
-QS_INPUT = (QS_MOUSE         | \
-                            QS_KEY)
-QS_ALLEVENTS = (QS_INPUT         | \
-                            QS_POSTMESSAGE   | \
-                            QS_TIMER         | \
-                            QS_PAINT         | \
-                            QS_HOTKEY)
-QS_ALLINPUT = (QS_INPUT         | \
-                            QS_POSTMESSAGE   | \
-                            QS_TIMER         | \
-                            QS_PAINT         | \
-                            QS_HOTKEY        | \
-                            QS_SENDMESSAGE)
+QS_RAWINPUT = 0x400
+QS_MOUSE = (QS_MOUSEMOVE     |
+            QS_MOUSEBUTTON)
+QS_INPUT = (QS_MOUSE         |
+            QS_KEY           |
+            QS_RAWINPUT)
+QS_ALLEVENTS = (QS_INPUT         |
+                QS_POSTMESSAGE   |
+                QS_TIMER         |
+                QS_PAINT         |
+                QS_HOTKEY)
+QS_ALLINPUT = (QS_INPUT          |
+               QS_POSTMESSAGE    |
+               QS_TIMER          |
+               QS_PAINT          |
+               QS_HOTKEY         |
+               QS_SENDMESSAGE)
 
 
 IMN_CLOSESTATUSWINDOW = 1
