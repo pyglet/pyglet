@@ -594,6 +594,59 @@ class EVENT_MOUSEMOTION(InteractiveTestCase):
 
 
 @pytest.mark.requires_user_action
+class EVENT_MOUSEMOTION_EXCLUSIVE(InteractiveTestCase):
+    """Test that mouse motion event works correctly in exclusive mode.
+
+    Expected behaviour:
+        One window will be opened. The mouse cursor will disappear. Move the 
+        mouse and ensure the relative coordinates are correct.
+        - Absolute coordinates should be 0, 0.
+        - Relative coordinates should be positive when moving up and right.
+
+        Try also to use the mouse buttons and mouse wheel.
+        - Buttons 1, 2, 4 correspond to left, middle, right, respectively.
+        - Buttons press and release will display the button and key modifiers.
+        - Drag motions show relative movement, buttons pressed and key 
+          modifier.
+        - Mouse wheel show positive value for forward movements.
+
+        Close the window or press ESC to end the test.
+    """
+    def on_mouse_motion(self, x, y, dx, dy):
+        print('Mouse at (%f, %f); relative (%f, %f).' % \
+            (x, y, dx, dy))
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        print('Mouse button %d pressed at %f,%f with %s' % \
+            (button, x, y, key.modifiers_string(modifiers)))
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        print('Mouse button %d released at %f,%f with %s' % \
+            (button, x, y, key.modifiers_string(modifiers)))
+
+    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
+        print('Mouse dragged. Button %d pressed. dx, dy %f,%f with %s' % \
+            (button, dx, dy, key.modifiers_string(modifiers)))
+
+    def on_mouse_scroll(self, x, y, scrollx, scrolly):
+        print('Mouse scroll %f' % (scrolly))
+
+
+    def test_motion(self):
+        w = Window(200, 200)
+        try:
+            w.set_exclusive_mouse(True)
+            w.push_handlers(self)
+            while not w.has_exit:
+                w.dispatch_events()
+        finally:
+            w.set_exclusive_mouse(False)
+            w.close()
+
+        self.user_verify('Pass test?', take_screenshot=False)
+
+
+@pytest.mark.requires_user_action
 class EVENT_MOUSE_SCROLL(InteractiveTestCase):
     """Test that mouse scroll event works correctly.
 

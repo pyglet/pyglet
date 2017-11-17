@@ -707,6 +707,11 @@ class Clock(_ClockBase):
         valid_items = set(item
                           for item in self._schedule_interval_items
                           if item.func == func)
+
+        if self._current_interval_item:
+            if self._current_interval_item.func == func:
+                valid_items.add(self._current_interval_item)
+
         for item in valid_items:
             item.interval = 0
             item.func = lambda x, *args, **kwargs: x

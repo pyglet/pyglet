@@ -81,7 +81,7 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.3.0rc1'
+version = '1.3.0rc2'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
