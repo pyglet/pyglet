@@ -230,3 +230,9 @@ _user32.UnregisterClassW.restype = BOOL
 _user32.UnregisterClassW.argtypes = [c_wchar_p, HINSTANCE]
 _user32.UnregisterHotKey.restype = BOOL
 _user32.UnregisterHotKey.argtypes = [HWND, c_int]
+#Raw inputs
+_user32.RegisterRawInputDevices.restype = BOOL
+_user32.RegisterRawInputDevices.argtypes = [PCRAWINPUTDEVICE, UINT, UINT]
+_user32.GetRawInputData.restype = UINT
+_user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
+
