@@ -363,3 +363,76 @@ class ICONINFO(Structure):
         ('hbmColor', HBITMAP)
     ]
     __slots__ = [f[0] for f in _fields_]
+
+class RAWINPUTDEVICE(Structure):
+    _fields_ = [
+        ('usUsagePage', USHORT),
+        ('usUsage', USHORT),
+        ('dwFlags', DWORD),
+        ('hwndTarget', HWND)
+    ]
+
+PCRAWINPUTDEVICE = POINTER(RAWINPUTDEVICE)
+HRAWINPUT = HANDLE
+
+class RAWINPUTHEADER(Structure):
+    _fields_ = [
+        ('dwType', DWORD),
+        ('dwSize', DWORD),
+        ('hDevice', HANDLE),
+        ('wParam', WPARAM),
+    ]
+
+class _Buttons(Structure):
+    _fields_ = [
+        ('usButtonFlags', USHORT),
+        ('usButtonData', USHORT),
+    ]
+
+class _U(Union):
+    _anonymous_ = ('_buttons',)
+    _fields_ = [
+        ('ulButtons', ULONG),
+        ('_buttons', _Buttons),
+    ]
+
+class RAWMOUSE(Structure):
+    _anonymous_ = ('u',)
+    _fields_ = [
+        ('usFlags', USHORT),
+        ('u', _U),
+        ('ulRawButtons', ULONG),
+        ('lLastX', LONG),
+        ('lLastY', LONG),
+        ('ulExtraInformation', ULONG),
+    ]
+
+class RAWKEYBOARD(Structure):
+    _fields_ = [
+        ('MakeCode', USHORT),
+        ('Flags', USHORT),
+        ('Reserved', USHORT),
+        ('VKey', USHORT),
+        ('Message', UINT),
+        ('ExtraInformation', ULONG),
+    ]
+
+class RAWHID(Structure):
+    _fields_ = [
+        ('dwSizeHid', DWORD),
+        ('dwCount', DWORD),
+        ('bRawData', POINTER(BYTE)),
+    ]
+
+class _RAWINPUTDEVICEUNION(Union):
+    _fields_ = [
+        ('mouse', RAWMOUSE),
+        ('keyboard', RAWKEYBOARD),
+        ('hid', RAWHID),
+    ]
+
+class RAWINPUT(Structure):
+    _fields_ = [
+        ('header', RAWINPUTHEADER),
+        ('data', _RAWINPUTDEVICEUNION),
+    ]
