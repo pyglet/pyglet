@@ -107,7 +107,8 @@ class Win32Window(BaseWindow):
     _exclusive_mouse = False
     _exclusive_mouse_focus = True
     _exclusive_mouse_screen = None
-    _exclusive_mouse_client = None
+    _exclusive_mouse_lpos = None
+    _exclusive_mouse_buttons = 0
     _mouse_platform_visible = True
 
     _ws_style = 0
@@ -424,13 +425,27 @@ class Win32Window(BaseWindow):
         # This is the point the mouse will be kept at while in exclusive
         # mode.
         self._exclusive_mouse_screen = p.x, p.y
-        self._exclusive_mouse_client = p.x - rect.left, p.y - rect.top
 
     def set_exclusive_mouse(self, exclusive=True):
         if self._exclusive_mouse == exclusive and \
            self._exclusive_mouse_focus == self._has_focus:
             return
 
+        # Mouse: UsagePage = 1, Usage = 2
+        raw_mouse = RAWINPUTDEVICE(0x01, 0x02, 0, None)
+        if exclusive:
+            raw_mouse.dwFlags = RIDEV_NOLEGACY
+            raw_mouse.hwndTarget = self._view_hwnd
+        else:
+            raw_mouse.dwFlags |= RIDEV_REMOVE
+            raw_mouse.hwndTarget = None
+
+        if not _user32.RegisterRawInputDevices(
+                byref(raw_mouse), 1, sizeof(RAWINPUTDEVICE)):
+            if exclusive:
+                raise WindowException("Cannot enter mouse exclusive mode.")
+
+        self._exclusive_mouse_buttons = 0
         if exclusive and self._has_focus:
             # Move mouse to the center of the window.
             self._reset_exclusive_mouse_screen()
@@ -447,10 +462,15 @@ class Win32Window(BaseWindow):
         else:
             # Release clip
             _user32.ClipCursor(None)
+            # Move mouse bak to the middle of the client area.
+            if self._exclusive_mouse_screen:
+                x, y = self._exclusive_mouse_screen
+                self.set_mouse_position(x, y, absolute=True)
 
         self._exclusive_mouse = exclusive
         self._exclusive_mouse_focus = self._has_focus
-        self.set_mouse_platform_visible()
+        self.set_mouse_platform_visible(not exclusive)
+
 
     def set_mouse_position(self, x, y, absolute=False):
         if not absolute:
@@ -719,22 +739,90 @@ class Win32Window(BaseWindow):
         return 0
 
     @ViewEventHandler
-    @Win32EventHandler(WM_MOUSEMOVE)
-    def _event_mousemove(self, msg, wParam, lParam):
-        x, y = self._get_location(lParam)
-
-        if (x, y) == self._exclusive_mouse_client:
-            # Ignore the event caused by SetCursorPos
-            self._mouse_x = x
-            self._mouse_y = y
+    @Win32EventHandler(WM_INPUT)
+    def _event_raw_input(self, msg, wParam, lParam):
+        if not self._exclusive_mouse:
             return 0
 
-        y = self._height - y
+        hRawInput = cast(lParam, HRAWINPUT)
+        inp = RAWINPUT()
+        size = UINT(sizeof(inp))
+        _user32.GetRawInputData(hRawInput, RID_INPUT, byref(inp),
+                        byref(size), sizeof(RAWINPUTHEADER))
 
+        if inp.header.dwType == RIM_TYPEMOUSE:
+            rmouse = inp.data.mouse
+
+            if rmouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN:
+                self.dispatch_event('on_mouse_press', 0, 0, mouse.LEFT,
+                                    self._get_modifiers())
+                self._exclusive_mouse_buttons |= mouse.LEFT
+            if rmouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP:
+                self.dispatch_event('on_mouse_release', 0, 0, mouse.LEFT,
+                                    self._get_modifiers())
+                self._exclusive_mouse_buttons &= ~mouse.LEFT
+            if rmouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN:
+                self.dispatch_event('on_mouse_press', 0, 0, mouse.RIGHT,
+                                    self._get_modifiers())
+                self._exclusive_mouse_buttons |= mouse.RIGHT
+            if rmouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP:
+                self.dispatch_event('on_mouse_release', 0, 0, mouse.RIGHT,
+                                    self._get_modifiers())
+                self._exclusive_mouse_buttons &= ~mouse.RIGHT
+            if rmouse.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN:
+                self.dispatch_event('on_mouse_press', 0, 0, mouse.MIDDLE,
+                                    self._get_modifiers())
+                self._exclusive_mouse_buttons |= mouse.MIDDLE
+            if rmouse.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP:
+                self.dispatch_event('on_mouse_release', 0, 0, mouse.MIDDLE,
+                                    self._get_modifiers())
+                self._exclusive_mouse_buttons &= ~mouse.MIDDLE
+            if rmouse.usButtonFlags & RI_MOUSE_WHEEL:
+                delta = SHORT(rmouse.usButtonData).value
+                self.dispatch_event('on_mouse_scroll',
+                    0, 0, 0, delta / float(WHEEL_DELTA))
+
+            if rmouse.usFlags & 0x01 == MOUSE_MOVE_RELATIVE:
+                if rmouse.lLastX != 0 or rmouse.lLastY != 0:
+                    # Motion event
+                    # In relative motion, Y axis is positive for below.
+                    # We invert it for Pyglet so positive is motion up.
+                    if self._exclusive_mouse_buttons:
+                        self.dispatch_event('on_mouse_drag', 0, 0,
+                                            rmouse.lLastX, -rmouse.lLastY,
+                                            self._exclusive_mouse_buttons,
+                                            self._get_modifiers())
+                    else:
+                        self.dispatch_event('on_mouse_motion', 0, 0,
+                                            rmouse.lLastX, -rmouse.lLastY)
+            else:
+                if self._exclusive_mouse_lpos is None:
+                    self._exclusive_mouse_lpos = rmouse.lLastX, rmouse.lLastY
+                last_x, last_y = self._exclusive_mouse_lpos
+                rel_x = rmouse.lLastX - last_x
+                rel_y = rmouse.lLastY - last_y
+                if rel_x != 0 or rel_y != 0.0:
+                    # Motion event
+                    if self._exclusive_mouse_buttons:
+                        self.dispatch_event('on_mouse_drag', 0, 0,
+                                            rmouse.lLastX, -rmouse.lLastY,
+                                            self._exclusive_mouse_buttons,
+                                            self._get_modifiers())
+                    else:
+                        self.dispatch_event('on_mouse_motion', 0, 0,
+                                        rel_x, rel_y)
+                    self._exclusive_mouse_lpos = rmouse.lLastX, rmouse.lLastY
+
+        return 0
+
+    @ViewEventHandler
+    @Win32EventHandler(WM_MOUSEMOVE)
+    def _event_mousemove(self, msg, wParam, lParam):
         if self._exclusive_mouse and self._has_focus:
-            # Reset mouse position (so we don't hit the edge of the screen).
-            _x, _y = self._exclusive_mouse_screen
-            self.set_mouse_position(_x, _y, absolute=True)
+            return 0
+
+        x, y = self._get_location(lParam)
+        y = self._height - y
 
         dx = x - self._mouse_x
         dy = y - self._mouse_y
