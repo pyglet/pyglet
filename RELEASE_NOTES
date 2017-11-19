@@ -1,3 +1,11 @@
+Pyglet 1.3.1
+============
+Bugfix release.
+
+Bugfixes
+--------
+- Fix mouse events in mouse exclusive mode on Windows.
+
 Pyglet 1.3.0
 ============
 This major release takes Python 3 support to the next level. The entire codebase is now compatible
