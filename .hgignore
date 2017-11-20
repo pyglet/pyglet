@@ -30,3 +30,4 @@ parsetab.py
 pptab.py
 strict_exprtab.py
 prof/
+.hgrc
