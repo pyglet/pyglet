@@ -18,6 +18,7 @@ Classes
 -------
 
 .. autoclass:: pyglet.media.player.Player
+  :members: loop
 
   .. rubric:: Methods
 
@@ -36,7 +37,7 @@ Classes
 
   .. automethod:: on_eos
   .. automethod:: on_player_eos
-  .. automethod:: on_source_group_eos
+  .. automethod:: on_player_next_source
 
   .. rubric:: Attributes
 
@@ -50,6 +51,7 @@ Classes
   .. autoattribute:: playing
   .. autoattribute:: position
   .. autoattribute:: source
+  .. autoattribute:: texture
   .. autoattribute:: time
   .. autoattribute:: volume
 
@@ -58,10 +60,15 @@ Classes
   .. automethod:: play
   .. automethod:: pause
 
+.. autoclass:: pyglet.media.sources.PlayList
+
 .. autoclass:: AudioFormat
 .. autoclass:: VideoFormat
 .. autoclass:: AudioData
+    :members:
+
 .. autoclass:: SourceInfo
+    :members:
 
 .. autoclass:: Source
   :members:
@@ -76,19 +83,24 @@ Classes
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: SourceGroup
+.. autoclass:: pyglet.media.sources.base.StaticMemorySource
   :members:
   :undoc-members:
+  :show-inheritance:
 
 .. autoclass:: pyglet.media.listener.AbstractListener
   :members:
   :undoc-members:
+
+.. autoclass:: pyglet.media.events.MediaEvent
+    :members:
 
 Functions
 ---------
 
 .. autofunction:: get_audio_driver
 .. autofunction:: load
+.. autofunction:: have_ffmpeg
 
 Exceptions
 ----------

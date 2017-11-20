@@ -69,6 +69,6 @@ window = pyglet.window.Window(width=format.width, height=format.height)
 
 @window.event
 def on_draw():
-    player.get_texture().blit(0, 0)
+    player.texture.blit(0, 0)
 
 pyglet.app.run()

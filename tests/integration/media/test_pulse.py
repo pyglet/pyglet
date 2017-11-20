@@ -6,7 +6,7 @@ import pytest
 from threading import Timer
 
 import pyglet
-#pyglet.options['debug_media'] = True
+pyglet.options['debug_media'] = False
 
 from pyglet.media.sources import AudioFormat
 from pyglet.media.sources.procedural import Silence
@@ -62,7 +62,12 @@ def test_mainloop_wait_signal(mainloop):
 def context(mainloop):
     mainloop.start()
     with mainloop:
-        return mainloop.create_context()
+        context = mainloop.create_context()
+    yield context
+
+    with context:
+        context.delete()
+    mainloop.delete()
 
 
 def test_context_not_connected(context):
@@ -85,8 +90,6 @@ def test_context_not_connected(context):
     assert context.server_protocol_version == None
     assert context.is_local == None
 
-    context.mainloop.delete()
-
 
 def test_context_connect(context):
     assert context.is_ready == False
@@ -97,8 +100,7 @@ def test_context_connect(context):
     assert context.server_protocol_version == None
     assert context.is_local == None
 
-    with context:
-        context.connect()
+    context.connect()
 
     assert context.is_ready == True
     assert context.is_failed == False
@@ -119,14 +121,12 @@ def test_context_connect(context):
     assert context.server_protocol_version == None
     assert context.is_local == None
 
-    context.mainloop.delete()
-
 
 @pytest.fixture
 def stream(context):
+    context.connect()
+    audio_format = AudioFormat(1, 16, 44100)
     with context:
-        context.connect()
-        audio_format = AudioFormat(1, 16, 44100)
         stream = context.create_stream(audio_format)
     return stream
 
@@ -150,7 +150,6 @@ def filled_stream(stream, audio_source):
         stream.write(audio_data)
 
     assert stream.is_ready
-
     return stream
 
 
@@ -169,10 +168,6 @@ def test_stream_create(stream):
     assert stream.is_ready == False
     assert stream.is_failed == False
     assert stream.is_terminated == False
-
-    with stream:
-        stream.context.delete()
-    stream.mainloop.delete()
 
 
 def test_stream_connect(stream):
@@ -202,9 +197,6 @@ def test_stream_connect(stream):
     assert stream.is_failed == False
     assert stream.is_terminated == True
 
-    with stream:
-        stream.context.delete()
-    stream.mainloop.delete()
 
 
 def test_stream_write(stream, audio_source):
@@ -227,9 +219,6 @@ def test_stream_write(stream, audio_source):
 
     assert stream.is_terminated
 
-    with stream:
-        stream.context.delete()
-    stream.mainloop.delete()
 
 
 def test_stream_timing_info(filled_stream):
@@ -242,9 +231,6 @@ def test_stream_timing_info(filled_stream):
 
     with filled_stream:
         op.delete()
-        filled_stream.delete()
-        filled_stream.context.delete()
-    filled_stream.mainloop.delete()
 
 
 def test_stream_trigger(filled_stream):
@@ -255,9 +241,6 @@ def test_stream_trigger(filled_stream):
 
     with filled_stream:
         op.delete()
-        filled_stream.delete()
-        filled_stream.context.delete()
-    filled_stream.mainloop.delete()
 
 
 def test_stream_prebuf(filled_stream):
@@ -268,9 +251,6 @@ def test_stream_prebuf(filled_stream):
 
     with filled_stream:
         op.delete()
-        filled_stream.delete()
-        filled_stream.context.delete()
-    filled_stream.mainloop.delete()
 
 
 def test_stream_cork(filled_stream):
@@ -291,9 +271,6 @@ def test_stream_cork(filled_stream):
 
     with filled_stream:
         op.delete()
-        filled_stream.delete()
-        filled_stream.context.delete()
-    filled_stream.mainloop.delete()
 
 
 def test_stream_update_sample_rate(filled_stream):
@@ -304,12 +281,9 @@ def test_stream_update_sample_rate(filled_stream):
 
     with filled_stream:
         op.delete()
-        filled_stream.delete()
-        filled_stream.context.delete()
-    filled_stream.mainloop.delete()
 
 
-def test_stream_write_needed(stream, audio_source):
+def test_stream_write_needed(stream, audio_source, event_loop):
     with stream:
         stream.connect_playback()
 
@@ -320,7 +294,10 @@ def test_stream_write_needed(stream, audio_source):
     def on_write_needed(nbytes, underflow):
         on_write_needed.nbytes = nbytes
         on_write_needed.underflow = underflow
+        if underflow is True:
+            event_loop.interrupt_event_loop()
         return pyglet.event.EVENT_HANDLED
+
     on_write_needed.nbytes = None
     on_write_needed.underflow = None
 
@@ -329,27 +306,20 @@ def test_stream_write_needed(stream, audio_source):
         stream.write(audio_data)
     assert stream.is_ready
     assert not stream.underflow
-
     with stream:
         stream.resume().wait().delete()
 
-    while on_write_needed.nbytes is None:
-        with stream:
-            stream.wait()
+    event_loop.run_event_loop(duration=0.1)
+
     assert on_write_needed.nbytes > 0
     assert on_write_needed.underflow == False
     assert not stream.underflow
 
     on_write_needed.nbytes = None
     on_write_needed.underflow = None
-    while on_write_needed.underflow != True:
-        with stream:
-            stream.wait()
+
+    event_loop.run_event_loop(duration=5.0)
     assert on_write_needed.nbytes > 0
     assert on_write_needed.underflow == True
     assert stream.underflow
 
-    with stream:
-        stream.delete()
-        stream.context.delete()
-    stream.mainloop.delete()

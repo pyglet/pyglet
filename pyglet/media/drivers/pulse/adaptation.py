@@ -34,16 +34,20 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import weakref
+
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
 from pyglet.media.listener import AbstractListener
+from pyglet.debug import debug_print
 
 from . import lib_pulseaudio as pa
 from .interface import PulseAudioContext, PulseAudioContext, PulseAudioMainLoop, PulseAudioStream
 
 import pyglet
-_debug = pyglet.options['debug_media']
+
+_debug = debug_print('debug_media')
 
 
 class PulseAudioDriver(AbstractAudioDriver):
@@ -56,9 +60,12 @@ class PulseAudioDriver(AbstractAudioDriver):
         self._players = pyglet.app.WeakSet()
         self._listener = PulseAudioListener(self)
 
-    def create_audio_player(self, source_group, player):
+    def __del__(self):
+        self.delete()
+
+    def create_audio_player(self, playlist, player):
         assert self.context is not None
-        player = PulseAudioPlayer(source_group, player, self)
+        player = PulseAudioPlayer(playlist, player, self)
         self._players.add(player)
         return player
 
@@ -88,8 +95,6 @@ class PulseAudioDriver(AbstractAudioDriver):
     def delete(self):
         """Completely shut down pulseaudio client."""
         if self.mainloop is not None:
-            for player in self._players:
-                player.delete()
 
             with self.mainloop:
                 if self.context is not None:
@@ -107,7 +112,7 @@ class PulseAudioDriver(AbstractAudioDriver):
 
 class PulseAudioListener(AbstractListener):
     def __init__(self, driver):
-        self.driver = driver
+        self.driver = weakref.proxy(driver)
 
     def _set_volume(self, volume):
         self._volume = volume
@@ -127,10 +132,10 @@ class PulseAudioListener(AbstractListener):
 class PulseAudioPlayer(AbstractAudioPlayer):
     _volume = 1.0
 
-    def __init__(self, source_group, player, driver):
-        super(PulseAudioPlayer, self).__init__(source_group, player)
-        self.driver = driver
-        self.context = driver.context
+    def __init__(self, playlist, player, driver):
+        super(PulseAudioPlayer, self).__init__(playlist, player)
+        self.driver = weakref.ref(driver)
+        self.context = weakref.proxy(driver.context)
 
         self._events = []
         self._timestamps = []  # List of (ref_time, timestamp)
@@ -145,17 +150,16 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         self._time_sync_operation = None
 
-        audio_format = source_group.audio_format
+        audio_format = playlist.audio_format
         assert audio_format
 
-        with self.context.mainloop:
+        with driver.mainloop:
             self.stream = self.context.create_stream(audio_format)
             self.stream.push_handlers(self)
             self.stream.connect_playback()
             assert self.stream.is_ready
 
-        if _debug:
-            print('PulseAudioPlayer: __init__ finished')
+        assert _debug('PulseAudioPlayer: __init__ finished')
 
     def on_write_needed(self, nbytes, underflow):
         if underflow:
@@ -169,27 +173,26 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 self._time_sync_operation.delete()
                 self._time_sync_operation = None
             if self._time_sync_operation is None:
-                if _debug:
-                    print('PulseAudioPlayer: trigger timing info update')
+                assert _debug('PulseAudioPlayer: trigger timing info update')
                 self._time_sync_operation = self.stream.update_timing_info(self._process_events)
 
     def _get_audio_data(self, nbytes=None):
-        if self._current_audio_data is None and self.source_group is not None:
+        if self._current_audio_data is None and self.playlist is not None:
             # Always try to buffer at least 1 second of audio data
-            min_bytes = 1 * self.source_group.audio_format.bytes_per_second
+            min_bytes = 1 * self.playlist.audio_format.bytes_per_second
             if nbytes is None:
                 nbytes = min_bytes
             else:
                 nbytes = min(min_bytes, nbytes)
-            if _debug:
-                print('PulseAudioPlayer: Try to get {} bytes of audio data'.format(nbytes))
-            self._current_audio_data = self.source_group.get_audio_data(nbytes)
+            assert _debug('PulseAudioPlayer: Try to get {} bytes of audio data'.format(nbytes))
+            compensation_time = self.get_audio_time_diff()
+            self._current_audio_data = self.playlist.get_audio_data(nbytes, compensation_time)
             self._schedule_events()
-        if _debug:
-            if self._current_audio_data is None:
-                print('PulseAudioPlayer: No audio data available')
-            else:
-                print('PulseAudioPlayer: Got {} bytes of audio data'.format(self._current_audio_data.length))
+        if self._current_audio_data is None:
+            assert _debug('PulseAudioPlayer: No audio data available')
+        else:
+            assert _debug('PulseAudioPlayer: Got {} bytes of audio data'.format(
+                           self._current_audio_data.length))
         return self._current_audio_data
 
     def _has_audio_data(self):
@@ -200,29 +203,30 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             if nbytes == self._current_audio_data.length:
                 self._current_audio_data = None
             else:
-                self._current_audio_data.consume(nbytes, self.source_group.audio_format)
+                self._current_audio_data.consume(nbytes, self.playlist.audio_format)
 
     def _schedule_events(self):
         if self._current_audio_data is not None:
             for event in self._current_audio_data.events:
                 event_index = self._write_index + event.timestamp * \
-                    self.source_group.audio_format.bytes_per_second
-                if _debug:
-                    print('PulseAudioPlayer: Schedule event at index {}'.format(event_index))
+                    self.playlist.audio_format.bytes_per_second
+                assert _debug('PulseAudioPlayer: Schedule event at index {}'.format(event_index))
                 self._events.append((event_index, event))
 
     def _write_to_stream(self, nbytes=None):
         if nbytes is None:
             nbytes = self.stream.writable_size
-        if _debug:
-            print('PulseAudioPlayer: Requested to write %d bytes to stream' % nbytes)
+        assert _debug('PulseAudioPlayer: Requested to write %d bytes to stream' % nbytes)
 
         seek_mode = pa.PA_SEEK_RELATIVE
         if self._clear_write:
+            # When seeking, the stream.writable_size will be 0.
+            # So we force at least 4096 bytes to overwrite the Buffer
+            # starting at read index
+            nbytes = max(4096, nbytes)
             seek_mode = pa.PA_SEEK_RELATIVE_ON_READ
             self._clear_write = False
-            if _debug:
-                print('PulseAudioPlayer: Clear buffer')
+            assert _debug('PulseAudioPlayer: Clear buffer')
 
         while self._has_audio_data() and nbytes > 0:
             audio_data = self._get_audio_data()
@@ -235,8 +239,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self._timestamps.append((self._write_index, audio_data.timestamp))
             self._write_index += consumption
 
-            if _debug:
-                print('PulseAudioPlayer: Actually wrote %d bytes to stream' % consumption)
+            assert _debug('PulseAudioPlayer: Actually wrote {} bytes '
+                          'to stream'.format(consumption))
             self._consume_audio_data(consumption)
 
             nbytes -= consumption
@@ -250,69 +254,62 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 op.delete()  # Explicit delete to prevent locking
 
     def _handle_underflow(self):
-        if _debug:
-            print('Player: underflow')
+        assert _debug('Player: underflow')
         if self._has_audio_data():
             self._write_to_stream()
         else:
             self._add_event_at_write_index('on_eos')
-            self._add_event_at_write_index('on_source_group_eos')
 
     def _process_events(self):
-        if _debug:
-            print('PulseAudioPlayer: Process events')
+        assert _debug('PulseAudioPlayer: Process events')
         if not self._events:
-            if _debug:
-                print('PulseAudioPlayer: No events')
+            assert _debug('PulseAudioPlayer: No events')
             return
 
         # Assume this is called after time sync
         timing_info = self.stream.get_timing_info()
         if not timing_info:
-            if _debug:
-                print('PulseAudioPlayer: No timing info to process events')
+            assert _debug('PulseAudioPlayer: No timing info to process events')
             return
 
         read_index = timing_info.read_index
-        if _debug:
-            print('PulseAudioPlayer: Dispatch events at index {}'.format(read_index))
+        assert _debug('PulseAudioPlayer: Dispatch events at index {}'.format(read_index))
 
         while self._events and self._events[0][0] <= read_index:
             _, event = self._events.pop(0)
-            if _debug:
-                print('PulseAudioPlayer: Dispatch event', event)
+            assert _debug('PulseAudioPlayer: Dispatch event', event)
             event._sync_dispatch_to_player(self.player)
 
     def _add_event_at_write_index(self, event_name):
-        if _debug:
-            print('PulseAudioPlayer: Add event at index {}'.format(self._write_index))
+        assert _debug('PulseAudioPlayer: Add event at index {}'.format(self._write_index))
         self._events.append((self._write_index, MediaEvent(0., event_name)))
 
-
-    def __del__(self):
-        try:
-            self.delete()
-        except:
-            pass
-
     def delete(self):
-        if _debug:
-            print('PulseAudioPlayer.delete')
+        assert _debug('Delete PulseAudioPlayer')
+
+        self.stream.pop_handlers()
+        driver = self.driver()
+        if driver is None:
+            assert _debug('PulseAudioDriver has been garbage collected.')
+            self.stream = None
+            return
+
+        if driver.mainloop is None:
+            assert _debug('PulseAudioDriver already deleted. '
+                      'PulseAudioPlayer could not clean up properly.')
+            return
 
         if self._time_sync_operation is not None:
             with self._time_sync_operation:
                 self._time_sync_operation.delete()
             self._time_sync_operation = None
 
-        if self.stream is not None:
-            with self.stream:
-                self.stream.delete()
-            self.stream = None
+        self.stream.delete()
+        self.stream = None
 
     def clear(self):
-        if _debug:
-            print('PulseAudioPlayer.clear')
-
+        assert _debug('PulseAudioPlayer.clear')
+        super(PulseAudioPlayer, self).clear()
         self._clear_write = True
         self._write_index = self._get_read_index()
         self._timestamps = []
@@ -323,27 +320,23 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             self.stream.prebuf().wait()
 
     def play(self):
-        if _debug:
-            print('PulseAudioPlayer.play')
+        assert _debug('PulseAudioPlayer.play')
 
         with self.stream:
             if self.stream.is_corked:
                 self.stream.resume().wait().delete()
-                if _debug:
-                    print('PulseAudioPlayer: Resumed playback')
+                assert _debug('PulseAudioPlayer: Resumed playback')
             if self.stream.underflow:
                 self._write_to_stream()
             if not self._has_audio_data():
                 self.stream.trigger().wait().delete()
-                if _debug:
-                    print('PulseAudioPlayer: Triggered stream for immediate playback')
+                assert _debug('PulseAudioPlayer: Triggered stream for immediate playback')
             assert not self.stream.is_corked
 
         self._playing = True
 
     def stop(self):
-        if _debug:
-            print('PulseAudioPlayer.stop')
+        assert _debug('PulseAudioPlayer.stop')
 
         with self.stream:
             if not self.stream.is_corked:
@@ -361,8 +354,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         else:
             read_index = 0
 
-        if _debug:
-            print('_get_read_index ->', read_index)
+        assert _debug('_get_read_index ->', read_index)
         return read_index
 
     def _get_write_index(self):
@@ -372,17 +364,25 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         else:
             write_index = 0
 
-        if _debug:
-            print('_get_write_index ->', write_index)
+        assert _debug('_get_write_index ->', write_index)
         return write_index
+
+    def _get_timing_info(self):
+        with self.stream:
+            self.stream.update_timing_info().wait().delete()
+
+        timing_info = self.stream.get_timing_info()
+        return timing_info
 
     def get_time(self):
         if not self._read_index_valid:
-            if _debug:
-                print('get_time <_read_index_valid = False> -> None')
-            return
+            assert _debug('get_time <_read_index_valid = False> -> 0')
+            return 0
 
-        read_index = self._get_read_index()
+        t_info = self._get_timing_info()
+        read_index = t_info.read_index
+        transport_usec = t_info.transport_usec
+        sink_usec = t_info.sink_usec
 
         write_index = 0
         timestamp = 0.0
@@ -396,18 +396,25 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         except IndexError:
             pass
 
-        bytes_per_second = self.source_group.audio_format.bytes_per_second
-        time = timestamp + (read_index - write_index) / float(bytes_per_second)
+        bytes_per_second = self.playlist.audio_format.bytes_per_second
+        dt = (read_index - write_index) / float(bytes_per_second) * 1000000
+        # We add 2x the transport time because we didn't take it into account
+        # when we wrote the write index the first time. See _write_to_stream
+        dt += t_info.transport_usec * 2
+        dt -= t_info.sink_usec
+        # We convert back to seconds
+        dt /= 1000000
+        time = timestamp + dt
 
-        if _debug:
-            print('get_time ->', time)
+        assert _debug('get_time ->', time)
         return time
 
     def set_volume(self, volume):
         self._volume = volume
 
         if self.stream:
-            volume *= self.driver._listener._volume
+            driver = self.driver()
+            volume *= driver._listener._volume
             with self.context:
                 self.context.set_input_volume(self.stream, volume).wait()
 
@@ -415,3 +422,5 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         with self.stream:
             self.stream.update_sample_rate(int(pitch * self.sample_rate)).wait()
 
+    def prefill_audio(self):
+        self._write_to_stream(nbytes=None)

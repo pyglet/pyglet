@@ -1,4 +1,6 @@
 syntax: glob
+.hgrc
+*~
 *.pyc
 *.pyo
 _build
@@ -28,3 +30,4 @@ parsetab.py
 pptab.py
 strict_exprtab.py
 prof/
+.hgrc

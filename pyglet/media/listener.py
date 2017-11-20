@@ -40,7 +40,7 @@ class AbstractListener(with_metaclass(ABCMeta, object)):
     """The listener properties for positional audio.
 
     You can obtain the singleton instance of this class by calling
-    `AbstractAudioDriver.get_listener`.
+    :meth:`AbstractAudioDriver.get_listener`.
     """
 
     _volume = 1.0

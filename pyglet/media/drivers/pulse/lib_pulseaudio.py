@@ -4,6 +4,9 @@ Generated with:
 tools/genwrappers.py pulseaudio
 
 Do not modify this file.
+
+IMPORTANT: struct_timeval is incorrectly parsed by tools/genwrappers.py and
+was manually edited in this file.
 '''
 
 __docformat__ =  'restructuredtext'
@@ -326,12 +329,10 @@ class struct_pa_timing_info(Structure):
         'configured_source_usec',
         'since_underrun',
     ]
+
 class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
+    _fields_ = [("tv_sec", c_long),
+                ("tv_usec", c_long)]
 
 struct_pa_timing_info._fields_ = [
     ('timestamp', struct_timeval),
@@ -468,19 +469,6 @@ struct_pa_time_event._fields_ = [
 ]
 
 pa_time_event = struct_pa_time_event 	# /usr/include/pulse/mainloop-api.h:66
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 pa_time_event_cb_t = CFUNCTYPE(None, POINTER(pa_mainloop_api), POINTER(pa_time_event), POINTER(struct_timeval), POINTER(None)) 	# /usr/include/pulse/mainloop-api.h:68
 pa_time_event_destroy_cb_t = CFUNCTYPE(None, POINTER(pa_mainloop_api), POINTER(pa_time_event), POINTER(None)) 	# /usr/include/pulse/mainloop-api.h:70
@@ -2557,138 +2545,48 @@ pa_msleep = _lib.pa_msleep
 pa_msleep.restype = c_int
 pa_msleep.argtypes = [c_ulong]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:61
 pa_gettimeofday = _lib.pa_gettimeofday
 pa_gettimeofday.restype = POINTER(struct_timeval)
 pa_gettimeofday.argtypes = [POINTER(struct_timeval)]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:65
 pa_timeval_diff = _lib.pa_timeval_diff
 pa_timeval_diff.restype = pa_usec_t
 pa_timeval_diff.argtypes = [POINTER(struct_timeval), POINTER(struct_timeval)]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:68
 pa_timeval_cmp = _lib.pa_timeval_cmp
 pa_timeval_cmp.restype = c_int
 pa_timeval_cmp.argtypes = [POINTER(struct_timeval), POINTER(struct_timeval)]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:71
 pa_timeval_age = _lib.pa_timeval_age
 pa_timeval_age.restype = pa_usec_t
 pa_timeval_age.argtypes = [POINTER(struct_timeval)]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:74
 pa_timeval_add = _lib.pa_timeval_add
 pa_timeval_add.restype = POINTER(struct_timeval)
 pa_timeval_add.argtypes = [POINTER(struct_timeval), pa_usec_t]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:77
 pa_timeval_sub = _lib.pa_timeval_sub
 pa_timeval_sub.restype = POINTER(struct_timeval)
 pa_timeval_sub.argtypes = [POINTER(struct_timeval), pa_usec_t]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
-
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:80
 pa_timeval_store = _lib.pa_timeval_store
 pa_timeval_store.restype = POINTER(struct_timeval)
 pa_timeval_store.argtypes = [POINTER(struct_timeval), pa_usec_t]
 
-class struct_timeval(Structure):
-    __slots__ = [
-    ]
-struct_timeval._fields_ = [
-    ('_opaque_struct', c_int)
-]
 
 # /usr/include/pulse/timeval.h:83
 pa_timeval_load = _lib.pa_timeval_load

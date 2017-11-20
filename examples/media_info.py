@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Print details of a media file that pyglet can open (requires AVbin).
+'''Print details of a media file that pyglet can open (requires FFmpeg).
 
 Usage::
 
@@ -17,17 +17,16 @@ import sys
 import pyglet
 
 
-def print_avbin_info():
-    from pyglet.media import have_avbin
+def print_ffmpeg_info():
+    from pyglet.media import have_ffmpeg
 
-    if have_avbin():
-        from pyglet.media.sources import avbin
-        print('Using AVbin version %d (FFmpeg r%d)' % (
-            avbin.get_version(),
-            avbin.av.avbin_get_ffmpeg_revision()))
+    if have_ffmpeg():
+        from pyglet.media.sources import ffmpeg
+        print('Using FFmpeg version {0}'.format(
+            ffmpeg.get_version()))
     else:
-        print('AVbin not available; required for media decoding.')
-        print('http://code.google.com/p/avbin')
+        print('FFmpeg not available; required for media decoding.')
+        print('https://www.ffmpeg.org/download.html')
         print()
 
 
@@ -84,7 +83,7 @@ if __name__ == '__main__':
         print_avbin_info()
         sys.exit(1)
 
-    print_avbin_info()
+    print_ffmpeg_info()
 
     filename = sys.argv[1]
     try:
