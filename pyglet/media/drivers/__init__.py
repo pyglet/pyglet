@@ -3,12 +3,26 @@ from __future__ import print_function
 from __future__ import absolute_import
 from builtins import str
 
+import atexit
+
 import pyglet
 
 _debug = pyglet.options['debug_media']
 
 
 def get_audio_driver():
+    """Get the preferred audio driver for the current platform.
+
+    Currently pyglet supports DirectSound, PulseAudio and OpenAL drivers. If
+    the platform supports more than one of those audio drivers, the
+    application can give its preference with :data:`pyglet.options` ``audio``
+    keyword. See the Programming guide, section
+    :doc:`/programming_guide/media`.
+
+    Returns:
+        AbstractAudioDriver : The concrete implementation of the preferred 
+        audio driver for this platform.
+    """
     global _audio_driver
 
     if _audio_driver:
@@ -31,24 +45,19 @@ def get_audio_driver():
                 _audio_driver = directsound.create_audio_driver()
                 break
             elif driver_name == 'silent':
-                _audio_driver = get_silent_audio_driver()
+                _audio_driver = None
                 break
-        except Exception as exp:
+        except Exception:
             if _debug:
                 print('Error importing driver %s:' % driver_name)
                 import traceback
                 traceback.print_exc()
     return _audio_driver
 
-def get_silent_audio_driver():
-    global _silent_audio_driver
 
-    if not _silent_audio_driver:
-        from . import silent
-        _silent_audio_driver = silent.create_audio_driver()
-
-    return _silent_audio_driver
+def _delete_audio_driver():
+    global _audio_driver
+    _audio_driver = None
 
 _audio_driver = None
-_silent_audio_driver = None
-
+atexit.register(_delete_audio_driver)

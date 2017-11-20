@@ -54,7 +54,7 @@
 * ``pyglet.media.drivers.directsound``
 * ``pyglet.media.drivers.openal``
 * ``pyglet.media.drivers.pulse``
-* ``pyglet.media.sources.avbin``
+* ``pyglet.media.sources.ffmpeg``
 * ``pyglet.window.carbon``
 * ``pyglet.window.cocoa``
 * ``pyglet.window.win32``

@@ -5,7 +5,7 @@ import pytest
 from time import sleep
 
 import pyglet
-#pyglet.options['debug_media'] = True
+pyglet.options['debug_media'] = False
 from pyglet.media.player import Player
 from pyglet.media.sources import procedural
 from pyglet.media.sources.base import StaticSource
@@ -39,7 +39,9 @@ def test_playback_fire_and_forget(event_loop, test_data):
     """Test playing back sound files using fire and forget."""
     sound = test_data.get_file('media', 'alert.wav')
     source = pyglet.media.load(sound, streaming=False)
-    source.play()
+    player = source.play()
+    player.on_player_eos = event_loop.interrupt_event_loop
+    event_loop.run_event_loop()
 
     event_loop.ask_question('Did you hear the alert sound playing?', screenshot=False)
 
@@ -79,7 +81,7 @@ def test_pause_queue(event_loop):
     # Run for the duration of the sound
     event_loop.run_event_loop(1.0)
 
-    event_loop.ask_question('Did you not hear any sound?', screenshot=False)
+    event_loop.ask_question('Is it silent?', screenshot=False)
 
 @pytest.mark.requires_user_validation
 def test_pause_sound(event_loop):

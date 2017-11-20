@@ -81,7 +81,7 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.3.0rc2'
+version = '1.3.0'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -212,6 +212,7 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
+    'ffmpeg_libs_win': tuple,
     'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,

@@ -309,7 +309,7 @@ class CheckerImagePattern(ImagePattern):
 class AbstractImage(object):
     """Abstract class representing an image.
 
-    :Ivariables:
+    :Parameters:
         `width` : int
             Width of image
         `height` : int
@@ -606,7 +606,7 @@ class TextureSequence(AbstractImageSequence):
 class UniformTextureSequence(TextureSequence):
     """Interface for a sequence of textures, each with the same dimensions.
 
-    :Ivariables:
+    :Parameters:
         `item_width` : int
             Width of each texture in the sequence.
         `item_height` : int
@@ -632,7 +632,7 @@ class UniformTextureSequence(TextureSequence):
 class ImageData(AbstractImage):
     """An image represented as a string of unsigned bytes.
 
-    :Ivariables:
+    :Parameters:
         `data` : str
             Pixel data, encoded according to `format` and `pitch`.
         `format` : str
@@ -1445,7 +1445,7 @@ class Texture(AbstractImage):
     Typically you will get an instance of Texture by accessing the `texture`
     member of any other AbstractImage.
 
-    :Ivariables:
+    :Parameters:
         `region_class` : class (subclass of TextureRegion)
             Class to use when constructing regions of this texture.
         `tex_coords` : tuple
