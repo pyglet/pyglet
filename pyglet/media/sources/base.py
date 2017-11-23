@@ -244,6 +244,7 @@ class Source(object):
     """
 
     _duration = None
+    _players = [] # List of players when calling Source.play
 
     audio_format = None
     video_format = None
@@ -273,6 +274,15 @@ class Source(object):
         player = Player()
         player.queue(self)
         player.play()
+        Source._players.append(player)
+
+        def _on_player_eos():
+            Source._players.remove(player)
+            # There is a closure on player. To get the refcount to 0,
+            # we need to delete this function.
+            player.on_player_eos = None
+
+        player.on_player_eos = _on_player_eos
         return player
 
     def get_animation(self):
