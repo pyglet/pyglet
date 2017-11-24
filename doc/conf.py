@@ -52,7 +52,7 @@ except ImportError:
 
 
 
-implementations = ["carbon", "cocoa", "win32", "xlib"]
+implementations = ["cocoa", "win32", "xlib"]
 
 # For each module, a list of submodules that should not be imported.
 # If value is None, do not try to import any submodule.
@@ -64,14 +64,12 @@ skip_modules = {"pyglet": {
                      "pyglet.app": implementations,
                      "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
                      "pyglet.extlibs": None,
-                     "pyglet.font": ["carbon",
-                                     "quartz",
+                     "pyglet.font": ["quartz",
                                      "win32",
                                      "freetype", "freetype_lib",
                                      "fontconfig",
                                      "win32query",],
-                     "pyglet.input": ["carbon_hid", "carbon_tablet",
-                                      "darwin_hid",
+                     "pyglet.input": ["darwin_hid",
                                       "directinput",
                                       "evdev",
                                       "wintab",
