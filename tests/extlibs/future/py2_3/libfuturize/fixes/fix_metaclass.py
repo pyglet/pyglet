@@ -201,6 +201,11 @@ class FixMetaclass(fixer_base.BaseFix):
         else:
             raise ValueError("Unexpected class definition")
 
+        # now stick the metaclass in the arglist
+        meta_txt = last_metaclass.children[0].children[0]
+        meta_txt.value = 'metaclass'
+        orig_meta_prefix = meta_txt.prefix
+
         # Was: touch_import(None, u'future.utils', node)
         touch_import(u'future.utils', u'with_metaclass', node)
 
