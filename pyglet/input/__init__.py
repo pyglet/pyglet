@@ -173,9 +173,4 @@ else:
         except:
             pass
     elif compat_platform == 'darwin':
-        from pyglet import options as pyglet_options
-        if pyglet_options['darwin_cocoa']:
-            from .darwin_hid import get_devices, get_joysticks, get_apple_remote
-        else:
-            from .carbon_hid import get_devices, get_joysticks, get_apple_remote
-            from .carbon_tablet import get_tablets
+        from .darwin_hid import get_devices, get_joysticks, get_apple_remote
