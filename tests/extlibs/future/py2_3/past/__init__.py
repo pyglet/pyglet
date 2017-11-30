@@ -80,7 +80,7 @@ Credits
 
 Licensing
 ---------
-Copyright 2013-2015 Python Charmers Pty Ltd, Australia.
+Copyright 2013-2016 Python Charmers Pty Ltd, Australia.
 The software is distributed under an MIT licence. See LICENSE.txt.
 """
 

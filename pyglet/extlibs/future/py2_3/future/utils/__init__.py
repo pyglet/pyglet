@@ -1,17 +1,19 @@
 """
 A selection of cross-compatible functions for Python 2 and 3.
 
-This exports useful functions for 2/3 compatible code that are not
-builtins on Python 3:
+This module exports useful functions for 2/3 compatible code:
 
     * bind_method: binds functions to classes
     * ``native_str_to_bytes`` and ``bytes_to_native_str``
     * ``native_str``: always equal to the native platform string object (because
       this may be shadowed by imports from future.builtins)
     * lists: lrange(), lmap(), lzip(), lfilter()
-    * iterable method compatibility: iteritems, iterkeys, itervalues
+    * iterable method compatibility:
+        - iteritems, iterkeys, itervalues
+        - viewitems, viewkeys, viewvalues
 
-        * Uses the original method if available, otherwise uses items, keys, values.
+        These use the original method if available, otherwise they use items,
+        keys, values.
 
     * types:
 
@@ -27,38 +29,14 @@ builtins on Python 3:
         Take a text string, a byte string, or a sequence of characters taken
         from a byte string, and make a byte string.
 
-This module also defines a simple decorator called
-``python_2_unicode_compatible`` (from django.utils.encoding) which
-defines ``__unicode__`` and ``__str__`` methods consistently under Python
-3 and 2. To support Python 3 and 2 with a single code base, simply define
-a ``__str__`` method returning unicode text and apply the
-python_2_unicode_compatible decorator to the class like this::
-    
-    >>> from future.utils import python_2_unicode_compatible
-    
-    >>> @python_2_unicode_compatible
-    ... class MyClass(object):
-    ...     def __str__(self):
-    ...         return u'Unicode string: \u5b54\u5b50'
-    
-    >>> a = MyClass()
+    * raise_from()
+    * raise_with_traceback()
 
-Then, after this import:
+This module also defines these decorators:
 
-    >>> from future.builtins import str
-    
-the following is ``True`` on both Python 3 and 2::
-    
-    >>> str(a) == a.encode('utf-8').decode('utf-8')
-    True
-
-and, on a Unicode-enabled terminal with the right fonts, these both print the
-Chinese characters for Confucius::
-    
-    print(a)
-    print(str(a))
-
-On Python 3, this decorator is a no-op.
+    * ``python_2_unicode_compatible``
+    * ``with_metaclass``
+    * ``implements_iterator``
 
 Some of the functions in this module come from the following sources:
 
@@ -80,16 +58,42 @@ import inspect
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
 PY26 = sys.version_info[0:2] == (2, 6)
+PY27 = sys.version_info[0:2] == (2, 7)
 PYPY = hasattr(sys, 'pypy_translation_info')
 
 
 def python_2_unicode_compatible(cls):
     """
     A decorator that defines __unicode__ and __str__ methods under Python
-    2. Under Python 3 it does nothing.
-    
+    2. Under Python 3, this decorator is a no-op.
+
     To support Python 2 and 3 with a single code base, define a __str__
-    method returning unicode text and apply this decorator to the class.
+    method returning unicode text and apply this decorator to the class, like
+    this::
+
+    >>> from future.utils import python_2_unicode_compatible
+
+    >>> @python_2_unicode_compatible
+    ... class MyClass(object):
+    ...     def __str__(self):
+    ...         return u'Unicode string: \u5b54\u5b50'
+
+    >>> a = MyClass()
+
+    Then, after this import:
+
+    >>> from future.builtins import str
+
+    the following is ``True`` on both Python 3 and 2::
+
+    >>> str(a) == a.encode('utf-8').decode('utf-8')
+    True
+
+    and, on a Unicode-enabled terminal with the right fonts, these both print the
+    Chinese characters for Confucius::
+
+    >>> print(a)
+    >>> print(str(a))
 
     The implementation comes from django.utils.encoding.
     """
@@ -104,13 +108,13 @@ def with_metaclass(meta, *bases):
     Function from jinja2/_compat.py. License: BSD.
 
     Use it like this::
-        
+
         class BaseForm(object):
             pass
-        
+
         class FormType(type):
             pass
-        
+
         class Form(with_metaclass(FormType, BaseForm)):
             pass
 
@@ -120,7 +124,7 @@ def with_metaclass(meta, *bases):
     we also need to make sure that we downgrade the custom metaclass
     for one level to something closer to type (that's why __call__ and
     __init__ comes back from type etc.).
-    
+
     This has the advantage over six.with_metaclass of not introducing
     dummy classes into the final MRO.
     """
@@ -134,7 +138,7 @@ def with_metaclass(meta, *bases):
     return metaclass('temporary_class', None, {})
 
 
-# Definitions from pandas.compat follow:
+# Definitions from pandas.compat and six.py follow:
 if PY3:
     def bchr(s):
         return bytes([s])
@@ -145,6 +149,13 @@ if PY3:
             return bytes(s)
     def bord(s):
         return s
+
+    string_types = str,
+    integer_types = int,
+    class_types = type,
+    text_type = str
+    binary_type = bytes
+
 else:
     # Python 2
     def bchr(s):
@@ -153,6 +164,12 @@ else:
         return str(s)
     def bord(s):
         return ord(s)
+
+    string_types = basestring,
+    integer_types = (int, long)
+    class_types = (type, types.ClassType)
+    text_type = unicode
+    binary_type = str
 
 ###
 
@@ -370,15 +387,14 @@ if PY3:
 
         on Python 3. (See PEP 3134).
         """
-        # Is either arg an exception class (e.g. IndexError) rather than
-        # instance (e.g. IndexError('my message here')? If so, pass the
-        # name of the class undisturbed through to "raise ... from ...".
-        if isinstance(exc, type) and issubclass(exc, Exception):
-            exc = exc.__name__
-        if isinstance(cause, type) and issubclass(cause, Exception):
-            cause = cause.__name__
-        execstr = "raise " + _repr_strip(exc) + " from " + _repr_strip(cause)
         myglobals, mylocals = _get_caller_globals_and_locals()
+
+        # We pass the exception and cause along with other globals
+        # when we exec():
+        myglobals = myglobals.copy()
+        myglobals['__python_future_raise_from_exc'] = exc
+        myglobals['__python_future_raise_from_cause'] = cause
+        execstr = "raise __python_future_raise_from_exc from __python_future_raise_from_cause"
         exec(execstr, myglobals, mylocals)
 
     def raise_(tp, value=None, tb=None):
@@ -463,7 +479,7 @@ def implements_iterator(cls):
     From jinja2/_compat.py. License: BSD.
 
     Use as a decorator like this::
-        
+
         @implements_iterator
         class UppercasingIterator(object):
             def __init__(self, iterable):
@@ -472,7 +488,7 @@ def implements_iterator(cls):
                 return self
             def __next__(self):
                 return next(self._iter).upper()
-    
+
     '''
     if PY3:
         return cls
@@ -503,7 +519,7 @@ def is_new_style(cls):
     function to test for whether a class is new-style. (Python 3 only has
     new-style classes.)
     """
-    return hasattr(cls, '__class__') and ('__dict__' in dir(cls) 
+    return hasattr(cls, '__class__') and ('__dict__' in dir(cls)
                                           or hasattr(cls, '__slots__'))
 
 # The native platform string and bytes types. Useful because ``str`` and
@@ -570,7 +586,7 @@ def native(obj):
 
     On Py2, returns the corresponding native Py2 types that are
     superclasses for backported objects from Py3:
-    
+
     >>> from builtins import str, bytes, int
 
     >>> native(str(u'ABC'))
@@ -639,7 +655,7 @@ def as_native_str(encoding='utf-8'):
     unicode, into one that returns a native platform str.
 
     Use it as a decorator like this::
-        
+
         from __future__ import unicode_literals
 
         class MyClass(object):
@@ -700,7 +716,7 @@ else:
             elif native_type == dict:
                 return newdict(obj)
             else:
-                return NotImplementedError('type %s not supported' % type(obj))
+                return obj
         else:
             # Already a new type
             assert type(obj) in [newbytes, newstr]
@@ -721,4 +737,3 @@ __all__ = ['PY2', 'PY26', 'PY3', 'PYPY',
            'tobytes', 'viewitems', 'viewkeys', 'viewvalues',
            'with_metaclass'
           ]
-

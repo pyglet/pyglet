@@ -48,12 +48,12 @@ from __future__ import print_function
 
 import pyglet
 
-# Check for Carbon (OS X)
+# Check for OS X
 try:
-    from pyglet.window.carbon import *
-    _have_carbon = True
+    from pyglet.window.cocoa import *
+    _have_cocoa = True
 except ImportError:
-    _have_carbon = False
+    _have_cocoa = False
 
 # Check for Win32
 try:
@@ -73,12 +73,9 @@ except ImportError:
 
 # Subclass Window
 class MyWindow(pyglet.window.Window):
-    if _have_carbon:
-        @CarbonEventHandler(kEventClassWindow, kEventWindowClickDragRgn)
-        def _on_window_click_drag_rgn(self, next_handler, event, data):
-            print('Clicked drag rgn.')
-            carbon.CallNextEventHandler(next_handler, event)
-            return noErr
+    if _have_cocoa:
+        # TODO This is currently not supported in Cocoa (#156).
+        pass
 
     if _have_win32:
         @Win32EventHandler(WM_DISPLAYCHANGE)

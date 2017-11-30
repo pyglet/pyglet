@@ -184,19 +184,12 @@ def add_default_image_codecs():
     except ImportError:
         pass
 
-    # Mac OS X default: Quicktime for Carbon, Quartz for Cocoa.
-    # TODO: Make ctypes Quartz the default for both Carbon & Cocoa.
+    # Mac OS X default: Quartz
     if compat_platform == 'darwin':
         try:
-            from pyglet import options as pyglet_options
-            if pyglet_options['darwin_cocoa']:
-                import pyglet.image.codecs.quartz
-                add_encoders(quartz)
-                add_decoders(quartz)
-            else:
-                import pyglet.image.codecs.quicktime
-                add_encoders(quicktime)
-                add_decoders(quicktime)
+            import pyglet.image.codecs.quartz
+            add_encoders(quartz)
+            add_decoders(quartz)
         except ImportError:
             pass
 

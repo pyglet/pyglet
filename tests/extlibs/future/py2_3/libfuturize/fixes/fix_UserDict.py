@@ -96,7 +96,6 @@ class FixUserdict(FixImports):
                     self.transform(node, results)
         else:
             # Replace usage of the module.
-            import pdb; pdb.set_trace()
             bare_name = results["bare_with_attr"][0]
             new_name = self.replace.get(bare_name.value)
             if new_name:

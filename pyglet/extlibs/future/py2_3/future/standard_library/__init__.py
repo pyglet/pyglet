@@ -11,7 +11,6 @@ It is designed to be used as follows::
 And then these normal Py3 imports work on both Py3 and Py2::
 
     import builtins
-    import configparser
     import copyreg
     import queue
     import reprlib
@@ -31,7 +30,7 @@ And then these normal Py3 imports work on both Py3 and Py2::
     from itertools import filterfalse, zip_longest
     from sys import intern
     from collections import UserDict, UserList, UserString
-    from collections import OrderedDict, Counter     # even on Py2.6
+    from collections import OrderedDict, Counter, ChainMap     # even on Py2.6
     from subprocess import getoutput, getstatusoutput
     from subprocess import check_output              # even on Py2.6
 
@@ -55,7 +54,6 @@ We don't currently support these modules, but would like to::
     import dbm.dumb
     import dbm.gnu
     import collections.abc  # on Py33
-    import tkinter
     import pickle     # should (optionally) bring in cPickle on Python 2
 
 """
@@ -197,6 +195,10 @@ MOVES = [('collections', 'UserList', 'UserList', 'UserList'),
          ('math', 'ceil', 'future.backports.misc', 'ceil'),
          ('collections', 'OrderedDict', 'future.backports.misc', 'OrderedDict'),
          ('collections', 'Counter', 'future.backports.misc', 'Counter'),
+         ('collections', 'ChainMap', 'future.backports.misc', 'ChainMap'),
+         ('itertools', 'count', 'future.backports.misc', 'count'),
+         ('reprlib', 'recursive_repr', 'future.backports.misc', 'recursive_repr'),
+         ('functools', 'cmp_to_key', 'future.backports.misc', 'cmp_to_key'),
 
 # This is no use, since "import urllib.request" etc. still fails:
 #          ('urllib', 'error', 'future.moves.urllib', 'error'),
@@ -461,11 +463,11 @@ def install_aliases():
 
     # Hack for urllib so it appears to have the same structure on Py2 as on Py3
     import urllib
-    from future.moves.urllib import request
-    from future.moves.urllib import response
-    from future.moves.urllib import parse
-    from future.moves.urllib import error
-    from future.moves.urllib import robotparser
+    from future.backports.urllib import request
+    from future.backports.urllib import response
+    from future.backports.urllib import parse
+    from future.backports.urllib import error
+    from future.backports.urllib import robotparser
     urllib.request = request
     urllib.response = response
     urllib.parse = parse
@@ -738,8 +740,9 @@ class exclude_local_folder_imports(object):
     A context-manager that prevents standard library modules like configparser
     from being imported from the local python-future source folder on Py3.
 
-    (The presence of a configparser folder would otherwise prevent setuptools
-    from running on Py3.)
+    (This was need prior to v0.16.0 because the presence of a configparser
+    folder would otherwise have prevented setuptools from running on Py3. Maybe
+    it's not needed any more?)
     """
     def __init__(self, *args):
         assert len(args) > 0
@@ -753,7 +756,9 @@ class exclude_local_folder_imports(object):
         self.old_sys_modules = copy.copy(sys.modules)
         if sys.version_info[0] < 3:
             return
-        FUTURE_SOURCE_SUBFOLDERS = ['future', 'past', 'libfuturize', 'configparser']
+        # The presence of all these indicates we've found our source folder,
+        # because `builtins` won't have been installed in site-packages by setup.py:
+        FUTURE_SOURCE_SUBFOLDERS = ['future', 'past', 'libfuturize', 'libpasteurize', 'builtins']
 
         # Look for the future source folder:
         for folder in self.old_sys_path:
@@ -785,7 +790,6 @@ class exclude_local_folder_imports(object):
             sys.modules[m] = self.old_sys_modules[m]
 
 TOP_LEVEL_MODULES = ['builtins',
-                     'configparser',
                      'copyreg',
                      'html',
                      'http',

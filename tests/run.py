@@ -130,7 +130,6 @@ def _get_platform_omit():
     windows_specific = ['*win32*', '*wgl*', '*gdiplus*', '*wintab*', '*directsound*']
     linux_specific = ['*xlib*', '*freetype*', '*glx*', '*gdkpixbuf2*', '*x11*', '*pulse*']
     osx_specific = ['*agl*', '*darwin*']
-    osx_carbon_specific = ['*carbon*', '*quicktime*']
     osx_cocoa_specific = ['*cocoa*', '*quartz*']
 
     if pyglet.compat_platform not in Platform.LINUX:
@@ -139,13 +138,7 @@ def _get_platform_omit():
         omit.extend(windows_specific)
     if pyglet.compat_platform not in Platform.OSX:
         omit.extend(osx_specific)
-        omit.extend(osx_carbon_specific)
         omit.extend(osx_cocoa_specific)
-    if pyglet.compat_platform in Platform.OSX:
-        if pyglet.options['darwin_cocoa']:
-            omit.extend(osx_carbon_specific)
-        else:
-            omit.extend(osx_cocoa_specific)
 
     return omit
 

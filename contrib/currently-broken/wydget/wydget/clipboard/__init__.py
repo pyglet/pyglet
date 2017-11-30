@@ -15,8 +15,8 @@ def put_text(text):
 
 # Try to determine which platform to use.
 if sys.platform == 'darwin':
-    from wydget.clipboard.carbon import CarbonPasteboard
-    _clipboard = CarbonPasteboard()
+    assert false
+    _clipboard = None
 elif sys.platform in ('win32', 'cygwin'):
     from wydget.clipboard.win32 import Win32Clipboard
     _clipboard = Win32Clipboard()

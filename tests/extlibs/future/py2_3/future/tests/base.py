@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 import os
 import tempfile
 import unittest
@@ -6,10 +6,9 @@ import sys
 import re
 import warnings
 import io
-import functools
 from textwrap import dedent
 
-from future.utils import bind_method, PY26, PY3, PY2
+from future.utils import bind_method, PY26, PY3, PY2, PY27
 from future.moves.subprocess import check_output, STDOUT, CalledProcessError
 
 if PY26:
@@ -362,6 +361,9 @@ class CodeHandler(unittest.TestCase):
                         fn,
                         '----\n%s\n----' % f.read(),
                     )
+            if not hasattr(e, 'output'):
+                # The attribute CalledProcessError.output doesn't exist on Py2.6
+                e.output = None
             raise VerboseCalledProcessError(msg, e.returncode, e.cmd, output=e.output)
         return output
 
@@ -375,9 +377,14 @@ def expectedFailurePY3(func):
         return func
     return unittest.expectedFailure(func)
 
-
 def expectedFailurePY26(func):
     if not PY26:
+        return func
+    return unittest.expectedFailure(func)
+
+
+def expectedFailurePY27(func):
+    if not PY27:
         return func
     return unittest.expectedFailure(func)
 

@@ -313,7 +313,7 @@ class XlibContext13(BaseXlibContext):
                                        True)
 
     def attach(self, canvas):
-        if canvas is self.canvas:  # XXX do this for carbon too?
+        if canvas is self.canvas:
             return
 
         super(XlibContext13, self).attach(canvas)

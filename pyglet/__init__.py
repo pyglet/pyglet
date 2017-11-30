@@ -153,14 +153,6 @@ if getattr(sys, 'frozen', None):
 #:     that implements the _NET_WM_SYNC_REQUEST protocol.
 #:
 #:     .. versionadded:: 1.1
-#: darwin_cocoa
-#:     If True, the Cocoa-based pyglet implementation is used as opposed to
-#:     the 32-bit Carbon implementation.  When python is running in 64-bit mode
-#:     on Mac OS X 10.6 or later, this option is set to True by default.
-#:     Otherwise the Carbon implementation is preferred.
-#:
-#:     .. versionadded:: 1.2
-#:
 #: search_local_libs
 #:     If False, pyglet won't try to search for libraries in the script
 #:     directory and its `lib` subdirectory. This is useful to load a local
@@ -191,7 +183,7 @@ options = {
     'vsync': None,
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
-    'darwin_cocoa': False,
+    'darwin_cocoa': True,
     'search_local_libs': True,
 }
 
@@ -218,26 +210,7 @@ _option_types = {
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
-    'darwin_cocoa': bool,
 }
-
-
-def _choose_darwin_platform():
-    """Choose between Darwin's Carbon and Cocoa implementations."""
-    if compat_platform != 'darwin':
-        return
-    import struct
-    numbits = 8*struct.calcsize("P")
-    if numbits == 64:
-        import platform
-        osx_version = platform.mac_ver()[0].split(".")
-        if int(osx_version[0]) == 10 and int(osx_version[1]) < 6:
-            raise Exception('pyglet is not compatible with 64-bit Python '  
-                            'for versions of Mac OS X prior to 10.6.')
-        options['darwin_cocoa'] = True
-    else:
-        options['darwin_cocoa'] = False
-_choose_darwin_platform()  # can be overridden by an environment variable below
 
 
 def _read_environment():
@@ -265,9 +238,6 @@ if compat_platform == 'cygwin':
     ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
-
-if compat_platform == 'darwin' and not options['darwin_cocoa']:
-    warnings.warn('Carbon support is to be deprecated in Pyglet 1.4', PendingDeprecationWarning)
 
 
 # Call tracing

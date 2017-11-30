@@ -1,8 +1,6 @@
-* ``pyglet.app.carbon``
 * ``pyglet.app.cocoa``
 * ``pyglet.app.win32``
 * ``pyglet.app.xlib``
-* ``pyglet.canvas.carbon``
 * ``pyglet.canvas.cocoa``
 * ``pyglet.canvas.win32``
 * ``pyglet.canvas.xlib``
@@ -10,7 +8,6 @@
 * ``pyglet.com``
 * ``pyglet.compat``
 * ``pyglet.extlibs``
-* ``pyglet.font.carbon``
 * ``pyglet.font.fontconfig``
 * ``pyglet.font.freetype``
 * ``pyglet.font.freetype_lib``
@@ -18,7 +15,6 @@
 * ``pyglet.font.win32``
 * ``pyglet.font.win32query``
 * ``pyglet.gl.agl``
-* ``pyglet.gl.carbon``
 * ``pyglet.gl.cocoa``
 * ``pyglet.gl.glext_arb``
 * ``pyglet.gl.glext_nv``
@@ -41,8 +37,6 @@
 * ``pyglet.image.codecs.pil``
 * ``pyglet.image.codecs.quartz``
 * ``pyglet.image.codecs.quicktime``
-* ``pyglet.input.carbon_hid``
-* ``pyglet.input.carbon_tablet``
 * ``pyglet.input.darwin_hid``
 * ``pyglet.input.directinput``
 * ``pyglet.input.evdev``
@@ -55,7 +49,6 @@
 * ``pyglet.media.drivers.openal``
 * ``pyglet.media.drivers.pulse``
 * ``pyglet.media.sources.ffmpeg``
-* ``pyglet.window.carbon``
 * ``pyglet.window.cocoa``
 * ``pyglet.window.win32``
 * ``pyglet.window.xlib``
