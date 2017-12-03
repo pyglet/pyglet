@@ -134,7 +134,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def __init__(self, driver, source, player):
         super(OpenALAudioPlayer11, self).__init__(source, player)
         self.driver = driver
-        self.source = driver.context.create_source()
+        self.alsource = driver.context.create_source()
 
         # Cursor positions, like DSound and Pulse drivers, refer to a
         # hypothetical infinite-length buffer.  Cursor units are in bytes.
@@ -180,7 +180,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
     def delete(self):
         pyglet.clock.unschedule(self._check_refill)
-        self.source = None
+        self.alsource = None
 
     @property
     def ideal_buffer_size(self):
@@ -190,10 +190,10 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         assert _debug('OpenALAudioPlayer.play()')
 
         assert self.driver is not None
-        assert self.source is not None
+        assert self.alsource is not None
 
-        if not self.source.is_playing:
-            self.source.play()
+        if not self.alsource.is_playing:
+            self.alsource.play()
         self._playing = True
         self._clearing = False
 
@@ -204,24 +204,24 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         pyglet.clock.unschedule(self._check_refill)
 
         assert self.driver is not None
-        assert self.source is not None
+        assert self.alsource is not None
 
         self._pause_timestamp = self.get_time()
 
-        self.source.pause()
+        self.alsource.pause()
         self._playing = False
 
     def clear(self):
         assert _debug('OpenALAudioPlayer.clear()')
 
         assert self.driver is not None
-        assert self.source is not None
+        assert self.alsource is not None
 
         super(OpenALAudioPlayer11, self).clear()
-        self.source.stop()
+        self.alsource.stop()
         self._handle_processed_buffers()
-        self.source.clear()
-        self.source.byte_offset = 0
+        self.alsource.clear()
+        self.alsource.byte_offset = 0
         self._playing = False
         self._clearing = True
         self._audiodata_buffer = None
@@ -240,7 +240,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
     def _update_play_cursor(self):
         assert self.driver is not None
-        assert self.source is not None
+        assert self.alsource is not None
 
         self._handle_processed_buffers()
 
@@ -249,13 +249,13 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         if self._clearing:
             self._play_cursor = self._buffer_cursor
         else:
-            self._play_cursor = self._buffer_cursor + self.source.byte_offset
+            self._play_cursor = self._buffer_cursor + self.alsource.byte_offset
         assert self._check_cursors()
 
         self._dispatch_events()
 
     def _handle_processed_buffers(self):
-        processed = self.source.unqueue_buffers()
+        processed = self.alsource.unqueue_buffers()
 
         if processed > 0:
             if (len(self._buffer_timestamps) == processed
@@ -307,9 +307,9 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             write_size -= length
 
         # Check for underrun stopping playback
-        if self._playing and not self.source.is_playing:
+        if self._playing and not self.alsource.is_playing:
             assert _debug('underrun')
-            self.source.play()
+            self.alsource.play()
 
     def _get_audiodata(self):
         if self._audiodata_buffer is None or self._audiodata_buffer.length == 0:
@@ -333,9 +333,9 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
 
     def _queue_audio_data(self, audio_data, length):
-        buf = self.source.get_buffer()
+        buf = self.alsource.get_buffer()
         buf.data(audio_data, self.source.audio_format, length)
-        self.source.queue_buffer(buf)
+        self.alsource.queue_buffer(buf)
         self._update_write_cursor(audio_data, length)
 
     def _update_write_cursor(self, audio_data, length):
@@ -352,7 +352,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             self._events.append((cursor, event))
 
     def _has_underrun(self):
-        return self.source.buffers_queued == 0
+        return self.alsource.buffers_queued == 0
 
     def get_time(self):
         # Update first, might remove buffers
@@ -385,31 +385,31 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         return True  # Return true so it can be called in an assert (and optimized out)
 
     def set_volume(self, volume):
-        self.source.gain = volume
+        self.alsource.gain = volume
 
     def set_position(self, position):
-        self.source.position = position
+        self.alsource.position = position
 
     def set_min_distance(self, min_distance):
-        self.source.reference_distance = min_distance
+        self.alsource.reference_distance = min_distance
 
     def set_max_distance(self, max_distance):
-        self.source.max_distance = max_distance
+        self.alsource.max_distance = max_distance
 
     def set_pitch(self, pitch):
-        self.source.pitch = pitch
+        self.alsource.pitch = pitch
 
     def set_cone_orientation(self, cone_orientation):
-        self.source.direction = cone_orientation
+        self.alsource.direction = cone_orientation
 
     def set_cone_inner_angle(self, cone_inner_angle):
-        self.source.cone_inner_angle = cone_inner_angle
+        self.alsource.cone_inner_angle = cone_inner_angle
 
     def set_cone_outer_angle(self, cone_outer_angle):
-        self.source.cone_outer_angle = cone_outer_angle
+        self.alsource.cone_outer_angle = cone_outer_angle
 
     def set_cone_outer_gain(self, cone_outer_gain):
-        self.source.cone_outer_gain = cone_outer_gain
+        self.alsource.cone_outer_gain = cone_outer_gain
 
     def prefill_audio(self):
         write_size = self.get_write_size()
@@ -432,7 +432,7 @@ class OpenALAudioPlayer10(OpenALAudioPlayer11):
 
     def _update_play_cursor(self):
         assert self.driver is not None
-        assert self.source is not None
+        assert self.alsource is not None
 
         self._handle_processed_buffers()
 
