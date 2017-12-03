@@ -3,7 +3,7 @@
 # Collect public interface
 from .loader import load, have_ffmpeg
 from .base import AudioFormat, VideoFormat, AudioData, SourceInfo
-from .base import Source, StreamingSource, StaticSource, PlayList
+from .base import Source, StreamingSource, StaticSource
 # help the docs figure out where these are supposed to live (they live here)
 __all__ = [
   'load',
@@ -15,5 +15,4 @@ __all__ = [
   'Source',
   'StreamingSource',
   'StaticSource',
-  'PlayList',
 ]

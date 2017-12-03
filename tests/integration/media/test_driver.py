@@ -12,7 +12,6 @@ pyglet.options['debug_media'] = _debug
 pyglet.options['debug_media_buffers'] = _debug
 
 import pyglet.app
-from pyglet.media.sources import PlayList
 from pyglet.media.sources.procedural import Silence
 
 from .mock_player import MockPlayer
@@ -97,29 +96,21 @@ def driver(request):
     return driver
 
 
-def _create_play_list(*sources):
-    play_list = PlayList()
-    for source in sources:
-        play_list.queue(source)
-    return play_list
-
-
 def test_create_destroy(driver):
     driver.delete()
 
 
 def test_create_audio_player(driver, player):
-    play_list = _create_play_list(Silence(1.))
-    audio_player = driver.create_audio_player(play_list, player)
+    source = Silence(1.)
+    audio_player = driver.create_audio_player(source, player)
     audio_player.delete()
 
 
 def test_audio_player_clear(driver, player):
     """Test clearing all buffered data."""
     source = SilentTestSource(10.)
-    play_list = _create_play_list(source)
 
-    audio_player = driver.create_audio_player(play_list, player)
+    audio_player = driver.create_audio_player(source, player)
     try:
         audio_player.play()
         player.wait(.5)
@@ -139,9 +130,8 @@ def test_audio_player_clear(driver, player):
 def test_audio_player_time(driver, player):
     """Test retrieving current timestamp from player."""
     source = SilentTestSource(10.)
-    play_list = _create_play_list(source)
 
-    audio_player = driver.create_audio_player(play_list, player)
+    audio_player = driver.create_audio_player(source, player)
     try:
         audio_player.play()
         last_time = audio_player.get_time()

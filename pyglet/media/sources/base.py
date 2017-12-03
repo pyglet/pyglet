@@ -241,6 +241,13 @@ class Source(object):
             etc; or ``None`` if the` information is not available.
 
             .. versionadded:: 1.2
+
+    Attributes:
+        is_player_source (bool): Determine if this source is a player
+            current source.
+
+            Check on a :py:class:`~pyglet.media.player.Player` if this source
+            is the current source.
     """
 
     _duration = None
@@ -249,6 +256,7 @@ class Source(object):
     audio_format = None
     video_format = None
     info = None
+    is_player_source = False
 
     @property
     def duration(self):
@@ -342,7 +350,7 @@ class Source(object):
         """
         pass
 
-    # Internal methods that PlayList calls on the source:
+    # Internal methods that Player calls on the source:
 
     def seek(self, timestamp):
         """Seek to given timestamp.
@@ -378,34 +386,33 @@ class Source(object):
 class StreamingSource(Source):
     """A source that is decoded as it is being played.
 
-    The source can only be queued once.
+    The source can only be played once at a time on any
+    :class:`~pyglet.media.player.Player`.
     """
-
-    _is_queued = False
 
     @property
     def is_queued(self):
         """
-        bool: Determine if this source has been queued.
+        bool: Determine if this source is a player current source.
 
         Check on a :py:class:`~pyglet.media.player.Player` if this source
-        has been queued.
+        is the current source.
 
-        Read-only.
+        :deprecated: Use :attr:`is_player_source` instead.
         """
-        return self._is_queued
+        return self.is_player_source
 
     def _get_queue_source(self):
-        """Return the ``Source`` to be used as the queue source for a player.
+        """Return the ``Source`` to be used as the source for a player.
 
         Default implementation returns self.
 
         Returns:
             :class:`.Source`
         """
-        if self._is_queued:
-            raise MediaException('This source is already queued on a player.')
-        self._is_queued = True
+        if self.is_player_source:
+            raise MediaException('This source is already a source on a player.')
+        self.is_player_source = True
         return self
 
     def delete(self):
@@ -532,119 +539,3 @@ class StaticMemorySource(StaticSource):
 
         duration = float(len(data)) / self.audio_format.bytes_per_second
         return AudioData(data, len(data), timestamp, duration, [])
-
-
-class PlayList(object):
-    """Represents a queue of sources.
-
-    This class is used internally by pyglet.
-
-    .. versionadded:: 1.4
-    """
-
-    # TODO can sources list go empty?  what behaviour (ignore or error)?
-
-    def __init__(self):
-        self.audio_format = None
-        self.video_format = None
-        self.duration = 0.0
-        self._sources = deque()
-
-    def seek(self, time):
-        """Seek the first source to given timestamp.
-
-        Args:
-            timestamp (float): Time where to seek in the first source. The
-                ``timestamp`` will be clamped to the duration of the source.
-        """
-        if self._sources:
-            self._sources[0].seek(time)
-
-    def queue(self, source):
-        """Add the source to the queue.
-
-        :Parameters:
-            `source`: :class:`~pyglet.media.Source`
-                The source to queue.
-        """
-        source = source._get_queue_source()
-        if not self._sources:
-            # The first queued source will determine the initial playlist
-            # audio and video format.
-            # These are updated each time `next_source` is called.
-            self.audio_format = source.audio_format
-            self.video_format = source.video_format
-        self._sources.append(source)
-        self.duration += source.duration
-
-    def has_next(self):
-        """Check if there is a source behind the current one.
-
-        Returns:
-            bool
-        """
-        return len(self._sources) > 1
-
-    def next_source(self):
-        """Discard the current source.
-
-        This places the next source on top of the playlist.
-        """
-        if self._sources:
-            old_source = self._sources.popleft()
-            self.duration -= old_source.duration
-        if self._sources:
-            source = self._sources[0]
-            self.audio_format = source.audio_format
-            self.video_format = source.video_format
-
-    #: :deprecated: Use `next_source` instead.
-    next = next_source  # old API, worked badly with 2to3
-
-    def get_current_source(self):
-        """Get the current source on the playlist.
-
-        Returns:
-            :class:`.Source`
-        """
-        if self._sources:
-            return self._sources[0]
-
-    def get_audio_data(self, bytes, compensation_time=0.0):
-        """Get next audio packet.
-
-        Args:
-            bytes (int): Hint for preferred size of audio packet; may be
-                ignored.
-            compensation_time (float): Time in sec to compensate due to a
-                difference between the master clock and the audio clock.
-
-        Returns:
-            :class:`.AudioData`: The audio data or ``None`` if there is no
-            more data.
-        """
-        if not self._sources:
-            return None
-        data = self._sources[0].get_audio_data(bytes, compensation_time)
-        return data
-
-    def get_next_video_timestamp(self):
-        """Get the timestamp of the next video frame for the current source.
-
-        :rtype: float
-        :return: The next timestamp, or `None` if there are no more video
-            frames.
-        """
-        if not self._sources:
-            return None
-        timestamp = self._sources[0].get_next_video_timestamp()
-        return timestamp
-
-    def get_next_video_frame(self):
-        """Get the next video frame.
-
-        :rtype: :class:`pyglet.image.AbstractImage`
-        :return: The next video frame image.
-        """
-        if self._sources:
-            return self._sources[0].get_next_video_frame()

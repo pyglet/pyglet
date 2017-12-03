@@ -36,10 +36,12 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+from collections import deque, abc
+
 import pyglet
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
-from pyglet.media.sources.base import PlayList
+from pyglet.media.sources.base import Source
 
 # import cProfile
 
@@ -141,8 +143,9 @@ class Player(pyglet.event.EventDispatcher):
     _cone_outer_gain = 1.
 
     def __init__(self):
-        """Initialize the Player with a PlayList and a MasterClock."""
-        self._playlist = PlayList()
+        """Initialize the Player with a MasterClock."""
+        self._source = None
+        self._playlists = deque()
         self._audio_player = None
 
         self._texture = None
@@ -172,9 +175,22 @@ class Player(pyglet.event.EventDispatcher):
         or pause depending on its :attr:`.playing` attribute.
 
         Args:
-            source (Source): The source to queue.
+            source (Source or Iterable[Source]): The source to queue.
         """
-        self._playlist.queue(source)
+        if isinstance(source, Source):
+            source = _one_item_playlist(source)
+        else:
+            try:
+                source = iter(source)
+            except TypeError:
+                raise TypeError("source must be either a Source or an iterable."
+                    " Received type {0}".format(type(source)))
+        self._playlists.append(source)
+
+        if self.source is None:
+            source = next(self._playlists[0])
+            self._source = source._get_queue_source()
+
         self._set_playing(self._playing)
 
     def _set_playing(self, playing):
@@ -258,34 +274,56 @@ class Player(pyglet.event.EventDispatcher):
 
     def next_source(self):
         """
-        Move immediately to the next queued source.
+        Move immediately to the next source in the current playlist.
 
+        If the playlist is emtpy, discard it and check if another playlist
+        is queued.
         There may be a gap in playback while the audio buffer is refilled.
         """
         was_playing = self._playing
         self.pause()
         self._mclock.reset()
 
-        playlist = self._playlist
-        if playlist.has_next():
-            old_audio_format = playlist.audio_format
-            old_video_format = playlist.video_format
-            playlist.next_source()
-            if old_audio_format == playlist.audio_format:
+        if self.source:
+            # Reset source to the beginning
+            self.seek(0.0)
+            self.source.is_player_source = False
+
+        playlists = self._playlists
+        if not playlists:
+            return
+
+        try:
+            source = next(playlists[0])
+        except StopIteration:
+            self._playlists.popleft()
+            if not self._playlists:
+                source = None
+            else:
+                # Could someone queue an iterator which is empty??
+                source = next(self._playlists[0])
+
+        if source is None:
+            self._source = None
+            self.delete()
+            self.dispatch_event('on_player_eos')
+        else:
+            old_audio_format = self.source.audio_format
+            old_video_format = self.source.video_format
+            self._source = source._get_queue_source()
+
+            if old_audio_format == self.source.audio_format:
                 self._audio_player.clear()
+                self._audio_player.source = self.source
             else:
                 self._audio_player.delete()
                 self._audio_player = None
-            if old_video_format != playlist.video_format:
+            if old_video_format != self.source.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
-        else:
-            self.delete()
-            playlist.next_source()
-            self.dispatch_event('on_player_eos')
 
     #: :deprecated: Use `next_source` instead.
     next = next_source  # old API, worked badly with 2to3
@@ -325,14 +363,14 @@ class Player(pyglet.event.EventDispatcher):
         assert not self._audio_player
         assert self.source
 
-        _playlist = self._playlist
+        source = self.source
         audio_driver = get_audio_driver()
         if audio_driver is None:
             # Failed to find a valid audio driver
             self.source.audio_format = None
             return
 
-        self._audio_player = audio_driver.create_audio_player(_playlist, self)
+        self._audio_player = audio_driver.create_audio_player(source, self)
 
         # Set the audio player attributes
         for attr in ('volume', 'min_distance', 'max_distance', 'position',
@@ -344,7 +382,7 @@ class Player(pyglet.event.EventDispatcher):
     @property
     def source(self):
         """Source: Read-only. The current :class:`Source`, or ``None``."""
-        return self._playlist.get_current_source()
+        return self._source  
 
     @property
     def time(self):
@@ -397,7 +435,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def seek_next_frame(self):
         """Step forwards one video frame in the current source."""
-        time = self._playlist.get_next_video_timestamp()
+        time = self.source.get_next_video_timestamp()
         if time is None:
             return
         self.seek(time)
@@ -417,7 +455,7 @@ class Player(pyglet.event.EventDispatcher):
         #     import pstats
         #     ps = pstats.Stats(self.pr).sort_stats("cumulative")
         #     ps.print_stats()
-        _playlist = self._playlist
+        source = self.source
         time = self.time
         if bl.logger is not None:
             bl.logger.log(
@@ -426,15 +464,15 @@ class Player(pyglet.event.EventDispatcher):
                 bl.logger.rebased_wall_time()
             )
 
-        frame_rate = _playlist.video_format.frame_rate
+        frame_rate = source.video_format.frame_rate
         frame_duration = 1 / frame_rate
-        ts = _playlist.get_next_video_timestamp()
+        ts = source.get_next_video_timestamp()
         # Allow up to frame_duration difference
         while ts is not None and ts + frame_duration < time:
-            _playlist.get_next_video_frame()  # Discard frame
+            source.get_next_video_frame()  # Discard frame
             if bl.logger is not None:
                 bl.logger.log("p.P.ut.1.5", ts)
-            ts = _playlist.get_next_video_timestamp()
+            ts = source.get_next_video_timestamp()
 
         if bl.logger is not None:
             bl.logger.log("p.P.ut.1.6", ts)
@@ -447,7 +485,7 @@ class Player(pyglet.event.EventDispatcher):
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
 
-        image = _playlist.get_next_video_frame()
+        image = source.get_next_video_frame()
         if image is not None:
             if self._texture is None:
                 self._create_texture()
@@ -455,7 +493,7 @@ class Player(pyglet.event.EventDispatcher):
         elif bl.logger is not None:
             bl.logger.log("p.P.ut.1.8")
 
-        ts = _playlist.get_next_video_timestamp()
+        ts = source.get_next_video_timestamp()
         if ts is None:
             delay = frame_duration
         else:
@@ -568,10 +606,7 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.oe")
             bl.logger.close()
-        if self.loop:
-            self.seek(0)
-        else:
-            self.next_source()
+        self.next_source()
 
     def on_player_next_source(self):
         """The player starts to play the next queued source in the playlist.
@@ -588,6 +623,9 @@ Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_player_next_source')
 
+
+def _one_item_playlist(source):
+    yield source
 
 class PlayerGroup(object):
     """Group of players that can be played and paused simultaneously.

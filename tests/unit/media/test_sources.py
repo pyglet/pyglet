@@ -190,11 +190,11 @@ class SourceTestCase(FutureTestCase):
 class StreamingSourceTestCase(FutureTestCase):
     def test_can_queue_only_once(self):
         source = StreamingSource()
-        self.assertFalse(source.is_queued)
+        self.assertFalse(source.is_player_source)
 
         ret = source._get_queue_source()
         self.assertIs(ret, source)
-        self.assertTrue(source.is_queued)
+        self.assertTrue(source.is_player_source)
 
         with self.assertRaises(MediaException):
             source._get_queue_source()
@@ -219,6 +219,8 @@ class StaticSourceTestCase(FutureTestCase):
 
         type(self.mock_queue_source).audio_format = mock.PropertyMock(return_value=AudioFormat(channels, bitrate, 11025))
         type(self.mock_queue_source).video_format = mock.PropertyMock(return_value=None)
+        type(self.mock_source).audio_format = mock.PropertyMock(return_value=AudioFormat(channels, bitrate, 11025))
+        type(self.mock_source).video_format = mock.PropertyMock(return_value=None)
 
 
     def test_reads_all_data_on_init(self):
@@ -312,6 +314,8 @@ class StaticSourceTestCase(FutureTestCase):
 
         type(self.mock_queue_source).audio_format = mock.PropertyMock(return_value=None)
         type(self.mock_queue_source).video_format = mock.PropertyMock(return_value=None)
+        type(self.mock_source).audio_format = mock.PropertyMock(return_value=None)
+        type(self.mock_source).video_format = mock.PropertyMock(return_value=None)
 
         static_source = StaticSource(self.mock_source)
 
@@ -337,91 +341,4 @@ class StaticSourceTestCase(FutureTestCase):
         no_more_audio_data = queue_source.get_audio_data(1024)
         self.assertIsNone(no_more_audio_data)
 
-
-class PlayListTestCase(FutureTestCase):
-    audio_format = AudioFormat(1, 8, 11025)
-    video_format = VideoFormat(800, 600)
-
-    def create_mock_source(self, duration, audio_data=None, video_frame=None):
-        mock_source = mock.MagicMock()
-        m = mock_source._get_queue_source.return_value
-        type(m).audio_format = mock.PropertyMock(return_value=self.audio_format)
-        type(m).video_format = mock.PropertyMock(return_value=self.video_format)
-        type(m).duration = mock.PropertyMock(return_value=duration)
-        m.get_audio_data.return_value = self.create_audio_data(duration, audio_data)
-        m.get_next_video_timestamp.return_value=0.1
-        m.get_next_video_frame.return_value=video_frame
-        return mock_source
-
-    def create_audio_data(self, duration=1., data=None):
-        if data is None:
-            return None
-
-        audio_data = AudioData(data, len(data), 0., duration, [])
-        return audio_data
-
-    def test_queueing(self):
-        play_list = PlayList()
-        self.assertFalse(play_list.has_next())
-        self.assertAlmostEqual(play_list.duration, 0.)
-
-        source1 = self.create_mock_source(1.)
-        play_list.queue(source1)
-        self.assertFalse(play_list.has_next())
-        self.assertAlmostEqual(play_list.duration, 1.)
-
-        source2 = self.create_mock_source(2.0)
-        play_list.queue(source2)
-        self.assertTrue(play_list.has_next())
-        self.assertAlmostEqual(play_list.duration, 3.)
-
-    def test_seek(self):
-        play_list = PlayList()
-        source1 = self.create_mock_source(1.)
-        play_list.queue(source1)
-        source2 = self.create_mock_source(2.)
-        play_list.queue(source2)
-
-        play_list.seek(0.5)
-
-        source1._get_queue_source.return_value.seek.assert_called_once_with(0.5)
-        self.assertFalse(source2._get_queue_source.return_value.seek.called)
-
-    def test_empty_play_list(self):
-        """Test an empty source group"""
-        play_list = PlayList()
-        self.assertFalse(play_list.has_next())
-        self.assertAlmostEqual(play_list.duration, 0.)
-        self.assertIsNone(play_list.get_current_source())
-        play_list.seek(1.)
-        play_list.next_source()
-        self.assertIsNone(play_list.get_audio_data(1024))
-        self.assertIsNone(play_list.get_next_video_timestamp())
-        self.assertIsNone(play_list.get_next_video_frame())
-
-    def test_get_next_video_timestamp(self):
-        source1 = self.create_mock_source(1., audio_data=None, video_frame='a')
-        source2 = self.create_mock_source(2., audio_data=None, video_frame='b')
-        play_list = PlayList()
-        play_list.queue(source1)
-        play_list.queue(source2)
-
-        timestamp = play_list.get_next_video_timestamp()
-        self.assertAlmostEqual(timestamp, 0.1)
-
-        play_list.next_source()
-        timestamp = play_list.get_next_video_timestamp()
-        self.assertAlmostEqual(timestamp, 0.1)
-
-    def test_get_next_video_frame(self):
-        source1 = self.create_mock_source(1., audio_data=None, video_frame='a')
-        source2 = self.create_mock_source(2., audio_data=None, video_frame='b')
-        play_list = PlayList()
-        play_list.queue(source1)
-        play_list.queue(source2)
-
-        self.assertEqual(play_list.get_next_video_frame(), 'a')
-
-        play_list.next_source()
-        self.assertEqual(play_list.get_next_video_frame(), 'b')
 

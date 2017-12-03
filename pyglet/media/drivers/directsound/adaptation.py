@@ -78,8 +78,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     min_buffer_size = 9600
 
-    def __init__(self, driver, ds_driver, playlist, player):
-        super(DirectSoundAudioPlayer, self).__init__(playlist, player)
+    def __init__(self, driver, ds_driver, source, player):
+        super(DirectSoundAudioPlayer, self).__init__(source, player)
 
         # We keep here a strong reference because the AudioDriver is anyway
         # a singleton object which will only be deleted when the application
@@ -119,7 +119,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         # place of the timestamp)
         self._timestamps = []
 
-        audio_format = playlist.audio_format
+        audio_format = source.audio_format
 
         # DSound buffer
         self._ds_buffer = self._ds_driver.create_buffer(audio_format)
@@ -207,7 +207,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         # Pass a reference of ourself to allow the audio decoding to get time
         # information for synchronization.
         compensation_time = self.get_audio_time_diff()
-        self._audiodata_buffer = self.playlist.get_audio_data(self._buffer_size, compensation_time)
+        self._audiodata_buffer = self.source.get_audio_data(self._buffer_size, compensation_time)
 
         if self._audiodata_buffer is not None:
             assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
@@ -241,7 +241,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def _add_audiodata_events(self, audio_data):
         for event in audio_data.events:
             event_cursor = self._write_cursor + event.timestamp * \
-                self.playlist.audio_format.bytes_per_second
+                self.source.audio_format.bytes_per_second
             assert _debug('Adding event', event, 'at', event_cursor)
             self._events.append((event_cursor, event))
 
@@ -303,12 +303,12 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         if audio_data:
             ctypes.memmove(write_ptr.audio_ptr_1, audio_data.data, write_ptr.audio_length_1.value)
-            audio_data.consume(write_ptr.audio_length_1.value, self.playlist.audio_format)
+            audio_data.consume(write_ptr.audio_length_1.value, self.source.audio_format)
             if write_ptr.audio_length_2.value > 0:
                 ctypes.memmove(write_ptr.audio_ptr_2, audio_data.data, write_ptr.audio_length_2.value)
-                audio_data.consume(write_ptr.audio_length_2.value, self.playlist.audio_format)
+                audio_data.consume(write_ptr.audio_length_2.value, self.source.audio_format)
         else:
-            if self.playlist.audio_format.sample_size == 8:
+            if self.source.audio_format.sample_size == 8:
                 c = 0x80
             else:
                 c = 0
@@ -326,7 +326,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         if self._timestamps:
             cursor, ts = self._timestamps[0]
             result = ts + (self._play_cursor - cursor) / \
-                float(self.playlist.audio_format.bytes_per_second)
+                float(self.source.audio_format.bytes_per_second)
         else:
             result = None
 
@@ -348,7 +348,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
             self._ds_buffer.max_distance = max_distance
 
     def set_pitch(self, pitch):
-        frequency = int(pitch * self.playlist.audio_format.sample_rate)
+        frequency = int(pitch * self.source.audio_format.sample_rate)
         self._ds_buffer.frequency = frequency
 
     def set_cone_orientation(self, cone_orientation):
@@ -391,13 +391,13 @@ class DirectSoundDriver(AbstractAudioDriver):
     def __del__(self):
         self.delete()
 
-    def create_audio_player(self, playlist, player):
+    def create_audio_player(self, source, player):
         assert self._ds_driver is not None
         # We increase IDirectSound refcount for each AudioPlayer instantiated
         # This makes sure the AudioPlayer still has a valid _native_dsound to
         # clean-up itself during tear-down.
         self._ds_driver._native_dsound.AddRef()
-        return DirectSoundAudioPlayer(self, self._ds_driver, playlist, player)
+        return DirectSoundAudioPlayer(self, self._ds_driver, source, player)
 
     def get_listener(self):
         assert self._ds_driver is not None
