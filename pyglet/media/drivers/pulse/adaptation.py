@@ -135,7 +135,6 @@ class PulseAudioPlayer(AbstractAudioPlayer):
     def __init__(self, playlist, player, driver):
         super(PulseAudioPlayer, self).__init__(playlist, player)
         self.driver = weakref.ref(driver)
-        self.context = weakref.proxy(driver.context)
 
         self._events = []
         self._timestamps = []  # List of (ref_time, timestamp)
@@ -154,7 +153,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         assert audio_format
 
         with driver.mainloop:
-            self.stream = self.context.create_stream(audio_format)
+            self.stream = driver.context.create_stream(audio_format)
             self.stream.push_handlers(self)
             self.stream.connect_playback()
             assert self.stream.is_ready
@@ -415,12 +414,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         if self.stream:
             driver = self.driver()
             volume *= driver._listener._volume
-            with self.context:
-                self.context.set_input_volume(self.stream, volume).wait()
+            with driver.context:
+                driver.context.set_input_volume(self.stream, volume).wait()
 
     def set_pitch(self, pitch):
+        sample_rate = self.stream.audio_format.rate
         with self.stream:
-            self.stream.update_sample_rate(int(pitch * self.sample_rate)).wait()
+            self.stream.update_sample_rate(int(pitch * sample_rate)).wait()
 
     def prefill_audio(self):
         self._write_to_stream(nbytes=None)
