@@ -328,13 +328,15 @@ class PulseAudioContext(PulseAudioLockable):
         Set the volume for a stream.
         """
         cvolume = self._get_cvolume_from_linear(stream, volume)
-        with self:
-            idx = stream.index
-            op = pa.pa_context_set_sink_volume(self._pa_context,
-                                               idx,
-                                               cvolume,
-                                               self._success_cb_func,
-                                               None)
+        idx = stream.index
+        op = PulseAudioOperation(self, succes_cb_t=pa.pa_context_success_cb_t)
+        op.execute(
+                pa.pa_context_set_sink_input_volume(self._pa_context,
+                                                    idx,
+                                                    cvolume,
+                                                    op.pa_callback,
+                                                    None)
+                  )
         return op
 
     def _get_cvolume_from_linear(self, stream, volume):
@@ -466,6 +468,11 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
     def is_corked(self):
         assert self._pa_stream is not None
         return get_bool_or_none(pa.pa_stream_is_corked(self._pa_stream))
+
+    @property
+    def audio_format(self):
+        assert self._pa_stream is not None
+        return pa.pa_stream_get_sample_spec(self._pa_stream)[0]
 
     def connect_playback(self):
         context = self.context()
@@ -660,13 +667,14 @@ class PulseAudioOperation(PulseAudioLockable):
                    pa.PA_OPERATION_DONE: 'Done',
                    pa.PA_OPERATION_CANCELLED: 'Cancelled'}
 
-    def __init__(self, context, callback=None, pa_operation=None):
+    def __init__(self, context, callback=None, pa_operation=None,
+                 succes_cb_t=pa.pa_stream_success_cb_t):
         mainloop = context.mainloop()
         assert mainloop is not None
         PulseAudioLockable.__init__(self, mainloop)
         self.context = weakref.ref(context)
         self._callback = callback
-        self.pa_callback = pa.pa_stream_success_cb_t(self._success_callback)
+        self.pa_callback = succes_cb_t(self._success_callback)
         if pa_operation is not None:
             self.execute(pa_operation)
         else:
