@@ -76,6 +76,10 @@ class Player(pyglet.event.EventDispatcher):
 
         self._paused_time = 0.0
 
+    def __del__(self):
+        """Release the Player resources."""
+        self.delete()
+
     def queue(self, source):
         """
         Queue the source on this player.
@@ -163,8 +167,6 @@ class Player(pyglet.event.EventDispatcher):
 
     def delete(self):
         """Tear down the player and any child objects."""
-        self.pause()
-
         if self._audio_player:
             self._audio_player.delete()
             self._audio_player = None
