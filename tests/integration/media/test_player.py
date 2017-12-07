@@ -51,6 +51,7 @@ def test_player_play(player):
         'on_eos', 'on_player_eos')
     assert source.has_fully_played(), 'Source not fully played'
 
+
 def test_player_play_multiple(player):
     sources = (SilentTestSource(.1), SilentTestSource(.1))
     for source in sources:
@@ -62,3 +63,11 @@ def test_player_play_multiple(player):
     for source in sources:
         assert source.has_fully_played(), 'Source not fully played'
 
+
+def test_multiple_fire_and_forget_players():
+    """
+    Test an issue where the driver crashed when starting multiple players, but not keeping a
+    reference to these players.
+    """
+    for _ in range(10):
+        SilentTestSource(.1).play()
