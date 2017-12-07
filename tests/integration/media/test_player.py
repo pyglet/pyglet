@@ -70,4 +70,5 @@ def test_multiple_fire_and_forget_players():
     reference to these players.
     """
     for _ in range(10):
-        SilentTestSource(.1).play()
+        Silence(1).play()
+    time.sleep(1)
