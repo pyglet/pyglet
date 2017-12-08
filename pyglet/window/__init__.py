@@ -1075,11 +1075,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         reading from the video buffer; while it does not correspond to
         a vertical retrace it has the same effect.
 
-        With multi-monitor systems the secondary monitor cannot be
-        synchronised to, so tearing and flicker cannot be avoided when the
-        window is positioned outside of the primary display.  In this case
-        it may be advisable to forcibly reduce the framerate (for example,
-        using `pyglet.clock.set_fps_limit`).
+        Also note that with multi-monitor systems the secondary monitor
+        cannot be synchronised to, so tearing and flicker cannot be avoided
+        when the window is positioned outside of the primary display.
 
         :Parameters:
             `vsync` : bool
