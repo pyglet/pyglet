@@ -2,7 +2,10 @@ Pyglet 1.4.0
 ============
 The following deprecated methods and attributes have now been removed:
 - `sprite.set_position`. Set the X, Y coordinates via sprite.position instead.
-- `next` on the Player class has been replaced by `next_source`.
+- `next` on the Player class. This has been replaced by `next_source`.
+- `clock.ClockDisplay`. Use pyglet.window.FPSDisplay instead.
+- `clock.test_clock`. This relied on deprecated behavior, and is superseded by unit tests.
+- `font.text`. Use the `text` module instead for displaying text.
 
 Pyglet 1.3.0
 ============

@@ -32,20 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Load fonts and render text.
-
-This is a fairly-low level interface to text rendering. Obtain a font using :meth:`load`::
-
-    from pyglet import font
-    arial = font.load('Arial', 14, bold=True, italic=False)
-
-Manually loading fonts is only required in the following situations:
-
-* When manually rendering fonts;
-* When using the deprecated font rendering in :mod:`pyglet.font.text`.
-
-You are encouraged to use :mod:`pyglet.text` for actual text rendering. Classes in this module will
-handle font loading for you, so manual loading is not required.
+"""Load fonts.
 
 pyglet will automatically load any system-installed fonts.  You can add additional fonts
 (for example, from your program resources) using :meth:`add_file` or
@@ -54,7 +41,6 @@ pyglet will automatically load any system-installed fonts.  You can add addition
     from pyglet import font
     font.add_file('action_man.ttf')
     action_man = font.load('Action Man', 16)
-
 
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
@@ -69,22 +55,25 @@ import weakref
 import pyglet
 from pyglet import gl
 
-
 if not getattr(sys, 'is_epydoc', False):
     if pyglet.compat_platform == 'darwin':
         from pyglet.font.quartz import QuartzFont
+
         _font_class = QuartzFont
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         if pyglet.options['font'][0] == 'win32':
             from pyglet.font.win32 import Win32Font
+
             _font_class = Win32Font
         elif pyglet.options['font'][0] == 'gdiplus':
             from pyglet.font.win32 import GDIPlusFont
+
             _font_class = GDIPlusFont
         else:
             assert False, 'Unknown font driver'
     else:
         from pyglet.font.freetype import FreeTypeFont
+
         _font_class = FreeTypeFont
 
 
@@ -137,8 +126,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
     # Locate or create font cache
     shared_object_space = gl.current_context.object_space
     if not hasattr(shared_object_space, 'pyglet_font_font_cache'):
-        shared_object_space.pyglet_font_font_cache = \
-            weakref.WeakValueDictionary()
+        shared_object_space.pyglet_font_font_cache = weakref.WeakValueDictionary()
         shared_object_space.pyglet_font_font_hold = []
     font_cache = shared_object_space.pyglet_font_font_cache
     font_hold = shared_object_space.pyglet_font_font_hold
@@ -168,6 +156,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
 
     return font
 
+
 def add_file(font):
     """Add a font to pyglet's search path.
 
@@ -192,7 +181,7 @@ def add_file(font):
     _font_class.add_font_data(font)
 
 
-def add_directory(dir):
+def add_directory(directory):
     """Add a directory of fonts to pyglet's search path.
 
     This function simply calls :meth:`pyglet.font.add_file` for each file with a ``.ttf``
@@ -203,11 +192,9 @@ def add_directory(dir):
             Directory that contains font files.
 
     """
-    for file in os.listdir(dir):
+    for file in os.listdir(directory):
         if file[-4:].lower() == '.ttf':
-            add_file(os.path.join(dir, file))
+            add_file(os.path.join(directory, file))
 
 
-from .text import Text
-__all__ = ('Text', 'add_file', 'add_directory', 'load', 'have_font')
-
+__all__ = ('add_file', 'add_directory', 'load', 'have_font')
