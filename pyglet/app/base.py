@@ -140,8 +140,8 @@ class EventLoop(event.EventDispatcher):
             self._run_estimated()
         else:
             self._run()
-        self.is_running = False
 
+        self.is_running = False
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
 
@@ -384,6 +384,7 @@ class EventLoop(event.EventDispatcher):
 
             :event:
             """
+
 
 EventLoop.register_event_type('on_window_close')
 EventLoop.register_event_type('on_enter')

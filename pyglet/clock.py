@@ -55,20 +55,6 @@ taking the reciprocal of ``dt``).
 
 Always remember to `tick` the clock!
 
-Limiting frame-rate
-===================
-
-The framerate can be limited::
-
-    clock.set_fps_limit(60)
-
-This causes :py:class:`~pyglet.clock.Clock` to sleep during each `tick` in an
-attempt to keep the number of ticks (frames) per second below 60.
-
-The implementation uses platform-dependent high-resolution sleep functions
-to achieve better accuracy with busy-waiting than would be possible using
-just the `time` module.
-
 Scheduling
 ==========
 
@@ -102,21 +88,6 @@ You can cancel a function scheduled with any of these methods using
 
     clock.unschedule(animate)
 
-Displaying FPS
-==============
-
-The ClockDisplay class provides a simple FPS counter.  You should create
-an instance of ClockDisplay once during the application's start up::
-
-    fps_display = clock.ClockDisplay()
-
-Call draw on the ClockDisplay object for each frame::
-
-    fps_display.draw()
-
-There are several options to change the font, color and text displayed
-within the __init__ method.
-
 Using multiple clocks
 =====================
 
@@ -132,7 +103,7 @@ You can also replace the default clock with your own:
     clock.set_default(myclk)
 
 Each clock maintains its own set of scheduled functions and FPS
-limiting/measurement.  Each clock must be "ticked" separately.
+measurement.  Each clock must be "ticked" separately.
 
 Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
@@ -186,8 +157,7 @@ class _ScheduledItem(object):
 
 
 class _ScheduledIntervalItem(object):
-    __slots__ = ['func', 'interval', 'last_ts', 'next_ts',
-                 'args', 'kwargs']
+    __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):
         self.func = func
@@ -233,13 +203,10 @@ class Clock(_ClockBase):
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep = False
 
-    def __init__(self, fps_limit=None, time_function=_default_time_function):
-        """Initialise a Clock, with optional framerate limit and custom time function.
+    def __init__(self, time_function=_default_time_function):
+        """Initialise a Clock, with optional custom time function.
 
         :Parameters:
-            `fps_limit` : float
-                If not None, the maximum allowable framerate. Defaults
-                to None. Deprecated in pyglet 1.2.
             `time_function` : function
                 Function to return the elapsed time of the application,
                 in seconds.  Defaults to time.time, but can be replaced
@@ -252,12 +219,13 @@ class Clock(_ClockBase):
         self.last_ts = None
         self.times = deque()
 
-        self.set_fps_limit(fps_limit)
         self.cumulative_time = 0
 
         self._schedule_items = []
         self._schedule_interval_items = []
         self._current_interval_item = None
+
+        self.window_size = 60
 
     def update_time(self):
         """Get the elapsed time since the last call to `update_time`.
@@ -269,7 +237,7 @@ class Clock(_ClockBase):
 
         :rtype: float
         :return: The number of seconds since the last `update_time`, or 0
-            if this was the first time it was called.
+                 if this was the first time it was called.
         """
         ts = self.time()
         if self.last_ts is None:
@@ -395,54 +363,15 @@ class Clock(_ClockBase):
         :return: The number of seconds since the last "tick", or 0 if this was
             the first frame.
         """
-        if poll:
-            if self.period_limit:
-                self.next_ts += self.period_limit
-        else:
-            if self.period_limit:
-                self._limit()
-
-            if self._force_sleep:
-                self.sleep(0)
+        if not poll and self._force_sleep:
+            self.sleep(0)
 
         delta_t = self.update_time()
         self.call_scheduled_functions(delta_t)
         return delta_t
 
-    def _limit(self):
-        """Sleep until the next frame is due.
-
-        Called automatically by :meth:`.tick` if a framerate limit has been
-        set.
-
-        This method uses several heuristics to determine whether to
-        sleep or busy-wait (or both).
-        """
-        ts = self.time()
-        # Sleep to just before the desired time
-        sleeptime = self.get_sleep_time(False)
-        while sleeptime - self.SLEEP_UNDERSHOOT > self.MIN_SLEEP:
-            self.sleep(1000000 * (sleeptime - self.SLEEP_UNDERSHOOT))
-            sleeptime = self.get_sleep_time(False)
-
-        # Busy-loop CPU to get closest to the mark
-        sleeptime = self.next_ts - self.time()
-        while sleeptime > 0:
-            sleeptime = self.next_ts - self.time()
-
-        if sleeptime < -2 * self.period_limit:
-            # Missed the time by a long shot, let's reset the clock
-            # print >> sys.stderr, 'Step %f' % -sleeptime
-            self.next_ts = ts + 2 * self.period_limit
-        else:
-            # Otherwise keep the clock steady
-            self.next_ts += self.period_limit
-
     def get_sleep_time(self, sleep_idle):
         """Get the time until the next item is scheduled.
-
-        This method considers all scheduled items and the current
-        ``fps_limit``, if any.
 
         Applications can choose to continue receiving updates at the
         maximum framerate during idle time (when no functions are scheduled),
@@ -452,9 +381,8 @@ class Clock(_ClockBase):
         If `sleep_idle` is ``True`` the latter behaviour is selected, and
         ``None`` will be returned if there are no scheduled items.
 
-        Otherwise, if `sleep_idle` is ``False``, a sleep time allowing
-        the maximum possible framerate (considering ``fps_limit``) will
-        be returned; or an earlier time if a scheduled function is ready.
+        Otherwise, if `sleep_idle` is ``False``, or if any scheduled items
+        exist, a value of 0 is returned.
 
         :Parameters:
             `sleep_idle` : bool
@@ -464,57 +392,17 @@ class Clock(_ClockBase):
 
         :rtype: float
         :return: Time until the next scheduled event in seconds, or ``None``
-            if there is no event scheduled.
+                 if there is no event scheduled.
 
         .. versionadded:: 1.1
         """
         if self._schedule_items or not sleep_idle:
-            if not self.period_limit:
-                return 0.
-            else:
-                wake_time = self.next_ts
-                if self._schedule_interval_items:
-                    wake_time = min(wake_time,
-                                    self._schedule_interval_items[0].next_ts)
-                return max(wake_time - self.time(), 0.)
+                return 0.0
 
         if self._schedule_interval_items:
-            return max(self._schedule_interval_items[0].next_ts - self.time(),
-                       0)
+            return max(self._schedule_interval_items[0].next_ts - self.time(), 0.0)
 
         return None
-
-    def set_fps_limit(self, fps_limit):
-        """Set the framerate limit.
-
-        The framerate limit applies only when a function is scheduled
-        for every frame.  That is, the framerate limit can be exceeded by
-        scheduling a function for a very small period of time.
-
-        :Parameters:
-            `fps_limit` : float
-                Maximum frames per second allowed, or None to disable
-                limiting.
-
-        :deprecated: Use `pyglet.app.run` and `schedule_interval` instead.
-        """
-        if not fps_limit:
-            self.period_limit = None
-        else:
-            self.period_limit = 1. / fps_limit
-        self.window_size = fps_limit or 60
-
-    def get_fps_limit(self):
-        """Get the framerate limit.
-
-        :rtype: float
-        :return: The framerate limit previously set in the constructor or
-            `set_fps_limit`, or None if no limit was set.
-        """
-        if self.period_limit:
-            return 1. / self.period_limit
-        else:
-            return 0
 
     def get_fps(self):
         """Get the average FPS of recent history.
@@ -796,29 +684,6 @@ def get_fps():
     :rtype: float
     """
     return _default.get_fps()
-
-
-def set_fps_limit(fps_limit):
-    """Set the framerate limit for the default clock.
-
-    :Parameters:
-        `fps_limit` : float
-            Maximum frames per second allowed, or None to disable
-            limiting.
-
-    :deprecated: Use `pyglet.app.run` and `schedule_interval` instead.
-    """
-    _default.set_fps_limit(fps_limit)
-
-
-def get_fps_limit():
-    """Get the framerate limit for the default clock.
-
-    :return: The framerate limit previously set by `set_fps_limit`, or None if
-        no limit was set.
-
-    """
-    return _default.get_fps_limit()
 
 
 def schedule(func, *args, **kwargs):
