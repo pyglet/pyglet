@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Precise framerate calculation, scheduling and framerate limiting.
+"""Precise framerate calculation function scheduling.
 
 Measuring time
 ==============

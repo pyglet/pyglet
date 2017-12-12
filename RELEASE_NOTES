@@ -6,6 +6,8 @@ The following deprecated methods and attributes have now been removed:
 - `clock.ClockDisplay`. Use pyglet.window.FPSDisplay instead.
 - `clock.test_clock`. This relied on deprecated behavior, and is superseded by unit tests.
 - `font.text`. Use the `text` module instead for displaying text.
+- `window.Platform` API. Use `canvas.get_display` or `canvas.Display` instead.
+
 
 Pyglet 1.3.0
 ============
