@@ -483,6 +483,7 @@ class XlibWindow(BaseWindow):
             xlib.XDestroyWindow(self._x_display, self._window)
 
         del self.display._window_map[self._window]
+        del self.display._window_map[self._view]
         self._window = None
 
         self._view_event_handlers.clear()
