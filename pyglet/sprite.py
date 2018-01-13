@@ -397,8 +397,8 @@ class Sprite(event.EventDispatcher):
 
     def _update_position(self):
         img = self._texture
-        scale_x = self._scale * self.scale_x
-        scale_y = self._scale * self.scale_y
+        scale_x = self._scale * self._scale_x
+        scale_y = self._scale * self._scale_y
         if not self._visible:
             vertices = (0, 0, 0, 0, 0, 0, 0, 0)
         elif self._rotation:
