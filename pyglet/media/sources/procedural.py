@@ -217,7 +217,7 @@ class ProceduralSource(Source):
         self._envelope = envelope
         self._envelope_array = envelope.build_envelope(self._sample_rate, self._duration)
 
-    def get_audio_data(self, num_bytes):
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
         """Return `num_bytes` bytes of audio data."""
         num_bytes = min(num_bytes, self._max_offset - self._offset)
         if num_bytes <= 0:

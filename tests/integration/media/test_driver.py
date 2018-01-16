@@ -1,9 +1,8 @@
-"""Test a specific audio driver (either for platform or silent). Only checks the use of the
+"""Test a specific audio driver for platform. Only checks the use of the
 interface. Any playback is silent."""
 from __future__ import absolute_import, print_function
 
 from tests import mock
-import queue
 import pytest
 import time
 
@@ -13,86 +12,34 @@ pyglet.options['debug_media'] = _debug
 pyglet.options['debug_media_buffers'] = _debug
 
 import pyglet.app
-from pyglet.media.drivers import silent
-from pyglet.media.drivers.silent import SilentAudioDriver
-from pyglet.media.sources import SourceGroup
+from pyglet.media.sources import PlayList
 from pyglet.media.sources.procedural import Silence
+
+from .mock_player import MockPlayer
 
 
 def _delete_driver():
-    if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
-        pyglet.media.drivers._audio_driver.delete()
+    # if hasattr(pyglet.media.drivers._audio_driver, 'delete'):
+    #     pyglet.media.drivers._audio_driver.delete()
     pyglet.media.drivers._audio_driver = None
 
 def test_get_platform_driver():
     driver = pyglet.media.drivers.get_audio_driver()
     assert driver is not None
-    assert not isinstance(driver, SilentAudioDriver), 'Cannot load audio driver for your platform'
+    assert driver is not None, 'Cannot load audio driver for your platform'
     _delete_driver()
 
 
-def test_get_silent_driver():
-    driver = pyglet.media.drivers.get_silent_audio_driver()
-    assert driver is not None
-    assert isinstance(driver, SilentAudioDriver)
-    _delete_driver()
+class MockPlayerWithMockTime(MockPlayer):
 
-
-class MockPlayer(object):
-    def __init__(self, event_loop):
-        self.queue = queue.Queue()
-        self.event_loop = event_loop
-
-    def dispatch_event(self, event_type, *args):
-        if _debug:
-            print('MockPlayer: event {} received @ {}'.format(event_type, time.time()))
-        self.queue.put((event_type, args))
-        self.event_loop.interrupt_event_loop()
-
-    def wait_for_event(self, timeout, *event_types):
-        end_time = time.time() + timeout
-        try:
-            while time.time() < end_time:
-                if _debug:
-                    print('MockPlayer: run for {} sec @ {}'.format(end_time-time.time(),
-                                                                   time.time()))
-                self.event_loop.run_event_loop(duration=end_time-time.time())
-                event_type, args = self.queue.get_nowait()
-                if event_type in event_types:
-                    return event_type, args
-        except queue.Empty:
-            return None, None
-
-    def wait_for_all_events(self, timeout, *expected_events):
-        if _debug:
-            print('Wait for events @ {}'.format(time.time()))
-        end_time = time.time() + timeout
-        expected_events = list(expected_events)
-        received_events = []
-        while expected_events:
-            event_type, args = self.wait_for_event(timeout, *expected_events)
-            if _debug:
-                print('MockPlayer: got event {} @ {}'.format(event_type, time.time()))
-            if event_type is None and time.time() >= end_time:
-                pytest.fail('Timeout before all events have been received. Still waiting for: '
-                        + ','.join(expected_events))
-            elif event_type is not None:
-                if event_type in expected_events:
-                    expected_events.remove(event_type)
-                received_events.append((event_type, args))
-        return received_events
-
-    def wait(self, timeout):
-        end_time = time.time() + timeout
-        while time.time() < end_time:
-            duration = max(.01, end_time-time.time())
-            self.event_loop.run_event_loop(duration=duration)
-        #assert time.time() - end_time < .1
+    @property
+    def time(self):
+        return 0
 
 
 @pytest.fixture
 def player(event_loop):
-    return MockPlayer(event_loop)
+    return MockPlayerWithMockTime(event_loop)
 
 
 class SilentTestSource(Silence):
@@ -100,8 +47,8 @@ class SilentTestSource(Silence):
         super(Silence, self).__init__(duration, sample_rate, sample_size)
         self.bytes_read = 0
 
-    def get_audio_data(self, nbytes):
-        data = super(Silence, self).get_audio_data(nbytes)
+    def get_audio_data(self, nbytes, compensation_time=0.0):
+        data = super(Silence, self).get_audio_data(nbytes, compensation_time)
         if data is not None:
             self.bytes_read += data.length
         return data
@@ -111,8 +58,8 @@ class SilentTestSource(Silence):
 
 
 def get_drivers():
-    drivers = [silent]
-    ids = ['Silent']
+    drivers = []
+    ids = []
 
     try:
         from pyglet.media.drivers import pulse
@@ -150,11 +97,11 @@ def driver(request):
     return driver
 
 
-def _create_source_group(*sources):
-    source_group = SourceGroup(sources[0].audio_format, None)
+def _create_play_list(*sources):
+    play_list = PlayList()
     for source in sources:
-        source_group.queue(source)
-    return source_group
+        play_list.queue(source)
+    return play_list
 
 
 def test_create_destroy(driver):
@@ -162,78 +109,17 @@ def test_create_destroy(driver):
 
 
 def test_create_audio_player(driver, player):
-    source_group = _create_source_group(Silence(1.))
-    audio_player = driver.create_audio_player(source_group, player)
+    play_list = _create_play_list(Silence(1.))
+    audio_player = driver.create_audio_player(play_list, player)
     audio_player.delete()
-
-
-def test_audio_player_play(driver, player):
-    source = SilentTestSource(.1)
-    source_group = _create_source_group(source)
-
-    audio_player = driver.create_audio_player(source_group, player)
-    try:
-        audio_player.play()
-        player.wait_for_all_events(1., 'on_eos', 'on_source_group_eos')
-        assert source.has_fully_played(), 'Source not fully played'
-
-    finally:
-        audio_player.delete()
-
-
-def test_audio_player_play_multiple(driver, player):
-    sources = (SilentTestSource(.1), SilentTestSource(.1))
-    source_group = _create_source_group(*sources)
-
-    audio_player = driver.create_audio_player(source_group, player)
-    try:
-        audio_player.play()
-        player.wait_for_all_events(1., 'on_eos', 'on_eos', 'on_source_group_eos')
-        for source in sources:
-            assert source.has_fully_played(), 'Source not fully played'
-
-    finally:
-        audio_player.delete()
-
-
-def test_audio_player_add_to_paused_group(driver, player):
-    """This is current behaviour when adding a sound of the same format as the previous to a
-    player paused due to end of stream for previous sound."""
-    source = SilentTestSource(.1)
-    source_group = _create_source_group(source)
-
-    if _debug:
-        print('Create player @ {}'.format(time.time()))
-    audio_player = driver.create_audio_player(source_group, player)
-    try:
-        audio_player.play()
-        player.wait_for_all_events(1., 'on_eos', 'on_source_group_eos')
-
-        source2 = SilentTestSource(.1)
-        source_group.queue(source2)
-        audio_player.play()
-        player.wait_for_all_events(1., 'on_eos', 'on_source_group_eos')
-        assert source2.has_fully_played(), 'Source not fully played'
-
-    finally:
-        audio_player.delete()
-
-
-def test_audio_player_delete_driver_with_players(driver, player):
-    """Delete a driver with active players. Should not cause problems."""
-    source = SilentTestSource(10.)
-    source_group = _create_source_group(source)
-
-    audio_player = driver.create_audio_player(source_group, player)
-    audio_player.play()
 
 
 def test_audio_player_clear(driver, player):
     """Test clearing all buffered data."""
     source = SilentTestSource(10.)
-    source_group = _create_source_group(source)
+    play_list = _create_play_list(source)
 
-    audio_player = driver.create_audio_player(source_group, player)
+    audio_player = driver.create_audio_player(play_list, player)
     try:
         audio_player.play()
         player.wait(.5)
@@ -249,12 +135,13 @@ def test_audio_player_clear(driver, player):
     finally:
         audio_player.delete()
 
+
 def test_audio_player_time(driver, player):
     """Test retrieving current timestamp from player."""
     source = SilentTestSource(10.)
-    source_group = _create_source_group(source)
+    play_list = _create_play_list(source)
 
-    audio_player = driver.create_audio_player(source_group, player)
+    audio_player = driver.create_audio_player(play_list, player)
     try:
         audio_player.play()
         last_time = audio_player.get_time()

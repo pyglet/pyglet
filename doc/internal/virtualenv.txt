@@ -14,7 +14,7 @@ To generate documentation you also need:
 
 To use and test all pyglet functionality you should also have:
 
-    - `AVbin <http://avbin.github.io/>`_
+    - `FFmpeg <https://www.ffmpeg.org/download.html>`_
     - `Pillow <https://pillow.readthedocs.io>`_
     - `coverage <https://coverage.readthedocs.io>`_
 
@@ -64,7 +64,7 @@ library names are different for Python 2 and 3::
 
 Once the virtual environments have been created, the next step is to activate one of them.
 You'll then install the dependencies, which will be isolated inside that virtual environment.
-Only one can be active at a time, so perform the following steps one one at a time::
+Only one can be active at a time, so perform the following steps one one at a time
 
 Activate whichever virtual environment you wish to use::
 

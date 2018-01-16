@@ -211,14 +211,6 @@ def test_quartz_loading(image_test, image_name):
     image_test.test_image_loading(QuartzImageDecoder(), image_name)
 
 
-@pytest.mark.parametrize('image_name', png_images)
-@require_platform(Platform.OSX)
-def test_quicktime_loading(image_test, image_name):
-    """Test loading PNG images using OSX specific QuickTime."""
-    from pyglet.image.codecs.quicktime import QuickTimeDecoder
-    image_test.test_image_loading(QuickTimeDecoder(), image_name)
-
-
 @pytest.mark.parametrize('image_name', pypng_images)
 def test_pypng_loading(image_test, image_name):
     """Test loading PNG images using PyPNG."""

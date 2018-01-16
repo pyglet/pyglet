@@ -4,7 +4,7 @@ Installation
 .. note:: These instructions apply to pyglet |version|.
 
 To play compressed audio and video files (anything but WAV), you will need
-`AVBin <http://avbin.github.io/>`_.
+`FFmpeg <https://www.ffmpeg.org/download.html>`_.
 
 pyglet is available `on PyPI <https://pypi.python.org/pypi/pyglet>`_. You can
 install it like any other Python library:

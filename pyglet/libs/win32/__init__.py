@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from builtins import object
 import struct
 from ctypes import *
+import sys
 
 import pyglet
 from . import constants
@@ -231,6 +232,9 @@ _user32.UnregisterClassW.argtypes = [c_wchar_p, HINSTANCE]
 _user32.UnregisterHotKey.restype = BOOL
 _user32.UnregisterHotKey.argtypes = [HWND, c_int]
 #Raw inputs
+# PUINT is defined only from >= python 3.2
+if sys.version_info < (3, 2):
+    PUINT = POINTER(UINT)
 _user32.RegisterRawInputDevices.restype = BOOL
 _user32.RegisterRawInputDevices.argtypes = [PCRAWINPUTDEVICE, UINT, UINT]
 _user32.GetRawInputData.restype = UINT

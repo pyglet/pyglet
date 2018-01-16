@@ -17,6 +17,38 @@ from lib2to3.fixer_util import (Node, Call, Name, syms, Comma, Number)
 import re
 
 
+def canonical_fix_name(fix, avail_fixes):
+    """
+    Examples:
+    >>> canonical_fix_name('fix_wrap_text_literals')
+    'libfuturize.fixes.fix_wrap_text_literals'
+    >>> canonical_fix_name('wrap_text_literals')
+    'libfuturize.fixes.fix_wrap_text_literals'
+    >>> canonical_fix_name('wrap_te')
+    ValueError("unknown fixer name")
+    >>> canonical_fix_name('wrap')
+    ValueError("ambiguous fixer name")
+    """
+    if ".fix_" in fix:
+        return fix
+    else:
+        if fix.startswith('fix_'):
+            fix = fix[4:]
+        # Infer the full module name for the fixer.
+        # First ensure that no names clash (e.g.
+        # lib2to3.fixes.fix_blah and libfuturize.fixes.fix_blah):
+        found = [f for f in avail_fixes
+                 if f.endswith('fix_{0}'.format(fix))]
+        if len(found) > 1:
+            raise ValueError("Ambiguous fixer name. Choose a fully qualified "
+                  "module name instead from these:\n" +
+                  "\n".join("  " + myf for myf in found))
+        elif len(found) == 0:
+            raise ValueError("Unknown fixer. Use --list-fixes or -l for a list.")
+        return found[0]
+
+
+
 ## These functions are from 3to2 by Joe Amenta:
 
 def Star(prefix=None):
@@ -29,7 +61,7 @@ def Minus(prefix=None):
     return Leaf(token.MINUS, u'-', prefix=prefix)
 
 def commatize(leafs):
-    u"""
+    """
     Accepts/turns: (Name, Name, ..., Name, Name) 
     Returns/into: (Name, Comma, Name, Comma, ..., Name, Comma, Name)
     """
@@ -41,7 +73,7 @@ def commatize(leafs):
     return new_leafs
 
 def indentation(node):
-    u"""
+    """
     Returns the indentation for this node
     Iff a node is in a suite, then it has indentation.
     """
@@ -62,7 +94,7 @@ def indentation(node):
         return node.prefix
 
 def indentation_step(node):
-    u"""
+    """
     Dirty little trick to get the difference between each indentation level
     Implemented by finding the shortest indentation string
     (technically, the "least" of all of the indentation strings, but
@@ -78,7 +110,7 @@ def indentation_step(node):
         return min(all_indents)
 
 def suitify(parent):
-    u"""
+    """
     Turn the stuff after the first colon in parent's children
     into a suite, if it wasn't already
     """
@@ -102,7 +134,7 @@ def suitify(parent):
     parent.append_child(suite)
 
 def NameImport(package, as_name=None, prefix=None):
-    u"""
+    """
     Accepts a package (Name node), name to import it as (string), and
     optional prefix and returns a node:
     import <package> [as <as_name>]
@@ -119,7 +151,7 @@ _compound_stmts = (syms.if_stmt, syms.while_stmt, syms.for_stmt, syms.try_stmt, 
 _import_stmts = (syms.import_name, syms.import_from)
 
 def import_binding_scope(node):
-    u"""
+    """
     Generator yields all nodes for which a node (an import_stmt) has scope
     The purpose of this is for a call to _find() on each of them
     """
@@ -187,6 +219,14 @@ def ImportAsName(name, as_name, prefix=None):
     return new_node
 
 
+def is_docstring(node):
+    """
+    Returns True if the node appears to be a docstring
+    """
+    return (node.type == syms.simple_stmt and
+            len(node.children) > 0 and node.children[0].type == token.STRING)
+
+
 def future_import(feature, node):
     """
     This seems to work
@@ -203,8 +243,7 @@ def future_import(feature, node):
         # Is it a shebang or encoding line?
         if is_shebang_comment(node) or is_encoding_comment(node):
             shebang_encoding_idx = idx
-        if node.type == syms.simple_stmt and \
-           len(node.children) > 0 and node.children[0].type == token.STRING:
+        if is_docstring(node):
             # skip over docstring
             continue
         names = check_future_import(node)
@@ -293,7 +332,8 @@ def is_import_stmt(node):
 
 def touch_import_top(package, name_to_import, node):
     """Works like `does_tree_import` but adds an import statement at the
-    top if it was not imported (but below any __future__ imports).
+    top if it was not imported (but below any __future__ imports) and below any
+    comments such as shebang lines).
 
     Based on lib2to3.fixer_util.touch_import()
 
@@ -345,7 +385,7 @@ def touch_import_top(package, name_to_import, node):
         for idx, node in enumerate(root.children):
             if node.type != syms.simple_stmt:
                 break
-            if not (node.children and node.children[0].type == token.STRING):
+            if not is_docstring(node):
                 # This is the usual case.
                 break
         insert_pos = idx
@@ -376,10 +416,12 @@ def touch_import_top(package, name_to_import, node):
         else:
             children_hooks = []
         
-        FromImport(package, [Leaf(token.NAME, name_to_import, prefix=u" ")])
+        # FromImport(package, [Leaf(token.NAME, name_to_import, prefix=u" ")])
 
     children_import = [import_, Newline()]
-    root.insert_child(insert_pos, Node(syms.simple_stmt, children_import))
+    old_prefix = root.children[insert_pos].prefix
+    root.children[insert_pos].prefix = u''
+    root.insert_child(insert_pos, Node(syms.simple_stmt, children_import, prefix=old_prefix))
     if len(children_hooks) > 0:
         root.insert_child(insert_pos + 1, Node(syms.simple_stmt, children_hooks))
 

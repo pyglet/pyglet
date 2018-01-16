@@ -197,7 +197,7 @@ class WaveSource(StreamingSource):
                 raise WAVEFormatException('Not a WAVE file')
             else:
                 raise WAVEFormatException(
-                    'AVbin is required to decode compressed media')
+                    'FFmpeg is required to decode compressed media')
 
         if format.wFormatTag != WAVE_FORMAT_PCM:
             raise WAVEFormatException('Unsupported WAVE format category')
@@ -218,7 +218,7 @@ class WaveSource(StreamingSource):
         self._offset = 0
         self._file.seek(self._start_offset)
 
-    def get_audio_data(self, bytes):
+    def get_audio_data(self, bytes, compensation_time=0.0):
         bytes = min(bytes, self._max_offset - self._offset)
         if not bytes:
             return None

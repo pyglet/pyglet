@@ -75,6 +75,7 @@ from future.utils import PY2
 
 from future.backports.email import parser as email_parser
 from future.backports.email import message as email_message
+from future.backports.misc import create_connection as socket_create_connection
 import io
 import os
 import socket
@@ -553,19 +554,9 @@ class HTTPResponse(io.RawIOBase):
         # (for example, reading in 1k chunks)
 
         if PY2:
-            ### Python-Future:
-            # TODO: debug and fix me!
             data = self.fp.read(len(b))
-            if data[:2] == b"b'":
-                # Something has gone wrong
-                import pdb
-                pdb.set_trace()
-            #if len(b) != len(data):
-            #    import pdb
-            #    pdb.set_trace()
             n = len(data)
             b[:n] = data
-            ###
         else:
             n = self.fp.readinto(b)
 
@@ -843,7 +834,7 @@ class HTTPConnection(object):
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
-        self.sock = socket.create_connection((self.host,self.port),
+        self.sock = socket_create_connection((self.host,self.port),
                                              self.timeout, self.source_address)
         if self._tunnel_host:
             self._tunnel()
@@ -1226,7 +1217,7 @@ else:
         def connect(self):
             "Connect to a host on a given (SSL) port."
 
-            sock = socket.create_connection((self.host, self.port),
+            sock = socket_create_connection((self.host, self.port),
                                             self.timeout, self.source_address)
 
             if self._tunnel_host:
@@ -1266,7 +1257,7 @@ else:
     #     def connect(self):
     #         "Connect to a host on a given (SSL) port."
 
-    #         sock = socket.create_connection((self.host, self.port),
+    #         sock = socket_create_connection((self.host, self.port),
     #                                         self.timeout, self.source_address)
     #         if self._tunnel_host:
     #             self.sock = sock

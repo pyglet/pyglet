@@ -10,6 +10,17 @@ import sys
 import time
 import datetime
 
+# Prevents instance attributes from having a default value of None
+# See sphinx ticket: https://github.com/sphinx-doc/sphinx/issues/2044
+from sphinx.ext.autodoc import (
+    ClassLevelDocumenter, InstanceAttributeDocumenter)
+
+def iad_add_directive_header(self, sig):
+    ClassLevelDocumenter.add_directive_header(self, sig)
+
+InstanceAttributeDocumenter.add_directive_header = iad_add_directive_header
+
+
 def write_build(data, filename):
     with open(os.path.join('internal', filename), 'w') as f:
         f.write(".. list-table::\n")
@@ -41,7 +52,7 @@ except ImportError:
 
 
 
-implementations = ["carbon", "cocoa", "win32", "xlib"]
+implementations = ["cocoa", "win32", "xlib"]
 
 # For each module, a list of submodules that should not be imported.
 # If value is None, do not try to import any submodule.
@@ -53,14 +64,12 @@ skip_modules = {"pyglet": {
                      "pyglet.app": implementations,
                      "pyglet.canvas": implementations + ["xlib_vidmoderestore"],
                      "pyglet.extlibs": None,
-                     "pyglet.font": ["carbon",
-                                     "quartz",
+                     "pyglet.font": ["quartz",
                                      "win32",
                                      "freetype", "freetype_lib",
                                      "fontconfig",
                                      "win32query",],
-                     "pyglet.input": ["carbon_hid", "carbon_tablet",
-                                      "darwin_hid",
+                     "pyglet.input": ["darwin_hid",
                                       "directinput",
                                       "evdev",
                                       "wintab",
@@ -110,7 +119,8 @@ needs_sphinx = '1.3'
 extensions = ['sphinx.ext.autodoc',
               'ext.docstrings',
               'sphinx.ext.inheritance_diagram', 
-              'sphinx.ext.todo']
+              'sphinx.ext.todo',
+              'sphinx.ext.napoleon']
 
 autodoc_member_order='groupwise'
 
@@ -135,7 +145,7 @@ copyright = u'2006-2017, Alex Holkner'
 # built documents.
 #
 # The short X.Y version.
-version = '1.3'
+version = '1.4'
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 

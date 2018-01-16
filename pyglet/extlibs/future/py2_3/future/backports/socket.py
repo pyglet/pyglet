@@ -410,7 +410,10 @@ def getfqdn(name=''):
     return name
 
 
-_GLOBAL_DEFAULT_TIMEOUT = object()
+# Re-use the same sentinel as in the Python stdlib socket module:
+from socket import _GLOBAL_DEFAULT_TIMEOUT
+# Was: _GLOBAL_DEFAULT_TIMEOUT = object()
+
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                       source_address=None):

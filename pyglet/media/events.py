@@ -39,6 +39,17 @@ import pyglet
 
 
 class MediaEvent(object):
+    """Representation of a media event.
+
+    These events are used internally by some audio driver implementation to
+    communicate events to the :class:`~pyglet.media.player.Player`.
+    One example is the ``on_eos`` event.
+
+    Args:
+        timestamp (float): The time where this event happens.
+        event (str): Event description.
+        *args: Any required positional argument to go along with this event.
+    """
     def __init__(self, timestamp, event, *args):
         # Meaning of timestamp is dependent on context; and not seen by
         # application.

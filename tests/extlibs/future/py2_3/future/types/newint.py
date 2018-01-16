@@ -201,10 +201,16 @@ class newint(with_metaclass(BaseNewInt, long)):
 
     def __divmod__(self, other):
         value = super(newint, self).__divmod__(other)
+        if value is NotImplemented:
+            mylong = long(self)
+            return (mylong // other, mylong % other)
         return (newint(value[0]), newint(value[1]))
 
     def __rdivmod__(self, other):
         value = super(newint, self).__rdivmod__(other)
+        if value is NotImplemented:
+            mylong = long(self)
+            return (other // mylong, other % mylong)
         return (newint(value[0]), newint(value[1]))
 
     def __pow__(self, other):

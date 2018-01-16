@@ -86,6 +86,8 @@ class newobject(object):
     def __nonzero__(self):
         if hasattr(self, '__bool__'):
             return type(self).__bool__(self)
+        if hasattr(self, '__len__'):
+            return type(self).__len__(self)
         # object has no __nonzero__ method
         return True
 
