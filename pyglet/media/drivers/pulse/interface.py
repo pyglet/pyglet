@@ -36,6 +36,7 @@ from __future__ import absolute_import
 
 import ctypes
 import sys
+import weakref
 
 from . import lib_pulseaudio as pa
 from pyglet.media.exceptions import MediaException
@@ -148,7 +149,10 @@ class PulseAudioMainLoop(object):
         """Construct a new context in this mainloop."""
         assert self._pa_mainloop is not None
         app_name = self._get_app_name()
-        return pa.pa_context_new(self._pa_mainloop, app_name.encode('ASCII'))
+        context = pa.pa_context_new(self._pa_mainloop,
+                                    app_name.encode('ASCII')
+                                    )
+        return context
 
     def _get_app_name(self):
         """Get the application name as advertised to the pulseaudio server."""
@@ -165,24 +169,24 @@ class PulseAudioMainLoop(object):
 class PulseAudioLockable(object):
     def __init__(self, mainloop):
         assert mainloop is not None
-        self.mainloop = mainloop
+        self.mainloop = weakref.ref(mainloop)
 
     def lock(self):
         """Lock the threaded mainloop against events.  Required for all
         calls into PA."""
-        self.mainloop.lock()
+        self.mainloop().lock()
 
     def unlock(self):
         """Unlock the mainloop thread."""
-        self.mainloop.unlock()
+        self.mainloop().unlock()
 
     def signal(self):
         """Signal the mainloop thread to break from a wait."""
-        self.mainloop.signal()
+        self.mainloop().signal()
 
     def wait(self):
         """Wait for a signal."""
-        self.mainloop.wait()
+        self.mainloop().wait()
 
     def __enter__(self):
         self.lock()
@@ -219,9 +223,12 @@ class PulseAudioContext(PulseAudioLockable):
             if _debug:
                 print("PulseAudioContext.delete")
             pa.pa_context_disconnect(self._pa_context)
-            pa.pa_context_unref(self._pa_context)
+
             while self.state is not None and not self.is_terminated:
-                self.mainloop.wait()
+                self.wait()
+
+            self._disconnect_callbacks()
+            pa.pa_context_unref(self._pa_context)
             self._pa_context = None
 
     @property
@@ -269,13 +276,14 @@ class PulseAudioContext(PulseAudioLockable):
         """
         assert self._pa_context is not None
         self.state = None
-        self.check(
-            pa.pa_context_connect(self._pa_context, server, 0, None)
-        )
 
         with self:
+            self.check(
+                pa.pa_context_connect(self._pa_context, server, 0, None)
+            )
             while not self.is_failed and not self.is_ready:
                 self.wait()
+
         if self.is_failed:
             self.raise_error()
 
@@ -284,6 +292,8 @@ class PulseAudioContext(PulseAudioLockable):
         """
         Create a new audio stream.
         """
+        mainloop = self.mainloop()
+        assert mainloop is not None
         assert self.is_ready
 
         sample_spec = self.create_sample_spec(audio_format)
@@ -295,7 +305,7 @@ class PulseAudioContext(PulseAudioLockable):
                                   sample_spec,
                                   channel_map)
         self.check_not_null(stream)
-        return PulseAudioStream(self.mainloop, self, stream)
+        return PulseAudioStream(mainloop, self, stream)
 
     def create_sample_spec(self, audio_format):
         """
@@ -342,6 +352,12 @@ class PulseAudioContext(PulseAudioLockable):
         pa.pa_context_set_state_callback(self._pa_context,
                                         self._state_cb_func, None)
 
+    def _disconnect_callbacks(self):
+        self._state_cb_func = None
+        pa.pa_context_set_state_callback(self._pa_context,
+                                         pa.pa_context_notify_cb_t(0),
+                                         None)
+
     def _state_callback(self, context, userdata):
         self.state = pa.pa_context_get_state(self._pa_context)
         if _debug:
@@ -380,7 +396,7 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
     def __init__(self, mainloop, context, pa_stream):
         PulseAudioLockable.__init__(self, mainloop)
         self._pa_stream = pa_stream
-        self.context = context
+        self.context = weakref.ref(context)
         self.state = None
         self.underflow = False
 
@@ -390,26 +406,36 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
 
     def __del__(self):
         if self._pa_stream is not None:
-            with self:
-                self.delete()
+            self.delete()
 
     def delete(self):
-        if self._pa_stream is not None:
+        context = self.context()
+        if context is None:
             if _debug:
-                print("PulseAudioStream.delete")
-                print('PulseAudioStream: writable_size {}'.format(self.writable_size))
-            if not self.is_unconnected:
-                if _debug:
-                    print("PulseAudioStream: disconnecting")
-                self.context.check(
+                print("No active context anymore. Cannot disconnect the stream")
+                self._pa_stream = None
+            return
+
+        if self._pa_stream is None:
+            assert _debug("No stream to delete.")
+            return
+
+        if _debug:
+            print("PulseAudioStream.delete")
+            print('PulseAudioStream: writable_size {}'.format(self.writable_size))
+        if not self.is_unconnected:
+            if _debug:
+                print("PulseAudioStream: disconnecting")
+            with self:
+                context.check(
                     pa.pa_stream_disconnect(self._pa_stream)
                     )
-                while not self.is_terminated:
+                while not (self.is_terminated or self.is_failed):
                     self.wait()
 
-            pa_stream = self._pa_stream
-            self._pa_stream = None
-            pa.pa_stream_unref(pa_stream)
+        self._disconnect_callbacks()
+        pa.pa_stream_unref(self._pa_stream)
+        self._pa_stream = None
 
     @property
     def is_unconnected(self):
@@ -447,7 +473,9 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         return get_bool_or_none(pa.pa_stream_is_corked(self._pa_stream))
 
     def connect_playback(self):
+        context = self.context()
         assert self._pa_stream is not None
+        assert context is not None
         device = None
         buffer_attr = None
         flags = (pa.PA_STREAM_START_CORKED |
@@ -455,7 +483,8 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
                  pa.PA_STREAM_VARIABLE_RATE)
         volume = None
         sync_stream = None  # TODO use this
-        self.context.check(
+
+        context.check(
             pa.pa_stream_connect_playback(self._pa_stream,
                                           device,
                                           buffer_attr,
@@ -467,11 +496,13 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         while not self.is_ready and not self.is_failed:
             self.wait()
         if not self.is_ready:
-            self.context.raise_error()
+            context.raise_error()
         if _debug:
             print('PulseAudioStream: Playback connected')
 
     def write(self, audio_data, length=None, seek_mode=pa.PA_SEEK_RELATIVE):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
         assert self.is_ready
         if length is None:
@@ -479,7 +510,7 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         if _debug:
             print('PulseAudioStream: writing {} bytes'.format(length))
             print('PulseAudioStream: writable size before write {} bytes'.format(self.writable_size))
-        self.context.check(
+        context.check(
                 pa.pa_stream_write(self._pa_stream,
                                    audio_data.data,
                                    length,
@@ -493,8 +524,10 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         return length
 
     def update_timing_info(self, callback=None):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
-        op = PulseAudioOperation(self.context, callback)
+        op = PulseAudioOperation(context, callback)
         op.execute(
                 pa.pa_stream_update_timing_info(self._pa_stream,
                                                 op.pa_callback,
@@ -503,15 +536,19 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         return op
 
     def get_timing_info(self):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
-        timing_info = self.context.check_ptr_not_null(
+        timing_info = context.check_ptr_not_null(
                 pa.pa_stream_get_timing_info(self._pa_stream)
                 )
         return timing_info.contents
 
     def trigger(self, callback=None):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
-        op = PulseAudioOperation(self.context)
+        op = PulseAudioOperation(context)
         op.execute(
                 pa.pa_stream_trigger(self._pa_stream,
                                      op.pa_callback,
@@ -520,8 +557,10 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         return op
 
     def prebuf(self, callback=None):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
-        op = PulseAudioOperation(self.context)
+        op = PulseAudioOperation(context)
         op.execute(
                 pa.pa_stream_prebuf(self._pa_stream,
                                     op.pa_callback,
@@ -536,8 +575,10 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         return self._cork(True, callback)
 
     def update_sample_rate(self, sample_rate, callback=None):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
-        op = PulseAudioOperation(self.context)
+        op = PulseAudioOperation(context)
         op.execute(
                 pa.pa_stream_update_sample_rate(self._pa_stream,
                                                 int(sample_rate),
@@ -547,8 +588,10 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         return op
 
     def _cork(self, pause, callback):
+        context = self.context()
+        assert context is not None
         assert self._pa_stream is not None
-        op = PulseAudioOperation(self.context)
+        op = PulseAudioOperation(context)
         op.execute(
             pa.pa_stream_cork(self._pa_stream,
                               1 if pause else 0,
@@ -565,6 +608,21 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
         pa.pa_stream_set_underflow_callback(self._pa_stream, self._cb_underflow, None)
         pa.pa_stream_set_write_callback(self._pa_stream, self._cb_write, None)
         pa.pa_stream_set_state_callback(self._pa_stream, self._cb_state, None)
+
+    def _disconnect_callbacks(self):
+        self._cb_underflow = None
+        self._cb_write = None
+        self._cb_state = None
+
+        pa.pa_stream_set_underflow_callback(self._pa_stream,
+                                            pa.pa_stream_notify_cb_t(0),
+                                            None)
+        pa.pa_stream_set_write_callback(self._pa_stream,
+                                        pa.pa_stream_request_cb_t(0),
+                                        None)
+        pa.pa_stream_set_state_callback(self._pa_stream,
+                                        pa.pa_stream_notify_cb_t(0),
+                                        None)
 
     def _underflow_callback(self, stream, userdata):
         if _debug:
@@ -592,7 +650,9 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
     def _write_needed(self, nbytes=None):
         if nbytes is None:
             nbytes = self.writable_size
-        ret = self.dispatch_event('on_write_needed', nbytes, self.underflow)
+        # This dispatch call is made from the threaded mainloop thread!
+        pyglet.app.platform_event_loop.post_event(
+            self, 'on_write_needed', nbytes, self.underflow)
 
     def on_write_needed(self, nbytes, underflow):
         """A write is requested from PulseAudio.
@@ -612,8 +672,10 @@ class PulseAudioOperation(PulseAudioLockable):
                    pa.PA_OPERATION_CANCELLED: 'Cancelled'}
 
     def __init__(self, context, callback=None, pa_operation=None):
-        PulseAudioLockable.__init__(self, context.mainloop)
-        self.context = context
+        mainloop = context.mainloop()
+        assert mainloop is not None
+        PulseAudioLockable.__init__(self, mainloop)
+        self.context = weakref.ref(context)
         self._callback = callback
         self.pa_callback = pa.pa_stream_success_cb_t(self._success_callback)
         if pa_operation is not None:
@@ -634,7 +696,9 @@ class PulseAudioOperation(PulseAudioLockable):
             self._pa_operation = None
 
     def execute(self, pa_operation):
-        self.context.check_ptr_not_null(pa_operation)
+        context = self.context()
+        assert context is not None
+        context.check_ptr_not_null(pa_operation)
         if _debug:
             print("PulseAudioOperation.execute({})".format(id(self)))
         self._pa_operation = pa_operation

@@ -87,3 +87,12 @@ class PlayerTestCase(unittest.TestCase):
                 self.fail('Player should be cleaned up')
         self.assertListEqual([], gc.garbage, msg='Should not find garbage')
 
+
+def test_multiple_fire_and_forget_players():
+    """
+    Test an issue where the driver crashed when starting multiple players, but not keeping a
+    reference to these players.
+    """
+    for _ in range(10):
+        Silence(1).play()
+    time.sleep(1)

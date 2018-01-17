@@ -34,6 +34,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import weakref
+
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
@@ -55,6 +57,9 @@ class PulseAudioDriver(AbstractAudioDriver):
 
         self._players = pyglet.app.WeakSet()
         self._listener = PulseAudioListener(self)
+
+    def __del__(self):
+        self.delete()
 
     def create_audio_player(self, source_group, player):
         assert self.context is not None
@@ -88,8 +93,6 @@ class PulseAudioDriver(AbstractAudioDriver):
     def delete(self):
         """Completely shut down pulseaudio client."""
         if self.mainloop is not None:
-            for player in self._players:
-                player.delete()
 
             with self.mainloop:
                 if self.context is not None:
@@ -107,7 +110,7 @@ class PulseAudioDriver(AbstractAudioDriver):
 
 class PulseAudioListener(AbstractListener):
     def __init__(self, driver):
-        self.driver = driver
+        self.driver = weakref.proxy(driver)
 
     def _set_volume(self, volume):
         self._volume = volume
@@ -129,8 +132,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
     def __init__(self, source_group, player, driver):
         super(PulseAudioPlayer, self).__init__(source_group, player)
-        self.driver = driver
-        self.context = driver.context
+        self.driver = weakref.ref(driver)
 
         self._events = []
         self._timestamps = []  # List of (ref_time, timestamp)
@@ -148,8 +150,8 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         audio_format = source_group.audio_format
         assert audio_format
 
-        with self.context.mainloop:
-            self.stream = self.context.create_stream(audio_format)
+        with driver.mainloop:
+            self.stream = driver.context.create_stream(audio_format)
             self.stream.push_handlers(self)
             self.stream.connect_playback()
             assert self.stream.is_ready
@@ -288,26 +290,30 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             print('PulseAudioPlayer: Add event at index {}'.format(self._write_index))
         self._events.append((self._write_index, MediaEvent(0., event_name)))
 
-
-    def __del__(self):
-        try:
-            self.delete()
-        except:
-            pass
-
     def delete(self):
         if _debug:
             print('PulseAudioPlayer.delete')
+        self.stream.pop_handlers()
+        driver = self.driver()
+        if driver is None:
+            if _debug:
+                print('PulseAudioDriver has been garbage collected.')
+            self.stream = None
+            return
+
+        if driver.mainloop is None:
+            if _debug:
+                print('PulseAudioDriver already deleted. '
+                      'PulseAudioPlayer could not clean up properly.')
+            return
 
         if self._time_sync_operation is not None:
             with self._time_sync_operation:
                 self._time_sync_operation.delete()
             self._time_sync_operation = None
 
-        if self.stream is not None:
-            with self.stream:
-                self.stream.delete()
-            self.stream = None
+        self.stream.delete()
+        self.stream = None
 
     def clear(self):
         if _debug:

@@ -43,6 +43,9 @@ def test_playback_fire_and_forget(event_loop, test_data):
 
     event_loop.ask_question('Did you hear the alert sound playing?', screenshot=False)
 
+    procedural.FM(1).play()
+    event_loop.ask_question('Did you hear the FM sound playing?', screenshot=False)
+
 
 @pytest.mark.requires_user_validation
 def test_play_queue(event_loop):
