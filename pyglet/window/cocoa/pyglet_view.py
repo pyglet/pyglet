@@ -41,9 +41,17 @@ def getModifiers(nsevent):
         modifiers |= key.MOD_FUNCTION
     return modifiers
 
+
 def getSymbol(nsevent):
-    keycode = nsevent.keyCode()
-    return keymap[keycode]
+    symbol = keymap.get(nsevent.keyCode(), None)
+    if symbol is not None:
+        return symbol
+
+    chars = cfstring_to_string(nsevent.charactersIgnoringModifiers())
+    if chars:
+        return charmap[chars[0].upper()]
+
+    return None
 
 
 class PygletView_Implementation(object):
@@ -185,12 +193,12 @@ class PygletView_Implementation(object):
                        key.CAPSLOCK : NSAlphaShiftKeyMask,
                        key.FUNCTION : NSFunctionKeyMask }
 
-        symbol = getSymbol(nsevent)
+        symbol = keymap.get(nsevent.keyCode(), None)
 
         # Ignore this event if symbol is not a modifier key.  We must check this
         # because e.g., we receive a flagsChanged message when using CMD-tab to
         # switch applications, with symbol == "a" when command key is released.
-        if symbol not in maskForKey: 
+        if symbol is None or symbol not in maskForKey: 
             return
 
         modifiers = getModifiers(nsevent)
