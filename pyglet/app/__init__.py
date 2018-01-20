@@ -70,7 +70,7 @@ __version__ = '$Id$'
 import sys
 import weakref
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 class AppException(Exception):
     pass
@@ -153,7 +153,7 @@ def exit():
 
 from pyglet.app.base import EventLoop
 from pyglet import compat_platform
-if _is_epydoc:
+if _is_pyglet_docgen:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':

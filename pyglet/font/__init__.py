@@ -70,7 +70,7 @@ import pyglet
 from pyglet import gl
 
 
-if not getattr(sys, 'is_epydoc', False):
+if not getattr(sys, 'is_pyglet_docgen', False):
     if pyglet.compat_platform == 'darwin':
         if pyglet.options['darwin_cocoa']:
             from pyglet.font.quartz import QuartzFont

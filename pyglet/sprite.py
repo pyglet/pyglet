@@ -112,7 +112,7 @@ from pyglet import event
 from pyglet import graphics
 from pyglet import image
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 
 class SpriteGroup(graphics.Group):
@@ -692,7 +692,7 @@ class Sprite(event.EventDispatcher):
         self._vertex_list.draw(GL_QUADS)
         self._group.unset_state_recursive()
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_animation_end(self):
             """The sprite animation reached the final frame.
 

@@ -59,7 +59,7 @@ by the application; see the documentation for :class:`Screen`.
 '''
 
 import sys
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 def get_display():
     '''Get the default display device.
@@ -81,7 +81,7 @@ def get_display():
     # Otherwise, create a new display and return it.
     return Display()
 
-if _is_epydoc:
+if _is_pyglet_docgen:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
 else:
     from pyglet import compat_platform

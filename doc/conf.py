@@ -18,7 +18,7 @@ def write_build(data, filename):
         for var, val in data:
             f.write("   * - "+var+"\n     - "+val+"\n")
 
-sys.is_epydoc = True
+sys.is_pyglet_docgen = True
 
 document_modules = ["pyglet"]
 

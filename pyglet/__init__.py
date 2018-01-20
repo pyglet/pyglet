@@ -66,8 +66,8 @@ import sys
 import warnings
 
 if 'sphinx' in sys.modules:
-    setattr(sys, 'is_epydoc', True)
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+    setattr(sys, 'is_pyglet_docgen', True)
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 #: The release version of this pyglet installation.
 #:

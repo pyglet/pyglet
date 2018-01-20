@@ -15,7 +15,7 @@ from pyglet import compat_platform
 from pyglet import clock
 from pyglet import event
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 
 class PlatformEventLoop(object):
@@ -350,7 +350,7 @@ class EventLoop(event.EventDispatcher):
         if len(app.windows) == 0:
             self.exit()
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_window_close(self, window):
             """A window was closed.
 

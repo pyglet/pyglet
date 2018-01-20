@@ -175,7 +175,7 @@ import sys
 from pyglet import event
 from pyglet.text import runlist
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 #: The style attribute takes on multiple values in the document.
 STYLE_INDETERMINATE = 'indeterminate'
@@ -533,7 +533,7 @@ class AbstractDocument(event.EventDispatcher):
         self._set_style(start, end, attributes)
         self.dispatch_event('on_style_text', start, end, attributes)
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_insert_text(self, start, text):
             """Text was inserted into the document.
 

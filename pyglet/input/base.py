@@ -45,7 +45,7 @@ __version__ = '$Id: $'
 import sys
 from pyglet.event import EventDispatcher
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 
 class DeviceException(Exception):
@@ -170,7 +170,7 @@ class Control(EventDispatcher):
         else:
             return '%s(raw_name=%s)' % (self.__class__.__name__, self.raw_name)
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_change(self, value):
             """The value changed.
 
@@ -273,7 +273,7 @@ class Button(Control):
         else:
             self.dispatch_event('on_release')
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_press(self):
             """The button was pressed.
 
@@ -668,7 +668,7 @@ class TabletCanvas(EventDispatcher):
         """
         raise NotImplementedError('abstract')
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_enter(self, cursor):
             """A cursor entered the proximity of the window.  The cursor may
             be hovering above the tablet surface, but outside of the window
