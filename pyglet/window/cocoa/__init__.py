@@ -403,6 +403,11 @@ class CocoaWindow(BaseWindow):
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         return int(rect.size.width), int(rect.size.height)
 
+    def get_viewport_size(self):
+        view = self.context._nscontext.view()
+        bounds = view.convertRectToBacking_(view.bounds()).size
+        return int(bounds.width), int(bounds.height)
+
     def set_size(self, width, height):
         if self._fullscreen:
             raise WindowException('Cannot set size of fullscreen window.')
@@ -606,16 +611,4 @@ class CocoaWindow(BaseWindow):
 
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
-
-    def on_resize(self, width, height):
-        """Override default implementation to support retina displays."""
-        view = self.context._nscontext.view()
-        bounds = view.convertRectToBacking_(view.bounds()).size
-        back_width, back_height = (int(bounds.width), int(bounds.height))
-
-        gl.glViewport(0, 0, back_width, back_height)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(0, width, 0, height, -1, 1)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
 
