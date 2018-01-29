@@ -8,6 +8,7 @@ The following deprecated methods and attributes have now been removed:
 - `font.text`. Use the `text` module instead for displaying text.
 - `window.Platform` API. Use `canvas.get_display` or `canvas.Display` instead.
 - `font.Win32Font` class. This has been replaced by `font.GDIPlusFont`, which was already default.
+- `window.event.WindowExitHandler`. This functionality is now handled by the Window itself.
 
 note: The canvas and display logic seems a bit disjointed. Should be reviewed.
 note: The `font.Win32Font` class can be removed, and it's methods merged with `font.GDIPlusFont`.
