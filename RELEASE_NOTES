@@ -3,10 +3,15 @@ Pyglet 1.4.0
 The following deprecated methods and attributes have now been removed:
 - `sprite.set_position`. Set the X, Y coordinates via sprite.position instead.
 - `next` on the Player class. This has been replaced by `next_source`.
-- `clock.ClockDisplay`. Use pyglet.window.FPSDisplay instead.
+- `clock.ClockDisplay`. Use `window.FPSDisplay` instead.
 - `clock.test_clock`. This relied on deprecated behavior, and is superseded by unit tests.
 - `font.text`. Use the `text` module instead for displaying text.
 - `window.Platform` API. Use `canvas.get_display` or `canvas.Display` instead.
+- `font.Win32Font` class. This has been replaced by `font.GDIPlusFont`, which was already default.
+
+note: The canvas and display logic seems a bit disjointed. Should be reviewed.
+note: The `font.Win32Font` class can be removed, and it's methods merged with `font.GDIPlusFont`.
+
 
 
 Pyglet 1.3.0

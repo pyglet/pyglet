@@ -58,22 +58,14 @@ from pyglet import gl
 if not getattr(sys, 'is_epydoc', False):
     if pyglet.compat_platform == 'darwin':
         from pyglet.font.quartz import QuartzFont
-
         _font_class = QuartzFont
+
     elif pyglet.compat_platform in ('win32', 'cygwin'):
-        if pyglet.options['font'][0] == 'win32':
-            from pyglet.font.win32 import Win32Font
+        from pyglet.font.win32 import GDIPlusFont
+        _font_class = GDIPlusFont
 
-            _font_class = Win32Font
-        elif pyglet.options['font'][0] == 'gdiplus':
-            from pyglet.font.win32 import GDIPlusFont
-
-            _font_class = GDIPlusFont
-        else:
-            assert False, 'Unknown font driver'
     else:
         from pyglet.font.freetype import FreeTypeFont
-
         _font_class = FreeTypeFont
 
 
