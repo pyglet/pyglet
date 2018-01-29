@@ -5,6 +5,7 @@ from builtins import object
 from pyglet import app
 from pyglet import gl
 from pyglet import window
+from pyglet import canvas
 
 
 class Display(object):
@@ -49,7 +50,7 @@ class Display(object):
                 The X11 screen number to use.
 
         """
-        app.displays.add(self)
+        canvas._displays.add(self)
 
     def get_screens(self):
         """Get the available screens.

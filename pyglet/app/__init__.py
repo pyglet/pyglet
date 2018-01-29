@@ -123,17 +123,6 @@ class WeakSet(object):
         return len(self._dict)
 
 
-displays = WeakSet()
-"""Set of all open displays.  Instances of :class:`pyglet.canvas.Display` 
-are automatically added to this set upon construction.  The set uses weak 
-references, so displays are removed from the set when they are no longer 
-referenced.
-
-:deprecated: Use :func:`pyglet.canvas.get_display`.
-
-:type: :class:`WeakSet`
-"""
-
 windows = WeakSet()
 """Set of all open windows (including invisible windows).  Instances of
 :class:`pyglet.window.Window` are automatically added to this set upon 
