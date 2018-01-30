@@ -1,4 +1,4 @@
-Pyglet 1.4.0
+Pyglet 1.5.0
 ============
 The following deprecated methods and attributes have now been removed:
 - `sprite.set_position`. Set the X, Y coordinates via sprite.position instead.
@@ -22,6 +22,8 @@ note: The canvas and display logic seems a bit disjointed. Should be reviewed.
 note: The `font.Win32Font` class can be removed, and it's methods merged with `font.GDIPlusFont`.
 note: The image module properties were deprecated due to parameterization requirements.
 
+Pyglet 1.4.0
+============
 
 Pyglet 1.3.0
 ============
