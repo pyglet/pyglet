@@ -733,13 +733,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        # XXX avoid GLException by not allowing 0 width or height.
-        width = max(1, width)
-        height = max(1, height)
-        gl.glViewport(0, 0, width, height)
+        viewport = self.get_viewport_size()
+        gl.glViewport(0, 0, max(1, viewport[0]), max(1, viewport[1]))
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(0, width, 0, height, -1, 1)
+        gl.glOrtho(0, max(1, width), 0, max(1, height), -1, 1)
         gl.glMatrixMode(gl.GL_MODELVIEW)
 
     def on_close(self):
@@ -1004,6 +1002,20 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         :return: The width and height of the window, in pixels.
         """
         raise NotImplementedError('abstract')
+
+    def get_viewport_size(self):
+        """Return the size in actual pixels of the viewport.
+
+        When using HiDPI screens, the actual number of pixels used to render
+        is higher than that of the coordinates used. Each virtual pixel is made
+        up of multiple actual pixels in the hardware. When manually setting
+        the viewport using glViewport, this size should be used instead of
+        `Window.get_size()`.
+
+        :rtype: (int, int)
+        :return: The width and height of the viewport, in pixels.
+        """
+        return self.get_size()
 
     def set_location(self, x, y):
         """Set the position of the window.
