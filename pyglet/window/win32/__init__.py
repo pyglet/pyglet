@@ -462,7 +462,7 @@ class Win32Window(BaseWindow):
         else:
             # Release clip
             _user32.ClipCursor(None)
-            # Move mouse bak to the middle of the client area.
+            # Move mouse back to the middle of the client area.
             if self._exclusive_mouse_screen:
                 x, y = self._exclusive_mouse_screen
                 self.set_mouse_position(x, y, absolute=True)
@@ -980,7 +980,6 @@ class Win32Window(BaseWindow):
         if not self._fullscreen:
             self._width, self._height = w, h
         self._update_view_location(self._width, self._height)
-        self._reset_exclusive_mouse_screen()
         self.switch_to()
         self.dispatch_event('on_resize', self._width, self._height)
         return 0
@@ -1002,7 +1001,6 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_MOVE)
     def _event_move(self, msg, wParam, lParam):
         x, y = self._get_location(lParam)
-        self._reset_exclusive_mouse_screen()
         self.dispatch_event('on_move', x, y)
         return 0
 
@@ -1026,10 +1024,16 @@ class Win32Window(BaseWindow):
         return 0
     '''
 
+    @Win32EventHandler(WM_MOUSEACTIVATE)
+    def _event_mouse_activate(self, msg, wParam, lParam):
+        # The user clicked on the Window. Activate it but eat the click event.
+        return MA_ACTIVATEANDEAT
+
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):
         self.dispatch_event('on_activate')
         self._has_focus = True
+
         self.set_exclusive_keyboard(self._exclusive_keyboard)
         self.set_exclusive_mouse(self._exclusive_mouse)
         return 0
@@ -1038,8 +1042,18 @@ class Win32Window(BaseWindow):
     def _event_killfocus(self, msg, wParam, lParam):
         self.dispatch_event('on_deactivate')
         self._has_focus = False
-        self.set_exclusive_keyboard(self._exclusive_keyboard)
-        self.set_exclusive_mouse(self._exclusive_mouse)
+        exclusive_keyboard = self._exclusive_keyboard
+        exclusive_mouse = self._exclusive_mouse
+        # Disable both exclusive keyboard and mouse
+        self.set_exclusive_keyboard(False)
+        self.set_exclusive_mouse(False)
+
+        # But save desired state and note that we lost focus
+        # This will allow to reset the correct mode once we regain focus
+        self._exclusive_keyboard = exclusive_keyboard
+        self._exclusive_keyboard_focus = False
+        self._exclusive_mouse = exclusive_mouse
+        self._exclusive_mouse_focus = False
         return 0
 
     @Win32EventHandler(WM_GETMINMAXINFO)
