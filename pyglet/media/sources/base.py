@@ -244,7 +244,7 @@ class Source(object):
     """
 
     _duration = None
-    _players = [] # List of players when calling Source.play
+    _players = []  # List of players when calling Source.play
 
     audio_format = None
     video_format = None

@@ -79,11 +79,14 @@ from .drivers import get_audio_driver
 from .exceptions import *
 from .player import Player, PlayerGroup
 from .sources import *
-from .codecs import *
+from .codecs import get_decoders, add_decoders
+from .codecs import add_default_media_codecs as _add_default_media_codecs
+
+from . import procedural
 
 
 def load(filename, file=None, streaming=True, decoder=None):
-    """Load a 3D model from a file.
+    """Load a Source from a file.
 
     :Parameters:
         `filename` : str
@@ -109,13 +112,13 @@ def load(filename, file=None, streaming=True, decoder=None):
             try:
                 model = decoder.decode(file, filename, streaming)
                 return model
-            except codecs.MediaDecodeException as e:
+            except MediaDecodeException as e:
                 if not first_exception or first_exception.exception_priority < e.exception_priority:
                     first_exception = e
                 file.seek(0)
 
         if not first_exception:
-            raise codecs.MediaDecodeException('No decoders are available for this media format.')
+            raise MediaDecodeException('No decoders are available for this media format.')
         raise first_exception
 
 

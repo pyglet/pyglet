@@ -34,7 +34,7 @@ from builtins import range
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.media.sources.base import Source, AudioFormat, AudioData
+from .sources.base import Source, AudioFormat, AudioData
 
 from collections import deque
 
