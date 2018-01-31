@@ -255,20 +255,3 @@ class WaveSource(StreamingSource):
 
         self._file.seek(offset + self._start_offset)
         self._offset = offset
-
-
-class WaveDecoder(object):
-
-    def get_file_extensions(self):
-        return ['.wav', '.wave']
-
-    def decode(self, file, filename):
-        return
-
-
-def get_decoders():
-    return [WaveDecoder()]
-
-
-def get_encoders():
-    return []
