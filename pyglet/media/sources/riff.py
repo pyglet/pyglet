@@ -56,11 +56,14 @@ IBM_FORMAT_MULAW = 0x0101
 IBM_FORMAT_ALAW = 0x0102
 IBM_FORMAT_ADPCM = 0x0103
 
+
 class RIFFFormatException(MediaFormatException):
     pass
 
+
 class WAVEFormatException(RIFFFormatException):
     pass
+
 
 class RIFFChunk(object):
     header_fmt = '<4sL'
@@ -82,6 +85,7 @@ class RIFFChunk(object):
             self.name,
             self.offset,
             self.length)
+
 
 class RIFFForm(object):
     _chunks = None
@@ -117,6 +121,7 @@ class RIFFForm(object):
     def __repr__(self):
         return '%s(offset=%r)' % (self.__class__.__name__, self.offset)
 
+
 class RIFFType(RIFFChunk):
     def __init__(self, *args, **kwargs):
         super(RIFFType, self).__init__(*args, **kwargs)
@@ -127,6 +132,7 @@ class RIFFType(RIFFChunk):
             raise RIFFFormatException('Unsupported RIFF form "%s"' % form)
 
         self.form = WaveForm(self.file, self.offset + 4)
+
 
 class RIFFFile(RIFFForm):
     _chunk_types = {
@@ -144,6 +150,7 @@ class RIFFFile(RIFFForm):
         if len(chunks) == 1 and isinstance(chunks[0], RIFFType):
             return chunks[0].form
 
+
 class WaveFormatChunk(RIFFChunk):
     def __init__(self, *args, **kwargs):
         super(WaveFormatChunk, self).__init__(*args, **kwargs)
@@ -159,8 +166,10 @@ class WaveFormatChunk(RIFFChunk):
          self.wBlockAlign,
          self.wBitsPerSample) = struct.unpack(fmt, self.get_data())
 
+
 class WaveDataChunk(RIFFChunk):
     pass
+
 
 class WaveForm(RIFFForm):
     _chunk_types = {
@@ -177,6 +186,7 @@ class WaveForm(RIFFForm):
         for chunk in self.get_chunks():
             if isinstance(chunk, WaveDataChunk):
                 return chunk
+
 
 class WaveSource(StreamingSource):
     def __init__(self, filename, file=None):
@@ -245,3 +255,20 @@ class WaveSource(StreamingSource):
 
         self._file.seek(offset + self._start_offset)
         self._offset = offset
+
+
+class WaveDecoder(object):
+
+    def get_file_extensions(self):
+        return ['.wav', '.wave']
+
+    def decode(self, file, filename):
+        return
+
+
+def get_decoders():
+    return [WaveDecoder()]
+
+
+def get_encoders():
+    return []
