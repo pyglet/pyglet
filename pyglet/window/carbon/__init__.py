@@ -332,7 +332,7 @@ class CarbonWindow(BaseWindow):
         # Can occur when mixing with other toolkits, e.g. Tk.
         # Fixes issue 180.
         if result not in (eventLoopTimedOutErr, eventLoopQuitErr):
-            raise 'Error %d' % result
+             raise WindowException('Error %d' % result)
 
     def dispatch_pending_events(self):
         while self._event_queue:
