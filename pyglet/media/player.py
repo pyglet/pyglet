@@ -39,7 +39,7 @@ from builtins import object
 import pyglet
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
-from pyglet.media.sources.base import PlayList
+from pyglet.media.codecs.base import PlayList
 
 # import cProfile
 

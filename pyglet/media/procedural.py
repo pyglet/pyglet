@@ -34,7 +34,7 @@ from builtins import range
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from .sources.base import Source, AudioFormat, AudioData
+from .codecs.base import Source, AudioFormat, AudioData
 
 from collections import deque
 
@@ -164,7 +164,7 @@ class TremoloEnvelope(Envelope):
         total_bytes = int(sample_rate * duration)
         period = total_bytes / duration
         max_amplitude = self.amplitude
-        min_amplitude = max(0, (1 - self.depth) * self.amplitude)
+        min_amplitude = max(0.0, (1.0 - self.depth) * self.amplitude)
         step = (math.pi * 2) / period / self.rate
         envelope = []
         for i in range(total_bytes):

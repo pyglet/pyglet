@@ -1,5 +1,8 @@
 import os.path
+import pyglet
 
+
+_debug = pyglet.options['debug_media']
 
 _decoders = []              # List of registered MediaDecoders
 _encoders = []              # List of registered MediaEncoders
@@ -100,7 +103,28 @@ def add_default_media_codecs():
         pass
 
     try:
-        from . import ffmpeg
-        add_decoders(ffmpeg)
+        if have_ffmpeg():
+            from . import ffmpeg
+            add_decoders(ffmpeg)
     except ImportError:
         pass
+
+
+def have_ffmpeg():
+    """Check if FFmpeg library is available.
+
+    Returns:
+        bool: True if FFmpeg is found.
+
+    .. versionadded:: 1.4
+    """
+    try:
+        from . import ffmpeg_lib
+        if _debug:
+            print('FFmpeg available, using to load media files.')
+        return True
+
+    except ImportError:
+        if _debug:
+            print('FFmpeg not available.')
+        return False

@@ -38,11 +38,8 @@ from builtins import object
 import ctypes
 from collections import deque
 
-import pyglet
 from pyglet.compat import bytes_type, BytesIO
 from pyglet.media.exceptions import MediaException, CannotSeekException
-
-_debug = pyglet.options['debug_media']
 
 
 class AudioFormat(object):
