@@ -44,7 +44,7 @@ def load(filename, file=None, decoder=None, batch=None):
                     return model
                 except _codecs.ModelDecodeException as e:
                     if (not first_exception or
-                                first_exception.exception_priority < e.exception_priority):
+                            first_exception.exception_priority < e.exception_priority):
                         first_exception = e
                     file.seek(0)
 
@@ -58,34 +58,58 @@ def load(filename, file=None, decoder=None, batch=None):
 
 class Model(object):
 
-    def __init__(self, vertex_lists, batch, own_batch=False):
+    def __init__(self, vertex_list_map, batch, own_batch):
         self._batch = batch
         self._own_batch = own_batch
-        self.vertex_lists = vertex_lists
+        self.vertex_list_map = vertex_list_map
+
+    @property
+    def batch(self):
+        """The graphics Batch the model belongs to.
+
+        The Model can be migrated from one batch to another, or removed from
+        a batch (for individual drawing).  Note that this can be an expensive
+        operation.
+
+        :type: :py:class:`pyglet.graphics.Batch`
+        """
+        return self._batch
+
+    @batch.setter
+    def batch(self, batch):
+        if self._batch == batch:
+            return
+
+        if batch is None and not self._own_batch:
+            batch = pyglet.graphics.Batch()
+            for vlist, group in self.vertex_list_map.items():
+                self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
+            self._batch = batch
+            self._own_batch = True
+        elif batch is not None:
+            for vlist, group in self.vertex_list_map.items():
+                self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
+            self._batch = batch
+            self._own_batch = False
 
     def update(self, x=None, y=None, z=None):
-        """Shift entire model on the x, y or z axis."""
+        """Shift the model on the x, y or z axis."""
         if x:
-            for vlist in self.vertex_lists:
+            for vlist in self.vertex_list_map:
                 verts = vlist.vertices[:]
-                verts[0::3] = [v + x for v in verts[0::3]]
-                vlist.vertices[:] = verts
+                vlist.vertices[0::3] = [v + x for v in verts[0::3]]
         if y:
-            for vlist in self.vertex_lists:
+            for vlist in self.vertex_list_map:
                 verts = vlist.vertices[:]
-                verts[1::3] = [v + y for v in verts[1::3]]
-                vlist.vertices[:] = verts
+                vlist.vertices[1::3] = [v + y for v in verts[1::3]]
         if z:
-            for vlist in self.vertex_lists:
+            for vlist in self.vertex_list_map:
                 verts = vlist.vertices[:]
-                verts[2::3] = [v + z for v in verts[2::3]]
-                vlist.vertices[:] = verts
+                vlist.vertices[2::3] = [v + z for v in verts[2::3]]
 
     def draw(self):
-        if self._own_batch:
-            self._batch.draw()
-        else:
-            self._batch.draw_subset(self.vertex_lists)
+        print(self.batch)
+        self._batch.draw_subset(self.vertex_list_map.keys())
 
 
 class TexturedMaterialGroup(graphics.Group):

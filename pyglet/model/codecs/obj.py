@@ -9,7 +9,6 @@ from pyglet.model import ModelException, Model, MaterialGroup, TexturedMaterialG
 class MaterialSet(object):
     def __init__(self, group):
         self.group = group
-
         # Interleaved array of floats in GL_T2F_N3F_V3F format
         self.vertices = []
         self.normals = []
@@ -80,6 +79,8 @@ def load_material_library(path, filename):
 
         except BaseException as ex:
             raise ModelException('Parse error in {0}.'.format((filename, ex)))
+
+    file.close()
 
     return materials
 
@@ -183,6 +184,8 @@ def parse_obj_file(filename, file=None):
                 tlast = tex_coords[t_index]
                 vlast = vertices[v_index]
 
+    file.close()
+
     return mesh_list
 
 
@@ -202,18 +205,20 @@ class OBJModelDecoder(ModelDecoder):
             own_batch = False
 
         mesh_list = parse_obj_file(filename)
-        vertex_lists = []
+        vertex_list_map = {}
 
         for mesh in mesh_list:
             for material in mesh.materials:
-                vertex_lists.append(batch.add(len(material.vertices) // 3,
-                                              GL_TRIANGLES,
-                                              material.group,
-                                              ('v3f/static', material.vertices),
-                                              ('n3f/static', material.normals),
-                                              ('t2f/static', material.tex_coords)))
+                vlist = batch.add(len(material.vertices) // 3,
+                                  GL_TRIANGLES,
+                                  material.group,
+                                  ('v3f/static', material.vertices),
+                                  ('n3f/static', material.normals),
+                                  ('t2f/static', material.tex_coords))
 
-        return Model(vertex_lists, batch, own_batch=own_batch)
+                vertex_list_map[vlist] = material.group
+
+        return Model(vertex_list_map, batch, own_batch)
 
 
 def get_decoders():
