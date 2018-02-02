@@ -152,28 +152,35 @@ class MaterialGroup(graphics.Group):
     def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity):
         super(MaterialGroup, self).__init__()
         self.name = name
-        self._diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
-        self._ambient = (GLfloat * 4)(*(ambient + [opacity]))
-        self._specular = (GLfloat * 4)(*(specular + [opacity]))
-        self._emission = (GLfloat * 4)(*(emission + [opacity]))
-        self._shininess = shininess
+        self.diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
+        self.ambient = (GLfloat * 4)(*(ambient + [opacity]))
+        self.specular = (GLfloat * 4)(*(specular + [opacity]))
+        self.emission = (GLfloat * 4)(*(emission + [opacity]))
+        self.shininess = shininess
 
     def set_state(self, face=GL_FRONT_AND_BACK):
         glDisable(GL_TEXTURE_2D)
-        glMaterialfv(face, GL_DIFFUSE, self._diffuse)
-        glMaterialfv(face, GL_AMBIENT, self._ambient)
-        glMaterialfv(face, GL_SPECULAR, self._specular)
-        glMaterialfv(face, GL_EMISSION, self._emission)
-        glMaterialf(face, GL_SHININESS, self._shininess)
+        glMaterialfv(face, GL_DIFFUSE, self.diffuse)
+        glMaterialfv(face, GL_AMBIENT, self.ambient)
+        glMaterialfv(face, GL_SPECULAR, self.specular)
+        glMaterialfv(face, GL_EMISSION, self.emission)
+        glMaterialf(face, GL_SHININESS, self.shininess)
 
     def unset_state(self):
         glDisable(GL_COLOR_MATERIAL)
 
     def __eq__(self, other):
-        return super(MaterialGroup, self).__eq__(other)
+        return (self.__class__ is other.__class__ and
+                self.diffuse[:] == other.diffuse[:] and
+                self.ambient[:] == other.ambient[:] and
+                self.specular[:] == other.specular[:] and
+                self.emission[:] == other.emission[:] and
+                self.shininess == other.shininess)
 
     def __hash__(self):
-        return super(MaterialGroup, self).__hash__()
+        return hash((tuple(self.diffuse) + tuple(self.ambient) +
+                    tuple(self.specular) + tuple(self.emission),
+                     self.shininess))
 
 
 _codecs.add_default_model_codecs()

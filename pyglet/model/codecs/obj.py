@@ -34,8 +34,7 @@ def load_material_library(path, filename):
     shininess = 100.0
     opacity = 1.0
     texture = None
-
-    materials = {}
+    material_group = None
 
     for line in file:
         if line.startswith('#'):
@@ -69,20 +68,18 @@ def load_material_library(path, filename):
                     raise ModelException('Could not load texture %s: %s' % (values[1], ex))
 
             if texture:
-                group = TexturedMaterialGroup(material_name, diffuse, ambient, specular,
-                                              emission, shininess, opacity, texture)
+                material_group = TexturedMaterialGroup(material_name, diffuse, ambient, specular,
+                                                       emission, shininess, opacity, texture)
             else:
-                group = MaterialGroup(material_name, diffuse, ambient, specular,
-                                      emission, shininess, opacity)
-
-            materials[material_name] = group
+                material_group = MaterialGroup(material_name, diffuse, ambient, specular,
+                                               emission, shininess, opacity)
 
         except BaseException as ex:
             raise ModelException('Parse error in {0}.'.format((filename, ex)))
 
     file.close()
 
-    return materials
+    return material_name, material_group
 
 
 def parse_obj_file(filename, file=None):
@@ -108,8 +105,8 @@ def parse_obj_file(filename, file=None):
     emission = [0.0, 0.0, 0.0]
     shininess = 100.0
     opacity = 1.0
-    default_group = MaterialGroup("Default", diffuse, ambient,
-                                  specular, emission, shininess, opacity)
+    default_group = MaterialGroup("default", diffuse, ambient, specular,
+                                  emission, shininess, opacity)
 
     for line in file:
         if line.startswith('#'):
@@ -125,7 +122,8 @@ def parse_obj_file(filename, file=None):
         elif values[0] == 'vt':
             tex_coords.append(list(map(float, values[1:3])))
         elif values[0] == 'mtllib':
-            materials = load_material_library(path, values[1])
+            name, group = load_material_library(path, values[1])
+            materials[name] = group
         elif values[0] in ('usemtl', 'usemat'):
             group = materials.get(values[1], default_group)
             if mesh is not None:
