@@ -34,7 +34,6 @@ def load_material_library(path, filename):
     shininess = 100.0
     opacity = 1.0
     texture = None
-    material_group = None
 
     for line in file:
         if line.startswith('#'):
@@ -63,19 +62,19 @@ def load_material_library(path, filename):
                 opacity = float(values[1])
             elif values[0] == 'map_Kd':
                 try:
-                    texture = pyglet.resource.image(values[1]).texture
+                    texture = pyglet.resource.texture(values[1])
                 except BaseException as ex:
                     raise ModelException('Could not load texture %s: %s' % (values[1], ex))
 
-            if texture:
-                material_group = TexturedMaterialGroup(material_name, diffuse, ambient, specular,
-                                                       emission, shininess, opacity, texture)
-            else:
-                material_group = MaterialGroup(material_name, diffuse, ambient, specular,
-                                               emission, shininess, opacity)
-
         except BaseException as ex:
             raise ModelException('Parse error in {0}.'.format((filename, ex)))
+
+    if texture:
+        material_group = TexturedMaterialGroup(material_name, diffuse, ambient, specular,
+                                               emission, shininess, opacity, texture)
+    else:
+        material_group = MaterialGroup(material_name, diffuse, ambient,
+                                       specular, emission, shininess, opacity)
 
     file.close()
 
@@ -105,7 +104,7 @@ def parse_obj_file(filename, file=None):
     emission = [0.0, 0.0, 0.0]
     shininess = 100.0
     opacity = 1.0
-    default_group = MaterialGroup("default", diffuse, ambient, specular,
+    default_group = MaterialGroup("Default", diffuse, ambient, specular,
                                   emission, shininess, opacity)
 
     for line in file:
@@ -196,13 +195,12 @@ class OBJModelDecoder(ModelDecoder):
         return ['.obj']
 
     def decode(self, file, filename, batch):
+
         if not batch:
             batch = pyglet.graphics.Batch()
-            own_batch = True
-        else:
-            own_batch = False
 
         mesh_list = parse_obj_file(filename)
+
         vertex_list_map = {}
 
         for mesh in mesh_list:
@@ -216,7 +214,7 @@ class OBJModelDecoder(ModelDecoder):
 
                 vertex_list_map[vlist] = material.group
 
-        return Model(vertex_list_map, batch, own_batch)
+        return Model(vertex_list_map, batch)
 
 
 def get_decoders():
