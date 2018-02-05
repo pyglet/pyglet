@@ -1,3 +1,15 @@
+Pyglet 1.3.1
+============
+Bugfix release.
+
+Bugfixes
+--------
+- #158 Fix mouse events in mouse exclusive mode on Windows.
+- #105 Crashes in PulseAudio;
+- #163 Workaround for running inside Spyder;
+- #45  Expose viewport size for use on HiDPI screens;
+- #15  Respect keyboard layout on macOS;
+
 Pyglet 1.3.0
 ============
 This major release takes Python 3 support to the next level. The entire codebase is now compatible
