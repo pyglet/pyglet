@@ -1,39 +1,48 @@
 import os
 import pyglet
 
-from pyglet.gl import GL_TRIANGLES
 from pyglet.model.codecs import ModelDecoder
-from pyglet.model import ModelException, Model, MaterialGroup, TexturedMaterialGroup
+from pyglet.model import ModelException, Model
 
 
-class MaterialSet(object):
-    def __init__(self, group):
-        self.group = group
-        # Interleaved array of floats in GL_T2F_N3F_V3F format
-        self.vertices = []
-        self.normals = []
-        self.tex_coords = []
-        self.array = None
+class Material(object):
+    __slots__ = ("name", "diffuse", "ambient", "specular",
+                 "emission", "shininess", "opacity", "texture_name")
+
+    def __init__(self, name, diffuse, ambient, specular,
+                 emission, shininess, opacity, texture_name=None):
+        self.name = name
+        self.diffuse = diffuse
+        self.ambient = ambient
+        self.specular = specular
+        self.emission = emission
+        self.shininess = shininess
+        self.opacity = opacity
+        self.texture_name = texture_name
 
 
 class Mesh(object):
     def __init__(self, name):
         self.name = name
-        self.materials = []
+        self.material = None
+        # Interleaved array of floats in GL_T2F_N3F_V3F format
+        self.vertices = []
+        self.normals = []
+        self.tex_coords = []
 
 
 def load_material_library(path, filename):
 
     file = open(os.path.join(path, filename), 'r')
 
-    material_name = None
+    name = None
     diffuse = [0.8, 0.8, 0.8]
     ambient = [1.0, 1.0, 1.0]
     specular = [0.0, 0.0, 0.0]
     emission = [0.0, 0.0, 0.0]
     shininess = 100.0
     opacity = 1.0
-    texture = None
+    texture_name = None
 
     for line in file:
         if line.startswith('#'):
@@ -43,8 +52,8 @@ def load_material_library(path, filename):
             continue
 
         if values[0] == 'newmtl':
-            material_name = values[1]
-        elif material_name is None:
+            name = values[1]
+        elif name is None:
             raise ModelException('Expected "newmtl" in %s' % filename)
 
         try:
@@ -61,24 +70,14 @@ def load_material_library(path, filename):
             elif values[0] == 'd':
                 opacity = float(values[1])
             elif values[0] == 'map_Kd':
-                try:
-                    texture = pyglet.resource.texture(values[1])
-                except BaseException as ex:
-                    raise ModelException('Could not load texture %s: %s' % (values[1], ex))
+                texture_name = values[1]
 
         except BaseException as ex:
-            raise ModelException('Parse error in {0}.'.format((filename, ex)))
-
-    if texture:
-        material_group = TexturedMaterialGroup(material_name, diffuse, ambient, specular,
-                                               emission, shininess, opacity, texture)
-    else:
-        material_group = MaterialGroup(material_name, diffuse, ambient,
-                                       specular, emission, shininess, opacity)
+            raise ModelException('Parsing error in {0}.'.format((filename, ex)))
 
     file.close()
 
-    return material_name, material_group
+    return Material(name, diffuse, ambient, specular, emission, shininess, opacity, texture_name)
 
 
 def parse_obj_file(filename, file=None):
@@ -90,9 +89,8 @@ def parse_obj_file(filename, file=None):
 
     path = os.path.dirname(filename)
 
+    material = None
     mesh = None
-    material_set = None
-    group = None
 
     vertices = [[0., 0., 0.]]
     normals = [[0., 0., 0.]]
@@ -104,8 +102,8 @@ def parse_obj_file(filename, file=None):
     emission = [0.0, 0.0, 0.0]
     shininess = 100.0
     opacity = 1.0
-    default_group = MaterialGroup("Default", diffuse, ambient, specular,
-                                  emission, shininess, opacity)
+
+    default_material = Material("Default", diffuse, ambient, specular, emission, shininess, opacity)
 
     for line in file:
         if line.startswith('#'):
@@ -120,27 +118,29 @@ def parse_obj_file(filename, file=None):
             normals.append(list(map(float, values[1:4])))
         elif values[0] == 'vt':
             tex_coords.append(list(map(float, values[1:3])))
+
         elif values[0] == 'mtllib':
-            name, group = load_material_library(path, values[1])
-            materials[name] = group
+            material = load_material_library(path, values[1])
+            materials[material.name] = material
+
         elif values[0] in ('usemtl', 'usemat'):
-            group = materials.get(values[1], default_group)
+            # TODO: fail on missing material instead of using default?
+            material = materials.get(values[1], default_material)
             if mesh is not None:
-                material_set = MaterialSet(group)
-                mesh.materials.append(material_set)
+                mesh.material = material
+
         elif values[0] == 'o':
-            mesh = Mesh(values[1])
+            mesh = Mesh(name=values[1])
             mesh_list.append(mesh)
-            material_set = None
+
         elif values[0] == 'f':
             if mesh is None:
-                mesh = Mesh('')
+                mesh = Mesh(name='')
                 mesh_list.append(mesh)
-            if group is None:
-                group = default_group
-            if material_set is None:
-                material_set = MaterialSet(group)
-                mesh.materials.append(material_set)
+            if material is None:
+                material = default_material
+            if mesh.material is None:
+                mesh.material = material
 
             # For fan triangulation, remember first and latest vertices
             n1 = None
@@ -159,19 +159,17 @@ def parse_obj_file(filename, file=None):
                     t_index += len(tex_coords) - 1
                 if n_index < 0:
                     n_index += len(normals) - 1
-                # vertex = tex_coords[t_index] + \
-                #         normals[n_index] + \
-                #         vertices[v_index]
+                # vertex = tex_coords[t_index] + normals[n_index] + vertices[v_index]
 
-                material_set.normals += normals[n_index]
-                material_set.tex_coords += tex_coords[t_index]
-                material_set.vertices += vertices[v_index]
+                mesh.normals += normals[n_index]
+                mesh.tex_coords += tex_coords[t_index]
+                mesh.vertices += vertices[v_index]
 
                 if i >= 3:
                     # Triangulate
-                    material_set.normals += n1 + nlast
-                    material_set.tex_coords += t1 + tlast
-                    material_set.vertices += v1 + vlast
+                    mesh.normals += n1 + nlast
+                    mesh.tex_coords += t1 + tlast
+                    mesh.vertices += v1 + vlast
 
                 if i == 0:
                     n1 = normals[n_index]
@@ -199,22 +197,9 @@ class OBJModelDecoder(ModelDecoder):
         if not batch:
             batch = pyglet.graphics.Batch()
 
-        mesh_list = parse_obj_file(filename)
+        mesh_list = parse_obj_file(filename=filename)
 
-        vertex_list_map = {}
-
-        for mesh in mesh_list:
-            for material in mesh.materials:
-                vlist = batch.add(len(material.vertices) // 3,
-                                  GL_TRIANGLES,
-                                  material.group,
-                                  ('v3f/static', material.vertices),
-                                  ('n3f/static', material.normals),
-                                  ('t2f/static', material.tex_coords))
-
-                vertex_list_map[vlist] = material.group
-
-        return Model(vertex_list_map, batch)
+        return Model(mesh_list=mesh_list, batch=batch)
 
 
 def get_decoders():

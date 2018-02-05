@@ -58,9 +58,29 @@ def load(filename, file=None, decoder=None, batch=None):
 
 class Model(object):
 
-    def __init__(self, vertex_list_map, batch):
+    def __init__(self, mesh_list, batch):
         self._batch = batch
-        self.vertex_list_map = vertex_list_map
+        self.mesh_list = mesh_list
+        self.vertex_list_map = {}
+        self.texture_map = {}
+
+        for mesh in mesh_list:
+            material = mesh.material
+            if material.texture_name:
+                texture = pyglet.image.load(material.texture_name).get_texture()
+                group = TexturedMaterialGroup(material, texture)
+                self.texture_map[texture] = group
+            else:
+                group = MaterialGroup(material)
+
+            vlist = batch.add(len(mesh.vertices) // 3,
+                              GL_TRIANGLES,
+                              group,
+                              ('v3f/static', mesh.vertices),
+                              ('n3f/static', mesh.normals),
+                              ('t2f/static', mesh.tex_coords))
+
+            self.vertex_list_map[vlist] = group
 
     @property
     def batch(self):
@@ -111,14 +131,14 @@ class Model(object):
 
 class TexturedMaterialGroup(graphics.Group):
 
-    def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity, texture):
+    def __init__(self, material, texture):
         super(TexturedMaterialGroup, self).__init__()
-        self.name = name
-        self.diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
-        self.ambient = (GLfloat * 4)(*(ambient + [opacity]))
-        self.specular = (GLfloat * 4)(*(specular + [opacity]))
-        self.emission = (GLfloat * 4)(*(emission + [opacity]))
-        self.shininess = shininess
+        self.material = material
+        self.diffuse = (GLfloat * 4)(*(material.diffuse + [material.opacity]))
+        self.ambient = (GLfloat * 4)(*(material.ambient + [material.opacity]))
+        self.specular = (GLfloat * 4)(*(material.specular + [material.opacity]))
+        self.emission = (GLfloat * 4)(*(material.emission + [material.opacity]))
+        self.shininess = material.shininess
         self.texture = texture
 
     def set_state(self, face=GL_FRONT_AND_BACK):
@@ -149,14 +169,14 @@ class TexturedMaterialGroup(graphics.Group):
 
 class MaterialGroup(graphics.Group):
 
-    def __init__(self, name, diffuse, ambient, specular, emission, shininess, opacity):
+    def __init__(self, material):
         super(MaterialGroup, self).__init__()
-        self.name = name
-        self.diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
-        self.ambient = (GLfloat * 4)(*(ambient + [opacity]))
-        self.specular = (GLfloat * 4)(*(specular + [opacity]))
-        self.emission = (GLfloat * 4)(*(emission + [opacity]))
-        self.shininess = shininess
+        self.material = material
+        self.diffuse = (GLfloat * 4)(*(material.diffuse + [material.opacity]))
+        self.ambient = (GLfloat * 4)(*(material.ambient + [material.opacity]))
+        self.specular = (GLfloat * 4)(*(material.specular + [material.opacity]))
+        self.emission = (GLfloat * 4)(*(material.emission + [material.opacity]))
+        self.shininess = material.shininess
 
     def set_state(self, face=GL_FRONT_AND_BACK):
         glDisable(GL_TEXTURE_2D)
