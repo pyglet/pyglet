@@ -135,6 +135,10 @@ If you would like to have your library listed here, let us know!
     Pyshaders provides a high level api and a low level api, and it can be integrated easily
     with existing code because it does not occlude the underlying opengl values.
 
+`Ratcave - A Simple Python 3D Graphics Engine extension for pyglet, Psychopy, and PyGame <https://github.com/neuroneuro15/ratcave>`_
+    Ratcave provides a simple OOP interface for loading, positioning, and drawing 3D scenes
+    in OpenGL windows.  It's a great fit for simple games and scientific behavioral experiments!
+
 Projects using pyglet
 ---------------------
 
