@@ -34,34 +34,8 @@
 import os
 import pyglet
 
+from pyglet.model import ModelException, Model, Material, Mesh
 from pyglet.model.codecs import ModelDecoder
-from pyglet.model import ModelException, Model
-
-
-class Material(object):
-    __slots__ = ("name", "diffuse", "ambient", "specular",
-                 "emission", "shininess", "opacity", "texture_name")
-
-    def __init__(self, name, diffuse, ambient, specular,
-                 emission, shininess, opacity, texture_name=None):
-        self.name = name
-        self.diffuse = diffuse
-        self.ambient = ambient
-        self.specular = specular
-        self.emission = emission
-        self.shininess = shininess
-        self.opacity = opacity
-        self.texture_name = texture_name
-
-
-class Mesh(object):
-    def __init__(self, name):
-        self.name = name
-        self.material = None
-        # Interleaved array of floats in GL_T2F_N3F_V3F format
-        self.vertices = []
-        self.normals = []
-        self.tex_coords = []
 
 
 def load_material_library(path, filename):
