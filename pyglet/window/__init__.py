@@ -670,9 +670,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 .. versionadded:: 1.2
         """
         if (fullscreen == self._fullscreen and
-           (screen is None or screen is self._screen) and
-           (width is None or width == self._width) and
-           (height is None or height == self._height)):
+            (screen is None or screen is self._screen) and
+            (width is None or width == self._width) and
+            (height is None or height == self._height)):
             return
 
         if not self._fullscreen:
