@@ -80,6 +80,7 @@ from .exceptions import MediaDecodeException
 from .player import Player, PlayerGroup, PlayList
 from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
 from .codecs import add_default_media_codecs
+from .codecs import Source, StaticSource, StreamingSource, PlayList
 
 from . import procedural
 

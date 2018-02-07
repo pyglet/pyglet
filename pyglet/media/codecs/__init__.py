@@ -1,3 +1,5 @@
+from .base import *
+
 import os.path
 import pyglet
 
