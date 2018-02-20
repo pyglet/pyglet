@@ -146,7 +146,7 @@ pyglet is a fairly lightweight library, which makes it ideal to build upon.  Lis
 a few projects that take advantage of pyglet "under the hood".  If you would like to have your
 project listed here, let us know!
 
-`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://http://python.cocos2d.org/index.html>`_
+`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://python.cocos2d.org/index.html>`_
     Cocos2d is an open source software framework. It can be used to build games, apps and
     other cross platform GUI based interactive programs.
 
