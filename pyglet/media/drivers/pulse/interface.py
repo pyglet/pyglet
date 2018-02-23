@@ -317,6 +317,11 @@ class PulseAudioContext(PulseAudioLockable):
                 sample_spec.format = pa.PA_SAMPLE_S16LE
             else:
                 sample_spec.format = pa.PA_SAMPLE_S16BE
+        elif audio_format.sample_size == 24:
+            if sys.byteorder == 'little':
+                sample_spec.format = pa.PA_SAMPLE_S24LE
+            else:
+                sample_spec.format = pa.PA_SAMPLE_S24BE
         else:
             raise MediaException('Unsupported sample size')
         sample_spec.rate = audio_format.sample_rate
