@@ -8,7 +8,7 @@ import pytest
 import random
 import time
 
-from pyglet.media.sources import AudioFormat
+from pyglet.media.codecs import AudioFormat
 import pyglet
 _debug = False
 pyglet.options['debug_media'] = _debug

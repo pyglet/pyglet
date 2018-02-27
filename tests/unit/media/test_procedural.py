@@ -4,7 +4,7 @@ from ctypes import sizeof
 from io import BytesIO
 import unittest
 
-from pyglet.media.sources.procedural import *
+from pyglet.media.procedural import *
 
 
 local_dir = os.path.dirname(__file__)
