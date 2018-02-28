@@ -34,8 +34,8 @@
 import os
 import pyglet
 
-from pyglet.model import ModelException, Model, Material, Mesh
-from pyglet.model.codecs import ModelDecoder
+from .. import Model, Material, Mesh
+from . import ModelDecodeException, ModelDecoder
 
 
 def load_material_library(path, filename):
@@ -61,7 +61,7 @@ def load_material_library(path, filename):
         if values[0] == 'newmtl':
             name = values[1]
         elif name is None:
-            raise ModelException('Expected "newmtl" in %s' % filename)
+            raise ModelDecodeException('Expected "newmtl" in %s' % filename)
 
         try:
             if values[0] == 'Kd':
@@ -80,7 +80,7 @@ def load_material_library(path, filename):
                 texture_name = values[1]
 
         except BaseException as ex:
-            raise ModelException('Parsing error in {0}.'.format((filename, ex)))
+            raise ModelDecodeException('Parsing error in {0}.'.format((filename, ex)))
 
     file.close()
 

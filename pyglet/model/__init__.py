@@ -31,14 +31,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from pyglet.model import codecs as _codecs
 from pyglet.compat import BytesIO
 from pyglet.gl import *
 from pyglet import graphics
 
-
-class ModelException(Exception):
-    pass
+from .codecs import ModelDecodeException
+from .codecs import add_encoders, add_decoders, add_default_model_codecs
 
 
 def load(filename, file=None, decoder=None, batch=None):
@@ -71,19 +69,18 @@ def load(filename, file=None, decoder=None, batch=None):
             return decoder.decode(file, filename, batch)
         else:
             first_exception = None
-            for decoder in _codecs.get_decoders(filename):
+            for decoder in get_decoders(filename):
                 try:
                     model = decoder.decode(file, filename, batch)
                     return model
-                except _codecs.ModelDecodeException as e:
+                except ModelDecodeException as e:
                     if (not first_exception or
                             first_exception.exception_priority < e.exception_priority):
                         first_exception = e
                     file.seek(0)
 
             if not first_exception:
-                raise _codecs.ModelDecodeException('No decoders are available'
-                                                   'for this model format.')
+                raise ModelDecodeException('No decoders are available for this model format.')
             raise first_exception
     finally:
         file.close()
@@ -261,4 +258,4 @@ class MaterialGroup(graphics.Group):
                      tuple(self.specular) + tuple(self.emission), self.shininess))
 
 
-_codecs.add_default_model_codecs()
+add_default_model_codecs()
