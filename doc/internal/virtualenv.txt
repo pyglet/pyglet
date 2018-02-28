@@ -106,7 +106,7 @@ Setting up
 Make sure you download and install:
 
     - `Python 3.4+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
-    - `Graphviz <http://www.graphviz.org/Download_windows.php>`_
+    - `Graphviz <https://www.graphviz.org/download/>`_
 
 Pip should be installed by default with the latest Python installers.  Make sure you do not
 uncheck the option.  When finished installing, open a command prompt.
