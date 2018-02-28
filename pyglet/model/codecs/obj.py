@@ -200,6 +200,7 @@ class OBJModelDecoder(ModelDecoder):
         return ['.obj']
 
     def decode(self, file, filename, batch):
+        # TODO: consider how to handle passed files opened in 'rb' mode.
 
         if not batch:
             batch = pyglet.graphics.Batch()

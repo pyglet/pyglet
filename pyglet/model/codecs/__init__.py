@@ -138,3 +138,9 @@ def add_default_model_codecs():
         add_decoders(obj)
     except ImportError:
         pass
+
+    try:
+        from pyglet.model.codecs import gltf
+        add_decoders(gltf)
+    except ImportError:
+        pass
