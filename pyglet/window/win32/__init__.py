@@ -437,7 +437,7 @@ class Win32Window(BaseWindow):
             raw_mouse.dwFlags = RIDEV_NOLEGACY
             raw_mouse.hwndTarget = self._view_hwnd
         else:
-            raw_mouse.dwFlags |= RIDEV_REMOVE
+            raw_mouse.dwFlags = RIDEV_REMOVE
             raw_mouse.hwndTarget = None
 
         if not _user32.RegisterRawInputDevices(
@@ -447,11 +447,6 @@ class Win32Window(BaseWindow):
 
         self._exclusive_mouse_buttons = 0
         if exclusive and self._has_focus:
-            # Move mouse to the center of the window.
-            self._reset_exclusive_mouse_screen()
-            x, y = self._exclusive_mouse_screen
-            self.set_mouse_position(x, y, absolute=True)
-
             # Clip to client area, to prevent large mouse movements taking
             # it outside the client area.
             rect = RECT()
@@ -459,18 +454,15 @@ class Win32Window(BaseWindow):
             _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP,
                                     byref(rect), 2)
             _user32.ClipCursor(byref(rect))
+            # Release mouse capture in case is was acquired during mouse click
+            _user32.ReleaseCapture()
         else:
             # Release clip
             _user32.ClipCursor(None)
-            # Move mouse back to the middle of the client area.
-            if self._exclusive_mouse_screen:
-                x, y = self._exclusive_mouse_screen
-                self.set_mouse_position(x, y, absolute=True)
 
         self._exclusive_mouse = exclusive
         self._exclusive_mouse_focus = self._has_focus
         self.set_mouse_platform_visible(not exclusive)
-
 
     def set_mouse_position(self, x, y, absolute=False):
         if not absolute:
@@ -1023,11 +1015,6 @@ class Win32Window(BaseWindow):
             _user32.SetFocus(self._hwnd)
         return 0
     '''
-
-    @Win32EventHandler(WM_MOUSEACTIVATE)
-    def _event_mouse_activate(self, msg, wParam, lParam):
-        # The user clicked on the Window. Activate it but eat the click event.
-        return MA_ACTIVATEANDEAT
 
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):
