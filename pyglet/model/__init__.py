@@ -37,6 +37,7 @@ from pyglet import graphics
 
 from .codecs import ModelDecodeException
 from .codecs import add_encoders, add_decoders, add_default_model_codecs
+from .codecs import get_encoders, get_decoders
 
 
 def load(filename, file=None, decoder=None, batch=None):
@@ -88,29 +89,10 @@ def load(filename, file=None, decoder=None, batch=None):
 
 class Model(object):
 
-    def __init__(self, mesh_list, batch):
+    def __init__(self, vertex_lists, textures, batch):
+        self.vertex_lists = vertex_lists
+        self.textures = textures
         self._batch = batch
-        self.mesh_list = mesh_list
-        self.vertex_list_map = {}
-        self.texture_map = {}
-
-        for mesh in mesh_list:
-            material = mesh.material
-            if material.texture_name:
-                texture = pyglet.image.load(material.texture_name).get_texture()
-                group = TexturedMaterialGroup(material, texture)
-                self.texture_map[texture] = group
-            else:
-                group = MaterialGroup(material)
-
-            vlist = batch.add(len(mesh.vertices) // 3,
-                              GL_TRIANGLES,
-                              group,
-                              ('v3f/static', mesh.vertices),
-                              ('n3f/static', mesh.normals),
-                              ('t2f/static', mesh.tex_coords))
-
-            self.vertex_list_map[vlist] = group
 
     @property
     def batch(self):
@@ -132,31 +114,31 @@ class Model(object):
 
         if batch is None:
             batch = pyglet.graphics.Batch()
-            for vlist, group in self.vertex_list_map.items():
+            for vlist, group in self.vertex_lists.items():
                 self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
             self._batch = batch
         else:
-            for vlist, group in self.vertex_list_map.items():
+            for vlist, group in self.vertex_lists.items():
                 self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
             self._batch = batch
 
     def update(self, x=None, y=None, z=None):
         """Shift the model on the x, y or z axis."""
         if x:
-            for vlist in self.vertex_list_map:
+            for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
                 vlist.vertices[0::3] = [v + x for v in verts[0::3]]
         if y:
-            for vlist in self.vertex_list_map:
+            for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
                 vlist.vertices[1::3] = [v + y for v in verts[1::3]]
         if z:
-            for vlist in self.vertex_list_map:
+            for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
                 vlist.vertices[2::3] = [v + z for v in verts[2::3]]
 
     def draw(self):
-        self._batch.draw_subset(self.vertex_list_map.keys())
+        self._batch.draw_subset(self.vertex_lists.keys())
 
 
 class Material(object):

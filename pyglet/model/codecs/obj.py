@@ -34,13 +34,17 @@
 import os
 import pyglet
 
-from .. import Model, Material, Mesh
+from pyglet.gl import GL_TRIANGLES
+
+from .. import Model, Material, Mesh, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
 
 def load_material_library(path, filename):
 
-    file = open(os.path.join(path, filename), 'r')
+    file = pyglet.resource.file(filename, 'r')
+
+    # file = open(os.path.join(path, filename), 'r')
 
     name = None
     diffuse = [0.8, 0.8, 0.8]
@@ -207,7 +211,28 @@ class OBJModelDecoder(ModelDecoder):
 
         mesh_list = parse_obj_file(filename=filename)
 
-        return Model(mesh_list=mesh_list, batch=batch)
+        textures = {}
+        vertex_lists = {}
+
+        for mesh in mesh_list:
+            material = mesh.material
+            if material.texture_name:
+                texture = pyglet.resource.texture(material.texture_name)
+                group = TexturedMaterialGroup(material, texture)
+                textures[texture] = group
+            else:
+                group = MaterialGroup(material)
+
+            vlist = batch.add(len(mesh.vertices) // 3,
+                              GL_TRIANGLES,
+                              group,
+                              ('v3f/static', mesh.vertices),
+                              ('n3f/static', mesh.normals),
+                              ('t2f/static', mesh.tex_coords))
+
+            vertex_lists[vlist] = group
+
+        return Model(vertex_lists, textures, batch=batch)
 
 
 def get_decoders():

@@ -33,22 +33,23 @@
 # ----------------------------------------------------------------------------
 import os
 import json
+import struct
 
 import pyglet
 
 from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT
-from pyglet.gl import GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER
+from pyglet.gl import GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_TRIANGLES
 
-from .. import Model, Material, Mesh
+from .. import Model, Material, Mesh, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
 
 _struct_types = {
     GL_BYTE: 'b',
     GL_FLOAT: 'f',
-    GL_SHORT: 's',
+    GL_SHORT: 's',              # ('h')
     GL_UNSIGNED_BYTE: 'B',
-    GL_UNSIGNED_SHORT: 'S',
+    GL_UNSIGNED_SHORT: 'H',     # ('S')
     GL_UNSIGNED_INT: 'I',
 }
 
@@ -68,9 +69,18 @@ _targets = {
 }
 
 
+class Buffer(object):
+    def __init__(self, length, uri):
+        self._length = length
+        self._file = pyglet.resource.file(uri, 'rb')
+
+    def read(self, offset, length, stride=1):
+        self._file.seek(offset)
+        data = self._file.read(length)
+        return data[::stride]
+
+
 def parse_gltf_file(filename, file=None):
-    materials = {}
-    mesh_list = []
 
     if not file:
         file = open(filename)
@@ -82,30 +92,46 @@ def parse_gltf_file(filename, file=None):
     finally:
         file.close()
 
-    path = os.path.dirname(filename)
-
     if 'asset' not in data:
         raise ModelDecodeException('Not a valid glTF file. Asset property not found.')
     else:
         if float(data['asset']['version']) < 2.0:
             raise ModelDecodeException('Only glTF 2.0+ models are supported')
 
-    buffers = data.get('buffers', [])
+    path = os.path.dirname(filename)
+
+    buffers = {i: Buffer(length=item['byteLength'], uri=item['uri'])
+               for i, item in enumerate(data.get('buffers', []))}
     buffer_views = data.get('bufferViews', [])
     accessors = data.get('accessors', [])
 
-    for acessor in accessors:
+    for accessor in accessors:
         # "required": ["bufferView", "byteOffset", "componentType", "count", "type"]
-        view = buffer_views[acessor['bufferView']]
-        offset = acessor['byteOffset']
-        component_type = acessor['componentType']
-        count = acessor['count']
+        buffer_view = buffer_views[accessor['bufferView']]
+        byte_offset = accessor['byteOffset']
+        component_type = accessor['componentType']
+        count = accessor['count']
+        data_type = accessor['type']
 
-        size = _accessor_types[acessor['type']] * count
-        struct_type = "{0}{1}".format(_struct_types[component_type], size)
-        target = view['target']
+        size = _accessor_types[data_type] * count
+        struct_fmt = "{0}{1}".format(size, _struct_types[component_type])
+        target = buffer_view['target']
+        buffer = buffers[buffer_view['buffer']]
 
-        print(struct_type, _targets[target])
+        offset = buffer_view.get('byteOffset')
+        length = buffer_view.get('byteLength')
+        stride = buffer_view.get('byteStride', 1)
+
+        # print(offset, length, stride)
+
+        raw = buffer.read(offset, length, stride)
+        print(len(raw))
+
+        struct_fmt = "{0}{1}".format(length//_accessor_types[data_type], _struct_types[component_type])
+        print(struct_fmt)
+        data = struct.unpack(struct_fmt, buffer.read(offset, length, stride))
+
+        # print(struct_fmt, _targets[target], buffer_view)
 
     # return mesh_list
     return buffers, buffer_views
@@ -126,7 +152,28 @@ class GLTFModelDecoder(ModelDecoder):
 
         mesh_list = parse_gltf_file(filename=filename)
 
-        return Model(mesh_list=mesh_list, batch=batch)
+        textures = {}
+        vertex_lists = {}
+
+        # for mesh in mesh_list:
+        #     material = mesh.material
+        #     if material.texture_name:
+        #         texture = pyglet.resource.texture(material.texture_name)
+        #         group = TexturedMaterialGroup(material, texture)
+        #         textures[texture] = group
+        #     else:
+        #         group = MaterialGroup(material)
+        #
+        #     vlist = batch.add(len(mesh.vertices) // 3,
+        #                       GL_TRIANGLES,
+        #                       group,
+        #                       ('v3f/static', mesh.vertices),
+        #                       ('n3f/static', mesh.normals),
+        #                       ('t2f/static', mesh.tex_coords))
+        #
+        #     vertex_lists[vlist] = group
+
+        return Model(vertex_lists, textures, batch=batch)
 
 
 def get_decoders():
