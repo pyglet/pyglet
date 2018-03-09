@@ -104,7 +104,6 @@ __version__ = '$Id$'
 
 import math
 import sys
-import warnings
 
 from pyglet.gl import *
 from pyglet import clock
@@ -387,11 +386,11 @@ class Sprite(event.EventDispatcher):
         else:
             vertex_format = 'v2i/%s' % self._usage
         if self._batch is None:
-            self._vertex_list = graphics.vertex_list(4, vertex_format,
-                'c4B', ('t3f', self._texture.tex_coords))
+            self._vertex_list = graphics.vertex_list(
+                4, vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
         else:
-            self._vertex_list = self._batch.add(4, GL_QUADS, self._group,
-                vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
+            self._vertex_list = self._batch.add(
+                4, GL_QUADS, self._group, vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
         self._update_position()
         self._update_color()
 
@@ -460,22 +459,6 @@ class Sprite(event.EventDispatcher):
     def position(self, pos):
         self._x, self._y = pos
         self._update_position()
-
-    def set_position(self, x, y):
-        """Set the X and Y coordinates of the sprite simultaneously.
-
-        :Parameters:
-            `x` : int
-                X coordinate of the sprite.
-            `y` : int
-                Y coordinate of the sprite.
-
-        :deprecated: Set the X, Y coordinates via sprite.position instead.
-        """
-        self._x = x
-        self._y = y
-        self._update_position()
-        warnings.warn("Use position property instead.", DeprecationWarning)
 
     @property
     def x(self):
@@ -702,5 +685,6 @@ class Sprite(event.EventDispatcher):
 
             :event:
             """
+
 
 Sprite.register_event_type('on_animation_end')

@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Display and screen management.
+"""Display and screen management.
 
 Rendering is performed on a :class:`Canvas`, which conceptually could be an
 off-screen buffer, the content area of a :class:`pyglet.window.Window`, or an 
@@ -56,13 +56,28 @@ The size of a screen is determined by its current mode, which can be changed
 by the application; see the documentation for :class:`Screen`.
 
 .. versionadded:: 1.2
-'''
+"""
 
 import sys
+
+from pyglet.app import WeakSet
+
+
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+
+_displays = WeakSet()
+"""Set of all open displays.  Instances of :class:`pyglet.canvas.Display` 
+are automatically added to this set upon construction.  The set uses weak 
+references, so displays are removed from the set when they are no longer 
+referenced.
+
+:type: :class:`WeakSet`
+"""
+
+
 def get_display():
-    '''Get the default display device.
+    """Get the default display device.
 
     If there is already a :class`~pyglet.canvas.Display`connection, that display will be 
     returned. Otherwise, a default :class`~pyglet.canvas.Display`is created and returned.  
@@ -71,15 +86,14 @@ def get_display():
     .. versionadded:: 1.2
 
     :rtype: :class`~pyglet.canvas.Display`
-    '''
-    # If there's an existing display, return it (return arbitrary display if
-    # there are multiple).
-    from pyglet.app import displays
-    for display in displays:
+    """
+    # If there are existing displays, return one of them arbitrarily.
+    for display in _displays:
         return display
 
     # Otherwise, create a new display and return it.
     return Display()
+
 
 if _is_epydoc:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode

@@ -345,19 +345,6 @@ class AbstractImage(object):
         """
         raise ImageException('Cannot retrieve image data for %r' % self)
 
-    @property
-    def image_data(self):
-        """An :py:class:`~pyglet.image.ImageData` view of this image.  
-        
-        Changes to the returned instance may or may not be reflected in this
-        image.  Read-only.
-
-        :deprecated: Use :py:meth:`~pyglet.image.ImageData.get_image_data`.
-
-        :type: :py:class:`~pyglet.image.ImageData`
-        """
-        return self.get_image_data()
-
     def get_texture(self, rectangle=False, force_rectangle=False):
         """A :py:class:`~pyglet.image.Texture` view of this image.  
 
@@ -398,19 +385,6 @@ class AbstractImage(object):
         """
         raise ImageException('Cannot retrieve texture for %r' % self)
 
-    @property
-    def texture(self):
-        """Get a :py:class:`~pyglet.image.Texture` view of this image.  
-        
-        Changes to the returned instance may or may not be reflected in this
-        image.
-
-        :deprecated: Use :py:meth:`~pyglet.image.AbstractImage.get_texture`.
-
-        :type: :py:class:`~pyglet.image.Texture`
-        """
-        return self.get_texture()
-
     def get_mipmapped_texture(self):
         """Retrieve a :py:class:`~pyglet.image.Texture` instance with all mipmap levels filled in.
 
@@ -421,19 +395,6 @@ class AbstractImage(object):
         .. versionadded:: 1.1
         """
         raise ImageException('Cannot retrieve mipmapped texture for %r' % self)
-
-    @property
-    def mipmapped_texture(self):
-        """A Texture view of this image.  
-        
-        The returned Texture will have mipmaps filled in for all levels.
-        Requires that image dimensions be powers of 2.  Read-only.
-
-        :deprecated: Use `get_mipmapped_texture`.
-
-        :type: :py:class:`~pyglet.image.Texture`
-        """
-        return self.get_mipmapped_texture()
 
     def get_region(self, x, y, width, height):
         """Retrieve a rectangular region of this image.
@@ -537,16 +498,6 @@ class AbstractImageSequence(object):
         """
         raise NotImplementedError('abstract')
 
-    @property
-    def texture_sequence(self):
-        """Access this image sequence as a texture sequence.
-        
-        :deprecated: Use `get_texture_sequence`
-
-        :type: `TextureSequence`
-        """
-        return self.get_texture_sequence()
-
     def get_animation(self, period, loop=True):
         """Create an animation over this image sequence for the given constant
         framerate.
@@ -643,11 +594,7 @@ class ImageData(AbstractImage):
             Number of bytes per row.  Negative values indicate a top-to-bottom
             arrangement.
 
-    Setting the `format` and `pitch` instance variables and reading `data` is
-    deprecated; use `get_data` and `set_data` in new applications.  (Reading
-    `format` and `pitch` to obtain the current encoding is not deprecated).
     """
-
     _swap1_pattern = re.compile(asbytes('(.)'), re.DOTALL)
     _swap2_pattern = re.compile(asbytes('(.)(.)'), re.DOTALL)
     _swap3_pattern = re.compile(asbytes('(.)(.)(.)'), re.DOTALL)
@@ -698,10 +645,6 @@ class ImageData(AbstractImage):
     def get_image_data(self):
         return self
 
-    def _set_format(self, fmt):
-        self._desired_format = fmt.upper()
-        self._current_texture = None
-
     @property
     def format(self):
         """Format string of the data.  Read-write.
@@ -712,38 +655,8 @@ class ImageData(AbstractImage):
 
     @format.setter
     def format(self, fmt):
-        self._set_format(fmt)
-
-    def _get_data(self):
-        if self._current_pitch != self.pitch or \
-                        self._current_format != self.format:
-            self._current_data = self._convert(self.format, self.pitch)
-            self._current_format = self.format
-            self._current_pitch = self.pitch
-
-        self._ensure_string_data()
-        return self._current_data
-
-    def _set_data(self, data):
-        self._current_data = data
-        self._current_format = self.format
-        self._current_pitch = self.pitch
+        self._desired_format = fmt.upper()
         self._current_texture = None
-        self._current_mipmapped_texture = None
-
-    @property
-    def data(self):
-        """The byte data of the image.  Read-write.
-
-        :deprecated: Use `get_data` and `set_data`.
-        
-        :type: sequence of bytes, or str
-        """
-        return self._get_data()
-
-    @data.setter
-    def data(self, data):
-        self._set_data(data)
 
     def get_data(self, format, pitch):
         """Get the byte data of the image.
@@ -856,9 +769,7 @@ class ImageData(AbstractImage):
     def get_texture(self, rectangle=False, force_rectangle=False):
         if (not self._current_texture or
                 (not self._current_texture._is_rectangle and force_rectangle)):
-            self._current_texture = self.create_texture(Texture,
-                                                        rectangle,
-                                                        force_rectangle)
+            self._current_texture = self.create_texture(Texture, rectangle, force_rectangle)
         return self._current_texture
 
     def get_mipmapped_texture(self):
@@ -900,8 +811,7 @@ class ImageData(AbstractImage):
                 if image:
                     image.blit_to_texture(texture.target, level,
                                           self.anchor_x, self.anchor_y, 0, internalformat)
-                    # TODO: should set base and max mipmap level if some mipmaps
-                    # are missing.
+                    # TODO: should set base and max mipmap level if some mipmaps are missing.
         elif gl_info.have_version(1, 4):
             glTexParameteri(texture.target, GL_GENERATE_MIPMAP, GL_TRUE)
             self.blit_to_texture(texture.target, texture.level,
@@ -1475,18 +1385,6 @@ class Texture(AbstractImage):
         self.id = id
         self._context = gl.current_context
 
-    def delete(self):
-        """Delete the texture from video memory.
-
-        :deprecated: Textures are automatically released during object
-            finalization.
-        """
-        warnings.warn(
-            'Texture.delete() is deprecated; textures are '
-            'released through GC now')
-        self._context.delete_texture(self.id)
-        self.id = 0
-
     def __del__(self):
         try:
             self._context.delete_texture(self.id)
@@ -1665,8 +1563,7 @@ class Texture(AbstractImage):
 
         glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        buffer = \
-            (GLubyte * (self.width * self.height * self.images * len(format)))()
+        buffer = (GLubyte * (self.width * self.height * self.images * len(format)))()
         glGetTexImage(self.target, self.level,
                       gl_format, GL_UNSIGNED_BYTE, buffer)
         glPopClientAttrib()
@@ -1675,20 +1572,6 @@ class Texture(AbstractImage):
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
-
-    @property
-    def image_data(self):
-        """An ImageData view of this texture.  
-        
-        Changes to the returned instance will not be reflected in this
-        texture.  If the texture is a 3D texture, the first image will be 
-        returned.  See also :py:meth:`~pyglet.image.ImageData.get_image_data`.  Read-only.
-
-        :deprecated: Use :py:meth:`~pyglet.image.ImageData.get_image_data`.
-        
-        :type: :py:class:`~pyglet.image.ImageData`
-        """
-        return self.get_image_data()
 
     def get_texture(self, rectangle=False, force_rectangle=False):
         if force_rectangle and not self._is_rectangle:
@@ -2286,11 +2169,9 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         super(ImageGrid, self).__init__(image.width, image.height)
 
         if item_width is None:
-            item_width = \
-                (image.width - column_padding * (columns - 1)) // columns
+            item_width = (image.width - column_padding * (columns - 1)) // columns
         if item_height is None:
-            item_height = \
-                (image.height - row_padding * (rows - 1)) // rows
+            item_height = (image.height - row_padding * (rows - 1)) // rows
         self.image = image
         self.rows = rows
         self.columns = columns

@@ -595,9 +595,6 @@ class PlayList(object):
             self.audio_format = source.audio_format
             self.video_format = source.video_format
 
-    #: :deprecated: Use `next_source` instead.
-    next = next_source  # old API, worked badly with 2to3
-
     def get_current_source(self):
         """Get the current source on the playlist.
 
