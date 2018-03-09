@@ -17,7 +17,7 @@ class TestTexture3D(unittest.TestCase):
     def check_image(self, image, width, height, color):
         self.assertTrue(image.width == width)
         self.assertTrue(image.height == height)
-        image = image.image_data
+        image = image.get_image_data()
         data = image.get_data('L', image.width)
         self.assertTrue(data == colorbyte(color) * len(data))
 
@@ -47,7 +47,7 @@ class TestTexture3D(unittest.TestCase):
         self.assertTrue(cellimage.width == self.grid.item_width)
         self.assertTrue(cellimage.height == self.grid.item_height)
 
-        cellimage = cellimage.image_data
+        cellimage = cellimage.get_image_data()
         data = cellimage.get_data('L', cellimage.width)
         self.assertTrue(data == colorbyte(cellindex + 1) * len(data))
 
