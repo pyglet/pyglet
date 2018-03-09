@@ -5,8 +5,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from builtins import object
 import struct
-from ctypes import *
-import sys
 
 import pyglet
 from . import constants
@@ -27,12 +25,12 @@ if _debug_win32:
     def format_error(err):
         msg = create_string_buffer(256)
         _FormatMessageA(constants.FORMAT_MESSAGE_FROM_SYSTEM,
-                          c_void_p(),
-                          err,
-                          0,
-                          msg,
-                          len(msg),
-                          c_void_p())
+                        c_void_p(),
+                        err,
+                        0,
+                        msg,
+                        len(msg),
+                        c_void_p())
         return msg.value
     
     class DebugLibrary(object):
@@ -41,6 +39,7 @@ if _debug_win32:
 
         def __getattr__(self, name):
             fn = getattr(self.lib, name)
+
             def f(*args):
                 _SetLastError(0)
                 result = fn(*args)
@@ -50,6 +49,7 @@ if _debug_win32:
                         _log_win32.write(entry)
                     print(format_error(err), file=_log_win32)
                 return result
+
             return f
 else:
     DebugLibrary = lambda lib: lib
@@ -231,10 +231,7 @@ _user32.UnregisterClassW.restype = BOOL
 _user32.UnregisterClassW.argtypes = [c_wchar_p, HINSTANCE]
 _user32.UnregisterHotKey.restype = BOOL
 _user32.UnregisterHotKey.argtypes = [HWND, c_int]
-#Raw inputs
-# PUINT is defined only from >= python 3.2
-if sys.version_info < (3, 2):
-    PUINT = POINTER(UINT)
+# Raw inputs
 _user32.RegisterRawInputDevices.restype = BOOL
 _user32.RegisterRawInputDevices.argtypes = [PCRAWINPUTDEVICE, UINT, UINT]
 _user32.GetRawInputData.restype = UINT

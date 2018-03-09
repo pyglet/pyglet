@@ -6,13 +6,13 @@ from ctypes import *
 
 from tests.annotations import Platform, skip_platform
 
-from pyglet import window
+from pyglet import window, canvas
 from pyglet.gl import *
 
 @skip_platform(Platform.WINDOWS)  # Causes crashes on Windows (issue #48)
 class ContextShareTest(unittest.TestCase):
     def create_context(self, share):
-        display = window.get_platform().get_default_display()
+        display = canvas.get_display()
         screen = display.get_default_screen()
         config = screen.get_best_config()
         return config.create_context(share)

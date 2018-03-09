@@ -135,6 +135,10 @@ If you would like to have your library listed here, let us know!
     Pyshaders provides a high level api and a low level api, and it can be integrated easily
     with existing code because it does not occlude the underlying opengl values.
 
+`Ratcave - A Simple Python 3D Graphics Engine extension for pyglet, Psychopy, and PyGame <https://github.com/neuroneuro15/ratcave>`_
+    Ratcave provides a simple OOP interface for loading, positioning, and drawing 3D scenes
+    in OpenGL windows.  It's a great fit for simple games and scientific behavioral experiments!
+
 Projects using pyglet
 ---------------------
 
@@ -142,7 +146,7 @@ pyglet is a fairly lightweight library, which makes it ideal to build upon.  Lis
 a few projects that take advantage of pyglet "under the hood".  If you would like to have your
 project listed here, let us know!
 
-`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://http://python.cocos2d.org/index.html>`_
+`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://python.cocos2d.org/index.html>`_
     Cocos2d is an open source software framework. It can be used to build games, apps and
     other cross platform GUI based interactive programs.
 

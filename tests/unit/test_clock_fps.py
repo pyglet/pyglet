@@ -11,12 +11,14 @@ import unittest
 
 from pyglet import clock
 
+
 def sleep(seconds):
-    "Busy sleep on the CPU which is very precise"
+    """Busy sleep on the CPU which is very precise"""
     pyclock = clock.get_default()
     start = pyclock.time()
     while pyclock.time() - start < seconds:
         pass
+
 
 class ClockTimingTestCase(unittest.TestCase):
 
@@ -81,33 +83,3 @@ class ClockTimingTestCase(unittest.TestCase):
         computed_fps = clock.get_fps()
 
         self.assertAlmostEqual(computed_fps, expected_fps, delta=0.1*expected_fps)
-
-    def test_limit_fps(self):
-        """
-        Test that the clock effectively limits the
-        frames per second to 60 Hz when set to.
-
-        Because the fps are bounded, we expect a small error (1%)
-        from the expected value.
-        """
-        ticks = 20
-        fps_limit = 60
-        expected_delta_time = ticks*1./fps_limit
-
-        clock.set_fps_limit(fps_limit)
-
-        pyclock = clock.get_default()
-        t1 = pyclock.time()
-        # Initializes the timer state.
-        clock.tick()
-        for i in range(ticks):
-            clock.tick()
-
-        t2 = pyclock.time()
-
-        computed_time_delta = t2 - t1
-
-        self.assertAlmostEqual(computed_time_delta,
-                               expected_delta_time,
-                               delta=0.01*expected_delta_time)
-

@@ -45,6 +45,7 @@ try:
 except ImportError:
     import os.path as op
     import sys
+
     future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
     sys.path.insert(0, op.join(future_base, 'py2_3'))
     if sys.version_info[:2] < (3, 0):
@@ -63,7 +64,6 @@ from builtins import object
 
 import os
 import sys
-import warnings
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_epydoc', True)
@@ -163,7 +163,6 @@ if getattr(sys, 'frozen', None):
 #:
 options = {
     'audio': ('directsound', 'pulse', 'openal', 'silent'),
-    'font': ('gdiplus', 'win32'),  # ignored outside win32; win32 is deprecated
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_gl_trace': False,
@@ -189,7 +188,6 @@ options = {
 
 _option_types = {
     'audio': tuple,
-    'font': tuple,
     'debug_font': bool,
     'debug_gl': bool,
     'debug_gl_trace': bool,
@@ -227,6 +225,8 @@ def _read_environment():
                 options[key] = int(value)
         except KeyError:
             pass
+
+
 _read_environment()
 
 if compat_platform == 'cygwin':
@@ -234,11 +234,11 @@ if compat_platform == 'cygwin':
     # functionality.  COM does not work with this hack, so there is no
     # DirectSound support.
     import ctypes
+
     ctypes.windll = ctypes.cdll
     ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
-
 
 # Call tracing
 # ------------
@@ -249,7 +249,7 @@ _trace_filename_abbreviations = {}
 def _trace_repr(value, size=40):
     value = repr(value)
     if len(value) > size:
-        value = value[:size//2-2] + '...' + value[-size//2-1:]
+        value = value[:size // 2 - 2] + '...' + value[-size // 2 - 1:]
     return value
 
 
@@ -319,6 +319,7 @@ def _thread_trace_func(thread):
         elif event == 'exception':
             (exception, value, traceback) = arg
             print('First chance exception raised:', repr(exception))
+
     return _trace_func
 
 
@@ -326,6 +327,7 @@ def _install_trace():
     global _trace_thread_count
     sys.setprofile(_thread_trace_func(_trace_thread_count))
     _trace_thread_count += 1
+
 
 _trace_thread_count = 0
 _trace_args = options['debug_trace_args']
@@ -371,6 +373,7 @@ class _ModuleProxy(object):
             object.__setattr__(self, '_module', module)
             globals()[self._module_name] = module
             setattr(module, name, value)
+
 
 if True:
     app = _ModuleProxy('app')
