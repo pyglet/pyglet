@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 from __future__ import division
 from builtins import chr
 
@@ -45,13 +45,13 @@ import unicodedata
 import warnings
 
 from pyglet import compat_platform
+
 if compat_platform not in ('cygwin', 'win32'):
     raise ImportError('Not a win32 platform.')
 
 import pyglet
-from pyglet.window import BaseWindow, \
-    WindowException, MouseCursor, DefaultMouseCursor, _PlatformEventHandler, \
-    _ViewEventHandler
+from pyglet.window import BaseWindow, WindowException, MouseCursor
+from pyglet.window import DefaultMouseCursor, _PlatformEventHandler, _ViewEventHandler
 from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.window import mouse
@@ -81,10 +81,13 @@ _motion_map = {
     (key.DELETE, False):    key.MOTION_DELETE,
 }
 
+
 class Win32MouseCursor(MouseCursor):
     drawable = False
+
     def __init__(self, cursor):
         self.cursor = cursor
+
 
 # This is global state, we have to be careful not to set the same state twice,
 # which will throw off the ShowCursor counter.
@@ -92,6 +95,7 @@ _win32_cursor_visible = True
 
 Win32EventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
+
 
 class Win32Window(BaseWindow):
     _window_class = None
@@ -130,7 +134,6 @@ class Win32Window(BaseWindow):
                 else:
                     self._event_handlers[message] = func
 
-
         super(Win32Window, self).__init__(*args, **kwargs)
 
     def _recreate(self, changes):
@@ -159,7 +162,6 @@ class Win32Window(BaseWindow):
             self._ws_style |= WS_THICKFRAME
         else:
             self._ws_style &= ~(WS_THICKFRAME|WS_MAXIMIZEBOX)
-
 
         if self._fullscreen:
             width = self.screen.width
@@ -224,7 +226,6 @@ class Win32Window(BaseWindow):
                 0,
                 self._view_window_class.hInstance,
                 0)
-
 
             self._dc = _user32.GetDC(self._view_hwnd)
         else:
@@ -293,7 +294,7 @@ class Win32Window(BaseWindow):
 
         _user32.DestroyWindow(self._hwnd)
         _user32.UnregisterClassW(self._window_class.lpszClassName, 0)
-        
+
         self._window_class = None
         self._view_window_class = None
         self._view_event_handlers.clear()
@@ -437,7 +438,7 @@ class Win32Window(BaseWindow):
             raw_mouse.dwFlags = RIDEV_NOLEGACY
             raw_mouse.hwndTarget = self._view_hwnd
         else:
-            raw_mouse.dwFlags |= RIDEV_REMOVE
+            raw_mouse.dwFlags = RIDEV_REMOVE
             raw_mouse.hwndTarget = None
 
         if not _user32.RegisterRawInputDevices(
@@ -447,11 +448,6 @@ class Win32Window(BaseWindow):
 
         self._exclusive_mouse_buttons = 0
         if exclusive and self._has_focus:
-            # Move mouse to the center of the window.
-            self._reset_exclusive_mouse_screen()
-            x, y = self._exclusive_mouse_screen
-            self.set_mouse_position(x, y, absolute=True)
-
             # Clip to client area, to prevent large mouse movements taking
             # it outside the client area.
             rect = RECT()
@@ -459,18 +455,15 @@ class Win32Window(BaseWindow):
             _user32.MapWindowPoints(self._view_hwnd, HWND_DESKTOP,
                                     byref(rect), 2)
             _user32.ClipCursor(byref(rect))
+            # Release mouse capture in case is was acquired during mouse click
+            _user32.ReleaseCapture()
         else:
             # Release clip
             _user32.ClipCursor(None)
-            # Move mouse back to the middle of the client area.
-            if self._exclusive_mouse_screen:
-                x, y = self._exclusive_mouse_screen
-                self.set_mouse_position(x, y, absolute=True)
 
         self._exclusive_mouse = exclusive
         self._exclusive_mouse_focus = self._has_focus
         self.set_mouse_platform_visible(not exclusive)
-
 
     def set_mouse_position(self, x, y, absolute=False):
         if not absolute:
@@ -1023,11 +1016,6 @@ class Win32Window(BaseWindow):
             _user32.SetFocus(self._hwnd)
         return 0
     '''
-
-    @Win32EventHandler(WM_MOUSEACTIVATE)
-    def _event_mouse_activate(self, msg, wParam, lParam):
-        # The user clicked on the Window. Activate it but eat the click event.
-        return MA_ACTIVATEANDEAT
 
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):
