@@ -132,6 +132,9 @@ class Window(pyglet.window.Window):
             pyglet.app.exit()
         
     def set_focus(self, focus):
+        if focus is self.focus:
+            return
+
         if self.focus:
             self.focus.caret.visible = False
             self.focus.caret.mark = self.focus.caret.position = 0
@@ -139,8 +142,6 @@ class Window(pyglet.window.Window):
         self.focus = focus
         if self.focus:
             self.focus.caret.visible = True
-            self.focus.caret.mark = 0
-            self.focus.caret.position = len(self.focus.document.text)
 
 window = Window(resizable=True)
 pyglet.app.run()
