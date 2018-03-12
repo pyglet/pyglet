@@ -2400,6 +2400,9 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         line = self.lines[line]
         x -= self.top_group.translate_x
 
+        if x < line.x:
+            return line.start
+
         position = line.start
         last_glyph_x = line.x
         for box in line.boxes:
