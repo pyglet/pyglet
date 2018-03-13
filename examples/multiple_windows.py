@@ -33,11 +33,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Demonstrates how to manage OpenGL calls between two independent windows.
-'''
+"""Demonstrates how to manage OpenGL calls with two independent windows.
+"""
 
 import pyglet
 from pyglet.gl import *
+
 
 def on_resize(width, height):
     glViewport(0, 0, width, height)
@@ -46,9 +47,11 @@ def on_resize(width, height):
     gluPerspective(60., width / float(height), 1., 100.)
     glMatrixMode(GL_MODELVIEW)
 
+
 def setup():
     glClearColor(1, 1, 1, 1)
     glColor3f(.5, .5, .5)
+
 
 def on_draw():
     glClear(GL_COLOR_BUFFER_BIT)
@@ -57,13 +60,18 @@ def on_draw():
     glRotatef(r, 0, 0, 1)
     glRectf(-1, -1, 1, 1)
 
+
 r = 0
+
+
 def update(dt):
     global r
     r += 1
     if r > 360:
         r = 0
-pyglet.clock.schedule_interval(update, 1/20.)
+
+
+pyglet.clock.schedule_interval(update, 1 / 20.)
 
 w1 = pyglet.window.Window(200, 200, caption='First window', resizable=True)
 w1.on_resize = on_resize

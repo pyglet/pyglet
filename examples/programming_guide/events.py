@@ -33,8 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 
 from __future__ import print_function
 
@@ -47,6 +47,7 @@ from pyglet.window import mouse
 
 window = pyglet.window.Window()
 
+
 @window.event
 def on_key_press(symbol, modifiers):
     if symbol == key.A:
@@ -56,13 +57,16 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.ENTER:
         print('The enter key was pressed.')
 
+
 @window.event
 def on_mouse_press(x, y, button, modifiers):
     if button == mouse.LEFT:
         print('The left mouse button was pressed.')
 
+
 @window.event
 def on_draw():
     window.clear()
+
 
 pyglet.app.run()

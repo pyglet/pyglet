@@ -33,32 +33,34 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Displays a rotating torus using OpenGL.
+"""Displays a rotating torus using the pyglet.graphics API.
+
+This example uses the pyglet.graphics API to construct indexed vertex
+lists. The vertex list are added to a batch, allowing them to be easily
+rendered alongside other vertex lists with minimal overhead.
 
 This example demonstrates:
 
  * Using a 3D projection on a window by overriding the default on_resize
    handler
  * Enabling multisampling if available
- * Drawing a simple 3D primitive using vertex and index arrays
- * Using a display list
+ * Drawing simple 3D primitives using the pyglet.graphics API
  * Fixed-pipeline lighting
-
-'''
+"""
 
 from math import pi, sin, cos
 
-from pyglet.gl import *
 import pyglet
+from pyglet.gl import *
 
 try:
     # Try and create a window with multisampling (antialiasing)
-    config = Config(sample_buffers=1, samples=4, 
-                    depth_size=16, double_buffer=True,)
+    config = Config(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
     window = pyglet.window.Window(resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling for old hardware
     window = pyglet.window.Window(resizable=True)
+
 
 @window.event
 def on_resize(width, height):
@@ -68,17 +70,9 @@ def on_resize(width, height):
     glLoadIdentity()
     gluPerspective(60., width / float(height), .1, 1000.)
     glMatrixMode(GL_MODELVIEW)
+    # returning EVENT_HANDLED prevents the default handler from running
     return pyglet.event.EVENT_HANDLED
 
-def update(dt):
-    global rx, ry, rz
-    rx += dt * 1
-    ry += dt * 80
-    rz += dt * 30
-    rx %= 360
-    ry %= 360
-    rz %= 360
-pyglet.clock.schedule(update)
 
 @window.event
 def on_draw():
@@ -88,7 +82,18 @@ def on_draw():
     glRotatef(rz, 0, 0, 1)
     glRotatef(ry, 0, 1, 0)
     glRotatef(rx, 1, 0, 0)
-    torus.draw()
+    batch.draw()
+
+
+def update(dt):
+    global rx, ry, rz
+    rx += dt * 1
+    ry += dt * 80
+    rz += dt * 30
+    rx %= 360
+    ry %= 360
+    rz %= 360
+
 
 def setup():
     # One-time GL setup
@@ -122,8 +127,11 @@ def setup():
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
+
 class Torus(object):
-    def __init__(self, radius, inner_radius, slices, inner_slices):
+    list = None
+
+    def __init__(self, radius, inner_radius, slices, inner_slices, batch, group=None):
         # Create the vertex and normal arrays.
         vertices = []
         normals = []
@@ -153,38 +161,30 @@ class Torus(object):
                 v += v_step
             u += u_step
 
-        # Create ctypes arrays of the lists
-        vertices = (GLfloat * len(vertices))(*vertices)
-        normals = (GLfloat * len(normals))(*normals)
-
         # Create a list of triangle indices.
         indices = []
         for i in range(slices - 1):
             for j in range(inner_slices - 1):
                 p = i * inner_slices + j
                 indices.extend([p, p + inner_slices, p + inner_slices + 1])
-                indices.extend([p,  p + inner_slices + 1, p + 1])
-        indices = (GLuint * len(indices))(*indices)
+                indices.extend([p, p + inner_slices + 1, p + 1])
 
-        # Compile a display list
-        self.list = glGenLists(1)
-        glNewList(self.list, GL_COMPILE)
+        self.vertex_list = batch.add_indexed(len(vertices)//3, 
+                                             GL_TRIANGLES,
+                                             group,
+                                             indices,
+                                             ('v3f/static', vertices),
+                                             ('n3f/static', normals))
+       
+    def delete(self):
+        self.vertex_list.delete()
 
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_NORMAL_ARRAY)
-        glVertexPointer(3, GL_FLOAT, 0, vertices)
-        glNormalPointer(GL_FLOAT, 0, normals)
-        glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_INT, indices)
-        glPopClientAttrib()
-
-        glEndList()
-
-    def draw(self):
-        glCallList(self.list)
 
 setup()
-torus = Torus(1, 0.3, 50, 30)
+batch = pyglet.graphics.Batch()
+torus = Torus(1, 0.3, 50, 30, batch=batch)
 rx = ry = rz = 0
+
+pyglet.clock.schedule(update)
 
 pyglet.app.run()
