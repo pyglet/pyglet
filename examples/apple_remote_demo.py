@@ -1,6 +1,5 @@
-'''
-A silly demonstration of how to use the Apple remote.
-'''
+"""A silly demonstration of how to use the Apple remote.
+"""
 
 from __future__ import print_function
 
@@ -35,7 +34,7 @@ class MainWindow(pyglet.window.Window):
 
         self.carousel = Carousel()
         self.setup_opengl()
-        pyglet.clock.schedule_interval(self.update, 1/60.0)
+        pyglet.clock.schedule_interval(self.update, 1 / 60.0)
 
     # Event handler for Apple Remote button press events.
     # The button parameter is a string specifying the button that was pressed.
@@ -72,7 +71,7 @@ class MainWindow(pyglet.window.Window):
     def on_draw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        gluLookAt(0,3,-12,0,3,0,0,1,0)
+        gluLookAt(0, 3, -12, 0, 3, 0, 0, 1, 0)
         self.carousel.draw()
 
     def on_resize(self, width, height):
@@ -80,12 +79,12 @@ class MainWindow(pyglet.window.Window):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         aspect = width / float(height)
-        glFrustum(-1,1,-1.8/aspect,0.2/aspect,1,100)
+        glFrustum(-1, 1, -1.8 / aspect, 0.2 / aspect, 1, 100)
         glMatrixMode(GL_MODELVIEW)
         return pyglet.event.EVENT_HANDLED
 
     def setup_opengl(self):
-        glClearColor(1,1,1,1)
+        glClearColor(1, 1, 1, 1)
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -96,6 +95,7 @@ class MainWindow(pyglet.window.Window):
 
 class Carousel:
     """A rotating collection of labeled tiles."""
+
     def __init__(self):
         self.num_tiles = 14
         self.index = 0
@@ -108,14 +108,17 @@ class Carousel:
 
         # Create the tiles in the carousel.
         self.tiles = []
-        colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (0,205,205), (128,0,128), (255,165,0)]
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 205, 205),
+                  (128, 0, 128), (255, 165, 0)]
+
         class Tile:
             value = 0
-            color = [255,255,255]
+            color = [255, 255, 255]
+
         for i in range(self.num_tiles):
             tile = Tile()
             tile.value = i % 26
-            tile.color = colors[i%len(colors)]
+            tile.color = colors[i % len(colors)]
             self.tiles.append(tile)
 
         # Create glyphs for the characters displayed on the tiles.
@@ -182,9 +185,9 @@ class Carousel:
         angle = index * (360.0 / self.num_tiles)
 
         glPushMatrix()
-        glRotatef(angle,0,1,0)
-        glTranslatef(0,0,-7.5)
-        glRotatef(-angle+self.angle,0,1,0)
+        glRotatef(angle, 0, 1, 0)
+        glTranslatef(0, 0, -7.5)
+        glRotatef(-angle + self.angle, 0, 1, 0)
 
         texture = self.glyphs[self.tiles[index].value].texture
         vertex_list = pyglet.graphics.vertex_list(4, 'v2f', ('t3f', texture.tex_coords))
@@ -195,9 +198,9 @@ class Carousel:
         # Draw tile label.
         glBindTexture(texture.target, texture.id)
         glEnable(texture.target)
-        glColor3ub(0,0,0)
+        glColor3ub(0, 0, 0)
         vertex_list.vertices[:] = [.8, -.8, -.8, -.8, -.8, .8, .8, .8]
-        glTranslatef(0,0,-.01)
+        glTranslatef(0, 0, -.01)
         vertex_list.draw(GL_QUADS)
         glDisable(texture.target)
         glPopMatrix()

@@ -33,18 +33,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''A full-screen minute:second timer.  Leave it in charge of your conference
+"""A full-screen minute:second timer.  Leave it in charge of your conference
 lighting talks.
 
 After 5 minutes, the timer goes red.  This limit is easily adjustable by
 hacking the source code.
 
 Press spacebar to start, stop and reset the timer.
-'''
+"""
 
 import pyglet
 
 window = pyglet.window.Window(fullscreen=True)
+
 
 class Timer(object):
     def __init__(self):
@@ -67,6 +68,7 @@ class Timer(object):
             if m >= 5:
                 self.label.color = (180, 0, 0, 255)
 
+
 @window.event
 def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.SPACE:
@@ -80,10 +82,12 @@ def on_key_press(symbol, modifiers):
     elif symbol == pyglet.window.key.ESCAPE:
         window.close()
 
+
 @window.event
 def on_draw():
     window.clear()
     timer.label.draw()
+
 
 timer = Timer()
 pyglet.clock.schedule_interval(timer.update, 1/30.0)

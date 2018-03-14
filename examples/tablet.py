@@ -59,5 +59,5 @@ def on_mouse_press(x, y, button, modifiers):
 def on_mouse_release(x, y, button, modifiers):
     print('on_mouse_release(%r, %r, %r, %r' % (x, y, button, modifiers))
 
-pyglet.app.run()
 
+pyglet.app.run()
