@@ -34,9 +34,13 @@
 # $Id$
 
 import os
-import math
 
 from pyglet import media
+
+
+class ReaderException(Exception):
+    pass
+
 
 class PlayerReader(object):
     def __init__(self, player):
@@ -65,6 +69,7 @@ class PlayerReader(object):
                 raise ReaderException('Invalid label line %d' % lineno)
             self.player.label = parts[1]
 
+
 class SpaceReader(object):
     def __init__(self, space):
         self.basedir = ''
@@ -89,16 +94,14 @@ class SpaceReader(object):
                 continue
             if line.startswith(' '):
                 if not reader:
-                    raise ReaderException(
-                        'Unexpected indented block line %d' % lineno)
+                    raise ReaderException('Unexpected indented block line %d' % lineno)
                 reader.line(line, lineno)
             else:
                 reader = None
                 parts = line.split()
                 if parts[0] == 'loop':
                     if len(parts) < 2:
-                        raise ReaderException(
-                            'No loop filename line %d' % lineno)
+                        raise ReaderException('No loop filename line %d' % lineno)
                     player = media.Player()
                     player.eos_action = 'loop'
                     player.queue(self.source(parts[1], streaming=False))
