@@ -1263,12 +1263,18 @@ class TextLayout(object):
                             if new_paragraph:
                                 line.paragraph_end = True
                             yield line
-                            line = _Line(next_start)
-                            line.align = align_iterator[next_start]
-                            line.margin_left = self._parse_distance(
-                                margin_left_iterator[next_start])
-                            line.margin_right = self._parse_distance(
-                                margin_right_iterator[next_start])
+                            try:
+                                line = _Line(next_start)
+                                line.align = align_iterator[next_start]
+                                line.margin_left = self._parse_distance(
+                                    margin_left_iterator[next_start])
+                                line.margin_right = self._parse_distance(
+                                    margin_right_iterator[next_start])
+                            except IndexError:
+                                # XXX This used to throw StopIteration in some cases, causing the
+                                # final part of this method not to be executed. Refactoring
+                                # required to fix this
+                                return
                             if new_paragraph:
                                 line.paragraph_begin = True
 
