@@ -35,14 +35,14 @@
 
 """Displays a rotating torus using the pyglet.graphics API.
 
-This example uses the pyglet.graphics API to construct indexed vertex
-lists. The vertex list are added to a batch, allowing them to be easily
-rendered alongside other vertex lists with minimal overhead.
+This example uses the pyglet.graphics API to render an indexed vertex
+list. The vertex list is added to a batch, allowing easy rendered
+alongside other vertex lists with minimal overhead.
 
 This example demonstrates:
 
- * Using a 3D projection on a window by overriding the default on_resize
-   handler
+ * Setting a 3D projection on a window by overriding the default
+   on_resize handler
  * Enabling multisampling if available
  * Drawing simple 3D primitives using the pyglet.graphics API
  * Fixed-pipeline lighting
