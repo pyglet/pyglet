@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-'''Print details of a media file that pyglet can open (requires FFmpeg).
+"""Print details of a media file that pyglet can open (requires FFmpeg).
 
 Usage::
 
     media_info.py <filename>
 
-'''
+"""
 
 from __future__ import print_function
 
@@ -22,12 +22,10 @@ def print_ffmpeg_info():
 
     if have_ffmpeg():
         from pyglet.media.sources import ffmpeg
-        print('Using FFmpeg version {0}'.format(
-            ffmpeg.get_version()))
+        print('Using FFmpeg version {0}'.format(ffmpeg.get_version()))
     else:
         print('FFmpeg not available; required for media decoding.')
-        print('https://www.ffmpeg.org/download.html')
-        print()
+        print('https://www.ffmpeg.org/download.html\n')
 
 
 def print_source_info(source):
@@ -74,13 +72,13 @@ def print_source_info(source):
     minutes = int(source.duration / 60) % 60
     seconds = int(source.duration) % 60
     milliseconds = int(source.duration * 1000) % 1000
-    print('Duration: %d:%02d:%02d.%03d' % (
-        hours, minutes, seconds, milliseconds))
+    print('Duration: %d:%02d:%02d.%03d' % (hours, minutes, seconds, milliseconds))
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(__doc__)
-        print_avbin_info()
+        print_ffmpeg_info()
         sys.exit(1)
 
     print_ffmpeg_info()

@@ -33,16 +33,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Prints all window events to stdout.
-'''
+"""Prints all window events to stdout.
+"""
 
 import pyglet
 
 window = pyglet.window.Window(resizable=True)
 
+
 @window.event
 def on_draw():
     window.clear()
+
 
 window.push_handlers(pyglet.window.event.WindowEventLogger())
 

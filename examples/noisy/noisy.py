@@ -33,13 +33,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Bounces balls around a window and plays noises.
+"""Bounces balls around a window and plays noises.
 
 This is a simple demonstration of how pyglet efficiently manages many sound
 channels without intervention.
-'''
+"""
 
-import os
 import random
 import sys
 
@@ -53,7 +52,16 @@ BALL_SOUND = 'ball.wav'
 if len(sys.argv) > 1:
     BALL_SOUND = sys.argv[1]
 
+window = pyglet.window.Window(640, 480)
+
 sound = pyglet.resource.media(BALL_SOUND, streaming=False)
+balls_batch = pyglet.graphics.Batch()
+balls = []
+label = pyglet.text.Label('Press space to add a ball, backspace to remove',
+                          font_size=14,
+                          x=window.width // 2, y=10,
+                          anchor_x='center')
+
 
 class Ball(pyglet.sprite.Sprite):
     ball_image = pyglet.resource.image(BALL_IMAGE)
@@ -69,7 +77,7 @@ class Ball(pyglet.sprite.Sprite):
         self.dx = (random.random() - 0.5) * 1000
         self.dy = (random.random() - 0.5) * 1000
 
-    def update(self, dt):
+    def update_position(self, dt):
         if self.x <= 0 or self.x + self.width >= window.width:
             self.dx *= -1
             sound.play()
@@ -82,7 +90,6 @@ class Ball(pyglet.sprite.Sprite):
         self.x = min(max(self.x, 0), window.width - self.width)
         self.y = min(max(self.y, 0), window.height - self.height)
 
-window = pyglet.window.Window(640, 480)
 
 @window.event
 def on_key_press(symbol, modifiers):
@@ -94,23 +101,19 @@ def on_key_press(symbol, modifiers):
     elif symbol == key.ESCAPE:
         window.has_exit = True
 
+
 @window.event
 def on_draw():
     window.clear()
     balls_batch.draw()
     label.draw()
 
+
 def update(dt):
     for ball in balls:
-        ball.update(dt)
-pyglet.clock.schedule_interval(update, 1/30.)
+        ball.update_position(dt)
 
-balls_batch = pyglet.graphics.Batch()
-balls = []
-label = pyglet.text.Label('Press space to add a ball, backspace to remove',
-                          font_size=14,
-                          x=window.width // 2, y=10, 
-                          anchor_x='center')
 
 if __name__ == '__main__':
+    pyglet.clock.schedule_interval(update, 1 / 30.)
     pyglet.app.run()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-'''
-'''
+"""Print the details of all available input devices to stdout.
+"""
 
 from __future__ import print_function
 
@@ -27,6 +27,7 @@ def watch_control(device, control):
         @control.event
         def on_release():
             print('%r: %r.on_release()' % (device, control))
+
 
 print('Devices:')
 for device in devices:

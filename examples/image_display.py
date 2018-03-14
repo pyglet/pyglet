@@ -33,15 +33,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Display an image.
+"""Display an image.
 
 Usage::
 
     display.py <filename>
 
-A checkerboard background is visible behind any transparent areas of the
-image.
-'''
+A checkerboard background is visible behind any transparent areas.
+"""
 
 from __future__ import print_function
 
