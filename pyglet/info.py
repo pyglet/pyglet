@@ -166,7 +166,7 @@ def dump_ffmpeg():
     import pyglet.media
 
     if pyglet.media.have_ffmpeg():
-        from pyglet.media.sources.ffmpeg import get_version
+        from pyglet.media.codecs.ffmpeg import get_version
         print('FFmpeg version:', get_version())
     else:
         print('FFmpeg not available.')

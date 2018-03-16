@@ -5,7 +5,7 @@ Test the internal RIFF reader.
 import os
 import unittest
 
-from pyglet.media.sources.riff import WaveSource
+from pyglet.media.codecs.wave import WaveSource
 
 test_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'media'))
 

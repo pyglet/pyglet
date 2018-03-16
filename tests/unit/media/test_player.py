@@ -9,7 +9,7 @@ from tests.base.future_test import FutureTestCase
 
 import pyglet
 from pyglet.media.player import Player, PlayerGroup
-from pyglet.media.sources.base import *
+from pyglet.media.codecs.base import *
 
 #pyglet.options['debug_media'] = True
 

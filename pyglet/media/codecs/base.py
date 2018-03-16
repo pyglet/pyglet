@@ -38,11 +38,8 @@ from builtins import object
 import ctypes
 from collections import deque
 
-import pyglet
 from pyglet.compat import bytes_type, BytesIO
 from pyglet.media.exceptions import MediaException, CannotSeekException
-
-_debug = pyglet.options['debug_media']
 
 
 class AudioFormat(object):
@@ -244,7 +241,7 @@ class Source(object):
     """
 
     _duration = None
-    _players = [] # List of players when calling Source.play
+    _players = []  # List of players when calling Source.play
 
     audio_format = None
     video_format = None

@@ -32,13 +32,22 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+
 class MediaException(Exception):
     pass
 
+
 class MediaFormatException(MediaException):
     pass
+
 
 class CannotSeekException(MediaException):
     pass
 
 
+class MediaDecodeException(MediaException):
+    exception_priority = 10
+
+
+class MediaEncodeException(MediaException):
+    pass

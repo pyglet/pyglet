@@ -12,8 +12,8 @@ pyglet.options['debug_media'] = _debug
 pyglet.options['debug_media_buffers'] = _debug
 
 import pyglet.app
-from pyglet.media.sources import PlayList
-from pyglet.media.sources.procedural import Silence
+from pyglet.media.codecs import PlayList
+from pyglet.media.procedural import Silence
 
 from .mock_player import MockPlayer
 

@@ -34,7 +34,7 @@ from builtins import range
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.media.sources.base import Source, AudioFormat, AudioData
+from .codecs.base import Source, AudioFormat, AudioData
 
 from collections import deque
 
@@ -164,7 +164,7 @@ class TremoloEnvelope(Envelope):
         total_bytes = int(sample_rate * duration)
         period = total_bytes / duration
         max_amplitude = self.amplitude
-        min_amplitude = max(0, (1 - self.depth) * self.amplitude)
+        min_amplitude = max(0.0, (1.0 - self.depth) * self.amplitude)
         step = (math.pi * 2) / period / self.rate
         envelope = []
         for i in range(total_bytes):
@@ -469,54 +469,6 @@ class Square(ProceduralSource):
             count += 1
             data[i] = int(value * amplitude * envelope[i+env_offset] + bias)
         return data
-
-
-# class Noise(ProceduralSource):
-#     """A pseudo-random Noise waveform.
-#
-#     :Parameters:
-#         `duration` : float
-#             The length, in seconds, of audio that you wish to generate.
-#         `frequency` : int
-#             The frequency, in Hz of the waveform you wish to produce.
-#         `sample_rate` : int
-#             Audio samples per second. (CD quality is 44100).
-#         `sample_size` : int
-#             The bit precision. Must be either 8 or 16.
-#     """
-#     def __init__(self, duration, frequency=440, **kwargs):
-#         super(Noise, self).__init__(duration, **kwargs)
-#         self.frequency = frequency
-#         self.lfsr = _LFSR([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
-#
-#     def _generate_data(self, num_bytes, offset):
-#         # XXX TODO consider offset
-#         if self._bytes_per_sample == 1:
-#             start = offset
-#             samples = num_bytes
-#             bias = 0
-#             amplitude = 255
-#             data = (ctypes.c_ubyte * samples)()
-#         else:
-#             start = offset >> 1
-#             samples = num_bytes >> 1
-#             bias = -32768
-#             amplitude = 32767
-#             data = (ctypes.c_short * samples)()
-#         envelope = self._envelope_array
-#         env_offset = offset // self._bytes_per_sample
-#         period = self._sample_rate / self.frequency
-#         lfsr = self.lfsr
-#         lfsr.advance(start)
-#         counter = 0
-#         for i in range(samples):
-#             counter += 1
-#             if counter > period:
-#                 lfsr.reset()
-#                 counter = 0
-#             value = lfsr.get()
-#             data[i] = int(value * amplitude * envelope[i+env_offset] + bias)
-#         return data
 
 
 class FM(ProceduralSource):
