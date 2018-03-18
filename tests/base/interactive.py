@@ -13,15 +13,6 @@ from pyglet.image import get_buffer_manager
 
 from .data import PygletTestCase
 
-try:
-    # If the easygui package is available, use it to display popup questions, instead of using the
-    # console (which might lose focus to the Pyglet windows).
-    # Not using Pyglet to show a window with the question to prevent interfering with the test.
-    import easygui
-    _has_gui = True
-except:
-    _has_gui = False
-
 local_dir = os.path.dirname(__file__)
 test_dir = os.path.normpath(os.path.join(local_dir, '..'))
 
@@ -296,34 +287,24 @@ class InteractiveTestCase(PygletTestCase):
     def _get_screenshot_committed_file_name(self, screenshot_name):
         return os.path.join(committed_screenshot_path, screenshot_name)
 
-if _has_gui:
-    def _ask_user_to_verify(description):
-        failure_description = None
-        success = easygui.ynbox(description)
-        if not success:
-            failure_description = easygui.enterbox('Enter failure description:')
+def _ask_user_to_verify(description):
+    failure_description = None
+    print()
+    print(description)
+    while True:
+        response = input('Passed [Yn]: ')
+        if not response:
+            break
+        elif response in 'Nn':
+            failure_description = input('Enter failure description: ')
             if not failure_description:
                 failure_description = 'No description entered'
-        return failure_description
-else:
-    def _ask_user_to_verify(description):
-        failure_description = None
-        print()
-        print(description)
-        while True:
-            response = input('Passed [Yn]: ')
-            if not response:
-                break
-            elif response in 'Nn':
-                failure_description = input('Enter failure description: ')
-                if not failure_description:
-                    failure_description = 'No description entered'
-                break
-            elif response in 'Yy':
-                break
-            else:
-                print('Invalid response')
-        return failure_description
+            break
+        elif response in 'Yy':
+            break
+        else:
+            print('Invalid response')
+    return failure_description
 
 @pytest.fixture
 def interactive(request):
