@@ -223,7 +223,7 @@ class Win32Context(Context):
         super(Win32Context, self).detach()
 
     def flip(self):
-        wgl.wglSwapLayerBuffers(self.canvas.hdc, wgl.WGL_SWAP_MAIN_PLANE)
+        _gdi32.SwapBuffers(self.canvas.hdc)
 
     def get_vsync(self):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
