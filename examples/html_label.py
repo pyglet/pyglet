@@ -33,9 +33,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''A simple demonstration of the HTMLLabel class, as it might be used on a
+"""A simple demonstration of the HTMLLabel class, as it might be used on a
 help or introductory screen.
-'''
+"""
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -61,6 +61,7 @@ label = pyglet.text.HTMLLabel(html, location=location,
                               width=window.width,
                               multiline=True, anchor_y='center')
 
+
 @window.event
 def on_resize(width, height):
     # Wrap text to the width of the window
@@ -69,10 +70,12 @@ def on_resize(width, height):
     # Keep text vertically centered in the window
     label.y = window.height // 2
 
+
 @window.event
 def on_draw():
     window.clear()
     label.draw()
+
 
 pyglet.gl.glClearColor(1, 1, 1, 1)
 pyglet.app.run()

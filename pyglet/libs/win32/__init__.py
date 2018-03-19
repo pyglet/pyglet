@@ -102,6 +102,8 @@ _gdi32.SetPixelFormat.restype = BOOL
 _gdi32.SetPixelFormat.argtypes = [HDC, c_int, POINTER(PIXELFORMATDESCRIPTOR)]
 _gdi32.SetTextColor.restype = COLORREF
 _gdi32.SetTextColor.argtypes = [HDC, COLORREF]
+_gdi32.SwapBuffers.restype = BOOL
+_gdi32.SwapBuffers.argtypes = [HDC]
 
 _kernel32.CloseHandle.restype = BOOL
 _kernel32.CloseHandle.argtypes = [HANDLE]

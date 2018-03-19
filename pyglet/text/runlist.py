@@ -223,7 +223,7 @@ class RunList(object):
         if index == i:
             return self.runs[-1].value
 
-        assert False, 'Index not in range'
+        raise IndexError
 
     def __repr__(self):
         return str(list(self))
@@ -296,18 +296,24 @@ class RunIterator(AbstractRunIterator):
         return next(self._run_list_iter)
 
     def __getitem__(self, index):
-        while index >= self.end and index > self.start:
-            # condition has special case for 0-length run (fixes issue 471)
-            self.start, self.end, self.value = next(self)
-        return self.value
+        try:
+            while index >= self.end and index > self.start:
+                # condition has special case for 0-length run (fixes issue 471)
+                self.start, self.end, self.value = next(self)
+            return self.value
+        except StopIteration:
+            raise IndexError
 
     def ranges(self, start, end):
-        while start >= self.end:
-            self.start, self.end, self.value = next(self)
-        yield start, min(self.end, end), self.value
-        while end > self.end:
-            self.start, self.end, self.value = next(self)
-            yield self.start, min(self.end, end), self.value
+        try:
+            while start >= self.end:
+                self.start, self.end, self.value = next(self)
+            yield start, min(self.end, end), self.value
+            while end > self.end:
+                self.start, self.end, self.value = next(self)
+                yield self.start, min(self.end, end), self.value
+        except StopIteration:
+            return
 
 class OverriddenRunIterator(AbstractRunIterator):
     '''Iterator over a `RunIterator`, with a value temporarily replacing
@@ -394,18 +400,21 @@ class ZipRunIterator(AbstractRunIterator):
         self.range_iterators = range_iterators
 
     def ranges(self, start, end):
-        iterators = [i.ranges(start, end) for i in self.range_iterators]
-        starts, ends, values = zip(*[next(i) for i in iterators])
-        starts = list(starts)
-        ends = list(ends)
-        values = list(values)
-        while start < end:
-            min_end = min(ends)
-            yield start, min_end, values
-            start = min_end
-            for i, iterator in enumerate(iterators):
-                if ends[i] == min_end:
-                    starts[i], ends[i], values[i] = next(iterator)
+        try:
+            iterators = [i.ranges(start, end) for i in self.range_iterators]
+            starts, ends, values = zip(*[next(i) for i in iterators])
+            starts = list(starts)
+            ends = list(ends)
+            values = list(values)
+            while start < end:
+                min_end = min(ends)
+                yield start, min_end, values
+                start = min_end
+                for i, iterator in enumerate(iterators):
+                    if ends[i] == min_end:
+                        starts[i], ends[i], values[i] = next(iterator)
+        except StopIteration:
+            return
 
     def __getitem__(self, index):
         return [i[index] for i in self.range_iterators]

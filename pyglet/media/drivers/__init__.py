@@ -1,7 +1,6 @@
 """Drivers for playing back media."""
 from __future__ import print_function
 from __future__ import absolute_import
-from builtins import str
 
 import atexit
 
@@ -58,6 +57,7 @@ def get_audio_driver():
 def _delete_audio_driver():
     global _audio_driver
     _audio_driver = None
+
 
 _audio_driver = None
 atexit.register(_delete_audio_driver)

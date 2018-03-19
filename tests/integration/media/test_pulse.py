@@ -8,8 +8,8 @@ from threading import Timer
 import pyglet
 pyglet.options['debug_media'] = False
 
-from pyglet.media.sources import AudioFormat
-from pyglet.media.sources.procedural import Silence
+from pyglet.media.codecs import AudioFormat
+from pyglet.media.procedural import Silence
 
 try:
     from pyglet.media.drivers.pulse import interface

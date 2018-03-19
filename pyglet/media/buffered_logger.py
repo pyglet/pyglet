@@ -40,4 +40,5 @@ class BufferedLogger(object):
     def clear(self):
         self.log_entries = []
 
+
 logger = None
