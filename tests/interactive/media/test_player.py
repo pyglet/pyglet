@@ -2,13 +2,12 @@
 Interactively test the Player in pyglet.media for playing back sounds.
 """
 import pytest
-from time import sleep
 
 import pyglet
 pyglet.options['debug_media'] = False
 from pyglet.media.player import Player
-from pyglet.media.sources import procedural
-from pyglet.media.sources.base import StaticSource
+from pyglet.media import procedural
+from pyglet.media.codecs.base import StaticSource
 
 
 @pytest.mark.requires_user_validation

@@ -9,7 +9,7 @@ from tests.base.future_test import FutureTestCase
 import pyglet
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
-from pyglet.media.sources.base import *
+from pyglet.media.codecs.base import *
 
 #pyglet.options['debug_media'] = True
 
@@ -154,8 +154,8 @@ class SourceTestCase(FutureTestCase):
         returned_player.play.assert_called_once_with()
         returned_player.queue.assert_called_once_with(source)
 
-    @mock.patch('pyglet.media.sources.base.Source.get_next_video_timestamp')
-    @mock.patch('pyglet.media.sources.base.Source.get_next_video_frame')
+    @mock.patch('pyglet.media.codecs.base.Source.get_next_video_timestamp')
+    @mock.patch('pyglet.media.codecs.base.Source.get_next_video_frame')
     def test_get_animation(self, mock_get_next_video_frame, mock_get_next_video_timestamp):
         def _next_timestamp():
             if _next_timestamp.timestamp < 100:

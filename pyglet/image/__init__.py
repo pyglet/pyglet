@@ -145,10 +145,12 @@ from ctypes import *
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.window import *
-
-from pyglet.image import atlas
-from pyglet.image import codecs as _codecs
 from pyglet.compat import asbytes, bytes_type, BytesIO
+
+from .codecs import ImageEncodeException, ImageDecodeException
+from .codecs import add_default_image_codecs, add_decoders, add_encoders
+from .codecs import get_animation_decoders, get_decoders, get_encoders
+from . import atlas
 
 
 class ImageException(Exception):
@@ -190,18 +192,18 @@ def load(filename, file=None, decoder=None):
             return decoder.decode(file, filename)
         else:
             first_exception = None
-            for decoder in _codecs.get_decoders(filename):
+            for decoder in get_decoders(filename):
                 try:
                     image = decoder.decode(file, filename)
                     return image
-                except _codecs.ImageDecodeException as e:
+                except ImageDecodeException as e:
                     if (not first_exception or
-                                first_exception.exception_priority < e.exception_priority):
+                            first_exception.exception_priority < e.exception_priority):
                         first_exception = e
                     file.seek(0)
 
             if not first_exception:
-                raise _codecs.ImageDecodeException('No image decoders are available')
+                raise ImageDecodeException('No image decoders are available')
             raise first_exception
     finally:
         if opened_file:
@@ -433,16 +435,16 @@ class AbstractImage(object):
             encoder.encode(self, file, filename)
         else:
             first_exception = None
-            for encoder in _codecs.get_encoders(filename):
+            for encoder in get_encoders(filename):
                 try:
                     encoder.encode(self, file, filename)
                     return
-                except _codecs.ImageEncodeException as e:
+                except ImageEncodeException as e:
                     first_exception = first_exception or e
                     file.seek(0)
 
             if not first_exception:
-                raise _codecs.ImageEncodeException(
+                raise ImageEncodeException(
                     'No image encoders are available')
             raise first_exception
 
@@ -2379,16 +2381,16 @@ def load_animation(filename, file=None, decoder=None):
         return decoder.decode(file, filename)
     else:
         first_exception = None
-        for decoder in _codecs.get_animation_decoders(filename):
+        for decoder in get_animation_decoders(filename):
             try:
                 image = decoder.decode_animation(file, filename)
                 return image
-            except _codecs.ImageDecodeException as e:
+            except ImageDecodeException as e:
                 first_exception = first_exception or e
                 file.seek(0)
 
         if not first_exception:
-            raise _codecs.ImageDecodeException('No image decoders are available')
+            raise ImageDecodeException('No image decoders are available')
         raise first_exception
 
 
@@ -2524,4 +2526,4 @@ class AnimationFrame(object):
 
 
 # Initialise default codecs
-_codecs.add_default_image_codecs()
+add_default_image_codecs()

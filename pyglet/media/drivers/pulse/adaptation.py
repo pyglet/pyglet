@@ -39,7 +39,7 @@ import weakref
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
-from pyglet.media.listener import AbstractListener
+from pyglet.media.drivers.listener import AbstractListener
 from pyglet.debug import debug_print
 
 from . import lib_pulseaudio as pa

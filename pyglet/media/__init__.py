@@ -75,12 +75,67 @@ The player provides a :py:meth:`Player.delete` method that can be used to
 release resources immediately.
 """
 
-# Collect public interface from all submodules/packages
 from .drivers import get_audio_driver
-from .exceptions import *
-from .player import Player, PlayerGroup
-from .sources import *
+from .exceptions import MediaDecodeException
+from .player import Player, PlayerGroup, PlayList
+from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
+from .codecs import add_default_media_codecs
+from .codecs import Source, StaticSource, StreamingSource, PlayList
 
-# For backwards compatibility, deprecate?
-from .sources import procedural
+from . import procedural
 
+__all__ = (
+    'load',
+    'get_audio_driver',
+    'Player',
+    'PlayList',
+    'PlayerGroup',
+    'get_encoders',
+    'get_decoders',
+    'add_encoders',
+    'add_decoders',
+)
+
+
+def load(filename, file=None, streaming=True, decoder=None):
+    """Load a Source from a file.
+
+    All decoders that are registered for the filename extension are tried.
+    If none succeed, the exception from the first decoder is raised.
+    You can also specifically pass a decoder to use.
+
+    :Parameters:
+        `filename` : str
+            Used to guess the media format, and to load the file if `file` is
+            unspecified.
+        `file` : file-like object or None
+            Source of media data in any supported format.
+        `streaming` : bool
+            If `False`, a :class:`StaticSource` will be returned; otherwise
+            (default) a :class:`~pyglet.media.StreamingSource` is created.
+        `decoder` : MediaDecoder or None
+            A specific decoder you wish to use, rather than relying on
+            automatic detection. If specified, no other decoders are tried.
+
+    :rtype: StreamingSource or Source
+    """
+    if decoder:
+        return decoder.decode(file, filename, streaming)
+    else:
+        first_exception = None
+        for decoder in get_decoders(filename):
+            try:
+                loaded_source = decoder.decode(file, filename, streaming)
+                return loaded_source
+            except MediaDecodeException as e:
+                if not first_exception or first_exception.exception_priority < e.exception_priority:
+                    first_exception = e
+
+        # TODO: Review this:
+        # The FFmpeg codec attempts to decode anything, so this codepath won't be reached.
+        if not first_exception:
+            raise MediaDecodeException('No decoders are available for this media format.')
+        raise first_exception
+
+
+add_default_media_codecs()
