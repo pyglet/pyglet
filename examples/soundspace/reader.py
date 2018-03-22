@@ -103,7 +103,7 @@ class SpaceReader(object):
                     if len(parts) < 2:
                         raise ReaderException('No loop filename line %d' % lineno)
                     player = media.Player()
-                    player.eos_action = 'loop'
+                    player.loop = True
                     player.queue(self.source(parts[1], streaming=False))
                     self.space.add_player(player)
                     reader = PlayerReader(player)
