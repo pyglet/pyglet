@@ -38,17 +38,14 @@ import math
 
 import pyglet
 from pyglet.gl import *
-from pyglet.media import have_ffmpeg
 
 import reader
 
 pyglet.resource.path.append('res')
 pyglet.resource.reindex()
 
-
-# Check for FFmpeg
-if not have_ffmpeg():
-    raise ImportError('FFmpeg is required for this example.')
+# Test OpenAL instead of PulseAudio:
+# pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
 
 
 def disc(r, x, y, slices=20, start=0, end=2*math.pi):

@@ -37,7 +37,7 @@ from __future__ import absolute_import
 from builtins import str
 
 import ctypes
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 import weakref
 
 from . import lib_openal as al
@@ -62,6 +62,7 @@ class OpenALException(MediaException):
             return 'OpenAL Exception [{}: {}]: {}'.format(self.error_code,
                                                           self.error_string,
                                                           self.message)
+
 
 class OpenALObject(object):
     """Base class for OpenAL objects."""
@@ -265,7 +266,7 @@ class OpenALSource(OpenALObject):
     pitch = _float_source_property(al.AL_PITCH)
     max_distance = _float_source_property(al.AL_MAX_DISTANCE)
     direction = _3floats_source_property(al.AL_DIRECTION)
-    cone_inner_angle =_float_source_property(al.AL_CONE_INNER_ANGLE)
+    cone_inner_angle = _float_source_property(al.AL_CONE_INNER_ANGLE)
     cone_outer_angle = _float_source_property(al.AL_CONE_OUTER_ANGLE)
     cone_outer_gain = _float_source_property(al.AL_CONE_OUTER_GAIN)
     sec_offset = _float_source_property(al.AL_SEC_OFFSET)
@@ -398,7 +399,6 @@ class OpenALListener(OpenALObject):
         if len(actual_values) != 6:
             raise ValueError("Need 2 tuples of 3 or 1 tuple of 6.")
         self._set_float_vector(al.AL_ORIENTATION, actual_values)
-
 
     def _get_float(self, key):
         al_float = al.ALfloat()

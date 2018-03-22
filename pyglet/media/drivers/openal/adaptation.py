@@ -39,7 +39,6 @@ import weakref
 
 import pyglet
 from . import interface
-from pyglet.app import WeakSet
 from pyglet.debug import debug_print
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
@@ -99,6 +98,7 @@ class OpenALListener(AbstractListener):
     def __init__(self, driver):
         self._driver = weakref.proxy(driver)
         self._al_listener = interface.OpenALListener()
+        print(self._driver)
 
     def __del__(self):
         assert _debug("Delete OpenALListener")
@@ -330,7 +330,6 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
             if self._has_underrun():
                 assert _debug('Underrun')
                 MediaEvent(0, 'on_eos')._sync_dispatch_to_player(self.player)
-
 
     def _queue_audio_data(self, audio_data, length):
         buf = self.source.get_buffer()
