@@ -75,7 +75,7 @@ class InteractiveFixture(object):
         if window is not None:
             window.switch_to()
 
-        get_buffer_manager().get_color_buffer().image_data.save(screenshot_file_name)
+        get_buffer_manager().get_color_buffer().get_image_data().save(screenshot_file_name)
         self.screenshots.append(screenshot_name)
         self._schedule_commit()
 
@@ -120,8 +120,8 @@ class InteractiveFixture(object):
         else:
             assert b is not None, msg
 
-        a_data = a.image_data
-        b_data = b.image_data
+        a_data = a.get_image_data()
+        b_data = b.get_image_data()
 
         assert a_data.width == b_data.width, msg
         assert a_data.height == b_data.height, msg
@@ -212,8 +212,8 @@ class InteractiveTestCase(PygletTestCase):
         else:
             self.assertIsNotNone(b, msg)
 
-        a_data = a.image_data
-        b_data = b.image_data
+        a_data = a.get_image_data()
+        b_data = b.get_image_data()
 
         self.assertEqual(a_data.width, b_data.width, msg)
         self.assertEqual(a_data.height, b_data.height, msg)
@@ -239,7 +239,7 @@ class InteractiveTestCase(PygletTestCase):
         screenshot_name = self._get_next_screenshot_name()
         screenshot_file_name = self._get_screenshot_session_file_name(screenshot_name)
 
-        get_buffer_manager().get_color_buffer().image_data.save(screenshot_file_name)
+        get_buffer_manager().get_color_buffer().get_image_data().save(screenshot_file_name)
 
         self._screenshots.append(screenshot_name)
 
