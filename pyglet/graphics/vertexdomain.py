@@ -723,7 +723,7 @@ class IndexedVertexDomain(VertexDomain):
             elif primcount == 1:
                 # Common case
                 glDrawElements(mode, sizes[0], self.index_gl_type,
-                               self.index_buffer.ptr + starts[0])
+                               self.index_buffer.ptr + starts[0] * self.index_element_size)
             elif gl_info.have_version(1, 4):
                 starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
                 starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
