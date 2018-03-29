@@ -161,6 +161,10 @@ fragment_source = """#version 330 core
     }
 """
 
+_default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+_default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+_default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+
 
 class SpriteGroup(graphics.Group):
     """Shared sprite rendering group.
@@ -191,9 +195,7 @@ class SpriteGroup(graphics.Group):
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
-        self._vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
-        self._frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
-        self.shader_program = graphics.shader.ShaderProgram(self._vert_shader, self._frag_shader)
+        self.shader_program = _default_program
 
     def set_state(self):
         self.shader_program.use_program()

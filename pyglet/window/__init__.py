@@ -741,10 +741,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        # Avoid GLException by not allowing to resize to 0 width or height.
-        width = max(1, width)
-        height = max(1, height)
-        gl.glViewport(0, 0, width, height)
+        gl.glViewport(0, 0, max(1, width), max(1, height))
 
         # TODO: Check if this could cause trouble if it's not yet ready:
         window_buffer_obj = pyglet.graphics.default_group.buffer_objects['WindowBlock']
