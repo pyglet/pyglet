@@ -749,10 +749,9 @@ class IndexedVertexDomain(VertexDomain):
                     self.index_buffer.ptr + starts[0])
             elif gl_info.have_version(1, 4):
                 starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
-                starts = ctypes.cast((GLuint * primcount)(*starts), ctypes.POINTER(ctypes.c_void_p))
+                starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
                 sizes = (GLsizei * primcount)(*sizes)
-                glMultiDrawElements(mode, sizes, GL_UNSIGNED_INT, starts,
-                                    primcount)
+                glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
             else:
                 for start, size in zip(starts, sizes):
                     glDrawElements(mode, size, self.index_gl_type,
