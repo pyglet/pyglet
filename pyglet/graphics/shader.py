@@ -419,6 +419,7 @@ class UniformBufferObject:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.buffer.set_data_region(self.view_ptr, 0, self.view_size)
+        self.buffer.bind()
 
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
