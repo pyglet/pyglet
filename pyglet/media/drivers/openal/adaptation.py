@@ -98,29 +98,24 @@ class OpenALListener(AbstractListener):
     def __init__(self, driver):
         self._driver = weakref.proxy(driver)
         self._al_listener = interface.OpenALListener()
-        print(self._driver)
 
     def __del__(self):
         assert _debug("Delete OpenALListener")
 
     def _set_volume(self, volume):
-        with self._driver:
-            self._al_listener.gain = volume
+        self._al_listener.gain = volume
         self._volume = volume
 
     def _set_position(self, position):
-        with self._driver:
-            self._al_listener.position = position
+        self._al_listener.position = position
         self._position = position
 
     def _set_forward_orientation(self, orientation):
-        with self._driver:
-            self._al_listener = orientation + self._up_orientation
+        self._al_listener.orientation = orientation + self._up_orientation
         self._forward_orientation = orientation
 
     def _set_up_orientation(self, orientation):
-        with self._driver:
-            self._al_listener.orientation = self._forward_orientation + orientation
+        self._al_listener.orientation = self._forward_orientation + orientation
         self._up_orientation = orientation
 
 
