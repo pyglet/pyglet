@@ -72,7 +72,7 @@ class OpenALObject(object):
         error_code = al.alGetError()
         if error_code != 0:
             error_string = al.alGetString(error_code)
-            #TODO: Fix return type in generated code?
+            # TODO: Fix return type in generated code?
             error_string = ctypes.cast(error_string, ctypes.c_char_p)
             raise OpenALException(message=message,
                                   error_code=error_code,
@@ -371,17 +371,29 @@ OpenALOrientation = namedtuple("OpenALOrientation", ['at', 'up'])
 
 
 class OpenALListener(OpenALObject):
-    def _float_source_property(attribute):
-        return property(lambda self: self._get_float(attribute),
-                        lambda self, value: self._set_float(attribute, value))
+    @property
+    def position(self):
+        return self._get_3floats(al.AL_POSITION)
 
-    def _3floats_source_property(attribute):
-        return property(lambda self: self._get_3floats(attribute),
-                        lambda self, value: self._set_3floats(attribute, value))
+    @position.setter
+    def position(self, values):
+        self._set_3floats(al.AL_POSITION, values)
 
-    position = _3floats_source_property(al.AL_POSITION)
-    velocity = _3floats_source_property(al.AL_VELOCITY)
-    gain = _float_source_property(al.AL_GAIN)
+    @property
+    def velocity(self):
+        return self._get_3floats(al.AL_VELOCITY)
+
+    @velocity.setter
+    def velocity(self, values):
+        self._set_3floats(al.AL_VELOCITY, values)
+
+    @property
+    def gain(self):
+        return self._get_float(al.AL_GAIN)
+
+    @gain.setter
+    def gain(self, value):
+        self._set_float(al.AL_GAIN, value)
 
     @property
     def orientation(self):
@@ -497,7 +509,7 @@ class OpenALBufferPool(OpenALObject):
     """
     def __init__(self, context):
         self.context = context
-        self._buffers = [] # list of free buffer names
+        self._buffers = []  # list of free buffer names
 
     def __del__(self):
         assert _debug("Delete interface.OpenALBufferPool")
