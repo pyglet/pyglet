@@ -482,7 +482,12 @@ class OpenALBuffer(OpenALObject):
     def data(self, audio_data, audio_format, length=None):
         assert self.is_valid
         length = length or audio_data.length
-        al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
+
+        try:
+            al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
+        except KeyError:
+            raise MediaException('Unsupported sample size')
+
         al.alBufferData(self._al_buffer,
                         al_format,
                         audio_data.data,
