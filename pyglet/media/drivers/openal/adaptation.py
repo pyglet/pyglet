@@ -66,11 +66,7 @@ class OpenALDriver(AbstractAudioDriver):
 
     def create_audio_player(self, playlist, player):
         assert self.device is not None, "Device was closed"
-        if self.have_version(1, 1):
-            player = OpenALAudioPlayer11(self, playlist, player)
-        else:
-            player = OpenALAudioPlayer10(self, playlist, player)
-        return player
+        return OpenALAudioPlayer(self, playlist, player)
 
     def delete(self):
         # Delete the context first
@@ -119,7 +115,7 @@ class OpenALListener(AbstractListener):
         self._up_orientation = orientation
 
 
-class OpenALAudioPlayer11(AbstractAudioPlayer):
+class OpenALAudioPlayer(AbstractAudioPlayer):
     #: Minimum size of an OpenAL buffer worth bothering with, in bytes
     min_buffer_size = 512
 
@@ -127,7 +123,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     _ideal_buffer_size = 1.
 
     def __init__(self, driver, playlist, player):
-        super(OpenALAudioPlayer11, self).__init__(playlist, player)
+        super(OpenALAudioPlayer, self).__init__(playlist, player)
         self.driver = driver
         self.source = driver.context.create_source()
 
@@ -212,7 +208,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         assert self.driver is not None
         assert self.source is not None
 
-        super(OpenALAudioPlayer11, self).clear()
+        super(OpenALAudioPlayer, self).clear()
         self.source.stop()
         self._handle_processed_buffers()
         self.source.clear()
@@ -259,10 +255,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
                 # Underrun, take note of timestamp.
                 # We check that the timestamp is not None, because otherwise
                 # our source could have been cleared.
-                self._underrun_timestamp = \
-                    self._buffer_timestamps[-1] + \
-                    self._buffer_sizes[-1] / \
-                        float(self.playlist.audio_format.bytes_per_second)
+                self._underrun_timestamp = self._buffer_timestamps[-1] + \
+                    self._buffer_sizes[-1] / float(self.playlist.audio_format.bytes_per_second)
             self._update_buffer_cursor(processed)
 
         return processed
@@ -361,7 +355,7 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
 
             if timestamp is not None:
                 timestamp += ((self._play_cursor - self._buffer_cursor) /
-                    float(self.playlist.audio_format.bytes_per_second))
+                              float(self.playlist.audio_format.bytes_per_second))
 
         assert _debug('OpenALAudioPlayer: get_time = {}'.format(timestamp))
 
@@ -374,8 +368,8 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
         assert self._buffer_cursor <= self._play_cursor
         assert self._play_cursor <= self._write_cursor
         assert _debug('Buffer[{}], Play[{}], Write[{}]'.format(self._buffer_cursor,
-                                                                     self._play_cursor,
-                                                                     self._write_cursor))
+                                                               self._play_cursor,
+                                                               self._write_cursor))
         return True  # Return true so it can be called in an assert (and optimized out)
 
     def set_volume(self, volume):
@@ -408,39 +402,3 @@ class OpenALAudioPlayer11(AbstractAudioPlayer):
     def prefill_audio(self):
         write_size = self.get_write_size()
         self.refill(write_size)
-
-
-class OpenALAudioPlayer10(OpenALAudioPlayer11):
-    """Player compatible with OpenAL version 1.0. This version needs to interpolate
-    timestamps."""
-    def __init__(self, driver, playlist, player):
-        super(OpenALAudioPlayer10, self).__init__(driver, playlist, player)
-
-        # OpenAL 1.0 timestamp interpolation: system time of current buffer
-        # playback (best guess)
-        self._buffer_system_time = time.time() # TODO replace with pyglet.clock
-
-    def play(self):
-        super(OpenALAudioPlayer10, self).play()
-        self._buffer_system_time = time.time()
-
-    def _update_play_cursor(self):
-        assert self.driver is not None
-        assert self.source is not None
-
-        self._handle_processed_buffers()
-
-        # Interpolate system time past buffer timestamp
-        self._play_cursor = \
-            self._buffer_cursor + int(
-                (time.time() - self._buffer_system_time) * \
-                    self.playlist.audio_format.bytes_per_second)
-        assert self._check_cursors()
-        assert _debug('Play cursor at {} bytes'.format(self._play_cursor))
-
-        self._dispatch_events()
-
-    def _handle_processed_buffers(self):
-        processed = super(OpenALAudioPlayer10, self)._handle_processed_buffers()
-        if processed > 0:
-            self._buffer_system_time = time.time()
