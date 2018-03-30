@@ -1,22 +1,38 @@
 Pyglet 1.4.0
 ============
-The following deprecated methods and attributes have now been removed:
-- `sprite.set_position`. Set the X, Y coordinates via sprite.position instead.
-- `next` on the Player class. This has been replaced by `next_source`.
-- `clock.ClockDisplay`. Use `window.FPSDisplay` instead.
-- `clock.test_clock`. This relied on deprecated behavior, and is superseded by unit tests.
-- `font.text`. Use the `text` module instead for displaying text.
-- `window.Platform` API. Use `canvas.get_display` or `canvas.Display` instead.
-- `font.Win32Font` class. This has been replaced by `font.GDIPlusFont`, which was already default.
-   The class still remains, as it's subclassed by `font.GDIPlusFont`. The two should be merged.
-- `window.event.WindowExitHandler`. This functionality is now handled by the Window itself.
-- `image.ImageData.data` properties. Use the `get_data` and `set_data` methods instead.
-- `image.ImageData.image_data` property. Use the `get_image_data` method instead.
-- `image.ImageData.texture` property. Use the `get_texture` method instead.
-- `image.ImageData.mipmapped_texture` property. Use the `get_mipmapped_texture` method instead.
-- `image.ImageData.texture_sequence` property. Use the `get_texture_sequence` method instead.
-- `image.Texture.delete` method. Textures are automatically released through GC.
-- `image.Texture.image_data` property. Use the `get_image_data` method instead.
+
+New features
+------------
+
+Improvements
+------------
+- Many long depricated methods and attributes have now been removed. These are all small
+  changes, so updating an old codebase is straightforward. The following items were removed:
+    * `sprite.set_position`. Set the X, Y coordinates via `sprite.position` instead.
+    * `next` on the Player class. This has been replaced by `next_source`.
+    * `clock.ClockDisplay`. Use `window.FPSDisplay` instead.
+    * `clock.test_clock`. This relied on deprecated behavior, and is superseded by unit tests.
+    * `font.text`. Use the `text` module instead for displaying text.
+    * `window.Platform` API. Use `canvas.get_display` or `canvas.Display` instead.
+    * `font.Win32Font` class. This has been replaced by `font.GDIPlusFont`, which was already default.
+       The class still remains, as it's subclassed by `font.GDIPlusFont`. The two should be merged.
+    * `window.event.WindowExitHandler`. This functionality is now handled by the Window itself.
+    * `image.ImageData.data` properties. Use the `get_data` and `set_data` methods instead.
+    * `image.ImageData.image_data` property. Use the `get_image_data` method instead.
+    * `image.ImageData.texture` property. Use the `get_texture` method instead.
+    * `image.ImageData.mipmapped_texture` property. Use the `get_mipmapped_texture` method instead.
+    * `image.ImageData.texture_sequence` property. Use the `get_texture_sequence` method instead.
+    * `image.Texture.delete` method. Textures are automatically released through GC.
+    * `image.Texture.image_data` property. Use the `get_image_data` method instead.
+- Playback of 24bit audio is now supported in the PulseAudio, and DirectAudio drivers. The
+  bundled Python Wave codec can also support loading of 24bit wave files. Please note that the
+  OpenAL driver does NOT support 24bit audio playback.
+
+Bugfixes
+--------
+- #167 IndexedVertexDomains with non-1 primcount will now draw correctly on 64bit OSs.
+- #168 Fix StopIteration errors due to changes in behavior in Python 3.7. See PEP 479
+- #169 Fix slow Window.fip() on Windows.
 
 Pyglet 1.3.1
 ============
