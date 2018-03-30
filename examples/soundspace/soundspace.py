@@ -44,8 +44,8 @@ import reader
 pyglet.resource.path.append('res')
 pyglet.resource.reindex()
 
-# Test OpenAL instead of PulseAudio:
-# pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
+# Default to OpenAL if available:
+pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
 
 
 def disc(r, x, y, slices=20, start=0, end=2*math.pi):
