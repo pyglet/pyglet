@@ -33,6 +33,7 @@
 # ----------------------------------------------------------------------------
 import os
 import json
+import array
 import struct
 
 import pyglet
@@ -85,6 +86,8 @@ def parse_gltf_file(filename, file=None):
     if not file:
         file = open(filename)
 
+    path = os.path.abspath(filename)
+
     try:
         data = json.load(file)
     except json.JSONDecodeError:
@@ -97,8 +100,6 @@ def parse_gltf_file(filename, file=None):
     else:
         if float(data['asset']['version']) < 2.0:
             raise ModelDecodeException('Only glTF 2.0+ models are supported')
-
-    path = os.path.dirname(filename)
 
     buffers = {i: Buffer(length=item['byteLength'], uri=item['uri'])
                for i, item in enumerate(data.get('buffers', []))}
@@ -114,24 +115,15 @@ def parse_gltf_file(filename, file=None):
         data_type = accessor['type']
 
         size = _accessor_types[data_type] * count
-        struct_fmt = "{0}{1}".format(size, _struct_types[component_type])
         target = buffer_view['target']
         buffer = buffers[buffer_view['buffer']]
 
         offset = buffer_view.get('byteOffset')
         length = buffer_view.get('byteLength')
-        stride = buffer_view.get('byteStride', 1)
+        stride = buffer_view.get('byteStride', 1)   # Default to 1, if no stride.
 
-        # print(offset, length, stride)
-
-        raw = buffer.read(offset, length, stride)
-        print(len(raw))
-
-        struct_fmt = "{0}{1}".format(length//_accessor_types[data_type], _struct_types[component_type])
-        print(struct_fmt)
-        data = struct.unpack(struct_fmt, buffer.read(offset, length, stride))
-
-        # print(struct_fmt, _targets[target], buffer_view)
+        data = buffer.read(offset, length, stride)
+        arr = array.array(_struct_types[component_type], data)
 
     # return mesh_list
     return buffers, buffer_views
