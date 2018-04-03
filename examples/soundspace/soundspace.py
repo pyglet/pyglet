@@ -35,7 +35,6 @@
 # $Id$
 
 import math
-import os
 
 import pyglet
 from pyglet.gl import *
@@ -45,17 +44,14 @@ import reader
 pyglet.resource.path.append('res')
 pyglet.resource.reindex()
 
-# Check for AVbin
-from pyglet.media import have_avbin
+# Default to OpenAL if available:
+pyglet.options['audio'] = 'openal', 'pulse', 'directsound', 'silent'
 
-if not have_avbin():
-    raise ImportError('AVbin is required for this example, see '
-        'http://code.google.com/p/avbin')
 
 def disc(r, x, y, slices=20, start=0, end=2*math.pi):
     d = (end - start) / (slices - 1)
     s = start
-    points = [(x, y)] + [(x + r * math.cos(a*d+s), y + r * math.sin(a*d+s)) \
+    points = [(x, y)] + [(x + r * math.cos(a*d+s), y + r * math.sin(a*d+s))
                          for a in range(slices)]
     points = ((GLfloat * 2) * len(points))(*points)
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -64,10 +60,10 @@ def disc(r, x, y, slices=20, start=0, end=2*math.pi):
     glDrawArrays(GL_TRIANGLE_FAN, 0, len(points))
     glPopClientAttrib()
 
+
 def circle(r, x, y, slices=20):
     d = 2 * math.pi / slices
-    points = [(x + r * math.cos(a*d), y + r * math.sin(a*d)) \
-                         for a in range(slices)]
+    points = [(x + r * math.cos(a*d), y + r * math.sin(a*d)) for a in range(slices)]
     points = ((GLfloat * 2) * len(points))(*points)
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
     glEnableClientState(GL_VERTEX_ARRAY)
@@ -78,6 +74,7 @@ def circle(r, x, y, slices=20):
 
 def orientation_angle(orientation):
     return math.atan2(orientation[2], orientation[0])
+
 
 class Handle(object):
     tip = ''
@@ -103,6 +100,7 @@ class Handle(object):
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.win.remove_handlers(self)
+
 
 class LabelHandle(Handle):
     def __init__(self, player):
@@ -131,6 +129,7 @@ class LabelHandle(Handle):
 
             glPopMatrix()
 
+
 class PositionHandle(Handle):
     tip = 'position'
     radius = .3
@@ -156,17 +155,18 @@ class PositionHandle(Handle):
              pos[1] - self.offset[1],
              pos[2] - self.offset[2])
 
+
 class OrientationHandle(Handle):
     radius = .1
     length = 1.5
 
     def pos(self):
         x, _, z = self.player.position
-        dir = self.get_orientation()
-        sz = math.sqrt(dir[0] ** 2 + dir[1] ** 2 + dir[2] ** 2) or 1
+        direction = self.get_orientation()
+        sz = math.sqrt(direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2) or 1
         if sz != 0:
-            x += dir[0] / sz * self.length
-            z += dir[2] / sz * self.length
+            x += direction[0] / sz * self.length
+            z += direction[2] / sz * self.length
         return x, 0, z
 
     def draw(self):
@@ -198,6 +198,7 @@ class OrientationHandle(Handle):
              hy - self.offset[1] - py,
              hz - self.offset[2] - pz))
 
+
 class ConeOrientationHandle(OrientationHandle):
     tip = 'cone_orientation'
 
@@ -207,6 +208,7 @@ class ConeOrientationHandle(OrientationHandle):
     def set_orientation(self, orientation):
         self.player.cone_orientation = orientation
 
+
 class ForwardOrientationHandle(OrientationHandle):
     tip = 'forward_orientation'
 
@@ -215,6 +217,7 @@ class ForwardOrientationHandle(OrientationHandle):
 
     def set_orientation(self, orientation):
         self.player.forward_orientation = orientation
+
 
 class ConeAngleHandle(Handle):
     radius = .1
@@ -257,6 +260,7 @@ class ConeAngleHandle(Handle):
         res = min(max((hangle - angle) * 2, 0), math.pi * 2)
         self.set_angle(res * 180. / math.pi)
 
+
 class ConeInnerAngleHandle(ConeAngleHandle):
     tip = 'cone_inner_angle'
     length = 1.
@@ -269,6 +273,7 @@ class ConeInnerAngleHandle(ConeAngleHandle):
     def set_angle(self, angle):
         self.player.cone_inner_angle = angle
 
+
 class ConeOuterAngleHandle(ConeAngleHandle):
     tip = 'cone_outer_angle'
     length = 1.2
@@ -280,6 +285,7 @@ class ConeOuterAngleHandle(ConeAngleHandle):
 
     def set_angle(self, angle):
         self.player.cone_outer_angle = angle
+
 
 class MoreHandle(Handle):
     tip = 'More...'
@@ -354,6 +360,7 @@ class MoreHandle(Handle):
     def on_mouse_release(self, x, y, button, modifiers):
         pass
 
+
 class SliderHandle(Handle):
     length = 1.
     width = .05
@@ -395,6 +402,7 @@ class SliderHandle(Handle):
         value = min(max(value, 0), 1)
         self.set_value(value)
 
+
 class VolumeHandle(SliderHandle):
     tip = 'volume'
 
@@ -406,6 +414,7 @@ class VolumeHandle(SliderHandle):
 
     def set_value(self, value):
         self.player.volume = value
+
 
 class ListenerVolumeHandle(SliderHandle):
     tip = 'volume'
@@ -419,6 +428,7 @@ class ListenerVolumeHandle(SliderHandle):
     def set_value(self, value):
         self.player.volume = value
 
+
 class MinDistanceHandle(SliderHandle):
     tip = 'min_distance'
 
@@ -430,6 +440,7 @@ class MinDistanceHandle(SliderHandle):
 
     def set_value(self, value):
         self.player.min_distance = value * 5.
+
 
 class MaxDistanceHandle(SliderHandle):
     tip = 'max_distance'
@@ -443,6 +454,7 @@ class MaxDistanceHandle(SliderHandle):
     def set_value(self, value):
         self.player.max_distance = value * 5.
 
+
 class ConeOuterGainHandle(SliderHandle):
     tip = 'cone_outer_gain'
 
@@ -454,6 +466,7 @@ class ConeOuterGainHandle(SliderHandle):
 
     def set_value(self, value):
         self.player.cone_outer_gain = value
+
 
 class SoundSpaceWindow(pyglet.window.Window):
     def __init__(self, **kwargs):
@@ -575,6 +588,7 @@ class SoundSpaceWindow(pyglet.window.Window):
         else:
             self.tip.text = ''
 
+
 class PanView(object):
     def __init__(self, window):
         self.win = window
@@ -588,6 +602,7 @@ class PanView(object):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.win.tx += dx
         self.win.ty += dy
+
 
 if __name__ == '__main__':
     # We swap Y and Z, moving to left-handed system

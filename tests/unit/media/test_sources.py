@@ -1,6 +1,5 @@
 from __future__ import division
 from builtins import map
-import ctypes
 from tests import mock
 import os
 import unittest
@@ -11,7 +10,7 @@ from pyglet.media.events import MediaEvent
 from pyglet.media.exceptions import MediaException
 from pyglet.media.codecs.base import *
 
-#pyglet.options['debug_media'] = True
+# pyglet.options['debug_media'] = True
 
 
 class AudioFormatTestCase(FutureTestCase):
@@ -198,6 +197,7 @@ class StreamingSourceTestCase(FutureTestCase):
 
         with self.assertRaises(MediaException):
             source._get_queue_source()
+
 
 class StaticSourceTestCase(FutureTestCase):
     def create_valid_mock_source(self, bitrate=8, channels=1):
