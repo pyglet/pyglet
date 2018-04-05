@@ -253,7 +253,7 @@ GLUnurbsObj = GLUnurbs 	# /usr/include/GL/glu.h:279
 GLUquadricObj = GLUquadric 	# /usr/include/GL/glu.h:280
 GLUtesselatorObj = GLUtesselator 	# /usr/include/GL/glu.h:281
 GLUtriangulatorObj = GLUtesselator 	# /usr/include/GL/glu.h:282
-GLU_TESS_MAX_COORD = 9.9999999999999998e+149 	# /usr/include/GL/glu.h:284
+GLU_TESS_MAX_COORD = 1e+150 	# /usr/include/GL/glu.h:284
 _GLUfuncptr = CFUNCTYPE(None) 	# /usr/include/GL/glu.h:287
 # /usr/include/GL/glu.h:289
 gluBeginCurve = _link_function('gluBeginCurve', None, [POINTER(GLUnurbs)], None)
@@ -267,9 +267,9 @@ gluBeginSurface = _link_function('gluBeginSurface', None, [POINTER(GLUnurbs)], N
 # /usr/include/GL/glu.h:292
 gluBeginTrim = _link_function('gluBeginTrim', None, [POINTER(GLUnurbs)], None)
 
-GLint = c_int 	# /usr/include/GL/gl.h:159
-GLenum = c_uint 	# /usr/include/GL/gl.h:153
-GLsizei = c_int 	# /usr/include/GL/gl.h:163
+GLint = c_int 	# /usr/include/GL/gl.h:127
+GLenum = c_uint 	# /usr/include/GL/gl.h:121
+GLsizei = c_int 	# /usr/include/GL/gl.h:131
 # /usr/include/GL/glu.h:293
 gluBuild1DMipmapLevels = _link_function('gluBuild1DMipmapLevels', GLint, [GLenum, GLint, GLsizei, GLenum, GLenum, GLint, GLint, GLint, POINTER(None)], None)
 
@@ -288,12 +288,12 @@ gluBuild3DMipmapLevels = _link_function('gluBuild3DMipmapLevels', GLint, [GLenum
 # /usr/include/GL/glu.h:298
 gluBuild3DMipmaps = _link_function('gluBuild3DMipmaps', GLint, [GLenum, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(None)], None)
 
-GLboolean = c_ubyte 	# /usr/include/GL/gl.h:154
-GLubyte = c_ubyte 	# /usr/include/GL/gl.h:160
+GLboolean = c_ubyte 	# /usr/include/GL/gl.h:122
+GLubyte = c_ubyte 	# /usr/include/GL/gl.h:128
 # /usr/include/GL/glu.h:299
 gluCheckExtension = _link_function('gluCheckExtension', GLboolean, [POINTER(GLubyte), POINTER(GLubyte)], None)
 
-GLdouble = c_double 	# /usr/include/GL/gl.h:166
+GLdouble = c_double 	# /usr/include/GL/gl.h:134
 # /usr/include/GL/glu.h:300
 gluCylinder = _link_function('gluCylinder', None, [POINTER(GLUquadric), GLdouble, GLdouble, GLdouble, GLint, GLint], None)
 
@@ -324,7 +324,7 @@ gluEndTrim = _link_function('gluEndTrim', None, [POINTER(GLUnurbs)], None)
 # /usr/include/GL/glu.h:309
 gluErrorString = _link_function('gluErrorString', POINTER(GLubyte), [GLenum], None)
 
-GLfloat = c_float 	# /usr/include/GL/gl.h:164
+GLfloat = c_float 	# /usr/include/GL/gl.h:132
 # /usr/include/GL/glu.h:310
 gluGetNurbsProperty = _link_function('gluGetNurbsProperty', None, [POINTER(GLUnurbs), GLenum, POINTER(GLfloat)], None)
 
@@ -355,7 +355,7 @@ gluNextContour = _link_function('gluNextContour', None, [POINTER(GLUtesselator),
 # /usr/include/GL/glu.h:319
 gluNurbsCallback = _link_function('gluNurbsCallback', None, [POINTER(GLUnurbs), GLenum, _GLUfuncptr], None)
 
-GLvoid = None 	# /usr/include/GL/gl.h:156
+GLvoid = None 	# /usr/include/GL/gl.h:124
 # /usr/include/GL/glu.h:320
 gluNurbsCallbackData = _link_function('gluNurbsCallbackData', None, [POINTER(GLUnurbs), POINTER(GLvoid)], None)
 
@@ -511,6 +511,9 @@ __all__ = ['GLU_EXT_object_space_tess', 'GLU_EXT_nurbs_tessellator',
 'gluTessEndContour', 'gluTessEndPolygon', 'gluTessNormal', 'gluTessProperty',
 'gluTessVertex', 'gluUnProject', 'gluUnProject4']
 # END GENERATED CONTENT (do not edit above this line)
+
+
+
 
 
 
