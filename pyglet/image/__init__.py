@@ -1353,6 +1353,8 @@ class Texture(AbstractImage):
     level = 0
     images = 1
     x = y = z = 0
+    default_min_filter = GL_LINEAR
+    default_mag_filter = GL_LINEAR
 
     def __init__(self, width, height, target, id):
         super(Texture, self).__init__(width, height)
@@ -1368,7 +1370,7 @@ class Texture(AbstractImage):
 
     @classmethod
     def create(cls, width, height, internalformat=GL_RGBA,
-               rectangle=False, force_rectangle=False, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
+               rectangle=False, force_rectangle=False, min_filter=None, mag_filter=None):
         """Create an empty Texture.
 
         If `rectangle` is ``False`` or the appropriate driver extensions are
@@ -1401,6 +1403,8 @@ class Texture(AbstractImage):
         
         .. versionadded:: 1.1
         """
+        min_filter = min_filter or cls.default_min_filter
+        mag_filter = mag_filter or cls.default_mag_filter
         target = GL_TEXTURE_2D
         if rectangle or force_rectangle:
             if not force_rectangle and _is_pow2(width) and _is_pow2(height):
@@ -1495,6 +1499,8 @@ class Texture(AbstractImage):
                           width, 0., 0.,
                           width, height, 0.,
                           0., height, 0.)
+        min_filter = min_filter or cls.default_min_filter
+        mag_filter = mag_filter or cls.default_mag_filter
         id = GLuint()
         glGenTextures(1, byref(id))
         glBindTexture(target, id.value)
