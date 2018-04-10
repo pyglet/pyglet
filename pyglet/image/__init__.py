@@ -241,6 +241,13 @@ def color_as_bytes(color):
         return bytes(color)
 
 
+def get_max_texture_size():
+    """Query the maximum texture size available"""
+    size = c_int()
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
+    return size.value
+
+
 def _nearest_pow2(v):
     # From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     # Credit: Sean Anderson

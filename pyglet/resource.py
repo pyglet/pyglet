@@ -501,7 +501,7 @@ class Loader(object):
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        max_texture_size = pyglet.image.atlas.get_max_texture_size()
+        max_texture_size = pyglet.image.get_max_texture_size()
         max_size = min(1024, max_texture_size / 2)
         if width > max_size or height > max_size:
             return None
