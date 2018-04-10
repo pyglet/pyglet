@@ -641,7 +641,6 @@ class ImageData(AbstractImage):
 
         self._current_format = self._desired_format = format.upper()
         self._current_data = data
-        self._ensure_string_data()
         if not pitch:
             pitch = width * len(format)
         self._current_pitch = self.pitch = pitch
