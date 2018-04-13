@@ -4,11 +4,12 @@ Bugfix release.
 
 Bugfixes
 --------
-- #170 NameError: name 'PUINT' is not defined
-- #158 Additional fixes
-- #154 Caret issues
-- #168 Compatibility with python 3.7
-- #169 [Windows] window.flip too slow
+- #154 Caret issues.
+- #158 Additional fixes.
+- #167 IndexedVertexDomains with non-1 primcount will now draw correctly on 64bit OSs.
+- #168 Compatibility with python 3.7.
+- #169 [Windows] window.flip too slow.
+- #170 NameError: name 'PUINT' is not defined.
 
 Pyglet 1.3.1
 ============
