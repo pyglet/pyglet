@@ -16,7 +16,7 @@ game_over_label = pyglet.text.Label(text="GAME OVER",
                                     x=400, y=-300, anchor_x='center',
                                     batch=main_batch, font_size=48)
 
-counter = pyglet.clock.ClockDisplay()
+counter = pyglet.window.FPSDisplay(window=game_window)
 
 player_ship = None
 player_lives = []
