@@ -35,8 +35,7 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-from builtins import chr
-from past.builtins import basestring
+from builtins import chr, str
 
 from ctypes import *
 import unicodedata
@@ -795,7 +794,7 @@ class XlibWindow(BaseWindow):
         atom = xlib.XInternAtom(self._x_display, asbytes(name), False)
         if not atom:
             raise XlibException('Undefined atom "%s"' % name)
-        assert isinstance(value, basestring)
+        assert isinstance(value, str)
         property = xlib.XTextProperty()
         if _have_utf8 and allow_utf8:
             buf = create_string_buffer(value.encode('utf8'))

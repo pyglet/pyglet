@@ -46,7 +46,7 @@ See the :mod:`pyglet.font.base` module for documentation on the base classes use
 by this package.
 """
 from __future__ import absolute_import, division
-from past.builtins import basestring
+from builtins import str
 
 import os
 import sys
@@ -166,7 +166,7 @@ def add_file(font):
             Filename or file-like object to load fonts from.
 
     """
-    if isinstance(font, basestring):
+    if isinstance(font, str):
         font = open(font, 'rb')
     if hasattr(font, 'read'):
         font = font.read()

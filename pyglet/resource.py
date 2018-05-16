@@ -86,8 +86,7 @@ The default path is ``['.']``.  If you modify the path, you must call
 from future import standard_library
 
 standard_library.install_aliases()
-from builtins import object
-from past.builtins import basestring
+from builtins import object, str
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -318,7 +317,7 @@ class Loader(object):
         """
         if path is None:
             path = ['.']
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             path = [path]
         self.path = list(path)
         if script_home is None:

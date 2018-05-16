@@ -31,14 +31,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Functions for loading dynamic libraries.
+"""Functions for loading dynamic libraries.
 
 These extend and correct ctypes functions.
-'''
+"""
 from __future__ import print_function
-from builtins import str
-from builtins import object
-from past.builtins import basestring
+from builtins import object, str
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -60,12 +58,12 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
     cwd = os.getcwd()
-    _local_lib_paths = [script_path, os.path.join(script_path, 'lib'),
-                        os.path.join(cwd, 'lib')]
+    _local_lib_paths = [script_path, os.path.join(script_path, 'lib'), os.path.join(cwd, 'lib')]
     if pyglet.compat_platform == 'win32':
         os.environ["PATH"] += os.pathsep + os.pathsep.join(_local_lib_paths)
 else:
     _local_lib_paths = None
+
 
 class _TraceFunction(object):
     def __init__(self, func):
@@ -83,6 +81,7 @@ class _TraceFunction(object):
     def __setattr__(self, name, value):
         setattr(self._func, name, value)
 
+
 class _TraceLibrary(object):
     def __init__(self, library):
         self._library = library
@@ -92,6 +91,7 @@ class _TraceLibrary(object):
         func = getattr(self._library, name)
         f = _TraceFunction(func)
         return f
+
 
 if _is_epydoc:
     class LibraryMock(object):
@@ -107,14 +107,20 @@ if _is_epydoc:
 
 
 class LibraryLoader(object):
+
+    platform = pyglet.compat_platform
+    # this is only for library loading, don't include it in pyglet.platform
+    if platform == 'cygwin':
+        platform = 'win32'
+
     def load_library(self, *names, **kwargs):
-        '''Find and load a library.  
+        """Find and load a library.  
         
         More than one name can be specified, they will be tried in order.
         Platform-specific library names (given as kwargs) are tried first.
 
         Raises ImportError if library is not found.
-        '''
+        """
         if _is_epydoc:
             return LibraryMock()
 
@@ -125,7 +131,7 @@ class LibraryLoader(object):
             raise ImportError("No library name specified")
         
         platform_names = kwargs.get(self.platform, [])
-        if isinstance(platform_names, basestring):
+        if isinstance(platform_names, str):
             platform_names = [platform_names]
         elif type(platform_names) is tuple:
             platform_names = list(platform_names)
@@ -161,15 +167,12 @@ class LibraryLoader(object):
                         pass
         raise ImportError('Library "%s" not found.' % names[0])
 
-    find_library = lambda self, name: ctypes.util.find_library(name)
-
-    platform = pyglet.compat_platform
-    # this is only for library loading, don't include it in pyglet.platform
-    if platform == 'cygwin':
-        platform = 'win32'
+    def find_library(self, name):
+        return ctypes.util.find_library(name)
 
     def load_framework(self, path):
         raise RuntimeError("Can't load framework on this platform.")
+
 
 class MachOLibraryLoader(LibraryLoader):
     def __init__(self):
@@ -189,23 +192,21 @@ class MachOLibraryLoader(LibraryLoader):
             self.dyld_library_path = []
 
         if 'DYLD_FALLBACK_LIBRARY_PATH' in os.environ:
-            self.dyld_fallback_library_path = \
-                os.environ['DYLD_FALLBACK_LIBRARY_PATH'].split(':')
+            self.dyld_fallback_library_path = os.environ['DYLD_FALLBACK_LIBRARY_PATH'].split(':')
         else:
-            self.dyld_fallback_library_path = [
-                os.path.expanduser('~/lib'),
-                '/usr/local/lib',
-                '/usr/lib']
+            self.dyld_fallback_library_path = [os.path.expanduser('~/lib'),
+                                               '/usr/local/lib',
+                                               '/usr/lib']
  
     def find_library(self, path):
-        '''Implements the dylib search as specified in Apple documentation:
+        """Implements the dylib search as specified in Apple documentation:
 
-        http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
+        http://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
 
         Before commencing the standard search, the method first checks
         the bundle's ``Frameworks`` directory if the application is running
         within a bundle (OS X .app).
-        '''
+        """
 
         libname = os.path.basename(path)
         search_path = []
@@ -214,39 +215,27 @@ class MachOLibraryLoader(LibraryLoader):
             libname = 'lib' + libname + '.dylib'
 
         # py2app support
-        if (hasattr(sys, 'frozen') and sys.frozen == 'macosx_app' and
-                'RESOURCEPATH' in os.environ):
-            search_path.append(os.path.join(
-                os.environ['RESOURCEPATH'],
-                '..',
-                'Frameworks',
-                libname))
+        if getattr(sys, 'frozen', None) == 'macosx_app' and 'RESOURCEPATH' in os.environ:
+            search_path.append(os.path.join(os.environ['RESOURCEPATH'],
+                                            '..',
+                                            'Frameworks',
+                                            libname))
 
         # pyinstaller.py sets sys.frozen to True, and puts dylibs in
         # Contents/MacOS, which path pyinstaller puts in sys._MEIPASS
         if (hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS') and
-                sys.frozen == True and pyglet.compat_platform == 'darwin'):
+                sys.frozen is True and pyglet.compat_platform == 'darwin'):
             search_path.append(os.path.join(sys._MEIPASS, libname))
 
         if '/' in path:
-            search_path.extend(
-                [os.path.join(p, libname) \
-                    for p in self.dyld_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.dyld_library_path])
             search_path.append(path)
-            search_path.extend(
-                [os.path.join(p, libname) \
-                    for p in self.dyld_fallback_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.dyld_fallback_library_path])
         else:
-            search_path.extend(
-                [os.path.join(p, libname) \
-                    for p in self.ld_library_path])
-            search_path.extend(
-                [os.path.join(p, libname) \
-                    for p in self.dyld_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.ld_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.dyld_library_path])
             search_path.append(path)
-            search_path.extend(
-                [os.path.join(p, libname) \
-                    for p in self.dyld_fallback_library_path])
+            search_path.extend([os.path.join(p, libname) for p in self.dyld_fallback_library_path])
 
         for path in search_path:
             if os.path.exists(path):
@@ -254,11 +243,12 @@ class MachOLibraryLoader(LibraryLoader):
 
         return None
 
-    def find_framework(self, path):
-        '''Implement runtime framework search as described by:
+    @staticmethod
+    def find_framework(path):
+        """Implement runtime framework search as described by:
 
-        http://developer.apple.com/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkBinding.html
-        '''
+        http://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkBinding.html
+        """
 
         # e.g. path == '/System/Library/Frameworks/OpenGL.framework'
         #      name == 'OpenGL'
@@ -269,9 +259,8 @@ class MachOLibraryLoader(LibraryLoader):
         if os.path.exists(realpath):
             return realpath
 
-        for dir in ('/Library/Frameworks',
-                    '/System/Library/Frameworks'):
-            realpath = os.path.join(dir, '%s.framework' % name, name)
+        for directory in ('/Library/Frameworks', '/System/Library/Frameworks'):
+            realpath = os.path.join(directory, '%s.framework' % name, name)
             if os.path.exists(realpath):
                 return realpath
 
@@ -289,20 +278,22 @@ class MachOLibraryLoader(LibraryLoader):
 
         raise ImportError("Can't find framework %s." % path)
 
+
 class LinuxLibraryLoader(LibraryLoader):
     _ld_so_cache = None
     _local_libs_cache = None
 
-    def _find_libs(self, directories):
+    @staticmethod
+    def _find_libs(directories):
         cache = {}
         lib_re = re.compile('lib(.*)\.so(?:$|\.)')
-        for dir in directories:
+        for directory in directories:
             try:
-                for file in os.listdir(dir):
+                for file in os.listdir(directory):
                     match = lib_re.match(file)
                     if match:
                         # Index by filename
-                        path = os.path.join(dir, file)
+                        path = os.path.join(directory, file)
                         if file not in cache:
                             cache[file] = path
                         # Index by library name
@@ -358,6 +349,7 @@ class LinuxLibraryLoader(LibraryLoader):
             self._create_ld_so_cache()
 
         return self._ld_so_cache.get(path)
+
 
 if pyglet.compat_platform == 'darwin':
     loader = MachOLibraryLoader()
