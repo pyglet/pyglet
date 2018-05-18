@@ -6,7 +6,7 @@ pyglet.media
 .. toctree::
    :maxdepth: 1
 
-   media_procedural
+   media_synthesis
 
 .. rubric:: Details
 

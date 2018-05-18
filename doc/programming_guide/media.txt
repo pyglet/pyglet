@@ -50,7 +50,7 @@ The audio driver can be set through the ``audio`` key of the
 
     pyglet.options['audio'] = ('openal', 'pulse', 'directsound', 'silent')
 
-This tells pyglet to try using the OpenAL driver first, and if not available 
+This tells pyglet to try using the OpenAL driver first, and if not available
 to try Pulseaudio and DirectSound in that order. If all else fails, no driver
 will be instantiated. The ``audio`` option can be a list of any of these 
 strings, giving the preference order for each driver:
@@ -87,36 +87,17 @@ OpenAL
 ^^^^^^
 
 OpenAL is included with Mac OS X. Windows users can download a generic driver
-from `openal.org`_, or from their sound device's manufacturer. Linux users can
-use the reference implementation also provided by Creative. For example,
-Ubuntu users can ``apt-get install openal``. ALUT is not required. pyglet 
-makes use of OpenAL 1.1 features if available, but will also work with 
-OpenAL 1.0.
-
-Due to a long-standing bug in the reference implementation of OpenAL, stereo
-audio is downmixed to mono on Linux. This does not affect Windows or Mac OS X
-users.
+from `openal.org`_, or from their sound device's manufacturer. Most Linux
+distributions will have OpenAL available in the repositories for download.
+For example, Ubuntu users can ``apt install libopenal1``.
 
 Pulse
 ^^^^^
 
 Pulseaudio has become the standard Linux audio implementation over the past 
-few years, and is installed by default with most modern Linux distributions. 
-
-Linux Issues
-^^^^^^^^^^^^
-
-Linux users have the option of choosing between OpenAL and Pulse for audio
-output. Unfortunately OpenAL has severe limitations that are outside the 
-scope of pyglet's control.
-
-If your application can manage without stereo playback, you should use the 
-OpenAL driver (assuming your users have it installed). You can do this with::
-
-    pyglet.options['audio'] = ('openal', 'pulse', 'silent')
-
-If your application needs stereo playback, consider using the Pulse driver 
-in preference to the OpenAL driver (this is the default).
+few years, and is installed by default with most modern Linux distributions.
+Pulseaudio does not support positional audio, and is limited to stereo. It
+is recommended to use OpenAL if positional audio is required.
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
     distributions. It can be downloaded separately from your audio device
@@ -261,45 +242,45 @@ already- loaded :class:`~pyglet.media.Source`::
 
     explosion = pyglet.media.StaticSource(pyglet.media.load('explosion.wav'))
 
-Procedural Audio
-----------------
+Audio Synthesis
+---------------
 
-In addition to loading audio files, the :py:mod:`pyglet.media.procedural` module is available
+In addition to loading audio files, the :py:mod:`pyglet.media.synthesis` module is available
 for simple audio synthesis. There are several basic waveforms available:
 
-* :py:class:`~pyglet.media.sources.procedural.Sine`
-* :py:class:`~pyglet.media.sources.procedural.Sawtooth`
-* :py:class:`~pyglet.media.sources.procedural.Square`
-* :py:class:`~pyglet.media.sources.procedural.FM`
-* :py:class:`~pyglet.media.sources.procedural.Silence`
-* :py:class:`~pyglet.media.sources.procedural.WhiteNoise`
-* :py:class:`~pyglet.media.sources.procedural.Digitar`
+* :py:class:`~pyglet.media.synthesis.Sine`
+* :py:class:`~pyglet.media.synthesis.Sawtooth`
+* :py:class:`~pyglet.media.synthesis.Square`
+* :py:class:`~pyglet.media.synthesis.FM`
+* :py:class:`~pyglet.media.synthesis.Silence`
+* :py:class:`~pyglet.media.synthesis.WhiteNoise`
+* :py:class:`~pyglet.media.synthesis.Digitar`
 
 The module documentation for each will provide more information on constructing them, but at
-a minimum you will need to specify the duration. You will also want to set the frequency
+a minimum you will need to specify the duration. You will also want to set the audio frequency
 (most waveforms will default to 440Hz). Some waveforms, such as the FM, have additional parameters.
 
 For shaping the waveforms, several simple envelopes are available. These envelopes affect
 the amplitude (volume), and can make for more natural sounding tones. You first create an envelope
 instance, and then pass it into the constructor of any of the above waveforms. The same envelope
 instance can be passed to any number of waveforms, reducing duplicate code when creating multiple
-sounds. If no envelope is used, all procedural classes will default to the FlatEnvelope of maximum
+sounds. If no envelope is used, all waveforms will default to the FlatEnvelope of maximum
 volume, which esentially has no effect on the sound. Check the module documentation of each
 Envelope to see which parameters are available.
 
-* :py:class:`~pyglet.media.sources.procedural.FlatEnvelope`
-* :py:class:`~pyglet.media.sources.procedural.LinearDecayEnvelope`
-* :py:class:`~pyglet.media.sources.procedural.ADSREnvelope`
-* :py:class:`~pyglet.media.sources.procedural.TremoloEnvelope`
+* :py:class:`~pyglet.media.synthesis.FlatEnvelope`
+* :py:class:`~pyglet.media.synthesis.LinearDecayEnvelope`
+* :py:class:`~pyglet.media.synthesis.ADSREnvelope`
+* :py:class:`~pyglet.media.synthesis.TremoloEnvelope`
 
 An example of creating an envelope and waveforms::
 
-    adsr = pyglet.media.procedural.ADSREnvelope(0.05, 0.2, 0.1)
+    adsr = pyglet.media.synthesis.ADSREnvelope(0.05, 0.2, 0.1)
 
-    saw = pyglet.media.procedural.Sawtooth(duration=1.0, frequency=220, envelope=adsr)
-    fm = pyglet.media.procedural.FM(3, carrier=440, modulator=2, mod_index=22, envelope=adsr)
+    saw = pyglet.media.synthesis.Sawtooth(duration=1.0, frequency=220, envelope=adsr)
+    fm = pyglet.media.synthesis.FM(3, carrier=440, modulator=2, mod_index=22, envelope=adsr)
 
-The waveforms you create with the procedural module can be played like any other loaded sound.
+The waveforms you create with the synthesis module can be played like any other loaded sound.
 See the next sections for more detail on playback.
 
 Simple audio playback

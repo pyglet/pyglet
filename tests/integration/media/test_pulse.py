@@ -9,7 +9,7 @@ import pyglet
 pyglet.options['debug_media'] = False
 
 from pyglet.media.codecs import AudioFormat
-from pyglet.media.procedural import Silence
+from pyglet.media.synthesis import Silence
 
 try:
     from pyglet.media.drivers.pulse import interface

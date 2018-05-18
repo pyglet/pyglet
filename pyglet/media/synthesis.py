@@ -46,7 +46,7 @@ import random
 
 
 class Envelope(object):
-    """Base class for ProceduralSource amplitude envelopes."""
+    """Base class for SynthesisSource amplitude envelopes."""
     def build_envelope(self, sample_rate, duration):
         raise NotImplementedError
 
@@ -173,8 +173,8 @@ class TremoloEnvelope(Envelope):
         return envelope
 
 
-class ProceduralSource(Source):
-    """Base class for procedurally defined and generated waveforms.
+class SynthesisSource(Source):
+    """Base class for synthesized waveforms.
 
     :Parameters:
         `duration` : float
@@ -281,7 +281,7 @@ class ProceduralSource(Source):
         self._offset = offset
 
 
-class Silence(ProceduralSource):
+class Silence(SynthesisSource):
     """A silent waveform."""
 
     def _generate_data(self, num_bytes, offset):
@@ -291,15 +291,15 @@ class Silence(ProceduralSource):
             return b'\0' * num_bytes
 
 
-class WhiteNoise(ProceduralSource):
+class WhiteNoise(SynthesisSource):
     """A white noise, random waveform."""
 
     def _generate_data(self, num_bytes, offset):
         return os.urandom(num_bytes)
 
 
-class Sine(ProceduralSource):
-    """A procedurally generated sinusoid waveform.
+class Sine(SynthesisSource):
+    """A sinusoid (sine) waveform.
 
     :Parameters:
         `duration` : float
@@ -337,8 +337,8 @@ class Sine(ProceduralSource):
         return data
 
 
-class Triangle(ProceduralSource):
-    """A procedurally generated triangle waveform.
+class Triangle(SynthesisSource):
+    """A triangle waveform.
 
     :Parameters:
         `duration` : float
@@ -383,8 +383,8 @@ class Triangle(ProceduralSource):
         return data
 
 
-class Sawtooth(ProceduralSource):
-    """A procedurally generated sawtooth waveform.
+class Sawtooth(SynthesisSource):
+    """A sawtooth waveform.
 
     :Parameters:
         `duration` : float
@@ -425,8 +425,8 @@ class Sawtooth(ProceduralSource):
         return data
 
 
-class Square(ProceduralSource):
-    """A procedurally generated square (or pulse) waveform.
+class Square(SynthesisSource):
+    """A square (pulse) waveform.
 
     :Parameters:
         `duration` : float
@@ -471,8 +471,8 @@ class Square(ProceduralSource):
         return data
 
 
-class FM(ProceduralSource):
-    """A procedurally generated FM waveform.
+class FM(SynthesisSource):
+    """A simple FM waveform.
 
     This is a simplistic frequency modulated waveform, based on the
     concepts by John Chowning. Basic sine waves are used for both
@@ -527,8 +527,8 @@ class FM(ProceduralSource):
         return data
 
 
-class Digitar(ProceduralSource):
-    """A procedurally generated guitar-like waveform.
+class Digitar(SynthesisSource):
+    """A guitar-like waveform.
 
     A guitar-like waveform, based on the Karplus-Strong algorithm.
     The sound is similar to a plucked guitar string. The resulting

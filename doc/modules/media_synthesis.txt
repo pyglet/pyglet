@@ -1,6 +1,6 @@
-pyglet.media.procedural
+pyglet.media.synthesis
 ===============================================================
 
-.. automodule:: pyglet.media.sources.procedural
+.. automodule:: pyglet.media.synthesis
   :members:
   :undoc-members:

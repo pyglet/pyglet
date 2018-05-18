@@ -82,7 +82,11 @@ from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
 from .codecs import add_default_media_codecs, have_ffmpeg
 from .codecs import Source, StaticSource, StreamingSource, PlayList
 
-from . import procedural
+from . import synthesis
+
+# deprecated:: 1.4
+# Procedural was renamed to `synthesis` in 1.4
+from . import synthesis as procedural
 
 __all__ = (
     'load',

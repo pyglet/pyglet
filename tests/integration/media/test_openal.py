@@ -7,7 +7,7 @@ import weakref
 import pyglet
 _debug = False
 pyglet.options['debug_media'] = _debug
-from pyglet.media.procedural import Silence
+from pyglet.media.synthesis import Silence
 
 try:
     from pyglet.media.drivers import openal
