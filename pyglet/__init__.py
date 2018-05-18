@@ -162,7 +162,7 @@ if getattr(sys, 'frozen', None):
 #:     .. versionadded:: 1.2
 #:
 options = {
-    'audio': ('directsound', 'pulse', 'openal', 'silent'),
+    'audio': ('directsound', 'openal', 'pulse', 'silent'),
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_gl_trace': False,
