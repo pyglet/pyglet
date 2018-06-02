@@ -140,6 +140,11 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import inspect
+import sys
+if sys.version_info < (3, 4):
+    from .compat import WeakMethod
+else:
+    from weakref import WeakMethod
 
 EVENT_HANDLED = True 
 EVENT_UNHANDLED = None
@@ -204,17 +209,23 @@ class EventDispatcher(object):
                 name = obj.__name__
                 if name not in self.event_types:
                     raise EventException('Unknown event "%s"' % name)
-                yield name, obj
+                if inspect.ismethod(obj):
+                    yield name, WeakMethod(obj)
+                else:
+                    yield name, obj
             else:
                 # Single instance with magically named methods
                 for name in dir(obj):
                     if name in self.event_types:
-                        yield name, getattr(obj, name)
+                        yield name, WeakMethod(getattr(obj, name))
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
                 raise EventException('Unknown event "%s"' % name)
-            yield name, handler
+            if inspect.ismethod(handler):
+                yield name, WeakMethod(handler)
+            else:
+                yield name, handler
 
     def set_handlers(self, *args, **kwargs):
         """Attach one or more event handlers to the top level of the handler
@@ -347,6 +358,9 @@ class EventDispatcher(object):
             is always ``None``.
 
         """
+        assert hasattr(self, 'event_types'), ("No events registered on this "
+            "EventDispatcher. You need to register events with the class method "
+            "EventDispatcher.register_event_type('event_name').")
         assert event_type in self.event_types,\
             "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
 
@@ -355,6 +369,11 @@ class EventDispatcher(object):
         # Search handler stack for matching event handlers
         for frame in list(self._event_stack):
             handler = frame.get(event_type, None)
+            if isinstance(handler, WeakMethod):
+                handler = handler()
+                if handler is None:
+                    # Remove dead handler
+                    del frame[event_type]
             if handler:
                 try:
                     invoked = True

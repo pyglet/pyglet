@@ -119,6 +119,12 @@ import ctypes
 from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
 from collections import deque
+import inspect
+import sys
+if sys.version_info < (3, 4):
+    from .compat import WeakMethod
+else:
+    from weakref import WeakMethod
 
 import pyglet.lib
 from pyglet import compat_platform
@@ -274,7 +280,14 @@ class Clock(_ClockBase):
             result = True
             # duplicate list in case event unschedules itself
             for item in list(self._schedule_items):
-                item.func(dt, *item.args, **item.kwargs)
+                func = item.func
+                if isinstance(func, WeakMethod):
+                    func = func()
+                    if func is None:
+                        # Unschedule it as the object is dead!
+                        self.unschedule(item.func)
+                        continue
+                func(dt, *item.args, **item.kwargs)
 
         # check the next scheduled item that is not called each tick
         # if it is scheduled in the future, then exit
@@ -311,7 +324,14 @@ class Clock(_ClockBase):
                 break
 
             # execute the callback
-            item.func(now - item.last_ts, *item.args, **item.kwargs)
+            func = item.func
+            if isinstance(func, WeakMethod):
+                func = func()
+            if func is None:
+                # Unschedule it as the object is dead!
+                self.unschedule(item.func)
+            else:
+                func(now - item.last_ts, *item.args, **item.kwargs)
 
             if item.interval:
 
@@ -502,6 +522,8 @@ class Clock(_ClockBase):
             `func` : callable
                 The function to call each frame.
         """
+        if inspect.ismethod(func):
+            func = WeakMethod(func)
         item = _ScheduledItem(func, args, kwargs)
         self._schedule_items.append(item)
 
@@ -518,6 +540,8 @@ class Clock(_ClockBase):
         """
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + delay
+        if inspect.ismethod(func):
+            func = WeakMethod(func)
         item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
@@ -538,6 +562,8 @@ class Clock(_ClockBase):
         """
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + interval
+        if inspect.ismethod(func):
+            func = WeakMethod(func)
         item = _ScheduledIntervalItem(func, interval, last_ts,
                                       next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
@@ -573,6 +599,8 @@ class Clock(_ClockBase):
         """
         next_ts = self._get_soft_next_ts(self._get_nearest_ts(), interval)
         last_ts = next_ts - interval
+        if inspect.ismethod(func):
+            func = WeakMethod(func)
         item = _ScheduledIntervalItem(func, interval, last_ts,
                                       next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
