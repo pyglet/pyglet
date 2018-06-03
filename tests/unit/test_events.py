@@ -1,13 +1,11 @@
 """Testing the events"""
 
 
-import unittest
 import pytest
 import types
 import sys
 import pyglet
 from tests import mock
-from contextlib import contextmanager
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
 
 
@@ -109,6 +107,7 @@ def test_set_handlers_kwargs(dispatcher, mock_handler):
     assert result == EVENT_HANDLED
     assert mock_handler.called
 
+
 def test_set_handlers_not_setup(dispatcher):
     dispatcher.set_handlers()
     assert dispatcher._event_stack == [{}]
@@ -124,7 +123,7 @@ def test_set_handler_dispatch(dispatcher, mock_handler):
 def test_set_handler_not_setup(dispatcher, mock_handler):
     dispatcher.set_handler('mock_event', None)
     result = dispatcher.dispatch_event('mock_event')
-    assert result == False
+    assert result is False
     assert not mock_handler.called
 
 
@@ -144,7 +143,7 @@ def test_remove_handlers_args(dispatcher, mock_handler):
     dispatcher.set_handler('mock_event', mock_handler)
     dispatcher.remove_handlers(mock_handler)
     result = dispatcher.dispatch_event('mock_event')
-    assert result == False
+    assert result is False
     assert not mock_handler.called
 
 
@@ -152,7 +151,7 @@ def test_remove_handlers_kwargs(dispatcher, mock_handler):
     dispatcher.set_handler('mock_event', mock_handler)
     dispatcher.remove_handlers(mock_event=mock_handler)
     result = dispatcher.dispatch_event('mock_event')
-    assert result == False
+    assert result is False
     assert not mock_handler.called
 
 
@@ -164,7 +163,7 @@ def test_remove_handler(dispatcher, mock_handler):
     dispatcher.set_handler('mock_event', mock_handler)
     dispatcher.remove_handler('mock_event', mock_handler)
     result = dispatcher.dispatch_event('mock_event')
-    assert result == False
+    assert result is False
     assert not mock_handler.called
 
 
@@ -182,6 +181,7 @@ def test_dispatch_event_not_setup(dispatcher):
 class DummyHandler:
     def mock_event(self):
         return True
+
 
 @pytest.mark.skipif(sys.version_info < (3, 4), reason="requires python3.4")
 def test_weakref_to_instance_method(dispatcher):
@@ -209,10 +209,9 @@ def test_weakref_to_instance(dispatcher):
 
 @pytest.mark.skipif(sys.version_info < (3, 4), reason="requires python3.4")
 def test_weakref_deleted_when_instance_is_deleted(dispatcher):
-    import weakref
     dispatcher.register_event_type('mock_event')
     handler = DummyHandler()
     dispatcher.push_handlers(handler.mock_event)
     handler = None
-    dispatcher.dispatch_event('mock_event')
-    assert dispatcher._event_stack == [{}]
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False

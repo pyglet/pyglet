@@ -2,14 +2,14 @@
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -146,7 +146,7 @@ if sys.version_info < (3, 4):
 else:
     from weakref import WeakMethod
 
-EVENT_HANDLED = True 
+EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
 
@@ -230,7 +230,7 @@ class EventDispatcher(object):
     def set_handlers(self, *args, **kwargs):
         """Attach one or more event handlers to the top level of the handler
         stack.
-        
+
         See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the accepted argument types.
         """
         # Create event stack if necessary
@@ -333,7 +333,7 @@ class EventDispatcher(object):
 
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
-        
+
         The event is propagated to all handlers from from the top of the stack
         until one returns `EVENT_HANDLED`.  This method should be used only by
         :py:class:`~pyglet.event.EventDispatcher` implementors; applications should call
@@ -351,16 +351,18 @@ class EventDispatcher(object):
                 Arguments to pass to the event handler.
 
         :rtype: bool or None
-        :return: (Since pyglet 1.2) `EVENT_HANDLED` if an event handler 
+        :return: (Since pyglet 1.2) `EVENT_HANDLED` if an event handler
             returned `EVENT_HANDLED`; `EVENT_UNHANDLED` if one or more event
             handlers were invoked but returned only `EVENT_UNHANDLED`;
             otherwise ``False``.  In pyglet 1.1 and earler, the return value
             is always ``None``.
 
         """
-        assert hasattr(self, 'event_types'), ("No events registered on this "
-            "EventDispatcher. You need to register events with the class method "
-            "EventDispatcher.register_event_type('event_name').")
+        assert hasattr(self, 'event_types'), (
+            "No events registered on this EventDispatcher. "
+            "You need to register events with the class method "
+            "EventDispatcher.register_event_type('event_name')."
+        )
         assert event_type in self.event_types,\
             "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
 
@@ -400,7 +402,7 @@ class EventDispatcher(object):
         # A common problem in applications is having the wrong number of
         # arguments in an event handler.  This is caught as a TypeError in
         # dispatch_event but the error message is obfuscated.
-        # 
+        #
         # Here we check if there is indeed a mismatch in argument count,
         # and construct a more useful exception message if so.  If this method
         # doesn't find a problem with the number of arguments, the error
@@ -439,8 +441,8 @@ class EventDispatcher(object):
                              event_type, len(args), descr, len(handler_args)))
 
     def event(self, *args):
-        """Function decorator for an event handler.  
-        
+        """Function decorator for an event handler.
+
         Usage::
 
             win = window.Window()
