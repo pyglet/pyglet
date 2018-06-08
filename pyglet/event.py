@@ -140,6 +140,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import inspect
+from functools import partial
 import sys
 if sys.version_info < (3, 4):
     from .compat import WeakMethod
@@ -210,20 +211,22 @@ class EventDispatcher(object):
                 if name not in self.event_types:
                     raise EventException('Unknown event "%s"' % name)
                 if inspect.ismethod(obj):
-                    yield name, WeakMethod(obj)
+                    yield name, WeakMethod(obj, partial(self._remove_handler, name))
                 else:
                     yield name, obj
             else:
                 # Single instance with magically named methods
                 for name in dir(obj):
                     if name in self.event_types:
-                        yield name, WeakMethod(getattr(obj, name))
+                        meth = getattr(obj, name)
+                        yield name, WeakMethod(meth, partial(self._remove_handler, name))
+
         for name, handler in kwargs.items():
             # Function for handling given event (no magic)
             if name not in self.event_types:
                 raise EventException('Unknown event "%s"' % name)
             if inspect.ismethod(handler):
-                yield name, WeakMethod(handler)
+                yield name, WeakMethod(handler, partial(self._remove_handler, name))
             else:
                 yield name, handler
 
@@ -331,6 +334,19 @@ class EventDispatcher(object):
             except KeyError:
                 pass
 
+    def _remove_handler(self, name, handler):
+        """Used internally to remove all handler instances for the given event name.
+
+        This is normally called from a dead ``WeakMethod`` to remove itself from the
+        event stack.
+        """
+        # Iterate over a copy as we might mutate the list
+        for frame in list(self._event_stack):
+            if name in frame and frame[name] == handler:
+                del frame[name]
+                if not frame:
+                    self._event_stack.remove(frame)
+
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
 
@@ -370,28 +386,29 @@ class EventDispatcher(object):
 
         # Search handler stack for matching event handlers
         for frame in list(self._event_stack):
-            handler = frame.get(event_type, None)
+            if event_type not in frame:
+                continue
+            handler = frame[event_type]
             if isinstance(handler, WeakMethod):
                 handler = handler()
-                if handler is None:
-                    # Remove dead handler
-                    del frame[event_type]
-            if handler:
-                try:
-                    invoked = True
-                    if handler(*args):
-                        return EVENT_HANDLED
-                except TypeError:
-                    self._raise_dispatch_exception(event_type, args, handler)
-
-        # Check instance for an event handler
-        if hasattr(self, event_type):
+                assert handler is not None
             try:
                 invoked = True
-                if getattr(self, event_type)(*args):
+                if handler(*args):
                     return EVENT_HANDLED
             except TypeError:
-                self._raise_dispatch_exception(event_type, args, getattr(self, event_type))
+                self._raise_dispatch_exception(event_type, args, handler)
+
+        # Check instance for an event handler
+        try:
+            if getattr(self, event_type)(*args):
+                return EVENT_HANDLED
+        except AttributeError:
+            pass
+        except TypeError:
+            self._raise_dispatch_exception(event_type, args, getattr(self, event_type))
+        else:
+            invoked = True
 
         if invoked:
             return EVENT_UNHANDLED
