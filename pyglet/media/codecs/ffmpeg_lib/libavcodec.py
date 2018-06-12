@@ -43,7 +43,7 @@ import pyglet
 import pyglet.lib
 from . import libavutil
 
-avcodec = pyglet.lib.load_library('avcodec', win32='avcodec-58')
+avcodec = pyglet.lib.load_library('avcodec', win32='avcodec-58') # dylib on Mac OS X
 
 FF_INPUT_BUFFER_PADDING_SIZE = 32
 
@@ -247,17 +247,13 @@ AVCodecContext._fields_ = [
         ('qmin', c_int),
         ('qmax', c_int),
         ('max_qdiff', c_int),
-        ('rc_buffer_size', c_int),
         ('rc_override_count', c_int),
         ('rc_override', POINTER(RcOverride)),
-        ('rc_max_rate', c_int64),
         ('rc_min_rate', c_int64),
-        ('rc_max_available_vbv_use', c_float),
         ('rc_min_vbv_overflow_use', c_float),
         ('rc_initial_buffer_occupancy', c_int),
         ('coder_type', c_int), #Deprecated
         ('context_model', c_int), #Deprecated
-        ('frame_skip_threshold', c_int), #Deprecated
         ('frame_skip_factor', c_int), #Deprecated
         ('frame_skip_exp', c_int), #Deprecated
         ('frame_skip_cmp', c_int), #Deprecated

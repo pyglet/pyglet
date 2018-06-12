@@ -35,14 +35,14 @@
 '''
 from __future__ import unicode_literals
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64, 
-    c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p, 
-    c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union, 
-    create_string_buffer, memmove)
+    c_uint8, c_int8,  c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, 
+    c_char_p, c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, 
+    Union, create_string_buffer, memmove)
 
 import pyglet
 import pyglet.lib
 
-avutil = pyglet.lib.load_library('avutil', win32='avutil-56')
+avutil = pyglet.lib.load_library('avutil', win32='avutil-56') # dylib on Mac OS X
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0
@@ -149,16 +149,17 @@ class AVFrame(Structure):
         ('decode_error_flags', c_int),
         ('channels', c_int),
         ('pkt_size', c_int),
-        ('qscale_table', POINTER(c_int)), #Deprecated
+        ('qscale_table', POINTER(c_int8)), #Deprecated
         ('qstride', c_int), #Deprecated
         ('qscale_type', c_int), #Deprecated
         ('qp_table_buf', POINTER(AVBufferRef)), #Deprecated
         ('hw_frames_ctx', POINTER(AVBufferRef)),
-        ('opaque_ref', POINTER(AVBufferRef))
-        #!('crop_top', c_size_t), # video frames only
-        #!('crop_bottom', c_size_t), # video frames only
-        #!('crop_left', c_size_t), # video frames only
-        #!('crop_right', c_size_t) # video frames only
+        ('opaque_ref', POINTER(AVBufferRef)),
+        ('crop_top', c_size_t), # video frames only
+        ('crop_bottom', c_size_t), # video frames only
+        ('crop_left', c_size_t), # video frames only
+        ('crop_right', c_size_t), # video frames only
+        ('private_ref', POINTER(AVBufferRef)),
     ]
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
