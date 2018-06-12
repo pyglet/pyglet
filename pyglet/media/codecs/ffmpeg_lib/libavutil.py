@@ -42,7 +42,7 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet
 import pyglet.lib
 
-avutil = pyglet.lib.load_library('avutil', win32='avutil-55')
+avutil = pyglet.lib.load_library('avutil', win32='avutil-56')
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0
@@ -69,7 +69,19 @@ AV_NUM_DATA_POINTERS = 8
 
 AV_PIX_FMT_RGB24 = 2
 
-class AVBufferRef(Structure): pass
+class AVBuffer(Structure):
+    _fields_ = [
+		('data', POINTER(c_uint8)),
+        ('size', c_int),
+		#.. more
+    ]
+
+class AVBufferRef(Structure):
+    _fields_ = [
+        ('buffer', POINTER(AVBuffer)),
+		('data', POINTER(c_uint8)),
+        ('size', c_int)
+    ]
 
 
 class AVDictionaryEntry(Structure):
@@ -104,13 +116,13 @@ class AVFrame(Structure):
         ('pict_type', c_int),
         ('sample_aspect_ratio', AVRational),
         ('pts', c_int64),
-        ('pkt_pts', c_int64),
+        ('pkt_pts', c_int64), #Deprecated
         ('pkt_dts', c_int64),
         ('coded_picture_number', c_int),
         ('display_picture_number', c_int),
         ('quality', c_int),
         ('opaque', c_void_p),
-        ('error', c_uint64),
+        ('error', c_uint64 * AV_NUM_DATA_POINTERS), #Deprecated
         ('repeat_pict', c_int),
         ('interlaced_frame', c_int),
         ('top_field_first', c_int),
@@ -131,7 +143,22 @@ class AVFrame(Structure):
         ('chroma_location', c_int),
         ('best_effort_timestamp', c_int64),
         ('pkt_pos', c_int64),
-        ('pkt_duration', c_int64)
+        ('pkt_duration', c_int64),
+		#!
+		('metadata', POINTER(AVDictionary)),
+		('decode_error_flags', c_int),
+		('channels', c_int),
+		('pkt_size', c_int),
+		('qscale_table', POINTER(c_int)), #Deprecated
+		('qstride', c_int), #Deprecated
+		('qscale_type', c_int), #Deprecated
+		('qp_table_buf', POINTER(AVBufferRef)), #Deprecated
+		('hw_frames_ctx', POINTER(AVBufferRef)),
+		('opaque_ref', POINTER(AVBufferRef))
+		#!('crop_top', c_size_t), # video frames only
+		#!('crop_bottom', c_size_t), # video frames only
+		#!('crop_left', c_size_t), # video frames only
+		#!('crop_right', c_size_t) # video frames only
     ]
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000

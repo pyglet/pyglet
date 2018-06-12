@@ -42,7 +42,7 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet
 import pyglet.lib
 
-swscale = pyglet.lib.load_library('swscale', win32='swscale-4')
+swscale = pyglet.lib.load_library('swscale', win32='swscale-5')
 
 SWS_FAST_BILINEAR = 1
 

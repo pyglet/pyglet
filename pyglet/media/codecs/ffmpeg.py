@@ -74,13 +74,14 @@ class FileInfo(object):
 
 class StreamVideoInfo(object):
     def __init__(self, width, height, sample_aspect_num, sample_aspect_den,
-                 frame_rate_num, frame_rate_den):
+                 frame_rate_num, frame_rate_den, codec_id):
         self.width = width
         self.height = height
         self.sample_aspect_num = sample_aspect_num
         self.sample_aspect_den = sample_aspect_den
         self.frame_rate_num = frame_rate_num
         self.frame_rate_den = frame_rate_den
+        self.codec_id = codec_id
 
 
 class StreamAudioInfo(object):
@@ -122,7 +123,7 @@ def ffmpeg_get_audio_buffer_size(audio_format):
 def ffmpeg_init():
     """Initialize libavformat and register all the muxers, demuxers and 
     protocols."""
-    avformat.av_register_all()
+    pass
 
 
 def ffmpeg_open_filename(filename):
@@ -218,6 +219,37 @@ def ffmpeg_stream_info(file, stream_index):
     av_stream = file.context.contents.streams[stream_index].contents
     context = av_stream.codecpar.contents
     if context.codec_type == AVMEDIA_TYPE_VIDEO:
+        if _debug:
+            print ("codec_type=",context.codec_type)
+            print (" codec_id=",context.codec_id)
+            print (" codec_tag=",context.codec_tag)
+            print (" extradata=",context.extradata)
+            print (" extradata_size=",context.extradata_size)
+            print (" format=",context.format)
+            print (" bit_rate=",context.bit_rate)
+            print (" bits_per_coded_sample=",context.bits_per_coded_sample)
+            print (" bits_per_raw_sample=",context.bits_per_raw_sample)
+            print (" profile=",context.profile)
+            print (" level=",context.level)
+            print (" width=",context.width)
+            print (" height=",context.height)
+            print (" sample_aspect_ratio=",context.sample_aspect_ratio.num,context.sample_aspect_ratio.den)
+            print (" field_order=",context.field_order)
+            print (" color_range=",context.color_range)
+            print (" color_primaries=",context.color_primaries)
+            print (" color_trc=",context.color_trc)
+            print (" color_space=",context.color_space)
+            print (" chroma_location=",context.chroma_location)
+            print (" video_delay=",context.video_delay)
+            print (" channel_layout=",context.channel_layout)
+            print (" channels=",context.channels)
+            print (" sample_rate=",context.sample_rate)
+            print (" block_align=",context.block_align)
+            print (" frame_size=",context.frame_size)
+            print (" initial_padding=",context.initial_padding)
+            print (" trailing_padding=",context.trailing_padding)
+            print (" seek_preroll=",context.seek_preroll)
+        #
         frame_rate = avformat.av_guess_frame_rate(file.context, av_stream, None)
         info = StreamVideoInfo(
             context.width,
@@ -225,7 +257,8 @@ def ffmpeg_stream_info(file, stream_index):
             context.sample_aspect_ratio.num,
             context.sample_aspect_ratio.den,
             frame_rate.num,
-            frame_rate.den
+            frame_rate.den,
+			context.codec_id
         )
     elif context.codec_type == AVMEDIA_TYPE_AUDIO:
         info = StreamAudioInfo(
@@ -263,7 +296,7 @@ def ffmpeg_open_stream(file, index):
         raise FFmpegException('Could not copy the AVCodecContext.')
     codec = avcodec.avcodec_find_decoder(codec_context.contents.codec_id)
     if not codec:
-        raise FFmpegException('No codec found for this media.')
+        raise FFmpegException('No codec found for this media. codecID=%s'%(codec_context.contents.codec_id)) #!
     result = avcodec.avcodec_open2(codec_context, codec, None)
     if result < 0:
         raise FFmpegException('Could not open the media with the codec.')
@@ -967,7 +1000,6 @@ if pyglet.options['debug_media']:
     _debug = True
 else:
     _debug = False
-
 
 #########################################
 #   Decoder class:
