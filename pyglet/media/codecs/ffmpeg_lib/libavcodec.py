@@ -49,10 +49,10 @@ FF_INPUT_BUFFER_PADDING_SIZE = 32
 
 class AVPacketSideData(Structure):
     _fields_ = [
-		('data', POINTER(c_uint8)),
+        ('data', POINTER(c_uint8)),
         ('size', c_int),
-		('type', c_int)
-	]
+        ('type', c_int)
+    ]
 AVBufferRef = libavutil.AVBufferRef
 
 class AVPacket(Structure):
@@ -106,34 +106,34 @@ class AVCodecParameters(Structure):
         ('seek_preroll', c_int),
     ]
 class AVProfile(Structure):
-	_fields_ = [
-		('profile', c_int),
-		('name', c_char_p),
-	]
+    _fields_ = [
+        ('profile', c_int),
+        ('name', c_char_p),
+    ]
 class AVCodecDescriptor(Structure):
-	_fields_ = [
-		('id', c_int),
-		('type', c_int),
-		('name', c_char_p),
-		('long_name', c_char_p),
-		('props', c_int),
-		('mime_types', c_char_p),
-		('profiles', POINTER(AVProfile))
-	]
+    _fields_ = [
+        ('id', c_int),
+        ('type', c_int),
+        ('name', c_char_p),
+        ('long_name', c_char_p),
+        ('props', c_int),
+        ('mime_types', c_char_p),
+        ('profiles', POINTER(AVProfile))
+    ]
 class AVCodecInternal(Structure): pass
 class AVCodec(Structure):
     _fields_ = [
         ('name', c_char_p),
         ('long_name', c_char_p),
-		('type', c_int),
-		('id', c_int),
-		('capabilities', c_int),
-		('supported_framerates', POINTER(AVRational)),
-		('pix_fmts', POINTER(c_int)),
-		('supported_samplerates', POINTER(c_int)),
-		('sample_fmts', POINTER(c_int)),
-		('channel_layouts', POINTER(c_uint64)),
-		('max_lowres', c_uint8),
+        ('type', c_int),
+        ('id', c_int),
+        ('capabilities', c_int),
+        ('supported_framerates', POINTER(AVRational)),
+        ('pix_fmts', POINTER(c_int)),
+        ('supported_samplerates', POINTER(c_int)),
+        ('sample_fmts', POINTER(c_int)),
+        ('channel_layouts', POINTER(c_uint64)),
+        ('max_lowres', c_uint8),
         # And more...
     ]
 class AVCodecContext(Structure): pass
@@ -318,35 +318,35 @@ AVCodecContext._fields_ = [
         ('side_data_only_packets', c_int), #Deprecated
         ('initial_padding', c_int),
         ('framerate', AVRational),
-		#!
-		('sw_pix_fmt', c_int),
-		('pkt_timebase', AVRational),
-		('codec_dexcriptor', AVCodecDescriptor),
-		('pts_correction_num_faulty_pts', c_int64),
-		('pts_correction_num_faulty_dts', c_int64),
-		('pts_correction_last_pts', c_int64),
-		('pts_correction_last_dts', c_int64),
-		('sub_charenc', c_char_p),
-		('sub_charenc_mode', c_int),
-		('skip_alpha', c_int),
-		('seek_preroll', c_int),
-		('debug_mv', c_int),
-		('chroma_intra_matrix', POINTER(c_uint16)),
-		('dump_separator', POINTER(c_uint8)),
-		('codec_whitelist', c_char_p),
-		('properties', c_uint),
-		('coded_side_data', POINTER(AVPacketSideData)),
-		('nb_coded_side_data', c_int),
-		('hw_frames_ctx', POINTER(AVBufferRef)),
-		('sub_text_format', c_int),
-		('trailing_padding', c_int),
-		('max_pixels', c_int64),
-		('hw_device_ctx', POINTER(AVBufferRef)),
-		('hwaccel_flags', c_int),
-		('apply_cropping', c_int),
-		('extra_hw_frames', c_int)
-		
-		
+        #!
+        ('sw_pix_fmt', c_int),
+        ('pkt_timebase', AVRational),
+        ('codec_dexcriptor', AVCodecDescriptor),
+        ('pts_correction_num_faulty_pts', c_int64),
+        ('pts_correction_num_faulty_dts', c_int64),
+        ('pts_correction_last_pts', c_int64),
+        ('pts_correction_last_dts', c_int64),
+        ('sub_charenc', c_char_p),
+        ('sub_charenc_mode', c_int),
+        ('skip_alpha', c_int),
+        ('seek_preroll', c_int),
+        ('debug_mv', c_int),
+        ('chroma_intra_matrix', POINTER(c_uint16)),
+        ('dump_separator', POINTER(c_uint8)),
+        ('codec_whitelist', c_char_p),
+        ('properties', c_uint),
+        ('coded_side_data', POINTER(AVPacketSideData)),
+        ('nb_coded_side_data', c_int),
+        ('hw_frames_ctx', POINTER(AVBufferRef)),
+        ('sub_text_format', c_int),
+        ('trailing_padding', c_int),
+        ('max_pixels', c_int64),
+        ('hw_device_ctx', POINTER(AVBufferRef)),
+        ('hwaccel_flags', c_int),
+        ('apply_cropping', c_int),
+        ('extra_hw_frames', c_int)
+        
+        
     ]
 class AVPicture(Structure):  #Deprecated
     _fields_ = [

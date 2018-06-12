@@ -258,7 +258,7 @@ def ffmpeg_stream_info(file, stream_index):
             context.sample_aspect_ratio.den,
             frame_rate.num,
             frame_rate.den,
-			context.codec_id
+            context.codec_id
         )
     elif context.codec_type == AVMEDIA_TYPE_AUDIO:
         info = StreamAudioInfo(

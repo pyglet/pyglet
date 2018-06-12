@@ -71,15 +71,15 @@ AV_PIX_FMT_RGB24 = 2
 
 class AVBuffer(Structure):
     _fields_ = [
-		('data', POINTER(c_uint8)),
+        ('data', POINTER(c_uint8)),
         ('size', c_int),
-		#.. more
+        #.. more
     ]
 
 class AVBufferRef(Structure):
     _fields_ = [
         ('buffer', POINTER(AVBuffer)),
-		('data', POINTER(c_uint8)),
+        ('data', POINTER(c_uint8)),
         ('size', c_int)
     ]
 
@@ -144,21 +144,21 @@ class AVFrame(Structure):
         ('best_effort_timestamp', c_int64),
         ('pkt_pos', c_int64),
         ('pkt_duration', c_int64),
-		#!
-		('metadata', POINTER(AVDictionary)),
-		('decode_error_flags', c_int),
-		('channels', c_int),
-		('pkt_size', c_int),
-		('qscale_table', POINTER(c_int)), #Deprecated
-		('qstride', c_int), #Deprecated
-		('qscale_type', c_int), #Deprecated
-		('qp_table_buf', POINTER(AVBufferRef)), #Deprecated
-		('hw_frames_ctx', POINTER(AVBufferRef)),
-		('opaque_ref', POINTER(AVBufferRef))
-		#!('crop_top', c_size_t), # video frames only
-		#!('crop_bottom', c_size_t), # video frames only
-		#!('crop_left', c_size_t), # video frames only
-		#!('crop_right', c_size_t) # video frames only
+        #!
+        ('metadata', POINTER(AVDictionary)),
+        ('decode_error_flags', c_int),
+        ('channels', c_int),
+        ('pkt_size', c_int),
+        ('qscale_table', POINTER(c_int)), #Deprecated
+        ('qstride', c_int), #Deprecated
+        ('qscale_type', c_int), #Deprecated
+        ('qp_table_buf', POINTER(AVBufferRef)), #Deprecated
+        ('hw_frames_ctx', POINTER(AVBufferRef)),
+        ('opaque_ref', POINTER(AVBufferRef))
+        #!('crop_top', c_size_t), # video frames only
+        #!('crop_bottom', c_size_t), # video frames only
+        #!('crop_left', c_size_t), # video frames only
+        #!('crop_right', c_size_t) # video frames only
     ]
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
