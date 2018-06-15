@@ -42,7 +42,11 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet
 import pyglet.lib
 
-avutil = pyglet.lib.load_library('avutil', win32='avutil-56') # dylib on Mac OS X
+avutil = pyglet.lib.load_library(
+    'avutil',
+    win32='avutil-56',
+    darwin='avutil.56'
+)
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0

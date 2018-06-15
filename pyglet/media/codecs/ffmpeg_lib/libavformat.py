@@ -44,7 +44,11 @@ import pyglet.lib
 from . import libavcodec
 from . import libavutil
 
-avformat = pyglet.lib.load_library('avformat', win32='avformat-58') # dylib on Mac OS X
+avformat = pyglet.lib.load_library(
+    'avformat',
+    win32='avformat-58',
+    darwin='avformat.58'
+)
 
 AVSEEK_FLAG_BACKWARD = 1 # ///< seek backward
 AVSEEK_FLAG_BYTE = 2     # ///< seeking based on position in bytes

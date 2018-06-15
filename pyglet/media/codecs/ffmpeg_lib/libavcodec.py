@@ -43,7 +43,11 @@ import pyglet
 import pyglet.lib
 from . import libavutil
 
-avcodec = pyglet.lib.load_library('avcodec', win32='avcodec-58') # dylib on Mac OS X
+avcodec = pyglet.lib.load_library(
+    'avcodec',
+    win32='avcodec-58',
+    darwin='avcodec.58'
+)
 
 FF_INPUT_BUFFER_PADDING_SIZE = 32
 
