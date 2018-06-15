@@ -68,6 +68,8 @@ AV_SAMPLE_FMT_S64P = 11
 AV_NUM_DATA_POINTERS = 8
 
 AV_PIX_FMT_RGB24 = 2
+AV_PIX_FMT_ARGB = 25
+AV_PIX_FMT_RGBA = 26
 
 class AVBuffer(Structure):
     _fields_ = [
@@ -165,6 +167,7 @@ AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
 AV_TIME_BASE_Q = AVRational(1, AV_TIME_BASE)
 
+
 avutil.av_version_info.restype = c_char_p
 avutil.av_dict_get.restype = POINTER(AVDictionaryEntry)
 avutil.av_dict_get.argtypes = [POINTER(AVDictionary),
@@ -185,6 +188,13 @@ avutil.av_strerror.restype = c_int
 avutil.av_strerror.argtypes = [c_int, c_char_p, c_size_t]
 avutil.av_frame_get_best_effort_timestamp.restype = c_int64
 avutil.av_frame_get_best_effort_timestamp.argtypes = [POINTER(AVFrame)]
+avutil.av_image_fill_arrays.restype = c_int
+avutil.av_image_fill_arrays.argtypes = [POINTER(c_uint8) * 4, c_int * 4,
+            POINTER(c_uint8), c_int, c_int, c_int, c_int]
+avutil.av_dict_set.restype = c_int
+avutil.av_dict_set.argtypes = [POINTER(POINTER(AVDictionary)),
+                               c_char_p, c_char_p, c_int]
+avutil.av_dict_free.argtypes = [POINTER(POINTER(AVDictionary))]
 
 
 __all__ = [
@@ -210,9 +220,12 @@ __all__ = [
 'AV_SAMPLE_FMT_S64P',
 'AV_NUM_DATA_POINTERS',
 'AV_PIX_FMT_RGB24',
+'AV_PIX_FMT_ARGB',
+'AV_PIX_FMT_RGBA',
 'AV_NOPTS_VALUE',
 'AV_TIME_BASE',
 'AV_TIME_BASE_Q',
 'AVFrame',
-'AVRational'
+'AVRational',
+'AVDictionary',
 ]

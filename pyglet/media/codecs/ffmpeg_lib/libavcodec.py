@@ -387,6 +387,10 @@ avcodec.avcodec_free_context.argtypes = [POINTER(POINTER(AVCodecContext))]
 avcodec.avcodec_parameters_to_context.restype = c_int
 avcodec.avcodec_parameters_to_context.argtypes = [POINTER(AVCodecContext),
             POINTER(AVCodecParameters)]
+avcodec.avcodec_get_name.restype = c_char_p
+avcodec.avcodec_get_name.argtypes = [c_int]
+avcodec.avcodec_find_decoder_by_name.restype = POINTER(AVCodec)
+avcodec.avcodec_find_decoder_by_name.argtypes = [c_char_p]
 
 __all__ = [
 'avcodec',

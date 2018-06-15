@@ -222,6 +222,8 @@ def ffmpeg_stream_info(file, stream_index):
         if _debug:
             print ("codec_type=",context.codec_type)
             print (" codec_id=",context.codec_id)
+            codec_name = avcodec.avcodec_get_name(context.codec_id).decode('utf-8')
+            print (" codec name=", codec_name)
             print (" codec_tag=",context.codec_tag)
             print (" extradata=",context.extradata)
             print (" extradata_size=",context.extradata_size)
@@ -295,8 +297,17 @@ def ffmpeg_open_stream(file, index):
         avcodec.avcodec_free_context(byref(codec_context))
         raise FFmpegException('Could not copy the AVCodecContext.')
     codec = avcodec.avcodec_find_decoder(codec_context.contents.codec_id)
+    codec = avcodec.avcodec_find_decoder_by_name("libvpx".encode('utf-8'))
+    codec_context.contents.codec_id = codec.contents.id
     if not codec:
-        raise FFmpegException('No codec found for this media. codecID=%s'%(codec_context.contents.codec_id)) #!
+        raise FFmpegException('No codec found for this media. '
+                              'codecID={}'.format(codec_context.contents.codec_id))
+    if _debug:
+        print("Loaded codec: ", codec.contents.long_name.decode())
+
+    # opts = POINTER(AVDictionary)()
+    # avutil.av_dict_set(byref(opts), b"alpha_mode", b"1", 0)
+
     result = avcodec.avcodec_open2(codec_context, codec, None)
     if result < 0:
         raise FFmpegException('Could not open the media with the codec.')
@@ -306,6 +317,8 @@ def ffmpeg_open_stream(file, index):
     stream.type = codec_context.contents.codec_type
     stream.frame = avutil.av_frame_alloc()
     stream.time_base = file.context.contents.streams[index].contents.time_base
+
+    # avutil.av_dict_free(byref(opts))
 
     return stream
 
@@ -856,7 +869,7 @@ class FFmpegSource(StreamingSource):
 
         width = self.video_format.width
         height = self.video_format.height
-        pitch = width * 3
+        pitch = width * 4
         buffer = (c_uint8 * (pitch * height))()
         try:
             result = self._ffmpeg_decode_video(video_packet.packet,
@@ -864,7 +877,7 @@ class FFmpegSource(StreamingSource):
         except FFmpegException:
             image_data = None
         else:
-            image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
+            image_data = image.ImageData(width, height, 'RGBA', buffer, pitch)
             timestamp = ffmpeg_get_frame_ts(self._video_stream)
             timestamp = timestamp_from_ffmpeg(timestamp)
             video_packet.timestamp = timestamp - self.start_time
@@ -884,7 +897,8 @@ class FFmpegSource(StreamingSource):
 
     def _ffmpeg_decode_video(self, packet, data_out):
         stream = self._video_stream
-        picture_rgb = AVPicture()
+        rgba_ptrs = (POINTER(c_uint8) * 4)()
+        rgba_stride = (c_int * 4)()
         width = stream.codec_context.contents.width
         height = stream.codec_context.contents.height
         if stream.type != AVMEDIA_TYPE_VIDEO:
@@ -901,13 +915,13 @@ class FFmpegSource(StreamingSource):
         if not got_picture:
             raise FFmpegException('No frame could be decompressed')
 
-        avcodec.avpicture_fill(byref(picture_rgb), data_out, AV_PIX_FMT_RGB24,
-                               width, height)
+        avutil.av_image_fill_arrays(rgba_ptrs, rgba_stride, data_out,
+                                    AV_PIX_FMT_RGBA, width, height, 1)
 
         self.img_convert_ctx = swscale.sws_getCachedContext(
             self.img_convert_ctx,
             width, height, stream.codec_context.contents.pix_fmt,
-            width, height, AV_PIX_FMT_RGB24,
+            width, height, AV_PIX_FMT_RGBA,
             SWS_FAST_BILINEAR, None, None, None)
 
         swscale.sws_scale(self.img_convert_ctx,
@@ -916,8 +930,8 @@ class FFmpegSource(StreamingSource):
                           stream.frame.contents.linesize,
                           0,
                           height,
-                          picture_rgb.data,
-                          picture_rgb.linesize)
+                          rgba_ptrs,
+                          rgba_stride)
         return bytes_used
 
     def get_next_video_timestamp(self):
