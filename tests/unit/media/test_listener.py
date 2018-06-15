@@ -35,6 +35,8 @@ def test_openal_listener():
     listener = driver.get_listener()
     check_listener_defaults(listener=listener)
     check_modifying_values(listener=listener)
+    # Need to garbage collect the listener before the driver is deleted
+    del listener
 
 
 @require_platform(Platform.LINUX)
@@ -43,6 +45,8 @@ def test_pulse_listener():
     listener = driver.get_listener()
     check_listener_defaults(listener=listener)
     check_modifying_values(listener=listener)
+    # Need to garbage collect the listener before the driver is deleted
+    del listener
 
 
 @require_platform(Platform.WINDOWS)
@@ -51,3 +55,5 @@ def test_directsound_listener():
     listener = driver.get_listener()
     check_listener_defaults(listener=listener)
     check_modifying_values(listener=listener)
+    # Need to garbage collect the listener before the driver is deleted
+    del listener
