@@ -348,11 +348,10 @@ AVCodecContext._fields_ = [
         
         
     ]
-class AVPicture(Structure):  #Deprecated
-    _fields_ = [
-        ('data', POINTER(c_uint8) * AV_NUM_DATA_POINTERS), #Deprecated
-        ('linesize', c_int * AV_NUM_DATA_POINTERS) #Deprecated
-    ]
+
+AV_CODEC_ID_VP8 = 139
+AV_CODEC_ID_VP9 = 167
+
 avcodec.av_packet_unref.argtypes = [POINTER(AVPacket)]
 avcodec.av_packet_free.argtypes = [POINTER(POINTER(AVPacket))]
 avcodec.av_packet_clone.restype = POINTER(AVPacket)
@@ -376,10 +375,6 @@ avcodec.avcodec_decode_video2.restype = c_int
 avcodec.avcodec_decode_video2.argtypes = [POINTER(AVCodecContext),
             POINTER(AVFrame), POINTER(c_int),
             POINTER(AVPacket)]
-avcodec.avpicture_fill.restype = c_int
-avcodec.avpicture_fill.argtypes = [POINTER(AVPicture),
-            POINTER(c_uint8), c_int,
-            c_int, c_int]
 avcodec.avcodec_flush_buffers.argtypes = [POINTER(AVCodecContext)]
 avcodec.avcodec_alloc_context3.restype = POINTER(AVCodecContext)
 avcodec.avcodec_alloc_context3.argtypes = [POINTER(AVCodec)]
@@ -397,5 +392,6 @@ __all__ = [
 'FF_INPUT_BUFFER_PADDING_SIZE',
 'AVPacket',
 'AVCodecContext',
-'AVPicture'
+'AV_CODEC_ID_VP8',
+'AV_CODEC_ID_VP9',
 ]

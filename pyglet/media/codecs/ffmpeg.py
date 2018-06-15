@@ -219,11 +219,11 @@ def ffmpeg_stream_info(file, stream_index):
     av_stream = file.context.contents.streams[stream_index].contents
     context = av_stream.codecpar.contents
     if context.codec_type == AVMEDIA_TYPE_VIDEO:
-        if True:#_debug:
+        if _debug:
             print ("codec_type=",context.codec_type)
             print (" codec_id=",context.codec_id)
             codec_name = avcodec.avcodec_get_name(context.codec_id).decode('utf-8')
-            print ("  codec name=", codec_name)
+            print (" codec name=", codec_name)
             print (" codec_tag=",context.codec_tag)
             print (" extradata=",context.extradata)
             print (" extradata_size=",context.extradata_size)
@@ -298,19 +298,24 @@ def ffmpeg_open_stream(file, index):
         raise FFmpegException('Could not copy the AVCodecContext.')
     codec_id = codec_context.contents.codec_id
     codec = avcodec.avcodec_find_decoder(codec_id)
-    print("!Found Codec=",codec_id,"=",codec.contents.long_name.decode())
-    if codec_id == 167: #Google VP9
+    if _debug:
+        print("Found Codec=",codec_id,"=",codec.contents.long_name.decode())
+
+    # VP8 and VP9 default codec don't support alpha transparency.
+    # Force libvpx codec in this case.
+    if codec_id == AV_CODEC_ID_VP9:
+        codec = avcodec.avcodec_find_decoder_by_name("libvpx-vp9".encode('utf-8'))
+
+    if codec_id == AV_CODEC_ID_VP8:
         codec = avcodec.avcodec_find_decoder_by_name("libvpx".encode('utf-8'))
-        codec_id = codec.contents.id
-        print("!Replaced with Codec=",codec_id,"=", codec.contents.long_name.decode())
+
     if not codec:
         raise FFmpegException('No codec found for this media. '
                               'codecID={}'.format(codec_id))
+
+    codec_id = codec.contents.id
     if _debug:
         print("Loaded codec: ", codec.contents.long_name.decode())
-
-    # opts = POINTER(AVDictionary)()
-    # avutil.av_dict_set(byref(opts), b"alpha_mode", b"1", 0)
 
     result = avcodec.avcodec_open2(codec_context, codec, None)
     if result < 0:
@@ -321,8 +326,6 @@ def ffmpeg_open_stream(file, index):
     stream.type = codec_context.contents.codec_type
     stream.frame = avutil.av_frame_alloc()
     stream.time_base = file.context.contents.streams[index].contents.time_base
-
-    # avutil.av_dict_free(byref(opts))
 
     return stream
 
