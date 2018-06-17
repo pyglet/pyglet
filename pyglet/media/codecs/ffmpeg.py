@@ -299,15 +299,17 @@ def ffmpeg_open_stream(file, index):
     codec_id = codec_context.contents.codec_id
     codec = avcodec.avcodec_find_decoder(codec_id)
     if _debug:
-        print("Found Codec=",codec_id,"=",codec.contents.long_name.decode())
+        print("Found Codec=", codec_id, "=", codec.contents.long_name.decode())
 
     # VP8 and VP9 default codec don't support alpha transparency.
     # Force libvpx codec in this case.
     if codec_id == AV_CODEC_ID_VP9:
-        codec = avcodec.avcodec_find_decoder_by_name("libvpx-vp9".encode('utf-8'))
+        newcodec = avcodec.avcodec_find_decoder_by_name("libvpx-vp9".encode('utf-8'))
+        codec = newcodec or codec
 
     if codec_id == AV_CODEC_ID_VP8:
-        codec = avcodec.avcodec_find_decoder_by_name("libvpx".encode('utf-8'))
+        newcodec = avcodec.avcodec_find_decoder_by_name("libvpx".encode('utf-8'))
+        codec = newcodec or codec
 
     if not codec:
         raise FFmpegException('No codec found for this media. '
