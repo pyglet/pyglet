@@ -4,12 +4,12 @@ Sound and video
 pyglet can play many audio and video formats. Audio is played back with
 either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated 
 mixing and surround-sound 3D positioning. Video is played into OpenGL 
-textures, and so can be easily be manipulated in real-time by applications 
+textures, and so can be easily manipulated in real-time by applications 
 and incorporated into 3D environments.
 
-Decoding of compressed audio and video is provided by `FFmpeg`_, an optional
-component available for Linux, Windows and Mac OS X. FFmpeg needs to be 
-installed separately.
+Decoding of compressed audio and video is provided by `FFmpeg`_ v4.X, an
+optional component available for Linux, Windows and Mac OS X. FFmpeg needs
+to be installed separately.
 
 If FFmpeg is not present, pyglet will fall back to reading uncompressed WAV
 files only. This may be sufficient for many applications that require only a
@@ -132,23 +132,39 @@ Some of the supported video formats are:
 * OGG/Theora
 * Xvid
 * WMV
+* Webm
 
 For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
 to try playing back your target file with the ``media_player.py`` example.
 
 New versions of FFmpeg as they are released may support additional formats, or
 fix errors in the current implementation. Currently a C bindings was written
-with ctypes using FFmpeg v3.3. Future versions of FFmpeg might need a rewrite
-of the binding.
+with ctypes using FFmpeg v4.X. This means that this version of pyglet will
+support all FFmpeg binaries with the major version set to 4.
 
 FFmpeg installation
 -------------------
 
 You can install FFmpeg for your platform by following the instructions found
-in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page.
+in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
+choose the shared build for the targeted OS with the architecture similar to
+the Python interpreter.
 
-For Mac OS and Linux, the library is usually installed system-wide. For 
-Windows users, it's not recommended to install the library in one of the 
+This means that the major version must be 4.X. All minor versions are supported.
+Choose the correct architecture depending on the targeted **Python interpreter**.
+If you're shipping your project with a 32 bits interpreter, you must download the
+32 bits shared binaries.
+
+On Windows, the usual error message when the wrong architecture was downloaded
+is::
+
+    WindowsError: [Error 193] %1 is not a valid Win32 application
+
+Finally make sure you download the **shared** builds, not the static or the
+dev builds.
+
+For Mac OS and Linux, the library is usually already installed system-wide.
+For Windows users, it's not recommended to install the library in one of the 
 windows sub-folders.
 
 Instead we recommend to use the :py:data:`pyglet.options`
@@ -157,8 +173,17 @@ Instead we recommend to use the :py:data:`pyglet.options`
     import pyglet
     pyglet.options['search_local_libs'] = True
 
-This will allow pyglet to find the FFmpeg binaries in the ``lib`` folder 
+This will allow pyglet to find the FFmpeg binaries in the ``lib`` sub-folder 
 located in your running script folder.
+
+Another solution is to manipulate the environment variable. On Windows you can
+add the dll location to the PATH::
+
+    os.environ["PATH"] += "path/to/ffmpeg"
+
+For Linux and Mac OS::
+
+    os.environ["LD_LIBRARY_PATH"] += ":" + "path/to/ffmpeg"
 
 Loading media
 -------------
