@@ -256,6 +256,9 @@ class PlayerWindow(pyglet.window.Window):
             i += 1
             x += screen_button.width + self.GUI_PADDING
 
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     def on_player_next_source(self):
         self.gui_update_state()
         self.gui_update_source()

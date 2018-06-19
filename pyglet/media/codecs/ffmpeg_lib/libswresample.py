@@ -42,7 +42,11 @@ from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
 import pyglet
 import pyglet.lib
 
-swresample = pyglet.lib.load_library('swresample', win32='swresample-2')
+swresample = pyglet.lib.load_library(
+    'swresample',
+    win32='swresample-3',
+    darwin='swresample.3'
+)
 
 SWR_CH_MAX = 32
 

@@ -74,13 +74,14 @@ class FileInfo(object):
 
 class StreamVideoInfo(object):
     def __init__(self, width, height, sample_aspect_num, sample_aspect_den,
-                 frame_rate_num, frame_rate_den):
+                 frame_rate_num, frame_rate_den, codec_id):
         self.width = width
         self.height = height
         self.sample_aspect_num = sample_aspect_num
         self.sample_aspect_den = sample_aspect_den
         self.frame_rate_num = frame_rate_num
         self.frame_rate_den = frame_rate_den
+        self.codec_id = codec_id
 
 
 class StreamAudioInfo(object):
@@ -122,7 +123,7 @@ def ffmpeg_get_audio_buffer_size(audio_format):
 def ffmpeg_init():
     """Initialize libavformat and register all the muxers, demuxers and 
     protocols."""
-    avformat.av_register_all()
+    pass
 
 
 def ffmpeg_open_filename(filename):
@@ -218,6 +219,39 @@ def ffmpeg_stream_info(file, stream_index):
     av_stream = file.context.contents.streams[stream_index].contents
     context = av_stream.codecpar.contents
     if context.codec_type == AVMEDIA_TYPE_VIDEO:
+        if _debug:
+            print ("codec_type=",context.codec_type)
+            print (" codec_id=",context.codec_id)
+            codec_name = avcodec.avcodec_get_name(context.codec_id).decode('utf-8')
+            print (" codec name=", codec_name)
+            print (" codec_tag=",context.codec_tag)
+            print (" extradata=",context.extradata)
+            print (" extradata_size=",context.extradata_size)
+            print (" format=",context.format)
+            print (" bit_rate=",context.bit_rate)
+            print (" bits_per_coded_sample=",context.bits_per_coded_sample)
+            print (" bits_per_raw_sample=",context.bits_per_raw_sample)
+            print (" profile=",context.profile)
+            print (" level=",context.level)
+            print (" width=",context.width)
+            print (" height=",context.height)
+            print (" sample_aspect_ratio=",context.sample_aspect_ratio.num,context.sample_aspect_ratio.den)
+            print (" field_order=",context.field_order)
+            print (" color_range=",context.color_range)
+            print (" color_primaries=",context.color_primaries)
+            print (" color_trc=",context.color_trc)
+            print (" color_space=",context.color_space)
+            print (" chroma_location=",context.chroma_location)
+            print (" video_delay=",context.video_delay)
+            print (" channel_layout=",context.channel_layout)
+            print (" channels=",context.channels)
+            print (" sample_rate=",context.sample_rate)
+            print (" block_align=",context.block_align)
+            print (" frame_size=",context.frame_size)
+            print (" initial_padding=",context.initial_padding)
+            print (" trailing_padding=",context.trailing_padding)
+            print (" seek_preroll=",context.seek_preroll)
+        #
         frame_rate = avformat.av_guess_frame_rate(file.context, av_stream, None)
         info = StreamVideoInfo(
             context.width,
@@ -225,7 +259,8 @@ def ffmpeg_stream_info(file, stream_index):
             context.sample_aspect_ratio.num,
             context.sample_aspect_ratio.den,
             frame_rate.num,
-            frame_rate.den
+            frame_rate.den,
+            context.codec_id
         )
     elif context.codec_type == AVMEDIA_TYPE_AUDIO:
         info = StreamAudioInfo(
@@ -261,9 +296,29 @@ def ffmpeg_open_stream(file, index):
     if result < 0:
         avcodec.avcodec_free_context(byref(codec_context))
         raise FFmpegException('Could not copy the AVCodecContext.')
-    codec = avcodec.avcodec_find_decoder(codec_context.contents.codec_id)
+    codec_id = codec_context.contents.codec_id
+    codec = avcodec.avcodec_find_decoder(codec_id)
+    if _debug:
+        print("Found Codec=", codec_id, "=", codec.contents.long_name.decode())
+
+    # VP8 and VP9 default codec don't support alpha transparency.
+    # Force libvpx codec in this case.
+    if codec_id == AV_CODEC_ID_VP9:
+        newcodec = avcodec.avcodec_find_decoder_by_name("libvpx-vp9".encode('utf-8'))
+        codec = newcodec or codec
+
+    if codec_id == AV_CODEC_ID_VP8:
+        newcodec = avcodec.avcodec_find_decoder_by_name("libvpx".encode('utf-8'))
+        codec = newcodec or codec
+
     if not codec:
-        raise FFmpegException('No codec found for this media.')
+        raise FFmpegException('No codec found for this media. '
+                              'codecID={}'.format(codec_id))
+
+    codec_id = codec.contents.id
+    if _debug:
+        print("Loaded codec: ", codec.contents.long_name.decode())
+
     result = avcodec.avcodec_open2(codec_context, codec, None)
     if result < 0:
         raise FFmpegException('Could not open the media with the codec.')
@@ -405,9 +460,9 @@ class FFmpegSource(StreamingSource):
             raise FFmpegException('Could not open "{0}"'.format(filename))
 
         self._video_stream = None
-        self._video_stream_index = -1
+        self._video_stream_index = None
         self._audio_stream = None
-        self._audio_stream_index = -1
+        self._audio_stream_index = None
         self._audio_format = None
 
         self.img_convert_ctx = POINTER(SwsContext)()
@@ -823,7 +878,7 @@ class FFmpegSource(StreamingSource):
 
         width = self.video_format.width
         height = self.video_format.height
-        pitch = width * 3
+        pitch = width * 4
         buffer = (c_uint8 * (pitch * height))()
         try:
             result = self._ffmpeg_decode_video(video_packet.packet,
@@ -831,7 +886,7 @@ class FFmpegSource(StreamingSource):
         except FFmpegException:
             image_data = None
         else:
-            image_data = image.ImageData(width, height, 'RGB', buffer, pitch)
+            image_data = image.ImageData(width, height, 'RGBA', buffer, pitch)
             timestamp = ffmpeg_get_frame_ts(self._video_stream)
             timestamp = timestamp_from_ffmpeg(timestamp)
             video_packet.timestamp = timestamp - self.start_time
@@ -851,7 +906,8 @@ class FFmpegSource(StreamingSource):
 
     def _ffmpeg_decode_video(self, packet, data_out):
         stream = self._video_stream
-        picture_rgb = AVPicture()
+        rgba_ptrs = (POINTER(c_uint8) * 4)()
+        rgba_stride = (c_int * 4)()
         width = stream.codec_context.contents.width
         height = stream.codec_context.contents.height
         if stream.type != AVMEDIA_TYPE_VIDEO:
@@ -868,13 +924,13 @@ class FFmpegSource(StreamingSource):
         if not got_picture:
             raise FFmpegException('No frame could be decompressed')
 
-        avcodec.avpicture_fill(byref(picture_rgb), data_out, AV_PIX_FMT_RGB24,
-                               width, height)
+        avutil.av_image_fill_arrays(rgba_ptrs, rgba_stride, data_out,
+                                    AV_PIX_FMT_RGBA, width, height, 1)
 
         self.img_convert_ctx = swscale.sws_getCachedContext(
             self.img_convert_ctx,
             width, height, stream.codec_context.contents.pix_fmt,
-            width, height, AV_PIX_FMT_RGB24,
+            width, height, AV_PIX_FMT_RGBA,
             SWS_FAST_BILINEAR, None, None, None)
 
         swscale.sws_scale(self.img_convert_ctx,
@@ -883,8 +939,8 @@ class FFmpegSource(StreamingSource):
                           stream.frame.contents.linesize,
                           0,
                           height,
-                          picture_rgb.data,
-                          picture_rgb.linesize)
+                          rgba_ptrs,
+                          rgba_stride)
         return bytes_used
 
     def get_next_video_timestamp(self):
@@ -967,7 +1023,6 @@ if pyglet.options['debug_media']:
     _debug = True
 else:
     _debug = False
-
 
 #########################################
 #   Decoder class:
