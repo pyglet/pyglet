@@ -460,9 +460,9 @@ class FFmpegSource(StreamingSource):
             raise FFmpegException('Could not open "{0}"'.format(filename))
 
         self._video_stream = None
-        self._video_stream_index = -1
+        self._video_stream_index = None
         self._audio_stream = None
-        self._audio_stream_index = -1
+        self._audio_stream_index = None
         self._audio_format = None
 
         self.img_convert_ctx = POINTER(SwsContext)()
