@@ -386,9 +386,9 @@ class EventDispatcher(object):
 
         # Search handler stack for matching event handlers
         for frame in list(self._event_stack):
-            if event_type not in frame:
+            handler = frame.get(event_type, None)
+            if not handler:
                 continue
-            handler = frame[event_type]
             if isinstance(handler, WeakMethod):
                 handler = handler()
                 assert handler is not None
