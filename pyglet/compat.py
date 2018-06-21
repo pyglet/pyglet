@@ -46,12 +46,12 @@ import weakref
 
 if sys.version_info[0] == 2:
     if sys.version_info[1] < 6:
-        #Pure Python implementation from
-        #http://docs.python.org/library/itertools.html#itertools.izip_longest
+        # Pure Python implementation from
+        # http://docs.python.org/library/itertools.html#itertools.izip_longest
         def izip_longest(*args, **kwds):
             # izip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
             fillvalue = kwds.get('fillvalue')
-            def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
+            def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):
                 yield counter()     # yields the fillvalue, or raises IndexError
             fillers = itertools.repeat(fillvalue)
             iters = [itertools.chain(it, sentinel(), fillers) for it in args]
@@ -68,7 +68,7 @@ else:
 
 if sys.version_info[0] >= 3:
     import io
-    
+
     def asbytes(s):
         if isinstance(s, bytes):
             return s
@@ -82,19 +82,19 @@ if sys.version_info[0] >= 3:
             return s
         elif isinstance(s, str):
             return s.encode(encoding=sys.getfilesystemencoding())
-    
+
     def asstr(s):
         if s is None:
             return ''
         if isinstance(s, str):
             return s
         return s.decode("utf-8")
-    
+
     bytes_type = bytes
     BytesIO = io.BytesIO
 else:
     import StringIO
-    
+
     asbytes = str
     asbytes_filename = str
     asstr = str
@@ -103,7 +103,7 @@ else:
 
 
 # Backporting for Python < 3.4
-class WeakMethod(weakref.ref):
+class _WeakMethod(weakref.ref):
     """
     A custom 'weakref.ref' subclass which simulates a weak reference to
     a bound method, working around the lifetime problem of bound methods
@@ -154,3 +154,9 @@ class WeakMethod(weakref.ref):
         return True
 
     __hash__ = weakref.ref.__hash__
+
+
+if sys.version_info < (3, 4):
+    WeakMethod = _WeakMethod
+else:
+    from weakref import WeakMethod

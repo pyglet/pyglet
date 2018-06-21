@@ -142,10 +142,7 @@ __version__ = '$Id$'
 import inspect
 from functools import partial
 import sys
-if sys.version_info < (3, 4):
-    from .compat import WeakMethod
-else:
-    from weakref import WeakMethod
+from .compat import WeakMethod
 
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
