@@ -120,11 +120,7 @@ from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
 from collections import deque
 import inspect
-import sys
-if sys.version_info < (3, 4):
-    from .compat import WeakMethod
-else:
-    from weakref import WeakMethod
+from .compat import WeakMethod
 
 import pyglet.lib
 from pyglet import compat_platform
