@@ -60,7 +60,7 @@ def _delete_audio_driver():
     for p in Source._players:
         # Remove the reference to _on_player_eos which had a closure on the player
         p.on_player_eos = None
-    del p
+    p = None
     del Source._players
     global _audio_driver
     _audio_driver = None
