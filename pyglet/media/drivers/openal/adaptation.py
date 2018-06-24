@@ -291,9 +291,13 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                 break
 
             length = min(write_size, audio_data.length)
-            assert _debug('Writing {} bytes'.format(length))
-            self._queue_audio_data(audio_data, length)
-            write_size -= length
+            if length == 0:
+                assert _debug('Empty AudioData. Discard it.')
+
+            else:
+                assert _debug('Writing {} bytes'.format(length))
+                self._queue_audio_data(audio_data, length)
+                write_size -= length
 
         # Check for underrun stopping playback
         if self._playing and not self.source.is_playing:
