@@ -392,7 +392,7 @@ def main(target, dbg_file, debug):
 
     player = pyglet.media.Player()
     window = PlayerWindow(player)
-    
+
     player.queue(pyglet.media.load(filename) for filename in sys.argv[1:])
 
     window.gui_update_source()

@@ -606,7 +606,20 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.oe")
             bl.logger.close()
-        self.next_source()
+
+        if self.loop:
+            was_playing = self._playing
+            self.pause()
+            self._mclock.reset()
+
+            if self.source:
+                # Reset source to the beginning
+                self.seek(0.0)
+            self._audio_player.clear()
+            self._set_playing(was_playing)
+
+        else:
+            self.next_source()
 
     def on_player_next_source(self):
         """The player starts to play the next queued source in the playlist.
