@@ -77,10 +77,10 @@ release resources immediately.
 
 from .drivers import get_audio_driver
 from .exceptions import MediaDecodeException
-from .player import Player, PlayerGroup, PlayList
+from .player import Player, PlayerGroup
 from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
 from .codecs import add_default_media_codecs, have_ffmpeg
-from .codecs import Source, StaticSource, StreamingSource, PlayList
+from .codecs import Source, StaticSource, StreamingSource
 
 from . import synthesis
 
@@ -92,7 +92,6 @@ __all__ = (
     'load',
     'get_audio_driver',
     'Player',
-    'PlayList',
     'PlayerGroup',
     'get_encoders',
     'get_decoders',

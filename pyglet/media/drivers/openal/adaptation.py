@@ -64,9 +64,9 @@ class OpenALDriver(AbstractAudioDriver):
         assert _debug("Delete OpenALDriver")
         self.delete()
 
-    def create_audio_player(self, playlist, player):
+    def create_audio_player(self, source, player):
         assert self.device is not None, "Device was closed"
-        return OpenALAudioPlayer(self, playlist, player)
+        return OpenALAudioPlayer(self, source, player)
 
     def delete(self):
         # Delete the context first
@@ -122,8 +122,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     #: Aggregate (desired) buffer size, in seconds
     _ideal_buffer_size = 1.
 
-    def __init__(self, driver, playlist, player):
-        super(OpenALAudioPlayer, self).__init__(playlist, player)
+    def __init__(self, driver, source, player):
+        super(OpenALAudioPlayer, self).__init__(source, player)
         self.driver = driver
         self.source = driver.context.create_source()
 
@@ -175,7 +175,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
     @property
     def ideal_buffer_size(self):
-        return int(self._ideal_buffer_size * self.playlist.audio_format.bytes_per_second)
+        return int(self._ideal_buffer_size * self.source.audio_format.bytes_per_second)
 
     def play(self):
         assert _debug('OpenALAudioPlayer.play()')
@@ -255,7 +255,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                 # Underrun, take note of timestamp.
                 # We check that the timestamp is not None, because otherwise
                 # our source could have been cleared.
-                self._underrun_timestamp = self._buffer_timestamps[-1] + \
+                self._underrun_timestamp =  self._buffer_timestamps[-1] + \
                     self._buffer_sizes[-1] / float(self.playlist.audio_format.bytes_per_second)
             self._update_buffer_cursor(processed)
 
@@ -313,7 +313,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     def _get_new_audiodata(self):
         assert _debug('Getting new audio data buffer.')
         compensation_time = self.get_audio_time_diff()
-        self._audiodata_buffer= self.playlist.get_audio_data(self.ideal_buffer_size, compensation_time)
+        self._audiodata_buffer= self.source.get_audio_data(self.ideal_buffer_size, compensation_time)
 
         if self._audiodata_buffer is not None:
             assert _debug('New audio data available: {} bytes'.format(self._audiodata_buffer.length))
@@ -326,7 +326,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
     def _queue_audio_data(self, audio_data, length):
         buf = self.source.get_buffer()
-        buf.data(audio_data, self.playlist.audio_format, length)
+        buf.data(audio_data, self.source.audio_format, length)
         self.source.queue_buffer(buf)
         self._update_write_cursor(audio_data, length)
 
@@ -334,13 +334,13 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._write_cursor += length
         self._buffer_sizes.append(length)
         self._buffer_timestamps.append(audio_data.timestamp)
-        audio_data.consume(length, self.playlist.audio_format)
+        audio_data.consume(length, self.source.audio_format)
         assert self._check_cursors()
 
     def _queue_events(self, audio_data):
         for event in audio_data.events:
             cursor = self._write_cursor + event.timestamp * \
-                self.playlist.audio_format.bytes_per_second
+                self.source.audio_format.bytes_per_second
             self._events.append((cursor, event))
 
     def _has_underrun(self):
