@@ -61,9 +61,9 @@ Player
 Found in media/player.py
 
 The :class:`~pyglet.media.player.Player` is the main object that drives the
-source.  It maintains a :class:`~pyglet.media.sources.PlayList` which
-maintains a queue of sources that it can play sequentially. Its
-responsibilities are to play, pause and seek into the source.
+source.  It maintains an internal sequence of sources or iterator of sources
+that it can play sequentially. Its responsibilities are to play, pause and seek
+into the source.
 
 If the source contains audio, the :class:`~pyglet.media.player.Player` will
 instantiate an ``AudioPlayer`` by asking the ``SoundDriver`` to create an

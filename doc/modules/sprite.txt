@@ -9,7 +9,6 @@ pyglet.sprite
 
   .. automethod:: delete
   .. automethod:: draw
-  .. automethod:: set_position
   .. automethod:: update
 
   .. rubric:: Events

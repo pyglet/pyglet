@@ -47,8 +47,6 @@ Functions
 Attributes
 ----------
 
-.. autodata:: displays
-
 .. autodata:: event_loop
 
 .. autodata:: platform_event_loop

@@ -119,13 +119,6 @@ Classes
   .. autoattribute:: WINDOW_STYLE_DIALOG
   .. autoattribute:: WINDOW_STYLE_TOOL
 
-.. autoclass:: Display
-  :members:
-  :undoc-members:
-
-.. autoclass:: Platform
-  :members:
-  :undoc-members:
 
 .. autoclass:: FPSDisplay
   :members:
@@ -144,10 +137,6 @@ Classes
   :undoc-members:
   :show-inheritance:
 
-Functions
----------
-
-.. autofunction:: get_platform
 
 Exceptions
 ----------
