@@ -102,7 +102,6 @@ def test_create_destroy(driver):
 
 def test_create_audio_player(driver, player):
     source = Silence(1.)
-    import pdb; pdb.set_trace()
     audio_player = driver.create_audio_player(source, player)
     audio_player.delete()
 
