@@ -84,9 +84,7 @@ def dump_pyglet():
 def dump_window():
     '''Dump display, window, screen and default config info.'''
     import pyglet.window
-    platform = pyglet.window.get_platform()
-    print('platform:', repr(platform))
-    display = platform.get_default_display()
+    display = pyglet.canvas.get_display()
     print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):
