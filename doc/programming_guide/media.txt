@@ -397,8 +397,6 @@ Standard controls for controlling playback are provided by these methods:
           - Pause playback of the current source.
         * - :py:meth:`~pyglet.media.Player.next_source`
           - Dequeue the current source and move to the next one immediately.
-            :py:meth:`~pyglet.media.Player.next` can also be used but it is deprecated
-            because of incompatibilities with Python 3.
         * - :py:meth:`~pyglet.media.Player.seek`
           - Seek to a specific time within the current source.
 

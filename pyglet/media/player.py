@@ -325,9 +325,6 @@ class Player(pyglet.event.EventDispatcher):
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
 
-    #: :deprecated: Use `next_source` instead.
-    next = next_source  # old API, worked badly with 2to3
-
     def seek(self, time):
         """
         Seek for playback to the indicated timestamp on the current source.
