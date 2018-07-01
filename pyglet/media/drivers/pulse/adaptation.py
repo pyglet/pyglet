@@ -63,9 +63,9 @@ class PulseAudioDriver(AbstractAudioDriver):
     def __del__(self):
         self.delete()
 
-    def create_audio_player(self, playlist, player):
+    def create_audio_player(self, source, player):
         assert self.context is not None
-        player = PulseAudioPlayer(playlist, player, self)
+        player = PulseAudioPlayer(source, player, self)
         self._players.add(player)
         return player
 
@@ -132,8 +132,8 @@ class PulseAudioListener(AbstractListener):
 class PulseAudioPlayer(AbstractAudioPlayer):
     _volume = 1.0
 
-    def __init__(self, playlist, player, driver):
-        super(PulseAudioPlayer, self).__init__(playlist, player)
+    def __init__(self, source, player, driver):
+        super(PulseAudioPlayer, self).__init__(source, player)
         self.driver = weakref.ref(driver)
 
         self._events = []
@@ -149,7 +149,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
 
         self._time_sync_operation = None
 
-        audio_format = playlist.audio_format
+        audio_format = source.audio_format
         assert audio_format
 
         with driver.mainloop:
@@ -176,16 +176,16 @@ class PulseAudioPlayer(AbstractAudioPlayer):
                 self._time_sync_operation = self.stream.update_timing_info(self._process_events)
 
     def _get_audio_data(self, nbytes=None):
-        if self._current_audio_data is None and self.playlist is not None:
+        if self._current_audio_data is None and self.source is not None:
             # Always try to buffer at least 1 second of audio data
-            min_bytes = 1 * self.playlist.audio_format.bytes_per_second
+            min_bytes = 1 * self.source.audio_format.bytes_per_second
             if nbytes is None:
                 nbytes = min_bytes
             else:
                 nbytes = min(min_bytes, nbytes)
             assert _debug('PulseAudioPlayer: Try to get {} bytes of audio data'.format(nbytes))
             compensation_time = self.get_audio_time_diff()
-            self._current_audio_data = self.playlist.get_audio_data(nbytes, compensation_time)
+            self._current_audio_data = self.source.get_audio_data(nbytes, compensation_time)
             self._schedule_events()
         if self._current_audio_data is None:
             assert _debug('PulseAudioPlayer: No audio data available')
@@ -202,13 +202,13 @@ class PulseAudioPlayer(AbstractAudioPlayer):
             if nbytes == self._current_audio_data.length:
                 self._current_audio_data = None
             else:
-                self._current_audio_data.consume(nbytes, self.playlist.audio_format)
+                self._current_audio_data.consume(nbytes, self.source.audio_format)
 
     def _schedule_events(self):
         if self._current_audio_data is not None:
             for event in self._current_audio_data.events:
                 event_index = self._write_index + event.timestamp * \
-                    self.playlist.audio_format.bytes_per_second
+                    self.source.audio_format.bytes_per_second
                 assert _debug('PulseAudioPlayer: Schedule event at index {}'.format(event_index))
                 self._events.append((event_index, event))
 
@@ -395,7 +395,7 @@ class PulseAudioPlayer(AbstractAudioPlayer):
         except IndexError:
             pass
 
-        bytes_per_second = self.playlist.audio_format.bytes_per_second
+        bytes_per_second = self.source.audio_format.bytes_per_second
         dt = (read_index - write_index) / float(bytes_per_second) * 1000000
         # We add 2x the transport time because we didn't take it into account
         # when we wrote the write index the first time. See _write_to_stream

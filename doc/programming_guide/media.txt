@@ -316,8 +316,9 @@ without needing to keep track of them. For example, a sound needs to be
 played when the player's space ship explodes, but this sound never needs to
 have its volume adjusted, or be rewound, or interrupted.
 
-pyglet provides a simple interface for this kind of use-case. Call the :meth:`~pyglet.media.Source.play`
-method of any :class:`~pyglet.media.Source` to play it immediately and completely::
+pyglet provides a simple interface for this kind of use-case. Call the
+:meth:`~pyglet.media.Source.play` method of any :class:`~pyglet.media.Source` to play
+it immediately and completely::
 
     explosion = pyglet.media.load('explosion.wav', streaming=False)
     explosion.play()
@@ -345,6 +346,27 @@ can be queued on a single player, but once queued, a source can never be
 dequeued (until it is removed automatically once complete). The main use of
 this queueing mechanism is to facilitate "gapless" transitions between
 playback of media files.
+
+The :py:meth:`~pyglet.media.player.Player.queue` method is used to queue
+a media on the player - a :py:class:`~pyglet.media.StreamingSource` or a
+:py:class:`~pyglet.media.StaticSource`. Either you pass one instance, or you
+can also pass an iterable of sources. This provides great flexibility. For
+instance, you could create a generator which takes care of the logic about
+what music to play::
+
+    def my_playlist():
+       yield intro
+       while game_is_running():
+          yield main_theme
+       yield ending
+
+    player.queue(my_playlist())
+
+When the game ends, you will still need to call on the player::
+
+    player.next_source()
+
+The generator will pass the ``ending`` media to the player.
 
 A :py:class:`~pyglet.media.StreamingSource` can only ever be queued on one
 player, and only once on that player. :py:class:`~pyglet.media.StaticSource`
@@ -375,8 +397,6 @@ Standard controls for controlling playback are provided by these methods:
           - Pause playback of the current source.
         * - :py:meth:`~pyglet.media.Player.next_source`
           - Dequeue the current source and move to the next one immediately.
-            :py:meth:`~pyglet.media.Player.next` can also be used but it is deprecated because of
-            incompatibilities with Python 3.
         * - :py:meth:`~pyglet.media.Player.seek`
           - Seek to a specific time within the current source.
 
