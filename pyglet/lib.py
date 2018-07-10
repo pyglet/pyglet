@@ -342,13 +342,11 @@ class LinuxLibraryLoader(LibraryLoader):
         # the man page.
 
         result = ctypes.util.find_library(path)
-        if result:
-            return result
 
         if self._ld_so_cache is None:
             self._create_ld_so_cache()
 
-        return self._ld_so_cache.get(path)
+        return self._ld_so_cache.get(path) or result
 
 
 if pyglet.compat_platform == 'darwin':
