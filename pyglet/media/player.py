@@ -184,7 +184,7 @@ class Player(pyglet.event.EventDispatcher):
                 source = iter(source)
             except TypeError:
                 raise TypeError("source must be either a Source or an iterable."
-                    " Received type {0}".format(type(source)))
+                                " Received type {0}".format(type(source)))
         self._playlists.append(source)
 
         if self.source is None:
@@ -225,6 +225,12 @@ class Player(pyglet.event.EventDispatcher):
             # Negative number means audio runs ahead.
             # self._mclock._systime += -0.3
             self._mclock.play()
+            if self._audio_player is None and source.video_format is None:
+                pyglet.clock.schedule_once(
+                    lambda dt: self.dispatch_event("on_eos"),
+                    source.duration,
+                )
+
         else:
             if self._audio_player:
                 self._audio_player.stop()
@@ -364,7 +370,6 @@ class Player(pyglet.event.EventDispatcher):
         audio_driver = get_audio_driver()
         if audio_driver is None:
             # Failed to find a valid audio driver
-            self.source.audio_format = None
             return
 
         self._audio_player = audio_driver.create_audio_player(source, self)
@@ -379,7 +384,7 @@ class Player(pyglet.event.EventDispatcher):
     @property
     def source(self):
         """Source: Read-only. The current :class:`Source`, or ``None``."""
-        return self._source  
+        return self._source
 
     @property
     def time(self):
@@ -636,6 +641,7 @@ Player.register_event_type('on_player_next_source')
 
 def _one_item_playlist(source):
     yield source
+
 
 class PlayerGroup(object):
     """Group of players that can be played and paused simultaneously.
