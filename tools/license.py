@@ -1,18 +1,20 @@
 #!/usr/bin/python
 # $Id:$
 
-'''Rewrite the license header of source files.
+"""Rewrite the license header of source files.
 
 Usage:
     license.py file.py file.py dir/ dir/ ...
-'''
+"""
 
-import optparse
 import os
 import sys
+import datetime
+import optparse
 
-license = '''# pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+
+license_str = """# pyglet
+# Copyright (c) 2006-{0} Alex Holkner
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -41,38 +43,42 @@ license = '''# pyglet
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.'''
+# POSSIBILITY OF SUCH DAMAGE.""".format(datetime.datetime.now().year)
 
 marker = '# ' + '-' * 76
 
-license_lines = [marker] + license.split('\n') + [marker]
+license_lines = [marker] + license_str.split('\n') + [marker]
 
-def update_license(filename):
-    '''Open a Python source file and update the license header, writing
-    it back in place.'''
-    lines = [l.strip('\r\n') for l in open(filename).readlines()]
+
+def update_license(file_name):
+    """Open a Python source file and update the license header in place."""
+    lines = [l.strip('\r\n') for l in open(file_name).readlines()]
     if marker in lines:
         # Update existing license
+        print("Updating license in: '{0}'".format(file_name))
         try:
             marker1 = lines.index(marker)
             marker2 = lines.index(marker, marker1 + 1)
             if marker in lines[marker2 + 1:]:
-                raise ValueError() # too many markers
-            lines = (lines[:marker1] + 
-                     license_lines + 
+                raise ValueError()  # too many markers
+            lines = (lines[:marker1] +
+                     license_lines +
                      lines[marker2 + 1:])
         except ValueError:
-            print >> sys.stderr, "Can't update license in %s" % filename
+            print("Can't update license in %s" % file_name, file=sys.stderr)
+
     else:
-        # Add license to unmarked file
-        # Skip over #! if present
+        # Add license to unmarked file. Skip over #! if present.
+        print("Adding license to: '{0}'".format(file_name))
         if not lines:
-            pass # Skip empty files
+            pass    # Skip empty files
         elif lines[0].startswith('#!'):
             lines = lines[:1] + license_lines + lines[1:]
         else:
             lines = license_lines + lines
-    open(filename, 'wb').write('\n'.join(lines) + '\n')
+
+    open(file_name, 'w').write('\n'.join(lines) + '\n')
+
 
 if __name__ == '__main__':
     op = optparse.OptionParser()
@@ -80,7 +86,7 @@ if __name__ == '__main__':
     options, args = op.parse_args()
     
     if len(args) < 1:
-        print >> sys.stderr, __doc__
+        print(__doc__, file=sys.stderr)
         sys.exit(0)
 
     for path in args:
@@ -90,8 +96,7 @@ if __name__ == '__main__':
                     if dirname in options.exclude:
                         dirnames.remove(dirname)
                 for filename in filenames:
-                    if (filename.endswith('.py') and 
-                        filename not in options.exclude):
+                    if filename.endswith('.py') and filename not in options.exclude:
                         update_license(os.path.join(root, filename))
         else:
             update_license(path)
