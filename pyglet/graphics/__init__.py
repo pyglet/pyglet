@@ -706,10 +706,10 @@ class ShaderGroup(Group):
         self.buffer_objects = {}
 
         for block in self.shader_program.uniform_blocks.values():
-            self.buffer_objects[block.name] = UniformBufferObject(block)
+            self.buffer_objects[block.name] = UniformBufferObject(uniform_block=block)
 
         if _debug_graphics_batch:
-            print("Created ShaderGroup. ShaderProgram ID: {0}".format(self.shader_program.id))
+            print("Created ShaderGroup, containing {0}".format(self.shader_program))
 
     def set_state(self):
         self.shader_program.use_program()

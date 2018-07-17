@@ -71,15 +71,15 @@ zoom = 1
 def on_mouse_scroll(x, y, mouse, direction):
     global zoom
     zoom += direction / 8
-    values = [zoom, 0.0, 0.0, 0.0,
-              0.0, zoom, 0.0, 0.0,
-              0.0, 0.0, zoom, 0.0,
-              0.0, 0.0, 0.0, 1.0]
+    transform = [zoom, 0.0, 0.0, 0.0,
+                 0.0, zoom, 0.0, 0.0,
+                 0.0, 0.0, zoom, 0.0,
+                 0.0, 0.0, 0.0, 1.0]
     # pyglet.graphics.default_group.shader_program.use_program()
-    # pyglet.graphics.default_group.shader_program['testmatrix'] = values
-    ubo = pyglet.graphics.default_group.buffer_objects["WindowBlock"]
-    with ubo as view:
-        view.transform[:] = values
+
+    with pyglet.graphics.default_group.buffer_objects["WindowBlock"] as view:
+        view.transform[:] = transform
+        # view.zoom = -zoom
 
 
 # @window.event

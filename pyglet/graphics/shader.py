@@ -1,7 +1,4 @@
-from collections import namedtuple
 from ctypes import *
-
-import pyglet
 
 from pyglet.graphics.vertexbuffer import create_buffer
 from pyglet.gl import *
@@ -52,7 +49,16 @@ _uniform_setters = {
 }
 
 
+class Uniform:
+    __slots__ = 'setter', 'getter'
+
+    def __init__(self, setter, getter):
+        self.setter = setter
+        self.getter = getter
+
+
 def _create_getter_func(program_id, location, gl_getter, c_array, length):
+    """Factory function for creating simplified Uniform getters"""
 
     if length == 1:
         def getter_func():
@@ -67,6 +73,7 @@ def _create_getter_func(program_id, location, gl_getter, c_array, length):
 
 
 def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix):
+    """Factory function for creating simplified Uniform setters"""
 
     if is_matrix:
         def setter_func(value):
@@ -86,9 +93,6 @@ def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_mat
         raise NotImplementedError("Uniform type not yet supported.")
 
     return setter_func
-
-
-Uniform = namedtuple('Uniform', 'getter, setter')
 
 
 class Shader:
@@ -117,12 +121,11 @@ class Shader:
         status = c_int(0)
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, byref(status))
 
-        if _debug_gl_shaders:
-            print(self._get_shader_log(shader_id))
-
         if status.value != GL_TRUE:
             raise GLException("The {0} shader failed to compile. "
                               "\n{1}".format(self.type, self._get_shader_log(shader_id)))
+        elif _debug_gl_shaders:
+            print("Shader compliation log: {0}".format(self._get_shader_log(shader_id)))
 
         return shader_id
 
@@ -156,11 +159,14 @@ class ShaderProgram:
     """OpenGL Shader Program"""
 
     def __init__(self, *shaders):
+        assert shaders, "At least one Shader object is required."
         self._id = self._link_program(shaders)
         self._active = False
 
         self._uniforms = {}
         self.uniform_blocks = {}
+        self.uniform_buffers = {}
+
         self._introspect_uniforms()
         self._introspect_uniform_blocks()
 
@@ -172,7 +178,7 @@ class ShaderProgram:
         return self._id
 
     @property
-    def active(self):
+    def is_active(self):
         return self._active
 
     def _get_program_log(self):
@@ -186,7 +192,8 @@ class ShaderProgram:
         else:
             return "Program linked successfully."
 
-    def _link_program(self, shaders):
+    @staticmethod
+    def _link_program(shaders):
         # TODO: catch exceptions when linking Program:
         program_id = glCreateProgram()
         for shader in shaders:
@@ -241,7 +248,7 @@ class ShaderProgram:
         except GLException:
             raise
 
-    def get_num_active(self, variable_type):
+    def _get_num_active(self, variable_type):
         """Get the number of active variables of the passed GL type.
 
         :param variable_type: GL_ACTIVE_ATTRIBUTES, GL_ACTIVE_UNIFORMS, etc.
@@ -252,9 +259,9 @@ class ShaderProgram:
         return num_active.value
 
     def _introspect_uniforms(self):
-        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name, u_type, u_size = self.query_uniform(index)
-            loc = self.get_uniform_location(uniform_name)
+        for index in range(self._get_num_active(GL_ACTIVE_UNIFORMS)):
+            uniform_name, u_type, u_size = self._query_uniform(index)
+            loc = self._get_uniform_location(uniform_name)
 
             if loc == -1:      # Skip uniforms that may be in Uniform Blocks
                 continue
@@ -287,9 +294,9 @@ class ShaderProgram:
 
         block_uniforms = {}
 
-        for index in range(self.get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name, u_type, u_size = self.query_uniform(index)
-            location = self.get_uniform_location(uniform_name)
+        for index in range(self._get_num_active(GL_ACTIVE_UNIFORMS)):
+            uniform_name, u_type, u_size = self._query_uniform(index)
+            location = self._get_uniform_location(uniform_name)
             if location == -1:
                 block_name, uniform_name = uniform_name.split(".")
                 if block_name not in block_uniforms:
@@ -299,8 +306,8 @@ class ShaderProgram:
 
                 block_uniforms[block_name][index] = (uniform_name, gl_type, length)
 
-        for index in range(self.get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
-            name = self.get_uniform_block_name(index)
+        for index in range(self._get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
+            name = self._get_uniform_block_name(index)
             num_active = GLint()
             block_data_size = GLint()
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
@@ -308,8 +315,9 @@ class ShaderProgram:
 
             block = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
             self.uniform_blocks[name] = block
+            # self.uniform_buffers[name] = UniformBufferObject(uniform_block=block)
 
-    def get_uniform_block_name(self, index):
+    def _get_uniform_block_name(self, index):
         buf_size = 128
         size = c_int(0)
         name_buf = create_string_buffer(buf_size)
@@ -319,10 +327,10 @@ class ShaderProgram:
         except GLException:
             return None
 
-    def get_uniform_location(self, name):
+    def _get_uniform_location(self, name):
         return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
 
-    def query_uniform(self, index):
+    def _query_uniform(self, index):
         usize = GLint()
         utype = GLenum()
         buf_size = 192
@@ -338,6 +346,8 @@ class ShaderProgram:
 
 
 class UniformBlock:
+    __slots__ = 'program_id', 'name', 'index', 'size', 'uniforms'
+
     def __init__(self, program_id, name, index, size, uniforms):
         self.program_id = program_id
         self.name = name
@@ -350,17 +360,17 @@ class UniformBlock:
 
 
 class UniformBufferObject:
+    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr', '_view_size'
+
     def __init__(self, uniform_block):
         assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = uniform_block
         self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
-        self.bind_buffer_base(self.block.index)
-        self.view = self._introspect_uniforms()
-        self.view_ptr = pointer(self.view)
-        self.view_size = sizeof(self.view)
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.block.index, self.buffer.id)
 
-    def bind_buffer_base(self, index):
-        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
+        self.view = self._introspect_uniforms()
+        self._view_ptr = pointer(self.view)
+        self._view_size = sizeof(self.view)
 
     def _introspect_uniforms(self):
         p_id = self.block.program_id
@@ -373,7 +383,7 @@ class UniformBufferObject:
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
-        # Create objects and pointers for query values:
+        # Create objects and pointers for query values, to be used in the next step:
         offsets = (GLint * num_active.value)()
         gl_types = (GLuint * num_active.value)()
         mat_stride = (GLuint * num_active.value)()
@@ -398,16 +408,14 @@ class UniformBufferObject:
             padding = size - actual_size
             # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
 
-            arg = (u_name, gl_type*length) if length > 1 else (u_name, gl_type)
+            arg = (u_name, gl_type * length) if length > 1 else (u_name, gl_type)
             args.append(arg)
-
-            # print(f"start: {start}  size/actual_size: {size},{actual_size}  padding: {padding}  "
-            #       f"length: {length}  arg: {arg}  actualsize/ctype_size:{actual_size/c_type_size}")
 
             if padding > 0:
                 padding_bytes = padding // c_type_size
                 args.append(('_padding' + str(i), gl_type * padding_bytes))
 
+        # Custom ctypes Structure for Uniform access:
         repr_fn = lambda self: str(dict(self._fields_))
         view = type(self.block.name + 'View', (Structure,), {'_fields_': args, '__repr__': repr_fn})
 
@@ -418,11 +426,11 @@ class UniformBufferObject:
         return self.view
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.buffer.set_data_region(self.view_ptr, 0, self.view_size)
+        self.buffer.set_data_region(self._view_ptr, 0, self._view_size)
         self.buffer.bind()
 
     def __repr__(self):
-        return "{0}(id={1})".format(self.__class__.__name__, self.buffer.id)
+        return "{0}(id={1})".format(self.block.name + 'Buffer', self.buffer.id)
 
 
 vertex_source = """#version 330 core
@@ -432,12 +440,10 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    uniform mat4 testmatrix = mat4(1.0);
-
     uniform WindowBlock
     {
         vec2 size;
-        float aspect;
+        float aspect;       // not yet used
         float zoom;
         mat4 transform;
     } window;
@@ -449,7 +455,6 @@ vertex_source = """#version 330 core
                                          vertices.z,
                                          vertices.w * window.zoom + 1);
 
-        vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;
     }

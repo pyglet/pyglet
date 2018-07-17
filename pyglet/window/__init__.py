@@ -743,9 +743,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         gl.glViewport(0, 0, max(1, width), max(1, height))
 
-        # TODO: Check if this could cause trouble if it's not yet ready:
-        window_buffer_obj = pyglet.graphics.default_group.buffer_objects['WindowBlock']
-        with window_buffer_obj as window_block:
+        with pyglet.graphics.default_group.buffer_objects['WindowBlock'] as window_block:
             window_block.size = width, height
 
     def on_close(self):
