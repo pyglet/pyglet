@@ -220,10 +220,11 @@ class PulseAudioContext(PulseAudioLockable):
         """Completely shut down pulseaudio client."""
         if self._pa_context is not None:
             assert _debug("PulseAudioContext.delete")
-            pa.pa_context_disconnect(self._pa_context)
+            if self.is_ready:
+                pa.pa_context_disconnect(self._pa_context)
 
-            while self.state is not None and not self.is_terminated:
-                self.wait()
+                while self.state is not None and not self.is_terminated:
+                    self.wait()
 
             self._disconnect_callbacks()
             pa.pa_context_unref(self._pa_context)
