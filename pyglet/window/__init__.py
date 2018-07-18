@@ -741,10 +741,14 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        gl.glViewport(0, 0, max(1, width), max(1, height))
+        width = max(1, width)
+        height = max(1, height)
+
+        gl.glViewport(0, 0, width, height)
 
         with pyglet.graphics.default_group.buffer_objects['WindowBlock'] as window_block:
             window_block.size = width, height
+            window_block.aspect = width / height
 
     def on_close(self):
         """Default on_close handler."""
