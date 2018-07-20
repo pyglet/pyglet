@@ -315,7 +315,6 @@ class ShaderProgram:
 
             block = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
             self.uniform_blocks[name] = block
-            # self.uniform_buffers[name] = UniformBufferObject(uniform_block=block)
 
     def _get_uniform_block_name(self, index):
         buf_size = 128
@@ -440,20 +439,22 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
+    uniform mat4 transform = mat4(1);
+    uniform float testuniform = 1.0;
+
     uniform WindowBlock
     {
         vec2 size;
-        float aspect;       // not yet used
+        float aspect;
         float zoom;
-        mat4 transform;
     } window;
 
     void main()
     {
-        gl_Position = window.transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                                         vertices.y * 2.0 / window.size.y - 1.0,
-                                         vertices.z,
-                                         vertices.w * window.zoom + 1);
+        gl_Position = transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                                       vertices.y * 2.0 / window.size.y - 1.0,
+                                       vertices.z,
+                                       vertices.w * window.zoom + 1 * testuniform);
 
         vertex_colors = colors;
         texture_coords = tex_coords;

@@ -703,23 +703,19 @@ class ShaderGroup(Group):
     def __init__(self, *shaders, parent=None):
         super(ShaderGroup, self).__init__(parent)
         self.shader_program = ShaderProgram(*shaders)
-        self.buffer_objects = {}
+        self.uniform_buffers = {}
 
         for block in self.shader_program.uniform_blocks.values():
-            self.buffer_objects[block.name] = UniformBufferObject(uniform_block=block)
+            self.uniform_buffers[block.name] = UniformBufferObject(uniform_block=block)
 
         if _debug_graphics_batch:
             print("Created ShaderGroup, containing {0}".format(self.shader_program))
 
     def set_state(self):
         self.shader_program.use_program()
-        for buffer_obj in self.buffer_objects.values():
-            buffer_obj.buffer.bind()
 
     def unset_state(self):
         self.shader_program.stop_program()
-        for buffer_obj in self.buffer_objects.values():
-            buffer_obj.buffer.unbind()
 
 
 class TextureGroup(Group):

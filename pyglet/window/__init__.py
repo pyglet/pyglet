@@ -746,7 +746,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         gl.glViewport(0, 0, width, height)
 
-        with pyglet.graphics.default_group.buffer_objects['WindowBlock'] as window_block:
+        with pyglet.graphics.default_group.uniform_buffers['WindowBlock'] as window_block:
             window_block.size = width, height
             window_block.aspect = width / height
 
