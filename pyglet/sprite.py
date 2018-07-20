@@ -141,7 +141,7 @@ vertex_source = """#version 330 core
         gl_Position = transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
                                        vertices.y * 2.0 / window.size.y - 1.0,
                                        vertices.z,
-                                       vertices.w * window.zoom + 1);
+                                       vertices.w * (window.zoom + 1));
 
         vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;

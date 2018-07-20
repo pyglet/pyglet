@@ -56,7 +56,6 @@ The entire domain can be efficiently drawn in one step with the
 the same OpenGL primitive mode.
 """
 from builtins import zip
-from builtins import range
 from builtins import object
 
 __docformat__ = 'restructuredtext'
@@ -120,9 +119,8 @@ def create_attribute_usage(shader_program_id, fmt):
         usage = _gl_usages[usage]
     else:
         usage = GL_DYNAMIC_DRAW
-    vbo = True
 
-    return attribute, usage, vbo
+    return attribute, usage
 
 
 def create_domain(shader_program_id, *attribute_usage_formats):
@@ -166,7 +164,7 @@ class VertexDomain(object):
         # If there are any MultiTexCoord attributes,
         # then a TexCoord attribute must be converted.
         have_multi_texcoord = False
-        for attribute, _, _ in attribute_usages:
+        for attribute, _ in attribute_usages:
             if isinstance(attribute, vertexattribute.MultiTexCoordAttribute):
                 have_multi_texcoord = True
                 break
@@ -174,8 +172,8 @@ class VertexDomain(object):
         static_attributes = []
         attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
-        for attribute, usage, vbo in attribute_usages:
-            if (have_multi_texcoord and isinstance(attribute, vertexattribute.TexCoordAttribute)):
+        for attribute, usage in attribute_usages:
+            if have_multi_texcoord and isinstance(attribute, vertexattribute.TexCoordAttribute):
                 attribute.convert_to_multi_tex_coord_attribute()
 
             if usage == GL_STATIC_DRAW:
@@ -209,16 +207,16 @@ class VertexDomain(object):
         self.attributes = attributes
         self.attribute_names = {}
         for attribute in attributes:
-            if isinstance(attribute, vertexattribute.GenericAttribute):
-                index = attribute.index
-                # TODO create a name and use it (e.g. 'generic3')
-                # XXX this won't migrate; not documented.
-                if 'generic' not in self.attribute_names:
-                    self.attribute_names['generic'] = {}
-                assert index not in self.attribute_names['generic'], \
-                    'More than one generic attribute with index %d' % index
-                self.attribute_names['generic'][index] = attribute
-            elif isinstance(attribute, vertexattribute.MultiTexCoordAttribute):
+            # if isinstance(attribute, vertexattribute.GenericAttribute):
+            #     index = attribute.index
+            #     # TODO create a name and use it (e.g. 'generic3')
+            #     # XXX this won't migrate; not documented.
+            #     if 'generic' not in self.attribute_names:
+            #         self.attribute_names['generic'] = {}
+            #     assert index not in self.attribute_names['generic'], \
+            #         'More than one generic attribute with index %d' % index
+            #     self.attribute_names['generic'][index] = attribute
+            if isinstance(attribute, vertexattribute.MultiTexCoordAttribute):
                 # XXX this won't migrate; not documented.
                 texture = attribute.texture
                 if 'multi_tex_coords' not in self.attribute_names:
@@ -228,7 +226,7 @@ class VertexDomain(object):
                     texture
                 self.attribute_names['multi_tex_coords'].insert(texture, attribute)
             else:
-                name = attribute.plural
+                name = attribute.name
                 assert name not in self.attributes, 'More than one "%s" attribute given' % name
                 self.attribute_names[name] = attribute
 
@@ -437,7 +435,7 @@ class VertexList(object):
     # ---
 
     def _get_colors(self):
-        if (self._colors_cache_version != self.domain._version):
+        if self._colors_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['colors']
             self._colors_cache = attribute.get_region(

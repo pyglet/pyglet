@@ -287,7 +287,7 @@ class ShaderProgram:
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(u_type))
 
-            self._uniforms[uniform_name] = Uniform(getter, setter)
+            self._uniforms[uniform_name] = Uniform(setter=setter, getter=getter)
 
     def _introspect_uniform_blocks(self):
         p_id = self._id
@@ -440,7 +440,6 @@ vertex_source = """#version 330 core
     out vec2 texture_coords;
 
     uniform mat4 transform = mat4(1);
-    uniform float testuniform = 1.0;
 
     uniform WindowBlock
     {
@@ -454,7 +453,7 @@ vertex_source = """#version 330 core
         gl_Position = transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
                                        vertices.y * 2.0 / window.size.y - 1.0,
                                        vertices.z,
-                                       vertices.w * window.zoom + 1 * testuniform);
+                                       vertices.w * (window.zoom + 1));
 
         vertex_colors = colors;
         texture_coords = tex_coords;
