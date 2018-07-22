@@ -3,7 +3,7 @@ import pyglet
 from pyglet.gl import *
 
 
-pyglet.options['debug_gl_shaders'] = True
+# pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
@@ -19,6 +19,7 @@ vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (5, 5, 0,  150, 5, 0,  75, 
                                              ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
 
 batch = pyglet.graphics.Batch()
+buffer_objects = {}
 
 
 def create_quad_vertex_list(x, y, z, width, height):
@@ -59,33 +60,17 @@ sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 ###########################################################
 # Set some uniform values
 ###########################################################
-# ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
+# ubo = pyglet.graphics.default_group.uniform_buffers['WindowBlock']
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
-zoom = 1
-
 
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
-    global zoom
-    zoom += direction / 8
-    transform = [zoom, 0.0, 0.0, 0.0,
-                 0.0, zoom, 0.0, 0.0,
-                 0.0, 0.0, zoom, 0.0,
-                 0.0, 0.0, 0.0, 1.0]
-    # pyglet.graphics.default_group.shader_program.use_program()
-
-    with pyglet.graphics.default_group.buffer_objects["WindowBlock"] as view:
-        view.transform[:] = transform
-        # view.zoom = -zoom
-
-
-# @window.event
-# def on_resize(width, height):
-#     ubo = pyglet.graphics.default_group.buffer_objects['WindowBlock']
-#     ubo.uniforms['size'](width, height)
+    with pyglet.graphics.default_group.uniform_buffers["WindowBlock"] as block:
+        block.zoom += direction / 8
+        print("Zoom level:", block.zoom)
 
 
 ###########################################################
@@ -97,15 +82,14 @@ def on_draw():
 
     # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
     #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
-
-    # TODO: fix drawing vertex arrays directly without manually binding these:
-    # glBindVertexArray(pyglet.graphics._get_default_batch().vao_id)
-    # pyglet.graphics.default_group.set_state()
-    # vertex_list.draw(GL_TRIANGLES)
-
+    #
     # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
     #                              ('v2i', (300, 300,   400, 300,   400, 400,   300, 400)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
+
+    # TODO: fix drawing vertex arrays directly without manually binding these:
+    # glBindVertexArray(pyglet.graphics._get_default_batch().vao_id)
+    # vertex_list.draw(GL_TRIANGLES)
 
     batch.draw()
 
