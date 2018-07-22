@@ -114,16 +114,14 @@ class Model(object):
 
         if batch is None:
             batch = pyglet.graphics.Batch()
-            for vlist, group in self.vertex_lists.items():
-                self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
-            self._batch = batch
-        else:
-            for vlist, group in self.vertex_lists.items():
-                self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
-            self._batch = batch
+
+        for vlist, group in self.vertex_lists.items():
+            self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
+
+        self._batch = batch
 
     def update(self, x=None, y=None, z=None):
-        """Shift the model on the x, y or z axis."""
+        """Shift the model on the x, y or z axis"""
         if x:
             for vlist in self.vertex_lists:
                 verts = vlist.vertices[:]
