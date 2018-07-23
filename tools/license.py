@@ -5,6 +5,7 @@
 
 Usage:
     license.py file.py file.py dir/ dir/ ...
+    license.py --help  for more information
 """
 
 import os
@@ -53,7 +54,11 @@ license_lines = [marker] + license_str.split('\n') + [marker]
 def update_license(file_name):
     """Open a Python source file and update the license header in place."""
     lines = [l.strip('\r\n') for l in open(file_name).readlines()]
-    if marker in lines:
+
+    if marker not in lines and options.update_only is True:
+        print("Skipping %s" % file_name, file=sys.stderr)
+
+    elif marker in lines:
         # Update existing license
         print("Updating license in: '{0}'".format(file_name))
         try:
@@ -67,6 +72,8 @@ def update_license(file_name):
         except ValueError:
             print("Can't update license in %s" % file_name, file=sys.stderr)
 
+        open(file_name, 'w').write('\n'.join(lines) + '\n')
+
     else:
         # Add license to unmarked file. Skip over #! if present.
         print("Adding license to: '{0}'".format(file_name))
@@ -77,14 +84,17 @@ def update_license(file_name):
         else:
             lines = license_lines + lines
 
-    open(file_name, 'w').write('\n'.join(lines) + '\n')
+        open(file_name, 'w').write('\n'.join(lines) + '\n')
 
 
 if __name__ == '__main__':
     op = optparse.OptionParser()
-    op.add_option('--exclude', action='append', default=[])
+    op.add_option('--exclude', action='append', default=[],
+                  help='specify files and/or folders to exclude')
+    op.add_option('--update-only', action='store_true', default=False,
+                  help='skip files that do not already contain a license header')
     options, args = op.parse_args()
-    
+
     if len(args) < 1:
         print(__doc__, file=sys.stderr)
         sys.exit(0)
