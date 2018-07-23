@@ -563,7 +563,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         if caption is None:
             caption = sys.argv[0]
-            # Decode hack for Python2 unicode support:
+            # PYTHON2 - Remove this decode hack for unicode support:
             if hasattr(caption, "decode"):
                 try:
                     caption = caption.decode("utf8")
