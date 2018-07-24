@@ -551,8 +551,7 @@ class Loader(object):
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name,
-                                                                     atlas=atlas)
+            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas)
 
         if not rotate and not flip_x and not flip_y:
             return identity

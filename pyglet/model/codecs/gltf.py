@@ -54,7 +54,16 @@ _struct_types = {
     GL_UNSIGNED_INT: 'I',
 }
 
-_accessor_types = {
+_component_types = {
+    GL_BYTE: 1,
+    GL_UNSIGNED_BYTE: 1,
+    GL_SHORT: 2,
+    GL_UNSIGNED_SHORT: 2,
+    GL_UNSIGNED_INT: 4,
+    GL_FLOAT: 4
+}
+
+_accessor_type_sizes = {
     "SCALAR": 1,
     "VEC2": 2,
     "VEC3": 3,
@@ -88,19 +97,50 @@ _attributes = {
 
 
 class Buffer(object):
+    # TODO: support GLB format
     def __init__(self, length, uri):
         self._length = length
-        self._file = pyglet.resource.file(uri, 'rb')
+        self._uri = uri
 
     def read(self, offset, length, stride=1):
-        self._file.seek(offset)
-        data = self._file.read(length)
+        file = pyglet.resource.file(self._uri, 'rb')
+        file.seek(offset)
+        data = file.read(length)
+        file.close()
         return data[::stride]
+
+
+class BufferView(object):
+    def __init__(self, buffer, offset, length, target, stride):
+        self.buffer = buffer
+        self.offset = offset
+        self.length = length
+        self.target = target
+        self.stride = stride
+
+
+class Accessor(object):
+    # TODO: support sparse accessors
+    def __init__(self, buffer_view, offset, comp_type, count,
+                 maximum, minimum, accessor_type, sparse):
+        self.buffer_view = buffer_view
+        self.offset = offset
+        self.component_type = comp_type
+        self.count = count
+        self.maximum = maximum
+        self.minimum = minimum
+        self.type = accessor_type
+        self.sparse = sparse
+        self.size = _component_types[comp_type] * _accessor_type_sizes[accessor_type]
+        # print("Size:", self.size)
 
 
 def parse_gltf_file(filename, file=None):
 
-    if not file:
+    if file is None:
+        file = pyglet.resource.file(filename, 'r')
+    elif file.mode != 'r':
+        file.close()
         file = pyglet.resource.file(filename, 'r')
 
     try:
@@ -116,10 +156,32 @@ def parse_gltf_file(filename, file=None):
         if float(data['asset']['version']) < 2.0:
             raise ModelDecodeException('Only glTF 2.0+ models are supported')
 
-    buffers = {i: Buffer(length=item['byteLength'], uri=item['uri'])
-               for i, item in enumerate(data.get('buffers', []))}
-    buffer_views = data.get('bufferViews', [])
-    accessors = data.get('accessors', [])
+    buffers = dict()
+    buffer_views = dict()
+    accessors = dict()
+
+    for i, item in enumerate(data.get('buffers', [])):
+        buffers[i] = Buffer(length=item['byteLength'], uri=item['uri'])
+
+    for i, item in enumerate(data.get('bufferViews', [])):
+        buffer = buffers[item.get('buffer')]
+        offset = item.get('byteOffset')
+        length = item.get('byteLength')
+        target = item.get('target')
+        stride = item.get('byteStride', 0)
+        buffer_views[i] = BufferView(buffer, offset, length, target, stride)
+
+    for i, item in enumerate(data.get('accessors', [])):
+        buf_view = item.get('bufferView', None)
+        offset = item.get('byteOffset')
+        comp_type = item.get('componentType')
+        count = item.get('count')
+        maximum = item.get('max')
+        minimum = item.get('min')
+        access_type = item.get('type')
+        sparse = item.get('sparse', None)
+        accessors[i] = Accessor(buf_view, offset, comp_type, count,
+                                maximum, minimum, access_type, sparse)
 
     def get_array(accessor):
         # for accessor in accessors:
@@ -130,7 +192,7 @@ def parse_gltf_file(filename, file=None):
         count = accessor['count']
         data_type = accessor['type']
 
-        size = _accessor_types[data_type] * count
+        size = _accessor_type_sizes[data_type] * count
         target = buffer_view['target']
 
         buffer = buffers[buffer_view['buffer']]
@@ -144,7 +206,7 @@ def parse_gltf_file(filename, file=None):
         numeric_array = array.array(_struct_types[component_type], raw_bytes)
         assert size == len(numeric_array)
 
-        return numeric_array, _accessor_types[data_type]
+        return numeric_array, _accessor_type_sizes[data_type]
 
     vertex_lists = []
 
