@@ -40,11 +40,9 @@ from .. import Model, Material, Mesh, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
 
-def load_material_library(path, filename):
+def load_material_library(filename):
 
     file = pyglet.resource.file(filename, 'r')
-
-    # file = open(os.path.join(path, filename), 'r')
 
     name = None
     diffuse = [0.8, 0.8, 0.8]
@@ -96,9 +94,10 @@ def parse_obj_file(filename, file=None):
     mesh_list = []
 
     if file is None:
-        file = open(filename, 'r')
-
-    path = os.path.dirname(filename)
+        file = pyglet.resource.file(filename, 'r')
+    elif file.mode != 'r':
+        file.close()
+        file = pyglet.resource.file(filename, 'r')
 
     material = None
     mesh = None
@@ -131,7 +130,7 @@ def parse_obj_file(filename, file=None):
             tex_coords.append(list(map(float, values[1:3])))
 
         elif values[0] == 'mtllib':
-            material = load_material_library(path, values[1])
+            material = load_material_library(values[1])
             materials[material.name] = material
 
         elif values[0] in ('usemtl', 'usemat'):
@@ -204,15 +203,14 @@ class OBJModelDecoder(ModelDecoder):
         return ['.obj']
 
     def decode(self, file, filename, batch):
-        # TODO: consider how to handle passed files opened in 'rb' mode.
 
         if not batch:
             batch = pyglet.graphics.Batch()
 
-        mesh_list = parse_obj_file(filename=filename)
+        mesh_list = parse_obj_file(filename=filename, file=file)
 
-        textures = {}
         vertex_lists = {}
+        textures = {}
 
         for mesh in mesh_list:
             material = mesh.material

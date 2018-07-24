@@ -681,6 +681,21 @@ class Loader(object):
         self._cached_textures[name] = texture
         return texture
 
+    def model(self, name, batch=None):
+        """Load a 3D model.
+
+        :Parameters:
+            `name` : str
+                Filename of the 3D model to load.
+            `batch` : Batch or None
+                An optional Batch instance to add this model to.
+
+        :rtype: `Model`
+        """
+        # TODO: pass in a TextureBin for the model's textures.
+        loaded_model = pyglet.model.load(name, file=self.file(name), batch=batch)
+        return loaded_model
+
     def html(self, name):
         """Load an HTML document.
 
@@ -761,12 +776,13 @@ location = _default_loader.location
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation
-get_cached_image_names = _default_loader.get_cached_image_names
-get_cached_animation_names = _default_loader.get_cached_animation_names
-get_texture_bins = _default_loader.get_texture_bins
+model = _default_loader.model
 media = _default_loader.media
 texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text
 get_cached_texture_names = _default_loader.get_cached_texture_names
+get_cached_image_names = _default_loader.get_cached_image_names
+get_cached_animation_names = _default_loader.get_cached_animation_names
+get_texture_bins = _default_loader.get_texture_bins

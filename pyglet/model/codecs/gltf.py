@@ -101,9 +101,7 @@ class Buffer(object):
 def parse_gltf_file(filename, file=None):
 
     if not file:
-        file = open(filename)
-
-    path = os.path.abspath(filename)
+        file = pyglet.resource.file(filename, 'r')
 
     try:
         data = json.load(file)
