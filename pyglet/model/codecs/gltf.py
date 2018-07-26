@@ -31,9 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import os
 import json
-import array
 import struct
 
 import pyglet
@@ -45,16 +43,28 @@ from .. import Model, Material, Mesh, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
 
-_struct_types = {
+# pyglet.graphics types
+_pyglet_types = {
     GL_BYTE: 'b',
-    GL_FLOAT: 'f',
-    GL_SHORT: 'h',              # ('h')
     GL_UNSIGNED_BYTE: 'B',
-    GL_UNSIGNED_SHORT: 'H',     # ('S')
+    GL_SHORT: 's',
+    GL_UNSIGNED_SHORT: 'S',
     GL_UNSIGNED_INT: 'I',
+    GL_FLOAT: 'f',
 }
 
-_component_types = {
+# struct module types
+_struct_types = {
+    GL_BYTE: 'b',
+    GL_UNSIGNED_BYTE: 'B',
+    GL_SHORT: 'h',
+    GL_UNSIGNED_SHORT: 'H',
+    GL_UNSIGNED_INT: 'I',
+    GL_FLOAT: 'f',
+}
+
+# OpenGL type sizes
+_component_sizes = {
     GL_BYTE: 1,
     GL_UNSIGNED_BYTE: 1,
     GL_SHORT: 2,
@@ -78,21 +88,16 @@ _targets = {
     GL_ARRAY_BUFFER: "array",
 }
 
-# Vertex position 	"v[234][sifd]" 	"v[234]f"
-# Color 	"c[34][bBsSiIfd]" 	"c[34]B"
-# Edge flag 	"e1[bB]"
-# Fog coordinate 	"f[1234][bBsSiIfd]"
-# Normal 	"n3[bsifd]" 	"n3f"
-# Secondary color 	"s[34][bBsSiIfd]" 	"s[34]B"
-# Texture coordinate 	"[0-31]?t[234][sifd]" 	"[0-31]?t[234]f"
-# Generic attribute 	"[0-15]g(n)?[1234][bBsSiIfd]"
-
+# GLTF to pyglet shorthand types:
 _attributes = {
     'POSITION': 'v',
+    'NORMAL': 'n',
+    'TANGENT': None,
     'TEXCOORD_0': '0t',
     'TEXCOORD_1': '1t',
     'COLOR_0': 'c',
-    'NORMAL': 'n',
+    'JOINTS_0': None,
+    'WEIGHTS_0': None
 }
 
 
@@ -102,12 +107,12 @@ class Buffer(object):
         self._length = length
         self._uri = uri
 
-    def read(self, offset, length, stride=1):
+    def read(self, offset, length):
         file = pyglet.resource.file(self._uri, 'rb')
         file.seek(offset)
         data = file.read(length)
         file.close()
-        return data[::stride]
+        return data
 
 
 class BufferView(object):
@@ -131,8 +136,15 @@ class Accessor(object):
         self.minimum = minimum
         self.type = accessor_type
         self.sparse = sparse
-        self.size = _component_types[comp_type] * _accessor_type_sizes[accessor_type]
-        # print("Size:", self.size)
+        self.size = _component_sizes[comp_type] * _accessor_type_sizes[accessor_type]
+
+    def read(self):
+        offset = self.offset + self.buffer_view.offset
+        length = self.size * self.count
+        stride = self.buffer_view.stride or 1
+        # TODO: handle stride
+        data = self.buffer_view.buffer.read(offset, length)
+        return data
 
 
 def parse_gltf_file(filename, file=None):
@@ -160,80 +172,85 @@ def parse_gltf_file(filename, file=None):
     buffer_views = dict()
     accessors = dict()
 
-    for i, item in enumerate(data.get('buffers', [])):
-        buffers[i] = Buffer(length=item['byteLength'], uri=item['uri'])
+    for accessor_index, item in enumerate(data.get('buffers', [])):
+        buffers[accessor_index] = Buffer(item['byteLength'], item['uri'])
 
-    for i, item in enumerate(data.get('bufferViews', [])):
+    for accessor_index, item in enumerate(data.get('bufferViews', [])):
         buffer = buffers[item.get('buffer')]
         offset = item.get('byteOffset')
         length = item.get('byteLength')
         target = item.get('target')
         stride = item.get('byteStride', 0)
-        buffer_views[i] = BufferView(buffer, offset, length, target, stride)
+        buffer_views[accessor_index] = BufferView(buffer, offset, length, target, stride)
 
-    for i, item in enumerate(data.get('accessors', [])):
-        buf_view = item.get('bufferView', None)
+    for accessor_index, item in enumerate(data.get('accessors', [])):
+        buf_view_index = item.get('bufferView', None)
+        buf_view = buffer_views[buf_view_index]
         offset = item.get('byteOffset')
         comp_type = item.get('componentType')
         count = item.get('count')
-        maximum = item.get('max')
-        minimum = item.get('min')
-        access_type = item.get('type')
+        maxi = item.get('max')
+        mini = item.get('min')
+        acc_type = item.get('type')
         sparse = item.get('sparse', None)
-        accessors[i] = Accessor(buf_view, offset, comp_type, count,
-                                maximum, minimum, access_type, sparse)
+        accessors[accessor_index] = Accessor(buf_view, offset, comp_type, count, maxi, mini, acc_type, sparse)
 
-    def get_array(accessor):
-        # for accessor in accessors:
-        # "required": ["bufferView", "byteOffset", "componentType", "count", "type"]
-        buffer_view = buffer_views[accessor['bufferView']]
-        accessor_byte_offset = accessor['byteOffset']
-        component_type = accessor['componentType']
-        count = accessor['count']
-        data_type = accessor['type']
+    meshes = []
 
-        size = _accessor_type_sizes[data_type] * count
-        target = buffer_view['target']
+    for mesh_data in data.get('meshes'):
 
-        buffer = buffers[buffer_view['buffer']]
+        mesh = Mesh(name=mesh_data.get('name', 'Mesh'))
 
-        buffer_view_byte_offset = buffer_view.get('byteOffset')
-        length = buffer_view.get('byteLength')
-        stride = buffer_view.get('byteStride', 1)   # Default to 1, if no stride.
+        for primitive in mesh_data.get('primitives', []):
 
-        offset = accessor_byte_offset + buffer_view_byte_offset
-        raw_bytes = buffer.read(offset, length, stride)
-        numeric_array = array.array(_struct_types[component_type], raw_bytes)
-        assert size == len(numeric_array)
+            # TODO: validate this
+            indices = primitive.get('indices', None)
 
-        return numeric_array, _accessor_type_sizes[data_type]
+            for attribute_type, accessor_index in primitive['attributes'].items():
 
-    vertex_lists = []
+                accessor = accessors[accessor_index]
 
-    meshes = data.get('meshes')
+                attrib = _attributes[attribute_type]
+                if not attrib:
+                    # TODO: Add support for these attribute types to pyglet
+                    continue
+                attrib_size = _accessor_type_sizes[accessor.type]
+                pyglet_type = _pyglet_types[accessor.component_type]
+                count = accessor.count
+                fmt = "{0}{1}{2}".format(attrib, attrib_size, pyglet_type)
 
-    for mesh in meshes:
-        indices = None
+                struct_fmt = str(count * attrib_size) + _struct_types[accessor.component_type]
+                array = accessor.read()
 
-        for primitive in mesh.get('primitives', []):
-            index = primitive.get('indices', None)
-            if index:
-                indices = get_array(accessors[index])
+                array = struct.unpack(struct_fmt, array)
+                print(attribute_type, indices, count, fmt, len(array))
 
-            for attribute, i in primitive['attributes'].items():
-                arr, count = get_array(accessors[i])
-                attrib = _attributes[attribute]
+                if attribute_type == 'POSITION':
+                    mesh.vertices = array
+                elif attribute_type == 'NORMAL':
+                    mesh.normals = array
+                elif attribute_type == 'TANGENT':
+                    pass
+                elif attribute_type == 'TEXCOORD_0':
+                    mesh.tex_coords = array
+                elif attribute_type == 'TEXCOORD_1':
+                    pass
+                elif attribute_type == 'COLOR_0':
+                    mesh.colors = array
+                elif attribute_type == 'JOINTS_0':
+                    pass
+                elif attribute_type == 'WEIGHTS_0':
+                    pass
 
-                fmt = "{0}{1}{2}".format(attrib, count, arr.typecode)
+            meshes.append(mesh)
 
-                if indices:
-                    vlist = pyglet.graphics.vertex_list_indexed(count, indices, (fmt, arr))
-                else:
-                    vlist = pyglet.graphics.vertex_list(count, (fmt, arr))
+            # if indices:
+            #     vlist = pyglet.graphics.vertex_list_indexed(count, indices, (fmt, array))
+            # else:
+            #     vlist = pyglet.graphics.vertex_list(count, (fmt, array))
+            # vertex_lists.append(vlist)
 
-                vertex_lists.append(vlist)
-
-    return vertex_lists
+    return meshes
 
 
 ###################################################
@@ -273,6 +290,7 @@ class GLTFModelDecoder(ModelDecoder):
 
             group = MaterialGroup(material=material)
 
+            print(mesh)
             vertex_lists[mesh] = group
 
         return Model(vertex_lists, textures, batch=batch)

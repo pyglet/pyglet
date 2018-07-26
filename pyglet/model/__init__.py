@@ -159,10 +159,12 @@ class Mesh(object):
     def __init__(self, name):
         self.name = name
         self.material = None
-        # Interleaved array of floats in GL_T2F_N3F_V3F format
+
+        self.indices = []
         self.vertices = []
         self.normals = []
         self.tex_coords = []
+        self.colors = []
 
 
 class TexturedMaterialGroup(graphics.Group):
