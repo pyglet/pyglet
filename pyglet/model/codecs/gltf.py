@@ -147,7 +147,7 @@ class Accessor(object):
         return data
 
 
-def parse_gltf_file(filename, file=None):
+def parse_gltf_file(filename, file, batch):
 
     if file is None:
         file = pyglet.resource.file(filename, 'r')
@@ -183,6 +183,8 @@ def parse_gltf_file(filename, file=None):
         stride = item.get('byteStride', 0)
         buffer_views[accessor_index] = BufferView(buffer, offset, length, target, stride)
 
+        print(_targets[target])
+
     for accessor_index, item in enumerate(data.get('accessors', [])):
         buf_view_index = item.get('bufferView', None)
         buf_view = buffer_views[buf_view_index]
@@ -195,16 +197,16 @@ def parse_gltf_file(filename, file=None):
         sparse = item.get('sparse', None)
         accessors[accessor_index] = Accessor(buf_view, offset, comp_type, count, maxi, mini, acc_type, sparse)
 
-    meshes = []
+    vertex_lists = []
 
     for mesh_data in data.get('meshes'):
-
-        mesh = Mesh(name=mesh_data.get('name', 'Mesh'))
 
         for primitive in mesh_data.get('primitives', []):
 
             # TODO: validate this
             indices = primitive.get('indices', None)
+            attribute_list = []
+            count = 0
 
             for attribute_type, accessor_index in primitive['attributes'].items():
 
@@ -216,41 +218,32 @@ def parse_gltf_file(filename, file=None):
                     continue
                 attrib_size = _accessor_type_sizes[accessor.type]
                 pyglet_type = _pyglet_types[accessor.component_type]
-                count = accessor.count
                 fmt = "{0}{1}{2}".format(attrib, attrib_size, pyglet_type)
 
+                count = accessor.count
                 struct_fmt = str(count * attrib_size) + _struct_types[accessor.component_type]
-                array = accessor.read()
+                byte_array = accessor.read()
+                array = struct.unpack(struct_fmt, byte_array)
 
-                array = struct.unpack(struct_fmt, array)
-                print(attribute_type, indices, count, fmt, len(array))
+                attribute_list.append((fmt, array))
 
-                if attribute_type == 'POSITION':
-                    mesh.vertices = array
-                elif attribute_type == 'NORMAL':
-                    mesh.normals = array
-                elif attribute_type == 'TANGENT':
-                    pass
-                elif attribute_type == 'TEXCOORD_0':
-                    mesh.tex_coords = array
-                elif attribute_type == 'TEXCOORD_1':
-                    pass
-                elif attribute_type == 'COLOR_0':
-                    mesh.colors = array
-                elif attribute_type == 'JOINTS_0':
-                    pass
-                elif attribute_type == 'WEIGHTS_0':
-                    pass
+            diffuse = [1.0, 1.0, 1.0]
+            ambient = [1.0, 1.0, 1.0]
+            specular = [1.0, 1.0, 1.0]
+            emission = [0.0, 0.0, 0.0]
+            shininess = 100.0
+            opacity = 1.0
+            material = Material("Default", diffuse, ambient, specular, emission, shininess, opacity)
+            group = MaterialGroup(material=material)
 
-            meshes.append(mesh)
+            if indices:
+                vlist = batch.add_indexed(count, GL_TRIANGLES, group, indices, *attribute_list)
+            else:
+                vlist = batch.add(count, GL_TRIANGLES, group, *attribute_list)
 
-            # if indices:
-            #     vlist = pyglet.graphics.vertex_list_indexed(count, indices, (fmt, array))
-            # else:
-            #     vlist = pyglet.graphics.vertex_list(count, (fmt, array))
-            # vertex_lists.append(vlist)
+            vertex_lists.append(vlist)
 
-    return meshes
+    return vertex_lists
 
 
 ###################################################
@@ -266,32 +259,8 @@ class GLTFModelDecoder(ModelDecoder):
         if not batch:
             batch = pyglet.graphics.Batch()
 
-        mesh_list = parse_gltf_file(filename=filename)
-
+        vertex_lists = parse_gltf_file(filename, file, batch)
         textures = {}
-        vertex_lists = {}
-
-        for mesh in mesh_list:
-            # material = mesh.material
-            # if material.texture_name:
-            #     texture = pyglet.resource.texture(material.texture_name)
-            #     group = TexturedMaterialGroup(material, texture)
-            #     textures[texture] = group
-            # else:
-            #     group = MaterialGroup(material)
-
-            diffuse = [1.0, 1.0, 1.0]
-            ambient = [1.0, 1.0, 1.0]
-            specular = [1.0, 1.0, 1.0]
-            emission = [0.0, 0.0, 0.0]
-            shininess = 100.0
-            opacity = 1.0
-            material = Material("Default", diffuse, ambient, specular, emission, shininess, opacity)
-
-            group = MaterialGroup(material=material)
-
-            print(mesh)
-            vertex_lists[mesh] = group
 
         return Model(vertex_lists, textures, batch=batch)
 
