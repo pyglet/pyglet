@@ -36,7 +36,6 @@ from builtins import object
 # ----------------------------------------------------------------------------
 
 import ctypes
-from collections import deque
 
 from pyglet.compat import bytes_type, BytesIO
 from pyglet.media.exceptions import MediaException, CannotSeekException
@@ -132,6 +131,8 @@ class AudioData(object):
             this audio packet.
     """
 
+    __slots__ = 'data', 'length', 'timestamp', 'duration', 'events'
+
     def __init__(self, data, length, timestamp, duration, events):
         self.data = data
         self.length = length
@@ -148,23 +149,23 @@ class AudioData(object):
                     self.events == other.events)
         return False
 
-    def consume(self, bytes, audio_format):
+    def consume(self, num_bytes, audio_format):
         """Remove some data from the beginning of the packet.
 
         All events are cleared.
 
         Args:
-            bytes (int): The number of bytes to consume from the packet.
+            num_bytes (int): The number of bytes to consume from the packet.
             audio_format (:class:`.AudioFormat`): The packet audio format.
         """
         self.events = ()
-        if bytes >= self.length:
+        if num_bytes >= self.length:
             self.data = None
             self.length = 0
             self.timestamp += self.duration
             self.duration = 0.
             return
-        elif bytes == 0:
+        elif num_bytes == 0:
             return
 
         if not isinstance(self.data, str):
@@ -175,10 +176,10 @@ class AudioData(object):
             data = ctypes.create_string_buffer(self.length)
             ctypes.memmove(data, self.data, self.length)
             self.data = data
-        self.data = self.data[bytes:]
-        self.length -= bytes
-        self.duration -= bytes / float(audio_format.bytes_per_second)
-        self.timestamp += bytes / float(audio_format.bytes_per_second)
+        self.data = self.data[num_bytes:]
+        self.length -= num_bytes
+        self.duration -= num_bytes / float(audio_format.bytes_per_second)
+        self.timestamp += num_bytes / float(audio_format.bytes_per_second)
 
     def get_string_data(self):
         """Return data as a bytestring.
@@ -187,6 +188,7 @@ class AudioData(object):
             bytes or str: Data as a (byte)string. For Python 3 it's a
             bytestring while for Python 2 it's a string.
         """
+        # PYTHON2 - remove old Python 2 type checks
         if self.data is None:
             return b''
 

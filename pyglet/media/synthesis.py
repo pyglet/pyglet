@@ -47,7 +47,7 @@ import random
 
 class Envelope(object):
     """Base class for SynthesisSource amplitude envelopes."""
-    def build_envelope(self, sample_rate, duration):
+    def get_generator(self, sample_rate, duration):
         raise NotImplementedError
 
 
@@ -62,10 +62,10 @@ class FlatEnvelope(Envelope):
     def __init__(self, amplitude=0.5):
         self.amplitude = max(min(1.0, amplitude), 0)
 
-    def build_envelope(self, sample_rate, duration):
+    def get_generator(self, sample_rate, duration):
         amplitude = self.amplitude
-        total_bytes = int(sample_rate * duration)
-        return [amplitude for _ in range(total_bytes)]
+        while True:
+            yield amplitude
 
 
 class LinearDecayEnvelope(Envelope):
@@ -82,13 +82,11 @@ class LinearDecayEnvelope(Envelope):
     def __init__(self, peak=1.0):
         self.peak = max(min(1.0, peak), 0)
 
-    def build_envelope(self, sample_rate, duration):
+    def get_generator(self, sample_rate, duration):
         peak = self.peak
         total_bytes = int(sample_rate * duration)
-        envelope = []
         for i in range(total_bytes):
-            envelope.append((total_bytes - i) / total_bytes * peak)
-        return envelope
+            yield (total_bytes - i) / total_bytes * peak
 
 
 class ADSREnvelope(Envelope):
@@ -116,7 +114,7 @@ class ADSREnvelope(Envelope):
         self.release = release
         self.sustain_amplitude = max(min(1.0, sustain_amplitude), 0)
 
-    def build_envelope(self, sample_rate, duration):
+    def get_generator(self, sample_rate, duration):
         sustain_amplitude = self.sustain_amplitude
         total_bytes = int(sample_rate * duration)
         attack_bytes = int(sample_rate * self.attack)
@@ -125,16 +123,14 @@ class ADSREnvelope(Envelope):
         sustain_bytes = total_bytes - attack_bytes - decay_bytes - release_bytes
         decay_step = (1 - sustain_amplitude) / decay_bytes
         release_step = sustain_amplitude / release_bytes
-        envelope = []
         for i in range(1, attack_bytes + 1):
-            envelope.append(i / attack_bytes)
+            yield i / attack_bytes
         for i in range(1, decay_bytes + 1):
-            envelope.append(1 - (i * decay_step))
+            yield 1 - (i * decay_step)
         for i in range(1, sustain_bytes + 1):
-            envelope.append(sustain_amplitude)
+            yield sustain_amplitude
         for i in range(1, release_bytes + 1):
-            envelope.append(sustain_amplitude - (i * release_step))
-        return envelope
+            yield sustain_amplitude - (i * release_step)
 
 
 class TremoloEnvelope(Envelope):
@@ -160,17 +156,15 @@ class TremoloEnvelope(Envelope):
         self.rate = rate
         self.amplitude = max(min(1.0, amplitude), 0)
 
-    def build_envelope(self, sample_rate, duration):
+    def get_generator(self, sample_rate, duration):
         total_bytes = int(sample_rate * duration)
         period = total_bytes / duration
         max_amplitude = self.amplitude
         min_amplitude = max(0.0, (1.0 - self.depth) * self.amplitude)
         step = (math.pi * 2) / period / self.rate
-        envelope = []
         for i in range(total_bytes):
             value = math.sin(step * i)
-            envelope.append(value * (max_amplitude - min_amplitude) + min_amplitude)
-        return envelope
+            yield value * (max_amplitude - min_amplitude) + min_amplitude
 
 
 class SynthesisSource(Source):
@@ -198,39 +192,26 @@ class SynthesisSource(Source):
         self._bytes_per_sample = sample_size >> 3
         self._bytes_per_second = self._bytes_per_sample * sample_rate
         self._max_offset = int(self._bytes_per_second * self._duration)
-        self._envelope = envelope
-        
+        self.envelope = envelope or FlatEnvelope(amplitude=1.0)
+        self._envelope_generator = self.envelope.get_generator(sample_rate, duration)
+
         if self._bytes_per_sample == 2:
             self._max_offset &= 0xfffffffe
-
-        if not self._envelope:
-            self._envelope = FlatEnvelope(amplitude=1.0)
-
-        self._envelope_array = self._envelope.build_envelope(self._sample_rate, self._duration)
-
-    @property
-    def envelope(self):
-        return self._envelope
-
-    @envelope.setter
-    def envelope(self, envelope):
-        self._envelope = envelope
-        self._envelope_array = envelope.build_envelope(self._sample_rate, self._duration)
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         """Return `num_bytes` bytes of audio data."""
         num_bytes = min(num_bytes, self._max_offset - self._offset)
         if num_bytes <= 0:
             return None
-        
+
         timestamp = float(self._offset) / self._bytes_per_second
         duration = float(num_bytes) / self._bytes_per_second
-        data = self._generate_data(num_bytes, self._offset)
+        data = self._generate_data(num_bytes)
         self._offset += num_bytes
 
         return AudioData(data, num_bytes, timestamp, duration, [])
 
-    def _generate_data(self, num_bytes, offset):
+    def _generate_data(self, num_bytes):
         """Generate `num_bytes` bytes of data.
 
         Return data as ctypes array or string.
@@ -247,6 +228,8 @@ class SynthesisSource(Source):
         if self._bytes_per_sample == 2:
             self._offset &= 0xfffffffe
 
+        self._envelope_generator = self.envelope.get_generator(self._sample_rate, self._duration)
+
     def save(self, filename):
         """Save the audio to disk as a standard RIFF Wave.
 
@@ -258,7 +241,6 @@ class SynthesisSource(Source):
                 The file name to save as.
 
         """
-        offset = self._offset
         self.seek(0)
         data = self.get_audio_data(self._max_offset).get_string_data()
         header = struct.pack('<4sI8sIHHIIHH4sI',
@@ -278,13 +260,12 @@ class SynthesisSource(Source):
         with open(filename, "wb") as f:
             f.write(header)
             f.write(data)
-        self._offset = offset
 
 
 class Silence(SynthesisSource):
     """A silent waveform."""
 
-    def _generate_data(self, num_bytes, offset):
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
             return b'\127' * num_bytes
         else:
@@ -294,7 +275,7 @@ class Silence(SynthesisSource):
 class WhiteNoise(SynthesisSource):
     """A white noise, random waveform."""
 
-    def _generate_data(self, num_bytes, offset):
+    def _generate_data(self, num_bytes):
         return os.urandom(num_bytes)
 
 
@@ -315,25 +296,21 @@ class Sine(SynthesisSource):
         super(Sine, self).__init__(duration, **kwargs)
         self.frequency = frequency
 
-    def _generate_data(self, num_bytes, offset):
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
-            start = offset
             samples = num_bytes
             bias = 127
             amplitude = 127
             data = (ctypes.c_ubyte * samples)()
         else:
-            start = offset >> 1
             samples = num_bytes >> 1
             bias = 0
             amplitude = 32767
             data = (ctypes.c_short * samples)()
         step = self.frequency * (math.pi * 2) / self.audio_format.sample_rate
-        envelope = self._envelope_array
-        env_offset = offset // self._bytes_per_sample
+        envelope = self._envelope_generator
         for i in range(samples):
-            data[i] = int(math.sin(step * (i + start)) *
-                          amplitude * envelope[i+env_offset] + bias)
+            data[i] = int(math.sin(step * i) * amplitude * next(envelope) + bias)
         return data
 
 
@@ -354,8 +331,7 @@ class Triangle(SynthesisSource):
         super(Triangle, self).__init__(duration, **kwargs)
         self.frequency = frequency
         
-    def _generate_data(self, num_bytes, offset):
-        # XXX TODO consider offset
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
             samples = num_bytes
             value = 127
@@ -369,8 +345,7 @@ class Triangle(SynthesisSource):
             minimum = -32768
             data = (ctypes.c_short * samples)()
         step = (maximum - minimum) * 2 * self.frequency / self.audio_format.sample_rate
-        envelope = self._envelope_array
-        env_offset = offset // self._bytes_per_sample
+        envelope = self._envelope_generator
         for i in range(samples):
             value += step
             if value > maximum:
@@ -379,7 +354,7 @@ class Triangle(SynthesisSource):
             if value < minimum:
                 value = minimum - (value - minimum)
                 step = -step
-            data[i] = int(value * envelope[i+env_offset])
+            data[i] = int(value * next(envelope))
         return data
 
 
@@ -400,8 +375,7 @@ class Sawtooth(SynthesisSource):
         super(Sawtooth, self).__init__(duration, **kwargs)
         self.frequency = frequency
 
-    def _generate_data(self, num_bytes, offset):
-        # XXX TODO consider offset
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
             samples = num_bytes
             value = 127
@@ -415,13 +389,12 @@ class Sawtooth(SynthesisSource):
             minimum = -32768
             data = (ctypes.c_short * samples)()
         step = (maximum - minimum) * self.frequency / self._sample_rate
-        envelope = self._envelope_array
-        env_offset = offset // self._bytes_per_sample
+        envelope = self._envelope_generator
         for i in range(samples):
             value += step
             if value > maximum:
                 value = minimum + (value % maximum)
-            data[i] = int(value * envelope[i+env_offset])
+            data[i] = int(value * next(envelope))
         return data
 
 
@@ -443,23 +416,19 @@ class Square(SynthesisSource):
         super(Square, self).__init__(duration, **kwargs)
         self.frequency = frequency
 
-    def _generate_data(self, num_bytes, offset):
-        # XXX TODO consider offset
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
-            start = offset
             samples = num_bytes
             bias = 127
             amplitude = 127
             data = (ctypes.c_ubyte * samples)()
         else:
-            start = offset >> 1
             samples = num_bytes >> 1
             bias = 0
             amplitude = 32767
             data = (ctypes.c_short * samples)()
         half_period = self.audio_format.sample_rate / self.frequency / 2
-        envelope = self._envelope_array
-        env_offset = offset // self._bytes_per_sample
+        envelope = self._envelope_generator
         value = 1
         count = 0
         for i in range(samples):
@@ -467,7 +436,7 @@ class Square(SynthesisSource):
                 value = -value
                 count %= half_period
             count += 1
-            data[i] = int(value * amplitude * envelope[i+env_offset] + bias)
+            data[i] = int(value * amplitude * next(envelope) + bias)
         return data
 
 
@@ -499,15 +468,13 @@ class FM(SynthesisSource):
         self.modulator = modulator
         self.mod_index = mod_index
 
-    def _generate_data(self, num_bytes, offset):
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
-            start = offset
             samples = num_bytes
             bias = 127
             amplitude = 127
             data = (ctypes.c_ubyte * samples)()
         else:
-            start = offset >> 1
             samples = num_bytes >> 1
             bias = 0
             amplitude = 32767
@@ -516,14 +483,13 @@ class FM(SynthesisSource):
         mod_step = 2 * math.pi * self.modulator
         mod_index = self.mod_index
         sample_rate = self._sample_rate
-        envelope = self._envelope_array
-        env_offset = offset // self._bytes_per_sample
+        envelope = self._envelope_generator
+        sin = math.sin
         # FM equation:  sin((2 * pi * carrier) + sin(2 * pi * modulator))
         for i in range(samples):
-            increment = (i + start) / sample_rate
-            data[i] = int(math.sin(car_step * increment +
-                                   mod_index * math.sin(mod_step * increment))
-                          * amplitude * envelope[i+env_offset] + bias)
+            increment = i / sample_rate
+            data[i] = int(sin(car_step * increment + mod_index * sin(mod_step * increment))
+                          * amplitude * next(envelope) + bias)
         return data
 
 
@@ -554,31 +520,20 @@ class Digitar(SynthesisSource):
         self.decay = decay
         self.period = int(self._sample_rate / self.frequency)
 
-    def _advance(self, positions):
-        # XXX create fresh ring buffer, and advance if necessary.
-        period = self.period
-        random.seed(10)
-        ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
-        for _ in range(positions):
-            decay = self.decay
-            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
-        self.ring_buffer = ring_buffer
-
-    def _generate_data(self, num_bytes, offset):
+    def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
-            start = offset
             samples = num_bytes
             bias = 127
             amplitude = 127
             data = (ctypes.c_ubyte * samples)()
         else:
-            start = offset >> 1
             samples = num_bytes >> 1
             bias = 0
             amplitude = 32767
             data = (ctypes.c_short * samples)()
-        self._advance(start)
-        ring_buffer = self.ring_buffer
+        random.seed(10)
+        period = self.period
+        ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
         decay = self.decay
         for i in range(samples):
             data[i] = int(ring_buffer[0] * amplitude + bias)
