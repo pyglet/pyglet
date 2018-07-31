@@ -155,18 +155,6 @@ class Material(object):
         self.texture_name = texture_name
 
 
-class Mesh(object):
-    def __init__(self, name):
-        self.name = name
-        self.material = None
-
-        self.indices = []
-        self.vertices = []
-        self.normals = []
-        self.tex_coords = []
-        self.colors = []
-
-
 class TexturedMaterialGroup(graphics.Group):
 
     def __init__(self, material, texture):

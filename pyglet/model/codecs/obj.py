@@ -31,13 +31,24 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import os
 import pyglet
 
 from pyglet.gl import GL_TRIANGLES
 
-from .. import Model, Material, Mesh, MaterialGroup, TexturedMaterialGroup
+from .. import Model, Material, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
+
+
+class Mesh(object):
+    def __init__(self, name):
+        self.name = name
+        self.material = None
+
+        self.indices = []
+        self.vertices = []
+        self.normals = []
+        self.tex_coords = []
+        self.colors = []
 
 
 def load_material_library(filename):

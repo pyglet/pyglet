@@ -39,7 +39,7 @@ import pyglet
 from pyglet.gl import GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_FLOAT
 from pyglet.gl import GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_TRIANGLES
 
-from .. import Model, Material, Mesh, MaterialGroup, TexturedMaterialGroup
+from .. import Model, Material, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
 
@@ -103,6 +103,7 @@ _attributes = {
 
 class Buffer(object):
     # TODO: support GLB format
+    # TODO: support data uris
     def __init__(self, length, uri):
         self._length = length
         self._uri = uri
@@ -147,7 +148,7 @@ class Accessor(object):
         return data
 
 
-def parse_gltf_file(filename, file, batch):
+def parse_gltf_file(file, filename, batch):
 
     if file is None:
         file = pyglet.resource.file(filename, 'r')
@@ -183,8 +184,6 @@ def parse_gltf_file(filename, file, batch):
         stride = item.get('byteStride', 0)
         buffer_views[accessor_index] = BufferView(buffer, offset, length, target, stride)
 
-        print(_targets[target])
-
     for accessor_index, item in enumerate(data.get('accessors', [])):
         buf_view_index = item.get('bufferView', None)
         buf_view = buffer_views[buf_view_index]
@@ -202,30 +201,34 @@ def parse_gltf_file(filename, file, batch):
     for mesh_data in data.get('meshes'):
 
         for primitive in mesh_data.get('primitives', []):
-
-            # TODO: validate this
-            indices = primitive.get('indices', None)
+            indices = None
             attribute_list = []
             count = 0
 
+            if 'indices' in primitive:
+                indices_index = primitive.get('indices')
+                accessor = accessors.get(indices_index)
+                attrib_size = _accessor_type_sizes[accessor.type]
+                fmt = str(accessor.count * attrib_size) + _struct_types[accessor.component_type]
+                indices = struct.unpack('<' + fmt, accessor.read())
+
             for attribute_type, accessor_index in primitive['attributes'].items():
-
                 accessor = accessors[accessor_index]
-
                 attrib = _attributes[attribute_type]
                 if not attrib:
                     # TODO: Add support for these attribute types to pyglet
                     continue
                 attrib_size = _accessor_type_sizes[accessor.type]
                 pyglet_type = _pyglet_types[accessor.component_type]
-                fmt = "{0}{1}{2}".format(attrib, attrib_size, pyglet_type)
+                pyglet_fmt = "{0}{1}{2}".format(attrib, attrib_size, pyglet_type)
 
                 count = accessor.count
                 struct_fmt = str(count * attrib_size) + _struct_types[accessor.component_type]
-                byte_array = accessor.read()
-                array = struct.unpack(struct_fmt, byte_array)
+                array = struct.unpack('<' + struct_fmt, accessor.read())
 
-                attribute_list.append((fmt, array))
+                print(pyglet_fmt)
+
+                attribute_list.append((pyglet_fmt, array))
 
             diffuse = [1.0, 1.0, 1.0]
             ambient = [1.0, 1.0, 1.0]
@@ -259,7 +262,7 @@ class GLTFModelDecoder(ModelDecoder):
         if not batch:
             batch = pyglet.graphics.Batch()
 
-        vertex_lists = parse_gltf_file(filename, file, batch)
+        vertex_lists = parse_gltf_file(file=file, filename=filename, batch=batch)
         textures = {}
 
         return Model(vertex_lists, textures, batch=batch)
