@@ -172,29 +172,31 @@ def parse_gltf_file(file, filename, batch):
     buffers = dict()
     buffer_views = dict()
     accessors = dict()
+    materials = dict()
 
-    for accessor_index, item in enumerate(data.get('buffers', [])):
-        buffers[accessor_index] = Buffer(item['byteLength'], item['uri'])
+    for i, item in enumerate(data.get('buffers', [])):
+        buffers[i] = Buffer(item['byteLength'], item['uri'])
 
-    for accessor_index, item in enumerate(data.get('bufferViews', [])):
-        buffer = buffers[item.get('buffer')]
-        offset = item.get('byteOffset')
+    for i, item in enumerate(data.get('bufferViews', [])):
+        buffer_index = item['buffer']
+        buffer = buffers[buffer_index]
+        offset = item.get('byteOffset', 0)
         length = item.get('byteLength')
         target = item.get('target')
-        stride = item.get('byteStride', 0)
-        buffer_views[accessor_index] = BufferView(buffer, offset, length, target, stride)
+        stride = item.get('byteStride', 1)
+        buffer_views[i] = BufferView(buffer, offset, length, target, stride)
 
-    for accessor_index, item in enumerate(data.get('accessors', [])):
-        buf_view_index = item.get('bufferView', None)
+    for i, item in enumerate(data.get('accessors', [])):
+        buf_view_index = item.get('bufferView')
         buf_view = buffer_views[buf_view_index]
-        offset = item.get('byteOffset')
+        offset = item.get('byteOffset', 0)
         comp_type = item.get('componentType')
         count = item.get('count')
         maxi = item.get('max')
         mini = item.get('min')
         acc_type = item.get('type')
         sparse = item.get('sparse', None)
-        accessors[accessor_index] = Accessor(buf_view, offset, comp_type, count, maxi, mini, acc_type, sparse)
+        accessors[i] = Accessor(buf_view, offset, comp_type, count, maxi, mini, acc_type, sparse)
 
     vertex_lists = []
 
@@ -205,15 +207,8 @@ def parse_gltf_file(file, filename, batch):
             attribute_list = []
             count = 0
 
-            if 'indices' in primitive:
-                indices_index = primitive.get('indices')
-                accessor = accessors.get(indices_index)
-                attrib_size = _accessor_type_sizes[accessor.type]
-                fmt = str(accessor.count * attrib_size) + _struct_types[accessor.component_type]
-                indices = struct.unpack('<' + fmt, accessor.read())
-
-            for attribute_type, accessor_index in primitive['attributes'].items():
-                accessor = accessors[accessor_index]
+            for attribute_type, i in primitive['attributes'].items():
+                accessor = accessors[i]
                 attrib = _attributes[attribute_type]
                 if not attrib:
                     # TODO: Add support for these attribute types to pyglet
@@ -226,9 +221,19 @@ def parse_gltf_file(file, filename, batch):
                 struct_fmt = str(count * attrib_size) + _struct_types[accessor.component_type]
                 array = struct.unpack('<' + struct_fmt, accessor.read())
 
-                print(pyglet_fmt)
-
                 attribute_list.append((pyglet_fmt, array))
+
+            if 'indices' in primitive:
+                indices_index = primitive.get('indices')
+                accessor = accessors[indices_index]
+                attrib_size = _accessor_type_sizes[accessor.type]
+                fmt = str(accessor.count * attrib_size) + _struct_types[accessor.component_type]
+                indices = struct.unpack('<' + fmt, accessor.read())
+
+            # if 'material' in primitive:
+            #     material_index = primitive.get('material')
+            #     color = materials[material_index]
+            #     attribute_list.append(('c4f', color * count))
 
             diffuse = [1.0, 1.0, 1.0]
             ambient = [1.0, 1.0, 1.0]
