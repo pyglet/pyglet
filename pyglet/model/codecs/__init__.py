@@ -99,7 +99,6 @@ def get_decoders(filename=None):
     if filename:
         extension = os.path.splitext(filename)[1].lower()
         decoders += _decoder_extensions.get(extension, [])
-    decoders += [e for e in _decoders if e not in decoders]
     return decoders
 
 
