@@ -691,9 +691,8 @@ class Loader(object):
 
         :rtype: `Model`
         """
-        # TODO: pass in a TextureBin for the model's textures.
-        loaded_model = pyglet.model.load(name, file=self.file(name), batch=batch)
-        return loaded_model
+        # TODO: consider adding Model textures to the managed Atlas
+        return pyglet.model.load(filename=name, file=self.file(name), batch=batch)
 
     def html(self, name):
         """Load an HTML document.

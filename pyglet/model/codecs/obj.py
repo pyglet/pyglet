@@ -145,8 +145,7 @@ def parse_obj_file(filename, file=None):
             materials[material.name] = material
 
         elif values[0] in ('usemtl', 'usemat'):
-            # TODO: fail on missing material instead of using default?
-            material = materials.get(values[1], default_material)
+            material = materials.get(values[1])
             if mesh is not None:
                 mesh.material = material
 
@@ -170,21 +169,19 @@ def parse_obj_file(filename, file=None):
             tlast = None
             v1 = None
             vlast = None
-            # points = []
-            for i, v in enumerate(values[1:]):
-                v_index, t_index, n_index = \
-                    (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
-                if v_index < 0:
-                    v_index += len(vertices) - 1
-                if t_index < 0:
-                    t_index += len(tex_coords) - 1
-                if n_index < 0:
-                    n_index += len(normals) - 1
-                # vertex = tex_coords[t_index] + normals[n_index] + vertices[v_index]
 
-                mesh.normals += normals[n_index]
-                mesh.tex_coords += tex_coords[t_index]
-                mesh.vertices += vertices[v_index]
+            for i, v in enumerate(values[1:]):
+                v_i, t_i, n_i = (list(map(int, [j or 0 for j in v.split('/')])) + [0, 0])[:3]
+                if v_i < 0:
+                    v_i += len(vertices) - 1
+                if t_i < 0:
+                    t_i += len(tex_coords) - 1
+                if n_i < 0:
+                    n_i += len(normals) - 1
+
+                mesh.normals += normals[n_i]
+                mesh.tex_coords += tex_coords[t_i]
+                mesh.vertices += vertices[v_i]
 
                 if i >= 3:
                     # Triangulate
@@ -193,12 +190,12 @@ def parse_obj_file(filename, file=None):
                     mesh.vertices += v1 + vlast
 
                 if i == 0:
-                    n1 = normals[n_index]
-                    t1 = tex_coords[t_index]
-                    v1 = vertices[v_index]
-                nlast = normals[n_index]
-                tlast = tex_coords[t_index]
-                vlast = vertices[v_index]
+                    n1 = normals[n_i]
+                    t1 = tex_coords[t_i]
+                    v1 = vertices[v_i]
+                nlast = normals[n_i]
+                tlast = tex_coords[t_i]
+                vlast = vertices[v_i]
 
     file.close()
 
