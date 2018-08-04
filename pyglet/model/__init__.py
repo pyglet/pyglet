@@ -31,6 +31,55 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+"""Loading of 3D models.
+
+A :py:class:`~pyglet.model.Model` is an instance of a 3D object.
+
+The following example loads a ``"teapot.obj"`` model::
+
+    import pyglet
+
+    window = pyglet.window.Window()
+
+    teapot = pyglet.model.load('teapot.obj')
+
+    @window.event
+    def on_draw():
+        teapot.draw()
+
+    pyglet.app.run()
+
+
+Efficient Drawing
+=================
+
+As with Sprites or Text, Models added to a :py:class:`~pyglet.graphics.Batch`
+instance for efficient drawing. This is preferred to calling their ``draw``
+methods individually.  To do this, simply pass in a reference to the
+:py:class:`~pyglet.graphics.Batch` instance when loading the Model::
+
+
+    import pyglet
+
+    window = pyglet.window.Window()
+    batch = pyglet.graphics.Batch()
+
+    teapot = pyglet.model.load('teapot.obj', batch=batch)
+
+    @window.event
+    def on_draw():
+        batch.draw()
+
+    pyglet.app.run()
+
+
+.. versionadded:: 1.4
+"""
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id$'
+
+
 from pyglet.compat import BytesIO
 from pyglet.gl import *
 from pyglet import graphics

@@ -129,7 +129,7 @@ def add_encoders(module):
 
 
 def add_default_model_codecs():
-    # Add the codecs we know about. These should be listed in order of
+    # Add all bundled codecs. These should be listed in order of
     # preference. This is called automatically by pyglet.model.
 
     try:
@@ -138,8 +138,9 @@ def add_default_model_codecs():
     except ImportError:
         pass
 
-    try:
-        from pyglet.model.codecs import gltf
-        add_decoders(gltf)
-    except ImportError:
-        pass
+    # TODO: complete this decoder, and enable it by default
+    # try:
+    #     from pyglet.model.codecs import gltf
+    #     add_decoders(gltf)
+    # except ImportError:
+    #     pass
