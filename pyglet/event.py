@@ -360,8 +360,8 @@ class EventDispatcher(object):
                     invoked = True
                     if handler(*args):
                         return EVENT_HANDLED
-                except TypeError:
-                    self._raise_dispatch_exception(event_type, args, handler)
+                except TypeError as exception:
+                    self._raise_dispatch_exception(event_type, args, handler, exception)
 
         # Check instance for an event handler
         if hasattr(self, event_type):
@@ -369,15 +369,15 @@ class EventDispatcher(object):
                 invoked = True
                 if getattr(self, event_type)(*args):
                     return EVENT_HANDLED
-            except TypeError:
-                self._raise_dispatch_exception(event_type, args, getattr(self, event_type))
+            except TypeError as exception:
+                self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
 
         if invoked:
             return EVENT_UNHANDLED
 
         return False
 
-    def _raise_dispatch_exception(self, event_type, args, handler):
+    def _raise_dispatch_exception(self, event_type, args, handler, exception):
         # A common problem in applications is having the wrong number of
         # arguments in an event handler.  This is caught as a TypeError in
         # dispatch_event but the error message is obfuscated.
@@ -418,6 +418,8 @@ class EventDispatcher(object):
             raise TypeError("The '{0}' event was dispatched with {1} arguments, "
                             "but the handler {2} is written with {3} arguments.".format(
                              event_type, len(args), descr, len(handler_args)))
+        else:
+            raise exception
 
     def event(self, *args):
         """Function decorator for an event handler.  
