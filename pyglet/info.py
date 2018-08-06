@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -84,9 +84,7 @@ def dump_pyglet():
 def dump_window():
     '''Dump display, window, screen and default config info.'''
     import pyglet.window
-    platform = pyglet.window.get_platform()
-    print('platform:', repr(platform))
-    display = platform.get_default_display()
+    display = pyglet.canvas.get_display()
     print('display:', repr(display))
     screens = display.get_screens()
     for i, screen in enumerate(screens):

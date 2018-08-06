@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -77,10 +77,10 @@ release resources immediately.
 
 from .drivers import get_audio_driver
 from .exceptions import MediaDecodeException
-from .player import Player, PlayerGroup, PlayList
+from .player import Player, PlayerGroup
 from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
 from .codecs import add_default_media_codecs, have_ffmpeg
-from .codecs import Source, StaticSource, StreamingSource, PlayList
+from .codecs import Source, StaticSource, StreamingSource
 
 from . import synthesis
 
@@ -92,7 +92,6 @@ __all__ = (
     'load',
     'get_audio_driver',
     'Player',
-    'PlayList',
     'PlayerGroup',
     'get_encoders',
     'get_decoders',

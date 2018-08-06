@@ -720,6 +720,7 @@ def on_key_press(symbol, modifiers):
 
 @win.event
 def on_draw():
+    win.clear()
     glColor3f(1, 1, 1)
 
     # Render

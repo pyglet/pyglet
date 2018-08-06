@@ -4,12 +4,12 @@ Sound and video
 pyglet can play many audio and video formats. Audio is played back with
 either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated 
 mixing and surround-sound 3D positioning. Video is played into OpenGL 
-textures, and so can be easily be manipulated in real-time by applications 
+textures, and so can be easily manipulated in real-time by applications 
 and incorporated into 3D environments.
 
-Decoding of compressed audio and video is provided by `FFmpeg`_, an optional
-component available for Linux, Windows and Mac OS X. FFmpeg needs to be 
-installed separately.
+Decoding of compressed audio and video is provided by `FFmpeg`_ v4.X, an
+optional component available for Linux, Windows and Mac OS X. FFmpeg needs
+to be installed separately.
 
 If FFmpeg is not present, pyglet will fall back to reading uncompressed WAV
 files only. This may be sufficient for many applications that require only a
@@ -132,23 +132,39 @@ Some of the supported video formats are:
 * OGG/Theora
 * Xvid
 * WMV
+* Webm
 
 For a complete list, see the FFmpeg sources. Otherwise, it is probably simpler
 to try playing back your target file with the ``media_player.py`` example.
 
 New versions of FFmpeg as they are released may support additional formats, or
 fix errors in the current implementation. Currently a C bindings was written
-with ctypes using FFmpeg v3.3. Future versions of FFmpeg might need a rewrite
-of the binding.
+with ctypes using FFmpeg v4.X. This means that this version of pyglet will
+support all FFmpeg binaries with the major version set to 4.
 
 FFmpeg installation
 -------------------
 
 You can install FFmpeg for your platform by following the instructions found
-in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page.
+in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
+choose the shared build for the targeted OS with the architecture similar to
+the Python interpreter.
 
-For Mac OS and Linux, the library is usually installed system-wide. For 
-Windows users, it's not recommended to install the library in one of the 
+This means that the major version must be 4.X. All minor versions are supported.
+Choose the correct architecture depending on the targeted **Python interpreter**.
+If you're shipping your project with a 32 bits interpreter, you must download the
+32 bits shared binaries.
+
+On Windows, the usual error message when the wrong architecture was downloaded
+is::
+
+    WindowsError: [Error 193] %1 is not a valid Win32 application
+
+Finally make sure you download the **shared** builds, not the static or the
+dev builds.
+
+For Mac OS and Linux, the library is usually already installed system-wide.
+For Windows users, it's not recommended to install the library in one of the 
 windows sub-folders.
 
 Instead we recommend to use the :py:data:`pyglet.options`
@@ -157,8 +173,17 @@ Instead we recommend to use the :py:data:`pyglet.options`
     import pyglet
     pyglet.options['search_local_libs'] = True
 
-This will allow pyglet to find the FFmpeg binaries in the ``lib`` folder 
+This will allow pyglet to find the FFmpeg binaries in the ``lib`` sub-folder 
 located in your running script folder.
+
+Another solution is to manipulate the environment variable. On Windows you can
+add the dll location to the PATH::
+
+    os.environ["PATH"] += "path/to/ffmpeg"
+
+For Linux and Mac OS::
+
+    os.environ["LD_LIBRARY_PATH"] += ":" + "path/to/ffmpeg"
 
 Loading media
 -------------
@@ -291,8 +316,9 @@ without needing to keep track of them. For example, a sound needs to be
 played when the player's space ship explodes, but this sound never needs to
 have its volume adjusted, or be rewound, or interrupted.
 
-pyglet provides a simple interface for this kind of use-case. Call the :meth:`~pyglet.media.Source.play`
-method of any :class:`~pyglet.media.Source` to play it immediately and completely::
+pyglet provides a simple interface for this kind of use-case. Call the
+:meth:`~pyglet.media.Source.play` method of any :class:`~pyglet.media.Source` to play
+it immediately and completely::
 
     explosion = pyglet.media.load('explosion.wav', streaming=False)
     explosion.play()
@@ -320,6 +346,27 @@ can be queued on a single player, but once queued, a source can never be
 dequeued (until it is removed automatically once complete). The main use of
 this queueing mechanism is to facilitate "gapless" transitions between
 playback of media files.
+
+The :py:meth:`~pyglet.media.player.Player.queue` method is used to queue
+a media on the player - a :py:class:`~pyglet.media.StreamingSource` or a
+:py:class:`~pyglet.media.StaticSource`. Either you pass one instance, or you
+can also pass an iterable of sources. This provides great flexibility. For
+instance, you could create a generator which takes care of the logic about
+what music to play::
+
+    def my_playlist():
+       yield intro
+       while game_is_running():
+          yield main_theme
+       yield ending
+
+    player.queue(my_playlist())
+
+When the game ends, you will still need to call on the player::
+
+    player.next_source()
+
+The generator will pass the ``ending`` media to the player.
 
 A :py:class:`~pyglet.media.StreamingSource` can only ever be queued on one
 player, and only once on that player. :py:class:`~pyglet.media.StaticSource`
@@ -350,8 +397,6 @@ Standard controls for controlling playback are provided by these methods:
           - Pause playback of the current source.
         * - :py:meth:`~pyglet.media.Player.next_source`
           - Dequeue the current source and move to the next one immediately.
-            :py:meth:`~pyglet.media.Player.next` can also be used but it is deprecated because of
-            incompatibilities with Python 3.
         * - :py:meth:`~pyglet.media.Player.seek`
           - Seek to a specific time within the current source.
 

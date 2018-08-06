@@ -60,14 +60,12 @@ Classes
   .. automethod:: play
   .. automethod:: pause
 
-.. autoclass:: pyglet.media.sources.PlayList
-
-.. autoclass:: AudioFormat
-.. autoclass:: VideoFormat
-.. autoclass:: AudioData
+.. autoclass:: pyglet.media.codecs.AudioFormat
+.. autoclass:: pyglet.media.codecs.VideoFormat
+.. autoclass:: pyglet.media.codecs.AudioData
     :members:
 
-.. autoclass:: SourceInfo
+.. autoclass:: pyglet.media.codecs.SourceInfo
     :members:
 
 .. autoclass:: Source
@@ -83,12 +81,12 @@ Classes
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: pyglet.media.sources.base.StaticMemorySource
+.. autoclass:: pyglet.media.codecs.StaticMemorySource
   :members:
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: pyglet.media.listener.AbstractListener
+.. autoclass:: pyglet.media.drivers.listener.AbstractListener
   :members:
   :undoc-members:
 

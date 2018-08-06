@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -46,20 +46,20 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
     # no audio correction is done if too big error
     AV_NOSYNC_THRESHOLD = 10.0
 
-    def __init__(self, playlist, player):
+    def __init__(self, source, player):
         """Create a new audio player.
 
         :Parameters:
-            `playlist` : `PlayList`
-                Source group to play from.
+            `source` : `Source`
+                Source to play from.
             `player` : `Player`
                 Player to receive EOS and video frame sync events.
 
         """
-        # We only keep weakref to the player and its playlist to avoid
-        # circular references. It's the player who owns the playlist and
+        # We only keep weakref to the player and its source to avoid
+        # circular references. It's the player who owns the source and
         # the audio_player
-        self.playlist = weakref.proxy(playlist)
+        self.source = source
         self.player = weakref.proxy(player)
 
         # Audio synchronization
@@ -185,10 +185,20 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         """See `Player.cone_outer_gain`."""
         pass
 
+    @property
+    def source(self):
+        "Source to play from."
+        return self._source
+
+    @source.setter
+    def source(self, value):
+        self._source = weakref.proxy(value)
+
+
 
 class AbstractAudioDriver(with_metaclass(ABCMeta, object)):
     @abstractmethod
-    def create_audio_player(self, playlist, player):
+    def create_audio_player(self, source, player):
         pass
 
     @abstractmethod

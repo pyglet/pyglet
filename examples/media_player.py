@@ -256,6 +256,9 @@ class PlayerWindow(pyglet.window.Window):
             i += 1
             x += screen_button.width + self.GUI_PADDING
 
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     def on_player_next_source(self):
         self.gui_update_state()
         self.gui_update_source()
@@ -390,9 +393,7 @@ def main(target, dbg_file, debug):
     player = pyglet.media.Player()
     window = PlayerWindow(player)
 
-    for filename in sys.argv[1:]:
-        source = pyglet.media.load(filename)
-        player.queue(source)
+    player.queue(pyglet.media.load(filename) for filename in sys.argv[1:])
 
     window.gui_update_source()
     window.set_visible(True)
