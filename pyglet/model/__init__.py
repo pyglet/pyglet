@@ -53,10 +53,11 @@ The following example loads a ``"teapot.obj"`` model::
 Efficient Drawing
 =================
 
-As with Sprites or Text, Models added to a :py:class:`~pyglet.graphics.Batch`
-instance for efficient drawing. This is preferred to calling their ``draw``
-methods individually.  To do this, simply pass in a reference to the
-:py:class:`~pyglet.graphics.Batch` instance when loading the Model::
+As with Sprites or Text, Models can be added to a
+:py:class:`~pyglet.graphics.Batch` for efficient drawing. This is
+preferred to calling their ``draw`` methods individually.  To do this,
+simply pass in a reference to the :py:class:`~pyglet.graphics.Batch`
+instance when loading the Model::
 
 
     import pyglet
@@ -100,10 +101,10 @@ def load(filename, file=None, decoder=None, batch=None):
             Source of model data in any supported format.        
         `decoder` : ModelDecoder or None
             If unspecified, all decoders that are registered for the filename
-            extension are tried.  If none succeed, the exception from the
-            first decoder is raised.
+            extension are tried. An exception is raised if no codecs are
+            registered for the file extension, or if decoding fails.
         `batch` : Batch or None
-            An optional Batch instance to add this model to. 
+            An optional Batch instance to add this model to.
 
     :rtype: Model
     """
@@ -138,9 +139,9 @@ def load(filename, file=None, decoder=None, batch=None):
 
 class Model(object):
 
-    def __init__(self, vertex_lists, textures, batch):
+    def __init__(self, vertex_lists, groups, batch):
         self.vertex_lists = vertex_lists
-        self.textures = textures
+        self.groups = groups
         self._batch = batch
 
     @property

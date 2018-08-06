@@ -217,15 +217,14 @@ class OBJModelDecoder(ModelDecoder):
 
         mesh_list = parse_obj_file(filename=filename, file=file)
 
-        vertex_lists = {}
-        textures = {}
+        vertex_lists = []
+        groups = []
 
         for mesh in mesh_list:
             material = mesh.material
             if material.texture_name:
                 texture = pyglet.resource.texture(material.texture_name)
                 group = TexturedMaterialGroup(material, texture)
-                textures[texture] = group
             else:
                 group = MaterialGroup(material)
 
@@ -236,9 +235,10 @@ class OBJModelDecoder(ModelDecoder):
                               ('n3f/static', mesh.normals),
                               ('t2f/static', mesh.tex_coords))
 
-            vertex_lists[vlist] = group
+            vertex_lists.append(vlist)
+            groups.append(group)
 
-        return Model(vertex_lists, textures, batch=batch)
+        return Model(vertex_lists, groups, batch=batch)
 
 
 def get_decoders():
