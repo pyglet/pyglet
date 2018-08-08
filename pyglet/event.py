@@ -364,13 +364,15 @@ class EventDispatcher(object):
                     self._raise_dispatch_exception(event_type, args, handler, exception)
 
         # Check instance for an event handler
-        if hasattr(self, event_type):
+        handler = getattr(self, event_type, None)
+        if handler is not None:
             try:
-                invoked = True
-                if getattr(self, event_type)(*args):
+                if handler(*args):
                     return EVENT_HANDLED
             except TypeError as exception:
-                self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
+                self._raise_dispatch_exception(event_type, args, handler, exception)
+            else:
+                invoked = True
 
         if invoked:
             return EVENT_UNHANDLED
