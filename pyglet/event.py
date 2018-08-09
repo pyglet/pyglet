@@ -141,7 +141,7 @@ __version__ = '$Id$'
 
 import inspect
 
-EVENT_HANDLED = True 
+EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
 
@@ -219,7 +219,7 @@ class EventDispatcher(object):
     def set_handlers(self, *args, **kwargs):
         """Attach one or more event handlers to the top level of the handler
         stack.
-        
+
         See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the accepted argument types.
         """
         # Create event stack if necessary
@@ -322,7 +322,7 @@ class EventDispatcher(object):
 
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
-        
+
         The event is propagated to all handlers from from the top of the stack
         until one returns `EVENT_HANDLED`.  This method should be used only by
         :py:class:`~pyglet.event.EventDispatcher` implementors; applications should call
@@ -340,10 +340,10 @@ class EventDispatcher(object):
                 Arguments to pass to the event handler.
 
         :rtype: bool or None
-        :return: (Since pyglet 1.2) `EVENT_HANDLED` if an event handler 
+        :return: (Since pyglet 1.2) `EVENT_HANDLED` if an event handler
             returned `EVENT_HANDLED`; `EVENT_UNHANDLED` if one or more event
             handlers were invoked but returned only `EVENT_UNHANDLED`;
-            otherwise ``False``.  In pyglet 1.1 and earler, the return value
+            otherwise ``False``.  In pyglet 1.1 and earlier, the return value
             is always ``None``.
 
         """
