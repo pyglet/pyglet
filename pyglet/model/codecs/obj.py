@@ -31,6 +31,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+import os
+
 import pyglet
 
 from pyglet.gl import GL_TRIANGLES
@@ -53,7 +55,7 @@ class Mesh(object):
 
 def load_material_library(filename):
 
-    file = pyglet.resource.file(filename, 'r')
+    file = open(filename, 'r')
 
     name = None
     diffuse = [0.8, 0.8, 0.8]
@@ -105,10 +107,14 @@ def parse_obj_file(filename, file=None):
     mesh_list = []
 
     if file is None:
-        file = pyglet.resource.file(filename, 'r')
-    elif file.mode != 'r':
+        file = open(filename, 'r')
+
+    elif hasattr(file, 'mode') and file.mode != 'r':
+         file.close()
+         file = open(filename, 'r')
+    else:
         file.close()
-        file = pyglet.resource.file(filename, 'r')
+        file = open(filename, 'r')
 
     material = None
     mesh = None
@@ -141,7 +147,8 @@ def parse_obj_file(filename, file=None):
             tex_coords.append(list(map(float, values[1:3])))
 
         elif values[0] == 'mtllib':
-            material = load_material_library(values[1])
+            material_path = os.path.join(os.path.dirname(file.name), values[1])
+            material = load_material_library(filename=material_path)
             materials[material.name] = material
 
         elif values[0] in ('usemtl', 'usemat'):
