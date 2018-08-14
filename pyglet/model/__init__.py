@@ -90,6 +90,12 @@ from .codecs import add_encoders, add_decoders, add_default_model_codecs
 from .codecs import get_encoders, get_decoders
 
 
+_default_identity = [1.0, 0.0, 0.0, 0.0,
+                     0.0, 1.0, 0.0, 0.0,
+                     0.0, 0.0, 1.0, 0.0,
+                     0.0, 0.0, 0.0, 1.0]
+
+
 def load(filename, file=None, decoder=None, batch=None):
     """Load a 3D model from a file.
 
@@ -143,6 +149,7 @@ class Model(object):
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch
+        self._matrix = groups[0].matrix
 
     @property
     def batch(self):
@@ -170,23 +177,17 @@ class Model(object):
 
         self._batch = batch
 
-    def update(self, x=None, y=None, z=None):
-        """Shift the model on the x, y or z axis"""
-        if x:
-            for vlist in self.vertex_lists:
-                verts = vlist.vertices[:]
-                vlist.vertices[0::3] = [v + x for v in verts[0::3]]
-        if y:
-            for vlist in self.vertex_lists:
-                verts = vlist.vertices[:]
-                vlist.vertices[1::3] = [v + y for v in verts[1::3]]
-        if z:
-            for vlist in self.vertex_lists:
-                verts = vlist.vertices[:]
-                vlist.vertices[2::3] = [v + z for v in verts[2::3]]
+    @property
+    def matrix(self):
+        return self._matrix
+
+    @matrix.setter
+    def matrix(self, matrix):
+        for group in self.groups:
+            group.matrix[:] = matrix
 
     def draw(self):
-        self._batch.draw_subset(self.vertex_lists.keys())
+        self._batch.draw_subset(self.vertex_lists)
 
 
 class Material(object):
@@ -207,10 +208,11 @@ class Material(object):
 
 class TexturedMaterialGroup(graphics.Group):
 
-    def __init__(self, material, texture):
+    def __init__(self, material, texture, matrix=None):
         super(TexturedMaterialGroup, self).__init__()
         self.material = material
         self.texture = texture
+        self.matrix = (GLfloat * 16)(*matrix or _default_identity)
 
     def set_state(self, face=GL_FRONT_AND_BACK):
         glEnable(self.texture.target)
@@ -222,6 +224,7 @@ class TexturedMaterialGroup(graphics.Group):
         glMaterialfv(face, GL_EMISSION, material.emission)
         glMaterialf(face, GL_SHININESS, material.shininess)
         glPushMatrix()
+        glMultMatrixf(self.matrix)
 
     def unset_state(self):
         glPopMatrix()
@@ -229,14 +232,7 @@ class TexturedMaterialGroup(graphics.Group):
         glDisable(GL_COLOR_MATERIAL)
 
     def __eq__(self, other):
-        material = self.material
-        return (self.texture.id == other.texture.id and
-                self.texture.target == other.texture.target and
-                material.diffuse[:] == other.material.diffuse[:] and
-                material.ambient[:] == other.material.ambient[:] and
-                material.specular[:] == other.material.specular[:] and
-                material.emission[:] == other.material.emission[:] and
-                material.shininess == other.material.shininess)
+        return False    # Do not consolidate Groups when adding to a Batch
 
     def __hash__(self):
         return hash((self.texture.id, self.texture.target))
@@ -244,16 +240,10 @@ class TexturedMaterialGroup(graphics.Group):
 
 class MaterialGroup(graphics.Group):
 
-    def __init__(self, material, position=None):
+    def __init__(self, material, matrix=None):
         super(MaterialGroup, self).__init__()
         self.material = material
-
-        self.position = position or [0, 0, 0]
-
-        self.matrix = [1.0, 0.0, 0.0, 0.0,
-                       0.0, 1.0, 0.0, 0.0,
-                       0.0, 0.0, 1.0, 0.0,
-                       0.0, 0.0, 0.0, 1.0]
+        self.matrix = (GLfloat * 16)(*matrix or _default_identity)
 
     def set_state(self, face=GL_FRONT_AND_BACK):
         glDisable(GL_TEXTURE_2D)
@@ -265,21 +255,14 @@ class MaterialGroup(graphics.Group):
         glMaterialf(face, GL_SHININESS, material.shininess)
 
         glPushMatrix()
-        # glTranslatef(*self.position)
-        glMultMatrixf(*self.matrix)
+        glMultMatrixf(self.matrix)
 
     def unset_state(self):
         glPopMatrix()
         glDisable(GL_COLOR_MATERIAL)
 
     def __eq__(self, other):
-        material = self.material
-        return (self.__class__ is other.__class__ and
-                material.diffuse[:] == other.material.diffuse[:] and
-                material.ambient[:] == other.material.ambient[:] and
-                material.specular[:] == other.material.specular[:] and
-                material.emission[:] == other.material.emission[:] and
-                material.shininess == other.material.shininess)
+        return False    # Do not consolidate Groups when adding to a Batch
 
     def __hash__(self):
         material = self.material
