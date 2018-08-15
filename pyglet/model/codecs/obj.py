@@ -234,18 +234,15 @@ class OBJModelDecoder(ModelDecoder):
                 group = TexturedMaterialGroup(material, texture)
             else:
                 group = MaterialGroup(material)
-
-            vlist = batch.add(len(mesh.vertices) // 3,
-                              GL_TRIANGLES,
-                              group,
-                              ('v3f/static', mesh.vertices),
-                              ('n3f/static', mesh.normals),
-                              ('t2f/static', mesh.tex_coords))
-
-            vertex_lists.append(vlist)
             groups.append(group)
+            vertex_lists.append(batch.add(len(mesh.vertices) // 3,
+                                          GL_TRIANGLES,
+                                          group,
+                                          ('v3f/static', mesh.vertices),
+                                          ('n3f/static', mesh.normals),
+                                          ('t2f/static', mesh.tex_coords)))
 
-        return Model(vertex_lists, groups, batch=batch)
+        return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
 
 
 def get_decoders():

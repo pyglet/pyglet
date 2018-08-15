@@ -50,6 +50,10 @@ The following example loads a ``"teapot.obj"`` model::
     pyglet.app.run()
 
 
+You can also load models with :py:meth:`~pyglet.resource.model`.
+See :py:mod:`~pyglet.resource` for more information.
+
+
 Efficient Drawing
 =================
 
@@ -112,7 +116,7 @@ def load(filename, file=None, decoder=None, batch=None):
         `batch` : Batch or None
             An optional Batch instance to add this model to.
 
-    :rtype: Model
+    :rtype: :py:mod:`~pyglet.model.Model`
     """
 
     if not file:
@@ -144,12 +148,30 @@ def load(filename, file=None, decoder=None, batch=None):
 
 
 class Model(object):
+    """Instance of a 3D object.
+
+    See the module documentation for usage.
+    """
 
     def __init__(self, vertex_lists, groups, batch):
-        self.vertex_lists = vertex_lists
+        """Create a model.
+
+        :Parameters:
+            `vertex_lists` : list
+                A list of `~pyglet.graphics.VertexList` or
+                `~pyglet.graphics.IndexedVertexList`.
+            `groups` : list
+                A list of `~pyglet.model.TexturedMaterialGroup`, or
+                 `~pyglet.model.MaterialGroup`. Each group corresponds to
+                 a vertex list in `vertex_lists` of the same index.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the model to. If no batch is provided,
+                the model will maintain it's own internal batch.
+        """
         self.groups = groups
+        self.vertex_lists = vertex_lists
         self._batch = batch
-        self._matrix = groups[0].matrix
+        self._matrix = _default_identity
 
     @property
     def batch(self):
@@ -172,21 +194,34 @@ class Model(object):
         if batch is None:
             batch = pyglet.graphics.Batch()
 
-        for vlist, group in self.vertex_lists.items():
+        for group, vlist in zip(self.groups, self.vertex_lists):
             self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
 
         self._batch = batch
 
     @property
     def matrix(self):
+        """Transformation matrix.
+
+        A 4x4 matrix containing the desired transformation to
+        apply. The data should be provided as a flat list or tuple.
+
+        :type: list or tuple
+        """
         return self._matrix
 
     @matrix.setter
     def matrix(self, matrix):
         for group in self.groups:
             group.matrix[:] = matrix
+        self._matrix = matrix
 
     def draw(self):
+        """Draw the model.
+
+        This is not recommended. See the module documentation
+        for information on efficient drawing of multiple models.
+        """
         self._batch.draw_subset(self.vertex_lists)
 
 
@@ -223,6 +258,7 @@ class TexturedMaterialGroup(graphics.Group):
         glMaterialfv(face, GL_SPECULAR, material.specular)
         glMaterialfv(face, GL_EMISSION, material.emission)
         glMaterialf(face, GL_SHININESS, material.shininess)
+
         glPushMatrix()
         glMultMatrixf(self.matrix)
 
@@ -232,7 +268,9 @@ class TexturedMaterialGroup(graphics.Group):
         glDisable(GL_COLOR_MATERIAL)
 
     def __eq__(self, other):
-        return False    # Do not consolidate Groups when adding to a Batch
+        # Do not consolidate Groups when adding to a Batch.
+        # Matrix multiplications requires isolation.
+        return False
 
     def __hash__(self):
         return hash((self.texture.id, self.texture.target))
@@ -262,7 +300,9 @@ class MaterialGroup(graphics.Group):
         glDisable(GL_COLOR_MATERIAL)
 
     def __eq__(self, other):
-        return False    # Do not consolidate Groups when adding to a Batch
+        # Do not consolidate Groups when adding to a Batch.
+        # Matrix multiplications requires isolation.
+        return False
 
     def __hash__(self):
         material = self.material
