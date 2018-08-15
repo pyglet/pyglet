@@ -1461,7 +1461,7 @@ class Texture(AbstractImage):
 
     @classmethod
     def create_for_size(cls, target, min_width, min_height,
-                        internalformat=None, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
+                        internalformat=None, min_filter=None, mag_filter=None):
         """Create a Texture with dimensions at least min_width, min_height.
         On return, the texture will be bound.
 
@@ -1643,8 +1643,7 @@ class Texture(AbstractImage):
         else:
             assert False, 'Only 90 degree rotations are supported.'
         if rotate in (90, 270):
-            transform.width, transform.height = \
-                transform.height, transform.width
+            transform.width, transform.height = transform.height, transform.width
         transform._set_tex_coords_order(bl, br, tr, tl)
         return transform
 
@@ -1653,12 +1652,10 @@ class Texture(AbstractImage):
                       self.tex_coords[3:6],
                       self.tex_coords[6:9],
                       self.tex_coords[9:])
-        self.tex_coords = \
-            tex_coords[bl] + tex_coords[br] + tex_coords[tr] + tex_coords[tl]
+        self.tex_coords = tex_coords[bl] + tex_coords[br] + tex_coords[tr] + tex_coords[tl]
 
         order = self.tex_coords_order
-        self.tex_coords_order = \
-            (order[bl], order[br], order[tr], order[tl])
+        self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
 
 
 class TextureRegion(Texture):
@@ -1667,8 +1664,7 @@ class TextureRegion(Texture):
     """
 
     def __init__(self, x, y, z, width, height, owner):
-        super(TextureRegion, self).__init__(
-            width, height, owner.target, owner.id)
+        super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
 
         self.x = x
         self.y = y
@@ -2069,8 +2065,7 @@ class DepthBufferImage(BufferImage):
             raise ImageException(
                 'Depth texture requires that buffer dimensions be powers of 2')
 
-        texture = DepthTexture.create_for_size(GL_TEXTURE_2D,
-                                               self.width, self.height)
+        texture = DepthTexture.create_for_size(GL_TEXTURE_2D, self.width, self.height)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
