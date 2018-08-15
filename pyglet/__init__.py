@@ -388,6 +388,7 @@ if True:
     input = _ModuleProxy('input')
     lib = _ModuleProxy('lib')
     media = _ModuleProxy('media')
+    model = _ModuleProxy('model')
     resource = _ModuleProxy('resource')
     sprite = _ModuleProxy('sprite')
     text = _ModuleProxy('text')
@@ -408,6 +409,7 @@ if False:
     from . import image
     from . import lib
     from . import media
+    from . import model
     from . import resource
     from . import sprite
     from . import text
