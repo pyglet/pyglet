@@ -131,6 +131,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import sys
+import math
 
 import pyglet
 from pyglet import gl
@@ -231,6 +232,71 @@ class ImageMouseCursor(MouseCursor):
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
         gl.glPopAttrib()
+
+
+class Projection(object):
+    """Abstract OpenGL projection."""
+
+    def set(self, window_width, window_height, viewport_width, viewport_height):
+        """Set the OpenGL projection
+
+        Using the passed in Window and viewport sizes,
+        set a desired orthographic or perspective projection.
+
+        :Parameters:
+            `window_width` : int
+                The Window width
+            `window_height` : int
+                The Window height
+            `viewport_width` : int
+                The Window internal viewport width.
+            `viewport_height` : int
+                The Window internal viewport height.
+        """
+        raise NotImplementedError('abstract')
+
+
+class Projection2D(Projection):
+    """A 2D orthographic projection"""
+
+    def set(self, window_width, window_height, viewport_width, viewport_height):
+        gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.glOrtho(0, max(1, window_width), 0, max(1, window_height), -1, 1)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+
+
+class Projection3D(Projection):
+    """A 3D perspective projection"""
+
+    def __init__(self, fov=60, znear=0.1, zfar=255):
+        """Create a 3D projection
+
+        :Parameters:
+            `fov` : float
+                The field of vision. Defaults to 60.
+            `znear` : float
+                The near clipping plane. Defaults to 0.1.
+            `zfar` : float
+                The far clipping plane. Defaults to 255.
+        """
+        self.fov = fov
+        self.znear = znear
+        self.zfar = zfar
+
+    def set(self, window_width, window_height, viewport_width, viewport_height):
+        gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+
+        # Pure GL implementation of gluPerspective:
+        aspect_ratio = float(window_width) / float(window_height)
+        f_width = math.tan(self.fov / 360.0 * math.pi ) * self.znear
+        f_height = f_width * aspect_ratio
+        gl.glFrustum(-f_height, f_height, -f_width, f_width, self.znear, self.zfar)
+
+        gl.glMatrixMode(gl.GL_MODELVIEW)
 
 
 def _PlatformEventHandler(data):
@@ -403,6 +469,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _screen = None
     _config = None
     _context = None
+    _projection = Projection2D()
 
     # Used to restore window size and position after fullscreen
     _windowed_size = None
@@ -738,12 +805,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        viewport = self.get_viewport_size()
-        gl.glViewport(0, 0, max(1, viewport[0]), max(1, viewport[1]))
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(0, max(1, width), 0, max(1, height), -1, 1)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        viewport_width, viewport_height = self.get_viewport_size()
+        self._projection.set(width, height, viewport_width, viewport_height)
 
     def on_close(self):
         """Default on_close handler."""
@@ -922,6 +985,16 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     @height.setter
     def height(self, new_height):
         self.set_size(self.width, new_height)
+
+    @property
+    def projection(self):
+        return self._projection
+
+    @projection.setter
+    def projection(self, projection):
+        assert isinstance(projection, Projection)
+        self._projection = projection
+        self._projection.set(self._width, self._height, *self.get_viewport_size())
 
     def set_caption(self, caption):
         """Set the window's caption.
