@@ -988,6 +988,17 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @property
     def projection(self):
+        """The OpenGL window projection. Read-write.
+
+        The default window projection is orthographic (2D), but can
+        be changed to a 3D or custom projection. Custom projections
+        should subclass :py:class:`pyglet.window.Projection`. Two
+        default projection classes are also provided, as
+        :py:class:`pyglet.window.Projection3D` and
+        :py:class:`pyglet.window.Projection3D`.
+
+        :type: :py:class:`pyglet.window.Projection`
+        """
         return self._projection
 
     @projection.setter
