@@ -61,17 +61,8 @@ except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling for old hardware
     window = pyglet.window.Window(resizable=True)
 
-
-@window.event
-def on_resize(width, height):
-    # Override the default on_resize handler to create a 3D projection
-    glViewport(0, 0, width, height)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(60., width / float(height), .1, 1000.)
-    glMatrixMode(GL_MODELVIEW)
-    # returning EVENT_HANDLED prevents the default handler from running
-    return pyglet.event.EVENT_HANDLED
+# Change the window projection to 3D:
+window.projection = pyglet.window.Projection3D()
 
 
 @window.event
