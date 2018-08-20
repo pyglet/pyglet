@@ -103,77 +103,68 @@ def setup():
     glEnable(GL_LIGHT0)
     glEnable(GL_LIGHT1)
 
-    # Define a simple function to create ctypes arrays of floats:
-    def vec(*args):
-        return (GLfloat * len(args))(*args)
 
-    glLightfv(GL_LIGHT0, GL_POSITION, vec(.5, .5, 1, 0))
-    glLightfv(GL_LIGHT0, GL_SPECULAR, vec(.5, .5, 1, 1))
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1, 1, 1, 1))
-    glLightfv(GL_LIGHT1, GL_POSITION, vec(1, 0, .5, 0))
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, vec(.5, .5, .5, 1))
-    glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 1, 1, 1))
+def create_torus(radius, inner_radius, slices, inner_slices, batch):
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0.5, 0, 0.3, 1))
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
+    # Create the vertex and normal arrays.
+    vertices = []
+    normals = []
 
+    u_step = 2 * pi / (slices - 1)
+    v_step = 2 * pi / (inner_slices - 1)
+    u = 0.
+    for i in range(slices):
+        cos_u = cos(u)
+        sin_u = sin(u)
+        v = 0.
+        for j in range(inner_slices):
+            cos_v = cos(v)
+            sin_v = sin(v)
 
-class Torus(object):
-    list = None
+            d = (radius + inner_radius * cos_v)
+            x = d * cos_u
+            y = d * sin_u
+            z = inner_radius * sin_v
 
-    def __init__(self, radius, inner_radius, slices, inner_slices, batch, group=None):
-        # Create the vertex and normal arrays.
-        vertices = []
-        normals = []
+            nx = cos_u * cos_v
+            ny = sin_u * cos_v
+            nz = sin_v
 
-        u_step = 2 * pi / (slices - 1)
-        v_step = 2 * pi / (inner_slices - 1)
-        u = 0.
-        for i in range(slices):
-            cos_u = cos(u)
-            sin_u = sin(u)
-            v = 0.
-            for j in range(inner_slices):
-                cos_v = cos(v)
-                sin_v = sin(v)
+            vertices.extend([x, y, z])
+            normals.extend([nx, ny, nz])
+            v += v_step
+        u += u_step
 
-                d = (radius + inner_radius * cos_v)
-                x = d * cos_u
-                y = d * sin_u
-                z = inner_radius * sin_v
+    # Create a list of triangle indices.
+    indices = []
+    for i in range(slices - 1):
+        for j in range(inner_slices - 1):
+            p = i * inner_slices + j
+            indices.extend([p, p + inner_slices, p + inner_slices + 1])
+            indices.extend([p, p + inner_slices + 1, p + 1])
 
-                nx = cos_u * cos_v
-                ny = sin_u * cos_v
-                nz = sin_v
+    # Create a Material and Group for the Model
+    diffuse = [0.5, 0.0, 0.3, 1.0]
+    ambient = [0.5, 0.0, 0.3, 1.0]
+    specular = [1.0, 1.0, 1.0, 1.0]
+    emission = [0.0, 0.0, 0.0, 1.0]
+    shininess = 50
+    material = pyglet.model.Material("", diffuse, ambient, specular, emission, shininess)
+    group = pyglet.model.MaterialGroup(material=material)
 
-                vertices.extend([x, y, z])
-                normals.extend([nx, ny, nz])
-                v += v_step
-            u += u_step
+    vertex_list = batch.add_indexed(len(vertices)//3,
+                                    GL_TRIANGLES,
+                                    group,
+                                    indices,
+                                    ('v3f/static', vertices),
+                                    ('n3f/static', normals))
 
-        # Create a list of triangle indices.
-        indices = []
-        for i in range(slices - 1):
-            for j in range(inner_slices - 1):
-                p = i * inner_slices + j
-                indices.extend([p, p + inner_slices, p + inner_slices + 1])
-                indices.extend([p, p + inner_slices + 1, p + 1])
-
-        self.vertex_list = batch.add_indexed(len(vertices)//3, 
-                                             GL_TRIANGLES,
-                                             group,
-                                             indices,
-                                             ('v3f/static', vertices),
-                                             ('n3f/static', normals))
-       
-    def delete(self):
-        self.vertex_list.delete()
+    return pyglet.model.Model([vertex_list], [group], batch)
 
 
 setup()
 batch = pyglet.graphics.Batch()
-torus = Torus(1, 0.3, 50, 30, batch=batch)
+torus_model = create_torus(1, 0.3, 50, 30, batch=batch)
 rx = ry = rz = 0
 
 pyglet.clock.schedule(update)

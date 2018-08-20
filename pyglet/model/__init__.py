@@ -94,6 +94,7 @@ from .codecs import add_encoders, add_decoders, add_default_model_codecs
 from .codecs import get_encoders, get_decoders
 
 
+# Default matrix for models
 _default_identity = [1.0, 0.0, 0.0, 0.0,
                      0.0, 1.0, 0.0, 0.0,
                      0.0, 0.0, 1.0, 0.0,
@@ -226,18 +227,15 @@ class Model(object):
 
 
 class Material(object):
-    __slots__ = ("name", "diffuse", "ambient", "specular",
-                 "emission", "shininess", "opacity", "texture_name")
+    __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
-    def __init__(self, name, diffuse, ambient, specular,
-                 emission, shininess, opacity, texture_name=None):
+    def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
         self.name = name
-        self.diffuse = (GLfloat * 4)(*(diffuse + [opacity]))
-        self.ambient = (GLfloat * 4)(*(ambient + [opacity]))
-        self.specular = (GLfloat * 4)(*(specular + [opacity]))
-        self.emission = (GLfloat * 4)(*(emission + [opacity]))
+        self.diffuse = (GLfloat * 4)(*diffuse)
+        self.ambient = (GLfloat * 4)(*ambient)
+        self.specular = (GLfloat * 4)(*specular)
+        self.emission = (GLfloat * 4)(*emission)
         self.shininess = shininess
-        self.opacity = opacity
         self.texture_name = texture_name
 
 

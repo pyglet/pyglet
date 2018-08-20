@@ -58,9 +58,9 @@ def load_material_library(filename):
     file = open(filename, 'r')
 
     name = None
-    diffuse = [0.8, 0.8, 0.8]
+    diffuse = [1.0, 1.0, 1.0]
     ambient = [1.0, 1.0, 1.0]
-    specular = [0.0, 0.0, 0.0]
+    specular = [1.0, 1.0, 1.0]
     emission = [0.0, 0.0, 0.0]
     shininess = 100.0
     opacity = 1.0
@@ -99,7 +99,10 @@ def load_material_library(filename):
 
     file.close()
 
-    return Material(name, diffuse, ambient, specular, emission, shininess, opacity, texture_name)
+    for item in (diffuse, ambient, specular, emission):
+        item.append(opacity)
+
+    return Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
 
 
 def parse_obj_file(filename, file=None):
@@ -123,14 +126,13 @@ def parse_obj_file(filename, file=None):
     normals = [[0., 0., 0.]]
     tex_coords = [[0., 0.]]
 
-    diffuse = [1.0, 1.0, 1.0]
-    ambient = [1.0, 1.0, 1.0]
-    specular = [1.0, 1.0, 1.0]
-    emission = [0.0, 0.0, 0.0]
+    diffuse = [1.0, 1.0, 1.0, 1.0]
+    ambient = [1.0, 1.0, 1.0, 1.0]
+    specular = [1.0, 1.0, 1.0, 1.0]
+    emission = [0.0, 0.0, 0.0, 1.0]
     shininess = 100.0
-    opacity = 1.0
 
-    default_material = Material("Default", diffuse, ambient, specular, emission, shininess, opacity)
+    default_material = Material("Default", diffuse, ambient, specular, emission, shininess)
 
     for line in file:
         if line.startswith('#'):
