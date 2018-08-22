@@ -170,9 +170,9 @@ class CocoaConfig(Config):
             # check if we're wanting core or legacy
             # Mavericks (Darwin 13) and up are capable of the Core 4.1 profile,
             # while Lion and up are only capable of Core 3.2
-            if version == (4, 1) and _os_x_version >= os_x_release['mavericks']:
+            if version[0] == 4 and version[1] >= 1 and _os_x_version >= os_x_release['mavericks']:
                 attrs.append(int(NSOpenGLProfileVersion4_1Core))
-            elif version == (3, 2):
+            elif version[0] == 3 and version[1] >= 2:
                 attrs.append(int(NSOpenGLProfileVersion3_2Core))
             else:
                 attrs.append(int(NSOpenGLProfileVersionLegacy))
