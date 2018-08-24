@@ -66,6 +66,7 @@ NSColor = ObjCClass('NSColor')
 NSEvent = ObjCClass('NSEvent')
 NSImage = ObjCClass('NSImage')
 
+
 class CocoaMouseCursor(MouseCursor):
     drawable = False
     def __init__(self, cursorName):
@@ -75,6 +76,7 @@ class CocoaMouseCursor(MouseCursor):
     def set(self):
         cursor = getattr(NSCursor, self.cursorName)()
         cursor.set()
+
 
 class CocoaWindow(BaseWindow):
 
@@ -111,7 +113,7 @@ class CocoaWindow(BaseWindow):
     }
 
     def _recreate(self, changes):
-        if ('context' in changes):
+        if 'context' in changes:
             self.context.set_current()
         
         if 'fullscreen' in changes:
@@ -167,10 +169,10 @@ class CocoaWindow(BaseWindow):
         #     self.screen.get_nsscreen())  # screen      
 
         self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
-            content_rect,           # contentRect
-            style_mask,             # styleMask
-            NSBackingStoreBuffered, # backing
-            False)                  # defer
+            content_rect,            # contentRect
+            style_mask,              # styleMask
+            NSBackingStoreBuffered,  # backing
+            False)                   # defer
 
         if self._fullscreen:
             # BUG: I suspect that this doesn't do the right thing when using
@@ -222,10 +224,10 @@ class CocoaWindow(BaseWindow):
 
     def _set_nice_window_location(self):
         # Construct a list of all visible windows that aren't us.
-        visible_windows = [ win for win in pyglet.app.windows if
-                            win is not self and 
-                            win._nswindow and 
-                            win._nswindow.isVisible() ]
+        visible_windows = [win for win in pyglet.app.windows if
+                           win is not self and
+                           win._nswindow and
+                           win._nswindow.isVisible()]
         # If there aren't any visible windows, then center this window.
         if not visible_windows:
             self._center_window()
@@ -466,7 +468,7 @@ class CocoaWindow(BaseWindow):
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
-        self._vsync = vsync # _recreate depends on this
+        self._vsync = vsync  # _recreate depends on this
         if self.context:
             self.context.set_vsync(vsync)
 
@@ -531,7 +533,7 @@ class CocoaWindow(BaseWindow):
             self.CURSOR_CROSSHAIR:       'crosshairCursor',
             self.CURSOR_HAND:            'pointingHandCursor',
             self.CURSOR_HELP:            'arrowCursor',
-            self.CURSOR_NO:              'operationNotAllowedCursor', # Mac OS 10.6
+            self.CURSOR_NO:              'operationNotAllowedCursor',  # Mac OS 10.6
             self.CURSOR_SIZE:            'arrowCursor',
             self.CURSOR_SIZE_UP:         'resizeUpCursor',
             self.CURSOR_SIZE_UP_RIGHT:   'arrowCursor',
@@ -544,8 +546,8 @@ class CocoaWindow(BaseWindow):
             self.CURSOR_SIZE_UP_DOWN:    'resizeUpDownCursor',
             self.CURSOR_SIZE_LEFT_RIGHT: 'resizeLeftRightCursor',
             self.CURSOR_TEXT:            'IBeamCursor',
-            self.CURSOR_WAIT:            'arrowCursor', # No wristwatch cursor in Cocoa
-            self.CURSOR_WAIT_ARROW:      'arrowCursor', # No wristwatch cursor in Cocoa
+            self.CURSOR_WAIT:            'arrowCursor',  # No wristwatch cursor in Cocoa
+            self.CURSOR_WAIT_ARROW:      'arrowCursor',  # No wristwatch cursor in Cocoa
             }  
         if name not in cursors:
             raise RuntimeError('Unknown cursor name "%s"' % name)
@@ -570,7 +572,7 @@ class CocoaWindow(BaseWindow):
             windowOrigin = frame.origin
             x += windowOrigin.x
             y = displayBounds.size.height - windowOrigin.y - y
-            quartz.CGDisplayMoveCursorToPoint(displayID, NSPoint(x,y))
+            quartz.CGDisplayMoveCursorToPoint(displayID, NSPoint(x, y))
 
     def set_exclusive_mouse(self, exclusive=True):
         self._is_mouse_exclusive = exclusive

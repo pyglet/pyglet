@@ -41,10 +41,12 @@ NSTrackingArea = ObjCClass('NSTrackingArea')
 
 # Event data helper functions.
 
+
 def getMouseDelta(nsevent):
     dx = nsevent.deltaX()
     dy = -nsevent.deltaY()
     return int(round(dx)), int(round(dy))
+
 
 def getMousePosition(self, nsevent):
     in_window = nsevent.locationInWindow()
@@ -55,6 +57,7 @@ def getMousePosition(self, nsevent):
     self._window._mouse_x = x
     self._window._mouse_y = y
     return x, y
+
 
 def getModifiers(nsevent):
     modifiers = 0
@@ -122,7 +125,7 @@ class PygletView_Implementation(object):
     @PygletView.method('v')
     def dealloc(self):
         self._window = None
-        #send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
+        # send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
         self._textview.release()
         self._textview = None
         self._tracking_area.release()
@@ -215,16 +218,16 @@ class PygletView_Implementation(object):
         NSLeftCommandKeyMask    = 1 << 3
         NSRightCommandKeyMask   = 1 << 4
 
-        maskForKey = { key.LSHIFT : NSLeftShiftKeyMask,
-                       key.RSHIFT : NSRightShiftKeyMask,
-                       key.LCTRL : NSLeftControlKeyMask,
-                       key.RCTRL : NSRightControlKeyMask,
-                       key.LOPTION : NSLeftAlternateKeyMask,
-                       key.ROPTION : NSRightAlternateKeyMask,
-                       key.LCOMMAND : NSLeftCommandKeyMask,
-                       key.RCOMMAND : NSRightCommandKeyMask,
-                       key.CAPSLOCK : NSAlphaShiftKeyMask,
-                       key.FUNCTION : NSFunctionKeyMask }
+        maskForKey = {key.LSHIFT: NSLeftShiftKeyMask,
+                      key.RSHIFT: NSRightShiftKeyMask,
+                      key.LCTRL: NSLeftControlKeyMask,
+                      key.RCTRL: NSRightControlKeyMask,
+                      key.LOPTION: NSLeftAlternateKeyMask,
+                      key.ROPTION: NSRightAlternateKeyMask,
+                      key.LCOMMAND: NSLeftCommandKeyMask,
+                      key.RCOMMAND: NSRightCommandKeyMask,
+                      key.CAPSLOCK: NSAlphaShiftKeyMask,
+                      key.FUNCTION: NSFunctionKeyMask}
 
         symbol = keymap.get(nsevent.keyCode(), None)
 
