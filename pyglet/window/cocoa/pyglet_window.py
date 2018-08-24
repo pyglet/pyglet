@@ -34,6 +34,7 @@
 from builtins import object
 from pyglet.libs.darwin.cocoapy import *
 
+
 class PygletWindow_Implementation(object):
     PygletWindow = ObjCSubclass('NSWindow', 'PygletWindow')
 
@@ -64,11 +65,10 @@ class PygletWindow_Implementation(object):
         event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:', 
                            mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
-        if event.value == None:
+        if event.value is None:
             return 0
         else:
             return event.value
-
 
     # Need this for set_size to not flash.
     @PygletWindow.method(b'd'+NSRectEncoding)
@@ -99,6 +99,7 @@ class PygletToolWindow_Implementation(object):
     @PygletToolWindow.method(b'd'+NSRectEncoding)
     def animationResizeTime_(self, newFrame):
         return 0.0
+
 
 PygletWindow = ObjCClass('PygletWindow')
 PygletToolWindow = ObjCClass('PygletToolWindow')
