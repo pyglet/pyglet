@@ -1561,7 +1561,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_mouse_enter(x, y):
             """The mouse was moved into the window.
 
-            This event will not be trigged if the mouse is currently being
+            This event will not be triggered if the mouse is currently being
             dragged.
 
             :Parameters:
@@ -1576,7 +1576,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_mouse_leave(x, y):
             """The mouse was moved outside of the window.
 
-            This event will not be trigged if the mouse is currently being
+            This event will not be triggered if the mouse is currently being
             dragged.  Note that the coordinates of the mouse pointer will be
             outside of the window rectangle.
 
