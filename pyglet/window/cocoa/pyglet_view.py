@@ -176,6 +176,13 @@ class PygletView_Implementation(object):
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
         self._window.context.update_geometry()
+
+        # The size we are passed in might not be the actual size.
+        # High-res displays on the mac sometimes scale everything up by
+        # two. So re-fetch the size from this function that will
+        # return the actual unscaled pixel size
+        width, height = self._window.get_size()
+
         self._window.dispatch_event("on_resize", width, height)
         self._window.dispatch_event("on_expose")
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because

@@ -122,6 +122,16 @@ class CocoaWindow(BaseWindow):
 
         self._create()
 
+    def _reset_to_actual_window_size(self):
+        # The window we sized up to this point might be scaled. So a 800x600 window
+        # might actually be 1600x1200. This will attempt to correct that so that we
+        # get the actual size.
+        view = self.context._nscontext.view()
+        content_rect = NSMakeRect(0, 0, self._width, self._height)  # Get size, possibly scaled
+        bounds = view.convertRectFromBacking_(content_rect)  # Convert to actual pixel sizes
+        my_size = NSMakeSize(bounds.size.width, bounds.size.height)  # This is the size we really want
+        self._nswindow.setContentSize_(my_size)  # Set the content to the pixel size
+
     def _create(self):
         # Create a temporary autorelease pool for this method.
         pool = NSAutoreleasePool.alloc().init()
@@ -221,6 +231,9 @@ class CocoaWindow(BaseWindow):
         self.set_visible(self._visible)
 
         pool.drain()
+
+        # See if we need to adjust for Retina not telling us the pixel size
+        self._reset_to_actual_window_size()
 
     def _set_nice_window_location(self):
         # Construct a list of all visible windows that aren't us.
@@ -401,9 +414,9 @@ class CocoaWindow(BaseWindow):
         self._nswindow.setFrameOrigin_(origin)
 
     def get_size(self):
-        window_frame = self._nswindow.frame()
-        rect = self._nswindow.contentRectForFrameRect_(window_frame)
-        return int(rect.size.width), int(rect.size.height)
+        view = self.context._nscontext.view()
+        bounds = view.convertRectToBacking_(view.bounds()).size
+        return int(bounds.width), int(bounds.height)
 
     def get_viewport_size(self):
         view = self.context._nscontext.view()
@@ -427,15 +440,34 @@ class CocoaWindow(BaseWindow):
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
 
+        # See if we need to adjust for Retina not telling us the pixel size
+        self._reset_to_actual_window_size()
+
     def set_minimum_size(self, width, height):
-        self._minimum_size = NSSize(width, height)
+        self._minimum_size = (width, height)
+
+        # Do some adjusting for point size and pixel size because
+        # Retina scales windows, and we want pixel size not point size.
+        view = self.context._nscontext.view()
+        size_rect = NSMakeRect(0, 0, width, height)
+        adj_size_rect = view.convertRectFromBacking_(size_rect)  # Convert to actual pixel sizes
+        adj_size = NSMakeSize(adj_size_rect.size.width, adj_size_rect.size.height)  # This is the size we really want
+
         if self._nswindow is not None:
-            self._nswindow.setContentMinSize_(self._minimum_size)
+            self._nswindow.setContentMinSize_(adj_size)
 
     def set_maximum_size(self, width, height):
-        self._maximum_size = NSSize(width, height)
+        self._maximum_size = (width, height)
+
+        # Do some adjusting for point size and pixel size because
+        # Retina scales windows, and we want pixel size not point size.
+        view = self.context._nscontext.view()
+        size_rect = NSMakeRect(0, 0, width, height)
+        adj_size_rect = view.convertRectFromBacking_(size_rect)  # Convert to actual pixel sizes
+        adj_size = NSMakeSize(adj_size_rect.size.width, adj_size_rect.size.height)  # This is the size we really want
+
         if self._nswindow is not None:
-            self._nswindow.setContentMaxSize_(self._maximum_size)
+            self._nswindow.setContentMaxSize_(adj_size)
 
     def activate(self):
         if self._nswindow is not None:
