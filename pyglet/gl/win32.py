@@ -173,7 +173,12 @@ class Win32CanvasConfigARB(CanvasConfig):
         return isinstance(canvas, Win32Canvas)
 
     def create_context(self, share):
-        return Win32ARBContext(self, share)
+        if wgl_info.have_extension('WGL_ARB_create_context'):
+            # Graphics adapters that ONLY support up to OpenGL 3.1/3.2
+            # should be using the Win32ARBContext class.
+            return Win32ARBContext(self, share)
+        else:
+            return Win32Context(self, share)
 
     def _set_pixel_format(self, canvas):
         _gdi32.SetPixelFormat(canvas.hdc, self._pf, None)
@@ -188,10 +193,6 @@ class Win32Context(Context):
         super(Win32Context, self).attach(canvas)
 
         if not self._context:
-            if self.config._requires_gl_3():
-                raise gl.ContextException(
-                    'Require WGL_ARB_create_context extension to create OpenGL 3 contexts.')
-
             self.config._set_pixel_format(canvas)
             self._context = wgl.wglCreateContext(canvas.hdc)
 
