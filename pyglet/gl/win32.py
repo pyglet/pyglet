@@ -1,8 +1,39 @@
-#!/usr/bin/python
-# $Id:$
-
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2018 Alex Holkner
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 from __future__ import absolute_import
 from builtins import zip
+
 from pyglet.canvas.win32 import Win32Canvas
 from .base import Config, CanvasConfig, Context
 
@@ -16,21 +47,21 @@ from pyglet.libs.win32 import _user32, _kernel32, _gdi32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 
+
 class Win32Config(Config):
     def match(self, canvas):
         if not isinstance(canvas, Win32Canvas):
             raise RuntimeError('Canvas must be instance of Win32Canvas')
 
         # Use ARB API if available
-        if (gl_info.have_context() and
-            wgl_info.have_extension('WGL_ARB_pixel_format')):
+        if gl_info.have_context() and wgl_info.have_extension('WGL_ARB_pixel_format'):
             return self._get_arb_pixel_format_matching_configs(canvas)
         else:
             return self._get_pixel_format_descriptor_matching_configs(canvas)
 
     def _get_pixel_format_descriptor_matching_configs(self, canvas):
-        '''Get matching configs using standard PIXELFORMATDESCRIPTOR
-        technique.'''
+        """Get matching configs using standard PIXELFORMATDESCRIPTOR
+        technique."""
         pfd = PIXELFORMATDESCRIPTOR()
         pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR)
         pfd.nVersion = 1
@@ -46,12 +77,11 @@ class Win32Config(Config):
         else:
             pfd.dwFlags |= PFD_STEREO_DONTCARE
 
-        '''Not supported in pyglet API        
-        if attributes.get('swap_copy', False):
-            pfd.dwFlags |= PFD_SWAP_COPY
-        if attributes.get('swap_exchange', False):
-            pfd.dwFlags |= PFD_SWAP_EXCHANGE
-        '''
+        #   Not supported in pyglet API
+        # if attributes.get('swap_copy', False):
+        #     pfd.dwFlags |= PFD_SWAP_COPY
+        # if attributes.get('swap_exchange', False):
+        #     pfd.dwFlags |= PFD_SWAP_EXCHANGE
 
         if not self.depth_size:
             pfd.dwFlags |= PFD_DEPTH_DONTCARE
@@ -75,10 +105,10 @@ class Win32Config(Config):
             return [Win32CanvasConfig(canvas, pf, self)]
         else:
             return []                    
-                    
+
     def _get_arb_pixel_format_matching_configs(self, canvas):
-        '''Get configs using the WGL_ARB_pixel_format extension.
-        This method assumes a (dummy) GL context is already created.'''
+        """Get configs using the WGL_ARB_pixel_format extension.
+        This method assumes a (dummy) GL context is already created."""
         
         # Check for required extensions        
         if self.sample_buffers or self.samples:
@@ -96,20 +126,19 @@ class Win32Config(Config):
 
         pformats = (c_int * 16)()
         nformats = c_uint(16)
-        wglext_arb.wglChoosePixelFormatARB(canvas.hdc, attrs, None, 
-                                           nformats, pformats, nformats)
+        wglext_arb.wglChoosePixelFormatARB(canvas.hdc, attrs, None, nformats, pformats, nformats)
 
-        formats = [Win32CanvasConfigARB(canvas, pf, self) \
-                   for pf in pformats[:nformats.value]]
+        formats = [Win32CanvasConfigARB(canvas, pf, self) for pf in pformats[:nformats.value]]
         return formats
+
 
 class Win32CanvasConfig(CanvasConfig):
     def __init__(self, canvas, pf, config):
         super(Win32CanvasConfig, self).__init__(canvas, config)
         self._pf = pf
         self._pfd = PIXELFORMATDESCRIPTOR()
-        _gdi32.DescribePixelFormat(canvas.hdc, 
-            self._pf, sizeof(PIXELFORMATDESCRIPTOR), byref(self._pfd))
+
+        _gdi32.DescribePixelFormat(canvas.hdc, pf, sizeof(PIXELFORMATDESCRIPTOR), byref(self._pfd))
 
         self.double_buffer = bool(self._pfd.dwFlags & PFD_DOUBLEBUFFER)
         self.sample_buffers = 0
@@ -138,7 +167,8 @@ class Win32CanvasConfig(CanvasConfig):
     def _set_pixel_format(self, canvas):
         _gdi32.SetPixelFormat(canvas.hdc, self._pf, byref(self._pfd))
 
-class Win32CanvasConfigARB(CanvasConfig):    
+
+class Win32CanvasConfigARB(CanvasConfig):
     attribute_ids = {
         'double_buffer': wglext_arb.WGL_DOUBLE_BUFFER_ARB,
         'stereo': wglext_arb.WGL_STEREO_ARB,
@@ -166,8 +196,7 @@ class Win32CanvasConfigARB(CanvasConfig):
         attrs = (c_int * len(attrs))(*attrs)
         values = (c_int * len(attrs))()
         
-        result = wglext_arb.wglGetPixelFormatAttribivARB(canvas.hdc,
-            pf, 0, len(attrs), attrs, values)
+        wglext_arb.wglGetPixelFormatAttribivARB(canvas.hdc, pf, 0, len(attrs), attrs, values)
 
         for name, value in zip(names, values):
             setattr(self, name, value)
@@ -177,15 +206,17 @@ class Win32CanvasConfigARB(CanvasConfig):
         return isinstance(canvas, Win32Canvas)
 
     def create_context(self, share):
-        # Workaround for issue on certain Intel cards/drivers.
-        # TODO: Find out if there is a way to query for this problem
-        if wgl_info.have_extension('WGL_ARB_create_context') and gl_info.get_vendor() != 'Intel':
+        if self.requires_gl_3() and wgl_info.have_extension('WGL_ARB_create_context'):
+            # For GPUs that ONLY support OpenGL 3.1/3.2, this
+            # extension should be present. Those GPUs should use
+            # the Win32ARBContext for GL3.1/3.2 contexts:
             return Win32ARBContext(self, share)
         else:
             return Win32Context(self, share)
 
     def _set_pixel_format(self, canvas):
         _gdi32.SetPixelFormat(canvas.hdc, self._pf, None)
+
 
 class Win32Context(Context):
     def __init__(self, config, share):
@@ -196,11 +227,6 @@ class Win32Context(Context):
         super(Win32Context, self).attach(canvas)
 
         if not self._context:
-            if self.config._requires_gl_3():
-                raise gl.ContextException(
-                    'Require WGL_ARB_create_context extension to create ' +
-                    'OpenGL 3 contexts.')
-                
             self.config._set_pixel_format(canvas)
             self._context = wgl.wglCreateContext(canvas.hdc)
 
@@ -209,7 +235,7 @@ class Win32Context(Context):
             if not share.canvas:
                 raise RuntimeError('Share context has no canvas.')
             if not wgl.wglShareLists(share._context, self._context):
-                raise gl.ContextException('Unable to share contexts')
+                raise gl.ContextException('Unable to share contexts.')
 
     def set_current(self):
         if self._context is not None:
@@ -233,6 +259,7 @@ class Win32Context(Context):
         if wgl_info.have_extension('WGL_EXT_swap_control'):
             wglext_arb.wglSwapIntervalEXT(int(vsync))
 
+
 class Win32ARBContext(Win32Context):
     def __init__(self, config, share):
         super(Win32ARBContext, self).__init__(config, share)
@@ -246,11 +273,9 @@ class Win32ARBContext(Win32Context):
 
         attribs = []
         if self.config.major_version is not None:
-            attribs.extend([wglext_arb.WGL_CONTEXT_MAJOR_VERSION_ARB,
-                            self.config.major_version])
+            attribs.extend([wglext_arb.WGL_CONTEXT_MAJOR_VERSION_ARB, self.config.major_version])
         if self.config.minor_version is not None:
-            attribs.extend([wglext_arb.WGL_CONTEXT_MINOR_VERSION_ARB, 
-                            self.config.minor_version])
+            attribs.extend([wglext_arb.WGL_CONTEXT_MINOR_VERSION_ARB, self.config.minor_version])
         flags = 0
         if self.config.forward_compatible:
             flags |= wglext_arb.WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
@@ -262,6 +287,5 @@ class Win32ARBContext(Win32Context):
         attribs = (c_int * len(attribs))(*attribs)
 
         self.config._set_pixel_format(canvas)
-        self._context = wglext_arb.wglCreateContextAttribsARB(canvas.hdc,
-            share, attribs)
+        self._context = wglext_arb.wglCreateContextAttribsARB(canvas.hdc, share, attribs)
         super(Win32ARBContext, self).attach(canvas)
