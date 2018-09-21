@@ -88,7 +88,6 @@ skip_modules = {"pyglet": {
                      "pyglet.media.drivers": ["directsound",
                                               "openal",
                                               "pulse"],
-                     "pyglet.media.sources": ["avbin"],
                      "pyglet.window": implementations,
                      },
                }

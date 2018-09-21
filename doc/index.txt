@@ -109,7 +109,6 @@ Related Documentation
 
 * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
 * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
-* `AVbin Documentation <http://avbin.github.com/AVbin/Docs.html>`_
 * `ctypes Reference <http://docs.python.org/3/library/ctypes.html>`_
 * `Python Documentation <http://docs.python.org/>`_
 
