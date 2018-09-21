@@ -647,8 +647,7 @@ class Loader(object):
         try:
             location = self._index[name]
             if isinstance(location, FileLocation):
-                # Don't open the file if it's streamed from disk -- AVbin
-                # needs to do it.
+                # Don't open the file if it's streamed from disk
                 path = os.path.join(location.path, name)
                 return media.load(path, streaming=streaming)
             else:

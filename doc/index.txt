@@ -16,7 +16,7 @@ Some of the features of pyglet are:
   allows you to use as many windows as you need, and is fully aware of
   multi-monitor setups for use with fullscreen games and applications.
 * **Load images, sound, music and video in almost any format.** pyglet can
-  optionally use AVbin to play back audio formats such as MP3, OGG/Vorbis and
+  optionally use ffmpeg to play back audio formats such as MP3, OGG/Vorbis and
   WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
 * **pyglet is provided under the BSD open-source license**, allowing you to 
   use it for both commercial and other open-source projects with very little
