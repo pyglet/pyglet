@@ -1,8 +1,11 @@
 Pyglet 1.4.0
 ============
+Major release adding several new features and removing some long deprecated methods and attributes.
 
 New features
 ------------
+- Added support for loading 3D models from gltf and obj files.
+- Switched from avbin to ffmpeg for decoding media files.
 
 Improvements
 ------------
