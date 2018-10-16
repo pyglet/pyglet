@@ -129,8 +129,8 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 
-if sys.version_info.major < 3 and sys.version_info.minor < 5:
-    # PYTHON2 -
+if sys.version_info[:2] < (3, 5):
+    # PYTHON2 - remove these legacy classes:
 
     if compat_platform in ('win32', 'cygwin'):
 
@@ -550,8 +550,7 @@ class Clock(_ClockBase):
         """
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + interval
-        item = _ScheduledIntervalItem(func, interval, last_ts,
-                                      next_ts, args, kwargs)
+        item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
@@ -585,8 +584,7 @@ class Clock(_ClockBase):
         """
         next_ts = self._get_soft_next_ts(self._get_nearest_ts(), interval)
         last_ts = next_ts - interval
-        item = _ScheduledIntervalItem(func, interval, last_ts,
-                                      next_ts, args, kwargs)
+        item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
     def unschedule(self, func):
@@ -602,8 +600,7 @@ class Clock(_ClockBase):
         """
         # clever remove item without disturbing the heap:
         # 1. set function to an empty lambda -- original function is not called
-        # 2. set interval to 0               -- item will be removed from heap
-        #                                                           eventually
+        # 2. set interval to 0               -- item will be removed from heap eventually
         valid_items = set(item
                           for item in self._schedule_interval_items
                           if item.func == func)
@@ -616,8 +613,7 @@ class Clock(_ClockBase):
             item.interval = 0
             item.func = lambda x, *args, **kwargs: x
 
-        self._schedule_items = [i for i in self._schedule_items
-                                if i.func != func]
+        self._schedule_items = [i for i in self._schedule_items if i.func != func]
 
 
 # Default clock.
