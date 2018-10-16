@@ -44,7 +44,7 @@ games' basic requirements::
     while True:
         dt = clock.tick()
         # ... update and render ...
-        print 'FPS is %f' % clock.get_fps()
+        print(f"FPS is {clock.get_fps()}")
 
 The ``dt`` value returned gives the number of seconds (as a float) since the
 last "tick".
@@ -61,7 +61,7 @@ Scheduling
 You can schedule a function to be called every time the clock is ticked::
 
     def callback(dt):
-        print '%f seconds since last callback' % dt
+        print(f"{dt} seconds since last callback")
 
     clock.schedule(callback)
 
@@ -78,15 +78,15 @@ in the future::
 All of the `schedule` methods will pass on any additional args or keyword args
 you specify to the callback function::
 
-    def animate(dt, velocity, sprite):
+    def move(dt, velocity, sprite):
        sprite.position += dt * velocity
 
-    clock.schedule(animate, velocity=5.0, sprite=alien)
+    clock.schedule(move, velocity=5.0, sprite=alien)
 
 You can cancel a function scheduled with any of these methods using
 `unschedule`::
 
-    clock.unschedule(animate)
+    clock.unschedule(move)
 
 Using multiple clocks
 =====================
@@ -114,6 +114,7 @@ from __future__ import division
 from builtins import range
 from builtins import object
 
+import sys
 import time
 import ctypes
 from operator import attrgetter
@@ -128,23 +129,34 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 
-if compat_platform in ('win32', 'cygwin'):
+if sys.version_info[:2] < (3, 5):
+    # PYTHON2 - remove these legacy classes:
+
+    if compat_platform in ('win32', 'cygwin'):
+
+        class _ClockBase(object):
+            def sleep(self, microseconds):
+                time.sleep(microseconds * 1e-6)
+
+        _default_time_function = time.clock
+
+    else:
+        _c = pyglet.lib.load_library('c')
+        _c.usleep.argtypes = [ctypes.c_ulong]
+
+        class _ClockBase(object):
+            def sleep(self, microseconds):
+                _c.usleep(int(microseconds))
+
+        _default_time_function = time.time
+
+else:
 
     class _ClockBase(object):
         def sleep(self, microseconds):
             time.sleep(microseconds * 1e-6)
 
-    _default_time_function = time.clock
-
-else:
-    _c = pyglet.lib.load_library('c')
-    _c.usleep.argtypes = [ctypes.c_ulong]
-
-    class _ClockBase(object):
-        def sleep(self, microseconds):
-            _c.usleep(int(microseconds))
-
-    _default_time_function = time.time
+    _default_time_function = time.perf_counter
 
 
 class _ScheduledItem(object):
@@ -538,8 +550,7 @@ class Clock(_ClockBase):
         """
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + interval
-        item = _ScheduledIntervalItem(func, interval, last_ts,
-                                      next_ts, args, kwargs)
+        item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
@@ -573,8 +584,7 @@ class Clock(_ClockBase):
         """
         next_ts = self._get_soft_next_ts(self._get_nearest_ts(), interval)
         last_ts = next_ts - interval
-        item = _ScheduledIntervalItem(func, interval, last_ts,
-                                      next_ts, args, kwargs)
+        item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
     def unschedule(self, func):
@@ -590,8 +600,7 @@ class Clock(_ClockBase):
         """
         # clever remove item without disturbing the heap:
         # 1. set function to an empty lambda -- original function is not called
-        # 2. set interval to 0               -- item will be removed from heap
-        #                                                           eventually
+        # 2. set interval to 0               -- item will be removed from heap eventually
         valid_items = set(item
                           for item in self._schedule_interval_items
                           if item.func == func)
@@ -604,8 +613,7 @@ class Clock(_ClockBase):
             item.interval = 0
             item.func = lambda x, *args, **kwargs: x
 
-        self._schedule_items = [i for i in self._schedule_items
-                                if i.func != func]
+        self._schedule_items = [i for i in self._schedule_items if i.func != func]
 
 
 # Default clock.
