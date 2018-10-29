@@ -67,7 +67,7 @@ class ImageTestFixture(EventLoopFixture):
                 0)
 
     def load_left(self, image_file, decoder=None):
-        self.left_texture = image.load(image_file, decoder=decoder).texture
+        self.left_texture = image.load(image_file, decoder=decoder).get_texture()
 
     def copy_left_to_right(self, encoder=None):
         buf = BytesIO()
@@ -75,7 +75,7 @@ class ImageTestFixture(EventLoopFixture):
                                buf,
                                encoder=encoder)
         buf.seek(0)
-        self.right_texture = image.load("file.png", buf).texture
+        self.right_texture = image.load("file.png", buf).get_texture()
 
     def enable_alpha(self):
         gl.glEnable(gl.GL_BLEND)
@@ -85,7 +85,7 @@ class ImageTestFixture(EventLoopFixture):
         img = image.load(image_file)
         img.format = pixel_format
         img.data  # forces conversion
-        self.right_texture = img.texture
+        self.right_texture = img.get_texture()
 
     def draw_triangle_left(self):
         if self.show_triangle_left:
@@ -108,7 +108,7 @@ class ImageTestFixture(EventLoopFixture):
 
     def copy_color_buffer(self):
         self.right_texture = \
-                image.get_buffer_manager().get_color_buffer().texture
+                image.get_buffer_manager().get_color_buffer().get_texture()
 
     def save_and_load_color_buffer(self):
         stream = BytesIO()
