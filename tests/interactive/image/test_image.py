@@ -84,7 +84,7 @@ class ImageTestFixture(EventLoopFixture):
     def load_right_arb(self, image_file, pixel_format):
         img = image.load(image_file)
         img.format = pixel_format
-        img.data  # forces conversion
+        img.get_data()  # forces conversion
         self.right_texture = img.get_texture()
 
     def draw_triangle_left(self):

@@ -32,8 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Encoder and decoder for PNG files, using PyPNG (png.py).
-'''
+"""Encoder and decoder for PNG files, using PyPNG (png.py).
+"""
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -41,7 +41,6 @@ __version__ = '$Id: $'
 import array
 import itertools
 
-from pyglet.gl import *
 from pyglet.image import *
 from pyglet.image.codecs import *
 
@@ -62,18 +61,18 @@ class PNGImageDecoder(ImageDecoder):
 
         if metadata['greyscale']:
             if metadata['alpha']:
-                format = 'LA'
+                fmt = 'LA'
             else:
-                format = 'L'
+                fmt = 'L'
         else:
             if metadata['alpha']:
-                format = 'RGBA'
+                fmt = 'RGBA'
             else:
-                format = 'RGB'
-        pitch = len(format) * width
+                fmt = 'RGB'
+        pitch = len(fmt) * width
 
         pixels = array.array('BH'[metadata['bitdepth']>8], itertools.chain(*pixels))
-        return ImageData(width, height, format, pixels.tostring(), -pitch)
+        return ImageData(width, height, fmt, pixels.tostring(), -pitch)
 
 class PNGImageEncoder(ImageEncoder):
     def get_file_extensions(self):
@@ -104,7 +103,7 @@ class PNGImageEncoder(ImageEncoder):
             alpha=has_alpha)
 
         data = array.array('B')
-        data.fromstring(image.data)
+        data.fromstring(image.get_data())
         writer.write_array(file, data)
 
 def get_decoders():

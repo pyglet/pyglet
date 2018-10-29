@@ -1039,7 +1039,8 @@ class ImageData(AbstractImage):
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
-                rows = re.findall(asbytes('.') * abs(pitch), data, re.DOTALL)
+                # rows = re.findall(asbytes('.') * abs(pitch), data, re.DOTALL)
+                rows = [data[i:i+abs(pitch)] for i in range(0, len(data), abs(pitch))]
                 rows.reverse()
                 data = asbytes('').join(rows)
 
@@ -2265,8 +2266,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
     def __getitem__(self, index):
         if type(index) is slice:
-            if type(index.start) is not tuple and \
-                            type(index.stop) is not tuple:
+            if type(index.start) is not tuple and type(index.stop) is not tuple:
                 return self.items[index]
             else:
                 row1 = 0
