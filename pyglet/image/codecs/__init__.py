@@ -106,11 +106,9 @@ class ImageEncoder(object):
         """
         return []
 
-    def encode(self, image, file, filename, options={}):
+    def encode(self, image, file, filename):
         """Encode the given image to the given file.  filename
-        provides a hint to the file format desired.  options are
-        encoder-specific, and unknown options should be ignored or
-        issue warnings.
+        provides a hint to the file format desired.
         """
         raise NotImplementedError()
 

@@ -2265,8 +2265,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
     def __getitem__(self, index):
         if type(index) is slice:
-            if type(index.start) is not tuple and \
-                            type(index.stop) is not tuple:
+            if type(index.start) is not tuple and type(index.stop) is not tuple:
                 return self.items[index]
             else:
                 row1 = 0
@@ -2383,6 +2382,8 @@ class Animation(object):
 
     """
 
+    __slots__ = 'frames'
+
     def __init__(self, frames):
         """Create an animation directly from a list of frames.
 
@@ -2480,8 +2481,9 @@ class Animation(object):
 
 
 class AnimationFrame(object):
-    """A single frame of an animation.
-    """
+    """A single frame of an animation."""
+
+    __slots__ = 'image', 'duration'
 
     def __init__(self, image, duration):
         """Create an animation frame from an image.

@@ -134,7 +134,6 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
         self.set_window()
         try:
             self.angle = 0
-            clock.set_fps_limit(30)
             while not self.win.has_exit:
                 dt = clock.tick()
                 self.angle += dt
