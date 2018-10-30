@@ -1039,7 +1039,6 @@ class ImageData(AbstractImage):
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
-                # rows = re.findall(asbytes('.') * abs(pitch), data, re.DOTALL)
                 rows = [data[i:i+abs(pitch)] for i in range(0, len(data), abs(pitch))]
                 rows.reverse()
                 data = asbytes('').join(rows)
