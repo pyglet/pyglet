@@ -20,9 +20,9 @@ import unittest
 # PYTHON2 - This entire test may no longer be necessary,
 #           thanks to Python time module updates.
 if sys.version_info[:2] < (3, 5):
-    clock = time.clock()
+    clock = time.clock
 else:
-    clock = time.perf_counter()
+    clock = time.perf_counter
 
 
 @require_platform(Platform.WINDOWS)
