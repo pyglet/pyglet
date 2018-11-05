@@ -197,10 +197,10 @@ class SpriteGroup(graphics.Group):
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
-        self.shader_program = _default_program
+        self.program = _default_program
 
     def set_state(self):
-        self.shader_program.use_program()
+        self.program.use_program()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -210,7 +210,7 @@ class SpriteGroup(graphics.Group):
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
-        self.shader_program.stop_program()
+        self.program.stop_program()
 
     def __repr__(self):
         return "{0}({1})".format(self.__class__.__name__, self.texture)

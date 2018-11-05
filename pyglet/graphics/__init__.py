@@ -199,7 +199,7 @@ def draw(size, mode, *data):
 
     buffers = []
     for fmt, array in data:
-        attribute = vertexattribute.create_attribute(default_group.shader_program.id, fmt)
+        attribute = vertexattribute.create_attribute(default_group.program.id, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
@@ -243,7 +243,7 @@ def draw_indexed(size, mode, indices, *data):
 
     buffers = []
     for fmt, array in data:
-        attribute = vertexattribute.create_attribute(default_group.shader_program.id, fmt)
+        attribute = vertexattribute.create_attribute(default_group.program.id, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
@@ -488,9 +488,9 @@ class Batch(object):
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.create_indexed_domain(group.shader_program.id, *formats)
+                domain = vertexdomain.create_indexed_domain(group.program.id, *formats)
             else:
-                domain = vertexdomain.create_domain(group.shader_program.id, *formats)
+                domain = vertexdomain.create_domain(group.program.id, *formats)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True
@@ -702,20 +702,16 @@ class Group(object):
 class ShaderGroup(Group):
     def __init__(self, *shaders, parent=None):
         super(ShaderGroup, self).__init__(parent)
-        self.shader_program = ShaderProgram(*shaders)
-        self.uniform_buffers = {}
-
-        for block in self.shader_program.uniform_blocks.values():
-            self.uniform_buffers[block.name] = UniformBufferObject(uniform_block=block)
+        self.program = ShaderProgram(*shaders)
 
         if _debug_graphics_batch:
-            print("Created ShaderGroup, containing {0}".format(self.shader_program))
+            print("Created ShaderGroup, containing {0}".format(self.program))
 
     def set_state(self):
-        self.shader_program.use_program()
+        self.program.use_program()
 
     def unset_state(self):
-        self.shader_program.stop_program()
+        self.program.stop_program()
 
 
 class TextureGroup(Group):

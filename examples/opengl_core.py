@@ -3,7 +3,7 @@ import pyglet
 from pyglet.gl import *
 
 
-# pyglet.options['debug_gl_shaders'] = True
+pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
 print("OpenGL Context: {}".format(window.context.get_info().version))
@@ -68,7 +68,7 @@ sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
-    with pyglet.graphics.default_group.uniform_buffers["WindowBlock"] as block:
+    with pyglet.graphics.default_group.program.uniform_buffers["WindowBlock"] as block:
         block.zoom += direction / 8
         print("Zoom level:", block.zoom)
 
@@ -100,6 +100,9 @@ def update(dt):
 
 
 if __name__ == "__main__":
+
+    print(pyglet.graphics.default_group.program.uniform_buffers)
+
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
     pyglet.clock.schedule_interval(update, 1/30)
     pyglet.app.run()

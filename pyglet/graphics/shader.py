@@ -49,7 +49,7 @@ _uniform_setters = {
 }
 
 
-class Uniform:
+class _Uniform:
     __slots__ = 'setter', 'getter'
 
     def __init__(self, setter, getter):
@@ -99,6 +99,17 @@ class Shader:
     """OpenGL Shader object"""
 
     def __init__(self, source_string, shader_type):
+        """Create an instance of a Shader object.
+
+        Shader objects are compiled on instantiation. You can
+        reuse a Shader object in multiple `ShaderProgram`s.
+
+        :Parameters:
+            `source_string` : str
+                A string containing the Shader code.
+            `shader_type` : str
+                The Shader type, such as "vertex" or "fragment".
+        """
         if shader_type not in _shader_types.keys():
             raise TypeError("The `shader_type` must be 'vertex' or 'fragment'.")
         self._source = source_string
@@ -158,17 +169,33 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
+    uniform_buffers = {}
+
     def __init__(self, *shaders):
+        """Create an OpenGL ShaderProgram, from multiple Shaders.
+
+        Link one or more Shader objects together into a ShaderProgram.
+
+        :Parameters:
+            `shaders` : `Shader`
+                One or more Shader objects
+        """
         assert shaders, "At least one Shader object is required."
         self._id = self._link_program(shaders)
         self._active = False
 
         self._uniforms = {}
-        self.uniform_blocks = {}
-        self.uniform_buffers = {}
+        self._uniform_blocks = {}
 
         self._introspect_uniforms()
         self._introspect_uniform_blocks()
+
+        for block in self._uniform_blocks.values():
+            if block.name in self.uniform_buffers:
+                if _debug_gl_shaders:
+                    print("Uniform Buffer Object already cached: {0}".format(block.name))
+                continue
+            self.uniform_buffers[block.name] = UniformBufferObject(uniform_block=block)
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -249,11 +276,7 @@ class ShaderProgram:
             raise
 
     def _get_num_active(self, variable_type):
-        """Get the number of active variables of the passed GL type.
-
-        :param variable_type: GL_ACTIVE_ATTRIBUTES, GL_ACTIVE_UNIFORMS, etc.
-        :return: int: number of active types of the queried type
-        """
+        """Get the number of active variables of the passed GL type."""
         num_active = GLint(0)
         glGetProgramiv(self._id, variable_type, byref(num_active))
         return num_active.value
@@ -287,7 +310,7 @@ class ShaderProgram:
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(u_type))
 
-            self._uniforms[uniform_name] = Uniform(setter=setter, getter=getter)
+            self._uniforms[uniform_name] = _Uniform(setter=setter, getter=getter)
 
     def _introspect_uniform_blocks(self):
         p_id = self._id
@@ -314,7 +337,7 @@ class ShaderProgram:
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
 
             block = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
-            self.uniform_blocks[name] = block
+            self._uniform_blocks[name] = block
 
     def _get_uniform_block_name(self, index):
         buf_size = 128
