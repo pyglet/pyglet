@@ -113,11 +113,16 @@ def parse_obj_file(filename, file=None):
         file = open(filename, 'r')
 
     elif hasattr(file, 'mode') and file.mode != 'r':
-         file.close()
-         file = open(filename, 'r')
-    else:
+        # File object is opened in 'rb' mode
+        abspath = os.path.abspath(file.name)
         file.close()
-        file = open(filename, 'r')
+        file = open(abspath, 'r')
+
+    else:
+        # Unable to determine mode - reopen
+        abspath = os.path.abspath(file.name)
+        file.close()
+        file = open(abspath, 'r')
 
     material = None
     mesh = None
