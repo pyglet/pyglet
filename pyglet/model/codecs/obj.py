@@ -76,7 +76,7 @@ def load_material_library(filename):
         if values[0] == 'newmtl':
             name = values[1]
         elif name is None:
-            raise ModelDecodeException('Expected "newmtl" in %s' % filename)
+            raise ModelDecodeException('Expected "newmtl" in '.format(filename))
 
         try:
             if values[0] == 'Kd':
@@ -109,20 +109,17 @@ def parse_obj_file(filename, file=None):
     materials = {}
     mesh_list = []
 
+    location = os.path.dirname(filename)
+
     if file is None:
-        file = open(filename, 'r')
-
-    elif hasattr(file, 'mode') and file.mode != 'r':
-        # File object is opened in 'rb' mode
-        abspath = os.path.abspath(file.name)
-        file.close()
-        file = open(abspath, 'r')
-
+        with open(filename, 'r') as f:
+            file_contents = f.read()
     else:
-        # Unable to determine mode - reopen
-        abspath = os.path.abspath(file.name)
+        file_contents = file.read()
         file.close()
-        file = open(abspath, 'r')
+
+    if hasattr(file_contents, 'decode'):
+        file_contents = file_contents.decode()
 
     material = None
     mesh = None
@@ -139,7 +136,8 @@ def parse_obj_file(filename, file=None):
 
     default_material = Material("Default", diffuse, ambient, specular, emission, shininess)
 
-    for line in file:
+    for line in file_contents.splitlines():
+
         if line.startswith('#'):
             continue
         values = line.split()
@@ -154,8 +152,8 @@ def parse_obj_file(filename, file=None):
             tex_coords.append(list(map(float, values[1:3])))
 
         elif values[0] == 'mtllib':
-            material_path = os.path.join(os.path.dirname(file.name), values[1])
-            material = load_material_library(filename=material_path)
+            material_abspath = os.path.join(location, values[1])
+            material = load_material_library(filename=material_abspath)
             materials[material.name] = material
 
         elif values[0] in ('usemtl', 'usemat'):
@@ -210,8 +208,6 @@ def parse_obj_file(filename, file=None):
                 nlast = normals[n_i]
                 tlast = tex_coords[t_i]
                 vlast = vertices[v_i]
-
-    file.close()
 
     return mesh_list
 

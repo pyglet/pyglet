@@ -279,7 +279,7 @@ class URLLocation(Location):
         self.base = base_url
 
     def open(self, filename, mode='rb'):
-        import urllib.request, urllib.error, urllib.parse
+        import urllib.parse, urllib.request
         url = urllib.parse.urljoin(self.base, filename)
         return urllib.request.urlopen(url)
 
@@ -328,6 +328,11 @@ class Loader(object):
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
 
+        # map name to image etc.
+        self._cached_textures = weakref.WeakValueDictionary()
+        self._cached_images = weakref.WeakValueDictionary()
+        self._cached_animations = weakref.WeakValueDictionary()
+
     def _require_index(self):
         if self._index is None:
             self.reindex()
@@ -338,11 +343,6 @@ class Loader(object):
         You must call this method if `path` is changed or the filesystem
         layout changes.
         """
-        # map name to image etc.
-        self._cached_textures = weakref.WeakValueDictionary()
-        self._cached_images = weakref.WeakValueDictionary()
-        self._cached_animations = weakref.WeakValueDictionary()
-
         self._index = {}
         for path in self.path:
             if path.startswith('@'):
@@ -514,8 +514,7 @@ class Loader(object):
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = self._texture_atlas_bins[bin_size] =\
-                pyglet.image.atlas.TextureBin()
+            texture_bin = self._texture_atlas_bins[bin_size] = pyglet.image.atlas.TextureBin()
 
         return texture_bin
 
@@ -689,8 +688,9 @@ class Loader(object):
 
         :rtype: `Model`
         """
-        # TODO: consider adding Model textures to the managed Atlas
-        return pyglet.model.load(filename=name, file=self.file(name), batch=batch)
+        self._require_index()
+        abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
+        return pyglet.model.load(filename=abspathname, file=self.file(name), batch=batch)
 
     def html(self, name):
         """Load an HTML document.
