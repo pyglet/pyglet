@@ -119,7 +119,6 @@ class PlatformEventLoop(object):
         pass
 
     def step(self, timeout=None):
-        """:TODO: in mac/linux: return True if didn't time out"""
         raise NotImplementedError('abstract')
 
     def set_timer(self, func, interval):
@@ -318,18 +317,6 @@ class EventLoop(event.EventDispatcher):
         # Update timout
         return self.clock.get_sleep_time(True)
 
-    def _get_has_exit(self):
-        self._has_exit_condition.acquire()
-        result = self._has_exit
-        self._has_exit_condition.release()
-        return result
-
-    def _set_has_exit(self, value):
-        self._has_exit_condition.acquire()
-        self._has_exit = value
-        self._has_exit_condition.notify()
-        self._has_exit_condition.release()
-
     @property
     def has_exit(self):
         """Flag indicating if the event loop will exit in
@@ -341,11 +328,17 @@ class EventLoop(event.EventDispatcher):
         :see: `exit`
         :type: bool
         """
-        return self._get_has_exit()
+        self._has_exit_condition.acquire()
+        result = self._has_exit
+        self._has_exit_condition.release()
+        return result
 
     @has_exit.setter
     def has_exit(self, value):
-        self._set_has_exit(value)
+        self._has_exit_condition.acquire()
+        self._has_exit = value
+        self._has_exit_condition.notify()
+        self._has_exit_condition.release()
 
     def exit(self):
         """Safely exit the event loop at the end of the current iteration.
@@ -354,7 +347,7 @@ class EventLoop(event.EventDispatcher):
         :py:attr:`has_exit` to ``True``.  All waiting threads will be
         interrupted (see :py:meth:`sleep`).
         """
-        self._set_has_exit(True)
+        self.has_exit = True
         app.platform_event_loop.notify()
 
     def sleep(self, timeout):
