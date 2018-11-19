@@ -68,13 +68,13 @@ class ClockTimingTestCase(unittest.TestCase):
     def test_compute_fps(self):
         """
         Test that the clock computes a reasonable value of
-        frames per second when simulated for 10 ticks at 5 frames per second.
+        frames per second when simulated for 120 ticks at 60 frames per second.
 
         Because sleep is not very precise and fps are unbounded, we
         expect a moderate error (10%) from the expected value.
         """
-        ticks = 10  # for averaging
-        expected_fps = 5
+        ticks = 120  # for averaging
+        expected_fps = 60
         seconds_per_tick = 1./expected_fps
 
         for i in range(ticks):

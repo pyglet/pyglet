@@ -139,7 +139,12 @@ from builtins import object
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
+import sys
 import inspect
+
+# PYTHON2 - remove this legacy backwards compatibility hack:
+if sys.version_info < (3, 2):
+    inspect.getfullargspec = inspect.getargspec
 
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
@@ -392,8 +397,11 @@ class EventDispatcher(object):
         n_args = len(args)
 
         # Inspect the handler
-        # PYTHON2 - getargspec is deprecated
-        handler_args, handler_varargs, _, handler_defaults = inspect.getargspec(handler)
+        argspecs = inspect.getfullargspec(handler)
+        handler_args = argspecs.args
+        handler_varargs = argspecs.varargs
+        handler_defaults = argspecs.defaults
+
         n_handler_args = len(handler_args)
 
         # Remove "self" arg from handler if it's a bound method
@@ -418,7 +426,7 @@ class EventDispatcher(object):
                 descr = repr(handler)
 
             raise TypeError("The '{0}' event was dispatched with {1} arguments, "
-                            "but the handler {2} is written with {3} arguments.".format(
+                            "but your handler {2} accepts only {3} arguments.".format(
                              event_type, len(args), descr, len(handler_args)))
         else:
             raise exception
