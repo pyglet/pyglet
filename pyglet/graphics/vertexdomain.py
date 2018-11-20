@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,18 +46,15 @@ containing vertex indices.  This buffer is grown separately and has no size
 relation to the attribute buffers.
 
 Applications can create vertices (and optionally, indices) within a domain
-with the `VertexDomain.create` method.  This returns a `VertexList`
-representing the list of vertices created.  The vertex attribute data within
-the group can be modified, and the changes will be made to the underlying
-buffers automatically.
+with the :py:meth:`VertexDomain.create` method.  This returns a
+:py:class:`VertexList` representing the list of vertices created.  The vertex
+attribute data within the group can be modified, and the changes will be made
+to the underlying buffers automatically.
 
 The entire domain can be efficiently drawn in one step with the
-`VertexDomain.draw` method, assuming all the vertices comprise primitives of
-the same OpenGL primitive mode.
+:py:meth:`VertexDomain.draw` method, assuming all the vertices comprise
+primitives of the same OpenGL primitive mode.
 """
-from builtins import zip
-from builtins import object
-
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -125,11 +122,11 @@ def create_attribute_usage(shader_program_id, fmt):
 
 def create_domain(shader_program_id, *attribute_usage_formats):
     """Create a vertex domain covering the given attribute usage formats.
-    See documentation for `create_attribute_usage` and
-    `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
-    these format strings.
+    See documentation for :py:func:`create_attribute_usage` and
+    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
+    of these format strings.
 
-    :rtype: `VertexDomain`
+    :rtype: :py:class:`VertexDomain`
     """
     attribute_usages = [create_attribute_usage(shader_program_id, f)
                         for f in attribute_usage_formats]
@@ -138,11 +135,11 @@ def create_domain(shader_program_id, *attribute_usage_formats):
 
 def create_indexed_domain(shader_program_id, *attribute_usage_formats):
     """Create an indexed vertex domain covering the given attribute usage
-    formats.  See documentation for `create_attribute_usage` and
-    `pyglet.graphics.vertexattribute.create_attribute` for the grammar of
-    these format strings.
+    formats.  See documentation for :py:class:`create_attribute_usage` and
+    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
+    of these format strings.
 
-    :rtype: `VertexDomain`
+    :rtype: :py:class:`VertexDomain`
     """
     attribute_usages = [create_attribute_usage(shader_program_id, f)
                         for f in attribute_usage_formats]
@@ -152,8 +149,8 @@ def create_indexed_domain(shader_program_id, *attribute_usage_formats):
 class VertexDomain(object):
     """Management of a set of vertex lists.
 
-    Construction of a vertex domain is usually done with the `create_domain`
-    function.
+    Construction of a vertex domain is usually done with the
+    :py:func:`create_domain` function.
     """
     _version = 0
     _initial_count = 16
@@ -264,13 +261,13 @@ class VertexDomain(object):
             return self.allocator.realloc(start, count, new_count)
 
     def create(self, count):
-        """Create a `VertexList` in this domain.
+        """Create a :py:class:`VertexList` in this domain.
 
         :Parameters:
             `count` : int
                 Number of vertices to create.
 
-        :rtype: `VertexList`
+        :rtype: :py:class:`VertexList`
         """
         start = self._safe_alloc(count)
         return VertexList(self, start, count)
@@ -281,13 +278,13 @@ class VertexDomain(object):
         If `vertex_list` is not specified, all vertices in the domain are
         drawn.  This is the most efficient way to render primitives.
 
-        If `vertex_list` specifies a `VertexList`, only primitives in that
-        list will be drawn.
+        If `vertex_list` specifies a :py:class:`VertexList`, only primitives in
+        that list will be drawn.
 
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : `VertexList`
+            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
                 Vertex list to draw, or ``None`` for all lists in this domain.
 
         """
@@ -323,29 +320,28 @@ class VertexDomain(object):
 
 
 class VertexList(object):
-    """A list of vertices within a `VertexDomain`.  Use
-    `VertexDomain.create` to construct this list.
+    """A list of vertices within a :py:class:`VertexDomain`.  Use
+    :py:meth:`VertexDomain.create` to construct this list.
     """
+    _colors_cache = None
+    _colors_cache_version = None
+    _fog_coords_cache = None
+    _fog_coords_cache_version = None
+    _edge_flags_cache = None
+    _edge_flags_cache_version = None
+    _normals_cache = None
+    _normals_cache_version = None
+    _secondary_colors_cache = None
+    _secondary_colors_cache_version = None
+    _tex_coords_cache = None
+    _tex_coords_cache_version = None
+    _vertices_cache = None
+    _vertices_cache_version = None
 
     def __init__(self, domain, start, count):
-        # TODO make private
         self.domain = domain
         self.start = start
         self.count = count
-
-    def get_size(self):
-        """Get the number of vertices in the list.
-
-        :rtype: int
-        """
-        return self.count
-
-    def get_domain(self):
-        """Get the domain this vertex list belongs to.
-
-        :rtype: `VertexDomain`
-        """
-        return self.domain
 
     def draw(self, mode):
         """Draw this vertex list in the given OpenGL mode.
@@ -355,7 +351,11 @@ class VertexList(object):
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
+        glBindVertexArray(pyglet.graphics.get_default_batch().vao_id)
+        pyglet.graphics.default_group.set_state()
         self.domain.draw(mode, self)
+        pyglet.graphics.default_group.unset_state()
+        glBindVertexArray(0)
 
     def resize(self, count):
         """Resize this group.
@@ -405,11 +405,9 @@ class VertexList(object):
 
         new_start = domain._safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
-            old = old_attribute.get_region(old_attribute.buffer,
-                                           self.start, self.count)
+            old = old_attribute.get_region(old_attribute.buffer, self.start, self.count)
             new_attribute = domain.attribute_names[key]
-            new = new_attribute.get_region(new_attribute.buffer,
-                                           new_start, self.count)
+            new = new_attribute.get_region(new_attribute.buffer, new_start, self.count)
             new.array[:] = old.array[:]
             new.invalidate()
 
@@ -432,32 +430,27 @@ class VertexList(object):
         region.array[:] = data
         region.invalidate()
 
-    # ---
-
-    def _get_colors(self):
+    @property
+    def colors(self):
+        """Array of color data."""
         if self._colors_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['colors']
-            self._colors_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
+            self._colors_cache = attribute.get_region(attribute.buffer, self.start, self.count)
             self._colors_cache_version = domain._version
 
         region = self._colors_cache
         region.invalidate()
         return region.array
 
-    def _set_colors(self, data):
-        self._get_colors()[:] = data
+    @colors.setter
+    def colors(self, data):
+        self.colors[:] = data
 
-    _colors_cache = None
-    _colors_cache_version = None
-    colors = property(_get_colors, _set_colors,
-                      doc="""Array of color data.""")
-
-    # ---
-
-    def _get_fog_coords(self):
-        if (self._fog_coords_cache_version != self.domain._version):
+    @property
+    def fog_coords(self):
+        """Array of fog coordinate data."""
+        if self._fog_coords_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['fog_coords']
             self._fog_coords_cache = attribute.get_region(
@@ -468,18 +461,14 @@ class VertexList(object):
         region.invalidate()
         return region.array
 
-    def _set_fog_coords(self, data):
-        self._get_fog_coords()[:] = data
+    @fog_coords.setter
+    def fog_coords(self, data):
+        self.fog_coords[:] = data
 
-    _fog_coords_cache = None
-    _fog_coords_cache_version = None
-    fog_coords = property(_get_fog_coords, _set_fog_coords,
-                          doc="""Array of fog coordinate data.""")
-
-    # ---
-
-    def _get_edge_flags(self):
-        if (self._edge_flags_cache_version != self.domain._version):
+    @property
+    def edge_flags(self):
+        """Array of edge flag data."""
+        if self._edge_flags_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['edge_flags']
             self._edge_flags_cache = attribute.get_region(
@@ -490,18 +479,14 @@ class VertexList(object):
         region.invalidate()
         return region.array
 
-    def _set_edge_flags(self, data):
-        self._get_edge_flags()[:] = data
+    @edge_flags.setter
+    def edge_flags(self, data):
+        self.edge_flags[:] = data
 
-    _edge_flags_cache = None
-    _edge_flags_cache_version = None
-    edge_flags = property(_get_edge_flags, _set_edge_flags,
-                          doc="""Array of edge flag data.""")
-
-    # ---
-
-    def _get_normals(self):
-        if (self._normals_cache_version != self.domain._version):
+    @property
+    def normals(self):
+        """Array of normal vector data."""
+        if self._normals_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['normals']
             self._normals_cache = attribute.get_region(
@@ -512,18 +497,14 @@ class VertexList(object):
         region.invalidate()
         return region.array
 
-    def _set_normals(self, data):
-        self._get_normals()[:] = data
+    @normals.setter
+    def normals(self, data):
+        self.normals[:] = data
 
-    _normals_cache = None
-    _normals_cache_version = None
-    normals = property(_get_normals, _set_normals,
-                       doc="""Array of normal vector data.""")
-
-    # ---
-
-    def _get_secondary_colors(self):
-        if (self._secondary_colors_cache_version != self.domain._version):
+    @property
+    def secondary_colors(self):
+        """Array of secondary color data."""
+        if self._secondary_colors_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['secondary_colors']
             self._secondary_colors_cache = attribute.get_region(
@@ -534,22 +515,15 @@ class VertexList(object):
         region.invalidate()
         return region.array
 
-    def _set_secondary_colors(self, data):
-        self._get_secondary_colors()[:] = data
+    @secondary_colors.setter
+    def secondary_colors(self, data):
+        self.secondary_colors[:] = data
 
-    _secondary_colors_cache = None
-    _secondary_colors_cache_version = None
-    secondary_colors = property(_get_secondary_colors, _set_secondary_colors,
-                                doc="""Array of secondary color data.""")
-
-    # ---
-
-    _tex_coords_cache = None
-    _tex_coords_cache_version = None
-
-    def _get_tex_coords(self):
+    @property
+    def tex_coords(self):
+        """Array of texture coordinate data."""
         if 'multi_tex_coords' not in self.domain.attribute_names:
-            if (self._tex_coords_cache_version != self.domain._version):
+            if self._tex_coords_cache_version != self.domain._version:
                 domain = self.domain
                 attribute = domain.attribute_names['tex_coords']
                 self._tex_coords_cache = attribute.get_region(
@@ -562,18 +536,16 @@ class VertexList(object):
         else:
             return None
 
-    def _set_tex_coords(self, data):
-        if self._get_tex_coords() != None:
-            self._get_tex_coords()[:] = data
+    @tex_coords.setter
+    def tex_coords(self, data):
+        if self.tex_coords:
+            self.tex_coords[:] = data
 
-    tex_coords = property(_get_tex_coords, _set_tex_coords,
-                          doc="""Array of texture coordinate data.""")
-
-    # ---
-
-    def _get_multi_tex_coords(self):
+    @property
+    def multi_tex_coords(self):
+        """Multi-array texture coordinate data."""
         if 'tex_coords' not in self.domain.attribute_names:
-            if (self._tex_coords_cache_version != self.domain._version):
+            if self._tex_coords_cache_version != self.domain._version:
                 domain = self.domain
                 attribute = domain.attribute_names['multi_tex_coords']
                 self._tex_coords_cache = []
@@ -591,24 +563,19 @@ class VertexList(object):
         else:
             return None
 
-    def _set_multi_tex_coords(self, data):
-        if self._get_multi_tex_coords() != None:
+    @multi_tex_coords.setter
+    def multi_tex_coords(self, data):
+        if self.multi_tex_coords:
             for a in range(0, len(self._tex_coords_cache), 1):
                 if a > len(data):
                     break
-                elif data[a] != None:
+                elif data[a]:
                     self._tex_coords_cache[a].array[:] = data[a]
 
-    multi_tex_coords = property(_get_multi_tex_coords, _set_multi_tex_coords,
-                                doc="""Multi-array texture coordinate data.""")
-
-    # ---
-
-    _vertices_cache = None
-    _vertices_cache_version = None
-
-    def _get_vertices(self):
-        if (self._vertices_cache_version != self.domain._version):
+    @property
+    def vertices(self):
+        """Array of vertex coordinate data."""
+        if self._vertices_cache_version != self.domain._version:
             domain = self.domain
             attribute = domain.attribute_names['vertices']
             self._vertices_cache = attribute.get_region(
@@ -619,11 +586,9 @@ class VertexList(object):
         region.invalidate()
         return region.array
 
-    def _set_vertices(self, data):
-        self._get_vertices()[:] = data
-
-    vertices = property(_get_vertices, _set_vertices,
-                        doc="""Array of vertex coordinate data.""")
+    @vertices.setter
+    def vertices(self, data):
+        self.vertices[:] = data
 
 
 class IndexedVertexDomain(VertexDomain):
@@ -669,7 +634,7 @@ class IndexedVertexDomain(VertexDomain):
             return self.index_allocator.realloc(start, count, new_count)
 
     def create(self, count, index_count):
-        """Create an `IndexedVertexList` in this domain.
+        """Create an :py:class:`IndexedVertexList` in this domain.
 
         :Parameters:
             `count` : int
@@ -704,8 +669,8 @@ class IndexedVertexDomain(VertexDomain):
         If `vertex_list` is not specified, all vertices in the domain are
         drawn.  This is the most efficient way to render primitives.
 
-        If `vertex_list` specifies a `VertexList`, only primitives in that
-        list will be drawn.
+        If `vertex_list` specifies a :py:class:`VertexList`, only primitives in
+        that list will be drawn.
 
         :Parameters:
             `mode` : int
@@ -751,9 +716,11 @@ class IndexedVertexDomain(VertexDomain):
 
 
 class IndexedVertexList(VertexList):
-    """A list of vertices within an `IndexedVertexDomain` that are indexed.
-    Use `IndexedVertexDomain.create` to construct this list.
+    """A list of vertices within an :py:class:`IndexedVertexDomain` that are
+    indexed. Use :py:meth:`IndexedVertexDomain.create` to construct this list.
     """
+    _indices_cache = None
+    _indices_cache_version = None
 
     def __init__(self, domain, start, count, index_start, index_count):
         super(IndexedVertexList, self).__init__(domain, start, count)
@@ -819,8 +786,7 @@ class IndexedVertexList(VertexList):
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
             diff = self.start - old_start
-            region = old_domain.get_index_region(self.index_start,
-                                                 self.index_count)
+            region = old_domain.get_index_region(self.index_start, self.index_count)
             old_indices = region.array
             old_indices[:] = [i + diff for i in old_indices]
             region.invalidate()
@@ -845,9 +811,9 @@ class IndexedVertexList(VertexList):
         region.array[:] = data
         region.invalidate()
 
-    # ---
-
-    def _get_indices(self):
+    @property
+    def indices(self):
+        """Array of index data."""
         if self._indices_cache_version != self.domain._version:
             domain = self.domain
             self._indices_cache = domain.get_index_region(
@@ -858,10 +824,6 @@ class IndexedVertexList(VertexList):
         region.invalidate()
         return region.array
 
-    def _set_indices(self, data):
-        self._get_indices()[:] = data
-
-    _indices_cache = None
-    _indices_cache_version = None
-    indices = property(_get_indices, _set_indices,
-                       doc="""Array of index data.""")
+    @indices.setter
+    def indices(self, data):
+        self.indices[:] = data

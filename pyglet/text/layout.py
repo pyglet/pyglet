@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -363,13 +363,17 @@ class _GlyphBox(_AbstractBox):
         colors = []
         for start, end, color in context.colors_iter.ranges(i, i + n_glyphs):
             if color is None:
-                color = (0, 0, 0, 255)
-            colors.extend(color * ((end - start) * 6))
+                color = (255, 0, 0, 255)
+            colors.extend(color * ((end - start) * 4))
 
-        vertex_list = layout.batch.add(n_glyphs * 6, GL_TRIANGLES, group,
-                                       ('v2f/dynamic', vertices),
-                                       ('t3f/dynamic', tex_coords),
-                                       ('c4B/dynamic', colors))
+        print("NumGlyphs:", n_glyphs, n_glyphs * 4)
+
+        vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
+                                               [0, 1, 2, 0, 2, 3],
+                                               ('v2f/dynamic', vertices),
+                                               ('t3f/dynamic', tex_coords),
+                                               ('c4B/dynamic', colors))
+
         context.add_list(vertex_list)
 
         # Decoration (background color and underline)
@@ -539,12 +543,14 @@ class TextLayoutGroup(graphics.Group):
     """
 
     def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
+        # glEnable(GL_BLEND)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        pass
 
     def unset_state(self):
-        glPopAttrib()
+        # glPopAttrib()
+        pass
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
@@ -659,7 +665,8 @@ class TextLayoutForegroundGroup(graphics.OrderedGroup):
     """
 
     def set_state(self):
-        glEnable(GL_TEXTURE_2D)
+        # glEnable(GL_TEXTURE_2D)
+        pass
 
     # unset_state not needed, as parent group will pop enable bit
 
@@ -1263,12 +1270,18 @@ class TextLayout(object):
                             if new_paragraph:
                                 line.paragraph_end = True
                             yield line
-                            line = _Line(next_start)
-                            line.align = align_iterator[next_start]
-                            line.margin_left = self._parse_distance(
-                                margin_left_iterator[next_start])
-                            line.margin_right = self._parse_distance(
-                                margin_right_iterator[next_start])
+                            try:
+                                line = _Line(next_start)
+                                line.align = align_iterator[next_start]
+                                line.margin_left = self._parse_distance(
+                                    margin_left_iterator[next_start])
+                                line.margin_right = self._parse_distance(
+                                    margin_right_iterator[next_start])
+                            except IndexError:
+                                # XXX This used to throw StopIteration in some cases, causing the
+                                # final part of this method not to be executed. Refactoring
+                                # required to fix this
+                                return
                             if new_paragraph:
                                 line.paragraph_begin = True
 
@@ -2399,6 +2412,9 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         """
         line = self.lines[line]
         x -= self.top_group.translate_x
+
+        if x < line.x:
+            return line.start
 
         position = line.start
         last_glyph_x = line.x

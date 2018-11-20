@@ -3,24 +3,22 @@ import pyglet
 from pyglet.gl import *
 
 
-pyglet.options['debug_gl_shaders'] = True
+# pyglet.options['debug_gl_shaders'] = True
 
 window = pyglet.window.Window(width=540, height=540, resizable=True)
+batch = pyglet.graphics.Batch()
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
 ##########################################################
 #   TESTS !
 ##########################################################
 # TODO: update text module to fix this:
-# label = pyglet.text.Label("test", x=5, y=5)
+label_batch = pyglet.graphics.Batch()
+label = pyglet.text.Label("Test Label", x=5, y=5, batch=label_batch)
 
 
-vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (5, 5, 0,  150, 5, 0,  75, 150, 0)),
-                                             ('c3f', (1, 0, 1, 0, 1, 1, 0, 1, 0)))
-
-batch = pyglet.graphics.Batch()
-buffer_objects = {}
-
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
+                                             ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
 def create_quad_vertex_list(x, y, z, width, height):
     return x, y, z, x + width, y, z, x + width, y + height, z, x, y + height, z
@@ -88,21 +86,20 @@ def on_draw():
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
     # TODO: fix drawing vertex arrays directly without manually binding these:
-    # glBindVertexArray(pyglet.graphics._get_default_batch().vao_id)
-    # vertex_list.draw(GL_TRIANGLES)
+    # glBindVertexArray(pyglet.graphics.get_default_batch().vao_id)
+    # pyglet.graphics.default_group.set_state()
+    vertex_list.draw(GL_TRIANGLES)
 
     batch.draw()
+    label_batch.draw()
 
 
 def update(dt):
     for sprite in sprites:
-        sprite.rotation += 10 * dt % 360
+        sprite.rotation += 50 * dt % 360
 
 
 if __name__ == "__main__":
-
-    print(pyglet.graphics.default_group.program.uniform_buffers)
-
     pyglet.gl.glClearColor(0.2, 0.3, 0.3, 1)
-    pyglet.clock.schedule_interval(update, 1/30)
+    pyglet.clock.schedule_interval(update, 1/60)
     pyglet.app.run()

@@ -291,7 +291,7 @@ def _parse_data(data):
     return formats, initial_arrays
 
 
-def _get_default_batch():
+def get_default_batch():
     shared_object_space = gl.current_context.object_space
     try:
         return shared_object_space.pyglet_graphics_default_batch
@@ -314,7 +314,7 @@ def vertex_list(count, *data):
     """
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by their draw() method.
-    return _get_default_batch().add(count, 0, None, *data)
+    return get_default_batch().add(count, 0, None, *data)
 
 
 def vertex_list_indexed(count, indices, *data):
@@ -333,7 +333,7 @@ def vertex_list_indexed(count, indices, *data):
     """
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by their draw() method.
-    return _get_default_batch().add_indexed(count, 0, None, indices, *data)
+    return get_default_batch().add_indexed(count, 0, None, indices, *data)
 
 
 class Batch(object):
@@ -479,18 +479,20 @@ class Batch(object):
         if group not in self.group_map:
             self._add_group(group)
 
-        domain_map = self.group_map[group]
+        # If not a ShaderGroup, use the default ShaderProgram
+        shader_program = getattr(group, 'program', default_group.program)
 
         # Find domain given formats, indices and mode
+        domain_map = self.group_map[group]
         key = (formats, mode, indexed)
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.create_indexed_domain(group.program.id, *formats)
+                domain = vertexdomain.create_indexed_domain(shader_program.id, *formats)
             else:
-                domain = vertexdomain.create_domain(group.program.id, *formats)
+                domain = vertexdomain.create_domain(shader_program.id, *formats)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True
@@ -588,7 +590,7 @@ class Batch(object):
 
     def draw(self):
         """Draw the batch."""
-        glBindVertexArray(self.vao_id.value)
+        glBindVertexArray(self.vao_id)
 
         if self._draw_list_dirty:
             self._update_draw_list()
