@@ -42,12 +42,12 @@ green = pyglet.image.SolidColorImagePattern((0, 255, 0, 255)).create_image(50, 5
 blue = pyglet.image.SolidColorImagePattern((0, 0, 255, 255)).create_image(50, 50)
 white = pyglet.image.SolidColorImagePattern((255, 255, 255, 255)).create_image(50, 50)
 
-sprites = [
-    pyglet.sprite.Sprite(img=img, x=60, y=80, batch=batch),
-    pyglet.sprite.Sprite(img=img, x=110, y=90, batch=batch),
-    pyglet.sprite.Sprite(img=img, x=160, y=100, batch=batch),
-    pyglet.sprite.Sprite(img=img, x=210, y=110, batch=batch),
-]
+sprites = [pyglet.sprite.Sprite(img=img, x=60, y=80, batch=batch),
+           pyglet.sprite.Sprite(img=img, x=110, y=90, batch=batch),
+           pyglet.sprite.Sprite(img=img, x=160, y=100, batch=batch),
+           pyglet.sprite.Sprite(img=img, x=210, y=110, batch=batch)]
+for sprite in sprites:
+    sprite.opacity = 220
 
 sprite2 = pyglet.sprite.Sprite(img=red, x=200, y=400, batch=batch)
 sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=300, batch=batch)
@@ -85,9 +85,6 @@ def on_draw():
     #                              ('v2i', (300, 300,   400, 300,   400, 400,   300, 400)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
-    # TODO: fix drawing vertex arrays directly without manually binding these:
-    # glBindVertexArray(pyglet.graphics.get_default_batch().vao_id)
-    # pyglet.graphics.default_group.set_state()
     vertex_list.draw(GL_TRIANGLES)
 
     batch.draw()

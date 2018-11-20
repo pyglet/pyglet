@@ -155,7 +155,6 @@ document; they will be ignored by the built-in text classes.
 from __future__ import division
 from builtins import zip
 from builtins import map
-from builtins import range
 from builtins import object
 
 __docformat__ = 'restructuredtext'
@@ -169,7 +168,7 @@ from pyglet import event
 from pyglet import graphics
 from pyglet.text import runlist
 
-from pyglet.font.base import _grapheme_break
+from pyglet.font.base import grapheme_break
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
@@ -324,8 +323,7 @@ class _GlyphBox(_AbstractBox):
                 and kerns in the glyph list.
 
         """
-        super(_GlyphBox, self).__init__(
-            font.ascent, font.descent, advance, len(glyphs))
+        super(_GlyphBox, self).__init__(font.ascent, font.descent, advance, len(glyphs))
         assert owner
         self.owner = owner
         self.font = font
@@ -337,8 +335,8 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = layout.groups[self.owner] = \
-                TextLayoutTextureGroup(self.owner, layout.foreground_group)
+            group = TextLayoutTextureGroup(self.owner, layout.foreground_group)
+            layout.groups[self.owner] = group
 
         n_glyphs = self.length
         vertices = []
@@ -363,10 +361,8 @@ class _GlyphBox(_AbstractBox):
         colors = []
         for start, end, color in context.colors_iter.ranges(i, i + n_glyphs):
             if color is None:
-                color = (255, 0, 0, 255)
+                color = (0, 0, 0, 255)
             colors.extend(color * ((end - start) * 4))
-
-        print("NumGlyphs:", n_glyphs, n_glyphs * 4)
 
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                [0, 1, 2, 0, 2, 3],
@@ -396,31 +392,28 @@ class _GlyphBox(_AbstractBox):
                 x2 += glyph.advance + kern
 
             if bg is not None:
-                background_vertices.extend(
-                    [x1, y1, x2, y1, x2, y2, x1, y2])
+                background_vertices.extend([x1, y1, x2, y1, x2, y2, x1, y2])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
-                underline_vertices.extend(
-                    [x1, y + baseline - 2, x2, y + baseline - 2])
+                underline_vertices.extend([x1, y + baseline - 2, x2, y + baseline - 2])
                 underline_colors.extend(underline * 2)
 
             x1 = x2
 
         if background_vertices:
-            background_list = layout.batch.add(
-                len(background_vertices) // 2, GL_QUADS,
-                layout.background_group,
-                ('v2f/dynamic', background_vertices),
-                ('c4B/dynamic', background_colors))
+            background_list = layout.batch.add_indexed(len(background_vertices) // 2,
+                                                       GL_TRIANGLES, layout.background_group,
+                                                       [0, 1, 2, 0, 2, 3],
+                                                       ('v2f/dynamic', background_vertices),
+                                                       ('c4B/dynamic', background_colors))
             context.add_list(background_list)
 
         if underline_vertices:
-            underline_list = layout.batch.add(
-                len(underline_vertices) // 2, GL_LINES,
-                layout.foreground_decoration_group,
-                ('v2f/dynamic', underline_vertices),
-                ('c4B/dynamic', underline_colors))
+            underline_list = layout.batch.add(len(underline_vertices) // 2,
+                                              GL_LINES, layout.foreground_decoration_group,
+                                              ('v2f/dynamic', underline_vertices),
+                                              ('c4B/dynamic', underline_colors))
             context.add_list(underline_list)
 
     def delete(self, layout):
@@ -534,6 +527,113 @@ class _InvalidRange(object):
 #   foreground_decoration_group
 #                       TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
+vertex_source = """#version 330 core
+    // The "in" attributes are specifically named so that they
+    // match those created by the graphics.vertexattribute module.
+
+    in vec4 vertices;
+    in vec4 colors;
+    in vec2 tex_coords;
+
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
+
+    uniform mat4 transform = mat4(1);
+
+    uniform WindowBlock
+    {
+        vec2 size;
+        float aspect;
+        float zoom;
+    } window;
+
+
+    void main()
+    {
+        gl_Position = transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                                       vertices.y * 2.0 / window.size.y - 1.0,
+                                       vertices.z,
+                                       vertices.w * (window.zoom + 1));
+
+        vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+fragment_source = """#version 330 core
+    in vec4 vertex_colors;
+    in vec2 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords) * vertex_colors;
+    }
+"""
+
+_default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+_default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+_default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+
+
+class TextLayoutShaderGroup(graphics.Group):
+    """Shared text layout rendering group.
+
+    The group is automatically coalesced with other sprite groups sharing the
+    same parent group, texture and blend parameters.
+    """
+
+    def __init__(self, texture, parent=None):
+        """Create a text layout rendering group.
+
+        The group is created internally when a :py:class:`~pyglet.text.Label`
+        is created; applications usually do not need to explicitly create it.
+
+        :Parameters:
+            `texture` : `~pyglet.image.Texture`
+                The (top-level) texture containing the glyphs.
+            `parent` : `~pyglet.graphics.Group`
+                Optional parent group.
+        """
+        super(TextLayoutShaderGroup).__init__(parent)
+        self.texture = texture
+        self.program = _default_program
+
+    def set_state(self):
+        self.program.use_program()
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        glBindTexture(self.texture.target, 0)
+        self.program.stop_program()
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.texture)
+
+    def __eq__(self, other):
+        return (other.__class__ is self.__class__ and
+                self.parent is other.parent and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id and
+                self.blend_src == other.blend_src and
+                self.blend_dest == other.blend_dest)
+
+    def __hash__(self):
+        return hash((id(self.parent),
+                     self.texture.id, self.texture.target,
+                     self.blend_src, self.blend_dest))
+
+
 class TextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:func:`~pyglet.text.layout.TextLayout`.
 
@@ -544,9 +644,8 @@ class TextLayoutGroup(graphics.Group):
 
     def set_state(self):
         # glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
-        # glEnable(GL_BLEND)
-        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        pass
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def unset_state(self):
         # glPopAttrib()
@@ -679,7 +778,8 @@ class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
     """
 
     def set_state(self):
-        glDisable(GL_TEXTURE_2D)
+        pass
+        # glDisable(GL_TEXTURE_2D)
 
     # unset_state not needed, as parent group will pop enable bit
 
@@ -694,7 +794,6 @@ class TextLayoutTextureGroup(graphics.Group):
     def __init__(self, texture, parent):
         assert texture.target == GL_TEXTURE_2D
         super(TextLayoutTextureGroup, self).__init__(parent)
-
         self.texture = texture
 
     def set_state(self):
@@ -752,11 +851,11 @@ class TextLayout(object):
     _vertex_lists = ()
     _boxes = ()
 
-    top_group = TextLayoutGroup()
-    background_group = graphics.OrderedGroup(0, top_group)
-    foreground_group = TextLayoutForegroundGroup(1, top_group)
-    foreground_decoration_group = \
-        TextLayoutForegroundDecorationGroup(2, top_group)
+    top_group = None
+    # top_group = TextLayoutGroup()
+    # background_group = graphics.OrderedGroup(0, top_group)
+    # foreground_group = TextLayoutForegroundGroup(1, top_group)
+    # foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, top_group)
 
     _update_enabled = True
     _own_batch = False
@@ -875,13 +974,12 @@ class TextLayout(object):
         self._update_enabled = True
         self._update()
 
-    dpi = property(lambda self: self._dpi,
-                   doc="""Get DPI used by this layout.
-
-    Read-only.
-
-    :type: float
-    """)
+    @property
+    def dpi(self):
+        """Get DPI used by this layout.
+        :type: float
+        """
+        return self._dpi
 
     def delete(self):
         """Remove this layout from its batch.
@@ -1946,13 +2044,13 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         # Find grapheme breaks and extend glyph range to encompass.
         text = self.document.text
         while invalid_start > 0:
-            if _grapheme_break(text[invalid_start - 1], text[invalid_start]):
+            if grapheme_break(text[invalid_start - 1], text[invalid_start]):
                 break
             invalid_start -= 1
 
         len_text = len(text)
         while invalid_end < len_text:
-            if _grapheme_break(text[invalid_end - 1], text[invalid_end]):
+            if grapheme_break(text[invalid_end - 1], text[invalid_end]):
                 break
             invalid_end += 1
 

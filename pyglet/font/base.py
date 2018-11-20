@@ -71,7 +71,7 @@ _extend = lambda c, cc: _grapheme_extend(c, cc) or \
 _prepend = lambda c, cc: c in _logical_order_exception
 _spacing_mark = lambda c, cc: cc == 'Mc' and c not in _other_grapheme_extend
 
-def _grapheme_break(left, right):
+def grapheme_break(left, right):
     # GB1
     if left is None:
         return True
@@ -129,7 +129,7 @@ def get_grapheme_clusters(text):
     cluster = ''
     left = None
     for right in text:
-        if cluster and _grapheme_break(left, right):
+        if cluster and grapheme_break(left, right):
             clusters.append(cluster)
             cluster = ''
         elif cluster:

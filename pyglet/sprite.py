@@ -209,6 +209,7 @@ class SpriteGroup(graphics.Group):
         glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self):
+        glDisable(GL_BLEND)
         glBindTexture(self.texture.target, 0)
         self.program.stop_program()
 
