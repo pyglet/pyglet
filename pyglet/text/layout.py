@@ -335,7 +335,8 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = TextLayoutTextureGroup(self.owner, layout.foreground_group)
+            # group = TextLayoutTextureGroup(self.owner, layout.foreground_group)
+            group = TextLayoutShaderGroup(self.owner, layout.foreground_group)
             layout.groups[self.owner] = group
 
         n_glyphs = self.length
@@ -599,7 +600,7 @@ class TextLayoutShaderGroup(graphics.Group):
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super(TextLayoutShaderGroup).__init__(parent)
+        super(TextLayoutShaderGroup, self).__init__(parent)
         self.texture = texture
         self.program = _default_program
 
@@ -624,15 +625,12 @@ class TextLayoutShaderGroup(graphics.Group):
         return (other.__class__ is self.__class__ and
                 self.parent is other.parent and
                 self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
+                self.texture.id == other.texture.id)
 
     def __hash__(self):
-        return hash((id(self.parent),
-                     self.texture.id, self.texture.target,
-                     self.blend_src, self.blend_dest))
+        return hash((id(self.parent), self.texture.id, self.texture.target,))
 
+########################
 
 class TextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:func:`~pyglet.text.layout.TextLayout`.
@@ -643,13 +641,12 @@ class TextLayoutGroup(graphics.Group):
     """
 
     def set_state(self):
-        # glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def unset_state(self):
-        # glPopAttrib()
-        pass
+        glPopAttrib()
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
@@ -764,8 +761,7 @@ class TextLayoutForegroundGroup(graphics.OrderedGroup):
     """
 
     def set_state(self):
-        # glEnable(GL_TEXTURE_2D)
-        pass
+        glEnable(GL_TEXTURE_2D)
 
     # unset_state not needed, as parent group will pop enable bit
 
@@ -778,8 +774,7 @@ class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
     """
 
     def set_state(self):
-        pass
-        # glDisable(GL_TEXTURE_2D)
+        glDisable(GL_TEXTURE_2D)
 
     # unset_state not needed, as parent group will pop enable bit
 
@@ -815,6 +810,7 @@ class TextLayoutTextureGroup(graphics.Group):
                                self.texture.id,
                                self.parent)
 
+#####################
 
 class TextLayout(object):
     """Lay out and display documents.
@@ -852,6 +848,7 @@ class TextLayout(object):
     _boxes = ()
 
     top_group = None
+    foreground_group = None
     # top_group = TextLayoutGroup()
     # background_group = graphics.OrderedGroup(0, top_group)
     # foreground_group = TextLayoutForegroundGroup(1, top_group)
@@ -1004,6 +1001,7 @@ class TextLayout(object):
             self._batch.draw_subset(self._vertex_lists)
 
     def _init_groups(self, group):
+        pass
         if group:
             self.top_group = TextLayoutGroup(group)
             self.background_group = graphics.OrderedGroup(0, self.top_group)
@@ -1270,8 +1268,7 @@ class TextLayout(object):
             # Iterate over glyphs in this owner run.  `text` is the
             # corresponding character data for the glyph, and is used to find
             # whitespace and newlines.
-            for (text, glyph) in zip(self.document.text[start:end],
-                                     glyphs[start:end]):
+            for (text, glyph) in zip(self.document.text[start:end], glyphs[start:end]):
                 if nokern:
                     kern = 0
                     nokern = False
@@ -1295,10 +1292,8 @@ class TextLayout(object):
                         else:
                             # No more tab stops, tab to 100 pixels
                             tab = 50.
-                            tab_stop = \
-                                (((x + line.margin_left) // tab) + 1) * tab
-                        kern = int(tab_stop - x - line.margin_left -
-                                   glyph.advance)
+                            tab_stop = (((x + line.margin_left) // tab) + 1) * tab
+                        kern = int(tab_stop - x - line.margin_left - glyph.advance)
 
                     owner_accum.append((kern, glyph))
                     owner_accum_commit.extend(owner_accum)
@@ -1319,8 +1314,7 @@ class TextLayout(object):
                 else:
                     new_paragraph = text in u'\n\u2029'
                     new_line = (text == u'\u2028') or new_paragraph
-                    if (wrap and self._wrap_lines and x + kern + glyph.advance >= width)\
-                            or new_line:
+                    if wrap and self._wrap_lines and x + kern + glyph.advance >= width or new_line:
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
                         # way, the current line must be flushed.

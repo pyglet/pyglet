@@ -1620,11 +1620,11 @@ class Texture(AbstractImage):
         fmt = 'RGBA'
         gl_format = GL_RGBA
 
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
+        # glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)     # GL3
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
         buffer = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
         glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPopClientAttrib()
+        # glPopClientAttrib    # GL3()
 
         data = ImageData(self.width, self.height, fmt, buffer)
         if self.images > 1:
@@ -1675,7 +1675,7 @@ class Texture(AbstractImage):
         # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         # glInterleavedArrays(GL_T4F_V4F, 0, array)
         # glDrawArrays(GL_QUADS, 0, 4)
-        # glPopClientAttrib()
+        # # glPopClientAttrib    # GL3()
         # glPopAttrib()
 
     def blit_into(self, source, x, y, z):
@@ -1909,10 +1909,10 @@ class TileableTexture(Texture):
         glPushAttrib(GL_ENABLE_BIT)
         glEnable(self.target)
         glBindTexture(self.target, self.id)
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)    # GL3
         glInterleavedArrays(GL_T4F_V4F, 0, array)
         glDrawArrays(GL_QUADS, 0, 4)
-        glPopClientAttrib()
+        # # glPopClientAttrib    # GL3    # GL3()
         glPopAttrib()
 
     @classmethod
@@ -2101,11 +2101,11 @@ class BufferImage(AbstractImage):
             y += self.owner.y
 
         glReadBuffer(self.gl_buffer)
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
+        # glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)     #GL3
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
         glReadPixels(x, y, self.width, self.height,
                      self.gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPopClientAttrib()
+        # glPopClientAttrib()    # GL3
 
         return ImageData(self.width, self.height, self.format, buffer)
 

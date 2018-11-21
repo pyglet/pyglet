@@ -14,7 +14,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 # TODO: update text module to fix this:
 label_batch = pyglet.graphics.Batch()
-label = pyglet.text.Label("Test Label", x=5, y=5, batch=label_batch)
+label = pyglet.text.Label("Test Label", x=255, y=255, dpi=255, batch=label_batch)
 
 
 vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
@@ -85,8 +85,8 @@ def on_draw():
     #                              ('v2i', (300, 300,   400, 300,   400, 400,   300, 400)),
     #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
 
-    vertex_list.draw(GL_TRIANGLES)
-
+    # vertex_list.draw(GL_TRIANGLES)
+    #
     batch.draw()
     label_batch.draw()
 
