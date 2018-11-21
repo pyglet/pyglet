@@ -387,9 +387,8 @@ class VertexAttribute(AbstractAttribute):
             'Vertex attribute must have signed type larger than byte'
         super(VertexAttribute, self).__init__(shader_program_id, count, gl_type)
 
-        self.attr_name = self.name.encode('utf8')
-        self.location = glGetAttribLocation(self.shader_program_id,
-                                            ctypes.create_string_buffer(self.attr_name))
+        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
+        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
         assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
 
     def enable(self):
@@ -409,9 +408,8 @@ class ColorAttribute(AbstractAttribute):
         assert count in (3, 4), 'Color attributes must have count of 3 or 4'
         super(ColorAttribute, self).__init__(shader_program_id, count, gl_type)
 
-        self.attr_name = self.name.encode('utf8')
-        self.location = glGetAttribLocation(self.shader_program_id,
-                                            ctypes.create_string_buffer(self.attr_name))
+        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
+        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
         assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
 
     def enable(self):
@@ -501,9 +499,8 @@ class TexCoordAttribute(AbstractAttribute):
             'Texture coord attribute must have non-byte signed type'
         super(TexCoordAttribute, self).__init__(shader_program_id, count, gl_type)
 
-        self.attr_name = self.name.encode('utf8')
-        self.location = glGetAttribLocation(self.shader_program_id,
-                                            ctypes.create_string_buffer(self.attr_name))
+        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
+        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
         assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
 
     def enable(self):
@@ -544,10 +541,9 @@ class GenericAttribute(AbstractAttribute):
         super(GenericAttribute, self).__init__(shader_program_id, count, gl_type)
 
         self.name = name
-        self.attr_name = name.encode('utf8')
-        self.location = glGetAttribLocation(self.shader_program_id,
-                                            ctypes.create_string_buffer(self.attr_name))
-        assert self.location != -1, "{0} attribute not found in Shader".format(self.attr_name)
+        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
+        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
+        assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
 
     def enable(self):
         glEnableVertexAttribArray(self.location)
