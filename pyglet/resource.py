@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -86,8 +86,7 @@ The default path is ``['.']``.  If you modify the path, you must call
 from future import standard_library
 
 standard_library.install_aliases()
-from builtins import object
-from past.builtins import basestring
+from builtins import object, str
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
@@ -280,7 +279,7 @@ class URLLocation(Location):
         self.base = base_url
 
     def open(self, filename, mode='rb'):
-        import urllib.request, urllib.error, urllib.parse
+        import urllib.parse, urllib.request
         url = urllib.parse.urljoin(self.base, filename)
         return urllib.request.urlopen(url)
 
@@ -318,7 +317,7 @@ class Loader(object):
         """
         if path is None:
             path = ['.']
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             path = [path]
         self.path = list(path)
         if script_home is None:
@@ -328,6 +327,11 @@ class Loader(object):
 
         # Map bin size to list of atlases
         self._texture_atlas_bins = {}
+
+        # map name to image etc.
+        self._cached_textures = weakref.WeakValueDictionary()
+        self._cached_images = weakref.WeakValueDictionary()
+        self._cached_animations = weakref.WeakValueDictionary()
 
     def _require_index(self):
         if self._index is None:
@@ -339,11 +343,6 @@ class Loader(object):
         You must call this method if `path` is changed or the filesystem
         layout changes.
         """
-        # map name to image etc.
-        self._cached_textures = weakref.WeakValueDictionary()
-        self._cached_images = weakref.WeakValueDictionary()
-        self._cached_animations = weakref.WeakValueDictionary()
-
         self._index = {}
         for path in self.path:
             if path.startswith('@'):
@@ -501,7 +500,7 @@ class Loader(object):
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
-        max_texture_size = pyglet.image.atlas.get_max_texture_size()
+        max_texture_size = pyglet.image.get_max_texture_size()
         max_size = min(1024, max_texture_size / 2)
         if width > max_size or height > max_size:
             return None
@@ -515,8 +514,7 @@ class Loader(object):
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = self._texture_atlas_bins[bin_size] =\
-                pyglet.image.atlas.TextureBin()
+            texture_bin = self._texture_atlas_bins[bin_size] = pyglet.image.atlas.TextureBin()
 
         return texture_bin
 
@@ -551,8 +549,7 @@ class Loader(object):
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name,
-                                                                     atlas=atlas)
+            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas)
 
         if not rotate and not flip_x and not flip_y:
             return identity
@@ -649,8 +646,7 @@ class Loader(object):
         try:
             location = self._index[name]
             if isinstance(location, FileLocation):
-                # Don't open the file if it's streamed from disk -- AVbin
-                # needs to do it.
+                # Don't open the file if it's streamed from disk
                 path = os.path.join(location.path, name)
                 return media.load(path, streaming=streaming)
             else:
@@ -680,6 +676,21 @@ class Loader(object):
         texture = pyglet.image.load(name, file=file).get_texture()
         self._cached_textures[name] = texture
         return texture
+
+    def model(self, name, batch=None):
+        """Load a 3D model.
+
+        :Parameters:
+            `name` : str
+                Filename of the 3D model to load.
+            `batch` : Batch or None
+                An optional Batch instance to add this model to.
+
+        :rtype: `Model`
+        """
+        self._require_index()
+        abspathname = os.path.join(os.path.abspath(self.location(name).path), name)
+        return pyglet.model.load(filename=abspathname, file=self.file(name), batch=batch)
 
     def html(self, name):
         """Load an HTML document.
@@ -761,12 +772,13 @@ location = _default_loader.location
 add_font = _default_loader.add_font
 image = _default_loader.image
 animation = _default_loader.animation
-get_cached_image_names = _default_loader.get_cached_image_names
-get_cached_animation_names = _default_loader.get_cached_animation_names
-get_texture_bins = _default_loader.get_texture_bins
+model = _default_loader.model
 media = _default_loader.media
 texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text
 get_cached_texture_names = _default_loader.get_cached_texture_names
+get_cached_image_names = _default_loader.get_cached_image_names
+get_cached_animation_names = _default_loader.get_cached_animation_names
+get_texture_bins = _default_loader.get_texture_bins

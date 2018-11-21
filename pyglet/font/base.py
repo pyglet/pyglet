@@ -288,7 +288,8 @@ class Font(object):
     """
     texture_width = 256
     texture_height = 256
-    texture_internalformat = GL_R8
+    # texture_internalformat = GL_R8
+    texture_internalformat = GL_RED
     texture_min_filter = GL_LINEAR
     texture_mag_filter = GL_LINEAR
 

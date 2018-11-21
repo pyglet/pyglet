@@ -85,8 +85,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
             pyglet 1.1, the name may be omitted.
         `size` : float
             Size of the font, in points.  The returned font may be an exact
-            match or the closest available.  In pyglet 1.1, the size may be
-            omitted, and defaults to 12pt.
+            match or the closest available.
         `bold` : bool
             If True, a bold variant is returned, if one exists for the given
             family and size.

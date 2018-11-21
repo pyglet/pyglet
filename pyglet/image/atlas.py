@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -63,16 +63,7 @@ from builtins import object
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from ctypes import c_int
-
 import pyglet
-
-
-def get_max_texture_size():
-    """Query the maximum texture size available"""
-    size = c_int()
-    pyglet.gl.glGetIntegerv(pyglet.gl.GL_MAX_TEXTURE_SIZE, size)
-    return size.value
 
 
 class AllocatorException(Exception):
@@ -195,7 +186,7 @@ class TextureAtlas(object):
                 Height of the underlying texture.
 
         """
-        max_texture_size = get_max_texture_size()
+        max_texture_size = pyglet.image.get_max_texture_size()
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
@@ -222,8 +213,7 @@ class TextureAtlas(object):
         """
         x, y = self.allocator.alloc(img.width, img.height)
         self.texture.blit_into(img, x, y, 0)
-        region = self.texture.get_region(x, y, img.width, img.height)
-        return region
+        return self.texture.get_region(x, y, img.width, img.height)
 
 
 class TextureBin(object):
@@ -242,13 +232,10 @@ class TextureBin(object):
                 Height of texture atlases to create.
 
         """
-        max_texture_size = get_max_texture_size()
-        texture_width = min(texture_width, max_texture_size)
-        texture_height = min(texture_height, max_texture_size)
-
+        max_texture_size = pyglet.image.get_max_texture_size()
+        self.texture_width = min(texture_width, max_texture_size)
+        self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
-        self.texture_width = texture_width
-        self.texture_height = texture_height
 
     def add(self, img):
         """Add an image into this texture bin.

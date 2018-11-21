@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -104,7 +104,6 @@ __version__ = '$Id$'
 
 import math
 import sys
-import warnings
 
 from pyglet.gl import *
 from pyglet import clock
@@ -421,8 +420,19 @@ class Sprite(event.EventDispatcher):
         self._update_position()
 
     def _set_texture(self, texture):
-        self._group.texture = texture
-        self._vertex_list.tex_coords[:] = texture.tex_coords
+        if texture.id is not self._texture.id:
+            self._group = SpriteGroup(texture,
+                                      self._group.blend_src,
+                                      self._group.blend_dest,
+                                      self._group.parent)
+            if self._batch is None:
+                self._vertex_list.tex_coords[:] = texture.tex_coords
+            else:
+                self._vertex_list.delete()
+                self._texture = texture
+                self._create_vertex_list()
+        else:
+            self._vertex_list.tex_coords[:] = texture.tex_coords
         self._texture = texture
 
     def _create_vertex_list(self):
@@ -442,8 +452,8 @@ class Sprite(event.EventDispatcher):
 
     def _update_position(self):
         img = self._texture
-        scale_x = self._scale * self.scale_x
-        scale_y = self._scale * self.scale_y
+        scale_x = self._scale * self._scale_x
+        scale_y = self._scale * self._scale_y
         if not self._visible:
             vertices = (0, 0, 0, 0, 0, 0, 0, 0)
         elif self._rotation:
@@ -502,22 +512,6 @@ class Sprite(event.EventDispatcher):
     def position(self, pos):
         self._x, self._y = pos
         self._update_position()
-
-    def set_position(self, x, y):
-        """Set the X and Y coordinates of the sprite simultaneously.
-
-        :Parameters:
-            `x` : int
-                X coordinate of the sprite.
-            `y` : int
-                Y coordinate of the sprite.
-
-        :deprecated: Set the X, Y coordinates via sprite.position instead.
-        """
-        self._x = x
-        self._y = y
-        self._update_position()
-        warnings.warn("Use position property instead.", DeprecationWarning)
 
     @property
     def x(self):
