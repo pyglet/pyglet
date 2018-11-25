@@ -286,10 +286,10 @@ class Font(object):
         `descent` : int
             Maximum descent below the baseline, in pixels. Usually negative.
     """
-    texture_width = 256
-    texture_height = 256
+    texture_width = 512
+    texture_height = 512
     # texture_internalformat = GL_R8
-    texture_internalformat = GL_RED
+    texture_internalformat = GL_RGBA
     texture_min_filter = GL_LINEAR
     texture_mag_filter = GL_LINEAR
 

@@ -293,7 +293,7 @@ class _AbstractBox(object):
         self.advance = advance
         self.length = length
 
-    def place(self, layout, i, x, y):
+    def place(self, layout, i, x, y, context):
         raise NotImplementedError('abstract')
 
     def delete(self, layout):
@@ -365,11 +365,19 @@ class _GlyphBox(_AbstractBox):
                 color = (0, 0, 0, 255)
             colors.extend(color * ((end - start) * 4))
 
+        # TODO: property calculate indices
+        indices = []
+        for i in range(n_glyphs):
+            indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
+        # target = [0, 1, 2, 0, 2, 3,  4, 5, 6, 4, 6, 7,  8, 9, 10, 8, 10, 11],
+
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
-                                               [0, 1, 2, 0, 2, 3],
+                                               indices,
                                                ('v2f/dynamic', vertices),
                                                ('t3f/dynamic', tex_coords),
                                                ('c4B/dynamic', colors))
+
+        print(n_glyphs, len(vertices))
 
         context.add_list(vertex_list)
 
@@ -556,7 +564,6 @@ vertex_source = """#version 330 core
                                        vertices.z,
                                        vertices.w * (window.zoom + 1));
 
-        vertex_colors = vec4(1.0, 0.5, 0.2, 1.0);
         vertex_colors = colors;
         texture_coords = tex_coords;
     }
@@ -567,14 +574,34 @@ fragment_source = """#version 330 core
     in vec2 texture_coords;
     out vec4 final_colors;
 
-    uniform sampler2D our_texture;
+    uniform sampler2D text_texture;
 
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords) * vertex_colors;
+        final_colors = texture(text_texture, texture_coords) * vertex_colors;
+        // vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text_texture, texture_coords).r);
+        // final_colors = vec4(vertex_colors) * sampled;
     }
 """
+
+# fragment_source = """#version 330 core
+#     in vec4 vertex_colors;
+#     in vec2 texture_coords;
+#     out vec4 final_colors;
+#
+#     uniform sampler2D text;
+#
+#     void main()
+#     {
+#         // vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, texture_coords).r);
+#         // color = vec4(textColor, 1.0) * sampled;
+#
+#         vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, texture_coords).r);
+#         final_colors = vec4(vertex_colors) * sampled;
+#     }
+# """
+
 
 _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
 _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
@@ -1006,8 +1033,7 @@ class TextLayout(object):
             self.top_group = TextLayoutGroup(group)
             self.background_group = graphics.OrderedGroup(0, self.top_group)
             self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-            self.foreground_decoration_group = \
-                TextLayoutForegroundDecorationGroup(2, self.top_group)
+            self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
             # Otherwise class groups are (re)used.
 
     def _get_document(self):

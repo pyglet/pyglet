@@ -12,10 +12,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 #   TESTS !
 ##########################################################
-# TODO: update text module to fix this:
-label_batch = pyglet.graphics.Batch()
-label = pyglet.text.Label("Test Label", x=255, y=255, dpi=255, batch=label_batch)
-
+label = pyglet.text.Label("This is a test", x=50, y=180, dpi=200, batch=batch)
 
 vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
                                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
@@ -67,8 +64,8 @@ sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
     with pyglet.graphics.default_group.program.uniform_buffers["WindowBlock"] as block:
-        block.zoom += direction / 8
-        print("Zoom level:", block.zoom)
+        block.zoom += direction / 16
+        label.text = f"Zoom: {block.zoom}"
 
 
 ###########################################################
@@ -78,17 +75,16 @@ def on_mouse_scroll(x, y, mouse, direction):
 def on_draw():
     window.clear()
 
-    # pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
-    #                                       ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
-    #
-    # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-    #                              ('v2i', (300, 300,   400, 300,   400, 400,   300, 400)),
-    #                              ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
+    pyglet.graphics.draw(3, GL_TRIANGLES, ('v3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
+                                          ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
-    # vertex_list.draw(GL_TRIANGLES)
-    #
+    pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                 ('v2i', (225, 300,   250, 300,   250, 325,   225, 325)),
+                                 ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
+
+    vertex_list.draw(GL_TRIANGLES)
+
     batch.draw()
-    label_batch.draw()
 
 
 def update(dt):
