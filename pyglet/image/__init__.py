@@ -1529,7 +1529,7 @@ class Texture(AbstractImage):
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
-        format = 'RGBA'
+        fmt = 'RGBA'
         gl_format = GL_RGBA
 
         # glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)     # GL3
@@ -1551,30 +1551,20 @@ class Texture(AbstractImage):
     # no implementation of blit_to_texture yet (could use aux buffer)
 
     def blit(self, x, y, z=0, width=None, height=None):
-        # TODO: fix this for OpenGL core:
-        t = self.tex_coords
         x1 = x - self.anchor_x
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
         y2 = y1 + (height is None and self.height or height)
-        array = (GLfloat * 32)(
-            t[0], t[1], t[2], 1.,
-            x1, y1, z, 1.,
-            t[3], t[4], t[5], 1.,
-            x2, y1, z, 1.,
-            t[6], t[7], t[8], 1.,
-            x2, y2, z, 1.,
-            t[9], t[10], t[11], 1.,
-            x1, y2, z, 1.)
+        vertices = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
 
-        # glPushAttrib(GL_ENABLE_BIT)
-        # glEnable(self.target)
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        # glInterleavedArrays(GL_T4F_V4F, 0, array)
-        # glDrawArrays(GL_QUADS, 0, 4)
-        # # glPopClientAttrib    # GL3()
-        # glPopAttrib()
+
+        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                     ('v3f', vertices),
+                                     ('t3f', self.tex_coords))
+
+        glBindTexture(self.target, 0)
 
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
@@ -1806,14 +1796,12 @@ class TileableTexture(Texture):
             u1, v2, t[11], 1.,
             x, y + h, z, 1.)
 
-        glPushAttrib(GL_ENABLE_BIT)
         glEnable(self.target)
         glBindTexture(self.target, self.id)
         # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)    # GL3
         glInterleavedArrays(GL_T4F_V4F, 0, array)
         glDrawArrays(GL_QUADS, 0, 4)
         # # glPopClientAttrib    # GL3    # GL3()
-        glPopAttrib()
 
     @classmethod
     def create_for_image(cls, image):

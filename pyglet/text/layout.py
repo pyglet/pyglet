@@ -365,19 +365,16 @@ class _GlyphBox(_AbstractBox):
                 color = (0, 0, 0, 255)
             colors.extend(color * ((end - start) * 4))
 
-        # TODO: property calculate indices
         indices = []
+        # Create indices for each glyph quad:
         for i in range(n_glyphs):
             indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
-        # target = [0, 1, 2, 0, 2, 3,  4, 5, 6, 4, 6, 7,  8, 9, 10, 8, 10, 11],
 
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
                                                ('v2f/dynamic', vertices),
                                                ('t3f/dynamic', tex_coords),
                                                ('c4B/dynamic', colors))
-
-        print(n_glyphs, len(vertices))
 
         context.add_list(vertex_list)
 
@@ -528,13 +525,12 @@ class _InvalidRange(object):
 
 # Text group hierarchy
 #
-# top_group                     [Scrollable]TextLayoutGroup(Group)
-#   background_group            OrderedGroup(0)
-#   foreground_group            TextLayoutForegroundGroup(OrderedGroup(1))
-#     [font textures]           TextLayoutTextureGroup(Group)
-#     [...]                     TextLayoutTextureGroup(Group)
-#   foreground_decoration_group
-#                       TextLayoutForegroundDecorationGroup(OrderedGroup(2))
+# top_group                         [Scrollable]TextLayoutGroup(Group)
+#   background_group                OrderedGroup(0)
+#   foreground_group                TextLayoutForegroundGroup(OrderedGroup(1))
+#     [font textures]               TextLayoutTextureGroup(Group)
+#     [...]                         TextLayoutTextureGroup(Group)
+#   foreground_decoration_group     TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
 vertex_source = """#version 330 core
     // The "in" attributes are specifically named so that they
@@ -576,7 +572,6 @@ fragment_source = """#version 330 core
 
     uniform sampler2D text_texture;
 
-
     void main()
     {
         final_colors = texture(text_texture, texture_coords) * vertex_colors;
@@ -584,23 +579,6 @@ fragment_source = """#version 330 core
         // final_colors = vec4(vertex_colors) * sampled;
     }
 """
-
-# fragment_source = """#version 330 core
-#     in vec4 vertex_colors;
-#     in vec2 texture_coords;
-#     out vec4 final_colors;
-#
-#     uniform sampler2D text;
-#
-#     void main()
-#     {
-#         // vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, texture_coords).r);
-#         // color = vec4(textColor, 1.0) * sampled;
-#
-#         vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, texture_coords).r);
-#         final_colors = vec4(vertex_colors) * sampled;
-#     }
-# """
 
 
 _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
@@ -875,7 +853,9 @@ class TextLayout(object):
     _boxes = ()
 
     top_group = None
+    background_group = None
     foreground_group = None
+    foreground_decoration_group = None
     # top_group = TextLayoutGroup()
     # background_group = graphics.OrderedGroup(0, top_group)
     # foreground_group = TextLayoutForegroundGroup(1, top_group)
@@ -1028,7 +1008,6 @@ class TextLayout(object):
             self._batch.draw_subset(self._vertex_lists)
 
     def _init_groups(self, group):
-        pass
         if group:
             self.top_group = TextLayoutGroup(group)
             self.background_group = graphics.OrderedGroup(0, self.top_group)

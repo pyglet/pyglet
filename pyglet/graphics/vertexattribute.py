@@ -543,7 +543,7 @@ class GenericAttribute(AbstractAttribute):
         self.name = name
         attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
         self.location = glGetAttribLocation(self.shader_program_id, attr_name)
-        assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
+        assert self.location != -1, "'{0}' attribute not found in Shader".format(self.name)
 
     def enable(self):
         glEnableVertexAttribArray(self.location)
