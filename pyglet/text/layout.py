@@ -540,7 +540,7 @@ vertex_source = """#version 330 core
     in vec4 colors;
     in vec2 tex_coords;
 
-    out vec4 vertex_colors;
+    out vec4 text_colors;
     out vec2 texture_coords;
 
     uniform mat4 transform = mat4(1);
@@ -560,23 +560,22 @@ vertex_source = """#version 330 core
                                        vertices.z,
                                        vertices.w * (window.zoom + 1));
 
-        vertex_colors = colors;
+        text_colors = colors;
         texture_coords = tex_coords;
     }
 """
 
 fragment_source = """#version 330 core
-    in vec4 vertex_colors;
+    in vec4 text_colors;
     in vec2 texture_coords;
+
     out vec4 final_colors;
 
-    uniform sampler2D text_texture;
+    uniform sampler2D text;
 
     void main()
     {
-        final_colors = texture(text_texture, texture_coords) * vertex_colors;
-        // vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text_texture, texture_coords).r);
-        // final_colors = vec4(vertex_colors) * sampled;
+        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a) * text_colors;
     }
 """
 
@@ -617,6 +616,8 @@ class TextLayoutShaderGroup(graphics.Group):
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
     def unset_state(self):
         glDisable(GL_BLEND)
