@@ -266,7 +266,7 @@ def create_attribute(shader_program_id, fmt):
 class AbstractAttribute:
     """Abstract accessor for an attribute in a mapped buffer.
     """
-
+    name = None
     _fixed_count = None
 
     def __init__(self, shader_program_id, count, gl_type):
@@ -290,10 +290,13 @@ class AbstractAttribute:
         self.size = count * self.align
         self.stride = self.size
         self.offset = 0
+        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
+        self.location = glGetAttribLocation(shader_program_id, attr_name)
+        assert self.location != -1, "'{0}' attribute not found in Shader".format(self.name)
 
     def enable(self):
         """Enable the attribute using ``glEnableVertexAttribArray``."""
-        raise NotImplementedError('abstract')
+        glEnableVertexAttribArray(self.location)
 
     def set_pointer(self, offset):
         """Setup this attribute to point to the currently bound buffer at
@@ -387,13 +390,6 @@ class VertexAttribute(AbstractAttribute):
             'Vertex attribute must have signed type larger than byte'
         super(VertexAttribute, self).__init__(shader_program_id, count, gl_type)
 
-        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
-        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
-        assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
-
-    def enable(self):
-        glEnableVertexAttribArray(self.location)
-
     def set_pointer(self, pointer):
         glVertexAttribPointer(self.location, self.count, self.gl_type,
                               False, self.stride, self.offset + pointer)
@@ -408,85 +404,72 @@ class ColorAttribute(AbstractAttribute):
         assert count in (3, 4), 'Color attributes must have count of 3 or 4'
         super(ColorAttribute, self).__init__(shader_program_id, count, gl_type)
 
-        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
-        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
-        assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
-
-    def enable(self):
-        glEnableVertexAttribArray(self.location)
-
     def set_pointer(self, pointer):
         glVertexAttribPointer(self.location, self.count, self.gl_type,
                               True, self.stride, self.offset + pointer)
 
 
-# class EdgeFlagAttribute(AbstractAttribute):
-#     """Edge flag attribute."""
-#
-#     name = 'edge_flags'
-#     _fixed_count = 1
-#
-#     def __init__(self, shader_program_id, gl_type):
-#         assert gl_type in (GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOL), \
-#             'Edge flag attribute must have boolean type'
-#         super(EdgeFlagAttribute, self).__init__(shader_program_id, 1, gl_type)
-#
-#     def enable(self):
-#         glEnableClientState(GL_EDGE_FLAG_ARRAY)
-#
-#     def set_pointer(self, pointer):
-#         glEdgeFlagPointer(self.stride, self.offset + pointer)
-#
-#
-# class FogCoordAttribute(AbstractAttribute):
-#     """Fog coordinate attribute."""
-#
-#     name = 'fog_coords'
-#
-#     def __init__(self, shader_program_id, count, gl_type):
-#         super(FogCoordAttribute, self).__init__(shader_program_id, count, gl_type)
-#
-#     def enable(self):
-#         glEnableClientState(GL_FOG_COORD_ARRAY)
-#
-#     def set_pointer(self, pointer):
-#         glFogCoordPointer(self.count, self.gl_type, self.stride,
-#                           self.offset + pointer)
-#
-#
-# class NormalAttribute(AbstractAttribute):
-#     """Normal vector attribute."""
-#
-#     name = 'normals'
-#     _fixed_count = 3
-#
-#     def __init__(self, shader_program_id, gl_type):
-#         assert gl_type in (GL_BYTE, GL_SHORT, GL_INT, GL_FLOAT, GL_DOUBLE), \
-#             'Normal attribute must have signed type'
-#         super(NormalAttribute, self).__init__(shader_program_id, 3, gl_type)
-#
-#     def enable(self):
-#         glEnableClientState(GL_NORMAL_ARRAY)
-#
-#     def set_pointer(self, pointer):
-#         glNormalPointer(self.gl_type, self.stride, self.offset + pointer)
-#
-#
-# class SecondaryColorAttribute(AbstractAttribute):
-#     """Secondary color attribute."""
-#
-#     name = 'secondary_colors'
-#     _fixed_count = 3
-#
-#     def __init__(self, shader_program_id, gl_type):
-#         super(SecondaryColorAttribute, self).__init__(shader_program_id, 3, gl_type)
-#
-#     def enable(self):
-#         glEnableClientState(GL_SECONDARY_COLOR_ARRAY)
-#
-#     def set_pointer(self, pointer):
-#         glSecondaryColorPointer(3, self.gl_type, self.stride,
-#                                 self.offset + pointer)
+# TODO: test this
+class EdgeFlagAttribute(AbstractAttribute):
+    """Edge flag attribute."""
+
+    name = 'edge_flags'
+    _fixed_count = 1
+
+    def __init__(self, shader_program_id, gl_type):
+        assert gl_type in (GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOL),\
+            'Edge flag attribute must have boolean type'
+        super(EdgeFlagAttribute, self).__init__(shader_program_id, 1, gl_type)
+
+    def set_pointer(self, pointer):
+        glVertexAttribPointer(self.location, self.count, self.gl_type,
+                              True, self.stride, self.offset + pointer)     # Normalized?
+
+
+# TODO: test this
+class FogCoordAttribute(AbstractAttribute):
+    """Fog coordinate attribute."""
+
+    name = 'fog_coords'
+
+    def __init__(self, shader_program_id, count, gl_type):
+        super(FogCoordAttribute, self).__init__(shader_program_id, count, gl_type)
+
+    def set_pointer(self, pointer):
+        glVertexAttribPointer(self.location, self.count, self.gl_type,
+                              False, self.stride, self.offset + pointer)     # Normalized?
+
+
+# TODO: test this
+class NormalAttribute(AbstractAttribute):
+    """Normal vector attribute."""
+
+    name = 'normals'
+    _fixed_count = 3
+
+    def __init__(self, shader_program_id, gl_type):
+        assert gl_type in (GL_BYTE, GL_SHORT, GL_INT, GL_FLOAT, GL_DOUBLE), \
+            'Normal attribute must have signed type'
+        super(NormalAttribute, self).__init__(shader_program_id, 3, gl_type)
+
+    def set_pointer(self, pointer):
+        glVertexAttribPointer(self.location, self.count, self.gl_type,
+                              False, self.stride, self.offset + pointer)
+
+
+# TODO: test this
+class SecondaryColorAttribute(AbstractAttribute):
+    """Secondary color attribute."""
+
+    name = 'secondary_colors'
+    _fixed_count = 3
+
+    def __init__(self, shader_program_id, gl_type):
+        super(SecondaryColorAttribute, self).__init__(shader_program_id, 3, gl_type)
+
+    def set_pointer(self, pointer):
+        glVertexAttribPointer(self.location, self.count, self.gl_type,
+                              True, self.stride, self.offset + pointer)
 
 
 class TexCoordAttribute(AbstractAttribute):
@@ -499,13 +482,6 @@ class TexCoordAttribute(AbstractAttribute):
             'Texture coord attribute must have non-byte signed type'
         super(TexCoordAttribute, self).__init__(shader_program_id, count, gl_type)
 
-        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
-        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
-        assert self.location != -1, "{0} attribute not found in Shader".format(self.name)
-
-    def enable(self):
-        glEnableVertexAttribArray(self.location)
-
     def set_pointer(self, pointer):
         glVertexAttribPointer(self.location, self.count, self.gl_type,
                               False, self.stride, self.offset + pointer)
@@ -517,6 +493,7 @@ class TexCoordAttribute(AbstractAttribute):
         self.texture = 0
 
 
+# TODO: test this
 class MultiTexCoordAttribute(AbstractAttribute):
     """Texture coordinate attribute."""
 
@@ -526,27 +503,17 @@ class MultiTexCoordAttribute(AbstractAttribute):
         self.texture = texture
         super(MultiTexCoordAttribute, self).__init__(shader_program_id, count, gl_type)
 
-    def enable(self):
-        glClientActiveTexture(GL_TEXTURE0 + self.texture)
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-
     def set_pointer(self, pointer):
-        glTexCoordPointer(self.count, self.gl_type, self.stride, self.offset + pointer)
+        glVertexAttribPointer(self.location, self.count, self.gl_type,
+                              False, self.stride, self.offset + pointer)
 
 
 class GenericAttribute(AbstractAttribute):
     """Generic vertex attribute, used by shader programs."""
 
     def __init__(self, shader_program_id, name, count, gl_type):
-        super(GenericAttribute, self).__init__(shader_program_id, count, gl_type)
-
         self.name = name
-        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
-        self.location = glGetAttribLocation(self.shader_program_id, attr_name)
-        assert self.location != -1, "'{0}' attribute not found in Shader".format(self.name)
-
-    def enable(self):
-        glEnableVertexAttribArray(self.location)
+        super(GenericAttribute, self).__init__(shader_program_id, count, gl_type)
 
     def set_pointer(self, pointer):
         glVertexAttribPointer(self.location, self.count, self.gl_type,
@@ -555,10 +522,10 @@ class GenericAttribute(AbstractAttribute):
 
 _attribute_classes = {
     'c': ColorAttribute,
-    # 'e': EdgeFlagAttribute,
-    # 'f': FogCoordAttribute,
-    # 'n': NormalAttribute,
-    # 's': SecondaryColorAttribute,
+    'e': EdgeFlagAttribute,
+    'f': FogCoordAttribute,
+    'n': NormalAttribute,
+    's': SecondaryColorAttribute,
     't': TexCoordAttribute,
     'v': VertexAttribute,
 }
