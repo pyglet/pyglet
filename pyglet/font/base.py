@@ -288,7 +288,7 @@ class Font(object):
     """
     texture_width = 512
     texture_height = 512
-    # texture_internalformat = GL_R8
+    # TODO: rewrite text.layout._default_shader_program to use GL_R8 or GL_RED
     texture_internalformat = GL_RGBA
     texture_min_filter = GL_LINEAR
     texture_mag_filter = GL_LINEAR

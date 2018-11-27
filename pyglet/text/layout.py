@@ -533,9 +533,6 @@ class _InvalidRange(object):
 #   foreground_decoration_group     TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
 vertex_source = """#version 330 core
-    // The "in" attributes are specifically named so that they
-    // match those created by the graphics.vertexattribute module.
-
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
@@ -574,7 +571,7 @@ fragment_source = """#version 330 core
     uniform sampler2D text;
 
     void main()
-    {
+    {   
         final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a) * text_colors;
     }
 """
@@ -616,8 +613,6 @@ class TextLayoutShaderGroup(graphics.Group):
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
     def unset_state(self):
         glDisable(GL_BLEND)
