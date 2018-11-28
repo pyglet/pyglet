@@ -1,0 +1,196 @@
+Media manual
+^^^^^^^^^^^^
+
+Domain knowledge
+================
+
+This tutorial http://dranger.com/ffmpeg/ffmpeg.html is a good intro for
+building some domain knowledge. Bear in mind that the tutorial is rather old,
+and some ffmpeg functions have become deprecated - but the basics are still
+valid.
+
+In the FFmpeg base code there is the ffplay.c player - a very good way to see
+how things are managed. In particular, some newer FFmpeg functions are used,
+while current pyglet media code still uses functions that have now been
+deprecated.
+
+Current code architecture
+=========================
+
+The overview of the media code is the following:
+
+Source
+------
+
+Found in media/sources folder.
+
+:class:`~pyglet.media.Source` s represent data containing media
+information. They can come from disk or be created in memory. A
+:class:`~pyglet.media.Source` 's responsibility is to read data into
+and provide audio and/or video data out of its stream. Essentially, it's a
+*producer*.
+
+FFmpegStreamingSource
+---------------------
+
+One implementation of the :class:`~pyglet.media.StreamingSource` is the
+``FFmpegSource``. It implements the :class:`~pyglet.media.Source` base class
+by calling FFmpeg functions wrapped by ctypes and found in
+media/sources/ffmpeg_lib. They offer basic functionalities for handling media
+streams, such as opening a file, reading stream info, reading a packet, and
+decoding audio and video packets.
+
+The :class:`~pyglet.media.sources.ffmpeg.FFmpegSource` maintains two queues,
+one for audio packets and one for video packets, with a pre-determined maximum
+size. When the source is loaded, it will read packets from the stream and will
+fill up the queues until one of them is full. It has then to stop because we
+never know what type of packet we will get next from the stream. It could be a
+packet of the same type as the filled up queue, in  which case we would not be
+able to store the additional packet.
+
+Whenever a :class:`~pyglet.media.player.Player` - a consumer of a source -
+asks for audio data or a video frame, the
+:class:`~pyglet.media.Source` will pop the next packet from the
+appropriate queue, decode the data, and return the result to the Player. If
+this results in available space in both audio and video queues, it will read
+additional packets until one of the queues is full again.
+
+Player
+------
+
+Found in media/player.py
+
+The :class:`~pyglet.media.player.Player` is the main object that drives the
+source.  It maintains an internal sequence of sources or iterator of sources
+that it can play sequentially. Its responsibilities are to play, pause and seek
+into the source.
+
+If the source contains audio, the :class:`~pyglet.media.player.Player` will
+instantiate an ``AudioPlayer`` by asking the ``SoundDriver`` to create an
+appropriate ``AudioPlayer`` for the given platform. The ``AudioDriver`` is a
+singleton created according to which drivers are available. Currently
+supported sound drivers are: DirectSound, PulseAudio and OpenAL.
+
+If the source contains video, the Player has a
+:meth:`~pyglet.media.Player.get_texture` method returning the current
+video frame.
+
+The player has an internal `master clock` which is used to synchronize the
+video and the audio. The audio synchronization is delegated to the
+``AudioPlayer``. More info found below. The video synchronization is made by
+asking the :class:`~pyglet.media.Source` for the next video timestamp.
+The :class:`~pyglet.media.player.Player` then schedules on pyglet event loop a
+call to its :meth:`~pyglet.media.Player.update_texture` with a delay
+equals to the difference between the next video timestamp and the master clock
+current time.
+
+When :meth:`~pyglet.media.Player.update_texture` is called, we will
+check if the actual master clock time is not too late compared to the video
+timestamp. This could happen if the loop was very busy and the function could
+not be called on time. In this case, the frame would be skipped until we find
+a frame with a suitable timestamp for the current master clock time.
+
+AudioPlayer
+-----------
+
+Found in media/drivers
+
+The ``AudioPlayer`` is responsible only for the audio data. It can read, pause,
+and seek into the :class:`~pyglet.media.Source`.
+
+In order to accomplish these tasks, the audio player keeps a reference to the
+``AudioDriver`` singleton which provides access to the lower level functions
+for the selected audio driver.
+
+When instructed to play, it will register itself on pyglet event loop and
+check every 0.1 seconds if there is enough space in its audio buffer. If so it
+will ask the source for more audio data to refill its audio buffer. It's also
+at this time that it will check for the difference between the estimated audio
+time and the :class:`~pyglet.media.player.Player` master clock. A weighted
+average is used to smooth the inaccuracies of the audio time estimation as
+explained in http://dranger.com/ffmpeg/tutorial06.html. If the resulting
+difference is too big, the ``Source``
+:meth:`~pyglet.media.Source.get_audio_data` method has a
+``compensation_time`` argument which allows it to shorten or stretch the
+number of audio samples. This allows the audio to get back in synch with the
+master clock.
+
+AudioDriver
+-----------
+
+Found in media/drivers
+
+The ``AudioDriver`` is a wrapper around the low-level sound driver available
+on the platform. It's a singleton. It can create an ``AudioPlayer``
+appropriate for the current ``AudioDriver``.
+
+Normal operation of the ``Player``
+----------------------------------
+
+The client code instantiates a media player this way::
+
+    player = pyglet.media.Player()
+    source = pyglet.media.load(filename)
+    player.queue(source)
+    player.play()
+
+When the client code runs ``player.play()``:
+
+The :class:`~pyglet.media.player.Player` will check if there is an audio track
+on the media. If so it will instantiate an ``AudioPlayer`` appropriate for the
+available sound driver on the platform. It will create an empty
+:class:`~pyglet.image.Texture` if the media contains video frames and will
+schedule its :meth:`~pyglet.media.Player.update_texture` to be called 
+immediately. Finally it will start the master clock.
+
+The ``AudioPlayer`` will ask its :class:`~pyglet.media.Source` for
+audio data. The :class:`~pyglet.media.Source` will pop the next
+available audio packet and will decode it. The resulting audio data will be
+returned to the ``AudioPlayer``. If the audio queue and the video queues are
+not full, the :class:`~pyglet.media.Source` will read more packets
+from the stream until one of the queues is full again.
+
+When the :meth:`~pyglet.media.Player.update_texture` method is called,
+the next video timestamp will be checked with the master clock. We allow a
+delay up to the frame duration. If the master clock is beyond that time, the
+frame will be skipped. We will check the following frames for its timestamp
+until we find the appropriate frame for the master clock time. We will set the
+:attr:`~pyglet.media.player.Player.texture` to the new video frame. We will
+check for the next video frame timestamp and we will schedule a new call to
+:meth:`~pyglet.media.Player.update_texture` with a delay equals to the
+difference between the next video timestamps and the master clock time.
+
+Helpful tools
+=============
+
+I've found that using the binary ffprobe is a good way to explore the content
+of a media file. Here's a couple of things which might be
+interesting and helpful::
+
+    ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames
+
+This will show information about each frame in the file. You can choose only
+audio or only video frames by using the ``v`` flag for video and ``a`` for
+audio.::
+
+    ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames -select_streams v
+
+
+You can also ask to see a subset of frame information this way::
+
+    ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames
+    -select_streams v -show_entries frame=pkt_pts,pict_type
+
+Finally, you can get a more compact view with the additional ``compact`` flag:
+
+    ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames 
+    -select_streams v -show_entries frame=pkt_pts,pict_type -of compact
+
+Convert video to mkv
+====================
+
+::
+
+    ffmpeg -i <original_video> -c:v libx264 -preset slow -profile:v high -crf 18 
+    -coder 1 -pix_fmt yuv420p -movflags +faststart -g 30 -bf 2 -c:a aac -b:a 384k 
+    -profile:a aac_low <outputfilename.mkv>

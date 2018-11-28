@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-'''Print details of a media file that pyglet can open (requires AVbin).
+"""Print details of a media file that pyglet can open (requires FFmpeg).
 
 Usage::
 
     media_info.py <filename>
 
-'''
+"""
 
 from __future__ import print_function
 
@@ -17,18 +17,15 @@ import sys
 import pyglet
 
 
-def print_avbin_info():
-    from pyglet.media import have_avbin
+def print_ffmpeg_info():
+    from pyglet.media import have_ffmpeg
 
-    if have_avbin():
-        from pyglet.media.sources import avbin
-        print('Using AVbin version %d (FFmpeg r%d)' % (
-            avbin.get_version(),
-            avbin.av.avbin_get_ffmpeg_revision()))
+    if have_ffmpeg():
+        from pyglet.media.codecs import ffmpeg
+        print('Using FFmpeg version {0}'.format(ffmpeg.get_version()))
     else:
-        print('AVbin not available; required for media decoding.')
-        print('http://code.google.com/p/avbin')
-        print()
+        print('FFmpeg not available; required for media decoding.')
+        print('https://www.ffmpeg.org/download.html\n')
 
 
 def print_source_info(source):
@@ -75,16 +72,16 @@ def print_source_info(source):
     minutes = int(source.duration / 60) % 60
     seconds = int(source.duration) % 60
     milliseconds = int(source.duration * 1000) % 1000
-    print('Duration: %d:%02d:%02d.%03d' % (
-        hours, minutes, seconds, milliseconds))
+    print('Duration: %d:%02d:%02d.%03d' % (hours, minutes, seconds, milliseconds))
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(__doc__)
-        print_avbin_info()
+        print_ffmpeg_info()
         sys.exit(1)
 
-    print_avbin_info()
+    print_ffmpeg_info()
 
     filename = sys.argv[1]
     try:

@@ -2,13 +2,12 @@
 Interactively test the Player in pyglet.media for playing back sounds.
 """
 import pytest
-from time import sleep
 
 import pyglet
-#pyglet.options['debug_media'] = True
+pyglet.options['debug_media'] = False
 from pyglet.media.player import Player
-from pyglet.media.sources import procedural
-from pyglet.media.sources.base import StaticSource
+from pyglet.media import synthesis
+from pyglet.media.codecs.base import StaticSource
 
 
 @pytest.mark.requires_user_validation
@@ -39,7 +38,9 @@ def test_playback_fire_and_forget(event_loop, test_data):
     """Test playing back sound files using fire and forget."""
     sound = test_data.get_file('media', 'alert.wav')
     source = pyglet.media.load(sound, streaming=False)
-    source.play()
+    player = source.play()
+    player.on_player_eos = event_loop.interrupt_event_loop
+    event_loop.run_event_loop()
 
     event_loop.ask_question('Did you hear the alert sound playing?', screenshot=False)
 
@@ -47,7 +48,7 @@ def test_playback_fire_and_forget(event_loop, test_data):
 @pytest.mark.requires_user_validation
 def test_play_queue(event_loop):
     """Test playing a single sound on the queue."""
-    source = procedural.WhiteNoise(1.0)
+    source = synthesis.WhiteNoise(1.0)
     player = Player()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.play()
@@ -59,7 +60,7 @@ def test_play_queue(event_loop):
 @pytest.mark.requires_user_validation
 def test_queue_play(event_loop):
     """Test putting a single sound on the queue and then starting the player."""
-    source = procedural.WhiteNoise(1.0)
+    source = synthesis.WhiteNoise(1.0)
     player = Player()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source)
@@ -71,7 +72,7 @@ def test_queue_play(event_loop):
 @pytest.mark.requires_user_validation
 def test_pause_queue(event_loop):
     """Test the queue is not played when player is paused."""
-    source = procedural.WhiteNoise(1.0)
+    source = synthesis.WhiteNoise(1.0)
     player = Player()
     player.pause()
     player.queue(source)
@@ -79,12 +80,12 @@ def test_pause_queue(event_loop):
     # Run for the duration of the sound
     event_loop.run_event_loop(1.0)
 
-    event_loop.ask_question('Did you not hear any sound?', screenshot=False)
+    event_loop.ask_question('Is it silent?', screenshot=False)
 
 @pytest.mark.requires_user_validation
 def test_pause_sound(event_loop):
     """Test that a playing sound can be paused."""
-    source = procedural.WhiteNoise(60.0)
+    source = synthesis.WhiteNoise(60.0)
     player = Player()
     player.queue(source)
     player.play()
@@ -103,8 +104,8 @@ def test_pause_sound(event_loop):
 @pytest.mark.requires_user_validation
 def test_next_on_end_of_stream(event_loop):
     """Test that multiple items on the queue are played after each other."""
-    source1 = procedural.WhiteNoise(1.0)
-    source2 = procedural.Sine(1.0)
+    source1 = synthesis.WhiteNoise(1.0)
+    source2 = synthesis.Sine(1.0)
     player = Player()
     player.on_player_eos = event_loop.interrupt_event_loop
     player.queue(source1)
@@ -118,7 +119,7 @@ def test_next_on_end_of_stream(event_loop):
 @pytest.mark.requires_user_validation
 def test_static_source_wrapping(event_loop):
     """Test that a sound can be recursively wrappend inside a static source."""
-    source = procedural.WhiteNoise(1.0)
+    source = synthesis.WhiteNoise(1.0)
     source = StaticSource(source)
     source = StaticSource(source)
     player = Player()

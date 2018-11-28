@@ -17,9 +17,14 @@ From Dan Crosta's README:
     Read more at
         https://late.am/post/2012/06/18/what-the-heck-is-an-xrange
 """
+from __future__ import absolute_import
 
 from collections import Sequence, Iterator
 from itertools import islice
+
+from future.backports.misc import count   # with step parameter on Py2.6
+# For backward compatibility with python-future versions < 0.14.4:
+_count = count
 
 
 class newrange(Sequence):
@@ -126,10 +131,11 @@ class newrange(Sequence):
         """Return a range which represents the requested slce
         of the sequence represented by this range.
         """
-        start, stop, step = slce.indices(self._len)
-        return newrange(self._start + self._step*start,
-                        self._start + stop,
-                        self._step * step)
+        scaled_indices = (self._step * n for n in slce.indices(self._len))
+        start_offset, stop_offset, new_step = scaled_indices
+        return newrange(self._start + start_offset,
+                        self._start + stop_offset,
+                        new_step)
 
     def __iter__(self):
         """Return an iterator which enumerates the elements of the
@@ -141,20 +147,13 @@ class range_iterator(Iterator):
     """An iterator for a :class:`range`.
     """
     def __init__(self, range_):
-        self._stepper = islice(_count(range_.start, range_.step), len(range_))
+        self._stepper = islice(count(range_.start, range_.step), len(range_))
 
     def __iter__(self):
         return self
 
     def next(self):
         return next(self._stepper)
-
-
-# itertools.count in Py 2.6 doesn't accept a step parameter
-def _count(start=0, step=1):
-    while True:
-        yield start
-        start += step
 
 
 __all__ = ['newrange']

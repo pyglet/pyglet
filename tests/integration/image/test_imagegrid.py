@@ -29,14 +29,14 @@ class ImageGridTestCase(unittest.TestCase):
         assert len(data) == width * height
         self.image = ImageData(width, height, 'L', data)
         self.grid = ImageGrid(self.image, rows, cols,
-            itemwidth, itemheight, rowpad, colpad).texture_sequence
+            itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
 
     def check_cell(self, cellimage, cellindex):
         self.assertTrue(cellimage.width == self.grid.item_width)
         self.assertTrue(cellimage.height == self.grid.item_height)
 
         color = colorbyte(cellindex + 1)
-        cellimage = cellimage.image_data
+        cellimage = cellimage.get_image_data()
         data = cellimage.get_data('L', cellimage.width)
         self.assertTrue(data == color * len(data))
 

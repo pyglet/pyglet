@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,8 @@ from __future__ import absolute_import
 from builtins import str
 
 import ctypes
-from collections import defaultdict, namedtuple
+from collections import namedtuple
+import weakref
 
 from . import lib_openal as al
 from . import lib_alc as alc
@@ -45,7 +46,7 @@ import pyglet
 from pyglet.debug import debug_print
 from pyglet.media.exceptions import MediaException
 
-_debug_media = debug_print('debug_media')
+_debug = debug_print('debug_media')
 
 
 class OpenALException(MediaException):
@@ -62,6 +63,7 @@ class OpenALException(MediaException):
                                                           self.error_string,
                                                           self.message)
 
+
 class OpenALObject(object):
     """Base class for OpenAL objects."""
     @classmethod
@@ -70,7 +72,7 @@ class OpenALObject(object):
         error_code = al.alGetError()
         if error_code != 0:
             error_string = al.alGetString(error_code)
-            #TODO: Fix return type in generated code?
+            # TODO: Fix return type in generated code?
             error_string = ctypes.cast(error_string, ctypes.c_char_p)
             raise OpenALException(message=message,
                                   error_code=error_code,
@@ -92,6 +94,7 @@ class OpenALDevice(OpenALObject):
             raise OpenALException('No OpenAL devices.')
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALDevice")
         self.delete()
 
     def delete(self):
@@ -123,29 +126,7 @@ class OpenALDevice(OpenALObject):
     def get_extensions(self):
         extensions = alc.alcGetString(self._al_device, alc.ALC_EXTENSIONS)
         self.check_context_error('Failed to get extensions.')
-        if pyglet.compat_platform == 'darwin' or pyglet.compat_platform.startswith('linux'):
-            return [x.decode('ascii')
-                    for x
-                    in ctypes.cast(extensions, ctypes.c_char_p).value.split(b' ')]
-        else:
-            return self._split_nul_strings(extensions)
-
-    @staticmethod
-    def _split_nul_strings(s):
-        # NUL-separated list of strings, double-NUL-terminated.
-        nul = False
-        i = 0
-        while True:
-            if s[i] == b'\0':
-                if nul:
-                    break
-                else:
-                    nul = True
-            else:
-                nul = False
-            i += 1
-        s = s[:i - 1]
-        return filter(None, [ss.strip().decode('ascii') for ss in s.split(b'\0')])
+        return ctypes.cast(extensions, ctypes.c_char_p).value.decode('ascii').split()
 
     def check_context_error(self, message=None):
         """Check whether there is an OpenAL error and raise exception if present."""
@@ -171,6 +152,7 @@ class OpenALContext(OpenALObject):
         self.make_current()
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALContext")
         self.delete()
 
     def delete(self):
@@ -193,8 +175,8 @@ class OpenALContext(OpenALObject):
 
 class OpenALSource(OpenALObject):
     def __init__(self, context):
-        self.context = context
-        self.buffer_pool = OpenALBufferPool(context)
+        self.context = weakref.ref(context)
+        self.buffer_pool = OpenALBufferPool(self.context)
 
         self._al_source = al.ALuint()
         al.alGenSources(1, self._al_source)
@@ -206,10 +188,12 @@ class OpenALSource(OpenALObject):
         self._owned_buffers = {}
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALSource")
         self.delete()
 
     def delete(self):
-        if self._al_source is not None:
+        if self.context() and self._al_source is not None:
+            # Only delete source if the context still exists
             al.alDeleteSources(1, self._al_source)
             self._check_error('Failed to delete source.')
             # TODO: delete buffers in use
@@ -260,7 +244,7 @@ class OpenALSource(OpenALObject):
     pitch = _float_source_property(al.AL_PITCH)
     max_distance = _float_source_property(al.AL_MAX_DISTANCE)
     direction = _3floats_source_property(al.AL_DIRECTION)
-    cone_inner_angle =_float_source_property(al.AL_CONE_INNER_ANGLE)
+    cone_inner_angle = _float_source_property(al.AL_CONE_INNER_ANGLE)
     cone_outer_angle = _float_source_property(al.AL_CONE_OUTER_ANGLE)
     cone_outer_gain = _float_source_property(al.AL_CONE_OUTER_GAIN)
     sec_offset = _float_source_property(al.AL_SEC_OFFSET)
@@ -283,6 +267,12 @@ class OpenALSource(OpenALObject):
         al.alSourceStop(self._al_source)
         self._check_error('Failed to stop source.')
 
+    def clear(self):
+        self._set_int(al.AL_BUFFER, al.AL_NONE)
+        while self._owned_buffers:
+            buf_name, buf = self._owned_buffers.popitem()
+            self.buffer_pool.unqueue_buffer(buf)
+
     def get_buffer(self):
         return self.buffer_pool.get_buffer()
 
@@ -294,7 +284,7 @@ class OpenALSource(OpenALObject):
 
     def unqueue_buffers(self):
         processed = self.buffers_processed
-        assert _debug_media("Processed buffer count: {}".format(processed))
+        assert _debug("Processed buffer count: {}".format(processed))
         if processed > 0:
             buffers = (al.ALuint * processed)()
             al.alSourceUnqueueBuffers(self._al_source, len(buffers), buffers)
@@ -359,17 +349,29 @@ OpenALOrientation = namedtuple("OpenALOrientation", ['at', 'up'])
 
 
 class OpenALListener(OpenALObject):
-    def _float_source_property(attribute):
-        return property(lambda self: self._get_float(attribute),
-                        lambda self, value: self._set_float(attribute, value))
+    @property
+    def position(self):
+        return self._get_3floats(al.AL_POSITION)
 
-    def _3floats_source_property(attribute):
-        return property(lambda self: self._get_3floats(attribute),
-                        lambda self, value: self._set_3floats(attribute, value))
+    @position.setter
+    def position(self, values):
+        self._set_3floats(al.AL_POSITION, values)
 
-    position = _3floats_source_property(al.AL_POSITION)
-    velocity = _3floats_source_property(al.AL_VELOCITY)
-    gain = _float_source_property(al.AL_GAIN)
+    @property
+    def velocity(self):
+        return self._get_3floats(al.AL_VELOCITY)
+
+    @velocity.setter
+    def velocity(self, values):
+        self._set_3floats(al.AL_VELOCITY, values)
+
+    @property
+    def gain(self):
+        return self._get_float(al.AL_GAIN)
+
+    @gain.setter
+    def gain(self, value):
+        self._set_float(al.AL_GAIN, value)
 
     @property
     def orientation(self):
@@ -387,7 +389,6 @@ class OpenALListener(OpenALObject):
         if len(actual_values) != 6:
             raise ValueError("Need 2 tuples of 3 or 1 tuple of 6.")
         self._set_float_vector(al.AL_ORIENTATION, actual_values)
-
 
     def _get_float(self, key):
         al_float = al.ALfloat()
@@ -438,6 +439,7 @@ class OpenALBuffer(OpenALObject):
         assert self.is_valid
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALBuffer")
         self.delete()
 
     @property
@@ -462,7 +464,7 @@ class OpenALBuffer(OpenALObject):
         return self._al_buffer.value
 
     def delete(self):
-        if self.is_valid:
+        if self._al_buffer is not None and self.context() and self.is_valid:
             al.alDeleteBuffers(1, ctypes.byref(self._al_buffer))
             self._check_error('Error deleting buffer.')
             self._al_buffer = None
@@ -470,7 +472,12 @@ class OpenALBuffer(OpenALObject):
     def data(self, audio_data, audio_format, length=None):
         assert self.is_valid
         length = length or audio_data.length
-        al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
+
+        try:
+            al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
+        except KeyError:
+            raise MediaException('Unsupported sample size')
+
         al.alBufferData(self._al_buffer,
                         al_format,
                         audio_data.data,
@@ -485,9 +492,10 @@ class OpenALBufferPool(OpenALObject):
     """
     def __init__(self, context):
         self.context = context
-        self._buffers = [] # list of free buffer names
+        self._buffers = []  # list of free buffer names
 
     def __del__(self):
+        assert _debug("Delete interface.OpenALBufferPool")
         self.clear()
 
     def __len__(self):

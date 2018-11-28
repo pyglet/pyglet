@@ -1,7 +1,41 @@
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2018 Alex Holkner
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 """Drivers for playing back media."""
 from __future__ import print_function
 from __future__ import absolute_import
-from builtins import str
+
+import atexit
 
 import pyglet
 
@@ -9,6 +43,18 @@ _debug = pyglet.options['debug_media']
 
 
 def get_audio_driver():
+    """Get the preferred audio driver for the current platform.
+
+    Currently pyglet supports DirectSound, PulseAudio and OpenAL drivers. If
+    the platform supports more than one of those audio drivers, the
+    application can give its preference with :data:`pyglet.options` ``audio``
+    keyword. See the Programming guide, section
+    :doc:`/programming_guide/media`.
+
+    Returns:
+        AbstractAudioDriver : The concrete implementation of the preferred 
+        audio driver for this platform.
+    """
     global _audio_driver
 
     if _audio_driver:
@@ -31,24 +77,20 @@ def get_audio_driver():
                 _audio_driver = directsound.create_audio_driver()
                 break
             elif driver_name == 'silent':
-                _audio_driver = get_silent_audio_driver()
+                _audio_driver = None
                 break
-        except Exception as exp:
+        except Exception:
             if _debug:
                 print('Error importing driver %s:' % driver_name)
                 import traceback
                 traceback.print_exc()
     return _audio_driver
 
-def get_silent_audio_driver():
-    global _silent_audio_driver
 
-    if not _silent_audio_driver:
-        from . import silent
-        _silent_audio_driver = silent.create_audio_driver()
+def _delete_audio_driver():
+    global _audio_driver
+    _audio_driver = None
 
-    return _silent_audio_driver
 
 _audio_driver = None
-_silent_audio_driver = None
-
+atexit.register(_delete_audio_driver)

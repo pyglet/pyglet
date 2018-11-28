@@ -488,7 +488,10 @@ class Sprite(event.EventDispatcher):
             y2 = y1 + img.height
             vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
         if not self._subpixel:
-            vertices = tuple(map(int, vertices))
+            vertices = (int(vertices[0]), int(vertices[1]),
+                        int(vertices[2]), int(vertices[3]),
+                        int(vertices[4]), int(vertices[5]),
+                        int(vertices[6]), int(vertices[7]))
         self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
@@ -723,7 +726,6 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        # TODO: Test this, and fix if necessary
         self._group.set_state_recursive()
         self._vertex_list.draw(GL_TRIANGLES)
         self._group.unset_state_recursive()

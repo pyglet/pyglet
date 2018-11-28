@@ -80,6 +80,7 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
     mod_shift_keys = (key.LSHIFT, key.RSHIFT)
     mod_ctrl_keys = (key.LCTRL, key.RCTRL)
     mod_alt_keys = (key.LALT, key.RALT)
+    mod_option_keys = (key.LOPTION, key.ROPTION)
     mod_meta_keys = (key.LMETA, key.RMETA)
     mod_meta = key.MOD_SHIFT | key.MOD_ALT
 
@@ -139,11 +140,12 @@ class KeyPressWindowEventTestCase(WindowEventsTestCase):
         if self.chosen_modifiers & key.MOD_SHIFT:
             modifiers.append('<Shift>')
         if self.chosen_modifiers & key.MOD_ALT:
-            modifiers.append('<Alt>')
+            modifiers.append('<Alt/Option>')
         if self.chosen_modifiers & key.MOD_CTRL:
             modifiers.append('<Ctrl>')
 
-        self.question = """Please press and release:
+        self.question = """Please press and release the following combination of keys.
+Only use <Shift> if explicitly asked to do so.
 
 {} {}
 
@@ -155,6 +157,10 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
         modifier = self._get_modifier_for_key(symbol)
         if modifier == 0:
             return False
+
+        if modifier == key.MOD_OPTION:
+            # Ignore option key as it doubles with Alt
+            return True
 
         if not self.chosen_modifiers & modifier:
             self.fail_test('Unexpected modifier key "{}"'.format(key.symbol_string(symbol)))
@@ -168,6 +174,8 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
             return key.MOD_ALT
         elif symbol in self.mod_ctrl_keys:
             return key.MOD_CTRL
+        elif symbol in self.mod_option_keys:
+            return key.MOD_OPTION
         elif symbol in self.mod_meta_keys:
             return self.mod_meta
         else:
@@ -179,8 +187,20 @@ Press Esc if test does not pass.""".format(' '.join(modifiers), key.symbol_strin
             modifiers |= self._get_modifier_for_key(symbol)
         return modifiers
 
+    def _translate_option_modifier(self, modifiers):
+        """
+        On macOS the Alt key is also called the Option key. Key presses for both Alt and Option
+        are emitted, but the modifier list contains only one of them. Unify modifiers to
+        contain only Alt if Alt and/or Option is active.
+        """
+        if modifiers & key.MOD_OPTION or modifiers & key.MOD_ALT:
+            return (modifiers & ~key.MOD_OPTION) | key.MOD_ALT
+        else:
+            return modifiers
+
     def _check_modifiers_against_pressed_keys(self, modifiers):
-        modifiers_from_keys = self._get_modifiers_from_pressed_keys()
+        modifiers_from_keys = self._translate_option_modifier(self._get_modifiers_from_pressed_keys())
+        modifiers = self._translate_option_modifier(modifiers)
         if modifiers != modifiers_from_keys:
             self.fail_test('Received modifiers "{}" do not match pressed keys "{}"'.format(
                                 key.modifiers_string(modifiers),
@@ -243,7 +263,8 @@ class TextWindowEventsTest(WindowEventsTestCase):
         self._update_question()
 
     def _update_question(self):
-        self.question = """Please type:
+        self.question = """Please type the followin character exactly.
+Use <Shift> if needed.
 
 {}
 
@@ -269,6 +290,10 @@ class TextMotionWindowEventsTest(WindowEventsTestCase):
         self.chosen_key = None
         self.checks_passed = 0
 
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.X:
+            self._select_next_key()
+
     def on_text_motion(self, motion):
         if motion != self.chosen_key:
             self.fail_test('Expected "{}", received "{}"'.format(
@@ -290,6 +315,7 @@ class TextMotionWindowEventsTest(WindowEventsTestCase):
 {} ({})
 
 
+Press the X key if you do not have this motion key.
 Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
                                            key.symbol_string(self.chosen_key))
         self._render_question()
@@ -312,6 +338,10 @@ class TextMotionSelectWindowEventsTest(WindowEventsTestCase):
         self.chosen_key = None
         self.checks_passed = 0
 
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.X:
+            self._select_next_key()
+
     def on_text_motion_select(self, motion):
         if motion != self.chosen_key:
             self.fail_test('Expected "{}", received "{}"'.format(
@@ -333,6 +363,7 @@ class TextMotionSelectWindowEventsTest(WindowEventsTestCase):
 {} ({})
 
 
+Press the X key if you do not have this motion key.
 Press Esc if test does not pass.""".format(key.motion_string(self.chosen_key),
                                            key.symbol_string(self.chosen_key))
         self._render_question()

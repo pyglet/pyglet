@@ -28,8 +28,6 @@ class FixOrderFutureImports(fixer_base.BaseFix):
     #     Match only once per file
     #     """
     #     if hasattr(node, 'type') and node.type == syms.file_input:
-    #         import pdb
-    #         pdb.set_trace()
     #         return True
     #     return False
 

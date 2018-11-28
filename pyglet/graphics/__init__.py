@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -39,18 +39,18 @@ This module provides an efficient low-level abstraction over OpenGL.  It gives
 very good performance for rendering OpenGL primitives; far better than the
 typical immediate-mode usage and, on modern graphics cards, better than using
 display lists in many cases.  The module is used internally by other areas of
-pyglet.  
+pyglet.
 
-See the Programming Guide for details on how to use this graphics API.
+See the :ref:`programming-guide-graphics` for details on how to use this graphics API.
 
 Batches and groups
 ==================
 
 Without even needing to understand the details on how to draw primitives with
-the graphics API, developers can make use of `Batch` and `Group`
+the graphics API, developers can make use of :py:class:`~pyglet.graphics.Batch` and :py:class:`~pyglet.graphics.Group`
 objects to improve performance of sprite and text rendering.
 
-The `Sprite`, `Label` and `TextLayout` classes all accept a ``batch`` and
+The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.layout.TextLayout` classes all accept a ``batch`` and
 ``group`` parameter in their constructors.  A batch manages a set of objects
 that will be drawn all at once, and a group describes the manner in which an
 object is drawn.
@@ -155,7 +155,7 @@ present.  This also permits use of ``GL_POLYGON``, ``GL_LINE_LOOP`` and
 ``GL_TRIANGLE_FAN``.   Unfortunately the extension is not provided by older
 video drivers, and requires indexed vertex lists.
 
-:since: pyglet 1.1
+.. versionadded:: 1.1
 """
 from __future__ import print_function
 from builtins import zip
@@ -301,7 +301,7 @@ def get_default_batch():
 
 
 def vertex_list(count, *data):
-    """Create a `VertexList` not associated with a batch, group or mode.
+    """Create a :py:class:`~pyglet.graphics.vertexdomain.VertexList` not associated with a batch, group or mode.
 
     :Parameters:
         `count` : int
@@ -310,7 +310,7 @@ def vertex_list(count, *data):
             Attribute formats and initial data for the vertex list.  See the
             module summary for details.
 
-    :rtype: `VertexList`
+    :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
     """
     # Note that mode=0 because the default batch is never drawn: vertex lists
     # returned from this function are drawn directly by their draw() method.
@@ -339,7 +339,7 @@ def vertex_list_indexed(count, indices, *data):
 class Batch(object):
     """Manage a collection of vertex lists for batched rendering.
 
-    Vertex lists are added to a `Batch` using the `add` and `add_indexed`
+    Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the `add` and `add_indexed`
     methods.  An optional group can be specified along with the vertex list,
     which gives the OpenGL state required for its rendering.  Vertex lists
     with shared mode and group are allocated into adjacent areas of memory and
@@ -347,14 +347,13 @@ class Batch(object):
 
     Call `VertexList.delete` to remove a vertex list from the batch.
     """
-
     def __init__(self):
         """Create a graphics batch."""
         # Mapping to find domain.  
         # group -> (attributes, mode, indexed) -> domain
         self.group_map = {}
 
-        # Mapping of group to list of children
+        # Mapping of group to list of children.
         self.group_children = {}
 
         # List of top-level groups
@@ -376,7 +375,7 @@ class Batch(object):
         This method can be used to force the batch to re-compute the draw list
         when the ordering of groups has changed.
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
         """
         self._draw_list_dirty = True
 
@@ -388,16 +387,15 @@ class Batch(object):
                 The number of vertices in the list.
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, 
-                shared_object_space = gl.current_context.object_space etc.
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
                 See the module summary for additional information.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Group of the vertex list, or ``None`` if no group is required.
             `data` : data items
                 Attribute formats and initial data for the vertex list.  See
                 the module summary for details.
 
-        :rtype: `VertexList`
+        :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
         formats, initial_arrays = _parse_data(data)
         domain = self._get_domain(False, mode, group, formats)
@@ -419,7 +417,7 @@ class Batch(object):
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
                 See the module summary for additional information.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 Group of the vertex list, or ``None`` if no group is required.
             `indices` : sequence
                 Sequence of integers giving indices into the vertex list.
@@ -454,13 +452,13 @@ class Batch(object):
         `batch` can remain unchanged if only a group change is desired.
         
         :Parameters:
-            `vertex_list` : `VertexList`
+            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
                 A vertex list currently belonging to this batch.
             `mode` : int
                 The current GL drawing mode of the vertex list.
-            `group` : `Group`
+            `group` : `~pyglet.graphics.Group`
                 The new group to migrate to.
-            `batch` : `Batch`
+            `batch` : `~pyglet.graphics.Batch`
                 The batch to migrate to (or the current batch).
 
         """
@@ -653,14 +651,13 @@ class Group(object):
     subclasses; the default state change has no effect, and groups vertex
     lists only in the order in which they are drawn.
     """
-
     def __init__(self, parent=None):
         """Create a group.
 
         :Parameters:
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Group to contain this group; its state will be set before this
-                state's.vertex_source
+                state's.
 
         """
         self.parent = parent
@@ -669,7 +666,7 @@ class Group(object):
         return hash(self) < hash(other)
 
     def set_state(self):
-        """Apply the OpenGL state change.  
+        """Apply the OpenGL state change.
         
         The default implementation does nothing."""
         pass
@@ -728,9 +725,9 @@ class TextureGroup(Group):
         """Create a texture group.
 
         :Parameters:
-            `texture` : `Texture`
+            `texture` : `~pyglet.image.Texture`
                 Texture to bind.
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Parent group.
 
         """
@@ -764,7 +761,6 @@ class OrderedGroup(Group):
     their ``order`` field.  This is a useful way to render multiple layers of
     a scene within a single batch.
     """
-
     # This can be useful as a top-level group, or as a superclass for other
     # groups that need to be ordered.
     #
@@ -777,7 +773,7 @@ class OrderedGroup(Group):
         :Parameters:
             `order` : int
                 Order of this group.
-            `parent` : `Group`
+            `parent` : `~pyglet.graphics.Group`
                 Parent of this group.
 
         """

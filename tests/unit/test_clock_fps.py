@@ -11,12 +11,14 @@ import unittest
 
 from pyglet import clock
 
+
 def sleep(seconds):
-    "Busy sleep on the CPU which is very precise"
+    """Busy sleep on the CPU which is very precise"""
     pyclock = clock.get_default()
     start = pyclock.time()
     while pyclock.time() - start < seconds:
         pass
+
 
 class ClockTimingTestCase(unittest.TestCase):
 
@@ -66,13 +68,13 @@ class ClockTimingTestCase(unittest.TestCase):
     def test_compute_fps(self):
         """
         Test that the clock computes a reasonable value of
-        frames per second when simulated for 10 ticks at 5 frames per second.
+        frames per second when simulated for 120 ticks at 60 frames per second.
 
         Because sleep is not very precise and fps are unbounded, we
         expect a moderate error (10%) from the expected value.
         """
-        ticks = 10  # for averaging
-        expected_fps = 5
+        ticks = 120  # for averaging
+        expected_fps = 60
         seconds_per_tick = 1./expected_fps
 
         for i in range(ticks):
@@ -81,33 +83,3 @@ class ClockTimingTestCase(unittest.TestCase):
         computed_fps = clock.get_fps()
 
         self.assertAlmostEqual(computed_fps, expected_fps, delta=0.1*expected_fps)
-
-    def test_limit_fps(self):
-        """
-        Test that the clock effectively limits the
-        frames per second to 60 Hz when set to.
-
-        Because the fps are bounded, we expect a small error (1%)
-        from the expected value.
-        """
-        ticks = 20
-        fps_limit = 60
-        expected_delta_time = ticks*1./fps_limit
-
-        clock.set_fps_limit(fps_limit)
-
-        pyclock = clock.get_default()
-        t1 = pyclock.time()
-        # Initializes the timer state.
-        clock.tick()
-        for i in range(ticks):
-            clock.tick()
-
-        t2 = pyclock.time()
-
-        computed_time_delta = t2 - t1
-
-        self.assertAlmostEqual(computed_time_delta,
-                               expected_delta_time,
-                               delta=0.01*expected_delta_time)
-

@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -72,6 +69,7 @@ def add_menu_item(menu, title, action, key):
         title.release()
         key.release()
         menuItem.release()
+
 
 def create_menu():
     with AutoReleasePool():
@@ -195,4 +193,3 @@ class CocoaEventLoop(PlatformEventLoop):
                 )
 
             self.NSApp.postEvent_atStart_(notifyEvent, False)
-

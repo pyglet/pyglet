@@ -33,52 +33,37 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Displays a rotating torus using OpenGL.
+"""Displays a rotating torus using the pyglet.graphics API.
+
+This example uses the pyglet.graphics API to render an indexed vertex
+list. The vertex list is added to a batch, allowing easy rendered
+alongside other vertex lists with minimal overhead.
 
 This example demonstrates:
 
- * Using a 3D projection on a window by overriding the default on_resize
-   handler
+ * Setting a 3D projection on a window by overriding the default
+   on_resize handler
  * Enabling multisampling if available
- * Drawing a simple 3D primitive using vertex and index arrays
- * Using a display list
+ * Drawing simple 3D primitives using the pyglet.graphics API
  * Fixed-pipeline lighting
-
-'''
+"""
 
 from math import pi, sin, cos
 
-from pyglet.gl import *
 import pyglet
+from pyglet.gl import *
 
 try:
     # Try and create a window with multisampling (antialiasing)
-    config = Config(sample_buffers=1, samples=4, 
-                    depth_size=16, double_buffer=True,)
+    config = Config(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
     window = pyglet.window.Window(resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling for old hardware
     window = pyglet.window.Window(resizable=True)
 
-@window.event
-def on_resize(width, height):
-    # Override the default on_resize handler to create a 3D projection
-    glViewport(0, 0, width, height)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(60., width / float(height), .1, 1000.)
-    glMatrixMode(GL_MODELVIEW)
-    return pyglet.event.EVENT_HANDLED
+# Change the window projection to 3D:
+window.projection = pyglet.window.Projection3D()
 
-def update(dt):
-    global rx, ry, rz
-    rx += dt * 1
-    ry += dt * 80
-    rz += dt * 30
-    rx %= 360
-    ry %= 360
-    rz %= 360
-pyglet.clock.schedule(update)
 
 @window.event
 def on_draw():
@@ -88,7 +73,18 @@ def on_draw():
     glRotatef(rz, 0, 0, 1)
     glRotatef(ry, 0, 1, 0)
     glRotatef(rx, 1, 0, 0)
-    torus.draw()
+    batch.draw()
+
+
+def update(dt):
+    global rx, ry, rz
+    rx += dt * 1
+    ry += dt * 80
+    rz += dt * 30
+    rx %= 360
+    ry %= 360
+    rz %= 360
+
 
 def setup():
     # One-time GL setup
@@ -107,84 +103,70 @@ def setup():
     glEnable(GL_LIGHT0)
     glEnable(GL_LIGHT1)
 
-    # Define a simple function to create ctypes arrays of floats:
-    def vec(*args):
-        return (GLfloat * len(args))(*args)
 
-    glLightfv(GL_LIGHT0, GL_POSITION, vec(.5, .5, 1, 0))
-    glLightfv(GL_LIGHT0, GL_SPECULAR, vec(.5, .5, 1, 1))
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1, 1, 1, 1))
-    glLightfv(GL_LIGHT1, GL_POSITION, vec(1, 0, .5, 0))
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, vec(.5, .5, .5, 1))
-    glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 1, 1, 1))
+def create_torus(radius, inner_radius, slices, inner_slices, batch):
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0.5, 0, 0.3, 1))
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
+    # Create the vertex and normal arrays.
+    vertices = []
+    normals = []
 
-class Torus(object):
-    def __init__(self, radius, inner_radius, slices, inner_slices):
-        # Create the vertex and normal arrays.
-        vertices = []
-        normals = []
+    u_step = 2 * pi / (slices - 1)
+    v_step = 2 * pi / (inner_slices - 1)
+    u = 0.
+    for i in range(slices):
+        cos_u = cos(u)
+        sin_u = sin(u)
+        v = 0.
+        for j in range(inner_slices):
+            cos_v = cos(v)
+            sin_v = sin(v)
 
-        u_step = 2 * pi / (slices - 1)
-        v_step = 2 * pi / (inner_slices - 1)
-        u = 0.
-        for i in range(slices):
-            cos_u = cos(u)
-            sin_u = sin(u)
-            v = 0.
-            for j in range(inner_slices):
-                cos_v = cos(v)
-                sin_v = sin(v)
+            d = (radius + inner_radius * cos_v)
+            x = d * cos_u
+            y = d * sin_u
+            z = inner_radius * sin_v
 
-                d = (radius + inner_radius * cos_v)
-                x = d * cos_u
-                y = d * sin_u
-                z = inner_radius * sin_v
+            nx = cos_u * cos_v
+            ny = sin_u * cos_v
+            nz = sin_v
 
-                nx = cos_u * cos_v
-                ny = sin_u * cos_v
-                nz = sin_v
+            vertices.extend([x, y, z])
+            normals.extend([nx, ny, nz])
+            v += v_step
+        u += u_step
 
-                vertices.extend([x, y, z])
-                normals.extend([nx, ny, nz])
-                v += v_step
-            u += u_step
+    # Create a list of triangle indices.
+    indices = []
+    for i in range(slices - 1):
+        for j in range(inner_slices - 1):
+            p = i * inner_slices + j
+            indices.extend([p, p + inner_slices, p + inner_slices + 1])
+            indices.extend([p, p + inner_slices + 1, p + 1])
 
-        # Create ctypes arrays of the lists
-        vertices = (GLfloat * len(vertices))(*vertices)
-        normals = (GLfloat * len(normals))(*normals)
+    # Create a Material and Group for the Model
+    diffuse = [0.5, 0.0, 0.3, 1.0]
+    ambient = [0.5, 0.0, 0.3, 1.0]
+    specular = [1.0, 1.0, 1.0, 1.0]
+    emission = [0.0, 0.0, 0.0, 1.0]
+    shininess = 50
+    material = pyglet.model.Material("", diffuse, ambient, specular, emission, shininess)
+    group = pyglet.model.MaterialGroup(material=material)
 
-        # Create a list of triangle indices.
-        indices = []
-        for i in range(slices - 1):
-            for j in range(inner_slices - 1):
-                p = i * inner_slices + j
-                indices.extend([p, p + inner_slices, p + inner_slices + 1])
-                indices.extend([p,  p + inner_slices + 1, p + 1])
-        indices = (GLuint * len(indices))(*indices)
+    vertex_list = batch.add_indexed(len(vertices)//3,
+                                    GL_TRIANGLES,
+                                    group,
+                                    indices,
+                                    ('v3f/static', vertices),
+                                    ('n3f/static', normals))
 
-        # Compile a display list
-        self.list = glGenLists(1)
-        glNewList(self.list, GL_COMPILE)
+    return pyglet.model.Model([vertex_list], [group], batch)
 
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_NORMAL_ARRAY)
-        glVertexPointer(3, GL_FLOAT, 0, vertices)
-        glNormalPointer(GL_FLOAT, 0, normals)
-        glDrawElements(GL_TRIANGLES, len(indices), GL_UNSIGNED_INT, indices)
-        glPopClientAttrib()
-
-        glEndList()
-
-    def draw(self):
-        glCallList(self.list)
 
 setup()
-torus = Torus(1, 0.3, 50, 30)
+batch = pyglet.graphics.Batch()
+torus_model = create_torus(1, 0.3, 50, 30, batch=batch)
 rx = ry = rz = 0
+
+pyglet.clock.schedule(update)
 
 pyglet.app.run()

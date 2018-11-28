@@ -1,6 +1,0 @@
-pyglet.media.procedural
-===============================================================
-
-.. automodule:: pyglet.media.sources.procedural
-  :members:
-  :undoc-members:

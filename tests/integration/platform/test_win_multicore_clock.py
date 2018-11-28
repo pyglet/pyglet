@@ -13,21 +13,28 @@ __version__ = '$Id$'
 
 
 import time
+import sys
 from tests.annotations import require_platform, Platform
 import unittest
+
+# PYTHON2 - This entire test may no longer be necessary,
+#           thanks to Python time module updates.
+if sys.version_info[:2] < (3, 5):
+    clock = time.clock
+else:
+    clock = time.perf_counter
 
 
 @require_platform(Platform.WINDOWS)
 class WindowsMulticoreClockTestCase(unittest.TestCase):
     def test_multicore(self):
         failures = 0
-        old_time = time.clock()
+        old_time = clock()
         end_time = time.time() + 3
         while time.time() < end_time:
-           t = time.clock()
-           if t < old_time:
-               failures += 1
-           old_time = t
-           time.sleep(0.001)
+            t = clock()
+            if t < old_time:
+                failures += 1
+            old_time = t
+            time.sleep(0.001)
         self.assertTrue(failures == 0)
-

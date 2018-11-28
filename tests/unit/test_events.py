@@ -1,112 +1,173 @@
 """Testing the events"""
 
 
-import unittest
+import types
+import pytest
 import pyglet
 from tests import mock
-from contextlib import contextmanager
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
 
 
-class EventTestCase(unittest.TestCase):
-    def setUp(self):
-        self.d = pyglet.event.EventDispatcher()
-        self.d._event_stack = ()
-        try:
-            del pyglet.event.EventDispatcher.event_types
-        except AttributeError:
-            pass
+@pytest.fixture
+def dispatcher():
+    d = pyglet.event.EventDispatcher()
+    d.register_event_type('mock_event')
+    yield d
 
-    @contextmanager
-    def mock_context(self, called=True):
-        self.mock = mock.Mock(mock_event=mock.Mock())
-        self.mock.__name__ = 'mock_event'
-        self.d.register_event_type('mock_event')
-        yield
-        result = self.d.dispatch_event('mock_event')
-        if called:
-            self.assertEqual(result, EVENT_HANDLED)
-            self.assertTrue(self.mock.called)
-        else:
-            # self.assertEqual(result, EVENT_UNHANDLED)
-            self.assertFalse(self.mock.called)
 
-    def test_register_event_type(self):
-        self.d.register_event_type('mock_event')
+@pytest.fixture
+def mock_handler():
+    """Mock instance with method for handling event."""
+    mock_handler = mock.Mock(
+        mock_event=mock.Mock(return_value=True),
+        name='mock_handler'
+    )
+    yield mock_handler
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_push_handlers_args(self):
-        with self.mock_context():
-            self.d.push_handlers(self.mock)
 
-    def test_push_handlers_kwargs(self):
-        with self.mock_context():
-            self.d.push_handlers(mock_event=self.mock)
+@pytest.fixture
+def mock_fn():
+    """Mock function for handling event."""
+    # We copy the spec from types.FunctionType so that our mock is seen as
+    # a real user function. inspect.isroutine(our_mock) would return True.
+    mock_fn = mock.Mock(return_value=True, spec=types.FunctionType)
+    mock_fn.__name__ = 'mock_event'
+    yield mock_fn
 
-    def test_push_handlers_not_setup(self):
-        self.d.push_handlers()
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_set_handlers_args(self):
-        with self.mock_context():
-            self.d.set_handlers(self.mock)
+def test_register_event_type():
+    d = pyglet.event.EventDispatcher()
+    d.register_event_type('mock_event')
 
-    def test_set_handlers_kwargs(self):
-        with self.mock_context():
-            self.d.set_handlers(mock_event=self.mock)
 
-    def test_set_handlers_not_setup(self):
-        self.d.set_handlers()
+def test_dispatch_event_handled(dispatcher):
+    dispatcher.mock_event = mock.Mock(return_value=True)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_HANDLED
+    assert dispatcher.mock_event.called
 
-    def test_set_handler_dispatch(self):
-        with self.mock_context():
-            self.d.set_handler('mock_event', self.mock)
 
-    def test_set_handler_not_setup(self):
-        self.d.set_handler('mock_event', None)
+def test_push_handlers_args(dispatcher, mock_handler):
+    dispatcher.push_handlers(mock_handler)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_HANDLED
+    assert mock_handler.mock_event.called
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_pop_handlers(self):
-        self.d.set_handler('mock_event', None)
-        self.d.pop_handlers()
-        with self.assertRaises(NoHandlerException):
-            self.d.pop_handlers()
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_pop_handlers_not_setup(self):
-        with self.assertRaises(NoHandlerException):
-            self.d.pop_handlers()
+def test_push_handlers_kwargs(dispatcher, mock_fn):
+    dispatcher.push_handlers(mock_event=mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_HANDLED
+    assert mock_fn.called
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_remove_handlers_args(self):
-        with self.mock_context(False):
-            self.d.set_handler('mock_event', self.mock)
-            self.d.remove_handlers('mock_event')
 
-    def test_remove_handlers_kwargs(self):
-        with self.mock_context(False):
-            self.d.set_handler('mock_event', self.mock)
-            self.d.remove_handlers(mock_event=self.mock)
+def test_push_handlers_not_setup(dispatcher):
+    dispatcher.push_handlers()
 
-    def test_remove_handlers_not_setup(self):
-        self.d.remove_handlers()
 
-    def test_remove_handler(self):
-        with self.mock_context(False):
-            self.d.set_handler('mock_event', self.mock)
-            self.d.remove_handler('mock_event', self.mock)
+def test_set_handlers_args(dispatcher, mock_handler):
+    dispatcher.set_handlers(mock_handler)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_HANDLED
+    assert mock_handler.mock_event.called
 
-    def test_dispatch_event_handled(self):
-        self.d.register_event_type('mock_event')
-        self.d.dispatch_event('mock_event')
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_dispatch_unhandled(self):
-        self.d.register_event_type('mock_event')
-        with self.assertRaises(NoHandlerException):
-            self.d.dispatch_event('not_handled')
+def test_set_handlers_kwargs(dispatcher, mock_fn):
+    dispatcher.set_handlers(mock_event=mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_HANDLED
+    assert mock_fn.called
 
-    @unittest.skip('Requires changes to events from fork by Leif')
-    def test_dispatch_event_not_setup(self):
-        with self.assertRaises(NoHandlerException):
-            self.d.dispatch_event('mock_event')
+
+def test_set_handlers_not_setup(dispatcher):
+    dispatcher.set_handlers()
+
+
+def test_set_handler_dispatch(dispatcher, mock_fn):
+    dispatcher.set_handler('mock_event', mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_HANDLED
+    assert mock_fn.called
+
+
+def test_set_handler_not_setup(dispatcher):
+    dispatcher.set_handler('mock_event', None)
+
+
+def test_pop_handlers(dispatcher):
+    dispatcher.set_handler('mock_event', None)
+    dispatcher.pop_handlers()
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+
+
+def test_pop_handlers_not_setup(dispatcher):
+    with pytest.raises(AssertionError):
+        dispatcher.pop_handlers()
+
+
+def test_remove_handlers_args(dispatcher, mock_fn):
+    dispatcher.set_handlers(mock_fn)
+    dispatcher.remove_handlers(mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+    assert not mock_fn.called
+
+
+def test_remove_handlers_kwargs(dispatcher, mock_fn):
+    dispatcher.set_handlers(mock_fn)
+    dispatcher.remove_handlers(mock_event=mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+    assert not mock_fn.called
+
+
+def test_remove_handlers_not_setup(dispatcher):
+    dispatcher.remove_handlers()
+
+
+def test_remove_handler(dispatcher, mock_fn):
+    dispatcher.set_handler('mock_event', mock_fn)
+    dispatcher.remove_handler('mock_event', mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+    assert not mock_fn.called
+
+
+def test_dispatch_unhandled(dispatcher, mock_fn):
+    mock_fn.return_value = None
+    dispatcher.set_handlers(mock_fn)
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is EVENT_UNHANDLED
+    assert mock_fn.called
+
+
+def test_dispatch_event_not_setup(dispatcher):
+    result = dispatcher.dispatch_event('mock_event')
+    assert result is False
+
+
+def test_dispatch_wrong_arguments(dispatcher):
+    def mock_event():
+        pass
+    dispatcher.set_handlers(mock_event)
+    with pytest.raises(TypeError) as exception:
+        dispatcher.dispatch_event('mock_event', 'wrong argument')
+    error_msg = str(exception.value)
+    msg1 = ("The 'mock_event' event was dispatched with 1 arguments, "
+            "but the handler 'mock_event' at")
+    msg2 = "is written with 0 arguments."
+    assert msg1 in error_msg
+    assert msg2 in error_msg
+
+
+@pytest.mark.parametrize("ExceptionType", [
+    TypeError, AttributeError
+])
+def test_handler_raises_TypeError(ExceptionType, dispatcher):
+    def mock_event():
+        raise ExceptionType("Custom message")
+    dispatcher.set_handlers(mock_event)
+    with pytest.raises(ExceptionType) as exception:
+        dispatcher.dispatch_event('mock_event')
+    assert "Custom message" == str(exception.value)

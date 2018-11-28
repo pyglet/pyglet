@@ -141,10 +141,10 @@ Displaying the frame rate
 
 A simple way to profile your application performance is to display the frame
 rate while it is running.  Printing it to the console is not ideal as this
-will have a severe impact on performance.  pyglet provides the :py:class:`~pyglet.clock.ClockDisplay`
+will have a severe impact on performance.  pyglet provides the :py:class:`~pyglet.window.FPSDisplay`
 class for displaying the frame rate with very little effort::
 
-    fps_display = pyglet.clock.ClockDisplay()
+    fps_display = pyglet.window.FPSDisplay(window=window)
 
     @window.event
     def on_draw():
@@ -152,7 +152,7 @@ class for displaying the frame rate with very little effort::
         fps_display.draw()
 
 By default the frame rate will be drawn in the bottom-left corner of the
-window in a semi-translucent large font.  See the :py:class:`~pyglet.clock.ClockDisplay` documentation
+window in a semi-translucent large font.  See the :py:class:`~pyglet.window.FPSDisplay` documentation
 for details on how to customise this, or even display another clock value
 (such as the current time) altogether.
 

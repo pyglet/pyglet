@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Demonstrates how to handle a platform-specific event not defined in
+"""Demonstrates how to handle a platform-specific event not defined in
 pyglet by subclassing Window.  This is not for the faint-hearted!
 
 A message will be printed to stdout when the following events are caught:
@@ -42,43 +42,33 @@ A message will be printed to stdout when the following events are caught:
  - On Windows, the display resolution is changed.
  - On Linux, the window properties are changed.
 
-'''
+"""
 
 from __future__ import print_function
 
 import pyglet
 
-# Check for Carbon (OS X)
-try:
-    from pyglet.window.carbon import *
-    _have_carbon = True
-except ImportError:
-    _have_carbon = False
 
-# Check for Win32
-try:
-    from pyglet.window.win32 import *
-    from pyglet.window.win32.constants import *
-    _have_win32 = True
-except ImportError:
-    _have_win32 = False
+_have_cocoa = _have_win32 = _have_xlib = False
 
-# Check for Xlib (Linux)
-try:
-    from pyglet.window.xlib import *
+if pyglet.compat_platform.startswith('linux'):
     _have_xlib = True
-except ImportError:
-    _have_xlib = False
+    from pyglet.window.xlib import *
+
+elif pyglet.compat_platform == 'darwin':
+    _have_cocoa = True
+    from pyglet.window.cocoa import *
+
+elif pyglet.compat_platform in ('win32', 'cygwin'):
+    _have_win32 = True
+    from pyglet.window.win32 import *
 
 
 # Subclass Window
 class MyWindow(pyglet.window.Window):
-    if _have_carbon:
-        @CarbonEventHandler(kEventClassWindow, kEventWindowClickDragRgn)
-        def _on_window_click_drag_rgn(self, next_handler, event, data):
-            print('Clicked drag rgn.')
-            carbon.CallNextEventHandler(next_handler, event)
-            return noErr
+    if _have_cocoa:
+        # TODO This is currently not supported in Cocoa (#156).
+        pass
 
     if _have_win32:
         @Win32EventHandler(WM_DISPLAYCHANGE)
@@ -90,6 +80,7 @@ class MyWindow(pyglet.window.Window):
         @XlibEventHandler(xlib.PropertyNotify)
         def _on_window_property_notify(self, event):
             print('Property notify.')
+
 
 if __name__ == '__main__':
     window = MyWindow()

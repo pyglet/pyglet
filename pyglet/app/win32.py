@@ -1,16 +1,16 @@
 from __future__ import absolute_import
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -32,19 +32,14 @@ from __future__ import absolute_import
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
-
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import ctypes
-
-from pyglet import app
 from .base import PlatformEventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
-from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
+
 
 class Win32EventLoop(PlatformEventLoop):
     def __init__(self):
@@ -66,16 +61,17 @@ class Win32EventLoop(PlatformEventLoop):
         self._recreate_wait_objects_array()
 
         self._timer_proc = types.TIMERPROC(self._timer_proc_func)
-        self._timer = _user32.SetTimer(
-            0, 0, constants.USER_TIMER_MAXIMUM, self._timer_proc)
+        self._timer = _user32.SetTimer(0, 0, constants.USER_TIMER_MAXIMUM, self._timer_proc)
 
-    def add_wait_object(self, object, func):
-        self._wait_objects.append((object, func))
+        self._timer_func = None
+
+    def add_wait_object(self, obj, func):
+        self._wait_objects.append((obj, func))
         self._recreate_wait_objects_array()
 
-    def remove_wait_object(self, object):
+    def remove_wait_object(self, obj):
         for i, (_object, _) in enumerate(self._wait_objects):
-            if object == _object:
+            if obj == _object:
                 del self._wait_objects[i]
                 break
         self._recreate_wait_objects_array()
@@ -122,7 +118,7 @@ class Win32EventLoop(PlatformEventLoop):
                 _user32.TranslateMessage(ctypes.byref(msg))
                 _user32.DispatchMessageW(ctypes.byref(msg))
         elif 0 <= result < self._wait_objects_n:
-            object, func = self._wait_objects[result]
+            obj, func = self._wait_objects[result]
             func()
 
         # Return True if timeout was interrupted.

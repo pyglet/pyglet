@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -240,10 +240,7 @@ elif compat_platform in ('win32', 'cygwin'):
 elif compat_platform.startswith('linux'):
     from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
-    if _pyglet.options['darwin_cocoa']:
-        from .cocoa import CocoaConfig as Config
-    else:
-        from .carbon import CarbonConfig as Config
+    from .cocoa import CocoaConfig as Config
 del base
 
 # XXX remove

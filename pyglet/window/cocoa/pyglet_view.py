@@ -1,3 +1,36 @@
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2018 Alex Holkner
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 from builtins import object
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
@@ -8,10 +41,12 @@ NSTrackingArea = ObjCClass('NSTrackingArea')
 
 # Event data helper functions.
 
+
 def getMouseDelta(nsevent):
     dx = nsevent.deltaX()
     dy = -nsevent.deltaY()
     return int(round(dx)), int(round(dy))
+
 
 def getMousePosition(self, nsevent):
     in_window = nsevent.locationInWindow()
@@ -22,6 +57,7 @@ def getMousePosition(self, nsevent):
     self._window._mouse_x = x
     self._window._mouse_y = y
     return x, y
+
 
 def getModifiers(nsevent):
     modifiers = 0
@@ -41,9 +77,17 @@ def getModifiers(nsevent):
         modifiers |= key.MOD_FUNCTION
     return modifiers
 
+
 def getSymbol(nsevent):
-    keycode = nsevent.keyCode()
-    return keymap[keycode]
+    symbol = keymap.get(nsevent.keyCode(), None)
+    if symbol is not None:
+        return symbol
+
+    chars = cfstring_to_string(nsevent.charactersIgnoringModifiers())
+    if chars:
+        return charmap[chars[0].upper()]
+
+    return None
 
 
 class PygletView_Implementation(object):
@@ -81,7 +125,7 @@ class PygletView_Implementation(object):
     @PygletView.method('v')
     def dealloc(self):
         self._window = None
-        #send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
+        # send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
         self._textview.release()
         self._textview = None
         self._tracking_area.release()
@@ -132,6 +176,13 @@ class PygletView_Implementation(object):
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
         self._window.context.update_geometry()
+
+        # The size we are passed in might not be the actual size.
+        # High-res displays on the mac sometimes scale everything up by
+        # two. So re-fetch the size from this function that will
+        # return the actual unscaled pixel size
+        width, height = self._window.get_size()
+
         self._window.dispatch_event("on_resize", width, height)
         self._window.dispatch_event("on_expose")
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
@@ -174,23 +225,23 @@ class PygletView_Implementation(object):
         NSLeftCommandKeyMask    = 1 << 3
         NSRightCommandKeyMask   = 1 << 4
 
-        maskForKey = { key.LSHIFT : NSLeftShiftKeyMask,
-                       key.RSHIFT : NSRightShiftKeyMask,
-                       key.LCTRL : NSLeftControlKeyMask,
-                       key.RCTRL : NSRightControlKeyMask,
-                       key.LOPTION : NSLeftAlternateKeyMask,
-                       key.ROPTION : NSRightAlternateKeyMask,
-                       key.LCOMMAND : NSLeftCommandKeyMask,
-                       key.RCOMMAND : NSRightCommandKeyMask,
-                       key.CAPSLOCK : NSAlphaShiftKeyMask,
-                       key.FUNCTION : NSFunctionKeyMask }
+        maskForKey = {key.LSHIFT: NSLeftShiftKeyMask,
+                      key.RSHIFT: NSRightShiftKeyMask,
+                      key.LCTRL: NSLeftControlKeyMask,
+                      key.RCTRL: NSRightControlKeyMask,
+                      key.LOPTION: NSLeftAlternateKeyMask,
+                      key.ROPTION: NSRightAlternateKeyMask,
+                      key.LCOMMAND: NSLeftCommandKeyMask,
+                      key.RCOMMAND: NSRightCommandKeyMask,
+                      key.CAPSLOCK: NSAlphaShiftKeyMask,
+                      key.FUNCTION: NSFunctionKeyMask}
 
-        symbol = getSymbol(nsevent)
+        symbol = keymap.get(nsevent.keyCode(), None)
 
         # Ignore this event if symbol is not a modifier key.  We must check this
         # because e.g., we receive a flagsChanged message when using CMD-tab to
         # switch applications, with symbol == "a" when command key is released.
-        if symbol not in maskForKey: 
+        if symbol is None or symbol not in maskForKey: 
             return
 
         modifiers = getModifiers(nsevent)

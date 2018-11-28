@@ -33,20 +33,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Demonstrates a useful pattern for pyglet applications: subclassing Window.
-'''
+"""Demonstrates a useful pattern for pyglet applications: subclassing Window.
+"""
 
 import pyglet
+
 
 class HelloWorldWindow(pyglet.window.Window):
     def __init__(self):
         super(HelloWorldWindow, self).__init__()
-
-        self.label = pyglet.text.Label('Hello, world!')
+        self.label = pyglet.text.Label('Hello, world!', x=10, y=10)
 
     def on_draw(self):
         self.clear()
         self.label.draw()
+
 
 if __name__ == '__main__':
     window = HelloWorldWindow()

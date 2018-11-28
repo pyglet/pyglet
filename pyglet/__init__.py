@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@ try:
 except ImportError:
     import os.path as op
     import sys
+
     future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
     sys.path.insert(0, op.join(future_base, 'py2_3'))
     if sys.version_info[:2] < (3, 0):
@@ -63,7 +64,6 @@ from builtins import object
 
 import os
 import sys
-import warnings
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_epydoc', True)
@@ -81,7 +81,7 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.3.0rc2'
+version = '1.4.0b1'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -153,14 +153,6 @@ if getattr(sys, 'frozen', None):
 #:     that implements the _NET_WM_SYNC_REQUEST protocol.
 #:
 #:     .. versionadded:: 1.1
-#: darwin_cocoa
-#:     If True, the Cocoa-based pyglet implementation is used as opposed to
-#:     the 32-bit Carbon implementation.  When python is running in 64-bit mode
-#:     on Mac OS X 10.6 or later, this option is set to True by default.
-#:     Otherwise the Carbon implementation is preferred.
-#:
-#:     .. versionadded:: 1.2
-#:
 #: search_local_libs
 #:     If False, pyglet won't try to search for libraries in the script
 #:     directory and its `lib` subdirectory. This is useful to load a local
@@ -170,8 +162,7 @@ if getattr(sys, 'frozen', None):
 #:     .. versionadded:: 1.2
 #:
 options = {
-    'audio': ('directsound', 'pulse', 'openal', 'silent'),
-    'font': ('gdiplus', 'win32'),  # ignored outside win32; win32 is deprecated
+    'audio': ('directsound', 'openal', 'pulse', 'silent'),
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_gl_trace': False,
@@ -191,13 +182,12 @@ options = {
     'vsync': None,
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
-    'darwin_cocoa': False,
+    'darwin_cocoa': True,
     'search_local_libs': True,
 }
 
 _option_types = {
     'audio': tuple,
-    'font': tuple,
     'debug_font': bool,
     'debug_gl': bool,
     'debug_gl_trace': bool,
@@ -213,31 +203,13 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
+    'ffmpeg_libs_win': tuple,
+    'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
-    'darwin_cocoa': bool,
-    'search_local_libs': bool
 }
-
-
-def _choose_darwin_platform():
-    """Choose between Darwin's Carbon and Cocoa implementations."""
-    if compat_platform != 'darwin':
-        return
-    import struct
-    numbits = 8*struct.calcsize("P")
-    if numbits == 64:
-        import platform
-        osx_version = platform.mac_ver()[0].split(".")
-        if int(osx_version[0]) == 10 and int(osx_version[1]) < 6:
-            raise Exception('pyglet is not compatible with 64-bit Python '  
-                            'for versions of Mac OS X prior to 10.6.')
-        options['darwin_cocoa'] = True
-    else:
-        options['darwin_cocoa'] = False
-_choose_darwin_platform()  # can be overridden by an environment variable below
 
 
 def _read_environment():
@@ -254,6 +226,8 @@ def _read_environment():
                 options[key] = int(value)
         except KeyError:
             pass
+
+
 _read_environment()
 
 if compat_platform == 'cygwin':
@@ -261,14 +235,11 @@ if compat_platform == 'cygwin':
     # functionality.  COM does not work with this hack, so there is no
     # DirectSound support.
     import ctypes
+
     ctypes.windll = ctypes.cdll
     ctypes.oledll = ctypes.cdll
     ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
     ctypes.HRESULT = ctypes.c_long
-
-if compat_platform == 'darwin' and not options['darwin_cocoa']:
-    warnings.warn('Carbon support is to be deprecated in Pyglet 1.4', PendingDeprecationWarning)
-
 
 # Call tracing
 # ------------
@@ -279,7 +250,7 @@ _trace_filename_abbreviations = {}
 def _trace_repr(value, size=40):
     value = repr(value)
     if len(value) > size:
-        value = value[:size//2-2] + '...' + value[-size//2-1:]
+        value = value[:size // 2 - 2] + '...' + value[-size // 2 - 1:]
     return value
 
 
@@ -349,6 +320,7 @@ def _thread_trace_func(thread):
         elif event == 'exception':
             (exception, value, traceback) = arg
             print('First chance exception raised:', repr(exception))
+
     return _trace_func
 
 
@@ -356,6 +328,7 @@ def _install_trace():
     global _trace_thread_count
     sys.setprofile(_thread_trace_func(_trace_thread_count))
     _trace_thread_count += 1
+
 
 _trace_thread_count = 0
 _trace_args = options['debug_trace_args']
@@ -402,6 +375,7 @@ class _ModuleProxy(object):
             globals()[self._module_name] = module
             setattr(module, name, value)
 
+
 if True:
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
@@ -415,6 +389,7 @@ if True:
     input = _ModuleProxy('input')
     lib = _ModuleProxy('lib')
     media = _ModuleProxy('media')
+    model = _ModuleProxy('model')
     resource = _ModuleProxy('resource')
     sprite = _ModuleProxy('sprite')
     text = _ModuleProxy('text')
@@ -435,6 +410,7 @@ if False:
     from . import image
     from . import lib
     from . import media
+    from . import model
     from . import resource
     from . import sprite
     from . import text

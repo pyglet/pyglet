@@ -55,6 +55,9 @@ The entire domain can be efficiently drawn in one step with the
 :py:meth:`VertexDomain.draw` method, assuming all the vertices comprise
 primitives of the same OpenGL primitive mode.
 """
+from builtins import zip
+from builtins import object
+
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -193,8 +196,7 @@ class VertexDomain(object):
             buffer = vertexbuffer.create_buffer(
                 stride * self.allocator.capacity, usage=GL_STATIC_DRAW)
             buffer.element_size = stride
-            self.buffer_attributes.append(
-                (buffer, static_attributes))
+            self.buffer_attributes.append((buffer, static_attributes))
 
             attributes.extend(static_attributes)
             for attribute in static_attributes:
@@ -707,8 +709,7 @@ class IndexedVertexDomain(VertexDomain):
             else:
                 for start, size in zip(starts, sizes):
                     glDrawElements(mode, size, self.index_gl_type,
-                                   self.index_buffer.ptr +
-                                   start * self.index_element_size)
+                                   self.index_buffer.ptr + start * self.index_element_size)
 
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:
@@ -769,7 +770,7 @@ class IndexedVertexList(VertexList):
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
 
     def migrate(self, domain):
-        """Move this group from its current indexed domain and add to the 
+        """Move this group from its current indexed domain and add to the
         specified one.  Attributes on domains must match.  (In practice, used 
         to change parent state of some vertices).
 

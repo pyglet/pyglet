@@ -6,7 +6,7 @@ pyglet.media
 .. toctree::
    :maxdepth: 1
 
-   media_procedural
+   media_synthesis
 
 .. rubric:: Details
 
@@ -18,6 +18,7 @@ Classes
 -------
 
 .. autoclass:: pyglet.media.player.Player
+  :members: loop
 
   .. rubric:: Methods
 
@@ -36,7 +37,7 @@ Classes
 
   .. automethod:: on_eos
   .. automethod:: on_player_eos
-  .. automethod:: on_source_group_eos
+  .. automethod:: on_player_next_source
 
   .. rubric:: Attributes
 
@@ -50,6 +51,7 @@ Classes
   .. autoattribute:: playing
   .. autoattribute:: position
   .. autoattribute:: source
+  .. autoattribute:: texture
   .. autoattribute:: time
   .. autoattribute:: volume
 
@@ -58,10 +60,13 @@ Classes
   .. automethod:: play
   .. automethod:: pause
 
-.. autoclass:: AudioFormat
-.. autoclass:: VideoFormat
-.. autoclass:: AudioData
-.. autoclass:: SourceInfo
+.. autoclass:: pyglet.media.codecs.AudioFormat
+.. autoclass:: pyglet.media.codecs.VideoFormat
+.. autoclass:: pyglet.media.codecs.AudioData
+    :members:
+
+.. autoclass:: pyglet.media.codecs.SourceInfo
+    :members:
 
 .. autoclass:: Source
   :members:
@@ -76,19 +81,24 @@ Classes
   :undoc-members:
   :show-inheritance:
 
-.. autoclass:: SourceGroup
+.. autoclass:: pyglet.media.codecs.StaticMemorySource
+  :members:
+  :undoc-members:
+  :show-inheritance:
+
+.. autoclass:: pyglet.media.drivers.listener.AbstractListener
   :members:
   :undoc-members:
 
-.. autoclass:: pyglet.media.listener.AbstractListener
-  :members:
-  :undoc-members:
+.. autoclass:: pyglet.media.events.MediaEvent
+    :members:
 
 Functions
 ---------
 
 .. autofunction:: get_audio_driver
 .. autofunction:: load
+.. autofunction:: have_ffmpeg
 
 Exceptions
 ----------

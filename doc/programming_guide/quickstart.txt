@@ -188,9 +188,9 @@ The `examples/media_player.py` example demonstrates playback of streaming
 audio and video using pyglet.  The `examples/noisy/noisy.py` example
 demonstrates playing many short audio samples simultaneously, as in a game.
 
-.. [#mp3] MP3 and other compressed audio formats require AVbin to be installed
-          (this is the default for the Windows and Mac OS X installers).
-          Uncompressed WAV files can be played without AVbin.
+.. [#mp3] MP3 and other compressed audio formats require FFmpeg to be 
+          installed.
+          Uncompressed WAV files can be played without FFmpeg.
 
 Where to next?
 --------------

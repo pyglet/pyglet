@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -66,6 +66,7 @@ NSColor = ObjCClass('NSColor')
 NSEvent = ObjCClass('NSEvent')
 NSImage = ObjCClass('NSImage')
 
+
 class CocoaMouseCursor(MouseCursor):
     drawable = False
     def __init__(self, cursorName):
@@ -75,6 +76,7 @@ class CocoaMouseCursor(MouseCursor):
     def set(self):
         cursor = getattr(NSCursor, self.cursorName)()
         cursor.set()
+
 
 class CocoaWindow(BaseWindow):
 
@@ -111,7 +113,7 @@ class CocoaWindow(BaseWindow):
     }
 
     def _recreate(self, changes):
-        if ('context' in changes):
+        if 'context' in changes:
             self.context.set_current()
         
         if 'fullscreen' in changes:
@@ -119,6 +121,16 @@ class CocoaWindow(BaseWindow):
                 self.screen.release_display()
 
         self._create()
+
+    def _reset_to_actual_window_size(self):
+        # The window we sized up to this point might be scaled. So a 800x600 window
+        # might actually be 1600x1200. This will attempt to correct that so that we
+        # get the actual size.
+        view = self.context._nscontext.view()
+        content_rect = NSMakeRect(0, 0, self._width, self._height)  # Get size, possibly scaled
+        bounds = view.convertRectFromBacking_(content_rect)  # Convert to actual pixel sizes
+        my_size = NSMakeSize(bounds.size.width, bounds.size.height)  # This is the size we really want
+        self._nswindow.setContentSize_(my_size)  # Set the content to the pixel size
 
     def _create(self):
         # Create a temporary autorelease pool for this method.
@@ -167,10 +179,10 @@ class CocoaWindow(BaseWindow):
         #     self.screen.get_nsscreen())  # screen      
 
         self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
-            content_rect,           # contentRect
-            style_mask,             # styleMask
-            NSBackingStoreBuffered, # backing
-            False)                  # defer
+            content_rect,            # contentRect
+            style_mask,              # styleMask
+            NSBackingStoreBuffered,  # backing
+            False)                   # defer
 
         if self._fullscreen:
             # BUG: I suspect that this doesn't do the right thing when using
@@ -220,12 +232,15 @@ class CocoaWindow(BaseWindow):
 
         pool.drain()
 
+        # See if we need to adjust for Retina not telling us the pixel size
+        self._reset_to_actual_window_size()
+
     def _set_nice_window_location(self):
         # Construct a list of all visible windows that aren't us.
-        visible_windows = [ win for win in pyglet.app.windows if
-                            win is not self and 
-                            win._nswindow and 
-                            win._nswindow.isVisible() ]
+        visible_windows = [win for win in pyglet.app.windows if
+                           win is not self and
+                           win._nswindow and
+                           win._nswindow.isVisible()]
         # If there aren't any visible windows, then center this window.
         if not visible_windows:
             self._center_window()
@@ -399,9 +414,14 @@ class CocoaWindow(BaseWindow):
         self._nswindow.setFrameOrigin_(origin)
 
     def get_size(self):
-        window_frame = self._nswindow.frame()
-        rect = self._nswindow.contentRectForFrameRect_(window_frame)
-        return int(rect.size.width), int(rect.size.height)
+        view = self.context._nscontext.view()
+        bounds = view.convertRectToBacking_(view.bounds()).size
+        return int(bounds.width), int(bounds.height)
+
+    def get_viewport_size(self):
+        view = self.context._nscontext.view()
+        bounds = view.convertRectToBacking_(view.bounds()).size
+        return int(bounds.width), int(bounds.height)
 
     def set_size(self, width, height):
         if self._fullscreen:
@@ -420,15 +440,34 @@ class CocoaWindow(BaseWindow):
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
 
+        # See if we need to adjust for Retina not telling us the pixel size
+        self._reset_to_actual_window_size()
+
     def set_minimum_size(self, width, height):
-        self._minimum_size = NSSize(width, height)
+        self._minimum_size = (width, height)
+
+        # Do some adjusting for point size and pixel size because
+        # Retina scales windows, and we want pixel size not point size.
+        view = self.context._nscontext.view()
+        size_rect = NSMakeRect(0, 0, width, height)
+        adj_size_rect = view.convertRectFromBacking_(size_rect)  # Convert to actual pixel sizes
+        adj_size = NSMakeSize(adj_size_rect.size.width, adj_size_rect.size.height)  # This is the size we really want
+
         if self._nswindow is not None:
-            self._nswindow.setContentMinSize_(self._minimum_size)
+            self._nswindow.setContentMinSize_(adj_size)
 
     def set_maximum_size(self, width, height):
-        self._maximum_size = NSSize(width, height)
+        self._maximum_size = (width, height)
+
+        # Do some adjusting for point size and pixel size because
+        # Retina scales windows, and we want pixel size not point size.
+        view = self.context._nscontext.view()
+        size_rect = NSMakeRect(0, 0, width, height)
+        adj_size_rect = view.convertRectFromBacking_(size_rect)  # Convert to actual pixel sizes
+        adj_size = NSMakeSize(adj_size_rect.size.width, adj_size_rect.size.height)  # This is the size we really want
+
         if self._nswindow is not None:
-            self._nswindow.setContentMaxSize_(self._maximum_size)
+            self._nswindow.setContentMaxSize_(adj_size)
 
     def activate(self):
         if self._nswindow is not None:
@@ -461,7 +500,7 @@ class CocoaWindow(BaseWindow):
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
-        self._vsync = vsync # _recreate depends on this
+        self._vsync = vsync  # _recreate depends on this
         if self.context:
             self.context.set_vsync(vsync)
 
@@ -526,7 +565,7 @@ class CocoaWindow(BaseWindow):
             self.CURSOR_CROSSHAIR:       'crosshairCursor',
             self.CURSOR_HAND:            'pointingHandCursor',
             self.CURSOR_HELP:            'arrowCursor',
-            self.CURSOR_NO:              'operationNotAllowedCursor', # Mac OS 10.6
+            self.CURSOR_NO:              'operationNotAllowedCursor',  # Mac OS 10.6
             self.CURSOR_SIZE:            'arrowCursor',
             self.CURSOR_SIZE_UP:         'resizeUpCursor',
             self.CURSOR_SIZE_UP_RIGHT:   'arrowCursor',
@@ -539,8 +578,8 @@ class CocoaWindow(BaseWindow):
             self.CURSOR_SIZE_UP_DOWN:    'resizeUpDownCursor',
             self.CURSOR_SIZE_LEFT_RIGHT: 'resizeLeftRightCursor',
             self.CURSOR_TEXT:            'IBeamCursor',
-            self.CURSOR_WAIT:            'arrowCursor', # No wristwatch cursor in Cocoa
-            self.CURSOR_WAIT_ARROW:      'arrowCursor', # No wristwatch cursor in Cocoa
+            self.CURSOR_WAIT:            'arrowCursor',  # No wristwatch cursor in Cocoa
+            self.CURSOR_WAIT_ARROW:      'arrowCursor',  # No wristwatch cursor in Cocoa
             }  
         if name not in cursors:
             raise RuntimeError('Unknown cursor name "%s"' % name)
@@ -565,7 +604,7 @@ class CocoaWindow(BaseWindow):
             windowOrigin = frame.origin
             x += windowOrigin.x
             y = displayBounds.size.height - windowOrigin.y - y
-            quartz.CGDisplayMoveCursorToPoint(displayID, NSPoint(x,y))
+            quartz.CGDisplayMoveCursorToPoint(displayID, NSPoint(x, y))
 
     def set_exclusive_mouse(self, exclusive=True):
         self._is_mouse_exclusive = exclusive
@@ -606,16 +645,4 @@ class CocoaWindow(BaseWindow):
 
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
-
-    def on_resize(self, width, height):
-        """Override default implementation to support retina displays."""
-        view = self.context._nscontext.view()
-        bounds = view.convertRectToBacking_(view.bounds()).size
-        back_width, back_height = (int(bounds.width), int(bounds.height))
-
-        gl.glViewport(0, 0, back_width, back_height)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(0, width, 0, height, -1, 1)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
 

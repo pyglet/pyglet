@@ -17,11 +17,11 @@ from wraptypes.wrap import CtypesWrapper
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 
-GLEXT_ABI_H = 'http://www.opengl.org/registry/api/glext.h'
+GLEXT_ABI_H = 'https://www.khronos.org/registry/OpenGL/api/GL/glext.h'
+GLXEXT_ABI_H = 'https://www.khronos.org/registry/OpenGL/api/GL/glxext.h'
+WGLEXT_ABI_H = 'https://www.khronos.org/registry/OpenGL/api/GL/wglext.h'
 GLEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/glext.h'
-GLXEXT_ABI_H = 'http://www.opengl.org/registry/api/glxext.h'
 GLXEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/glxext.h'
-WGLEXT_ABI_H = 'http://www.opengl.org/registry/api/wglext.h'
 WGLEXT_NV_H = 'http://developer.download.nvidia.com/opengl/includes/wglext.h'
 
 AGL_H = '/System/Library/Frameworks/AGL.framework/Headers/agl.h'

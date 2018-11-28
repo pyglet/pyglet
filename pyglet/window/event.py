@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -46,29 +46,6 @@ import sys
 
 from pyglet.window import key
 from pyglet.window import mouse
-
-
-class WindowExitHandler(object):
-    """Determine if the window should be closed.
-
-    This event handler watches for the ESC key or the window close event
-    and sets `self.has_exit` to True when either is pressed.  An instance
-    of this class is automatically attached to all new `pyglet.window.Window`
-    objects.
-
-    :deprecated: This class's functionality is provided directly on :py:class:`~pyglet.window.Window`
-        in pyglet 1.1.
-    """
-
-    has_exit = False
-    """True if the user wants to close the window."""
-
-    def on_close(self):
-        self.has_exit = True
-
-    def on_key_press(self, symbol, modifiers):
-        if symbol == key.ESCAPE:
-            self.has_exit = True
 
 
 class WindowEventLogger(object):
@@ -120,20 +97,17 @@ class WindowEventLogger(object):
             x, y, dx, dy), file=self.file)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        print('on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, '\
-                            'buttons=%s, modifiers=%s)' % (
-              x, y, dx, dy,
-              mouse.buttons_string(buttons), key.modifiers_string(modifiers)), file=self.file)
+        print('on_mouse_drag(x=%d, y=%d, dx=%d, dy=%d, buttons=%s, modifiers=%s)' % (
+              x, y, dx, dy, mouse.buttons_string(buttons), key.modifiers_string(modifiers)),
+              file=self.file)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        print('on_mouse_press(x=%d, y=%d, button=%r, '\
-                            'modifiers=%s)' % (x, y,
-            mouse.buttons_string(button), key.modifiers_string(modifiers)), file=self.file)
+        print('on_mouse_press(x=%d, y=%d, button=%r, modifiers=%s)' % (
+            x, y, mouse.buttons_string(button), key.modifiers_string(modifiers)), file=self.file)
 
     def on_mouse_release(self, x, y, button, modifiers):
-        print('on_mouse_release(x=%d, y=%d, button=%r, '\
-                            'modifiers=%s)' % (x, y, 
-            mouse.buttons_string(button), key.modifiers_string(modifiers)), file=self.file)
+        print('on_mouse_release(x=%d, y=%d, button=%r, modifiers=%s)' % (
+            x, y, mouse.buttons_string(button), key.modifiers_string(modifiers)), file=self.file)
 
     def on_mouse_scroll(self, x, y, dx, dy):
         print('on_mouse_scroll(x=%f, y=%f, dx=%f, dy=%f)' % (

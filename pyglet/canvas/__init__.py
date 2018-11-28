@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Display and screen management.
+"""Display and screen management.
 
 Rendering is performed on a :class:`Canvas`, which conceptually could be an
 off-screen buffer, the content area of a :class:`pyglet.window.Window`, or an 
@@ -56,13 +56,28 @@ The size of a screen is determined by its current mode, which can be changed
 by the application; see the documentation for :class:`Screen`.
 
 .. versionadded:: 1.2
-'''
+"""
 
 import sys
+
+from pyglet.app import WeakSet
+
+
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
+
+_displays = WeakSet()
+"""Set of all open displays.  Instances of :class:`pyglet.canvas.Display` 
+are automatically added to this set upon construction.  The set uses weak 
+references, so displays are removed from the set when they are no longer 
+referenced.
+
+:type: :class:`WeakSet`
+"""
+
+
 def get_display():
-    '''Get the default display device.
+    """Get the default display device.
 
     If there is already a :class`~pyglet.canvas.Display`connection, that display will be 
     returned. Otherwise, a default :class`~pyglet.canvas.Display`is created and returned.  
@@ -71,30 +86,23 @@ def get_display():
     .. versionadded:: 1.2
 
     :rtype: :class`~pyglet.canvas.Display`
-    '''
-    # If there's an existing display, return it (return arbitrary display if
-    # there are multiple).
-    from pyglet.app import displays
-    for display in displays:
+    """
+    # If there are existing displays, return one of them arbitrarily.
+    for display in _displays:
         return display
 
     # Otherwise, create a new display and return it.
     return Display()
+
 
 if _is_epydoc:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
 else:
     from pyglet import compat_platform
     if compat_platform == 'darwin':
-        from pyglet import options as pyglet_options
-        if pyglet_options['darwin_cocoa']:
-            from pyglet.canvas.cocoa import CocoaDisplay as Display
-            from pyglet.canvas.cocoa import CocoaScreen as Screen
-            from pyglet.canvas.cocoa import CocoaCanvas as Canvas
-        else:
-            from pyglet.canvas.carbon import CarbonDisplay as Display
-            from pyglet.canvas.carbon import CarbonScreen as Screen
-            from pyglet.canvas.carbon import CarbonCanvas as Canvas
+        from pyglet.canvas.cocoa import CocoaDisplay as Display
+        from pyglet.canvas.cocoa import CocoaScreen as Screen
+        from pyglet.canvas.cocoa import CocoaCanvas as Canvas
     elif compat_platform in ('win32', 'cygwin'):
         from pyglet.canvas.win32 import Win32Display as Display
         from pyglet.canvas.win32 import Win32Screen as Screen

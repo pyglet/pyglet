@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -175,7 +175,7 @@ class AbstractMappable(object):
         will map bytes 0 to 80 of the buffer to an array of 20 ints.
 
         Changes to the array may not be recognised until the region's
-        `AbstractBufferRegion.invalidate` method is called.
+        :py:meth:`AbstractBufferRegion.invalidate` method is called.
 
         :Parameters:
             `start` : int
@@ -185,7 +185,7 @@ class AbstractMappable(object):
             `ptr_type` : ctypes pointer type
                 Pointer type describing the array format to create
 
-        :rtype: `AbstractBufferRegion`
+        :rtype: :py:class:`AbstractBufferRegion`
         """
         raise NotImplementedError('abstract')
 
@@ -197,9 +197,10 @@ class BufferObject(AbstractBuffer):
     is done so by the video driver).  While this can improve memory usage and
     possibly performance, updates to the buffer are relatively slow.
 
-    This class does not implement `AbstractMappable`, and so has no
-    ``get_region`` method.  See `MappableBufferObject` for a VBO class
-    that does implement ``get_region``.
+    This class does not implement :py:class:`AbstractMappable`, and so has no
+    :py:meth:`~AbstractMappable.get_region` method.  See 
+    :py:class:`MappableVertexBufferObject` for a VBO class
+    that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
     def __init__(self, size, target, usage):
@@ -283,9 +284,8 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 
     There may also be less performance penalty for resizing this buffer.
 
-    Updates to data via `map` are committed immediately.
+    Updates to data via :py:meth:`map` are committed immediately.
     """
-
     def __init__(self, size, target, usage):
         super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
@@ -346,14 +346,14 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 class AbstractBufferRegion(object):
     """A mapped region of a buffer.
 
-    Buffer regions are obtained using `AbstractMappable.get_region`.
+    Buffer regions are obtained using :py:meth:`~AbstractMappable.get_region`.
 
     :Ivariables:
         `array` : ctypes array
-            Array of data, of the type and count requested by ``get_region``.
+            Array of data, of the type and count requested by
+            :py:meth:`~AbstractMappable.get_region`.
 
     """
-
     def invalidate(self):
         """Mark this region as changed.
 

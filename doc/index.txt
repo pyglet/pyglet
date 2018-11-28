@@ -16,7 +16,7 @@ Some of the features of pyglet are:
   allows you to use as many windows as you need, and is fully aware of
   multi-monitor setups for use with fullscreen games and applications.
 * **Load images, sound, music and video in almost any format.** pyglet can
-  optionally use AVbin to play back audio formats such as MP3, OGG/Vorbis and
+  optionally use ffmpeg to play back audio formats such as MP3, OGG/Vorbis and
   WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
 * **pyglet is provided under the BSD open-source license**, allowing you to 
   use it for both commercial and other open-source projects with very little
@@ -101,13 +101,14 @@ help make pyglet even better.  Get in touch if you would like to contribute!
    internal/gl
    internal/generated
    internal/wraptypes
+   internal/media_manual
+   internal/media_logging_manual
 
 Related Documentation
 ---------------------
 
 * `OpenGL Programming Guide <http://www.glprogramming.com/red/>`_
 * `OpenGL Reference Pages <http://opengl.org/sdk/docs/man/>`_
-* `AVbin Documentation <http://avbin.github.com/AVbin/Docs.html>`_
 * `ctypes Reference <http://docs.python.org/3/library/ctypes.html>`_
 * `Python Documentation <http://docs.python.org/>`_
 
@@ -133,6 +134,10 @@ If you would like to have your library listed here, let us know!
     Pyshaders provides a high level api and a low level api, and it can be integrated easily
     with existing code because it does not occlude the underlying opengl values.
 
+`Ratcave - A Simple Python 3D Graphics Engine extension for pyglet, Psychopy, and PyGame <https://github.com/neuroneuro15/ratcave>`_
+    Ratcave provides a simple OOP interface for loading, positioning, and drawing 3D scenes
+    in OpenGL windows.  It's a great fit for simple games and scientific behavioral experiments!
+
 Projects using pyglet
 ---------------------
 
@@ -140,7 +145,7 @@ pyglet is a fairly lightweight library, which makes it ideal to build upon.  Lis
 a few projects that take advantage of pyglet "under the hood".  If you would like to have your
 project listed here, let us know!
 
-`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://http://python.cocos2d.org/index.html>`_
+`cocos2d - A framework for building 2D games, demos, and other graphical/interactive applications <http://python.cocos2d.org/index.html>`_
     Cocos2d is an open source software framework. It can be used to build games, apps and
     other cross platform GUI based interactive programs.
 

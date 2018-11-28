@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''A simple tool that may be used to explore font faces. (Windows only)
+"""A simple tool that may be used to explore font faces. (Windows only)
 
 Only the fonts installed in the system are visible.
 
@@ -44,7 +44,7 @@ to see all.
 
 Don't include tabs in the text sample (see
 http://pyglet.org/doc-current/programming_guide/text.html#id9 )
-'''
+"""
 
 from __future__ import print_function, unicode_literals
 
@@ -84,6 +84,7 @@ class SampleTable(object):
     def text(self):
         return '\n'.join(self.lines)
 
+
 def sample_text_monospaced_table():
     printables = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ '
     table = SampleTable()
@@ -94,6 +95,7 @@ def sample_text_monospaced_table():
         table.newline()
     return table.text()
 
+
 # this worked right with all fonts in a win xp installation
 def pyglet_safe(fontentry):
     """ this is heuristic and conservative. YMMV. """
@@ -102,6 +104,7 @@ def pyglet_safe(fontentry):
 
 class Window(pyglet.window.Window):
     font_num = 0
+
     def on_text_motion(self, motion):
         if motion == pyglet.window.key.MOTION_RIGHT:
             self.font_num += 1
@@ -113,10 +116,10 @@ class Window(pyglet.window.Window):
                 self.font_num = len(font_names) - 1
 
         face = font_names[self.font_num]
-        self.head = pyglet.text.Label(face, font_size=16, y=0,
-            anchor_y='bottom')
+        self.head = pyglet.text.Label(face, font_size=16, y=0, anchor_y='bottom')
         self.text = pyglet.text.Label(sample_text, font_name=face, font_size=12,
-            y=self.height, anchor_y='top', width=self.width, multiline=True)
+                                      y=self.height, anchor_y='top', width=self.width,
+                                      multiline=True)
 
     def on_draw(self):
         self.clear()
@@ -141,7 +144,7 @@ if __name__ == '__main__':
     fontdb = wq.query()
 
     if safe:
-        candidates = [ f for f in fontdb if pyglet_safe(f)]
+        candidates = [f for f in fontdb if pyglet_safe(f)]
     else:
         canditates = fontdb
 
@@ -152,4 +155,3 @@ if __name__ == '__main__':
     window = Window(1024, 600)
     window.on_text_motion(None)
     pyglet.app.run()
-

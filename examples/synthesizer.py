@@ -56,9 +56,9 @@ class Keyboard:
             note_wave = self.note_cache[frequency]
             note_wave.play()
         else:
-            adsr = pyglet.media.procedural.ADSREnvelope(0.05, 0.2, 0.1)
+            adsr = pyglet.media.synthesis.ADSREnvelope(0.05, 0.2, 0.1)
             note_wave = pyglet.media.StaticSource(
-                pyglet.media.procedural.Sawtooth(duration=length, frequency=frequency, envelope=adsr))
+                pyglet.media.synthesis.Sawtooth(duration=length, frequency=frequency, envelope=adsr))
             self.note_cache[frequency] = note_wave
             note_wave.play()
 

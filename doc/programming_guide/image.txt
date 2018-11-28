@@ -663,9 +663,9 @@ want to create a "sprite" for each appearance of the image on-screen.
 Sprites
 ^^^^^^^
 
-A Sprite is a more full featured class for displaying instances of Images in the window.
-While Image and Animation instances are mostly concerned with the image data (size, pixels, etc.),
-Sprites also include additional properties. These include x/y location, scale, rotation,
+A Sprite is a full featured class for displaying instances of Images or Animations in the
+window. Image and Animation instances are mainly concerned with the image data (size, pixels, etc.),
+wheras Sprites also include additional properties. These include x/y location, scale, rotation,
 opacity, color tint, visibility, and both horizontal and vertical scaling.  Multiple sprites
 can share the same image; for example, hundreds of bullet sprites might share the same bullet
 image.
@@ -891,6 +891,20 @@ empty (maximal).
 
 Use the :py:meth:`pyglet.image.Texture.create` class method to create a texture with a specific
 internal format.
+
+Texture filtering
+^^^^^^^^^^^^^^^^^
+
+By default, all textures are created with smooth (``GL_LINEAR``) filtering. In some cases
+you may wish to have different filtered applied. Retro style pixel art games, for example,
+would require sharper textures. To achieve this, pas ``GL_NEAREST`` to the `min_filter` and
+`mag_filter` parameters when creating a texture. It is also possible to set the default filtering
+by setting the `default_min_filter` and `default_mag_filter` class attributes on the `Texture`
+class. This will cause all textures created internally by pyglet to use these values::
+
+    pyglet.image.Texture.default_min_filter = GL_LINEAR
+    pyglet.image.Texture.default_mag_filter = GL_LINEAR
+
 
 .. _OpenGL Programming Guide: http://www.glprogramming.com/red/
 

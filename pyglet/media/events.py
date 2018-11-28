@@ -1,16 +1,16 @@
 from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -39,6 +39,17 @@ import pyglet
 
 
 class MediaEvent(object):
+    """Representation of a media event.
+
+    These events are used internally by some audio driver implementation to
+    communicate events to the :class:`~pyglet.media.player.Player`.
+    One example is the ``on_eos`` event.
+
+    Args:
+        timestamp (float): The time where this event happens.
+        event (str): Event description.
+        *args: Any required positional argument to go along with this event.
+    """
     def __init__(self, timestamp, event, *args):
         # Meaning of timestamp is dependent on context; and not seen by
         # application.
@@ -53,7 +64,7 @@ class MediaEvent(object):
 
     def __repr__(self):
         return '%s(%r, %r, %r)' % (self.__class__.__name__,
-            self.timestamp, self.event, self.args)
+                                   self.timestamp, self.event, self.args)
     
     def __lt__(self, other):
         return hash(self) < hash(other)

@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import atexit
-
 from .adaptation import OpenALDriver
 
 import pyglet
@@ -44,28 +42,8 @@ _debug = pyglet.options['debug_media']
 _debug_buffers = pyglet.options.get('debug_media_buffers', False)
 
 
-_driver = None
-
 def create_audio_driver(device_name=None):
-    global _driver
     _driver = OpenALDriver(device_name)
     if _debug:
         print('OpenAL', _driver.get_version())
     return _driver
-
-
-def cleanup_audio_driver():
-    global _driver
-
-    if _debug:
-        print("Cleaning up audio driver")
-
-    if _driver:
-        _driver.delete()
-        _driver = None
-
-    if _debug:
-        print("Cleaning done")
-
-atexit.register(cleanup_audio_driver)
-

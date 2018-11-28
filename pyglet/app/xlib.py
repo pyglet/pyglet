@@ -1,15 +1,15 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 #  * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above copyright 
+#  * Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
@@ -31,46 +31,44 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
-from builtins import object
-
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
+
+from builtins import object
 
 import os
 import select
 import threading
-from ctypes import *
 
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop
 from pyglet.compat import asbytes
 
+
 class XlibSelectDevice(object):
     def fileno(self):
-        '''Get the file handle for ``select()`` for this device.
+        """Get the file handle for ``select()`` for this device.
 
         :rtype: int
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def select(self):
-        '''Perform event processing on the device.
+        """Perform event processing on the device.
 
         Called when ``select()`` returns this device in its list of active
         files.
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def poll(self):
-        '''Check if the device has events ready to process.
+        """Check if the device has events ready to process.
 
         :rtype: bool
         :return: True if there are events to process, False otherwise.
-        '''
+        """
         return False
+
 
 class NotificationDevice(XlibSelectDevice):
     def __init__(self):
@@ -91,6 +89,7 @@ class NotificationDevice(XlibSelectDevice):
 
     def poll(self):
         return self._event.isSet()
+
 
 class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
