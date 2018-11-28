@@ -167,7 +167,7 @@ from pyglet.gl import *
 from pyglet import event
 from pyglet import graphics
 from pyglet.text import runlist
-
+from pyglet.graphics import shader
 from pyglet.font.base import grapheme_break
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
@@ -335,8 +335,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            # group = TextLayoutTextureGroup(self.owner, layout.foreground_group)
-            group = TextLayoutShaderGroup(self.owner, layout.foreground_group)
+            group = TextLayoutForegroundGroup(self.owner, 1, layout.top_group)
             layout.groups[self.owner] = group
 
         n_glyphs = self.length
@@ -532,15 +531,13 @@ class _InvalidRange(object):
 #     [...]                         TextLayoutTextureGroup(Group)
 #   foreground_decoration_group     TextLayoutForegroundDecorationGroup(OrderedGroup(2))
 
-vertex_source = """#version 330 core
+foreground_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
 
     out vec4 text_colors;
     out vec2 texture_coords;
-
-    uniform mat4 transform = mat4(1);
 
     uniform WindowBlock
     {
@@ -552,17 +549,17 @@ vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                                       vertices.y * 2.0 / window.size.y - 1.0,
-                                       vertices.z,
-                                       vertices.w * (window.zoom + 1));
+        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                           vertices.y * 2.0 / window.size.y - 1.0,
+                           vertices.z,
+                           vertices.w * (window.zoom + 1));
 
         text_colors = colors;
         texture_coords = tex_coords;
     }
 """
 
-fragment_source = """#version 330 core
+foreground_fragment_source = """#version 330 core
     in vec4 text_colors;
     in vec2 texture_coords;
 
@@ -576,34 +573,80 @@ fragment_source = """#version 330 core
     }
 """
 
+decoration_vertex_source = """#version 330 core
+    in vec4 vertices;
+    in vec4 colors;
 
-_default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
-_default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
-_default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+    out vec4 vert_colors;
+
+    uniform WindowBlock
+    {
+        vec2 size;
+        float aspect;
+        float zoom;
+    } window;
 
 
-class TextLayoutShaderGroup(graphics.Group):
-    """Shared text layout rendering group.
+    void main()
+    {
+        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
+                           vertices.y * 2.0 / window.size.y - 1.0,
+                           vertices.z,
+                           vertices.w * (window.zoom + 1));
 
-    The group is automatically coalesced with other sprite groups sharing the
-    same parent group, texture and blend parameters.
-    """
+        vert_colors = colors;
+    }
+"""
 
-    def __init__(self, texture, parent=None):
+decoration_fragment_source = """#version 330 core
+    in vec4 vert_colors;
+
+    out vec4 final_colors;
+
+    void main()
+    {   
+        final_colors = vert_colors;
+    }
+"""
+
+_foreground_vert_shader = shader.Shader(foreground_vertex_source, 'vertex')
+_foreground_frag_shader = shader.Shader(foreground_fragment_source, 'fragment')
+_foreground_program = shader.ShaderProgram(_foreground_vert_shader, _foreground_frag_shader)
+
+_decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
+_decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
+_decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
+
+
+class TextLayoutGroup(graphics.Group):
+    pass
+
+
+class TextDecorationGroup(graphics.OrderedGroup):
+    def __init__(self, order=0, parent=None):
+        super(TextDecorationGroup, self).__init__(order, parent)
+        self.program = _decoration_program
+
+    def set_state(self):
+        self.program.use_program()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        self.program.stop_program()
+
+
+class TextLayoutForegroundGroup(graphics.OrderedGroup):
+    def __init__(self, texture, order=0, parent=None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
-
-        :Parameters:
-            `texture` : `~pyglet.image.Texture`
-                The (top-level) texture containing the glyphs.
-            `parent` : `~pyglet.graphics.Group`
-                Optional parent group.
         """
-        super(TextLayoutShaderGroup, self).__init__(parent)
+        super(TextLayoutForegroundGroup, self).__init__(order, parent)
         self.texture = texture
-        self.program = _default_program
+        self.program = _foreground_program
 
     def set_state(self):
         self.program.use_program()
@@ -631,23 +674,23 @@ class TextLayoutShaderGroup(graphics.Group):
     def __hash__(self):
         return hash((id(self.parent), self.texture.id, self.texture.target,))
 
-########################
 
-class TextLayoutGroup(graphics.Group):
-    """Top-level rendering group for :py:func:`~pyglet.text.layout.TextLayout`.
-
-    The blend function is set for glyph rendering (``GL_SRC_ALPHA`` /
-    ``GL_ONE_MINUS_SRC_ALPHA``).  The group is shared by all :py:func:`~pyglet.text.layout.TextLayout`
-    instances as it has no internal state.
-    """
-
-    def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self):
-        glPopAttrib()
+########################################
+# class TextLayoutGroup(graphics.Group):
+#     """Top-level rendering group for :py:func:`~pyglet.text.layout.TextLayout`.
+#
+#     The blend function is set for glyph rendering (``GL_SRC_ALPHA`` /
+#     ``GL_ONE_MINUS_SRC_ALPHA``).  The group is shared by all :py:func:`~pyglet.text.layout.TextLayout`
+#     instances as it has no internal state.
+#     """
+#
+#     def set_state(self):
+#         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
+#         glEnable(GL_BLEND)
+#         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+#
+#     def unset_state(self):
+#         glPopAttrib()
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
@@ -755,61 +798,61 @@ class ScrollableTextLayoutGroup(graphics.Group):
         return id(self)
 
 
-class TextLayoutForegroundGroup(graphics.OrderedGroup):
-    """Rendering group for foreground elements (glyphs) in all text layouts.
-
-    The group enables ``GL_TEXTURE_2D``.
-    """
-
-    def set_state(self):
-        glEnable(GL_TEXTURE_2D)
-
-    # unset_state not needed, as parent group will pop enable bit
-
-
-class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
-    """Rendering group for decorative elements (e.g., glyph underlines) in all
-    text layouts.
-
-    The group disables ``GL_TEXTURE_2D``.
-    """
-
-    def set_state(self):
-        glDisable(GL_TEXTURE_2D)
-
-    # unset_state not needed, as parent group will pop enable bit
+# class TextLayoutForegroundGroup(graphics.OrderedGroup):
+#     """Rendering group for foreground elements (glyphs) in all text layouts.
+#
+#     The group enables ``GL_TEXTURE_2D``.
+#     """
+#
+#     def set_state(self):
+#         glEnable(GL_TEXTURE_2D)
+#
+#     # unset_state not needed, as parent group will pop enable bit
 
 
-class TextLayoutTextureGroup(graphics.Group):
-    """Rendering group for a glyph texture in all text layouts.
+# class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
+#     """Rendering group for decorative elements (e.g., glyph underlines) in all
+#     text layouts.
+#
+#     The group disables ``GL_TEXTURE_2D``.
+#     """
+#
+#     def set_state(self):
+#         glDisable(GL_TEXTURE_2D)
+#
+#     # unset_state not needed, as parent group will pop enable bit
 
-    The group binds its texture to ``GL_TEXTURE_2D``.  The group is shared
-    between all other text layout uses of the same texture.
-    """
 
-    def __init__(self, texture, parent):
-        assert texture.target == GL_TEXTURE_2D
-        super(TextLayoutTextureGroup, self).__init__(parent)
-        self.texture = texture
-
-    def set_state(self):
-        glBindTexture(GL_TEXTURE_2D, self.texture.id)
-
-    # unset_state not needed, as next group will either
-    # bind a new texture or pop enable bit.
-
-    def __hash__(self):
-        return hash((self.texture.id, self.parent))
-
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.texture.id == other.texture.id and
-                self.parent is other.parent)
-
-    def __repr__(self):
-        return '%s(%d, %r)' % (self.__class__.__name__,
-                               self.texture.id,
-                               self.parent)
+# class TextLayoutTextureGroup(graphics.Group):
+#     """Rendering group for a glyph texture in all text layouts.
+#
+#     The group binds its texture to ``GL_TEXTURE_2D``.  The group is shared
+#     between all other text layout uses of the same texture.
+#     """
+#
+#     def __init__(self, texture, parent):
+#         assert texture.target == GL_TEXTURE_2D
+#         super(TextLayoutTextureGroup, self).__init__(parent)
+#         self.texture = texture
+#
+#     def set_state(self):
+#         glBindTexture(GL_TEXTURE_2D, self.texture.id)
+#
+#     # unset_state not needed, as next group will either
+#     # bind a new texture or pop enable bit.
+#
+#     def __hash__(self):
+#         return hash((self.texture.id, self.parent))
+#
+#     def __eq__(self, other):
+#         return (self.__class__ is other.__class__ and
+#                 self.texture.id == other.texture.id and
+#                 self.parent is other.parent)
+#
+#     def __repr__(self):
+#         return '%s(%d, %r)' % (self.__class__.__name__,
+#                                self.texture.id,
+#                                self.parent)
 
 #####################
 
@@ -848,10 +891,9 @@ class TextLayout(object):
     _vertex_lists = ()
     _boxes = ()
 
-    top_group = None
-    background_group = None
-    foreground_group = None
-    foreground_decoration_group = None
+    top_group = TextLayoutGroup()
+    background_group = TextDecorationGroup(order=0, parent=top_group)
+    foreground_decoration_group = TextDecorationGroup(order=2, parent=top_group)
     # top_group = TextLayoutGroup()
     # background_group = graphics.OrderedGroup(0, top_group)
     # foreground_group = TextLayoutForegroundGroup(1, top_group)
@@ -1006,9 +1048,8 @@ class TextLayout(object):
     def _init_groups(self, group):
         if group:
             self.top_group = TextLayoutGroup(group)
-            self.background_group = graphics.OrderedGroup(0, self.top_group)
-            self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-            self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+            self.background_group = TextDecorationGroup(order=0, parent=self.top_group)
+            self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self.top_group)
             # Otherwise class groups are (re)used.
 
     def _get_document(self):
