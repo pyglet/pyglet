@@ -546,13 +546,18 @@ foreground_vertex_source = """#version 330 core
         float zoom;
     } window;
 
+    float sx = 2.0 / window.size.x;
+    float sy = 2.0 / window.size.y;
+    float zm = window.zoom + 1;
+
+    mat4 transform = mat4( sx,  0.0,  0.0, 0.0,
+                          0.0,   sy,  0.0, 0.0,
+                          0.0,  0.0, -1.0, 0.0,
+                         -1.0, -1.0,  0.0, zm);
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                           vertices.y * 2.0 / window.size.y - 1.0,
-                           vertices.z,
-                           vertices.w * (window.zoom + 1));
+        gl_Position = transform * vertices;
 
         text_colors = colors;
         texture_coords = tex_coords;
@@ -586,13 +591,18 @@ decoration_vertex_source = """#version 330 core
         float zoom;
     } window;
 
+    float sx = 2.0 / window.size.x;
+    float sy = 2.0 / window.size.y;
+    float zm = window.zoom + 1;
+
+    mat4 transform = mat4( sx,  0.0,  0.0, 0.0,
+                          0.0,   sy,  0.0, 0.0,
+                          0.0,  0.0, -1.0, 0.0,
+                         -1.0, -1.0,  0.0, zm);
 
     void main()
     {
-        gl_Position = vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                           vertices.y * 2.0 / window.size.y - 1.0,
-                           vertices.z,
-                           vertices.w * (window.zoom + 1));
+        gl_Position = transform * vertices;
 
         vert_colors = colors;
     }
