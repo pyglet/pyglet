@@ -168,10 +168,8 @@ import ctypes
 
 import pyglet
 from pyglet.gl import *
-from pyglet import gl
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 from pyglet.graphics.shader import Shader, ShaderProgram, UniformBufferObject
-from pyglet.graphics.shader import vertex_source, fragment_source
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
@@ -292,7 +290,7 @@ def _parse_data(data):
 
 
 def get_default_batch():
-    shared_object_space = gl.current_context.object_space
+    shared_object_space = pyglet.gl.current_context.object_space
     try:
         return shared_object_space.pyglet_graphics_default_batch
     except AttributeError:
@@ -797,7 +795,53 @@ class OrderedGroup(Group):
         return '%s(%d)' % (self.__class__.__name__, self.order)
 
 
-#: The default group.
+#: The default Group and Shaders
+
+vertex_source = """#version 330 core
+    in vec4 vertices;
+    in vec4 colors;
+    in vec2 tex_coords;
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
+
+    uniform WindowBlock
+    {
+        vec2 size;
+        float aspect;
+        float zoom;
+        mat4 transform;
+    } window;
+
+    float sx = 2.0 / window.size.x;
+    float sy = 2.0 / window.size.y;
+    float zm = window.zoom + 1;
+
+    mat4 transform = mat4(sx, 0.0, 0.0, 0.0,
+                          0.0, sy, 0.0, 0.0,
+                          0.0, 0.0, -1.0, 0.0,
+                          -1.0, -1.0, 0.0, zm);
+    void main()
+    {
+        gl_Position = transform * vertices;
+
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+fragment_source = """#version 330 core
+    in vec4 vertex_colors;
+    in vec2 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords) + vertex_colors;
+    }
+"""
+
 _default_vert_shader = Shader(vertex_source, 'vertex')
 _default_frag_shader = Shader(fragment_source, 'fragment')
 default_group = ShaderGroup(_default_vert_shader, _default_frag_shader)
