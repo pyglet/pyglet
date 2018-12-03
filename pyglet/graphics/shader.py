@@ -15,18 +15,18 @@ _shader_types = {
 }
 
 _uniform_getters = {
-    GLint: glGetUniformiv,
+    GLint:   glGetUniformiv,
     GLfloat: glGetUniformfv,
 }
 
 _uniform_setters = {
     # uniform type: (gl_type, setter, length, count)
-    GL_INT: (GLint, glUniform1iv, 1, 1),
+    GL_INT:      (GLint, glUniform1iv, 1, 1),
     GL_INT_VEC2: (GLint, glUniform2iv, 2, 1),
     GL_INT_VEC3: (GLint, glUniform3iv, 3, 1),
     GL_INT_VEC4: (GLint, glUniform4iv, 4, 1),
 
-    GL_FLOAT: (GLfloat, glUniform1fv, 1, 1),
+    GL_FLOAT:      (GLfloat, glUniform1fv, 1, 1),
     GL_FLOAT_VEC2: (GLfloat, glUniform2fv, 2, 1),
     GL_FLOAT_VEC3: (GLfloat, glUniform3fv, 3, 1),
     GL_FLOAT_VEC4: (GLfloat, glUniform4fv, 4, 1),
@@ -114,13 +114,7 @@ class Shader:
             raise TypeError("The `shader_type` must be 'vertex' or 'fragment'.")
         self._source = source_string
         self.type = shader_type
-        self._id = self._compile_shader()
 
-    @property
-    def id(self):
-        return self._id
-
-    def _compile_shader(self):
         shader_source_utf8 = self._source.encode("utf8")
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
@@ -138,7 +132,11 @@ class Shader:
         elif _debug_gl_shaders:
             print("Shader compliation log: {0}".format(self._get_shader_log(shader_id)))
 
-        return shader_id
+        self._id = shader_id
+
+    @property
+    def id(self):
+        return self._id
 
     def _get_shader_log(self, shader_id):
         log_length = c_int(0)
@@ -160,7 +158,7 @@ class Shader:
             pass
 
         if _debug_gl_shaders:
-            print("Destroyed {0} shader object.".format(self.type))
+            print("Destroyed {0} shader object id {1}.".format(self.type, self.id))
 
     def __repr__(self):
         return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
@@ -169,6 +167,10 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
+    __slots__ = '_id', '_active', '_uniforms', '_uniform_blocks'
+
+    # Cache UBOs to ensure all Shader Programs are using the same object.
+    # If the UBOs are recreated each time, they will not
     uniform_buffers = {}
 
     def __init__(self, *shaders):
@@ -293,7 +295,9 @@ class ShaderProgram:
                 gl_type, gl_setter, length, count = _uniform_setters[u_type]
                 gl_getter = _uniform_getters[gl_type]
 
-                is_matrix = u_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4)
+                is_matrix = u_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4,
+                                       GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4,
+                                       GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3)
 
                 # Create persistant mini c_array for getters and setters:
                 c_array = (gl_type * length)()
@@ -350,7 +354,7 @@ class ShaderProgram:
             return None
 
     def _get_uniform_location(self, name):
-        return glGetUniformLocation(self._id, create_string_buffer(name.encode('ascii')))
+        return glGetUniformLocation(self._id, create_string_buffer(name.encode('utf-8')))
 
     def _query_uniform(self, index):
         usize = GLint()
@@ -448,7 +452,7 @@ class UniformBufferObject:
         return self.view
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.buffer.set_data_region(self._view_ptr, 0, self._view_size)
+        self.buffer.set_data(self._view_ptr)
         self.buffer.bind()
 
     def __repr__(self):
