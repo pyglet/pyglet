@@ -125,22 +125,17 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    uniform mat4 transform = mat4(1);
-
     uniform WindowBlock
     {
         vec2 size;
         float aspect;
         float zoom;
+        mat4 transform;
     } window;
-
 
     void main()
     {
-        gl_Position = transform * vec4(vertices.x * 2.0 / window.size.x - 1.0,
-                                       vertices.y * 2.0 / window.size.y - 1.0,
-                                       vertices.z,
-                                       vertices.w * (window.zoom + 1));
+        gl_Position = window.transform * vertices;
 
         vertex_colors = colors;
         texture_coords = tex_coords;

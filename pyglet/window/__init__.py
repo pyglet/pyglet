@@ -261,11 +261,22 @@ class Projection2D(Projection):
     """A 2D orthographic projection"""
 
     def set(self, window_width, window_height, viewport_width, viewport_height):
-        gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(0, max(1, window_width), 0, max(1, window_height), -1, 1)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        width = max(1, window_width)
+        height = max(1, window_height)
+
+        sx = 2.0 / width
+        sy = 2.0 / height
+
+        transform = (sx, 0.0, 0.0, 0.0,
+                     0.0, sy, 0.0, 0.0,
+                     0.0, 0.0, -1.0, 0.0,
+                     -1.0, -1.0, 0.0, 1.0)
+
+        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
+            window_block.size = width, height
+            window_block.aspect = width / height
+            window_block.transform = transform
+            gl.glViewport(0, 0, viewport_width, viewport_height)
 
 
 class Projection3D(Projection):
@@ -287,18 +298,25 @@ class Projection3D(Projection):
         self.zfar = zfar
 
     def set(self, window_width, window_height, viewport_width, viewport_height):
-        gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
+        # gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
+        # gl.glMatrixMode(gl.GL_PROJECTION)
+        # gl.glLoadIdentity()
+        #
+        # # Pure GL implementation of gluPerspective:
+        # aspect_ratio = float(window_width) / float(window_height)
+        # f_width = math.tan(self.fov / 360.0 * math.pi ) * self.znear
+        # f_height = f_width * aspect_ratio
+        # gl.glFrustum(-f_height, f_height, -f_width, f_width, self.znear, self.zfar)
+        #
+        # gl.glMatrixMode(gl.GL_MODELVIEW)
+        # TODO: create a projection matrix
+        width = max(1, window_width)
+        height = max(1, window_height)
 
-        # Pure GL implementation of gluPerspective:
-        aspect_ratio = float(window_width) / float(window_height)
-        f_width = math.tan(self.fov / 360.0 * math.pi ) * self.znear
-        f_height = f_width * aspect_ratio
-        gl.glFrustum(-f_height, f_height, -f_width, f_width, self.znear, self.zfar)
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-
+        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
+            window_block.size = width, height
+            window_block.aspect = width / height
+            gl.glViewport(0, 0, viewport_width, viewport_height)
 
 def _PlatformEventHandler(data):
     """Decorator for platform event handlers.  
@@ -805,16 +823,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        # viewport_width, viewport_height = self.get_viewport_size()
-        # self._projection.set(width, height, viewport_width, viewport_height)
-        width = max(1, width)
-        height = max(1, height)
-
-        gl.glViewport(0, 0, width, height)
-
-        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.size = width, height
-            window_block.aspect = width / height
+        viewport_width, viewport_height = self.get_viewport_size()
+        self._projection.set(width, height, viewport_width, viewport_height)
 
     def on_close(self):
         """Default on_close handler."""
