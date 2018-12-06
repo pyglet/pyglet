@@ -177,7 +177,7 @@ def _parse_distance(distance, dpi):
         return int(distance)
 
     match = _distance_re.match(distance)
-    assert match, 'Could not parse distance %s' % (distance)
+    assert match, 'Could not parse distance %s' % distance
     if not match:
         return 0
 
@@ -327,7 +327,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = TextLayoutForegroundGroup(self.owner, 1, layout.top_group)
+            group = TextLayoutGlyphRenderGroup(self.owner, 1, layout.top_group)
             layout.groups[self.owner] = group
 
         n_glyphs = self.length
@@ -518,7 +518,7 @@ class _InvalidRange(object):
 #
 # top_group                         [Scrollable]TextLayoutGroup(Group)
 #   background_group                OrderedGroup(0)
-#   foreground_group                TextLayoutForegroundGroup(OrderedGroup(1))
+#   foreground_group                TextLayoutGlyphRenderGroup(OrderedGroup(1))
 #     [font textures]               TextLayoutTextureGroup(Group)
 #     [...]                         TextLayoutTextureGroup(Group)
 #   foreground_decoration_group     TextLayoutForegroundDecorationGroup(OrderedGroup(2))
@@ -613,29 +613,14 @@ class TextLayoutGroup(graphics.Group):
     pass
 
 
-class TextDecorationGroup(graphics.OrderedGroup):
-    def __init__(self, order=0, parent=None):
-        super(TextDecorationGroup, self).__init__(order, parent)
-        self.program = _decoration_program
-
-    def set_state(self):
-        self.program.use_program()
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        self.program.stop_program()
-
-
-class TextLayoutForegroundGroup(graphics.OrderedGroup):
+class TextLayoutGlyphRenderGroup(graphics.OrderedGroup):
     def __init__(self, texture, order=0, parent=None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
-        super(TextLayoutForegroundGroup, self).__init__(order, parent)
+        super(TextLayoutGlyphRenderGroup, self).__init__(order, parent)
         self.texture = texture
         self.program = _foreground_program
 
@@ -664,6 +649,21 @@ class TextLayoutForegroundGroup(graphics.OrderedGroup):
 
     def __hash__(self):
         return hash((id(self.parent), self.texture.id, self.texture.target,))
+
+
+class TextDecorationGroup(graphics.OrderedGroup):
+    def __init__(self, order=0, parent=None):
+        super(TextDecorationGroup, self).__init__(order, parent)
+        self.program = _decoration_program
+
+    def set_state(self):
+        self.program.use_program()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        self.program.stop_program()
 
 
 ########### OLD Classes: ###############
@@ -832,10 +832,6 @@ class TextLayout(object):
     top_group = TextLayoutGroup()
     background_group = TextDecorationGroup(order=0, parent=top_group)
     foreground_decoration_group = TextDecorationGroup(order=2, parent=top_group)
-    # top_group = TextLayoutGroup()
-    # background_group = graphics.OrderedGroup(0, top_group)
-    # foreground_group = TextLayoutForegroundGroup(1, top_group)
-    # foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, top_group)
 
     _x = 0
     _y = 0
@@ -1733,46 +1729,45 @@ class ScrollableTextLayout(TextLayout):
         # Scrollable layout never shares group becauase of translation.
         self.top_group = TextLayoutGroup(group)
         self.background_group = TextDecorationGroup(order=0, parent=self.top_group)
-        # self.foreground_group = TextDecorationGroup(1, self.top_group)
         self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self.top_group)
 
-    def _set_x(self, x):
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, x):
         self._x = x
         self.top_group.left = self._get_left()
 
-    def _get_x(self):
-        return self._x
+    @property
+    def y(self):
+        return self._y
 
-    x = property(_get_x, _set_x)
-
-    def _set_y(self, y):
+    @y.setter
+    def y(self, y):
         self._y = y
         self.top_group.top = self._get_top(self._get_lines())
 
-    def _get_y(self):
-        return self._y
+    @property
+    def width(self):
+        return self._width
 
-    y = property(_get_y, _set_y)
-
-    def _set_width(self, width):
-        super(ScrollableTextLayout, self)._set_width(width)
+    @width.setter
+    def width(self, width):
+        super(ScrollableTextLayout, self).width = width
         self.top_group.left = self._get_left()
         self.top_group.width = self._width
 
-    def _get_width(self):
-        return self._width
-
-    width = property(_get_width, _set_width)
-
-    def _set_height(self, height):
-        super(ScrollableTextLayout, self)._set_height(height)
-        self.top_group.top = self._get_top(self._get_lines())
-        self.top_group.height = self._height
-
-    def _get_height(self):
+    @property
+    def height(self):
         return self._height
 
-    height = property(_get_height, _set_height)
+    @height.setter
+    def height(self, height):
+        super(ScrollableTextLayout, self).height = height
+        self.top_group.top = self._get_top(self._get_lines())
+        self.top_group.height = self._height
 
     def _set_anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
@@ -1946,8 +1941,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             self.invalid_glyphs.invalidate(start, end)
         elif False:  # Attributes that change flow
             self.invalid_flow.invalidate(start, end)
-        elif ('color' in attributes or
-                      'background_color' in attributes):
+        elif 'color' in attributes or 'background_color' in attributes:
             self.invalid_style.invalidate(start, end)
 
         self._update()
@@ -2287,8 +2281,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
     def _set_selection_color(self, color):
         self._selection_color = color
-        self.invalid_style.invalidate(self._selection_start,
-                                      self._selection_end)
+        self.invalid_style.invalidate(self._selection_start, self._selection_end)
 
     selection_color = property(_get_selection_color, _set_selection_color,
                                doc="""Text color of active selection.
