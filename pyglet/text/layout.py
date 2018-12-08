@@ -710,33 +710,6 @@ class ScrollableTextLayoutGroup(graphics.Group):
         pass
 
     @property
-    def top(self):
-        """Top edge of the text layout (measured from the
-            bottom of the graphics viewport).
-
-            :type: int
-        """
-        return self._clip_y
-
-    @top.setter
-    def top(self, value):
-        self._clip_y = value
-        self.translate_y = self._clip_y - self._view_y
-
-    @property
-    def left(self):
-        """Left edge of the text layout.
-
-            :type: int
-        """
-        return self._clip_x
-
-    @left.setter
-    def left(self, value):
-        self._clip_x = value
-        self.translate_x = self._clip_x - self._view_x
-
-    @property
     def width(self):
         """Width of the text layout.
 
@@ -759,38 +732,6 @@ class ScrollableTextLayoutGroup(graphics.Group):
     @height.setter
     def height(self, value):
         self._clip_height = value
-
-    @property
-    def view_x(self):
-        """Horizontal scroll offset.
-
-            :type: int
-        """
-        return self._view_x
-
-    @view_x.setter
-    def view_x(self, value):
-        self._view_x = value
-        self.translate_x = self._clip_x - self._view_x
-
-    @property
-    def view_y(self):
-        """Vertical scroll offset.
-
-            :type: int
-        """
-        return self._view_y
-
-    @view_y.setter
-    def view_y(self, value):
-        self._view_y = value
-        self.translate_y = self._clip_y - self._view_y
-
-    def __eq__(self, other):
-        return self is other
-
-    def __hash__(self):
-        return id(self)
 
 #####################
 
@@ -1738,7 +1679,7 @@ class ScrollableTextLayout(TextLayout):
     @x.setter
     def x(self, x):
         self._x = x
-        self.top_group.left = self._get_left()
+        self.left = self._get_left()
 
     @property
     def y(self):
@@ -1747,7 +1688,7 @@ class ScrollableTextLayout(TextLayout):
     @y.setter
     def y(self, y):
         self._y = y
-        self.top_group.top = self._get_top(self._get_lines())
+        self.top = self._get_top(self._get_lines())
 
     @property
     def width(self):
@@ -1756,8 +1697,8 @@ class ScrollableTextLayout(TextLayout):
     @width.setter
     def width(self, width):
         super(ScrollableTextLayout, self).width = width
-        self.top_group.left = self._get_left()
-        self.top_group.width = self._width
+        self.left = self._get_left()
+        self._clip_width = width
 
     @property
     def height(self):
@@ -1766,68 +1707,94 @@ class ScrollableTextLayout(TextLayout):
     @height.setter
     def height(self, height):
         super(ScrollableTextLayout, self).height = height
-        self.top_group.top = self._get_top(self._get_lines())
-        self.top_group.height = self._height
+        self.top = self._get_top(self._get_lines())
+        self._clip_height = height
 
-    def _set_anchor_x(self, anchor_x):
-        self._anchor_x = anchor_x
-        self.top_group.left = self._get_left()
+    @property
+    def top(self):
+        """Top edge of the text layout (measured from the
+            bottom of the graphics viewport).
 
-    def _get_anchor_x(self):
+            :type: int
+        """
+        return self._clip_y
+
+    @top.setter
+    def top(self, value):
+        self._clip_y = value
+        self.translate_y = self._clip_y - self._view_y
+
+    @property
+    def left(self):
+        """Left edge of the text layout.
+
+            :type: int
+        """
+        return self._clip_x
+
+    @left.setter
+    def left(self, value):
+        self._clip_x = value
+        self.translate_x = self._clip_x - self._view_x
+
+    @property
+    def anchor_x(self):
         return self._anchor_x
 
-    anchor_x = property(_get_anchor_x, _set_anchor_x)
+    @anchor_x.setter
+    def anchor_x(self, value):
+        self._anchor_x = value
+        self.left = self._get_left()
 
-    def _set_anchor_y(self, anchor_y):
-        self._anchor_y = anchor_y
-        self.top_group.top = self._get_top(self._get_lines())
-
-    def _get_anchor_y(self):
+    @property
+    def anchor_y(self):
         return self._anchor_y
 
-    anchor_y = property(_get_anchor_y, _set_anchor_y)
+    @anchor_y.setter
+    def anchor_y(self, value):
+        self._anchor_y = value
+        self.top = self._get_top(self._get_lines())
 
     # Offset of content within viewport
 
-    def _set_view_x(self, view_x):
-        view_x = max(0, min(self.content_width - self.width, view_x))
-        self.top_group.view_x = view_x
+    @property
+    def view_x(self):
+        """Horizontal scroll offset.
 
-    def _get_view_x(self):
-        return self.top_group.view_x
+        The initial value is 0, and the left edge of the text will touch the left
+        side of the layout bounds.  A positive value causes the text to "scroll"
+        to the right.  Values are automatically clipped into the range
+        ``[0, content_width - width]``
 
-    view_x = property(_get_view_x, _set_view_x,
-                      doc="""Horizontal scroll offset.
+        :type: int
+        """
+        return self._view_x
 
-    The initial value is 0, and the left edge of the text will touch the left
-    side of the layout bounds.  A positive value causes the text to "scroll"
-    to the right.  Values are automatically clipped into the range
-    ``[0, content_width - width]``
+    @view_x.setter
+    def view_x(self, value):
+        self._view_x = max(0, min(self.content_width - self.width, value))
+        self.translate_x = self._clip_x - self._view_x
 
-    :type: int
-    """)
+    @property
+    def view_y(self):
+        """Vertical scroll offset.
 
-    def _set_view_y(self, view_y):
-        # view_y must be negative.
-        view_y = min(0, max(self.height - self.content_height, view_y))
-        self.top_group.view_y = view_y
+        The initial value is 0, and the top of the text will touch the top of the
+        layout bounds (unless the content height is less than the layout height,
+        in which case `content_valign` is used).
 
-    def _get_view_y(self):
-        return self.top_group.view_y
+        A negative value causes the text to "scroll" upwards.  Values outside of
+        the range ``[height - content_height, 0]`` are automatically clipped in
+        range.
 
-    view_y = property(_get_view_y, _set_view_y,
-                      doc="""Vertical scroll offset.
+        :type: int
+        """
+        return self._view_y
 
-    The initial value is 0, and the top of the text will touch the top of the
-    layout bounds (unless the content height is less than the layout height,
-    in which case `content_valign` is used).
-
-    A negative value causes the text to "scroll" upwards.  Values outside of
-    the range ``[height - content_height, 0]`` are automatically clipped in
-    range.
-
-    :type: int
-    """)
+    @view_y.setter
+    def view_y(self, value):
+        self._view_y = min(0, max(self.height - self.content_height, value))
+        self.translate_y = self._clip_y - self._view_y
 
 
 class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
