@@ -861,11 +861,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """Draw the custom mouse cursor.
 
         If the current mouse cursor has ``drawable`` set, this method
-        is called before the buffers are flipped to render it.  
-        
-        This method always leaves the ``GL_MODELVIEW`` matrix as current,
-        regardless of what it was set to previously.  No other GL state
-        is affected.
+        is called before the buffers are flipped to render it.
 
         There is little need to override this method; instead, subclass
         :py:class:`MouseCursor` and provide your own
