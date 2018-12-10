@@ -264,6 +264,8 @@ class Projection2D(Projection):
         width = max(1, window_width)
         height = max(1, window_height)
 
+        gl.glViewport(0, 0, viewport_width, viewport_height)
+
         sx = 2.0 / width
         sy = 2.0 / height
 
@@ -276,7 +278,6 @@ class Projection2D(Projection):
             window_block.size = width, height
             window_block.aspect = width / height
             window_block.transform = transform
-            gl.glViewport(0, 0, viewport_width, viewport_height)
 
 
 class Projection3D(Projection):
@@ -313,10 +314,12 @@ class Projection3D(Projection):
         width = max(1, window_width)
         height = max(1, window_height)
 
+        gl.glViewport(0, 0, viewport_width, viewport_height)
+
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.size = width, height
             window_block.aspect = width / height
-            gl.glViewport(0, 0, viewport_width, viewport_height)
+
 
 def _PlatformEventHandler(data):
     """Decorator for platform event handlers.  
