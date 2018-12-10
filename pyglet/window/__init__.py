@@ -191,11 +191,11 @@ class MouseCursor(object):
                 Y coordinate of the mouse pointer's hot spot.
 
         """
-        raise NotImplementedError('abstract')
+        pass
 
 
 class DefaultMouseCursor(MouseCursor):
-    """The default mouse cursor #sed by the operating system."""
+    """The default mouse cursor set by the operating system."""
     drawable = False
 
 
@@ -226,13 +226,7 @@ class ImageMouseCursor(MouseCursor):
         self.hot_y = hot_y
 
     def draw(self, x, y):
-        # TODO: fix this for OpenGL Core
-        gl.glPushAttrib(gl.GL_ENABLE_BIT | gl.GL_CURRENT_BIT)
-        gl.glColor4f(1, 1, 1, 1)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
-        gl.glPopAttrib()
 
 
 class Projection(object):
@@ -878,29 +872,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         :py:meth:`~MouseCursor.draw` method.
         """
         # Draw mouse cursor if set and visible.
-        # XXX leaves state in modelview regardless of starting state
 
-        # TODO: fix this for OpenGL Core
-
-        if (self._mouse_cursor.drawable and
-            self._mouse_visible and
-            self._mouse_in_window):
-            gl.glMatrixMode(gl.GL_PROJECTION)
-            gl.glPushMatrix()
-            gl.glLoadIdentity()
-            gl.glOrtho(0, self.width, 0, self.height, -1, 1)
-
-            gl.glMatrixMode(gl.GL_MODELVIEW)
-            gl.glPushMatrix()
-            gl.glLoadIdentity()
-
+        if self._mouse_cursor.drawable and self._mouse_visible and self._mouse_in_window:
+            # TODO: consider projection differences
             self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
-
-            gl.glMatrixMode(gl.GL_PROJECTION)
-            gl.glPopMatrix()
-
-            gl.glMatrixMode(gl.GL_MODELVIEW)
-            gl.glPopMatrix()
 
     # These properties provide read-only access to instance variables.
     @property
