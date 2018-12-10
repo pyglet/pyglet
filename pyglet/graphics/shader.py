@@ -1,10 +1,11 @@
 from ctypes import *
 
 from pyglet.graphics.vertexbuffer import create_buffer
+from pyglet import options
 from pyglet.gl import *
 
 
-_debug_gl_shaders = pyglet.options['debug_gl_shaders']
+_debug_gl_shaders = options['debug_gl_shaders']
 
 
 # TODO: test other shader types, and update pyglet GL bindings if necessary.
