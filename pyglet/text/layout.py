@@ -538,7 +538,7 @@ foreground_vertex_source = """#version 330 core
         vec2 size;
         float aspect;
         float zoom;
-        mat4 transform;
+        mat4 projection;
     } window;
 
     void main()
@@ -546,7 +546,7 @@ foreground_vertex_source = """#version 330 core
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translate, 1.0, 1.0);
 
-        gl_Position = window.transform * translate_mat * vertices;
+        gl_Position = window.projection * translate_mat * vertices;
 
         text_colors = colors;
         texture_coords = tex_coords;
@@ -578,12 +578,12 @@ decoration_vertex_source = """#version 330 core
         vec2 size;
         float aspect;
         float zoom;
-        mat4 transform;
+        mat4 projection;
     } window;
 
     void main()
     {
-        gl_Position = window.transform * vertices;
+        gl_Position = window.projection * vertices;
 
         vert_colors = colors;
     }

@@ -138,6 +138,7 @@ from pyglet import gl
 from pyglet.event import EventDispatcher
 import pyglet.window.key
 import pyglet.window.event
+import pyglet.extlibs.glm as glm
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
@@ -263,7 +264,7 @@ class Projection2D(Projection):
         sx = 2.0 / width
         sy = 2.0 / height
 
-        transform = (sx, 0.0, 0.0, 0.0,
+        projection = (sx, 0.0, 0.0, 0.0,
                      0.0, sy, 0.0, 0.0,
                      0.0, 0.0, -1.0, 0.0,
                      -1.0, -1.0, 0.0, 1.0)
@@ -271,7 +272,7 @@ class Projection2D(Projection):
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.size = width, height
             window_block.aspect = width / height
-            window_block.transform = transform
+            window_block.projection = projection
 
 
 class Projection3D(Projection):
@@ -293,26 +294,17 @@ class Projection3D(Projection):
         self.zfar = zfar
 
     def set(self, window_width, window_height, viewport_width, viewport_height):
-        # gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
-        # gl.glMatrixMode(gl.GL_PROJECTION)
-        # gl.glLoadIdentity()
-        #
-        # # Pure GL implementation of gluPerspective:
-        # aspect_ratio = float(window_width) / float(window_height)
-        # f_width = math.tan(self.fov / 360.0 * math.pi ) * self.znear
-        # f_height = f_width * aspect_ratio
-        # gl.glFrustum(-f_height, f_height, -f_width, f_width, self.znear, self.zfar)
-        #
-        # gl.glMatrixMode(gl.GL_MODELVIEW)
-        # TODO: create a projection matrix
         width = max(1, window_width)
         height = max(1, window_height)
+
+        projection = glm.perspective(fovy=self.fov, aspect=width/height, zNear=0.1, zFar=255)
 
         gl.glViewport(0, 0, viewport_width, viewport_height)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.size = width, height
             window_block.aspect = width / height
+            window_block.transform = tuple(projection)
 
 
 def _PlatformEventHandler(data):

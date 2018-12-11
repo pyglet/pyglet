@@ -130,12 +130,12 @@ vertex_source = """#version 330 core
         vec2 size;
         float aspect;
         float zoom;
-        mat4 transform;
+        mat4 projection;
     } window;
 
     void main()
     {
-        gl_Position = window.transform * vertices;
+        gl_Position = window.projection * vertices;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
