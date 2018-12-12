@@ -81,24 +81,16 @@ instance when loading the Model::
 .. versionadded:: 1.4
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+from io import BytesIO
 
-
-from pyglet.compat import BytesIO
+from pyglet.extlibs import glm
+from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.gl import *
 from pyglet import graphics
 
 from .codecs import ModelDecodeException
 from .codecs import add_encoders, add_decoders, add_default_model_codecs
 from .codecs import get_encoders, get_decoders
-
-
-# Default matrix for models
-_default_identity = [1.0, 0.0, 0.0, 0.0,
-                     0.0, 1.0, 0.0, 0.0,
-                     0.0, 0.0, 1.0, 0.0,
-                     0.0, 0.0, 0.0, 1.0]
 
 
 def load(filename, file=None, decoder=None, batch=None):
@@ -169,10 +161,10 @@ class Model(object):
                 Optional batch to add the model to. If no batch is provided,
                 the model will maintain it's own internal batch.
         """
-        self.groups = groups
         self.vertex_lists = vertex_lists
+        self.groups = groups
         self._batch = batch
-        self._matrix = _default_identity
+        self._matrix = glm.Mat4x4()
 
     @property
     def batch(self):
@@ -239,31 +231,78 @@ class Material(object):
         self.texture_name = texture_name
 
 
+vertex_source = """#version 330 core
+    in vec4 vertices;
+    in vec4 normals;
+    in vec4 colors;
+    in vec2 tex_coords;
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
+
+    uniform WindowBlock
+    {
+        vec2 size;
+        float aspect;
+        float zoom;
+        mat4 projection;
+    } window;
+
+    uniform mat4 model;
+
+    void main()
+    {
+        gl_Position = window.projection * model * vertices;
+
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+fragment_source = """#version 330 core
+    in vec4 vertex_colors;
+    in vec2 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D our_texture;
+
+    void main()
+    {
+        final_colors = texture(our_texture, texture_coords) + vertex_colors;
+    }
+"""
+
+_default_vert_shader = Shader(vertex_source, 'vertex')
+_default_frag_shader = Shader(fragment_source, 'fragment')
+default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
+
+
 class TexturedMaterialGroup(graphics.Group):
 
     def __init__(self, material, texture, matrix=None):
         super(TexturedMaterialGroup, self).__init__()
         self.material = material
         self.texture = texture
-        self.matrix = (GLfloat * 16)(*matrix or _default_identity)
+        self.matrix = []
 
     def set_state(self, face=GL_FRONT_AND_BACK):
-        glEnable(self.texture.target)
-        glBindTexture(self.texture.target, self.texture.id)
-        material = self.material
-        glMaterialfv(face, GL_DIFFUSE, material.diffuse)
-        glMaterialfv(face, GL_AMBIENT, material.ambient)
-        glMaterialfv(face, GL_SPECULAR, material.specular)
-        glMaterialfv(face, GL_EMISSION, material.emission)
-        glMaterialf(face, GL_SHININESS, material.shininess)
+        # glEnable(self.texture.target)
+        # glBindTexture(self.texture.target, self.texture.id)
+        # material = self.material
+        # glMaterialfv(face, GL_DIFFUSE, material.diffuse)
+        # glMaterialfv(face, GL_AMBIENT, material.ambient)
+        # glMaterialfv(face, GL_SPECULAR, material.specular)
+        # glMaterialfv(face, GL_EMISSION, material.emission)
+        # glMaterialf(face, GL_SHININESS, material.shininess)
 
-        glPushMatrix()
-        glMultMatrixf(self.matrix)
+        # glPushMatrix()
+        # glMultMatrixf(self.matrix)
+        pass
 
     def unset_state(self):
-        glPopMatrix()
-        glDisable(self.texture.target)
-        glDisable(GL_COLOR_MATERIAL)
+        # glPopMatrix()
+        # glDisable(self.texture.target)
+        # glDisable(GL_COLOR_MATERIAL)
+        pass
 
     def __eq__(self, other):
         # Do not consolidate Groups when adding to a Batch.
@@ -279,23 +318,25 @@ class MaterialGroup(graphics.Group):
     def __init__(self, material, matrix=None):
         super(MaterialGroup, self).__init__()
         self.material = material
-        self.matrix = (GLfloat * 16)(*matrix or _default_identity)
+        self.matrix = []
 
     def set_state(self, face=GL_FRONT_AND_BACK):
-        glDisable(GL_TEXTURE_2D)
-        material = self.material
-        glMaterialfv(face, GL_DIFFUSE, material.diffuse)
-        glMaterialfv(face, GL_AMBIENT, material.ambient)
-        glMaterialfv(face, GL_SPECULAR, material.specular)
-        glMaterialfv(face, GL_EMISSION, material.emission)
-        glMaterialf(face, GL_SHININESS, material.shininess)
+        # glDisable(GL_TEXTURE_2D)
+        # material = self.material
+        # glMaterialfv(face, GL_DIFFUSE, material.diffuse)
+        # glMaterialfv(face, GL_AMBIENT, material.ambient)
+        # glMaterialfv(face, GL_SPECULAR, material.specular)
+        # glMaterialfv(face, GL_EMISSION, material.emission)
+        # glMaterialf(face, GL_SHININESS, material.shininess)
 
-        glPushMatrix()
-        glMultMatrixf(self.matrix)
+        # glPushMatrix()
+        # glMultMatrixf(self.matrix)
+        pass
 
     def unset_state(self):
-        glPopMatrix()
-        glDisable(GL_COLOR_MATERIAL)
+        # glPopMatrix()
+        # glDisable(GL_COLOR_MATERIAL)
+        pass
 
     def __eq__(self, other):
         # Do not consolidate Groups when adding to a Batch.
