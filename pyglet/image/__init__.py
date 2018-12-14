@@ -1532,15 +1532,9 @@ class Texture(AbstractImage):
         fmt = 'RGBA'
         gl_format = GL_RGBA
 
-        # glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)     # GL3
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        buffer = (GLubyte * (self.width * self.height * self.images * len(format)))()
-        glGetTexImage(self.target, self.level,
-                      gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPopClientAttrib()
         buffer = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
         glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buffer)
-        # glPopClientAttrib    # GL3()
 
         data = ImageData(self.width, self.height, fmt, buffer)
         if self.images > 1:
