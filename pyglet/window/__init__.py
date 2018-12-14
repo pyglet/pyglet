@@ -304,7 +304,7 @@ class Projection3D(Projection):
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.size = width, height
             window_block.aspect = width / height
-            window_block.transform = tuple(projection)
+            window_block.projection = tuple(projection)
 
 
 def _PlatformEventHandler(data):

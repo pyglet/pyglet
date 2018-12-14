@@ -237,6 +237,7 @@ vertex_source = """#version 330 core
     in vec4 colors;
     in vec2 tex_coords;
     out vec4 vertex_colors;
+    out vec4 vertex_normals;
     out vec2 texture_coords;
 
     uniform WindowBlock
@@ -247,19 +248,21 @@ vertex_source = """#version 330 core
         mat4 projection;
     } window;
 
-    uniform mat4 model;
+    uniform mat4 model = mat4(1);
 
     void main()
     {
         gl_Position = window.projection * model * vertices;
 
         vertex_colors = colors;
+        vertex_normals = normals;
         texture_coords = tex_coords;
     }
 """
 
 fragment_source = """#version 330 core
     in vec4 vertex_colors;
+    in vec4 vertex_normals;
     in vec2 texture_coords;
     out vec4 final_colors;
 
@@ -267,7 +270,7 @@ fragment_source = """#version 330 core
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords) + vertex_colors;
+        final_colors = texture(our_texture, texture_coords) + vertex_colors + vertex_normals;
     }
 """
 
@@ -283,26 +286,16 @@ class TexturedMaterialGroup(graphics.Group):
         self.material = material
         self.texture = texture
         self.matrix = []
+        self.program = default_shader_program
 
     def set_state(self, face=GL_FRONT_AND_BACK):
-        # glEnable(self.texture.target)
-        # glBindTexture(self.texture.target, self.texture.id)
-        # material = self.material
-        # glMaterialfv(face, GL_DIFFUSE, material.diffuse)
-        # glMaterialfv(face, GL_AMBIENT, material.ambient)
-        # glMaterialfv(face, GL_SPECULAR, material.specular)
-        # glMaterialfv(face, GL_EMISSION, material.emission)
-        # glMaterialf(face, GL_SHININESS, material.shininess)
-
-        # glPushMatrix()
-        # glMultMatrixf(self.matrix)
-        pass
+        self.program.use_program()
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
 
     def unset_state(self):
-        # glPopMatrix()
-        # glDisable(self.texture.target)
-        # glDisable(GL_COLOR_MATERIAL)
-        pass
+        glBindTexture(self.texture.target, 0)
+        self.program.stop_program()
 
     def __eq__(self, other):
         # Do not consolidate Groups when adding to a Batch.
@@ -319,6 +312,7 @@ class MaterialGroup(graphics.Group):
         super(MaterialGroup, self).__init__()
         self.material = material
         self.matrix = []
+        self.program = default_shader_program
 
     def set_state(self, face=GL_FRONT_AND_BACK):
         # glDisable(GL_TEXTURE_2D)
@@ -331,12 +325,12 @@ class MaterialGroup(graphics.Group):
 
         # glPushMatrix()
         # glMultMatrixf(self.matrix)
-        pass
+        self.program.use_program()
 
     def unset_state(self):
         # glPopMatrix()
         # glDisable(GL_COLOR_MATERIAL)
-        pass
+        self.program.stop_program()
 
     def __eq__(self, other):
         # Do not consolidate Groups when adding to a Batch.
