@@ -196,7 +196,7 @@ class ShaderProgram:
         for block in self._uniform_blocks.values():
             if block.name in self.uniform_buffers:
                 if _debug_gl_shaders:
-                    print("Uniform Buffer Object already cached: {0}".format(block.name))
+                    print("Skipping cached Uniform Buffer Object: `{0}`".format(block.name))
                 continue
             self.uniform_buffers[block.name] = UniformBufferObject(uniform_block=block)
 
@@ -387,7 +387,7 @@ class UniformBlock:
 
 
 class UniformBufferObject:
-    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr', '_view_size'
+    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr'
 
     def __init__(self, uniform_block):
         assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
@@ -397,7 +397,6 @@ class UniformBufferObject:
 
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
-        self._view_size = sizeof(self.view)
 
     def _introspect_uniforms(self):
         p_id = self.block.program_id
@@ -409,6 +408,7 @@ class UniformBufferObject:
         indices_ptr = cast(addressof(indices), POINTER(GLint))
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+
 
         # Create objects and pointers for query values, to be used in the next step:
         offsets = (GLint * num_active.value)()
@@ -426,6 +426,8 @@ class UniformBufferObject:
         offsets = offsets[:] + [self.block.size]
         args = []
 
+        print(offsets)
+
         for i in range(num_active.value):
             u_name, gl_type, length = self.block.uniforms[i]
             start = offsets[i]
@@ -434,6 +436,11 @@ class UniformBufferObject:
             actual_size = c_type_size * length
             padding = size - actual_size
             # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
+            m_stride = mat_stride[i]
+
+            ################### TEST
+
+            ########################
 
             arg = (u_name, gl_type * length) if length > 1 else (u_name, gl_type)
             args.append(arg)

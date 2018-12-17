@@ -270,8 +270,6 @@ class Projection2D(Projection):
                      -1.0, -1.0, 0.0, 1.0)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.size = width, height
-            window_block.aspect = width / height
             window_block.projection = projection
 
 
@@ -302,8 +300,6 @@ class Projection3D(Projection):
         gl.glViewport(0, 0, viewport_width, viewport_height)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.size = width, height
-            window_block.aspect = width / height
             window_block.projection = tuple(projection)
 
 

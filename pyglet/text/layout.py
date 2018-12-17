@@ -535,10 +535,8 @@ foreground_vertex_source = """#version 330 core
 
     uniform WindowBlock
     {
-        vec2 size;
-        float aspect;
-        float zoom;
         mat4 projection;
+        mat4 view;
     } window;
 
     void main()
@@ -575,10 +573,8 @@ decoration_vertex_source = """#version 330 core
 
     uniform WindowBlock
     {
-        vec2 size;
-        float aspect;
-        float zoom;
         mat4 projection;
+        mat4 view;
     } window;
 
     void main()
