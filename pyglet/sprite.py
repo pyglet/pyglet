@@ -121,6 +121,7 @@ vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
+    // in vec3 translate;
 
     out vec4 vertex_colors;
     out vec2 texture_coords;
@@ -131,9 +132,15 @@ vertex_source = """#version 330 core
         mat4 view;
     } window;
 
+    mat4 translation = mat4(1);
+    
     void main()
     {
-        gl_Position = window.projection * vertices;
+        // translation[3][0] = translate.x;
+        // translation[3][1] = translate.y;
+        // translation[3][2] = translate.z;
+
+        gl_Position = window.projection * translation * vertices;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -434,7 +441,8 @@ class Sprite(event.EventDispatcher):
             vertex_format = 'v2i/%s' % self._usage
         if self._batch is None:
             self._vertex_list = graphics.vertex_list_indexed(
-                4, [0, 1, 2, 0, 2, 3], vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
+                4, [0, 1, 2, 0, 2, 3], vertex_format, 'c4B',
+                ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],

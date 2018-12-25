@@ -426,8 +426,6 @@ class UniformBufferObject:
         offsets = offsets[:] + [self.block.size]
         args = []
 
-        print(offsets)
-
         for i in range(num_active.value):
             u_name, gl_type, length = self.block.uniforms[i]
             start = offsets[i]

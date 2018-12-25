@@ -264,13 +264,16 @@ class Projection2D(Projection):
         sx = 2.0 / width
         sy = 2.0 / height
 
-        projection = (sx, 0.0, 0.0, 0.0,
-                     0.0, sy, 0.0, 0.0,
-                     0.0, 0.0, -1.0, 0.0,
-                     -1.0, -1.0, 0.0, 1.0)
+        projection = (sx,  0.0, 0.0, 0.0,
+                      0.0, sy,  0.0, 0.0,
+                      0.0, 0.0, 0.0, 0.0,
+                     -1.0,-1.0, 0.0, 1.0)
+
+        view = glm.mat4(1)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
+            window_block.view = tuple(view)
 
 
 class Projection3D(Projection):
@@ -295,12 +298,14 @@ class Projection3D(Projection):
         width = max(1, window_width)
         height = max(1, window_height)
 
-        projection = glm.perspective(fovy=self.fov, aspect=width/height, zNear=0.1, zFar=255)
-
         gl.glViewport(0, 0, viewport_width, viewport_height)
+
+        projection = glm.perspective(fovy=self.fov, aspect=width/height, zNear=0.1, zFar=255)
+        view = glm.mat4(1)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = tuple(projection)
+            window_block.view = tuple(view)
 
 
 def _PlatformEventHandler(data):

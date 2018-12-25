@@ -378,6 +378,9 @@ class AbstractAttribute:
             region = self.get_region(buffer, start, count)
             region[:] = data
 
+    def __repr__(self):
+        return "Attribute(name='{0}', count={1})".format(self.name, self.count)
+
 
 class VertexAttribute(AbstractAttribute):
     """Vertex coordinate attribute."""

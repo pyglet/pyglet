@@ -164,7 +164,7 @@ class Model(object):
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch
-        self._matrix = glm.Mat4x4()
+        self._matrix = glm.Mat4x4(1)
 
     @property
     def batch(self):
@@ -206,7 +206,7 @@ class Model(object):
     @matrix.setter
     def matrix(self, matrix):
         for group in self.groups:
-            group.matrix[:] = matrix
+            group.matrix = matrix
         self._matrix = matrix
 
     def draw(self):
@@ -242,17 +242,15 @@ vertex_source = """#version 330 core
 
     uniform WindowBlock
     {
-        vec2 size;
-        float aspect;
-        float zoom;
         mat4 projection;
-    } window;
+        mat4 view;
+    } window;  
 
     uniform mat4 model = mat4(1);
 
     void main()
     {
-        gl_Position = window.projection * model * vertices;
+        gl_Position = window.projection * window.view * model * vertices;
 
         vertex_colors = colors;
         vertex_normals = normals;
@@ -308,28 +306,17 @@ class TexturedMaterialGroup(graphics.Group):
 
 class MaterialGroup(graphics.Group):
 
-    def __init__(self, material, matrix=None):
+    def __init__(self, material):
         super(MaterialGroup, self).__init__()
         self.material = material
-        self.matrix = []
+        self.matrix = glm.mat4(1)
         self.program = default_shader_program
 
-    def set_state(self, face=GL_FRONT_AND_BACK):
-        # glDisable(GL_TEXTURE_2D)
-        # material = self.material
-        # glMaterialfv(face, GL_DIFFUSE, material.diffuse)
-        # glMaterialfv(face, GL_AMBIENT, material.ambient)
-        # glMaterialfv(face, GL_SPECULAR, material.specular)
-        # glMaterialfv(face, GL_EMISSION, material.emission)
-        # glMaterialf(face, GL_SHININESS, material.shininess)
-
-        # glPushMatrix()
-        # glMultMatrixf(self.matrix)
+    def set_state(self):
         self.program.use_program()
+        self.program['model'] = tuple(self.matrix)
 
     def unset_state(self):
-        # glPopMatrix()
-        # glDisable(GL_COLOR_MATERIAL)
         self.program.stop_program()
 
     def __eq__(self, other):
