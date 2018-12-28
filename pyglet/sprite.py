@@ -120,7 +120,8 @@ vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
-    // in vec3 translate;
+
+    in vec3 position;
 
     out vec4 vertex_colors;
     out vec2 texture_coords;
@@ -135,9 +136,9 @@ vertex_source = """#version 330 core
     
     void main()
     {
-        // translation[3][0] = translate.x;
-        // translation[3][1] = translate.y;
-        // translation[3][2] = translate.z;
+        translation[3][0] = position.x;
+        translation[3][1] = position.y;
+        translation[3][2] = position.z;
 
         gl_Position = window.projection * translation * vertices;
 
@@ -441,11 +442,11 @@ class Sprite(event.EventDispatcher):
         if self._batch is None:
             self._vertex_list = graphics.vertex_list_indexed(
                 4, [0, 1, 2, 0, 2, 3], vertex_format, 'c4B',
-                ('t3f', self._texture.tex_coords))
+                'position4f', ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
-                vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
+                vertex_format, 'c4B', 'position4f', ('t3f', self._texture.tex_coords))
         self._update_position()
         self._update_color()
 
@@ -493,6 +494,7 @@ class Sprite(event.EventDispatcher):
                         int(vertices[4]), int(vertices[5]),
                         int(vertices[6]), int(vertices[7]))
         self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = (0, 0, 0, 0) * 4
 
     def _update_color(self):
         r, g, b = self._rgb
