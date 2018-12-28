@@ -115,9 +115,8 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
 vertex_source = """#version 330 core
-    // The `in` attributes are specifically named so that they
+    // These `in` attributes are specifically named so that they
     // match those created by the graphics.vertexattribute module.
-
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
