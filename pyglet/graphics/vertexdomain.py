@@ -55,12 +55,6 @@ The entire domain can be efficiently drawn in one step with the
 :py:meth:`VertexDomain.draw` method, assuming all the vertices comprise
 primitives of the same OpenGL primitive mode.
 """
-from builtins import zip
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import ctypes
 import re
 
@@ -344,6 +338,8 @@ class VertexList(object):
         self.domain = domain
         self.start = start
         self.count = count
+        self._caches = {}
+        self._cache_versions = {}
 
     def draw(self, mode):
         """Draw this vertex list in the given OpenGL mode.
@@ -432,165 +428,178 @@ class VertexList(object):
         region.array[:] = data
         region.invalidate()
 
-    @property
-    def colors(self):
-        """Array of color data."""
-        if self._colors_cache_version != self.domain._version:
+    def __getattr__(self, name):
+        """dynamic access to vertex attributes, for backwards compatibility.
+        """
+        if self._cache_versions.get(name, None) != self.domain._version:
             domain = self.domain
-            attribute = domain.attribute_names['colors']
-            self._colors_cache = attribute.get_region(attribute.buffer, self.start, self.count)
-            self._colors_cache_version = domain._version
+            attribute = domain.attribute_names[name]
+            self._caches[name] = attribute.get_region(attribute.buffer, self.start, self.count)
+            self._cache_versions[name] = domain._version
 
-        region = self._colors_cache
+        region = self._caches[name]
         region.invalidate()
         return region.array
 
-    @colors.setter
-    def colors(self, data):
-        self.colors[:] = data
-
-    @property
-    def fog_coords(self):
-        """Array of fog coordinate data."""
-        if self._fog_coords_cache_version != self.domain._version:
-            domain = self.domain
-            attribute = domain.attribute_names['fog_coords']
-            self._fog_coords_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._fog_coords_cache_version = domain._version
-
-        region = self._fog_coords_cache
-        region.invalidate()
-        return region.array
-
-    @fog_coords.setter
-    def fog_coords(self, data):
-        self.fog_coords[:] = data
-
-    @property
-    def edge_flags(self):
-        """Array of edge flag data."""
-        if self._edge_flags_cache_version != self.domain._version:
-            domain = self.domain
-            attribute = domain.attribute_names['edge_flags']
-            self._edge_flags_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._edge_flags_cache_version = domain._version
-
-        region = self._edge_flags_cache
-        region.invalidate()
-        return region.array
-
-    @edge_flags.setter
-    def edge_flags(self, data):
-        self.edge_flags[:] = data
-
-    @property
-    def normals(self):
-        """Array of normal vector data."""
-        if self._normals_cache_version != self.domain._version:
-            domain = self.domain
-            attribute = domain.attribute_names['normals']
-            self._normals_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._normals_cache_version = domain._version
-
-        region = self._normals_cache
-        region.invalidate()
-        return region.array
-
-    @normals.setter
-    def normals(self, data):
-        self.normals[:] = data
-
-    @property
-    def secondary_colors(self):
-        """Array of secondary color data."""
-        if self._secondary_colors_cache_version != self.domain._version:
-            domain = self.domain
-            attribute = domain.attribute_names['secondary_colors']
-            self._secondary_colors_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._secondary_colors_cache_version = domain._version
-
-        region = self._secondary_colors_cache
-        region.invalidate()
-        return region.array
-
-    @secondary_colors.setter
-    def secondary_colors(self, data):
-        self.secondary_colors[:] = data
-
-    @property
-    def tex_coords(self):
-        """Array of texture coordinate data."""
-        if 'multi_tex_coords' not in self.domain.attribute_names:
-            if self._tex_coords_cache_version != self.domain._version:
-                domain = self.domain
-                attribute = domain.attribute_names['tex_coords']
-                self._tex_coords_cache = attribute.get_region(
-                    attribute.buffer, self.start, self.count)
-                self._tex_coords_cache_version = domain._version
-
-            region = self._tex_coords_cache
-            region.invalidate()
-            return region.array
-        else:
-            return None
-
-    @tex_coords.setter
-    def tex_coords(self, data):
-        if self.tex_coords:
-            self.tex_coords[:] = data
-
-    @property
-    def multi_tex_coords(self):
-        """Multi-array texture coordinate data."""
-        if 'tex_coords' not in self.domain.attribute_names:
-            if self._tex_coords_cache_version != self.domain._version:
-                domain = self.domain
-                attribute = domain.attribute_names['multi_tex_coords']
-                self._tex_coords_cache = []
-                for a in attribute:
-                    self._tex_coords_cache.append(a.get_region(
-                        a.buffer, self.start, self.count))
-                self._tex_coords_cache_version = domain._version
-
-            region = self._tex_coords_cache
-            array = []
-            for a in region:
-                a.invalidate()
-                array.append(a.array)
-            return array
-        else:
-            return None
-
-    @multi_tex_coords.setter
-    def multi_tex_coords(self, data):
-        if self.multi_tex_coords:
-            for a in range(0, len(self._tex_coords_cache), 1):
-                if a > len(data):
-                    break
-                elif data[a]:
-                    self._tex_coords_cache[a].array[:] = data[a]
-
-    @property
-    def vertices(self):
-        """Array of vertex coordinate data."""
-        if self._vertices_cache_version != self.domain._version:
-            domain = self.domain
-            attribute = domain.attribute_names['vertices']
-            self._vertices_cache = attribute.get_region(
-                attribute.buffer, self.start, self.count)
-            self._vertices_cache_version = domain._version
-
-        region = self._vertices_cache
-        region.invalidate()
-        return region.array
-
-    @vertices.setter
-    def vertices(self, data):
-        self.vertices[:] = data
+    # @property
+    # def colors(self):
+    #     """Array of color data."""
+    #     if self._colors_cache_version != self.domain._version:
+    #         domain = self.domain
+    #         attribute = domain.attribute_names['colors']
+    #         self._colors_cache = attribute.get_region(attribute.buffer, self.start, self.count)
+    #         self._colors_cache_version = domain._version
+    #
+    #     region = self._colors_cache
+    #     region.invalidate()
+    #     return region.array
+    #
+    # @colors.setter
+    # def colors(self, data):
+    #     self.colors[:] = data
+    #
+    # @property
+    # def fog_coords(self):
+    #     """Array of fog coordinate data."""
+    #     if self._fog_coords_cache_version != self.domain._version:
+    #         domain = self.domain
+    #         attribute = domain.attribute_names['fog_coords']
+    #         self._fog_coords_cache = attribute.get_region(
+    #             attribute.buffer, self.start, self.count)
+    #         self._fog_coords_cache_version = domain._version
+    #
+    #     region = self._fog_coords_cache
+    #     region.invalidate()
+    #     return region.array
+    #
+    # @fog_coords.setter
+    # def fog_coords(self, data):
+    #     self.fog_coords[:] = data
+    #
+    # @property
+    # def edge_flags(self):
+    #     """Array of edge flag data."""
+    #     if self._edge_flags_cache_version != self.domain._version:
+    #         domain = self.domain
+    #         attribute = domain.attribute_names['edge_flags']
+    #         self._edge_flags_cache = attribute.get_region(
+    #             attribute.buffer, self.start, self.count)
+    #         self._edge_flags_cache_version = domain._version
+    #
+    #     region = self._edge_flags_cache
+    #     region.invalidate()
+    #     return region.array
+    #
+    # @edge_flags.setter
+    # def edge_flags(self, data):
+    #     self.edge_flags[:] = data
+    #
+    # @property
+    # def normals(self):
+    #     """Array of normal vector data."""
+    #     if self._normals_cache_version != self.domain._version:
+    #         domain = self.domain
+    #         attribute = domain.attribute_names['normals']
+    #         self._normals_cache = attribute.get_region(
+    #             attribute.buffer, self.start, self.count)
+    #         self._normals_cache_version = domain._version
+    #
+    #     region = self._normals_cache
+    #     region.invalidate()
+    #     return region.array
+    #
+    # @normals.setter
+    # def normals(self, data):
+    #     self.normals[:] = data
+    #
+    # @property
+    # def secondary_colors(self):
+    #     """Array of secondary color data."""
+    #     if self._secondary_colors_cache_version != self.domain._version:
+    #         domain = self.domain
+    #         attribute = domain.attribute_names['secondary_colors']
+    #         self._secondary_colors_cache = attribute.get_region(
+    #             attribute.buffer, self.start, self.count)
+    #         self._secondary_colors_cache_version = domain._version
+    #
+    #     region = self._secondary_colors_cache
+    #     region.invalidate()
+    #     return region.array
+    #
+    # @secondary_colors.setter
+    # def secondary_colors(self, data):
+    #     self.secondary_colors[:] = data
+    #
+    # @property
+    # def tex_coords(self):
+    #     """Array of texture coordinate data."""
+    #     if 'multi_tex_coords' not in self.domain.attribute_names:
+    #         if self._tex_coords_cache_version != self.domain._version:
+    #             domain = self.domain
+    #             attribute = domain.attribute_names['tex_coords']
+    #             self._tex_coords_cache = attribute.get_region(
+    #                 attribute.buffer, self.start, self.count)
+    #             self._tex_coords_cache_version = domain._version
+    #
+    #         region = self._tex_coords_cache
+    #         region.invalidate()
+    #         return region.array
+    #     else:
+    #         return None
+    #
+    # @tex_coords.setter
+    # def tex_coords(self, data):
+    #     if self.tex_coords:
+    #         self.tex_coords[:] = data
+    #
+    # @property
+    # def multi_tex_coords(self):
+    #     """Multi-array texture coordinate data."""
+    #     if 'tex_coords' not in self.domain.attribute_names:
+    #         if self._tex_coords_cache_version != self.domain._version:
+    #             domain = self.domain
+    #             attribute = domain.attribute_names['multi_tex_coords']
+    #             self._tex_coords_cache = []
+    #             for a in attribute:
+    #                 self._tex_coords_cache.append(a.get_region(
+    #                     a.buffer, self.start, self.count))
+    #             self._tex_coords_cache_version = domain._version
+    #
+    #         region = self._tex_coords_cache
+    #         array = []
+    #         for a in region:
+    #             a.invalidate()
+    #             array.append(a.array)
+    #         return array
+    #     else:
+    #         return None
+    #
+    # @multi_tex_coords.setter
+    # def multi_tex_coords(self, data):
+    #     if self.multi_tex_coords:
+    #         for a in range(0, len(self._tex_coords_cache), 1):
+    #             if a > len(data):
+    #                 break
+    #             elif data[a]:
+    #                 self._tex_coords_cache[a].array[:] = data[a]
+    #
+    # @property
+    # def vertices(self):
+    #     """Array of vertex coordinate data."""
+    #     if self._vertices_cache_version != self.domain._version:
+    #         domain = self.domain
+    #         attribute = domain.attribute_names['vertices']
+    #         self._vertices_cache = attribute.get_region(
+    #             attribute.buffer, self.start, self.count)
+    #         self._vertices_cache_version = domain._version
+    #
+    #     region = self._vertices_cache
+    #     region.invalidate()
+    #     return region.array
+    #
+    # @vertices.setter
+    # def vertices(self, data):
+    #     self.vertices[:] = data
 
 
 class IndexedVertexDomain(VertexDomain):
@@ -701,15 +710,11 @@ class IndexedVertexDomain(VertexDomain):
                 # Common case
                 glDrawElements(mode, sizes[0], self.index_gl_type,
                                self.index_buffer.ptr + starts[0] * self.index_element_size)
-            elif gl_info.have_version(1, 4):
+            else:
                 starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
                 starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
                 sizes = (GLsizei * primcount)(*sizes)
                 glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
-            else:
-                for start, size in zip(starts, sizes):
-                    glDrawElements(mode, size, self.index_gl_type,
-                                   self.index_buffer.ptr + start * self.index_element_size)
 
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:
