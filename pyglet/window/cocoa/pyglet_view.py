@@ -85,7 +85,7 @@ def getSymbol(nsevent):
 
     chars = cfstring_to_string(nsevent.charactersIgnoringModifiers())
     if chars:
-        return charmap[chars[0].upper()]
+        return charmap.get(chars[0].upper(), None)
 
     return None
 
