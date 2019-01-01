@@ -14,15 +14,15 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 label = pyglet.text.Label("This is a test", x=50, y=180, dpi=200, batch=batch)
 
-vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
-                                             ('c3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 50,  200, 250, -50,  200, 350, 0)),
+                                             ('c3f', (1, 0, 0,  0, 1, 0,  0.3, 0.3, 1)))
 
 def create_quad_vertex_list(x, y, z, width, height):
     return x, y, z, x + width, y, z, x + width, y + height, z, x, y + height, z
 
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('v3f', create_quad_vertex_list(480, 270, 0, 50, 50)),
+                  ('v3f', create_quad_vertex_list(480, 270, -11, 50, 50)),
                   ('c3f', (1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2, 1, 0.5, 0.2)))
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
@@ -52,20 +52,14 @@ sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=200, batch=batch)
 sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 
 
-###########################################################
-# Set some uniform values
-###########################################################
-# ubo = pyglet.graphics.default_group.uniform_buffers['WindowBlock']
-
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
 ##########################################################
 
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
-    with pyglet.graphics.default_group.program.uniform_buffers["WindowBlock"] as block:
-        block.zoom += direction / 16
-        label.text = f"Zoom: {block.zoom}"
+    for spr in sprites:
+        spr.scale += direction / 16
 
 
 ###########################################################
@@ -89,7 +83,7 @@ def on_draw():
 
 def update(dt):
     for sprite in sprites:
-        sprite.rotation += 50 * dt % 360
+        sprite.rotation += 100 * dt % 360
 
 
 if __name__ == "__main__":

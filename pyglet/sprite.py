@@ -121,7 +121,7 @@ vertex_source = """#version 330 core
     in vec4 colors;
     in vec2 tex_coords;
 
-    in vec3 position;
+    in vec4 position;
 
     out vec4 vertex_colors;
     out vec2 texture_coords;
@@ -132,15 +132,23 @@ vertex_source = """#version 330 core
         mat4 view;
     } window;
 
-    mat4 translation = mat4(1);
-    
+    mat4 translation = mat4(1.0);
+    mat4 rotation = mat4(1.0);
+
     void main()
     {
-        translation[3][0] = position.x;
-        translation[3][1] = position.y;
-        translation[3][2] = position.z;
+        // translation and scaling
+        translation[3][0] = position[0];
+        translation[3][1] = position[1];
+        translation[0][0] = position[2]; 
+        translation[1][1] = position[3];
+        // rotation using value stored in z
+        rotation[0][0] =  cos(-radians(vertices[2])); 
+        rotation[0][1] =  sin(-radians(vertices[2]));
+        rotation[1][0] = -sin(-radians(vertices[2]));
+        rotation[1][1] =  cos(-radians(vertices[2]));
 
-        gl_Position = window.projection * translation * vertices;
+        gl_Position = window.projection * translation * rotation * vec4(vertices.xy, 1.0, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -436,17 +444,17 @@ class Sprite(event.EventDispatcher):
 
     def _create_vertex_list(self):
         if self._subpixel:
-            vertex_format = 'v2f/%s' % self._usage
+            vertex_format = 'v3f/%s' % self._usage
         else:
-            vertex_format = 'v2i/%s' % self._usage
+            vertex_format = 'v3i/%s' % self._usage
         if self._batch is None:
             self._vertex_list = graphics.vertex_list_indexed(
-                4, [0, 1, 2, 0, 2, 3], vertex_format, 'c4B',
-                'position4f', ('t3f', self._texture.tex_coords))
+                4, [0, 1, 2, 0, 2, 3], vertex_format,
+                'c4B', 'position4f', ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
-                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
-                vertex_format, 'c4B', 'position4f', ('t3f', self._texture.tex_coords))
+                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3], vertex_format,
+                'c4B', 'position4f', ('t3f', self._texture.tex_coords))
         self._update_position()
         self._update_color()
 
@@ -455,46 +463,23 @@ class Sprite(event.EventDispatcher):
         scale_x = self._scale * self._scale_x
         scale_y = self._scale * self._scale_y
         if not self._visible:
-            vertices = (0, 0, 0, 0, 0, 0, 0, 0)
-        elif self._rotation:
-            x1 = -img.anchor_x * scale_x
-            y1 = -img.anchor_y * scale_y
-            x2 = x1 + img.width * scale_x
-            y2 = y1 + img.height * scale_y
-            x = self._x
-            y = self._y
-
-            r = -math.radians(self._rotation)
-            cr = math.cos(r)
-            sr = math.sin(r)
-            ax = x1 * cr - y1 * sr + x
-            ay = x1 * sr + y1 * cr + y
-            bx = x2 * cr - y1 * sr + x
-            by = x2 * sr + y1 * cr + y
-            cx = x2 * cr - y2 * sr + x
-            cy = x2 * sr + y2 * cr + y
-            dx = x1 * cr - y2 * sr + x
-            dy = x1 * sr + y2 * cr + y
-            vertices = (ax, ay, bx, by, cx, cy, dx, dy)
-        elif scale_x != 1.0 or scale_y != 1.0:
-            x1 = self._x - img.anchor_x * scale_x
-            y1 = self._y - img.anchor_y * scale_y
-            x2 = x1 + img.width * scale_x
-            y2 = y1 + img.height * scale_y
-            vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
+            vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
-            x1 = self._x - img.anchor_x
-            y1 = self._y - img.anchor_y
+            x1 = -img.anchor_x
+            y1 = -img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
-            vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
+            z = self._rotation
+            vertices = (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)
         if not self._subpixel:
             vertices = (int(vertices[0]), int(vertices[1]),
                         int(vertices[2]), int(vertices[3]),
                         int(vertices[4]), int(vertices[5]),
-                        int(vertices[6]), int(vertices[7]))
+                        int(vertices[6]), int(vertices[7]),
+                        int(vertices[8]), int(vertices[9]),
+                        int(vertices[10]), int(vertices[11]))
         self._vertex_list.vertices[:] = vertices
-        self._vertex_list.position[:] = (0, 0, 0, 0) * 4
+        self._vertex_list.position[:] = (self._x, self._y, scale_x, scale_y) * 4
 
     def _update_color(self):
         r, g, b = self._rgb
