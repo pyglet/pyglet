@@ -459,18 +459,19 @@ class Sprite(event.EventDispatcher):
         self._update_color()
 
     def _update_position(self):
-        img = self._texture
-        scale_x = self._scale * self._scale_x
-        scale_y = self._scale * self._scale_y
         if not self._visible:
             vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
+            img = self._texture
+            scale_x = self._scale * self._scale_x
+            scale_y = self._scale * self._scale_y
             x1 = -img.anchor_x
             y1 = -img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
             z = self._rotation
             vertices = (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)
+            self._vertex_list.position[:] = (self._x, self._y, scale_x, scale_y) * 4
         if not self._subpixel:
             vertices = (int(vertices[0]), int(vertices[1]),
                         int(vertices[2]), int(vertices[3]),
@@ -479,11 +480,9 @@ class Sprite(event.EventDispatcher):
                         int(vertices[8]), int(vertices[9]),
                         int(vertices[10]), int(vertices[11]))
         self._vertex_list.vertices[:] = vertices
-        self._vertex_list.position[:] = (self._x, self._y, scale_x, scale_y) * 4
 
     def _update_color(self):
-        r, g, b = self._rgb
-        self._vertex_list.colors[:] = [r, g, b, int(self._opacity)] * 4
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
 
     @property
     def position(self):
