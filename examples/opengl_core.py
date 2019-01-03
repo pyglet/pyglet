@@ -12,7 +12,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 #   TESTS !
 ##########################################################
-label = pyglet.text.Label("This is a test", x=50, y=180, dpi=200, batch=batch)
+label = pyglet.text.Label("This is a test", x=0, y=180, dpi=200, batch=batch)
 
 vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 50,  200, 250, -50,  200, 350, 0)),
                                              ('c3f', (1, 0, 0,  0, 1, 0,  0.3, 0.3, 1)))

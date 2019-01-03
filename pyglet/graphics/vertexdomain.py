@@ -319,21 +319,6 @@ class VertexList(object):
     """A list of vertices within a :py:class:`VertexDomain`.  Use
     :py:meth:`VertexDomain.create` to construct this list.
     """
-    _colors_cache = None
-    _colors_cache_version = None
-    _fog_coords_cache = None
-    _fog_coords_cache_version = None
-    _edge_flags_cache = None
-    _edge_flags_cache_version = None
-    _normals_cache = None
-    _normals_cache_version = None
-    _secondary_colors_cache = None
-    _secondary_colors_cache_version = None
-    _tex_coords_cache = None
-    _tex_coords_cache_version = None
-    _vertices_cache = None
-    _vertices_cache_version = None
-
     def __init__(self, domain, start, count):
         self.domain = domain
         self.start = start
@@ -376,13 +361,8 @@ class VertexList(object):
         self.start = new_start
         self.count = count
 
-        self._colors_cache_version = None
-        self._fog_coords_cache_version = None
-        self._edge_flags_cache_version = None
-        self._normals_cache_version = None
-        self._secondary_colors_cache_version = None
-        self._tex_coords_cache_version = None
-        self._vertices_cache_version = None
+        for version in self._cache_versions:
+            self._cache_versions[version] = None
 
     def delete(self):
         """Delete this group."""
@@ -413,13 +393,8 @@ class VertexList(object):
         self.domain = domain
         self.start = new_start
 
-        self._colors_cache_version = None
-        self._fog_coords_cache_version = None
-        self._edge_flags_cache_version = None
-        self._normals_cache_version = None
-        self._secondary_colors_cache_version = None
-        self._tex_coords_cache_version = None
-        self._vertices_cache_version = None
+        for version in self._cache_versions:
+            self._cache_versions[version] = None
 
     def set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
