@@ -1808,28 +1808,10 @@ class FPSDisplay(object):
         self.label.text = '%.2f' % fps
 
     def draw(self):
-        # TODO: fix this for GL3:
         """Draw the label.
-
-        The OpenGL state is assumed to be at default values, except
-        that the MODELVIEW and PROJECTION matrices are ignored.  At
-        the return of this method the matrix mode will be MODELVIEW.
         """
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
-
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
-        gl.glOrtho(0, self.window.width, 0, self.window.height, -1, 1)
-
+        # TODO: GL3 - ensure projection is correct before/after drawing.
         self.label.draw()
-
-        gl.glPopMatrix()
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPopMatrix()
 
     def _hook_flip(self):
         self.update()

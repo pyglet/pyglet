@@ -149,7 +149,7 @@ class VertexDomain(object):
     Construction of a vertex domain is usually done with the
     :py:func:`create_domain` function.
     """
-    _version = 0
+    version = 0
     _initial_count = 16
 
     def __init__(self, attribute_usages):
@@ -200,15 +200,6 @@ class VertexDomain(object):
         self.attributes = attributes
         self.attribute_names = {}
         for attribute in attributes:
-            # if isinstance(attribute, vertexattribute.GenericAttribute):
-            #     index = attribute.index
-            #     # TODO create a name and use it (e.g. 'generic3')
-            #     # XXX this won't migrate; not documented.
-            #     if 'generic' not in self.attribute_names:
-            #         self.attribute_names['generic'] = {}
-            #     assert index not in self.attribute_names['generic'], \
-            #         'More than one generic attribute with index %d' % index
-            #     self.attribute_names['generic'][index] = attribute
             if isinstance(attribute, vertexattribute.MultiTexCoordAttribute):
                 # XXX this won't migrate; not documented.
                 texture = attribute.texture
@@ -232,25 +223,25 @@ class VertexDomain(object):
             except AttributeError:
                 pass
 
-    def _safe_alloc(self, count):
+    def safe_alloc(self, count):
         """Allocate vertices, resizing the buffers if necessary."""
         try:
             return self.allocator.alloc(count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
+            self.version += 1
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.element_size)
             self.allocator.set_capacity(capacity)
             return self.allocator.alloc(count)
 
-    def _safe_realloc(self, start, count, new_count):
+    def safe_realloc(self, start, count, new_count):
         """Reallocate vertices, resizing the buffers if necessary."""
         try:
             return self.allocator.realloc(start, count, new_count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
+            self.version += 1
             for buffer, _ in self.buffer_attributes:
                 buffer.resize(capacity * buffer.element_size)
             self.allocator.set_capacity(capacity)
@@ -265,7 +256,7 @@ class VertexDomain(object):
 
         :rtype: :py:class:`VertexList`
         """
-        start = self._safe_alloc(count)
+        start = self.safe_alloc(count)
         return VertexList(self, start, count)
 
     def draw(self, mode, vertex_list=None):
@@ -348,14 +339,12 @@ class VertexList(object):
                 New number of vertices in the list.
 
         """
-        new_start = self.domain._safe_realloc(self.start, self.count, count)
+        new_start = self.domain.safe_realloc(self.start, self.count, count)
         if new_start != self.start:
             # Copy contents to new location
             for attribute in self.domain.attributes:
-                old = attribute.get_region(attribute.buffer,
-                                           self.start, self.count)
-                new = attribute.get_region(attribute.buffer,
-                                           new_start, self.count)
+                old = attribute.get_region(attribute.buffer, self.start, self.count)
+                new = attribute.get_region(attribute.buffer, new_start, self.count)
                 new.array[:] = old.array[:]
                 new.invalidate()
         self.start = new_start
@@ -378,10 +367,10 @@ class VertexList(object):
                 Domain to migrate this vertex list to.
 
         """
-        assert list(domain.attribute_names.keys()) == \
-               list(self.domain.attribute_names.keys()), 'Domain attributes must match.'
+        assert list(domain.attribute_names.keys()) == list(self.domain.attribute_names.keys()),\
+            'Domain attributes must match.'
 
-        new_start = domain._safe_alloc(self.count)
+        new_start = domain.safe_alloc(self.count)
         for key, old_attribute in self.domain.attribute_names.items():
             old = old_attribute.get_region(old_attribute.buffer, self.start, self.count)
             new_attribute = domain.attribute_names[key]
@@ -406,175 +395,15 @@ class VertexList(object):
     def __getattr__(self, name):
         """dynamic access to vertex attributes, for backwards compatibility.
         """
-        if self._cache_versions.get(name, None) != self.domain._version:
+        if self._cache_versions.get(name, None) != self.domain.version:
             domain = self.domain
             attribute = domain.attribute_names[name]
             self._caches[name] = attribute.get_region(attribute.buffer, self.start, self.count)
-            self._cache_versions[name] = domain._version
+            self._cache_versions[name] = domain.version
 
         region = self._caches[name]
         region.invalidate()
         return region.array
-
-    # @property
-    # def colors(self):
-    #     """Array of color data."""
-    #     if self._colors_cache_version != self.domain._version:
-    #         domain = self.domain
-    #         attribute = domain.attribute_names['colors']
-    #         self._colors_cache = attribute.get_region(attribute.buffer, self.start, self.count)
-    #         self._colors_cache_version = domain._version
-    #
-    #     region = self._colors_cache
-    #     region.invalidate()
-    #     return region.array
-    #
-    # @colors.setter
-    # def colors(self, data):
-    #     self.colors[:] = data
-    #
-    # @property
-    # def fog_coords(self):
-    #     """Array of fog coordinate data."""
-    #     if self._fog_coords_cache_version != self.domain._version:
-    #         domain = self.domain
-    #         attribute = domain.attribute_names['fog_coords']
-    #         self._fog_coords_cache = attribute.get_region(
-    #             attribute.buffer, self.start, self.count)
-    #         self._fog_coords_cache_version = domain._version
-    #
-    #     region = self._fog_coords_cache
-    #     region.invalidate()
-    #     return region.array
-    #
-    # @fog_coords.setter
-    # def fog_coords(self, data):
-    #     self.fog_coords[:] = data
-    #
-    # @property
-    # def edge_flags(self):
-    #     """Array of edge flag data."""
-    #     if self._edge_flags_cache_version != self.domain._version:
-    #         domain = self.domain
-    #         attribute = domain.attribute_names['edge_flags']
-    #         self._edge_flags_cache = attribute.get_region(
-    #             attribute.buffer, self.start, self.count)
-    #         self._edge_flags_cache_version = domain._version
-    #
-    #     region = self._edge_flags_cache
-    #     region.invalidate()
-    #     return region.array
-    #
-    # @edge_flags.setter
-    # def edge_flags(self, data):
-    #     self.edge_flags[:] = data
-    #
-    # @property
-    # def normals(self):
-    #     """Array of normal vector data."""
-    #     if self._normals_cache_version != self.domain._version:
-    #         domain = self.domain
-    #         attribute = domain.attribute_names['normals']
-    #         self._normals_cache = attribute.get_region(
-    #             attribute.buffer, self.start, self.count)
-    #         self._normals_cache_version = domain._version
-    #
-    #     region = self._normals_cache
-    #     region.invalidate()
-    #     return region.array
-    #
-    # @normals.setter
-    # def normals(self, data):
-    #     self.normals[:] = data
-    #
-    # @property
-    # def secondary_colors(self):
-    #     """Array of secondary color data."""
-    #     if self._secondary_colors_cache_version != self.domain._version:
-    #         domain = self.domain
-    #         attribute = domain.attribute_names['secondary_colors']
-    #         self._secondary_colors_cache = attribute.get_region(
-    #             attribute.buffer, self.start, self.count)
-    #         self._secondary_colors_cache_version = domain._version
-    #
-    #     region = self._secondary_colors_cache
-    #     region.invalidate()
-    #     return region.array
-    #
-    # @secondary_colors.setter
-    # def secondary_colors(self, data):
-    #     self.secondary_colors[:] = data
-    #
-    # @property
-    # def tex_coords(self):
-    #     """Array of texture coordinate data."""
-    #     if 'multi_tex_coords' not in self.domain.attribute_names:
-    #         if self._tex_coords_cache_version != self.domain._version:
-    #             domain = self.domain
-    #             attribute = domain.attribute_names['tex_coords']
-    #             self._tex_coords_cache = attribute.get_region(
-    #                 attribute.buffer, self.start, self.count)
-    #             self._tex_coords_cache_version = domain._version
-    #
-    #         region = self._tex_coords_cache
-    #         region.invalidate()
-    #         return region.array
-    #     else:
-    #         return None
-    #
-    # @tex_coords.setter
-    # def tex_coords(self, data):
-    #     if self.tex_coords:
-    #         self.tex_coords[:] = data
-    #
-    # @property
-    # def multi_tex_coords(self):
-    #     """Multi-array texture coordinate data."""
-    #     if 'tex_coords' not in self.domain.attribute_names:
-    #         if self._tex_coords_cache_version != self.domain._version:
-    #             domain = self.domain
-    #             attribute = domain.attribute_names['multi_tex_coords']
-    #             self._tex_coords_cache = []
-    #             for a in attribute:
-    #                 self._tex_coords_cache.append(a.get_region(
-    #                     a.buffer, self.start, self.count))
-    #             self._tex_coords_cache_version = domain._version
-    #
-    #         region = self._tex_coords_cache
-    #         array = []
-    #         for a in region:
-    #             a.invalidate()
-    #             array.append(a.array)
-    #         return array
-    #     else:
-    #         return None
-    #
-    # @multi_tex_coords.setter
-    # def multi_tex_coords(self, data):
-    #     if self.multi_tex_coords:
-    #         for a in range(0, len(self._tex_coords_cache), 1):
-    #             if a > len(data):
-    #                 break
-    #             elif data[a]:
-    #                 self._tex_coords_cache[a].array[:] = data[a]
-    #
-    # @property
-    # def vertices(self):
-    #     """Array of vertex coordinate data."""
-    #     if self._vertices_cache_version != self.domain._version:
-    #         domain = self.domain
-    #         attribute = domain.attribute_names['vertices']
-    #         self._vertices_cache = attribute.get_region(
-    #             attribute.buffer, self.start, self.count)
-    #         self._vertices_cache_version = domain._version
-    #
-    #     region = self._vertices_cache
-    #     region.invalidate()
-    #     return region.array
-    #
-    # @vertices.setter
-    # def vertices(self, data):
-    #     self.vertices[:] = data
 
 
 class IndexedVertexDomain(VertexDomain):
@@ -597,24 +426,24 @@ class IndexedVertexDomain(VertexDomain):
             self.index_allocator.capacity * self.index_element_size,
             target=GL_ELEMENT_ARRAY_BUFFER)
 
-    def _safe_index_alloc(self, count):
+    def safe_index_alloc(self, count):
         """Allocate indices, resizing the buffers if necessary."""
         try:
             return self.index_allocator.alloc(count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
+            self.version += 1
             self.index_buffer.resize(capacity * self.index_element_size)
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.alloc(count)
 
-    def _safe_index_realloc(self, start, count, new_count):
+    def safe_index_realloc(self, start, count, new_count):
         """Reallocate indices, resizing the buffers if necessary."""
         try:
             return self.index_allocator.realloc(start, count, new_count)
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
-            self._version += 1
+            self.version += 1
             self.index_buffer.resize(capacity * self.index_element_size)
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.realloc(start, count, new_count)
@@ -629,8 +458,8 @@ class IndexedVertexDomain(VertexDomain):
                 Number of indices to create
 
         """
-        start = self._safe_alloc(count)
-        index_start = self._safe_index_alloc(index_count)
+        start = self.safe_alloc(count)
+        index_start = self.safe_index_alloc(index_count)
         return IndexedVertexList(self, start, count, index_start, index_count)
 
     def get_index_region(self, start, count):
@@ -731,7 +560,7 @@ class IndexedVertexList(VertexList):
             self.indices[:] = [i + diff for i in self.indices]
 
         # Resize indices
-        new_start = self.domain._safe_index_realloc(
+        new_start = self.domain.safe_index_realloc(
             self.index_start, self.index_count, index_count)
         if new_start != self.index_start:
             old = self.domain.get_index_region(
@@ -777,7 +606,7 @@ class IndexedVertexList(VertexList):
         # must delloc before calling safe_index_alloc or else problems when same
         # batch is migrated to because index_start changes after dealloc
         old_domain.index_allocator.dealloc(self.index_start, self.index_count)
-        new_start = self.domain._safe_index_alloc(self.index_count)
+        new_start = self.domain.safe_index_alloc(self.index_count)
         new = self.domain.get_index_region(new_start, self.index_count)
         new.array[:] = old.array[:]
         new.invalidate()
@@ -787,19 +616,17 @@ class IndexedVertexList(VertexList):
 
     def set_index_data(self, data):
         # TODO without region
-        region = self.domain.get_index_region(
-            self.index_start, self.index_count)
+        region = self.domain.get_index_region(self.index_start, self.index_count)
         region.array[:] = data
         region.invalidate()
 
     @property
     def indices(self):
         """Array of index data."""
-        if self._indices_cache_version != self.domain._version:
+        if self._indices_cache_version != self.domain.version:
             domain = self.domain
-            self._indices_cache = domain.get_index_region(
-                self.index_start, self.index_count)
-            self._indices_cache_version = domain._version
+            self._indices_cache = domain.get_index_region(self.index_start, self.index_count)
+            self._indices_cache_version = domain.version
 
         region = self._indices_cache
         region.invalidate()
