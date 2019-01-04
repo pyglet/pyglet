@@ -98,11 +98,6 @@ sprites within batches.
 
 .. versionadded:: 1.1
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import math
 import sys
 
 from pyglet.gl import *
@@ -114,14 +109,11 @@ from pyglet import image
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
-vertex_source = """#version 330 core
-    // These `in` attributes are specifically named so that they
-    // match those created by the graphics.vertexattribute module.
-    in vec4 vertices;
+vertex_source = """#version 150 core
+    in vec4 position;
+    in vec4 translate;
     in vec4 colors;
     in vec2 tex_coords;
-
-    in vec4 position;
 
     out vec4 vertex_colors;
     out vec2 texture_coords;
@@ -137,25 +129,24 @@ vertex_source = """#version 330 core
 
     void main()
     {
-        // translation and scaling
-        translation[3][0] = position[0];
-        translation[3][1] = position[1];
-        translation[0][0] = position[2]; 
-        translation[1][1] = position[3];
-        // rotation using value stored in z
-        rotation[0][0] =  cos(-radians(vertices[2])); 
-        rotation[0][1] =  sin(-radians(vertices[2]));
-        rotation[1][0] = -sin(-radians(vertices[2]));
-        rotation[1][1] =  cos(-radians(vertices[2]));
+        translation[3][0] = translate[0];               // translate x
+        translation[3][1] = translate[1];               // translate y
+        translation[0][0] = translate[2];               // scale x
+        translation[1][1] = translate[3];               // scale y
+        rotation[0][0] =  cos(-radians(position[2])); 
+        rotation[0][1] =  sin(-radians(position[2]));
+        rotation[1][0] = -sin(-radians(position[2]));
+        rotation[1][1] =  cos(-radians(position[2]));
 
-        gl_Position = window.projection * translation * rotation * vec4(vertices.xy, 1.0, 1.0);
+        gl_Position = window.projection * window.view * 
+                      translation * rotation * vec4(position.xy, 1.0, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
     }
 """
 
-fragment_source = """#version 330 core
+fragment_source = """#version 150 core
     in vec4 vertex_colors;
     in vec2 texture_coords;
     out vec4 final_colors;
@@ -444,45 +435,43 @@ class Sprite(event.EventDispatcher):
 
     def _create_vertex_list(self):
         if self._subpixel:
-            vertex_format = 'v3f/%s' % self._usage
+            vertex_format = 'position3f/%s' % self._usage
         else:
-            vertex_format = 'v3i/%s' % self._usage
+            vertex_format = 'position3i/%s' % self._usage
         if self._batch is None:
             self._vertex_list = graphics.vertex_list_indexed(
                 4, [0, 1, 2, 0, 2, 3], vertex_format,
-                'c4B', 'position4f', ('t3f', self._texture.tex_coords))
+                'c4B', 'translate4f', ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3], vertex_format,
-                'c4B', 'position4f', ('t3f', self._texture.tex_coords))
+                'c4B', 'translate4f', ('t3f', self._texture.tex_coords))
+
         self._update_position()
-        self._update_color()
+        self._update_translation()
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
 
     def _update_position(self):
         if not self._visible:
-            vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             img = self._texture
-            scale_x = self._scale * self._scale_x
-            scale_y = self._scale * self._scale_y
             x1 = -img.anchor_x
             y1 = -img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
             z = self._rotation
-            vertices = (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)
-            self._vertex_list.position[:] = (self._x, self._y, scale_x, scale_y) * 4
-        if not self._subpixel:
-            vertices = (int(vertices[0]), int(vertices[1]),
-                        int(vertices[2]), int(vertices[3]),
-                        int(vertices[4]), int(vertices[5]),
-                        int(vertices[6]), int(vertices[7]),
-                        int(vertices[8]), int(vertices[9]),
-                        int(vertices[10]), int(vertices[11]))
-        self._vertex_list.vertices[:] = vertices
+            position = (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)
 
-    def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
+            if not self._subpixel:
+                self._vertex_list.position[:] = tuple(map(int, position))
+            else:
+                self._vertex_list.position[:] = position
+
+    def _update_translation(self):
+        scale_x = self._scale * self._scale_x
+        scale_y = self._scale * self._scale_y
+        self._vertex_list.translate[:] = (self._x, self._y, scale_x, scale_y) * 4
 
     @property
     def position(self):
@@ -499,7 +488,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, pos):
         self._x, self._y = pos
-        self._update_position()
+        self._update_translation()
 
     @property
     def x(self):
@@ -512,7 +501,7 @@ class Sprite(event.EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self._update_position()
+        self._update_translation()
 
     @property
     def y(self):
@@ -525,7 +514,7 @@ class Sprite(event.EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self._update_position()
+        self._update_translation()
 
     @property
     def rotation(self):
@@ -557,7 +546,7 @@ class Sprite(event.EventDispatcher):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
-        self._update_position()
+        self._update_translation()
 
     @property
     def scale_x(self):
@@ -573,7 +562,7 @@ class Sprite(event.EventDispatcher):
     @scale_x.setter
     def scale_x(self, scale_x):
         self._scale_x = scale_x
-        self._update_position()
+        self._update_translation()
 
     @property
     def scale_y(self):
@@ -589,7 +578,7 @@ class Sprite(event.EventDispatcher):
     @scale_y.setter
     def scale_y(self, scale_y):
         self._scale_y = scale_y
-        self._update_position()
+        self._update_translation()
 
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
@@ -626,6 +615,7 @@ class Sprite(event.EventDispatcher):
         if scale_y is not None:
             self._scale_y = scale_y
         self._update_position()
+        self._update_translation()
 
     @property
     def width(self):
@@ -672,7 +662,7 @@ class Sprite(event.EventDispatcher):
     @opacity.setter
     def opacity(self, opacity):
         self._opacity = opacity
-        self._update_color()
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
 
     @property
     def color(self):
@@ -691,7 +681,7 @@ class Sprite(event.EventDispatcher):
     @color.setter
     def color(self, rgb):
         self._rgb = list(map(int, rgb))
-        self._update_color()
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
 
     @property
     def visible(self):
