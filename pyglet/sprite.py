@@ -110,9 +110,10 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
 vertex_source = """#version 150 core
-    in vec4 translate;
+    in vec2 translate;
     in vec4 colors;
     in vec2 tex_coords;
+    in vec2 scale;
     in vec2 vertex;
     in float rotation;
 
@@ -132,8 +133,8 @@ vertex_source = """#version 150 core
     {
         m_translation[3][0] = translate[0];               // translate x
         m_translation[3][1] = translate[1];               // translate y
-        m_translation[0][0] = translate[2];               // scale x
-        m_translation[1][1] = translate[3];               // scale y
+        m_translation[0][0] = scale[0];                   // scale x
+        m_translation[1][1] = scale[1];                   // scale y
         m_rotation[0][0] =  cos(-radians(rotation)); 
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
@@ -440,21 +441,24 @@ class Sprite(event.EventDispatcher):
             self._vertex_list = graphics.vertex_list_indexed(
                 4, [0, 1, 2, 0, 2, 3], vertex_format,
                 'c4B',
-                'translate4f',
+                'translate2f',
+                'scale2f',
                 'rotation1f',
                 ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3], vertex_format,
                 'c4B',
-                'translate4f',
+                'translate2f',
+                'scale2f',
                 'rotation1f',
                 ('t3f', self._texture.tex_coords))
 
         self._update_position()
-        self._update_translation()
+        self._vertex_list.translate[:] = (self._x, self._y) * 4
         self._vertex_list.rotation[:] = (self._rotation,) * 4
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
 
     def _update_position(self):
         if not self._visible:
@@ -472,11 +476,6 @@ class Sprite(event.EventDispatcher):
             else:
                 self._vertex_list.vertex[:] = verticies
 
-    def _update_translation(self):
-        scale_x = self._scale * self._scale_x
-        scale_y = self._scale * self._scale_y
-        self._vertex_list.translate[:] = (self._x, self._y, scale_x, scale_y) * 4
-
     @property
     def position(self):
         """The (x, y) coordinates of the sprite, as a tuple.
@@ -492,7 +491,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, pos):
         self._x, self._y = pos
-        self._update_translation()
+        self._vertex_list.translate[:] = (pos[0], pos[1]) * 4
 
     @property
     def x(self):
@@ -505,7 +504,7 @@ class Sprite(event.EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self._update_translation()
+        self._vertex_list.translate[:] = (x, self._y) * 4
 
     @property
     def y(self):
@@ -518,7 +517,7 @@ class Sprite(event.EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self._update_translation()
+        self._vertex_list.translate[:] = (self._x, y) * 4
 
     @property
     def rotation(self):
@@ -550,7 +549,7 @@ class Sprite(event.EventDispatcher):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
-        self._update_translation()
+        self._vertex_list.scale[:] = (scale * self._scale_x, scale * self._scale_y)
 
     @property
     def scale_x(self):
@@ -566,7 +565,7 @@ class Sprite(event.EventDispatcher):
     @scale_x.setter
     def scale_x(self, scale_x):
         self._scale_x = scale_x
-        self._update_translation()
+        self._vertex_list.scale[:] = (self._scale * scale_x, self._scale * self._scale_y)
 
     @property
     def scale_y(self):
@@ -582,7 +581,7 @@ class Sprite(event.EventDispatcher):
     @scale_y.setter
     def scale_y(self, scale_y):
         self._scale_y = scale_y
-        self._update_translation()
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * scale_y)
 
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
@@ -618,8 +617,9 @@ class Sprite(event.EventDispatcher):
             self._scale_x = scale_x
         if scale_y is not None:
             self._scale_y = scale_y
-        self._update_position()
-        self._update_translation()
+        self._vertex_list.translate[:] = (self._x, self._y) * 4
+        self._vertex_list.rotation[:] = (self._rotation,) * 4
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y)
 
     @property
     def width(self):

@@ -213,7 +213,6 @@ class BufferObject(AbstractBuffer):
         glGenBuffers(1, vbo_id)
         self.id = vbo_id.value
 
-        # TODO: see if this needs to be done here:
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
 
@@ -366,6 +365,8 @@ class AbstractBufferRegion(object):
 
 class BufferObjectRegion(AbstractBufferRegion):
     """A mapped region of a BufferObject."""
+
+    __slots__ = 'buffer', 'start', 'end', 'array'
 
     def __init__(self, buffer, start, end, array):
         self.buffer = buffer
