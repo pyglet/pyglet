@@ -110,10 +110,11 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 
 vertex_source = """#version 150 core
-    in vec4 position;
     in vec4 translate;
     in vec4 colors;
     in vec2 tex_coords;
+    in vec2 vertex;
+    in float rotation;
 
     out vec4 vertex_colors;
     out vec2 texture_coords;
@@ -124,22 +125,22 @@ vertex_source = """#version 150 core
         mat4 view;
     } window;
 
-    mat4 translation = mat4(1.0);
-    mat4 rotation = mat4(1.0);
+    mat4 m_translation = mat4(1.0);
+    mat4 m_rotation = mat4(1.0);
 
     void main()
     {
-        translation[3][0] = translate[0];               // translate x
-        translation[3][1] = translate[1];               // translate y
-        translation[0][0] = translate[2];               // scale x
-        translation[1][1] = translate[3];               // scale y
-        rotation[0][0] =  cos(-radians(position[2])); 
-        rotation[0][1] =  sin(-radians(position[2]));
-        rotation[1][0] = -sin(-radians(position[2]));
-        rotation[1][1] =  cos(-radians(position[2]));
+        m_translation[3][0] = translate[0];               // translate x
+        m_translation[3][1] = translate[1];               // translate y
+        m_translation[0][0] = translate[2];               // scale x
+        m_translation[1][1] = translate[3];               // scale y
+        m_rotation[0][0] =  cos(-radians(rotation)); 
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
 
         gl_Position = window.projection * window.view * 
-                      translation * rotation * vec4(position.xy, 1.0, 1.0);
+                      m_translation * m_rotation * vec4(vertex.xy, 1.0, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -434,39 +435,42 @@ class Sprite(event.EventDispatcher):
         self._texture = texture
 
     def _create_vertex_list(self):
-        if self._subpixel:
-            vertex_format = 'position3f/%s' % self._usage
-        else:
-            vertex_format = 'position3i/%s' % self._usage
+        vertex_format = 'vertex2f/%s' % self._usage
         if self._batch is None:
             self._vertex_list = graphics.vertex_list_indexed(
                 4, [0, 1, 2, 0, 2, 3], vertex_format,
-                'c4B', 'translate4f', ('t3f', self._texture.tex_coords))
+                'c4B',
+                'translate4f',
+                'rotation1f',
+                ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3], vertex_format,
-                'c4B', 'translate4f', ('t3f', self._texture.tex_coords))
+                'c4B',
+                'translate4f',
+                'rotation1f',
+                ('t3f', self._texture.tex_coords))
 
         self._update_position()
         self._update_translation()
+        self._vertex_list.rotation[:] = (self._rotation,) * 4
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.vertex[:] = (0, 0, 0, 0, 0, 0, 0, 0)
         else:
             img = self._texture
             x1 = -img.anchor_x
             y1 = -img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
-            z = self._rotation
-            position = (x1, y1, z, x2, y1, z, x2, y2, z, x1, y2, z)
+            verticies = (x1, y1, x2, y1, x2, y2, x1, y2)
 
             if not self._subpixel:
-                self._vertex_list.position[:] = tuple(map(int, position))
+                self._vertex_list.vertex[:] = tuple(map(int, verticies))
             else:
-                self._vertex_list.position[:] = position
+                self._vertex_list.vertex[:] = verticies
 
     def _update_translation(self):
         scale_x = self._scale * self._scale_x
@@ -530,7 +534,7 @@ class Sprite(event.EventDispatcher):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (self._rotation,) * 4
 
     @property
     def scale(self):
