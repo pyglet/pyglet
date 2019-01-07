@@ -279,17 +279,18 @@ default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shade
 
 class TexturedMaterialGroup(graphics.Group):
 
-    def __init__(self, material, texture, matrix=None):
+    def __init__(self, material, texture):
         super(TexturedMaterialGroup, self).__init__()
         self.material = material
         self.texture = texture
-        self.matrix = []
+        self.matrix = glm.mat4(1)
         self.program = default_shader_program
 
-    def set_state(self, face=GL_FRONT_AND_BACK):
-        self.program.use_program()
+    def set_state(self):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
+        self.program.use_program()
+        self.program['model'] = tuple(self.matrix)
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)

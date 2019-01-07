@@ -269,24 +269,27 @@ class Projection2D(Projection):
                       0.0, 0.0, 0.0, 0.0,
                      -1.0,-1.0, 0.0, 1.0)
 
-        view = glm.mat4(1)
+        view = (1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
-            window_block.view = tuple(view)
+            window_block.view = view
 
 
 class Projection3D(Projection):
     """A 3D perspective projection"""
 
-    def __init__(self, fov=60, znear=0.1, zfar=255):
+    def __init__(self, fov=60, znear=1, zfar=255):
         """Create a 3D projection
 
         :Parameters:
             `fov` : float
                 The field of vision. Defaults to 60.
             `znear` : float
-                The near clipping plane. Defaults to 0.1.
+                The near clipping plane. Defaults to 1.
             `zfar` : float
                 The far clipping plane. Defaults to 255.
         """
@@ -300,12 +303,28 @@ class Projection3D(Projection):
 
         gl.glViewport(0, 0, viewport_width, viewport_height)
 
-        projection = glm.perspective(fovy=self.fov, aspect=width/height, zNear=0.1, zFar=255)
-        view = glm.mat4(1)
+        aspect = width/height
+
+        sx0 = -0.11709
+        sy1 = -0.15612
+        sz2 = -1.00787
+        sz3 = -2.00787
+
+        projection = (sx0, 0.0, 0.0, 0.0,
+                      0.0, sy1, 0.0, 0.0,
+                      0.0, 0.0, sz2,-1.0,
+                      0.0, 0.0, sz3, 1.0)
+
+        view = (1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0)
+
+        print(projection, aspect)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = tuple(projection)
-            window_block.view = tuple(view)
+            window_block.view = view
 
 
 def _PlatformEventHandler(data):
