@@ -114,7 +114,7 @@ vertex_source = """#version 150 core
     in vec4 colors;
     in vec2 tex_coords;
     in vec2 scale;
-    in vec2 vertex;
+    in vec4 position;
     in float rotation;
 
     out vec4 vertex_colors;
@@ -140,8 +140,7 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * 
-                      m_translation * m_rotation * vec4(vertex.xy, 1.0, 1.0);
+        gl_Position = window.projection * window.view * m_translation * m_rotation * position;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -154,7 +153,6 @@ fragment_source = """#version 150 core
     out vec4 final_colors;
 
     uniform sampler2D sprite_texture;
-
 
     void main()
     {
@@ -436,29 +434,27 @@ class Sprite(event.EventDispatcher):
         self._texture = texture
 
     def _create_vertex_list(self):
-        vertex_format = 'vertex2f/%s' % self._usage
+        usage = self._usage
         if self._batch is None:
             self._vertex_list = graphics.vertex_list_indexed(
-                4, [0, 1, 2, 0, 2, 3], vertex_format,
-                'c4B',
-                'translate2f',
-                'scale2f',
-                'rotation1f',
+                4, [0, 1, 2, 0, 2, 3],
+                'position2f/%s' % usage,
+                ('c4B/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+                ('translate2f/%s' % usage, (self._x, self._y) * 4),
+                ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y)*4),
+                ('rotation1f/%s' % usage, (self._rotation,) * 4),
                 ('t3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
-                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3], vertex_format,
-                'c4B',
-                'translate2f',
-                'scale2f',
-                'rotation1f',
+                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
+                'position2f/%s' % usage,
+                ('c4B/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+                ('translate2f/%s' % usage, (self._x, self._y) * 4),
+                ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+                ('rotation1f/%s' % usage, (self._rotation,) * 4),
                 ('t3f', self._texture.tex_coords))
 
         self._update_position()
-        self._vertex_list.translate[:] = (self._x, self._y) * 4
-        self._vertex_list.rotation[:] = (self._rotation,) * 4
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
-        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
 
     def _update_position(self):
         if not self._visible:
@@ -472,9 +468,9 @@ class Sprite(event.EventDispatcher):
             verticies = (x1, y1, x2, y1, x2, y2, x1, y2)
 
             if not self._subpixel:
-                self._vertex_list.vertex[:] = tuple(map(int, verticies))
+                self._vertex_list.position[:] = tuple(map(int, verticies))
             else:
-                self._vertex_list.vertex[:] = verticies
+                self._vertex_list.position[:] = verticies
 
     @property
     def position(self):
@@ -549,7 +545,7 @@ class Sprite(event.EventDispatcher):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
-        self._vertex_list.scale[:] = (scale * self._scale_x, scale * self._scale_y)
+        self._vertex_list.scale[:] = (scale * self._scale_x, scale * self._scale_y) * 4
 
     @property
     def scale_x(self):
@@ -565,7 +561,7 @@ class Sprite(event.EventDispatcher):
     @scale_x.setter
     def scale_x(self, scale_x):
         self._scale_x = scale_x
-        self._vertex_list.scale[:] = (self._scale * scale_x, self._scale * self._scale_y)
+        self._vertex_list.scale[:] = (self._scale * scale_x, self._scale * self._scale_y) * 4
 
     @property
     def scale_y(self):
@@ -581,7 +577,7 @@ class Sprite(event.EventDispatcher):
     @scale_y.setter
     def scale_y(self, scale_y):
         self._scale_y = scale_y
-        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * scale_y)
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * scale_y) * 4
 
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
@@ -619,7 +615,7 @@ class Sprite(event.EventDispatcher):
             self._scale_y = scale_y
         self._vertex_list.translate[:] = (self._x, self._y) * 4
         self._vertex_list.rotation[:] = (self._rotation,) * 4
-        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y)
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
 
     @property
     def width(self):
@@ -666,7 +662,7 @@ class Sprite(event.EventDispatcher):
     @opacity.setter
     def opacity(self, opacity):
         self._opacity = opacity
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
+        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
 
     @property
     def color(self):
@@ -685,7 +681,7 @@ class Sprite(event.EventDispatcher):
     @color.setter
     def color(self, rgb):
         self._rgb = list(map(int, rgb))
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 4
+        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
 
     @property
     def visible(self):
