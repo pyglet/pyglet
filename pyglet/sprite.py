@@ -131,10 +131,10 @@ vertex_source = """#version 150 core
 
     void main()
     {
-        m_trans_scale[3][0] = translate[0];               // translate x
-        m_trans_scale[3][1] = translate[1];               // translate y
-        m_trans_scale[0][0] = scale[0];                   // scale x
-        m_trans_scale[1][1] = scale[1];                   // scale y
+        m_trans_scale[3][0] = translate.x;               // translate x
+        m_trans_scale[3][1] = translate.y;               // translate y
+        m_trans_scale[0][0] = scale.x;                   // scale x
+        m_trans_scale[1][1] = scale.y;                   // scale y
         m_rotation[0][0] =  cos(-radians(rotation)); 
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));

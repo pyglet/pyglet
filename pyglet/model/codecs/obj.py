@@ -241,6 +241,8 @@ class OBJModelDecoder(ModelDecoder):
             vertex_lists.append(batch.add(len(mesh.vertices) // 3,
                                           GL_TRIANGLES,
                                           group,
+                                          'translation3f',
+                                          'rotation3f',
                                           ('v3f/static', mesh.vertices),
                                           ('n3f/static', mesh.normals),
                                           ('t2f/static', mesh.tex_coords)))

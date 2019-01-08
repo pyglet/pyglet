@@ -138,7 +138,6 @@ from pyglet import gl
 from pyglet.event import EventDispatcher
 import pyglet.window.key
 import pyglet.window.event
-import pyglet.extlibs.glm as glm
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
@@ -266,8 +265,8 @@ class Projection2D(Projection):
 
         projection = (sx,  0.0, 0.0, 0.0,
                       0.0, sy,  0.0, 0.0,
-                      0.0, 0.0, 0.0, 0.0,
-                     -1.0,-1.0, 0.0, 1.0)
+                      0.0, 0.0, 1.0, 0.0,
+                      -1., -1., 0.0, 1.0)
 
         view = (1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
@@ -319,8 +318,6 @@ class Projection3D(Projection):
                 0.0, 1.0, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 0.0, 0.0, 1.0)
-
-        print(projection, aspect)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = tuple(projection)

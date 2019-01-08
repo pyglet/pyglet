@@ -82,8 +82,8 @@ instance when loading the Model::
 """
 
 from io import BytesIO
+from ctypes import Structure
 
-from pyglet.extlibs import glm
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.gl import *
 from pyglet import graphics
@@ -164,7 +164,8 @@ class Model(object):
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch
-        self._matrix = glm.Mat4x4(1)
+        self._rotation = 0, 0, 0
+        self._translation = 0, 0, 0
 
     @property
     def batch(self):
@@ -193,21 +194,24 @@ class Model(object):
         self._batch = batch
 
     @property
-    def matrix(self):
-        """Transformation matrix.
+    def rotation(self):
+        return self._rotation
 
-        A 4x4 matrix containing the desired transformation to
-        apply. The data should be provided as a flat list or tuple.
+    @rotation.setter
+    def rotation(self, values):
+        self._rotation = values
+        for vlist in self.vertex_lists:
+            vlist.rotation[:] = values * vlist.count
 
-        :type: list or tuple
-        """
-        return self._matrix
+    @property
+    def translation(self):
+        return self._translation
 
-    @matrix.setter
-    def matrix(self, matrix):
-        for group in self.groups:
-            group.matrix = matrix
-        self._matrix = matrix
+    @translation.setter
+    def translation(self, values):
+        self._translation = values
+        for vlist in self.vertex_lists:
+            vlist.translation[:] = values * vlist.count
 
     def draw(self):
         """Draw the model.
@@ -218,7 +222,7 @@ class Model(object):
         self._batch.draw_subset(self.vertex_lists)
 
 
-class Material(object):
+class MaterialOld(object):
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
     def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
@@ -231,7 +235,18 @@ class Material(object):
         self.texture_name = texture_name
 
 
+class Material(Structure):
+    _fields_ = (('name', GLchar),
+                ('diffuse', GLfloat * 4),
+                ('ambient', GLfloat * 4),
+                ('specular', GLfloat * 4),
+                ('emission', GLfloat * 4),
+                ('shininess', GLfloat))
+
+
 vertex_source = """#version 330 core
+    in vec3 translation;
+    in vec3 rotation;
     in vec4 vertices;
     in vec4 normals;
     in vec4 colors;
@@ -246,11 +261,37 @@ vertex_source = """#version 330 core
         mat4 view;
     } window;  
 
-    uniform mat4 model = mat4(1);
+    mat4 m_translation = mat4(1.0);
+    mat4 m_rotation_x = mat4(1.0);
+    mat4 m_rotation_y = mat4(1.0);
+    mat4 m_rotation_z = mat4(1.0);
 
     void main()
     {
-        gl_Position = window.projection * window.view * model * vertices;
+        m_rotation_x[1][1] =  cos(-radians(rotation.x)); 
+        m_rotation_x[1][2] =  sin(-radians(rotation.x));
+        m_rotation_x[2][1] = -sin(-radians(rotation.x));
+        m_rotation_x[2][2] =  cos(-radians(rotation.x));
+        vec4 vertices_rx = m_rotation_x * vertices;
+
+        m_rotation_y[0][0] =  cos(-radians(rotation.y)); 
+        m_rotation_y[0][2] = -sin(-radians(rotation.y));    
+        m_rotation_y[2][0] =  sin(-radians(rotation.y)); 
+        m_rotation_y[2][2] =  cos(-radians(rotation.y));
+        vec4 vertices_rxy = m_rotation_y * vertices_rx;
+
+        m_rotation_z[0][0] =  cos(-radians(rotation.z)); 
+        m_rotation_z[0][1] =  sin(-radians(rotation.z));
+        m_rotation_z[1][0] = -sin(-radians(rotation.z));
+        m_rotation_z[1][1] =  cos(-radians(rotation.z));
+        vec4 vertices_rxyz = m_rotation_z * vertices_rxy;
+
+        m_translation[3][0] = translation.x;
+        m_translation[3][1] = translation.y;
+        m_translation[3][2] = translation.z;
+        vec4 vertices_final = m_translation * vertices_rxyz;
+
+        gl_Position = window.projection * window.view * vertices_final;
 
         vertex_colors = colors;
         vertex_normals = normals;
@@ -268,7 +309,9 @@ fragment_source = """#version 330 core
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords) + vertex_colors + vertex_normals;
+        // TODO: implement lighting, and do something with normals and materials.
+        vec4 nothing = vertex_normals - vec4(1.0, 1.0, 1.0, 1.0);
+        final_colors = texture(our_texture, texture_coords) + vertex_colors * nothing;
     }
 """
 
@@ -280,29 +323,28 @@ default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shade
 class TexturedMaterialGroup(graphics.Group):
 
     def __init__(self, material, texture):
-        super(TexturedMaterialGroup, self).__init__()
+        super().__init__()
         self.material = material
         self.texture = texture
-        self.matrix = glm.mat4(1)
         self.program = default_shader_program
 
     def set_state(self):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
         self.program.use_program()
-        self.program['model'] = tuple(self.matrix)
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
         self.program.stop_program()
 
     def __eq__(self, other):
-        # Do not consolidate Groups when adding to a Batch.
-        # Matrix multiplications requires isolation.
-        return False
+        return (other.__class__ is self.__class__ and
+                self.parent is other.parent and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id)
 
     def __hash__(self):
-        return hash((self.texture.id, self.texture.target))
+        return hash((id(self.parent), self.texture.id, self.texture.target))
 
 
 class MaterialGroup(graphics.Group):
@@ -310,25 +352,19 @@ class MaterialGroup(graphics.Group):
     def __init__(self, material):
         super(MaterialGroup, self).__init__()
         self.material = material
-        self.matrix = glm.mat4(1)
         self.program = default_shader_program
 
     def set_state(self):
         self.program.use_program()
-        self.program['model'] = tuple(self.matrix)
 
     def unset_state(self):
         self.program.stop_program()
 
     def __eq__(self, other):
-        # Do not consolidate Groups when adding to a Batch.
-        # Matrix multiplications requires isolation.
-        return False
+        return other.__class__ is self.__class__ and self.parent is other.parent
 
     def __hash__(self):
-        material = self.material
-        return hash((tuple(material.diffuse) + tuple(material.ambient) +
-                     tuple(material.specular) + tuple(material.emission), material.shininess))
+        return hash((id(self.parent)))
 
 
 add_default_model_codecs()

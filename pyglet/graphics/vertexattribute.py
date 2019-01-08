@@ -294,6 +294,9 @@ class AbstractAttribute:
         self.location = glGetAttribLocation(shader_program_id, attr_name)
         assert self.location != -1, "'{0}' attribute not found in Shader".format(self.name)
 
+        self._size_cache = {}
+        self._pointer_cache = {}
+
     def enable(self):
         """Enable the attribute using ``glEnableVertexAttribArray``."""
         glEnableVertexAttribArray(self.location)
@@ -335,13 +338,24 @@ class AbstractAttribute:
 
         :rtype: `AbstractBufferRegion`
         """
-        byte_start = self.stride * start
-        byte_size = self.stride * count
-        array_count = self.count * count
+
+        try:
+            byte_start, byte_size, array_count = self._size_cache[count]
+        except KeyError:
+            byte_start = self.stride * start
+            byte_size = self.stride * count
+            array_count = self.count * count
+            self._size_cache[count] = byte_start, byte_size, array_count
+
         if self.stride == self.size or not array_count:
             # non-interleaved
-            ptr_type = ctypes.POINTER(self.c_type * array_count)
+            try:
+                ptr_type = self._pointer_cache[self.c_type * array_count]
+            except KeyError:
+                ptr_type = ctypes.POINTER(self.c_type * array_count)
+                self._pointer_cache[self.c_type * array_count] = ptr_type
             return buffer.get_region(byte_start, byte_size, ptr_type)
+
         else:
             # interleaved
             byte_start += self.offset
