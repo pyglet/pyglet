@@ -82,7 +82,6 @@ instance when loading the Model::
 """
 
 from io import BytesIO
-from ctypes import Structure
 
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.gl import *
@@ -222,7 +221,7 @@ class Model(object):
         self._batch.draw_subset(self.vertex_lists)
 
 
-class MaterialOld(object):
+class Material(object):
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
     def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
@@ -233,15 +232,6 @@ class MaterialOld(object):
         self.emission = (GLfloat * 4)(*emission)
         self.shininess = shininess
         self.texture_name = texture_name
-
-
-class Material(Structure):
-    _fields_ = (('name', GLchar),
-                ('diffuse', GLfloat * 4),
-                ('ambient', GLfloat * 4),
-                ('specular', GLfloat * 4),
-                ('emission', GLfloat * 4),
-                ('shininess', GLfloat))
 
 
 vertex_source = """#version 330 core

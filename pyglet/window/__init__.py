@@ -303,16 +303,27 @@ class Projection3D(Projection):
         gl.glViewport(0, 0, viewport_width, viewport_height)
 
         aspect = width/height
+        znear = self.znear
+        zfar = self.zfar
 
-        sx0 = -0.11709
-        sy1 = -0.15612
-        sz2 = -1.00787
-        sz3 = -2.00787
+        xymax = znear * math.tan(self.fov * math.pi / 360)
+        ymin = -xymax
+        xmin = -xymax
 
-        projection = (sx0, 0.0, 0.0, 0.0,
-                      0.0, sy1, 0.0, 0.0,
-                      0.0, 0.0, sz2,-1.0,
-                      0.0, 0.0, sz3, 1.0)
+        width = xymax - xmin
+        height = xymax - ymin
+        depth = zfar - znear
+        q = -(zfar + znear) / depth
+        qn = -2 * (zfar * znear) / depth
+
+        w = 2 * znear / width
+        w = w / aspect
+        h = 2 * znear / height
+
+        projection = (w, 0, 0, 0,
+                      0, h, 0, 0,
+                      0, 0, q, -1,
+                      0, 0, qn, 0)
 
         view = (1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
@@ -320,7 +331,7 @@ class Projection3D(Projection):
                 0.0, 0.0, 0.0, 1.0)
 
         with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection = tuple(projection)
+            window_block.projection = projection
             window_block.view = view
 
 
