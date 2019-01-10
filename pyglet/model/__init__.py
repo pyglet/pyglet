@@ -199,8 +199,8 @@ class Model(object):
     @rotation.setter
     def rotation(self, values):
         self._rotation = values
-        for vlist in self.vertex_lists:
-            vlist.rotation[:] = values * vlist.count
+        for group in self.groups:
+            group.rotation = values
 
     @property
     def translation(self):
@@ -209,8 +209,8 @@ class Model(object):
     @translation.setter
     def translation(self, values):
         self._translation = values
-        for vlist in self.vertex_lists:
-            vlist.translation[:] = values * vlist.count
+        for group in self.groups:
+            group.translation = values
 
     def draw(self):
         """Draw the model.
@@ -226,17 +226,15 @@ class Material(object):
 
     def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
         self.name = name
-        self.diffuse = (GLfloat * 4)(*diffuse)
-        self.ambient = (GLfloat * 4)(*ambient)
-        self.specular = (GLfloat * 4)(*specular)
-        self.emission = (GLfloat * 4)(*emission)
+        self.diffuse = diffuse
+        self.ambient = ambient
+        self.specular = specular
+        self.emission = emission
         self.shininess = shininess
         self.texture_name = texture_name
 
 
 vertex_source = """#version 330 core
-    in vec3 translation;
-    in vec3 rotation;
     in vec4 vertices;
     in vec4 normals;
     in vec4 colors;
@@ -244,6 +242,9 @@ vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec4 vertex_normals;
     out vec2 texture_coords;
+
+    uniform vec3 rotation;
+    uniform vec3 translation;
 
     uniform WindowBlock
     {
@@ -317,21 +318,22 @@ class TexturedMaterialGroup(graphics.Group):
         self.material = material
         self.texture = texture
         self.program = default_shader_program
+        self.rotation = 0, 0, 0
+        self.translation = 0, 0, 0
 
     def set_state(self):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
         self.program.use_program()
+        self.program['rotation'] = self.rotation
+        self.program['translation'] = self.translation
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
         self.program.stop_program()
 
     def __eq__(self, other):
-        return (other.__class__ is self.__class__ and
-                self.parent is other.parent and
-                self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id)
+        return False
 
     def __hash__(self):
         return hash((id(self.parent), self.texture.id, self.texture.target))
@@ -343,15 +345,19 @@ class MaterialGroup(graphics.Group):
         super(MaterialGroup, self).__init__()
         self.material = material
         self.program = default_shader_program
+        self.rotation = 0, 0, 0
+        self.translation = 0, 0, 0
 
     def set_state(self):
         self.program.use_program()
+        self.program['rotation'] = self.rotation
+        self.program['translation'] = self.translation
 
     def unset_state(self):
         self.program.stop_program()
 
     def __eq__(self, other):
-        return other.__class__ is self.__class__ and self.parent is other.parent
+        return False
 
     def __hash__(self):
         return hash((id(self.parent)))
