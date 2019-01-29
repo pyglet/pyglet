@@ -231,19 +231,15 @@ class BufferObject(AbstractBuffer):
         glBufferSubData(self.target, start, length, data)
 
     def map(self, invalidate=False):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
         ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
                           ctypes.POINTER(ctypes.c_byte * self.size)).contents
-        glPopClientAttrib()
         return ptr
 
     def unmap(self):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glUnmapBuffer(self.target)
-        glPopClientAttrib()
 
     def __del__(self):
         try:
@@ -261,9 +257,6 @@ class BufferObject(AbstractBuffer):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
-        # TODO: test this since stubbing out legacy GL code
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-
         glBindBuffer(self.target, self.id)
         data = glMapBuffer(self.target, GL_READ_ONLY)
         ctypes.memmove(temp, data, min(size, self.size))
@@ -271,7 +264,6 @@ class BufferObject(AbstractBuffer):
 
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
-        # glPopClientAttrib()
 
 
 class MappableBufferObject(BufferObject, AbstractMappable):

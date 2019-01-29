@@ -409,7 +409,6 @@ class UniformBufferObject:
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
-
         # Create objects and pointers for query values, to be used in the next step:
         offsets = (GLint * num_active.value)()
         gl_types = (GLuint * num_active.value)()
@@ -435,10 +434,6 @@ class UniformBufferObject:
             padding = size - actual_size
             # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
             m_stride = mat_stride[i]
-
-            ################### TEST
-
-            ########################
 
             arg = (u_name, gl_type * length) if length > 1 else (u_name, gl_type)
             args.append(arg)
