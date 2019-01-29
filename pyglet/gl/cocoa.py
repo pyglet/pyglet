@@ -243,10 +243,10 @@ class CocoaCanvasConfig(CanvasConfig):
                 0
                 )
 
-            if profile == NSOpenGLProfileVersion4_1Core:
+            if vals.value == NSOpenGLProfileVersion4_1Core:
                 setattr(self, "major_version", 4)
                 setattr(self, "minor_version", 1)
-            elif profile == NSOpenGLProfileVersion3_2Core:
+            elif vals.value == NSOpenGLProfileVersion3_2Core:
                 setattr(self, "major_version", 3)
                 setattr(self, "minor_version", 2)
             else:
