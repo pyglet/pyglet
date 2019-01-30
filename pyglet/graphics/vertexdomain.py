@@ -143,7 +143,7 @@ def create_indexed_domain(shader_program_id, *attribute_usage_formats):
     return IndexedVertexDomain(attribute_usages)
 
 
-class VertexDomain(object):
+class VertexDomain:
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
@@ -306,7 +306,7 @@ class VertexDomain(object):
         return '<%s@%x %s>' % (self.__class__.__name__, id(self), self.allocator)
 
 
-class VertexList(object):
+class VertexList:
     """A list of vertices within a :py:class:`VertexDomain`.  Use
     :py:meth:`VertexDomain.create` to construct this list.
     """
@@ -325,11 +325,10 @@ class VertexList(object):
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
-        glBindVertexArray(pyglet.graphics.get_default_batch().vao_id)
+        pyglet.graphics.get_default_batch().vao.bind()
         pyglet.graphics.default_group.set_state()
         self.domain.draw(mode, self)
         pyglet.graphics.default_group.unset_state()
-        glBindVertexArray(0)
 
     def resize(self, count):
         """Resize this group.
@@ -537,9 +536,6 @@ class IndexedVertexList(VertexList):
 
         self.index_start = index_start
         self.index_count = index_count
-
-    def draw(self, mode):
-        self.domain.draw(mode, self)
 
     def resize(self, count, index_count):
         """Resize this group.

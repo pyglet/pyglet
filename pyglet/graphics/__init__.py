@@ -362,11 +362,10 @@ class Batch(object):
         self._draw_list_dirty = False
 
         # Each Batch encompasses one VAO
-        self.vao_id = GLuint()
-        glGenVertexArrays(1, self.vao_id)
+        self.vao = VertexArray()
 
         if _debug_graphics_batch:
-            print("Batch created. VAO ID: {0}".format(self.vao_id.value))
+            print("Batch created. VAO ID: {0}".format(self.vao.id))
 
     def invalidate(self):
         """Force the batch to update the draw list.
@@ -523,8 +522,7 @@ class Batch(object):
                 if domain._is_empty():
                     del domain_map[(formats, mode, indexed)]
                     continue
-                draw_list.append(
-                    (lambda d, m: lambda: d.draw(m))(domain, mode))
+                draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))
 
             # Sort and visit child groups of this group
             children = self.group_children.get(group)
@@ -587,15 +585,13 @@ class Batch(object):
 
     def draw(self):
         """Draw the batch."""
-        glBindVertexArray(self.vao_id)
+        self.vao.bind()
 
         if self._draw_list_dirty:
             self._update_draw_list()
 
         for func in self._draw_list:
             func()
-
-        glBindVertexArray(0)
 
     def draw_subset(self, vertex_lists):
         """Draw only some vertex lists in the batch.
@@ -613,7 +609,7 @@ class Batch(object):
 
         """
 
-        glBindVertexArray(self.vao_id)
+        self.vao.bind()
 
         # Horrendously inefficient.
         def visit(group):
@@ -638,8 +634,6 @@ class Batch(object):
         self.top_groups.sort()
         for group in self.top_groups:
             visit(group)
-
-        glBindVertexArray(0)
 
 
 class Group(object):
