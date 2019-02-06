@@ -118,7 +118,8 @@ class Caret:
         if batch is None:
             batch = layout.batch
         colors = (*color, 255, *color, 255)
-        self._list = batch.add(2, gl.GL_LINES, layout.background_group, 'v2f', ('c4B', colors))
+        self._list = batch.add(2, gl.GL_LINES, layout.background_group,
+                               'vertices2f', ('colors4Bn', colors))
 
         self._ideal_x = None
         self._ideal_line = None

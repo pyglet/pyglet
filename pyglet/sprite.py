@@ -439,20 +439,20 @@ class Sprite(event.EventDispatcher):
             self._vertex_list = graphics.vertex_list_indexed(
                 4, [0, 1, 2, 0, 2, 3],
                 'position2f/%s' % usage,
-                ('c4B/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+                ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
                 ('translate2f/%s' % usage, (self._x, self._y) * 4),
                 ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y)*4),
                 ('rotation1f/%s' % usage, (self._rotation,) * 4),
-                ('t3f', self._texture.tex_coords))
+                ('tex_coords3f', self._texture.tex_coords))
         else:
             self._vertex_list = self._batch.add_indexed(
                 4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
                 'position2f/%s' % usage,
-                ('c4B/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+                ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
                 ('translate2f/%s' % usage, (self._x, self._y) * 4),
                 ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
                 ('rotation1f/%s' % usage, (self._rotation,) * 4),
-                ('t3f', self._texture.tex_coords))
+                ('tex_coords3f', self._texture.tex_coords))
 
         self._update_position()
 

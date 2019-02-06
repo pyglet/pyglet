@@ -363,9 +363,9 @@ class _GlyphBox(_AbstractBox):
 
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
-                                               ('v2f/dynamic', vertices),
-                                               ('t3f/dynamic', tex_coords),
-                                               ('c4B/dynamic', colors))
+                                               ('vertices2f/dynamic', vertices),
+                                               ('tex_coords3f/dynamic', tex_coords),
+                                               ('colors4Bn/dynamic', colors))
 
         context.add_list(vertex_list)
 
@@ -402,15 +402,15 @@ class _GlyphBox(_AbstractBox):
             background_list = layout.batch.add_indexed(len(background_vertices) // 2,
                                                        GL_TRIANGLES, layout.background_group,
                                                        [0, 1, 2, 0, 2, 3],
-                                                       ('v2f/dynamic', background_vertices),
-                                                       ('c4B/dynamic', background_colors))
+                                                       ('vertices2f/dynamic', background_vertices),
+                                                       ('colors4Bn/dynamic', background_colors))
             context.add_list(background_list)
 
         if underline_vertices:
             underline_list = layout.batch.add(len(underline_vertices) // 2,
                                               GL_LINES, layout.foreground_decoration_group,
-                                              ('v2f/dynamic', underline_vertices),
-                                              ('c4B/dynamic', underline_colors))
+                                              ('vertices2f/dynamic', underline_vertices),
+                                              ('colors4Bn/dynamic', underline_colors))
             context.add_list(underline_list)
 
     def delete(self, layout):

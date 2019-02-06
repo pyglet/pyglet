@@ -152,7 +152,7 @@ _attribute_format_re = re.compile(r"""
     (?P<name> .+?(?=[0-9]))
     (?P<count>[1234])
     (?P<type>[bBsSiIfd])
-    (?P<normalized>n?)
+    (?P<normalize>n?)
 """, re.VERBOSE)
 
 
@@ -232,7 +232,6 @@ def create_attribute(shader_program_id, fmt):
     """
     try:
         cls, args = _attribute_cache[fmt]
-        print("Cached vert class")
         return cls(*args)
     except KeyError:
         pass
@@ -243,14 +242,14 @@ def create_attribute(shader_program_id, fmt):
     name = match.group('name')
     count = int(match.group('count'))
     gl_type = _gl_types[match.group('type')]
-    normalized = True if match.group('normalized') else False
+    normalize = True if match.group('normalize') else False
 
     if name in _legacy_attributes:
-        name, normalized = _legacy_attributes[name]
+        name, normalize = _legacy_attributes[name]
         message = "Vertex attribute shorthand notation is deprecated: '{0}'".format(fmt)
         warnings.warn(message)
 
-    args = name, shader_program_id, count, gl_type, normalized
+    args = name, shader_program_id, count, gl_type, normalize
 
     _attribute_cache[fmt] = GenericAttribute, args
 
@@ -260,13 +259,13 @@ def create_attribute(shader_program_id, fmt):
 class GenericAttribute:
     """Abstract accessor for an attribute in a mapped buffer."""
 
-    def __init__(self, name, shader_program_id, count, gl_type, normalize):
+    def __init__(self, name, shader, count, gl_type, normalize):
         """Create the attribute accessor.
 
         :Parameters:
             `name` : str
                 Name of the vertex attribute.
-            `shader_program_id` : int
+            `shader` : int
                 ID of the Shader Program that this attribute will belong to.
             `count` : int
                 Number of components in the attribute.
@@ -278,7 +277,7 @@ class GenericAttribute:
         """
         assert count in (1, 2, 3, 4), 'Component count out of range'
         self.name = name
-        self.shader_program_id = shader_program_id
+        self.shader = shader
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
         self.count = count
@@ -288,8 +287,9 @@ class GenericAttribute:
         self.size = count * self.align
         self.stride = self.size
         self.offset = 0
+
         attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
-        self.location = glGetAttribLocation(shader_program_id, attr_name)
+        self.location = glGetAttribLocation(shader, attr_name)
         assert self.location != -1, "'{0}' attribute not found in Shader".format(self.name)
 
     def enable(self):
