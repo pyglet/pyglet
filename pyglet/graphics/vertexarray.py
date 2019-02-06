@@ -56,6 +56,11 @@ class VertexArray:
     def delete(self):
         glDeleteVertexArrays(1, self._id)
 
+    __enter__ = bind
+
+    def __exit__(self, *unused):
+        glBindVertexArray(0)
+
     def __del__(self):
         try:
             glDeleteVertexArrays(1, self._id)
