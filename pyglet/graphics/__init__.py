@@ -157,13 +157,6 @@ video drivers, and requires indexed vertex lists.
 
 .. versionadded:: 1.1
 """
-from __future__ import print_function
-from builtins import zip
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import ctypes
 
 import pyglet

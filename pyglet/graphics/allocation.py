@@ -46,15 +46,6 @@ allocation.  The buffer is never resized smaller.
 The allocator maintains references to free space only; it is the caller's
 responsibility to maintain the allocated regions.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import zip
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 
 # Common cases:
 # -regions will be the same size (instances of same object, e.g. sprites)
@@ -78,6 +69,7 @@ __version__ = '$Id: $'
 #  a region from the allocator's point of view.
 # -this means that compacting is probably not feasible, or would be hideously
 #  expensive
+
 
 class AllocatorMemoryException(Exception):
     """The buffer is not large enough to fulfil an allocation.
@@ -127,7 +119,7 @@ class Allocator(object):
     def set_capacity(self, size):
         """Resize the maximum buffer size.
         
-        The capaity cannot be reduced.
+        The capacity cannot be reduced.
 
         :Parameters:
             `size` : int

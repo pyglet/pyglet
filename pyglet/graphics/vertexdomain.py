@@ -231,12 +231,14 @@ class VertexDomain:
             self.allocator.set_capacity(capacity)
             return self.allocator.realloc(start, count, new_count)
 
-    def create(self, count):
+    def create(self, count, index_count=None):
         """Create a :py:class:`VertexList` in this domain.
 
         :Parameters:
             `count` : int
                 Number of vertices to create.
+            `index_count`: None
+                Ignored for non indexed VertexDomains
 
         :rtype: :py:class:`VertexList`
         """
@@ -314,12 +316,14 @@ class VertexList:
         self.domain.draw(mode, self)
         pyglet.graphics.default_group.unset_state()
 
-    def resize(self, count):
+    def resize(self, count, index_count=None):
         """Resize this group.
 
         :Parameters:
             `count` : int
                 New number of vertices in the list.
+            `index_count`: None
+                Ignored for non indexed VertexDomains
 
         """
         new_start = self.domain.safe_realloc(self.start, self.count, count)
@@ -378,8 +382,8 @@ class VertexList:
     def __getattr__(self, name):
         """dynamic access to vertex attributes, for backwards compatibility.
         """
-        if self._cache_versions.get(name, None) != self.domain.version:
-            domain = self.domain
+        domain = self.domain
+        if self._cache_versions.get(name, None) != domain.version:
             attribute = domain.attribute_names[name]
             self._caches[name] = attribute.get_region(attribute.buffer, self.start, self.count)
             self._cache_versions[name] = domain.version
