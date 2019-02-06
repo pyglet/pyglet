@@ -155,20 +155,10 @@ class VertexDomain:
     def __init__(self, attribute_usages):
         self.allocator = allocation.Allocator(self._initial_count)
 
-        # If there are any MultiTexCoord attributes,
-        # then a TexCoord attribute must be converted.
-        have_multi_texcoord = False
-        for attribute, _ in attribute_usages:
-            if isinstance(attribute, vertexattribute.MultiTexCoordAttribute):
-                have_multi_texcoord = True
-                break
-
         static_attributes = []
         attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
         for attribute, usage in attribute_usages:
-            if have_multi_texcoord and isinstance(attribute, vertexattribute.TexCoordAttribute):
-                attribute.convert_to_multi_tex_coord_attribute()
 
             if usage == GL_STATIC_DRAW:
                 # Group attributes for interleaved buffer
@@ -200,19 +190,9 @@ class VertexDomain:
         self.attributes = attributes
         self.attribute_names = {}
         for attribute in attributes:
-            if isinstance(attribute, vertexattribute.MultiTexCoordAttribute):
-                # XXX this won't migrate; not documented.
-                texture = attribute.texture
-                if 'multi_tex_coords' not in self.attribute_names:
-                    self.attribute_names['multi_tex_coords'] = []
-                assert texture not in self.attribute_names['multi_tex_coords'], \
-                    'More than one multi_tex_coord attribute for texture %d' % \
-                    texture
-                self.attribute_names['multi_tex_coords'].insert(texture, attribute)
-            else:
-                name = attribute.name
-                assert name not in self.attributes, 'More than one "%s" attribute given' % name
-                self.attribute_names[name] = attribute
+            name = attribute.name
+            assert name not in self.attributes, 'More than one "%s" attribute given' % name
+            self.attribute_names[name] = attribute
 
     def __del__(self):
         # Break circular refs that Python GC seems to miss even when forced
