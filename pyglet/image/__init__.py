@@ -2357,9 +2357,6 @@ class Animation(object):
             The frames that make up the animation.
 
     """
-
-    __slots__ = 'frames'
-
     def __init__(self, frames):
         """Create an animation directly from a list of frames.
 
