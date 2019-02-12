@@ -118,20 +118,6 @@ _is_epydoc = hasattr(_sys, 'is_epydoc') and _sys.is_epydoc
 current_context = None
 
 
-def get_current_context():
-    '''Return the active OpenGL context.
-
-    You can change the current context by calling `Context.set_current`.
-
-    :deprecated: Use `current_context`
-
-    :rtype: `Context`
-    :return: the context to which OpenGL commands are directed, or None
-        if there is no selected context.
-    '''
-    return current_context
-
-
 class ContextException(Exception):
     pass
 
@@ -214,21 +200,6 @@ if _pyglet.options['debug_texture']:
         return _glDeleteTextures(n, textures)
 
 
-def _create_shadow_window():
-    global _shadow_window
-
-    import pyglet
-    if not pyglet.options['shadow_window'] or _is_epydoc:
-        return
-
-    from pyglet.window import Window
-    _shadow_window = Window(width=1, height=1, visible=False)
-    _shadow_window.switch_to()
-
-    from pyglet import app
-    app.windows.remove(_shadow_window)
-
-
 from pyglet import compat_platform
 from .base import ObjectSpace, CanvasConfig, Context
 
@@ -242,12 +213,3 @@ elif compat_platform.startswith('linux'):
 elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
 del base
-
-# XXX remove
-_shadow_window = None
-
-# Import pyglet.window now if it isn't currently being imported (this creates the shadow window).
-if not _is_epydoc and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
-    # trickery is for circular import 
-    _pyglet.gl = _sys.modules[__name__]
-    import pyglet.window

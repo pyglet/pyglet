@@ -1864,9 +1864,3 @@ else:
         # import key, mouse
 
         from pyglet.window.xlib import XlibWindow as Window
-
-# XXX remove
-# Create shadow window. (trickery is for circular import)
-if not _is_epydoc:
-    pyglet.window = sys.modules[__name__]
-    gl._create_shadow_window()

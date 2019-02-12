@@ -31,9 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import object
-
-from pyglet import gl, compat_platform
+from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 
@@ -335,10 +333,6 @@ class Context(object):
         if gl.current_context is self:
             gl.current_context = None
             gl_info.remove_active_context()
-
-            # Switch back to shadow context.
-            if gl._shadow_window is not None:
-                gl._shadow_window.switch_to()
 
     def delete_texture(self, texture_id):
         """Safely delete a texture belonging to this context.

@@ -36,32 +36,6 @@
 
 Detailed documentation is available at http://www.pyglet.org
 """
-from __future__ import print_function
-from __future__ import absolute_import
-
-# Check if future is installed, if not use included batteries
-try:
-    import future
-except ImportError:
-    import os.path as op
-    import sys
-
-    future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
-    sys.path.insert(0, op.join(future_base, 'py2_3'))
-    if sys.version_info[:2] < (3, 0):
-        sys.path.insert(0, op.join(future_base, 'py2'))
-    del future_base
-    del sys
-    del op
-    try:
-        import future
-    except ImportError:
-        print('Failed to get python-future')
-        raise
-
-from builtins import range
-from builtins import object
-
 import os
 import sys
 
@@ -81,7 +55,7 @@ _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.4.0b1'
+version = '2.0'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -125,20 +99,6 @@ if getattr(sys, 'frozen', None):
 #:     this option is enabled if ``__debug__`` is (i.e., if Python was not run
 #:     with the -O option).  It is disabled by default when pyglet is "frozen"
 #:     within a py2exe or py2app library archive.
-#: shadow_window
-#:     By default, pyglet creates a hidden window with a GL context when
-#:     pyglet.gl is imported.  This allows resources to be loaded before
-#:     the application window is created, and permits GL objects to be
-#:     shared between windows even after they've been closed.  You can
-#:     disable the creation of the shadow window by setting this option to
-#:     False.
-#:
-#:     Some OpenGL driver implementations may not support shared OpenGL
-#:     contexts and may require disabling the shadow window (and all resources
-#:     must be loaded after the window using them was created).  Recommended
-#:     for advanced developers only.
-#:
-#:     .. versionadded:: 1.1
 #: vsync
 #:     If set, the `pyglet.window.Window.vsync` property is ignored, and
 #:     this option overrides it (to either force vsync on or off).  If unset,
@@ -178,7 +138,6 @@ options = {
     'debug_trace_flush': True,
     'debug_win32': False,
     'debug_x11': False,
-    'shadow_window': True,
     'vsync': None,
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
@@ -205,7 +164,6 @@ _option_types = {
     'debug_x11': bool,
     'ffmpeg_libs_win': tuple,
     'graphics_vbo': bool,
-    'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
