@@ -58,6 +58,8 @@ primitives of the same OpenGL primitive mode.
 import ctypes
 import re
 
+import pyglet
+
 from pyglet.gl import *
 from pyglet.graphics import allocation, vertexattribute, vertexbuffer
 
@@ -159,6 +161,8 @@ class VertexDomain:
         attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
         for attribute, usage in attribute_usages:
+
+            print(attribute)
 
             if usage == GL_STATIC_DRAW:
                 # Group attributes for interleaved buffer
