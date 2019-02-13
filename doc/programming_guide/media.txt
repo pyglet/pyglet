@@ -48,7 +48,7 @@ depend on your operating system:
 The audio driver can be set through the ``audio`` key of the :py:data:`pyglet.options`
 dictionary.  For example::
 
-    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', silent')
+    pyglet.options['audio'] = ('openal', 'pulse', 'directsound', 'silent')
 
 This tells pyglet to try using the OpenAL driver first, and if not available to try Pulseaudio
 and DirectSound in that order.  If all else fails, the silent driver will be used.
