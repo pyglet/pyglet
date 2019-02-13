@@ -278,9 +278,6 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
-        self.view = memoryview(self.data).cast('B')
-        self.regions = []
-
     def bind(self):
         # Commit pending data
         super(MappableBufferObject, self).bind()
@@ -316,11 +313,6 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         array = ctypes.cast(self.data_ptr + start, ptr_type).contents
         return BufferObjectRegion(self, start, start + size, array)
 
-    def get_view_region(self, start, size, view_type):
-        region = self.view[start:start+size].cast(view_type)
-        self.regions.append(region)
-        return region
-
     def resize(self, size):
         data = (ctypes.c_byte * size)()
         ctypes.memmove(data, self.data, min(size, self.size))
@@ -334,12 +326,6 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
-
-    def __del__(self):
-        self.view.release()
-        for region in self.regions:
-            region.release()
-        super(MappableBufferObject, self).__del__()
 
 
 class AbstractBufferRegion(object):

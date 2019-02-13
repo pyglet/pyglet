@@ -162,8 +162,6 @@ class VertexDomain:
         self.buffer_attributes = []  # list of (buffer, attributes)
         for attribute, usage in attribute_usages:
 
-            print(attribute)
-
             if usage == GL_STATIC_DRAW:
                 # Group attributes for interleaved buffer
                 static_attributes.append(attribute)
