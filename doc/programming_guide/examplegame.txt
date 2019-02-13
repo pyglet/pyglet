@@ -338,7 +338,7 @@ be simple::
 
             self.velocity_x, self.velocity_y = 0.0, 0.0
 
-Each object will need to be updated every frame, so let’s write an `update()` method.
+Each object will need to be updated every frame, so let’s write an `update()` method::
 
     def update(self, dt):
         self.x += self.velocity_x * dt
