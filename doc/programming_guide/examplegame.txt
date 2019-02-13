@@ -374,7 +374,7 @@ add a call to `self.check_bounds()` at the end of `update()`.
 
 To make the asteroids use our new motion code, just import the physicalobject module and change the
 `new_asteroid = ...` line to create a new `PhysicalObject` instead of a `Sprite`.  You’ll also want
-to give them a random initial velocity.  Here is the new, improved `load.asteroids()` function:
+to give them a random initial velocity.  Here is the new, improved `load.asteroids()` function::
 
     def asteroids(num_asteroids, player_position, batch=None):
         ...
@@ -454,7 +454,7 @@ constructor::
         self.keys = dict(left=False, right=False, up=False)
 
 Then we need to write two methods, `on_key_press()` and `on_key_release()`.  When pyglet checks a
-new event handler, it looks for these two methods, among others.
+new event handler, it looks for these two methods, among others::
 
     import math
     from pyglet.window import key
