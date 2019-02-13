@@ -207,6 +207,7 @@ def serialize_attributes(count, attributes):
 
 
 _legacy_attributes = {
+    #     name,  normalized
     'c': ("colors", True),
     'e': ("edge_flags", True),
     'f': ("fog_coords", False),
@@ -231,8 +232,8 @@ def create_attribute(shader_program_id, fmt):
     :rtype: `GenericAttribute`
     """
     try:
-        cls, args = _attribute_cache[fmt]
-        return cls(*args)
+        args = _attribute_cache[fmt]
+        return GenericAttribute(*args)
     except KeyError:
         pass
 
@@ -251,7 +252,7 @@ def create_attribute(shader_program_id, fmt):
 
     args = name, shader_program_id, count, gl_type, normalize
 
-    _attribute_cache[fmt] = GenericAttribute, args
+    _attribute_cache[fmt] = args
 
     return GenericAttribute(*args)
 

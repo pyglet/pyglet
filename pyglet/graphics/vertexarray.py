@@ -58,8 +58,7 @@ class VertexArray:
 
     __enter__ = bind
 
-    def __exit__(self, *unused):
-        glBindVertexArray(0)
+    __exit__ = unbind
 
     def __del__(self):
         try:

@@ -239,11 +239,9 @@ class ShaderProgram:
         glUseProgram(0)
         self._active = False
 
-    def __enter__(self):
-        self.use_program()
+    __enter__ = use_program
 
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.stop_program()
+    __exit__ = stop_program
 
     def __del__(self):
         try:
