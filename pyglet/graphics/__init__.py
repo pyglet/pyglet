@@ -512,7 +512,7 @@ class Batch(object):
             domain_map = self.group_map[group]
             for (formats, mode, indexed), domain in list(domain_map.items()):
                 # Remove unused domains from batch
-                if domain._is_empty():
+                if domain.is_empty:
                     del domain_map[(formats, mode, indexed)]
                     continue
                 draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))

@@ -386,7 +386,8 @@ class Allocator(object):
             return 0.
         return self.get_fragmented_free_size() / float(self.get_free_size())
 
-    def _is_empty(self):
+    @property
+    def is_empty(self):
         return not self.starts
 
     def __str__(self):

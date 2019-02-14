@@ -243,20 +243,15 @@ class VertexDomain:
         start = self.safe_alloc(count)
         return VertexList(self, start, count)
 
-    def draw(self, mode, vertex_list=None):
-        """Draw vertices in the domain.
+    def draw(self, mode):
+        """Draw all vertices in the domain.
 
-        If `vertex_list` is not specified, all vertices in the domain are
-        drawn.  This is the most efficient way to render primitives.
-
-        If `vertex_list` specifies a :py:class:`VertexList`, only primitives in
-        that list will be drawn.
+        All vertices in the domain are drawn at once. This is the
+        most efficient way to render primitives.
 
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : `~pyglet.graphics.vertexdomain.VertexList`
-                Vertex list to draw, or ``None`` for all lists in this domain.
 
         """
         for buffer, attributes in self.buffer_attributes:
@@ -265,25 +260,47 @@ class VertexDomain:
                 attribute.enable()
                 attribute.set_pointer(attribute.buffer.ptr)
 
-        if vertex_list is not None:
-            glDrawArrays(mode, vertex_list.start, vertex_list.count)
+        starts, sizes = self.allocator.get_allocated_regions()
+        primcount = len(starts)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawArrays(mode, starts[0], sizes[0])
         else:
-            starts, sizes = self.allocator.get_allocated_regions()
-            primcount = len(starts)
-            if primcount == 0:
-                pass
-            elif primcount == 1:
-                # Common case
-                glDrawArrays(mode, starts[0], sizes[0])
-            else:
-                starts = (GLint * primcount)(*starts)
-                sizes = (GLsizei * primcount)(*sizes)
-                glMultiDrawArrays(mode, starts, sizes, primcount)
+            starts = (GLint * primcount)(*starts)
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawArrays(mode, starts, sizes, primcount)
 
         for buffer, _ in self.buffer_attributes:
             buffer.unbind()
 
-    def _is_empty(self):
+    def draw_subset(self, mode, vertex_list):
+        """Draw a specific VertexList in the domain.
+
+        The `vertex_list` parameter specifies a :py:class:`VertexList`
+        to draw. Only primitives in that list will be drawn.
+
+        :Parameters:
+            `mode` : int
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+            `vertex_list` : `VertexList`
+                Vertex list to draw.
+
+        """
+        for buffer, attributes in self.buffer_attributes:
+            buffer.bind()
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(attribute.buffer.ptr)
+
+        glDrawArrays(mode, vertex_list.start, vertex_list.count)
+
+        for buffer, _ in self.buffer_attributes:
+            buffer.unbind()
+
+    @property
+    def is_empty(self):
         return not self.allocator.starts
 
     def __repr__(self):
@@ -311,7 +328,7 @@ class VertexList:
         """
         pyglet.graphics.get_default_batch().vao.bind()
         pyglet.graphics.default_group.set_state()
-        self.domain.draw(mode, self)
+        self.domain.draw_subset(mode, self)
         pyglet.graphics.default_group.unset_state()
 
     def resize(self, count, index_count=None):
@@ -463,20 +480,15 @@ class IndexedVertexDomain(VertexDomain):
         ptr_type = ctypes.POINTER(self.index_c_type * count)
         return self.index_buffer.get_region(byte_start, byte_count, ptr_type)
 
-    def draw(self, mode, vertex_list=None):
-        """Draw vertices in the domain.
+    def draw(self, mode):
+        """Draw all vertices in the domain.
 
-        If `vertex_list` is not specified, all vertices in the domain are
-        drawn.  This is the most efficient way to render primitives.
-
-        If `vertex_list` specifies a :py:class:`VertexList`, only primitives in
-        that list will be drawn.
+        All vertices in the domain are drawn at once. This is the
+        most efficient way to render primitives.
 
         :Parameters:
             `mode` : int
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
-            `vertex_list` : `IndexedVertexList`
-                Vertex list to draw, or ``None`` for all lists in this domain.
 
         """
         for buffer, attributes in self.buffer_attributes:
@@ -486,24 +498,47 @@ class IndexedVertexDomain(VertexDomain):
                 attribute.set_pointer(attribute.buffer.ptr)
         self.index_buffer.bind()
 
-        if vertex_list is not None:
-            glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
-                           self.index_buffer.ptr +
-                           vertex_list.index_start * self.index_element_size)
+        starts, sizes = self.index_allocator.get_allocated_regions()
+        primcount = len(starts)
+        if primcount == 0:
+            pass
+        elif primcount == 1:
+            # Common case
+            glDrawElements(mode, sizes[0], self.index_gl_type,
+                           self.index_buffer.ptr + starts[0] * self.index_element_size)
         else:
-            starts, sizes = self.index_allocator.get_allocated_regions()
-            primcount = len(starts)
-            if primcount == 0:
-                pass
-            elif primcount == 1:
-                # Common case
-                glDrawElements(mode, sizes[0], self.index_gl_type,
-                               self.index_buffer.ptr + starts[0] * self.index_element_size)
-            else:
-                starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
-                starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
-                sizes = (GLsizei * primcount)(*sizes)
-                glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+            starts = [s * self.index_element_size + self.index_buffer.ptr for s in starts]
+            starts = (ctypes.POINTER(GLvoid) * primcount)(*(GLintptr * primcount)(*starts))
+            sizes = (GLsizei * primcount)(*sizes)
+            glMultiDrawElements(mode, sizes, self.index_gl_type, starts, primcount)
+
+        self.index_buffer.unbind()
+        for buffer, _ in self.buffer_attributes:
+            buffer.unbind()
+
+    def draw_subset(self, mode, vertex_list):
+        """Draw a specific IndexedVertexList in the domain.
+
+        The `vertex_list` parameter specifies a :py:class:`IndexedVertexList`
+        to draw. Only primitives in that list will be drawn.
+
+        :Parameters:
+            `mode` : int
+                OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
+            `vertex_list` : `IndexedVertexList`
+                Vertex list to draw.
+
+        """
+        for buffer, attributes in self.buffer_attributes:
+            buffer.bind()
+            for attribute in attributes:
+                attribute.enable()
+                attribute.set_pointer(attribute.buffer.ptr)
+        self.index_buffer.bind()
+
+        glDrawElements(mode, vertex_list.index_count, self.index_gl_type,
+                       self.index_buffer.ptr +
+                       vertex_list.index_start * self.index_element_size)
 
         self.index_buffer.unbind()
         for buffer, _ in self.buffer_attributes:
