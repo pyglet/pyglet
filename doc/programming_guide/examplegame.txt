@@ -338,7 +338,7 @@ be simple::
 
             self.velocity_x, self.velocity_y = 0.0, 0.0
 
-Each object will need to be updated every frame, so let’s write an `update()` method.
+Each object will need to be updated every frame, so let’s write an `update()` method::
 
     def update(self, dt):
         self.x += self.velocity_x * dt
@@ -374,7 +374,7 @@ add a call to `self.check_bounds()` at the end of `update()`.
 
 To make the asteroids use our new motion code, just import the physicalobject module and change the
 `new_asteroid = ...` line to create a new `PhysicalObject` instead of a `Sprite`.  You’ll also want
-to give them a random initial velocity.  Here is the new, improved `load.asteroids()` function:
+to give them a random initial velocity.  Here is the new, improved `load.asteroids()` function::
 
     def asteroids(num_asteroids, player_position, batch=None):
         ...
@@ -454,7 +454,7 @@ constructor::
         self.keys = dict(left=False, right=False, up=False)
 
 Then we need to write two methods, `on_key_press()` and `on_key_release()`.  When pyglet checks a
-new event handler, it looks for these two methods, among others.
+new event handler, it looks for these two methods, among others::
 
     import math
     from pyglet.window import key
@@ -595,7 +595,7 @@ frame, or we could just move the image’s anchor point. First, load the image i
 
 To get the flame to draw behind the player, we need to move the flame image’s center of rotation to
 the right, past the end of the image.  To do that, we just set its `anchor_x` and `anchor_y`
-attributes:
+attributes::
 
     engine_image.anchor_x = engine_image.width * 1.5
     engine_image.anchor_y = engine_image.height / 2
