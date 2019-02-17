@@ -321,7 +321,7 @@ class Loader(object):
             path = ['.']
         if isinstance(path, str):
             path = [path]
-        self.path = list(path)
+        self.path = [os.path.normpath(p) for p in path]
         if script_home is None:
             script_home = get_script_home()
         self._script_home = script_home
