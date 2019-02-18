@@ -155,8 +155,8 @@ def test_dispatch_wrong_arguments(dispatcher):
         dispatcher.dispatch_event('mock_event', 'wrong argument')
     error_msg = str(exception.value)
     msg1 = ("The 'mock_event' event was dispatched with 1 arguments, "
-            "but the handler 'mock_event' at")
-    msg2 = "is written with 0 arguments."
+            "but your handler 'mock_event' at")
+    msg2 = "accepts only 0 arguments."
     assert msg1 in error_msg
     assert msg2 in error_msg
 
