@@ -257,7 +257,9 @@ class ZIPLocation(Location):
             path = self.dir + '/' + filename
         else:
             path = filename
-        text = self.zip.read(path)
+
+        forward_slash_path = path.replace(os.sep, '/')  # looks like zip can only handle forward slashes
+        text = self.zip.read(forward_slash_path)
         return BytesIO(text)
 
 
@@ -319,7 +321,7 @@ class Loader(object):
             path = ['.']
         if isinstance(path, str):
             path = [path]
-        self.path = list(path)
+        self.path = [os.path.normpath(p) for p in path]
         if script_home is None:
             script_home = get_script_home()
         self._script_home = script_home
@@ -363,8 +365,6 @@ class Loader(object):
                     path = ''  # interactive
             elif not os.path.isabs(path):
                 # Add script base unless absolute
-                assert '\\' not in path, \
-                    'Backslashes not permitted in relative path'
                 path = os.path.join(self._script_home, path)
 
             if os.path.isdir(path):
@@ -414,8 +414,9 @@ class Loader(object):
                             self._index_file(zip_name, location)
 
     def _index_file(self, name, location):
-        if name not in self._index:
-            self._index[name] = location
+        normed_name = os.path.normpath(name)
+        if normed_name not in self._index:
+            self._index[normed_name] = location
 
     def file(self, name, mode='rb'):
         """Load a resource.
@@ -429,12 +430,13 @@ class Loader(object):
 
         :rtype: file object
         """
+        normed_name = os.path.normpath(name)
         self._require_index()
         try:
-            location = self._index[name]
-            return location.open(name, mode)
+            location = self._index[normed_name]
+            return location.open(normed_name, mode)
         except KeyError:
-            raise ResourceNotFoundException(name)
+            raise ResourceNotFoundException(normed_name)
 
     def location(self, name):
         """Get the location of a resource.
