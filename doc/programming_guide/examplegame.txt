@@ -194,7 +194,7 @@ Here is a simple function to calculate that distance::
     ...
     def distance(point_1=(0, 0), point_2=(0, 0)):
         """Returns the distance between two points"""
-        return math.sqrt(point_1[0] - point_2[0]) ** 2 + (point_1[1] - point_2[1]) ** 2)
+        return math.sqrt((point_1[0] - point_2[0]) ** 2 + (point_1[1] - point_2[1]) ** 2)
 
 To check new asteroids against the player’s position, we need to pass the player’s position
 into the `asteroids()` function and keep regenerating new coordinates until the asteroid is
@@ -338,7 +338,7 @@ be simple::
 
             self.velocity_x, self.velocity_y = 0.0, 0.0
 
-Each object will need to be updated every frame, so let’s write an `update()` method.
+Each object will need to be updated every frame, so let’s write an `update()` method::
 
     def update(self, dt):
         self.x += self.velocity_x * dt
@@ -454,7 +454,7 @@ constructor::
         self.keys = dict(left=False, right=False, up=False)
 
 Then we need to write two methods, `on_key_press()` and `on_key_release()`.  When pyglet checks a
-new event handler, it looks for these two methods, among others.
+new event handler, it looks for these two methods, among others::
 
     import math
     from pyglet.window import key
