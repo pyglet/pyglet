@@ -108,7 +108,8 @@ class XInputDevice(DeviceResponder, Device):
             elif cls_class == xi.ButtonClass:
                 cp = ctypes.cast(ptr, ctypes.POINTER(xi.XButtonInfo))
                 num_buttons = cp.contents.num_buttons
-                for i in range(num_buttons):
+                # Pointer buttons start at index 1, with 0 as 'AnyButton'
+                for i in range(num_buttons+1):
                     self.buttons.append(Button('button%d' % i))
 
             elif cls_class == xi.ValuatorClass:
