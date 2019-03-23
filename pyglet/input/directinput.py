@@ -31,10 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import zip
-#!/usr/bin/python
-# $Id:$
-
 import ctypes
 
 import pyglet
@@ -64,6 +60,7 @@ _rel_instance_names = {
 
 _btn_instance_names = {}
 
+
 def _create_control(object_instance):
     raw_name = object_instance.tszName
     type = object_instance.dwType
@@ -86,7 +83,8 @@ def _create_control(object_instance):
 
     control._type = object_instance.dwType
     return control
-        
+
+
 class DirectInputDevice(base.Device):
     def __init__(self, display, device, device_instance):
         name = device_instance.tszInstanceName
@@ -146,11 +144,10 @@ class DirectInputDevice(base.Device):
             return
 
         if window is None:
-            # Pick any open window, or the shadow window if no windows
-            # have been created yet.
-            window = pyglet.gl._shadow_window
-            for window in pyglet.app.windows:
-                break
+            if not pyglet.app.windows:
+                return
+            # Pick any open window
+            window = pyglet.app.windows[0]
 
         flags = dinput.DISCL_BACKGROUND
         if exclusive:
@@ -195,7 +192,9 @@ class DirectInputDevice(base.Device):
             index = event.dwOfs // 4
             self.controls[index].value = event.dwData
 
+
 _i_dinput = None
+
 
 def _init_directinput():
     global _i_dinput
@@ -207,6 +206,7 @@ def _init_directinput():
     dinput.DirectInput8Create(module, dinput.DIRECTINPUT_VERSION,
                               dinput.IID_IDirectInput8W, 
                               ctypes.byref(_i_dinput), None)
+
 
 def get_devices(display=None):
     _init_directinput()
@@ -227,11 +227,13 @@ def get_devices(display=None):
                           None, dinput.DIEDFL_ATTACHEDONLY)
     return _devices
 
+
 def _create_joystick(device):
     if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
                         dinput.DI8DEVTYPE_1STPERSON,
                         dinput.DI8DEVTYPE_GAMEPAD):
         return base.Joystick(device)
+
 
 def get_joysticks(display=None):
     return [joystick 

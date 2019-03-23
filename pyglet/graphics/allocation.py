@@ -33,7 +33,7 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-'''Memory allocation algorithm for vertex arrays and buffers.
+"""Memory allocation algorithm for vertex buffers.
 
 The region allocator is used to allocate vertex indices within a vertex
 domain's  multiple buffers.  ("Buffer" refers to any abstract buffer presented
@@ -45,16 +45,8 @@ allocation.  The buffer is never resized smaller.
 
 The allocator maintains references to free space only; it is the caller's
 responsibility to maintain the allocated regions.
-'''
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import zip
-from builtins import object
+"""
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
- 
 # Common cases:
 # -regions will be the same size (instances of same object, e.g. sprites)
 # -regions will not usually be resized (only exception is text)
@@ -78,28 +70,31 @@ __version__ = '$Id: $'
 # -this means that compacting is probably not feasible, or would be hideously
 #  expensive
 
+
 class AllocatorMemoryException(Exception):
-    '''The buffer is not large enough to fulfil an allocation.
+    """The buffer is not large enough to fulfil an allocation.
 
     Raised by `Allocator` methods when the operation failed due to lack of
     buffer space.  The buffer should be increased to at least
     requested_capacity and then the operation retried (guaranteed to
     pass second time).
-    '''
+    """
 
     def __init__(self, requested_capacity):
         self.requested_capacity = requested_capacity
 
+
 class Allocator(object):
-    '''Buffer space allocation implementation.'''
+    """Buffer space allocation implementation."""
+
     def __init__(self, capacity):
-        '''Create an allocator for a buffer of the specified capacity.
+        """Create an allocator for a buffer of the specified capacity.
 
         :Parameters:
             `capacity` : int
                 Maximum size of the buffer.
 
-        '''
+        """
         self.capacity = capacity
 
         # Allocated blocks.  Start index and size in parallel lists.
@@ -122,20 +117,20 @@ class Allocator(object):
         self.sizes = []
 
     def set_capacity(self, size):
-        '''Resize the maximum buffer size.
+        """Resize the maximum buffer size.
         
-        The capaity cannot be reduced.
+        The capacity cannot be reduced.
 
         :Parameters:
             `size` : int
                 New maximum size of the buffer.
 
-        '''
+        """
         assert size > self.capacity
         self.capacity = size
 
     def alloc(self, size):
-        '''Allocate memory in the buffer.
+        """Allocate memory in the buffer.
 
         Raises `AllocatorMemoryException` if the allocation cannot be
         fulfilled.
@@ -146,14 +141,13 @@ class Allocator(object):
                
         :rtype: int
         :return: Starting index of the allocated region.
-        '''
+        """
         assert size >= 0
 
         if size == 0:
             return 0
 
-        # return start
-        # or raise AllocatorMemoryException
+        # return start, or raise AllocatorMemoryException
 
         if not self.starts:
             if size <= self.capacity:
@@ -165,8 +159,7 @@ class Allocator(object):
 
         # Allocate in a free space
         free_start = self.starts[0] + self.sizes[0]
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(self.starts[1:], self.sizes[1:])):
+        for i, (alloc_start, alloc_size) in enumerate(zip(self.starts[1:], self.sizes[1:])):
             # Danger!  
             # i is actually index - 1 because of slicing above...
             # starts[i]   points to the block before this free space
@@ -176,26 +169,25 @@ class Allocator(object):
             if free_size == size:
                 # Merge previous block with this one (removing this free space)
                 self.sizes[i] += free_size + alloc_size
-                del self.starts[i+1]
-                del self.sizes[i+1]
+                del self.starts[i + 1]
+                del self.sizes[i + 1]
                 return free_start
             elif free_size > size:
-                # Increase size of previous block to intrude into this free
-                # space.
+                # Increase size of previous block to intrude into this free space.
                 self.sizes[i] += size
                 return free_start
             free_start = alloc_start + alloc_size
-        
+
         # Allocate at end of capacity
         free_size = self.capacity - free_start
         if free_size >= size:
             self.sizes[-1] += size
             return free_start
-        
+
         raise AllocatorMemoryException(self.capacity + size - free_size)
 
     def realloc(self, start, size, new_size):
-        '''Reallocate a region of the buffer.
+        """Reallocate a region of the buffer.
 
         This is more efficient than separate `dealloc` and `alloc` calls, as
         the region can often be resized in-place.
@@ -211,9 +203,9 @@ class Allocator(object):
             `new_size` : int
                 New size of the region.
 
-        '''
+        """
         assert size >= 0 and new_size >= 0
-        
+
         if new_size == 0:
             if size != 0:
                 self.dealloc(start, size)
@@ -221,17 +213,15 @@ class Allocator(object):
         elif size == 0:
             return self.alloc(new_size)
 
-        # return start
-        # or raise AllocatorMemoryException
+        # return start or raise AllocatorMemoryException
 
         # Truncation is the same as deallocating the tail cruft
         if new_size < size:
             self.dealloc(start + new_size, size - new_size)
             return start
-            
+
         # Find which block it lives in
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(*(self.starts, self.sizes))):
+        for i, (alloc_start, alloc_size) in enumerate(zip(*(self.starts, self.sizes))):
             p = start - alloc_start
             if p >= 0 and size <= alloc_size - p:
                 break
@@ -242,16 +232,15 @@ class Allocator(object):
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
         if size == alloc_size - p:
-            # Region is at end of block.  Find how much free space is after
-            # it.
+            # Region is at end of block.  Find how much free space is after it.
             is_final_block = i == len(self.starts) - 1
             if not is_final_block:
                 free_size = self.starts[i + 1] - (start + size)
             else:
                 free_size = self.capacity - (start + size)
 
-            # TODO If region is an entire block being an island in free space, 
-            # can possibly extend in both directions.
+            # TODO: If region is an entire block being an island in free space,
+            #       can possibly extend in both directions.
 
             if free_size == new_size - size and not is_final_block:
                 # Merge block with next (region is expanded in place to
@@ -266,7 +255,7 @@ class Allocator(object):
                 return start
 
         # The block must be repositioned.  Dealloc then alloc.
-        
+
         # But don't do this!  If alloc fails, we've already silently dealloc'd
         # the original block.
         #   self.dealloc(start, size)
@@ -281,7 +270,7 @@ class Allocator(object):
         return result
 
     def dealloc(self, start, size):
-        '''Free a region of the buffer.
+        """Free a region of the buffer.
 
         :Parameters:
             `start` : int
@@ -289,21 +278,20 @@ class Allocator(object):
             `size` : int
                 Size of the region.
 
-        '''
+        """
         assert size >= 0
 
         if size == 0:
             return
 
         assert self.starts
-        
+
         # Find which block needs to be split
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(*(self.starts, self.sizes))):
+        for i, (alloc_start, alloc_size) in enumerate(zip(*(self.starts, self.sizes))):
             p = start - alloc_start
             if p >= 0 and size <= alloc_size - p:
                 break
-        
+
         # Assert we left via the break
         assert p >= 0 and size <= alloc_size - p, 'Region not allocated'
 
@@ -341,41 +329,40 @@ class Allocator(object):
             self.sizes.insert(i + 1, alloc_size - (p + size))
 
     def get_allocated_regions(self):
-        '''Get a list of (aggregate) allocated regions.
+        """Get a list of (aggregate) allocated regions.
 
         The result of this method is ``(starts, sizes)``, where ``starts`` is
         a list of starting indices of the regions and ``sizes`` their
         corresponding lengths.
 
         :rtype: (list, list)
-        '''
+        """
         # return (starts, sizes); len(starts) == len(sizes)
-        return (self.starts, self.sizes)
+        return self.starts, self.sizes
 
     def get_fragmented_free_size(self):
-        '''Returns the amount of space unused, not including the final
+        """Returns the amount of space unused, not including the final
         free block.
 
         :rtype: int
-        '''
+        """
         if not self.starts:
             return 0
 
         # Variation of search for free block.
         total_free = 0
         free_start = self.starts[0] + self.sizes[0]
-        for i, (alloc_start, alloc_size) in \
-                enumerate(zip(self.starts[1:], self.sizes[1:])):
+        for i, (alloc_start, alloc_size) in enumerate(zip(self.starts[1:], self.sizes[1:])):
             total_free += alloc_start - free_start
             free_start = alloc_start + alloc_size
 
         return total_free
 
     def get_free_size(self):
-        '''Return the amount of space unused.
+        """Return the amount of space unused.
         
         :rtype: int
-        '''
+        """
         if not self.starts:
             return self.capacity
 
@@ -383,23 +370,24 @@ class Allocator(object):
         return self.get_fragmented_free_size() + free_end
 
     def get_usage(self):
-        '''Return fraction of capacity currently allocated.
+        """Return fraction of capacity currently allocated.
         
         :rtype: float
-        '''
+        """
         return 1. - self.get_free_size() / float(self.capacity)
 
     def get_fragmentation(self):
-        '''Return fraction of free space that is not expandable.
+        """Return fraction of free space that is not expandable.
         
         :rtype: float
-        '''
+        """
         free_size = self.get_free_size()
         if free_size == 0:
             return 0.
         return self.get_fragmented_free_size() / float(self.get_free_size())
 
-    def _is_empty(self):
+    @property
+    def is_empty(self):
         return not self.starts
 
     def __str__(self):

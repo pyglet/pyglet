@@ -191,11 +191,11 @@ class MouseCursor(object):
                 Y coordinate of the mouse pointer's hot spot.
 
         """
-        raise NotImplementedError('abstract')
+        pass
 
 
 class DefaultMouseCursor(MouseCursor):
-    """The default mouse cursor #sed by the operating system."""
+    """The default mouse cursor set by the operating system."""
     drawable = False
 
 
@@ -226,12 +226,7 @@ class ImageMouseCursor(MouseCursor):
         self.hot_y = hot_y
 
     def draw(self, x, y):
-        gl.glPushAttrib(gl.GL_ENABLE_BIT | gl.GL_CURRENT_BIT)
-        gl.glColor4f(1, 1, 1, 1)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
-        gl.glPopAttrib()
 
 
 class Projection(object):
@@ -260,24 +255,40 @@ class Projection2D(Projection):
     """A 2D orthographic projection"""
 
     def set(self, window_width, window_height, viewport_width, viewport_height):
-        gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(0, max(1, window_width), 0, max(1, window_height), -1, 1)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        width = max(1, window_width)
+        height = max(1, window_height)
+
+        gl.glViewport(0, 0, viewport_width, viewport_height)
+
+        sx = 2.0 / width
+        sy = 2.0 / height
+
+        projection = (sx,  0.0, 0.0, 0.0,
+                      0.0, sy,  0.0, 0.0,
+                      0.0, 0.0, 1.0, 0.0,
+                      -1., -1., 0.0, 1.0)
+
+        view = (1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0)
+
+        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
+            window_block.projection = projection
+            window_block.view = view
 
 
 class Projection3D(Projection):
     """A 3D perspective projection"""
 
-    def __init__(self, fov=60, znear=0.1, zfar=255):
+    def __init__(self, fov=60, znear=1, zfar=255):
         """Create a 3D projection
 
         :Parameters:
             `fov` : float
                 The field of vision. Defaults to 60.
             `znear` : float
-                The near clipping plane. Defaults to 0.1.
+                The near clipping plane. Defaults to 1.
             `zfar` : float
                 The far clipping plane. Defaults to 255.
         """
@@ -286,17 +297,42 @@ class Projection3D(Projection):
         self.zfar = zfar
 
     def set(self, window_width, window_height, viewport_width, viewport_height):
-        gl.glViewport(0, 0, max(1, viewport_width), max(1, viewport_height))
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
+        width = max(1, window_width)
+        height = max(1, window_height)
 
-        # Pure GL implementation of gluPerspective:
-        aspect_ratio = float(window_width) / float(window_height)
-        f_width = math.tan(self.fov / 360.0 * math.pi ) * self.znear
-        f_height = f_width * aspect_ratio
-        gl.glFrustum(-f_height, f_height, -f_width, f_width, self.znear, self.zfar)
+        gl.glViewport(0, 0, viewport_width, viewport_height)
 
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        aspect = width/height
+        znear = self.znear
+        zfar = self.zfar
+
+        xymax = znear * math.tan(self.fov * math.pi / 360)
+        ymin = -xymax
+        xmin = -xymax
+
+        width = xymax - xmin
+        height = xymax - ymin
+        depth = zfar - znear
+        q = -(zfar + znear) / depth
+        qn = -2 * (zfar * znear) / depth
+
+        w = 2 * znear / width
+        w = w / aspect
+        h = 2 * znear / height
+
+        projection = (w, 0, 0, 0,
+                      0, h, 0, 0,
+                      0, 0, q, -1,
+                      0, 0, qn, 0)
+
+        view = (1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0)
+
+        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
+            window_block.projection = projection
+            window_block.view = view
 
 
 def _PlatformEventHandler(data):
@@ -315,7 +351,6 @@ def _PlatformEventHandler(data):
         List of data applied to the function (permitting multiple decorators
         on the same method).
     """
-
     def _event_wrapper(f):
         f._platform_event = True
         if not hasattr(f, '_platform_event_data'):
@@ -577,8 +612,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         if not config:
             for template_config in [
-                gl.Config(double_buffer=True, depth_size=24),
-                gl.Config(double_buffer=True, depth_size=16),
+                gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
                 None]:
                 try:
                     config = screen.get_best_config(template_config)
@@ -653,7 +688,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # If the window is already closed, pass silently.
         try:
             self.close()
-        except:   # XXX  Avoid a NoneType error if already closed.
+        except:  # XXX  Avoid a NoneType error if already closed.
             pass
 
     def __repr__(self):
@@ -846,37 +881,17 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """Draw the custom mouse cursor.
 
         If the current mouse cursor has ``drawable`` set, this method
-        is called before the buffers are flipped to render it.  
-        
-        This method always leaves the ``GL_MODELVIEW`` matrix as current,
-        regardless of what it was set to previously.  No other GL state
-        is affected.
+        is called before the buffers are flipped to render it.
 
         There is little need to override this method; instead, subclass
         :py:class:`MouseCursor` and provide your own
         :py:meth:`~MouseCursor.draw` method.
         """
         # Draw mouse cursor if set and visible.
-        # XXX leaves state in modelview regardless of starting state
-        if (self._mouse_cursor.drawable and
-            self._mouse_visible and
-            self._mouse_in_window):
-            gl.glMatrixMode(gl.GL_PROJECTION)
-            gl.glPushMatrix()
-            gl.glLoadIdentity()
-            gl.glOrtho(0, self.width, 0, self.height, -1, 1)
 
-            gl.glMatrixMode(gl.GL_MODELVIEW)
-            gl.glPushMatrix()
-            gl.glLoadIdentity()
-
+        if self._mouse_cursor.drawable and self._mouse_visible and self._mouse_in_window:
+            # TODO: consider projection differences
             self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
-
-            gl.glMatrixMode(gl.GL_PROJECTION)
-            gl.glPopMatrix()
-
-            gl.glMatrixMode(gl.GL_MODELVIEW)
-            gl.glPopMatrix()
 
     # These properties provide read-only access to instance variables.
     @property
@@ -1300,7 +1315,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         pass
 
-    def clear(self):
+    @staticmethod
+    def clear():
         """Clear the window.
 
         This is a convenience method for clearing the color and depth
@@ -1820,26 +1836,9 @@ class FPSDisplay(object):
 
     def draw(self):
         """Draw the label.
-
-        The OpenGL state is assumed to be at default values, except
-        that the MODELVIEW and PROJECTION matrices are ignored.  At
-        the return of this method the matrix mode will be MODELVIEW.
         """
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
-
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
-        gl.glOrtho(0, self.window.width, 0, self.window.height, -1, 1)
-
+        # TODO: GL3 - ensure projection is correct before/after drawing.
         self.label.draw()
-
-        gl.glPopMatrix()
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPopMatrix()
 
     def _hook_flip(self):
         self.update()
@@ -1851,6 +1850,7 @@ if _is_epydoc:
     Window = BaseWindow
     Window.__name__ = 'Window'
     del BaseWindow
+
 else:
     # Try to determine which platform to use.
     if pyglet.compat_platform == 'darwin':
@@ -1860,13 +1860,7 @@ else:
     else:
         # XXX HACK around circ problem, should be fixed after removal of
         # shadow nonsense
-        #pyglet.window = sys.modules[__name__]
-        #import key, mouse
+        # pyglet.window = sys.modules[__name__]
+        # import key, mouse
 
         from pyglet.window.xlib import XlibWindow as Window
-
-# XXX remove
-# Create shadow window. (trickery is for circular import)
-if not _is_epydoc:
-    pyglet.window = sys.modules[__name__]
-    gl._create_shadow_window()

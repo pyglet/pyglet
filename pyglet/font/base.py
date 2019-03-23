@@ -69,7 +69,7 @@ _prepend = lambda c, cc: c in _logical_order_exception
 _spacing_mark = lambda c, cc: cc == 'Mc' and c not in _other_grapheme_extend
 
 
-def _grapheme_break(left, right):
+def grapheme_break(left, right):
     # GB1
     if left is None:
         return True
@@ -128,7 +128,7 @@ def get_grapheme_clusters(text):
     cluster = ''
     left = None
     for right in text:
-        if cluster and _grapheme_break(left, right):
+        if cluster and grapheme_break(left, right):
             clusters.append(cluster)
             cluster = ''
         elif cluster:
@@ -192,7 +192,7 @@ class Glyph(image.TextureRegion):
         glEnd()
 
     def draw_quad_vertices(self):
-        """Debug method. 
+        """Debug method.
 
         Use the higher level APIs for performance and kerning.
         """
@@ -286,9 +286,10 @@ class Font(object):
         `descent` : int
             Maximum descent below the baseline, in pixels. Usually negative.
     """
-    texture_width = 256
-    texture_height = 256
-    texture_internalformat = GL_ALPHA
+    texture_width = 512
+    texture_height = 512
+    # TODO: rewrite text.layout._default_shader_program to use GL_R8 or GL_RED
+    texture_internalformat = GL_RGBA
     texture_min_filter = GL_LINEAR
     texture_mag_filter = GL_LINEAR
 

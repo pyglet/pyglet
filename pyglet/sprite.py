@@ -98,11 +98,6 @@ sprites within batches.
 
 .. versionadded:: 1.1
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import math
 import sys
 
 from pyglet.gl import *
@@ -112,6 +107,62 @@ from pyglet import graphics
 from pyglet import image
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+
+
+vertex_source = """#version 150 core
+    in vec2 translate;
+    in vec4 colors;
+    in vec2 tex_coords;
+    in vec2 scale;
+    in vec4 position;
+    in float rotation;
+
+    out vec4 vertex_colors;
+    out vec2 texture_coords;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    mat4 m_trans_scale = mat4(1.0);
+    mat4 m_rotation = mat4(1.0);
+
+    void main()
+    {
+        m_trans_scale[3][0] = translate.x;               // translate x
+        m_trans_scale[3][1] = translate.y;               // translate y
+        m_trans_scale[0][0] = scale.x;                   // scale x
+        m_trans_scale[1][1] = scale.y;                   // scale y
+        m_rotation[0][0] =  cos(-radians(rotation)); 
+        m_rotation[0][1] =  sin(-radians(rotation));
+        m_rotation[1][0] = -sin(-radians(rotation));
+        m_rotation[1][1] =  cos(-radians(rotation));
+
+        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
+
+        vertex_colors = colors;
+        texture_coords = tex_coords;
+    }
+"""
+
+fragment_source = """#version 150 core
+    in vec4 vertex_colors;
+    in vec2 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2D sprite_texture;
+
+    void main()
+    {
+        final_colors = texture(sprite_texture, texture_coords) * vertex_colors;
+    }
+"""
+
+_default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+_default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+_default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
 
 
 class SpriteGroup(graphics.Group):
@@ -124,8 +175,8 @@ class SpriteGroup(graphics.Group):
     def __init__(self, texture, blend_src, blend_dest, parent=None):
         """Create a sprite group.
 
-        The group is created internally within :py:class:`~pyglet.sprite.Sprite`; applications usually
-        do not need to explicitly create it.
+        The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
+        is created; applications usually do not need to explicitly create it.
 
         :Parameters:
             `texture` : `~pyglet.image.Texture`
@@ -143,21 +194,24 @@ class SpriteGroup(graphics.Group):
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
+        self.program = _default_program
 
     def set_state(self):
-        glEnable(self.texture.target)
+        self.program.use_program()
+
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
 
-        glPushAttrib(GL_COLOR_BUFFER_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
 
     def unset_state(self):
-        glPopAttrib()
-        glDisable(self.texture.target)
+        glDisable(GL_BLEND)
+        glBindTexture(self.texture.target, 0)
+        self.program.stop_program()
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.texture)
+        return "{0}({1})".format(self.__class__.__name__, self.texture)
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
@@ -306,7 +360,7 @@ class Sprite(event.EventDispatcher):
             return
 
         if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_QUADS, self._group, batch)
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
             self._batch = batch
         else:
             self._vertex_list.delete()
@@ -333,8 +387,7 @@ class Sprite(event.EventDispatcher):
                                   self._group.blend_dest,
                                   group)
         if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_QUADS, self._group,
-                                self._batch)
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self):
@@ -381,67 +434,43 @@ class Sprite(event.EventDispatcher):
         self._texture = texture
 
     def _create_vertex_list(self):
-        if self._subpixel:
-            vertex_format = 'v2f/%s' % self._usage
-        else:
-            vertex_format = 'v2i/%s' % self._usage
+        usage = self._usage
         if self._batch is None:
-            self._vertex_list = graphics.vertex_list(
-                4, vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
+            self._vertex_list = graphics.vertex_list_indexed(
+                4, [0, 1, 2, 0, 2, 3],
+                'position2f/%s' % usage,
+                ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+                ('translate2f/%s' % usage, (self._x, self._y) * 4),
+                ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y)*4),
+                ('rotation1f/%s' % usage, (self._rotation,) * 4),
+                ('tex_coords3f', self._texture.tex_coords))
         else:
-            self._vertex_list = self._batch.add(
-                4, GL_QUADS, self._group, vertex_format, 'c4B', ('t3f', self._texture.tex_coords))
+            self._vertex_list = self._batch.add_indexed(
+                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
+                'position2f/%s' % usage,
+                ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+                ('translate2f/%s' % usage, (self._x, self._y) * 4),
+                ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+                ('rotation1f/%s' % usage, (self._rotation,) * 4),
+                ('tex_coords3f', self._texture.tex_coords))
+
         self._update_position()
-        self._update_color()
 
     def _update_position(self):
-        img = self._texture
-        scale_x = self._scale * self._scale_x
-        scale_y = self._scale * self._scale_y
         if not self._visible:
-            vertices = (0, 0, 0, 0, 0, 0, 0, 0)
-        elif self._rotation:
-            x1 = -img.anchor_x * scale_x
-            y1 = -img.anchor_y * scale_y
-            x2 = x1 + img.width * scale_x
-            y2 = y1 + img.height * scale_y
-            x = self._x
-            y = self._y
-
-            r = -math.radians(self._rotation)
-            cr = math.cos(r)
-            sr = math.sin(r)
-            ax = x1 * cr - y1 * sr + x
-            ay = x1 * sr + y1 * cr + y
-            bx = x2 * cr - y1 * sr + x
-            by = x2 * sr + y1 * cr + y
-            cx = x2 * cr - y2 * sr + x
-            cy = x2 * sr + y2 * cr + y
-            dx = x1 * cr - y2 * sr + x
-            dy = x1 * sr + y2 * cr + y
-            vertices = (ax, ay, bx, by, cx, cy, dx, dy)
-        elif scale_x != 1.0 or scale_y != 1.0:
-            x1 = self._x - img.anchor_x * scale_x
-            y1 = self._y - img.anchor_y * scale_y
-            x2 = x1 + img.width * scale_x
-            y2 = y1 + img.height * scale_y
-            vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
+            self._vertex_list.vertex[:] = (0, 0, 0, 0, 0, 0, 0, 0)
         else:
-            x1 = self._x - img.anchor_x
-            y1 = self._y - img.anchor_y
+            img = self._texture
+            x1 = -img.anchor_x
+            y1 = -img.anchor_y
             x2 = x1 + img.width
             y2 = y1 + img.height
-            vertices = (x1, y1, x2, y1, x2, y2, x1, y2)
-        if not self._subpixel:
-            vertices = (int(vertices[0]), int(vertices[1]),
-                        int(vertices[2]), int(vertices[3]),
-                        int(vertices[4]), int(vertices[5]),
-                        int(vertices[6]), int(vertices[7]))
-        self._vertex_list.vertices[:] = vertices
+            verticies = (x1, y1, x2, y1, x2, y2, x1, y2)
 
-    def _update_color(self):
-        r, g, b = self._rgb
-        self._vertex_list.colors[:] = [r, g, b, int(self._opacity)] * 4
+            if not self._subpixel:
+                self._vertex_list.position[:] = tuple(map(int, verticies))
+            else:
+                self._vertex_list.position[:] = verticies
 
     @property
     def position(self):
@@ -458,7 +487,7 @@ class Sprite(event.EventDispatcher):
     @position.setter
     def position(self, pos):
         self._x, self._y = pos
-        self._update_position()
+        self._vertex_list.translate[:] = (pos[0], pos[1]) * 4
 
     @property
     def x(self):
@@ -471,7 +500,7 @@ class Sprite(event.EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self._update_position()
+        self._vertex_list.translate[:] = (x, self._y) * 4
 
     @property
     def y(self):
@@ -484,7 +513,7 @@ class Sprite(event.EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self._update_position()
+        self._vertex_list.translate[:] = (self._x, y) * 4
 
     @property
     def rotation(self):
@@ -500,7 +529,7 @@ class Sprite(event.EventDispatcher):
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
-        self._update_position()
+        self._vertex_list.rotation[:] = (self._rotation,) * 4
 
     @property
     def scale(self):
@@ -516,12 +545,12 @@ class Sprite(event.EventDispatcher):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
-        self._update_position()
+        self._vertex_list.scale[:] = (scale * self._scale_x, scale * self._scale_y) * 4
 
     @property
     def scale_x(self):
         """Horizontal scaling factor.
-        
+
          A scaling factor of 1 (the default) has no effect.  A scale of 2 will
          draw the sprite at twice the native width of its image.
 
@@ -532,12 +561,12 @@ class Sprite(event.EventDispatcher):
     @scale_x.setter
     def scale_x(self, scale_x):
         self._scale_x = scale_x
-        self._update_position()
+        self._vertex_list.scale[:] = (self._scale * scale_x, self._scale * self._scale_y) * 4
 
     @property
     def scale_y(self):
         """Vertical scaling factor.
-        
+
          A scaling factor of 1 (the default) has no effect.  A scale of 2 will
          draw the sprite at twice the native height of its image.
 
@@ -548,7 +577,7 @@ class Sprite(event.EventDispatcher):
     @scale_y.setter
     def scale_y(self, scale_y):
         self._scale_y = scale_y
-        self._update_position()
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * scale_y) * 4
 
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
@@ -584,7 +613,9 @@ class Sprite(event.EventDispatcher):
             self._scale_x = scale_x
         if scale_y is not None:
             self._scale_y = scale_y
-        self._update_position()
+        self._vertex_list.translate[:] = (self._x, self._y) * 4
+        self._vertex_list.rotation[:] = (self._rotation,) * 4
+        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
 
     @property
     def width(self):
@@ -631,7 +662,7 @@ class Sprite(event.EventDispatcher):
     @opacity.setter
     def opacity(self, opacity):
         self._opacity = opacity
-        self._update_color()
+        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
 
     @property
     def color(self):
@@ -650,7 +681,7 @@ class Sprite(event.EventDispatcher):
     @color.setter
     def color(self, rgb):
         self._rgb = list(map(int, rgb))
-        self._update_color()
+        self._vertex_list.colors[:] = (*self._rgb, int(self._opacity)) * 4
 
     @property
     def visible(self):
@@ -672,7 +703,7 @@ class Sprite(event.EventDispatcher):
         efficiently.
         """
         self._group.set_state_recursive()
-        self._vertex_list.draw(GL_QUADS)
+        self._vertex_list.draw(GL_TRIANGLES)
         self._group.unset_state_recursive()
 
     if _is_epydoc:
