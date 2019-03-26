@@ -195,7 +195,6 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         self._source = weakref.proxy(value)
 
 
-
 class AbstractAudioDriver(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def create_audio_player(self, source, player):
