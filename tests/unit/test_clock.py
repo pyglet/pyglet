@@ -1,5 +1,4 @@
 import unittest
-import sys
 from tests import mock
 import pyglet.clock
 
@@ -347,19 +346,3 @@ class ClockTestCase(unittest.TestCase):
         items = sorted(i.next_ts for i in self.clock._schedule_interval_items)
 
         self.assertEqual(items, expected)
-
-    @unittest.skipIf(sys.version_info < (3, 4), "requires python3.4")
-    def test_weakref_to_methods(self):
-        import weakref
-        dummy = Dummy()
-        watcher = mock.Mock()
-        weakref.finalize(dummy, watcher)
-        self.clock.schedule(dummy.schedule_me)
-        dummy = None
-        assert watcher.called
-
-
-class Dummy:
-    def schedule_me(self):
-        return True
-
