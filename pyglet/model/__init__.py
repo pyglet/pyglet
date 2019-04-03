@@ -185,7 +185,7 @@ class Model(object):
             return
 
         if batch is None:
-            batch = pyglet.graphics.Batch()
+            batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
             self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
