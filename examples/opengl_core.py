@@ -5,7 +5,7 @@ from pyglet.gl import *
 
 # pyglet.options['debug_gl_shaders'] = True
 
-window = pyglet.window.Window(width=54, height=54, resizable=True)
+window = pyglet.window.Window(width=540, height=540, resizable=True)
 batch = pyglet.graphics.Batch()
 print("OpenGL Context: {}".format(window.context.get_info().version))
 
