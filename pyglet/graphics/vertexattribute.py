@@ -246,15 +246,14 @@ def create_attribute(shader_program_id, fmt):
     normalize = True if match.group('normalize') else False
 
     if name in _legacy_attributes:
+        # TODO: remove deprecated fallback:
         name, normalize = _legacy_attributes[name]
         message = "Vertex attribute shorthand notation is deprecated: '{0}'".format(fmt)
         warnings.warn(message)
 
-    args = name, shader_program_id, count, gl_type, normalize
+    _attribute_cache[fmt] = name, shader_program_id, count, gl_type, normalize
 
-    _attribute_cache[fmt] = args
-
-    return GenericAttribute(*args)
+    return GenericAttribute(name, shader_program_id, count, gl_type, normalize)
 
 
 class GenericAttribute:
@@ -276,12 +275,12 @@ class GenericAttribute:
                 True if OpenGL should normalize the values
 
         """
-        assert count in (1, 2, 3, 4), 'Component count out of range'
+        assert count in (1, 2, 3, 4), 'Vertex attribute component count out of range'
         self.name = name
         self.shader = shader
+        self.count = count
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
-        self.count = count
         self.normalize = normalize
 
         self.align = ctypes.sizeof(self.c_type)
@@ -310,8 +309,7 @@ class GenericAttribute:
                 attribute.
 
         """
-        glVertexAttribPointer(self.location, self.count, self.gl_type,
-                              self.normalize, self.stride, self.offset + pointer)
+        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, self.offset+pointer)
 
     def get_region(self, buffer, start, count):
         """Map a buffer region using this attribute as an accessor.
@@ -380,4 +378,4 @@ class GenericAttribute:
             region[:] = data
 
     def __repr__(self):
-        return "Attribute(name='{0}', count={1})".format(self.name, self.count)
+        return "VertexAttribute(name='{}', count={}, location={})".format(self.name, self.count, self.location)
