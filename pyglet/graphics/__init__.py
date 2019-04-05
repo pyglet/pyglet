@@ -339,7 +339,7 @@ def vertex_list_indexed(count, indices, *data):
     return get_default_batch().add_indexed(count, 0, None, indices, *data)
 
 
-class Batch(object):
+class Batch:
     """Manage a collection of vertex lists for batched rendering.
 
     Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the `add` and `add_indexed`
@@ -637,7 +637,7 @@ class Batch(object):
             visit(group)
 
 
-class Group(object):
+class Group:
     """Group of common OpenGL state.
 
     Before a vertex list is rendered, its group's OpenGL state is set; as are
@@ -645,8 +645,6 @@ class Group(object):
     subclasses; the default state change has no effect, and groups vertex
     lists only in the order in which they are drawn.
     """
-
-    parent = None
 
     def __init__(self, program=None, parent=None):
         """Create a group.
@@ -669,13 +667,13 @@ class Group(object):
         """Apply the OpenGL state change.
         
         The default implementation does nothing."""
-        pass
+        self.program.use_program()
 
     def unset_state(self):
         """Repeal the OpenGL state change.
         
         The default implementation does nothing."""
-        pass
+        self.program.stop_program()
 
     def set_state_recursive(self):
         """Set this group and its ancestry.

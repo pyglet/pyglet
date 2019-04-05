@@ -172,7 +172,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, program=None):
+    def __init__(self, texture, blend_src, blend_dest, program=None, parent=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -194,6 +194,7 @@ class SpriteGroup(graphics.Group):
         self.blend_src = blend_src
         self.blend_dest = blend_dest
         self.program = program or _default_program
+        super().__init__(self.program, parent)
 
     def set_state(self):
         self.program.use_program()
