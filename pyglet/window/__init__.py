@@ -273,7 +273,7 @@ class Projection2D(Projection):
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 0.0, 0.0, 1.0)
 
-        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
+        with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
             window_block.view = view
 
@@ -330,7 +330,7 @@ class Projection3D(Projection):
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 0.0, 0.0, 1.0)
 
-        with pyglet.graphics.default_group.program.uniform_buffers['WindowBlock'] as window_block:
+        with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
             window_block.view = view
 
@@ -482,6 +482,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: response to any events that actually do require a window contents
     #: update.
     #:
+    #: :type: bool
     #: :type: bool
     #: .. versionadded:: 1.1
     invalid = True

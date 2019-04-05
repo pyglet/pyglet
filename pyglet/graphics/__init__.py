@@ -187,11 +187,12 @@ def draw(size, mode, *data):
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
     # Activate shader program:
-    default_group.set_state()
+    group = get_default_group()
+    group.set_state()
 
     buffers = []
     for fmt, array in data:
-        attribute = vertexattribute.create_attribute(default_group.program.id, fmt)
+        attribute = vertexattribute.create_attribute(group.program.id, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
@@ -205,7 +206,7 @@ def draw(size, mode, *data):
     glDrawArrays(mode, 0, size)
 
     # Deactivate shader program:
-    default_group.unset_state()
+    group.unset_state()
     # Discard everything after drawing:
     del buffers
     glBindVertexArray(0)
@@ -231,11 +232,12 @@ def draw_indexed(size, mode, indices, *data):
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
     # Activate shader program:
-    default_group.set_state()
+    group = get_default_group()
+    group.set_state()
 
     buffers = []
     for fmt, array in data:
-        attribute = vertexattribute.create_attribute(default_group.program.id, fmt)
+        attribute = vertexattribute.create_attribute(group.program.id, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
@@ -260,7 +262,7 @@ def draw_indexed(size, mode, indices, *data):
     glFlush()
 
     # Deactivate shader program:
-    default_group.unset_state()
+    group.unset_state()
     # Discard everything after drawing:
     del buffers
     glBindVertexArray(0)
@@ -290,6 +292,15 @@ def get_default_batch():
     except AttributeError:
         shared_object_space.pyglet_graphics_default_batch = Batch()
         return shared_object_space.pyglet_graphics_default_batch
+
+
+def get_default_group():
+    shared_object_space = pyglet.gl.current_context.object_space
+    try:
+        return shared_object_space.pyglet_graphics_default_group
+    except AttributeError:
+        shared_object_space.pyglet_graphics_default_group = Group()
+        return shared_object_space.pyglet_graphics_default_group
 
 
 def vertex_list(count, *data):
@@ -328,7 +339,7 @@ def vertex_list_indexed(count, indices, *data):
     return get_default_batch().add_indexed(count, 0, None, indices, *data)
 
 
-class Batch(object):
+class Batch:
     """Manage a collection of vertex lists for batched rendering.
 
     Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the `add` and `add_indexed`
@@ -462,14 +473,11 @@ class Batch(object):
 
     def _get_domain(self, indexed, mode, group, formats):
         if group is None:
-            group = default_group
+            group = get_default_group()
 
         # Batch group
         if group not in self.group_map:
             self._add_group(group)
-
-        # If not a ShaderGroup, use the default ShaderProgram
-        shader_program = getattr(group, 'program', default_group.program)
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
@@ -479,9 +487,9 @@ class Batch(object):
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.create_indexed_domain(shader_program.id, *formats)
+                domain = vertexdomain.create_indexed_domain(group.program.id, *formats)
             else:
-                domain = vertexdomain.create_domain(shader_program.id, *formats)
+                domain = vertexdomain.create_domain(group.program.id, *formats)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True
@@ -629,7 +637,7 @@ class Batch(object):
             visit(group)
 
 
-class Group(object):
+class Group:
     """Group of common OpenGL state.
 
     Before a vertex list is rendered, its group's OpenGL state is set; as are
@@ -637,15 +645,19 @@ class Group(object):
     subclasses; the default state change has no effect, and groups vertex
     lists only in the order in which they are drawn.
     """
-    def __init__(self, parent=None):
+
+    def __init__(self, program=None, parent=None):
         """Create a group.
 
         :Parameters:
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional Shader Program.
             `parent` : `~pyglet.graphics.Group`
                 Group to contain this group; its state will be set before this
                 state's.
 
         """
+        self.program = program or ShaderProgram(_default_vert_shader, _default_frag_shader)
         self.parent = parent
 
     def __lt__(self, other):
@@ -655,13 +667,13 @@ class Group(object):
         """Apply the OpenGL state change.
         
         The default implementation does nothing."""
-        pass
+        self.program.use_program()
 
     def unset_state(self):
         """Repeal the OpenGL state change.
         
         The default implementation does nothing."""
-        pass
+        self.program.stop_program()
 
     def set_state_recursive(self):
         """Set this group and its ancestry.
@@ -682,21 +694,6 @@ class Group(object):
         self.unset_state()
         if self.parent:
             self.parent.unset_state_recursive()
-
-
-class ShaderGroup(Group):
-    def __init__(self, *shaders, parent=None):
-        super(ShaderGroup, self).__init__(parent)
-        self.program = ShaderProgram(*shaders)
-
-        if _debug_graphics_batch:
-            print("Created ShaderGroup, containing {0}".format(self.program))
-
-    def set_state(self):
-        self.program.use_program()
-
-    def unset_state(self):
-        self.program.stop_program()
 
 
 class TextureGroup(Group):
@@ -823,4 +820,3 @@ fragment_source = """#version 330 core
 
 _default_vert_shader = Shader(vertex_source, 'vertex')
 _default_frag_shader = Shader(fragment_source, 'fragment')
-default_group = ShaderGroup(_default_vert_shader, _default_frag_shader)

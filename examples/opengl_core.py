@@ -14,8 +14,9 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 label = pyglet.text.Label("This is a test", x=0, y=180, dpi=200, batch=batch)
 
-vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 50,  200, 250, -50,  200, 350, 0)),
+vertex_list = pyglet.graphics.vertex_list(3, ('v3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
                                              ('c3f', (1, 0, 0,  0, 1, 0,  0.3, 0.3, 1)))
+
 
 def create_quad_vertex_list(x, y, z, width, height):
     return x, y, z, x + width, y, z, x + width, y + height, z, x, y + height, z
@@ -51,6 +52,8 @@ sprite3 = pyglet.sprite.Sprite(img=green, x=300, y=300, batch=batch)
 sprite4 = pyglet.sprite.Sprite(img=blue, x=400, y=200, batch=batch)
 sprite5 = pyglet.sprite.Sprite(img=white, x=500, y=100, batch=batch)
 
+standalone_sprite = pyglet.sprite.Sprite(img=white, x=600, y=0)
+
 
 ##########################################################
 # Modify the "zoom" Uniform value scrolling the mouse
@@ -79,6 +82,8 @@ def on_draw():
     vertex_list.draw(GL_TRIANGLES)
 
     batch.draw()
+
+    standalone_sprite.draw()
 
 
 def update(dt):
