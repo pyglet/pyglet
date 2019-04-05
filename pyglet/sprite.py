@@ -131,10 +131,10 @@ vertex_source = """#version 150 core
 
     void main()
     {
-        m_trans_scale[3][0] = translate.x;               // translate x
-        m_trans_scale[3][1] = translate.y;               // translate y
-        m_trans_scale[0][0] = scale.x;                   // scale x
-        m_trans_scale[1][1] = scale.y;                   // scale y
+        m_trans_scale[3][0] = translate.x;
+        m_trans_scale[3][1] = translate.y;
+        m_trans_scale[0][0] = scale.x;
+        m_trans_scale[1][1] = scale.y;
         m_rotation[0][0] =  cos(-radians(rotation)); 
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
@@ -172,7 +172,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, parent=None):
+    def __init__(self, texture, blend_src, blend_dest, program=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -187,14 +187,13 @@ class SpriteGroup(graphics.Group):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `parent` : `~pyglet.graphics.Group`
-                Optional parent group.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional Shader Program.
         """
-        super(SpriteGroup, self).__init__(parent)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
-        self.program = _default_program
+        self.program = program or _default_program
 
     def set_state(self):
         self.program.use_program()
@@ -215,14 +214,14 @@ class SpriteGroup(graphics.Group):
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
-                self.parent is other.parent and
+                self.program is other.program and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
-        return hash((id(self.parent),
+        return hash((id(self.program),
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
@@ -279,9 +278,6 @@ class Sprite(event.EventDispatcher):
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
         """
-        if batch is not None:
-            self._batch = batch
-
         self._x = x
         self._y = y
 
@@ -295,7 +291,9 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
-        self._group = SpriteGroup(self._texture, blend_src, blend_dest, group)
+        self._batch = batch or graphics.Batch()
+        self._group = group or SpriteGroup(self._texture, blend_src, blend_dest)
+        assert isinstance(self._group, SpriteGroup), "Group must be a subclass of pyglet.sprite.SpriteGroup"
         self._usage = usage
         self._subpixel = subpixel
         self._create_vertex_list()
@@ -358,14 +356,8 @@ class Sprite(event.EventDispatcher):
     def batch(self, batch):
         if self._batch == batch:
             return
-
-        if batch is not None and self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
-            self._batch = batch
-        else:
-            self._vertex_list.delete()
-            self._batch = batch
-            self._create_vertex_list()
+        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
+        self._batch = batch
 
     @property
     def group(self):
@@ -376,18 +368,15 @@ class Sprite(event.EventDispatcher):
 
         :type: :py:class:`pyglet.graphics.Group`
         """
-        return self._group.parent
+        return self._group
 
     @group.setter
     def group(self, group):
-        if self._group.parent == group:
+        if self._group == group:
             return
-        self._group = SpriteGroup(self._texture,
-                                  self._group.blend_src,
-                                  self._group.blend_dest,
-                                  group)
-        if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+        assert isinstance(SpriteGroup, group), "Group must be a subclass of pyglet.sprite.SpriteGroup"
+        self._group = group
+        self._batch.migrate(self._vertex_list, GL_TRIANGLES, group, self._batch)
 
     @property
     def image(self):
@@ -419,41 +408,24 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture):
         if texture.id is not self._texture.id:
-            self._group = SpriteGroup(texture,
-                                      self._group.blend_src,
-                                      self._group.blend_dest,
-                                      self._group.parent)
-            if self._batch is None:
-                self._vertex_list.tex_coords[:] = texture.tex_coords
-            else:
-                self._vertex_list.delete()
-                self._texture = texture
-                self._create_vertex_list()
+            self._group = self._group.__class__(texture, self._group.blend_src, self._group.blend_dest)
+            self._vertex_list.delete()
+            self._texture = texture
+            self._create_vertex_list()
         else:
             self._vertex_list.tex_coords[:] = texture.tex_coords
         self._texture = texture
 
     def _create_vertex_list(self):
         usage = self._usage
-        if self._batch is None:
-            self._vertex_list = graphics.vertex_list_indexed(
-                4, [0, 1, 2, 0, 2, 3],
-                'position2f/%s' % usage,
-                ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
-                ('translate2f/%s' % usage, (self._x, self._y) * 4),
-                ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y)*4),
-                ('rotation1f/%s' % usage, (self._rotation,) * 4),
-                ('tex_coords3f', self._texture.tex_coords))
-        else:
-            self._vertex_list = self._batch.add_indexed(
-                4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
-                'position2f/%s' % usage,
-                ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
-                ('translate2f/%s' % usage, (self._x, self._y) * 4),
-                ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
-                ('rotation1f/%s' % usage, (self._rotation,) * 4),
-                ('tex_coords3f', self._texture.tex_coords))
-
+        self._vertex_list = self._batch.add_indexed(
+            4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
+            'position2f/%s' % usage,
+            ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
+            ('translate2f/%s' % usage, (self._x, self._y) * 4),
+            ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+            ('rotation1f/%s' % usage, (self._rotation,) * 4),
+            ('tex_coords3f', self._texture.tex_coords))
         self._update_position()
 
     def _update_position(self):
@@ -702,9 +674,7 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        self._group.set_state_recursive()
-        self._vertex_list.draw(GL_TRIANGLES)
-        self._group.unset_state_recursive()
+        self._batch.draw()
 
     if _is_epydoc:
         def on_animation_end(self):

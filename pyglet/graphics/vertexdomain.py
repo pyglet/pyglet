@@ -327,9 +327,9 @@ class VertexList:
 
         """
         pyglet.graphics.get_default_batch().vao.bind()
-        pyglet.graphics.default_group.set_state()
+        pyglet.graphics.get_default_group().set_state()
         self.domain.draw_subset(mode, self)
-        pyglet.graphics.default_group.unset_state()
+        pyglet.graphics.get_default_group().unset_state()
 
     def resize(self, count, index_count=None):
         """Resize this group.
