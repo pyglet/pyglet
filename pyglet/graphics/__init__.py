@@ -481,7 +481,7 @@ class Batch:
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (formats, mode, indexed)
+        key = (formats, mode, indexed, group.program.id)
         try:
             domain = domain_map[key]
         except KeyError:
@@ -518,10 +518,10 @@ class Batch:
 
             # Draw domains using this group
             domain_map = self.group_map[group]
-            for (formats, mode, indexed), domain in list(domain_map.items()):
+            for (formats, mode, indexed, program_id), domain in list(domain_map.items()):
                 # Remove unused domains from batch
                 if domain.is_empty:
-                    del domain_map[(formats, mode, indexed)]
+                    del domain_map[(formats, mode, indexed, program_id)]
                     continue
                 draw_list.append((lambda d, m: lambda: d.draw(m))(domain, mode))
 
@@ -646,7 +646,7 @@ class Group:
     lists only in the order in which they are drawn.
     """
 
-    def __init__(self, program=None, parent=None):
+    def __init__(self, program=None, parent=None, order=0):
         """Create a group.
 
         :Parameters:
@@ -659,9 +659,10 @@ class Group:
         """
         self.program = program or ShaderProgram(_default_vert_shader, _default_frag_shader)
         self.parent = parent
+        self.order = order
 
     def __lt__(self, other):
-        return hash(self) < hash(other)
+        return self.order < other.order
 
     def set_state(self):
         """Apply the OpenGL state change.
