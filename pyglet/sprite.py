@@ -375,9 +375,19 @@ class Sprite(event.EventDispatcher):
     def group(self, group):
         if self._group == group:
             return
-        assert isinstance(SpriteGroup, group), "Group must be a subclass of pyglet.sprite.SpriteGroup"
         self._group = group
         self._batch.migrate(self._vertex_list, GL_TRIANGLES, group, self._batch)
+
+    @property
+    def shader_program(self):
+        return self._group.program
+
+    @shader_program.setter
+    def shader_program(self, program):
+        if self._group.program == program:
+            return
+        self._group = self._group.__class__(self._texture, self._group.blend_src, self._group.blend_dest, program)
+        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self):
