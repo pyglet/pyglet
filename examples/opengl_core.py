@@ -56,13 +56,13 @@ standalone_sprite = pyglet.sprite.Sprite(img=white, x=600, y=0)
 
 
 ##########################################################
-# Modify the "zoom" Uniform value scrolling the mouse
+# Modify the sprite scale value by scrolling the mouse
 ##########################################################
 
 @window.event
 def on_mouse_scroll(x, y, mouse, direction):
     for spr in sprites:
-        spr.scale += direction / 16
+        spr.scale += direction / 10
 
 
 ###########################################################

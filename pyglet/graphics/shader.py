@@ -133,7 +133,7 @@ class Shader:
             raise GLException("The {0} shader failed to compile. "
                               "\n{1}".format(self.type, self._get_shader_log(shader_id)))
         elif _debug_gl_shaders:
-            print("Shader compliation log: {0}".format(self._get_shader_log(shader_id)))
+            print("Shader compilation log: {0}".format(self._get_shader_log(shader_id)))
 
         self._id = shader_id
 
@@ -179,7 +179,7 @@ class ShaderProgram:
     def __init__(self, *shaders):
         """Create an OpenGL ShaderProgram, from multiple Shaders.
 
-        Link one or more Shader objects together into a ShaderProgram.
+        Link multiple Shader objects together into a ShaderProgram.
 
         :Parameters:
             `shaders` : `Shader`
@@ -326,6 +326,8 @@ class ShaderProgram:
             uniform_name, u_type, u_size = self._query_uniform(index)
             location = self._get_uniform_location(uniform_name)
             if location == -1:
+                # May be in a UniformBlock. Currently we only
+                # support Named Uniform Blocks. Try to parse it:
                 block_name, uniform_name = uniform_name.split(".")
                 if block_name not in block_uniforms:
                     block_uniforms[block_name] = {}

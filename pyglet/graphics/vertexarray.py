@@ -68,4 +68,4 @@ class VertexArray:
             pass
 
     def __repr__(self):
-        return "{0}(id={1})".format(self.__class__.__name__, self._id.value)
+        return "{}(id={})".format(self.__class__.__name__, self._id.value)

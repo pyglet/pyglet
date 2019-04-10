@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2018 Alex Holkner
+# Copyright (c) 2006-2019 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -193,7 +193,7 @@ class BufferObject(AbstractBuffer):
 
     This class does not implement :py:class:`AbstractMappable`, and so has no
     :py:meth:`~AbstractMappable.get_region` method.  See 
-    :py:class:`MappableVertexBufferObject` for a VBO class
+    :py:class:`MappableVertexBufferObject` for a Buffer class
     that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
@@ -203,9 +203,9 @@ class BufferObject(AbstractBuffer):
         self.usage = usage
         self._context = pyglet.gl.current_context
 
-        vbo_id = GLuint()
-        glGenBuffers(1, vbo_id)
-        self.id = vbo_id.value
+        buffer_id = GLuint()
+        glGenBuffers(1, buffer_id)
+        self.id = buffer_id.value
 
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
@@ -228,8 +228,7 @@ class BufferObject(AbstractBuffer):
         glBindBuffer(self.target, self.id)
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
-        ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
-                          ctypes.POINTER(ctypes.c_byte * self.size)).contents
+        ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
     def unmap(self):
@@ -243,8 +242,8 @@ class BufferObject(AbstractBuffer):
             pass
 
     def delete(self):
-        vbo_id = GLuint(self.id)
-        glDeleteBuffers(1, vbo_id)
+        buffer_id = GLuint(self.id)
+        glDeleteBuffers(1, buffer_id)
         self.id = None
 
     def resize(self, size):
@@ -261,7 +260,7 @@ class BufferObject(AbstractBuffer):
 
 
 class MappableBufferObject(BufferObject, AbstractMappable):
-    """A VBO with system-memory backed store.
+    """A buffer with system-memory backed store.
 
     Updates to the data via `set_data`, `set_data_region` and `map` will be
     held in local memory until `bind` is called.  The advantage is that fewer

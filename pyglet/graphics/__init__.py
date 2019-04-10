@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2018 Alex Holkner
+# Copyright (c) 2006-2019 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
