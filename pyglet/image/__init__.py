@@ -2282,7 +2282,7 @@ def load_animation(filename, file=None, decoder=None):
         file = BytesIO(file.read())
 
     if decoder:
-        return decoder.decode(file, filename)
+        return decoder.decode_animation(file, filename)
     else:
         first_exception = None
         for decoder in get_animation_decoders(filename):
