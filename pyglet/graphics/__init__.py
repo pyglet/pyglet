@@ -36,21 +36,22 @@
 """Low-level graphics rendering.
 
 This module provides an efficient low-level abstraction over OpenGL.  It gives
-very good performance for rendering OpenGL primitives; far better than the
-typical immediate-mode usage and, on modern graphics cards, better than using
-display lists in many cases.  The module is used internally by other areas of
-pyglet.
+very good performance for rendering OpenGL primitives. The module is used
+internally by other areas of pyglet.
 
-See the :ref:`programming-guide-graphics` for details on how to use this graphics API.
+See the :ref:`programming-guide-graphics` for details on how to use this
+graphics API.
 
 Batches and groups
 ==================
 
 Without even needing to understand the details on how to draw primitives with
-the graphics API, developers can make use of :py:class:`~pyglet.graphics.Batch` and :py:class:`~pyglet.graphics.Group`
-objects to improve performance of sprite and text rendering.
+the graphics API, developers can make use of :py:class:`~pyglet.graphics.Batch`
+and :py:class:`~pyglet.graphics.Group` objects to improve performance of sprite
+and text rendering.
 
-The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label` and :py:func:`~pyglet.text.layout.TextLayout` classes all accept a ``batch`` and
+The :py:class:`~pyglet.sprite.Sprite`, :py:func:`~pyglet.text.Label` and
+:py:func:`~pyglet.text.layout.TextLayout` classes all accept a ``batch`` and
 ``group`` parameter in their constructors.  A batch manages a set of objects
 that will be drawn all at once, and a group describes the manner in which an
 object is drawn.
@@ -69,14 +70,14 @@ Drawing a complete batch is much faster than drawing the items in the batch
 individually, especially when those items belong to a common group.  
 
 Groups describe the OpenGL state required for an item.  This is for the most
-part managed by the sprite and text classes, however you can also use groups
-to ensure items are drawn in a particular order.  For example,  the following
-example adds a background sprite which is guaranteed to be drawn before the
-car and the boat::
+part managed by the sprite and text classes, however you can also use custom
+groups to ensure items are drawn in a particular order. For example, the
+following example adds a background sprite which is guaranteed to be drawn
+before the car and the boat::
 
     batch = pyglet.graphics.Batch()
-    background = pyglet.graphics.OrderedGroup(0)
-    foreground = pyglet.graphics.OrderedGroup(1)
+    background = pyglet.sprite.SpriteGroup(0)
+    foreground = pyglet.sprite.SpriteGroup(1)
 
     background = pyglet.sprite.Sprite(background_image, 
                                       batch=batch, group=background)
@@ -646,6 +647,8 @@ class Group:
     lists only in the order in which they are drawn.
     """
 
+    order = 0
+
     def __init__(self, program=None, parent=None, order=0):
         """Create a group.
 
@@ -657,22 +660,19 @@ class Group:
                 state's.
 
         """
-        self.program = program or ShaderProgram(_default_vert_shader, _default_frag_shader)
+        self.program = program or default_shader_program
         self.parent = parent
         self.order = order
 
-    def __lt__(self, other):
-        return self.order < other.order
-
     def set_state(self):
         """Apply the OpenGL state change.
-        
+
         The default implementation does nothing."""
         self.program.use_program()
 
     def unset_state(self):
         """Repeal the OpenGL state change.
-        
+
         The default implementation does nothing."""
         self.program.stop_program()
 
@@ -695,6 +695,18 @@ class Group:
         self.unset_state()
         if self.parent:
             self.parent.unset_state_recursive()
+
+    def __lt__(self, other):
+        return self.order < other.order
+
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and self.program is other.program and self.order == other.order
+
+    def __hash__(self):
+        return hash((self.order, self.program))
+
+    def __repr__(self):
+        return "{}(order={})".format(self.__class__.__name__, self.order)
 
 
 class TextureGroup(Group):
@@ -738,49 +750,6 @@ class TextureGroup(Group):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
 
-class OrderedGroup(Group):
-    """A group with partial order.
-
-    Ordered groups with a common parent are rendered in ascending order of
-    their ``order`` field.  This is a useful way to render multiple layers of
-    a scene within a single batch.
-    """
-    # This can be useful as a top-level group, or as a superclass for other
-    # groups that need to be ordered.
-    #
-    # As a top-level group it's useful because graphics can be composited in a
-    # known order even if they don't know about each other or share any known
-    # group.
-    def __init__(self, order, parent=None):
-        """Create an ordered group.
-
-        :Parameters:
-            `order` : int
-                Order of this group.
-            `parent` : `~pyglet.graphics.Group`
-                Parent of this group.
-
-        """
-        super(OrderedGroup, self).__init__(parent)
-        self.order = order
-
-    def __lt__(self, other):
-        if isinstance(other, OrderedGroup):
-            return self.order < other.order
-        return super(OrderedGroup, self).__lt__(other)
-
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.order == other.order and
-                self.parent == other.parent)
-
-    def __hash__(self):
-        return hash((self.order, self.parent))
-
-    def __repr__(self):
-        return '%s(%d)' % (self.__class__.__name__, self.order)
-
-
 #: The default Group and Shaders
 
 vertex_source = """#version 330 core
@@ -821,3 +790,4 @@ fragment_source = """#version 330 core
 
 _default_vert_shader = Shader(vertex_source, 'vertex')
 _default_frag_shader = Shader(fragment_source, 'fragment')
+default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)

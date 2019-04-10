@@ -517,11 +517,11 @@ class _InvalidRange(object):
 # Text group hierarchy
 #
 # top_group                         [Scrollable]TextLayoutGroup(Group)
-#   background_group                OrderedGroup(0)
-#   foreground_group                TextLayoutGlyphRenderGroup(OrderedGroup(1))
+#   background_group                Group(order=0)
+#   foreground_group                TextLayoutGlyphRenderGroup(Group(order=1))
 #     [font textures]               TextLayoutTextureGroup(Group)
 #     [...]                         TextLayoutTextureGroup(Group)
-#   foreground_decoration_group     TextLayoutForegroundDecorationGroup(OrderedGroup(2))
+#   foreground_decoration_group     TextLayoutForegroundDecorationGroup(Group(order=2))
 
 foreground_vertex_source = """#version 330 core
     in vec4 vertices;
@@ -609,14 +609,14 @@ class TextLayoutGroup(graphics.Group):
     pass
 
 
-class TextLayoutGlyphRenderGroup(graphics.OrderedGroup):
+class TextLayoutGlyphRenderGroup(graphics.Group):
     def __init__(self, texture, order=0, parent=None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
-        super(TextLayoutGlyphRenderGroup, self).__init__(order, parent)
+        super(TextLayoutGlyphRenderGroup, self).__init__(order=order, parent=parent)
         self.texture = texture
         self.program = _foreground_program
 
@@ -647,9 +647,9 @@ class TextLayoutGlyphRenderGroup(graphics.OrderedGroup):
         return hash((id(self.parent), self.texture.id, self.texture.target,))
 
 
-class TextDecorationGroup(graphics.OrderedGroup):
+class TextDecorationGroup(graphics.Group):
     def __init__(self, order=0, parent=None):
-        super(TextDecorationGroup, self).__init__(order, parent)
+        super(TextDecorationGroup, self).__init__(order=order, parent=parent)
         self.program = _decoration_program
 
     def set_state(self):
