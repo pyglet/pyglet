@@ -15,9 +15,10 @@ import pyglet
 class Rectangle(object):
     """Draws a rectangle into a batch."""
     def __init__(self, x1, y1, x2, y2, batch):
-        self.vertex_list = batch.add(4, pyglet.gl.GL_QUADS, None,
-                                     ('v2i', [x1, y1, x2, y1, x2, y2, x1, y2]),
-                                     ('c4B', [200, 200, 220, 255] * 4))
+        self.vertex_list = batch.add_indexed(4, pyglet.gl.GL_TRIANGLES, None,
+                                             [0, 1, 2, 0, 2, 3],
+                                             ('v2i', [x1, y1, x2, y1, x2, y2, x1, y2]),
+                                             ('c4B', [200, 200, 220, 255] * 4))
 
 
 class TextWidget(object):
@@ -36,8 +37,7 @@ class TextWidget(object):
 
         # Rectangular outline
         pad = 2
-        self.rectangle = Rectangle(x - pad, y - pad,
-                                   x + width + pad, y + height + pad, batch)
+        self.rectangle = Rectangle(x - pad, y - pad, x + width + pad, y + height + pad, batch)
 
     def hit_test(self, x, y):
         return (0 < x - self.layout.x < self.layout.width and

@@ -605,10 +605,6 @@ _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
 _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
 
 
-class TextLayoutGroup(graphics.Group):
-    pass
-
-
 class TextLayoutGlyphRenderGroup(graphics.Group):
     def __init__(self, texture, order=0, parent=None):
         """Create a text layout rendering group.
@@ -662,7 +658,7 @@ class TextDecorationGroup(graphics.Group):
         self.program.stop_program()
 
 
-########### OLD Classes: ###############
+# ########## OLD Groups: ############## #
 
 class ScrollableTextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
@@ -788,6 +784,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
     def __hash__(self):
         return id(self)
 
+
 #####################
 
 class TextLayout(object):
@@ -825,7 +822,7 @@ class TextLayout(object):
     _vertex_lists = ()
     _boxes = ()
 
-    top_group = TextLayoutGroup()
+    top_group = graphics.Group()
     background_group = TextDecorationGroup(order=0, parent=top_group)
     foreground_decoration_group = TextDecorationGroup(order=2, parent=top_group)
 
@@ -985,7 +982,7 @@ class TextLayout(object):
 
     def _init_groups(self, group):
         if group:
-            self.top_group = TextLayoutGroup(group)
+            self.top_group = graphics.Group(group)
             self.background_group = TextDecorationGroup(order=0, parent=self.top_group)
             self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self.top_group)
             # Otherwise class groups are (re)used.
