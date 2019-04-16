@@ -118,8 +118,7 @@ class Caret:
         if batch is None:
             batch = layout.batch
         colors = (*color, 255, *color, 255)
-        self._list = batch.add(2, gl.GL_LINES, layout.background_group,
-                               'vertices2f', ('colors4Bn', colors))
+        self._list = batch.add(2, gl.GL_LINES, layout.background_group, 'vertices2f', ('colors4Bn', colors))
 
         self._ideal_x = None
         self._ideal_line = None
@@ -150,7 +149,19 @@ class Caret:
     def _nudge(self):
         self.visible = True
 
-    def _set_visible(self, visible):
+    @property
+    def visible(self):
+        """Caret visibility.
+
+        The caret may be hidden despite this property due to the periodic blinking
+        or by `on_deactivate` if the event handler is attached to a window.
+
+        :type: bool
+        """
+        return self._visible
+
+    @visible.setter
+    def visible(self, visible):
         self._visible = visible
         clock.unschedule(self._blink)
         if visible and self._active and self.PERIOD:
@@ -158,33 +169,21 @@ class Caret:
             self._blink_visible = False  # flipped immediately by next blink
         self._blink(0)
 
-    def _get_visible(self):
-        return self._visible
+    @property
+    def color(self):
+        """Caret color.
 
-    visible = property(_get_visible, _set_visible,
-                       doc="""Caret visibility.
-    
-    The caret may be hidden despite this property due to the periodic blinking
-    or by `on_deactivate` if the event handler is attached to a window.
+        The default caret color is ``[0, 0, 0]`` (black).  Each RGB color
+        component is in the range 0 to 255.
 
-    :type: bool
-    """)
-
-    def _set_color(self, color):
-        self._list.colors[:3] = color
-        self._list.colors[4:7] = color
-
-    def _get_color(self):
+        :type: (int, int, int)
+        """
         return self._list.colors[:3]
 
-    color = property(_get_color, _set_color,
-                     doc="""Caret color.
-
-    The default caret color is ``[0, 0, 0]`` (black).  Each RGB color
-    component is in the range 0 to 255.
-
-    :type: (int, int, int)
-    """)
+    @color.setter
+    def color(self, color):
+        self._list.colors[:3] = color
+        self._list.colors[4:7] = color
 
     def _set_position(self, index):
         self._position = index

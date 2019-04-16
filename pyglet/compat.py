@@ -32,10 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Compatibility tools
+"""Compatibility tools
 
 Various tools for simultaneous Python 2.x and Python 3.x support
-'''
+"""
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'

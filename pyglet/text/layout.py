@@ -327,7 +327,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = TextLayoutGlyphRenderGroup(self.owner, 1, layout.top_group)
+            group = TextLayoutGroup(texture=self.owner, order=1, program=layout.default_shader)
             layout.groups[self.owner] = group
 
         n_glyphs = self.length
@@ -476,7 +476,7 @@ class _InlineElementBox(_AbstractBox):
         return '_InlineElementBox(%r)' % self.element
 
 
-class _InvalidRange(object):
+class _InvalidRange:
     def __init__(self):
         self.start = sys.maxsize
         self.end = 0
@@ -596,25 +596,25 @@ decoration_fragment_source = """#version 330 core
     }
 """
 
-_foreground_vert_shader = shader.Shader(foreground_vertex_source, 'vertex')
-_foreground_frag_shader = shader.Shader(foreground_fragment_source, 'fragment')
-_foreground_program = shader.ShaderProgram(_foreground_vert_shader, _foreground_frag_shader)
+_layout_vert_shader = shader.Shader(foreground_vertex_source, 'vertex')
+_layout_frag_shader = shader.Shader(foreground_fragment_source, 'fragment')
+_layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
+_scrollable_layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
 
 _decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
 _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
 _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
 
 
-class TextLayoutGlyphRenderGroup(graphics.Group):
-    def __init__(self, texture, order=0, parent=None):
+class TextLayoutGroup(graphics.Group):
+    def __init__(self, texture, order=1, program=_layout_program):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
-        super(TextLayoutGlyphRenderGroup, self).__init__(order=order, parent=parent)
+        super().__init__(order=order, program=program)
         self.texture = texture
-        self.program = _foreground_program
 
     def set_state(self):
         self.program.use_program()
@@ -635,17 +635,18 @@ class TextLayoutGlyphRenderGroup(graphics.Group):
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
-                self.parent is other.parent and
+                self.program.id is other.program.id and
+                self.order == other.order and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id)
 
     def __hash__(self):
-        return hash((id(self.parent), self.texture.id, self.texture.target,))
+        return hash((self.program.id, self.order, self.texture.target, self.texture.id))
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0, parent=None):
-        super(TextDecorationGroup, self).__init__(order=order, parent=parent)
+    def __init__(self, order=0):
+        super().__init__(order=order)
         self.program = _decoration_program
 
     def set_state(self):
@@ -660,7 +661,8 @@ class TextDecorationGroup(graphics.Group):
 
 # ########## OLD Groups: ############## #
 
-class ScrollableTextLayoutGroup(graphics.Group):
+
+class OLDScrollableTextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     The group maintains internal state for setting the clipping planes and
@@ -787,7 +789,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
 #####################
 
-class TextLayout(object):
+class TextLayout:
     """Lay out and display documents.
 
     This class is intended for displaying documents that do not change
@@ -822,9 +824,10 @@ class TextLayout(object):
     _vertex_lists = ()
     _boxes = ()
 
-    top_group = graphics.Group()
-    background_group = TextDecorationGroup(order=0, parent=top_group)
-    foreground_decoration_group = TextDecorationGroup(order=2, parent=top_group)
+    default_shader = _layout_program
+
+    background_group = TextDecorationGroup(order=0)
+    foreground_decoration_group = TextDecorationGroup(order=2)
 
     _x = 0
     _y = 0
@@ -981,11 +984,9 @@ class TextLayout(object):
             self._batch.draw_subset(self._vertex_lists)
 
     def _init_groups(self, group):
-        if group:
-            self.top_group = graphics.Group(group)
-            self.background_group = TextDecorationGroup(order=0, parent=self.top_group)
-            self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self.top_group)
-            # Otherwise class groups are (re)used.
+        self.top_group = group
+        self.background_group = TextDecorationGroup(order=0)
+        self.foreground_decoration_group = TextDecorationGroup(order=2)
 
     @property
     def document(self):
@@ -1840,8 +1841,10 @@ class ScrollableTextLayout(TextLayout):
        """
     _origin_layout = True
 
+    default_shader = _scrollable_layout_program
+
     def __init__(self, document, width, height, multiline=False, dpi=None,
-                     batch=None, group=None, wrap_lines=True):
+                 batch=None, group=None, wrap_lines=True):
 
         self._clip_x = 0
         self._clip_y = 0
