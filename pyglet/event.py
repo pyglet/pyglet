@@ -139,15 +139,10 @@ from builtins import object
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import sys
 import inspect
 from functools import partial
-import sys
 from .compat import WeakMethod
 
-# PYTHON2 - remove this legacy backwards compatibility hack:
-if sys.version_info < (3, 2):
-    inspect.getfullargspec = inspect.getargspec
 
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
@@ -342,12 +337,19 @@ class EventDispatcher(object):
         This is normally called from a dead ``WeakMethod`` to remove itself from the
         event stack.
         """
+
         # Iterate over a copy as we might mutate the list
         for frame in list(self._event_stack):
-            if name in frame and frame[name] == handler:
-                del frame[name]
-                if not frame:
-                    self._event_stack.remove(frame)
+
+            if name in frame:
+                try:
+                    if frame[name] == handler:
+                        del frame[name]
+                        if not frame:
+                            self._event_stack.remove(frame)
+                except TypeError:
+                    # weakref is already dead
+                    pass
 
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
