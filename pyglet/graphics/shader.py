@@ -231,6 +231,8 @@ class ShaderProgram:
         for shader in shaders:
             glAttachShader(program_id, shader.id)
         glLinkProgram(program_id)
+        for shader in shaders:
+            glDetachShader(program_id, shader.id)
         return program_id
 
     def use_program(self):
