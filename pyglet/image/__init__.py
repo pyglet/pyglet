@@ -326,7 +326,7 @@ class CheckerImagePattern(ImagePattern):
         return ImageData(width, height, 'RGBA', data)
 
 
-class AbstractImage(object):
+class AbstractImage:
     """Abstract class representing an image.
 
     :Parameters:
@@ -349,7 +349,7 @@ class AbstractImage(object):
         self.height = height
 
     def __repr__(self):
-        return '<%s %dx%d>' % (self.__class__.__name__, self.width, self.height)
+        return "{}(size={}x{})".format(self.__class__.__name__, self.width, self.height)
 
     def get_image_data(self):
         """Get an ImageData view of this image.  
@@ -461,8 +461,7 @@ class AbstractImage(object):
                     file.seek(0)
 
             if not first_exception:
-                raise ImageEncodeException(
-                    'No image encoders are available')
+                raise ImageEncodeException('No image encoders are available')
             raise first_exception
 
     def blit(self, x, y, z=0):
@@ -497,7 +496,7 @@ class AbstractImage(object):
         raise ImageException('Cannot blit %r to a texture.' % self)
 
 
-class AbstractImageSequence(object):
+class AbstractImageSequence:
     """Abstract sequence of images.
 
     The sequence is useful for storing image animations or slices of a volume.
@@ -642,9 +641,8 @@ class ImageData(AbstractImage):
 
         self._current_format = self._desired_format = fmt.upper()
         self._current_data = data
-        if not pitch:
-            pitch = width * len(fmt)
-        self._current_pitch = self.pitch = pitch
+        self.pitch = pitch or width * len(fmt)
+        self._current_pitch = self.pitch
         self.mipmap_images = []
 
     def __getstate__(self):
@@ -1076,7 +1074,8 @@ class ImageData(AbstractImage):
 class ImageDataRegion(ImageData):
     def __init__(self, x, y, width, height, image_data):
         super(ImageDataRegion, self).__init__(width, height,
-                                              image_data._current_format, image_data._current_data,
+                                              image_data._current_format,
+                                              image_data._current_data,
                                               image_data._current_pitch)
         self.x = x
         self.y = y
@@ -1085,8 +1084,7 @@ class ImageDataRegion(ImageData):
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data':
-                self.get_data(self._current_format, self._current_pitch),
+            '_current_data': self.get_data(self._current_format, self._current_pitch),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -1267,10 +1265,7 @@ class CompressedImageData(AbstractImage):
             width >>= 1
             height >>= 1
             level += 1
-            glCompressedTexImage2DARB(texture.target, level,
-                                      self.gl_format,
-                                      width, height, 0,
-                                      len(data), data)
+            glCompressedTexImage2DARB(texture.target, level, self.gl_format, width, height, 0, len(data), data)
 
         glFlush()
 
@@ -1610,6 +1605,9 @@ class Texture(AbstractImage):
         order = self.tex_coords_order
         self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
 
+    def __repr__(self):
+        return "{}(id={}, size={}x{})".format(self.__class__.__name__, self.id, self.width, self.height)
+
 
 class TextureRegion(Texture):
     """A rectangular region of a texture, presented as if it were
@@ -1649,6 +1647,10 @@ class TextureRegion(Texture):
 
     def blit_into(self, source, x, y, z):
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
+
+    def __repr__(self):
+        return "{}(id={}, size={}x{}, owner={}x{})".format(self.__class__.__name__, self.id, self.width, self.height,
+                                                           self.owner.width, self.owner.height)
 
     def __del__(self):
         # only the owner Texture should handle deletion
@@ -2075,16 +2077,11 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                 inserted between columns, not at the edges of the grid.
         """
         super(ImageGrid, self).__init__(image.width, image.height)
-
-        if item_width is None:
-            item_width = (image.width - column_padding * (columns - 1)) // columns
-        if item_height is None:
-            item_height = (image.height - row_padding * (rows - 1)) // rows
         self.image = image
         self.rows = rows
         self.columns = columns
-        self.item_width = item_width
-        self.item_height = item_height
+        self.item_width = item_width or (image.width - column_padding * (columns - 1)) // columns
+        self.item_height = item_height or (image.height - row_padding * (rows - 1)) // rows
         self.row_padding = row_padding
         self.column_padding = column_padding
 
@@ -2249,14 +2246,9 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
 
 # --------------------------------------------------------------------------
-# Animation stuff here.  Vote on if this should be in pyglet.image.animation
-# or just leave it tacked on here.
+# Animation stuff here.
 
-# TODO: 
-#       conversion Animation ->  media.Source
-#       move to another module?  
-#          pyglet.animation?
-#          pyglet.image.animation?
+# TODO: conversion Animation ->  media.Source ?
 
 def load_animation(filename, file=None, decoder=None):
     """Load an animation from a file.
@@ -2321,19 +2313,19 @@ class Animation(object):
         assert len(frames)
         self.frames = frames
 
-    def add_to_texture_bin(self, bin):
+    def add_to_texture_bin(self, texturebin):
         """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
 
         The animation frames are modified in-place to refer to the texture bin
         regions.
 
         :Parameters:
-            `bin` : `~pyglet.image.atlas.TextureBin`
+            `texturebin` : `~pyglet.image.atlas.TextureBin`
                 Texture bin to upload animation frames into.
 
         """
         for frame in self.frames:
-            frame.image = bin.add(frame.image)
+            frame.image = texturebin.add(frame.image)
 
     def get_transform(self, flip_x=False, flip_y=False, rotate=0):
         """Create a copy of this animation applying a simple transformation.
