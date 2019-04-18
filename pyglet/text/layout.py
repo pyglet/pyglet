@@ -199,7 +199,7 @@ def _parse_distance(distance, dpi):
         assert False, 'Unknown distance unit %s' % unit
 
 
-class _Line(object):
+class _Line:
     align = 'left'
 
     margin_left = 0
@@ -240,22 +240,18 @@ class _Line(object):
             box.delete(layout)
 
 
-class _LayoutContext(object):
+class _LayoutContext:
     def __init__(self, layout, document, colors_iter, background_iter):
         self.colors_iter = colors_iter
         underline_iter = document.get_style_runs('underline')
-        self.decoration_iter = runlist.ZipRunIterator(
-            (background_iter,
-             underline_iter))
-        self.baseline_iter = runlist.FilteredRunIterator(
-            document.get_style_runs('baseline'),
-            lambda value: value is not None, 0)
+        self.decoration_iter = runlist.ZipRunIterator((background_iter, underline_iter))
+        self.baseline_iter = runlist.FilteredRunIterator(document.get_style_runs('baseline'),
+                                                         lambda value: value is not None, 0)
 
 
 class _StaticLayoutContext(_LayoutContext):
     def __init__(self, layout, document, colors_iter, background_iter):
-        super(_StaticLayoutContext, self).__init__(layout, document,
-                                                   colors_iter, background_iter)
+        super().__init__(layout, document, colors_iter, background_iter)
         self.vertex_lists = layout._vertex_lists
         self.boxes = layout._boxes
 
@@ -276,7 +272,7 @@ class _IncrementalLayoutContext(_LayoutContext):
         pass
 
 
-class _AbstractBox(object):
+class _AbstractBox:
     owner = None
 
     def __init__(self, ascent, descent, advance, length):
@@ -315,7 +311,7 @@ class _GlyphBox(_AbstractBox):
                 and kerns in the glyph list.
 
         """
-        super(_GlyphBox, self).__init__(font.ascent, font.descent, advance, len(glyphs))
+        super().__init__(font.ascent, font.descent, advance, len(glyphs))
         assert owner
         self.owner = owner
         self.font = font
@@ -327,15 +323,16 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = TextLayoutGroup(texture=self.owner, order=1, program=layout.default_shader)
+            group = layout.default_group_class(texture=self.owner, order=1, program=layout.default_shader)
             layout.groups[self.owner] = group
 
         n_glyphs = self.length
         vertices = []
         tex_coords = []
+        baseline = 0
         x1 = x
         for start, end, baseline in context.baseline_iter.ranges(i, i + n_glyphs):
-            baseline = layout._parse_distance(baseline)
+            baseline = layout.parse_distance(baseline)
             assert len(self.glyphs[start - i:end - i]) == end - start
             for kern, glyph in self.glyphs[start - i:end - i]:
                 x1 += kern
@@ -514,16 +511,7 @@ class _InvalidRange:
         return self.end > self.start
 
 
-# Text group hierarchy
-#
-# top_group                         [Scrollable]TextLayoutGroup(Group)
-#   background_group                Group(order=0)
-#   foreground_group                TextLayoutGlyphRenderGroup(Group(order=1))
-#     [font textures]               TextLayoutTextureGroup(Group)
-#     [...]                         TextLayoutTextureGroup(Group)
-#   foreground_decoration_group     TextLayoutForegroundDecorationGroup(Group(order=2))
-
-foreground_vertex_source = """#version 330 core
+layout_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
@@ -551,7 +539,7 @@ foreground_vertex_source = """#version 330 core
     }
 """
 
-foreground_fragment_source = """#version 330 core
+layout_fragment_source = """#version 330 core
     in vec4 text_colors;
     in vec2 texture_coords;
 
@@ -596,14 +584,16 @@ decoration_fragment_source = """#version 330 core
     }
 """
 
-_layout_vert_shader = shader.Shader(foreground_vertex_source, 'vertex')
-_layout_frag_shader = shader.Shader(foreground_fragment_source, 'fragment')
+_layout_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
+_layout_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
 _layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
 _scrollable_layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
 
 _decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
 _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
 _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
+
+# TODO: consider linking ShaderPrograms on-demand, to avoid uniform data conflicts
 
 
 class TextLayoutGroup(graphics.Group):
@@ -645,9 +635,13 @@ class TextLayoutGroup(graphics.Group):
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0):
-        super().__init__(order=order)
-        self.program = _decoration_program
+    def __init__(self, order=0, program=_decoration_program):
+        """Create a text decoration rendering group.
+
+        The group is created internally when a :py:class:`~pyglet.text.Label`
+        is created; applications usually do not need to explicitly create it.
+        """
+        super().__init__(order=order, program=program)
 
     def set_state(self):
         self.program.use_program()
@@ -657,6 +651,46 @@ class TextDecorationGroup(graphics.Group):
     def unset_state(self):
         glDisable(GL_BLEND)
         self.program.stop_program()
+
+
+class ScrollableTextLayoutGroup(graphics.Group):
+    def __init__(self, texture, order=1, program=_layout_program):
+        """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+
+        The group maintains internal state for specifying the viewable
+        area, and for scrolling. Because the group has internal state
+        specific to the text layout, the group is never shared.
+        """
+        super().__init__(order=order, program=program)
+        self.texture = texture
+        self.scissor_box = (GLint * 4)()
+
+    def set_state(self):
+        self.program.use_program()
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glEnable(GL_SCISSOR_TEST)
+        glScissor(*self.scissor_box)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        glDisable(GL_SCISSOR_TEST)
+        glBindTexture(self.texture.target, 0)
+        self.program.stop_program()
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.texture)
+
+    def __eq__(self, other):
+        return self is other
+
+    def __hash__(self):
+        return id(self)
 
 
 # ########## OLD Groups: ############## #
@@ -824,9 +858,9 @@ class TextLayout:
     _vertex_lists = ()
     _boxes = ()
 
+    default_group_class = TextLayoutGroup
     default_shader = _layout_program
-
-    background_group = TextDecorationGroup(order=0)
+    background_decoration_group = TextDecorationGroup(order=0)
     foreground_decoration_group = TextDecorationGroup(order=2)
 
     _x = 0
@@ -873,8 +907,9 @@ class TextLayout:
         self.content_width = 0
         self.content_height = 0
 
+        assert not group, "Assigning custom Groups is not supported"
+
         self.groups = {}
-        self._init_groups(group)
 
         if batch is None:
             batch = graphics.Batch()
@@ -927,7 +962,7 @@ class TextLayout:
             "When the parameters 'multiline' and 'wrap_lines' are True," \
             "the parameter 'width' must be a number."
 
-    def _parse_distance(self, distance):
+    def parse_distance(self, distance):
         if distance is None:
             return None
         return _parse_distance(distance, self._dpi)
@@ -982,11 +1017,6 @@ class TextLayout:
             self._batch.draw()
         else:
             self._batch.draw_subset(self._vertex_lists)
-
-    def _init_groups(self, group):
-        self.top_group = group
-        self.background_group = TextDecorationGroup(order=0)
-        self.foreground_decoration_group = TextDecorationGroup(order=2)
 
     @property
     def document(self):
@@ -1044,11 +1074,12 @@ class TextLayout:
             left = self._get_left()
             top = self._get_top(lines)
 
-        context = _StaticLayoutContext(self, self._document,
-                                       colors_iter, background_iter)
+        context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
-            self._create_vertex_lists(left + line.x, top + line.y,
-                                      line.start, line.boxes, context)
+            self._create_vertex_lists(left + line.x, top + line.y, line.start, line.boxes, context)
+
+    def _calculate_scissor_box(self):
+        pass
 
     def _get_left(self):
         if self._multiline:
@@ -1153,8 +1184,7 @@ class TextLayout:
     def _flow_glyphs(self, glyphs, owner_runs, start, end):
         # TODO change flow generator on self, avoiding this conditional.
         if not self._multiline:
-            for line in self._flow_glyphs_single_line(glyphs, owner_runs,
-                                                      start, end):
+            for line in self._flow_glyphs_single_line(glyphs, owner_runs, start, end):
                 yield line
         else:
             for line in self._flow_glyphs_wrap(glyphs, owner_runs, start, end):
@@ -1170,41 +1200,32 @@ class TextLayout:
 
         font_iterator = self._document.get_font_runs(dpi=self._dpi)
 
-        align_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('align'),
-            lambda value: value in ('left', 'right', 'center'),
-            'left')
+        align_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('align'),
+                                                     lambda value: value in ('left', 'right', 'center'),
+                                                     'left')
         if self._width is None:
-            wrap_iterator = runlist.ConstRunIterator(
-                len(self.document.text), False)
+            wrap_iterator = runlist.ConstRunIterator(len(self.document.text), False)
         else:
-            wrap_iterator = runlist.FilteredRunIterator(
-                self._document.get_style_runs('wrap'),
-                lambda value: value in (True, False, 'char', 'word'),
-                True)
-        margin_left_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('margin_left'),
-            lambda value: value is not None, 0)
-        margin_right_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('margin_right'),
-            lambda value: value is not None, 0)
-        indent_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('indent'),
-            lambda value: value is not None, 0)
-        kerning_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('kerning'),
-            lambda value: value is not None, 0)
-        tab_stops_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('tab_stops'),
-            lambda value: value is not None, [])
-
+            wrap_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('wrap'),
+                                                        lambda value: value in (True, False, 'char', 'word'),
+                                                        True)
+        margin_left_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('margin_left'),
+                                                           lambda value: value is not None, 0)
+        margin_right_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('margin_right'),
+                                                            lambda value: value is not None, 0)
+        indent_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('indent'),
+                                                      lambda value: value is not None, 0)
+        kerning_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('kerning'),
+                                                       lambda value: value is not None, 0)
+        tab_stops_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('tab_stops'),
+                                                         lambda value: value is not None, [])
         line = _Line(start)
         line.align = align_iterator[start]
-        line.margin_left = self._parse_distance(margin_left_iterator[start])
-        line.margin_right = self._parse_distance(margin_right_iterator[start])
+        line.margin_left = self.parse_distance(margin_left_iterator[start])
+        line.margin_right = self.parse_distance(margin_right_iterator[start])
         if start == 0 or self.document.text[start - 1] in u'\n\u2029':
             line.paragraph_begin = True
-            line.margin_left += self._parse_distance(indent_iterator[start])
+            line.margin_left += self.parse_distance(indent_iterator[start])
         wrap = wrap_iterator[start]
         if self._wrap_lines:
             width = self._width - line.margin_left - line.margin_right
@@ -1250,7 +1271,7 @@ class TextLayout:
                     kern = 0
                     nokern = False
                 else:
-                    kern = self._parse_distance(kerning_iterator[index])
+                    kern = self.parse_distance(kerning_iterator[index])
 
                 if wrap != 'char' and text in u'\u0020\u200b\t':
                     # Whitespace: commit pending runs to this line.
@@ -1263,7 +1284,7 @@ class TextLayout:
                         # Fix up kern for this glyph to align to the next tab
                         # stop
                         for tab_stop in tab_stops_iterator[index]:
-                            tab_stop = self._parse_distance(tab_stop)
+                            tab_stop = self.parse_distance(tab_stop)
                             if tab_stop > x + line.margin_left:
                                 break
                         else:
@@ -1274,8 +1295,7 @@ class TextLayout:
 
                     owner_accum.append((kern, glyph))
                     owner_accum_commit.extend(owner_accum)
-                    owner_accum_commit_width += owner_accum_width + \
-                                                glyph.advance + kern
+                    owner_accum_commit_width += owner_accum_width + glyph.advance + kern
                     eol_ws += glyph.advance + kern
 
                     owner_accum = []
@@ -1316,9 +1336,7 @@ class TextLayout:
                         # Create the _GlyphBox for the committed glyphs in the
                         # current owner.
                         if owner_accum_commit:
-                            line.add_box(
-                                _GlyphBox(owner, font, owner_accum_commit,
-                                          owner_accum_commit_width))
+                            line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
                             owner_accum_commit = []
                             owner_accum_commit_width = 0
 
@@ -1342,10 +1360,8 @@ class TextLayout:
                             try:
                                 line = _Line(next_start)
                                 line.align = align_iterator[next_start]
-                                line.margin_left = self._parse_distance(
-                                    margin_left_iterator[next_start])
-                                line.margin_right = self._parse_distance(
-                                    margin_right_iterator[next_start])
+                                line.margin_left = self.parse_distance(margin_left_iterator[next_start])
+                                line.margin_right = self.parse_distance(margin_right_iterator[next_start])
                             except IndexError:
                                 # XXX This used to throw StopIteration in some cases, causing the
                                 # final part of this method not to be executed. Refactoring
@@ -1378,7 +1394,7 @@ class TextLayout:
                     elif new_paragraph:
                         # New paragraph started, update wrap style
                         wrap = wrap_iterator[next_start]
-                        line.margin_left += self._parse_distance(indent_iterator[next_start])
+                        line.margin_left += self.parse_distance(indent_iterator[next_start])
                         if self._wrap_lines:
                             width = self._width - line.margin_left - line.margin_right
                     elif not new_line:
@@ -1393,11 +1409,9 @@ class TextLayout:
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
             if owner_accum_commit:
-                line.add_box(_GlyphBox(owner, font, owner_accum_commit,
-                                       owner_accum_commit_width))
+                line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
             if owner_accum:
-                run_accum.append(_GlyphBox(owner, font, owner_accum,
-                                           owner_accum_width))
+                run_accum.append(_GlyphBox(owner, font, owner_accum, owner_accum_width))
                 run_accum_width += owner_accum_width
 
         # All glyphs have been processed: commit everything pending and flush
@@ -1417,9 +1431,8 @@ class TextLayout:
     def _flow_glyphs_single_line(self, glyphs, owner_runs, start, end):
         owner_iterator = owner_runs.get_run_iterator().ranges(start, end)
         font_iterator = self.document.get_font_runs(dpi=self._dpi)
-        kern_iterator = runlist.FilteredRunIterator(
-            self.document.get_style_runs('kerning'),
-            lambda value: value is not None, 0)
+        kern_iterator = runlist.FilteredRunIterator(self.document.get_style_runs('kerning'),
+                                                    lambda value: value is not None, 0)
 
         line = _Line(start)
         font = font_iterator[0]
@@ -1449,39 +1462,33 @@ class TextLayout:
         yield line
 
     def _flow_lines(self, lines, start, end):
-        margin_top_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('margin_top'),
-            lambda value: value is not None, 0)
-        margin_bottom_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('margin_bottom'),
-            lambda value: value is not None, 0)
+        margin_top_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('margin_top'),
+                                                          lambda value: value is not None, 0)
+        margin_bottom_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('margin_bottom'),
+                                                             lambda value: value is not None, 0)
         line_spacing_iterator = self._document.get_style_runs('line_spacing')
-        leading_iterator = runlist.FilteredRunIterator(
-            self._document.get_style_runs('leading'),
-            lambda value: value is not None, 0)
+        leading_iterator = runlist.FilteredRunIterator(self._document.get_style_runs('leading'),
+                                                       lambda value: value is not None, 0)
 
         if start == 0:
             y = 0
         else:
             line = lines[start - 1]
-            line_spacing = \
-                self._parse_distance(line_spacing_iterator[line.start])
-            leading = \
-                self._parse_distance(leading_iterator[line.start])
+            line_spacing = self.parse_distance(line_spacing_iterator[line.start])
+            leading = self.parse_distance(leading_iterator[line.start])
 
             y = line.y
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= self._parse_distance(margin_bottom_iterator[line.start])
+                y -= self.parse_distance(margin_bottom_iterator[line.start])
 
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
-                y -= self._parse_distance(margin_top_iterator[line.start])
-                line_spacing = \
-                    self._parse_distance(line_spacing_iterator[line.start])
-                leading = self._parse_distance(leading_iterator[line.start])
+                y -= self.parse_distance(margin_top_iterator[line.start])
+                line_spacing = self.parse_distance(line_spacing_iterator[line.start])
+                leading = self.parse_distance(leading_iterator[line.start])
             else:
                 y -= leading
 
@@ -1492,13 +1499,11 @@ class TextLayout:
             if line.align == 'left' or line.width > self.width:
                 line.x = line.margin_left
             elif line.align == 'center':
-                line.x = (self.width - line.margin_left - line.margin_right
-                          - line.width) // 2 + line.margin_left
+                line.x = (self.width - line.margin_left - line.margin_right - line.width) // 2 + line.margin_left
             elif line.align == 'right':
                 line.x = self.width - line.margin_right - line.width
 
-            self.content_width = max(self.content_width,
-                                     line.width + line.margin_left)
+            self.content_width = max(self.content_width, line.width + line.margin_left)
 
             if line.y == y and line_index >= end:
                 # Early exit: all invalidated lines have been reflowed and the
@@ -1510,7 +1515,7 @@ class TextLayout:
             if line_spacing is None:
                 y += line.descent
             if line.paragraph_end:
-                y -= self._parse_distance(margin_bottom_iterator[line.start])
+                y -= self.parse_distance(margin_bottom_iterator[line.start])
 
             line_index += 1
         else:
@@ -1547,6 +1552,7 @@ class TextLayout:
                 vertices[::2] = list(map(l_dx, vertices[::2]))
                 vertex_list.vertices[:] = vertices
             self._x = x
+        self._calculate_scissor_box()
 
     @property
     def y(self):
@@ -1571,6 +1577,7 @@ class TextLayout:
                 vertices[1::2] = list(map(l_dy, vertices[1::2]))
                 vertex_list.vertices[:] = vertices
             self._y = y
+        self._calculate_scissor_box()
 
     @property
     def width(self):
@@ -1582,14 +1589,11 @@ class TextLayout:
         """
         return self._width
 
-    def _set_width(self, width):
+    @width.setter
+    def width(self, width):
         self._width = width
         self._wrap_lines_invariant()
         self._update()
-
-    @width.setter
-    def width(self, width):
-        self._set_width(width)
 
     @property
     def height(self):
@@ -1599,13 +1603,10 @@ class TextLayout:
         """
         return self._height
 
-    def _set_height(self, height):
-        self._height = height
-        self._update()
-
     @height.setter
     def height(self, height):
-        self._set_height(height)
+        self._height = height
+        self._update()
 
     @property
     def multiline(self):
@@ -1619,14 +1620,11 @@ class TextLayout:
         """
         return self._multiline
 
-    def _set_multiline(self, multiline):
+    @multiline.setter
+    def multiline(self, multiline):
         self._multiline = multiline
         self._wrap_lines_invariant()
         self._update()
-
-    @multiline.setter
-    def multiline(self, multiline):
-        self._set_multiline(multiline)
 
     @property
     def anchor_x(self):
@@ -1841,11 +1839,11 @@ class ScrollableTextLayout(TextLayout):
        """
     _origin_layout = True
 
+    default_group_class = ScrollableTextLayoutGroup
     default_shader = _scrollable_layout_program
 
-    def __init__(self, document, width, height, multiline=False, dpi=None,
-                 batch=None, group=None, wrap_lines=True):
-
+    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
         self._clip_x = 0
         self._clip_y = 0
         self._clip_width = 0
@@ -1855,7 +1853,25 @@ class ScrollableTextLayout(TextLayout):
         self.translate_x = 0  # x - view_x
         self.translate_y = 0  # y - view_y
 
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
+        self._calculate_scissor_box()
+
+    def _calculate_scissor_box(self):
+        for group in self.groups.values():
+            x = self._x
+            y = self._y
+            height = max(min(y + self.height, self.height), 0)
+            width = max(min(x + self.width, self.width), 0)
+            x = max(0, x)
+            y = max(0, y)
+
+            print(x, y, width, height)
+
+            group.scissor_box[:] = x, y, width, height
+
+    def _update_translation(self):
+        for group in self.groups.values():
+            group.program.use_program()
+            group.program['translate'] = self.translate_x, self.translate_y
 
     # Offset of content within viewport
     @property
@@ -1871,17 +1887,12 @@ class ScrollableTextLayout(TextLayout):
         """
         return self._view_x
 
-    def _set_view_x(self, view_x):
+    @view_x.setter
+    def view_x(self, view_x):
         view_x = max(0, min(self.content_width - self._width, view_x))
         self._view_x = view_x
         self.translate_x = self._clip_x - view_x
-        for group in self.groups.values():
-            group.program.use_program()
-            group.program['translate'] = self.translate_x, self.translate_y
-
-    @view_x.setter
-    def view_x(self, view_x):
-        self._set_view_x(view_x)
+        self._update_translation()
 
     @property
     def view_y(self):
@@ -1899,18 +1910,13 @@ class ScrollableTextLayout(TextLayout):
         """
         return self._view_y
 
-    def _set_view_y(self, view_y):
+    @view_y.setter
+    def view_y(self, view_y):
         # view_y must be negative.
         view_y = min(0, max(self.height - self.content_height, view_y))
         self._view_y = view_y
         self.translate_y = self._clip_y - view_y
-        for group in self.groups.values():
-            group.program.use_program()
-            group.program['translate'] = self.translate_x, self.translate_y
-
-    @view_y.setter
-    def view_y(self, view_y):
-        self._set_view_y(view_y)
+        self._update_translation()
 
 
 class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
@@ -2419,7 +2425,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         if baseline is None:
             baseline = 0
         else:
-            baseline = self._parse_distance(baseline)
+            baseline = self.parse_distance(baseline)
 
         position -= line.start
         for box in line.boxes:
