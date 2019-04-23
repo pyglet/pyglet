@@ -32,160 +32,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Simple Python-only RIFF reader, supports uncompressed WAV files.
+"""Decoder for RIFF Wave files, using the standard library wave module.
 """
-from __future__ import division
-from builtins import object
 
-# RIFF reference:
-# http://www.saettler.com/RIFFMCI/riffmci.html
-#
-# More readable WAVE summaries:
-#
-# http://www.borg.com/~jglatt/tech/wave.htm
-# http://www.sonicspot.com/guide/wavefiles.html
-
-from ..exceptions import MediaFormatException, MediaDecodeException
+from ..exceptions import MediaFormatException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
-from pyglet.compat import BytesIO, asbytes
 
-import struct
-
-WAVE_FORMAT_PCM = 0x0001
-IBM_FORMAT_MULAW = 0x0101
-IBM_FORMAT_ALAW = 0x0102
-IBM_FORMAT_ADPCM = 0x0103
+import wave
 
 
-class RIFFFormatException(MediaFormatException):
+class WAVEFormatException(MediaFormatException):
     pass
-
-
-class WAVEFormatException(RIFFFormatException):
-    pass
-
-
-class RIFFChunk(object):
-    header_fmt = '<4sL'
-    header_length = struct.calcsize(header_fmt)
-
-    def __init__(self, file, name, length, offset):
-        self.file = file
-        self.name = name
-        self.length = length
-        self.offset = offset
-
-    def get_data(self):
-        self.file.seek(self.offset)
-        return self.file.read(self.length)
-
-    def __repr__(self):
-        return '%s(%r, offset=%r, length=%r)' % (
-            self.__class__.__name__,
-            self.name,
-            self.offset,
-            self.length)
-
-
-class RIFFForm(object):
-    _chunks = None
-
-    def __init__(self, file, offset):
-        self.file = file
-        self.offset = offset
-
-    def get_chunks(self):
-        if self._chunks:
-            return self._chunks
-
-        self._chunks = []
-        self.file.seek(self.offset)
-        offset = self.offset
-        while True:
-            header = self.file.read(RIFFChunk.header_length)
-            if not header:
-                break
-            name, length = struct.unpack(RIFFChunk.header_fmt, header)
-            offset += RIFFChunk.header_length
-
-            cls = self._chunk_types.get(name, RIFFChunk)
-            chunk = cls(self.file, name, length, offset)
-            self._chunks.append(chunk)
-
-            offset += length
-            if offset & 0x3 != 0:
-                offset = (offset | 0x3) + 1
-            self.file.seek(offset)
-        return self._chunks
-
-    def __repr__(self):
-        return '%s(offset=%r)' % (self.__class__.__name__, self.offset)
-
-
-class RIFFType(RIFFChunk):
-    def __init__(self, *args, **kwargs):
-        super(RIFFType, self).__init__(*args, **kwargs)
-
-        self.file.seek(self.offset)
-        form = self.file.read(4)
-        if form != asbytes('WAVE'):
-            raise RIFFFormatException('Unsupported RIFF form "%s"' % form)
-
-        self.form = WaveForm(self.file, self.offset + 4)
-
-
-class RIFFFile(RIFFForm):
-    _chunk_types = {
-        asbytes('RIFF'): RIFFType,
-    }
-
-    def __init__(self, file):
-        if not hasattr(file, 'seek'):
-            file = BytesIO(file.read())
-
-        super(RIFFFile, self).__init__(file, 0)
-
-    def get_wave_form(self):
-        chunks = self.get_chunks()
-        if len(chunks) == 1 and isinstance(chunks[0], RIFFType):
-            return chunks[0].form
-
-
-class WaveFormatChunk(RIFFChunk):
-    def __init__(self, *args, **kwargs):
-        super(WaveFormatChunk, self).__init__(*args, **kwargs)
-
-        fmt = '<HHLLHH'
-        if struct.calcsize(fmt) != self.length:
-            raise RIFFFormatException('Size of format chunk is incorrect.')
-
-        (self.wFormatTag,
-         self.wChannels,
-         self.dwSamplesPerSec,
-         self.dwAvgBytesPerSec,
-         self.wBlockAlign,
-         self.wBitsPerSample) = struct.unpack(fmt, self.get_data())
-
-
-class WaveDataChunk(RIFFChunk):
-    pass
-
-
-class WaveForm(RIFFForm):
-    _chunk_types = {
-        asbytes('fmt '): WaveFormatChunk,
-        asbytes('data'): WaveDataChunk
-    }
-
-    def get_format_chunk(self):
-        for chunk in self.get_chunks():
-            if isinstance(chunk, WaveFormatChunk):
-                return chunk
-
-    def get_data_chunk(self):
-        for chunk in self.get_chunks():
-            if isinstance(chunk, WaveDataChunk):
-                return chunk
 
 
 class WaveSource(StreamingSource):
@@ -195,62 +52,42 @@ class WaveSource(StreamingSource):
 
         self._file = file
 
-        # Read RIFF format, get format and data chunks
-        riff = RIFFFile(file)
-        wave_form = riff.get_wave_form()
-        if wave_form:
-            format = wave_form.get_format_chunk()
-            data_chunk = wave_form.get_data_chunk()
+        try:
+            self._wave = wave.open(file)
+        except wave.Error as e:
+            raise WAVEFormatException(e)
 
-        if not wave_form or not format or not data_chunk:
-            if not filename or not filename.lower().endswith('.wav'):
-                raise MediaDecodeException('Not a WAVE file')
+        parameters = self._wave.getparams()
 
-        if format.wFormatTag != WAVE_FORMAT_PCM:
-            raise WAVEFormatException('Unsupported WAVE format category')
+        self.audio_format = AudioFormat(channels=parameters.nchannels,
+                                        sample_size=parameters.sampwidth * 8,
+                                        sample_rate=parameters.framerate)
 
-        if format.wBitsPerSample not in (8, 16, 24):
-            raise WAVEFormatException('Unsupported sample bit size: %d' %
-                                      format.wBitsPerSample)
+        self._bytes_per_frame = parameters.nchannels * parameters.sampwidth
+        self._duration = parameters.nframes / parameters.framerate
+        self._duration_per_frame = self._duration / parameters.nframes
+        self._num_frames = parameters.nframes
 
-        self.audio_format = AudioFormat(
-            channels=format.wChannels,
-            sample_size=format.wBitsPerSample,
-            sample_rate=format.dwSamplesPerSec)
-        self._duration = float(data_chunk.length) / self.audio_format.bytes_per_second
+        self._wave.rewind()
 
-        self._start_offset = data_chunk.offset
-        self._max_offset = data_chunk.length
-        self._offset = 0
-        self._file.seek(self._start_offset)
+    def __del__(self):
+        self._file.close()
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
-        num_bytes = min(num_bytes, self._max_offset - self._offset)
-        if not num_bytes:
+        num_frames = max(1, num_bytes // self._bytes_per_frame)
+
+        data = self._wave.readframes(num_frames)
+        if not data:
             return None
 
-        data = self._file.read(num_bytes)
-        self._offset += len(data)
-
-        timestamp = float(self._offset) / self.audio_format.bytes_per_second
-        duration = float(num_bytes) / self.audio_format.bytes_per_second
-
+        timestamp = self._wave.tell() / self.audio_format.sample_rate
+        duration = num_frames / self.audio_format.sample_rate
         return AudioData(data, len(data), timestamp, duration, [])
 
     def seek(self, timestamp):
-        offset = int(timestamp * self.audio_format.bytes_per_second)
-
-        # Bound within duration
-        offset = min(max(offset, 0), self._max_offset)
-
-        # Align to sample
-        if self.audio_format.bytes_per_sample == 2:
-            offset &= 0xfffffffe
-        elif self.audio_format.bytes_per_sample == 4:
-            offset &= 0xfffffffc
-
-        self._file.seek(offset + self._start_offset)
-        self._offset = offset
+        timestamp = max(0.0, min(timestamp, self._duration))
+        position = int(timestamp / self._duration_per_frame)
+        self._wave.setpos(position)
 
 
 #########################################
@@ -260,7 +97,7 @@ class WaveSource(StreamingSource):
 class WaveDecoder(object):
 
     def get_file_extensions(self):
-        return ['.wav', '.wave']
+        return ['.wav', '.wave', '.riff']
 
     def decode(self, file, filename, streaming):
         if streaming:
