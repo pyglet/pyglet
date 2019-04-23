@@ -44,6 +44,7 @@ __version__ = '$Id: $'
 
 import sys
 from pyglet.event import EventDispatcher
+from .gamecontroller import get_mapping
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
@@ -113,6 +114,19 @@ class Device(object):
         """
         raise NotImplementedError('abstract')
 
+    def get_guid(self):
+        """Get the device GUID, in SDL2 format.
+
+        Return a string containing a unique device identification
+        string. This is generated from the various hardware IDs,
+        in the same format as is used by SDL2. This allows reusing
+        the Game Controller mapping strings that have become a
+        fairly standard.
+
+        :rtype: The GUID, as a string
+        """
+        raise NotImplementedError('abstract')
+
     def __repr__(self):
         return '%s(name=%s)' % (self.__class__.__name__, self.name)
 
@@ -138,10 +152,10 @@ class Control(EventDispatcher):
             operating systems.
     """
 
-    def __init__(self, name, raw_name=None):
+    def __init__(self, name, raw_name=None, inverted=False):
         self.name = name
         self.raw_name = raw_name
-        self.inverted = False
+        self.inverted = inverted
         self._value = None
 
     @property
@@ -181,6 +195,7 @@ class Control(EventDispatcher):
             :event:
             """
 
+
 Control.register_event_type('on_change')
 
 
@@ -209,9 +224,9 @@ class RelativeAxis(Control):
         return self._value
 
     @value.setter
-    def value(self, newvalue):
-        self._value = newvalue
-        self.dispatch_event('on_change', newvalue)
+    def value(self, value):
+        self._value = value
+        self.dispatch_event('on_change', value)
 
 
 class AbsoluteAxis(Control):
@@ -248,8 +263,8 @@ class AbsoluteAxis(Control):
     #: described by two orthogonal controls.
     HAT_Y = 'hat_y'
 
-    def __init__(self, name, min, max, raw_name=None):
-        super(AbsoluteAxis, self).__init__(name, raw_name)
+    def __init__(self, name, min, max, raw_name=None, inverted=False):
+        super(AbsoluteAxis, self).__init__(name, raw_name, inverted)
         
         self.min = min
         self.max = max
@@ -285,6 +300,7 @@ class Button(Control):
 
             :event:
             """
+
 
 Button.register_event_type('on_press')
 Button.register_event_type('on_release')
@@ -514,10 +530,272 @@ class Joystick(EventDispatcher):
                 (centered) or 1 (top).
         """
 
+
 Joystick.register_event_type('on_joyaxis_motion')
 Joystick.register_event_type('on_joybutton_press')
 Joystick.register_event_type('on_joybutton_release')
 Joystick.register_event_type('on_joyhat_motion')
+
+
+class GameController(EventDispatcher):
+
+    __slots__ = ('device', 'guid', '_mapping', 'name', 'a', 'b', 'x', 'y',
+                 'back', 'start', 'guide', 'leftshoulder', 'rightshoulder',
+                 'leftstick', 'rightstick', 'lefttrigger', 'righttrigger',
+                 'leftx', 'lefty', 'rightx', 'righty', 'dpup', 'dpdown', 'dpleft',
+                 'dpright', '_button_controls', '_axis_controls', '_hat_control',
+                 'hat_x_control', '_hat_y_control')
+
+    def __init__(self, device):
+        self.device = device
+        self.guid = device.get_guid()
+        self._mapping = get_mapping(self.guid)
+        self.name = self._mapping['name']
+
+        self.a = False
+        self.b = False
+        self.x = False
+        self.y = False
+        self.back = False
+        self.start = False
+        self.guide = False
+        self.leftshoulder = False
+        self.rightshoulder = False
+        self.leftstick = False          # stick press button
+        self.rightstick = False         # stick press button
+        self.lefttrigger = -1           # default to rest position
+        self.righttrigger = -1          # default to rest position
+        self.leftx = 0
+        self.lefty = 0
+        self.rightx = 0
+        self.righty = 0
+        self.dpup = False
+        self.dpdown = False
+        self.dpleft = False
+        self.dpright = False
+
+        self._button_controls = []
+        self._axis_controls = []
+        self._hat_control = None
+        self._hat_x_control = None
+        self._hat_y_control = None
+
+        def add_axis(control, axis_name):
+            scale = 2.0 / (control.max - control.min)
+            bias = -1.0 - control.min * scale
+            if control.inverted:
+                scale = -scale
+                bias = -bias
+
+            if axis_name in ("dpup", "dpdown"):
+                @control.event
+                def on_change(value):
+                    normalized_value = value * scale + bias
+                    self.dpup = self.dpdown = False
+                    if normalized_value > 0.1:
+                        self.dpup = True
+                    if normalized_value < -0.1:
+                        self.dpdown = True
+                    self.dispatch_event('on_dpad_motion', self,
+                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+
+            elif axis_name in ("dpleft", "dpright"):
+                @control.event
+                def on_change(value):
+                    normalized_value = value * scale + bias
+                    self.dpleft = self.dpright = False
+                    if normalized_value > 0.1:
+                        self.dpright = True
+                    if normalized_value < -0.1:
+                        self.dpleft = True
+                    self.dispatch_event('on_dpad_motion', self,
+                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+
+            elif axis_name in ("lefttrigger", "righttrigger"):
+                @control.event
+                def on_change(value):
+                    normalized_value = value * scale + bias
+                    setattr(self, axis_name, normalized_value)
+                    self.dispatch_event('on_trigger_motion', self, axis_name, normalized_value)
+
+            elif axis_name in ("leftx", "lefty"):
+                @control.event
+                def on_change(value):
+                    normalized_value = value * scale + bias
+                    setattr(self, axis_name, normalized_value)
+                    self.dispatch_event('on_stick_motion', self,
+                                        "leftstick", self.leftx, -self.lefty)
+
+            elif axis_name in ("rightx", "righty"):
+                @control.event
+                def on_change(value):
+                    normalized_value = value * scale + bias
+                    setattr(self, axis_name, normalized_value)
+                    self.dispatch_event('on_stick_motion', self,
+                                        "rightstick", self.rightx, -self.righty)
+
+        def add_button(control, button_name):
+            if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
+                @control.event
+                def on_change(value):
+                    setattr(self, button_name, value)
+                    self.dispatch_event('on_dpad_motion', self,
+                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+            else:
+                @control.event
+                def on_change(value):
+                    setattr(self, button_name, value)
+
+                @control.event
+                def on_press():
+                    self.dispatch_event('on_button_press', self, button_name)
+
+                @control.event
+                def on_release():
+                    self.dispatch_event('on_button_release', self, button_name)
+
+        # TODO: Test this on Windows and Mac:
+        def add_dedicated_hat(control):
+            # 8-directional hat encoded as a single control (Windows/Mac)
+            @control.event
+            def on_change(value):
+                if value & 0xffff == 0xffff:
+                    self.dpleft = self.dpright = self.dpup = self.dpdown = False
+                else:
+                    if control.max > 8:  # DirectInput: scale value
+                        value //= 0xfff
+                    if 0 <= value < 8:
+                        self.dpleft, self.dpright, self.dpup, self.dpdown = (
+                            (False, False, True,  False),
+                            (False, True,  True,  False),
+                            (False, True,  False, False),
+                            (False, True,  False, True),
+                            (False, False, False, True),
+                            (True,  False, False, True),
+                            (True,  False, False, False),
+                            (True,  False, True,  False))[value]
+                    else:
+                        # Out of range
+                        self.dpleft = self.dpright = self.dpup = self.dpdown = False
+                self.dispatch_event('on_dpad_motion', self,
+                                    self.dpleft, self.dpright, self.dpup, self.dpdown)
+
+        for control in device.get_controls():
+            """Categorize the various control types"""
+            if isinstance(control, Button):
+                self._button_controls.append(control)
+            elif isinstance(control, AbsoluteAxis):
+                if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz'):
+                    self._axis_controls.append(control)
+                elif control.name == "hat_x":
+                    self._hat_x_control = control
+                elif control.name == "hat_y":
+                    self._hat_y_control = control
+                elif control.name == "hat":
+                    self._hat_control = control
+
+        for name, relation in self._mapping.items():
+
+            if relation is None:
+                continue
+            elif type(relation) is str:
+                continue
+
+            if relation.control_type == "button":
+                add_button(self._button_controls[relation.index], name)
+            elif relation.control_type == "axis":
+                add_axis(self._axis_controls[relation.index], name)
+            elif relation.control_type == "hat0":
+                if self._hat_control:
+                    # TODO: test this on Windows/Mac.
+                    add_dedicated_hat(self._hat_control)
+                else:
+                    if relation.index == 1:       # 1 == UP
+                        add_axis(self._hat_y_control, "dpup")
+                    elif relation.index == 2:     # 2 == RIGHT
+                        add_axis(self._hat_x_control, "dpright")
+                    # TODO: figure out a more elegent way to handle direction pairs
+                    # elif relation.index == 4:     # 4 == DOWN
+                    #     add_axis(self._hat_y_control, "dpdown")
+                    # elif relation.index == 8:     # 8 == LEFT
+                    #     add_axis(self._hat_x_control, "dpleft")
+
+    def open(self, window=None, exclusive=False):
+        """Open the game controller.  See `Device.open`. """
+        self.device.open(window, exclusive)
+
+    def close(self):
+        """Close the game controller.  See `Device.close`. """
+        self.device.close()
+
+    def on_stick_motion(self, gamecontroller, axis, xvalue, yvalue):
+        """The value of a game controller analogue stick changed.
+
+        :Parameters:
+            `gamecontroller` : `GameController`
+                The game controller whose analogue stick changed.
+            `axis` : string
+                The name of the axis that changed.
+            `xvalue` : float
+                The current x axis value, normalized to [-1, 1].
+            `yvalue` : float
+                The current y axis value, normalized to [-1, 1].
+        """
+
+    def on_dpad_motion(self, gamecontroller, dpleft, dpright, dpup, dpdown):
+        """The direction pad of the game controller changed.
+
+        :Parameters:
+            `gamecontroller` : `GameController`
+                The game controller whose hat control changed.
+            `dpleft` : boolean
+                True if left is pressed on the directional pad.
+            `dpright` : boolean
+                True if right is pressed on the directional pad.
+            `dpup` : boolean
+                True if up is pressed on the directional pad.
+            `dpdown` : boolean
+                True if down is pressed on the directional pad.
+        """
+
+    def on_trigger_motion(self, gamecontroller, trigger, value):
+        """The value of a game controller analogue stick changed.
+
+        :Parameters:
+            `gamecontroller` : `GameController`
+                The game controller whose analogue stick changed.
+            `trigger` : string
+                The name of the trigger that changed.
+            `value` : float
+                The current value of the trigger, normalized to [-1, 1].
+        """
+
+    def on_button_press(self, gamecontroller, button):
+        """A button on the game controller was pressed.
+
+        :Parameters:
+            `gamecontroller` : `GameController`
+                The game controller whose button was pressed.
+            `button` : string
+                The name of the button that was pressed.
+        """
+
+    def on_button_release(self, gamecontroller, button):
+        """A button on the joystick was released.
+
+        :Parameters:
+            `gamecontroller` : `GameController`
+                The game controller whose button was released.
+            `button` : string
+                The name of the button that was released.
+        """
+
+
+GameController.register_event_type('on_button_press')
+GameController.register_event_type('on_button_release')
+GameController.register_event_type('on_stick_motion')
+GameController.register_event_type('on_dpad_motion')
+GameController.register_event_type('on_trigger_motion')
 
 
 class AppleRemote(EventDispatcher):
@@ -610,6 +888,7 @@ class AppleRemote(EventDispatcher):
 
         :event:
         """
+
 
 AppleRemote.register_event_type('on_button_press')
 AppleRemote.register_event_type('on_button_release')
@@ -724,6 +1003,7 @@ class TabletCanvas(EventDispatcher):
 
             :event:
             """
+
 
 TabletCanvas.register_event_type('on_enter')
 TabletCanvas.register_event_type('on_leave')

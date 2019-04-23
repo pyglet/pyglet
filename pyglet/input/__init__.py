@@ -86,8 +86,9 @@ __version__ = '$Id: $'
 
 import sys
 
-from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button
-from .base import Joystick, AppleRemote, Tablet
+from .base import Device, Control, RelativeAxis, AbsoluteAxis
+from .base import Button, Joystick, AppleRemote, Tablet, GameController
+
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
@@ -163,14 +164,20 @@ else:
         from .x11_xinput_tablet import get_tablets
         from .evdev import get_devices as evdev_get_devices
         from .evdev import get_joysticks
+        from .evdev import get_game_controllers
+
         def get_devices(display=None):
             return (evdev_get_devices(display) +
                     xinput_get_devices(display))
+
     elif compat_platform in ('cygwin', 'win32'):
-        from .directinput import get_devices, get_joysticks
+        from .directinput import get_devices
+        from .directinput import get_joysticks
+        from .directinput import get_game_controllers
         try:
             from .wintab import get_tablets
         except:
             pass
+
     elif compat_platform == 'darwin':
         from .darwin_hid import get_devices, get_joysticks, get_apple_remote

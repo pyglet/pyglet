@@ -407,8 +407,8 @@ class HIDDeviceElement(object):
 
     def __init__(self, elementRef):
         # Check that we've been passed a valid IOHIDElement.
-        assert(elementRef)
-        assert(cf.CFGetTypeID(elementRef) == iokit.IOHIDElementGetTypeID())
+        assert elementRef
+        assert cf.CFGetTypeID(elementRef) == iokit.IOHIDElementGetTypeID()
         _element_lookup[elementRef.value] = self
         self.elementRef = elementRef
         # Set element properties as attributes.
@@ -443,7 +443,7 @@ class HIDManager(object):
     def __init__(self):
         # Create the HID Manager.
         self.managerRef = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))
-        assert(self.managerRef)
+        assert self.managerRef
         assert cf.CFGetTypeID(self.managerRef) == iokit.IOHIDManagerGetTypeID()
         self.schedule_with_run_loop()
         self.matching_observers = set()
@@ -507,6 +507,7 @@ from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
 from .base import Joystick, AppleRemote
 from .base import DeviceExclusiveException
 
+
 _axis_names = {
     (0x01, 0x30): 'x',
     (0x01, 0x31): 'y',
@@ -517,6 +518,7 @@ _axis_names = {
     (0x01, 0x38): 'wheel',
     (0x01, 0x39): 'hat',
 }
+
 
 _button_names = {
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemSleep): 'sleep',
@@ -536,6 +538,7 @@ _button_names = {
     (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeIncrement): 'volume_up',
     (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeDecrement): 'volume_down'
 }
+
 
 class PygletDevice(Device):
     def __init__(self, display, device, manager):
@@ -622,15 +625,22 @@ class PygletDevice(Device):
 
 _manager = HIDManager()
 
+
 def get_devices(display=None):
-    return [ PygletDevice(display, device, _manager) for device in _manager.devices ]
+    return [PygletDevice(display, device, _manager) for device in _manager.devices]
+
 
 def get_joysticks(display=None):
-    return [ Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices
-             if device.is_joystick() or device.is_gamepad() or device.is_multi_axis() ]
+    return [Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices
+            if device.is_joystick() or device.is_gamepad() or device.is_multi_axis()]
+
 
 def get_apple_remote(display=None):
     for device in _manager.devices:
         if device.product == 'Apple IR':
             return AppleRemote(PygletDevice(display, device, _manager))
 
+
+def get_game_controllers(display=None):
+    # TODO: implement
+    return []
