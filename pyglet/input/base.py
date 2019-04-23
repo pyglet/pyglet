@@ -36,9 +36,6 @@
 
 .. versionadded:: 1.2
 """
-from __future__ import division
-from builtins import object
-
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
@@ -61,7 +58,7 @@ class DeviceExclusiveException(DeviceException):
     pass
 
 
-class Device(object):
+class Device:
     """Input device.
 
     :Ivariables:
@@ -78,9 +75,7 @@ class Device(object):
         self.display = display
         self.name = name
         self.manufacturer = None
-
-        # TODO: make private 
-        self.is_open = False
+        self._is_open = False
 
     def open(self, window=None, exclusive=False):
         """Open the device to begin receiving input from it.
@@ -98,14 +93,14 @@ class Device(object):
                 opened it).
         """
 
-        if self.is_open:
+        if self._is_open:
             raise DeviceOpenException('Device is already open.')
 
-        self.is_open = True
+        self._is_open = True
 
     def close(self):
         """Close the device. """
-        self.is_open = False
+        self._is_open = False
 
     def get_controls(self):
         """Get a list of controls provided by the device.

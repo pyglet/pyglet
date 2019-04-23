@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Joystick, tablet and USB HID device support.
+"""Joystick, Game Controller, tablet and USB HID device support.
 
 This module provides a unified interface to almost any input device, besides
 the regular mouse and keyboard support provided by
