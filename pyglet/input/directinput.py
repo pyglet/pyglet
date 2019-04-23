@@ -31,8 +31,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import zip
-
 import ctypes
 
 import pyglet
@@ -66,19 +64,19 @@ _btn_instance_names = {}
 
 def _create_control(object_instance):
     raw_name = object_instance.tszName
-    type = object_instance.dwType
-    instance = dinput.DIDFT_GETINSTANCE(type)
+    ctrl_type = object_instance.dwType
+    instance = dinput.DIDFT_GETINSTANCE(ctrl_type)
 
-    if type & dinput.DIDFT_ABSAXIS:
+    if ctrl_type & dinput.DIDFT_ABSAXIS:
         name = _abs_instance_names.get(instance)
         control = base.AbsoluteAxis(name, 0, 0xffff, raw_name)
-    elif type & dinput.DIDFT_RELAXIS:
+    elif ctrl_type & dinput.DIDFT_RELAXIS:
         name = _rel_instance_names.get(instance)
         control = base.RelativeAxis(name, raw_name)
-    elif type & dinput.DIDFT_BUTTON:
+    elif ctrl_type & dinput.DIDFT_BUTTON:
         name = _btn_instance_names.get(instance)
         control = base.Button(name, raw_name)
-    elif type & dinput.DIDFT_POV:
+    elif ctrl_type & dinput.DIDFT_POV:
         control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 0xffffffff, raw_name)
     else:
         return
@@ -112,9 +110,7 @@ class DirectInputDevice(base.Device):
 
     def _init_controls(self):
         self.controls = []
-        self._device.EnumObjects(
-            dinput.LPDIENUMDEVICEOBJECTSCALLBACK(self._object_enum),
-            None, dinput.DIDFT_ALL)
+        self._device.EnumObjects(dinput.LPDIENUMDEVICEOBJECTSCALLBACK(self._object_enum), None, dinput.DIDFT_ALL)
 
     def _object_enum(self, object_instance, arg):
         control = _create_control(object_instance.contents)
@@ -132,15 +128,14 @@ class DirectInputDevice(base.Device):
             object_format.dwOfs = offset
             object_format.dwType = control._type
             offset += 4
-             
+
         fmt = dinput.DIDATAFORMAT()
         fmt.dwSize = ctypes.sizeof(fmt)
         fmt.dwObjSize = ctypes.sizeof(dinput.DIOBJECTDATAFORMAT)
         fmt.dwFlags = 0
         fmt.dwDataSize = offset
         fmt.dwNumObjs = len(object_formats)
-        fmt.rgodf = ctypes.cast(ctypes.pointer(object_formats),
-                                   dinput.LPDIOBJECTDATAFORMAT)
+        fmt.rgodf = ctypes.cast(ctypes.pointer(object_formats), dinput.LPDIOBJECTDATAFORMAT)
         self._device.SetDataFormat(fmt)
 
         prop = dinput.DIPROPDWORD()
@@ -195,8 +190,7 @@ class DirectInputDevice(base.Device):
         events = (dinput.DIDEVICEOBJECTDATA * 64)()
         n_events = win32.DWORD(len(events))
         self._device.GetDeviceData(ctypes.sizeof(dinput.DIDEVICEOBJECTDATA),
-                                   ctypes.cast(ctypes.pointer(events),
-                                               dinput.LPDIDEVICEOBJECTDATA),
+                                   ctypes.cast(ctypes.pointer(events), dinput.LPDIDEVICEOBJECTDATA),
                                    ctypes.byref(n_events),
                                    0)
         for event in events[:n_events.value]:
@@ -227,9 +221,7 @@ def get_devices(display=None):
 
     def _device_enum(device_instance, arg):
         device = dinput.IDirectInputDevice8()
-        _i_dinput.CreateDevice(device_instance.contents.guidInstance,
-                               ctypes.byref(device),
-                               None)
+        _i_dinput.CreateDevice(device_instance.contents.guidInstance, ctypes.byref(device), None)
         _devices.append(DirectInputDevice(display, device, device_instance.contents))
         return dinput.DIENUM_CONTINUE
 
