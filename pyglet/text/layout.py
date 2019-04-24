@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2006-2018 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -171,7 +171,7 @@ from pyglet.text import runlist
 
 from pyglet.font.base import _grapheme_break
 
-_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
+_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
 
 _distance_re = re.compile(r'([-0-9.]+)([a-zA-Z]+)')
 
@@ -2479,7 +2479,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
                       self.content_width > self.width):
             self.view_x = x - self.width + 10
 
-    if _is_pyglet_docgen:
+    if _is_epydoc:
         def on_layout_update(self):
             """Some or all of the layout text was reflowed.
 
