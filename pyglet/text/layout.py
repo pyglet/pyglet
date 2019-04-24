@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2018 Alex Holkner
+# Copyright (c) 2006-2008 Alex Holkner
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -171,7 +171,7 @@ from pyglet.text import runlist
 
 from pyglet.font.base import _grapheme_break
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_docgen = hasattr(sys, 'is_pyglet_docgen') and sys.is_pyglet_docgen
 
 _distance_re = re.compile(r'([-0-9.]+)([a-zA-Z]+)')
 
@@ -938,37 +938,51 @@ class TextLayout(object):
         self._flow_lines(lines, 0, len(lines))
         return lines
 
-    def _update(self):
+    def _update(self, color_only=False):
         if not self._update_enabled:
             return
 
-        for _vertex_list in self._vertex_lists:
-            _vertex_list.delete()
-        for box in self._boxes:
-            box.delete(self)
-        self._vertex_lists = []
-        self._boxes = []
-        self.groups.clear()
+        if not color_only:
+            for _vertex_list in self._vertex_lists:
+                _vertex_list.delete()
+            for box in self._boxes:
+                box.delete(self)
+            self._vertex_lists = []
+            self._boxes = []
+            self.groups.clear()
 
-        if not self._document or not self._document.text:
-            return
+            if not self._document or not self._document.text:
+                return
 
-        lines = self._get_lines()
+            lines = self._get_lines()
 
-        colors_iter = self._document.get_style_runs('color')
-        background_iter = self._document.get_style_runs('background_color')
+            colors_iter = self._document.get_style_runs('color')
+            background_iter = self._document.get_style_runs('background_color')
 
-        if self._origin_layout:
-            left = top = 0
+            if self._origin_layout:
+                left = top = 0
+            else:
+                left = self._get_left()
+                top = self._get_top(lines)
+
+            context = _StaticLayoutContext(self, self._document,
+                                           colors_iter, background_iter)
+            for line in lines:
+                self._create_vertex_lists(left + line.x, top + line.y,
+                                          line.start, line.boxes, context)
+
         else:
-            left = self._get_left()
-            top = self._get_top(lines)
+            colors_iter = self._document.get_style_runs('color')
+            colors = []
+            for start, end, color in colors_iter.ranges(0, colors_iter.length):
+                if color is None:
+                    color = (0, 0, 0, 255)
+                colors.extend(color * ((end - start) * 4))
 
-        context = _StaticLayoutContext(self, self._document,
-                                       colors_iter, background_iter)
-        for line in lines:
-            self._create_vertex_lists(left + line.x, top + line.y,
-                                      line.start, line.boxes, context)
+            start = 0
+            for _vertex_list in self._vertex_lists:
+                _vertex_list.colors = colors[start:start+len(_vertex_list.colors)]
+                start += len(_vertex_list.colors)
 
     def _get_left(self):
         if self._multiline:
@@ -1016,8 +1030,8 @@ class TextLayout(object):
         else:
             assert False, 'Invalid anchor_y'
 
-    def _init_document(self):
-        self._update()
+    def _init_document(self, color_only=False):
+        self._update(color_only)
 
     def _uninit_document(self):
         pass
@@ -1044,7 +1058,11 @@ class TextLayout(object):
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        self._init_document()
+        color_only = False
+        if len(attributes) == 1 and 'color' in attributes.keys():
+            color_only = True
+
+        self._init_document(color_only)
 
     def _get_glyphs(self):
         glyphs = []
@@ -2461,7 +2479,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
                       self.content_width > self.width):
             self.view_x = x - self.width + 10
 
-    if _is_epydoc:
+    if _is_pyglet_docgen:
         def on_layout_update(self):
             """Some or all of the layout text was reflowed.
 
