@@ -970,6 +970,19 @@ class TextLayout(object):
             self._create_vertex_lists(left + line.x, top + line.y,
                                       line.start, line.boxes, context)
 
+    def _update_color(self):
+        colors_iter = self._document.get_style_runs('color')
+        colors = []
+        for start, end, color in colors_iter.ranges(0, colors_iter.length):
+            if color is None:
+                color = (0, 0, 0, 255)
+            colors.extend(color * ((end - start) * 4))
+
+        start = 0
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.colors = colors[start:start+len(_vertex_list.colors)]
+            start += len(_vertex_list.colors)
+
     def _get_left(self):
         if self._multiline:
             width = self._width if self._wrap_lines else self.content_width
@@ -1044,7 +1057,10 @@ class TextLayout(object):
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        self._init_document()
+        if len(attributes) == 1 and 'color' in attributes.keys():
+            self._update_color()
+        else:
+            self._init_document()
 
     def _get_glyphs(self):
         glyphs = []
