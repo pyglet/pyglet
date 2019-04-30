@@ -938,51 +938,50 @@ class TextLayout(object):
         self._flow_lines(lines, 0, len(lines))
         return lines
 
-    def _update(self, color_only=False):
+    def _update(self):
         if not self._update_enabled:
             return
 
-        if not color_only:
-            for _vertex_list in self._vertex_lists:
-                _vertex_list.delete()
-            for box in self._boxes:
-                box.delete(self)
-            self._vertex_lists = []
-            self._boxes = []
-            self.groups.clear()
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.delete()
+        for box in self._boxes:
+            box.delete(self)
+        self._vertex_lists = []
+        self._boxes = []
+        self.groups.clear()
 
-            if not self._document or not self._document.text:
-                return
+        if not self._document or not self._document.text:
+            return
 
-            lines = self._get_lines()
+        lines = self._get_lines()
 
-            colors_iter = self._document.get_style_runs('color')
-            background_iter = self._document.get_style_runs('background_color')
+        colors_iter = self._document.get_style_runs('color')
+        background_iter = self._document.get_style_runs('background_color')
 
-            if self._origin_layout:
-                left = top = 0
-            else:
-                left = self._get_left()
-                top = self._get_top(lines)
-
-            context = _StaticLayoutContext(self, self._document,
-                                           colors_iter, background_iter)
-            for line in lines:
-                self._create_vertex_lists(left + line.x, top + line.y,
-                                          line.start, line.boxes, context)
-
+        if self._origin_layout:
+            left = top = 0
         else:
-            colors_iter = self._document.get_style_runs('color')
-            colors = []
-            for start, end, color in colors_iter.ranges(0, colors_iter.length):
-                if color is None:
-                    color = (0, 0, 0, 255)
-                colors.extend(color * ((end - start) * 4))
+            left = self._get_left()
+            top = self._get_top(lines)
 
-            start = 0
-            for _vertex_list in self._vertex_lists:
-                _vertex_list.colors = colors[start:start+len(_vertex_list.colors)]
-                start += len(_vertex_list.colors)
+        context = _StaticLayoutContext(self, self._document,
+                                       colors_iter, background_iter)
+        for line in lines:
+            self._create_vertex_lists(left + line.x, top + line.y,
+                                      line.start, line.boxes, context)
+
+    def _update_color(self):
+        colors_iter = self._document.get_style_runs('color')
+        colors = []
+        for start, end, color in colors_iter.ranges(0, colors_iter.length):
+            if color is None:
+                color = (0, 0, 0, 255)
+            colors.extend(color * ((end - start) * 4))
+
+        start = 0
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.colors = colors[start:start+len(_vertex_list.colors)]
+            start += len(_vertex_list.colors)
 
     def _get_left(self):
         if self._multiline:
@@ -1030,8 +1029,8 @@ class TextLayout(object):
         else:
             assert False, 'Invalid anchor_y'
 
-    def _init_document(self, color_only=False):
-        self._update(color_only)
+    def _init_document(self):
+        self._update()
 
     def _uninit_document(self):
         pass
@@ -1058,11 +1057,10 @@ class TextLayout(object):
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        color_only = False
         if len(attributes) == 1 and 'color' in attributes.keys():
-            color_only = True
-
-        self._init_document(color_only)
+            self._update_color()
+        else:
+            self._init_document()
 
     def _get_glyphs(self):
         glyphs = []
