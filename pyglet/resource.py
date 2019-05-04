@@ -91,7 +91,6 @@ from builtins import object, str
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-import io
 import os
 import weakref
 import sys
@@ -402,19 +401,21 @@ class Loader(object):
                 dir = dir.rstrip('/')
 
                 # path looks like a ZIP file, dir resides within ZIP
-                if path:
-                    zip_stream = self._get_stream(path)
-                    if zip_stream:
-                        zip = zipfile.ZipFile(zip_stream, 'r')
-                        location = ZIPLocation(zip, dir)
-                        for zip_name in zip.namelist():
-                            # zip_name_dir, zip_name = os.path.split(zip_name)
-                            # assert '\\' not in name_dir
-                            # assert not name_dir.endswith('/')
-                            if zip_name.startswith(dir):
-                                if dir:
-                                    zip_name = zip_name[len(dir) + 1:]
-                                self._index_file(zip_name, location)
+                if not path:
+                    continue
+
+                zip_stream = self._get_stream(path)
+                if zip_stream:
+                    zip = zipfile.ZipFile(zip_stream, 'r')
+                    location = ZIPLocation(zip, dir)
+                    for zip_name in zip.namelist():
+                        # zip_name_dir, zip_name = os.path.split(zip_name)
+                        # assert '\\' not in name_dir
+                        # assert not name_dir.endswith('/')
+                        if zip_name.startswith(dir):
+                            if dir:
+                                zip_name = zip_name[len(dir) + 1:]
+                            self._index_file(zip_name, location)
                             
     def _get_stream(self, path):
         if zipfile.is_zipfile(path):
@@ -432,7 +433,7 @@ class Loader(object):
 
                 volume_index += 1
 
-            zip_stream = io.BytesIO(bytes_)
+            zip_stream = BytesIO(bytes_)
             if zipfile.is_zipfile(zip_stream):
                 return zip_stream
             else:
