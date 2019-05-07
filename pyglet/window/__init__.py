@@ -1091,16 +1091,18 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         raise NotImplementedError('abstract')
 
     def get_viewport_size(self):
-        """Return the size in actual pixels of the viewport.
+        """Return the size in actual pixels of the Window viewport.
 
-        When using HiDPI screens, the actual number of pixels used to render
-        is higher than that of the coordinates used. Each virtual pixel is made
-        up of multiple actual pixels in the hardware. When manually setting
-        the viewport using glViewport, this size should be used instead of
-        `Window.get_size()`.
+        When using HiDPI screens, the actual number of physical pixels
+        used to render can be higher than that of the Window size
+        requested. Each virtual pixel can be made up of multiple actual
+        pixels in the hardware. For some operations, such as changing
+        the OpenGL viewport with glViewport, this method should be used
+        instead of `Window.get_size()` to query the maximum Window
+        viewport size.
 
         :rtype: (int, int)
-        :return: The width and height of the viewport, in pixels.
+        :return: The width and height of the Window viewport, in pixels.
         """
         return self.get_size()
 
