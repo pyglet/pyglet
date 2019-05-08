@@ -586,7 +586,8 @@ class PygletDevice(Device):
             # Byte swap (ABCD --> CDAB):
             bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
 
-            name = self.device.product or self.device.vendorID
+            # TODO: test fallback to vendor id if no product name:
+            name = self.device.product or str(self.device.vendorID)
             name = name.encode().hex()
             return "{:04x}0000{:0<24}".format(bustype, name)
 
