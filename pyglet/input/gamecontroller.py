@@ -42,9 +42,14 @@ large number of different devices, with no tedious button and axis mapping
 for each one. To achieve this, an internal mapping database exists which
 contains lists of device ids and their corresponding button and axis mappings.
 The mapping database is in the same format as originated by the `SDL` library,
-which has become a semi-standard and is in common use. Most popular devices are
-included in the build-in database, and additional mappings can be added at
+which has become a semi-standard and is in common use. Most popular controllers
+are included in the build-in database, and additional mappings can be added at
 runtime.
+
+
+Some Joysticks, such as Flight Sticks, etc., do not necessarily fit into the
+layout (and limitations) of GameControllers. For those such devices, it is
+recommended to use the Joystick interface instead.
 
 To query which GameControllers are available, call :py:func:`get_game_controllers`.
 

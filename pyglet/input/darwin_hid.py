@@ -568,6 +568,9 @@ class PygletDevice(Device):
     def get_controls(self):
         return list(self._controls.values())
 
+    def get_guid(self):
+        return None
+
     def device_removed(self, hid_device):
         # Called by device when it is unplugged.
         # Set device to None, but Keep self._controls around
@@ -622,6 +625,7 @@ class PygletDevice(Device):
                     control.value = hid_value.intvalue
 
 ######################################################################
+
 
 _manager = HIDManager()
 
