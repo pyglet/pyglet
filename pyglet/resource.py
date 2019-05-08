@@ -387,10 +387,10 @@ class Loader(object):
                             index_name = filename
                         self._index_file(index_name, location)
             else:
-                # Find path component that is the ZIP file.
+                # Find path component that looks like the ZIP file.
                 dir = ''
                 old_path = None
-                while path and not os.path.isfile(path):
+                while path and not (os.path.isfile(path) or os.path.isfile(path + '.001')):
                     old_path = path
                     path, tail_dir = os.path.split(path)
                     if path == old_path:
@@ -400,9 +400,13 @@ class Loader(object):
                     continue
                 dir = dir.rstrip('/')
 
-                # path is a ZIP file, dir resides within ZIP
-                if path and zipfile.is_zipfile(path):
-                    zip = zipfile.ZipFile(path, 'r')
+                # path looks like a ZIP file, dir resides within ZIP
+                if not path:
+                    continue
+
+                zip_stream = self._get_stream(path)
+                if zip_stream:
+                    zip = zipfile.ZipFile(zip_stream, 'r')
                     location = ZIPLocation(zip, dir)
                     for zip_name in zip.namelist():
                         # zip_name_dir, zip_name = os.path.split(zip_name)
@@ -412,6 +416,28 @@ class Loader(object):
                             if dir:
                                 zip_name = zip_name[len(dir) + 1:]
                             self._index_file(zip_name, location)
+                            
+    def _get_stream(self, path):
+        if zipfile.is_zipfile(path):
+            return path
+        elif not os.path.exists(path + '.001'):
+            return None
+        else:
+            with open(path + '.001', 'rb') as volume:
+                bytes_ = bytes(volume.read())
+
+            volume_index = 2
+            while os.path.exists(path + '.{0:0>3}'.format(volume_index)):
+                with open(path + '.{0:0>3}'.format(volume_index), 'rb') as volume:
+                    bytes_ += bytes(volume.read())
+
+                volume_index += 1
+
+            zip_stream = BytesIO(bytes_)
+            if zipfile.is_zipfile(zip_stream):
+                return zip_stream
+            else:
+                return None
 
     def _index_file(self, name, location):
         normed_name = os.path.normpath(name)
