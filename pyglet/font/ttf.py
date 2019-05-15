@@ -123,19 +123,17 @@ class TruetypeInfo(object):
         An exception will be raised if the file does not exist or cannot
         be read.
         """
-        if not filename: filename = ''
-        len = os.stat(filename).st_size
+        filename = filename or ""
+        length = os.stat(filename).st_size
         self._fileno = os.open(filename, os.O_RDONLY)
         if hasattr(mmap, 'MAP_SHARED'):
-            self._data = mmap.mmap(self._fileno, len, mmap.MAP_SHARED,
-                mmap.PROT_READ)
+            self._data = mmap.mmap(self._fileno, length, mmap.MAP_SHARED, mmap.PROT_READ)
         else:
-            self._data = mmap.mmap(self._fileno, len, None, mmap.ACCESS_READ)
+            self._data = mmap.mmap(self._fileno, length, None, mmap.ACCESS_READ)
 
         offsets = _read_offset_table(self._data, 0)
         self._tables = {}
-        for table in _read_table_directory_entry.array(self._data, 
-            offsets.size, offsets.num_tables):
+        for table in _read_table_directory_entry.array(self._data, offsets.size, offsets.num_tables):
             self._tables[table.tag] = table
 
         self._names = None
@@ -147,16 +145,13 @@ class TruetypeInfo(object):
         self._glyph_map = None
         self._font_selection_flags = None
 
-        self.header = \
-            _read_head_table(self._data, self._tables['head'].offset)
-        self.horizontal_header = \
-            _read_horizontal_header(self._data, self._tables['hhea'].offset)
+        self.header = _read_head_table(self._data, self._tables[b'head'].offset)
+        self.horizontal_header = _read_horizontal_header(self._data, self._tables[b'hhea'].offset)
 
     def get_font_selection_flags(self):
         """Return the font selection flags, as defined in OS/2 table"""
         if not self._font_selection_flags:
-            OS2_table = \
-                _read_OS2_table(self._data, self._tables['OS/2'].offset)
+            OS2_table = _read_OS2_table(self._data, self._tables['OS/2'].offset)
             self._font_selection_flags = OS2_table.fs_selection
         return self._font_selection_flags
 
