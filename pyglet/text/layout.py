@@ -1,6 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2019 Alex Holkner
+# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2008-2019 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -155,9 +156,9 @@ document; they will be ignored by the built-in text classes.
 import re
 import sys
 
-from pyglet.gl import *
-from pyglet import event
 from pyglet import graphics
+from pyglet.gl import *
+from pyglet.event import EventDispatcher
 from pyglet.text import runlist
 from pyglet.graphics import shader
 from pyglet.font.base import grapheme_break
@@ -732,6 +733,7 @@ class TextLayout:
 
     default_group_class = TextLayoutGroup
     default_shader = _layout_program
+
     background_decoration_group = TextDecorationGroup(order=0)
     foreground_decoration_group = TextDecorationGroup(order=2)
 
@@ -1673,7 +1675,7 @@ class ScrollableTextLayout(TextLayout):
         self._update_translation()
 
 
-class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
+class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
@@ -1697,9 +1699,8 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     _selection_color = [255, 255, 255, 255]
     _selection_background_color = [46, 106, 197, 255]
 
-    def __init__(self, document, width, height, multiline=False, dpi=None,
-                 batch=None, group=None, wrap_lines=True):
-        event.EventDispatcher.__init__(self)
+    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+        EventDispatcher.__init__(self)
         self.glyphs = []
         self.lines = []
 
@@ -1775,10 +1776,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         self._update()
 
     def on_style_text(self, start, end, attributes):
-        if ('font_name' in attributes or
-            'font_size' in attributes or
-            'bold' in attributes or
-            'italic' in attributes):
+        if 'font_name' in attributes or 'font_size' in attributes or 'bold' in attributes or 'italic' in attributes:
             self.invalid_glyphs.invalidate(start, end)
         elif False:  # Attributes that change flow
             self.invalid_flow.invalidate(start, end)
@@ -2010,35 +2008,50 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
             self._create_vertex_lists(line.x, y, line.start, line.boxes, context)
 
-    def _set_width(self, width):
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, width):
         # Invalidate everything when width changes
         if self._width == width:
             return
         self.invalid_flow.invalidate(0, len(self.document.text))
-        super(IncrementalTextLayout, self)._set_width(width)
+        super().width = width
 
-    def _set_height(self, height):
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, height):
         # Recalculate visible lines when height changes
         if height == self._height:
             return
-
-        super(IncrementalTextLayout, self)._set_height(height)
+        super().height = height
         if self._update_enabled:
             self._update_visible_lines()
             self._update_vertex_lists()
 
-    def _set_multiline(self, multiline):
+    @property
+    def multiline(self):
+        return self._multiline
+
+    @multiline.setter
+    def multiline(self, multiline):
         self.invalid_flow.invalidate(0, len(self.document.text))
-        super(IncrementalTextLayout, self)._set_multiline(multiline)
+        super().multiline = multiline
 
     # Invalidate invisible/visible lines when y scrolls
     @property
     def view_y(self):
-        return self._view_y
+        return super().view_y
 
-    def _set_view_y(self, view_y):
+    @view_y.setter
+    def view_y(self, view_y):
         # view_y must be negative.
-        super(IncrementalTextLayout, self)._set_view_y(view_y)
+        super().view_y = view_y
         self._update_visible_lines()
         self._update_vertex_lists()
 
@@ -2063,14 +2076,11 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         if end > self._selection_start and start < self._selection_end:
             # Overlapping, only invalidate difference
-            self.invalid_style.invalidate(min(start, self._selection_start),
-                                          max(start, self._selection_start))
-            self.invalid_style.invalidate(min(end, self._selection_end),
-                                          max(end, self._selection_end))
+            self.invalid_style.invalidate(min(start, self._selection_start), max(start, self._selection_start))
+            self.invalid_style.invalidate(min(end, self._selection_end), max(end, self._selection_end))
         else:
             # Non-overlapping, invalidate both ranges
-            self.invalid_style.invalidate(self._selection_start,
-                                          self._selection_end)
+            self.invalid_style.invalidate(self._selection_start, self._selection_end)
             self.invalid_style.invalidate(start, end)
 
         self._selection_start = start
@@ -2078,58 +2088,63 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         self._update()
 
-    selection_start = property(
-        lambda self: self._selection_start,
-        lambda self, v: self.set_selection(v, self._selection_end),
-        doc="""Starting position of the active selection.
+    @property
+    def selection_start(self):
+        """Starting position of the active selection.
 
-    :see: `set_selection`
+        :see: `set_selection`
 
-    :type: int
-    """)
+        :type: int
+        """
+        return self._selection_start
 
-    selection_end = property(
-        lambda self: self._selection_end,
-        lambda self, v: self.set_selection(self._selection_start, v),
-        doc="""End position of the active selection (exclusive).
+    @selection_start.setter
+    def selection_start(self, v):
+        self.set_selection(v, self._selection_end)
 
-    :see: `set_selection`
+    @property
+    def selection_end(self):
+        """End position of the active selection (exclusive).
 
-    :type: int
-    """)
+        :see: `set_selection`
 
-    def _get_selection_color(self):
+        :type: int
+        """
+        return self._selection_end
+
+    @selection_end.setter
+    def selection_end(self, v):
+        self.set_selection(self._selection_start, v)
+
+    @property
+    def selection_color(self):
+        """Text color of active selection.
+
+        The color is an RGBA tuple with components in range [0, 255].
+
+        :type: (int, int, int, int)
+        """
         return self._selection_color
 
-    def _set_selection_color(self, color):
+    @selection_color.setter
+    def selection_color(self, color):
         self._selection_color = color
         self.invalid_style.invalidate(self._selection_start, self._selection_end)
 
-    selection_color = property(_get_selection_color, _set_selection_color,
-                               doc="""Text color of active selection.
+    @property
+    def selection_background_color(self):
+        """Background color of active selection.
 
-    The color is an RGBA tuple with components in range [0, 255].
+        The color is an RGBA tuple with components in range [0, 255].
 
-    :type: (int, int, int, int)
-    """)
-
-    def _get_selection_background_color(self):
+        :type: (int, int, int, int)
+        """
         return self._selection_background_color
 
-    def _set_selection_background_color(self, background_color):
+    @selection_background_color.setter
+    def selection_background_color(self, background_color):
         self._selection_background_color = background_color
-        self.invalid_style.invalidate(self._selection_start,
-                                      self._selection_end)
-
-    selection_background_color = property(_get_selection_background_color,
-                                          _set_selection_background_color,
-                                          doc="""Background color of active
-    selection.
-
-    The color is an RGBA tuple with components in range [0, 255].
-
-    :type: (int, int, int, int)
-    """)
+        self.invalid_style.invalidate(self._selection_start, self._selection_end)
 
     # Coordinate translation
 

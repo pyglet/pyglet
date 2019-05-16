@@ -1,6 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2019 Alex Holkner
+# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2008-2019 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +42,10 @@ pyglet will automatically load any system-installed fonts.  You can add addition
     from pyglet import font
     font.add_file('action_man.ttf')
     action_man = font.load('Action Man', 16)
+    # or
+    from pyglet import resource
+    resource.add_font('action_man.ttf')
+    action_man = font.load('Action Man')
 
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.

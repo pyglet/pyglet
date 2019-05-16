@@ -15,7 +15,8 @@ import optparse
 
 
 license_str = """# pyglet
-# Copyright (c) 2006-{0} Alex Holkner
+# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2008-{0} pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -88,7 +89,8 @@ def update_license(file_name):
 
 
 if __name__ == '__main__':
-    op = optparse.OptionParser()
+    op = optparse.OptionParser(usage=__doc__)
+
     op.add_option('--exclude', action='append', default=[],
                   help='specify files and/or folders to exclude')
     op.add_option('--update-only', action='store_true', default=False,

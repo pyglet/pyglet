@@ -1,6 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
-# Copyright (c) 2006-2019 Alex Holkner
+# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2008-2019 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,15 +37,14 @@
 This module provides an interface for Game Controller devices, which are a
 subset of Joysticks. Game Controllers have consistent button and axis mapping,
 which resembles common dual-stick home video game console controllers.
-Joysticks that are similar in design can be automatically mapped to the
-"virtual" Game Controller layout, providing a consistent abstraction for a
-large number of different devices, with no tedious button and axis mapping
-for each one. To achieve this, an internal mapping database exists which
-contains lists of device ids and their corresponding button and axis mappings.
-The mapping database is in the same format as originated by the `SDL` library,
-which has become a semi-standard and is in common use. Most popular controllers
-are included in the build-in database, and additional mappings can be added at
-runtime.
+Devices that are of this design can be automatically mapped to the "virtual"
+Game Controller layout, providing a consistent abstraction for a large number
+of different devices, with no tedious button and axis mapping for each one.
+To achieve this, an internal mapping database contains lists of device ids
+and their corresponding button and axis mappings. The mapping database is in
+the same format as originated by the `SDL` library, which has become a
+semi-standard and is in common use. Most popular controllers are included in
+the built-in database, and additional mappings can be added at runtime.
 
 
 Some Joysticks, such as Flight Sticks, etc., do not necessarily fit into the
