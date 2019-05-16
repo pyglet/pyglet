@@ -15,15 +15,14 @@ from pyglet.font import ttf
 def inspect_font(filename):
     try:
         info = ttf.TruetypeInfo(filename)
-        print(info)
-        print('%s:' % filename, end=' ')
-        print(info.get_name('family'), end=' ')
-        print('bold=%r' % info.is_bold(), end=' ')
-        print('italic=%r' % info.is_italic(), end=' ')
+        print('{0}:'.format(filename))
+        print(info.get_name('family'))
+        print('bold=%r' % info.is_bold())
+        print('italic=%r' % info.is_italic())
     except:
-        print('''%s could not be identified.  It is probably not a TrueType or
-OpenType font.  However, pyglet may still be able to load it
-on some platforms.''' % filename)
+        print("%s could not be identified.  It is probably not a TrueType or "
+              "OpenType font.  However, pyglet may still be able to load it "
+              "on some platforms." % filename)
 
 
 if __name__ == '__main__':
