@@ -41,6 +41,10 @@ pyglet will automatically load any system-installed fonts.  You can add addition
     from pyglet import font
     font.add_file('action_man.ttf')
     action_man = font.load('Action Man', 16)
+    # or
+    from pyglet import resource
+    resource.add_font('action_man.ttf')
+    action_man = font.load('Action Man')
 
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
