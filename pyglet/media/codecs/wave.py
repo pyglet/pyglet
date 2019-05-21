@@ -38,6 +38,7 @@
 
 from ..exceptions import MediaFormatException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
+from . import MediaEncoder, MediaDecoder
 
 import wave
 
@@ -95,12 +96,12 @@ class WaveSource(StreamingSource):
 #   Decoder class:
 #########################################
 
-class WaveDecoder(object):
+class WaveDecoder(MediaDecoder):
 
     def get_file_extensions(self):
-        return ['.wav', '.wave', '.riff']
+        return '.wav', '.wave', '.riff'
 
-    def decode(self, file, filename, streaming):
+    def decode(self, file, filename, streaming=True):
         if streaming:
             return WaveSource(filename, file)
         else:
