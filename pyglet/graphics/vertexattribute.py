@@ -208,7 +208,7 @@ def serialize_attributes(count, attributes):
 
 
 _legacy_attributes = {
-    #     name,  normalized
+    #      name,  normalized
     'c': ("colors", True),
     'e': ("edge_flags", True),
     'f': ("fog_coords", False),
@@ -249,7 +249,9 @@ def create_attribute(shader_program_id, fmt):
     if name in _legacy_attributes:
         # TODO: remove deprecated fallback:
         name, normalize = _legacy_attributes[name]
-        message = "Vertex attribute shorthand notation is deprecated: '{0}'".format(fmt)
+        message = ("Vertex attribute shorthand notation is deprecated: '{0}'\n"
+                   "Please use the actual attribute names as defined in the\n"
+                   "Shader Program.".format(fmt))
         warnings.warn(message)
 
     _attribute_cache[fmt] = name, shader_program_id, count, gl_type, normalize

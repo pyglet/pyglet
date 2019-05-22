@@ -173,7 +173,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, program=None, parent=None):
+    def __init__(self, texture, blend_src, blend_dest, program=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -195,7 +195,6 @@ class SpriteGroup(graphics.Group):
         self.blend_src = blend_src
         self.blend_dest = blend_dest
         self.program = program or _default_program
-        super().__init__(self.program, parent)
 
     def set_state(self):
         self.program.use_program()
@@ -293,7 +292,7 @@ class Sprite(event.EventDispatcher):
         else:
             self._texture = img.get_texture()
 
-        self._batch = batch or graphics.Batch()
+        self._batch = batch or graphics.get_default_batch()
         self._group = group or SpriteGroup(self._texture, blend_src, blend_dest)
         assert isinstance(self._group, SpriteGroup), "Group must be a subclass of pyglet.sprite.SpriteGroup"
         self._usage = usage
@@ -566,10 +565,9 @@ class Sprite(event.EventDispatcher):
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
 
-        This method is provided for performance. In cases where
-        multiple Sprite attributes need to be updated at the same
-        time, it is more efficent to update them together using
-        the update method, rather than modifying them one by one.
+        This method is provided for convenience. As of pyglet
+        2.0, there is no performance benefit to updating multiple
+        Sprite attributes at once.
 
         :Parameters:
             `x` : int
@@ -585,21 +583,23 @@ class Sprite(event.EventDispatcher):
             `scale_y` : float
                 Vertical scaling factor.
         """
-        if x is not None:
+        if x:
             self._x = x
-        if y is not None:
+        if y:
             self._y = y
-        if rotation is not None:
+        if x or y:
+            self._vertex_list.translate[:] = (self._x, self._y) * 4
+        if rotation:
             self._rotation = rotation
-        if scale is not None:
+            self._vertex_list.rotation[:] = (rotation,) * 4
+        if scale:
             self._scale = scale
-        if scale_x is not None:
+        if scale_x:
             self._scale_x = scale_x
-        if scale_y is not None:
+        if scale_y:
             self._scale_y = scale_y
-        self._vertex_list.translate[:] = (self._x, self._y) * 4
-        self._vertex_list.rotation[:] = (self._rotation,) * 4
-        self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
+        if scale or scale_x or scale_y:
+            self._vertex_list.scale[:] = (self._scale * self._scale_x, self._scale * self._scale_y) * 4
 
     @property
     def width(self):

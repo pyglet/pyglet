@@ -245,7 +245,9 @@ class ShaderProgram:
 
     __enter__ = use_program
 
-    __exit__ = stop_program
+    def __exit__(self, *_):
+        glUseProgram(0)
+        self._active = False
 
     def __del__(self):
         try:
