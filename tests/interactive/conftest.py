@@ -24,9 +24,9 @@ def pytest_collection_modifyitems(items, config):
 
 
 def _skip_item(item, sanity, non_interactive):
-    requires_user_action = item.get_marker('requires_user_action')
-    requires_user_validation = item.get_marker('requires_user_validation')
-    only_interactive = item.get_marker('only_interactive')
+    requires_user_action = item.get_closest_marker('requires_user_action')
+    requires_user_validation = item.get_closest_marker('requires_user_validation')
+    only_interactive = item.get_closest_marker('only_interactive')
 
     if ((requires_user_action is not None or only_interactive is not None) 
             and (sanity or non_interactive)):

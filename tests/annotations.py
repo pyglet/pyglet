@@ -1,8 +1,10 @@
 from builtins import object
 
+import sys
+
+import pytest
 import pyglet
 from pyglet.gl import gl_info
-import pytest
 
 
 # Platform identifiers
@@ -29,7 +31,8 @@ def require_platform(platform):
         :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
     """
     return pytest.mark.skipif(pyglet.compat_platform not in platform,
-            reason='requires platform: %s' % str(platform))
+                              reason='requires platform: %s' % str(platform))
+
 
 def skip_platform(platform):
     """
@@ -39,7 +42,8 @@ def skip_platform(platform):
         :data:`pyglet.options`. See also :class:`tests.annotations.Platform`.
     """
     return pytest.mark.skipif(pyglet.compat_platform in platform,
-            reason='not supported for platform: %s' % str(platform))
+                              reason='not supported for platform: %s' % str(platform))
+
 
 def require_gl_extension(extension):
     """
@@ -48,4 +52,14 @@ def require_gl_extension(extension):
     :param str extension: Name of the extension required.
     """
     return pytest.mark.skipif(not gl_info.have_extension(extension),
-                              reason='Tests requires GL extension {}'.format(extension))
+                              reason='Tests requires GL extension {0}'.format(extension))
+
+
+def require_python_version(version):
+    """
+    Skip test on older Python versions.
+
+    :param tuple version: The major, minor Python version as a tuple.
+    """
+    return pytest.mark.skipif(sys.version_info < version,
+                              reason="Test require at least Python version {0}".format(version))

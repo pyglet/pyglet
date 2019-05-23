@@ -6,6 +6,7 @@ import pyglet
 
 from pyglet.compat import BytesIO
 from pyglet.model import ModelDecodeException
+from ...annotations import require_python_version
 
 
 test_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
@@ -25,6 +26,7 @@ def test_load_from_disk():
     assert isinstance(model, pyglet.model.Model)
 
 
+@require_python_version((3, 4))
 def test_load_from_object_str():
     file_path = get_test_data_file('models', 'logo3d.obj')
     with open(file_path, 'r') as f:

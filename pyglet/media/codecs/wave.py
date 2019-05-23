@@ -35,6 +35,7 @@
 
 """Decoder for RIFF Wave files, using the standard library wave module.
 """
+from __future__ import absolute_import, division
 
 from ..exceptions import MediaFormatException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
@@ -59,16 +60,18 @@ class WaveSource(StreamingSource):
         except wave.Error as e:
             raise WAVEFormatException(e)
 
-        parameters = self._wave.getparams()
+        # parameters = self._wave.getparams()
+        # (nchannels=1, sampwidth=2, framerate=22050, nframes=11583, comptype='NONE', compname='not compressed')
+        nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
 
-        self.audio_format = AudioFormat(channels=parameters.nchannels,
-                                        sample_size=parameters.sampwidth * 8,
-                                        sample_rate=parameters.framerate)
+        self.audio_format = AudioFormat(channels=nchannels,
+                                        sample_size=sampwidth * 8,
+                                        sample_rate=framerate)
 
-        self._bytes_per_frame = parameters.nchannels * parameters.sampwidth
-        self._duration = parameters.nframes / parameters.framerate
-        self._duration_per_frame = self._duration / parameters.nframes
-        self._num_frames = parameters.nframes
+        self._bytes_per_frame = nchannels * sampwidth
+        self._duration = nframes / framerate
+        self._duration_per_frame = self._duration / nframes
+        self._num_frames = nframes
 
         self._wave.rewind()
 
