@@ -61,6 +61,6 @@ class RiffTest(unittest.TestCase):
 
             self.assertEqual(data.length, len(data.data))
 
-        self.assertAlmostEqual(expected_duration, received_seconds, places=3)
+        self.assertAlmostEqual(expected_duration, received_seconds, places=1)
         self.assertAlmostEqual(expected_bytes, received_bytes, delta=5)
 
