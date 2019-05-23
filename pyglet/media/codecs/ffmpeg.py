@@ -56,6 +56,7 @@ from ..exceptions import MediaFormatException
 from .base import StreamingSource, VideoFormat, AudioFormat
 from .base import AudioData, SourceInfo, StaticSource
 from .ffmpeg_lib import *
+from . import MediaEncoder, MediaDecoder
 
 
 class FileInfo(object):
@@ -1025,16 +1026,17 @@ if pyglet.options['debug_media']:
 else:
     _debug = False
 
+
 #########################################
 #   Decoder class:
 #########################################
 
-class FFmpegDecoder(object):
+class FFmpegDecoder(MediaDecoder):
 
     def get_file_extensions(self):
-        return ['.mp3', '.ogg']
+        return '.mp3', '.ogg'
 
-    def decode(self, file, filename, streaming):
+    def decode(self, file, filename, streaming=True):
         if streaming:
             return FFmpegSource(filename, file)
         else:
