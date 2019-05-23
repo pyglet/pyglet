@@ -249,9 +249,8 @@ def create_attribute(shader_program_id, fmt):
     if name in _legacy_attributes:
         # TODO: remove deprecated fallback:
         name, normalize = _legacy_attributes[name]
-        message = ("Vertex attribute shorthand notation is deprecated: '{0}'\n"
-                   "Please use the actual attribute names as defined in the\n"
-                   "Shader Program.".format(fmt))
+        message = ("Vertex attribute shorthand notation is deprecated: '{0}'. "
+                   "Please use the actual attribute names as defined in the Shader Program.".format(fmt))
         warnings.warn(message)
 
     _attribute_cache[fmt] = name, shader_program_id, count, gl_type, normalize

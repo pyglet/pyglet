@@ -327,10 +327,10 @@ class VertexList:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
-        pyglet.graphics.get_default_batch().vao.bind()
-        pyglet.graphics.get_default_group().set_state()
-        self.domain.draw_subset(mode, self)
-        pyglet.graphics.get_default_group().unset_state()
+        with pyglet.graphics.get_default_batch().vao:
+            pyglet.graphics.get_default_group().set_state()
+            self.domain.draw_subset(mode, self)
+            pyglet.graphics.get_default_group().unset_state()
 
     def resize(self, count, index_count=None):
         """Resize this group.

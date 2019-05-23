@@ -288,21 +288,19 @@ def _parse_data(data):
 
 
 def get_default_batch():
-    shared_object_space = pyglet.gl.current_context.object_space
     try:
-        return shared_object_space.pyglet_graphics_default_batch
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_batch
     except AttributeError:
-        shared_object_space.pyglet_graphics_default_batch = Batch()
-        return shared_object_space.pyglet_graphics_default_batch
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_batch = Batch()
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_batch
 
 
 def get_default_group():
-    shared_object_space = pyglet.gl.current_context.object_space
     try:
-        return shared_object_space.pyglet_graphics_default_group
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
     except AttributeError:
-        shared_object_space.pyglet_graphics_default_group = Group()
-        return shared_object_space.pyglet_graphics_default_group
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_group = Group()
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
 
 
 def vertex_list(count, *data):
