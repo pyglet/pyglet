@@ -576,7 +576,9 @@ class XlibWindow(BaseWindow):
         return x.value, y.value
 
     def activate(self):
-        xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
+        # Issue 218
+        if self._x_display and self._window:
+            xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
 
     def set_visible(self, visible=True):
         if visible:
