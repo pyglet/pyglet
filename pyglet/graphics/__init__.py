@@ -288,21 +288,19 @@ def _parse_data(data):
 
 
 def get_default_batch():
-    shared_object_space = pyglet.gl.current_context.object_space
     try:
-        return shared_object_space.pyglet_graphics_default_batch
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_batch
     except AttributeError:
-        shared_object_space.pyglet_graphics_default_batch = Batch()
-        return shared_object_space.pyglet_graphics_default_batch
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_batch = Batch()
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_batch
 
 
 def get_default_group():
-    shared_object_space = pyglet.gl.current_context.object_space
     try:
-        return shared_object_space.pyglet_graphics_default_group
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
     except AttributeError:
-        shared_object_space.pyglet_graphics_default_group = Group()
-        return shared_object_space.pyglet_graphics_default_group
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_group = Group()
+        return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
 
 
 def vertex_list(count, *data):
@@ -500,15 +498,14 @@ class Batch:
 
     def _add_group(self, group):
         self.group_map[group] = {}
-        if group.parent is None:
-            self.top_groups.append(group)
-        else:
-            if group.parent not in self.group_map:
-                self._add_group(group.parent)
-            if group.parent not in self.group_children:
-                self.group_children[group.parent] = []
-            self.group_children[group.parent].append(group)
-        self._draw_list_dirty = True
+        self.top_groups.append(group)
+        # else:
+        #     if group.parent not in self.group_map:
+        #         self._add_group(group.parent)
+        #     if group.parent not in self.group_children:
+        #         self.group_children[group.parent] = []
+        #     self.group_children[group.parent].append(group)
+        # self._draw_list_dirty = True
 
     def _update_draw_list(self):
         """Visit group tree in preorder and create a list of bound methods
@@ -620,7 +617,7 @@ class Batch:
 
             # Draw domains using this group
             domain_map = self.group_map[group]
-            for (_, mode, _), domain in domain_map.items():
+            for (_, mode, _, _), domain in domain_map.items():
                 for alist in vertex_lists:
                     if alist.domain is domain:
                         alist.draw(mode)
@@ -642,60 +639,32 @@ class Batch:
 class Group:
     """Group of common OpenGL state.
 
-    Before a vertex list is rendered, its group's OpenGL state is set; as are
-    that state's ancestors' states.  This can be defined arbitrarily on
-    subclasses; the default state change has no effect, and groups vertex
-    lists only in the order in which they are drawn.
+    Before a vertex list is rendered, its group's OpenGL state is set.
+    This should includes at least the Shader Program, in addition to any
+    optional state required.
     """
 
     order = 0
 
-    def __init__(self, program=None, parent=None, order=0):
+    def __init__(self, program=None, order=0):
         """Create a group.
 
         :Parameters:
             `program` : `~pyglet.graphics.shader.ShaderProgram`
-                Optional Shader Program.
-            `parent` : `~pyglet.graphics.Group`
-                Group to contain this group; its state will be set before this
-                state's.
-
+                Optional custom Shader Program.
+            `order` : int
+                Change the order to render above or below other Groups.
         """
         self.program = program or default_shader_program
-        self.parent = parent
         self.order = order
 
     def set_state(self):
-        """Apply the OpenGL state change.
-
-        The default implementation does nothing."""
+        """Bind the Shader, and apply additional OpenGL state."""
         self.program.use_program()
 
     def unset_state(self):
-        """Repeal the OpenGL state change.
-
-        The default implementation does nothing."""
+        """Unbind the Shader, and repeal OpenGL state change."""
         self.program.stop_program()
-
-    def set_state_recursive(self):
-        """Set this group and its ancestry.
-
-        Call this method if you are using a group in isolation: the
-        parent groups will be called in top-down order, with this class's
-        `set` being called last.
-        """
-        if self.parent:
-            self.parent.set_state_recursive()
-        self.set_state()
-
-    def unset_state_recursive(self):
-        """Unset this group and its ancestry.
-
-        The inverse of `set_state_recursive`.
-        """
-        self.unset_state()
-        if self.parent:
-            self.parent.unset_state_recursive()
 
     def __lt__(self, other):
         return self.order < other.order
@@ -718,7 +687,7 @@ class TextureGroup(Group):
 
     # Don't use this, create your own group classes that are more specific.
     # This is just an example.
-    def __init__(self, texture, parent=None):
+    def __init__(self, texture, program=None, order=0):
         """Create a texture group.
 
         :Parameters:
@@ -728,7 +697,7 @@ class TextureGroup(Group):
                 Parent group.
 
         """
-        super(TextureGroup, self).__init__(parent)
+        super(TextureGroup, self).__init__(program, order)
         self.texture = texture
 
     def set_state(self):
@@ -739,13 +708,14 @@ class TextureGroup(Group):
         glDisable(self.texture.target)
 
     def __hash__(self):
-        return hash((self.texture.target, self.texture.id, self.parent))
+        return hash((self.order, self.program, self.texture.target, self.texture.id))
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
+                self.program is other.program and
+                self.order == other.order and
                 self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id and
-                self.parent == other.parent)
+                self.texture.id == other.texture.id)
 
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)

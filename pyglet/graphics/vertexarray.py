@@ -35,6 +35,9 @@
 from pyglet.gl import GLuint, glGenVertexArrays, glDeleteVertexArrays, glBindVertexArray
 
 
+__all__ = ['VertexArray']
+
+
 class VertexArray:
     """OpenGL Vertex Array Object"""
 
@@ -59,7 +62,8 @@ class VertexArray:
 
     __enter__ = bind
 
-    __exit__ = unbind
+    def __exit__(self, *_):
+        glBindVertexArray(0)
 
     def __del__(self):
         try:

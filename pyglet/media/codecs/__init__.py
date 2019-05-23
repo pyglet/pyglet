@@ -48,12 +48,12 @@ _encoder_extensions = {}    # Map str -> list of matching MediaEncoders
 
 class MediaDecoder(object):
     def get_file_extensions(self):
-        """Return a list of accepted file extensions, e.g. ['.wav', '.ogg']
+        """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
         """
         return []
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, file, filename, streaming):
         """Read the given file object and return an instance of `Source`
         or `StreamingSource`. 
         Throws MediaDecodeException if there is an error.  `filename`
@@ -61,10 +61,19 @@ class MediaDecoder(object):
         """
         raise NotImplementedError()
 
+    def __hash__(self):
+        return hash(self.__class__.__name__)
+
+    def __eq__(self, other):
+        return self.__class__.__name__ == other.__class__.__name__
+
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__.__name__, tuple(self.get_file_extensions()))
+
 
 class MediaEncoder(object):
     def get_file_extensions(self):
-        """Return a list of accepted file extensions, e.g. ['.wav', '.ogg']
+        """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
         """
         return []
@@ -76,6 +85,15 @@ class MediaEncoder(object):
         issue warnings.
         """
         raise NotImplementedError()
+
+    def __hash__(self):
+        return hash(self.__class__.__name__)
+
+    def __eq__(self, other):
+        return self.__class__.__name__ == other.__class__.__name__
+
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__.__name__, tuple(self.get_file_extensions()))
 
 
 def get_decoders(filename=None):
@@ -108,6 +126,8 @@ def add_decoders(module):
     pyglet.media.codecs.get_decoders.
     """
     for decoder in module.get_decoders():
+        if decoder in _decoders:
+            continue
         _decoders.append(decoder)
         for extension in decoder.get_file_extensions():
             if extension not in _decoder_extensions:
@@ -121,6 +141,8 @@ def add_encoders(module):
     pyglet.media.codecs.get_encoders.
     """
     for encoder in module.get_encoders():
+        if encoder in _encoders:
+            continue
         _encoders.append(encoder)
         for extension in encoder.get_file_extensions():
             if extension not in _encoder_extensions:
