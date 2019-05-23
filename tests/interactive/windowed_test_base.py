@@ -39,6 +39,7 @@ class WindowedTestCase(InteractiveTestCase):
             for name, value in kwargs.items():
                 setattr(self, name, value)
             self._test_main()
+
         run_test.__name__ = name
         if description:
             run_test.__doc__ = cleandoc(description)
@@ -68,15 +69,13 @@ class WindowedTestCase(InteractiveTestCase):
         else:
             options = {}
 
-        if not 'width' in options:
+        if 'width' not in options:
             options['width'] = self.window_size[0]
-        if not 'height' in options:
+        if 'height' not in options:
             options['height'] = self.window_size[1]
-        if not 'visible' in options:
+        if 'visible' not in options:
             options['visible'] = False
-        if not 'resizable' in options:
+        if 'resizable' not in options:
             options['resizable'] = True
 
         return options
-
-

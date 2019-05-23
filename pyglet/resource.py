@@ -323,9 +323,7 @@ class Loader(object):
         if isinstance(path, str):
             path = [path]
         self.path = [os.path.normpath(p) for p in path]
-        if script_home is None:
-            script_home = get_script_home()
-        self._script_home = script_home
+        self._script_home = script_home or get_script_home()
         self._index = None
 
         # Map bin size to list of atlases
@@ -417,7 +415,7 @@ class Loader(object):
                             if dir:
                                 zip_name = zip_name[len(dir) + 1:]
                             self._index_file(zip_name, location)
-                            
+
     def _get_stream(self, path):
         if zipfile.is_zipfile(path):
             return path
