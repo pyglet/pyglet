@@ -9,10 +9,10 @@ _debug_gl_shaders = options['debug_gl_shaders']
 
 
 # TODO: test other shader types, and update pyglet GL bindings if necessary.
-_shader_types = {
+shader_types = {
     'vertex': GL_VERTEX_SHADER,
-    'fragment': GL_FRAGMENT_SHADER,
     'geometry': GL_GEOMETRY_SHADER,
+    'fragment': GL_FRAGMENT_SHADER,
 }
 
 _uniform_getters = {
@@ -113,8 +113,8 @@ class Shader:
             `shader_type` : str
                 The Shader type, such as "vertex" or "fragment".
         """
-        if shader_type not in _shader_types.keys():
-            raise TypeError("The `shader_type` must be 'vertex' or 'fragment'.")
+        if shader_type not in shader_types.keys():
+            raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
         self._source = source_string
         self.type = shader_type
 
@@ -122,7 +122,7 @@ class Shader:
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
-        shader_id = glCreateShader(_shader_types[self.type])
+        shader_id = glCreateShader(shader_types[self.type])
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
