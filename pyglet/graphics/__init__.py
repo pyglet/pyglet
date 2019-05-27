@@ -536,8 +536,8 @@ class Batch:
             else:
                 # Remove unused group from batch
                 del self.group_map[group]
-                if group.parent:
-                    self.group_children[group.parent].remove(group)
+                # if group.parent:
+                #     self.group_children[group.parent].remove(group)
                 try:
                     del self.group_children[group]
                 except KeyError:
@@ -693,9 +693,10 @@ class TextureGroup(Group):
         :Parameters:
             `texture` : `~pyglet.image.Texture`
                 Texture to bind.
-            `parent` : `~pyglet.graphics.Group`
-                Parent group.
-
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                Optional custom Shader Program.
+            `order` : int
+                Change the order to render above or below other Groups.
         """
         super(TextureGroup, self).__init__(program, order)
         self.texture = texture
