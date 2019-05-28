@@ -1608,16 +1608,23 @@ class ScrollableTextLayout(TextLayout):
     default_group_class = ScrollableTextLayoutGroup
     default_shader = _scrollable_layout_program
 
+    _clip_x = 0
+    _clip_y = 0
+    _clip_width = 0
+    _clip_height = 0
+    _view_x = 0
+    _view_y = 0
+
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self._clip_x = 0
-        self._clip_y = 0
-        self._clip_width = 0
-        self._clip_height = 0
-        self._view_x = 0
-        self._view_y = 0
-        self.translate_x = 0  # x - view_x
-        self.translate_y = 0  # y - view_y
+        # self._clip_x = 0
+        # self._clip_y = 0
+        # self._clip_width = 0
+        # self._clip_height = 0
+        # self._view_x = 0
+        # self._view_y = 0
+        self._translate_x = 0  # x - view_x
+        self._translate_y = 0  # y - view_y
 
         self._calculate_scissor_box()
 
@@ -1629,15 +1636,12 @@ class ScrollableTextLayout(TextLayout):
             width = max(min(x + self.width, self.width), 0)
             x = max(0, x)
             y = max(0, y)
-
-            print(x, y, width, height)
-
             group.scissor_box[:] = x, y, width, height
 
     def _update_translation(self):
         for group in self.groups.values():
             group.program.use_program()
-            group.program['translate'] = self.translate_x, self.translate_y
+            group.program['translate'] = self._translate_x, self._translate_y
 
     def _x_setter(self, x):
         super()._x_setter(x)
@@ -1664,7 +1668,7 @@ class ScrollableTextLayout(TextLayout):
     def _view_x_setter(self, view_x):
         view_x = max(0, min(self.content_width - self._width, view_x))
         self._view_x = view_x
-        self.translate_x = self._clip_x - view_x
+        self._translate_x = self._clip_x - view_x
         self._update_translation()
 
     @view_x.setter
@@ -1691,7 +1695,7 @@ class ScrollableTextLayout(TextLayout):
         # view_y must be negative.
         view_y = min(0, max(self.height - self.content_height, view_y))
         self._view_y = view_y
-        self.translate_y = self._clip_y - view_y
+        self._translate_y = self._clip_y - view_y
         self._update_translation()
 
     @view_y.setter
@@ -2209,7 +2213,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return x + self.translate_x, line.y + self.translate_y + baseline
+        return x + self._translate_x, line.y + self._translate_y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2222,8 +2226,8 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
         :rtype: int
         """
-        x -= self.translate_x
-        y -= self.translate_y
+        x -= self._translate_x
+        y -= self._translate_y
 
         line_index = 0
         for line in self.lines:
@@ -2245,7 +2249,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         :return: (x, y)
         """
         line = self.lines[line]
-        return line.x + self.translate_x, line.y + self.translate_y
+        return line.x + self._translate_x, line.y + self._translate_y
 
     def get_line_from_position(self, position):
         """Get the line index of a character position in the document.
@@ -2287,7 +2291,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         :rtype: int
         """
         line = self.lines[line]
-        x -= self.translate_x
+        x -= self._translate_x
 
         if x < line.x:
             return line.start
