@@ -17,14 +17,14 @@ class Rectangle(object):
     def __init__(self, x1, y1, x2, y2, batch):
         self.vertex_list = batch.add_indexed(4, pyglet.gl.GL_TRIANGLES, None,
                                              [0, 1, 2, 0, 2, 3],
-                                             ('v2i', [x1, y1, x2, y1, x2, y2, x1, y2]),
-                                             ('c4B', [200, 200, 220, 255] * 4))
+                                             ('vertices2i', [x1, y1, x2, y1, x2, y2, x1, y2]),
+                                             ('colors4Bn', [200, 200, 220, 255] * 4))
 
 
 class TextWidget(object):
     def __init__(self, text, x, y, width, batch):
         self.document = pyglet.text.document.UnformattedDocument(text)
-        self.document.set_style(0, len(self.document.text), dict(color=(0, 0, 0, 255)))
+        self.document.set_style(0, len(self.document.text), dict(color=(0, 0, 0, 55)))
         font = self.document.get_font()
         height = font.ascent - font.descent
 
@@ -59,7 +59,7 @@ class Window(pyglet.window.Window):
                               batch=self.batch)
         ]
         self.widgets = [
-            TextWidget('', 200, 100, self.width - 210, self.batch),
+            TextWidget('This is a tset', 200, 100, self.width - 210, self.batch),
             TextWidget('', 200, 60, self.width - 210, self.batch),
             TextWidget('', 200, 20, self.width - 210, self.batch)
         ]

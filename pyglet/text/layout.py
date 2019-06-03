@@ -442,8 +442,7 @@ class _InlineElementBox(_AbstractBox):
     def __init__(self, element):
         """Create a glyph run holding a single element.
         """
-        super(_InlineElementBox, self).__init__(
-            element.ascent, element.descent, element.advance, 1)
+        super(_InlineElementBox, self).__init__(element.ascent, element.descent, element.advance, 1)
         self.element = element
         self.placed = False
 
@@ -1740,6 +1739,10 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         self.visible_lines = _InvalidRange()
 
         self.owner_runs = runlist.RunList(0, None)
+
+        if group:
+            # TODO: see if this is necessary
+            assert isinstance(group, ScrollableTextLayoutGroup), "Only subclasses of ScrollableTextLayoutGroup allowed."
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
