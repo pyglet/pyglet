@@ -663,7 +663,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order, program=program)
         self.texture = texture
-        self.scissor_box = (GLint * 4)()
+        self.scissor_box = (0, 0, 0, 0)
 
     def set_state(self):
         self.program.use_program()
@@ -1607,24 +1607,11 @@ class ScrollableTextLayout(TextLayout):
     default_group_class = ScrollableTextLayoutGroup
     default_shader = _scrollable_layout_program
 
-    _clip_x = 0
-    _clip_y = 0
-    _clip_width = 0
-    _clip_height = 0
-    _view_x = 0
-    _view_y = 0
+    _translate_x = 0
+    _translate_y = 0
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        # self._clip_x = 0
-        # self._clip_y = 0
-        # self._clip_width = 0
-        # self._clip_height = 0
-        # self._view_x = 0
-        # self._view_y = 0
-        self._translate_x = 0  # x - view_x
-        self._translate_y = 0  # y - view_y
-
         self._calculate_scissor_box()
 
     def _calculate_scissor_box(self):
@@ -1635,7 +1622,9 @@ class ScrollableTextLayout(TextLayout):
             width = max(min(x + self.width, self.width), 0)
             x = max(0, x)
             y = max(0, y)
-            group.scissor_box[:] = x, y, width, height
+            # TODO: fix this
+            # group.scissor_box = x, y, width, height
+            group.scissor_box = 0, 0, width, height
 
     def _update_translation(self):
         for group in self.groups.values():
@@ -1662,12 +1651,10 @@ class ScrollableTextLayout(TextLayout):
 
             :type: int
         """
-        return self._view_x
+        return self._translate_x
 
     def _view_x_setter(self, view_x):
-        view_x = max(0, min(self.content_width - self._width, view_x))
-        self._view_x = view_x
-        self._translate_x = self._clip_x - view_x
+        self._translate_x = max(0, min(self.content_width - self._width, view_x))
         self._update_translation()
 
     @view_x.setter
@@ -1688,13 +1675,11 @@ class ScrollableTextLayout(TextLayout):
 
             :type: int
         """
-        return self._view_y
+        return self._translate_y
 
     def _view_y_setter(self, view_y):
         # view_y must be negative.
-        view_y = min(0, max(self.height - self.content_height, view_y))
-        self._view_y = view_y
-        self._translate_y = self._clip_y - view_y
+        self._translate_y = min(0, max(self.height - self.content_height, view_y))
         self._update_translation()
 
     @view_y.setter
