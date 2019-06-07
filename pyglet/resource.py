@@ -115,7 +115,8 @@ class UndetectableShaderType(Exception):
 
     def __init__(self, name):
         message = ("The Shader type of '{}' could not be determined.  "
-                   "Ensure that your source file has a standard extension.".format(name))
+                   "Ensure that your source file has a standard extension,"
+                   "or provide a valid 'shader_type' parameter.".format(name))
         Exception.__init__(self, message)
 
 
@@ -793,6 +794,8 @@ class Loader(object):
                 shader_type = shader_extensions.get(extension)
             except KeyError:
                 raise UndetectableShaderType(name=name)
+        elif shader_type not in shader_extensions.values():
+            raise UndetectableShaderType(name=name)
 
         return pyglet.graphics.shader.Shader(source_string, shader_type)
 
