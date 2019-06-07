@@ -60,14 +60,8 @@ class WaveSource(StreamingSource):
         except wave.Error as e:
             raise WAVEFormatException(e)
 
-        # parameters = self._wave.getparams()
-        # (nchannels=1, sampwidth=2, framerate=22050, nframes=11583, comptype='NONE', compname='not compressed')
         nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
-
-        self.audio_format = AudioFormat(channels=nchannels,
-                                        sample_size=sampwidth * 8,
-                                        sample_rate=framerate)
-
+        self.audio_format = AudioFormat(channels=nchannels, sample_size=sampwidth * 8, sample_rate=framerate)
         self._bytes_per_frame = nchannels * sampwidth
         self._duration = nframes / framerate
         self._duration_per_frame = self._duration / nframes
