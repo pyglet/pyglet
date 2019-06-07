@@ -577,10 +577,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             screen = display.get_default_screen()
 
         if not config:
-            for template_config in [
-                gl.Config(double_buffer=True, depth_size=24),
-                gl.Config(double_buffer=True, depth_size=16),
-                None]:
+            for template_config in [gl.Config(double_buffer=True, depth_size=24),
+                                    gl.Config(double_buffer=True, depth_size=16),
+                                    None]:
                 try:
                     config = screen.get_best_config(template_config)
                     break
@@ -595,16 +594,14 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if not context:
             context = config.create_context(gl.current_context)
 
-        # Set these in reverse order to above, to ensure we get user
-        # preference
+        # Set these in reverse order to above, to ensure we get user preference
         self._context = context
         self._config = self._context.config
         # XXX deprecate config's being screen-specific
         if hasattr(self._config, 'screen'):
             self._screen = self._config.screen
         else:
-            display = self._config.canvas.display
-            self._screen = display.get_default_screen()
+            self._screen = screen
         self._display = self._screen.display
 
         if fullscreen:
@@ -658,8 +655,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             pass
 
     def __repr__(self):
-        return '%s(width=%d, height=%d)' % \
-               (self.__class__.__name__, self.width, self.height)
+        return '%s(width=%d, height=%d)' % (self.__class__.__name__, self.width, self.height)
 
     def _create(self):
         raise NotImplementedError('abstract')
@@ -754,8 +750,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         self._fullscreen = fullscreen
         if self._fullscreen:
-            self._width, self._height = self._set_fullscreen_mode(
-                mode, width, height)
+            self._width, self._height = self._set_fullscreen_mode(mode, width, height)
         else:
             self.screen.restore_mode()
 
@@ -788,8 +783,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 self.screen.set_mode(mode)
             elif self.screen.get_modes():
                 # Only raise exception if mode switching is at all possible.
-                raise NoSuchScreenModeException(
-                    'No mode matching %dx%d' % (width, height))
+                raise NoSuchScreenModeException('No mode matching %dx%d' % (width, height))
         else:
             width = self.screen.width
             height = self.screen.height
