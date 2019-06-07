@@ -105,8 +105,17 @@ class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
 
     def __init__(self, name):
-        message = ('Resource "%s" was not found on the path.  '
-                   'Ensure that the filename has the correct captialisation.') % name
+        message = ("Resource '{}' was not found on the path.  "
+                   "Ensure that the filename has the correct captialisation.".format(name))
+        Exception.__init__(self, message)
+
+
+class UndetectableShaderType(Exception):
+    """The type of the Shader source could not be identified."""
+
+    def __init__(self, name):
+        message = ("The Shader type of '{}' could not be determined.  "
+                   "Ensure that your source file has a standard extension.".format(name))
         Exception.__init__(self, message)
 
 
@@ -757,8 +766,35 @@ class Loader(object):
         :rtype: `UnformattedDocument`
         """
         self._require_index()
-        file = self.file(name)
-        return pyglet.text.load(name, file, 'text/plain')
+        fileobj = self.file(name)
+        return pyglet.text.load(name, fileobj, 'text/plain')
+
+    def shader(self, name, shader_type=None):
+        """Load a Shader object.
+
+        :Parameters:
+            `name` : str
+                Filename of the Shader source to load.
+            `shader_type` : str
+                A hint for the type of shader, such as 'vertex', 'fragment', etc.
+                Not required if your shader has a standard file extension.
+
+        :rtype: A compiled `Shader` object.
+        """
+        # https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
+        shader_extensions = {'vert': "vertex",
+                             'geom': "geometry",
+                             'frag': "fragment"}
+        fileobj = self.file(name, 'r')
+        source_string = fileobj.read()
+        if not shader_type:
+            try:
+                _, extension = os.path.splitext(name)
+                shader_type = shader_extensions.get(extension)
+            except KeyError:
+                raise UndetectableShaderType(name=name)
+
+        return pyglet.graphics.shader.Shader(source_string, shader_type)
 
     def get_cached_texture_names(self):
         """Get the names of textures currently cached.
@@ -805,6 +841,7 @@ texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text
+shader = _default_loader.shader
 get_cached_texture_names = _default_loader.get_cached_texture_names
 get_cached_image_names = _default_loader.get_cached_image_names
 get_cached_animation_names = _default_loader.get_cached_animation_names

@@ -442,8 +442,7 @@ class _InlineElementBox(_AbstractBox):
     def __init__(self, element):
         """Create a glyph run holding a single element.
         """
-        super(_InlineElementBox, self).__init__(
-            element.ascent, element.descent, element.advance, 1)
+        super(_InlineElementBox, self).__init__(element.ascent, element.descent, element.advance, 1)
         self.element = element
         self.placed = False
 
@@ -952,9 +951,6 @@ class TextLayout:
         for line in lines:
             self._create_vertex_lists(left + line.x, top + line.y, line.start, line.boxes, context)
 
-    def _calculate_scissor_box(self):
-        pass
-
     def _update_color(self):
         colors_iter = self._document.get_style_runs('color')
         colors = []
@@ -1429,8 +1425,7 @@ class TextLayout:
         """
         return self._x
 
-    @x.setter
-    def x(self, x):
+    def _x_setter(self, x):
         if self._boxes:
             self._x = x
             self._update()
@@ -1442,7 +1437,10 @@ class TextLayout:
                 vertices[::2] = list(map(l_dx, vertices[::2]))
                 vertex_list.vertices[:] = vertices
             self._x = x
-        self._calculate_scissor_box()
+
+    @x.setter
+    def x(self, x):
+        self._x_setter(x)
 
     @property
     def y(self):
@@ -1454,8 +1452,7 @@ class TextLayout:
         """
         return self._y
 
-    @y.setter
-    def y(self, y):
+    def _y_setter(self, y):
         if self._boxes:
             self._y = y
             self._update()
@@ -1467,7 +1464,10 @@ class TextLayout:
                 vertices[1::2] = list(map(l_dy, vertices[1::2]))
                 vertex_list.vertices[:] = vertices
             self._y = y
-        self._calculate_scissor_box()
+
+    @y.setter
+    def y(self, y):
+        self._y_setter(y)
 
     @property
     def width(self):
@@ -1479,11 +1479,14 @@ class TextLayout:
         """
         return self._width
 
-    @width.setter
-    def width(self, width):
+    def _width_setter(self, width):
         self._width = width
         self._wrap_lines_invariant()
         self._update()
+
+    @width.setter
+    def width(self, width):
+        self._width_setter(width)
 
     @property
     def height(self):
@@ -1493,10 +1496,13 @@ class TextLayout:
         """
         return self._height
 
-    @height.setter
-    def height(self, height):
+    def _height_setter(self, height):
         self._height = height
         self._update()
+
+    @height.setter
+    def height(self, height):
+        self._height_setter(height)
 
     @property
     def multiline(self):
@@ -1510,11 +1516,14 @@ class TextLayout:
         """
         return self._multiline
 
-    @multiline.setter
-    def multiline(self, multiline):
+    def _multiline_setter(self, multiline):
         self._multiline = multiline
         self._wrap_lines_invariant()
         self._update()
+
+    @multiline.setter
+    def multiline(self, multiline):
+        self._multiline_setter(multiline)
 
     @property
     def anchor_x(self):
@@ -1598,16 +1607,23 @@ class ScrollableTextLayout(TextLayout):
     default_group_class = ScrollableTextLayoutGroup
     default_shader = _scrollable_layout_program
 
+    _clip_x = 0
+    _clip_y = 0
+    _clip_width = 0
+    _clip_height = 0
+    _view_x = 0
+    _view_y = 0
+
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self._clip_x = 0
-        self._clip_y = 0
-        self._clip_width = 0
-        self._clip_height = 0
-        self._view_x = 0
-        self._view_y = 0
-        self.translate_x = 0  # x - view_x
-        self.translate_y = 0  # y - view_y
+        # self._clip_x = 0
+        # self._clip_y = 0
+        # self._clip_width = 0
+        # self._clip_height = 0
+        # self._view_x = 0
+        # self._view_y = 0
+        self._translate_x = 0  # x - view_x
+        self._translate_y = 0  # y - view_y
 
         self._calculate_scissor_box()
 
@@ -1619,15 +1635,20 @@ class ScrollableTextLayout(TextLayout):
             width = max(min(x + self.width, self.width), 0)
             x = max(0, x)
             y = max(0, y)
-
-            print(x, y, width, height)
-
             group.scissor_box[:] = x, y, width, height
 
     def _update_translation(self):
         for group in self.groups.values():
             group.program.use_program()
-            group.program['translate'] = self.translate_x, self.translate_y
+            group.program['translate'] = self._translate_x, self._translate_y
+
+    def _x_setter(self, x):
+        super()._x_setter(x)
+        self._calculate_scissor_box()
+
+    def _y_setter(self, y):
+        super()._y_setter(y)
+        self._calculate_scissor_box()
 
     # Offset of content within viewport
     @property
@@ -1643,12 +1664,15 @@ class ScrollableTextLayout(TextLayout):
         """
         return self._view_x
 
-    @view_x.setter
-    def view_x(self, view_x):
+    def _view_x_setter(self, view_x):
         view_x = max(0, min(self.content_width - self._width, view_x))
         self._view_x = view_x
-        self.translate_x = self._clip_x - view_x
+        self._translate_x = self._clip_x - view_x
         self._update_translation()
+
+    @view_x.setter
+    def view_x(self, view_x):
+        self._view_x_setter(view_x)
 
     @property
     def view_y(self):
@@ -1666,13 +1690,16 @@ class ScrollableTextLayout(TextLayout):
         """
         return self._view_y
 
-    @view_y.setter
-    def view_y(self, view_y):
+    def _view_y_setter(self, view_y):
         # view_y must be negative.
         view_y = min(0, max(self.height - self.content_height, view_y))
         self._view_y = view_y
-        self.translate_y = self._clip_y - view_y
+        self._translate_y = self._clip_y - view_y
         self._update_translation()
+
+    @view_y.setter
+    def view_y(self, view_y):
+        self._view_y_setter(view_y)
 
 
 class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
@@ -1712,6 +1739,10 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         self.visible_lines = _InvalidRange()
 
         self.owner_runs = runlist.RunList(0, None)
+
+        if group:
+            # TODO: see if this is necessary
+            assert isinstance(group, ScrollableTextLayoutGroup), "Only subclasses of ScrollableTextLayoutGroup allowed."
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
@@ -2008,50 +2039,31 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
             self._create_vertex_lists(line.x, y, line.start, line.boxes, context)
 
-    @property
-    def width(self):
-        return self._width
+    # Method overrides:
 
-    @width.setter
-    def width(self, width):
+    def _width_setter(self, width):
         # Invalidate everything when width changes
         if self._width == width:
             return
         self.invalid_flow.invalidate(0, len(self.document.text))
-        super().width = width
+        super()._width_setter(width)
 
-    @property
-    def height(self):
-        return self._height
-
-    @height.setter
-    def height(self, height):
+    def _height_setter(self, height):
         # Recalculate visible lines when height changes
         if height == self._height:
             return
-        super().height = height
+        super()._height_setter(height)
         if self._update_enabled:
             self._update_visible_lines()
             self._update_vertex_lists()
 
-    @property
-    def multiline(self):
-        return self._multiline
-
-    @multiline.setter
-    def multiline(self, multiline):
+    def _multiline_setter(self, multiline):
         self.invalid_flow.invalidate(0, len(self.document.text))
-        super().multiline = multiline
+        super()._multiline_setter(multiline)
 
     # Invalidate invisible/visible lines when y scrolls
-    @property
-    def view_y(self):
-        return super().view_y
-
-    @view_y.setter
-    def view_y(self, view_y):
-        # view_y must be negative.
-        super().view_y = view_y
+    def _view_y_setter(self, view_y):
+        super()._view_y_setter(view_y)
         self._update_visible_lines()
         self._update_vertex_lists()
 
@@ -2204,7 +2216,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return x + self.translate_x, line.y + self.translate_y + baseline
+        return x + self._translate_x, line.y + self._translate_y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2217,8 +2229,8 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
         :rtype: int
         """
-        x -= self.translate_x
-        y -= self.translate_y
+        x -= self._translate_x
+        y -= self._translate_y
 
         line_index = 0
         for line in self.lines:
@@ -2240,7 +2252,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         :return: (x, y)
         """
         line = self.lines[line]
-        return line.x + self.translate_x, line.y + self.translate_y
+        return line.x + self._translate_x, line.y + self._translate_y
 
     def get_line_from_position(self, position):
         """Get the line index of a character position in the document.
@@ -2282,7 +2294,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         :rtype: int
         """
         line = self.lines[line]
-        x -= self.translate_x
+        x -= self._translate_x
 
         if x < line.x:
             return line.start

@@ -99,6 +99,8 @@ class Caret:
     #: to 12pt at 96dpi.
     SCROLL_INCREMENT = 12 * 96 // 72
 
+    _mark = None
+
     def __init__(self, layout, batch=None, color=(0, 0, 0)):
         """Create a caret for a layout.
 
@@ -116,10 +118,9 @@ class Caret:
         """
         from pyglet import gl
         self._layout = layout
-        if batch is None:
-            batch = layout.batch
+        batch = batch or layout.batch
         colors = (*color, 255, *color, 255)
-        self._list = batch.add(2, gl.GL_LINES, layout.background_group, 'vertices2f', ('colors4Bn', colors))
+        self._list = batch.add(2, gl.GL_LINES, layout.foreground_decoration_group, 'vertices2f', ('colors4Bn', colors))
 
         self._ideal_x = None
         self._ideal_line = None
@@ -186,64 +187,58 @@ class Caret:
         self._list.colors[:3] = color
         self._list.colors[4:7] = color
 
-    def _set_position(self, index):
-        self._position = index
+    @property
+    def position(self):
+        """Position of caret within document."""
+        return self._position
+
+    @position.setter
+    def position(self, position):
+        self._position = position
         self._next_attributes.clear()
         self._update()
 
-    def _get_position(self):
-        return self._position
+    @property
+    def mark(self):
+        """Position of immovable end of text selection within document.
 
-    position = property(_get_position, _set_position,
-                        doc="""Position of caret within document.
+        An interactive text selection is determined by its immovable end (the
+        caret's position when a mouse drag begins) and the caret's position, which
+        moves interactively by mouse and keyboard input.
 
-    :type: int
-    """)
+        This property is ``None`` when there is no selection.
 
-    _mark = None
+        :type: int
+        """
+        return self._mark
 
-    def _set_mark(self, mark):
+    @mark.setter
+    def mark(self, mark):
         self._mark = mark
         self._update(line=self._ideal_line)
         if mark is None:
             self._layout.set_selection(0, 0)
 
-    def _get_mark(self):
-        return self._mark
+    @property
+    def line(self):
+        """Index of line containing the caret's position.
 
-    mark = property(_get_mark, _set_mark,
-                    doc="""Position of immovable end of text selection within
-    document.
+        When set, `position` is modified to place the caret on requested line
+        while maintaining the closest possible X offset.
 
-    An interactive text selection is determined by its immovable end (the
-    caret's position when a mouse drag begins) and the caret's position, which
-    moves interactively by mouse and keyboard input.
-
-    This property is ``None`` when there is no selection.
-
-    :type: int
-    """)
-
-    def _set_line(self, line):
-        if self._ideal_x is None:
-            self._ideal_x, _ = self._layout.get_point_from_position(self._position)
-        self._position = self._layout.get_position_on_line(line, self._ideal_x)
-        self._update(line=line, update_ideal_x=False)
-
-    def _get_line(self):
+        :rtype: int
+        """
         if self._ideal_line is not None:
             return self._ideal_line
         else:
             return self._layout.get_line_from_position(self._position)
 
-    line = property(_get_line, _set_line,
-                    doc="""Index of line containing the caret's position.
-
-    When set, `position` is modified to place the caret on requested line
-    while maintaining the closest possible X offset.
-                    
-    :type: int
-    """)
+    @line.setter
+    def line(self, line):
+        if self._ideal_x is None:
+            self._ideal_x, _ = self._layout.get_point_from_position(self._position)
+        self._position = self._layout.get_position_on_line(line, self._ideal_x)
+        self._update(line=line, update_ideal_x=False)
 
     def get_style(self, attribute):
         """Get the document's named style at the caret's current position.
