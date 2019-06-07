@@ -84,17 +84,9 @@ The default path is ``['.']``.  If you modify the path, you must call
 
 .. versionadded:: 1.1
 """
-from future import standard_library
-
-standard_library.install_aliases()
-from builtins import object, str
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os
-import weakref
 import sys
+import weakref
 import zipfile
 
 import pyglet
@@ -115,7 +107,7 @@ class UndetectableShaderType(Exception):
 
     def __init__(self, name):
         message = ("The Shader type of '{}' could not be determined.  "
-                   "Ensure that your source file has a standard extension,"
+                   "Ensure that your source file has a standard extension, "
                    "or provide a valid 'shader_type' parameter.".format(name))
         Exception.__init__(self, message)
 
@@ -202,7 +194,7 @@ def get_settings_path(name):
         return os.path.expanduser('~/.%s' % name)
 
 
-class Location(object):
+class Location:
     """Abstract resource location.
 
     Given a location, a file can be loaded from that location with the `open`
@@ -231,14 +223,14 @@ class FileLocation(Location):
     """Location on the filesystem.
     """
 
-    def __init__(self, path):
+    def __init__(self, filepath):
         """Create a location given a relative or absolute path.
 
         :Parameters:
-            `path` : str
+            `filepath` : str
                 Path on the filesystem.
         """
-        self.path = path
+        self.path = filepath
 
     def open(self, filename, mode='rb'):
         return open(os.path.join(self.path, filename), mode)
@@ -292,12 +284,13 @@ class URLLocation(Location):
         self.base = base_url
 
     def open(self, filename, mode='rb'):
-        import urllib.parse, urllib.request
+        import urllib.parse
+        import urllib.request
         url = urllib.parse.urljoin(self.base, filename)
         return urllib.request.urlopen(url)
 
 
-class Loader(object):
+class Loader:
     """Load program resource files from disk.
 
     The loader contains a search path which can include filesystem
@@ -538,7 +531,7 @@ class Loader(object):
         """
         # Large images are not placed in an atlas
         max_texture_size = pyglet.image.get_max_texture_size()
-        max_size = min(1024, max_texture_size / 2)
+        max_size = min(2048, max_texture_size)
         if width > max_size or height > max_size:
             return None
 
@@ -788,13 +781,15 @@ class Loader(object):
                              'frag': "fragment"}
         fileobj = self.file(name, 'r')
         source_string = fileobj.read()
+
         if not shader_type:
             try:
                 _, extension = os.path.splitext(name)
-                shader_type = shader_extensions.get(extension)
+                shader_type = shader_extensions.get(extension.strip("."))
             except KeyError:
                 raise UndetectableShaderType(name=name)
-        elif shader_type not in shader_extensions.values():
+
+        if shader_type not in shader_extensions.values():
             raise UndetectableShaderType(name=name)
 
         return pyglet.graphics.shader.Shader(source_string, shader_type)
