@@ -15,6 +15,7 @@ import pyglet
 from pyglet import window
 from pyglet.gl import *
 
+
 @pytest.mark.requires_user_action
 class InteractiveTestCaseTest(InteractiveTestCase):
     """
@@ -41,8 +42,8 @@ class InteractiveTestCaseTest(InteractiveTestCase):
         return directory
 
     def _patch_screenshot_paths(self):
-        self._session_screenshot_path = self._patch_directory('tests.interactive.interactive_test_base.session_screenshot_path')
-        self._committed_screenshot_path = self._patch_directory('tests.interactive.interactive_test_base.committed_screenshot_path')
+        self._session_screenshot_path = self._patch_directory('tests.base.interactive.session_screenshot_path')
+        self._committed_screenshot_path = self._patch_directory('tests.base.interactive.committed_screenshot_path')
 
     def test_single_method(self):
         class _Test(InteractiveTestCase):
