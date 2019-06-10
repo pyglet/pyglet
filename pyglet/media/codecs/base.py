@@ -542,13 +542,11 @@ class StaticMemorySource(StaticSource):
 
 
 class SourceGroup(object):
-    """Seamlessly read data from a queue of sources to allow for
+    """Group of like sources to allow gapless playback.
+
+    Seamlessly read data from a group of sources to allow for
     gapless playback. All sources must share the same audio format.
-
-    :Ivariables:
-        `audio_format` : `AudioFormat`
-            Required audio format for queued sources.
-
+    The first source added sets the format.
     """
 
     def __init__(self):
@@ -572,14 +570,6 @@ class SourceGroup(object):
 
     def has_next(self):
         return len(self._sources) > 1
-
-    def next_source(self, immediate=True):
-        if immediate:
-            self._advance()
-
-    def get_current_source(self):
-        if self._sources:
-            return self._sources[0]
 
     def get_queue_source(self):
         return self
@@ -613,25 +603,13 @@ class SourceGroup(object):
         duration = 0.0
         timestamp = 0.0
 
-        data = self._sources[0].get_audio_data(num_bytes)
-        if not data:
-            return None
-
-        buffer += data.data
-
-        while len(buffer) < num_bytes:
-            data = self._sources[0].get_audio_data(num_bytes)
-
-            while not data:
-                # Advance source if there's something to advance to.
-                # Otherwise leave last source paused at EOS.
-                if len(self._sources) > 1:
-                    self._advance()
-                else:
-                    return AudioData(buffer, len(buffer), timestamp, duration, [])
-
-            buffer += data.data
-            duration += data.duration
-            timestamp += self._timestamp_offset
+        while len(buffer) < num_bytes and self._sources:
+            audiodata = self._sources[0].get_audio_data(num_bytes)
+            if audiodata:
+                buffer += audiodata.data
+                duration += audiodata.duration
+                timestamp += self._timestamp_offset
+            else:
+                self._advance()
 
         return AudioData(buffer, len(buffer), timestamp, duration, [])
