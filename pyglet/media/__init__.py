@@ -81,7 +81,7 @@ from .exceptions import MediaDecodeException
 from .player import Player, PlayerGroup
 from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
 from .codecs import add_default_media_codecs, have_ffmpeg
-from .codecs import Source, StaticSource, StreamingSource
+from .codecs import Source, StaticSource, StreamingSource, SourceGroup
 
 from . import synthesis
 
@@ -94,6 +94,7 @@ __all__ = (
     'get_audio_driver',
     'Player',
     'PlayerGroup',
+    'SourceGroup',
     'get_encoders',
     'get_decoders',
     'add_encoders',

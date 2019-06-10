@@ -68,7 +68,7 @@ class PlayerTestCase(FutureTestCase):
         def _get_timestamp():
             if timestamp_data_pairs:
                 return timestamp_data_pairs[0][0]
-        queue_source = mock_source._get_queue_source.return_value
+        queue_source = mock_source.get_queue_source.return_value
         queue_source.get_next_video_timestamp.side_effect = _get_timestamp
         queue_source.get_next_video_frame.side_effect = _get_frame
 
@@ -101,7 +101,7 @@ class PlayerTestCase(FutureTestCase):
         call_args = mock_audio_driver.create_audio_player.call_args
         args, kwargs = call_args
         arg_source, arg_player = args
-        self.assertIs(arg_source, source._get_queue_source.return_value)
+        self.assertIs(arg_source, source.get_queue_source.return_value)
         self.assertIs(arg_player, self.player)
 
     def assert_no_new_driver_player_created(self):
@@ -133,7 +133,7 @@ class PlayerTestCase(FutureTestCase):
         self.mock_audio_driver_player.clear.assert_called_once_with()
 
     def assert_source_seek(self, source, time):
-        source._get_queue_source.return_value.seek.assert_called_once_with(time)
+        source.get_queue_source.return_value.seek.assert_called_once_with(time)
 
     def assert_new_texture_created(self, video_format):
         self.mock_texture_create.assert_called_once_with(video_format.width, video_format.height, rectangle=True)

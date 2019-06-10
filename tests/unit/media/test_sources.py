@@ -191,12 +191,12 @@ class StreamingSourceTestCase(FutureTestCase):
         source = StreamingSource()
         self.assertFalse(source.is_player_source)
 
-        ret = source._get_queue_source()
+        ret = source.get_queue_source()
         self.assertIs(ret, source)
         self.assertTrue(source.is_player_source)
 
         with self.assertRaises(MediaException):
-            source._get_queue_source()
+            source.get_queue_source()
 
 
 class StaticSourceTestCase(FutureTestCase):
@@ -231,7 +231,7 @@ class StaticSourceTestCase(FutureTestCase):
         self.assertEqual(self.mock_queue_source.get_audio_data.call_count, 4, 'Data should be retrieved until empty')
 
         # Try to read all data plus more, more should be ignored
-        returned_audio_data = static_source._get_queue_source().get_audio_data(len(self.mock_audio_data)+1024)
+        returned_audio_data = static_source.get_queue_source().get_audio_data(len(self.mock_audio_data) + 1024)
         self.assertBytesEqual(returned_audio_data.get_string_data(), self.mock_audio_data, 'All data from the mock should be returned')
         self.assertAlmostEqual(returned_audio_data.duration, 5.0)
 
@@ -246,7 +246,7 @@ class StaticSourceTestCase(FutureTestCase):
         self.create_valid_mock_source()
         static_source = StaticSource(self.mock_source)
 
-        queue_source = static_source._get_queue_source()
+        queue_source = static_source.get_queue_source()
         queue_source.seek(1.0)
         returned_audio_data = queue_source.get_audio_data(len(self.mock_audio_data))
         self.assertAlmostEqual(returned_audio_data.duration, 4.0)
@@ -258,10 +258,10 @@ class StaticSourceTestCase(FutureTestCase):
         static_source = StaticSource(self.mock_source)
 
         # Check that seeking and consuming on queued instances does not affect others
-        queue_source1 = static_source._get_queue_source()
+        queue_source1 = static_source.get_queue_source()
         queue_source1.seek(1.0)
 
-        queue_source2 = static_source._get_queue_source()
+        queue_source2 = static_source.get_queue_source()
 
         returned_audio_data = queue_source2.get_audio_data(len(self.mock_audio_data))
         self.assertAlmostEqual(returned_audio_data.duration, 5.0)
@@ -277,7 +277,7 @@ class StaticSourceTestCase(FutureTestCase):
         self.create_valid_mock_source(bitrate=16, channels=1)
         static_source = StaticSource(self.mock_source)
 
-        queue_source = static_source._get_queue_source()
+        queue_source = static_source.get_queue_source()
         queue_source.seek(0.01)
         returned_audio_data = queue_source.get_audio_data(len(self.mock_audio_data))
         self.assertEqual(returned_audio_data.length % 2, 0, 'Must seek and return aligned to 2 byte chunks')
@@ -286,7 +286,7 @@ class StaticSourceTestCase(FutureTestCase):
         self.create_valid_mock_source(bitrate=16, channels=1)
         static_source = StaticSource(self.mock_source)
 
-        queue_source = static_source._get_queue_source()
+        queue_source = static_source.get_queue_source()
         returned_audio_data = queue_source.get_audio_data(1000*2+1)
         self.assertEqual(returned_audio_data.length % 2, 0, 'Must return aligned to 2 byte chunks')
 
@@ -294,7 +294,7 @@ class StaticSourceTestCase(FutureTestCase):
         self.create_valid_mock_source(bitrate=16, channels=2)
         static_source = StaticSource(self.mock_source)
 
-        queue_source = static_source._get_queue_source()
+        queue_source = static_source.get_queue_source()
         queue_source.seek(0.01)
         returned_audio_data = queue_source.get_audio_data(len(self.mock_audio_data))
         self.assertEqual(returned_audio_data.length % 4, 0, 'Must seek and return aligned to 4 byte chunks')
@@ -303,7 +303,7 @@ class StaticSourceTestCase(FutureTestCase):
         self.create_valid_mock_source(bitrate=16, channels=2)
         static_source = StaticSource(self.mock_source)
 
-        queue_source = static_source._get_queue_source()
+        queue_source = static_source.get_queue_source()
         returned_audio_data = queue_source.get_audio_data(1000*4+3)
         self.assertEqual(returned_audio_data.length % 4, 0, 'Must return aligned to 4 byte chunks')
 
@@ -320,7 +320,7 @@ class StaticSourceTestCase(FutureTestCase):
         static_source = StaticSource(self.mock_source)
 
         self.assertEqual(static_source.duration, 0.)
-        self.assertIsNone(static_source._get_queue_source())
+        self.assertIsNone(static_source.get_queue_source())
 
     def test_not_directly_queueable(self):
         """A StaticSource cannot be played directly. Its queue source returns a playable object."""
@@ -334,7 +334,7 @@ class StaticSourceTestCase(FutureTestCase):
         """When running out of data, return None"""
         self.create_valid_mock_source()
         static_source = StaticSource(self.mock_source)
-        queue_source = static_source._get_queue_source()
+        queue_source = static_source.get_queue_source()
         returned_audio_data = queue_source.get_audio_data(self.mock_data_length)
         self.assertIsNotNone(returned_audio_data)
 
