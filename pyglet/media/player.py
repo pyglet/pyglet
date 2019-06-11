@@ -190,7 +190,7 @@ class Player(pyglet.event.EventDispatcher):
 
         if self.source is None:
             source = next(self._playlists[0])
-            self._source = source._get_queue_source()
+            self._source = source.get_queue_source()
 
         self._set_playing(self._playing)
 
@@ -317,7 +317,7 @@ class Player(pyglet.event.EventDispatcher):
         else:
             old_audio_format = self.source.audio_format
             old_video_format = self.source.video_format
-            self._source = source._get_queue_source()
+            self._source = source.get_queue_source()
 
             if old_audio_format == self.source.audio_format:
                 self._audio_player.clear()

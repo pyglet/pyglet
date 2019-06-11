@@ -425,9 +425,9 @@ There are several properties that describe the player's current state:
           - The audio level, expressed as a float from 0 (mute) to 1 (normal
             volume). This can be set at any time.
         * - :py:attr:`~pyglet.media.player.Player.loop`
-          - ``True`` if the current source must be repeated when reaching the
-            end. If set to ``False``, the next queued source will play when
-            reaching the end.
+          - ``True`` if the current source should be repeated when reaching
+            the end. If set to ``False``, playback will continue to the next
+            queued source.
 
 When a player reaches the end of the current source, by default it will move
 immediately to the next queued source. If there are no more sources, playback
@@ -445,6 +445,16 @@ any time,  but be aware that unless sufficient time is given for the future
 data to be  decoded and buffered there may be a stutter or gap in playback.
 If set well  in advance of the end of the source (say, several seconds), there
 will be no  disruption.
+
+Gapless playback
+----------------
+
+To play back multiple similar sources without any audible gaps, :py:class:`~pyglet.media.SourceGroup`
+is provided. A :py:class:`~pyglet.media.SourceGroup` can only contain media sources with identical
+audio or video format. First create an instance of :py:class:`~pyglet.media.SourceGroup`, and then
+add all desired additional sources with the :func:`~pyglet.media.SourceGroup.add` method. Afterwards,
+you can queue the :py:class:`~pyglet.media.SourceGroup` on a Player as if it was a single
+source.
 
 Incorporating video
 -------------------

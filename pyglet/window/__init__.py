@@ -836,7 +836,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        viewport_width, viewport_height = self.get_viewport_size()
+        viewport_width, viewport_height = self.get_framebuffer_size()
         self._projection.set(width, height, viewport_width, viewport_height)
 
     def on_close(self):
@@ -1003,9 +1003,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         The default window projection is orthographic (2D), but can
         be changed to a 3D or custom projection. Custom projections
-        should subclass :py:class:`pyglet.window.Projection`. Two
-        default projection classes are also provided, as
-        :py:class:`pyglet.window.Projection3D` and
+        should subclass :py:class:`pyglet.window.Projection`. There
+        are two default projection classes are also provided, which
+        are :py:class:`pyglet.window.Projection3D` and
         :py:class:`pyglet.window.Projection3D`.
 
         :type: :py:class:`pyglet.window.Projection`
@@ -1015,8 +1015,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     @projection.setter
     def projection(self, projection):
         assert isinstance(projection, Projection)
+        projection.set(self._width, self._height, *self.get_framebuffer_size())
         self._projection = projection
-        self._projection.set(self._width, self._height, *self.get_viewport_size())
 
     def set_caption(self, caption):
         """Set the window's caption.
@@ -1101,16 +1101,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def get_viewport_size(self):
-        """Return the size in actual pixels of the Window viewport.
+    def get_framebuffer_size(self):
+        """Return the size in actual pixels of the Window framebuffer.
 
-        When using HiDPI screens, the actual number of physical pixels
-        used to render can be higher than that of the Window size
-        requested. Each virtual pixel can be made up of multiple actual
-        pixels in the hardware. For some operations, such as changing
-        the OpenGL viewport with glViewport, this method should be used
-        instead of `Window.get_size()` to query the maximum Window
-        viewport size.
+        When using HiDPI screens, the size of the Window's framebuffer
+        can be higher than that of the Window size requested. If you
+        are performing operations that require knowing the actual number
+        of pixels in the window, this method should be used instead of
+        :py:func:`Window.get_size()`. For example, setting the Window
+        projection or setting the glViewport size.
 
         :rtype: (int, int)
         :return: The width and height of the Window viewport, in pixels.
