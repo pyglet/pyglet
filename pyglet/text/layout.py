@@ -727,8 +727,8 @@ class TextLayout:
 
     """
     _document = None
-    _vertex_lists = ()
-    _boxes = ()
+    _vertex_lists = []
+    _boxes = []
 
     default_group_class = TextLayoutGroup
     default_shader = _layout_program
@@ -1595,20 +1595,20 @@ class TextLayout:
 class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport.
 
-       This class does not display a scrollbar or handle scroll events; it merely
-       clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout`
-       to the bounds of the layout given by `x`, `y`, `width` and `height`;
-       and offsets the text by a scroll offset.
+    This class does not display a scrollbar or handle scroll events; it merely
+    clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout`
+    to the bounds of the layout given by `x`, `y`, `width` and `height`;
+    and offsets the text by a scroll offset.
 
-       Use `view_x` and `view_y` to scroll the text within the viewport.
-       """
-    _origin_layout = True
-
+    Use `view_x` and `view_y` to scroll the text within the viewport.
+    """
     default_group_class = ScrollableTextLayoutGroup
     default_shader = _scrollable_layout_program
 
     _translate_x = 0
     _translate_y = 0
+
+    _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
@@ -1622,9 +1622,7 @@ class ScrollableTextLayout(TextLayout):
             width = max(min(x + self.width, self.width), 0)
             x = max(0, x)
             y = max(0, y)
-            # TODO: fix this
-            # group.scissor_box = x, y, width, height
-            group.scissor_box = 0, 0, width, height
+            group.scissor_box = x, y, width, height
 
     def _update_translation(self):
         for group in self.groups.values():
