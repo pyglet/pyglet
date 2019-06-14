@@ -359,11 +359,14 @@ class _GlyphBox(_AbstractBox):
         for i in range(n_glyphs):
             indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
 
+        translation = (0, 0) * n_glyphs * 4
+
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
                                                ('vertices2f/dynamic', vertices),
                                                ('tex_coords3f/dynamic', tex_coords),
-                                               ('colors4Bn/dynamic', colors))
+                                               ('colors4Bn/dynamic', colors),
+                                               ('translation2f/dynamic', translation))
 
         context.add_list(vertex_list)
 
@@ -515,11 +518,10 @@ layout_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
+    in vec2 translation;
 
     out vec4 text_colors;
     out vec2 texture_coords; 
-
-    uniform vec2 translate;
 
     uniform WindowBlock
     {
@@ -530,7 +532,7 @@ layout_vertex_source = """#version 330 core
     void main()
     {
         mat4 translate_mat = mat4(1.0);
-        translate_mat[3] = vec4(translate, 1.0, 1.0);
+        translate_mat[3] = vec4(translation, 1.0, 1.0);
 
         gl_Position = window.projection * translate_mat * vertices;
 
@@ -1625,9 +1627,8 @@ class ScrollableTextLayout(TextLayout):
             group.scissor_box = x, y, width, height
 
     def _update_translation(self):
-        for group in self.groups.values():
-            group.program.use_program()
-            group.program['translate'] = self._translate_x, self._translate_y
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.translation[:] = (self._translate_x, self._translate_y) * (len(_vertex_list.translation) // 2)
 
     def _x_setter(self, x):
         super()._x_setter(x)
