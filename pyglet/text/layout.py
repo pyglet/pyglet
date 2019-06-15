@@ -359,11 +359,14 @@ class _GlyphBox(_AbstractBox):
         for i in range(n_glyphs):
             indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
 
+        translation = (0, 0) * n_glyphs * 4
+
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
                                                ('vertices2f/dynamic', vertices),
                                                ('tex_coords3f/dynamic', tex_coords),
-                                               ('colors4Bn/dynamic', colors))
+                                               ('colors4Bn/dynamic', colors),
+                                               ('translation2f/dynamic', translation))
 
         context.add_list(vertex_list)
 
@@ -515,11 +518,10 @@ layout_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
+    in vec2 translation;
 
     out vec4 text_colors;
     out vec2 texture_coords; 
-
-    uniform vec2 translate;
 
     uniform WindowBlock
     {
@@ -530,7 +532,7 @@ layout_vertex_source = """#version 330 core
     void main()
     {
         mat4 translate_mat = mat4(1.0);
-        translate_mat[3] = vec4(translate, 1.0, 1.0);
+        translate_mat[3] = vec4(translation, 1.0, 1.0);
 
         gl_Position = window.projection * translate_mat * vertices;
 
@@ -663,7 +665,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order, program=program)
         self.texture = texture
-        self.scissor_box = (GLint * 4)()
+        self.scissor_box = (0, 0, 0, 0)
 
     def set_state(self):
         self.program.use_program()
@@ -727,8 +729,8 @@ class TextLayout:
 
     """
     _document = None
-    _vertex_lists = ()
-    _boxes = ()
+    _vertex_lists = []
+    _boxes = []
 
     default_group_class = TextLayoutGroup
     default_shader = _layout_program
@@ -1595,36 +1597,23 @@ class TextLayout:
 class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport.
 
-       This class does not display a scrollbar or handle scroll events; it merely
-       clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout`
-       to the bounds of the layout given by `x`, `y`, `width` and `height`;
-       and offsets the text by a scroll offset.
+    This class does not display a scrollbar or handle scroll events; it merely
+    clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout`
+    to the bounds of the layout given by `x`, `y`, `width` and `height`;
+    and offsets the text by a scroll offset.
 
-       Use `view_x` and `view_y` to scroll the text within the viewport.
-       """
-    _origin_layout = True
-
+    Use `view_x` and `view_y` to scroll the text within the viewport.
+    """
     default_group_class = ScrollableTextLayoutGroup
     default_shader = _scrollable_layout_program
 
-    _clip_x = 0
-    _clip_y = 0
-    _clip_width = 0
-    _clip_height = 0
-    _view_x = 0
-    _view_y = 0
+    _translate_x = 0
+    _translate_y = 0
+
+    _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        # self._clip_x = 0
-        # self._clip_y = 0
-        # self._clip_width = 0
-        # self._clip_height = 0
-        # self._view_x = 0
-        # self._view_y = 0
-        self._translate_x = 0  # x - view_x
-        self._translate_y = 0  # y - view_y
-
         self._calculate_scissor_box()
 
     def _calculate_scissor_box(self):
@@ -1635,12 +1624,11 @@ class ScrollableTextLayout(TextLayout):
             width = max(min(x + self.width, self.width), 0)
             x = max(0, x)
             y = max(0, y)
-            group.scissor_box[:] = x, y, width, height
+            group.scissor_box = x, y, width, height
 
     def _update_translation(self):
-        for group in self.groups.values():
-            group.program.use_program()
-            group.program['translate'] = self._translate_x, self._translate_y
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.translation[:] = (self._translate_x, self._translate_y) * (len(_vertex_list.translation) // 2)
 
     def _x_setter(self, x):
         super()._x_setter(x)
@@ -1662,12 +1650,10 @@ class ScrollableTextLayout(TextLayout):
 
             :type: int
         """
-        return self._view_x
+        return self._translate_x
 
     def _view_x_setter(self, view_x):
-        view_x = max(0, min(self.content_width - self._width, view_x))
-        self._view_x = view_x
-        self._translate_x = self._clip_x - view_x
+        self._translate_x = max(0, min(self.content_width - self._width, view_x))
         self._update_translation()
 
     @view_x.setter
@@ -1688,13 +1674,11 @@ class ScrollableTextLayout(TextLayout):
 
             :type: int
         """
-        return self._view_y
+        return self._translate_y
 
     def _view_y_setter(self, view_y):
         # view_y must be negative.
-        view_y = min(0, max(self.height - self.content_height, view_y))
-        self._view_y = view_y
-        self._translate_y = self._clip_y - view_y
+        self._translate_y = min(0, max(self.height - self.content_height, view_y))
         self._update_translation()
 
     @view_y.setter
