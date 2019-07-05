@@ -5,7 +5,7 @@ import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.4.0b1'
+VERSION = '1.4.0'
 
 long_description = '''pyglet provides an object-oriented programming
 interface for developing games and other visually-rich applications
@@ -18,11 +18,13 @@ excluded = []
 if is_wheel:
     excluded.append('extlibs.future')
 
+
 def exclude_package(pkg):
     for exclude in excluded:
         if pkg.startswith(exclude):
             return True
     return False
+
 
 def create_package_list(base_package):
     return ([base_package] +

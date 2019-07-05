@@ -1,10 +1,18 @@
 Pyglet 1.4.0
 ============
 Major release adding several new features and removing some long deprecated methods and attributes.
+There are also many small bugfixes, and documentation corrections. Thanks to everyone who submitted
+a pull request or contributed towards this release!
+
+Of special note, is that the 1.4 release will be the last to support Python 2. It will also be the
+last release to support Legacy OpenGL (2.x). Future pyglet releases will be Python 3 only, and will
+require at least OpenGL 3 support. If you are using pyglet on legacy systems, don't worry. The 1.4
+branch will remain available for download. Bugfixes will be backported as long as someone is willing
+to do so, but new fetures on the 1.4 branch are unlikely.
 
 New features
 ------------
-- Added support for loading 3D models from gltf and obj files.
+- Added preliminary support for loading 3D models from obj files.
 - Switched from avbin to ffmpeg for decoding media files.
 
 Improvements
@@ -30,11 +38,25 @@ Improvements
 - Playback of 24bit audio is now supported in the PulseAudio, and DirectAudio drivers. The
   bundled Python Wave codec can also support loading of 24bit wave files. Please note that the
   OpenAL driver does NOT support 24bit audio playback.
+- Wave decoding is now based on the Python standard library `wave` module. This is slightly more
+  forgiving when loading slightly non-complient files.
+- Default texture min and mag filtering can be set on the Texture class. For example:
+  `pyglet.image.Texture.default_min_filter = GL_LINEAR`
+  `pyglet.image.Texture.default_mag_filter = GL_LINEAR`
+- Audio Player and Event classes now take advantage of weak references to ensure proper cleanup of
+  resources.
+- The `pyglet.resource` module now supports loading of multi-volume Zip files.
 
 Bugfixes
 --------
+- #253 Add missing self argument to Window event dispatcher methods. Fixes linter warnings.
+- #226 Loading Animations failed when a decoder was manually specified.
+- #218 Add None-check to xlib `Window.activate` to prevent crash if window is not yet created.
+- #190 Remove all usage of `past.basestring`.
+- #189 Setting the volume on audio Listeners should work on Python3 in all cases now.
+- #170 Fix for UINT point on Windows when using 32-bit Python.
 - #167 IndexedVertexDomains with non-1 primcount will now draw correctly on 64bit OSs.
-- #168 Fix StopIteration errors due to changes in behavior in Python 3.7. See PEP 479
+- #168 Fix StopIteration errors due to changes in behavior in Python 3.7. See PEP 479.
 - #169 Fix slow Window.flip() on Windows.
 
 Pyglet 1.3.1
