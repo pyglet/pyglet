@@ -406,7 +406,7 @@ class CocoaWindow(BaseWindow):
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         return int(rect.size.width), int(rect.size.height)
 
-    def get_viewport_size(self):
+    def get_framebuffer_size(self):
         view = self.context._nscontext.view()
         bounds = view.convertRectToBacking_(view.bounds()).size
         return int(bounds.width), int(bounds.height)

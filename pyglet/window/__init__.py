@@ -1100,6 +1100,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         return self.get_size()
 
+    # :deprecated: Use Window.get_framebuffer_size
+    get_viewport_size = get_framebuffer_size
+
     def set_location(self, x, y):
         """Set the position of the window.
 
