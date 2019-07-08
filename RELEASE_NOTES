@@ -1,3 +1,11 @@
+Pyglet 1.4.1
+============
+Bugfix release.
+
+Bugfixes
+--------
+- #256 Fix aliases for Window.get_viewport_size/get_framebuffer_size.
+
 Pyglet 1.4.0
 ============
 Major release adding several new features and removing some long deprecated methods and attributes.
