@@ -1116,6 +1116,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         return self.get_size()
 
+    # :deprecated: Use Window.get_framebuffer_size
+    get_viewport_size = get_framebuffer_size
+
     def set_location(self, x, y):
         """Set the position of the window.
 
@@ -1343,7 +1346,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
     if _is_epydoc:
-        def on_key_press(symbol, modifiers):
+        def on_key_press(self, symbol, modifiers):
             """A key on the keyboard was pressed (and held down).
 
             In pyglet 1.0 the default handler sets `has_exit` to ``True`` if
@@ -1361,7 +1364,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_key_release(symbol, modifiers):
+        def on_key_release(self, symbol, modifiers):
             """A key on the keyboard was released.
 
             :Parameters:
@@ -1373,7 +1376,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_text(text):
+        def on_text(self, text):
             """The user input some text.
 
             Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
@@ -1392,7 +1395,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_text_motion(motion):
+        def on_text_motion(self, motion):
             """The user moved the text input cursor.
 
             Typically this is called after :py:meth:`~pyglet.window.Window.on_key_press` and before
@@ -1428,7 +1431,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_text_motion_select(motion):
+        def on_text_motion_select(self, motion):
             """The user moved the text input cursor while extending the
             selection.
 
@@ -1463,7 +1466,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_motion(x, y, dx, dy):
+        def on_mouse_motion(self, x, y, dx, dy):
             """The mouse was moved with no buttons held down.
 
             :Parameters:
@@ -1479,7 +1482,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
             """The mouse was moved with one or more mouse buttons pressed.
 
             This event will continue to be fired even if the mouse leaves
@@ -1503,7 +1506,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_press(x, y, button, modifiers):
+        def on_mouse_press(self, x, y, button, modifiers):
             """A mouse button was pressed (and held down).
 
             :Parameters:
@@ -1520,7 +1523,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_release(x, y, button, modifiers):
+        def on_mouse_release(self, x, y, button, modifiers):
             """A mouse button was released.
 
             :Parameters:
@@ -1537,7 +1540,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_scroll(x, y, scroll_x, scroll_y):
+        def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
             """The mouse wheel was scrolled.
 
             Note that most mice have only a vertical scroll wheel, so
@@ -1558,7 +1561,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_close():
+        def on_close(self):
             """The user attempted to close the window.
 
             This event can be triggered by clicking on the "X" control box in
@@ -1571,7 +1574,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_enter(x, y):
+        def on_mouse_enter(self, x, y):
             """The mouse was moved into the window.
 
             This event will not be triggered if the mouse is currently being
@@ -1586,7 +1589,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_mouse_leave(x, y):
+        def on_mouse_leave(self, x, y):
             """The mouse was moved outside of the window.
 
             This event will not be triggered if the mouse is currently being
@@ -1602,7 +1605,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_expose():
+        def on_expose(self):
             """A portion of the window needs to be redrawn.
 
             This event is triggered when the window first appears, and any time
@@ -1617,7 +1620,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_resize(width, height):
+        def on_resize(self, width, height):
             """The window was resized.
 
             The window will have the GL context when this event is dispatched;
@@ -1632,7 +1635,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_move(x, y):
+        def on_move(self, x, y):
             """The window was moved.
 
             :Parameters:
@@ -1647,7 +1650,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_activate():
+        def on_activate(self):
             """The window was activated.
 
             This event can be triggered by clicking on the title bar, bringing
@@ -1658,7 +1661,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_deactivate():
+        def on_deactivate(self):
             """The window was deactivated.
 
             This event can be triggered by clicking on another application
@@ -1668,7 +1671,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_show():
+        def on_show(self):
             """The window was shown.
 
             This event is triggered when a window is restored after being
@@ -1677,7 +1680,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_hide():
+        def on_hide(self):
             """The window was hidden.
 
             This event is triggered when a window is minimised or (on Mac OS X)
@@ -1686,7 +1689,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_context_lost():
+        def on_context_lost(self):
             """The window's GL context was lost.
             
             When the context is lost no more GL methods can be called until it
@@ -1698,7 +1701,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_context_state_lost():
+        def on_context_state_lost(self):
             """The state of the window's GL context was lost.
 
             pyglet may sometimes need to recreate the window's GL context if
@@ -1711,7 +1714,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_draw():
+        def on_draw(self):
             """The window contents must be redrawn.
 
             The `EventLoop` will dispatch this event when the window

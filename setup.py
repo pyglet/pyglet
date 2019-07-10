@@ -5,12 +5,12 @@ import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.4.0b1'
+VERSION = '1.4.1'
 
-long_description = '''pyglet provides an object-oriented programming
-interface for developing games and other visually-rich applications
-for Windows, Mac OS X and Linux.'''
-
+with open('README.rst') as f:
+    long_description = f.read()
+long_description_content_type = "text/x-rst"
+    
 # The source dist comes with batteries included, the wheel can use pip to get the rest
 is_wheel = 'bdist_wheel' in sys.argv
 
@@ -18,11 +18,13 @@ excluded = []
 if is_wheel:
     excluded.append('extlibs.future')
 
+
 def exclude_package(pkg):
     for exclude in excluded:
         if pkg.startswith(exclude):
             return True
     return False
+
 
 def create_package_list(base_package):
     return ([base_package] +
@@ -40,6 +42,11 @@ setup_info = dict(
     author_email='Alex.Holkner@gmail.com',
     url='http://pyglet.readthedocs.org/en/latest/',
     download_url='http://pypi.python.org/pypi/pyglet',
+    project_urls={
+        'Documentation': 'https://pyglet.readthedocs.io/en/latest',
+        'Source': 'https://github.com/pyglet/pyglet',
+        'Tracker': 'https://github.com/pyglet/pyglet/issues',
+    },
     description='Cross-platform windowing and multimedia library',
     long_description=long_description,
     license='BSD',
@@ -70,7 +77,6 @@ setup_info = dict(
     # Add _ prefix to the names of temporary build dirs
     options={
         'build': {'build_base': '_build'},
-        #        'sdist': {'dist_dir': '_dist'},
     },
     zip_safe=True,
 )
