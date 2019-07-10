@@ -1,6 +1,6 @@
 include LICENSE
 include NOTICE
-include README
+include README.rst
 include CHANGELOG
 include RELEASE_NOTES
 
