@@ -32,14 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
 from __future__ import division
 from builtins import range
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: pil.py 163 2006-11-13 04:15:46Z Alex.Holkner $'
 
 from ctypes import *
 
@@ -78,6 +73,9 @@ ImageLockModeRead = 1
 ImageLockModeWrite = 2
 ImageLockModeUserInputBuf = 4
 
+PropertyTagFrameDelay = 0x5100
+
+
 class GdiplusStartupInput(Structure):
     _fields_ = [
         ('GdiplusVersion', c_uint32),
@@ -86,11 +84,13 @@ class GdiplusStartupInput(Structure):
         ('SuppressExternalCodecs', BOOL)
     ]
 
+
 class GdiplusStartupOutput(Structure):
     _fields = [
         ('NotificationHookProc', c_void_p),
         ('NotificationUnhookProc', c_void_p)
     ]
+
 
 class BitmapData(Structure):
     _fields_ = [
@@ -102,6 +102,7 @@ class BitmapData(Structure):
         ('Reserved', POINTER(c_uint))
     ]
 
+
 class Rect(Structure):
     _fields_ = [
         ('X', c_int),
@@ -110,7 +111,6 @@ class Rect(Structure):
         ('Height', c_int)
     ]
 
-PropertyTagFrameDelay = 0x5100
 
 class PropertyItem(Structure):
     _fields_ = [
@@ -119,7 +119,8 @@ class PropertyItem(Structure):
         ('type', c_short),
         ('value', c_void_p)
     ]
-    
+
+
 INT_PTR = POINTER(INT)
 UINT_PTR = POINTER(UINT)
 
@@ -148,7 +149,7 @@ gdiplus.GdipDisposeImage.argtypes = [c_void_p]
 gdiplus.GdipDrawString.restype = c_int
 gdiplus.GdipDrawString.argtypes = [c_void_p, c_wchar_p, c_int, c_void_p, c_void_p, c_void_p, c_void_p]
 gdiplus.GdipGetFamilyName.restype = c_int
-gdiplus.GdipGetFamilyName.argtypes = [c_void_p, c_wchar_p, c_wchar]
+gdiplus.GdipGetFamilyName.argtypes = [LONG_PTR, c_wchar_p, c_wchar]
 gdiplus.GdipFlush.restype = c_int
 gdiplus.GdipFlush.argtypes = [c_void_p, c_int]
 gdiplus.GdipGetFontCollectionFamilyCount.restype = c_int
@@ -223,12 +224,12 @@ class GDIPlusDecoder(ImageDecoder):
         status = gdiplus.GdipCreateBitmapFromStream(self.stream, byref(bitmap))
         if status != 0:
             self.stream.Release()
-            raise ImageDecodeException(
-                'GDI+ cannot load %r' % (filename or file))
+            raise ImageDecodeException('GDI+ cannot load %r' % (filename or file))
 
         return bitmap
 
-    def _get_image(self, bitmap):
+    @staticmethod
+    def _get_image(bitmap):
         # Get size of image (Bitmap subclasses Image)
         width = REAL()
         height = REAL()
@@ -242,9 +243,9 @@ class GDIPlusDecoder(ImageDecoder):
         pf = pf.value
 
         # Reverse from what's documented because of Intel little-endianness.
-        format = 'BGRA'
+        fmt = 'BGRA'
         if pf == PixelFormat24bppRGB:
-            format = 'BGR'
+            fmt = 'BGR'
         elif pf == PixelFormat32bppRGB:
             pass
         elif pf == PixelFormat32bppARGB:
@@ -253,7 +254,7 @@ class GDIPlusDecoder(ImageDecoder):
                     PixelFormat64bppARGB, PixelFormat64bppPARGB):
             pf = PixelFormat32bppARGB
         else:
-            format = 'BGR'
+            fmt = 'BGR'
             pf = PixelFormat24bppRGB
 
         # Lock pixel data in best format
@@ -263,8 +264,7 @@ class GDIPlusDecoder(ImageDecoder):
         rect.Width = width
         rect.Height = height
         bitmap_data = BitmapData()
-        gdiplus.GdipBitmapLockBits(bitmap, 
-            byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
+        gdiplus.GdipBitmapLockBits(bitmap, byref(rect), ImageLockModeRead, pf, byref(bitmap_data))
         
         # Create buffer for RawImage
         buffer = create_string_buffer(bitmap_data.Stride * height)
@@ -273,7 +273,7 @@ class GDIPlusDecoder(ImageDecoder):
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(bitmap, byref(bitmap_data))
 
-        return ImageData(width, height, format, buffer, -bitmap_data.Stride)
+        return ImageData(width, height, fmt, buffer, -bitmap_data.Stride)
 
     def _delete_bitmap(self, bitmap):
         # Release image and stream
@@ -297,8 +297,7 @@ class GDIPlusDecoder(ImageDecoder):
         
         # XXX Make sure this dimension is time?
         dimensions = (c_void_p * dimension_count.value)()
-        gdiplus.GdipImageGetFrameDimensionsList(bitmap, dimensions,
-                                                dimension_count.value)
+        gdiplus.GdipImageGetFrameDimensionsList(bitmap, dimensions, dimension_count.value)
 
         frame_count = c_uint()
         gdiplus.GdipImageGetFrameCount(bitmap, dimensions, byref(frame_count))
@@ -309,8 +308,7 @@ class GDIPlusDecoder(ImageDecoder):
 
         prop_buffer = c_buffer(prop_size.value)
         prop_item = cast(prop_buffer, POINTER(PropertyItem)).contents 
-        gdiplus.GdipGetPropertyItem(bitmap, prop_id, prop_size.value,
-            prop_buffer)
+        gdiplus.GdipGetPropertyItem(bitmap, prop_id, prop_size.value, prop_buffer)
 
         n_delays = prop_item.length // sizeof(c_long)
         delays = cast(prop_item.value, POINTER(c_long * n_delays)).contents
@@ -330,11 +328,14 @@ class GDIPlusDecoder(ImageDecoder):
 
         return Animation(frames)
 
+
 def get_decoders():
     return [GDIPlusDecoder()]
 
+
 def get_encoders():
     return []
+
 
 def init():
     token = c_ulong()
@@ -345,5 +346,6 @@ def init():
 
     # Shutdown later?
     # gdiplus.GdiplusShutdown(token)
+
 
 init()
