@@ -61,7 +61,7 @@ by the application; see the documentation for :class:`Screen`.
 
 import sys
 
-from pyglet.app import WeakSet
+from weakref import WeakSet
 
 
 _is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc

@@ -1752,6 +1752,7 @@ class TileableTexture(Texture):
         The image will be tiled with the bottom-left corner of the destination
         rectangle aligned with the anchor point of this texture.
         """
+        # TODO: Fix this method for GL3:
         u1 = self.anchor_x / self.width
         v1 = self.anchor_y / self.height
         u2 = u1 + width / self.width
@@ -1776,22 +1777,6 @@ class TileableTexture(Texture):
 
     @classmethod
     def create_for_image(cls, image):
-        if not _is_pow2(image.width) or not _is_pow2(image.height):
-            # Potentially unnecessary conversion if a GL format exists.
-            image = image.get_image_data()
-            texture_width = _nearest_pow2(image.width)
-            texture_height = _nearest_pow2(image.height)
-            newdata = c_buffer(texture_width * texture_height * 4)
-            gluScaleImage(GL_RGBA,
-                          image.width, image.height,
-                          GL_UNSIGNED_BYTE,
-                          image.get_data('RGBA', image.width * 4),
-                          texture_width,
-                          texture_height,
-                          GL_UNSIGNED_BYTE,
-                          newdata)
-            image = ImageData(texture_width, texture_height, 'RGBA', newdata)
-
         image = image.get_image_data()
         return image.create_texture(cls)
 
