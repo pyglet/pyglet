@@ -32,17 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import object
-# !/usr/bin/python
-# $Id:$
-
 from pyglet import app
 from pyglet import gl
 from pyglet import window
 from pyglet import canvas
 
 
-class Display(object):
+class Display:
     """A display device supporting one or more screens.
     
     .. versionadded:: 1.2
@@ -116,7 +112,7 @@ class Display(object):
         return [window for window in app.windows if window.display is self]
 
 
-class Screen(object):
+class Screen:
     """A virtual monitor that supports fullscreen windows.
 
     Screens typically map onto a physical display such as a
@@ -161,8 +157,7 @@ class Screen(object):
         """Height of the screen, in pixels."""
 
     def __repr__(self):
-        return '%s(x=%d, y=%d, width=%d, height=%d)' % \
-               (self.__class__.__name__, self.x, self.y, self.width, self.height)
+        return '%s(x=%d, y=%d, width=%d, height=%d)' % self.__class__.__name__, self.x, self.y, self.width, self.height
 
     def get_best_config(self, template=None):
         """Get the best available GL config.
@@ -183,14 +178,13 @@ class Screen(object):
         """
         configs = None
         if template is None:
-            for template_config in [
-                gl.Config(double_buffer=True, depth_size=24),
-                gl.Config(double_buffer=True, depth_size=16),
-                None]:
+            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+                                    None]:
                 try:
                     configs = self.get_matching_configs(template_config)
                     break
-                except NoSuchConfigException:
+                except window.NoSuchConfigException:
                     pass
         else:
             configs = self.get_matching_configs(template)
@@ -302,7 +296,7 @@ class Screen(object):
         raise NotImplementedError('abstract')
 
 
-class ScreenMode(object):
+class ScreenMode:
     """Screen resolution and display settings.
 
     Applications should not construct `ScreenMode` instances themselves; see
@@ -350,7 +344,7 @@ class ScreenMode(object):
             self.width, self.height, self.depth, self.rate)
 
 
-class Canvas(object):
+class Canvas:
     """Abstract drawing area.
 
     Canvases are used internally by pyglet to represent drawing areas --
