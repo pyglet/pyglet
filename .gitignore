@@ -1,4 +1,4 @@
-syntax: glob
+__pycache__
 .hgrc
 *~
 *.pyc
@@ -21,7 +21,6 @@ tests/interactive/screenshots/committed/*.png
 .coverage
 coverage_report/
 *.bak
-*.un~
 *.cache
 tools/*tab.py
 exprtab.py
@@ -31,3 +30,4 @@ pptab.py
 strict_exprtab.py
 prof/
 .hgrc
+.idea
