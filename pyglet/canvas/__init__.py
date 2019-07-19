@@ -64,7 +64,7 @@ import sys
 from pyglet.app import WeakSet
 
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 _displays = WeakSet()
@@ -96,7 +96,7 @@ def get_display():
     return Display()
 
 
-if _is_epydoc:
+if _is_pyglet_doc_run:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
 else:
     from pyglet import compat_platform

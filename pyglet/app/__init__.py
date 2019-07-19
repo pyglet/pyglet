@@ -74,9 +74,10 @@ import weakref
 from pyglet.app.base import EventLoop
 from pyglet import compat_platform
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-if _is_epydoc:
+
+if _is_pyglet_doc_run:
     from pyglet.app.base import PlatformEventLoop
 else:
     if compat_platform == 'darwin':

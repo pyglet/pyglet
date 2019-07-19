@@ -91,7 +91,7 @@ from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button
 from .base import Joystick, AppleRemote, Tablet
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 def get_apple_remote(display=None):
@@ -110,7 +110,7 @@ def get_apple_remote(display=None):
     """
     return None
 
-if _is_epydoc:
+if _is_pyglet_doc_run:
     def get_devices(display=None):
         """Get a list of all attached input devices.
 

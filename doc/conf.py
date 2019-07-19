@@ -12,11 +12,12 @@ import datetime
 
 # Prevents instance attributes from having a default value of None
 # See sphinx ticket: https://github.com/sphinx-doc/sphinx/issues/2044
-from sphinx.ext.autodoc import (
-    ClassLevelDocumenter, InstanceAttributeDocumenter)
+from sphinx.ext.autodoc import (ClassLevelDocumenter, InstanceAttributeDocumenter)
+
 
 def iad_add_directive_header(self, sig):
     ClassLevelDocumenter.add_directive_header(self, sig)
+
 
 InstanceAttributeDocumenter.add_directive_header = iad_add_directive_header
 
@@ -29,7 +30,8 @@ def write_build(data, filename):
         for var, val in data:
             f.write("   * - "+var+"\n     - "+val+"\n")
 
-sys.is_epydoc = True
+
+sys.is_pyglet_doc_run = True
 
 document_modules = ["pyglet"]
 
@@ -42,14 +44,13 @@ sys.path.insert(0, os.path.abspath('..'))
 
 try:
     import pyglet
-    print("Generating pyglet %s Documentation" % (pyglet.version))
+    print("Generating pyglet %s Documentation" % pyglet.version)
 except ImportError:
     print("ERROR: pyglet not found")
     sys.exit(1)
 
 
 # -- PYGLET DOCUMENTATION CONFIGURATION ----------------------------------------
-
 
 
 implementations = ["cocoa", "win32", "xlib"]
@@ -80,22 +81,23 @@ skip_modules = {"pyglet": {
                                              "quartz",
                                              "quicktime"],
                      "pyglet.gl": implementations + ["agl",
-                                  "glext_arb", "glext_nv",
-                                  "glx", "glx_info",
-                                  "glxext_arb", "glxext_mesa", "glxext_nv",
-                                  "lib_agl", "lib_glx", "lib_wgl",
-                                  "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
+                                                     "glext_arb", "glext_nv",
+                                                     "glx", "glx_info",
+                                                     "glxext_arb", "glxext_mesa", "glxext_nv",
+                                                     "lib_agl", "lib_glx", "lib_wgl",
+                                                     "wgl", "wgl_info", "wglext_arb", "wglext_nv"],
                      "pyglet.media.drivers": ["directsound",
                                               "openal",
                                               "pulse"],
                      "pyglet.window": implementations,
-                     },
-               }
+                        },
+                }
+
 
 now = datetime.datetime.fromtimestamp(time.time())
-data = (("Date", now.strftime("%Y/%m/%d %H:%M:%S")),
-        ("pyglet version", pyglet.version))
-write_build(data, 'build.rst')
+build_data = (("Date", now.strftime("%Y/%m/%d %H:%M:%S")),
+              ("pyglet version", pyglet.version))
+write_build(build_data, 'build.rst')
 
 # -- SPHINX STANDARD OPTIONS ---------------------------------------------------
 
@@ -199,10 +201,10 @@ html_theme_path = ["ext/theme"]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "pyglet v%s" % (pyglet.version)
+html_title = "pyglet v%s" % pyglet.version
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "pyglet v%s documentation " % (pyglet.version)
+html_short_title = "pyglet v%s documentation " % pyglet.version
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
@@ -336,6 +338,3 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
-
-
-

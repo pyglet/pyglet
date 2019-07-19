@@ -140,7 +140,7 @@ from pyglet.event import EventDispatcher
 import pyglet.window.key
 import pyglet.window.event
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class WindowException(Exception):
@@ -1328,7 +1328,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     # If documenting, show the event methods.  Otherwise, leave them out
     # as they are not really methods.
-    if _is_epydoc:
+    if _is_pyglet_doc_run:
         def on_key_press(self, symbol, modifiers):
             """A key on the keyboard was pressed (and held down).
 
@@ -1845,7 +1845,7 @@ class FPSDisplay(object):
         self._window_flip()
 
 
-if _is_epydoc:
+if _is_pyglet_doc_run:
     # We are building documentation
     Window = BaseWindow
     Window.__name__ = 'Window'
@@ -1866,6 +1866,6 @@ else:
 
 # XXX remove
 # Create shadow window. (trickery is for circular import)
-if not _is_epydoc:
+if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()

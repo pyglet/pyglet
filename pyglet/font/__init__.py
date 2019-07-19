@@ -60,7 +60,7 @@ import weakref
 import pyglet
 from pyglet import gl
 
-if not getattr(sys, 'is_epydoc', False):
+if not getattr(sys, 'is_pyglet_doc_run', False):
     if pyglet.compat_platform == 'darwin':
         from pyglet.font.quartz import QuartzFont
         _font_class = QuartzFont
