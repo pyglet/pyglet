@@ -128,11 +128,6 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-from io import open
 import re
 import weakref
 
@@ -229,12 +224,9 @@ def create(width, height, pattern=None):
 
 
 def color_as_bytes(color):
-    if sys.version.startswith('2'):
-        return '%c%c%c%c' % color
-    else:
-        if len(color) != 4:
-            raise TypeError("color is expected to have 4 components")
-        return bytes(color)
+    if len(color) != 4:
+        raise TypeError("color is expected to have 4 components")
+    return bytes(color)
 
 
 def get_max_texture_size():
@@ -261,7 +253,7 @@ def _is_pow2(v):
     return (v & (v - 1)) == 0
 
 
-class ImagePattern(object):
+class ImagePattern:
     """Abstract image creation class."""
 
     def create_image(self, width, height):
@@ -1789,7 +1781,11 @@ class DepthTexture(Texture):
         source.blit_to_texture(self.level, x, y, z)
 
 
-class BufferManager(object):
+class ArrayTexture(Texture):
+    pass
+
+
+class BufferManager:
     """Manages the set of framebuffers for a context.
 
     Use :py:func:`~pyglet.image.get_buffer_manager` to obtain the instance of this class for the
@@ -2276,7 +2272,7 @@ def load_animation(filename, file=None, decoder=None):
         raise first_exception
 
 
-class Animation(object):
+class Animation:
     """Sequence of images with timing information.
 
     If no frames of the animation have a duration of ``None``, the animation
@@ -2384,7 +2380,7 @@ class Animation(object):
         return cls(frames)
 
 
-class AnimationFrame(object):
+class AnimationFrame:
     """A single frame of an animation."""
 
     __slots__ = 'image', 'duration'
