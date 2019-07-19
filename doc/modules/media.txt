@@ -31,7 +31,6 @@ Classes
   .. automethod:: next_source
   .. automethod:: delete
   .. automethod:: update_texture
-  .. automethod:: next
 
   .. rubric:: Events
 

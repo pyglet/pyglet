@@ -227,10 +227,7 @@ class Player(pyglet.event.EventDispatcher):
             # self._mclock._systime += -0.3
             self._mclock.play()
             if self._audio_player is None and source.video_format is None:
-                pyglet.clock.schedule_once(
-                    lambda dt: self.dispatch_event("on_eos"),
-                    source.duration,
-                )
+                pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
 
         else:
             if self._audio_player:
@@ -253,16 +250,14 @@ class Player(pyglet.event.EventDispatcher):
         return self._playing
 
     def play(self):
-        """
-        Begin playing the current source.
+        """Begin playing the current source.
 
         This has no effect if the player is already playing.
         """
         self._set_playing(True)
 
     def pause(self):
-        """
-        Pause playback of the current source.
+        """Pause playback of the current source.
 
         This has no effect if the player is already paused.
         """
@@ -280,12 +275,11 @@ class Player(pyglet.event.EventDispatcher):
             self._texture = None
 
     def next_source(self):
-        """
-        Move immediately to the next source in the current playlist.
+        """Move immediately to the next source in the current playlist.
 
-        If the playlist is emtpy, discard it and check if another playlist
-        is queued.
-        There may be a gap in playback while the audio buffer is refilled.
+        If the playlist is empty, discard it and check if another playlist
+        is queued. There may be a gap in playback while the audio buffer
+        is refilled.
         """
         was_playing = self._playing
         self.pause()
