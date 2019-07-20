@@ -39,7 +39,7 @@ of its properties::
     c_int(1)
     >>> config.stereo
     c_int(0)
-    >>> config.sample_buffers     
+    >>> config.sample_buffers
     c_int(0)
 
 Note that the values of the config's attributes are all ctypes instances.
@@ -58,37 +58,39 @@ are interested in.  See :ref:`guide_simple-context-configuration` for details.
 Displays
 ^^^^^^^^
 
-The system may actually support several different sets of configs, depending
-on which display device is being used.  For example, a computer with two video
-cards may not support the same configs on each card.  Another example
-is using X11 remotely: the display device will support different
-configurations than the local driver.  Even a single video card on the local
-computer may support different configs for two monitors plugged in.
+The system may actually support several different sets of configs, depending on
+which display device is being used.  For example, a computer with two video
+cards may not support the same configs on each card.  Another example is using
+X11 remotely: the display device will support different configurations than the
+local driver.  Even a single video card on the local computer may support
+different configs for two monitors plugged in.
 
 In pyglet, a :class:`~pyglet.canvas.Display` is a collection of "screens"
 attached to a single display device.  On Linux, the display device corresponds
-to the X11 display
-being used.  On Windows and Mac OS X, there is only one display (as these
-operating systems present multiple video cards as a single virtual device).
+to the X11 display being used.  On Windows and Mac OS X, there is only one
+display (as these operating systems present multiple video cards as a single
+virtual device).
 
-There is a singleton class :class:`~pyglet.window.Platform` which provides 
-access to the display(s);
-this represents the computer on which your application is running.  It is
-usually sufficient to use the default display::
+The :mod:`pyglet.canvas` module provides access to the display(s). Use the
+:func:`~pyglet.canvas.get_display` function to get the default display::
 
-    >>> platform = pyglet.window.get_platform()
-    >>> display = platform.get_default_display()
+    >>> display = pyglet.canvas.get_display()
 
-On X11, you can specify the display string to use, for example to use a
-remotely connected display.  The display string is in the same format as used
-by the ``DISPLAY`` environment variable::
+.. note::
 
-    >>> display = platform.get_display('remote:1.0')
+    On X11, you can use the :class:`~pyglet.canvas.Display` class directly to
+    specify the display string to use, for example to use a remotely connected
+    display.  The name string is in the same format as used by the ``DISPLAY``
+    environment variable::
 
-You use the same string to specify a separate X11 screen [#display]_::
+        >>> display = pyglet.canvas.Display(name=':1')
 
-    >>> display = platform.get_display(':0.1')
+    If you have multiple physical screens and you're using Xinerama, see
+    :ref:`guide_screens` to select the desired screen as you would for Windows
+    and Mac OS X. Otherwise, you can specify the screen number via the
+    ``x_screen`` argument::
 
+        >>> display = pyglet.canvas.Display(name=':1', x_screen=1)
 
 .. _guide_screens:
 
@@ -128,10 +130,6 @@ the default screen is usually the one that contains the taskbar (on Windows) or
 menu bar (on OS X).
 You can access this screen directly using 
 :meth:`~pyglet.canvas.Display.get_default_screen`.
-
-.. [#display] Assuming Xinerama is not being used to combine the screens.  If
-              Xinerama is enabled, use screen 0 in the display string, and
-              select a screen in the same manner as for Windows and Mac OS X.
 
 
 .. _guide_glconfig:
