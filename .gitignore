@@ -1,27 +1,47 @@
+# Python
 __pycache__
-.hgrc
-*~
 *.pyc
 *.pyo
+
+# Virtualenvs (from project root)
+/env
+/.env
+/.venv
+/.venv2
+/.venv3
+
+# Build / Docs
 _build
 pyglet.*.log
 *.orig
-.DS_Store
-doc/api
-doc/internal/build.rst
-website/dist
 build
 dist
 pyglet.egg-info/
 MANIFEST
+.coverage
+coverage_report/
+
+# Version control
+.hgrc
+
+# IDEs / Editors
+.idea
+.vscode
+*~
+*.bak
+*.cache
+
+# Platforms
+.DS_Store
+*.swp
+
+# Internal
 tests/regression/images/*.png
 tests/interactive/screenshots/session/*.png
 tests/interactive/screenshots/committed/*.png
-*.swp
-.coverage
-coverage_report/
-*.bak
-*.cache
+doc/api
+doc/internal/build.rst
+website/dist
 tools/*tab.py
 exprtab.py
 parser.out
@@ -29,5 +49,3 @@ parsetab.py
 pptab.py
 strict_exprtab.py
 prof/
-.hgrc
-.idea
