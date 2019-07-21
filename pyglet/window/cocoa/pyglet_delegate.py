@@ -34,7 +34,12 @@
 # ----------------------------------------------------------------------------
 from __future__ import absolute_import
 from builtins import object
-from pyglet.libs.darwin.cocoapy import *
+
+from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
+from pyglet.libs.darwin.cocoapy import NSApplicationDidHideNotification
+from pyglet.libs.darwin.cocoapy import NSApplicationDidUnhideNotification
+from pyglet.libs.darwin.cocoapy import send_super, get_selector
+from pyglet.libs.darwin.cocoapy import PyObjectEncoding
 from .systemcursor import SystemCursor
 
 NSNotificationCenter = ObjCClass('NSNotificationCenter')

@@ -33,6 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 import platform
+from ctypes import c_uint32, c_int, byref
 
 from pyglet.gl.base import Config, CanvasConfig, Context
 
@@ -42,11 +43,11 @@ from pyglet.gl import agl
 
 from pyglet.canvas.cocoa import CocoaCanvas
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin import cocoapy
 
 
-NSOpenGLPixelFormat = ObjCClass('NSOpenGLPixelFormat')
-NSOpenGLContext = ObjCClass('NSOpenGLContext')
+NSOpenGLPixelFormat = cocoapy.ObjCClass('NSOpenGLPixelFormat')
+NSOpenGLContext = cocoapy.ObjCClass('NSOpenGLContext')
 
 # Version info, needed as OpenGL different Lion and onward
 """Version is based on Darwin kernel, not OS-X version.
@@ -98,44 +99,44 @@ _os_x_version = os_x_version()
 
 # Valid names for GL attributes and their corresponding NSOpenGL constant.
 _gl_attributes = {
-    'double_buffer': NSOpenGLPFADoubleBuffer,
-    'stereo': NSOpenGLPFAStereo,
-    'buffer_size': NSOpenGLPFAColorSize,
-    'sample_buffers': NSOpenGLPFASampleBuffers,
-    'samples': NSOpenGLPFASamples,
-    'aux_buffers': NSOpenGLPFAAuxBuffers,
-    'alpha_size': NSOpenGLPFAAlphaSize,
-    'depth_size': NSOpenGLPFADepthSize,
-    'stencil_size': NSOpenGLPFAStencilSize,
+    'double_buffer': cocoapy.NSOpenGLPFADoubleBuffer,
+    'stereo': cocoapy.NSOpenGLPFAStereo,
+    'buffer_size': cocoapy.NSOpenGLPFAColorSize,
+    'sample_buffers': cocoapy.NSOpenGLPFASampleBuffers,
+    'samples': cocoapy.NSOpenGLPFASamples,
+    'aux_buffers': cocoapy.NSOpenGLPFAAuxBuffers,
+    'alpha_size': cocoapy.NSOpenGLPFAAlphaSize,
+    'depth_size': cocoapy.NSOpenGLPFADepthSize,
+    'stencil_size': cocoapy.NSOpenGLPFAStencilSize,
 
     # Not exposed by pyglet API (set internally)
-    'all_renderers': NSOpenGLPFAAllRenderers,
-    'fullscreen': NSOpenGLPFAFullScreen,
-    'minimum_policy': NSOpenGLPFAMinimumPolicy,
-    'maximum_policy': NSOpenGLPFAMaximumPolicy,
-    'screen_mask' : NSOpenGLPFAScreenMask,
+    'all_renderers': cocoapy.NSOpenGLPFAAllRenderers,
+    'fullscreen': cocoapy.NSOpenGLPFAFullScreen,
+    'minimum_policy': cocoapy.NSOpenGLPFAMinimumPolicy,
+    'maximum_policy': cocoapy.NSOpenGLPFAMaximumPolicy,
+    'screen_mask' : cocoapy.NSOpenGLPFAScreenMask,
 
     # Not supported in current pyglet API
-    'color_float': NSOpenGLPFAColorFloat,
-    'offscreen': NSOpenGLPFAOffScreen,
-    'sample_alpha': NSOpenGLPFASampleAlpha,
-    'multisample': NSOpenGLPFAMultisample,
-    'supersample': NSOpenGLPFASupersample,
+    'color_float': cocoapy.NSOpenGLPFAColorFloat,
+    'offscreen': cocoapy.NSOpenGLPFAOffScreen,
+    'sample_alpha': cocoapy.NSOpenGLPFASampleAlpha,
+    'multisample': cocoapy.NSOpenGLPFAMultisample,
+    'supersample': cocoapy.NSOpenGLPFASupersample,
 }
 
 # NSOpenGL constants which do not require a value.
 _boolean_gl_attributes = frozenset([
-    NSOpenGLPFAAllRenderers,
-    NSOpenGLPFADoubleBuffer,
-    NSOpenGLPFAStereo,
-    NSOpenGLPFAMinimumPolicy,
-    NSOpenGLPFAMaximumPolicy,
-    NSOpenGLPFAOffScreen,
-    NSOpenGLPFAFullScreen,
-    NSOpenGLPFAColorFloat,
-    NSOpenGLPFAMultisample,
-    NSOpenGLPFASupersample,
-    NSOpenGLPFASampleAlpha,
+    cocoapy.NSOpenGLPFAAllRenderers,
+    cocoapy.NSOpenGLPFADoubleBuffer,
+    cocoapy.NSOpenGLPFAStereo,
+    cocoapy.NSOpenGLPFAMinimumPolicy,
+    cocoapy.NSOpenGLPFAMaximumPolicy,
+    cocoapy.NSOpenGLPFAOffScreen,
+    cocoapy.NSOpenGLPFAFullScreen,
+    cocoapy.NSOpenGLPFAColorFloat,
+    cocoapy.NSOpenGLPFAMultisample,
+    cocoapy.NSOpenGLPFASupersample,
+    cocoapy.NSOpenGLPFASampleAlpha,
 ])
 
 # Attributes for which no NSOpenGLPixelFormatAttribute name exists.
@@ -166,10 +167,10 @@ class CocoaConfig(Config):
                 attrs.append(int(value))
 
         # Support for RAGE-II, which is not compliant.
-        attrs.append(NSOpenGLPFAAllRenderers)
+        attrs.append(cocoapy.NSOpenGLPFAAllRenderers)
 
         # Force selection policy.
-        attrs.append(NSOpenGLPFAMaximumPolicy)
+        attrs.append(cocoapy.NSOpenGLPFAMaximumPolicy)
 
         # NSOpenGLPFAFullScreen is always supplied so we can switch to and
         # from fullscreen without losing the context.  Also must supply the
@@ -181,8 +182,8 @@ class CocoaConfig(Config):
         # Otherwise, make sure we refer to the correct Profile for OpenGL (Core or
         # Legacy) on Lion and afterwards
         if _os_x_version < os_x_release['snow_leopard']:
-            attrs.append(NSOpenGLPFAFullScreen)
-            attrs.append(NSOpenGLPFAScreenMask)
+            attrs.append(cocoapy.NSOpenGLPFAFullScreen)
+            attrs.append(cocoapy.NSOpenGLPFAScreenMask)
             attrs.append(quartz.CGDisplayIDToOpenGLDisplayMask(quartz.CGMainDisplayID()))
         elif _os_x_version >= os_x_release['lion']:
             # check for opengl profile
@@ -192,17 +193,17 @@ class CocoaConfig(Config):
                 getattr(self, 'minor_version', None)
                 )
             # tell os-x we want to request a profile
-            attrs.append(NSOpenGLPFAOpenGLProfile)
+            attrs.append(cocoapy.NSOpenGLPFAOpenGLProfile)
 
             # check if we're wanting core or legacy
             # Mavericks (Darwin 13) and up are capable of the Core 4.1 profile,
             # while Lion and up are only capable of Core 3.2
             if version[0] == 4 and version[1] >= 1 and _os_x_version >= os_x_release['mavericks']:
-                attrs.append(int(NSOpenGLProfileVersion4_1Core))
+                attrs.append(int(cocoapy.NSOpenGLProfileVersion4_1Core))
             elif version[0] == 3 and version[1] >= 2:
-                attrs.append(int(NSOpenGLProfileVersion3_2Core))
+                attrs.append(int(cocoapy.NSOpenGLProfileVersion3_2Core))
             else:
-                attrs.append(int(NSOpenGLProfileVersionLegacy))
+                attrs.append(int(cocoapy.NSOpenGLProfileVersionLegacy))
         # Terminate the list.
         attrs.append(0)
 
@@ -240,14 +241,14 @@ class CocoaCanvasConfig(CanvasConfig):
             vals = c_int()
             profile = self._pixel_format.getValues_forAttribute_forVirtualScreen_(
                 byref(vals),
-                NSOpenGLPFAOpenGLProfile,
+                cocoapy.NSOpenGLPFAOpenGLProfile,
                 0
                 )
 
-            if vals.value == NSOpenGLProfileVersion4_1Core:
+            if vals.value == cocoapy.NSOpenGLProfileVersion4_1Core:
                 setattr(self, "major_version", 4)
                 setattr(self, "minor_version", 1)
-            elif vals.value == NSOpenGLProfileVersion3_2Core:
+            elif vals.value == cocoapy.NSOpenGLProfileVersion3_2Core:
                 setattr(self, "major_version", 3)
                 setattr(self, "minor_version", 2)
             else:
@@ -315,11 +316,11 @@ class CocoaContext(Context):
 
     def set_vsync(self, vsync=True):
         vals = c_int(vsync)
-        self._nscontext.setValues_forParameter_(byref(vals), NSOpenGLCPSwapInterval)
+        self._nscontext.setValues_forParameter_(byref(vals), cocoapy.NSOpenGLCPSwapInterval)
 
     def get_vsync(self):
         vals = c_int()
-        self._nscontext.getValues_forParameter_(byref(vals), NSOpenGLCPSwapInterval)
+        self._nscontext.getValues_forParameter_(byref(vals), cocoapy.NSOpenGLCPSwapInterval)
         return vals.value
 
     def flip(self):

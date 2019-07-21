@@ -35,6 +35,7 @@
 
 '''
 '''
+from ctypes import c_void_p, c_ubyte
 from builtins import range
 
 __docformat__ = 'restructuredtext'
@@ -43,7 +44,11 @@ __version__ = '$Id$'
 from pyglet.image import ImageData, Animation, AnimationFrame
 from pyglet.image.codecs import *
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin.cocoapy import cf, quartz, NSMakeRect
+from pyglet.libs.darwin.cocoapy import cfnumber_to_number
+from pyglet.libs.darwin.cocoapy import kCGImageAlphaPremultipliedLast
+from pyglet.libs.darwin.cocoapy import kCGImagePropertyGIFDictionary
+from pyglet.libs.darwin.cocoapy import kCGImagePropertyGIFDelayTime
 
 
 class QuartzImageDecoder(ImageDecoder):

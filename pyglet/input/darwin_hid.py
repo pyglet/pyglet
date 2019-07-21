@@ -35,13 +35,19 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from builtins import object
+
+from ctypes import cdll, util, CFUNCTYPE, byref, c_void_p
+from ctypes import c_int, c_ubyte, c_bool, c_uint32, c_uint32, c_uint64
+
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
 
 import sys
 __LP64__ = (sys.maxsize > 2**32)
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, \
+    kCFRunLoopDefaultMode, CFAllocatorRef, known_cftypes, cf, \
+    cfset_to_set, cftype_to_value, cfarray_to_list
 
 # Load iokit framework
 iokit = cdll.LoadLibrary(util.find_library('IOKit'))

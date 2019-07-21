@@ -32,8 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
+from ctypes import c_void_p, c_bool
 from builtins import object
-from pyglet.libs.darwin.cocoapy import *
+
+from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, send_super
+from pyglet.libs.darwin.cocoapy import NSUInteger, NSUIntegerEncoding
+from pyglet.libs.darwin.cocoapy import NSRectEncoding
 
 
 class PygletWindow_Implementation(object):

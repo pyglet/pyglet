@@ -45,12 +45,16 @@ __version__ = '$Id: $'
 # independence?
 
 import math
+from ctypes import c_void_p, c_int32, byref, c_byte
 
 from pyglet.font import base
 import pyglet.image
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin import cocoapy
 
+cf = cocoapy.cf
+ct = cocoapy.ct
+quartz = cocoapy.quartz
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
@@ -68,8 +72,8 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
 
         # Create an attributed string using text and font.
         attributes = c_void_p(cf.CFDictionaryCreateMutable(None, 1, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
-        cf.CFDictionaryAddValue(attributes, kCTFontAttributeName, ctFont)
-        string = c_void_p(cf.CFAttributedStringCreate(None, CFSTR(text), attributes))
+        cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontAttributeName, ctFont)
+        string = c_void_p(cf.CFAttributedStringCreate(None, cocoapy.CFSTR(text), attributes))
 
         # Create a CTLine object to render the string.
         line = c_void_p(ct.CTLineCreateWithAttributedString(string))
@@ -78,8 +82,8 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         
         # Get a bounding rectangle for glyphs in string.
         count = len(text)
-        chars = (UniChar * count)(*list(map(ord,str(text))))
-        glyphs = (CGGlyph * count)()
+        chars = (cocoapy.UniChar * count)(*list(map(ord,str(text))))
+        glyphs = (cocoapy.CGGlyph * count)()
         ct.CTFontGetGlyphsForCharacters(ctFont, chars, glyphs, count)
         rect = ct.CTFontGetBoundingRectsForGlyphs(ctFont, 0, glyphs, None, count)
 
@@ -108,7 +112,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
                 bitsPerComponent, 
                 bytesPerRow, 
                 colorSpace, 
-                kCGImageAlphaPremultipliedLast))
+                cocoapy.kCGImageAlphaPremultipliedLast))
 
         # Draw text to bitmap context.
         quartz.CGContextSetShouldAntialias(bitmap, True)
@@ -124,7 +128,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         imageData = c_void_p(quartz.CGDataProviderCopyData(dataProvider))
         buffersize = cf.CFDataGetLength(imageData)
         buffer = (c_byte * buffersize)()
-        byteRange = CFRange(0, buffersize)
+        byteRange = cocoapy.CFRange(0, buffersize)
         cf.CFDataGetBytes(imageData, byteRange, buffer)
 
         quartz.CGImageRelease(imageRef)
@@ -178,20 +182,20 @@ class QuartzFont(base.Font):
         # Create an attribute dictionary.
         attributes = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
         # Add family name to attributes.
-        cfname = CFSTR(family_name)
-        cf.CFDictionaryAddValue(attributes, kCTFontFamilyNameAttribute, cfname)
+        cfname = cocoapy.CFSTR(family_name)
+        cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontFamilyNameAttribute, cfname)
         cf.CFRelease(cfname)
         # Construct a CFNumber to represent the traits.
         itraits = c_int32(traits)
-        symTraits = c_void_p(cf.CFNumberCreate(None, kCFNumberSInt32Type, byref(itraits)))
+        symTraits = c_void_p(cf.CFNumberCreate(None, cocoapy.kCFNumberSInt32Type, byref(itraits)))
         if symTraits:
             # Construct a dictionary to hold the traits values.
             traitsDict = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
             if traitsDict:
                 # Add CFNumber traits to traits dictionary.
-                cf.CFDictionaryAddValue(traitsDict, kCTFontSymbolicTrait, symTraits)
+                cf.CFDictionaryAddValue(traitsDict, cocoapy.kCTFontSymbolicTrait, symTraits)
                 # Add traits dictionary to attributes.
-                cf.CFDictionaryAddValue(attributes, kCTFontTraitsAttribute, traitsDict)
+                cf.CFDictionaryAddValue(attributes, cocoapy.kCTFontTraitsAttribute, traitsDict)
                 cf.CFRelease(traitsDict)
             cf.CFRelease(symTraits)
         # Create font descriptor with attributes.
@@ -210,8 +214,8 @@ class QuartzFont(base.Font):
         
         # Construct traits value.
         traits = 0
-        if bold: traits |= kCTFontBoldTrait
-        if italic: traits |= kCTFontItalicTrait
+        if bold: traits |= cocoapy.kCTFontBoldTrait
+        if italic: traits |= cocoapy.kCTFontItalicTrait
 
         name = str(name)
         # First see if we can find an appropriate font from our table of loaded fonts.
@@ -239,7 +243,7 @@ class QuartzFont(base.Font):
         if name in cls._loaded_CGFont_table: return True
         # Try to create the font to see if it exists.
         # TODO: Find a better way to check.
-        cfstring = CFSTR(name)
+        cfstring = cocoapy.CFSTR(name)
         cgfont = c_void_p(quartz.CGFontCreateWithFontName(cfstring))
         cf.CFRelease(cfstring)
         if cgfont:
@@ -267,11 +271,11 @@ class QuartzFont(base.Font):
 
         # Get info about the font to use as key in our font table.
         string = c_void_p(ct.CTFontCopyFamilyName(ctFont))
-        familyName = str(cfstring_to_string(string))
+        familyName = str(cocoapy.cfstring_to_string(string))
         cf.CFRelease(string)
 
         string = c_void_p(ct.CTFontCopyFullName(ctFont))
-        fullName = str(cfstring_to_string(string))
+        fullName = str(cocoapy.cfstring_to_string(string))
         cf.CFRelease(string)
 
         traits = ct.CTFontGetSymbolicTraits(ctFont)

@@ -38,7 +38,9 @@ import unicodedata
 
 from pyglet.window import key
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
+from pyglet.libs.darwin.cocoapy import PyObjectEncoding, send_super
+from pyglet.libs.darwin.cocoapy import CFSTR, cfstring_to_string
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')

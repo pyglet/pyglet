@@ -36,9 +36,9 @@ from builtins import object
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin import cocoapy
 
-NSTrackingArea = ObjCClass('NSTrackingArea')
+NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
 
 # Event data helper functions.
 
@@ -63,18 +63,18 @@ def getMousePosition(self, nsevent):
 def getModifiers(nsevent):
     modifiers = 0
     modifierFlags = nsevent.modifierFlags()
-    if modifierFlags & NSAlphaShiftKeyMask:
+    if modifierFlags & cocoapy.NSAlphaShiftKeyMask:
         modifiers |= key.MOD_CAPSLOCK
-    if modifierFlags & NSShiftKeyMask:
+    if modifierFlags & cocoapy.NSShiftKeyMask:
         modifiers |= key.MOD_SHIFT
-    if modifierFlags & NSControlKeyMask:
+    if modifierFlags & cocoapy.NSControlKeyMask:
         modifiers |= key.MOD_CTRL
-    if modifierFlags & NSAlternateKeyMask:
+    if modifierFlags & cocoapy.NSAlternateKeyMask:
         modifiers |= key.MOD_ALT
         modifiers |= key.MOD_OPTION
-    if modifierFlags & NSCommandKeyMask:
+    if modifierFlags & cocoapy.NSCommandKeyMask:
         modifiers |= key.MOD_COMMAND
-    if modifierFlags & NSFunctionKeyMask:
+    if modifierFlags & cocoapy.NSFunctionKeyMask:
         modifiers |= key.MOD_FUNCTION
     return modifiers
 
@@ -84,7 +84,7 @@ def getSymbol(nsevent):
     if symbol is not None:
         return symbol
 
-    chars = cfstring_to_string(nsevent.charactersIgnoringModifiers())
+    chars = cocoapy.cfstring_to_string(nsevent.charactersIgnoringModifiers())
     if chars:
         return charmap.get(chars[0].upper(), None)
 
@@ -92,16 +92,16 @@ def getSymbol(nsevent):
 
 
 class PygletView_Implementation(object):
-    PygletView = ObjCSubclass('NSView', 'PygletView')
+    PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
 
-    @PygletView.method(b'@'+NSRectEncoding+PyObjectEncoding)
+    @PygletView.method(b'@'+cocoapy.NSRectEncoding+cocoapy.PyObjectEncoding)
     def initWithFrame_cocoaWindow_(self, frame, window):
 
         # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate 
         # events so that we can custom set the mouse cursor within the view.
         self._tracking_area = None
 
-        self = ObjCInstance(send_super(self, 'initWithFrame:', frame, argtypes=[NSRect]))
+        self = cocoapy.ObjCInstance(cocoapy.send_super(self, 'initWithFrame:', frame, argtypes=[cocoapy.NSRect]))
 
         if not self:
             return None
@@ -117,7 +117,7 @@ class PygletView_Implementation(object):
         # "Option-e", "e" if the protocol isn't implemented.  So the easiest
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
-        PygletTextView = ObjCClass('PygletTextView')
+        PygletTextView = cocoapy.ObjCClass('PygletTextView')
         self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
         # Add text view to the responder chain.
         self.addSubview_(self._textview)
@@ -126,12 +126,12 @@ class PygletView_Implementation(object):
     @PygletView.method('v')
     def dealloc(self):
         self._window = None
-        # send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
+        # cocoapy.end_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
         self._textview.release()
         self._textview = None
         self._tracking_area.release()
         self._tracking_area = None
-        send_super(self, 'dealloc')        
+        cocoapy.send_super(self, 'dealloc')
 
     @PygletView.method('v')
     def updateTrackingAreas(self):
@@ -142,7 +142,7 @@ class PygletView_Implementation(object):
             self._tracking_area.release()
             self._tracking_area = None
 
-        tracking_options = NSTrackingMouseEnteredAndExited | NSTrackingActiveInActiveApp | NSTrackingCursorUpdate
+        tracking_options = cocoapy.NSTrackingMouseEnteredAndExited | cocoapy.NSTrackingActiveInActiveApp | cocoapy.NSTrackingCursorUpdate
         frame = self.frame()
 
         self._tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
@@ -164,9 +164,9 @@ class PygletView_Implementation(object):
     ## Event responders.
 
     # This method is called whenever the view changes size.
-    @PygletView.method(b'v'+NSSizeEncoding) 
+    @PygletView.method(b'v'+cocoapy.NSSizeEncoding)
     def setFrameSize_(self, size):
-        send_super(self, 'setFrameSize:', size, argtypes=[NSSize])
+        cocoapy.send_super(self, 'setFrameSize:', size, argtypes=[cocoapy.NSSize])
 
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
@@ -227,8 +227,8 @@ class PygletView_Implementation(object):
                       key.ROPTION: NSRightAlternateKeyMask,
                       key.LCOMMAND: NSLeftCommandKeyMask,
                       key.RCOMMAND: NSRightCommandKeyMask,
-                      key.CAPSLOCK: NSAlphaShiftKeyMask,
-                      key.FUNCTION: NSFunctionKeyMask}
+                      key.CAPSLOCK: cocoapy.NSAlphaShiftKeyMask,
+                      key.FUNCTION: cocoapy.NSFunctionKeyMask}
 
         symbol = keymap.get(nsevent.keyCode(), None)
 
@@ -252,15 +252,15 @@ class PygletView_Implementation(object):
         # Let arrow keys and certain function keys pass through the responder
         # chain so that the textview can handle on_text_motion events.
         modifierFlags = nsevent.modifierFlags()
-        if modifierFlags & NSNumericPadKeyMask:
+        if modifierFlags & cocoapy.NSNumericPadKeyMask:
             return False
-        if modifierFlags & NSFunctionKeyMask:
-            ch = cfstring_to_string(nsevent.charactersIgnoringModifiers())
-            if ch in (NSHomeFunctionKey, NSEndFunctionKey, 
-                      NSPageUpFunctionKey, NSPageDownFunctionKey):
+        if modifierFlags & cocoapy.NSFunctionKeyMask:
+            ch = cocoapy.cfstring_to_string(nsevent.charactersIgnoringModifiers())
+            if ch in (cocoapy.NSHomeFunctionKey, cocoapy.NSEndFunctionKey,
+                      cocoapy.NSPageUpFunctionKey, cocoapy.NSPageDownFunctionKey):
                 return False
         # Send the key equivalent to the main menu to perform menu items.
-        NSApp = ObjCClass('NSApplication').sharedApplication()
+        NSApp = cocoapy.ObjCClass('NSApplication').sharedApplication()
         NSApp.mainMenu().performKeyEquivalent_(nsevent)
         # Indicate that we've handled the event so system won't beep.
         return True
@@ -379,4 +379,4 @@ class PygletView_Implementation(object):
             self._window.set_mouse_platform_visible()
 
 
-PygletView = ObjCClass('PygletView')
+PygletView = cocoapy.ObjCClass('PygletView')
