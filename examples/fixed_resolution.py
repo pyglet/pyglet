@@ -65,6 +65,8 @@ class FixedResolutionViewport(object):
         self.window = window
         self.width = width
         self.height = height
+        # Get the actual viewport size as this can be different from the window size
+        self.viewport_width, self.viewport_height = self.window.get_viewport_size()
         self.texture = pyglet.image.Texture.create(width, height, 
             rectangle=True)
 
@@ -85,20 +87,22 @@ class FixedResolutionViewport(object):
         buffer = pyglet.image.get_buffer_manager().get_color_buffer()
         self.texture.blit_into(buffer, 0, 0, 0)
 
-        glViewport(0, 0, self.window.width, self.window.height)
+        glViewport(0, 0, self.viewport_width, self.viewport_height)
         self.set_window_projection()
 
         aspect_width = self.window.width / float(self.width)
         aspect_height = self.window.height / float(self.height)
+
         if aspect_width > aspect_height:
             scale_width = aspect_height * self.width
             scale_height = aspect_height * self.height
         else:
             scale_width = aspect_width * self.width
             scale_height = aspect_width * self.height
+
         x = (self.window.width - scale_width) / 2
         y = (self.window.height - scale_height) / 2
-        
+
         glClearColor(0, 0, 0, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
