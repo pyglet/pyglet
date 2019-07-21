@@ -85,7 +85,7 @@ w2.on_draw = on_draw
 w2.switch_to()
 setup()
 
-# On some platforms the actual framebuffer/viewport size is bigger than the window.
-pixel_ratio = w1.get_viewport_size()[0] / w1.width
+# On some platforms the actual framebuffer size is bigger than the window.
+pixel_ratio = w1.get_framebuffer_size()[0] / w1.width
 
 pyglet.app.run()
