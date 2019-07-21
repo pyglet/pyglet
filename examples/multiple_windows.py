@@ -41,7 +41,7 @@ from pyglet.gl import *
 
 
 def on_resize(width, height):
-    glViewport(0, 0, width, height)
+    glViewport(0, 0, int(width * pixel_ratio), int(height * pixel_ratio))
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(60., width / float(height), 1., 100.)
@@ -84,5 +84,8 @@ w2.on_resize = on_resize
 w2.on_draw = on_draw
 w2.switch_to()
 setup()
+
+# On some platforms the actual framebuffer/viewport size is bigger than the window.
+pixel_ratio = w1.get_viewport_size()[0] / w1.width
 
 pyglet.app.run()
