@@ -72,7 +72,7 @@ quartz = cocoapy.quartz
 class CocoaMouseCursor(MouseCursor):
     drawable = False
     def __init__(self, cursorName):
-        # cursorName is a string identifying one of the named default NSCursors 
+        # cursorName is a string identifying one of the named default NSCursors
         # e.g. 'pointingHandCursor', and can be sent as message to NSCursor class.
         self.cursorName = cursorName
     def set(self):
@@ -87,7 +87,7 @@ class CocoaWindow(BaseWindow):
 
     # Delegate object.
     _delegate = None
-    
+
     # Window properties
     _minimum_size = None
     _maximum_size = None
@@ -117,7 +117,7 @@ class CocoaWindow(BaseWindow):
     def _recreate(self, changes):
         if 'context' in changes:
             self.context.set_current()
-        
+
         if 'fullscreen' in changes:
             if not self._fullscreen:  # leaving fullscreen
                 self.screen.release_display()
@@ -168,7 +168,7 @@ class CocoaWindow(BaseWindow):
         #     style_mask,             # styleMask
         #     NSBackingStoreBuffered, # backing
         #     False,                  # defer
-        #     self.screen.get_nsscreen())  # screen      
+        #     self.screen.get_nsscreen())  # screen
 
         self._nswindow = WindowClass.alloc().initWithContentRect_styleMask_backing_defer_(
             content_rect,                    # contentRect
@@ -263,7 +263,7 @@ class CocoaWindow(BaseWindow):
             self._nswindow.setDelegate_(None)
             self._delegate.release()
             self._delegate = None
-            
+
         # Remove window from display and remove its view.
         if self._nswindow:
             self._nswindow.orderOut_(None)
@@ -280,7 +280,7 @@ class CocoaWindow(BaseWindow):
             self.canvas.nsview = None
             self.canvas = None
 
-        # Do this last, so that we don't see white flash 
+        # Do this last, so that we don't see white flash
         # when exiting application from fullscreen mode.
         super(CocoaWindow, self).close()
 
@@ -354,7 +354,7 @@ class CocoaWindow(BaseWindow):
         # a CFDataRef object first and use it to create the data provider.
         cfdata = c_void_p(cf.CFDataCreate(None, data, len(data)))
         provider = c_void_p(quartz.CGDataProviderCreateWithCFData(cfdata))
-        
+
         colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
 
         # Then create a CGImage from the provider.
@@ -366,7 +366,7 @@ class CocoaWindow(BaseWindow):
             None,
             True,
             kCGRenderingIntentDefault))
-        
+
         if not cgimage:
             return
 
@@ -454,7 +454,7 @@ class CocoaWindow(BaseWindow):
         self._visible = visible
         if self._nswindow is not None:
             if visible:
-                # Not really sure why on_resize needs to be here, 
+                # Not really sure why on_resize needs to be here,
                 # but it's what pyglet wants.
                 self.dispatch_event('on_resize', self._width, self._height)
                 self.dispatch_event('on_show')
@@ -555,7 +555,7 @@ class CocoaWindow(BaseWindow):
             self.CURSOR_TEXT:            'IBeamCursor',
             self.CURSOR_WAIT:            'arrowCursor',  # No wristwatch cursor in Cocoa
             self.CURSOR_WAIT_ARROW:      'arrowCursor',  # No wristwatch cursor in Cocoa
-            }  
+            }
         if name not in cursors:
             raise RuntimeError('Unknown cursor name "%s"' % name)
         return CocoaMouseCursor(cursors[name])
@@ -566,7 +566,7 @@ class CocoaWindow(BaseWindow):
             # which sets (0,0) at top left corner of main display.  It is possible
             # to warp the mouse position to a point inside of another display.
             quartz.CGWarpMouseCursorPosition(CGPoint(x,y))
-        else: 
+        else:
             # Window-relative coordinates: (x, y) are given in window coords
             # with (0,0) at bottom-left corner of window and y up.  We find
             # which display the window is in and then convert x, y into local
@@ -601,15 +601,15 @@ class CocoaWindow(BaseWindow):
         # http://developer.apple.com/mac/library/technotes/tn2002/tn2062.html
         # http://developer.apple.com/library/mac/#technotes/KioskMode/
 
-        # BUG: System keys like F9 or command-tab are disabled, however 
+        # BUG: System keys like F9 or command-tab are disabled, however
         # pyglet also does not receive key press events for them.
 
-        # This flag is queried by window delegate to determine whether 
+        # This flag is queried by window delegate to determine whether
         # the quit menu item is active.
         self._is_keyboard_exclusive = exclusive
-            
+
         if exclusive:
-            # "Be nice! Don't disable force-quit!" 
+            # "Be nice! Don't disable force-quit!"
             #          -- Patrick Swayze, Road House (1989)
             options = cocoapy.NSApplicationPresentationHideDock | \
                       cocoapy.NSApplicationPresentationHideMenuBar | \

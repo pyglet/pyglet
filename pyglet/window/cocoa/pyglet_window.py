@@ -67,8 +67,8 @@ class PygletWindow_Implementation(object):
             from pyglet import app
             if app.event_loop is not None:
                 app.event_loop.idle()
-         
-        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:', 
+
+        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
                            mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value is None:
@@ -92,8 +92,8 @@ class PygletToolWindow_Implementation(object):
             from pyglet import app
             if app.event_loop is not None:
                 app.event_loop.idle()
-                
-        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:', 
+
+        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
                            mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value == None:

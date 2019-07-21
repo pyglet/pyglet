@@ -109,7 +109,7 @@ class CocoaEventLoop(PlatformEventLoop):
             self.NSApp.setActivationPolicy_(cocoapy.NSApplicationActivationPolicyRegular)
             # Prevent Lion / Mountain Lion from automatically saving application state.
             # If we don't do this, new windows will not display on 10.8 after finishLaunching
-            # has been called.  
+            # has been called.
             defaults = NSUserDefaults.standardUserDefaults()
             ignoreState = cocoapy.CFSTR("ApplePersistenceIgnoreState")
             if not defaults.objectForKey_(ignoreState):

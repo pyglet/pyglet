@@ -79,7 +79,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         line = c_void_p(ct.CTLineCreateWithAttributedString(string))
         cf.CFRelease(string)
         cf.CFRelease(attributes)
-        
+
         # Get a bounding rectangle for glyphs in string.
         count = len(text)
         chars = (cocoapy.UniChar * count)(*list(map(ord,str(text))))
@@ -106,12 +106,12 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         bytesPerRow = 4*width
         colorSpace = c_void_p(quartz.CGColorSpaceCreateDeviceRGB())
         bitmap = c_void_p(quartz.CGBitmapContextCreate(
-                None, 
-                width, 
-                height, 
-                bitsPerComponent, 
-                bytesPerRow, 
-                colorSpace, 
+                None,
+                width,
+                height,
+                bitsPerComponent,
+                bytesPerRow,
+                colorSpace,
                 cocoapy.kCGImageAlphaPremultipliedLast))
 
         # Draw text to bitmap context.
@@ -142,7 +142,7 @@ class QuartzGlyphRenderer(base.GlyphRenderer):
         glyph.set_bearings(baseline, lsb, advance)
         t = list(glyph.tex_coords)
         glyph.tex_coords = t[9:12] + t[6:9] + t[3:6] + t[:3]
-        
+
         return glyph
 
 
@@ -164,7 +164,7 @@ class QuartzFont(base.Font):
         fonts = self._loaded_CGFont_table[family]
         if not fonts:
             return None
-        # Return font with desired traits if it is available. 
+        # Return font with desired traits if it is available.
         if traits in fonts:
             return fonts[traits]
         # Otherwise try to find a font with some of the traits.
@@ -211,7 +211,7 @@ class QuartzFont(base.Font):
         # I don't know what is the right thing to do here.
         if dpi is None: dpi = 96
         size = size * dpi / 72.0
-        
+
         # Construct traits value.
         traits = 0
         if bold: traits |= cocoapy.kCTFontBoldTrait
@@ -253,8 +253,8 @@ class QuartzFont(base.Font):
 
     @classmethod
     def add_font_data(cls, data):
-        # Create a cgFont with the data.  There doesn't seem to be a way to 
-        # register a font loaded from memory such that the operating system will 
+        # Create a cgFont with the data.  There doesn't seem to be a way to
+        # register a font loaded from memory such that the operating system will
         # find it later.  So instead we just store the cgFont in a table where
         # it can be found by our __init__ method.
         # Note that the iOS CTFontManager *is* able to register graphics fonts,
@@ -290,5 +290,3 @@ class QuartzFont(base.Font):
         if fullName not in cls._loaded_CGFont_table:
             cls._loaded_CGFont_table[fullName] = {}
         cls._loaded_CGFont_table[fullName][traits] = cgFont
-
-        

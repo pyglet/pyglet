@@ -47,7 +47,7 @@ NSApplication = ObjCClass('NSApplication')
 
 class PygletDelegate_Implementation(object):
     PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
-    
+
     @PygletDelegate.method(b'@'+PyObjectEncoding)
     def initWithWindow_(self, window):
         self = ObjCInstance(send_super(self, 'init'))
@@ -59,16 +59,16 @@ class PygletDelegate_Implementation(object):
         self._window = window
         window._nswindow.setDelegate_(self)
 
-        # Register delegate for hide and unhide notifications so that we 
+        # Register delegate for hide and unhide notifications so that we
         # can dispatch the corresponding pyglet events.
         notificationCenter = NSNotificationCenter.defaultCenter()
 
         notificationCenter.addObserver_selector_name_object_(
-            self, get_selector('applicationDidHide:'), 
+            self, get_selector('applicationDidHide:'),
             NSApplicationDidHideNotification, None)
 
         notificationCenter.addObserver_selector_name_object_(
-            self, get_selector('applicationDidUnhide:'), 
+            self, get_selector('applicationDidUnhide:'),
             NSApplicationDidUnhideNotification, None)
 
         # Flag set when we pause exclusive mouse mode if window loses key status.
@@ -86,7 +86,7 @@ class PygletDelegate_Implementation(object):
     @PygletDelegate.method('v@')
     def applicationDidHide_(self, notification):
         self._window.dispatch_event("on_hide")
-    
+
     @PygletDelegate.method('v@')
     def applicationDidUnhide_(self, notification):
         if self._window._is_mouse_exclusive and quartz.CGCursorIsVisible():
@@ -118,7 +118,7 @@ class PygletDelegate_Implementation(object):
          # Restore previous mouse visibility settings.
          self._window.set_mouse_platform_visible()
          self._window.dispatch_event("on_activate")
-    
+
     @PygletDelegate.method('v@')
     def windowDidResignKey_(self, notification):
         # Pause exclusive mouse mode if it is active.
@@ -128,11 +128,11 @@ class PygletDelegate_Implementation(object):
             # We need to prevent the window from being unintentionally dragged
             # (by the call to set_mouse_position in set_exclusive_mouse) when
             # the window is reactivated by clicking on its title bar.
-            self._window._nswindow.setMovable_(False)  # Mac OS X 10.6 
+            self._window._nswindow.setMovable_(False)  # Mac OS X 10.6
         # Make sure that cursor is visible.
         self._window.set_mouse_platform_visible(True)
         self._window.dispatch_event("on_deactivate")
-        
+
     @PygletDelegate.method('v@')
     def windowDidMiniaturize_(self, notification):
         self._window.dispatch_event("on_hide")
