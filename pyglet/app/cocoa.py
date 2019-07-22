@@ -36,15 +36,15 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
 from pyglet.app.base import PlatformEventLoop
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin import cocoapy
 
-NSApplication = ObjCClass('NSApplication')
-NSMenu = ObjCClass('NSMenu')
-NSMenuItem = ObjCClass('NSMenuItem')
-NSAutoreleasePool = ObjCClass('NSAutoreleasePool')
-NSDate = ObjCClass('NSDate')
-NSEvent = ObjCClass('NSEvent')
-NSUserDefaults = ObjCClass('NSUserDefaults')
+NSApplication = cocoapy.ObjCClass('NSApplication')
+NSMenu = cocoapy.ObjCClass('NSMenu')
+NSMenuItem = cocoapy.ObjCClass('NSMenuItem')
+NSAutoreleasePool = cocoapy.ObjCClass('NSAutoreleasePool')
+NSDate = cocoapy.ObjCClass('NSDate')
+NSEvent = cocoapy.ObjCClass('NSEvent')
+NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
 
 
 class AutoReleasePool(object):
@@ -59,9 +59,9 @@ class AutoReleasePool(object):
 
 def add_menu_item(menu, title, action, key):
     with AutoReleasePool():
-        title = CFSTR(title)
-        action = get_selector(action)
-        key = CFSTR(key)
+        title = cocoapy.CFSTR(title)
+        action = cocoapy.get_selector(action)
+        key = cocoapy.CFSTR(key)
         menuItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
             title, action, key)
         menu.addItem_(menuItem)
@@ -106,12 +106,12 @@ class CocoaEventLoop(PlatformEventLoop):
                 return
             if not self.NSApp.mainMenu():
                 create_menu()
-            self.NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+            self.NSApp.setActivationPolicy_(cocoapy.NSApplicationActivationPolicyRegular)
             # Prevent Lion / Mountain Lion from automatically saving application state.
             # If we don't do this, new windows will not display on 10.8 after finishLaunching
-            # has been called.  
+            # has been called.
             defaults = NSUserDefaults.standardUserDefaults()
-            ignoreState = CFSTR("ApplePersistenceIgnoreState")
+            ignoreState = cocoapy.CFSTR("ApplePersistenceIgnoreState")
             if not defaults.objectForKey_(ignoreState):
                 defaults.setBool_forKey_(True, ignoreState)
             self._finished_launching = False
@@ -142,12 +142,12 @@ class CocoaEventLoop(PlatformEventLoop):
             # We only process one event per call of step().
             self._is_running.set()
             event = self.NSApp.nextEventMatchingMask_untilDate_inMode_dequeue_(
-                NSAnyEventMask, timeout_date, NSDefaultRunLoopMode, True)
+                cocoapy.NSAnyEventMask, timeout_date, cocoapy.NSDefaultRunLoopMode, True)
 
             # Dispatch the event (if any).
             if event is not None:
                 event_type = event.type()
-                if event_type != NSApplicationDefined:
+                if event_type != cocoapy.NSApplicationDefined:
                     # Send out event as normal.  Responders will still receive
                     # keyUp:, keyDown:, and flagsChanged: events.
                     self.NSApp.sendEvent_(event)
@@ -160,12 +160,12 @@ class CocoaEventLoop(PlatformEventLoop):
                     # replacements ensure that we see all the raw key presses & releases.
                     # We also filter out key-down repeats since pyglet only sends one
                     # on_key_press event per key press.
-                    if event_type == NSKeyDown and not event.isARepeat():
-                        self.NSApp.sendAction_to_from_(get_selector("pygletKeyDown:"), None, event)
-                    elif event_type == NSKeyUp:
-                        self.NSApp.sendAction_to_from_(get_selector("pygletKeyUp:"), None, event)
-                    elif event_type == NSFlagsChanged:
-                        self.NSApp.sendAction_to_from_(get_selector("pygletFlagsChanged:"), None, event)
+                    if event_type == cocoapy.NSKeyDown and not event.isARepeat():
+                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletKeyDown:"), None, event)
+                    elif event_type == cocoapy.NSKeyUp:
+                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletKeyUp:"), None, event)
+                    elif event_type == cocoapy.NSFlagsChanged:
+                        self.NSApp.sendAction_to_from_(cocoapy.get_selector("pygletFlagsChanged:"), None, event)
 
                 self.NSApp.updateWindows()
                 did_time_out = False
@@ -182,15 +182,15 @@ class CocoaEventLoop(PlatformEventLoop):
     def notify(self):
         with AutoReleasePool():
             notifyEvent = NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
-                NSApplicationDefined, # type
-                NSPoint(0.0, 0.0),    # location
-                0,                    # modifierFlags
-                0,                    # timestamp
-                0,                    # windowNumber
-                None,                 # graphicsContext
-                0,                    # subtype
-                0,                    # data1
-                0,                    # data2
+                cocoapy.NSApplicationDefined, # type
+                cocoapy.NSPoint(0.0, 0.0),    # location
+                0,                            # modifierFlags
+                0,                            # timestamp
+                0,                            # windowNumber
+                None,                         # graphicsContext
+                0,                            # subtype
+                0,                            # data1
+                0,                            # data2
                 )
 
             self.NSApp.postEvent_atStart_(notifyEvent, False)

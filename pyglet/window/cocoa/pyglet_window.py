@@ -32,8 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
+from ctypes import c_void_p, c_bool
 from builtins import object
-from pyglet.libs.darwin.cocoapy import *
+
+from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, send_super
+from pyglet.libs.darwin.cocoapy import NSUInteger, NSUIntegerEncoding
+from pyglet.libs.darwin.cocoapy import NSRectEncoding
 
 
 class PygletWindow_Implementation(object):
@@ -62,8 +67,8 @@ class PygletWindow_Implementation(object):
             from pyglet import app
             if app.event_loop is not None:
                 app.event_loop.idle()
-         
-        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:', 
+
+        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
                            mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value is None:
@@ -87,8 +92,8 @@ class PygletToolWindow_Implementation(object):
             from pyglet import app
             if app.event_loop is not None:
                 app.event_loop.idle()
-                
-        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:', 
+
+        event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
                            mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value == None:

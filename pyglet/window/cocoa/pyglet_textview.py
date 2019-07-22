@@ -38,7 +38,9 @@ import unicodedata
 
 from pyglet.window import key
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
+from pyglet.libs.darwin.cocoapy import PyObjectEncoding, send_super
+from pyglet.libs.darwin.cocoapy import CFSTR, cfstring_to_string
 
 NSArray = ObjCClass('NSArray')
 NSApplication = ObjCClass('NSApplication')
@@ -104,11 +106,11 @@ class PygletTextView_Implementation(object):
 
     @PygletTextView.method('v@')
     def moveWordLeft_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_PREVIOUS_WORD)        
+        self._window.dispatch_event("on_text_motion", key.MOTION_PREVIOUS_WORD)
 
     @PygletTextView.method('v@')
     def moveWordRight_(self, sender):
-        self._window.dispatch_event("on_text_motion", key.MOTION_NEXT_WORD)        
+        self._window.dispatch_event("on_text_motion", key.MOTION_NEXT_WORD)
 
     @PygletTextView.method('v@')
     def moveToBeginningOfLine_(self, sender):
@@ -160,11 +162,11 @@ class PygletTextView_Implementation(object):
 
     @PygletTextView.method('v@')
     def moveWordLeftAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_PREVIOUS_WORD)        
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_PREVIOUS_WORD)
 
     @PygletTextView.method('v@')
     def moveWordRightAndModifySelection_(self, sender):
-        self._window.dispatch_event("on_text_motion_select", key.MOTION_NEXT_WORD)        
+        self._window.dispatch_event("on_text_motion_select", key.MOTION_NEXT_WORD)
 
     @PygletTextView.method('v@')
     def moveToBeginningOfLineAndModifySelection_(self, sender):      # Mac OS X 10.6
