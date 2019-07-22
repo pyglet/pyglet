@@ -54,7 +54,7 @@ import pyglet
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
@@ -94,7 +94,7 @@ class _TraceLibrary(object):
         return f
 
 
-if _is_epydoc:
+if _is_pyglet_doc_run:
     class LibraryMock(object):
         """Mock library used when generating documentation."""
         def __getattr__(self, name):
@@ -122,7 +122,7 @@ class LibraryLoader(object):
 
         Raises ImportError if library is not found.
         """
-        if _is_epydoc:
+        if _is_pyglet_doc_run:
             return LibraryMock()
 
         if 'framework' in kwargs and self.platform == 'darwin':

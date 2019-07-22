@@ -85,7 +85,7 @@ class Display:
     def get_screens(self):
         """Get the available screens.
 
-        A typical multi-monitor workstation comprises one :class`~pyglet.canvas.Display`
+        A typical multi-monitor workstation comprises one :class:`Display`
         with multiple :class:`Screen` s.  This method returns a list of 
         screens which can be enumerated to select one for full-screen display.
 

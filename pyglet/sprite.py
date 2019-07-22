@@ -107,7 +107,7 @@ from pyglet import event
 from pyglet import graphics
 from pyglet import image
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 vertex_source = """#version 150 core
@@ -688,7 +688,7 @@ class Sprite(event.EventDispatcher):
         """
         self._batch.draw()
 
-    if _is_epydoc:
+    if _is_pyglet_doc_run:
         def on_animation_end(self):
             """The sprite animation reached the final frame.
 

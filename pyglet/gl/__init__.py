@@ -91,8 +91,7 @@ from pyglet import compat_platform
 from .base import ObjectSpace, CanvasConfig, Context
 
 import sys as _sys
-
-_is_epydoc = hasattr(_sys, 'is_epydoc') and _sys.is_epydoc
+_is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run
 
 #: The active OpenGL context.
 #:
@@ -189,7 +188,7 @@ def _create_shadow_window():
     global _shadow_window
 
     import pyglet
-    if not pyglet.options['shadow_window'] or _is_epydoc:
+    if not pyglet.options['shadow_window'] or _is_pyglet_doc_run:
         return
 
     from pyglet.window import Window
@@ -200,7 +199,7 @@ def _create_shadow_window():
     app.windows.remove(_shadow_window)
 
 
-if _is_epydoc:
+if _is_pyglet_doc_run:
     from .base import Config
 elif compat_platform in ('win32', 'cygwin'):
     from .win32 import Win32Config as Config
@@ -214,8 +213,9 @@ del base
 # XXX remove
 _shadow_window = None
 
-# Import pyglet.window now if it isn't currently being imported (this creates the shadow window).
-if not _is_epydoc and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
-    # trickery is for circular import
+# Import pyglet.window now if it isn't currently being imported (this creates
+# the shadow window).
+if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
+    # trickery is for circular import 
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window

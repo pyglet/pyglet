@@ -41,8 +41,9 @@ import os
 import sys
 
 if 'sphinx' in sys.modules:
-    setattr(sys, 'is_epydoc', True)
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+    setattr(sys, 'is_pyglet_doc_run', True)
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+
 
 #: The release version of this pyglet installation.
 #:
@@ -391,5 +392,6 @@ if False:
     from . import window
 
 # Hack around some epydoc bug that causes it to think pyglet.window is None.
+# TODO: confirm if this is still needed
 if False:
     from . import window

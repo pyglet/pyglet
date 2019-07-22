@@ -163,7 +163,7 @@ from pyglet.text import runlist
 from pyglet.graphics import shader
 from pyglet.font.base import grapheme_break
 
-_is_epydoc = hasattr(sys, 'is_epydoc') and sys.is_epydoc
+_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 _distance_re = re.compile(r'([-0-9.]+)([a-zA-Z]+)')
 
@@ -2334,7 +2334,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         elif x >= self.view_x + self.width - 10 and self.content_width > self.width:
             self.view_x = x - self.width + 10
 
-    if _is_epydoc:
+    if _is_pyglet_doc_run:
         def on_layout_update(self):
             """Some or all of the layout text was reflowed.
 

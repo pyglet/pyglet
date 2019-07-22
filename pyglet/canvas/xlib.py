@@ -115,6 +115,9 @@ class XlibDisplay(XlibSelectDevice, Display):
         if x_screen is None:
             x_screen = 0
 
+        if isinstance(name, str):
+            name = c_char_p(name.encode('ascii'))
+
         self._display = xlib.XOpenDisplay(name)
         if not self._display:
             raise NoSuchDisplayException('Cannot connect to "%s"' % name)
