@@ -68,6 +68,7 @@ NSEvent = cocoapy.ObjCClass('NSEvent')
 NSImage = cocoapy.ObjCClass('NSImage')
 
 quartz = cocoapy.quartz
+cf = cocoapy.cf
 
 class CocoaMouseCursor(MouseCursor):
     drawable = False
@@ -361,11 +362,11 @@ class CocoaWindow(BaseWindow):
         cgimage = c_void_p(quartz.CGImageCreate(
             image.width, image.height, 8, 32, bytesPerRow,
             colorSpace,
-            kCGImageAlphaFirst,
+            cocoapy.kCGImageAlphaFirst,
             provider,
             None,
             True,
-            kCGRenderingIntentDefault))
+            cocoapy.kCGRenderingIntentDefault))
 
         if not cgimage:
             return
