@@ -1433,11 +1433,8 @@ class TextLayout:
             self._update()
         else:
             dx = x - self._x
-            l_dx = lambda x: int(x + dx)
             for vertex_list in self._vertex_lists:
-                vertices = vertex_list.vertices[:]
-                vertices[::2] = list(map(l_dx, vertices[::2]))
-                vertex_list.vertices[:] = vertices
+                vertex_list.vertices[::2] = [x + dx for x in vertex_list.vertices[::2]]
             self._x = x
 
     @x.setter
@@ -1460,11 +1457,8 @@ class TextLayout:
             self._update()
         else:
             dy = y - self._y
-            l_dy = lambda y: int(y + dy)
             for vertex_list in self._vertex_lists:
-                vertices = vertex_list.vertices[:]
-                vertices[1::2] = list(map(l_dy, vertices[1::2]))
-                vertex_list.vertices[:] = vertices
+                vertex_list.vertices[1::2] = [y + dy for y in vertex_list.vertices[1::2]]
             self._y = y
 
     @y.setter
