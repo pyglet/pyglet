@@ -34,7 +34,8 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 from abc import ABCMeta, abstractmethod
-from future.utils import with_metaclass
+
+from pyglet.compat import with_metaclass
 
 
 class AbstractListener(with_metaclass(ABCMeta, object)):

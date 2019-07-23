@@ -131,12 +131,13 @@ use of the data in this arbitrary format).
 import re
 import weakref
 
+from io import BytesIO
 from ctypes import *
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.window import *
-from pyglet.compat import asbytes, bytes_type, BytesIO
+from pyglet.compat import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
@@ -1006,7 +1007,7 @@ class ImageData(AbstractImage):
         return asbytes(data)
 
     def _ensure_string_data(self):
-        if type(self._current_data) is not bytes_type:
+        if type(self._current_data) is not bytes:
             buf = create_string_buffer(len(self._current_data))
             memmove(buf, self._current_data, len(self._current_data))
             self._current_data = buf.raw

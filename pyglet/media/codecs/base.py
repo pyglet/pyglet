@@ -1,6 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -38,7 +35,8 @@ from builtins import object
 
 import ctypes
 
-from pyglet.compat import bytes_type, BytesIO
+from io import BytesIO
+
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 
@@ -193,7 +191,7 @@ class AudioData(object):
         if self.data is None:
             return b''
 
-        if isinstance(self.data, bytes_type):
+        if isinstance(self.data, bytes):
             return self.data
 
         buf = ctypes.create_string_buffer(self.length)

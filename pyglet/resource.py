@@ -89,8 +89,9 @@ import sys
 import weakref
 import zipfile
 
+from io import BytesIO
+
 import pyglet
-from pyglet.compat import BytesIO
 
 
 class ResourceNotFoundException(Exception):

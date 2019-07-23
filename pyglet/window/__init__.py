@@ -122,21 +122,13 @@ above, "Working with multiple screens")::
         win = window.Window(config=configs[0])
 
 """
-from __future__ import division
-
-from builtins import object
-
-from future.utils import with_metaclass
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import sys
 import math
 
 import pyglet
 from pyglet import gl
 from pyglet.event import EventDispatcher
+from pyglet.compat import with_metaclass
 import pyglet.window.key
 import pyglet.window.event
 

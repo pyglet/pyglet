@@ -135,14 +135,9 @@ Not all event dispatchers require the call to ``dispatch_events``; check with
 the particular class documentation.
 
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import inspect
 from functools import partial
-from .compat import WeakMethod
+from weakref import WeakMethod
 
 
 EVENT_HANDLED = True

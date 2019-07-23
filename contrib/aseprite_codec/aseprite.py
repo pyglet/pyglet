@@ -34,16 +34,13 @@
 
 """Decoder for Aseprite animation files in .ase or .aseprite format.
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import struct
 import zlib
 
+from io import BytesIO
+
 from pyglet.image import ImageData, Animation, AnimationFrame
 from pyglet.image.codecs import ImageDecoder, ImageDecodeException
-from pyglet.compat import BytesIO
 
 #   Documentation for the Aseprite format can be found here:
 #   https://raw.githubusercontent.com/aseprite/aseprite/master/docs/ase-file-specs.md

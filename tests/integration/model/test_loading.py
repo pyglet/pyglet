@@ -1,10 +1,9 @@
 import os
-from io import StringIO
+from io import StringIO, BytesIO
 
 import pytest
 import pyglet
 
-from pyglet.compat import BytesIO
 from pyglet.model import ModelDecodeException
 from ...annotations import require_python_version
 
@@ -38,13 +37,13 @@ def test_load_from_object_str():
 def test_load_from_object_bytes():
     file_path = get_test_data_file('models', 'logo3d.obj')
     with open(file_path, 'rb') as f:
-        file_obj = pyglet.compat.BytesIO(f.read())
+        file_obj = BytesIO(f.read())
     model = pyglet.model.load(file_path, file=file_obj)
     assert isinstance(model, pyglet.model.Model)
 
 
 def test_no_decoders_available():
-    ### This is NOT a valid model file:
+    # This is NOT a valid model file:
     file_path = get_test_data_file('media', 'alert.wav')
 
     with pytest.raises(ModelDecodeException) as e:
