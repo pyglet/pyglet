@@ -33,36 +33,34 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Read GIF control data.
+"""Read GIF control data.
 
 http://www.w3.org/Graphics/GIF/spec-gif89a.txt
-'''
-from __future__ import print_function
-from __future__ import division
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
+"""
 import struct
 
 from pyglet.image.codecs import ImageDecodeException
 
-class GIFStream(object):
+
+class GIFStream:
     def __init__(self):
         self.images = []
 
-class GIFImage(object):
+
+class GIFImage:
     delay = None
 
-class GraphicsScope(object):
+
+class GraphicsScope:
     delay = None
+
 
 # Appendix A.
 LABEL_EXTENSION_INTRODUCER = 0x21
 LABEL_GRAPHIC_CONTROL_EXTENSION = 0xf9
 LABEL_IMAGE_DESCRIPTOR = 0x2c
 LABEL_TRAILER = 0x3b
+
 
 def unpack(format, file):
     size = struct.calcsize(format)
@@ -71,17 +69,19 @@ def unpack(format, file):
         raise ImageDecodeException('Unexpected EOF')
     return struct.unpack(format, data)
 
+
 def read_byte(file):
     data = file.read(1)
     if not len(data):
         raise ImageDecodeException('Unexpected EOF')
     return ord(data)
 
+
 def read(file):
-    '''Read a GIF file stream.
+    """Read a GIF file stream.
 
     :rtype: GIFStream
-    '''
+    """
     # 17. Header
     signature = file.read(3)
     version = file.read(3)
@@ -93,7 +93,7 @@ def read(file):
     # 18. Logical screen descriptor
     (logical_screen_width,
      logical_screen_height,
-     fields, 
+     fields,
      background_color_index,
      pixel_aspect_ratio) = unpack('HHBBB', file)
     global_color_table_flag = fields & 0x80
@@ -124,7 +124,8 @@ def read(file):
         block_type = read_byte(file)
 
     return stream
-        
+
+
 def skip_data_sub_blocks(file):
     # 15. Data sub-blocks
     block_size = read_byte(file)
@@ -132,11 +133,12 @@ def skip_data_sub_blocks(file):
         data = file.read(block_size)
         block_size = read_byte(file)
 
+
 def read_table_based_image(file, stream, graphics_scope):
     gif_image = GIFImage()
     stream.images.append(gif_image)
     gif_image.delay = graphics_scope.delay
-        
+
     # 20. Image descriptor
     (image_left_position,
      image_top_position,
@@ -155,6 +157,7 @@ def read_table_based_image(file, stream, graphics_scope):
     lzw_code_size = file.read(1)
     skip_data_sub_blocks(file)
 
+
 def read_graphic_control_extension(file, stream, graphics_scope):
     # 23. Graphic control extension
     (block_size,
@@ -164,7 +167,7 @@ def read_graphic_control_extension(file, stream, graphics_scope):
      terminator) = unpack('BBHBB', file)
     if block_size != 4:
         raise ImageDecodeException('Incorrect block size')
-    
+
     if delay_time:
         # Follow Firefox/Mac behaviour: use 100ms delay for any delay
         # less than 10ms.

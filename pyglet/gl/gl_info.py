@@ -55,12 +55,6 @@ context::
         # ...
 
 '''
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from ctypes import *
 import warnings
 

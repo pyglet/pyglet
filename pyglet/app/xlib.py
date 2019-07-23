@@ -32,11 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-from builtins import object
-
 import os
 import select
 import threading
@@ -46,7 +41,7 @@ from pyglet.app.base import PlatformEventLoop
 from pyglet.compat import asbytes
 
 
-class XlibSelectDevice(object):
+class XlibSelectDevice:
     def fileno(self):
         """Get the file handle for ``select()`` for this device.
 

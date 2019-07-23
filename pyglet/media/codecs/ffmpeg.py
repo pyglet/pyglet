@@ -35,11 +35,6 @@
 
 """Use ffmpeg to decode audio and video media.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import range
-from builtins import object
-
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
                     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p,
                     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union,

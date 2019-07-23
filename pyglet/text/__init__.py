@@ -73,10 +73,6 @@ creating scrollable layouts.
 
 .. versionadded:: 1.1
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import os.path
 

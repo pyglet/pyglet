@@ -36,12 +36,6 @@
 
 These extend and correct ctypes functions.
 """
-from __future__ import print_function
-from builtins import object, str
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os
 import re
 import sys

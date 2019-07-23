@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import division
-from builtins import object
-
 import ctypes
 from collections import namedtuple
 
@@ -136,8 +133,7 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         return self._create_glyph()
 
 
-FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics',
-                                 ['ascent', 'descent'])
+FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics', ['ascent', 'descent'])
 
 
 class MemoryFaceStore(object):

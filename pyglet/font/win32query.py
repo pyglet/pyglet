@@ -105,8 +105,6 @@ appropriate typeface name and create the font using CreateFont or
 CreateFontIndirect.
 
 """
-from __future__ import print_function
-from builtins import object
 DEBUG = False
 
 __all__ = ['have_font', 'font_list']

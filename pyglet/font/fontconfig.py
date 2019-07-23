@@ -35,11 +35,6 @@
 """
 Wrapper around the Linux FontConfig library. Used to find available fonts.
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 from collections import OrderedDict
 from ctypes import *
 

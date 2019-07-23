@@ -33,11 +33,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
-
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import object
 import struct
 
 import pyglet

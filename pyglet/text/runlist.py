@@ -36,13 +36,7 @@
 
 .. versionadded:: 1.1
 '''
-from builtins import str
-from builtins import zip
-from builtins import next
-from builtins import object
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 class _Run(object):
     def __init__(self, value, count):

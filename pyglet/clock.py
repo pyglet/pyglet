@@ -110,11 +110,6 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
 of the system clock.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import range
-from builtins import object
-
 import sys
 import time
 import ctypes
@@ -126,38 +121,14 @@ import pyglet.lib
 from pyglet import compat_platform
 
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+class _ClockBase(object):
+
+    @staticmethod
+    def sleep(microseconds):
+        time.sleep(microseconds * 1e-6)
 
 
-if sys.version_info[:2] < (3, 5):
-    # PYTHON2 - remove these legacy classes:
-
-    if compat_platform in ('win32', 'cygwin'):
-
-        class _ClockBase(object):
-            def sleep(self, microseconds):
-                time.sleep(microseconds * 1e-6)
-
-        _default_time_function = time.clock
-
-    else:
-        _c = pyglet.lib.load_library('c')
-        _c.usleep.argtypes = [ctypes.c_ulong]
-
-        class _ClockBase(object):
-            def sleep(self, microseconds):
-                _c.usleep(int(microseconds))
-
-        _default_time_function = time.time
-
-else:
-
-    class _ClockBase(object):
-        def sleep(self, microseconds):
-            time.sleep(microseconds * 1e-6)
-
-    _default_time_function = time.perf_counter
+_default_time_function = time.perf_counter
 
 
 class _ScheduledItem(object):
@@ -238,7 +209,7 @@ class Clock(_ClockBase):
         self._schedule_interval_items = []
         self._current_interval_item = None
 
-        self.window_size = 60
+        self.time_window_size = 60
 
     def update_time(self):
         """Get the elapsed time since the last call to `update_time`.
@@ -258,7 +229,7 @@ class Clock(_ClockBase):
         else:
             delta_t = ts - self.last_ts
             self.times.appendleft(delta_t)
-            if len(self.times) > self.window_size:
+            if len(self.times) > self.time_window_size:
                 self.cumulative_time -= self.times.pop()
         self.cumulative_time += delta_t
         self.last_ts = ts
@@ -382,6 +353,9 @@ class Clock(_ClockBase):
         delta_t = self.update_time()
         self.call_scheduled_functions(delta_t)
         return delta_t
+
+    def sleep(self, microseconds):
+        time.sleep(microseconds * 1e-6)
 
     def get_sleep_time(self, sleep_idle):
         """Get the time until the next item is scheduled.

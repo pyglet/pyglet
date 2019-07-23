@@ -36,9 +36,6 @@
 '''Extensible attributed text format for representing pyglet formatted
 documents.
 '''
-from builtins import chr
-from builtins import map
-
 from functools import reduce
 import operator
 import parser

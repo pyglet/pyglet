@@ -50,15 +50,13 @@ pyglet will automatically load any system-installed fonts.  You can add addition
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
 """
-from __future__ import absolute_import, division
-from builtins import str
-
 import os
 import sys
 import weakref
 
 import pyglet
 from pyglet import gl
+
 
 if not getattr(sys, 'is_pyglet_doc_run', False):
     if pyglet.compat_platform == 'darwin':

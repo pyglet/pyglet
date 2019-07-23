@@ -32,15 +32,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import absolute_import
-from builtins import object
 from pyglet.libs.darwin.cocoapy import *
 from .systemcursor import SystemCursor
 
 NSNotificationCenter = ObjCClass('NSNotificationCenter')
 NSApplication = ObjCClass('NSApplication')
 
-class PygletDelegate_Implementation(object):
+
+class PygletDelegate_Implementation:
     PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
     
     @PygletDelegate.method(b'@'+PyObjectEncoding)

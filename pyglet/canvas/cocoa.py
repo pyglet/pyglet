@@ -32,15 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# Note: The display mode API used here is Mac OS 10.6 only.
-
-'''
-'''
-from __future__ import absolute_import
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from ctypes import *
 from ctypes import util
 

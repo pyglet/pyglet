@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,16 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import range
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from ctypes import *
 import ctypes
 
@@ -52,29 +41,36 @@ from .base import Display, Screen, ScreenMode, Canvas
 
 from . import xlib_vidmoderestore
 
+
 # XXX
-#from pyglet.window import NoSuchDisplayException
+# from pyglet.window import NoSuchDisplayException
 class NoSuchDisplayException(Exception):
     pass
 
+
 from pyglet.libs.x11 import xlib
+
 try:
     from pyglet.libs.x11 import xinerama
+
     _have_xinerama = True
 except:
     _have_xinerama = False
 
 try:
     from pyglet.libs.x11 import xsync
+
     _have_xsync = True
 except:
     _have_xsync = False
 
 try:
     from pyglet.libs.x11 import xf86vmode
+
     _have_xf86vmode = True
 except:
     _have_xf86vmode = False
+
 
 # Set up error handler
 def _error_handler(display, event):
@@ -100,16 +96,19 @@ def _error_handler(display, event):
         print('Python stack trace (innermost last):')
         traceback.print_stack()
     return 0
+
+
 _error_handler_ptr = xlib.XErrorHandler(_error_handler)
 xlib.XSetErrorHandler(_error_handler_ptr)
 
-class XlibDisplay(XlibSelectDevice, Display):
-    _display = None     # POINTER(xlib.Display)
 
-    _x_im = None        # X input method
-                        # TODO close _x_im when display connection closed.
+class XlibDisplay(XlibSelectDevice, Display):
+    _display = None  # POINTER(xlib.Display)
+
+    _x_im = None  # X input method
+    # TODO close _x_im when display connection closed.
     _enable_xsync = False
-    _screens = None     # Cache of get_screens()
+    _screens = None  # Cache of get_screens()
 
     def __init__(self, name=None, x_screen=None):
         if x_screen is None:
@@ -124,8 +123,7 @@ class XlibDisplay(XlibSelectDevice, Display):
 
         screen_count = xlib.XScreenCount(self._display)
         if x_screen >= screen_count:
-            raise NoSuchDisplayException(
-                'Display "%s" has no screen %d' % (name, x_screen))
+            raise NoSuchDisplayException('Display "%s" has no screen %d' % (name, x_screen))
 
         super(XlibDisplay, self).__init__()
         self.name = name
@@ -138,7 +136,7 @@ class XlibDisplay(XlibSelectDevice, Display):
         if _have_xsync:
             event_base = c_int()
             error_base = c_int()
-            if xsync.XSyncQueryExtension(self._display, 
+            if xsync.XSyncQueryExtension(self._display,
                                          byref(event_base),
                                          byref(error_base)):
                 major_version = c_int()
@@ -157,10 +155,8 @@ class XlibDisplay(XlibSelectDevice, Display):
 
         if _have_xinerama and xinerama.XineramaIsActive(self._display):
             number = c_int()
-            infos = xinerama.XineramaQueryScreens(self._display, 
-                                                  byref(number))
-            infos = cast(infos, 
-                 POINTER(xinerama.XineramaScreenInfo * number.value)).contents
+            infos = xinerama.XineramaQueryScreens(self._display, byref(number))
+            infos = cast(infos, POINTER(xinerama.XineramaScreenInfo * number.value)).contents
             self._screens = []
             using_xinerama = number.value > 1
             for info in infos:
@@ -207,13 +203,14 @@ class XlibDisplay(XlibSelectDevice, Display):
     def poll(self):
         return xlib.XPending(self._display)
 
+
 class XlibScreen(Screen):
     _initial_mode = None
 
     def __init__(self, display, x, y, width, height, xinerama):
         super(XlibScreen, self).__init__(display, x, y, width, height)
         self._xinerama = xinerama
- 
+
     def get_matching_configs(self, template):
         canvas = XlibCanvas(self.display, None)
         configs = template.match(canvas)
@@ -233,17 +230,15 @@ class XlibScreen(Screen):
             return []
 
         count = ctypes.c_int()
-        info_array = \
-            ctypes.POINTER(ctypes.POINTER(xf86vmode.XF86VidModeModeInfo))()
-        xf86vmode.XF86VidModeGetAllModeLines(
-            self.display._display, self.display.x_screen, count, info_array)
+        info_array = ctypes.POINTER(ctypes.POINTER(xf86vmode.XF86VidModeModeInfo))()
+        xf86vmode.XF86VidModeGetAllModeLines(self.display._display, self.display.x_screen, count, info_array)
 
         # Copy modes out of list and free list
         modes = []
         for i in range(count.value):
             info = xf86vmode.XF86VidModeModeInfo()
-            ctypes.memmove(ctypes.byref(info), 
-                           ctypes.byref(info_array.contents[i]), 
+            ctypes.memmove(ctypes.byref(info),
+                           ctypes.byref(info_array.contents[i]),
                            ctypes.sizeof(info))
             modes.append(XlibScreenMode(self, info))
             if info.privsize:
@@ -265,11 +260,9 @@ class XlibScreen(Screen):
             self._initial_mode = self.get_mode()
             xlib_vidmoderestore.set_initial_mode(self._initial_mode)
 
-        xf86vmode.XF86VidModeSwitchToMode(self.display._display, 
-            self.display.x_screen, mode.info)
+        xf86vmode.XF86VidModeSwitchToMode(self.display._display, self.display.x_screen, mode.info)
         xlib.XFlush(self.display._display)
-        xf86vmode.XF86VidModeSetViewPort(self.display._display,
-            self.display.x_screen, 0, 0)
+        xf86vmode.XF86VidModeSetViewPort(self.display._display,  self.display.x_screen, 0, 0)
         xlib.XFlush(self.display._display)
 
         self.width = mode.width
@@ -282,8 +275,8 @@ class XlibScreen(Screen):
     def __repr__(self):
         return 'XlibScreen(display=%r, x=%d, y=%d, ' \
                'width=%d, height=%d, xinerama=%d)' % \
-            (self.display, self.x, self.y, self.width, self.height,
-             self._xinerama)
+               (self.display, self.x, self.y, self.width, self.height, self._xinerama)
+
 
 class XlibScreenMode(ScreenMode):
     def __init__(self, screen, info):
@@ -293,6 +286,7 @@ class XlibScreenMode(ScreenMode):
         self.height = info.vdisplay
         self.rate = info.dotclock
         self.depth = None
+
 
 class XlibCanvas(Canvas):
     def __init__(self, display, x_window):

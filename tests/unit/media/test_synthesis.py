@@ -117,7 +117,3 @@ class SquareTest(SynthesisSourceTest, unittest.TestCase):
 
 class FMTest(SynthesisSourceTest, unittest.TestCase):
     source_class = FM
-
-
-class DigitarTest(SynthesisSourceTest, unittest.TestCase):
-    source_class = Digitar

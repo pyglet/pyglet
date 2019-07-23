@@ -32,8 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id$
-
 """
 Implementation of the Truetype file format.
 
@@ -44,18 +42,9 @@ References:
  * http://developer.apple.com/fonts/TTRefMan/RM06
  * http://www.microsoft.com/typography/otspec
 """
-from __future__ import division
-from builtins import zip
-from builtins import chr
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import codecs
 import os
 import mmap
+import codecs
 import struct
 
 

@@ -80,17 +80,12 @@ handlers.
 .. versionadded:: 1.2
 
 """
-from __future__ import absolute_import
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import sys
 
 from .base import Device, Control, RelativeAxis, AbsoluteAxis
 from .base import Button, Joystick, AppleRemote, Tablet, GameController
-
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -110,6 +105,7 @@ def get_apple_remote(display=None):
     :return: The remote device, or `None` if the computer does not support it.
     """
     return None
+
 
 if _is_pyglet_doc_run:
     def get_devices(display=None):

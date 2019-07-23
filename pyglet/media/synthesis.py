@@ -1,5 +1,3 @@
-from __future__ import division
-from builtins import range
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -46,7 +44,7 @@ import struct
 import random
 
 
-class Envelope(object):
+class Envelope:
     """Base class for SynthesisSource amplitude envelopes."""
     def get_generator(self, sample_rate, duration):
         raise NotImplementedError
@@ -491,52 +489,4 @@ class FM(SynthesisSource):
             increment = i / sample_rate
             data[i] = int(sin(car_step * increment + mod_index * sin(mod_step * increment))
                           * amplitude * next(envelope) + bias)
-        return data
-
-
-class Digitar(SynthesisSource):
-    """A guitar-like waveform.
-
-    A guitar-like waveform, based on the Karplus-Strong algorithm.
-    The sound is similar to a plucked guitar string. The resulting
-    sound decays over time, and so the actual length will vary
-    depending on the frequency. Lower frequencies require a longer
-    `length` parameter to prevent cutting off abruptly.
-
-    :Parameters:
-        `duration` : float
-            The length, in seconds, of audio that you wish to generate.
-        `frequency` : int
-            The frequency, in Hz of the waveform you wish to produce.
-        `decay` : float
-            The decay rate of the effect. Defaults to 0.996.
-        `sample_rate` : int
-            Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
-    """
-    def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
-        super(Digitar, self).__init__(duration, **kwargs)
-        self.frequency = frequency
-        self.decay = decay
-        self.period = int(self._sample_rate / self.frequency)
-
-    def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            bias = 127
-            amplitude = 127
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            bias = 0
-            amplitude = 32767
-            data = (ctypes.c_short * samples)()
-        random.seed(10)
-        period = self.period
-        ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
-        decay = self.decay
-        for i in range(samples):
-            data[i] = int(ring_buffer[0] * amplitude + bias)
-            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
         return data

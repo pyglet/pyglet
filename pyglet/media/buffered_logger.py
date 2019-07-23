@@ -38,8 +38,6 @@ Responsabilities
     Handles accumulation of debug events while playing media_player and  saves
     when sample's play ends.
 """
-from __future__ import division, print_function, unicode_literals
-
 import pickle
 import time
 

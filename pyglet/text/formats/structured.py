@@ -35,13 +35,6 @@
 
 """Base class for structured (hierarchical) document formats.
 """
-from __future__ import division
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import re
 
 import pyglet
@@ -91,7 +84,7 @@ def _int_to_roman(number):
     return result
 
 
-class ListBuilder(object):
+class ListBuilder:
 
     def begin(self, decoder, style):
         """Begin a list.

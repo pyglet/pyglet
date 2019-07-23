@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,11 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
-
-from __future__ import print_function
-from builtins import range
-from builtins import object
 import ctypes
 
 import pyglet

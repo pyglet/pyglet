@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,18 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''
-'''
-from __future__ import absolute_import
-from builtins import hex
-from builtins import range
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import ctypes
-import errno
 import os
+import errno
+import ctypes
 
 import pyglet
 from pyglet.app.xlib import XlibSelectDevice

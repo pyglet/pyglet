@@ -49,8 +49,9 @@ oddly if edited.
 No CSS styling is supported.
 """
 
-from future.moves.html.parser import HTMLParser
-from future.moves.html import entities
+from html.parser import HTMLParser
+from html import entities
+
 import re
 
 import pyglet

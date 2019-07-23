@@ -68,8 +68,6 @@ the return value.
 Don't forget to manually manage memory... call Release() when you're done with
 an interface.
 """
-from builtins import object
-
 import ctypes
 import sys
 

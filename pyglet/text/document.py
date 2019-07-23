@@ -164,12 +164,6 @@ of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
-from builtins import next
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import re
 import sys
 

@@ -37,19 +37,13 @@
 
 See :py:class:`~pyglet.window.Window` for a description of the window event types.
 """
-from __future__ import print_function
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import sys
 
 from pyglet.window import key
 from pyglet.window import mouse
 
 
-class WindowEventLogger(object):
+class WindowEventLogger:
     """Print all events to a file.
 
     When this event handler is added to a window it prints out all events

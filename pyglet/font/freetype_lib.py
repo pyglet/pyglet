@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import print_function
-from __future__ import absolute_import
-
 from ctypes import *
 from .base import FontException
 import pyglet.lib
@@ -43,6 +40,7 @@ _libfreetype = pyglet.lib.load_library('freetype')
 
 _font_data = {}
 
+
 def _get_function(name, argtypes, rtype):
     try:
         func = getattr(_libfreetype, name)
@@ -50,7 +48,7 @@ def _get_function(name, argtypes, rtype):
         func.restype = rtype
         return func
     except AttributeError as e:
-            raise ImportError(e)
+        raise ImportError(e)
 
 
 FT_Byte = c_char

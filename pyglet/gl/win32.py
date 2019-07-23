@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import absolute_import
-from builtins import zip
-
 from pyglet.canvas.win32 import Win32Canvas
 from .base import Config, CanvasConfig, Context
 
