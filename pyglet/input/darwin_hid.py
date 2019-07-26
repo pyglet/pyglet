@@ -38,7 +38,12 @@
 import sys
 __LP64__ = (sys.maxsize > 2**32)
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, \
+    kCFRunLoopDefaultMode, CFAllocatorRef, known_cftypes, cf, \
+    cfset_to_set, cftype_to_value, cfarray_to_list
+
+from ctypes import *
+from ctypes import util
 
 from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
 from .base import Joystick, GameController, AppleRemote
@@ -85,8 +90,8 @@ IOReturn = c_int  # IOReturn.h
 IOOptionBits = c_uint32   # IOTypes.h
 
 # IOHIDKeys.h
-IOHIDElementType = c_int 
-IOHIDElementCollectionType = c_int 
+IOHIDElementType = c_int
+IOHIDElementCollectionType = c_int
 if __LP64__:
     IOHIDElementCookie = c_uint32
 else:
@@ -228,9 +233,9 @@ iokit.IOHIDValueGetTypeID.restype = CFTypeID
 iokit.IOHIDValueGetTypeID.argtypes = []
 
 # Callback function types
-HIDManagerCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)    
-HIDDeviceCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p)    
-HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)    
+HIDManagerCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)
+HIDDeviceCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p)
+HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)
 
 ######################################################################
 # HID Class Wrappers
@@ -289,7 +294,7 @@ class HIDDevice:
         self.primaryUsage = self.get_property("PrimaryUsage")
         self.primaryUsagePage = self.get_property("PrimaryUsagePage")
         # Populate self.elements with our device elements.
-        self.get_elements()        
+        self.get_elements()
         # Set up callback functions.
         self.value_observers = set()
         self.removal_observers = set()
@@ -297,7 +302,7 @@ class HIDDevice:
         self.register_input_value_callback()
 
     def dump_info(self):
-        for x in ('manufacturer', 'product', 'transport', 'vendorID', 'vendorIDSource', 'productID', 
+        for x in ('manufacturer', 'product', 'transport', 'vendorID', 'vendorIDSource', 'productID',
                   'versionNumber', 'serialNumber', 'locationID', 'primaryUsage', 'primaryUsagePage'):
             value = getattr(self, x)
             print(x + ":", value)
@@ -305,7 +310,7 @@ class HIDDevice:
     def unique_identifier(self):
         # Since we can't rely on the serial number, create our own identifier.
         # Can use this to find devices when they are plugged back in.
-        return (self.manufacturer, self.product, self.vendorID, self.productID, 
+        return (self.manufacturer, self.product, self.vendorID, self.productID,
                 self.versionNumber, self.primaryUsage, self.primaryUsagePage)
 
     def get_property(self, name):
@@ -313,25 +318,25 @@ class HIDDevice:
         cfvalue = c_void_p(iokit.IOHIDDeviceGetProperty(self.deviceRef, cfname))
         cf.CFRelease(cfname)
         return cftype_to_value(cfvalue)
-        
+
     def open(self, exclusive_mode=False):
         if exclusive_mode: options = kIOHIDOptionsTypeSeizeDevice
         else: options = kIOHIDOptionsTypeNone
         return bool(iokit.IOHIDDeviceOpen(self.deviceRef, options))
-    
+
     def close(self):
         return bool(iokit.IOHIDDeviceClose(self.deviceRef, kIOHIDOptionsTypeNone))
 
     def schedule_with_run_loop(self):
         iokit.IOHIDDeviceScheduleWithRunLoop(
-            self.deviceRef, 
-            c_void_p(cf.CFRunLoopGetCurrent()), 
+            self.deviceRef,
+            c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
     def unschedule_from_run_loop(self):
         iokit.IOHIDDeviceUnscheduleFromRunLoop(
-            self.deviceRef, 
-            c_void_p(cf.CFRunLoopGetCurrent()), 
+            self.deviceRef,
+            c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
     def get_elements(self):
@@ -384,7 +389,7 @@ class HIDDevice:
     def register_input_value_callback(self):
         self.value_callback = HIDDeviceValueCallback(self.py_value_callback)
         iokit.IOHIDDeviceRegisterInputValueCallback(
-            self.deviceRef, 
+            self.deviceRef,
             self.value_callback,
             None)
 
@@ -436,8 +441,8 @@ class HIDDeviceElement:
         self.name = cftype_to_value(iokit.IOHIDElementGetName(elementRef))
         self.reportID = iokit.IOHIDElementGetReportID(elementRef)
         self.reportSize = iokit.IOHIDElementGetReportSize(elementRef)
-        self.reportCount = iokit.IOHIDElementGetReportCount(elementRef)        
-        self.unit = iokit.IOHIDElementGetUnit(elementRef)        
+        self.reportCount = iokit.IOHIDElementGetReportCount(elementRef)
+        self.unit = iokit.IOHIDElementGetUnit(elementRef)
         self.unitExponent = iokit.IOHIDElementGetUnitExponent(elementRef)
         self.logicalMin = iokit.IOHIDElementGetLogicalMin(elementRef)
         self.logicalMax = iokit.IOHIDElementGetLogicalMax(elementRef)
@@ -455,9 +460,9 @@ class HIDManager:
         self.matching_observers = set()
         self.register_matching_callback()
         self.get_devices()
-        
+
     def get_devices(self):
-        # Tell manager that we are willing to match *any* device.    
+        # Tell manager that we are willing to match *any* device.
         # (Alternatively, we could restrict by device usage, or usage page.)
         iokit.IOHIDManagerSetDeviceMatching(self.managerRef, None)
         # Copy the device set and convert it to python.
@@ -470,17 +475,17 @@ class HIDManager:
 
     def close(self):
         iokit.IOHIDManagerClose(self.managerRef, kIOHIDOptionsTypeNone)
-        
+
     def schedule_with_run_loop(self):
         iokit.IOHIDManagerScheduleWithRunLoop(
-            self.managerRef, 
-            c_void_p(cf.CFRunLoopGetCurrent()), 
+            self.managerRef,
+            c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
-        
+
     def unschedule_from_run_loop(self):
         iokit.IOHIDManagerUnscheduleFromRunLoop(
-            self.managerRef, 
-            c_void_p(cf.CFRunLoopGetCurrent()), 
+            self.managerRef,
+            c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
     def py_matching_callback(self, context, result, sender, device):
@@ -552,7 +557,7 @@ class PygletDevice(Device):
         self._create_controls()
         self._is_open = False
         self._is_exclusive = False
-    
+
     def open(self, window=None, exclusive=False):
         super(PygletDevice, self).open(window, exclusive)
         self.device.open(exclusive)
@@ -607,10 +612,10 @@ class PygletDevice(Device):
             self.device.add_removal_observer(self)
             # Don't need to recreate controls since this is same device.
             # They are indexed by cookie, which is constant.
-            if self._is_open: 
+            if self._is_open:
                 self.device.open(self._is_exclusive)
                 self.device.schedule_with_run_loop()
-        
+
     def device_value_changed(self, hid_device, hid_value):
         # Called by device when input value changes.
         control = self._controls[hid_value.element.cookie]
@@ -631,7 +636,7 @@ class PygletDevice(Device):
                 control = Button(name, raw_name)
             else:
                 continue
-            
+
             control._cookie = element.cookie
 
             self._controls[control._cookie] = control

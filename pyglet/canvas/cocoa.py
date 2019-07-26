@@ -33,18 +33,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 from ctypes import *
-from ctypes import util
 
 from pyglet import app
 from .base import Display, Screen, ScreenMode, Canvas
 
-from pyglet.libs.darwin.cocoapy import *
-
+from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf
+from pyglet.libs.darwin.cocoapy import cfstring_to_string, cfarray_to_list
 
 class CocoaDisplay(Display):
 
     def get_screens(self):
-        maxDisplays = 256 
+        maxDisplays = 256
         activeDisplays = (CGDirectDisplayID * maxDisplays)()
         count = c_uint32()
         quartz.CGGetActiveDisplayList(maxDisplays, activeDisplays, byref(count))
@@ -70,7 +69,7 @@ class CocoaScreen(Screen):
     # However the NSScreens.screens() message currently sends out a warning:
     # "*** -[NSLock unlock]: lock (<NSLock: 0x...> '(null)') unlocked when not locked"
     # on Snow Leopard and apparently causes python to crash on Lion.
-    # 
+    #
     # def get_nsscreen(self):
     #     """Returns the NSScreen instance that matches our CGDirectDisplayID."""
     #     NSScreen = ObjCClass('NSScreen')
@@ -103,7 +102,7 @@ class CocoaScreen(Screen):
         quartz.CGDisplayModeRelease(cgmode)
         return mode
 
-    def set_mode(self, mode): 
+    def set_mode(self, mode):
         assert mode.screen is self
         quartz.CGDisplayCapture(self._cg_display_id)
         quartz.CGDisplaySetDisplayMode(self._cg_display_id, mode.cgmode, None)
@@ -135,7 +134,7 @@ class CocoaScreenMode(ScreenMode):
     def __del__(self):
         quartz.CGDisplayModeRelease(self.cgmode)
         self.cgmode = None
-        
+
     def getBitsPerPixel(self, cgmode):
         # from /System/Library/Frameworks/IOKit.framework/Headers/graphics/IOGraphicsTypes.h
         IO8BitIndexedPixels = "PPPPPPPP"
@@ -151,7 +150,7 @@ class CocoaScreenMode(ScreenMode):
         if pixelEncoding == IO32BitDirectPixels: return 32
         return 0
 
-                   
+
 class CocoaCanvas(Canvas):
 
     def __init__(self, display, screen, nsview):

@@ -35,9 +35,9 @@
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
-from pyglet.libs.darwin.cocoapy import *
+from pyglet.libs.darwin import cocoapy
 
-NSTrackingArea = ObjCClass('NSTrackingArea')
+NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
 
 # Event data helper functions.
 
@@ -62,18 +62,18 @@ def getMousePosition(self, nsevent):
 def getModifiers(nsevent):
     modifiers = 0
     modifierFlags = nsevent.modifierFlags()
-    if modifierFlags & NSAlphaShiftKeyMask:
+    if modifierFlags & cocoapy.NSAlphaShiftKeyMask:
         modifiers |= key.MOD_CAPSLOCK
-    if modifierFlags & NSShiftKeyMask:
+    if modifierFlags & cocoapy.NSShiftKeyMask:
         modifiers |= key.MOD_SHIFT
-    if modifierFlags & NSControlKeyMask:
+    if modifierFlags & cocoapy.NSControlKeyMask:
         modifiers |= key.MOD_CTRL
-    if modifierFlags & NSAlternateKeyMask:
+    if modifierFlags & cocoapy.NSAlternateKeyMask:
         modifiers |= key.MOD_ALT
         modifiers |= key.MOD_OPTION
-    if modifierFlags & NSCommandKeyMask:
+    if modifierFlags & cocoapy.NSCommandKeyMask:
         modifiers |= key.MOD_COMMAND
-    if modifierFlags & NSFunctionKeyMask:
+    if modifierFlags & cocoapy.NSFunctionKeyMask:
         modifiers |= key.MOD_FUNCTION
     return modifiers
 
@@ -83,7 +83,7 @@ def getSymbol(nsevent):
     if symbol is not None:
         return symbol
 
-    chars = cfstring_to_string(nsevent.charactersIgnoringModifiers())
+    chars = cocoapy.cfstring_to_string(nsevent.charactersIgnoringModifiers())
     if chars:
         return charmap.get(chars[0].upper(), None)
 
@@ -91,16 +91,16 @@ def getSymbol(nsevent):
 
 
 class PygletView_Implementation(object):
-    PygletView = ObjCSubclass('NSView', 'PygletView')
+    PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
 
-    @PygletView.method(b'@'+NSRectEncoding+PyObjectEncoding)
+    @PygletView.method(b'@'+cocoapy.NSRectEncoding+cocoapy.PyObjectEncoding)
     def initWithFrame_cocoaWindow_(self, frame, window):
 
-        # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate 
+        # The tracking area is used to get mouseEntered, mouseExited, and cursorUpdate
         # events so that we can custom set the mouse cursor within the view.
         self._tracking_area = None
 
-        self = ObjCInstance(send_super(self, 'initWithFrame:', frame, argtypes=[NSRect]))
+        self = cocoapy.ObjCInstance(cocoapy.send_super(self, 'initWithFrame:', frame, argtypes=[cocoapy.NSRect]))
 
         if not self:
             return None
@@ -109,14 +109,14 @@ class PygletView_Implementation(object):
         self._window = window
         self.updateTrackingAreas()
 
-        # Create an instance of PygletTextView to handle text events. 
+        # Create an instance of PygletTextView to handle text events.
         # We must do this because NSOpenGLView doesn't conform to the
         # NSTextInputClient protocol by default, and the insertText: method will
         # not do the right thing with respect to translating key sequences like
         # "Option-e", "e" if the protocol isn't implemented.  So the easiest
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
-        PygletTextView = ObjCClass('PygletTextView')
+        PygletTextView = cocoapy.ObjCClass('PygletTextView')
         self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
         # Add text view to the responder chain.
         self.addSubview_(self._textview)
@@ -125,12 +125,12 @@ class PygletView_Implementation(object):
     @PygletView.method('v')
     def dealloc(self):
         self._window = None
-        # send_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
+        # cocoapy.end_message(self.objc_self, 'removeFromSuperviewWithoutNeedingDisplay')
         self._textview.release()
         self._textview = None
         self._tracking_area.release()
         self._tracking_area = None
-        send_super(self, 'dealloc')        
+        cocoapy.send_super(self, 'dealloc')
 
     @PygletView.method('v')
     def updateTrackingAreas(self):
@@ -141,7 +141,7 @@ class PygletView_Implementation(object):
             self._tracking_area.release()
             self._tracking_area = None
 
-        tracking_options = NSTrackingMouseEnteredAndExited | NSTrackingActiveInActiveApp | NSTrackingCursorUpdate
+        tracking_options = cocoapy.NSTrackingMouseEnteredAndExited | cocoapy.NSTrackingActiveInActiveApp | cocoapy.NSTrackingCursorUpdate
         frame = self.frame()
 
         self._tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
@@ -151,7 +151,7 @@ class PygletView_Implementation(object):
             None)               # userInfo
 
         self.addTrackingArea_(self._tracking_area)
-    
+
     @PygletView.method('B')
     def canBecomeKeyView(self):
         return True
@@ -163,9 +163,9 @@ class PygletView_Implementation(object):
     ## Event responders.
 
     # This method is called whenever the view changes size.
-    @PygletView.method(b'v'+NSSizeEncoding) 
+    @PygletView.method(b'v'+cocoapy.NSSizeEncoding)
     def setFrameSize_(self, size):
-        send_super(self, 'setFrameSize:', size, argtypes=[NSSize])
+        cocoapy.send_super(self, 'setFrameSize:', size, argtypes=[cocoapy.NSSize])
 
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
@@ -226,15 +226,15 @@ class PygletView_Implementation(object):
                       key.ROPTION: NSRightAlternateKeyMask,
                       key.LCOMMAND: NSLeftCommandKeyMask,
                       key.RCOMMAND: NSRightCommandKeyMask,
-                      key.CAPSLOCK: NSAlphaShiftKeyMask,
-                      key.FUNCTION: NSFunctionKeyMask}
+                      key.CAPSLOCK: cocoapy.NSAlphaShiftKeyMask,
+                      key.FUNCTION: cocoapy.NSFunctionKeyMask}
 
         symbol = keymap.get(nsevent.keyCode(), None)
 
         # Ignore this event if symbol is not a modifier key.  We must check this
         # because e.g., we receive a flagsChanged message when using CMD-tab to
         # switch applications, with symbol == "a" when command key is released.
-        if symbol is None or symbol not in maskForKey: 
+        if symbol is None or symbol not in maskForKey:
             return
 
         modifiers = getModifiers(nsevent)
@@ -251,15 +251,15 @@ class PygletView_Implementation(object):
         # Let arrow keys and certain function keys pass through the responder
         # chain so that the textview can handle on_text_motion events.
         modifierFlags = nsevent.modifierFlags()
-        if modifierFlags & NSNumericPadKeyMask:
+        if modifierFlags & cocoapy.NSNumericPadKeyMask:
             return False
-        if modifierFlags & NSFunctionKeyMask:
-            ch = cfstring_to_string(nsevent.charactersIgnoringModifiers())
-            if ch in (NSHomeFunctionKey, NSEndFunctionKey, 
-                      NSPageUpFunctionKey, NSPageDownFunctionKey):
+        if modifierFlags & cocoapy.NSFunctionKeyMask:
+            ch = cocoapy.cfstring_to_string(nsevent.charactersIgnoringModifiers())
+            if ch in (cocoapy.NSHomeFunctionKey, cocoapy.NSEndFunctionKey,
+                      cocoapy.NSPageUpFunctionKey, cocoapy.NSPageDownFunctionKey):
                 return False
         # Send the key equivalent to the main menu to perform menu items.
-        NSApp = ObjCClass('NSApplication').sharedApplication()
+        NSApp = cocoapy.ObjCClass('NSApplication').sharedApplication()
         NSApp.mainMenu().performKeyEquivalent_(nsevent)
         # Indicate that we've handled the event so system won't beep.
         return True
@@ -275,20 +275,20 @@ class PygletView_Implementation(object):
         x, y = getMousePosition(self, nsevent)
         dx, dy = getMouseDelta(nsevent)
         self._window.dispatch_event('on_mouse_motion', x, y, dx, dy)
-    
+
     @PygletView.method('v@')
     def scrollWheel_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
         scroll_x, scroll_y = getMouseDelta(nsevent)
         self._window.dispatch_event('on_mouse_scroll', x, y, scroll_x, scroll_y)
-    
+
     @PygletView.method('v@')
     def mouseDown_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.LEFT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def mouseDragged_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
@@ -303,14 +303,14 @@ class PygletView_Implementation(object):
         buttons = mouse.LEFT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def rightMouseDown_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def rightMouseDragged_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
@@ -318,21 +318,21 @@ class PygletView_Implementation(object):
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def rightMouseUp_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.RIGHT
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def otherMouseDown_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
         buttons = mouse.MIDDLE
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def otherMouseDragged_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
@@ -340,7 +340,7 @@ class PygletView_Implementation(object):
         buttons = mouse.MIDDLE
         modifiers = getModifiers(nsevent)
         self._window.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
-    
+
     @PygletView.method('v@')
     def otherMouseUp_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
@@ -369,7 +369,7 @@ class PygletView_Implementation(object):
         # Called when mouse cursor enters view.  Unlike mouseEntered:,
         # this method will be called if the view appears underneath a
         # motionless mouse cursor, as can happen during window creation,
-        # or when switching into fullscreen mode.  
+        # or when switching into fullscreen mode.
         # BUG: If the mouse enters the window via the resize control at the
         # the bottom right corner, the resize control will set the cursor
         # to the default arrow and screw up our cursor tracking.
@@ -378,4 +378,4 @@ class PygletView_Implementation(object):
             self._window.set_mouse_platform_visible()
 
 
-PygletView = ObjCClass('PygletView')
+PygletView = cocoapy.ObjCClass('PygletView')
