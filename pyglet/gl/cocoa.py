@@ -43,7 +43,7 @@ from pyglet.gl import agl
 
 from pyglet.canvas.cocoa import CocoaCanvas
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, quartz
 
 
 NSOpenGLPixelFormat = cocoapy.ObjCClass('NSOpenGLPixelFormat')
