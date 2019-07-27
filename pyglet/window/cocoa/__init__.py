@@ -52,7 +52,7 @@ from pyglet.event import EventDispatcher
 
 from pyglet.canvas.cocoa import CocoaCanvas
 
-from pyglet.libs.darwin import cocoapy
+from pyglet.libs.darwin import cocoapy, CGPoint
 
 from .systemcursor import SystemCursor
 from .pyglet_delegate import PygletDelegate
