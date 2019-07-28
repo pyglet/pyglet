@@ -1075,6 +1075,23 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
+    def get_pixel_ratio(self):
+        """Return the framebuffer/window size ratio.
+
+        Some platforms and/or window system do supports subpixel scaling
+        making the framebuffer size larger than the window size.
+        Retina screens on OS X and Gnome on Linux are some examples.
+
+        On a Retina systems the returned ratio would usually be 2.0 as a
+        window of size 500 x 500 would have a frambuffer of 1000 x 1000.
+        A pixel ratio between 1.0 and 2.0 should also be expected and
+        possibly also above 2.0 in the future.
+
+        :rtype: float
+        :return: The framebuffer/window size ratio
+        """
+        return self.get_framebuffer_size()[0] / self.width
+
     def get_size(self):
         """Return the current size of the window.
 
