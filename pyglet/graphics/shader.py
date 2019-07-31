@@ -332,7 +332,11 @@ class ShaderProgram:
             if location == -1:
                 # May be in a UniformBlock. Currently we only
                 # support Named Uniform Blocks. Try to parse it:
-                block_name, uniform_name = uniform_name.split(".")
+                try:
+                    block_name, uniform_name = uniform_name.split(".")
+                except ValueError:
+                    block_name = uniform_name
+                    
                 if block_name not in block_uniforms:
                     block_uniforms[block_name] = {}
 
