@@ -1,0 +1,8 @@
+dist: xenial
+language: python
+python: 3.7
+services: xvfb
+before_install: pip install --upgrade pip
+install: pip install --upgrade flake8  # pytest
+before_script: flake8 . --count --exclude=./.*,*/future/* --select=E9,F63,F7,F82 --show-source --statistics || true
+script: true  # pytest
