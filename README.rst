@@ -1,4 +1,4 @@
-.. image:: https://badge.fury.io/py/cachet-client.svg
+.. image:: https://badge.fury.io/py/pyglet.svg
    :target: https://pypi.python.org/pypi/pyglet
 
 pyglet
