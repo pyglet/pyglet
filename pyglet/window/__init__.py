@@ -36,7 +36,7 @@
 """Windowing and user-interface events.
 
 This module allows applications to create and display windows with an
-OpenGL context.  Windows can be created with a variety of border styles 
+OpenGL context.  Windows can be created with a variety of border styles
 or set fullscreen.
 
 You can register event handlers for keyboard, mouse and window events.
@@ -137,6 +137,7 @@ import math
 import pyglet
 from pyglet import gl
 from pyglet.event import EventDispatcher
+from pyglet.window import key
 import pyglet.window.key
 import pyglet.window.event
 
@@ -181,8 +182,8 @@ class MouseCursor(object):
         """Abstract render method.
 
         The cursor should be drawn with the "hot" spot at the given
-        coordinates.  The projection is set to the pyglet default (i.e., 
-        orthographic in window-space), however no other aspects of the 
+        coordinates.  The projection is set to the pyglet default (i.e.,
+        orthographic in window-space), however no other aspects of the
         state can be assumed.
 
         :Parameters:
@@ -301,8 +302,8 @@ class Projection3D(Projection):
 
 
 def _PlatformEventHandler(data):
-    """Decorator for platform event handlers.  
-    
+    """Decorator for platform event handlers.
+
     Apply giving the platform-specific data needed by the window to associate
     the method with an event.  See platform-specific subclasses of this
     decorator for examples.
@@ -402,19 +403,19 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: A mouse cursor indicating the element can be resized from the
     #: upper-right corner.
     CURSOR_SIZE_UP_RIGHT = 'size_up_right'
-    #: A mouse cursor indicating the element can be resized from the right 
+    #: A mouse cursor indicating the element can be resized from the right
     #: border.
     CURSOR_SIZE_RIGHT = 'size_right'
     #: A mouse cursor indicating the element can be resized from the lower-right
     #: corner.
     CURSOR_SIZE_DOWN_RIGHT = 'size_down_right'
-    #: A mouse cursor indicating the element can be resized from the bottom 
+    #: A mouse cursor indicating the element can be resized from the bottom
     #: border.
     CURSOR_SIZE_DOWN = 'size_down'
     #: A mouse cursor indicating the element can be resized from the lower-left
     #: corner.
     CURSOR_SIZE_DOWN_LEFT = 'size_down_left'
-    #: A mouse cursor indicating the element can be resized from the left 
+    #: A mouse cursor indicating the element can be resized from the left
     #: border.
     CURSOR_SIZE_LEFT = 'size_left'
     #: A mouse cursor indicating the element can be resized from the upper-left
@@ -513,7 +514,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         where they are not specified.
 
         The `display`, `screen`, `config` and `context` parameters form
-        a hierarchy of control: there is no need to specify more than 
+        a hierarchy of control: there is no need to specify more than
         one of these.  For example, if you specify `screen` the `display`
         will be inferred, and a default `config` and `context` will be
         created.
@@ -667,7 +668,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             `changes` : list of str
                 List of attribute names that were changed since the last
                 `_create` or `_recreate`.  For example, ``['fullscreen']``
-                is given if the window is to be toggled to or from fullscreen. 
+                is given if the window is to be toggled to or from fullscreen.
         """
         raise NotImplementedError('abstract')
 
@@ -841,8 +842,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """Draw the custom mouse cursor.
 
         If the current mouse cursor has ``drawable`` set, this method
-        is called before the buffers are flipped to render it.  
-        
+        is called before the buffers are flipped to render it.
+
         This method always leaves the ``GL_MODELVIEW`` matrix as current,
         regardless of what it was set to previously.  No other GL state
         is affected.
@@ -1060,7 +1061,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     def set_size(self, width, height):
         """Resize the window.
-        
+
         The behaviour is undefined if the window is not resizable, or if
         it is currently fullscreen.
 
@@ -1085,7 +1086,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         On a Retina systems the returned ratio would usually be 2.0 as a
         window of size 500 x 500 would have a frambuffer of 1000 x 1000.
         Fractional values between 1.0 and 2.0, as well as values above
-        2.0 may also be encountered. 
+        2.0 may also be encountered.
 
         :rtype: float
         :return: The framebuffer/window size ratio
@@ -1302,7 +1303,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def set_icon(self, *images):
         """Set the window icon.
 
-        If multiple images are provided, one with an appropriate size 
+        If multiple images are provided, one with an appropriate size
         will be selected (if the correct size is not provided, the image
         will be scaled).
 
@@ -1312,7 +1313,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         :Parameters:
             `images` : sequence of `pyglet.image.AbstractImage`
                 List of images to use for the window icon.
-        
+
         """
         pass
 
@@ -1360,7 +1361,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     The key symbol pressed.
                 `modifiers` : int
                     Bitwise combination of the key modifiers active.
-            
+
             :event:
             """
 
@@ -1519,7 +1520,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 `modifiers` : int
                     Bitwise combination of any keyboard modifiers currently
                     active.
-                
+
             :event:
             """
 
@@ -1691,7 +1692,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         def on_context_lost(self):
             """The window's GL context was lost.
-            
+
             When the context is lost no more GL methods can be called until it
             is recreated.  This is a rare event, triggered perhaps by the user
             switching to an incompatible video mode.  When it occurs, an
@@ -1778,12 +1779,12 @@ class FPSDisplay(object):
 
     The style and position of the display can be modified via the :py:func:`~pyglet.text.Label`
     attribute.  Different text can be substituted by overriding the
-    `set_fps` method.  The display can be set to update more or less often 
+    `set_fps` method.  The display can be set to update more or less often
     by setting the `update_period` attribute.
 
     :Ivariables:
         `label` : Label
-            The text label displaying the framerate. 
+            The text label displaying the framerate.
 
     """
 

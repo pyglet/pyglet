@@ -40,7 +40,7 @@ functions.  Functions have identical signatures to their C counterparts.  For
 example::
 
     from pyglet.gl import *
-    
+
     # [...omitted: set up a GL context and framebuffer]
     glBegin(GL_QUADS)
     glVertex3f(0, 0, 0)
@@ -48,7 +48,7 @@ example::
     glVertex3f(0.1, 0.2, 0.3)
     glEnd()
 
-OpenGL is documented in full at the `OpenGL Reference Pages`_.  
+OpenGL is documented in full at the `OpenGL Reference Pages`_.
 
 The `OpenGL Programming Guide`_ is a popular reference manual organised by
 topic.  The free online version documents only OpenGL 1.1.  `Later editions`_
@@ -195,7 +195,7 @@ if _pyglet.options['debug_texture']:
         else:
             for i in range(n):
                 _debug_texture_dealloc(textures[i].value)
-        
+
         return _glDeleteTextures(n, textures)
 
 def _create_shadow_window():
@@ -204,7 +204,7 @@ def _create_shadow_window():
     import pyglet
     if not pyglet.options['shadow_window'] or _is_pyglet_doc_run:
         return
-    
+
     from pyglet.window import Window
     _shadow_window = Window(width=1, height=1, visible=False)
     _shadow_window.switch_to()
@@ -222,7 +222,7 @@ elif compat_platform.startswith('linux'):
     from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
-del base
+del base  # noqa: F821
 
 # XXX remove
 _shadow_window = None
@@ -230,8 +230,8 @@ _shadow_window = None
 # Import pyglet.window now if it isn't currently being imported (this creates
 # the shadow window).
 if (not _is_pyglet_doc_run and
-    'pyglet.window' not in _sys.modules and 
+    'pyglet.window' not in _sys.modules and
     _pyglet.options['shadow_window']):
-    # trickery is for circular import 
+    # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window

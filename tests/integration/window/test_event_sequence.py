@@ -16,7 +16,7 @@ class EventSequenceFixture(object):
         self.received_events = queue.Queue()
 
     def create_window(self, **kwargs):
-        w = event_loop.create_window(**kwargs)
+        w = self.event_loop.create_window(**kwargs)
         w.push_handlers(self)
         return w
 

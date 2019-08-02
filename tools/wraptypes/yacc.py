@@ -477,7 +477,7 @@ def validate_dict(d):
                 doc = v.__doc__.split(" ")
                 if doc[1] == ':':
                     sys.stderr.write("%s:%d: Warning. Possible grammar rule '%s' defined without p_ prefix.\n" % (v.func_code.co_filename, v.func_code.co_firstlineno,n))
-            except StandardError:
+            except Exception:
                 pass
 
 # -----------------------------------------------------------------------------
@@ -791,7 +791,7 @@ def add_function(f):
                 error += e
 
 
-            except StandardError:
+            except Exception:
                 sys.stderr.write("%s:%d: Syntax error in rule '%s'\n" % (file,dline,ps))
                 error -= 1
     else:
@@ -1766,7 +1766,7 @@ def lr_parse_table(method):
                                 action[st,a] = j
                                 actionp[st,a] = p
 
-            except StandardError as e:
+            except Exception as e:
                 raise YaccError("Hosed in lr_parse_table", e)
 
         # Print the actions associated with each terminal
@@ -1938,6 +1938,7 @@ def lr_read_tables(module=tab_module,optimize=0):
     global _lr_action, _lr_goto, _lr_productions, _lr_method
     try:
         exec("import %s as parsetab" % module)
+        global parsetab  # declare the name of the imported module
 
         if (optimize) or (Signature.digest() == parsetab._lr_signature):
             _lr_action = parsetab._lr_action
@@ -2055,7 +2056,7 @@ def yacc(method=default_lr, debug=yaccdebug, module=None, tabmodule=tab_module, 
                         raise TypeError
                     v1 = [x.split(".") for x in v]
                     Requires[r] = v1
-                except StandardError:
+                except Exception:
                     print("Invalid specification for rule '%s' in require. Expected a list of strings" % r)
 
 

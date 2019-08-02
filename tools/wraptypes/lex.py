@@ -175,6 +175,7 @@ class Lexer:
     # ------------------------------------------------------------
     def readtab(self,tabfile,fdict):
         exec("import %s as lextab" % tabfile)
+        global lextab  # declare the name of the imported module
         self.lextokens      = lextab._lextokens
         self.lexreflags     = lextab._lexreflags
         self.lexliterals    = lextab._lexliterals
