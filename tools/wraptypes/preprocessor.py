@@ -13,6 +13,7 @@ Reference is C99:
   * Also understands GNU #include_next
 
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -567,7 +568,7 @@ class PreprocessorGrammar(Grammar):
                         return
 
             # TODO
-            print >> sys.stderr, 'Invalid #include'
+            print('Invalid #include', file=sys.stderr)
 
     def p_define_object(self, p):
         '''define_object : DEFINE IDENTIFIER replacement_list NEWLINE 
@@ -774,11 +775,11 @@ class PreprocessorGrammar(Grammar):
     def p_error(self, t):
         if not t:
             # Crap, no way to get to Parser instance.  FIXME TODO
-            print >> sys.stderr, 'Syntax error at end of file.'
+            print('Syntax error at end of file.', file=sys.stderr)
         else:
             # TODO
-            print >> sys.stderr, '%s:%d Syntax error at %r' % \
-                (t.lexer.filename, t.lexer.lineno, t.value)
+            print('%s:%d Syntax error at %r' % \
+                (t.lexer.filename, t.lexer.lineno, t.value), file=sys.stderr)
             #t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
             #     t.lexer.filename, t.lexer.lineno)
         # Don't alter lexer: default behaviour is to pass error production
@@ -1101,13 +1102,13 @@ class PreprocessorParser(yacc.Parser):
         if output:
             output = output.split('\n')
             while output and not '#include <...>' in output[0]:
-                print('Skipping:', output[0])
+                print(('Skipping:', output[0]))
                 del output[0]
             if output:
                 del output[0]  # Remove start line
                 while output and not 'End of search list' in output[0]:
                     self.include_path.append(output[0].strip())
-                    print('Adding:', output[0].strip())
+                    print(('Adding:', output[0].strip()))
                     del output[0]
 
     def parse(self, filename=None, data=None, namespace=None, debug=False): 
@@ -1129,7 +1130,7 @@ class PreprocessorParser(yacc.Parser):
         return yacc.Parser.parse(self, debug=debug)
 
     def push_file(self, filename, data=None):
-        print >> sys.stderr, filename
+        print(filename, file=sys.stderr)
         if not data:
             data = open(filename).read()
         self.lexer.push_input(data, filename)
@@ -1139,7 +1140,7 @@ class PreprocessorParser(yacc.Parser):
         if path:
             self.push_file(path)
         else:
-            print >> sys.stderr, '"%s" not found' % header # TODO
+            print('"%s" not found' % header, file=sys.stderr) # TODO
 
     def include_system(self, header):
         if header in self.system_headers:
@@ -1150,7 +1151,7 @@ class PreprocessorParser(yacc.Parser):
         if path:
             self.push_file(path)
         else:
-            print >> sys.stderr, '"%s" not found' % header # TODO
+            print('"%s" not found' % header, file=sys.stderr) # TODO
 
     def include_next(self, header, reference):
         # XXX doesn't go via get_system_header
@@ -1163,8 +1164,8 @@ class PreprocessorParser(yacc.Parser):
                     return
                 elif p == reference:
                     next = True
-        print >> sys.stderr, '%s: cannot include_next from %s' % \
-            (header, reference) # TODO
+        print('%s: cannot include_next from %s' % \
+            (header, reference), file=sys.stderr) # TODO
 
     def import_(self, header):
         path = self.get_header_path(header)
@@ -1173,7 +1174,7 @@ class PreprocessorParser(yacc.Parser):
                 self.imported_headers.add(path)
                 self.push_file(path)
         else:
-            print >> sys.stderr, '"%s" not found' % header # TODO
+            print('"%s" not found' % header, file=sys.stderr) # TODO
 
     def import_system(self, header):
         if header in self.system_headers:
@@ -1187,7 +1188,7 @@ class PreprocessorParser(yacc.Parser):
                 self.imported_headers.add(path)
                 self.push_file(path)
         else:
-            print >> sys.stderr, '"%s" not found' % header # TODO
+            print('"%s" not found' % header, file=sys.stderr) # TODO
  
     def get_header_path(self, header):
         p = os.path.join(os.path.dirname(self.lexer.filename), header)
@@ -1226,7 +1227,7 @@ class PreprocessorParser(yacc.Parser):
                     return p
 
     def error(self, message, filename, line):
-        print >> sys.stderr, '%s:%d #error %s' % (filename, line, message)
+        print('%s:%d #error %s' % (filename, line, message), file=sys.stderr)
     
     def condition_if(self, result):
         self.condition_stack.append(
@@ -1480,7 +1481,7 @@ class PreprocessorNamespace(EvaluationContext):
                     i += 1
                 else:
                     # TODO
-                    print >> sys.stderr, 'Invalid use of "defined"'
+                    print('Invalid use of "defined"', file=sys.stderr)
                     result = 0
                 t = lex.LexToken()
                 t.value = str(int(result))
@@ -1503,4 +1504,4 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     parser = PreprocessorParser()
     parser.parse(filename, debug=True)
-    print ' '.join([str(t.value) for t in parser.output])
+    print(' '.join([str(t.value) for t in parser.output]))
