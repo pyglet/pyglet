@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block section %}<span class="pipe-colored">|</span> Blog{% endblock %}
+{% block nav_main %}
+{% if config.THEME_SETTINGS.atom_enable and config.THEME_SETTINGS.atom_enable.lower() not in ["false", "f", "no", "n"] %}
+<a id="rss-nav-link" data-nav-section="RSS" href="{{ '/blog/feed.xml' | url }}">RSS</a>
+{% endif %}
+{% endblock %}
+{% block body %}
+<div class="blog-content-container" data-section="Blog">
+  {% block blogmaintitle %}
+  {% endblock %}
+  <div id="blog-center" class="center">
+    {% block blogbody %}
+    {% endblock %}
+  </div>
+</div>
+{% endblock %}

@@ -86,6 +86,6 @@ w2.switch_to()
 setup()
 
 # On some platforms the actual framebuffer size is bigger than the window.
-pixel_ratio = w1.get_framebuffer_size()[0] / w1.width
+pixel_ratio = w1.get_pixel_ratio()
 
 pyglet.app.run()

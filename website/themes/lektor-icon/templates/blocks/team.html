@@ -1,0 +1,46 @@
+{% if this.members %}
+<div class="container">
+  {% for member in this.members.blocks %}
+  <div class="col-md-4 card-outer">
+    <div class="card person">
+      <div class="card-inner">
+        {% if member.image %}
+        {% set member_img_file = record.attachments.get(member.image) %}
+        {% endif %}
+        {% if member.image and member_img_file.thumbnail %}
+        <img alt="{{ member.name | striptags | striptags }} photo" src="{{ member_img_file.thumbnail(width=512) | url }}" class="img-responsive" srcset="{{ member_img_file.thumbnail(width=512) | url }} 1x, {{ member_img_file.thumbnail(width=1024) | url }} 2x">
+        {% elif member.image and member.image.split('.')[-1].lower() in ['svg', 'svgz'] %}
+        <img alt="{{ member.name | striptags | striptags }} photo" src="{{ member.image | url }}" class="img-responsive">
+        {% else %}
+        <img alt="Placeholder person" src="{{ '/static/images/placeholder_person.png' | asseturl }}" class="img-responsive">
+        {% endif %}
+        <h3>{{ member.name }}</h3>
+        <h4>{{ member.position }}</h4>
+        {{ member.description }}
+        <ul class="social">
+          {% if  member.website and member.website.url != '' %}
+          <li><a href="{{ member.website }}" aria-label="Website"><i class="icon-globe2"></i></a></li>
+          {% endif %}
+          {% if member.facebook and member.facebook.url != '' %}
+          <li><a href="{{ member.facebook }}" aria-label="Facebook"><i class="icon-facebook"></i></a></li>
+          {% endif %}
+          {% if member.twitter and member.twitter.url != '' %}
+          <li><a href="{{ member.twitter }}" aria-label="Twitter"><i class="icon-twitter"></i></a></li>
+          {% endif %}
+          {% if member.instagram and member.instagram.url != '' %}
+          <li><a href="{{ member.instagram }}" aria-label="Instagram"><i class="icon-instagram"></i></a></li>
+          {% endif %}
+          {% if member.github and member.github.url != '' %}
+          <li><a href="{{ member.github }}" aria-label="Github"><i class="icon-github"></i></a></li>
+          {% endif %}
+          {% if member.github and member.linkedin.url != '' %}
+          <li><a href="{{ member.linkedin }}" aria-label="Linkedin"><i class="icon-linkedin"></i></a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div class="card-spacer"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

@@ -1,0 +1,7 @@
+_model: blog
+---
+sort_key: 1
+---
+title: Latest Blog Posts
+---
+allow_comments_default: true

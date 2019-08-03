@@ -1,0 +1,22 @@
+{% extends "blog-layout.html" %}
+{% from "macros/blog.html" import render_blog_post %}
+{% from "macros/pagination.html" import render_pagination %}
+
+{% block title %}Blog{% endblock %}
+
+{% block blogmaintitle %}
+{% if this.title %}
+<div id="blog-main-title" class="text-center fh5co-heading">
+  <h1>{{ this.title }}</h1>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block blogbody %}
+{% if this.pagination.items %}
+{% for child in this.pagination.items %}
+{{ render_blog_post(child, from_index=true) }}
+{% endfor %}
+{% endif %}
+{{ render_pagination(this.pagination) }}
+{% endblock %}

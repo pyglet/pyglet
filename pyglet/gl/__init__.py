@@ -38,7 +38,7 @@
 This package imports all OpenGL, GLU and registered OpenGL extension
 functions.  Functions have identical signatures to their C counterparts.
 
-OpenGL is documented in full at the `OpenGL Reference Pages`_.  
+OpenGL is documented in full at the `OpenGL Reference Pages`_.
 
 The `OpenGL Programming Guide`_, also known as "The Red Book", is a popular
 reference manual organised by topic. It is available in digital and paper

@@ -1,0 +1,12 @@
+{% extends "blog-layout.html" %}
+{% from "macros/blog.html" import render_blog_post %}
+{% block title %}Blog{% if this.title %} | {{ this.title }}{% endif %}{% endblock %}
+{% block blogbody %}
+{{ render_blog_post(this) }}
+{% if config.THEME_SETTINGS.disqus_name and not this.allow_comments == False and (this.allow_comments or this.parent.allow_comments_default) %}
+<div class="comment-box">
+  <h2>Comments</h2>
+  {{ render_disqus_comments() }}
+</div>
+{% endif %}
+{% endblock %}
