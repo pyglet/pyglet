@@ -14,5 +14,5 @@ addons:
 before_install: pip install --upgrade pip flake8 pytest
 install: python setup.py install
 before_script: flake8 . --count --exclude=./.*,*/future/* --select=E9,F63,F7,F82 --show-source --statistics || true
-script: pytest
+script: pytest --ignore=tests/base --ignore=tests/interactive
 # after_success: coveralls
