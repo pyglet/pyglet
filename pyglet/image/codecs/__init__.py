@@ -39,7 +39,7 @@ Modules must subclass ImageDecoder and ImageEncoder for each method of
 decoding/encoding they support.
 
 Modules must also implement the two functions::
-    
+
     def get_decoders():
         # Return a list of ImageDecoder instances or []
         return []
@@ -47,7 +47,7 @@ Modules must also implement the two functions::
     def get_encoders():
         # Return a list of ImageEncoder instances or []
         return []
-    
+
 """
 from builtins import object
 
@@ -178,7 +178,7 @@ def add_encoders(module):
             if extension not in _encoder_extensions:
                 _encoder_extensions[extension] = []
             _encoder_extensions[extension].append(encoder)
- 
+
 
 def add_default_image_codecs():
     # Add the codecs we know about.  These should be listed in order of
@@ -195,7 +195,7 @@ def add_default_image_codecs():
     # Mac OS X default: Quartz
     if compat_platform == 'darwin':
         try:
-            import pyglet.image.codecs.quartz
+            from pyglet.image.codecs import quartz
             add_encoders(quartz)
             add_decoders(quartz)
         except ImportError:
@@ -204,7 +204,7 @@ def add_default_image_codecs():
     # Windows XP default: GDI+
     if compat_platform in ('win32', 'cygwin'):
         try:
-            import pyglet.image.codecs.gdiplus
+            from pyglet.image.codecs import gdiplus
             add_encoders(gdiplus)
             add_decoders(gdiplus)
         except ImportError:
@@ -213,7 +213,7 @@ def add_default_image_codecs():
     # Linux default: GdkPixbuf 2.0
     if compat_platform.startswith('linux'):
         try:
-            import pyglet.image.codecs.gdkpixbuf2
+            from pyglet.image.codecs import gdkpixbuf2
             add_encoders(gdkpixbuf2)
             add_decoders(gdkpixbuf2)
         except ImportError:
@@ -221,7 +221,7 @@ def add_default_image_codecs():
 
     # Fallback: PIL
     try:
-        import pyglet.image.codecs.pil
+        from pyglet.image.codecs import pil
         add_encoders(pil)
         add_decoders(pil)
     except ImportError:
@@ -229,7 +229,7 @@ def add_default_image_codecs():
 
     # Fallback: PNG loader (slow)
     try:
-        import pyglet.image.codecs.png
+        from pyglet.image.codecs import png
         add_encoders(png)
         add_decoders(png)
     except ImportError:
@@ -237,7 +237,7 @@ def add_default_image_codecs():
 
     # Fallback: BMP loader (slow)
     try:
-        import pyglet.image.codecs.bmp
+        from pyglet.image.codecs import bmp
         add_encoders(bmp)
         add_decoders(bmp)
     except ImportError:
