@@ -1,6 +1,5 @@
 dist: xenial
 language: python
-python: 3.7
 services: xvfb
 addons:
   apt:
@@ -11,6 +10,13 @@ addons:
     # - python3-gi
     # - python3-gi-cairo
     # - python-gst-1.0
+matrix:
+  include:
+    - python: 2.7
+    - python: 3.7
+    - os: osx
+      osx_image: xcode11
+      language: minimal
 before_install: pip install --upgrade pip flake8 pytest
 install: python setup.py install
 before_script: flake8 . --count --exclude=./.*,*/future/* --select=E9,F63,F7,F82 --show-source --statistics || true
