@@ -1,0 +1,31 @@
+{% if this.video_url and this.video_url.url != '' %}
+<div class="fh5co-video">
+  <a href="{{ this.video_url }}" class="popup-youtube"><i class="icon-play2"></i></a>
+  <span>Watch video</span>
+</div>
+{% endif %}
+{% if this.services %}
+<div class="container">
+  {% for service in this.services.blocks %}
+  <div class="col-md-4 card-outer">
+    <div class="card service">
+      <div class="card-inner">
+        {% if service.icon %}
+        {% set service_img_file = record.attachments.get(service.icon) %}
+        <div class="icon">
+          {% if service_img_file.thumbnail %}
+          <img alt="{{ service.title | striptags | striptags }} photo" src="{{ service_img_file.thumbnail(width=640) | url }}" class="img-responsive center" srcset="{{ service_img_file.thumbnail(width=640) | url }} 1x, {{ service_img_file.thumbnail(width=1280) | url }} 2x">
+          {% elif service.icon.split('.')[-1].lower() in ['svg', 'svgz'] %}
+          <img alt="{{ service.title | striptags | striptags }} photo" src="{{ service.icon | url }}" class="img-responsive center">
+          {% endif %}
+        </div>
+        {% endif %}
+        <h3>{{ service.title }}</h3>
+        {{ service.description }}
+      </div>
+      <div class="card-spacer"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

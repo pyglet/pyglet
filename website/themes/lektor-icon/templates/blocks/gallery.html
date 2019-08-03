@@ -1,0 +1,34 @@
+{% if this.gallery_items %}
+{% for gallery in this.gallery_items.blocks %}
+{% if gallery.image %}
+{% set gallery_img_file = record.attachments.get(gallery.image) %}
+{% set is_svg = gallery.image.split('.')[-1].lower() in ['svg', 'svgz'] %}
+{% endif %}
+{% set gallery_class_string = 'fh5co-item' %}
+{% if gallery.url and gallery.url.url != '' and (gallery.direct_link or not gallery.image) %}
+{% set gallery_link = gallery.url %}
+{% elif gallery.image and (gallery_img_file.thumbnail or is_svg) %}
+{% set gallery_link = gallery.image %}
+{% set gallery_class_string = gallery_class_string ~ ' image-popup' %}
+{% else %}
+{% set gallery_link = '' %}
+{% endif %}
+{% if this.show_titles %}
+{% set gallery_class_string = gallery_class_string ~ ' gallery-item-title' %}
+{% endif %}
+<a href="{{ gallery_link }}" class="{{ gallery_class_string }}"{% if gallery.image and (gallery_img_file.thumbnail or is_svg) %} style="background-image: url({% if gallery_img_file.thumbnail %}{{ gallery_img_file.thumbnail(width=1024) | url }}{% else %}{{ gallery.image | url }}{% endif %})"{% endif %}>
+  {% if this.show_titles %}
+  <h3>{{ gallery.title }}</h3>
+  {% endif %}
+  <div class="fh5co-overlay"></div>
+  <div class="fh5co-copy">
+    <div class="fh5co-copy-inner">
+      <h2>{{ gallery.title }}</h2>
+      {% if gallery.subtitle %}
+      <h3>{{ gallery.subtitle }}</h3>
+      {% endif %}
+    </div>
+  </div>
+</a>
+{% endfor %}
+{% endif %}

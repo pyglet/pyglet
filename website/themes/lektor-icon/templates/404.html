@@ -1,0 +1,32 @@
+{% extends "page.html" %}
+{% block stylesheets %}
+<style>
+  {% if this.bg_image %}
+  {% set error_img_file = this.attachments.get(this.bg_image) %}
+  {% set is_svg = this.bg_image.split('.')[-1].lower() in ['svg', 'svgz'] %}
+  {% if error_img_file.thumbnail %}
+  {% if this.bg_image_fadeout and (this.bg_image_fadeout >= 0.0) and (this.bg_image_fadeout <= 1.0) %}
+    {% set bg_image_fadeout = this.bg_image_fadeout %}
+  {% else %}
+    {% set bg_image_fadeout = 0 %}
+  {% endif %}
+  #error-page {
+    background-image: linear-gradient(rgba(255, 255, 255, {{ bg_image_fadeout }}), rgba(255, 255, 255, {{ bg_image_fadeout }})), url("{{ error_img_file.thumbnail(width=1920) | url }}");
+  }
+  @media ((min-device-width: 1921px) or ((min-device-width: 1281px) and (min-resolution: 102dpi)) or ((min-device-width: 961px) and (min-resolution: 152dpi))) {
+    #error-page {
+      background-image: linear-gradient(rgba(255, 255, 255, {{ bg_image_fadeout }}), rgba(255, 255, 255, {{ bg_image_fadeout }})), url("{{ error_img_file.thumbnail(width=3840) | url }}")
+    }
+  }
+  {% elif is_svg %}
+  #error-page {
+    background-image: url("{{ this.bg_image | url }}");
+  }
+  {% endif %}
+  {% endif %}
+</style>
+{% endblock %}
+{% block pageid %}error-page{% endblock %}
+{% block pagebody %}
+{{ this.message }}
+{% endblock %}

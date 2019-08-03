@@ -17,8 +17,12 @@ matrix:
     - os: osx
       osx_image: xcode11
       language: minimal
-before_install: pip install --upgrade pip flake8 pytest
+before_install: pip install --upgrade pip flake8 pytest lektor
 install: python setup.py install
 before_script: flake8 . --count --exclude=./.*,*/future/* --select=E9,F63,F7,F82 --show-source --statistics || true
 script: pytest --ignore=tests/base --ignore=tests/interactive
 # after_success: coveralls
+deploy:
+  # Deploy static website to Github Pages
+  provider: script
+  script: "lektor --project website deploy"
