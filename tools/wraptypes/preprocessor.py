@@ -146,7 +146,7 @@ punctuators = {
 
 def punctuator_regex(punctuators):
     punctuator_regexes = [v[0] for v in punctuators.values()]
-    punctuator_regexes.sort(lambda a, b: -cmp(len(a), len(b)))
+    punctuator_regexes.sort(key=len, reverse=True)
     return '(%s)' % '|'.join(punctuator_regexes)
 
 def t_clinecomment(t):
