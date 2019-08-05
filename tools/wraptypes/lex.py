@@ -646,7 +646,7 @@ def lex(module=None,object=None,debug=0,optimize=0,lextab="lextab",reflags=0,now
 
     # Sort the functions by line number
     for f in funcsym.values():
-        f.sort(lambda x,y: cmp(x[1].func_code.co_firstlineno,y[1].func_code.co_firstlineno))
+        f.sort(key=lambda func: func[1].__code__.co_firstlineno)
 
     # Sort the strings by regular expression length
     for s in strsym.values():

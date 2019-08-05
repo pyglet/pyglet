@@ -2117,7 +2117,7 @@ def yacc(method=default_lr, debug=yaccdebug, module=None, tabmodule=tab_module, 
             raise YaccError("no rules of the form p_rulename are defined.")
 
         # Sort the symbols by line number
-        symbols.sort(lambda x,y: cmp(x.func_code.co_firstlineno,y.func_code.co_firstlineno))
+        symbols.sort(key=lambda func: func.__code__.co_firstlineno)
 
         # Add all of the symbols to the grammar
         for f in symbols:
