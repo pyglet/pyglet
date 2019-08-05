@@ -1,0 +1,19 @@
+@charset "UTF-8";
+
+/* Site custom styles */
+
+.red-text-test {
+  color: red;
+}
+
+.hero-section .container .col-md-6 {
+  float: left;
+}
+
+.hero-section .js-fullheight-home h1 {
+  margin-top: 75px;
+}
+
+.hero-section .js-fullheight-home h2 {
+  color: #ffffff;
+}

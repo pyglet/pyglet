@@ -8,6 +8,7 @@ Usage example::
     >>> from GL import *
 
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -54,7 +55,7 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
     def print_preamble(self):
         import textwrap
         import time
-        print >> self.file, textwrap.dedent("""
+        print(textwrap.dedent("""
             '''Wrapper for %(library)s
             
             Generated with:
@@ -94,37 +95,37 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
             'date': time.ctime(),
             'class': self.__class__.__name__,
             'argv': ' '.join(sys.argv),
-        }).lstrip()
+        }).lstrip(), file=self.file)
 
     def print_link_modules_imports(self):
         for name in self.link_modules:
-            print >> self.file, 'import %s' % name
-        print >> self.file
+            print('import %s' % name, file=self.file)
+        print(file=self.file)
 
     def print_epilogue(self):
-        print >> self.file
-        print >> self.file,  '\n'.join(textwrap.wrap(
+        print(file=self.file)
+        print('\n'.join(textwrap.wrap(
             '__all__ = [%s]' % ', '.join([repr(n) for n in self.all_names]),
             width=78,
-            break_long_words=False))
+            break_long_words=False)), file=self.file)
 
     def handle_ctypes_constant(self, name, value, filename, lineno):
         if self.does_emit(name, filename):
-            print >> self.file, '%s = %r' % (name, value),
-            print >> self.file, '\t# %s:%d' % (filename, lineno)
+            print('%s = %r' % (name, value), end=' ', file=self.file)
+            print('\t# %s:%d' % (filename, lineno), file=self.file)
             self.all_names.append(name)
 
     def handle_ctypes_type_definition(self, name, ctype, filename, lineno):
         if self.does_emit(name, filename):
             self.all_names.append(name)
             if name in self.linked_symbols:
-                print >> self.file, '%s = %s' % \
-                    (name, self.linked_symbols[name])
+                print('%s = %s' % \
+                    (name, self.linked_symbols[name]), file=self.file)
             else:
                 ctype.visit(self)
                 self.emit_type(ctype)
-                print >> self.file, '%s = %s' % (name, str(ctype)),
-                print >> self.file, '\t# %s:%d' % (filename, lineno)
+                print('%s = %s' % (name, str(ctype)), end=' ', file=self.file)
+                print('\t# %s:%d' % (filename, lineno), file=self.file)
         else:
             self.known_types[name] = (ctype, filename, lineno)
 
@@ -133,14 +134,14 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
         for s in t.get_required_type_names():
             if s in self.known_types:
                 if s in self.linked_symbols:
-                    print >> self.file, '%s = %s' % (s, self.linked_symbols[s])
+                    print('%s = %s' % (s, self.linked_symbols[s]), file=self.file)
                 else:
                     s_ctype, s_filename, s_lineno = self.known_types[s]
                     s_ctype.visit(self)
 
                     self.emit_type(s_ctype)
-                    print >> self.file, '%s = %s' % (s, str(s_ctype)),
-                    print >> self.file, '\t# %s:%d' % (s_filename, s_lineno)
+                    print('%s = %s' % (s, str(s_ctype)), end=' ', file=self.file)
+                    print('\t# %s:%d' % (s_filename, s_lineno), file=self.file)
                 del self.known_types[s]
 
     def visit_struct(self, struct):
@@ -149,37 +150,37 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
         self.structs.add(struct.tag)
             
         base = {True: 'Union', False: 'Structure'}[struct.is_union]
-        print >> self.file, 'class struct_%s(%s):' % (struct.tag, base)
-        print >> self.file, '    __slots__ = ['
+        print('class struct_%s(%s):' % (struct.tag, base), file=self.file)
+        print('    __slots__ = [', file=self.file)
         if not struct.opaque:
             for m in struct.members:
-                print >> self.file, "        '%s'," % m[0]
-        print >> self.file, '    ]'
+                print("        '%s'," % m[0], file=self.file)
+        print('    ]', file=self.file)
 
         # Set fields after completing class, so incomplete structs can be
         # referenced within struct.
         for name, typ in struct.members:
             self.emit_type(typ)
 
-        print >> self.file, 'struct_%s._fields_ = [' % struct.tag
+        print('struct_%s._fields_ = [' % struct.tag, file=self.file)
         if struct.opaque:
-            print >> self.file, "    ('_opaque_struct', c_int)"
+            print("    ('_opaque_struct', c_int)", file=self.file)
             self.structs.remove(struct.tag)
         else:
             for m in struct.members:
-                print >> self.file, "    ('%s', %s)," % (m[0], m[1])
-        print >> self.file, ']'
-        print >> self.file
+                print("    ('%s', %s)," % (m[0], m[1]), file=self.file)
+        print(']', file=self.file)
+        print(file=self.file)
 
     def visit_enum(self, enum):
         if enum.tag in self.enums:
             return
         self.enums.add(enum.tag)
 
-        print >> self.file, 'enum_%s = c_int' % enum.tag
+        print('enum_%s = c_int' % enum.tag, file=self.file)
         for name, value in enum.enumerators:
             self.all_names.append(name)
-            print >> self.file, '%s = %d' % (name, value)
+            print('%s = %d' % (name, value), file=self.file)
 
     def handle_ctypes_function(self, name, restype, argtypes, filename, lineno):
         if self.does_emit(name, filename):
@@ -190,12 +191,12 @@ class CtypesWrapper(CtypesParser, CtypesTypeVisitor):
                 self.emit_type(a)
 
             self.all_names.append(name)
-            print >> self.file, '# %s:%d' % (filename, lineno)
-            print >> self.file, '%s = _lib.%s' % (name, name)
-            print >> self.file, '%s.restype = %s' % (name, str(restype))
-            print >> self.file, '%s.argtypes = [%s]' % \
-                (name, ', '.join([str(a) for a in argtypes])) 
-            print >> self.file
+            print('# %s:%d' % (filename, lineno), file=self.file)
+            print('%s = _lib.%s' % (name, name), file=self.file)
+            print('%s.restype = %s' % (name, str(restype)), file=self.file)
+            print('%s.argtypes = [%s]' % \
+                (name, ', '.join([str(a) for a in argtypes])), file=self.file) 
+            print(file=self.file)
 
     def handle_ctypes_variable(self, name, ctype, filename, lineno):
         # This doesn't work.
@@ -232,7 +233,7 @@ def main(*argv):
     
     (options, args) = op.parse_args(list(argv[1:]))
     if len(args) < 1:
-        print >> sys.stderr, 'No header files specified.'
+        print('No header files specified.', file=sys.stderr)
         sys.exit(1)
     headers = args
 
@@ -257,7 +258,7 @@ def main(*argv):
         wrapper.wrap(header)
     wrapper.end_output()
 
-    print 'Wrapped to %s' % options.output
+    print('Wrapped to %s' % options.output)
 
 if __name__ == '__main__':
     main(*sys.argv)

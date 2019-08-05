@@ -38,7 +38,7 @@
 This package imports all OpenGL, GLU and registered OpenGL extension
 functions.  Functions have identical signatures to their C counterparts.
 
-OpenGL is documented in full at the `OpenGL Reference Pages`_.  
+OpenGL is documented in full at the `OpenGL Reference Pages`_.
 
 The `OpenGL Programming Guide`_, also known as "The Red Book", is a popular
 reference manual organised by topic. It is available in digital and paper
@@ -207,7 +207,7 @@ elif compat_platform.startswith('linux'):
     from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
-del base
+del base  # noqa: F821
 
 
 # XXX remove

@@ -1,0 +1,15 @@
+_model: 404
+---
+_discoverable: false
+---
+full_title: 404 — Page Not Found
+---
+short_title: 404
+---
+bg_image: ngc-5793.jpg
+---
+bg_image_fadeout: 0.1
+---
+message: This page does not exist! Please click on the title bar to return home.
+---
+_hidden: no

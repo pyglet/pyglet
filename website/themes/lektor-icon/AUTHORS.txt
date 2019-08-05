@@ -1,0 +1,14 @@
+The Lektor-Icon Contributors are composed of:
+
+* Free HTML5 Template <https://FreeHTML5.co> (Original HTML5 template author)
+* Steve Lane <https://gtown-ds.netlify.com/> (Port to Hugo theme)
+* Daniel Althviz <https://dalthviz.github.io/> (Port to Lektor theme)
+* All other developers that have contributed to the lektor-icon repository:
+  <https://github.com/spyder-ide/lektor-icon/graphs/contributors>
+
+Additionally, some font assets, Javascript libraries and stylesheets were
+originally sourced from third-party authors or projects.
+For information about the sources and authors of other third-party code
+and other resources used, please see the NOTICE.txt file, located in the
+root of the lektor-icon repository or online at:
+<https://github.com/spyder-ide/lektor-icon/blob/master/NOTICE.txt>

@@ -13,6 +13,7 @@ Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
 
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -1144,7 +1145,7 @@ def p_function_definition(p):
 def p_error(t):
     if not t:
         # Crap, no way to get to CParser instance.  FIXME TODO
-        print >> sys.stderr, 'Syntax error at end of file.'
+        print('Syntax error at end of file.', file=sys.stderr)
     else:
         t.lexer.cparser.handle_error('Syntax error at %r' % t.value, 
              t.filename, t.lineno)
@@ -1336,14 +1337,14 @@ class CParser(object):
         The parser will try to recover from errors by synchronising at the
         next semicolon.
         '''
-        print >> sys.stderr, '%s:%s %s' % (filename, lineno, message)
+        print('%s:%s %s' % (filename, lineno, message), file=sys.stderr)
 
     def handle_status(self, message):
         '''Progress information.
 
         The default implementationg prints message to stderr.
         '''
-        print >> sys.stderr, message
+        print(message, file=sys.stderr)
 
     def handle_include(self, header):
         '''#include `header`
@@ -1414,38 +1415,38 @@ class DebugCParser(CParser):
     stdout.
     '''
     def handle_include(self, header):
-        print '#include header=%r' % header
+        print('#include header=%r' % header)
         return True
 
     def handle_define(self, name, value, filename, lineno):
-        print '#define name=%r, value=%r' % (name, value)
+        print('#define name=%r, value=%r' % (name, value))
 
     def handle_define_constant(self, name, value, filename, lineno):
-        print '#define constant name=%r, value=%r' % (name, value)
+        print('#define constant name=%r, value=%r' % (name, value))
 
     def handle_undef(self, name):
-        print '#undef name=%r' % name
+        print('#undef name=%r' % name)
 
     def handle_if(self, expr):
-        print '#if expr=%s' % expr
+        print('#if expr=%s' % expr)
 
     def handle_ifdef(self, name):
-        print '#ifdef name=%r' % name
+        print('#ifdef name=%r' % name)
 
     def handle_ifndef(self, name, filename, lineno):
-        print '#ifndef name=%r' % name
+        print('#ifndef name=%r' % name)
 
     def handle_elif(self, expr):
-        print '#elif expr=%s' % expr
+        print('#elif expr=%s' % expr)
 
     def handle_else(self):
-        print '#else'
+        print('#else')
 
     def handle_endif(self):
-        print '#endif'
+        print('#endif')
 
     def handle_declaration(self, declaration, filename, lineno):
-        print declaration
+        print(declaration)
         
 if __name__ == '__main__':
     DebugCParser().parse(sys.argv[1], debug=True)
