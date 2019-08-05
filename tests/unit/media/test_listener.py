@@ -1,14 +1,25 @@
 import pyglet
 
-from ...annotations import Platform, require_platform, skip_platform
+import pytest
 
-if pyglet.compat_platform in Platform.LINUX:
+
+try:
     from pyglet.media.drivers import pulse
-elif pyglet.compat_platform in Platform.OSX:
-    # TODO: test OpenAL for Linux and Windows also, if available.
+    has_pulse = True
+except ImportError:
+    has_pulse = False
+
+try:
     from pyglet.media.drivers import openal
-elif pyglet.compat_platform in Platform.WINDOWS:
+    has_openal = True
+except ImportError:
+    has_openal = False
+
+try:
     from pyglet.media.drivers import directsound
+    has_directsound = True
+except ImportError:
+    has_directsound = False
 
 
 def check_listener_defaults(listener):
@@ -29,7 +40,7 @@ def check_modifying_values(listener):
     assert listener.up_orientation == (0, -1, 0)
 
 
-@skip_platform(Platform.WINDOWS + Platform.LINUX)
+@pytest.mark.skipif(not has_openal, reason="Test requires OpenAL")
 def test_openal_listener():
     driver = openal.create_audio_driver()
     listener = driver.get_listener()
@@ -39,7 +50,7 @@ def test_openal_listener():
     del listener
 
 
-@require_platform(Platform.LINUX)
+@pytest.mark.skipif(not has_pulse, reason="Test requires PulseAudio")
 def test_pulse_listener():
     driver = pulse.create_audio_driver()
     listener = driver.get_listener()
@@ -49,7 +60,7 @@ def test_pulse_listener():
     del listener
 
 
-@require_platform(Platform.WINDOWS)
+@pytest.mark.skipif(not has_directsound, reason="Test requires DirectSound")
 def test_directsound_listener():
     driver = directsound.create_audio_driver()
     listener = driver.get_listener()
