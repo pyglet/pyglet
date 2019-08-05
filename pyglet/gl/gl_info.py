@@ -65,6 +65,7 @@ from ctypes import c_char_p, cast
 import warnings
 
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
+from pyglet.gl.glext_arb import GL_MAJOR_VERSION, GL_MINOR_VERSION
 from pyglet.compat import asstr
 
 
@@ -80,6 +81,8 @@ class GLInfo(object):
     """
     have_context = False
     version = '0.0.0'
+    version_major = 0
+    version_minor = 0
     vendor = ''
     renderer = ''
     extensions = set()
@@ -96,7 +99,14 @@ class GLInfo(object):
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
-            if self.have_version(3):
+            major = GLint()
+            glGetIntegerv(GL_MAJOR_VERSION, major)
+            self.version_major = major.value
+            minor = GLint()
+            glGetIntegerv(GL_MINOR_VERSION, minor)
+            self.version_minor = minor.value
+
+            if self.version_major >= 3:
                 from pyglet.gl.glext_arb import glGetStringi, GL_NUM_EXTENSIONS
                 num_extensions = GLint()
                 glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
@@ -156,7 +166,8 @@ class GLInfo(object):
             `minor` : int
                 The minor revision number.
             `release` : int
-                The release number.  
+                The release number.
+                :deprecated: No longer used
 
         :rtype: bool
         :return: True if the requested or a later version is supported.
@@ -164,13 +175,11 @@ class GLInfo(object):
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        if 'None' in self.version:
-            return False
-        ver = '%s.0.0' % self.version.split(' ', 1)[0]
-        imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
+        imajor = self.version_major
+        iminor = self.version_minor
         return (imajor > major or
-                (imajor == major and iminor > minor) or
-                (imajor == major and iminor == minor and irelease >= release))
+                (imajor == major and iminor >= minor) or
+                (imajor == major and iminor == minor))
 
     def get_renderer(self):
         """Determine the renderer string of the OpenGL context.
