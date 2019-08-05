@@ -61,10 +61,10 @@ from builtins import object
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
 
-from ctypes import *
+from ctypes import c_char_p, cast
 import warnings
 
-from pyglet.gl.gl import *
+from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
 from pyglet.compat import asstr
 
 
