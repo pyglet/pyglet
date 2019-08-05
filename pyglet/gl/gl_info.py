@@ -63,7 +63,7 @@ from pyglet.gl.glext_arb import GL_MAJOR_VERSION, GL_MINOR_VERSION
 from pyglet.compat import asstr
 
 
-class GLInfo(object):
+class GLInfo:
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context
@@ -74,7 +74,7 @@ class GLInfo(object):
     when the context is active for this `GLInfo` instance.
     """
     have_context = False
-    version = '0.0.0'
+    version_string = '0.0.0'
     version_major = 0
     version_minor = 0
     vendor = ''
@@ -92,7 +92,7 @@ class GLInfo(object):
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
-            self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
+            self.version_string = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
             major = GLint()
             glGetIntegerv(GL_MAJOR_VERSION, major)
             self.version_major = major.value
@@ -149,9 +149,9 @@ class GLInfo(object):
         """
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        return self.version
+        return self.version_string
 
-    def have_version(self, major, minor=0, release=0):
+    def have_version(self, major, minor=0):
         """Determine if a version of OpenGL is supported.
 
         :Parameters:
@@ -159,9 +159,6 @@ class GLInfo(object):
                 The major revision number (typically 1 or 2).
             `minor` : int
                 The minor revision number.
-            `release` : int
-                The release number.
-                :deprecated: No longer used
 
         :rtype: bool
         :return: True if the requested or a later version is supported.
