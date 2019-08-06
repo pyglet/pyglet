@@ -65,7 +65,6 @@ from ctypes import c_char_p, cast
 import warnings
 
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
-from pyglet.gl.glext_arb import GL_MAJOR_VERSION, GL_MINOR_VERSION
 from pyglet.compat import asstr
 
 
@@ -73,7 +72,7 @@ class GLInfo(object):
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context
-    is created.  You can use the module functions as a convenience for 
+    is created.  You can use the module functions as a convenience for
     this default instance's methods.
 
     If you are using more than one context, you must call `set_active_context`
@@ -81,8 +80,6 @@ class GLInfo(object):
     """
     have_context = False
     version = '0.0.0'
-    version_major = 0
-    version_minor = 0
     vendor = ''
     renderer = ''
     extensions = set()
@@ -99,14 +96,7 @@ class GLInfo(object):
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
-            major = GLint()
-            glGetIntegerv(GL_MAJOR_VERSION, major)
-            self.version_major = major.value
-            minor = GLint()
-            glGetIntegerv(GL_MINOR_VERSION, minor)
-            self.version_minor = minor.value
-
-            if self.version_major >= 3:
+            if self.have_version(3):
                 from pyglet.gl.glext_arb import glGetStringi, GL_NUM_EXTENSIONS
                 num_extensions = GLint()
                 glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
@@ -175,8 +165,10 @@ class GLInfo(object):
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        imajor = self.version_major
-        iminor = self.version_minor
+        if 'None' in self.version:
+            return False
+        ver = '%s.0.0' % self.version.strip().split(' ', 1)[0]
+        imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
         return (imajor > major or
                 (imajor == major and iminor >= minor) or
                 (imajor == major and iminor == minor))
