@@ -56,14 +56,14 @@ each GLUInfo::
 Note that GLUInfo only returns meaningful information if a context has been
 created.
 """
-from ctypes import *
+from ctypes import c_char_p, cast
 import warnings
 
-from pyglet.gl.glu import *
+from pyglet.gl.glu import GLU_EXTENSIONS, GLU_VERSION, gluGetString
 from pyglet.compat import asstr
 
 
-class GLUInfo(object):
+class GLUInfo:
     """Information interface for the GLU library.
 
     A default instance is created automatically when the first OpenGL context
@@ -74,7 +74,7 @@ class GLUInfo(object):
     when the context is active for this `GLUInfo` instance.
     """
     have_context = False
-    version = '0.0.0'
+    version = '0.0'
     extensions = []
 
     _have_info = False
@@ -90,7 +90,7 @@ class GLUInfo(object):
             self.version = asstr(cast(gluGetString(GLU_VERSION), c_char_p).value)
             self._have_info = True
 
-    def have_version(self, major, minor=0, release=0):
+    def have_version(self, major, minor=0):
         """Determine if a version of GLU is supported.
 
         :Parameters:
@@ -98,19 +98,17 @@ class GLUInfo(object):
                 The major revision number (typically 1).
             `minor` : int
                 The minor revision number.
-            `release` : int
-                The release number.  
 
         :rtype: bool
         :return: True if the requested or a later version is supported.
         """
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        ver = '%s.0.0' % self.version.split(' ', 1)[0]
+        ver = '%s.0.0' % self.version.strip().split(' ', 1)[0]
         imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
-        return imajor > major or\
-               (imajor == major and iminor > minor) or \
-               (imajor == major and iminor == minor and irelease >= release)
+        return (imajor > major or
+                (imajor == major and iminor > minor) or
+                (imajor == major and iminor == minor))
 
     def get_version(self):
         """Get the current GLU version.
@@ -148,8 +146,8 @@ class GLUInfo(object):
         return self.extensions
 
 
-# Single instance useful for apps with only a single context (or all contexts
-# have same GLU driver, common case). 
+# Single instance useful for apps with only a single context
+# (or all contexts have the same GLU driver, a common case).
 _glu_info = GLUInfo()
 
 set_active_context = _glu_info.set_active_context
