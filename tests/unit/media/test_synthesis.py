@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import bytes, object
 from ctypes import sizeof
 from io import BytesIO
 import unittest

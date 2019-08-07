@@ -1,5 +1,3 @@
-from __future__ import division
-from builtins import range
 from tests import mock
 import random
 from tests.base.future_test import FutureTestCase

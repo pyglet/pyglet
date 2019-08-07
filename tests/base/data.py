@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import os
 import pytest
 
@@ -8,6 +6,7 @@ from .future_test import FutureTestCase
 local_dir = os.path.dirname(__file__)
 test_data_path = os.path.abspath(os.path.join(local_dir, '..', 'data'))
 del local_dir
+
 
 class PygletTestCase(FutureTestCase):
     """

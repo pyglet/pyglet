@@ -1,5 +1,3 @@
-from __future__ import division
-from builtins import map
 from tests import mock
 import os
 import unittest
