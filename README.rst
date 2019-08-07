@@ -12,7 +12,7 @@ and other visually-rich applications for Windows, Mac OS X and Linux.
 * `Pyglet on PyPI <https://pypi.org/project/pyglet/>`_
 * `Pyglet Discord Server <https://discord.gg/QXyegWe>`_
 * `Pyglet mailing list <http://groups.google.com/group/pyglet-users>`_
-* `Pyglet Website <http://www.pyglet.org/>`_
+* `Pyglet Website <http://pyglet.org/>`_
 
 Pyglet has an active developer and user community.  If you find a bug, please
 `open an issue <https://github.com/pyglet/pyglet/issues>`_.
