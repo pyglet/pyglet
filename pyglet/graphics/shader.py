@@ -326,33 +326,36 @@ class ShaderProgram:
 
         block_uniforms = {}
 
-        for index in range(self._get_num_active(GL_ACTIVE_UNIFORMS)):
-            uniform_name, u_type, u_size = self._query_uniform(index)
-            location = self._get_uniform_location(uniform_name)
-            if location == -1:
-                # May be in a UniformBlock. Currently we only
-                # support Named Uniform Blocks. Try to parse it:
-                try:
-                    block_name, uniform_name = uniform_name.split(".")
-                except ValueError:
-                    block_name = uniform_name
-                    
-                if block_name not in block_uniforms:
-                    block_uniforms[block_name] = {}
-
-                gl_type, _, length, _ = _uniform_setters[u_type]
-
-                block_uniforms[block_name][index] = (uniform_name, gl_type, length)
-
         for index in range(self._get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self._get_uniform_block_name(index)
+            
+            block_uniforms[name] = {}
+            
             num_active = GLint()
             block_data_size = GLint()
+            num_indices = GLint()
+
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
+            
+            indices = (GLuint * num_active.value)()
+            indices_ptr = cast(addressof(indices), POINTER(GLint))
+            glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+            
+            for i in range(num_active.value):
+                uniform_name, u_type, u_size = self._query_uniform(indices[i])
+                
+                # Separate uniform name from block name (Only if instance name is provided on the Uniform Block)
+                try:
+                    _, uniform_name = uniform_name.split(".")
+                except ValueError:
+                    pass
+                
+                gl_type, _, length, _ = _uniform_setters[u_type]
+                
+                block_uniforms[name][i] = (uniform_name, gl_type, length)
 
-            block = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
-            self._uniform_blocks[name] = block
+            self._uniform_blocks[name] = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
 
     def _get_uniform_block_name(self, index):
         buf_size = 128
