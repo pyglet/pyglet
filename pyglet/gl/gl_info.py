@@ -51,12 +51,13 @@ context::
     info = GLInfo()
     info.set_active_context()
 
-    if info.have_version(2, 1):
+    if info.have_version(4, 5):
         # ...
 
 """
-from ctypes import *
+
 import warnings
+from ctypes import c_char_p, cast
 
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
 from pyglet.gl.glext_arb import GL_MAJOR_VERSION, GL_MINOR_VERSION
@@ -74,7 +75,7 @@ class GLInfo:
     when the context is active for this `GLInfo` instance.
     """
     have_context = False
-    version_string = '0.0.0'
+    version = '0.0'
     version_major = 0
     version_minor = 0
     vendor = ''
@@ -92,12 +93,12 @@ class GLInfo:
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
-            self.version_string = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
+            self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
             major = GLint()
-            glGetIntegerv(GL_MAJOR_VERSION, major)
-            self.version_major = major.value
             minor = GLint()
+            glGetIntegerv(GL_MAJOR_VERSION, major)
             glGetIntegerv(GL_MINOR_VERSION, minor)
+            self.version_major = major.value
             self.version_minor = minor.value
 
             if self.version_major >= 3:
@@ -149,7 +150,7 @@ class GLInfo:
         """
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        return self.version_string
+        return self.version
 
     def have_version(self, major, minor=0):
         """Determine if a version of OpenGL is supported.
@@ -191,8 +192,8 @@ class GLInfo:
         return self.vendor
 
 
-# Single instance useful for apps with only a single context (or all contexts
-# have same GL driver, common case). 
+# Single instance useful for apps with only a single context
+# (or all contexts have the same GL driver, a common case).
 _gl_info = GLInfo()
 
 set_active_context = _gl_info.set_active_context
