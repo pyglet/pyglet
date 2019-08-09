@@ -5,6 +5,7 @@ Improvements
 ------------
 - Removed broken projects from /contrib
 - Update setup.py with project_urls and long_description.
+- Added Window.get_pixel_ratio function for calculating scaling on HiDPI displays.
 
 Bugfixes
 --------

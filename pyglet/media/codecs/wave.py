@@ -60,7 +60,7 @@ class WaveSource(StreamingSource):
         except wave.Error as e:
             raise WAVEDecodeException(e)
 
-        # PYTHON2 - named tuple can be used instead of explicit unpacking:
+        # PYTHON2: use the named tuple instead of explicit unpacking
         # parameters = self._wave.getparams()
         nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
 
