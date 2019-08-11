@@ -10,40 +10,36 @@ class Mat4:
     """
     __slots__ = 'array'
 
-    def __init__(self, array=None, main=1.0):
+    def __init__(self, array=None):
         """Create a Matrix
 
         A Matrix can be created with tuple containing 16 floats
-        or ints. Alternatively, you can create provide an int
-        for the main diagonal. If nothing is provided, an identity
-        Matrix will be created (1.0 on the main diagonal).
+        or ints. If no tuple is provided, an "identity Matrix"
+        will be created (1.0 on the main diagonal).
 
         :Parameters:
             `array` : tuple of float or int
-                A one dimentional array containing the elements.
-            `main` : float or int
-                The data to fill the main diagonal with. Ignored
-                if `array` is provided.
+                A tuple containing 16 values.
         """
-        self.array = array or (main, 0.0, 0.0, 0.0,
-                               0.0, main, 0.0, 0.0,
-                               0.0, 0.0, main, 0.0,
-                               0.0, 0.0, 0.0, main)
+        self.array = array or (1.0, 0.0, 0.0, 0.0,
+                               0.0, 1.0, 0.0, 0.0,
+                               0.0, 0.0, 1.0, 0.0,
+                               0.0, 0.0, 0.0, 1.0)
 
     def __add__(self, other):
-        assert type(other) is Mat4, "Only addition with Mat4 types is supported"
+        assert isinstance(other, Mat4), "Only addition with Mat4 types is supported"
         return Mat4(array=tuple(s + o for s, o in zip(self.array, other.array)))
 
     def __sub__(self, other):
-        assert type(other) is Mat4, "Only subtraction from Mat4 types is supported"
+        assert isinstance(other, Mat4), "Only subtraction from Mat4 types is supported"
         return Mat4(array=tuple(s - o for s, o in zip(self.array, other.array)))
 
     def __mul__(self, other):
-        assert type(other) is Mat4, "Only multiplication with Mat4 types is supported"
+        assert isinstance(other, Mat4), "Only multiplication with Mat4 types is supported"
         return Mat4(array=tuple(s * o for s, o in zip(self.array, other.array)))
 
     def __matmul__(self, other):
-        assert type(other) is Mat4
+        assert isinstance(other, Mat4)
         sarray = self.array
         oarray = other.array
         # Rows:
