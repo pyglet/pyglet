@@ -79,6 +79,14 @@ class Mat4:
 
         Mat4((a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p))
 
+    def __getitem__(self, index):
+        if type(index) is tuple:
+            row, column = index
+            assert 0 <= row <= 3 and 0 <= column <= 3, "row and column must range from 0-3"
+            return self.array[row * 3 + column]
+        else:
+            return self.array[index]
+
     def __iter__(self):
         return iter(self.array)
 
