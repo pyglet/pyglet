@@ -83,7 +83,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.4.1'
+version = '1.4.2'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
