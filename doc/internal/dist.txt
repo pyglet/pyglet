@@ -5,7 +5,7 @@ Making a pyglet release
 
 #. Make sure it is up to date::
 
-    hg pull -u
+    git pull
 
 #. Update version string in the following files and commit:
 
@@ -15,11 +15,11 @@ Making a pyglet release
 
 #. Tag the current changelist with the version number::
 
-    hg tag pyglet-x.y.z
+    git tag v0.0.0
 
 #. Push the changes to the central repo::
 
-    hg push
+    git push
 
 #. Build the wheels and documentation::
 
@@ -34,8 +34,6 @@ Making a pyglet release
 
 #. Start a build of the documentation on https://readthedocs.org/builds/pyglet
 
-#. Update the download page on BitBucket: https://bitbucket.org/pyglet/pyglet/wiki/Download
- 
 #. Tell people!
 
 Major version increase
