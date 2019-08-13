@@ -15,7 +15,7 @@ Making a pyglet release
 
 #. Tag the current changelist with the version number::
 
-    git tag v0.0.0
+    git tag -a v0.0.0 -m "release message"
 
 #. Push the changes to the central repo::
 
@@ -26,11 +26,9 @@ Making a pyglet release
     ./make.py clean
     ./make.py dist
 
-#. Upload the wheels, zip and tarball to PyPI::
+#. Upload the wheels and zips to PyPI::
 
     twine upload dist/pyglet-x.y.z*
-
-#. Upload the documentation to BitBucket
 
 #. Start a build of the documentation on https://readthedocs.org/builds/pyglet
 
