@@ -5,12 +5,14 @@ Improvements
 ------------
 - Removed broken projects from /contrib
 - Update setup.py with project_urls and long_description.
+- Added Window.get_pixel_ratio function for calculating scaling on HiDPI displays.
+- Start some code quality improvements, such as whitespace removal, star imports, etc.
 
 Bugfixes
 --------
 - Fix invalid argtype in image GDIplus decoder.
 - Change sys.is_epydoc to sys.is_pyglet_doc_run to prevent crashing with Anaconda, etc. (#9)
-
+- Prevent gl_info.get_version from crashing with blank version string. (#36)
 
 Pyglet 1.4.1
 ============

@@ -5,8 +5,6 @@ from tests.base.future_test import FutureTestCase
 from pyglet.media.player import Player, PlayerGroup
 from pyglet.media.codecs.base import AudioFormat, VideoFormat, Source
 
-# pyglet.options['debug_media'] = True
-
 
 class PlayerTestCase(FutureTestCase):
     # Default values to use
@@ -49,8 +47,8 @@ class PlayerTestCase(FutureTestCase):
         mock_source = mock.MagicMock(spec=Source)
         type(mock_source).audio_format = mock.PropertyMock(return_value=audio_format)
         type(mock_source).video_format = mock.PropertyMock(return_value=video_format)
-        type(mock_source._get_queue_source.return_value).audio_format = mock.PropertyMock(return_value=audio_format)
-        type(mock_source._get_queue_source.return_value).video_format = mock.PropertyMock(return_value=video_format)
+        type(mock_source.get_queue_source.return_value).audio_format = mock.PropertyMock(return_value=audio_format)
+        type(mock_source.get_queue_source.return_value).video_format = mock.PropertyMock(return_value=video_format)
         if video_format:
             mock_source.video_format.frame_rate = 30
         return mock_source
@@ -84,7 +82,7 @@ class PlayerTestCase(FutureTestCase):
 
     def _assert_playing(self, playing, current_source=None):
         self.assertEqual(self.player.playing, playing)
-        queued_source = (current_source._get_queue_source.return_value
+        queued_source = (current_source.get_queue_source.return_value
                          if current_source is not None
                          else None)
         self.assertIs(self.player.source, queued_source)
@@ -109,7 +107,7 @@ class PlayerTestCase(FutureTestCase):
     # def assert_in_current_play_list(self, *sources):
     #     self.assertIsNotNone(self.current_play_list, msg='No previous call to create driver player')
 
-    #     queue_sources = deque(source._get_queue_source.return_value for source in sources)
+    #     queue_sources = deque(source.get_queue_source.return_value for source in sources)
     #     self.assertSequenceEqual(self.current_play_list._sources, queue_sources)
 
     def assert_driver_player_destroyed(self):

@@ -68,7 +68,7 @@ class GLInfo:
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context
-    is created.  You can use the module functions as a convenience for 
+    is created.  You can use the module functions as a convenience for
     this default instance's methods.
 
     If you are using more than one context, you must call `set_active_context`

@@ -37,12 +37,12 @@
 """
 import wave
 
-from ..exceptions import MediaFormatException
+from ..exceptions import MediaDecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 
 
-class WAVEFormatException(MediaFormatException):
+class WAVEDecodeException(MediaDecodeException):
     pass
 
 
@@ -56,10 +56,10 @@ class WaveSource(StreamingSource):
         try:
             self._wave = wave.open(file)
         except wave.Error as e:
-            raise WAVEFormatException(e)
+            raise WAVEDecodeException(e)
 
+        # PYTHON2: use the named tuple instead of explicit unpacking
         # parameters = self._wave.getparams()
-        # (nchannels=1, sampwidth=2, framerate=22050, nframes=11583, comptype='NONE', compname='not compressed')
         nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
 
         self.audio_format = AudioFormat(channels=nchannels,

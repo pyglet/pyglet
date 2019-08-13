@@ -42,10 +42,11 @@ directory as the application's script files.
 This module allows applications to specify a search path for resources.
 Relative paths are taken to be relative to the application's ``__main__``
 module. ZIP files can appear on the path; they will be searched inside.  The
-resource module also behaves as expected when applications are bundled using py2exe or py2app.
+resource module also behaves as expected when applications are bundled using
+Freezers such as PyInstaller, py2exe, py2app, etc..
 
-As well as providing file references (with the :py:func:`file` function), the
-resource module also contains convenience functions for loading images,
+In addition to providing file references (with the :py:func:`file` function),
+the resource module also contains convenience functions for loading images,
 textures, fonts, media and documents.
 
 3rd party modules or packages not bound to a specific application should
@@ -74,10 +75,9 @@ script home.  Some examples::
     # by the `res/images` directory.
     path = ['@levels.level1', 'res/images']
 
-Paths are always case-sensitive and forward slashes are always used as path
-separators, even in cases when the filesystem or platform does not do this.
-This avoids a common programmer error when porting applications between
-platforms.
+Paths are always **case-sensitive** and **forward slashes are always used**
+as path separators, even in cases when the filesystem or platform does not do this.
+This avoids a common programmer error when porting applications between platforms.
 
 The default path is ``['.']``.  If you modify the path, you must call
 :py:func:`reindex`.

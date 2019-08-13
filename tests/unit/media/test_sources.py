@@ -5,10 +5,7 @@ from tests.base.future_test import FutureTestCase
 
 import pyglet
 from pyglet.media.events import MediaEvent
-from pyglet.media.exceptions import MediaException
 from pyglet.media.codecs.base import *
-
-# pyglet.options['debug_media'] = True
 
 
 class AudioFormatTestCase(FutureTestCase):
@@ -24,9 +21,9 @@ class AudioFormatTestCase(FutureTestCase):
 
         formats = [AudioFormat(c, s, r) for c in channels for s in sample_sizes for r in sample_rates]
         while formats:
-           a = formats.pop()
-           for b in formats:
-               self.assertNotEqual(a, b)
+            a = formats.pop()
+            for b in formats:
+                self.assertNotEqual(a, b)
 
     def test_bytes_per(self):
         af1 = AudioFormat(1, 8, 22050)
@@ -200,7 +197,7 @@ class StreamingSourceTestCase(FutureTestCase):
 class StaticSourceTestCase(FutureTestCase):
     def create_valid_mock_source(self, bitrate=8, channels=1):
         self.mock_source = mock.MagicMock()
-        self.mock_queue_source = self.mock_source._get_queue_source.return_value
+        self.mock_queue_source = self.mock_source.get_queue_source.return_value
 
         byte_rate = bitrate >> 3
         self.mock_data = [b'a'*22050*byte_rate*channels,
@@ -308,7 +305,7 @@ class StaticSourceTestCase(FutureTestCase):
     def test_empty_source(self):
         """Test that wrapping an empty source does not cause trouble."""
         self.mock_source = mock.MagicMock()
-        self.mock_queue_source = self.mock_source._get_queue_source.return_value
+        self.mock_queue_source = self.mock_source.get_queue_source.return_value
 
         type(self.mock_queue_source).audio_format = mock.PropertyMock(return_value=None)
         type(self.mock_queue_source).video_format = mock.PropertyMock(return_value=None)

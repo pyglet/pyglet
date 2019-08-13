@@ -7,7 +7,7 @@ cd $base
 VERSION=`grep 'VERSION =' setup.py | cut -d "'" -f2`
 
 # Source dists
-python setup.py sdist --formats=gztar,zip
+python setup.py sdist --formats=zip
 
 # Wheels
 python setup.py bdist_wheel 

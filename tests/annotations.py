@@ -61,3 +61,11 @@ def require_python_version(version):
     """
     return pytest.mark.skipif(sys.version_info < version,
                               reason="Test require at least Python version {0}".format(version))
+
+
+def skip_if_continuous_integration():
+    """
+    Skip the test if being run under a Continuous Integration service.
+    """
+    return pytest.mark.skipif(any(key in os.environ for key in ['CI', 'TRAVIS']),
+                              reason="Test is unreliable under Continuous Integration ")
