@@ -4,6 +4,7 @@ from pyglet.gl import *
 from pyglet import image
 from pyglet import resource
 
+
 # Test image is laid out
 #  M R
 #  B G
@@ -21,7 +22,7 @@ from pyglet import resource
     (dict(rotate=-180), 'bmrg'),
     (dict(rotate=270), 'gbmr'),
     (dict(rotate=-90), 'gbmr'),
-    ])
+])
 def test_resource_image_loading(event_loop, transforms, result):
     """Test loading an image resource with possible transformations."""
     resource.path.append('@' + __name__)
@@ -30,6 +31,7 @@ def test_resource_image_loading(event_loop, transforms, result):
     img = resource.image('rgbm.png', **transforms)
 
     w = event_loop.create_window(width=10, height=10)
+
     @w.event
     def on_draw():
         # XXX For some reason original on_draw is not called
@@ -49,23 +51,21 @@ def test_resource_image_loading(event_loop, transforms, result):
 
     image_data = image.get_buffer_manager().get_color_buffer().get_image_data()
     pixels = image_data.get_data('RGBA', image_data.width * 4)
+
     def sample(x, y):
         i = y * image_data.pitch + x * len(image_data.format)
-        r, g, b, _ = pixels[i:i+len(image_data.format)]
+        r, g, b, _ = pixels[i:i + len(image_data.format)]
         if type(r) is str:
             r, g, b = list(map(ord, (r, g, b)))
-        return {
-            (255, 0, 0): 'r',
-            (0, 255, 0): 'g',
-            (0, 0, 255): 'b',
-            (255, 0, 255): 'm'}.get((r, g, b), 'x')
+        return {(255, 0, 0): 'r',
+                (0, 255, 0): 'g',
+                (0, 0, 255): 'b',
+                (255, 0, 255): 'm'}.get((r, g, b), 'x')
 
-    samples = ''.join([
-        sample(3, 3), sample(3, 0), sample(0, 0), sample(0, 3)])
-    if samples == samples[2]*4:
+    samples = ''.join([sample(3, 3), sample(3, 0), sample(0, 0), sample(0, 3)])
+
+    if samples == samples[2] * 4:
         # On retina displays the image buffer is twice the size of the coordinate system
-        samples = ''.join([
-            sample(6, 6), sample(6, 0), sample(0, 0), sample(0, 6)])
+        samples = ''.join([sample(6, 6), sample(6, 0), sample(0, 0), sample(0, 6)])
 
     assert samples == result
-
