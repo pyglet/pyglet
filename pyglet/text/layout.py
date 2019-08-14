@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
 
 """Render simple text and formatted documents efficiently.
 
@@ -477,6 +476,8 @@ class _InlineElementBox(_AbstractBox):
 
 
 class _InvalidRange:
+    # Used by the IncrementalTextLayout
+
     def __init__(self):
         self.start = sys.maxsize
         self.end = 0
@@ -589,13 +590,10 @@ decoration_fragment_source = """#version 330 core
 _layout_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
 _layout_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
 _layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
-_scrollable_layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
 
 _decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
 _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
 _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
-
-# TODO: consider linking ShaderPrograms on-demand, to avoid uniform data conflicts
 
 
 class TextLayoutGroup(graphics.Group):
@@ -1599,7 +1597,7 @@ class ScrollableTextLayout(TextLayout):
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
     default_group_class = ScrollableTextLayoutGroup
-    default_shader = _scrollable_layout_program
+    default_shader = _layout_program
 
     _translate_x = 0
     _translate_y = 0
