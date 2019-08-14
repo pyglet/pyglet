@@ -403,14 +403,16 @@ class _GlyphBox(_AbstractBox):
                                                        GL_TRIANGLES, layout.background_group,
                                                        [0, 1, 2, 0, 2, 3],
                                                        ('vertices2f/dynamic', background_vertices),
-                                                       ('colors4Bn/dynamic', background_colors))
+                                                       ('colors4Bn/dynamic', background_colors),
+                                                       ('translation2f/dynamic', translation))
             context.add_list(background_list)
 
         if underline_vertices:
             underline_list = layout.batch.add(len(underline_vertices) // 2,
                                               GL_LINES, layout.foreground_decoration_group,
                                               ('vertices2f/dynamic', underline_vertices),
-                                              ('colors4Bn/dynamic', underline_colors))
+                                              ('colors4Bn/dynamic', underline_colors),
+                                              ('translation2f/dynamic', translation))
             context.add_list(underline_list)
 
     def delete(self, layout):
@@ -556,6 +558,7 @@ layout_fragment_source = """#version 330 core
     }
 """
 
+# TODO: add 'translation' attribute to decoration shader (see layout shader):
 decoration_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
