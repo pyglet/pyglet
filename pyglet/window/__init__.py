@@ -1789,7 +1789,8 @@ class FPSDisplay(object):
     The style and position of the display can be modified via the :py:func:`~pyglet.text.Label`
     attribute.  Different text can be substituted by overriding the
     `set_fps` method.  The display can be set to update more or less often
-    by setting the `update_period` attribute.
+    by setting the `update_period` attribute. Note: setting the `update_period`
+    to a value smaller than your Window refresh rate will cause inaccurate readings.
 
     :Ivariables:
         `label` : Label
@@ -1828,7 +1829,7 @@ class FPSDisplay(object):
         self.last_time = t
 
         if self.time >= self.update_period:
-            self.set_fps(self.count / self.update_period)
+            self.set_fps(self.count / self.time)
             self.time %= self.update_period
             self.count = 0
 

@@ -3,7 +3,7 @@ name = pyglet project
 themes = lektor-icon
 
 [servers.ghpages]
-target = ghpages+https://pyglet/pyglet.github.io
+target = ghpages+https://pyglet/pyglet.github.io?cname=pyglet.org
 
 
 [theme_settings]
