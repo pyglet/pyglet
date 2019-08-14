@@ -535,7 +535,7 @@ layout_vertex_source = """#version 330 core
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * translate_mat * vertices;
+        gl_Position = window.projection * window.view * translate_mat * vertices;
 
         text_colors = colors;
         texture_coords = tex_coords;
@@ -570,8 +570,7 @@ decoration_vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * vertices;
-
+        gl_Position = window.projection * window.view * vertices;
         vert_colors = colors;
     }
 """
@@ -1717,7 +1716,6 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         self.owner_runs = runlist.RunList(0, None)
 
         if group:
-            # TODO: see if this is necessary
             assert isinstance(group, ScrollableTextLayoutGroup), "Only subclasses of ScrollableTextLayoutGroup allowed."
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
