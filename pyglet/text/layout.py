@@ -792,7 +792,7 @@ class TextLayout:
         self._batch = batch
 
         self._width = width
-        if height is not None:
+        if height:
             self._height = height
         if multiline:
             self._multiline = multiline
@@ -1889,7 +1889,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
             line = self.lines[line_index]
             invalid_start = min(invalid_start, line.start)
             line.delete(self)
-            line = self.lines[line_index] = _Line(invalid_start)
+            self.lines[line_index] = _Line(invalid_start)
             self.invalid_lines.invalidate(line_index, line_index + 1)
         except IndexError:
             line_index = 0
@@ -1901,8 +1901,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         content_width_invalid = False
         next_start = invalid_start
 
-        for line in self._flow_glyphs(self.glyphs, self.owner_runs,
-                                      invalid_start, len(self._document.text)):
+        for line in self._flow_glyphs(self.glyphs, self.owner_runs, invalid_start, len(self._document.text)):
             try:
                 old_line = self.lines[line_index]
                 old_line.delete(self)
