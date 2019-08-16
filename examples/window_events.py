@@ -46,6 +46,8 @@ def on_draw():
     window.clear()
 
 
-window.push_handlers(pyglet.window.event.WindowEventLogger())
+# A logger class, which prints events to stdout or to a file:
+win_event_logger = pyglet.window.event.WindowEventLogger()
+window.push_handlers(win_event_logger)
 
 pyglet.app.run()
