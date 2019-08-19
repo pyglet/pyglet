@@ -358,14 +358,12 @@ class _GlyphBox(_AbstractBox):
         for i in range(n_glyphs):
             indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
 
-        translation = (0, 0) * n_glyphs * 4
-
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
                                                ('vertices2f/dynamic', vertices),
                                                ('tex_coords3f/dynamic', tex_coords),
                                                ('colors4Bn/dynamic', colors),
-                                               ('translation2f/dynamic', translation))
+                                               'translation2f/dynamic')
 
         context.add_list(vertex_list)
 
@@ -404,7 +402,7 @@ class _GlyphBox(_AbstractBox):
                                                        [0, 1, 2, 0, 2, 3],
                                                        ('vertices2f/dynamic', background_vertices),
                                                        ('colors4Bn/dynamic', background_colors),
-                                                       ('translation2f/dynamic', translation))
+                                                       'translation2f/dynamic')
             context.add_list(background_list)
 
         if underline_vertices:
@@ -412,7 +410,7 @@ class _GlyphBox(_AbstractBox):
                                               GL_LINES, layout.foreground_decoration_group,
                                               ('vertices2f/dynamic', underline_vertices),
                                               ('colors4Bn/dynamic', underline_colors),
-                                              ('translation2f/dynamic', translation))
+                                              'translation2f/dynamic')
             context.add_list(underline_list)
 
     def delete(self, layout):
@@ -558,10 +556,10 @@ layout_fragment_source = """#version 330 core
     }
 """
 
-# TODO: add 'translation' attribute to decoration shader (see layout shader):
 decoration_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
+    in vec2 translation;
 
     out vec4 vert_colors;
 
@@ -573,7 +571,11 @@ decoration_vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vertices;
+        mat4 translate_mat = mat4(1.0);
+        translate_mat[3] = vec4(translation, 1.0, 1.0);
+
+        gl_Position = window.projection * window.view * translate_mat * vertices;
+
         vert_colors = colors;
     }
 """
