@@ -75,6 +75,29 @@ class Mat4:
 
         Mat4((a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p))
 
+    @classmethod
+    def create_orthogonal(cls, left, right, bottom, top, znear, zfar):
+        width = right - left
+        height = top - bottom
+        depth = zfar - znear
+
+        sx = 2.0 / width
+        sy = 2.0 / height
+        sz = 2.0 / -depth
+
+        tx = -(right + left) / width
+        ty = -(top + bottom) / height
+        tz = -(zfar + znear) / depth
+
+        return Mat4((sx,  0.0, 0.0, 0.0,
+                     0.0, sy,  0.0, 0.0,
+                     0.0, 0.0, sz,  0.0,
+                     tx,  ty,  tz,  1.0))
+
+    @classmethod
+    def create_perspective(cls, left, right, bottom, top, znear, zfar, fov=60):
+        pass
+
     def __getitem__(self, index):
         if type(index) is tuple:
             row, column = index
