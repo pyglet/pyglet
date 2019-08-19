@@ -50,7 +50,7 @@ Getting started
 Call the Window constructor to create a new window::
 
     from pyglet.window import Window
-    win = Window(width=640, height=480)
+    win = Window(width=960, height=540)
 
 Attach your own event handlers::
 
@@ -518,8 +518,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     # Class attributes
 
-    _default_width = 640
-    _default_height = 480
+    _default_width = 960
+    _default_height = 540
 
     def __init__(self,
                  width=None,
@@ -555,10 +555,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         :Parameters:
             `width` : int
-                Width of the window, in pixels.  Defaults to 640, or the
+                Width of the window, in pixels.  Defaults to 960, or the
                 screen width if `fullscreen` is True.
             `height` : int
-                Height of the window, in pixels.  Defaults to 480, or the
+                Height of the window, in pixels.  Defaults to 540, or the
                 screen height if `fullscreen` is True.
             `caption` : str or unicode
                 Initial caption (title) of the window.  Defaults to
