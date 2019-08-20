@@ -1,3 +1,4 @@
+import math as _math
 
 
 class Mat4(tuple):
@@ -48,7 +49,29 @@ class Mat4(tuple):
 
     @classmethod
     def create_perspective(cls, left, right, bottom, top, znear, zfar, fov=60):
-        pass
+        width = right - left
+        height = top - bottom
+
+        aspect = width / height
+
+        xymax = znear * _math.tan(fov * _math.pi / 360)
+        ymin = -xymax
+        xmin = -xymax
+
+        width = xymax - xmin
+        height = xymax - ymin
+        depth = zfar - znear
+        q = -(zfar + znear) / depth
+        qn = -2 * (zfar * znear) / depth
+
+        w = 2 * znear / width
+        w = w / aspect
+        h = 2 * znear / height
+
+        return Mat4((w, 0, 0, 0,
+                     0, h, 0, 0,
+                     0, 0, q, -1,
+                     0, 0, qn, 0))
 
     def __add__(self, other):
         assert isinstance(other, Mat4), "Only addition with Mat4 types is supported"
