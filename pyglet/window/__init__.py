@@ -130,8 +130,8 @@ from pyglet import gl
 from pyglet.event import EventDispatcher
 from pyglet.compat import with_metaclass
 from pyglet.window import key
-import pyglet.window.key
-import pyglet.window.event
+from pyglet.matrix import Mat4
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -223,13 +223,13 @@ class ImageMouseCursor(MouseCursor):
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
 
 
-class Projection(object):
+class Projection:
     """Abstract OpenGL projection."""
 
-    def set(self, window_width, window_height, viewport_width, viewport_height):
+    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         """Set the OpenGL projection
 
-        Using the passed in Window and viewport sizes,
+        Using the passed in Window and framebuffer sizes,
         set a desired orthographic or perspective projection.
 
         :Parameters:
@@ -237,10 +237,10 @@ class Projection(object):
                 The Window width
             `window_height` : int
                 The Window height
-            `viewport_width` : int
-                The Window internal viewport width.
-            `viewport_height` : int
-                The Window internal viewport height.
+            `framebuffer_width` : int
+                The Window framebuffer width.
+            `framebuffer_height` : int
+                The Window framebuffer height.
         """
         raise NotImplementedError('abstract')
 
@@ -248,24 +248,14 @@ class Projection(object):
 class Projection2D(Projection):
     """A 2D orthographic projection"""
 
-    def set(self, window_width, window_height, viewport_width, viewport_height):
+    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         width = max(1, window_width)
         height = max(1, window_height)
 
-        gl.glViewport(0, 0, viewport_width, viewport_height)
+        gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        sx = 2.0 / width
-        sy = 2.0 / height
-
-        projection = (sx,  0.0, 0.0, 0.0,
-                      0.0, sy,  0.0, 0.0,
-                      0.0, 0.0, 1.0, 0.0,
-                      -1., -1., 0.0, 1.0)
-
-        view = (1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0)
+        projection = Mat4.create_orthogonal(0, width, 0, height, -255, 255)
+        view = Mat4()       # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
@@ -290,39 +280,14 @@ class Projection3D(Projection):
         self.znear = znear
         self.zfar = zfar
 
-    def set(self, window_width, window_height, viewport_width, viewport_height):
+    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         width = max(1, window_width)
         height = max(1, window_height)
 
-        gl.glViewport(0, 0, viewport_width, viewport_height)
+        gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        aspect = width/height
-        znear = self.znear
-        zfar = self.zfar
-
-        xymax = znear * math.tan(self.fov * math.pi / 360)
-        ymin = -xymax
-        xmin = -xymax
-
-        width = xymax - xmin
-        height = xymax - ymin
-        depth = zfar - znear
-        q = -(zfar + znear) / depth
-        qn = -2 * (zfar * znear) / depth
-
-        w = 2 * znear / width
-        w = w / aspect
-        h = 2 * znear / height
-
-        projection = (w, 0, 0, 0,
-                      0, h, 0, 0,
-                      0, 0, q, -1,
-                      0, 0, qn, 0)
-
-        view = (1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0)
+        projection = Mat4.create_perspective(0, width, 0, height, self.znear, self.zfar, self.fov)
+        view = Mat4()      # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
