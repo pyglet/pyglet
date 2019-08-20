@@ -32,10 +32,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Run list encoding utilities.
+"""Run list encoding utilities.
 
 .. versionadded:: 1.1
-'''
+"""
 from builtins import str
 from builtins import zip
 from builtins import next
@@ -43,6 +43,7 @@ from builtins import object
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'
+
 
 class _Run(object):
     def __init__(self, value, count):
@@ -52,8 +53,9 @@ class _Run(object):
     def __repr__(self):
         return 'Run(%r, %d)' % (self.value, self.count)
 
+
 class RunList(object):
-    '''List of contiguous runs of values.
+    """List of contiguous runs of values.
 
     A `RunList` is an efficient encoding of a sequence of values.  For
     example, the sequence ``aaaabbccccc`` is encoded as ``(4, a), (2, b),
@@ -70,9 +72,10 @@ class RunList(object):
     The length and ranges of a run list always refer to the character
     positions in the decoded list.  For example, in the above sequence,
     ``set_run(2, 5, 'x')`` would change the sequence to ``aaxxxbccccc``.
-    '''
+    """
+
     def __init__(self, size, initial):
-        '''Create a run list of the given size and a default value.
+        """Create a run list of the given size and a default value.
 
         :Parameters:
             `size` : int
@@ -80,11 +83,11 @@ class RunList(object):
             `initial` : object
                 The value of all characters in the run list.
 
-        '''
+        """
         self.runs = [_Run(initial, size)]
 
     def insert(self, pos, length):
-        '''Insert characters into the run list.
+        """Insert characters into the run list.
 
         The inserted characters will take on the value immediately preceding
         the insertion point (or the value of the first character, if `pos` is
@@ -96,7 +99,7 @@ class RunList(object):
             `length` : int
                 Number of characters to insert.
 
-        '''
+        """
 
         i = 0
         for run in self.runs:
@@ -105,7 +108,7 @@ class RunList(object):
             i += run.count
 
     def delete(self, start, end):
-        '''Remove characters from the run list.
+        """Remove characters from the run list.
 
         :Parameters:
             `start` : int
@@ -113,7 +116,7 @@ class RunList(object):
             `end` : int
                 End index, exclusive.
 
-        '''
+        """
         i = 0
         for run in self.runs:
             if end - start == 0:
@@ -130,7 +133,7 @@ class RunList(object):
             self.runs = [_Run(run.value, 0)]
 
     def set_run(self, start, end, value):
-        '''Set the value of a range of characters.
+        """Set the value of a range of characters.
 
         :Parameters:
             `start` : int
@@ -140,10 +143,10 @@ class RunList(object):
             `value` : object
                 Value to set over the range.
 
-        '''
+        """
         if end - start <= 0:
             return
-        
+
         # Find runs that need to be split
         i = 0
         start_i = None
@@ -159,7 +162,7 @@ class RunList(object):
                 end_i = run_i
                 end_trim = end - i
             i += count
-        
+
         # Split runs
         if start_i is not None:
             run = self.runs[start_i]
@@ -173,15 +176,15 @@ class RunList(object):
             run = self.runs[end_i]
             self.runs.insert(end_i, _Run(run.value, end_trim))
             run.count -= end_trim
-                
+
         # Set new value on runs
         i = 0
         for run in self.runs:
-            if start <= i and i + run.count <= end: 
+            if start <= i and i + run.count <= end:
                 run.value = value
-            i += run.count 
+            i += run.count
 
-        # Merge adjacent runs
+            # Merge adjacent runs
         last_run = self.runs[0]
         for run in self.runs[1:]:
             if run.value == last_run.value:
@@ -199,21 +202,21 @@ class RunList(object):
             i += run.count
 
     def get_run_iterator(self):
-        '''Get an extended iterator over the run list.
+        """Get an extended iterator over the run list.
 
         :rtype: `RunIterator`
-        '''
+        """
         return RunIterator(self)
 
     def __getitem__(self, index):
-        '''Get the value at a character position.
+        """Get the value at a character position.
 
         :Parameters:
             `index` : int
                 Index of character.  Must be within range and non-negative.
 
         :rtype: object
-        '''
+        """
         i = 0
         for run in self.runs:
             if i <= index < i + run.count:
@@ -229,8 +232,9 @@ class RunList(object):
     def __repr__(self):
         return str(list(self))
 
+
 class AbstractRunIterator(object):
-    '''Range iteration over `RunList`.
+    """Range iteration over `RunList`.
 
     `AbstractRunIterator` objects allow any monotonically non-decreasing
     access of the iteration, including repeated iteration over the same index.
@@ -259,10 +263,10 @@ class AbstractRunIterator(object):
             pass
 
     Both start and end indices of the slice are required and must be positive.
-    '''
+    """
 
     def __getitem__(self, index):
-        '''Get the value at a given index.
+        """Get the value at a given index.
 
         See the class documentation for examples of valid usage.
 
@@ -271,10 +275,10 @@ class AbstractRunIterator(object):
                 Document position to query.
 
         :rtype: object
-        '''
+        """
 
     def ranges(self, start, end):
-        '''Iterate over a subrange of the run list.
+        """Iterate over a subrange of the run list.
 
         See the class documentation for examples of valid usage.
 
@@ -286,13 +290,14 @@ class AbstractRunIterator(object):
 
         :rtype: iterator
         :return: Iterator over (start, end, value) tuples.
-        '''
+        """
+
 
 class RunIterator(AbstractRunIterator):
     def __init__(self, run_list):
         self._run_list_iter = iter(run_list)
         self.start, self.end, self.value = next(self)
-        
+
     def __next__(self):
         return next(self._run_list_iter)
 
@@ -316,12 +321,14 @@ class RunIterator(AbstractRunIterator):
         except StopIteration:
             return
 
+
 class OverriddenRunIterator(AbstractRunIterator):
-    '''Iterator over a `RunIterator`, with a value temporarily replacing
+    """Iterator over a `RunIterator`, with a value temporarily replacing
     a given range.
-    '''
+    """
+
     def __init__(self, base_iterator, start, end, value):
-        '''Create a derived iterator.
+        """Create a derived iterator.
 
         :Parameters:
             `start` : int
@@ -331,7 +338,7 @@ class OverriddenRunIterator(AbstractRunIterator):
             `value` : object
                 Value to replace over the range
 
-        '''
+        """
         self.iter = base_iterator
         self.override_start = start
         self.override_end = end
@@ -353,19 +360,21 @@ class OverriddenRunIterator(AbstractRunIterator):
             if start < self.override_end < end:
                 for r in self.iter.ranges(self.override_end, end):
                     yield r
-        
+
     def __getitem__(self, index):
         if self.override_start <= index < self.override_end:
             return self.override_value
         else:
             return self.iter[index]
 
+
 class FilteredRunIterator(AbstractRunIterator):
-    '''Iterate over an `AbstractRunIterator` with filtered values replaced
+    """Iterate over an `AbstractRunIterator` with filtered values replaced
     by a default value.
-    '''
+    """
+
     def __init__(self, base_iterator, filter, default):
-        '''Create a filtered run iterator.
+        """Create a filtered run iterator.
 
         :Parameters:
             `base_iterator` : `AbstractRunIterator`
@@ -377,7 +386,7 @@ class FilteredRunIterator(AbstractRunIterator):
             `default` : object
                 Default value to replace filtered values.
 
-        '''
+        """
         self.iter = base_iterator
         self.filter = filter
         self.default = default
@@ -395,8 +404,10 @@ class FilteredRunIterator(AbstractRunIterator):
             return value
         return self.default
 
+
 class ZipRunIterator(AbstractRunIterator):
-    '''Iterate over multiple run iterators concurrently.'''
+    """Iterate over multiple run iterators concurrently."""
+
     def __init__(self, range_iterators):
         self.range_iterators = range_iterators
 
@@ -420,8 +431,10 @@ class ZipRunIterator(AbstractRunIterator):
     def __getitem__(self, index):
         return [i[index] for i in self.range_iterators]
 
+
 class ConstRunIterator(AbstractRunIterator):
-    '''Iterate over a constant value without creating a RunList.'''
+    """Iterate over a constant value without creating a RunList."""
+
     def __init__(self, length, value):
         self.length = length
         self.value = value
