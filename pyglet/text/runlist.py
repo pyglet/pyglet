@@ -437,6 +437,7 @@ class ConstRunIterator(AbstractRunIterator):
 
     def __init__(self, length, value):
         self.length = length
+        self.end = length
         self.value = value
 
     def __next__(self):
