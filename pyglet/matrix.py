@@ -4,18 +4,20 @@ import math as _math
 class Mat4(tuple):
     """A 4x4 Matrix
 
-    `Mat4` is a simple 4x4 Matrix, with a few operators.
+    `Mat4` is a simple immutable 4x4 Matrix, with a few operators.
     Two types of multiplication are possible. The "*" operator
     will perform elementwise multiplication, wheras the "@"
-    operator will perform Matrix multiplication.
+    operator will perform Matrix multiplication. Internally
+    data is stored in a linear 1D array, allowing direct passing
+    to OpenGL.
     """
 
     def __new__(cls, array=None):
-        """Create a Matrix
+        """Create a 4x4 Matrix
 
-        A Matrix can be created with tuple containing 16 floats
-        or ints. If no tuple is provided, an "identity Matrix"
-        will be created (1.0 on the main diagonal).
+        A Matrix can be created with list or tuple of 16 values.
+        If nothing is provided, an "identity Matrix" will be created
+        (1.0 on the main diagonal). Matrix objects are immutable.
 
         :Parameters:
             `array` : tuple of float or int
@@ -62,7 +64,7 @@ class Mat4(tuple):
         height = xymax - ymin
         depth = zfar - znear
         q = -(zfar + znear) / depth
-        qn = -2 * (zfar * znear) / depth
+        qn = -2 * zfar * znear / depth
 
         w = 2 * znear / width
         w = w / aspect
@@ -72,6 +74,9 @@ class Mat4(tuple):
                      0, h, 0, 0,
                      0, 0, q, -1,
                      0, 0, qn, 0))
+
+    def translate(self, x=0, y=0, z=0):
+        return Mat4((*self[:12], self[12] + x, self[13] + y, self[14] + z, self[15]))
 
     def __add__(self, other):
         assert isinstance(other, Mat4), "Only addition with Mat4 types is supported"
