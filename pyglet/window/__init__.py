@@ -127,10 +127,10 @@ import math
 
 import pyglet
 from pyglet import gl
+from pyglet import matrix
 from pyglet.event import EventDispatcher
 from pyglet.compat import with_metaclass
 from pyglet.window import key
-from pyglet.matrix import Mat4
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -254,8 +254,8 @@ class Projection2D(Projection):
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        projection = Mat4.create_orthogonal(0, width, 0, height, -255, 255)
-        view = Mat4()       # Identity Matrix
+        projection = matrix.create_orthogonal(0, width, 0, height, -255, 255)
+        view = matrix.Mat4()       # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
@@ -286,8 +286,8 @@ class Projection3D(Projection):
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        projection = Mat4.create_perspective(0, width, 0, height, self.znear, self.zfar, self.fov)
-        view = Mat4()      # Identity Matrix
+        projection = matrix.create_perspective(0, width, 0, height, self.znear, self.zfar, self.fov)
+        view = matrix.Mat4()      # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection

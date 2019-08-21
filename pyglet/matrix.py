@@ -4,6 +4,7 @@ from functools import lru_cache as _lru_cache
 
 @_lru_cache()
 def create_orthogonal(left, right, bottom, top, znear, zfar):
+    """Create a Mat4 with orthographic projection."""
     width = right - left
     height = top - bottom
     depth = zfar - znear
@@ -24,9 +25,9 @@ def create_orthogonal(left, right, bottom, top, znear, zfar):
 
 @_lru_cache()
 def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
+    """Create a Mat4 with perspective projection."""
     width = right - left
     height = top - bottom
-
     aspect = width / height
 
     xymax = znear * _math.tan(fov * _math.pi / 360)
@@ -47,6 +48,15 @@ def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
                  0, h, 0, 0,
                  0, 0, q, -1,
                  0, 0, qn, 0))
+
+
+def translate(matrix, x=0, y=0, z=0):
+    """Translate a matrix along x, y, and z axis."""
+    return Mat4((*matrix[:12], matrix[12] + x, matrix[13] + y, matrix[14] + z, matrix[15]))
+
+
+def rotate(matrix, angle=0, x=0, y=0, z=0):
+    pass
 
 
 class Mat4(tuple):
@@ -77,9 +87,6 @@ class Mat4(tuple):
                           0.0, 0.0, 1.0, 0.0,
                           0.0, 0.0, 0.0, 1.0)
         return super().__new__(Mat4, array)
-
-    def translate(self, x=0, y=0, z=0):
-        return Mat4((*self[:12], self[12] + x, self[13] + y, self[14] + z, self[15]))
 
     def __add__(self, other):
         assert isinstance(other, Mat4), "Only addition with Mat4 types is supported"
