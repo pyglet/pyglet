@@ -1,4 +1,52 @@
 import math as _math
+from functools import lru_cache as _lru_cache
+
+
+@_lru_cache()
+def create_orthogonal(left, right, bottom, top, znear, zfar):
+    width = right - left
+    height = top - bottom
+    depth = zfar - znear
+
+    sx = 2.0 / width
+    sy = 2.0 / height
+    sz = 2.0 / -depth
+
+    tx = -(right + left) / width
+    ty = -(top + bottom) / height
+    tz = -(zfar + znear) / depth
+
+    return Mat4((sx, 0.0, 0.0, 0.0,
+                 0.0, sy, 0.0, 0.0,
+                 0.0, 0.0, sz, 0.0,
+                 tx, ty, tz, 1.0))
+
+
+@_lru_cache()
+def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
+    width = right - left
+    height = top - bottom
+
+    aspect = width / height
+
+    xymax = znear * _math.tan(fov * _math.pi / 360)
+    ymin = -xymax
+    xmin = -xymax
+
+    width = xymax - xmin
+    height = xymax - ymin
+    depth = zfar - znear
+    q = -(zfar + znear) / depth
+    qn = -2 * zfar * znear / depth
+
+    w = 2 * znear / width
+    w = w / aspect
+    h = 2 * znear / height
+
+    return Mat4((w, 0, 0, 0,
+                 0, h, 0, 0,
+                 0, 0, q, -1,
+                 0, 0, qn, 0))
 
 
 class Mat4(tuple):
@@ -29,51 +77,6 @@ class Mat4(tuple):
                           0.0, 0.0, 1.0, 0.0,
                           0.0, 0.0, 0.0, 1.0)
         return super().__new__(Mat4, array)
-
-    @classmethod
-    def create_orthogonal(cls, left, right, bottom, top, znear, zfar):
-        width = right - left
-        height = top - bottom
-        depth = zfar - znear
-
-        sx = 2.0 / width
-        sy = 2.0 / height
-        sz = 2.0 / -depth
-
-        tx = -(right + left) / width
-        ty = -(top + bottom) / height
-        tz = -(zfar + znear) / depth
-
-        return Mat4((sx,  0.0, 0.0, 0.0,
-                     0.0, sy,  0.0, 0.0,
-                     0.0, 0.0, sz,  0.0,
-                     tx,  ty,  tz,  1.0))
-
-    @classmethod
-    def create_perspective(cls, left, right, bottom, top, znear, zfar, fov=60):
-        width = right - left
-        height = top - bottom
-
-        aspect = width / height
-
-        xymax = znear * _math.tan(fov * _math.pi / 360)
-        ymin = -xymax
-        xmin = -xymax
-
-        width = xymax - xmin
-        height = xymax - ymin
-        depth = zfar - znear
-        q = -(zfar + znear) / depth
-        qn = -2 * zfar * znear / depth
-
-        w = 2 * znear / width
-        w = w / aspect
-        h = 2 * znear / height
-
-        return Mat4((w, 0, 0, 0,
-                     0, h, 0, 0,
-                     0, 0, q, -1,
-                     0, 0, qn, 0))
 
     def translate(self, x=0, y=0, z=0):
         return Mat4((*self[:12], self[12] + x, self[13] + y, self[14] + z, self[15]))
