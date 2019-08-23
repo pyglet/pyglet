@@ -50,13 +50,22 @@ def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
                  0, 0, qn, 0))
 
 
+def rotate(matrix, angle=0, x=0, y=0, z=0):
+    pass
+
+
+def scale(matrix, value):
+    """Scale a matrix."""
+    temp = list(matrix)
+    temp[0] *= value
+    temp[5] *= value
+    temp[10] *= value
+    return Mat4(temp)
+
+
 def translate(matrix, x=0, y=0, z=0):
     """Translate a matrix along x, y, and z axis."""
     return Mat4((*matrix[:12], matrix[12] + x, matrix[13] + y, matrix[14] + z, matrix[15]))
-
-
-def rotate(matrix, angle=0, x=0, y=0, z=0):
-    pass
 
 
 class Mat4(tuple):
@@ -70,7 +79,7 @@ class Mat4(tuple):
     to OpenGL.
     """
 
-    def __new__(cls, array=None):
+    def __new__(cls, values=None):
         """Create a 4x4 Matrix
 
         A Matrix can be created with list or tuple of 16 values.
@@ -78,15 +87,15 @@ class Mat4(tuple):
         (1.0 on the main diagonal). Matrix objects are immutable.
 
         :Parameters:
-            `array` : tuple of float or int
+            `values` : tuple of float or int
                 A tuple containing 16 values.
         """
-        assert array is None or len(array) == 16,  "Mat4 requires 16 values"
-        array = array or (1.0, 0.0, 0.0, 0.0,
-                          0.0, 1.0, 0.0, 0.0,
-                          0.0, 0.0, 1.0, 0.0,
-                          0.0, 0.0, 0.0, 1.0)
-        return super().__new__(Mat4, array)
+        assert values is None or len(values) == 16, "A 4x4 Matrix requires 16 values"
+        values = values or (1.0, 0.0, 0.0, 0.0,
+                            0.0, 1.0, 0.0, 0.0,
+                            0.0, 0.0, 1.0, 0.0,
+                            0.0, 0.0, 0.0, 1.0)
+        return super().__new__(Mat4, values)
 
     def __add__(self, other):
         assert isinstance(other, Mat4), "Only addition with Mat4 types is supported"
