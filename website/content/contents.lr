@@ -27,11 +27,11 @@ content:
 
 pyglet is provided under the BSD open-source license, allowing you to use it for both commercial and other open-source projects with very little restriction.
 ----
-button_content: 
+button_content: githublogo.jpg
 ----
-button_type: 
+button_type: image
 ----
-button_link: 
+button_link: https://github.com/pyglet/pyglet
 #### services ####
 title: Features
 ----
