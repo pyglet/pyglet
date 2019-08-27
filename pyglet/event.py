@@ -134,6 +134,22 @@ updates the application state and checks for new events::
 Not all event dispatchers require the call to ``dispatch_events``; check with
 the particular class documentation.
 
+.. note::
+
+    In order to prevent issues with garbage collection, the
+    :py:class:`~pyglet.event.EventDispatcher` class only holds weak
+    references to pushed event handlers. That means the following example
+    will not work, because the pushed object will fall out of scope and be
+    collected::
+
+        dispatcher.push_handlers(MyHandlerClass())
+
+    Instead, you must make sure to keep a reference to the object before pushing
+    it. For example::
+
+        my_handler_instance = MyHandlerClass()
+        dispatcher.push_handlers(my_handler_instance)
+
 """
 from builtins import object
 
