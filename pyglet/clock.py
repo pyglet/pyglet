@@ -110,25 +110,10 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
 of the system clock.
 """
-import sys
 import time
-import ctypes
 from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
 from collections import deque
-
-import pyglet.lib
-from pyglet import compat_platform
-
-
-class _ClockBase(object):
-
-    @staticmethod
-    def sleep(microseconds):
-        time.sleep(microseconds * 1e-6)
-
-
-_default_time_function = time.perf_counter
 
 
 class _ScheduledItem(object):
@@ -158,26 +143,11 @@ class _ScheduledIntervalItem(object):
             return self.next_ts < other
 
 
-class Clock(_ClockBase):
+class Clock:
     """Class for calculating and limiting framerate.
 
     It is also used for calling scheduled functions.
     """
-
-    #: The minimum amount of time in seconds this clock will attempt to sleep
-    #: for when framerate limiting.  Higher values will increase the
-    #: accuracy of the limiting but also increase CPU usage while
-    #: busy-waiting.  Lower values mean the process sleeps more often, but is
-    #: prone to over-sleep and run at a potentially lower or uneven framerate
-    #: than desired.
-    #: On Windows, MIN_SLEEP is larger because the default timer resolution
-    #: is set by default to 15 .6 ms.
-    MIN_SLEEP = 0.008 if compat_platform in ('win32', 'cygwin') else 0.005
-
-    #: The amount of time in seconds this clock subtracts from sleep values
-    #: to compensate for lazy operating systems.
-    SLEEP_UNDERSHOOT = MIN_SLEEP - 0.001
-
     # List of functions to call every tick.
     _schedule_items = None
 
@@ -187,7 +157,7 @@ class Clock(_ClockBase):
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep = False
 
-    def __init__(self, time_function=_default_time_function):
+    def __init__(self, time_function=time.perf_counter):
         """Initialise a Clock, with optional custom time function.
 
         :Parameters:
@@ -201,15 +171,15 @@ class Clock(_ClockBase):
         self.time = time_function
         self.next_ts = self.time()
         self.last_ts = None
-        self.times = deque()
 
+        # Used by self.get_fps to show update frequency
+        self.times = deque()
         self.cumulative_time = 0
+        self.window_size = 60
 
         self._schedule_items = []
         self._schedule_interval_items = []
         self._current_interval_item = None
-
-        self.time_window_size = 60
 
     def update_time(self):
         """Get the elapsed time since the last call to `update_time`.
@@ -229,7 +199,7 @@ class Clock(_ClockBase):
         else:
             delta_t = ts - self.last_ts
             self.times.appendleft(delta_t)
-            if len(self.times) > self.time_window_size:
+            if len(self.times) > self.window_size:
                 self.cumulative_time -= self.times.pop()
         self.cumulative_time += delta_t
         self.last_ts = ts
@@ -354,7 +324,8 @@ class Clock(_ClockBase):
         self.call_scheduled_functions(delta_t)
         return delta_t
 
-    def sleep(self, microseconds):
+    @staticmethod
+    def sleep(microseconds):
         time.sleep(microseconds * 1e-6)
 
     def get_sleep_time(self, sleep_idle):
@@ -384,7 +355,7 @@ class Clock(_ClockBase):
         .. versionadded:: 1.1
         """
         if self._schedule_items or not sleep_idle:
-                return 0.0
+            return 0.0
 
         if self._schedule_interval_items:
             return max(self._schedule_interval_items[0].next_ts - self.time(), 0.0)
@@ -392,13 +363,14 @@ class Clock(_ClockBase):
         return None
 
     def get_fps(self):
-        """Get the average FPS of recent history.
+        """Get the average clock update frequency of recent history.
 
-        The result is the average of a sliding window of the last "n" frames,
+        The result is the average of a sliding window of the last "n" updates,
         where "n" is some number designed to cover approximately 1 second.
+        This is **not** the Window redraw rate.
 
         :rtype: float
-        :return: The measured frames per second.
+        :return: The measured updates per second.
         """
         if not self.cumulative_time:
             return 0
@@ -662,9 +634,16 @@ def get_sleep_time(sleep_idle):
 
 
 def get_fps():
-    """Return the current measured FPS of the default clock.
+    """Get the average clock update frequency.
+
+    The result is the sliding average of the last "n" updates,
+    where "n" is some number designed to cover approximately 1
+    second. This is **not** the Window redraw rate. Platform
+    events, such as moving the mouse rapidly, will cause the
+    clock to refresh more often
 
     :rtype: float
+    :return: The measured updates per second.
     """
     return _default.get_fps()
 

@@ -55,15 +55,17 @@ To query which GameControllers are available, call :py:func:`get_game_controller
 
 .. versionadded:: 2.0
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
+import os
 
 from .gamecontrollerdb import mapping_list
 
 
-class Relation:
+env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
+if env_config:
+    mapping_list.append(env_config)
+
+
+class _Relation:
     __slots__ = 'control_type', 'index', 'inverted'
 
     def __init__(self, control_type, index, inverted=False):
@@ -85,11 +87,11 @@ def _map_pair(raw_relation):
         # TODO: handle this
         return None
     if relation_string.startswith("b"):     # Button
-        return Relation("button", int(relation_string[1:]), inverted)
+        return _Relation("button", int(relation_string[1:]), inverted)
     elif relation_string.startswith("a"):   # Axis
-        return Relation("axis", int(relation_string[1:]), inverted)
+        return _Relation("axis", int(relation_string[1:]), inverted)
     elif relation_string.startswith("h0"):  # Hat
-        return Relation("hat0", int(relation_string.split(".")[1]), inverted)
+        return _Relation("hat0", int(relation_string.split(".")[1]), inverted)
 
 
 def _parse_mapping(mapping_string):

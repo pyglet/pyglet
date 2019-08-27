@@ -1,0 +1,29 @@
+[project]
+name = pyglet project
+themes = lektor-icon
+
+[servers.ghpages]
+target = ghpages+https://pyglet/pyglet.github.io?cname=pyglet.org
+
+
+[theme_settings]
+title = pyglet
+content_lang = en-US
+description = Web site of the pyglet project
+keywords = website, pyglet, python, gamedev, development
+favicon_path = /favicon.ico
+theme_accent_color = #ff6161
+theme_pipe_color = rgb(255, 76, 82)
+custom_css = /static/css/example-custom-styles.css
+
+content_security_policy = true
+content_security_policy_frame_src =
+content_security_policy_script_src =
+content_security_policy_style_src =
+
+loader_enable = true
+nav_logo_path = /static/images/pyglet.png
+nav_logo_text = pyglet
+
+footer_links = Github: https://github.com/pyglet/pyglet, Discord: https://discord.gg/QXyegWe, Google Groups: https://groups.google.com/d/forum/pyglet-users
+

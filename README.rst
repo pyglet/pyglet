@@ -1,10 +1,21 @@
+.. image:: https://badge.fury.io/py/pyglet.svg
+   :target: https://pypi.python.org/pypi/pyglet
+
 pyglet
 ======
 
-http://www.pyglet.org/
-
 pyglet provides an object-oriented programming interface for developing games
 and other visually-rich applications for Windows, Mac OS X and Linux.
+
+* `Pyglet Documentation <https://pyglet.readthedocs.io/en/latest/>`_
+* `Pyglet Wiki <https://github.com/pyglet/pyglet/wiki>`_
+* `Pyglet on PyPI <https://pypi.org/project/pyglet/>`_
+* `Pyglet Discord Server <https://discord.gg/QXyegWe>`_
+* `Pyglet mailing list <http://groups.google.com/group/pyglet-users>`_
+* `Pyglet Website <http://pyglet.org/>`_
+
+Pyglet has an active developer and user community.  If you find a bug, please
+`open an issue <https://github.com/pyglet/pyglet/issues>`_.
 
 Requirements
 ------------
@@ -18,9 +29,10 @@ interpreters such as PyPy. pyglet works on the following operating systems:
 * Mac OS X 10.3 or later
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
-    * OpenGL and GLX
-    * GDK 2.0+ or PIL (required for loading images other than PNG and BMP)
-    * OpenAL or Pulseaudio (required for playing audio)
+
+  * OpenGL and GLX
+  * GDK 2.0+ or PIL (required for loading images other than PNG and BMP)
+  * OpenAL or Pulseaudio (required for playing audio)
 
 Installation
 ------------
@@ -38,25 +50,8 @@ There are no compilation steps during the installation; if you prefer,
 you can simply add this directory to your PYTHONPATH and use pyglet without
 installing it. You can also copy pyglet directly into your project folder.
 
-The documentation is available online at https://pyglet.readthedocs.io/en/latest/
-but if you want to build the documentation yourself, please check the README file
+If you want to build the documentation yourself, please check the README file
 in the doc directory.
-
-Support
--------
-
-pyglet has an active developer and user community.  If you find a bug, please
-open an issue at https://github.com/pyglet/pyglet/issues.
-
-Please join us on the mailing list at:
-
-    http://groups.google.com/group/pyglet-users
-
-Or drop by our Discord channel:
-
-    https://discord.gg/QXyegWe
-
-For more information, visit http://www.pyglet.org
 
 Testing
 -------

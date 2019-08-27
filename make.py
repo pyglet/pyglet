@@ -4,14 +4,15 @@ import os
 import os.path as op
 import sys
 import shutil
-import inspect
 import webbrowser
+
 from subprocess import call
 
 THIS_DIR = op.dirname(op.abspath(__file__))
 DOC_DIR = op.join(THIS_DIR, 'doc')
 DIST_DIR = op.join(THIS_DIR, 'dist')
 GENDIST_TOOL = op.join(THIS_DIR, 'tools', 'gendist.sh')
+
 
 def clean():
     """Clean up all build artifacts, including generated documentation."""
@@ -34,14 +35,14 @@ def clean():
 
 def docs():
     """Generate documentation"""
-    make_bin = 'make.exe' if sys.platform=='win32' else 'make'
+    make_bin = 'make.exe' if sys.platform == 'win32' else 'make'
 
     html_dir = op.join(DOC_DIR, '_build', 'html')
     if not op.exists(html_dir):
         os.makedirs(op.join(DOC_DIR, '_build', 'html'))
     call([make_bin, 'html'], cwd=DOC_DIR)
     if '--open' in sys.argv:
-        webbrowser.open('file://'+op.abspath(DOC_DIR)+'/_build/html/index.html')
+        webbrowser.open('file://' + op.abspath(DOC_DIR) + '/_build/html/index.html')
 
 
 def dist():
@@ -58,11 +59,8 @@ def _print_usage():
         print(name, '\t', cmd.__doc__)
 
 
-if __name__=='__main__':
-    avail_cmds = dict(filter(lambda kv: not kv[0].startswith('_') 
-                             and inspect.isfunction(kv[1])
-                             and kv[1].__module__ == '__main__',
-                             locals().items()))
+if __name__ == '__main__':
+    avail_cmds = dict(clean=clean, dist=dist, docs=docs)
     try:
         cmd = avail_cmds[sys.argv[1]]
     except IndexError:

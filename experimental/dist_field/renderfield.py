@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # $Id:$
 
+from __future__ import print_function
 import ctypes
 import sys
 
@@ -29,7 +30,7 @@ class Shader(object):
             glGetProgramiv(program, GL_INFO_LOG_LENGTH, length)
             log = ctypes.c_buffer(length.value)
             glGetProgramInfoLog(program, len(log), None, log)
-            print >> sys.stderr, log.value
+            print(log.value, file=sys.stderr)
             raise RuntimeError('Program link error')
 
         self.program = program
@@ -50,7 +51,7 @@ class Shader(object):
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, length)
             log = ctypes.c_buffer(length.value)
             glGetShaderInfoLog(shader, len(log), None, log)
-            print >> sys.stderr, log.value
+            print(log.value, file=sys.stderr)
             raise RuntimeError('Shader compile error')
 
         return shader
@@ -156,13 +157,13 @@ def on_key_press(symbol, modifiers):
         else:
             outline_width -= 0.005
 
-    print '-' * 78
-    print 'enable_shader', enable_shader
-    print 'enable_bidirectional', enable_bidirectional
-    print 'enable_antialias', enable_antialias
-    print 'enable_outline', enable_outline
-    print 'enable_glow', enable_glow
-    print 'outline_width', outline_width
+    print('-' * 78)
+    print('enable_shader', enable_shader)
+    print('enable_bidirectional', enable_bidirectional)
+    print('enable_antialias', enable_antialias)
+    print('enable_outline', enable_outline)
+    print('enable_glow', enable_glow)
+    print('outline_width', outline_width)
 
 image = pyglet.image.load(sys.argv[1])
 image.anchor_x = image.width // 2

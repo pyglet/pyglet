@@ -36,7 +36,7 @@
 """Windowing and user-interface events.
 
 This module allows applications to create and display windows with an
-OpenGL context.  Windows can be created with a variety of border styles 
+OpenGL context.  Windows can be created with a variety of border styles
 or set fullscreen.
 
 You can register event handlers for keyboard, mouse and window events.
@@ -50,7 +50,7 @@ Getting started
 Call the Window constructor to create a new window::
 
     from pyglet.window import Window
-    win = Window(width=640, height=480)
+    win = Window(width=960, height=540)
 
 Attach your own event handlers::
 
@@ -127,10 +127,11 @@ import math
 
 import pyglet
 from pyglet import gl
+from pyglet import matrix
 from pyglet.event import EventDispatcher
 from pyglet.compat import with_metaclass
-import pyglet.window.key
-import pyglet.window.event
+from pyglet.window import key
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -173,8 +174,8 @@ class MouseCursor(object):
         """Abstract render method.
 
         The cursor should be drawn with the "hot" spot at the given
-        coordinates.  The projection is set to the pyglet default (i.e., 
-        orthographic in window-space), however no other aspects of the 
+        coordinates.  The projection is set to the pyglet default (i.e.,
+        orthographic in window-space), however no other aspects of the
         state can be assumed.
 
         :Parameters:
@@ -222,13 +223,13 @@ class ImageMouseCursor(MouseCursor):
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
 
 
-class Projection(object):
+class Projection:
     """Abstract OpenGL projection."""
 
-    def set(self, window_width, window_height, viewport_width, viewport_height):
+    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         """Set the OpenGL projection
 
-        Using the passed in Window and viewport sizes,
+        Using the passed in Window and framebuffer sizes,
         set a desired orthographic or perspective projection.
 
         :Parameters:
@@ -236,10 +237,10 @@ class Projection(object):
                 The Window width
             `window_height` : int
                 The Window height
-            `viewport_width` : int
-                The Window internal viewport width.
-            `viewport_height` : int
-                The Window internal viewport height.
+            `framebuffer_width` : int
+                The Window framebuffer width.
+            `framebuffer_height` : int
+                The Window framebuffer height.
         """
         raise NotImplementedError('abstract')
 
@@ -247,24 +248,14 @@ class Projection(object):
 class Projection2D(Projection):
     """A 2D orthographic projection"""
 
-    def set(self, window_width, window_height, viewport_width, viewport_height):
+    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         width = max(1, window_width)
         height = max(1, window_height)
 
-        gl.glViewport(0, 0, viewport_width, viewport_height)
+        gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        sx = 2.0 / width
-        sy = 2.0 / height
-
-        projection = (sx,  0.0, 0.0, 0.0,
-                      0.0, sy,  0.0, 0.0,
-                      0.0, 0.0, 1.0, 0.0,
-                      -1., -1., 0.0, 1.0)
-
-        view = (1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0)
+        projection = matrix.create_orthogonal(0, width, 0, height, -255, 255)
+        view = matrix.Mat4()       # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
@@ -274,14 +265,14 @@ class Projection2D(Projection):
 class Projection3D(Projection):
     """A 3D perspective projection"""
 
-    def __init__(self, fov=60, znear=1, zfar=255):
+    def __init__(self, fov=60, znear=0.1, zfar=255):
         """Create a 3D projection
 
         :Parameters:
             `fov` : float
                 The field of vision. Defaults to 60.
             `znear` : float
-                The near clipping plane. Defaults to 1.
+                The near clipping plane. Defaults to 0.1.
             `zfar` : float
                 The far clipping plane. Defaults to 255.
         """
@@ -289,39 +280,14 @@ class Projection3D(Projection):
         self.znear = znear
         self.zfar = zfar
 
-    def set(self, window_width, window_height, viewport_width, viewport_height):
+    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         width = max(1, window_width)
         height = max(1, window_height)
 
-        gl.glViewport(0, 0, viewport_width, viewport_height)
+        gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        aspect = width/height
-        znear = self.znear
-        zfar = self.zfar
-
-        xymax = znear * math.tan(self.fov * math.pi / 360)
-        ymin = -xymax
-        xmin = -xymax
-
-        width = xymax - xmin
-        height = xymax - ymin
-        depth = zfar - znear
-        q = -(zfar + znear) / depth
-        qn = -2 * (zfar * znear) / depth
-
-        w = 2 * znear / width
-        w = w / aspect
-        h = 2 * znear / height
-
-        projection = (w, 0, 0, 0,
-                      0, h, 0, 0,
-                      0, 0, q, -1,
-                      0, 0, qn, 0)
-
-        view = (1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0)
+        projection = matrix.create_perspective(0, width, 0, height, self.znear, self.zfar, self.fov)
+        view = matrix.Mat4()      # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection = projection
@@ -329,8 +295,8 @@ class Projection3D(Projection):
 
 
 def _PlatformEventHandler(data):
-    """Decorator for platform event handlers.  
-    
+    """Decorator for platform event handlers.
+
     Apply giving the platform-specific data needed by the window to associate
     the method with an event.  See platform-specific subclasses of this
     decorator for examples.
@@ -429,19 +395,19 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: A mouse cursor indicating the element can be resized from the
     #: upper-right corner.
     CURSOR_SIZE_UP_RIGHT = 'size_up_right'
-    #: A mouse cursor indicating the element can be resized from the right 
+    #: A mouse cursor indicating the element can be resized from the right
     #: border.
     CURSOR_SIZE_RIGHT = 'size_right'
     #: A mouse cursor indicating the element can be resized from the lower-right
     #: corner.
     CURSOR_SIZE_DOWN_RIGHT = 'size_down_right'
-    #: A mouse cursor indicating the element can be resized from the bottom 
+    #: A mouse cursor indicating the element can be resized from the bottom
     #: border.
     CURSOR_SIZE_DOWN = 'size_down'
     #: A mouse cursor indicating the element can be resized from the lower-left
     #: corner.
     CURSOR_SIZE_DOWN_LEFT = 'size_down_left'
-    #: A mouse cursor indicating the element can be resized from the left 
+    #: A mouse cursor indicating the element can be resized from the left
     #: border.
     CURSOR_SIZE_LEFT = 'size_left'
     #: A mouse cursor indicating the element can be resized from the upper-left
@@ -517,8 +483,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     # Class attributes
 
-    _default_width = 640
-    _default_height = 480
+    _default_width = 960
+    _default_height = 540
 
     def __init__(self,
                  width=None,
@@ -540,7 +506,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         where they are not specified.
 
         The `display`, `screen`, `config` and `context` parameters form
-        a hierarchy of control: there is no need to specify more than 
+        a hierarchy of control: there is no need to specify more than
         one of these.  For example, if you specify `screen` the `display`
         will be inferred, and a default `config` and `context` will be
         created.
@@ -554,10 +520,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         :Parameters:
             `width` : int
-                Width of the window, in pixels.  Defaults to 640, or the
+                Width of the window, in pixels.  Defaults to 960, or the
                 screen width if `fullscreen` is True.
             `height` : int
-                Height of the window, in pixels.  Defaults to 480, or the
+                Height of the window, in pixels.  Defaults to 540, or the
                 screen height if `fullscreen` is True.
             `caption` : str or unicode
                 Initial caption (title) of the window.  Defaults to
@@ -695,7 +661,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             `changes` : list of str
                 List of attribute names that were changed since the last
                 `_create` or `_recreate`.  For example, ``['fullscreen']``
-                is given if the window is to be toggled to or from fullscreen. 
+                is given if the window is to be toggled to or from fullscreen.
         """
         raise NotImplementedError('abstract')
 
@@ -1068,7 +1034,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     def set_size(self, width, height):
         """Resize the window.
-        
+
         The behaviour is undefined if the window is not resizable, or if
         it is currently fullscreen.
 
@@ -1082,6 +1048,23 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         """
         raise NotImplementedError('abstract')
+
+    def get_pixel_ratio(self):
+        """Return the framebuffer/window size ratio.
+
+        Some platforms and/or window systems support subpixel scaling,
+        making the framebuffer size larger than the window size.
+        Retina screens on OS X and Gnome on Linux are some examples.
+
+        On a Retina systems the returned ratio would usually be 2.0 as a
+        window of size 500 x 500 would have a frambuffer of 1000 x 1000.
+        Fractional values between 1.0 and 2.0, as well as values above
+        2.0 may also be encountered.
+
+        :rtype: float
+        :return: The framebuffer/window size ratio
+        """
+        return self.get_framebuffer_size()[0] / self.width
 
     def get_size(self):
         """Return the current size of the window.
@@ -1293,7 +1276,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     def set_icon(self, *images):
         """Set the window icon.
 
-        If multiple images are provided, one with an appropriate size 
+        If multiple images are provided, one with an appropriate size
         will be selected (if the correct size is not provided, the image
         will be scaled).
 
@@ -1303,7 +1286,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         :Parameters:
             `images` : sequence of `pyglet.image.AbstractImage`
                 List of images to use for the window icon.
-        
+
         """
         pass
 
@@ -1352,7 +1335,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     The key symbol pressed.
                 `modifiers` : int
                     Bitwise combination of the key modifiers active.
-            
+
             :event:
             """
 
@@ -1511,7 +1494,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 `modifiers` : int
                     Bitwise combination of any keyboard modifiers currently
                     active.
-                
+
             :event:
             """
 
@@ -1683,7 +1666,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         def on_context_lost(self):
             """The window's GL context was lost.
-            
+
             When the context is lost no more GL methods can be called until it
             is recreated.  This is a rare event, triggered perhaps by the user
             switching to an incompatible video mode.  When it occurs, an
@@ -1770,12 +1753,13 @@ class FPSDisplay(object):
 
     The style and position of the display can be modified via the :py:func:`~pyglet.text.Label`
     attribute.  Different text can be substituted by overriding the
-    `set_fps` method.  The display can be set to update more or less often 
-    by setting the `update_period` attribute.
+    `set_fps` method.  The display can be set to update more or less often
+    by setting the `update_period` attribute. Note: setting the `update_period`
+    to a value smaller than your Window refresh rate will cause inaccurate readings.
 
     :Ivariables:
         `label` : Label
-            The text label displaying the framerate. 
+            The text label displaying the framerate.
 
     """
 
@@ -1810,7 +1794,7 @@ class FPSDisplay(object):
         self.last_time = t
 
         if self.time >= self.update_period:
-            self.set_fps(self.count / self.update_period)
+            self.set_fps(self.count / self.time)
             self.time %= self.update_period
             self.count = 0
 

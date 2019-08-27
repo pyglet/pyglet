@@ -2,6 +2,7 @@
 
 '''
 '''
+from __future__ import print_function
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
@@ -32,10 +33,10 @@ if __name__ == '__main__':
                  '-mpyglet.libs.x11.xlib',
                  '/usr/include/X11/extensions/Xinerama.h')
         if 'xsync' in names:
-            print '------------------------------------'
-            print 'WARNING xsync requires import hacks.'
-            print ' ... copy over from current xsync.py'
-            print '------------------------------------'
+            print('------------------------------------')
+            print('WARNING xsync requires import hacks.')
+            print(' ... copy over from current xsync.py')
+            print('------------------------------------')
             wrap('tools/wraptypes/wrap.py',
                  '-opyglet/libs/x11/xsync.py',
                  '-lXext',

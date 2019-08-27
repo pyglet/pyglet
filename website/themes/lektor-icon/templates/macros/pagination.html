@@ -1,0 +1,21 @@
+{% macro render_pagination(pagination) %}
+{% set previous = '<i class="fa fa-mail-forward fa-rotate-180 fa-lg"></i> Previous' %}
+{% set next = 'Next <i class="fa fa-mail-reply fa-rotate-180 fa-lg"></i>' %}
+
+<div class="row blog-pagination">
+  <div class="small-6 columns previous">
+    {% if pagination.has_prev %}
+    <a href="{{ pagination.prev | url }}" class="button">{{ previous | safe }}</a>
+    {% else %}
+    <span class="button disabled" aria-disabled="true">{{ previous | safe }}</span>
+    {% endif %}
+  </div>
+  <div class="small-6 columns next">
+    {% if pagination.has_next %}
+    <a href="{{ pagination.next | url }}" class="button">{{ next | safe }}</a>
+    {% else %}
+    <span class="button disabled" aria-disabled="true">{{ next | safe }}</span>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}

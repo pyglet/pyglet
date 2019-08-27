@@ -115,10 +115,9 @@ class Shader:
         """
         if shader_type not in shader_types.keys():
             raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
-        self._source = source_string
         self.type = shader_type
 
-        shader_source_utf8 = self._source.encode("utf8")
+        shader_source_utf8 = source_string.encode("utf8")
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
@@ -173,7 +172,7 @@ class ShaderProgram:
     __slots__ = '_id', '_active', '_uniforms', '_uniform_blocks'
 
     # Cache UBOs to ensure all Shader Programs are using the same object.
-    # If the UBOs are recreated each time, they will not
+    # If the UBOs are recreated, they will not link to the same data.
     uniform_buffers = {}
 
     def __init__(self, *shaders):
@@ -333,7 +332,6 @@ class ShaderProgram:
             
             num_active = GLint()
             block_data_size = GLint()
-            num_indices = GLint()
 
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
             glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)

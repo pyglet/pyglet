@@ -1,0 +1,55 @@
+{% macro render_blog_post(post, from_index=false) %}
+{% if post.author %}
+{% set author =  site.get('authors/' + post.author) %}
+{% if not author %}
+{% set author = post.author %}
+{% endif %}
+{% else %}
+{% set author = '' %}
+{% endif %}
+<div class="blog-post">
+  {% if from_index %}
+  <div class="blog-header blog-index-header">
+  {% else %}
+  <div class="blog-header blog-post-header">
+  {% endif %}
+    <div class="row">
+      {% if author.image %}
+      <div class="column meta-blog-author">
+        <img alt="{{ author.name | striptags | striptags }} photo" class="author-img" src="{{ (author.path ~ '/' ~ author.image) | url }}">
+      </div>
+      {% endif %}
+      <div class="meta-blog-index">
+        <p>
+          {% if author.name %}
+          {{ author.name }}<br>
+          {% elif author %}
+          {{ author }}<br>
+          {% endif %}
+          {% if post.pub_date %}
+          <span class="small">{{ post.pub_date.strftime('%Y-%m-%d') }}</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    {% if from_index %}
+    <div class="row">
+      <h2><a href="{{ post | url }}">{{ post.title }}</a></h2>
+    </div>
+    {% else %}
+    <h1>{{ post.title }}</h1>
+    {{ post.body }}
+    {% endif %}
+  </div>
+  {% if from_index %}
+  {% if post.summary %}
+  <p>
+    {{ post.summary }}
+  </p>
+  {% endif %}
+  <p class="pull-right">
+    <a href="{{ post | url }}">Read more...</a>
+  </p>
+  {% endif %}
+</div>
+{% endmacro %}

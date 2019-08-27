@@ -95,8 +95,8 @@ class Caret:
     #: Blink period, in seconds.
     PERIOD = 0.5
 
-    #: Pixels to scroll viewport per mouse scroll wheel movement.  Defaults
-    #: to 12pt at 96dpi.
+    #: Pixels to scroll viewport per mouse scroll wheel movement.
+    #: Defaults to 12pt at 96dpi.
     SCROLL_INCREMENT = 12 * 96 // 72
 
     _mark = None

@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
 
 """Render simple text and formatted documents efficiently.
 
@@ -359,14 +358,12 @@ class _GlyphBox(_AbstractBox):
         for i in range(n_glyphs):
             indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
 
-        translation = (0, 0) * n_glyphs * 4
-
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
                                                ('vertices2f/dynamic', vertices),
                                                ('tex_coords3f/dynamic', tex_coords),
                                                ('colors4Bn/dynamic', colors),
-                                               ('translation2f/dynamic', translation))
+                                               'translation2f/dynamic')
 
         context.add_list(vertex_list)
 
@@ -404,14 +401,16 @@ class _GlyphBox(_AbstractBox):
                                                        GL_TRIANGLES, layout.background_group,
                                                        [0, 1, 2, 0, 2, 3],
                                                        ('vertices2f/dynamic', background_vertices),
-                                                       ('colors4Bn/dynamic', background_colors))
+                                                       ('colors4Bn/dynamic', background_colors),
+                                                       'translation2f/dynamic')
             context.add_list(background_list)
 
         if underline_vertices:
             underline_list = layout.batch.add(len(underline_vertices) // 2,
                                               GL_LINES, layout.foreground_decoration_group,
                                               ('vertices2f/dynamic', underline_vertices),
-                                              ('colors4Bn/dynamic', underline_colors))
+                                              ('colors4Bn/dynamic', underline_colors),
+                                              'translation2f/dynamic')
             context.add_list(underline_list)
 
     def delete(self, layout):
@@ -477,6 +476,8 @@ class _InlineElementBox(_AbstractBox):
 
 
 class _InvalidRange:
+    # Used by the IncrementalTextLayout
+
     def __init__(self):
         self.start = sys.maxsize
         self.end = 0
@@ -534,7 +535,7 @@ layout_vertex_source = """#version 330 core
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * translate_mat * vertices;
+        gl_Position = window.projection * window.view * translate_mat * vertices;
 
         text_colors = colors;
         texture_coords = tex_coords;
@@ -558,6 +559,7 @@ layout_fragment_source = """#version 330 core
 decoration_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
+    in vec2 translation;
 
     out vec4 vert_colors;
 
@@ -569,7 +571,10 @@ decoration_vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * vertices;
+        mat4 translate_mat = mat4(1.0);
+        translate_mat[3] = vec4(translation, 1.0, 1.0);
+
+        gl_Position = window.projection * window.view * translate_mat * vertices;
 
         vert_colors = colors;
     }
@@ -589,13 +594,10 @@ decoration_fragment_source = """#version 330 core
 _layout_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
 _layout_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
 _layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
-_scrollable_layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
 
 _decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
 _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
 _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
-
-# TODO: consider linking ShaderPrograms on-demand, to avoid uniform data conflicts
 
 
 class TextLayoutGroup(graphics.Group):
@@ -792,7 +794,7 @@ class TextLayout:
         self._batch = batch
 
         self._width = width
-        if height is not None:
+        if height:
             self._height = height
         if multiline:
             self._multiline = multiline
@@ -1599,7 +1601,7 @@ class ScrollableTextLayout(TextLayout):
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
     default_group_class = ScrollableTextLayoutGroup
-    default_shader = _scrollable_layout_program
+    default_shader = _layout_program
 
     _translate_x = 0
     _translate_y = 0
@@ -1719,7 +1721,6 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         self.owner_runs = runlist.RunList(0, None)
 
         if group:
-            # TODO: see if this is necessary
             assert isinstance(group, ScrollableTextLayoutGroup), "Only subclasses of ScrollableTextLayoutGroup allowed."
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
@@ -1890,7 +1891,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
             line = self.lines[line_index]
             invalid_start = min(invalid_start, line.start)
             line.delete(self)
-            line = self.lines[line_index] = _Line(invalid_start)
+            self.lines[line_index] = _Line(invalid_start)
             self.invalid_lines.invalidate(line_index, line_index + 1)
         except IndexError:
             line_index = 0
@@ -1902,8 +1903,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         content_width_invalid = False
         next_start = invalid_start
 
-        for line in self._flow_glyphs(self.glyphs, self.owner_runs,
-                                      invalid_start, len(self._document.text)):
+        for line in self._flow_glyphs(self.glyphs, self.owner_runs, invalid_start, len(self._document.text)):
             try:
                 old_line = self.lines[line_index]
                 old_line.delete(self)
