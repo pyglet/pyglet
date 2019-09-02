@@ -178,7 +178,7 @@ class RunList:
                 run.value = value
             i += run.count
 
-            # Merge adjacent runs
+        # Merge adjacent runs
         last_run = self.runs[0]
         for run in self.runs[1:]:
             if run.value == last_run.value:
@@ -431,6 +431,7 @@ class ConstRunIterator(AbstractRunIterator):
 
     def __init__(self, length, value):
         self.length = length
+        self.end = length
         self.value = value
 
     def __next__(self):

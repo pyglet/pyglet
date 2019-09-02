@@ -958,7 +958,7 @@ class TextLayout:
     def _update_color(self):
         colors_iter = self._document.get_style_runs('color')
         colors = []
-        for start, end, color in colors_iter.ranges(0, colors_iter.length):
+        for start, end, color in colors_iter.ranges(0, colors_iter.end):
             if color is None:
                 color = (0, 0, 0, 255)
             colors.extend(color * ((end - start) * 4))

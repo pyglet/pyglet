@@ -1,4 +1,11 @@
-Pyglet 1.4.2
+pyglet 1.4.3
+Bugfix release.
+
+Bugfixes
+--------
+- Fix crash due to inconsistent API when changing Label or HTMLLabel color. (#45)
+
+pyglet 1.4.2
 Bugfix and cleanup release.
 
 Improvements
@@ -14,7 +21,7 @@ Bugfixes
 - Change sys.is_epydoc to sys.is_pyglet_doc_run to prevent crashing with Anaconda, etc. (#9)
 - Prevent gl_info.get_version from crashing with blank version string. (#36)
 
-Pyglet 1.4.1
+pyglet 1.4.1
 ============
 Bugfix release.
 
@@ -23,7 +30,7 @@ Bugfixes
 - #256 Fix aliases for Window.get_viewport_size/get_framebuffer_size.
 
 
-Pyglet 1.4.0
+pyglet 1.4.0
 ============
 Major release adding several new features and removing some long deprecated methods and attributes.
 There are also many small bugfixes, and documentation corrections. Thanks to everyone who submitted
@@ -85,7 +92,7 @@ Bugfixes
 - #169 Fix slow Window.flip() on Windows.
 
 
-Pyglet 1.3.1
+pyglet 1.3.1
 ============
 Bugfix release.
 
@@ -98,7 +105,7 @@ Bugfixes
 - #15  Respect keyboard layout on macOS;
 
 
-Pyglet 1.3.0
+pyglet 1.3.0
 ============
 This major release takes Python 3 support to the next level. The entire codebase is now compatible
 with both Python 2 and Python 3 without the need for 2to3. This should make it easier to develop
@@ -147,7 +154,7 @@ Bugfixes
 - Windows: Window.set_icon no longer fails when given a Texture instead of ImageData (#136)
 
 
-Pyglet 1.2.3                                                                                        
+pyglet 1.2.3
 ============                                                                                        
 Minor bugfix release.                                                                               
                                                                                                     
@@ -160,7 +167,7 @@ Bugfixes:
 - ArchLinux: Fix segmentation fault when using gdk_pixbuf (#25) 
 
 
-Pyglet 1.2.2
+pyglet 1.2.2
 ============
 Minor bugfix release. Includes documentation updates for deprecated code.
 
@@ -170,7 +177,7 @@ Bugfixes
 - BB#23: Windows: Disable ARB context on Intel devices.
 
 
-Pyglet 1.2.1
+pyglet 1.2.1
 ============
 Minor bugfix release. Fixes some issues on Linux.
 
@@ -181,9 +188,9 @@ Bugfixes
 - X11: Fix deletion of PulseAudioPlayer.
 
 
-Pyglet 1.2
+pyglet 1.2
 ==========
-The major 1.2 release brings pyglet to Python 3. Pyglet now also runs on 64-bit operating systems 
+The major 1.2 release brings pyglet to Python 3. pyglet now also runs on 64-bit operating systems
 Linux, Windows and OS X. The OS X layer has switched to Cocoa.
 
 Backwards-incompatible API changes:
@@ -265,7 +272,7 @@ Bugfixes
 - 517: tests/window/CONTEXT_SHARE.py glIsList exceptions
 - 519: Windows test log errors
 - 523: some incorrect key constants in the programming guide
-- 524: Pyglet 1.2dev events do not fire on OS X
+- 524: pyglet 1.2dev events do not fire on OS X
 - 529: pyglet crashes on FreeBSD-8/amd64 if fonts are used. [patch included]
 - 533: pyglet.media.Player broken on Python3
 - 536: Pitch change functionality with pulseaudio driver.
@@ -327,7 +334,7 @@ Bugfixes
 - 731: Expectations about supported font formats
 - 734: spurious 'class plain' showing in sphinx rendering of doc/programming_guide/text.txt
 - 735: py3: BytesIO and disambiguate div for pyglet/image/__init__.py
-- 736: Pyglet media fails to close PulseAudio instances
+- 736: pyglet media fails to close PulseAudio instances
 - 737: 1.2 programming guide mentions ALSA and not Pulse
 - 739: FIX: Prevent user mouse stupidity
 - 744: expectations and exploration of fonts in Windows

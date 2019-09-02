@@ -63,6 +63,9 @@ class ModelDecoder(object):
         """
         raise NotImplementedError()
 
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
+
 
 class ModelEncoder(object):
     def get_file_extensions(self):
@@ -79,10 +82,13 @@ class ModelEncoder(object):
         """
         raise NotImplementedError()
 
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
+
 
 def get_encoders(filename=None):
-    """Get an ordered list of encoders to attempt.  filename can be used
-    as a hint for the filetype.
+    """Get an ordered list of all encoders. If a `filename` is provided,
+    encoders supporting that extension will be ordered first in the list.
     """
     encoders = []
     if filename:
@@ -93,8 +99,8 @@ def get_encoders(filename=None):
 
 
 def get_decoders(filename=None):
-    """Get an ordered list of decoders to attempt.  filename can be used
-     as a hint for the filetype.
+    """Get an ordered list of all decoders. If a `filename` is provided,
+    decoders supporting that extension will be ordered first in the list.
     """
     decoders = []
     if filename:
