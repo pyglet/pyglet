@@ -94,32 +94,27 @@ class Mat4(list):
         self[10] *= value
 
     def rotate(self, angle=0, x=0, y=0, z=0):
-        raise NotImplementedError
         r = _math.radians(angle)
-        rc = _math.cos(r)
-        rs = _math.sin(r)
+        c = _math.cos(r)
+        s = _math.sin(r)
 
-        a = 0
-        b = 0
-        c = 0
-        d = 0
+        temp = (1 - c) * x, (1 - c) * y, (1 - c) * z
 
-        e = 0
-        f = 0
-        g = 0
-        h = 0
+        ra = c + temp[0] * x
+        rb = 0 + temp[0] * y + s * z
+        rc = 0 + temp[0] * z - s * y
 
-        i = 0
-        j = 0
-        k = 0
-        l = 0
+        re = 0 + temp[1] * x - s * z
+        rf = c + temp[1] * y
+        rg = 0 + temp[1] * z + s * x
 
-        m = 0
-        n = 0
-        o = 0
-        p = 0
+        ri = 0 + temp[2] * x + s * y
+        rj = 0 + temp[2] * y - s * x
+        rk = c + temp[2] * z
 
-        self[:] = a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p
+        rmat = Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 0))
+
+        self[:] = self @ rmat
 
     def __add__(self, other):
         assert isinstance(other, Mat4), "Only addition with Mat4 types is supported"

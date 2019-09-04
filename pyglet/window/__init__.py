@@ -123,11 +123,10 @@ above, "Working with multiple screens")::
 
 """
 import sys
-import math
 
 import pyglet
 from pyglet import gl
-from pyglet import matrix
+from pyglet.graphics import matrix
 from pyglet.event import EventDispatcher
 from pyglet.compat import with_metaclass
 from pyglet.window import key
