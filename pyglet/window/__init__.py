@@ -257,8 +257,8 @@ class Projection2D(Projection):
         view = matrix.Mat4()       # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection = projection
-            window_block.view = view
+            window_block.projection[:] = projection
+            window_block.view[:] = view
 
 
 class Projection3D(Projection):
@@ -289,8 +289,8 @@ class Projection3D(Projection):
         view = matrix.Mat4()      # Identity Matrix
 
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection = projection
-            window_block.view = view
+            window_block.projection[:] = projection
+            window_block.view[:] = view
 
 
 def _PlatformEventHandler(data):
