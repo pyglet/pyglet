@@ -150,6 +150,7 @@ from pyglet.compat import asbytes, bytes_type, BytesIO
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
 from .codecs import get_animation_decoders, get_decoders, get_encoders
+from .animation import Animation, AnimationFrame
 from . import atlas
 
 
@@ -208,6 +209,46 @@ def load(filename, file=None, decoder=None):
     finally:
         if opened_file:
             opened_file.close()
+
+
+def load_animation(filename, file=None, decoder=None):
+    """Load an animation from a file.
+
+    Currently, the only supported format is GIF.
+
+    :Parameters:
+        `filename` : str
+            Used to guess the animation format, and to load the file if `file`
+            is unspecified.
+        `file` : file-like object or None
+            File object containing the animation stream.
+        `decoder` : ImageDecoder or None
+            If unspecified, all decoders that are registered for the filename
+            extension are tried.  If none succeed, the exception from the
+            first decoder is raised.
+
+    :rtype: Animation
+    """
+    if not file:
+        file = open(filename, 'rb')
+    if not hasattr(file, 'seek'):
+        file = BytesIO(file.read())
+
+    if decoder:
+        return decoder.decode_animation(file, filename)
+    else:
+        first_exception = None
+        for decoder in get_animation_decoders(filename):
+            try:
+                image = decoder.decode_animation(file, filename)
+                return image
+            except ImageDecodeException as e:
+                first_exception = first_exception or e
+                file.seek(0)
+
+        if not first_exception:
+            raise ImageDecodeException('No image decoders are available')
+        raise first_exception
 
 
 def create(width, height, pattern=None):
@@ -1978,6 +2019,58 @@ def get_buffer_manager():
     return context.image_buffer_manager
 
 
+class FrameBuffer(object):
+
+    def __init__(self):
+        self._id = GLuint()
+        glGenFramebuffers(1, self._id)
+
+    def is_complete(self):
+        return glCheckFramebufferStatus(GL_FRAMEBUFFER, self._id) == GL_FRAMEBUFFER_COMPLETE
+
+    def bind(self):
+        glBindFramebuffer(GL_FRAMEBUFFER, self._id)
+
+    @staticmethod
+    def unbind():
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+    def clear(self):
+        self.bind()
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
+        self.unbind()
+
+    @classmethod
+    def create(cls, width, height, depth=False, internal_format=GL_RGBA8, fmt=GL_RGBA, type=GL_UNSIGNED_BYTE, layers=1):
+        """
+        Convenient shortcut for creating single color attachment FBOs
+        :param width: Color buffer width
+        :param height: Coller buffer height
+        :param depth: (bool) Create a depth attachment
+        :param internal_format: The internalformat of the color buffer
+        :param fmt: The format of the color buffer
+        :param type: The type of the color buffer
+        :param layers: How many layers to create
+        :return: A new FBO
+        """
+        fbo = FrameBuffer()
+        fbo.bind()
+
+        # Add N layers of color attachments
+        for layer in range(layers):
+            c = Texture.create(width, height, internal_format)
+            c = Texture.create_2d(width=width, height=height, internal_format=internal_format, format=fmt, type=type,
+                                  wrap_s=GL_CLAMP_TO_EDGE, wrap_t=GL_CLAMP_TO_EDGE, wrap_r=GL_CLAMP_TO_EDGE)
+            fbo.add_color_attachment(c)
+
+        # Set depth attachment is specified
+        if depth:
+            pass
+
+        fbo.unbind()
+        return fbo
+
+
 # XXX BufferImage could be generalised to support EXT_framebuffer_object's
 # renderbuffer.
 class BufferImage(AbstractImage):
@@ -2318,187 +2411,6 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
     def __iter__(self):
         return iter(self.items)
-
-
-# --------------------------------------------------------------------------
-# Animation stuff here.  Vote on if this should be in pyglet.image.animation
-# or just leave it tacked on here.
-
-# TODO: 
-#       conversion Animation ->  media.Source
-#       move to another module?  
-#          pyglet.animation?
-#          pyglet.image.animation?
-
-def load_animation(filename, file=None, decoder=None):
-    """Load an animation from a file.
-
-    Currently, the only supported format is GIF.
-
-    :Parameters:
-        `filename` : str
-            Used to guess the animation format, and to load the file if `file`
-            is unspecified.
-        `file` : file-like object or None
-            File object containing the animation stream.
-        `decoder` : ImageDecoder or None
-            If unspecified, all decoders that are registered for the filename
-            extension are tried.  If none succeed, the exception from the
-            first decoder is raised.
-
-    :rtype: Animation
-    """
-    if not file:
-        file = open(filename, 'rb')
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    if decoder:
-        return decoder.decode_animation(file, filename)
-    else:
-        first_exception = None
-        for decoder in get_animation_decoders(filename):
-            try:
-                image = decoder.decode_animation(file, filename)
-                return image
-            except ImageDecodeException as e:
-                first_exception = first_exception or e
-                file.seek(0)
-
-        if not first_exception:
-            raise ImageDecodeException('No image decoders are available')
-        raise first_exception
-
-
-class Animation(object):
-    """Sequence of images with timing information.
-
-    If no frames of the animation have a duration of ``None``, the animation
-    loops continuously; otherwise the animation stops at the first frame with
-    duration of ``None``.
-
-    :Ivariables:
-        `frames` : list of `~pyglet.image.AnimationFrame`
-            The frames that make up the animation.
-
-    """
-    def __init__(self, frames):
-        """Create an animation directly from a list of frames.
-
-        :Parameters:
-            `frames` : list of `~pyglet.image.AnimationFrame`
-                The frames that make up the animation.
-
-        """
-        assert len(frames)
-        self.frames = frames
-
-    def add_to_texture_bin(self, bin):
-        """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
-
-        The animation frames are modified in-place to refer to the texture bin
-        regions.
-
-        :Parameters:
-            `bin` : `~pyglet.image.atlas.TextureBin`
-                Texture bin to upload animation frames into.
-
-        """
-        for frame in self.frames:
-            frame.image = bin.add(frame.image)
-
-    def get_transform(self, flip_x=False, flip_y=False, rotate=0):
-        """Create a copy of this animation applying a simple transformation.
-
-        The transformation is applied around the image's anchor point of
-        each frame.  The texture data is shared between the original animation
-        and the transformed animation.
-
-        :Parameters:
-            `flip_x` : bool
-                If True, the returned animation will be flipped horizontally.
-            `flip_y` : bool
-                If True, the returned animation will be flipped vertically.
-            `rotate` : int
-                Degrees of clockwise rotation of the returned animation.  Only
-                90-degree increments are supported.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
-        """
-        frames = [AnimationFrame(frame.image.get_texture().get_transform(flip_x, flip_y, rotate),
-                                 frame.duration) for frame in self.frames]
-        return Animation(frames)
-
-    def get_duration(self):
-        """Get the total duration of the animation in seconds.
-
-        :rtype: float
-        """
-        return sum([frame.duration for frame in self.frames if frame.duration is not None])
-
-    def get_max_width(self):
-        """Get the maximum image frame width.
-
-        This method is useful for determining texture space requirements: due
-        to the use of ``anchor_x`` the actual required playback area may be
-        larger.
-
-        :rtype: int
-        """
-        return max([frame.image.width for frame in self.frames])
-
-    def get_max_height(self):
-        """Get the maximum image frame height.
-
-        This method is useful for determining texture space requirements: due
-        to the use of ``anchor_y`` the actual required playback area may be
-        larger.
-
-        :rtype: int
-        """
-        return max([frame.image.height for frame in self.frames])
-
-    @classmethod
-    def from_image_sequence(cls, sequence, period, loop=True):
-        """Create an animation from a list of images and a constant framerate.
-
-        :Parameters:
-            `sequence` : list of `~pyglet.image.AbstractImage`
-                Images that make up the animation, in sequence.
-            `period` : float
-                Number of seconds to display each image.
-            `loop` : bool
-                If True, the animation will loop continuously.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
-        """
-        frames = [AnimationFrame(image, period) for image in sequence]
-        if not loop:
-            frames[-1].duration = None
-        return cls(frames)
-
-
-class AnimationFrame(object):
-    """A single frame of an animation."""
-
-    __slots__ = 'image', 'duration'
-
-    def __init__(self, image, duration):
-        """Create an animation frame from an image.
-
-        :Parameters:
-            `image` : `~pyglet.image.AbstractImage`
-                The image of this frame.
-            `duration` : float
-                Number of seconds to display the frame, or ``None`` if it is
-                the last frame in the animation.
-
-        """
-        self.image = image
-        self.duration = duration
-
-    def __repr__(self):
-        return 'AnimationFrame(%r, %r)' % (self.image, self.duration)
 
 
 # Initialise default codecs
