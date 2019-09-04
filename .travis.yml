@@ -20,8 +20,5 @@ matrix:
 before_install: pip install --upgrade pip flake8 pytest lektor
 install: python setup.py install
 before_script: flake8 . --count --exclude=./.*,*/future/* --select=E9,F63,F7,F82 --show-source --statistics || true
-script: pytest --ignore=tests/base --ignore=tests/interactive --ignore=tests/integration/media --ignore=tests/integration/font --ignore=tests/integration/platform/test_linux_fontconfig.py
-deploy:
-  provider: script
-  script: lektor --project website deploy
-# after_success: coveralls
+script: pytest --ignore=tests/base --ignore=tests/interactive --ignore=tests/integration
+

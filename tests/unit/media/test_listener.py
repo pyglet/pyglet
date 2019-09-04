@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import pytest
 
 from ...annotations import skip_if_continuous_integration

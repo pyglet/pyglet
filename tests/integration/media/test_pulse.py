@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-
-from builtins import str
 import numbers
 import pytest
 from threading import Timer

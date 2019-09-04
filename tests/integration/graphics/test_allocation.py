@@ -1,9 +1,3 @@
-from builtins import zip
-from builtins import next
-from builtins import range
-from builtins import object
-#!/usr/bin/python
-
 import random
 import unittest
 

@@ -10,8 +10,6 @@ The test will correctly detect the asbence of multitexturing, or if texture
 coords are not supplied for a unit, but will still pass if the texture
 coordinates for each unit are swapped (the tex coords are identical).
 '''
-from builtins import map
-
 import unittest
 
 import pyglet

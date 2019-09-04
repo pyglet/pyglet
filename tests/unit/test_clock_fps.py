@@ -1,7 +1,6 @@
 """Tests clock timing between frames and estimations
 of frames per second.
 """
-from __future__ import absolute_import
 import time
 import pytest
 
