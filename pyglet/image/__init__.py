@@ -274,20 +274,20 @@ def create(width, height, pattern=None):
     return pattern.create_image(width, height)
 
 
-def color_as_bytes(color):
+def get_max_texture_size():
+    """Query the maximum texture size available"""
+    size = c_int()
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
+    return size.value
+
+
+def _color_as_bytes(color):
     if sys.version.startswith('2'):
         return '%c%c%c%c' % color
     else:
         if len(color) != 4:
             raise TypeError("color is expected to have 4 components")
         return bytes(color)
-
-
-def get_max_texture_size():
-    """Query the maximum texture size available"""
-    size = c_int()
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
-    return size.value
 
 
 def _nearest_pow2(v):
@@ -336,7 +336,7 @@ class SolidColorImagePattern(ImagePattern):
                 color to fill with.
 
         """
-        self.color = color_as_bytes(color)
+        self.color = _color_as_bytes(color)
 
     def create_image(self, width, height):
         data = self.color * width * height
@@ -361,8 +361,8 @@ class CheckerImagePattern(ImagePattern):
                 bottom-left corners of the image.
 
         """
-        self.color1 = color_as_bytes(color1)
-        self.color2 = color_as_bytes(color2)
+        self.color1 = _color_as_bytes(color1)
+        self.color2 = _color_as_bytes(color2)
 
     def create_image(self, width, height):
         hw = width // 2
