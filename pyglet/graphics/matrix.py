@@ -98,19 +98,24 @@ class Mat4(list):
         c = _math.cos(r)
         s = _math.sin(r)
 
-        temp = (1 - c) * x, (1 - c) * y, (1 - c) * z
+        tempx, tempy, tempz = (1 - c) * x, (1 - c) * y, (1 - c) * z
 
-        ra = c + temp[0] * x
-        rb = 0 + temp[0] * y + s * z
-        rc = 0 + temp[0] * z - s * y
+        ra = c + tempx * x
+        rb = 0 + tempx * y + s * z
+        rc = 0 + tempx * z - s * y
 
-        re = 0 + temp[1] * x - s * z
-        rf = c + temp[1] * y
-        rg = 0 + temp[1] * z + s * x
+        re = 0 + tempy * x - s * z
+        rf = c + tempy * y
+        rg = 0 + tempy * z + s * x
 
-        ri = 0 + temp[2] * x + s * y
-        rj = 0 + temp[2] * y - s * x
-        rk = c + temp[2] * z
+        ri = 0 + tempz * x + s * y
+        rj = 0 + tempz * y - s * x
+        rk = c + tempz * z
+
+        # ra, rb, rc, --
+        # re, rf, rg, --
+        # ri, rj, rk, --
+        # --, --, --, --
 
         rmat = Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 0))
 
