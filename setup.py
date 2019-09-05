@@ -5,7 +5,7 @@ import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.4.2'
+VERSION = '1.4.3'
 
 with open('README.rst') as f:
     long_description = f.read()
