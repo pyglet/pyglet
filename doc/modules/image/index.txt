@@ -7,6 +7,7 @@ pyglet.image
    :maxdepth: 1
 
    atlas
+   animation
 
 .. rubric:: Details
 
@@ -61,17 +62,6 @@ Images
   :members:
   :undoc-members:
   :show-inheritance:
-
-Animations
-^^^^^^^^^^
-
-.. autoclass:: Animation
-  :members:
-  :undoc-members:
-
-.. autoclass:: AnimationFrame
-  :members:
-  :undoc-members:
 
 Image Sequences
 ^^^^^^^^^^^^^^^
@@ -150,11 +140,11 @@ Other Classes
 Functions
 ---------
 
-.. autofunction:: color_as_bytes
 .. autofunction:: create
 .. autofunction:: get_buffer_manager
 .. autofunction:: load
 .. autofunction:: load_animation
+.. autofunction:: get_max_texture_size
 
 Exceptions
 ----------

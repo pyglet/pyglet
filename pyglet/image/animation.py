@@ -33,6 +33,48 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+"""2D Animations
+
+Animations can be used by the :py:class:`~pyglet.sprite.Sprite` class in place
+of static images. They are essentially containers for individual image frames,
+with a duration per frame. They can be infinitely looping, or stop at the last
+frame. You can load Animations from disk, such as from GIF files::
+
+    ani = pyglet.resource.animation('walking.gif')
+    sprite = pyglet.sprite.Sprite(img=ani)
+
+Alternatively, you can create your own Animations from a sequence of images
+by using the :py:meth:`~Animation.from_image_sequence` method::
+
+    images = [pyglet.resource.image('walk_a.png')
+              pyglet.resource.image('walk_b.png')
+              pyglet.resource.image('walk_c.png')]
+
+    ani = pyglet.image.Animation.from_image_sequence(images, duration=0.1, loop=True)
+
+You can also use an :py:class:`pyglet.image.ImageGrid`, which is iterable::
+
+    sprite_sheet = pyglet.resource.image('my_sprite_sheet.png')
+    image_grid = pyglet.image.ImageGrid(sprite_sheet, rows=1, columns=5)
+
+    ani = pyglet.image.Animation.from_image_sequence(image_grid, duration=0.1)
+
+In the above examples, all of the Animation Frames have the same duration.
+If you wish to adjust this, you can manually create the Animation from a list of
+:py:class:`~AnimationFrame`::
+
+    image_a = pyglet.resource.image('walk_a.png')
+    image_b = pyglet.resource.image('walk_b.png')
+    image_c = pyglet.resource.image('walk_c.png')
+
+    frame_a = pyglet.image.AnimationFrame(image_a, duration=0.1)
+    frame_b = pyglet.image.AnimationFrame(image_b, duration=0.2)
+    frame_c = pyglet.image.AnimationFrame(image_c, duration=0.1)
+
+    ani = pyglet.image.Animation(frames=[frame_a, frame_b, frame_c])
+
+"""
+
 
 class Animation(object):
     """Sequence of images with timing information.
@@ -142,6 +184,9 @@ class Animation(object):
             frames[-1].duration = None
         return cls(frames)
 
+    def __repr__(self):
+        return "Animation(frames={0})".format(len(self.frames))
+
 
 class AnimationFrame(object):
     """A single frame of an animation."""
@@ -163,4 +208,4 @@ class AnimationFrame(object):
         self.duration = duration
 
     def __repr__(self):
-        return 'AnimationFrame(%r, %r)' % (self.image, self.duration)
+        return "AnimationFrame({0}, duration={1})".format(self.image, self.duration)
