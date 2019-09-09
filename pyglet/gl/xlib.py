@@ -253,7 +253,7 @@ class BaseXlibContext(Context):
         self._vsync = vsync
         interval = vsync and 1 or 0
         if not self._use_video_sync and self._have_EXT_swap_control:
-            glxext_arb.glXSwapIntervalEXT(interval)
+            glxext_arb.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)
         elif not self._use_video_sync and self._have_MESA_swap_control:
             glxext_mesa.glXSwapIntervalMESA(interval)
         elif self._have_SGI_swap_control:
