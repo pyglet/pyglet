@@ -1,3 +1,10 @@
+pyglet 1.4.4
+Bugfix release.
+
+Bugfixes
+--------
+- Fixed incorrect glXSwapIntervalEXT arguments for Xlib contexts.
+
 pyglet 1.4.3
 Bugfix release.
 
