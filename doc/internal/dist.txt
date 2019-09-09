@@ -30,7 +30,9 @@ Making a pyglet release
 
     twine upload dist/pyglet-x.y.z*
 
-#. Start a build of the documentation on https://readthedocs.org/builds/pyglet
+#. Start a build of the documentation on https://readthedocs.org/projects/pyglet/builds/
+
+#. Draft a new release on Github, using the same version number https://github.com/pyglet/pyglet/releases
 
 #. Tell people!
 
