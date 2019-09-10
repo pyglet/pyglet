@@ -4,8 +4,8 @@
 pyglet
 ======
 
-pyglet provides an object-oriented programming interface for developing games
-and other visually-rich applications for Windows, Mac OS X and Linux.
+pyglet provides an easy to use Pythonic interface for developing games
+and other visually-rich applications on Windows, Mac OS X and Linux.
 
 * `Pyglet Documentation <https://pyglet.readthedocs.io/en/latest/>`_
 * `Pyglet Wiki <https://github.com/pyglet/pyglet/wiki>`_
@@ -23,7 +23,7 @@ Requirements
 pyglet runs under Python 2.7, and 3.4+. The entire codebase is fully 2/3 dual
 compatible, making use of the future module for backwards compatibility with
 legacy Python. Being written in pure Python, it also works on other Python
-interpreters such as PyPy. pyglet works on the following operating systems:
+interpreters such as PyPy. Supported platforms are:
 
 * Windows XP or later
 * Mac OS X 10.3 or later
@@ -33,6 +33,10 @@ interpreters such as PyPy. pyglet works on the following operating systems:
   * OpenGL and GLX
   * GDK 2.0+ or PIL (required for loading images other than PNG and BMP)
   * OpenAL or Pulseaudio (required for playing audio)
+ 
+Please note that pyglet v1.4 will likely be the last version to support
+Python 2.7. Future releases of pyglet will be Python 3 only, and will be
+targeting OpenGL 3.3+. Previous releases will remain available for download.
 
 Installation
 ------------
