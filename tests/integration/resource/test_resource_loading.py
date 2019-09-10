@@ -33,55 +33,55 @@ def loader():
 
 
 def test_base_path_only(loader):
-    assert loader.file('f1.txt').read() == asbytes('%s\n' % 'F1')
+    assert loader.file('f1.txt').read().strip() == asbytes('F1')
 
 
 def test_blank_base_path(loader):
     loader.path = ['']
-    assert loader.file('f1.txt').read() == asbytes('%s\n' % 'F1')
+    assert loader.file('f1.txt').read().strip() == asbytes('F1')
 
 
 def test_unused_paths(loader):
     loader.path = ['foo', 'bar', '.']
-    assert loader.file('f1.txt').read() == asbytes('%s\n' % 'F1')
+    assert loader.file('f1.txt').read().strip() == asbytes('F1')
 
 
 def test_subfolder(loader):
     loader.path = ['dir1', 'dir2']
-    assert loader.file('f2.txt').read() == asbytes('%s\n' % 'F2')
-    assert loader.file('f6.txt').read() == asbytes('%s\n' % 'F6')
+    assert loader.file('f2.txt').read().strip() == asbytes('F2')
+    assert loader.file('f6.txt').read().strip() == asbytes('F6')
 
 
 def test_subfolder_trailing_slash(loader):
     loader.path = ['dir1/', 'dir2/']
-    assert loader.file('f2.txt').read() == asbytes('%s\n' % 'F2')
-    assert loader.file('f6.txt').read() == asbytes('%s\n' % 'F6')
+    assert loader.file('f2.txt').read().strip() == asbytes('F2')
+    assert loader.file('f6.txt').read().strip() == asbytes('F6')
 
 
 def test_sub_subfolder(loader):
     loader.path = ['dir1/dir1']
-    assert loader.file('f3.txt').read() == asbytes('%s\n' % 'F3')
+    assert loader.file('f3.txt').read().strip() == asbytes('F3')
 
 
 def test_sub_subfolder_trailing_slash(loader):
     loader.path = ['dir1/dir1/']
-    assert loader.file('f3.txt').read() == asbytes('%s\n' % 'F3')
+    assert loader.file('f3.txt').read().strip() == asbytes('F3')
 
 
 def test_zipfile(loader):
     loader.path = ['dir1/res.zip']
-    assert loader.file('f7.txt').read() == asbytes('%s\n' % 'F7')
+    assert loader.file('f7.txt').read().strip() == asbytes('F7')
 
 
 def test_zipfile_trailing_slash(loader):
     loader.path = ['dir1/res.zip/']
-    assert loader.file('f7.txt').read() == asbytes('%s\n' % 'F7')
+    assert loader.file('f7.txt').read().strip() == asbytes('F7')
 
 
 def test_zipfile_subdirs(loader):
     loader.path = ['dir1/res.zip/dir1', 'dir1/res.zip/dir1/dir1/']
-    assert loader.file('f8.txt').read() == asbytes('%s\n' % 'F8')
-    assert loader.file('f9.txt').read() == asbytes('%s\n' % 'F9')
+    assert loader.file('f8.txt').read().strip() == asbytes('F8')
+    assert loader.file('f9.txt').read().strip() == asbytes('F9')
 
 
 # Expected Failures:
