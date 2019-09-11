@@ -126,7 +126,7 @@ import sys
 
 import pyglet
 from pyglet import gl
-from pyglet.graphics import matrix
+from pyglet import matrix
 from pyglet.event import EventDispatcher
 from pyglet.compat import with_metaclass
 from pyglet.window import key
