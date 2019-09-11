@@ -166,6 +166,7 @@ from pyglet.gl import *
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 from pyglet.graphics.shader import Shader, ShaderProgram, UniformBufferObject
 from pyglet.graphics.vertexarray import VertexArray
+from pyglet.graphics.framebuffer import Framebuffer
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
