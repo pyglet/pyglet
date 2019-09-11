@@ -59,8 +59,8 @@ context::
 import warnings
 from ctypes import c_char_p, cast
 
-from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
-from pyglet.gl.glext_arb import GL_MAJOR_VERSION, GL_MINOR_VERSION
+from pyglet.gl.gl import GLint, glGetIntegerv, glGetString
+from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
 from pyglet.compat import asstr
 
 
@@ -76,8 +76,6 @@ class GLInfo:
     """
     have_context = False
     version = '0.0'
-    version_major = 0
-    version_minor = 0
     vendor = ''
     renderer = ''
     extensions = set()
@@ -94,14 +92,7 @@ class GLInfo:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
-            major = GLint()
-            minor = GLint()
-            glGetIntegerv(GL_MAJOR_VERSION, major)
-            glGetIntegerv(GL_MINOR_VERSION, minor)
-            self.version_major = major.value
-            self.version_minor = minor.value
-
-            if self.version_major >= 3:
+            if self.have_version(3):
                 from pyglet.gl.glext_arb import glGetStringi, GL_NUM_EXTENSIONS
                 num_extensions = GLint()
                 glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
@@ -167,8 +158,10 @@ class GLInfo:
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        imajor = self.version_major
-        iminor = self.version_minor
+        if not self.version or 'None' in self.version:
+            return False
+        ver = '%s.0' % self.version.split(' ', 1)[0]
+        imajor, iminor = [int(v) for v in ver.split('.', 3)[:2]]
         return (imajor > major or
                 (imajor == major and iminor >= minor) or
                 (imajor == major and iminor == minor))
