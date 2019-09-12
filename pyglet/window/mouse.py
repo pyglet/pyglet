@@ -39,6 +39,34 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 
+class MouseStateHandler(dict):
+    """Simple handler that tracks the state of buttons from the mouse. If a
+    button is pressed then this handler holds a True value for it.
+
+    For example::
+
+        >>> win = window.Window
+        >>> mousebuttons = mouse.MouseStateHandler()
+        >>> win.push_handlers(mousebuttons)
+
+        # Hold down the "left" button...
+
+        >>> mousebuttons[mouse.LEFT]
+        True
+        >>> mousebuttons[mouse.RIGHT]
+        False
+
+    """
+    def on_mouse_press(self, x, y, button, modifiers):
+        self[button] = True
+        
+    def on_mouse_release(self, x, y, button, modifiers):
+        self[button] = False
+        
+    def __getitem__(self, key):
+        return self.get(key, False)
+
+
 def buttons_string(buttons):
     """Return a string describing a set of active mouse buttons.
 
