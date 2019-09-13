@@ -35,9 +35,8 @@
 import weakref
 
 from pyglet.gl import *
-from pyglet.image import Texture
 
-__all__ = ['Framebuffer']
+__all__ = ['Framebuffer', 'Renderbuffer', 'RenderbufferMultisample']
 
 
 def _get_max_color_attachments():
