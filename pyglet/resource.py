@@ -326,7 +326,7 @@ class Loader:
             path = ['.']
         if isinstance(path, str):
             path = [path]
-        self.path = [os.path.normpath(p) for p in path]
+        self.path = list(path)
         self._script_home = script_home or get_script_home()
         self._index = None
 
@@ -368,6 +368,7 @@ class Loader:
                     path = ''  # interactive
             elif not os.path.isabs(path):
                 # Add script base unless absolute
+                assert r'\\' not in path, "Backslashes are not permitted in relative paths"
                 path = os.path.join(self._script_home, path)
 
             if os.path.isdir(path):
@@ -443,9 +444,8 @@ class Loader:
                 return None
 
     def _index_file(self, name, location):
-        normed_name = os.path.normpath(name)
-        if normed_name not in self._index:
-            self._index[normed_name] = location
+        if name not in self._index:
+            self._index[name] = location
 
     def file(self, name, mode='rb'):
         """Load a resource.
@@ -459,13 +459,12 @@ class Loader:
 
         :rtype: file object
         """
-        normed_name = os.path.normpath(name)
         self._require_index()
         try:
-            location = self._index[normed_name]
-            return location.open(normed_name, mode)
+            location = self._index[name]
+            return location.open(name, mode)
         except KeyError:
-            raise ResourceNotFoundException(normed_name)
+            raise ResourceNotFoundException(name)
 
     def location(self, name):
         """Get the location of a resource.

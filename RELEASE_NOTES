@@ -1,9 +1,17 @@
+pyglet 1.4.4
+Bugfix release.
+
+Bugfixes
+--------
+- Fixed incorrect glXSwapIntervalEXT arguments for Xlib contexts.
+
 pyglet 1.4.3
 Bugfix release.
 
 Bugfixes
 --------
 - Fix crash due to inconsistent API when changing Label or HTMLLabel color. (#45)
+- Add support for GLX_EXT_swap_control on Linux platforms.
 
 pyglet 1.4.2
 Bugfix and cleanup release.

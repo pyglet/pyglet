@@ -142,6 +142,7 @@ from pyglet.compat import asbytes
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
 from .codecs import get_animation_decoders, get_decoders, get_encoders
+from .animation import Animation, AnimationFrame
 from . import atlas
 
 
@@ -201,6 +202,46 @@ def load(filename, file=None, decoder=None):
             opened_file.close()
 
 
+def load_animation(filename, file=None, decoder=None):
+    """Load an animation from a file.
+
+    Currently, the only supported format is GIF.
+
+    :Parameters:
+        `filename` : str
+            Used to guess the animation format, and to load the file if `file`
+            is unspecified.
+        `file` : file-like object or None
+            File object containing the animation stream.
+        `decoder` : ImageDecoder or None
+            If unspecified, all decoders that are registered for the filename
+            extension are tried.  If none succeed, the exception from the
+            first decoder is raised.
+
+    :rtype: Animation
+    """
+    if not file:
+        file = open(filename, 'rb')
+    if not hasattr(file, 'seek'):
+        file = BytesIO(file.read())
+
+    if decoder:
+        return decoder.decode_animation(file, filename)
+    else:
+        first_exception = None
+        for decoder in get_animation_decoders(filename):
+            try:
+                image = decoder.decode_animation(file, filename)
+                return image
+            except ImageDecodeException as e:
+                first_exception = first_exception or e
+                file.seek(0)
+
+        if not first_exception:
+            raise ImageDecodeException('No image decoders are available')
+        raise first_exception
+
+
 def create(width, height, pattern=None):
     """Create an image optionally filled with the given pattern.
 
@@ -224,10 +265,20 @@ def create(width, height, pattern=None):
     return pattern.create_image(width, height)
 
 
-def color_as_bytes(color):
-    if len(color) != 4:
-        raise TypeError("color is expected to have 4 components")
-    return bytes(color)
+def get_max_texture_size():
+    """Query the maximum texture size available"""
+    size = c_int()
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, size)
+    return size.value
+
+
+def _color_as_bytes(color):
+    if sys.version.startswith('2'):
+        return '%c%c%c%c' % color
+    else:
+        if len(color) != 4:
+            raise TypeError("color is expected to have 4 components")
+        return bytes(color)
 
 
 def get_max_texture_size():
@@ -271,7 +322,7 @@ class SolidColorImagePattern(ImagePattern):
                 color to fill with.
 
         """
-        self.color = color_as_bytes(color)
+        self.color = _color_as_bytes(color)
 
     def create_image(self, width, height):
         data = self.color * width * height
@@ -296,8 +347,8 @@ class CheckerImagePattern(ImagePattern):
                 bottom-left corners of the image.
 
         """
-        self.color1 = color_as_bytes(color1)
-        self.color2 = color_as_bytes(color2)
+        self.color1 = _color_as_bytes(color1)
+        self.color2 = _color_as_bytes(color2)
 
     def create_image(self, width, height):
         hw = width // 2
@@ -1337,7 +1388,7 @@ class Texture(AbstractImage):
         """
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
-        
+
         if rectangle:
             target = GL_TEXTURE_RECTANGLE
         else:
@@ -1405,7 +1456,7 @@ class Texture(AbstractImage):
                           width, 0., 0.,
                           width, height, 0.,
                           0., height, 0.)
-                          
+
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
         tex_id = GLuint()
@@ -2174,182 +2225,6 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
     def __iter__(self):
         return iter(self.items)
-
-
-# --------------------------------------------------------------------------
-# Animation stuff here.
-
-# TODO: conversion Animation ->  media.Source ?
-
-def load_animation(filename, file=None, decoder=None):
-    """Load an animation from a file.
-
-    Currently, the only supported format is GIF.
-
-    :Parameters:
-        `filename` : str
-            Used to guess the animation format, and to load the file if `file`
-            is unspecified.
-        `file` : file-like object or None
-            File object containing the animation stream.
-        `decoder` : ImageDecoder or None
-            If unspecified, all decoders that are registered for the filename
-            extension are tried.  If none succeed, the exception from the
-            first decoder is raised.
-
-    :rtype: Animation
-    """
-    if not file:
-        file = open(filename, 'rb')
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    if decoder:
-        return decoder.decode_animation(file, filename)
-    else:
-        first_exception = None
-        for decoder in get_animation_decoders(filename):
-            try:
-                image = decoder.decode_animation(file, filename)
-                return image
-            except ImageDecodeException as e:
-                first_exception = first_exception or e
-                file.seek(0)
-
-        if not first_exception:
-            raise ImageDecodeException('No image decoders are available')
-        raise first_exception
-
-
-class Animation:
-    """Sequence of images with timing information.
-
-    If no frames of the animation have a duration of ``None``, the animation
-    loops continuously; otherwise the animation stops at the first frame with
-    duration of ``None``.
-
-    :Ivariables:
-        `frames` : list of `~pyglet.image.AnimationFrame`
-            The frames that make up the animation.
-
-    """
-    def __init__(self, frames):
-        """Create an animation directly from a list of frames.
-
-        :Parameters:
-            `frames` : list of `~pyglet.image.AnimationFrame`
-                The frames that make up the animation.
-
-        """
-        assert len(frames)
-        self.frames = frames
-
-    def add_to_texture_bin(self, texturebin):
-        """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
-
-        The animation frames are modified in-place to refer to the texture bin
-        regions.
-
-        :Parameters:
-            `texturebin` : `~pyglet.image.atlas.TextureBin`
-                Texture bin to upload animation frames into.
-
-        """
-        for frame in self.frames:
-            frame.image = texturebin.add(frame.image)
-
-    def get_transform(self, flip_x=False, flip_y=False, rotate=0):
-        """Create a copy of this animation applying a simple transformation.
-
-        The transformation is applied around the image's anchor point of
-        each frame.  The texture data is shared between the original animation
-        and the transformed animation.
-
-        :Parameters:
-            `flip_x` : bool
-                If True, the returned animation will be flipped horizontally.
-            `flip_y` : bool
-                If True, the returned animation will be flipped vertically.
-            `rotate` : int
-                Degrees of clockwise rotation of the returned animation.  Only
-                90-degree increments are supported.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
-        """
-        frames = [AnimationFrame(frame.image.get_texture().get_transform(flip_x, flip_y, rotate),
-                                 frame.duration) for frame in self.frames]
-        return Animation(frames)
-
-    def get_duration(self):
-        """Get the total duration of the animation in seconds.
-
-        :rtype: float
-        """
-        return sum([frame.duration for frame in self.frames if frame.duration is not None])
-
-    def get_max_width(self):
-        """Get the maximum image frame width.
-
-        This method is useful for determining texture space requirements: due
-        to the use of ``anchor_x`` the actual required playback area may be
-        larger.
-
-        :rtype: int
-        """
-        return max([frame.image.width for frame in self.frames])
-
-    def get_max_height(self):
-        """Get the maximum image frame height.
-
-        This method is useful for determining texture space requirements: due
-        to the use of ``anchor_y`` the actual required playback area may be
-        larger.
-
-        :rtype: int
-        """
-        return max([frame.image.height for frame in self.frames])
-
-    @classmethod
-    def from_image_sequence(cls, sequence, period, loop=True):
-        """Create an animation from a list of images and a constant framerate.
-
-        :Parameters:
-            `sequence` : list of `~pyglet.image.AbstractImage`
-                Images that make up the animation, in sequence.
-            `period` : float
-                Number of seconds to display each image.
-            `loop` : bool
-                If True, the animation will loop continuously.
-
-        :rtype: :py:class:`~pyglet.image.Animation`
-        """
-        frames = [AnimationFrame(image, period) for image in sequence]
-        if not loop:
-            frames[-1].duration = None
-        return cls(frames)
-
-
-class AnimationFrame:
-    """A single frame of an animation."""
-
-    __slots__ = 'image', 'duration'
-
-    def __init__(self, image, duration):
-        """Create an animation frame from an image.
-
-        :Parameters:
-            `image` : `~pyglet.image.AbstractImage`
-                The image of this frame.
-            `duration` : float
-                Number of seconds to display the frame, or ``None`` if it is
-                the last frame in the animation.
-
-        """
-        self.image = image
-        self.duration = duration
-
-    def __repr__(self):
-        return 'AnimationFrame(%r, %r)' % (self.image, self.duration)
 
 
 # Initialise default codecs
