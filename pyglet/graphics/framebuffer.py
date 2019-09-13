@@ -33,22 +33,32 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.gl import GLuint, glBindFramebuffer, glCheckFramebufferStatus, glDeleteFramebuffers, glGenFramebuffers
-from pyglet.gl import GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT
-from pyglet.gl import GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT, GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER
-from pyglet.gl import GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT, GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT
-from pyglet.gl import GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER, GL_FRAMEBUFFER_UNSUPPORTED
+from pyglet.gl import *
 
 __all__ = ['Framebuffer']
+
+
+def _get_max_color_attachments():
+    number = GLint()
+    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
+    return number.value
 
 
 class Framebuffer:
     """OpenGL Framebuffer Object"""
 
+    _max_color_attachments = _get_max_color_attachments()
+
     def __init__(self):
         """Create an instance of a Framebuffer object."""
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
+
+        # TODO: weakrefs, or just count?
+        self._color_attachments = []
+        self._depth_attachments = None
+        self._stencil_attachments = None
+        self._depth_stencil_attachments = None
 
     @property
     def id(self):
@@ -82,6 +92,20 @@ class Framebuffer:
         gl_status = glCheckFramebufferStatus(GL_FRAMEBUFFER)
 
         return states.get(gl_status, "Unknown error")
+
+    def attach_color(self, image):
+        number = GL_COLOR_ATTACHMENT0 + len(self._color_attachments)
+        assert number <= self._max_color_attachments, "Exceeded maximum supported color attachments"
+        glFramebufferTexture2D(GL_FRAMEBUFFER, number, GL_TEXTURE_2D, image, 0)
+
+    def attach_depth(self, image):
+        pass
+
+    def attach_stencil(self, image):
+        pass
+
+    def attach_depth_stencil(self, image):
+        pass
 
     def __del__(self):
         try:
