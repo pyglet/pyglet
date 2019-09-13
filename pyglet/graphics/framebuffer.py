@@ -32,8 +32,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+import weakref
 
 from pyglet.gl import *
+from pyglet.image import Texture
 
 __all__ = ['Framebuffer']
 
@@ -42,6 +44,76 @@ def _get_max_color_attachments():
     number = GLint()
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
     return number.value
+
+
+class Renderbuffer:
+    """OpenGL Renderbuffer Object"""
+
+    def __init__(self, width, height, internal_format=GL_RGB8):
+        """Create an instance of a Renderbuffer object."""
+        self._id = GLuint()
+        glGenRenderbuffers(1, self._id)
+        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+        glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+    @property
+    def id(self):
+        return self._id.value
+
+    def bind(self):
+        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+
+    @staticmethod
+    def unbind():
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+    def delete(self):
+        glDeleteRenderbuffers(1, self._id)
+
+    def __del__(self):
+        try:
+            glDeleteRenderbuffers(1, self._id)
+        # Python interpreter is shutting down:
+        except ImportError:
+            pass
+
+    def __repr__(self):
+        return "{}(id={})".format(self.__class__.__name__, self._id.value)
+
+
+class RenderbufferMultisample:
+
+    def __init__(self, width, height, internal_format, samples):
+        self._id = GLuint()
+        glGenRenderbuffers(1, self._id)
+        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+    @property
+    def id(self):
+        return self._id.value
+
+    def bind(self):
+        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
+
+    @staticmethod
+    def unbind():
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+
+    def delete(self):
+        glDeleteRenderbuffers(1, self._id)
+
+    def __del__(self):
+        try:
+            glDeleteRenderbuffers(1, self._id)
+        # Python interpreter is shutting down:
+        except ImportError:
+            pass
+
+    def __repr__(self):
+        return "{}(id={})".format(self.__class__.__name__, self._id.value)
 
 
 class Framebuffer:
@@ -54,8 +126,7 @@ class Framebuffer:
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
 
-        # TODO: weakrefs, or just count?
-        self._color_attachments = []
+        self._color_attachments = weakref.WeakSet()
         self._depth_attachments = None
         self._stencil_attachments = None
         self._depth_stencil_attachments = None
@@ -97,6 +168,7 @@ class Framebuffer:
         number = GL_COLOR_ATTACHMENT0 + len(self._color_attachments)
         assert number <= self._max_color_attachments, "Exceeded maximum supported color attachments"
         glFramebufferTexture2D(GL_FRAMEBUFFER, number, GL_TEXTURE_2D, image, 0)
+        self._color_attachments.add(image)
 
     def attach_depth(self, image):
         pass
