@@ -516,12 +516,12 @@ class Loader:
             file.close()
 
         if not atlas:
-            return img.get_texture(True)
+            return img.get_texture()
 
         # find an atlas suitable for the image
         bin = self._get_texture_atlas_bin(img.width, img.height)
         if bin is None:
-            return img.get_texture(True)
+            return img.get_texture()
 
         return bin.add(img)
 
