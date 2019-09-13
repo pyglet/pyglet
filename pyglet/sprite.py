@@ -113,13 +113,13 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 vertex_source = """#version 150 core
     in vec2 translate;
     in vec4 colors;
-    in vec2 tex_coords;
+    in vec3 tex_coords;
     in vec2 scale;
     in vec4 position;
     in float rotation;
 
     out vec4 vertex_colors;
-    out vec2 texture_coords;
+    out vec3 texture_coords;
 
     uniform WindowBlock
     {
@@ -150,10 +150,23 @@ vertex_source = """#version 150 core
 
 fragment_source = """#version 150 core
     in vec4 vertex_colors;
-    in vec2 texture_coords;
+    in vec3 texture_coords;
     out vec4 final_colors;
 
     uniform sampler2D sprite_texture;
+
+    void main()
+    {
+        final_colors = texture(sprite_texture, texture_coords.xy) * vertex_colors;
+    }
+"""
+
+fragment_array_source = """#version 150 core
+    in vec4 vertex_colors;
+    in vec3 texture_coords;
+    out vec4 final_colors;
+
+    uniform sampler2DArray sprite_texture;
 
     void main()
     {
@@ -161,9 +174,13 @@ fragment_source = """#version 150 core
     }
 """
 
+
 _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
 _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
 _default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+
+_default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
+_default_array_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
 
 
 class SpriteGroup(graphics.Group):
@@ -291,9 +308,14 @@ class Sprite(event.EventDispatcher):
                 clock.schedule_once(self._animate, self._next_dt)
         else:
             self._texture = img.get_texture()
+            
+        if isinstance(img, image.TextureArrayRegion):
+            program = _default_array_program
+        else:
+            program = _default_program
 
         self._batch = batch or graphics.get_default_batch()
-        self._group = group or SpriteGroup(self._texture, blend_src, blend_dest)
+        self._group = group or SpriteGroup(self._texture, blend_src, blend_dest, program)
         assert isinstance(self._group, SpriteGroup), "Group must be a subclass of pyglet.sprite.SpriteGroup"
         self._usage = usage
         self._subpixel = subpixel
