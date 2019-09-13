@@ -12,9 +12,10 @@ addons:
     # - python-gst-1.0
 matrix:
   include:
-    - python: 2.7
     - python: 3.7
+    − python: 3.8-dev
     - os: osx
+      python: 3.7
       osx_image: xcode11
       language: minimal
 before_install: pip install --upgrade pip flake8 pytest lektor
