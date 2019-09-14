@@ -230,15 +230,16 @@ class BaseXlibContext(Context):
 
         self._have_SGI_video_sync = config.glx_info.have_extension('GLX_SGI_video_sync')
         self._have_SGI_swap_control = config.glx_info.have_extension('GLX_SGI_swap_control')
+        self._have_EXT_swap_control = config.glx_info.have_extension('GLX_EXT_swap_control')
         self._have_MESA_swap_control = config.glx_info.have_extension('GLX_MESA_swap_control')
 
         # In order of preference:
-        # 1. GLX_MESA_swap_control (more likely to work where video_sync will
-        #    not)
-        # 2. GLX_SGI_video_sync (does not work on Intel 945GM, but that has
-        #    MESA)
-        # 3. GLX_SGI_swap_control (cannot be disabled once enabled).
-        self._use_video_sync = (self._have_SGI_video_sync and not self._have_MESA_swap_control)
+        # 1. GLX_EXT_swap_control (more likely to work where video_sync will not)
+        # 2. GLX_MESA_swap_control (same as above, but supported by MESA drivers)
+        # 3. GLX_SGI_video_sync (does not work on Intel 945GM, but that has EXT)
+        # 4. GLX_SGI_swap_control (cannot be disabled once enabled)
+        self._use_video_sync = (self._have_SGI_video_sync and
+                                not (self._have_EXT_swap_control or self._have_MESA_swap_control))
 
         # XXX mandate that vsync defaults on across all platforms.
         self._vsync = True
@@ -249,7 +250,9 @@ class BaseXlibContext(Context):
     def set_vsync(self, vsync=True):
         self._vsync = vsync
         interval = vsync and 1 or 0
-        if not self._use_video_sync and self._have_MESA_swap_control:
+        if not self._use_video_sync and self._have_EXT_swap_control:
+            glxext_arb.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)
+        elif not self._use_video_sync and self._have_MESA_swap_control:
             glxext_mesa.glXSwapIntervalMESA(interval)
         elif self._have_SGI_swap_control:
             glxext_arb.glXSwapIntervalSGI(interval)

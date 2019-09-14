@@ -100,10 +100,15 @@ functions.
 useful when using the texture for a 3D model, or generally working with OpenGL directly.
 
 :py:func:`pyglet.resource.image` is optimised for loading sprite-like images that can
-have their texture coordinates adjusted.  The resource module attempts to pack
+have their texture coordinates adjusted. The resource module attempts to pack
 small images into larger texture atlases (explained in :ref:`guide_texture-bins-and-atlases`)
 for efficient rendering (which is why the return type of this function can be
-:py:class:`~pyglet.image.TextureRegion`).
+:py:class:`~pyglet.image.TextureRegion`). It is also advisable to use the texture
+atlas classes directly if you wish to have different achor points on multiple copies of the
+same image. This is because when loading an image more than once, you will actually get the
+**same** object back. You can still use the resource module for getting the image location,
+and described in the next section.
+
 
 Resource locations
 ^^^^^^^^^^^^^^^^^^
