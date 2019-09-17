@@ -273,6 +273,13 @@ def get_max_texture_size():
     return size.value
 
 
+def get_texture_array_max_depth():
+    """Query the maximum TextureArray depth"""
+    max_layers = c_int()
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
+    return max_layers.value
+
+
 def _color_as_bytes(color):
     if sys.version.startswith('2'):
         return '%c%c%c%c' % color
@@ -1598,8 +1605,7 @@ class Texture(AbstractImage):
 
 
 class TextureRegion(Texture):
-    """A rectangular region of a texture, presented as if it were
-    a separate texture.
+    """A rectangular region of a texture, presented as if it were a separate texture.
     """
 
     def __init__(self, x, y, z, width, height, owner):
@@ -1716,7 +1722,10 @@ class Texture3D(Texture, UniformTextureSequence):
     def __iter__(self):
         return iter(self.items)
 
+
 class TextureArrayRegion(TextureRegion):
+    """A region of a TextureArray, presented as if it were a separate texture.
+    """
     def __init__(self, x, y, z, width, height, owner):
         super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
 
@@ -1743,19 +1752,41 @@ class TextureArrayRegion(TextureRegion):
         
 class TextureArray(Texture, UniformTextureSequence):
     allow_smaller_pack = True
+    _max_depth = get_texture_array_max_depth()
 
     @classmethod
     def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
-        """ Max safe depth for GL 3 is 256. Can be queried with GL_MAX_ARRAY_TEXTURE_LAYERS if more is needed.
-        
-            Depth can be specified as you may want to reserve more for later, create as needed, or if your hardware supports more.
+        """Create an empty TextureArray.
+
+        You may specify the maximum depth, or layers, the Texture Array should have. This defaults
+        to 256, but will be hardware and driver dependent.
+
+        :Parameters:
+            `width` : int
+                Width of the texture.
+            `height` : int
+                Height of the texture.
+            `internalformat` : int
+                GL constant giving the internal format of the texture array; for example, ``GL_RGBA``.
+            `min_filter` : int
+                The minifaction filter used for this texture array, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `mag_filter` : int
+                The magnification filter used for this texture array, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `max_depth` : int
+                The number of layers in the texture array.
+
+        :rtype: :py:class:`~pyglet.image.TextureArray`
+
+        .. versionadded:: 2.0
         """
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
 
-        id = GLuint()
-        glGenTextures(1, byref(id))
-        glBindTexture(GL_TEXTURE_2D_ARRAY, id.value)
+        assert max_depth <= cls._max_depth, "TextureArray max_depth supported is {}.".format(cls._max_depth)
+
+        tex_id = GLuint()
+        glGenTextures(1, byref(tex_id))
+        glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id.value)
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, min_filter)
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, mag_filter)
 
@@ -1766,8 +1797,8 @@ class TextureArray(Texture, UniformTextureSequence):
                      internalformat, GL_UNSIGNED_BYTE,
                      0)
 
-        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, id.value)
-        texture.items = [] # No items on creation
+        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, tex_id.value)
+        texture.items = []  # No items on creation
         texture.max_depth = max_depth
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
@@ -1778,7 +1809,8 @@ class TextureArray(Texture, UniformTextureSequence):
         
     def _verify_size(self, image):
         if image.width > self.width or image.height > self.height:
-            raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(image.width, image.height, self.width, self.height))
+            raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(
+                image.width, image.height, self.width, self.height))
         
     def allocate(self, *images):
         if len(self.items) + len(images) > self.max_depth:
@@ -1824,8 +1856,10 @@ class TextureArray(Texture, UniformTextureSequence):
     def __iter__(self):
         return iter(self.items)
 
+
 TextureArray.region_class = TextureArrayRegion
 TextureArrayRegion.region_class = TextureArrayRegion
+
 
 class TileableTexture(Texture):
     """A texture that can be tiled efficiently.
