@@ -931,7 +931,7 @@ class ImageData(AbstractImage):
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
         self._apply_region_unpack()
 
-        if target == GL_TEXTURE_3D:
+        if target == GL_TEXTURE_3D or target == GL_TEXTURE_2D_ARRAY:
             assert not internalformat
             glTexSubImage3D(target, level,
                             x, y, z,
@@ -1716,6 +1716,116 @@ class Texture3D(Texture, UniformTextureSequence):
     def __iter__(self):
         return iter(self.items)
 
+class TextureArrayRegion(TextureRegion):
+    def __init__(self, x, y, z, width, height, owner):
+        super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
+
+        self.x = x
+        self.y = y
+        self.z = z
+        self.owner = owner
+        owner_u1 = owner.tex_coords[0]
+        owner_v1 = owner.tex_coords[1]
+        owner_u2 = owner.tex_coords[3]
+        owner_v2 = owner.tex_coords[7]
+        scale_u = owner_u2 - owner_u1
+        scale_v = owner_v2 - owner_v1
+        u1 = x / owner.width * scale_u + owner_u1
+        v1 = y / owner.height * scale_v + owner_v1
+        u2 = (x + width) / owner.width * scale_u + owner_u1
+        v2 = (y + height) / owner.height * scale_v + owner_v1
+        z = float(z)
+        self.tex_coords = (u1, v1, z, u2, v1, z, u2, v2, z, u1, v2, z)
+        
+    def __repr__(self):
+        return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height, self.z)
+    
+        
+class TextureArray(Texture, UniformTextureSequence):
+    allow_smaller_pack = True
+
+    @classmethod
+    def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
+        """ Max safe depth for GL 3 is 256. Can be queried with GL_MAX_ARRAY_TEXTURE_LAYERS if more is needed.
+        
+            Depth can be specified as you may want to reserve more for later, create as needed, or if your hardware supports more.
+        """
+        min_filter = min_filter or cls.default_min_filter
+        mag_filter = mag_filter or cls.default_mag_filter
+
+        id = GLuint()
+        glGenTextures(1, byref(id))
+        glBindTexture(GL_TEXTURE_2D_ARRAY, id.value)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, min_filter)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, mag_filter)
+
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                     internalformat,
+                     width, height, max_depth,
+                     0,
+                     internalformat, GL_UNSIGNED_BYTE,
+                     0)
+
+        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, id.value)
+        texture.items = [] # No items on creation
+        texture.max_depth = max_depth
+        texture.min_filter = min_filter
+        texture.mag_filter = mag_filter
+
+        glFlush()
+
+        return texture
+        
+    def _verify_size(self, image):
+        if image.width > self.width or image.height > self.height:
+            raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(image.width, image.height, self.width, self.height))
+        
+    def allocate(self, *images):
+        if len(self.items) + len(images) > self.max_depth:
+            raise Exception("The amount of images being added exceeds the depth of this TextureArray.")
+                    
+        textures = []
+        start_length = len(self.items)
+        for i, image in enumerate(images):
+            self._verify_size(image)
+            item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
+            self.items.append(item)
+            image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
+        
+        glFlush()
+        
+        return self.items[start_length:]
+        
+    @classmethod
+    def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
+        texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))
+        texture_array.allocate(*grid[:])
+        return texture_array
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, index):
+        return self.items[index]
+
+    def __setitem__(self, index, value):
+        if type(index) is slice:
+            for old_item, image in zip(self[index], value):
+                self._verify_size(image)
+                item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
+                image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, old_item.z)
+                self.items[old_item.z] = item
+        else:
+            self._verify_size(value)
+            item = self.region_class(0, 0, index, value.width, value.height, self)
+            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, index)
+            self.items[index] = item
+
+    def __iter__(self):
+        return iter(self.items)
+
+TextureArray.region_class = TextureArrayRegion
+TextureArrayRegion.region_class = TextureArrayRegion
 
 class TileableTexture(Texture):
     """A texture that can be tiled efficiently.
@@ -1773,10 +1883,6 @@ class DepthTexture(Texture):
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.level, x, y, z)
-
-
-class ArrayTexture(Texture):
-    pass
 
 
 class ImageGrid(AbstractImage, AbstractImageSequence):

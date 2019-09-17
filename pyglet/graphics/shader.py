@@ -33,7 +33,10 @@ _uniform_setters = {
     GL_FLOAT_VEC4: (GLfloat, glUniform4fv, 4, 1),
 
     GL_SAMPLER_1D: (GLint, glUniform1iv, 1, 1),
+    
     GL_SAMPLER_2D: (GLint, glUniform1iv, 1, 1),
+    GL_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, 1, 1),
+        
     GL_SAMPLER_3D: (GLint, glUniform1iv, 1, 1),
 
     GL_FLOAT_MAT2: (GLfloat, glUniformMatrix2fv, 4, 1),
