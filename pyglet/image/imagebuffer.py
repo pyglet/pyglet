@@ -32,14 +32,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import weakref
-
 from pyglet.gl import *
 
-__all__ = ['Framebuffer', 'Renderbuffer', 'RenderbufferMultisample']
 
-
-def _get_max_color_attachments():
+def get_max_color_attachments():
+    """Get the maximum allow Framebuffer Color attachements"""
     number = GLint()
     glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, number)
     return number.value
@@ -48,51 +45,34 @@ def _get_max_color_attachments():
 class Renderbuffer:
     """OpenGL Renderbuffer Object"""
 
-    def __init__(self, width, height, internal_format=GL_RGB8):
+    def __init__(self, width, height, internal_format, samples=1):
         """Create an instance of a Renderbuffer object."""
         self._id = GLuint()
+        self._width = width
+        self._height = height
+        self._internal_format = internal_format
+
         glGenRenderbuffers(1, self._id)
         glBindRenderbuffer(GL_RENDERBUFFER, self._id)
-        glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+
+        if samples > 1:
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height)
+        else:
+            glRenderbufferStorage(GL_RENDERBUFFER, internal_format, width, height)
+
         glBindRenderbuffer(GL_RENDERBUFFER, 0)
 
     @property
     def id(self):
         return self._id.value
 
-    def bind(self):
-        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
-
-    @staticmethod
-    def unbind():
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
-
-    def delete(self):
-        glDeleteRenderbuffers(1, self._id)
-
-    def __del__(self):
-        try:
-            glDeleteRenderbuffers(1, self._id)
-        # Python interpreter is shutting down:
-        except ImportError:
-            pass
-
-    def __repr__(self):
-        return "{}(id={})".format(self.__class__.__name__, self._id.value)
-
-
-class RenderbufferMultisample:
-
-    def __init__(self, width, height, internal_format, samples):
-        self._id = GLuint()
-        glGenRenderbuffers(1, self._id)
-        glBindRenderbuffer(GL_RENDERBUFFER, self._id)
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height)
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+    @property
+    def width(self):
+        return self._width
 
     @property
-    def id(self):
-        return self._id.value
+    def height(self):
+        return self._height
 
     def bind(self):
         glBindRenderbuffer(GL_RENDERBUFFER, self._id)
@@ -118,21 +98,27 @@ class RenderbufferMultisample:
 class Framebuffer:
     """OpenGL Framebuffer Object"""
 
-    _max_color_attachments = _get_max_color_attachments()
+    _max_color_attachments = get_max_color_attachments()
 
     def __init__(self):
         """Create an instance of a Framebuffer object."""
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
-
-        self._color_attachments = weakref.WeakSet()
-        self._depth_attachments = None
-        self._stencil_attachments = None
-        self._depth_stencil_attachments = None
+        self._attachment_types = 0
+        self._width = 0
+        self._height = 0
 
     @property
     def id(self):
         return self._id.value
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
 
     def bind(self, target=GL_FRAMEBUFFER):
         glBindFramebuffer(target, self._id)
@@ -140,6 +126,12 @@ class Framebuffer:
     @staticmethod
     def unbind(target=GL_FRAMEBUFFER):
         glBindFramebuffer(target, 0)
+
+    def clear(self):
+        if self._attachment_types:
+            self.bind()
+            glClear(self._attachment_types)
+            self.unbind()
 
     def delete(self):
         glDeleteFramebuffers(1, self._id)
@@ -163,20 +155,79 @@ class Framebuffer:
 
         return states.get(gl_status, "Unknown error")
 
-    def attach_color(self, image):
-        number = GL_COLOR_ATTACHMENT0 + len(self._color_attachments)
-        assert number <= self._max_color_attachments, "Exceeded maximum supported color attachments"
-        glFramebufferTexture2D(GL_FRAMEBUFFER, number, GL_TEXTURE_2D, image, 0)
-        self._color_attachments.add(image)
+    def attach_texture(self, target, attachment, texture):
+        """Attach a Texture to the Framebuffer
 
-    def attach_depth(self, image):
-        pass
+        :Parameters:
+            `target` : int
+                Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
+                GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
+                to GL_DRAW_FRAMEBUFFER.
+            `attachment` : int
+                Specifies the attachment point of the framebuffer. attachment must be
+                GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
+                GL_DEPTH_STENCIL_ATTACHMENT.
+            `texture` : pyglet.image.Texture
+                Specifies the texture object to attach to the framebuffer attachment
+                point named by attachment.
+        """
+        self.bind()
+        glFramebufferTexture(target, attachment, texture.id, texture.level)
+        # glFramebufferTexture2D(target, attachment, texture.target, texture.id, texture.level)
+        self._attachment_types |= attachment
+        self._width = max(texture.width, self._width)
+        self._height = max(texture.height, self._height)
+        self.unbind()
 
-    def attach_stencil(self, image):
-        pass
+    def attach_texture_layer(self, target, attachment, texture, level, layer):
+        """Attach a Texture layer to the Framebuffer
 
-    def attach_depth_stencil(self, image):
-        pass
+        :Parameters:
+            `target` : int
+                Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
+                GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
+                to GL_DRAW_FRAMEBUFFER.
+            `attachment` : int
+                Specifies the attachment point of the framebuffer. attachment must be
+                GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
+                GL_DEPTH_STENCIL_ATTACHMENT.
+            `texture` : pyglet.image.TextureArray
+                Specifies the texture object to attach to the framebuffer attachment
+                point named by attachment.
+            `level` : int
+                Specifies the mipmap level of texture to attach.
+            `layer` : int
+                Specifies the layer of texture to attach.
+        """
+        self.bind()
+        glFramebufferTextureLayer(target, attachment, texture.id, level, layer)
+        self._attachment_types |= attachment
+        self._width = max(texture.width, self._width)
+        self._height = max(texture.height, self._height)
+        self.unbind()
+
+    def attach_renderbuffer(self, target, attachment, renderbuffer):
+        """"Attach a Renderbuffer to the Framebuffer
+
+        :Parameters:
+            `target` : int
+                Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
+                GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
+                to GL_DRAW_FRAMEBUFFER.
+            `attachment` : int
+                Specifies the attachment point of the framebuffer. attachment must be
+                GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
+                GL_DEPTH_STENCIL_ATTACHMENT.
+            `renderbuffer` : pyglet.image.Renderbuffer
+                Specifies the Renderbuffer to attach to the framebuffer attachment
+                point named by attachment.
+        """
+        self.bind()
+        glFramebufferRenderbuffer(target, attachment, GL_RENDERBUFFER, renderbuffer.id)
+        self._attachment_types |= attachment
+        self._width = max(renderbuffer.width, self._width)
+        self._height = max(renderbuffer.height, self._height)
+        self.unbind()
 
     def __del__(self):
         try:
