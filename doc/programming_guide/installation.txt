@@ -3,31 +3,47 @@ Installation
 
 .. note:: These instructions apply to pyglet |version|.
 
-To play compressed audio and video files (anything but WAV), you will need
-`FFmpeg <https://www.ffmpeg.org/download.html>`_.
-
-pyglet is available `on PyPI <https://pypi.python.org/pypi/pyglet>`_. You can
-install it like any other Python library:
+pyglet is a pure python library, so no special steps are required for
+installation. You can install it in a variety of ways, or simply copy the
+`pyglet` folder directly into your project. If you're unsure what to do,
+the recommended method is to install it into your local ``site-packages``
+directory. pyglet is available `on PyPI <https://pypi.python.org/pypi/pyglet>`_.
+and can be installed like any other Python library via **pip**:
 
 .. code-block:: sh
 
-    pip install pyglet
+    pip install pyglet --user
 
-If you're installing pyglet into your global ``site-packages`` directory, you
-might need to add ``sudo``. But you shouldn't do that; instead, create a
-`venv <https://docs.python.org/3/library/venv.html>`_. Alternatively, you can
-simply copy pyglet directly into your project folder, and use it without any
-installation.
+You can also clone the repository using **git** and install from source:
+
+.. code-block:: sh
+
+    git clone https://github.com/pyglet/pyglet.git
+    cd pyglet
+    python setup.py install --user
+
+
+To play compressed audio and video files (anything except for WAV), you will need
+`FFmpeg <https://www.ffmpeg.org/download.html>`_.
+
 
 Running the examples
 --------------------
 
 The source code archives include examples. Archives are
-`available on BitBucket <https://bitbucket.org/pyglet/pyglet/downloads/>`_:
+`available on Github <https://github.com/pyglet/pyglet/releases/>`_:
 
 .. code-block:: sh
 
-    wget https://bitbucket.org/pyglet/pyglet/downloads/pyglet-1.3.0.zip
-    tar -xzvf pyglet-1.3.0.zip
-    cd pyglet-1.3.0
+    unzip pyglet-x.x.x.zip
+    cd pyglet-x.x.x
     python examples/graphics.py
+
+
+You mentioned above, you can  also clone the repository using Git:
+
+.. code-block:: sh
+
+    git clone https://github.com/pyglet/pyglet.git
+    cd pyglet
+    python example/graphics.py

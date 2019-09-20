@@ -3,13 +3,13 @@ Development environment
 
 To develop pyglet, you need an environment with at least the following:
 
-    - Python 3.4+ and Python 2.7
+    - Python 3.5+ and Python 2.7
     - `py.test <https://pytest.org>`_
     - Your favorite Python editor or IDE
 
 To generate documentation you also need:
 
-    - `Sphinx <https://sphinx-doc.org>`_
+    - `Sphinx <https://sphinx-doc.org>`_ (and the "read_the_docs" Theme)
     - `Graphviz`_
 
 To use and test all pyglet functionality you should also have:
@@ -20,7 +20,7 @@ To use and test all pyglet functionality you should also have:
 
 To build packages for distribution you need to install:
 
-    - `wheel <https://bitbucket.org/pypa/wheel/>`_
+    - `wheel <https://github.com/pypa/wheel/>`_
 
 It is preferred to create a Python virtual environment to develop in.  This allows you
 to easily test on all Python versions supported by pyglet, not pollute your local system
@@ -41,7 +41,7 @@ Setting up
 Setting up a virtual environment is almost the same for Linux and OS X. First, use your
 OS's package manager (apt, brew, etc) to install the following dependencies:
 
-    - Python 3.4+ and Python 2.7
+    - Python 3.5+ and Python 2.7
     - pip (for each version of Python)
     - Graphviz (if you want to generate documentation)
 

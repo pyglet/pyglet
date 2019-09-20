@@ -4,7 +4,9 @@
 
 # pyglet
 
-*pyglet* is a cross-platform windowing and multimedia library for Python, intended for developing games and other visually rich applications. It supports windowing, user interface event handling, Joysticks, OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
+*pyglet* is a cross-platform windowing and multimedia library for Python, intended for developing games
+and other visually rich applications. It supports windowing, user interface event handling, Joysticks,
+OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
 * pyglet [documentation]
 * pyglet [wiki]
@@ -14,18 +16,27 @@
 * pyglet [issue tracker]
 * Pyglet [website]
 
-Pyglet has an active developer and user community.  If you find a bug or issue, please [open an issue](https://github.com/pyglet/pyglet/issues).
-Anyone is welcome to join our [discord] server were a lot
-if the development discussion is going on. It's also a great place
-to ask for help.
+Pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
+please [open an issue](https://github.com/pyglet/pyglet/issues).
+Anyone is welcome to join our [discord] server were a lot of the development discussion is going on.
+It's also a great place to ask for help.
 
 Some of the features of pyglet are:
 
-* **No external dependencies or installation requirements.** For most application and game requirements, *pyglet* needs nothing else besides Python, simplifying distribution and installation. It's easy to package your project with freezers such as PyInstaller. 
-* **Take advantage of multiple windows and multi-monitor desktops.** *pyglet* allows you to use multiple platform-native windows, and is fully aware of multi-monitor setups for use with fullscreen games.
-* **Load images, sound, music and video in almost any format.** *pyglet* can optionally use FFmpeg to play back audio formats such as MP3, OGG/Vorbis and WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid. Without FFmpeg, *pyglet* contains built-in support for standard formats such as wav, png, bmp, and others.
-* **pyglet is written entirely in pure Python**, and makes use of the *ctypes* module to interface with system libraries. You can modify the codebase or make a contribution without any second language compilation steps or compiler setup. Despite being pure Python, *pyglet* has excellent performance thanks to advanced batching for drawing thousands of sprites or animations.
-* **pyglet is provided under the BSD open-source license**, allowing you to use it for both commercial and other open-source projects with very little restriction.
+* **No external dependencies or installation requirements.** For most application and game requirements, *pyglet*
+  needs nothing else besides Python, simplifying distribution and installation. It's easy to package your project
+  with freezers such as PyInstaller. 
+* **Take advantage of multiple windows and multi-monitor desktops.** *pyglet* allows you to use multiple
+  platform-native windows, and is fully aware of multi-monitor setups for use with fullscreen games.
+* **Load images, sound, music and video in almost any format.** *pyglet* can optionally use FFmpeg to play back
+  audio formats such as MP3, OGG/Vorbis and WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
+  Without FFmpeg, *pyglet* contains built-in support for standard formats such as wav, png, bmp, and others.
+* **pyglet is written entirely in pure Python**, and makes use of the *ctypes* module to interface with system
+  libraries. You can modify the codebase or make a contribution without any second language compilation steps or
+  compiler setup. Despite being pure Python, *pyglet* has excellent performance thanks to advanced batching for
+  drawing thousands of sprites or animations.
+* **pyglet is provided under the BSD open-source license**, allowing you to use it for both commercial and other
+  open-source projects with very little restriction.
 
 ## Requirements
 
@@ -60,7 +71,7 @@ pyglet is installable from PyPI:
 
 If you're reading this `README` from a source distribution, you can install pyglet with:
 
-    python setup.py install
+    python setup.py install --user
 
 You can also install the latest development version direct from Github using:
 
@@ -81,7 +92,9 @@ installing it. You can also copy pyglet directly into your project folder.
 
 ## Contributing
 
-**A good way to start contributing to a component of pyglet is by its documentation**. When studying the code you are going to work with, also read the associated docs. If you don't understand the code with the help of the docs, it is a sign that the docs should be improved.
+**A good way to start contributing to a component of pyglet is by its documentation**. When studying the code you
+are going to work with, also read the associated docs. If you don't understand the code with the help of the docs,
+it is a sign that the docs should be improved.
 
 If you want to contribute to Pyglet, we suggest the following:
 
@@ -90,9 +103,12 @@ If you want to contribute to Pyglet, we suggest the following:
 * Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
 * Alternatively you can create a patch and submit it to the issue tracker.
 
-When making a pull request, check that you have addressed its respective documentation, both within the code docstrings and the programming guide (if applicable). It is very important to all of us that the documentation matches the latest code and vice-versa.
+When making a pull request, check that you have addressed its respective documentation, both within the code docstrings
+and the programming guide (if applicable). It is very important to all of us that the documentation matches the latest
+code and vice-versa.
 
-Consequently, an error in the documentation, either because it is hard to understand or because it doesn't match the code, is a bug that deserves to be reported on a ticket.
+Consequently, an error in the documentation, either because it is hard to understand or because it doesn't match the
+code, is a bug that deserves to be reported on a ticket.
 
 ## Building Docs
 
@@ -109,7 +125,8 @@ Please check the documentation for more information about running and writing te
 
 ## Contact
 
-pyglet is developed by many individual volunteers, and there is no central point of contact. If you have a question about developing with pyglet, or you wish to contribute, please join the [mailing list] or the [discord] channel.
+pyglet is developed by many individual volunteers, and there is no central point of contact. If you have a question
+about developing with pyglet, or you wish to contribute, please join the [mailing list] or the [discord] server.
 
 For legal issues, please contact [Alex Holkner](mailto:Alex.Holkner@gmail.com).
 
