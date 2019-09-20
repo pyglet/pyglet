@@ -172,19 +172,18 @@ configured with the following attributes:
         you are compositing in multiple passes) you should specify
         ``alpha_size=8`` to ensure that this channel is created.
     ``sample_buffers`` and ``samples``
-        Configures the buffer for multisampling, in which more than one color
+        Configures the buffer for multisampling (MSAA), in which more than one color
         sample is used to determine the color of each pixel, leading to a
         higher quality, antialiased image.
 
-        Enable multisampling by setting ``sample_buffers=1``, then give the
+        Enable multisampling (MSAA) by setting ``sample_buffers=1``, then give the
         number of samples per pixel to use in ``samples``.  For example,
         ``samples=2`` is the fastest, lowest-quality multisample
-        configuration.  A higher-quality buffer (with a compromise in
-        performance) is possible with ``samples=4``.
+        configuration. ``samples=4`` is still widely supported
+        and fairly performant even on Intel HD and AMD Vega.
+        Most modern GPUs support 2×, 4×, 8×, and 16× MSAA samples
+        with fairly high performance.
 
-        Not all video hardware supports multisampling; you may need to make
-        this a user-selectable option, or be prepared to automatically
-        downgrade the configuration if the requested one is not available.
     ``stereo``
         Creates separate left and right buffers, for use with stereo hardware.
         Only specialised video hardware such as stereoscopic glasses will
