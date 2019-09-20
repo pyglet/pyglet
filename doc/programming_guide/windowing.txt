@@ -331,8 +331,9 @@ Double-buffering
 
 If the window is double-buffered (i.e., the configuration specified
 ``double_buffer=True``, the default), OpenGL commands are applied to a hidden
-back buffer.  This back buffer can be copied to the window using the `flip`
-method.  If you are using the standard `pyglet.app.run` or
+back buffer. This back buffer can be brought to the front using the `flip`
+method. The previous front buffer then becomes the hidden back buffer
+we render to in the next frame. If you are using the standard `pyglet.app.run` or
 :py:class:`pyglet.app.EventLoop` event loop, this is taken care of automatically after
 each :py:meth:`~pyglet.window.Window.on_draw` event.
 
