@@ -78,6 +78,12 @@ If this is your first time reading about pyglet, we suggest you start at
 
 .. toctree::
    :maxdepth: 3
+   :caption: External Resources
+
+   external_resources
+
+.. toctree::
+   :maxdepth: 3
    :caption: Development Guide
 
    internal/contributing
@@ -90,9 +96,3 @@ If this is your first time reading about pyglet, we suggest you start at
    internal/wraptypes
    internal/media_manual
    internal/media_logging_manual
-
-.. toctree::
-   :maxdepth: 3
-   :caption: External Resources
-
-   external_resources
