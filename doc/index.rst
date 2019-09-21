@@ -9,7 +9,7 @@ and Linux.
 
 Some of the features of pyglet are:
 
-* **No external dependencies or installation requirements.** For most 
+* **No external dependencies or installation requirements.** For most
   application and game requirements, pyglet needs nothing else besides Python,
   simplifying distribution and installation.
 * **Take advantage of multiple windows and multi-monitor desktops.** pyglet
@@ -18,7 +18,7 @@ Some of the features of pyglet are:
 * **Load images, sound, music and video in almost any format.** pyglet can
   optionally use ffmpeg to play back audio formats such as MP3, OGG/Vorbis and
   WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
-* **pyglet is provided under the BSD open-source license**, allowing you to 
+* **pyglet is provided under the BSD open-source license**, allowing you to
   use it for both commercial and other open-source projects with very little
   restriction.
 * **Supports Python 2 and 3.** Pick your favorite!
