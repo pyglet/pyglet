@@ -1,5 +1,5 @@
 pyglet.graphics.allocation
-===============================================================
+==========================
 
 .. automodule:: pyglet.graphics.allocation
   :members:

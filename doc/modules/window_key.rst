@@ -1,8 +1,8 @@
 pyglet.window.key
-===============================================================
+=================
 
 .. automodule:: pyglet.window.key
-  :members: KeyStateHandler, modifiers_string, symbol_string, motion_string, 
+  :members: KeyStateHandler, modifiers_string, symbol_string, motion_string,
             user_key
 
 Key Constants
