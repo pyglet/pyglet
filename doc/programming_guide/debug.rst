@@ -6,8 +6,9 @@ application startup.  These were primarily developed to aid in debugging
 pyglet itself, however some of them may also prove useful for understanding
 and debugging pyglet applications.
 
-Each debug option is a key in the :py:attr:`pyglet.options` dictionary.  Options can be
-set directly on the dictionary before any other modules are imported::
+Each debug option is a key in the :py:attr:`pyglet.options` dictionary.
+Options can be set directly on the dictionary before any other modules
+are imported::
 
     import pyglet
     pyglet.options['debug_gl'] = False
@@ -67,8 +68,8 @@ A summary of the debug environment variables appears in the table below.
           - bool
 
 The ``debug_media`` and ``debug_font`` options are used to debug the
-:py:mod:`pyglet.media` and :py:mod:`pyglet.font` modules, respectively.  Their behaviour
-is platform-dependent and useful only for pyglet developers.  
+:py:mod:`pyglet.media` and :py:mod:`pyglet.font` modules, respectively.
+Their behaviour is platform-dependent and useful only for pyglet developers.
 
 The remaining debug options are detailed below.
 
@@ -80,10 +81,12 @@ The ``graphics_vbo`` option enables the use of vertex buffer objects in
 debugging the ``graphics`` module as well as isolating code for determining if
 a video driver is faulty.
 
-The ``debug_graphics_batch`` option causes all :py:class:`~pyglet.graphics.Batch` objects to dump their
+The ``debug_graphics_batch`` option causes all
+:py:class:`~pyglet.graphics.Batch` objects to dump their
 rendering tree to standard output before drawing, after any change (so two
 drawings of the same tree will only dump once).  This is useful to debug
-applications making use of :py:class:`~pyglet.graphics.Group` and :py:class:`~pyglet.graphics.Batch` rendering.
+applications making use of :py:class:`~pyglet.graphics.Group` and
+:py:class:`~pyglet.graphics.Batch` rendering.
 
 Error checking
 ^^^^^^^^^^^^^^
@@ -148,5 +151,3 @@ call ``SetLastError(0)`` is called, and afterwards ``GetLastError()`` is
 called.  Any errors discovered are written to a file named
 ``debug_win32.log``.  Note that an error is only valid if the function called
 returned an error code, but the interception function does not check this.
-
-

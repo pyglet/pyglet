@@ -2,9 +2,9 @@ Sound and video
 ===============
 
 pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated 
-mixing and surround-sound 3D positioning. Video is played into OpenGL 
-textures, and so can be easily manipulated in real-time by applications 
+either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated
+mixing and surround-sound 3D positioning. Video is played into OpenGL
+textures, and so can be easily manipulated in real-time by applications
 and incorporated into 3D environments.
 
 Decoding of compressed audio and video is provided by `FFmpeg`_ v4.X, an
@@ -23,15 +23,15 @@ distribute FFmpeg.
 Audio drivers
 -------------
 
-pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio. Only one 
-of these drivers can be used in an application. In most cases you won't need 
+pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio. Only one
+of these drivers can be used in an application. In most cases you won't need
 to concern yourself with choosing a driver, but you can manually select one if
 desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
 The available drivers depend on your operating system:
 
     .. list-table::
         :header-rows: 1
-        
+
         * - Windows
           - Mac OS X
           - Linux
@@ -39,20 +39,20 @@ The available drivers depend on your operating system:
           - OpenAL
           - OpenAL [#openalf]_
         * - DirectSound
-          - 
+          -
           -
         * -
-          - 
+          -
           - Pulseaudio
 
-The audio driver can be set through the ``audio`` key of the 
+The audio driver can be set through the ``audio`` key of the
 :py:data:`pyglet.options` dictionary. For example::
 
     pyglet.options['audio'] = ('openal', 'pulse', 'directsound', 'silent')
 
 This tells pyglet to try using the OpenAL driver first, and if not available
 to try Pulseaudio and DirectSound in that order. If all else fails, no driver
-will be instantiated. The ``audio`` option can be a list of any of these 
+will be instantiated. The ``audio`` option can be a list of any of these
 strings, giving the preference order for each driver:
 
     .. list-table::
@@ -69,9 +69,9 @@ strings, giving the preference order for each driver:
         * - ``silent``
           - No audio output
 
-You must set the ``audio`` option before importing :mod:`pyglet.media`. You 
-can alternatively set it through an environment variable; see 
-:ref:`guide_environment-settings`.
+You must set the ``audio`` option before importing :mod:`pyglet.media`.
+You  can alternatively set it through an environment variable;
+see :ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
 driver.
@@ -80,7 +80,7 @@ DirectSound
 ^^^^^^^^^^^
 
 DirectSound is available only on Windows, and is installed by default.
-pyglet uses only DirectX 7 features. On Windows Vista, DirectSound does not 
+pyglet uses only DirectX 7 features. On Windows Vista, DirectSound does not
 support hardware audio mixing or surround sound.
 
 OpenAL
@@ -94,7 +94,7 @@ For example, Ubuntu users can ``apt install libopenal1``.
 Pulse
 ^^^^^
 
-Pulseaudio has become the standard Linux audio implementation over the past 
+Pulseaudio has become the standard Linux audio implementation over the past
 few years, and is installed by default with most modern Linux distributions.
 Pulseaudio does not support positional audio, and is limited to stereo. It
 is recommended to use OpenAL if positional audio is required.
@@ -150,10 +150,10 @@ in the `FFmpeg download <https://www.ffmpeg.org/download.html>`_ page. You must
 choose the shared build for the targeted OS with the architecture similar to
 the Python interpreter.
 
-This means that the major version must be 4.X. All minor versions are supported.
-Choose the correct architecture depending on the targeted **Python interpreter**.
-If you're shipping your project with a 32 bits interpreter, you must download the
-32 bits shared binaries.
+This means that the major version must be 4.X. All minor versions are
+supported. Choose the correct architecture depending on the targeted
+**Python interpreter**. If you're shipping your project with a 32 bits
+interpreter, you must download the 32 bits shared binaries.
 
 On Windows, the usual error message when the wrong architecture was downloaded
 is::
@@ -164,16 +164,16 @@ Finally make sure you download the **shared** builds, not the static or the
 dev builds.
 
 For Mac OS and Linux, the library is usually already installed system-wide.
-For Windows users, it's not recommended to install the library in one of the 
+For Windows users, it's not recommended to install the library in one of the
 windows sub-folders.
 
 Instead we recommend to use the :py:data:`pyglet.options`
 ``search_local_libs``::
-    
+
     import pyglet
     pyglet.options['search_local_libs'] = True
 
-This will allow pyglet to find the FFmpeg binaries in the ``lib`` sub-folder 
+This will allow pyglet to find the FFmpeg binaries in the ``lib`` sub-folder
 located in your running script folder.
 
 Another solution is to manipulate the environment variable. On Windows you can
@@ -196,9 +196,9 @@ Audio and video files are loaded in the same way, using the
 If the media file is bundled with the application, consider using the
 :py:mod:`~pyglet.resource` module (see :ref:`guide_resources`).
 
-The result of loading a media file is a 
-:py:class:`~pyglet.media.Source` object. This object provides useful 
-information about the type of media encoded in the file, and serves as an 
+The result of loading a media file is a
+:py:class:`~pyglet.media.Source` object. This object provides useful
+information about the type of media encoded in the file, and serves as an
 opaque object used for playing back the file (described in the next section).
 
 The :py:func:`~pyglet.media.load` function will raise a
@@ -270,8 +270,9 @@ already- loaded :class:`~pyglet.media.Source`::
 Audio Synthesis
 ---------------
 
-In addition to loading audio files, the :py:mod:`pyglet.media.synthesis` module is available
-for simple audio synthesis. There are several basic waveforms available:
+In addition to loading audio files, the :py:mod:`pyglet.media.synthesis`
+module is available for simple audio synthesis. There are several basic
+waveforms available:
 
 * :py:class:`~pyglet.media.synthesis.Sine`
 * :py:class:`~pyglet.media.synthesis.Sawtooth`
@@ -281,17 +282,21 @@ for simple audio synthesis. There are several basic waveforms available:
 * :py:class:`~pyglet.media.synthesis.WhiteNoise`
 * :py:class:`~pyglet.media.synthesis.Digitar`
 
-The module documentation for each will provide more information on constructing them, but at
-a minimum you will need to specify the duration. You will also want to set the audio frequency
-(most waveforms will default to 440Hz). Some waveforms, such as the FM, have additional parameters.
+The module documentation for each will provide more information on
+constructing them, but at a minimum you will need to specify the duration.
+You will also want to set the audio frequency (most waveforms will default
+to 440Hz). Some waveforms, such as the FM, have additional parameters.
 
-For shaping the waveforms, several simple envelopes are available. These envelopes affect
-the amplitude (volume), and can make for more natural sounding tones. You first create an envelope
-instance, and then pass it into the constructor of any of the above waveforms. The same envelope
-instance can be passed to any number of waveforms, reducing duplicate code when creating multiple
-sounds. If no envelope is used, all waveforms will default to the FlatEnvelope of maximum
-volume, which esentially has no effect on the sound. Check the module documentation of each
-Envelope to see which parameters are available.
+For shaping the waveforms, several simple envelopes are available.
+These envelopes affect the amplitude (volume), and can make for more
+natural sounding tones. You first create an envelope instance,
+and then pass it into the constructor of any of the above waveforms.
+The same envelope instance can be passed to any number of waveforms,
+reducing duplicate code when creating multiple sounds.
+If no envelope is used, all waveforms will default to the FlatEnvelope
+of maximum volume, which esentially has no effect on the sound.
+Check the module documentation of each Envelope to see which parameters
+are available.
 
 * :py:class:`~pyglet.media.synthesis.FlatEnvelope`
 * :py:class:`~pyglet.media.synthesis.LinearDecayEnvelope`
@@ -305,8 +310,8 @@ An example of creating an envelope and waveforms::
     saw = pyglet.media.synthesis.Sawtooth(duration=1.0, frequency=220, envelope=adsr)
     fm = pyglet.media.synthesis.FM(3, carrier=440, modulator=2, mod_index=22, envelope=adsr)
 
-The waveforms you create with the synthesis module can be played like any other loaded sound.
-See the next sections for more detail on playback.
+The waveforms you create with the synthesis module can be played like any
+other loaded sound. See the next sections for more detail on playback.
 
 Simple audio playback
 ---------------------
@@ -317,8 +322,8 @@ played when the player's space ship explodes, but this sound never needs to
 have its volume adjusted, or be rewound, or interrupted.
 
 pyglet provides a simple interface for this kind of use-case. Call the
-:meth:`~pyglet.media.Source.play` method of any :class:`~pyglet.media.Source` to play
-it immediately and completely::
+:meth:`~pyglet.media.Source.play` method of any :class:`~pyglet.media.Source`
+to play it immediately and completely::
 
     explosion = pyglet.media.load('explosion.wav', streaming=False)
     explosion.play()
@@ -334,7 +339,7 @@ discarded, or retained to maintain control over the sound's playback.
 Controlling playback
 --------------------
 
-You can implement many functions common to a media player using the 
+You can implement many functions common to a media player using the
 :py:class:`~pyglet.media.player.Player`
 class. Use of this class is also necessary for video playback. There are no
 parameters to its construction::
@@ -402,13 +407,14 @@ Standard controls for controlling playback are provided by these methods:
 
 Note that there is no `stop` method. If you do not need to resume playback,
 simply pause playback and discard the player and source objects. Using the
-:meth:`~pyglet.media.Player.next_source` method does not guarantee gapless playback.
+:meth:`~pyglet.media.Player.next_source` method does not guarantee gapless
+playback.
 
 There are several properties that describe the player's current state:
 
     .. list-table::
         :header-rows: 1
-        
+
         * - Property
           - Description
         * - :py:attr:`~pyglet.media.Player.time`
@@ -449,12 +455,14 @@ will be no  disruption.
 Gapless playback
 ----------------
 
-To play back multiple similar sources without any audible gaps, :py:class:`~pyglet.media.SourceGroup`
-is provided. A :py:class:`~pyglet.media.SourceGroup` can only contain media sources with identical
-audio or video format. First create an instance of :py:class:`~pyglet.media.SourceGroup`, and then
-add all desired additional sources with the :func:`~pyglet.media.SourceGroup.add` method. Afterwards,
-you can queue the :py:class:`~pyglet.media.SourceGroup` on a Player as if it was a single
-source.
+To play back multiple similar sources without any audible gaps,
+:py:class:`~pyglet.media.SourceGroup` is provided.
+A :py:class:`~pyglet.media.SourceGroup` can only contain media sources
+with identical audio or video format. First create an instance of
+:py:class:`~pyglet.media.SourceGroup`, and then add all desired additional
+sources with the :func:`~pyglet.media.SourceGroup.add` method.
+Afterwards, you can queue the :py:class:`~pyglet.media.SourceGroup`
+on a Player as if it was a single source.
 
 Incorporating video
 -------------------

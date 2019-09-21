@@ -38,11 +38,12 @@ To have a function called periodically, for example, once every 0.1 seconds::
     pyglet.clock.schedule_interval(update, 0.1)
 
 The `dt`, or `delta time` parameter gives the number of "wall clock" seconds
-elapsed since the last call of this function, (or the time the function was scheduled,
-if it's the first period). Due to latency, load and timer inprecision, this might be
-slightly more or less than the requested interval.  Please note that the `dt` parameter
-is always passed to scheduled functions, so be sure to expect it when writing functions
-even if you don't need to use it.
+elapsed since the last call of this function, (or the time the function was
+scheduled, if it's the first period). Due to latency, load and timer
+inprecision, this might be slightly more or less than the requested interval.
+Please note that the `dt` parameter is always passed to scheduled functions,
+so be sure to expect it when writing functions even if you don't need to
+use it.
 
 Scheduling functions with a set interval is ideal for animation, physics
 simulation, and game state updates.  pyglet ensures that the application does
@@ -53,7 +54,8 @@ Rather than "limiting the frame rate", as is common in other toolkits, simply
 schedule all your update functions for no less than the minimum period your
 application or game requires.  For example, most games need not run at more
 than 60Hz (60 times a second) for imperceptibly smooth animation, so the
-interval given to :py:func:`~pyglet.clock.schedule_interval` would be ``1/60.0`` (or more).
+interval given to :py:func:`~pyglet.clock.schedule_interval` would be
+``1/60.0`` (or more).
 
 If you are writing a benchmarking program or otherwise wish to simply run at
 the highest possible frequency, use `schedule`. This will call the function
@@ -67,11 +69,11 @@ By default pyglet window buffer swaps are synchronised to the display refresh
 rate, so you may also want to disable vsync if you are running a benchmark.
 
 For one-shot events, use :py:func:`~pyglet.clock.schedule_once`::
-    
+
     def dismiss_dialog(dt):
         # ...
 
-    # Dismiss the dialog after 5 seconds.   
+    # Dismiss the dialog after 5 seconds.
     pyglet.clock.schedule_once(dismiss_dialog, 5.0)
 
 To stop a scheduled function from being called, including cancelling a
@@ -96,20 +98,20 @@ screen at exactly 10 pixels per second::
 
     sprite = pyglet.sprite.Sprite(image)
     sprite.dx = 10.0
-    
+
     def update(dt):
         sprite.x += sprite.dx * dt
     pyglet.clock.schedule_interval(update, 1/60.0) # update at 60Hz
 
-This is a robust technique for simple sprite movement, as the velocity will remain
-constant regardless of the speed or load of the computer.
+This is a robust technique for simple sprite movement, as the velocity will
+remain constant regardless of the speed or load of the computer.
 
 Some examples of other common animation variables are given in the table
 below.
 
     .. list-table::
         :header-rows: 1
-        
+
         * - Animation parameter
           - Distance
           - Velocity
@@ -141,8 +143,9 @@ Displaying the frame rate
 
 A simple way to profile your application performance is to display the frame
 rate while it is running.  Printing it to the console is not ideal as this
-will have a severe impact on performance.  pyglet provides the :py:class:`~pyglet.window.FPSDisplay`
-class for displaying the frame rate with very little effort::
+will have a severe impact on performance.  pyglet provides the
+:py:class:`~pyglet.window.FPSDisplay` class for displaying the frame rate
+with very little effort::
 
     fps_display = pyglet.window.FPSDisplay(window=window)
 
@@ -152,9 +155,10 @@ class for displaying the frame rate with very little effort::
         fps_display.draw()
 
 By default the frame rate will be drawn in the bottom-left corner of the
-window in a semi-translucent large font.  See the :py:class:`~pyglet.window.FPSDisplay` documentation
-for details on how to customise this, or even display another clock value
-(such as the current time) altogether.
+window in a semi-translucent large font.
+See the :py:class:`~pyglet.window.FPSDisplay` documentation for details
+on how to customise this, or even display another clock value (such as
+the current time) altogether.
 
 User-defined clocks
 -------------------
@@ -165,7 +169,8 @@ you to use another time source.  This can be useful for implementing a
 separate "game time" to the real-world time, or for synchronising to a network
 time source or a sound device.
 
-Each of the ``clock_*`` functions are aliases for the methods on a global instance
-of :py:class:`~pyglet.clock.Clock`.  You can construct or subclass your own :py:class:`~pyglet.clock.Clock`, which can
-then maintain its own schedule and framerate calculation.  See the class
-documentation for more details.
+Each of the ``clock_*`` functions are aliases for the methods on a global
+instance of :py:class:`~pyglet.clock.Clock`. You can construct or subclass
+your own :py:class:`~pyglet.clock.Clock`, which can then maintain its own
+schedule and framerate calculation.
+See the class documentation for more details.

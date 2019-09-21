@@ -19,13 +19,13 @@ Contexts and configs
 
 When you draw on a window in pyglet, you are drawing to an OpenGL context.
 Every window has its own context, which is created when the window is created.
-You can access the window's context via its 
+You can access the window's context via its
 :attr:`~pyglet.window.Window.context` attribute.
 
 The context is created from an OpenGL configuration (or "config"), which
 describes various properties of the context such as what color format to use,
 how many buffers are available, and so on.  You can access the config
-that was used to create a context via the context's 
+that was used to create a context via the context's
 :attr:`~pyglet.gl.Context.config` attribute.
 
 For example, here we create a window using the default config and examine some
@@ -107,19 +107,20 @@ In the following example the screens of a dual-head workstation are listed::
 
     >>> for screen in display.get_screens():
     ...     print(screen)
-    ... 
+    ...
     XlibScreen(screen=0, x=1280, y=0, width=1280, height=1024, xinerama=1)
     XlibScreen(screen=0, x=0, y=0, width=1280, height=1024, xinerama=1)
 
 Because this workstation is running Linux, the returned screens are
-``XlibScreen``, a subclass of :class:`~pyglet.canvas.Screen`.  The ``screen`` 
-and ``xinerama`` attributes are specific to Linux, but the 
-:attr:`~pyglet.canvas.Screen.x`, :attr:`~pyglet.canvas.Screen.y`, 
-:attr:`~pyglet.canvas.Screen.width` and :attr:`~pyglet.canvas.Screen.height` attributes are present on all screens, and describe the screen's geometry, as 
-shown below.
+``XlibScreen``, a subclass of :class:`~pyglet.canvas.Screen`. The
+``screen`` and ``xinerama`` attributes are specific to Linux, but the
+:attr:`~pyglet.canvas.Screen.x`, :attr:`~pyglet.canvas.Screen.y`,
+:attr:`~pyglet.canvas.Screen.width` and
+:attr:`~pyglet.canvas.Screen.height` attributes are present on all screens,
+and describe the screen's geometry, as shown below.
 
 .. figure:: img/screens.png
-    
+
     Example arrangement of screens and their reported geometry.  Note that the
     primary display (marked "1") is positioned on the right, according to this
     particular user's preference.
@@ -128,7 +129,7 @@ There is always a "default" screen, which is the first screen returned by
 :meth:`~pyglet.canvas.Display.get_screens`.  Depending on the operating system,
 the default screen is usually the one that contains the taskbar (on Windows) or
 menu bar (on OS X).
-You can access this screen directly using 
+You can access this screen directly using
 :meth:`~pyglet.canvas.Display.get_default_screen`.
 
 
@@ -137,9 +138,9 @@ You can access this screen directly using
 OpenGL configuration options
 ----------------------------
 
-When configuring or selecting a :class:`~pyglet.gl.Config`, you do so based on 
-the properties of that config.  pyglet supports a fixed subset of the options 
-provided by AGL, GLX, WGL and their extensions.  In particular, these 
+When configuring or selecting a :class:`~pyglet.gl.Config`, you do so based
+on the properties of that config.  pyglet supports a fixed subset of the
+options provided by AGL, GLX, WGL and their extensions.  In particular, these
 constraints are placed on all OpenGL configs:
 
 * Buffers are always component (RGB or RGBA) color, never palette indexed.
@@ -172,13 +173,13 @@ configured with the following attributes:
         you are compositing in multiple passes) you should specify
         ``alpha_size=8`` to ensure that this channel is created.
     ``sample_buffers`` and ``samples``
-        Configures the buffer for multisampling (MSAA), in which more than one color
-        sample is used to determine the color of each pixel, leading to a
-        higher quality, antialiased image.
+        Configures the buffer for multisampling (MSAA), in which more than
+        one color sample is used to determine the color of each pixel,
+        leading to a higher quality, antialiased image.
 
-        Enable multisampling (MSAA) by setting ``sample_buffers=1``, then give the
-        number of samples per pixel to use in ``samples``.  For example,
-        ``samples=2`` is the fastest, lowest-quality multisample
+        Enable multisampling (MSAA) by setting ``sample_buffers=1``, then
+        give the number of samples per pixel to use in ``samples``.
+        For example, ``samples=2`` is the fastest, lowest-quality multisample
         configuration. ``samples=4`` is still widely supported
         and fairly performant even on Intel HD and AMD Vega.
         Most modern GPUs support 2×, 4×, 8×, and 16× MSAA samples
@@ -199,7 +200,7 @@ configured with the following attributes:
         separate hidden buffer to which drawing is performed.  When the
         `Window.flip` is called, the buffers are swapped,
         making the new drawing visible virtually instantaneously.
-        
+
 In addition to the color buffer, several other buffers can optionally be
 created based on the values of these properties:
 
@@ -230,11 +231,12 @@ created based on the values of these properties:
         available.  They are almost universally available on older hardware,
         though, where the newer techniques are not possible.
 
-If you wish to work with OpenGL directly, you can request a higher level context.
-This is required if you wish to work with the modern OpenGL programmable pipeline.
-Please note, however, that pyglet currently uses legacy OpenGL functionality for
-many of it's internal modules (such as the text, graphics, and sprite modules).
-Requesting a higher version context will currently prevent usage of these modules.
+If you wish to work with OpenGL directly, you can request a higher level
+context. This is required if you wish to work with the modern OpenGL
+programmable pipeline. Please note, however, that pyglet currently uses
+legacy OpenGL functionality for many of it's internal modules (such as
+the text, graphics, and sprite modules). Requesting a higher version
+context will currently prevent usage of these modules.
 
     ``major_version``
         This will be either 3 or 4, for an OpenGL 3.x or 4.x context.
@@ -253,7 +255,7 @@ Requesting a higher version context will currently prevent usage of these module
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you create a :class:`~pyglet.window.Window` without specifying the context 
+If you create a :class:`~pyglet.window.Window` without specifying the context
 or config, pyglet will use a template config with the following properties:
 
     .. list-table::
@@ -276,9 +278,9 @@ Enumerating and comparing the attributes of all the possible configs is
 a complicated process, so pyglet provides a simpler interface based on
 "template" configs.
 
-To get the config with the attributes you need, construct a 
+To get the config with the attributes you need, construct a
 :class:`~pyglet.gl.Config` and set only the attributes you are interested in.
-You can then supply this config to the :class:`~pyglet.window.Window` 
+You can then supply this config to the :class:`~pyglet.window.Window`
 constructor to create the context.
 
 For example, to create a window with an alpha channel::
@@ -300,16 +302,16 @@ config, which you can then use to create the context::
     context = config.create_context(None)
     window = pyglet.window.Window(context=context)
 
-Note that you cannot create a context directly from a template (any 
-:class:`~pyglet.gl.Config` you constructed yourself).  The 
-:class:`~pyglet.window.Window` constructor performs a similar process to the 
+Note that you cannot create a context directly from a template (any
+:class:`~pyglet.gl.Config` you constructed yourself).  The
+:class:`~pyglet.window.Window` constructor performs a similar process to the
 above to create the context if a template config is given.
 
 Not all configs will be possible on all machines.  The call to
-:meth:`~pyglet.canvas.Screen.get_best_config` will raise 
-:class:`~pyglet.window.NoSuchConfigException` if the hardware does not 
+:meth:`~pyglet.canvas.Screen.get_best_config` will raise
+:class:`~pyglet.window.NoSuchConfigException` if the hardware does not
 support the requested attributes.  It will never return a config that does not
-meet or exceed the attributes you specify in the template.  
+meet or exceed the attributes you specify in the template.
 
 You can use this to support newer hardware features where available, but also
 accept a lesser config if necessary.  For example, the following code creates
@@ -330,10 +332,10 @@ Allowing pyglet to select the best configuration based on a template is
 sufficient for most applications, however some complex programs may want to
 specify their own algorithm for selecting a set of OpenGL attributes.
 
-You can enumerate a screen's configs using the 
-:meth:`~pyglet.canvas.Screen.get_matching_configs` method. You must supply a 
-template as a minimum specification, but you can supply an "empty" template 
-(one with no attributes set) to get a list of all configurations supported by 
+You can enumerate a screen's configs using the
+:meth:`~pyglet.canvas.Screen.get_matching_configs` method. You must supply a
+template as a minimum specification, but you can supply an "empty" template
+(one with no attributes set) to get a list of all configurations supported by
 the screen.
 
 In the following example, all configurations with either an auxilliary buffer
@@ -342,7 +344,7 @@ or an accumulation buffer are printed::
     platform = pyglet.window.get_platform()
     display = platform.get_default_display()
     screen = display.get_default_screen()
-    
+
     for config in screen.get_matching_configs(gl.Config()):
         if config.aux_buffers or config.accum_red_size:
             print config
@@ -381,10 +383,10 @@ the old one and lose all the objects already created, you can
 1. Create the new context, sharing object space with the old context, then
 2. Destroy the old context.  The new context retains all the old objects.
 
-pyglet defines an :class:`~pyglet.gl.ObjectSpace`: a representation of a 
+pyglet defines an :class:`~pyglet.gl.ObjectSpace`: a representation of a
 collection of objects used by one or more contexts.  Each context has a single
-object space, accessible via its :py:attr:`~pyglet.gl.base.Context.object_space` 
-attribute.
+object space, accessible via its
+:py:attr:`~pyglet.gl.base.Context.object_space` attribute.
 
 By default, all contexts share the same object space as long as at least one
 context using it is "alive".  If all the contexts sharing an object space are
@@ -392,14 +394,14 @@ lost or destroyed, the object space will be destroyed also.  This is why it is
 necessary to follow the steps outlined above for retaining objects when a
 context is recreated.
 
-pyglet creates a hidden "shadow" context as soon as :mod:`pyglet.gl` is 
-imported. By default, all windows will share object space with this shadow 
-context, so the above steps are generally not needed. The shadow context also 
+pyglet creates a hidden "shadow" context as soon as :mod:`pyglet.gl` is
+imported. By default, all windows will share object space with this shadow
+context, so the above steps are generally not needed. The shadow context also
 allows objects such as textures to be loaded before a window is created (see
 ``shadow_window`` in :data:`pyglet.options` for further details).
 
-When you create a :class:`~pyglet.gl.Context`, you tell pyglet which other 
-context it will obtain an object space from.  By default (when using the 
+When you create a :class:`~pyglet.gl.Context`, you tell pyglet which other
+context it will obtain an object space from.  By default (when using the
 :class:`~pyglet.window.Window` constructor
 to create the context) the most recently created context will be used.  You
 can specify another context, or specify no context (to create a new object
@@ -408,8 +410,8 @@ space) in the :class:`~pyglet.gl.Context` constructor.
 It can be useful to keep track of which object space an object was created in.
 For example, when you load a font, pyglet caches the textures used and reuses
 them; but only if the font is being loaded on the same object space.  The
-easiest way to do this is to set your own attributes on the :py:class:`~pyglet.gl.ObjectSpace`
-object.
+easiest way to do this is to set your own attributes on the
+:py:class:`~pyglet.gl.ObjectSpace` object.
 
 In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,

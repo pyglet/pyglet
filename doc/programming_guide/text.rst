@@ -1,25 +1,27 @@
 Displaying text
 ===============
 
-pyglet provides the :py:mod:`~pyglet.font` module for efficiently rendering high-quality
-antialiased Unicode glyphs.  pyglet can use any installed font on the operating system,
-or you can provide your own font with your application.
+pyglet provides the :py:mod:`~pyglet.font` module for efficiently rendering
+high-quality antialiased Unicode glyphs. pyglet can use any installed font
+on the operating system, or you can provide your own font with your
+application.
 
-Please note that not all font formats are supported, see :ref:`guide_supported-font-formats`
+Please note that not all font formats are supported,
+see :ref:`guide_supported-font-formats`
 
-Text rendering is performed with the :py:mod:`~pyglet.text` module, which can display
-word-wrapped formatted text.  There is also support for interactive editing of
-text on-screen with a caret.
+Text rendering is performed with the :py:mod:`~pyglet.text` module, which
+can display word-wrapped formatted text.  There is also support for
+interactive editing of text on-screen with a caret.
 
 Simple text rendering
 ---------------------
 
-The following complete example creates a window that displays "Hello, World" 
-centered vertically and horizontally::
+The following complete example creates a window that displays
+"Hello, World"  centered vertically and horizontally::
 
     window = pyglet.window.Window()
-    label = pyglet.text.Label('Hello, world', 
-                              font_name='Times New Roman', 
+    label = pyglet.text.Label('Hello, world',
+                              font_name='Times New Roman',
                               font_size=36,
                               x=window.width//2, y=window.height//2,
                               anchor_x='center', anchor_y='center')
@@ -29,7 +31,7 @@ centered vertically and horizontally::
         window.clear()
         label.draw()
 
-    pyglet.app.run() 
+    pyglet.app.run()
 
 The example demonstrates the most common uses of text rendering:
 
@@ -39,28 +41,30 @@ The example demonstrates the most common uses of text rendering:
 * The position of the text is given by the ``x`` and ``y`` coordinates.  The
   meaning of these coordinates is given by the ``anchor_x`` and ``anchor_y``
   parameters.
-* The actual drawing of the text to the screen is done with the :py:meth:`pyglet.text.Label.draw`
-  method.  Labels can also be added to a graphics batch; see :ref:`guide_batched-rendering`
-  for details.
+* The actual drawing of the text to the screen is done with the
+  :py:meth:`pyglet.text.Label.draw` method.  Labels can also be added to a
+  raphics batch; see :ref:`guide_batched-rendering` for details.
 
-The :py:func:`~pyglet.text.HTMLLabel` class is used similarly, but accepts an HTML formatted string
-instead of parameters describing the style.  This allows the label to display
-text with mixed style::
+The :py:func:`~pyglet.text.HTMLLabel` class is used similarly, but accepts
+an HTML formatted string instead of parameters describing the style.
+This allows the label to display text with mixed style::
 
     label = pyglet.text.HTMLLabel(
         '<font face="Times New Roman" size="4">Hello, <i>world</i></font>',
         x=window.width//2, y=window.height//2,
         anchor_x='center', anchor_y='center')
 
-See :ref:`guide_formatted-text` for details on the subset of HTML that is supported.
+See :ref:`guide_formatted-text` for details on the subset of HTML that is
+supported.
 
 The document/layout model
 -------------------------
 
-The :py:func:`~pyglet.text.Label` class demonstrated above presents a simplified interface to
-pyglet's complete text rendering capabilities.  The underlying :py:func:`~pyglet.text.layout.TextLayout`
-and :py:class:`~pyglet.text.document.AbstractDocument` classes provide a "model/view" interface to all of
-pyglet's text features.
+The :py:func:`~pyglet.text.Label` class demonstrated above presents a
+simplified interface to pyglet's complete text rendering capabilities.
+The underlying :py:func:`~pyglet.text.layout.TextLayout` and
+:py:class:`~pyglet.text.document.AbstractDocument` classes provide a
+"model/view" interface to all of pyglet's text features.
 
     .. image:: img/text_classes.png
 
@@ -69,19 +73,26 @@ Documents
 
 A `document` is the "model" part of the architecture, and describes the
 content and style of the text to be displayed.  There are two concrete
-document classes: :py:class:`~pyglet.text.document.UnformattedDocument` and :py:class:`~pyglet.text.document.FormattedDocument`.
-:py:class:`~pyglet.text.document.UnformattedDocument` models a document containing text in just one style,
-whereas :py:class:`~pyglet.text.document.FormattedDocument` allows the style to change within the text.
+document classes: :py:class:`~pyglet.text.document.UnformattedDocument`
+and :py:class:`~pyglet.text.document.FormattedDocument`.
+:py:class:`~pyglet.text.document.UnformattedDocument` models a document
+containing text in just one style, whereas
+:py:class:`~pyglet.text.document.FormattedDocument` allows the style to
+change within the text.
 
 An empty, unstyled document can be created by constructing either of the
 classes directly.  Usually you will want to initialise the document with some
-text, however.  The :py:func:`~pyglet.text.decode_text`, :py:func:`~pyglet.text.decode_attributed` and :py:func:`~pyglet.text.decode_html`
-functions return a document given a source string.  For :py:func:`~pyglet.text.decode_text`, this is
-simply a plain text string, and the return value is an :py:class:`~pyglet.text.document.UnformattedDocument`::
+text, however. The :py:func:`~pyglet.text.decode_text`,
+:py:func:`~pyglet.text.decode_attributed` and
+:py:func:`~pyglet.text.decode_html` functions return a document given a
+source string. For :py:func:`~pyglet.text.decode_text`,
+this is simply a plain text string, and the return value is an
+:py:class:`~pyglet.text.document.UnformattedDocument`::
 
     document = pyglet.text.decode_text('Hello, world.')
 
-:py:func:`~pyglet.text.decode_attributed` and :py:func:`~pyglet.text.decode_html` are described in detail in the next
+:py:func:`~pyglet.text.decode_attributed` and
+:py:func:`~pyglet.text.decode_html` are described in detail in the next
 section.
 
 The text of a document can be modified directly as a property on the object::
@@ -90,42 +101,50 @@ The text of a document can be modified directly as a property on the object::
 
 However, if small changes are being made to the document it can be more
 efficient (when coupled with an appropriate layout; see below) to use the
-:py:func:`~pyglet.text.document.AbstractDocument.delete_text` and :py:func:`~pyglet.text.document.AbstractDocument.insert_text` methods instead.
+:py:func:`~pyglet.text.document.AbstractDocument.delete_text` and
+:py:func:`~pyglet.text.document.AbstractDocument.insert_text` methods instead.
 
 Layouts
 ^^^^^^^
 
-The actual layout and rendering of a document is performed by the :py:func:`~pyglet.text.layout.TextLayout`
-classes.  This split exists to reduce the complexity of the code, and to allow
+The actual layout and rendering of a document is performed by the
+:py:func:`~pyglet.text.layout.TextLayout` classes.
+This split exists to reduce the complexity of the code, and to allow
 a single document to be displayed in multiple layouts simultaneously (in other
 words, many layouts can display one document).
 
-Each of the :py:func:`~pyglet.text.layout.TextLayout` classes perform layout in the same way, but represent
-a trade-off in efficiency of update against efficiency of drawing and memory
-usage.
+Each of the :py:func:`~pyglet.text.layout.TextLayout` classes perform layout
+in the same way, but represent a trade-off in efficiency of update against
+efficiency of drawing and memory usage.
 
-The base :py:func:`~pyglet.text.layout.TextLayout` class uses little memory, and shares its graphics
-group with other :py:func:`~pyglet.text.layout.TextLayout` instances in the same batch (see :ref:`guide_batched-rendering`).  When the text or style of the document is modified, or the
-layout constraints change (for example, the width of the layout changes), the
-entire text layout is recalculated.  This is a potentially expensive
-operation, especially for long documents.  This makes :py:func:`~pyglet.text.layout.TextLayout` suitable
+The base :py:func:`~pyglet.text.layout.TextLayout` class uses little memory,
+and shares its graphics group with other
+:py:func:`~pyglet.text.layout.TextLayout` instances in the same batch
+(see :ref:`guide_batched-rendering`). When the text or style of the document
+is modified, or the layout constraints change (for example, the width of the
+layout changes), the entire text layout is recalculated.
+This is a potentially expensive operation, especially for long documents.
+This makes :py:func:`~pyglet.text.layout.TextLayout` suitable
 for relatively short or unchanging documents.
 
-:py:class:`~pyglet.text.layout.ScrollableTextLayout` is a small extension to :py:func:`~pyglet.text.layout.TextLayout` that clips the
+:py:class:`~pyglet.text.layout.ScrollableTextLayout` is a small extension to
+:py:func:`~pyglet.text.layout.TextLayout` that clips the
 text to a specified view rectangle, and allows text to be scrolled within that
 rectangle without performing the layout calculuation again.  Because of this
 clipping rectangle the graphics group cannot be shared with other text
-layouts, so for ideal performance :py:class:`~pyglet.text.layout.ScrollableTextLayout` should be used only
+layouts, so for ideal performance
+:py:class:`~pyglet.text.layout.ScrollableTextLayout` should be used only
 if this behaviour is required.
 
-:py:class:`~pyglet.text.layout.IncrementalTextLayout` uses a more sophisticated layout algorithm that
-performs less work for small changes to documents.  For example, if a document
-is being edited by the user, only the immediately affected lines of text are
-recalculated when a character is typed or deleted.  :py:class:`~pyglet.text.layout.IncrementalTextLayout`
+:py:class:`~pyglet.text.layout.IncrementalTextLayout` uses a more sophisticated
+layout algorithm that performs less work for small changes to documents.
+For example, if a document is being edited by the user, only the immediately
+affected lines of text are recalculated when a character is typed or deleted.
+:py:class:`~pyglet.text.layout.IncrementalTextLayout`
 also performs view rectangle culling, reducing the amount of layout and
 rendering required when the document is larger than the view.
-:py:class:`~pyglet.text.layout.IncrementalTextLayout` should be used for large documents or documents that
-change rapidly.
+:py:class:`~pyglet.text.layout.IncrementalTextLayout` should be used for
+large documents or documents that change rapidly.
 
 All the layout classes can be constructed given a document and display
 dimensions::
@@ -145,8 +164,9 @@ optional `multiline` and `wrap_lines` flags.
   then pyglet can automatically wrap them to fit the width by setting this
   option to ``True``.
 
-Like labels, layouts are positioned through their `x`, `y`, `anchor_x` and
-`anchor_y` properties.  Note that unlike :py:class:`~pyglet.image.AbstractImage`, the `anchor`
+Like labels, layouts are positioned through their `x`, `y`,
+`anchor_x` and `anchor_y` properties.
+Note that unlike :py:class:`~pyglet.image.AbstractImage`, the `anchor`
 properties accept a string such as ``"bottom"`` or ``"center"`` instead of a
 numeric displacement.
 
@@ -155,8 +175,9 @@ numeric displacement.
 Formatted text
 --------------
 
-The :py:class:`~pyglet.text.document.FormattedDocument` class maintains style information for individual
-characters in the text, rather than a single style for the whole document.
+The :py:class:`~pyglet.text.document.FormattedDocument` class maintains
+style information for individual characters in the text, rather than a
+single style for the whole document.
 Styles can be accessed and modified by name, for example::
 
     # Get the font name used at character index 0
@@ -169,23 +190,24 @@ Internally, character styles are run-length encoded over the document text; so
 longer documents with few style changes do not use excessive memory.
 
 From the document's point of view, there are no predefined style names: it
-simply maps names and character ranges to arbitrary Python values.  It is the
-:py:class:`~pyglet.text.layout.TextLayout` classes that interpret this style information; for example, by
-selecting a different font based on the ``font_name`` style.  Unrecognised
-style names are ignored by the layout -- you can use this knowledge to store
-additional data alongside the document text (for example, a URL behind a
-hyperlink).
+simply maps names and character ranges to arbitrary Python values.
+It is the :py:class:`~pyglet.text.layout.TextLayout` classes that interpret
+this style information; for example, by selecting a different font based on the
+``font_name`` style.  Unrecognised style names are ignored by the layout
+-- you can use this knowledge to store additional data alongside the
+document text (for example, a URL behind a hyperlink).
 
 Character styles
 ^^^^^^^^^^^^^^^^
 
-The following character styles are recognised by all :py:func:`~pyglet.text.layout.TextLayout` classes.
+The following character styles are recognised by all
+:py:func:`~pyglet.text.layout.TextLayout` classes.
 
 Where an attribute is marked "as a distance" the value is assumed to be
 in pixels if given as an int or float, otherwise a string of the form
 ``"0u"`` is required, where ``0`` is the distance and ``u`` is the unit; one
 of ``"px"`` (pixels), ``"pt"`` (points), ``"pc"`` (picas), ``"cm"``
-(centimeters), ``"mm"`` (millimeters) or ``"in"`` (inches).  For example, 
+(centimeters), ``"mm"`` (millimeters) or ``"in"`` (inches).  For example,
 ``"14pt"`` is the distance covering 14 points, which at the default DPI of 96
 is 18 pixels.
 
@@ -215,10 +237,11 @@ is 18 pixels.
 Paragraph styles
 ^^^^^^^^^^^^^^^^
 
-Although :py:class:`~pyglet.text.document.FormattedDocument` does not distinguish between character- and
-paragraph-level styles, :py:func:`~pyglet.text.layout.TextLayout` interprets the following styles only at
-the paragraph level.  You should take care to set these styles for complete
-paragraphs only, for example, by using
+Although :py:class:`~pyglet.text.document.FormattedDocument` does not
+distinguish between character- and paragraph-level styles,
+:py:func:`~pyglet.text.layout.TextLayout` interprets the following styles
+only at the paragraph level. You should take care to set these styles for
+complete paragraphs only, for example, by using
 :py:meth:`~pyglet.text.document.AbstractDocument.set_paragraph_style`.
 
 These styles are ignored for layouts without the ``multiline`` flag set.
@@ -226,7 +249,7 @@ These styles are ignored for layouts without the ``multiline`` flag set.
 ``align``
     ``"left"`` (default), ``"center"`` or ``"right"``.
 ``indent``
-    Additional horizontal space to insert before the first glyph of the 
+    Additional horizontal space to insert before the first glyph of the
     first line of a paragraph, as a distance.
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
@@ -262,11 +285,11 @@ Tab stops are specified in pixels, not in some font unit; by default
 there is a tab stop every 50 pixels and because of that a tab can look too
 small for big fonts or too big for small fonts.
 
-Additionally, when rendering text with tabs using a `monospace` font, character boxes
-may not align vertically.
+Additionally, when rendering text with tabs using a `monospace` font,
+character boxes may not align vertically.
 
-To avoid these visualization issues the simpler solution is to convert the tabs to
-spaces before sending a string to a pyglet text-related class.
+To avoid these visualization issues the simpler solution is to convert
+the tabs to spaces before sending a string to a pyglet text-related class.
 
 Attributed text
 ^^^^^^^^^^^^^^^
@@ -276,9 +299,10 @@ These are useful for loading preprepared documents such as help screens.  At
 this time there is no facility for saving (encoding) formatted documents.
 
 The *attributed text* format is an encoding specific to pyglet that can
-exactly describe any :py:class:`~pyglet.text.document.FormattedDocument`.  You must use this encoding to
-access all of the features of pyglet text layout.  For a more accessible, yet
-less featureful encoding, see the `HTML` encoding, described below.
+exactly describe any :py:class:`~pyglet.text.document.FormattedDocument`.
+You must use this encoding to access all of the features of pyglet text layout.
+For a more accessible, yet less featureful encoding,
+see the `HTML` encoding, described below.
 
 The following example shows a simple attributed text encoded document:
 
@@ -338,9 +362,9 @@ The attribute tag consists of the attribute name (in this example, ``bold``)
 followed by a Python bool, int, float, string, tuple or list.
 
 Unlike most structured documents such as HTML, attributed text has no concept
-of the "end" of a style; styles merely change within the document.  This
-corresponds exactly to the representation used by :py:class:`~pyglet.text.document.FormattedDocument`
-internally.
+of the "end" of a style; styles merely change within the document.
+This corresponds exactly to the representation used by
+:py:class:`~pyglet.text.document.FormattedDocument` internally.
 
 Some more examples follow:
 
@@ -348,7 +372,7 @@ Some more examples follow:
 
   ::
 
-    {font_name 'Times New Roman'}{font_size 28}Hello{font_size 12}, 
+    {font_name 'Times New Roman'}{font_size 28}Hello{font_size 12},
     {color (255, 0, 0, 255)}world{color (0, 0, 0, 255)}!
 
 (This example uses 28pt Times New Roman for the word "Hello", and 12pt
@@ -400,17 +424,18 @@ HTML
 ^^^^
 
 While attributed text gives access to all of the features of
-:py:class:`~pyglet.text.document.FormattedDocument` and :py:func:`~pyglet.text.layout.TextLayout`, it is quite verbose and difficult
+:py:class:`~pyglet.text.document.FormattedDocument` and
+:py:func:`~pyglet.text.layout.TextLayout`, it is quite verbose and difficult
 produce text in.  For convenience, pyglet provides an HTML 4.01 decoder that
 can translate a small, commonly used subset of HTML into a
-:py:class:`~pyglet.text.document.FormattedDocument`.  
+:py:class:`~pyglet.text.document.FormattedDocument`.
 
 Note that the decoder does not preserve the structure of the HTML document --
 all notion of element hierarchy is lost in the translation, and only the
 visible style changes are preserved.
 
-The following example uses :py:func:`~pyglet.text.decode_html` to create a :py:class:`~pyglet.text.document.FormattedDocument` from
-a string of HTML::
+The following example uses :py:func:`~pyglet.text.decode_html` to create a
+:py:class:`~pyglet.text.document.FormattedDocument` from a string of HTML::
 
     document = pyglet.text.decode_html('Hello, <b>world</b>')
 
@@ -432,23 +457,28 @@ Custom elements
 ---------------
 
 Graphics and other visual elements can be inserted inline into a document
-using :py:meth:`~pyglet.text.document.AbstractDocument.insert_element`.  For example, inline elements are
-used to render HTML images included with the ``IMG`` tag.  There is currently
-no support for floating or absolutely-positioned elements.
+using :py:meth:`~pyglet.text.document.AbstractDocument.insert_element`.
+For example, inline elements are used to render HTML images included with
+the ``IMG`` tag.  There is currently no support for floating or
+absolutely-positioned elements.
 
-Elements must subclass :py:class:`~pyglet.text.document.InlineElement` and override the `place` and `remove`
-methods.  These methods are called by :py:func:`~pyglet.text.layout.TextLayout` when the element becomes
-or ceases to be visible.  For :py:func:`~pyglet.text.layout.TextLayout` and :py:class:`~pyglet.text.layout.ScrollableTextLayout`, this is
-when the element is added or removed from the document; but for
-:py:class:`~pyglet.text.layout.IncrementalTextLayout` the methods are also called as the element scrolls in
-and out of the viewport.
+Elements must subclass :py:class:`~pyglet.text.document.InlineElement`
+and override the `place` and `remove` methods.  These methods are called by
+:py:func:`~pyglet.text.layout.TextLayout` when the element becomes
+or ceases to be visible.  For :py:func:`~pyglet.text.layout.TextLayout`
+and :py:class:`~pyglet.text.layout.ScrollableTextLayout`,
+this is when the element is added or removed from the document;
+but for :py:class:`~pyglet.text.layout.IncrementalTextLayout` the methods
+are also called as the element scrolls in and out of the viewport.
 
-The constructor of :py:class:`~pyglet.text.document.InlineElement` gives the width and height (separated into
-the ascent above the baseline, and descent below the baseline) of the element.
+The constructor of :py:class:`~pyglet.text.document.InlineElement`
+gives the width and height (separated into the ascent above the baseline,
+and descent below the baseline) of the element.
 
-Typically an :py:class:`~pyglet.text.document.InlineElement` subclass will add graphics primitives to the
-layout's graphics batch; though applications may choose to simply record the
-position of the element and render it separately.
+Typically an :py:class:`~pyglet.text.document.InlineElement` subclass will
+add graphics primitives to the layout's graphics batch; though applications
+may choose to simply record the position of the element and render it
+separately.
 
 The position of the element in the document text is marked with a NUL
 character (U+0000) placeholder.  This has the effect that inserting an element
@@ -465,29 +495,43 @@ text editing.  These can be used as a basis for a more complete GUI system, or
 to present a simple text entry field, as demonstrated in the
 ``examples/text_input.py`` example.
 
-:py:class:`~pyglet.text.layout.IncrementalTextLayout` should always be used for text that can be edited by
-the user.  This class maintains information about the placement of glyphs on
-screen, and so can map window coordinates to a document position and
-vice-versa.  These methods are :py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_position_from_point`,
-:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_point_from_position`, :py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_line_from_point`, :py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_point_from_line`,
-:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_line_from_position`, :py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_position_from_line`, :py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_position_on_line` and
+:py:class:`~pyglet.text.layout.IncrementalTextLayout` should always be used for
+text that can be edited by the user.
+This class maintains information about the placement of glyphs on screen,
+and so can map window coordinates to a document position and vice-versa.
+These methods are
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_position_from_point`,
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_point_from_position`,
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_line_from_point`,
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_point_from_line`,
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_line_from_position`,
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_position_from_line`,
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_position_on_line`
+and
 :py:meth:`~pyglet.text.layout.IncrementalTextLayout.get_line_count`.
 
 The viewable rectangle of the document can be adjusted using a document
-position instead of a scrollbar using the :py:meth:`~pyglet.text.layout.IncrementalTextLayout.ensure_line_visible` and
+position instead of a scrollbar using the
+:py:meth:`~pyglet.text.layout.IncrementalTextLayout.ensure_line_visible` and
 :py:meth:`~pyglet.text.layout.IncrementalTextLayout.ensure_x_visible` methods.
 
-:py:class:`~pyglet.text.layout.IncrementalTextLayout` can display a current text selection by temporarily
-overriding the foreground and background colour of the selected text.  The
-:py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_start` and :py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_end` properties give the range of the
-selection, and :py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_color` and :py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_background_color` the colors
-to use (defaulting to white on blue).
+:py:class:`~pyglet.text.layout.IncrementalTextLayout` can display a current
+text selection by temporarily overriding the foreground and background colour
+of the selected text. The
+:py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_start` and
+:py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_end` properties
+give the range of the selection, and
+:py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_color` and
+:py:attr:`~pyglet.text.layout.IncrementalTextLayout.selection_background_color`
+the colors to use (defaulting to white on blue).
 
-The :py:class:`~pyglet.text.caret.Caret` class implements an insertion caret (cursor) for
-:py:class:`~pyglet.text.layout.IncrementalTextLayout`.  This includes displaying the blinking caret at the
-correct location, and handling keyboard, text and mouse events.  The behaviour
-in response to the events is very similar to the system GUIs on Windows, Mac
-OS X and GTK.  Using :py:class:`~pyglet.text.caret.Caret` frees you from using the :py:class:`~pyglet.text.layout.IncrementalTextLayout`
+The :py:class:`~pyglet.text.caret.Caret` class implements an insertion caret
+(cursor) for :py:class:`~pyglet.text.layout.IncrementalTextLayout`.
+This includes displaying the blinking caret at the correct location,
+and handling keyboard, text and mouse events.
+The behaviour in response to the events is very similar to the system GUIs
+on Windows, Mac OS X and GTK.  Using :py:class:`~pyglet.text.caret.Caret`
+frees you from using the :py:class:`~pyglet.text.layout.IncrementalTextLayout`
 methods described above directly.
 
 The following example creates a document, a layout and a caret and attaches
@@ -526,7 +570,7 @@ Bold and italic variants of the font can specified with keyword parameters::
 
     times_bold = pyglet.font.load('Times New Roman', 16, bold=True)
     times_italic = pyglet.font.load('Times New Roman', 16, italic=True)
-    times_bold_italic = pyglet.font.load('Times New Roman', 16, 
+    times_bold_italic = pyglet.font.load('Times New Roman', 16,
                                          bold=True, italic=True)
 
 For maximum compatibility on all platforms, you can specify a list of font
@@ -537,11 +581,12 @@ suitable alternatives::
 
     sans_serif = pyglet.font.load(('Verdana', 'Helvetica', 'Arial'), 16)
 
-Also you can check for the availability of a font using :py:func:`pyglet.font.have_font`::
+Also you can check for the availability of a font using
+:py:func:`pyglet.font.have_font`::
 
     # Will return True
     pyglet.font.have_font('Times New Roman')
-	
+
     # Will return False
     pyglet.font.have_font('missing-font-name')
 
@@ -569,8 +614,9 @@ Mac OS X applications use a DPI of 72, so the font sizes will not match up on
 that operating system.  However, application developers can be assured that
 font sizes remain consistent in pyglet across platforms.
 
-The DPI can be specified directly in the :py:func:`pyglet.font.load` function, and as
-an argument to the :py:func:`~pyglet.text.layout.TextLayout` constructor.
+The DPI can be specified directly in the :py:func:`pyglet.font.load`
+function, and as an argument to the :py:func:`~pyglet.text.layout.TextLayout`
+constructor.
 
 Determining font size
 ^^^^^^^^^^^^^^^^^^^^^
@@ -584,7 +630,7 @@ the attributes::
 These measurements are shown in the diagram below.
 
 .. figure:: img/font_metrics.png
-    
+
     Font metrics.  Note that the descent is usually negative as it descends
     below the baseline.
 
@@ -615,7 +661,7 @@ For example, let's say you have the *Action Man* font in a file called
 
 Similarly, once the font file has been added, the font name can be specified
 as a style on a label or layout::
-    
+
     label = pyglet.text.Label('Hello', font_name='Action Man')
 
 Fonts are often distributed in separate files for each variant.  *Action Man
@@ -640,7 +686,7 @@ If the custom font is distributed with your application, consider using the
 Supported font formats
 ^^^^^^^^^^^^^^^^^^^^^^
 
-pyglet can load any font file that the operating system natively supports, 
+pyglet can load any font file that the operating system natively supports,
 but not all formats all fully supported.
 
 The list of supported formats is shown in the table below.
@@ -662,19 +708,19 @@ The list of supported formats is shown in the table below.
           - X
         * - Windows Bitmap (.fnt)
           - X
-          - 
+          -
           - X
         * - Mac OS X Data Fork Font (.dfont)
-          - 
-          - X 
-          - 
+          -
+          - X
+          -
         * - OpenType (.otf) [#opentype]_
           -
           - X
           -
         * - X11 font formats PCF, BDF, SFONT
           -
-          - 
+          -
           - X
         * - Bitstream PFR (.pfr)
           -
@@ -690,11 +736,11 @@ The list of supported formats is shown in the table below.
                render bad, by example inconsolata.otf, from
                http://levien.com/type/myfonts/inconsolata.html
 
-Some of the fonts found in internet may miss information for some operating 
-systems, others may have been written with work in progress tools not fully 
-compliant with standards. Using the font with text editors or fonts viewers 
+Some of the fonts found in internet may miss information for some operating
+systems, others may have been written with work in progress tools not fully
+compliant with standards. Using the font with text editors or fonts viewers
 can help to determine if the font is broken.
- 
+
 OpenGL font considerations
 --------------------------
 
@@ -709,7 +755,7 @@ Context affinity
 When a font is loaded, it immediately creates a texture in the current
 context's object space.  Subsequent textures may need to be created if there
 is not enough room on the first texture for all the glyphs.  This is done when
-the glyph is first requested.  
+the glyph is first requested.
 
 pyglet always assumes that the object space that was active when the font was
 loaded is the active one when any texture operations are performed.  Normally

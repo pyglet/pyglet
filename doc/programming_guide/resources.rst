@@ -26,7 +26,7 @@ directory containing the application script files.
 
 A common workaround for this is to construct a path relative to the script
 file instead of the working directory::
-    
+
     import os
 
     script_dir = os.path.dirname(__file__)
@@ -46,8 +46,8 @@ the behaviour can be customised.
 Loading resources
 -----------------
 
-Use the :py:mod:`pyglet.resource` module when files shipped with the application need
-to be loaded.  For example, instead of writing::
+Use the :py:mod:`pyglet.resource` module when files shipped with the
+application need to be loaded.  For example, instead of writing::
 
     data_file = open('file.txt')
 
@@ -96,18 +96,21 @@ functions.
           - :py:func:`pyglet.resource.add_font`
           - ``None``
 
-:py:func:`pyglet.resource.texture` is for loading stand-alone textures. This can be
-useful when using the texture for a 3D model, or generally working with OpenGL directly.
+:py:func:`pyglet.resource.texture` is for loading stand-alone textures.
+This can be useful when using the texture for a 3D model, or generally
+working with OpenGL directly.
 
-:py:func:`pyglet.resource.image` is optimised for loading sprite-like images that can
-have their texture coordinates adjusted. The resource module attempts to pack
-small images into larger texture atlases (explained in :ref:`guide_texture-bins-and-atlases`)
-for efficient rendering (which is why the return type of this function can be
-:py:class:`~pyglet.image.TextureRegion`). It is also advisable to use the texture
-atlas classes directly if you wish to have different achor points on multiple copies of the
-same image. This is because when loading an image more than once, you will actually get the
-**same** object back. You can still use the resource module for getting the image location,
-and described in the next section.
+:py:func:`pyglet.resource.image` is optimised for loading sprite-like
+images that can have their texture coordinates adjusted.
+The resource module attempts to pack small images into larger texture atlases
+(explained in :ref:`guide_texture-bins-and-atlases`) for efficient rendering
+(which is why the return type of this function can be
+:py:class:`~pyglet.image.TextureRegion`).
+It is also advisable to use the texture atlas classes directly if you wish
+to have different achor points on multiple copies of the same image.
+This is because when loading an image more than once, you will actually get
+the **same** object back. You can still use the resource module for getting
+the image location, and described in the next section.
 
 
 Resource locations
@@ -117,11 +120,12 @@ Some resource files reference other files by name.  For example, an HTML
 document can contain ``<img src="image.png" />`` elements.  In this case your
 application needs to locate ``image.png`` relative to the original HTML file.
 
-Use :py:func:`pyglet.resource.location` to get a :py:class:`~pyglet.resource.Location` object describing the
-location of an application resource.  This location might be a file system
-directory or a directory within a ZIP file.  The :py:class:`~pyglet.resource.Location` object can
-directly open files by name, so your application does not need to distinguish
-between these cases.
+Use :py:func:`pyglet.resource.location` to get a
+:py:class:`~pyglet.resource.Location` object describing the location of an
+application resource.  This location might be a file system
+directory or a directory within a ZIP file.
+The :py:class:`~pyglet.resource.Location` object can directly open files by
+name, so your application does not need to distinguish between these cases.
 
 In the following example, a ``thumbnails.txt`` file is assumed to contain a
 list of image filenames (one per line), which are then loaded assuming the
@@ -143,14 +147,15 @@ Specifying the resource path
 ----------------------------
 
 By default, only the script home directory is searched (the directory
-containing the ``__main__`` module).  You can set :py:attr:`pyglet.resource.path` to a
-list of locations to search in order.  This list is indexed, so after
-modifying it you will need to call :py:func:`pyglet.resource.reindex`.
+containing the ``__main__`` module).
+You can set :py:attr:`pyglet.resource.path` to a list of locations to
+search in order.  This list is indexed, so after modifying it you will
+need to call :py:func:`pyglet.resource.reindex`.
 
 Each item in the path list is either a path relative to the script home, or
 the name of a Python module preceded with an ampersand (``@``).  For example,
 if you would like to package all your resources in a ``res`` directory::
-        
+
     pyglet.resource.path = ['res']
     pyglet.resource.reindex()
 
@@ -173,10 +178,11 @@ following example uses the directory containing the hypothetical
 Multiple loaders
 ----------------
 
-A :py:class:`~pyglet.resource.Loader` encapsulates a complete resource path and cache.  This lets your
-application cleanly separate resource loading of different modules.  Loaders
-are constructed for a given search path, and exposes the same methods as the
-global :py:mod:`pyglet.resource` module functions.
+A :py:class:`~pyglet.resource.Loader` encapsulates a complete resource path
+and cache.  This lets your application cleanly separate resource loading of
+different modules.
+Loaders are constructed for a given search path, andnexposes the same methods
+as the global :py:mod:`pyglet.resource` module functions.
 
 For example, if a module needs to load its own graphics but does not want to
 interfere with the rest of the application's resource loading, it would create
@@ -187,9 +193,10 @@ its own :py:class:`~pyglet.resource.Loader` with a local search path::
 
 This is particularly suitable for "plugin" modules.
 
-You can also use a :py:class:`~pyglet.resource.Loader` instance to load a set of resources relative to
-some user-specified document directory.  The following example creates a
-loader for a directory specified on the command line::
+You can also use a :py:class:`~pyglet.resource.Loader` instance to load a set
+of resources relative to some user-specified document directory.
+The following example creates a loader for a directory specified on the
+command line::
 
     import sys
     home = sys.argv[1]
@@ -206,11 +213,12 @@ within ZIP files, it is usually not feasible to save user preferences, high
 score lists, and so on within the application directory (or worse, the working
 directory).
 
-The :py:func:`pyglet.resource.get_settings_path` function returns a directory suitable
-for writing arbitrary user-centric data.  The directory used follows the
-operating system's convention:
+The :py:func:`pyglet.resource.get_settings_path` function returns a directory
+suitable for writing arbitrary user-centric data. The directory used follows
+the operating system's convention:
 
-* ``~/.config/ApplicationName/`` on Linux (depends on `XDG_CONFIG_HOME` environment variable).
+* ``~/.config/ApplicationName/`` on Linux (depends on `XDG_CONFIG_HOME`
+  environment variable).
 * ``$HOME\Application Settings\ApplicationName`` on Windows
 * ``~/Library/Application Support/ApplicationName`` on Mac OS X
 

@@ -1,15 +1,15 @@
 Working with other input devices
 ================================
 
-Pyglet's :py:mod:`~pyglet.input` module allows you to accept input from any USB human
-interface device (HID).  High level interfaces are provided for
-working with joysticks and with the Apple Remote.
+Pyglet's :py:mod:`~pyglet.input` module allows you to accept input
+from any USB human interface device (HID).  High level interfaces
+are provided for working with joysticks and with the Apple Remote.
 
 Using joysticks
 ---------------
 
 Before using a joystick, you must find it and open it.  To get a list
-of all joystick devices currently connected to your computer, call 
+of all joystick devices currently connected to your computer, call
 :py:func:`pyglet.input.get_joysticks`::
 
     joysticks = pyglet.input.get_joysticks()
@@ -50,15 +50,16 @@ event which is sent whenever any of the joystick's buttons are pressed::
 
 and the :py:meth:`~pyglet.input.Joystick.on_joybutton_release` event which is
 sent whenever any of the joystick's buttons are released::
- 
+
     def on_joybutton_release(joystick, button):
         pass
 
-The :py:class:`~pyglet.input.Joystick` parameter is the :py:class:`~pyglet.input.Joystick`
-instance whose buttons changed state (useful if you have multiple joysticks connected).
+The :py:class:`~pyglet.input.Joystick` parameter is the
+:py:class:`~pyglet.input.Joystick` instance whose buttons changed state
+(useful if you have multiple joysticks connected).
 The `button` parameter signifies which button changed and is simply an
 integer value, the index of the corresponding button in the `buttons`
-list. 
+list.
 
 For most games, it is probably best to examine the current position of
 the joystick directly by using the `x` and `y` attributes.  However if
@@ -68,10 +69,10 @@ should handle the :py:meth:`~pyglet.input.Joystick.on_joyaxis_motion` event::
     def on_joyaxis_motion(joystick, axis, value):
         pass
 
-The :py:class:`~pyglet.input.Joystick` parameter again tells you which joystick device
-changed.  The `axis` parameter is string such as "x", "y", or "rx"
-telling you which axis changed value.  And `value` gives the current
-normalized value of the axis, ranging between -1 and 1.
+The :py:class:`~pyglet.input.Joystick` parameter again tells you which
+joystick device changed.  The `axis` parameter is string such as
+"x", "y", or "rx" telling you which axis changed value.  And `value`
+gives the current normalized value of the axis, ranging between -1 and 1.
 
 If the joystick has a hat switch, you may examine its current value by
 looking at the `hat_x` and `hat_y` attributes.  For both, the values
@@ -94,8 +95,9 @@ within a controller class and then call::
     joystick.push_handlers(my_controller)
 
 Please note that you need a running application event loop for the joystick
-button an axis values to be properly updated. See the :ref:`programming-guide-eventloop`
-section for more details on how to start an event loop.
+button an axis values to be properly updated. See the
+:ref:`programming-guide-eventloop` section for more details on how to start
+an event loop.
 
 
 Using the Apple Remote
@@ -133,7 +135,7 @@ been either pressed or released::
 The `button` parameter indicates which button changed and is a string
 equal to one of the ten button names defined above: "up", "down",
 "left", "left_hold", "right",  "right_hold", "select", "select_hold",
-"menu", or "menu_hold". 
+"menu", or "menu_hold".
 
 To use the remote, you may define code for the event handlers in
 some controller class and then call::

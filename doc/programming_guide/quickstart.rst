@@ -4,67 +4,68 @@ Writing a pyglet application
 ============================
 
 Getting started with a new library or framework can be daunting, especially
-when presented with a large amount of reference material to read.  This
-chapter gives a very quick introduction to pyglet without going into too much
-detail.
+when presented with a large amount of reference material to read.
+This chapter gives a very quick introduction to pyglet without going into
+too much detail.
 
 Hello, World
 ------------
 
-We'll begin with the requisite "Hello, World" introduction.  This program will
-open a window with some text in it and wait to be closed.  You can find the
+We'll begin with the requisite "Hello, World" introduction. This program will
+open a window with some text in it and wait to be closed. You can find the
 entire program in the `examples/programming_guide/hello_world.py` file.
 
 Begin by importing the :mod:`pyglet` package::
 
     import pyglet
 
-Create a :class:`pyglet.window.Window` by calling its default constructor.  The 
-window will be visible as soon as it's created, and will have reasonable default 
-values for all its parameters::
+Create a :class:`pyglet.window.Window` by calling its default constructor.
+The  window will be visible as soon as it's created, and will have reasonable
+default  values for all its parameters::
 
     window = pyglet.window.Window()
 
-To display the text, we'll create a :class:`~pyglet.text.Label`. Keyword 
+To display the text, we'll create a :class:`~pyglet.text.Label`. Keyword
 arguments are used to set the font, position and anchorage of the label::
 
-    label = pyglet.text.Label('Hello, world', 
-                              font_name='Times New Roman', 
+    label = pyglet.text.Label('Hello, world',
+                              font_name='Times New Roman',
                               font_size=36,
                               x=window.width//2, y=window.height//2,
                               anchor_x='center', anchor_y='center')
 
-An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window to
-give it a chance to redraw its contents.  pyglet provides several ways to attach
-event handlers to objects; a simple way is to use a decorator::
+An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window
+to give it a chance to redraw its contents.  pyglet provides several ways to
+attach event handlers to objects; a simple way is to use a decorator::
 
     @window.event
     def on_draw():
         window.clear()
         label.draw()
 
-Within the :meth:`~pyglet.window.Window.on_draw` handler the window is cleared to 
-the default background color (black), and the label is drawn.
+Within the :meth:`~pyglet.window.Window.on_draw` handler the window is cleared
+to the default background color (black), and the label is drawn.
 
 Finally, call::
 
     pyglet.app.run()
 
-This will enter pyglet's default event loop, and let pyglet respond to application
-events such as the mouse and keyboard.  Your event handlers will now be called as
-required, and the :func:`~pyglet.app.run` method will return only when all
-application windows have been closed.
+This will enter pyglet's default event loop, and let pyglet respond to
+application events such as the mouse and keyboard.
+Your event handlers will now be called as required, and the
+:func:`~pyglet.app.run` method will return only when all application
+windows have been closed.
 
-If you are coming from another library, you may be used to writing your own event
-loop.  This is possible to do with pyglet as well, but it is generally discouraged;
-see :ref:`programming-guide-eventloop` for details.
+If you are coming from another library, you may be used to writing your
+own event loop. This is possible to do with pyglet as well, but it is
+generally discouraged; see :ref:`programming-guide-eventloop` for details.
 
 Image viewer
 ------------
 
-Most games and applications will need to load and display images on the screen.
-In this example we'll load an image from the application's directory and display
-it within the window::
+Most games and applications will need to load and display images on the
+screen. In this example we'll load an image from the application's
+directory and display it within the window::
 
     import pyglet
 
@@ -84,8 +85,8 @@ file (rather than the working directory).  To load an image not bundled with
 the application (for example, specified on the command line, you would use
 :func:`pyglet.image.load`).
 
-The :meth:`~pyglet.image.AbstractImage.blit` method draws the image.  The 
-arguments ``(0, 0)`` tell pyglet to draw the image at pixel coordinates 0, 
+The :meth:`~pyglet.image.AbstractImage.blit` method draws the image.  The
+arguments ``(0, 0)`` tell pyglet to draw the image at pixel coordinates 0,
 0 in the window (the lower-left corner).
 
 The complete code for this example is located in
@@ -94,8 +95,8 @@ The complete code for this example is located in
 Handling mouse and keyboard events
 ----------------------------------
 
-So far the only event used is the :meth:`~pyglet.window.Window.on_draw` 
-event.  To react to keyboard and mouse events, it's necessary to write and 
+So far the only event used is the :meth:`~pyglet.window.Window.on_draw`
+event.  To react to keyboard and mouse events, it's necessary to write and
 attach event handlers for these events as well::
 
     import pyglet
@@ -129,8 +130,8 @@ The key symbols are defined in :mod:`pyglet.window.key`::
         elif symbol == key.ENTER:
             print('The enter key was pressed.')
 
-See the :mod:`pyglet.window.key` documentation for a complete list of key 
-symbols.
+See the :mod:`pyglet.window.key` documentation for a complete list
+of key symbols.
 
 Mouse events are handled in a similar way::
 
@@ -169,8 +170,8 @@ The following example plays an MP3 file [#mp3]_::
 
     pyglet.app.run()
 
-As with the image loading example presented earlier, 
-:func:`~pyglet.resource.media` locates the sound file in the application's 
+As with the image loading example presented earlier,
+:func:`~pyglet.resource.media` locates the sound file in the application's
 directory (not the working directory).  If you know the actual filesystem path
 (either relative or absolute), use :func:`pyglet.media.load`.
 
@@ -188,7 +189,7 @@ The `examples/media_player.py` example demonstrates playback of streaming
 audio and video using pyglet.  The `examples/noisy/noisy.py` example
 demonstrates playing many short audio samples simultaneously, as in a game.
 
-.. [#mp3] MP3 and other compressed audio formats require FFmpeg to be 
+.. [#mp3] MP3 and other compressed audio formats require FFmpeg to be
           installed.
           Uncompressed WAV files can be played without FFmpeg.
 
@@ -204,8 +205,9 @@ interest you.
 
 For new users, it might be daunting to read through everything all at once.
 If you feel overwhelmed, we recommend browsing through the beginnings of each
-chapter, and then having a look at a more in-depth example project. You can find an
-example of a 2D game in the :ref:`programming-guide-game` section.
+chapter, and then having a look at a more in-depth example project.
+You can find an example of a 2D game in the :ref:`programming-guide-game`
+section.
 
 To write advanced 3D applications or achieve optimal performance in your 2D
 applications, you'll need to work with OpenGL directly.  If you only want to

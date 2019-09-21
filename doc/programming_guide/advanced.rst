@@ -6,9 +6,9 @@ Advanced topics
 Environment settings
 --------------------
 
-Options in the :py:attr:`pyglet.options` dictionary can have defaults set through the
-operating system's environment variable.  The following table shows which
-environment variable is used for each option:
+Options in the :py:attr:`pyglet.options` dictionary can have defaults set
+through the operating system's environment variable.  The following table
+shows which environment variable is used for each option:
 
     .. list-table::
         :header-rows: 1

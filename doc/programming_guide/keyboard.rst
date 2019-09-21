@@ -12,10 +12,10 @@ window appears above all others and may be decorated differently, though this
 is platform-specific (for example, Unix window managers sometimes couple
 keyboard focus with the mouse pointer).
 
-You can request keyboard focus for a window with the :py:meth:`~pyglet.window.Window.activate`
-method, but you should not rely on this -- it may simply provide a visual cue to the user
-indicating that the window requires user input, without actually getting
-focus.
+You can request keyboard focus for a window with the
+:py:meth:`~pyglet.window.Window.activate` method, but you should not rely
+on this -- it may simply provide a visual cue to the user indicating that
+the window requires user input, without actually getting focus.
 
 Windows created with the
 :py:attr:`~pyglet.window.Window.WINDOW_STYLE_BORDERLESS` or
@@ -50,9 +50,10 @@ It does *not* correspond to any particular numbering scheme; in particular
 the symbol is *not* an ASCII character code.
 
 pyglet has key symbols that are hardware and platform independent
-for many types of keyboard.  These are defined in :py:mod:`pyglet.window.key` as
-constants.  For example, the Latin-1 alphabet is simply the letter itself::
-    
+for many types of keyboard.  These are defined in
+:py:mod:`pyglet.window.key` as constants.  For example, the Latin-1
+alphabet is simply the letter itself::
+
     key.A
     key.B
     key.C
@@ -147,7 +148,7 @@ User-defined key symbols
 
 pyglet does not define key symbols for every keyboard ever made.  For example,
 non-Latin languages will have many keys not recognised by pyglet (however,
-their Unicode representation will still be valid, see 
+their Unicode representation will still be valid, see
 :ref:`guide_text-and-motion-events`).
 Even English keyboards often have additional so-called "OEM" keys
 added by the manufacturer, which might be labelled "Media", "Volume" or
@@ -156,7 +157,7 @@ added by the manufacturer, which might be labelled "Media", "Volume" or
 In these cases pyglet will create a key symbol at runtime based on the
 hardware scancode of the key.  This is guaranteed to be unique for that model
 of keyboard, but may not be consistent across other keyboards with the same
-labelled key.  
+labelled key.
 
 The best way to use these keys is to record what the user presses after a
 prompt, and then check for that same key symbol.  Many commercial games have
@@ -165,7 +166,8 @@ similar functionality in allowing players to set up their own key bindings.
 Remembering key state
 ^^^^^^^^^^^^^^^^^^^^^
 
-pyglet provides the convenience class :py:class:`~pyglet.window.key.KeyStateHandler` for storing the
+pyglet provides the convenience class
+:py:class:`~pyglet.window.key.KeyStateHandler` for storing the
 current keyboard state.  This can be pushed onto the event handler stack of
 any window and subsequently queried as a dict::
 
@@ -202,17 +204,20 @@ The actual source of input (i.e., which keys were pressed, or what input
 method was used) should be considered outside of the scope of the application
 -- the operating system provides the necessary services.
 
-When text is entered into a window, the :py:meth:`~pyglet.window.Window.on_text` event is fired::
+When text is entered into a window, the
+:py:meth:`~pyglet.window.Window.on_text` event is fired::
 
     def on_text(text):
         pass
 
-The only parameter provided is a Unicode string.  For keyboard input this will
-usually be one character long, however more complex input methods such as an
-input palette may provide an entire word or phrase at once.
+The only parameter provided is a Unicode string.
+For keyboard input this will usually be one character long,
+however more complex input methods such as an input palette may
+provide an entire word or phrase at once.
 
-You should always use the :py:meth:`~pyglet.window.Window.on_text` event when you need to determine a string
-from a sequence of keystrokes.  Conversely, you never use :py:meth:`~pyglet.window.Window.on_text` when you
+You should always use the :py:meth:`~pyglet.window.Window.on_text`
+event when you need to determine a string from a sequence of keystrokes.
+Conversely, you never use :py:meth:`~pyglet.window.Window.on_text` when you
 require keys to be pressed (for example, to control the movement of the player
 in a game).
 
@@ -223,10 +228,12 @@ In addition to entering text, users press keys on the keyboard to navigate
 around text widgets according to well-ingrained conventions.  For example,
 pressing the left arrow key moves the cursor one character to the left.
 
-While you might be tempted to use the :py:meth:`~pyglet.window.Window.on_key_press` event to capture these
+While you might be tempted to use the
+:py:meth:`~pyglet.window.Window.on_key_press` event to capture these
 events, there are a couple of problems:
 
-* Key repeat events are not generated for :py:meth:`~pyglet.window.Window.on_key_press`, yet users expect
+* Key repeat events are not generated for
+  :py:meth:`~pyglet.window.Window.on_key_press`, yet users expect
   that holding down the left arrow key will eventually move the character to
   the beginning of the line.
 * Different operating systems have different conventions for the behaviour of
@@ -234,16 +241,16 @@ events, there are a couple of problems:
   cursor to the beginning of the line, whereas on Mac OS X the same key moves
   to the beginning of the document.
 
-pyglet windows provide the :py:meth:`~pyglet.window.Window.on_text_motion` event, which takes care of these
-problems by abstracting away the key presses and providing your application
-only with the intended cursor motion::
+pyglet windows provide the :py:meth:`~pyglet.window.Window.on_text_motion`
+event, which takes care of these problems by abstracting away the key presses
+and providing your application only with the intended cursor motion::
 
     def on_text_motion(motion):
         pass
 
-`motion` is an integer which is a constant defined in :py:mod:`pyglet.window.key`.
-The following table shows the defined text motions and their keyboard mapping
-on each operating system.
+`motion` is an integer which is a constant defined in
+:py:mod:`pyglet.window.key`. The following table shows the defined text motions
+and their keyboard mapping on each operating system.
 
     .. list-table::
         :header-rows: 1
@@ -321,9 +328,10 @@ your application.  This can be useful if you are developing a kiosk
 application which should not be closed, or a game in which it is possible for
 a user to accidentally press one of these keys.
 
-To enable this mode, call :py:meth:`~pyglet.window.Window.set_exclusive_keyboard` for the window on which it
-should apply.  On Mac OS X the dock and menu bar will slide out of view while
-exclusive keyboard is activated.
+To enable this mode, call
+:py:meth:`~pyglet.window.Window.set_exclusive_keyboard` for the window on
+which it should apply.  On Mac OS X the dock and menu bar will slide out of
+view while exclusive keyboard is activated.
 
 The following restrictions apply on Windows:
 

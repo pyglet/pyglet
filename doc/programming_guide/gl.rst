@@ -89,8 +89,9 @@ Resizing the window
 -------------------
 
 pyglet sets up the viewport and an orthographic projection on each window
-automatically.  It does this in a default :py:meth:`~pyglet.window.Window.on_resize`
-handler defined on :py:class:`~pyglet.window.Window`::
+automatically.  It does this in a default
+:py:meth:`~pyglet.window.Window.on_resize` handler defined on
+:py:class:`~pyglet.window.Window`::
 
     @window.event
     def on_resize(width, height):
@@ -114,7 +115,8 @@ event with your own; for example::
         return pyglet.event.EVENT_HANDLED
 
 Note that the :py:meth:`~pyglet.window.Window.on_resize` handler is called for
-a window the first time it is displayed, as well as any time it is later resized.
+a window the first time it is displayed, as well as any time it is later
+resized.
 
 Error checking
 --------------
@@ -178,8 +180,9 @@ by default [#objects]_.  Each context has its own state and framebuffers.
 
 There is always an active context (unless there are no windows).  When using
 :py:func:`pyglet.app.run` for the application event loop, pyglet ensures that
-the correct window is the active context before dispatching the :py:meth:`~pyglet.window.Window.on_draw`
-or :py:meth:`~pyglet.window.Window.on_resize` events.  
+the correct window is the active context before dispatching the
+:py:meth:`~pyglet.window.Window.on_draw` or
+:py:meth:`~pyglet.window.Window.on_resize` events.
 
 In other cases, you can explicitly set the active context with
 :py:class:`pyglet.window.Window.switch_to`.
@@ -208,9 +211,10 @@ operating system::
         from pyglet.gl.agl import *
         aglCreatePbuffer(...)
 
-Alternativally you can use :py:attr:`pyglet.compat_platform` to support platforms that are
-compatible with platforms not officially supported by pyglet. For example
-FreeBSD systems will appear as ``linux-compat`` in ``pyglet.compat_platform``.
+Alternativally you can use :py:attr:`pyglet.compat_platform` to support
+platforms that are compatible with platforms not officially supported
+by pyglet. For example FreeBSD systems will appear as ``linux-compat``
+in ``pyglet.compat_platform``.
 
 There are convenience modules for querying the version and extensions of WGL
 and GLX named ``pyglet.gl.wgl_info`` and ``pyglet.gl.glx_info``, respectively.
@@ -222,4 +226,3 @@ extensions.
 
 Similarly, if using WGL extensions, import ``pyglet.gl.wglext_arb`` or
 ``pyglet.gl.wglext_nv``.
-

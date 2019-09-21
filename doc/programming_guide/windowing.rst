@@ -1,9 +1,9 @@
 Windowing
 =========
 
-A :py:class:`~pyglet.window.Window` in pyglet corresponds to a top-level window provided by the
-operating system.  Windows can be floating (overlapped with other application
-windows) or fullscreen.
+A :py:class:`~pyglet.window.Window` in pyglet corresponds to a top-level
+window provided by the operating system.  Windows can be floating
+(overlapped with other application windows) or fullscreen.
 
 .. _guide_creating-a-window:
 
@@ -18,9 +18,10 @@ arguments, defaults will be assumed for all parameters::
 The default parameters used are:
 
 * The window will have a size of 640x480, and not be resizable.
-* A default context will be created using template config described in :ref:`guide_glconfig`.
-* The window caption will be the name of the executing Python script (i.e.,
-  ``sys.argv[0]``).
+* A default context will be created using template config described in
+  :ref:`guide_glconfig`.
+* The window caption will be the name of the executing Python script
+  (i.e., ``sys.argv[0]``).
 
 Windows are visible as soon as they are created, unless you give the
 ``visible=False`` argument to the constructor.  The following
@@ -36,41 +37,45 @@ Context configuration
 The context of a window cannot be changed once created.  There are several
 ways to control the context that is created:
 
-* Supply an already-created :py:class:`~pyglet.gl.Context` using the ``context`` argument::
+* Supply an already-created :py:class:`~pyglet.gl.Context` using the
+  ``context`` argument::
 
       context = config.create_context(share)
       window = pyglet.window.Window(context=context)
 
-* Supply a complete :py:class:`~pyglet.gl.Config` obtained from a :py:class:`~pyglet.canvas.Screen` using the ``config``
+* Supply a complete :py:class:`~pyglet.gl.Config` obtained from a
+  :py:class:`~pyglet.canvas.Screen` using the ``config``
   argument.  The context will be created from this config and will share object
   space with the most recently created existing context::
 
       config = screen.get_best_config(template)
       window = pyglet.window.Window(config=config)
 
-* Supply a template :py:class:`~pyglet.gl.Config` using the ``config`` argument.  The context will
-  use the best config obtained from the default screen of the default display::
+* Supply a template :py:class:`~pyglet.gl.Config` using the ``config``
+  argument. The context will use the best config obtained from the default
+  screen of the default display::
 
       config = gl.Config(double_buffer=True)
       window = pyglet.window.Window(config=config)
 
-* Specify a :py:class:`~pyglet.canvas.Screen` using the ``screen`` argument.  The context will use a
-  config created from default template configuration and this screen::
+* Specify a :py:class:`~pyglet.canvas.Screen` using the ``screen`` argument.
+  The context will use a config created from default template configuration
+  and this screen::
 
       screen = display.get_screens()[screen_number]
       window = pyglet.window.Window(screen=screen)
 
-* Specify a :py:class:`~pyglet.canvas.Display` using the ``display`` argument.  The default screen on
-  this display will be used to obtain a context using the default template
-  configuration::
+* Specify a :py:class:`~pyglet.canvas.Display` using the ``display`` argument.
+  The default screen on this display will be used to obtain a context using
+  the default template configuration::
 
       display = platform.get_display(display_name)
       window = pyglet.window.Window(display=display)
 
 If a template :py:class:`~pyglet.gl.Config` is given, a
-:py:class:`~pyglet.canvas.Screen` or :py:class:`~pyglet.canvas.Display` may also
-be specified; however any other combination of parameters overconstrains the
-configuration and some parameters will be ignored.
+:py:class:`~pyglet.canvas.Screen` or :py:class:`~pyglet.canvas.Display`
+may also be specified; however any other combination of parameters
+overconstrains the configuration and some parameters will be ignored.
 
 Fullscreen windows
 ^^^^^^^^^^^^^^^^^^
@@ -201,8 +206,9 @@ are not decorated by the operating system at all, and have no way to be resized
 or moved around the desktop.  These are useful for implementing splash screens
 or custom window borders.
 
-You can specify the style of the window in the :py:class:`~pyglet.window.Window`
-constructor.  Once created, the window style cannot be altered::
+You can specify the style of the window in the
+:py:class:`~pyglet.window.Window` constructor.
+Once created, the window style cannot be altered::
 
     window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
 
@@ -237,9 +243,10 @@ icon sizes:
     Linux
         * No constraints, however most window managers will use a 16x16 and a
           32x32 icon in the same way as Windows XP.
-          
-The :py:meth:`~pyglet.window.Window.set_icon` method allows you to set any number of images as the
-icon.  pyglet will select the most appropriate ones to use and apply them to
+
+The :py:meth:`~pyglet.window.Window.set_icon` method allows you to set any
+number of images as the icon.
+pyglet will select the most appropriate ones to use and apply them to
 the window.  If an alternate size is required but not provided, pyglet will
 scale the image to the correct size using a simple interpolation algorithm.
 
@@ -264,17 +271,21 @@ Visibility
 ----------
 
 Windows have several states of visibility.  Already shown is the
-:py:attr:`~pyglet.window.Window.visible` property which shows or hides the window.
+:py:attr:`~pyglet.window.Window.visible` property which shows or hides
+the window.
 
-Windows can be minimized, which is equivalent to hiding them except that they
-still appear on the taskbar (or are minimised to the dock, on OS X).  The user
-can minimize a window by clicking the appropriate button in the title bar.
+Windows can be minimized, which is equivalent to hiding them except that
+they still appear on the taskbar (or are minimised to the dock, on OS X).
+The user can minimize a window by clicking the appropriate button in the
+title bar.
 You can also programmatically minimize a window using the
-:py:class:`~pyglet.window.Window.minimize` method
-(there is also a corresponding :py:class:`~pyglet.window.Window.maximize` method).
+:py:class:`~pyglet.window.Window.minimize` method (there is also a
+corresponding :py:class:`~pyglet.window.Window.maximize` method).
 
-When a window is made visible the :py:meth:`~pyglet.window.Window.on_show` event is triggered.  When it is
-hidden the :py:meth:`~pyglet.window.Window.on_hide` event is triggered.  On Windows and Linux these events
+When a window is made visible the :py:meth:`~pyglet.window.Window.on_show`
+event is triggered.  When it is hidden the
+:py:meth:`~pyglet.window.Window.on_hide` event is triggered.
+On Windows and Linux these events
 will only occur when you manually change the visibility of the window or when
 the window is minimized or restored.  On Mac OS X the user can also hide or
 show the window (affecting visibility) using the Command+H shortcut.
@@ -321,8 +332,9 @@ This example program is located in
 Windows and OpenGL contexts
 ---------------------------
 
-Every window in pyglet has an associated OpenGL context.  Specifying the
-configuration of this context has already been covered in :ref:`guide_creating-a-window`.
+Every window in pyglet has an associated OpenGL context.
+Specifying the configuration of this context has already been covered in
+:ref:`guide_creating-a-window`.
 Drawing into the OpenGL context is the only way to draw into the window's
 client area.
 
@@ -333,13 +345,14 @@ If the window is double-buffered (i.e., the configuration specified
 ``double_buffer=True``, the default), OpenGL commands are applied to a hidden
 back buffer. This back buffer can be brought to the front using the `flip`
 method. The previous front buffer then becomes the hidden back buffer
-we render to in the next frame. If you are using the standard `pyglet.app.run` or
-:py:class:`pyglet.app.EventLoop` event loop, this is taken care of automatically after
-each :py:meth:`~pyglet.window.Window.on_draw` event.
+we render to in the next frame. If you are using the standard `pyglet.app.run`
+or :py:class:`pyglet.app.EventLoop` event loop, this is taken care of
+automatically after each :py:meth:`~pyglet.window.Window.on_draw` event.
 
-If the window is not double-buffered, the :py:meth:`~pyglet.window.Window.flip` 
-operation is unnecessary, and you should remember only to call 
-:py:func:`pyglet.gl.glFlush` to ensure buffered commands are executed.
+If the window is not double-buffered, the
+:py:meth:`~pyglet.window.Window.flip`  operation is unnecessary,
+and you should remember only to call :py:func:`pyglet.gl.glFlush` to
+ensure buffered commands are executed.
 
 Vertical retrace synchronisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -373,7 +386,7 @@ example:
   which can throw off results.  You should disable vsync if you are measuring
   the performance of your application.
 * If you cannot afford for your application to block.  If your application run
-  loop needs to quickly poll a hardware device, for example, you may want to 
+  loop needs to quickly poll a hardware device, for example, you may want to
   avoid blocking with vsync.
 
 Note that some older video cards do not support the required extensions to
