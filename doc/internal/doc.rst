@@ -23,7 +23,7 @@ Writing documentation
 
 Familiarize yourself with `Sphinx`_ and `reStructuredText`_.
 
-Literature 
+Literature
 ^^^^^^^^^^
 
 The home page is ``pyglet/doc/index.rst``. This file create three toctrees:
@@ -35,8 +35,8 @@ The home page is ``pyglet/doc/index.rst``. This file create three toctrees:
 Source code
 -----------
 
-The API documentation is generated from the source code docstrings via `autodoc`_ and a few custom extensions.
-
+The API documentation is generated from the source code docstrings via
+`autodoc`_ and a few custom extensions.
 
 :Example:
 
@@ -46,14 +46,12 @@ The API documentation is generated from the source code docstrings via `autodoc`
       '''Short description.
 
       Detailed explanation, formatted as reST.
-      Can be as detailed as it is needed. 
-    
-   
-      :Ivariables: 
+      Can be as detailed as it is needed.
+
+      :Ivariables:
          `arg1`
              description
 
-      
       .. versionadded:: 1.2
 
       '''
@@ -67,11 +65,10 @@ The API documentation is generated from the source code docstrings via `autodoc`
       #: This is another attribute.
       attribute2 = None
 
-
       def __init__(self):
           '''Constructor
 
-          :parameters: 
+          :parameters:
              `arg1` : type
                 description
           '''
@@ -89,7 +86,7 @@ The API documentation is generated from the source code docstrings via `autodoc`
 
       def _get_property1(self):
           '''Getter Method contains docstrings for a property
-          
+
           :return: property1 value
           :rtype: property1 type
           '''
@@ -97,7 +94,7 @@ The API documentation is generated from the source code docstrings via `autodoc`
       def _set_property1(self, value):
           '''Setter Method docstrings are ignored
           '''
-   
+
       property1 = property(_get_property1, _set_property1,
                         doc='''Override docstring here if you want''')
 
@@ -116,8 +113,8 @@ Pyglet has a special role for deprecations, ``:deprecated:``.
 Building
 --------
 
-The complete documentation can be generated using ``sphinx``. Make sure you prepare your
-environment as stated in :doc:`virtualenv`.
+The complete documentation can be generated using ``sphinx``.
+Make sure you prepare your environment as stated in :doc:`virtualenv`.
 
 To build the documentation, execute::
 

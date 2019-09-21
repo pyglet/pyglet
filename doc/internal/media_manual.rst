@@ -140,7 +140,7 @@ The :class:`~pyglet.media.player.Player` will check if there is an audio track
 on the media. If so it will instantiate an ``AudioPlayer`` appropriate for the
 available sound driver on the platform. It will create an empty
 :class:`~pyglet.image.Texture` if the media contains video frames and will
-schedule its :meth:`~pyglet.media.Player.update_texture` to be called 
+schedule its :meth:`~pyglet.media.Player.update_texture` to be called
 immediately. Finally it will start the master clock.
 
 The ``AudioPlayer`` will ask its :class:`~pyglet.media.Source` for
@@ -183,7 +183,7 @@ You can also ask to see a subset of frame information this way::
 
 Finally, you can get a more compact view with the additional ``compact`` flag:
 
-    ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames 
+    ffprobe samples_v1.01\SampleVideo_320x240_1mb.3gp -show_frames
     -select_streams v -show_entries frame=pkt_pts,pict_type -of compact
 
 Convert video to mkv
@@ -191,6 +191,6 @@ Convert video to mkv
 
 ::
 
-    ffmpeg -i <original_video> -c:v libx264 -preset slow -profile:v high -crf 18 
-    -coder 1 -pix_fmt yuv420p -movflags +faststart -g 30 -bf 2 -c:a aac -b:a 384k 
+    ffmpeg -i <original_video> -c:v libx264 -preset slow -profile:v high -crf 18
+    -coder 1 -pix_fmt yuv420p -movflags +faststart -g 30 -bf 2 -c:a aac -b:a 384k
     -profile:a aac_low <outputfilename.mkv>

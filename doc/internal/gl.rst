@@ -25,7 +25,7 @@ import:
 
 3. On Windows, this will fail if the context hasn't been created yet.  Create
    and return a proxy object ``WGLFunctionProxy`` which will try the same
-   resolution again when the object is ``__call__``'d.  
+   resolution again when the object is ``__call__``'d.
 
    The proxy object caches its result so that subsequent calls have only a
    single extra function-call overhead.
@@ -37,10 +37,10 @@ import:
    it requires and any alternative functions that can be used.
 
    The extension required is currently guessed by ``gengl.py`` based on nearby
-   ``#ifndef`` declarations, it is occasionally wrong.  
+   ``#ifndef`` declarations, it is occasionally wrong.
 
    The suggestion list is not currently used, but is intended to be
-   implemented such that calling, for example, ``glCreateShader`` on an 
+   implemented such that calling, for example, ``glCreateShader`` on an
    older driver suggests ``glCreateShaderObjectARB``, etc.
 
 To access the linking function, import ``pyglet.gl.lib`` and use one of

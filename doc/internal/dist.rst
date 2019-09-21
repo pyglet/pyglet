@@ -38,9 +38,10 @@ Making a pyglet release
 
 Major version increase
 ----------------------
-When preparing for a major version you might also want to consider the following:
+When preparing for a major version you might also want to consider the
+following:
 
- * Create a maintenance branch for the major version
- * Add a readthedocs configuration for that maintenance branch
- * Point the url in setup.py to the maintenance branch documentation
+* Create a maintenance branch for the major version
+* Add a readthedocs configuration for that maintenance branch
+* Point the url in setup.py to the maintenance branch documentation
 

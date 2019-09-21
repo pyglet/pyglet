@@ -24,7 +24,7 @@ Preparation like in readme_run_tests.txt, optionally install the library bokeh
 The basic flow goes as:
 
 - initialize the active session subsystem:
-  set environment variable ``pyglet_mp_samples_dir`` to the desired 
+  set environment variable ``pyglet_mp_samples_dir`` to the desired
   samples_dir.
 - record a session with the initial state::
 
@@ -47,13 +47,13 @@ The basic flow goes as:
           then to look more details look at the individual reports.
           compare with prev sessions if desired:
               compare.py <session1> <session2>
-          
+
           render additional reports:
               report.py sample
-          
+
           or visualize the data collected with:
               bokeh_timeline.py sample
-          
+
           if results are as wanted, break
       done, you may want to delete sessions for intermediate commits
 
@@ -68,10 +68,10 @@ You can list the known sessions for the current samples_dir with::
 
 .. important::
     All this debugging machinery depends on a detailed and accurate capture of
-    media_player related state, currently in examples/media_player.py and 
+    media_player related state, currently in examples/media_player.py and
     pyglet.media.player.
 
-    Modifications in those modules may require matching modifications in 
+    Modifications in those modules may require matching modifications in
     pyglet/media/sources/instrumentation.py, and further propagation to other
     modules.
 
@@ -88,7 +88,7 @@ this will allow to rewrite the session.
 
 Keep in mind that some raw data will be stale or misleading:
 
-    - The ones captured at session creation time (currently pyglet.info and 
+    - The ones captured at session creation time (currently pyglet.info and
       pyglet_changeset)
     - The collected crashes info (new crashes will not be seen)
     - If media_player.py crashes before doing any writing, the state recording
@@ -96,7 +96,7 @@ Keep in mind that some raw data will be stale or misleading:
 
 The reports using that stale raw data will obviously report stale data.
 
-So it is a good idea to switch to a normal workflow as soon as posible 
+So it is a good idea to switch to a normal workflow as soon as posible
 (simply creating a new session and deleting the special session).
 
 
@@ -139,7 +139,7 @@ The current implementation relies in two pieces of data to determine the
 active session
 
     - the environment variable ``pyglet_mp_samples_dir`` specifies samples_dir,
-      the directory where all the media samples reside. Under the current 
+      the directory where all the media samples reside. Under the current
       paths schema is also where session data will be stored, one subdir per
       session.
 
@@ -172,7 +172,7 @@ and list all.
 ``timeline.py`` : translates the event stream to a stream of ``media_player``
 state, useful to pass to other software.
 
-``bokeh_timeline.py`` : visualization of data collected for the specified 
+``bokeh_timeline.py`` : visualization of data collected for the specified
 sample.
 
 Helper commands
@@ -199,12 +199,12 @@ Data directory layout
 
 .. code-block:: none
 
-    samples_dir/ : directory where the samples live, also used to store 
+    samples_dir/ : directory where the samples live, also used to store
                    sessions data
-        <session name>/ : directory to store session info, one per session, 
+        <session name>/ : directory to store session info, one per session,
                           named as the session.
             dbg/ : recording of media_player events captured while playing a
-                   sample, one per sample, named as sample.dbg; additional 
+                   sample, one per sample, named as sample.dbg; additional
                    versioning info, other raw data collected.
                 _crashes_light.pkl : pickle with info for retry crashed
                 _pyglet_hg_revision.txt
@@ -245,10 +245,10 @@ Structured as:
     - ``sysargs_to_mainargs()``: ``sys.argv`` translation to ``main`` params
     - ``main(...)``
 
-        - params validation and translation to adequate code entities (uses 
+        - params validation and translation to adequate code entities (uses
           module ``fs``).
         - translates exceptions to prints (uses module ``mpexceptions``)
-        - short chain of instantiations / function calls to accomplish the 
+        - short chain of instantiations / function calls to accomplish the
           command goals, no logic or calculations here.
     - other functions and classes: code specific to this command, delegates as
       much as possible to modules.
@@ -273,7 +273,7 @@ Modules
 buffered_logger
 _______________
 
-Accumulation of debug events while playing media_player, saves when 
+Accumulation of debug events while playing media_player, saves when
 sample's play ends
 
 
@@ -291,7 +291,7 @@ or files.
 fs
 __
 
-Path building for entities into a session directory should be delegated to 
+Path building for entities into a session directory should be delegated to
 ``fs.PathServices``.
 Session's creation, activation and management at start of ``fs``.
 Versions capture are handled at start of module ``fs``.
@@ -305,7 +305,7 @@ instance.
 extractors
 __________
 
-Analyzes a media_player recording to build specific info on behalf of 
+Analyzes a media_player recording to build specific info on behalf of
 reporters. Uses ``instrumentation`` to get input data about the media_player
 state sequence seen while playing a sample.
 Defines object types to collect some specific info about a replay.
@@ -358,7 +358,7 @@ Arguments:
 
     sample: sample to report
 
-The output will be written to session's output dir under 
+The output will be written to session's output dir under
 ``reports/sample.timeline.html``.
 
 Notice the plot can be zoomed live with the mouse wheel, but you must click
@@ -404,7 +404,7 @@ Subcommands:
 
 Creates and manages pyglet media_player debug session configurations.
 
-Most commands and subcommands need an environment variable 
+Most commands and subcommands need an environment variable
 ``pyglet_mp_samples_dir`` to be set to the directory where the media samples
 reside.
 
@@ -456,7 +456,7 @@ Arguments:
         "all": All data is exposed as text
         "counter": How many occurrences of each defect
 
-The report will be written to session's output dir under 
+The report will be written to session's output dir under
 ``reports/sample.report_name.txt``.
 
 Example::
@@ -465,7 +465,7 @@ Example::
 
 will write the report *anomalies* to ``report/small.mp4.anomalies.txt``.
 
-The authoritative list of reports available comes from 
+The authoritative list of reports available comes from
 ``reports.available_reports``
 
 
@@ -476,12 +476,12 @@ Usage::
 
     retry_crashed.py [--clean] [max_retries]
 
-Inspects the raw data collected to get the list of samples that crashed the 
+Inspects the raw data collected to get the list of samples that crashed the
 last time they were played.
 Then it replays those samples, recording new raw data for them.
 
 The process is repeated until all samples has a recording with no crashes or
-the still crashing samples were played ``max_tries`` times in this command 
+the still crashing samples were played ``max_tries`` times in this command
 run.
 
 Notice that only samples recorded as crashing in the last run are retried.
@@ -493,7 +493,7 @@ Besides the updated debug recordings, a state is build and saved:
 .. code-block:: none
 
     total_retries: total retries attempted, including previous runs
-    sometimes_crashed: list of samples that crashed one time but later 
+    sometimes_crashed: list of samples that crashed one time but later
                        completed a play
     always_crashed: list of samples that always crashed
 
@@ -546,13 +546,13 @@ Output files will be into subdirectories:
 
 ``samples_dir/test_run/dbg``
 
-    Each sample will generate a ``sample.dbg`` file storing the sequence of 
+    Each sample will generate a ``sample.dbg`` file storing the sequence of
     player debug events seen while playing the sample.
     It is simply a pickle of a list of tuples, each tuple an event.
     There are not meant for direct human use, but to run some analyzers to
     render useful reports.
 
-    A ``crash_retries.pkl`` file, a pickle of 
+    A ``crash_retries.pkl`` file, a pickle of
     ``(total_retries, sometimes_crashed, still_crashing) <-> (int, set, set)``.
 
     A ``pyglet.info`` captured at session creation to track hw & sw.
@@ -592,10 +592,10 @@ The files in that directory will be
 ``00_summary.txt`` , which provides:
 
     - basics defects stats over all samples
-    - a paragraph for each non perfect sample play with the count of each 
+    - a paragraph for each non perfect sample play with the count of each
       anomaly observed
 
-``03_pyglet_info.txt`` , ``pyglet.info`` output giving OS, python version, 
+``03_pyglet_info.txt`` , ``pyglet.info`` output giving OS, python version,
 etc (as captured at session creation).
 
 ``04_pyglet_hg_revision.txt`` , pyglet hg revision if running from a repo
@@ -608,7 +608,7 @@ played non perfect.
 readable form, that is, the sequence of player's internal events along the
 play.
 
-``sample_name.anomalies.txt`` is a reduced version of the ``.all``. 
+``sample_name.anomalies.txt`` is a reduced version of the ``.all``.
 variant: normal events are not shown, only anomalies.
 
 
@@ -662,10 +662,10 @@ Caveat:
 
         ``*.ogv``, ``*. webm`` played well with Firefox 54.0
 
-        ``*.flv``, ``*.mkv`` played well with VLC Media player, but VLC uses 
+        ``*.flv``, ``*.mkv`` played well with VLC Media player, but VLC uses
         ffmpeg
 
-Surely the samples set will be refined as time goes.  
+Surely the samples set will be refined as time goes.
 
 
 pycharm notes

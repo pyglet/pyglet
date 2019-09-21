@@ -22,15 +22,17 @@ To build packages for distribution you need to install:
 
     - `wheel <https://github.com/pypa/wheel/>`_
 
-It is preferred to create a Python virtual environment to develop in.  This allows you
-to easily test on all Python versions supported by pyglet, not pollute your local system
-with pyglet development dependencies, and not have your local system interfere with
-pyglet developement.  All dependencies you install while inside an activated virtual
-environment will remain isolated inside that environment.  When you're finished, you can
-simply delete it.
+It is preferred to create a Python virtual environment to develop in.
+This allows you to easily test on all Python versions supported by pyglet,
+not pollute your local system with pyglet development dependencies,
+and not have your local system interfere with pyglet developement.
+All dependencies you install while inside an activated virtual
+environment will remain isolated inside that environment.
+When you're finished, you can simply delete it.
 
-This section will show you how to set up and use virtual environments.  If you're already
-familiar with this, you can probably skip the rest of this page.
+This section will show you how to set up and use virtual environments.
+If you're already familiar with this, you can probably skip the rest of
+this page.
 
 Linux or Mac OSX
 ----------------
@@ -38,16 +40,17 @@ Linux or Mac OSX
 Setting up
 ''''''''''
 
-Setting up a virtual environment is almost the same for Linux and OS X. First, use your
-OS's package manager (apt, brew, etc) to install the following dependencies:
+Setting up a virtual environment is almost the same for Linux and OS X.
+First, use your OS's package manager (apt, brew, etc) to install the
+following dependencies:
 
     - Python 3.5+ and Python 2.7
     - pip (for each version of Python)
     - Graphviz (if you want to generate documentation)
 
-To create virtual environments, ``venv`` is included in the standard library since
-Python 3.3. For Python 2.7, you will need to install the ``virtualenv`` package
-(you might need to add sudo)::
+To create virtual environments, ``venv`` is included in the standard
+library since Python 3.3. For Python 2.7, you will need to install the
+``virtualenv`` package (you might need to add sudo)::
 
     pip install virtualenv
 
@@ -55,16 +58,18 @@ Make a directory somewhere to hold our virtual environments::
 
     mkdir pyglet-venv
 
-Next, we'll create the virtual environments for each version of python. We'll put them
-both inside the "pyglet-venv" folder, to keep things in one place.  Remember that the
-library names are different for Python 2 and 3::
+Next, we'll create the virtual environments for each version of python.
+We'll put them both inside the "pyglet-venv" folder, to keep things in
+one place.  Remember that the library names are different for
+Python 2 and 3::
 
     python2 -m virtualenv pyglet-venv/py2
     python3 -m venv pyglet-venv/py3
 
-Once the virtual environments have been created, the next step is to activate one of them.
-You'll then install the dependencies, which will be isolated inside that virtual environment.
-Only one can be active at a time, so perform the following steps one one at a time
+Once the virtual environments have been created, the next step is to activate
+one of them. You'll then install the dependencies, which will be isolated
+inside that virtual environment. Only one can be active at a time,
+so perform the following steps one one at a time
 
 Activate whichever virtual environment you wish to use::
 
@@ -72,7 +77,8 @@ Activate whichever virtual environment you wish to use::
     # or
     . pyglet-venv/py3/bin/activate
 
-You will see the name of the virtual environment at the start of the command prompt.
+You will see the name of the virtual environment at the start of the
+command prompt.
 
 [Optional] Make sure pip is the latest version::
 
@@ -108,11 +114,13 @@ Make sure you download and install:
     - `Python 3.4+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
     - `Graphviz <https://www.graphviz.org/download/>`_
 
-Pip should be installed by default with the latest Python installers.  Make sure you do not
-uncheck the option.  When finished installing, open a command prompt.
+Pip should be installed by default with the latest Python installers.
+Make sure you do not uncheck the option.  When finished installing,
+open a command prompt.
 
-To create virtual environments, ``venv`` is included in the standard library since
-Python 3.3.  For Python 2.7 only, you will need to install the ``virtualenv`` package::
+To create virtual environments, ``venv`` is included in the standard library
+since Python 3.3.
+For Python 2.7 only, you will need to install the ``virtualenv`` package::
 
     py -2 -m pip install virtualenv
 
@@ -120,16 +128,17 @@ Make a directory somewhere to hold our virtual environments::
 
     md pyglet-venv
 
-Next, we'll create the virtual environments for each version of python. We'll put them
-both inside the "pyglet-venv" folder, to keep things in one place.  Remember that the
-library names are different for Python 2 and 3::
+Next, we'll create the virtual environments for each version of python.
+We'll put them both inside the "pyglet-venv" folder, to keep things in one
+place. Remember that the library names are different for Python 2 and 3::
 
     py -2 -m virtualenv pyglet-venv\py2
     py -3 -m venv pyglet-venv\py3
 
-Once the virtual environments have been created, the next step is to activate one of them.
-You'll then install the dependencies, which will be isolated inside that virtual environment.
-Only one can be active at a time, so perform the following steps one one at a time.
+Once the virtual environments have been created, the next step is to activate
+one of them. You'll then install the dependencies, which will be isolated
+inside that virtual environment. Only one can be active at a time, so perform
+the following steps one one at a time.
 
 Activate the virtual environment::
 
@@ -137,7 +146,8 @@ Activate the virtual environment::
    # or
    pyglet-venv\py3\Scripts\activate
 
-You will see the name of the virtual environment at the start of the command prompt.
+You will see the name of the virtual environment at the start of the
+command prompt.
 
 [Optional] Make sure pip is the latest version::
 

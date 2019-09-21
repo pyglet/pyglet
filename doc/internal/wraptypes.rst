@@ -6,7 +6,7 @@ files.  The front-end is ``tools/wraptypes/wrap.py``, for usage::
 
     python tools/wraptypes/wrap.py -h
 
-There are three components to wraptypes: 
+There are three components to wraptypes:
 
 preprocessor.py
     Interprets preprocessor declarations and converts the source header files
@@ -29,9 +29,9 @@ format that can be imported as a module.
 Parser Modifications
 --------------------
 
-The parsers are built upon a modified version of `PLY`_, a Python implementation
-of lex and yacc.  The modified source is included in the ``wraptypes``
-directory.  The modifications are:
+The parsers are built upon a modified version of `PLY`_, a Python
+implementation of lex and yacc. The modified source is included in
+the ``wraptypes`` directory.  The modifications are:
 
 * Grammar is abstracted out of Parser, so multiple grammars can easily be
   defined in the same module.
@@ -50,7 +50,7 @@ for debugging.
 Preprocessor
 ------------
 
-The grammar and parser are defined in ``preprocessor.py``.  
+The grammar and parser are defined in ``preprocessor.py``.
 
 There is only one lexer state.  Each token has a type which is a string (e.g.
 ``'CHARACTER_CONSTANT'``) and a value.  Token values, when read directly from
@@ -278,7 +278,7 @@ handle_ctypes_variable(self, name, ctype, filename, lineno)
 Types are represented by instances of ``CtypesType``.  This is more easily
 manipulated than a "real" ctypes type.  There are subclasses for
 ``CtypesPointer``, ``CtypesArray``, ``CtypesFunction``, and so on; see the
-module for details.  
+module for details.
 
 Each ``CtypesType`` class implements the ``visit`` method, which can be used,
 Visitor pattern style, to traverse the type hierarchy.  Call the ``visit``
@@ -295,5 +295,3 @@ to print out the struct's members first.  Similarly for enums.
 straight-forward implementation that writes a module of ctypes wrappers.  It
 can filter the output based on the originating filename.  See the module
 docstring for usage and extension details.
-
-    
