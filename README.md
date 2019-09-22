@@ -1,4 +1,4 @@
-[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet)
+[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io)
 
 ![logo_large.png](https://bitbucket.org/repo/aejyXX/images/3385888514-logo_large.png)
 
