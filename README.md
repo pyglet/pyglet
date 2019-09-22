@@ -14,7 +14,7 @@ OpenGL graphics, loading images and videos, and playing sounds and music. *pygle
 * pyglet [discord] server
 * pyglet [mailing list]
 * pyglet [issue tracker]
-* Pyglet [website]
+* pyglet [website]
 
 Pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
 please [open an issue](https://github.com/pyglet/pyglet/issues).
