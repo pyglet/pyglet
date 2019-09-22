@@ -118,14 +118,32 @@ Make sure you prepare your environment as stated in :doc:`virtualenv`.
 
 To build the documentation, execute::
 
-   ./make.py docs
+   ./make.py docs --open
 
 .. note ::
    Due to a bug in Sphinx, documentation generation currently only works using Python 3.x.
 
 If the build succeeds, the web pages are in ``doc/_build/html``.
 
+Optionally the standalone way to build docs is through
+``setup.py`` or ``make``.
+
+.. code:: bash
+
+    # using setup.py (output dir: _build in project root)
+    python setup.py build_sphinx
+
+    # make (make.bat for windows)
+    cd doc
+    make html
+
 HTML Theme
 ----------
+
+.. Note:: The custom theme was disabled in 2019 and replaced with
+          the standard Read the Docs theme ``sphinx_rtd_theme``.
+          The old theme is somewhat broken with newer versions
+          of Sphinx and will probably need a substabtial work
+          to modernize and improve.
 
 The custom sphinx theme is in the ``ext/theme`` folder.
