@@ -31,7 +31,11 @@ get the latest version of the code using:
 
 .. code-block:: bash
 
+    # clone over https
     git clone https://github.com/pyglet/pyglet.git
+
+    # or clone over ssh
+    git clone git@github.com:pyglet/pyglet.git
 
 Contributing to the source
 --------------------------
