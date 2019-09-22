@@ -1,0 +1,30 @@
+Advanced topics
+===============
+
+.. _guide_environment-settings:
+
+Environment settings
+--------------------
+
+Options in the :py:attr:`pyglet.options` dictionary can have defaults set
+through the operating system's environment variable.  The following table
+shows which environment variable is used for each option:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Environment variable
+          - :py:attr:`pyglet.options` key
+          - Type
+          - Default value
+        * - ``PYGLET_AUDIO``
+          - ``audio``
+          - List of strings
+          - ``directsound,openal,alsa,silent``
+        * - ``PYGLET_DEBUG_GL``
+          - ``debug_gl``
+          - Boolean
+          - ``1`` [#debug_gl]_
+
+.. [#debug_gl] Defaults to ``1`` unless Python is run with ``-O`` or from a
+    frozen executable.
