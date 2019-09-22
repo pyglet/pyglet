@@ -4,7 +4,7 @@ Development environment
 To develop pyglet, you need an environment with at least the following:
 
     - Python 3.5+ and Python 2.7
-    - `py.test <https://pytest.org>`_
+    - `pytest <https://pytest.org>`_
     - Your favorite Python editor or IDE
 
 To generate documentation you also need:

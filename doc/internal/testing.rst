@@ -45,7 +45,7 @@ There are currently 3 types of interactive test cases:
 Running tests
 -------------
 
-The pyglet test suite is based on the `py.test framework <http://pytest.org>`_.
+The pyglet test suite is based on the `pytest framework <http://pytest.org>`_.
 
 It is preferred to use a virtual environment to run the tests.
 For instructions to set up virtual environments see :doc:`virtualenv`.
@@ -53,18 +53,18 @@ Make sure the virtual environment for the Python version you want to
 test is active. It is preferred to run the tests on 2.7, 3.4 and 3.5
 to make sure changes are compatible with all supported Python versions.
 
-To run all tests, execute py.test in the root of the pyglet repository::
+To run all tests, execute pytest in the root of the pyglet repository::
 
-    py.test
+    pytest
 
 You can also run just a single suite::
 
-    py.test tests/unit
-    py.test tests/integration
-    py.test tests/interactive
+    pytest tests/unit
+    pytest tests/integration
+    pytest tests/interactive
 
 For the interactive test suites, there are some extra command line switches
-for py.test:
+for pytest:
 
 - ``--non-interactive``: Only run the interactive tests that can only
   verify themselves using screenshots. The screenshots are created when
@@ -134,7 +134,7 @@ This is currently not used.
 Interactive test annotations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Interactive test cases can be marked with specific py.test marks. Currently
+Interactive test cases can be marked with specific pytest marks. Currently
 the following marks are used:
 
 .. py:decorator:: pytest.mark.requires_user_action
