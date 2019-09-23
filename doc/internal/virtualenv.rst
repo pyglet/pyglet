@@ -104,7 +104,7 @@ Setting up
 
 Make sure you download and install:
 
-    - `Python 3.4+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
+    - `Python 3.5+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
 
 Pip should be installed by default with the latest Python installers.
 Make sure you do not uncheck the option.  When finished installing,
