@@ -1,4 +1,4 @@
-[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet)
+[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io)
 
 ![logo_large.png](https://bitbucket.org/repo/aejyXX/images/3385888514-logo_large.png)
 
@@ -14,7 +14,7 @@ OpenGL graphics, loading images and videos, and playing sounds and music. *pygle
 * pyglet [discord] server
 * pyglet [mailing list]
 * pyglet [issue tracker]
-* Pyglet [website]
+* pyglet [website]
 
 Pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
 please [open an issue](https://github.com/pyglet/pyglet/issues).
@@ -66,7 +66,6 @@ pyglet is installable from PyPI:
 
     pip install --upgrade pyglet --user
 
-
 ## Installation from source
 
 If you're reading this `README` from a source distribution, you can install pyglet with:
@@ -112,16 +111,23 @@ code, is a bug that deserves to be reported on a ticket.
 
 ## Building Docs
 
-If you want to build the documentation yourself, please check
-[the README file in the doc directory](doc/README).
+    pip install -r doc/requirements.txt
+    python setup.py build_sphinx
+
+Please check [the README.md file in the doc directory](doc/README.md) for more details.
 
 ## Testing
 
 pyglet makes use of pytest for its test suite.
 
-    pytest tests/
+```bash
+pip install -r tests/requirements.txt --user
+# Only run unittests
+pytest tests/unit
+```
 
-Please check the documentation for more information about running and writing tests.
+Please check the [testing section in the development guide](https://pyglet.readthedocs.io/en/latest/internal/testing.html)
+for more information about running and writing tests.
 
 ## Contact
 

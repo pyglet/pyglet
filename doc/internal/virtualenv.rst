@@ -4,13 +4,16 @@ Development environment
 To develop pyglet, you need an environment with at least the following:
 
     - Python 3.5+ and Python 2.7
-    - `py.test <https://pytest.org>`_
+    - `pytest <https://pytest.org>`_
     - Your favorite Python editor or IDE
 
-To generate documentation you also need:
+All requirements should already be located in ``doc/requirements.txt``
+and ``tests/requirements.txt``.
 
-    - `Sphinx <https://sphinx-doc.org>`_ (and the "read_the_docs" Theme)
-    - `Graphviz`_
+.. code::
+
+    pip install -r doc/requirements.txt
+    pip install -r tests/requirements.txt
 
 To use and test all pyglet functionality you should also have:
 
@@ -46,7 +49,6 @@ following dependencies:
 
     - Python 3.5+ and Python 2.7
     - pip (for each version of Python)
-    - Graphviz (if you want to generate documentation)
 
 To create virtual environments, ``venv`` is included in the standard
 library since Python 3.3. For Python 2.7, you will need to install the
@@ -84,24 +86,15 @@ command prompt.
 
     pip install --upgrade pip
 
-Now install required dependencies::
-
-    pip install pytest
-
-Install the documentation generator::
-
-    pip install sphinx
-
-And optional dependencies::
-
-    pip install pytest-cov Pillow wheel
+Now install dependencies in ``doc/requirements.txt`` and
+``tests/requirements.txt``
 
 Finishing
 '''''''''
+
 To get out of the virtual environment run::
 
    deactivate
-
 
 Windows
 -------
@@ -111,8 +104,7 @@ Setting up
 
 Make sure you download and install:
 
-    - `Python 3.4+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
-    - `Graphviz <https://www.graphviz.org/download/>`_
+    - `Python 3.5+ and Python 2.7 <http://www.python.org/downloads/windows/>`_
 
 Pip should be installed by default with the latest Python installers.
 Make sure you do not uncheck the option.  When finished installing,
@@ -153,17 +145,8 @@ command prompt.
 
    pip install --upgrade pip
 
-Now install required dependencies::
-
-   pip install pytest
-
-Install the documentation generator::
-
-   pip install sphinx
-
-And optional dependencies::
-
-   pip install pytest-cov Pillow wheel
+Now install dependencies in ``doc/requirements.txt`` and
+``tests/requirements.txt``
 
 Finishing
 '''''''''
