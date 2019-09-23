@@ -142,8 +142,5 @@ HTML Theme
 
 .. Note:: The custom theme was disabled in 2019 and replaced with
           the standard Read the Docs theme ``sphinx_rtd_theme``.
-          The old theme is somewhat broken with newer versions
-          of Sphinx and will probably need a substabtial work
-          to modernize and improve.
 
 The custom sphinx theme is in the ``ext/theme`` folder.
