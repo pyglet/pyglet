@@ -185,7 +185,7 @@ class TextureAtlas:
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
-        self.texture = pyglet.image.Texture.create(width, height, pyglet.gl.GL_RGBA, rectangle=True)
+        self.texture = pyglet.image.Texture.create(width, height, pyglet.gl.GL_TEXTURE_RECTANGLE, pyglet.gl.GL_RGBA)
         self.allocator = Allocator(width, height)
 
     def add(self, img):

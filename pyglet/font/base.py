@@ -346,12 +346,12 @@ class Font(object):
             if glyph:
                 break
         if not glyph:
-            texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
-                                                         self.texture_width,
-                                                         self.texture_height,
-                                                         self.texture_internalformat,
-                                                         self.texture_min_filter,
-                                                         self.texture_mag_filter)
+            texture = self.texture_class.create(self.texture_width,
+                                                self.texture_height,
+                                                GL_TEXTURE_2D,
+                                                self.texture_internalformat,
+                                                self.texture_min_filter,
+                                                self.texture_mag_filter)
             self.textures.insert(0, texture)
             glyph = texture.fit(image)
         return glyph

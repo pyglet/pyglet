@@ -73,8 +73,7 @@ class PackedImageData(AbstractImage):
         if self._current_texture:
             return self._current_texture
 
-        texture = Texture.create_for_size(
-            GL_TEXTURE_2D, self.width, self.height)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
