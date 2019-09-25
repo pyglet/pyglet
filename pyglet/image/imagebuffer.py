@@ -100,8 +100,13 @@ class Framebuffer:
 
     _max_color_attachments = get_max_color_attachments()
 
-    def __init__(self):
-        """Create an instance of a Framebuffer object."""
+    def __init__(self, target=GL_FRAMEBUFFER):
+        """Create an OpenGL Framebuffer object.
+
+        :rtype: :py:class:`~pyglet.image.Framebuffer`
+
+        .. versionadded:: 2.0
+        """
         self._id = GLuint()
         glGenFramebuffers(1, self._id)
         self._attachment_types = 0
@@ -114,10 +119,12 @@ class Framebuffer:
 
     @property
     def width(self):
+        """The width of the widest attachment."""
         return self._width
 
     @property
     def height(self):
+        """The width of the widest attachment."""
         return self._height
 
     def bind(self, target=GL_FRAMEBUFFER):
@@ -137,7 +144,7 @@ class Framebuffer:
         glDeleteFramebuffers(1, self._id)
 
     @property
-    def is_compete(self):
+    def is_complete(self):
         return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
 
     @staticmethod
