@@ -212,7 +212,7 @@ class MachOLibraryLoader(LibraryLoader):
         libname = os.path.basename(path)
         search_path = []
 
-        if '.' not in libname:
+        if '.dylib' not in libname:
             libname = 'lib' + libname + '.dylib'
 
         # py2app support
