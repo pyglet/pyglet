@@ -595,8 +595,7 @@ class Win32Window(BaseWindow):
         rect = RECT()
         rect.left = x
         rect.top = y
-        _user32.AdjustWindowRectEx(byref(rect),
-            self._ws_style, False, self._ex_ws_style)
+        _user32.AdjustWindowRectEx(byref(rect), self._ws_style, False, self._ex_ws_style)
         return rect.left, rect.top
 
     # Event dispatching
@@ -628,7 +627,7 @@ class Win32Window(BaseWindow):
             event_handler = event_handlers.get(msg, None)
             result = None
             if event_handler:
-                if self._allow_dispatch_event or not self._enable_event_queue:
+                if self._allow_dispatch_event:
                     result = event_handler(msg, wParam, lParam)
                 else:
                     result = 0

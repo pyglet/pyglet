@@ -162,7 +162,7 @@ class MouseCursorException(WindowException):
     pass
 
 
-class MouseCursor(object):
+class MouseCursor:
     """An abstract mouse cursor."""
 
     #: Indicates if the cursor is drawn using OpenGL.  This is True
@@ -477,7 +477,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _mouse_in_window = False
 
     _event_queue = None
-    _enable_event_queue = True     # overridden by EventLoop.
     _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
     # Class attributes
@@ -569,10 +568,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             screen = display.get_default_screen()
 
         if not config:
-            for template_config in [
-                gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
-                gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
-                None]:
+            for template_config in [gl.Config(double_buffer=True, depth_size=24, major_version=3, minor_version=3),
+                                    gl.Config(double_buffer=True, depth_size=16, major_version=3, minor_version=3),
+                                    None]:
                 try:
                     config = screen.get_best_config(template_config)
                     break
@@ -1299,8 +1297,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     def dispatch_event(self, *args):
-        if not self._enable_event_queue or self._allow_dispatch_event:
-            if EventDispatcher.dispatch_event(self, *args) != False:
+        if not self._allow_dispatch_event:
+            if EventDispatcher.dispatch_event(self, *args) is not False:
                 self._legacy_invalid = True
         else:
             self._event_queue.append(args)
@@ -1323,10 +1321,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_key_press(self, symbol, modifiers):
             """A key on the keyboard was pressed (and held down).
 
-            In pyglet 1.0 the default handler sets `has_exit` to ``True`` if
-            the ``ESC`` key is pressed.
-
-            In pyglet 1.1 the default handler dispatches the :py:meth:`~pyglet.window.Window.on_close`
+            Since pyglet 1.1 the default handler dispatches the :py:meth:`~pyglet.window.Window.on_close`
             event if the ``ESC`` key is pressed.
 
             :Parameters:
@@ -1734,7 +1729,7 @@ BaseWindow.register_event_type('on_context_state_lost')
 BaseWindow.register_event_type('on_draw')
 
 
-class FPSDisplay(object):
+class FPSDisplay:
     """Display of a window's framerate.
 
     This is a convenience class to aid in profiling and debugging.  Typical
@@ -1767,12 +1762,10 @@ class FPSDisplay(object):
     #: :type: float
     update_period = 0.25
 
-    def __init__(self, window):
+    def __init__(self, window, color=(127, 127, 127, 127)):
         from time import time
         from pyglet.text import Label
-        self.label = Label('', x=10, y=10,
-                           font_size=24, bold=True,
-                           color=(127, 127, 127, 127))
+        self.label = Label('', x=10, y=10, font_size=24, bold=True, color=color)
 
         self.window = window
         self._window_flip = window.flip
@@ -1812,7 +1805,6 @@ class FPSDisplay(object):
     def draw(self):
         """Draw the label.
         """
-        # TODO: GL3 - ensure projection is correct before/after drawing.
         self.label.draw()
 
     def _hook_flip(self):
@@ -1833,14 +1825,8 @@ else:
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
     else:
-        # XXX HACK around circ problem, should be fixed after removal of
-        # shadow nonsense
-        # pyglet.window = sys.modules[__name__]
-        # import key, mouse
-
         from pyglet.window.xlib import XlibWindow as Window
 
-# XXX remove
 # Create shadow window. (trickery is for circular import)
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
