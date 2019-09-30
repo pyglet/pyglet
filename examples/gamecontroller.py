@@ -11,18 +11,18 @@ if not gamepads:
 
 gamepad = gamepads[0]
 gamepad.open()
-print("Detected: {0}\nController GUID: {1}".format(gamepad.name, gamepad.guid))
 
 window = pyglet.window.Window(720, 480)
 batch = pyglet.graphics.Batch()
-controller_label = pyglet.text.Label(x=10, y=window.height-20, text=gamepad.name)
+text = "Detected: {0}\nController GUID: {1}".format(gamepad.name, gamepad.guid)
+controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multiline=True, width=720)
 
 
 class Point:
     def __init__(self, position, batch, color=(255, 255, 255), visible=True):
-        self._position = list(position)
+        self._position = position
         self._visible = visible
-        self.vlist = batch.add(1, GL_POINTS, None, ('v2f', position), ('c3B', color))
+        self.vlist = batch.add(1, GL_POINTS, None, ('vertices2f', position), ('colors3Bn', color))
         self.visible = visible
 
     @property
