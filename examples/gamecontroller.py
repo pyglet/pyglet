@@ -32,7 +32,7 @@ class Point:
     @position.setter
     def position(self, value):
         self._position = value
-        self.vlist.vertices = value
+        self.vlist.vertices[:] = value
 
     @property
     def visible(self):
@@ -53,14 +53,14 @@ left_stick = Point(position=(180, 240), batch=batch)
 right_stick = Point(position=(540, 240), batch=batch)
 d_pad = Point(position=(280, 190), batch=batch)
 
-buttons = {'a': Point(position=(440, 170), batch=batch, visible=False),
-           'b': Point(position=(460, 190), batch=batch, visible=False),
-           'x': Point(position=(420, 190), batch=batch, visible=False),
-           'y': Point(position=(440, 210), batch=batch, visible=False),
+buttons = {'a': Point(position=(440, 170), color=(50, 255, 50), batch=batch, visible=False),
+           'b': Point(position=(460, 190), color=(255, 50, 50), batch=batch, visible=False),
+           'x': Point(position=(420, 190), color=(50, 50, 255), batch=batch, visible=False),
+           'y': Point(position=(440, 210), color=(255, 255, 50), batch=batch, visible=False),
            'leftshoulder': Point(position=(90, 290), batch=batch, visible=False),
            'rightshoulder': Point(position=(630, 290), batch=batch, visible=False),
            'start': Point(position=(390, 240), batch=batch, visible=False),
-           'guide': Point(position=(360, 240), batch=batch, visible=False),
+           'guide': Point(position=(360, 240), color=(255, 255, 100), batch=batch, visible=False),
            'back': Point(position=(330, 240), batch=batch, visible=False)}
 
 
