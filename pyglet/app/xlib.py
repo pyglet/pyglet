@@ -38,7 +38,6 @@ import threading
 
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop
-from pyglet.compat import asbytes
 
 
 class XlibSelectDevice:
@@ -76,7 +75,7 @@ class NotificationDevice(XlibSelectDevice):
 
     def set(self):
         self._event.set()
-        os.write(self._sync_file_write, asbytes('1'))
+        os.write(self._sync_file_write, b'1')
 
     def select(self):
         self._event.clear()

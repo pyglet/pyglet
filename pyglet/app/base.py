@@ -45,7 +45,7 @@ from pyglet import event
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
-class PlatformEventLoop(object):
+class PlatformEventLoop:
     """ Abstract class, implementation depends on platform.
     
     .. versionadded:: 1.2
@@ -161,11 +161,7 @@ class EventLoop(event.EventDispatcher):
         self.dispatch_event('on_enter')
 
         self.is_running = True
-        legacy_platforms = ('XP', '2000', '2003Server', 'post2003')
-        if compat_platform == 'win32' and platform.win32_ver()[0] in legacy_platforms:
-            self._run_estimated()
-        else:
-            self._run()
+        self._run()
 
         self.is_running = False
         self.dispatch_event('on_exit')
@@ -179,61 +175,6 @@ class EventLoop(event.EventDispatcher):
         while not self.has_exit:
             timeout = self.idle()
             platform_event_loop.step(timeout)
-
-    def _run_estimated(self):
-        """Run-loop that continually estimates function mapping requested
-        timeout to measured timeout using a least-squares linear regression.
-        Suitable for oddball platforms (Windows).
-
-        XXX: There is no real relation between the timeout given by self.idle(), and used
-        to calculate the estimate, and the time actually spent waiting for events. I have
-        seen this cause a negative gradient, showing a negative relation. Then CPU use
-        runs out of control due to very small estimates.
-        """
-        platform_event_loop = app.platform_event_loop
-
-        predictor = self._least_squares()
-        gradient, offset = next(predictor)
-
-        time = self.clock.time
-        while not self.has_exit:
-            timeout = self.idle()
-            if timeout is None: 
-                estimate = None
-            else:
-                estimate = max(gradient * timeout + offset, 0.0)
-            if False:
-                print('Gradient = %f, Offset = %f' % (gradient, offset))
-                print('Timeout = %f, Estimate = %f' % (timeout, estimate))
-
-            t = time()
-            if not platform_event_loop.step(estimate) and estimate != 0.0 and estimate is not None:
-                dt = time() - t
-                gradient, offset = predictor.send((dt, estimate))
-
-    @staticmethod
-    def _least_squares(gradient=1, offset=0):
-        X = 0
-        Y = 0
-        XX = 0
-        XY = 0
-        n = 0
-
-        while True:
-            x, y = yield gradient, offset
-            X += x
-            Y += y
-            XX += x * x
-            XY += x * y
-            n += 1
-
-            try:
-                gradient = (n * XY - X * Y) / (n * XX - X * X)
-                offset = (Y - gradient * X) / n
-            except ZeroDivisionError:
-                # Can happen in pathalogical case; keep current
-                # gradient/offset for now.
-                pass
 
     def _legacy_setup(self):
         # Disable event queuing for dispatch_events
@@ -262,7 +203,8 @@ class EventLoop(event.EventDispatcher):
         timeout = self.idle()
         app.platform_event_loop.set_timer(self._blocking_timer, timeout)
 
-    def exit_blocking(self):
+    @staticmethod
+    def exit_blocking():
         """Called by pyglet internal processes when the blocking operation
         completes.  See :py:meth:`enter_blocking`.
         """

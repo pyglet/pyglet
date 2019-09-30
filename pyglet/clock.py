@@ -548,9 +548,7 @@ class Clock:
         # clever remove item without disturbing the heap:
         # 1. set function to an empty lambda -- original function is not called
         # 2. set interval to 0               -- item will be removed from heap eventually
-        valid_items = set(item
-                          for item in self._schedule_interval_items
-                          if item.func == func)
+        valid_items = set(item for item in self._schedule_interval_items if item.func == func)
 
         if self._current_interval_item:
             if self._current_interval_item.func == func:
