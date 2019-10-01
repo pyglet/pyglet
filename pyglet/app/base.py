@@ -143,7 +143,12 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
 
-    def run(self):
+    @staticmethod
+    def _window_redraw(dt):
+        for window in app.windows:
+            window._redraw = True
+
+    def run(self, interval):
         """Begin processing events, scheduled functions and window updates.
 
         This method returns when :py:attr:`has_exit` is set to True.
@@ -157,6 +162,8 @@ class EventLoop(event.EventDispatcher):
         for window in app.windows:
             window.switch_to()
             window.dispatch_pending_events()
+
+        self.clock.schedule_interval(self._window_redraw, interval)
 
         platform_event_loop = app.platform_event_loop
         platform_event_loop.start()
@@ -225,15 +232,15 @@ class EventLoop(event.EventDispatcher):
             be called again, or `None` to block for user input.
         """
         dt = self.clock.update_time()
-        redraw_all = self.clock.call_scheduled_functions(dt)
+        self.clock.call_scheduled_functions(dt)
 
         # Redraw all windows
         for window in app.windows:
-            if redraw_all or (window._legacy_invalid and window.invalid):
+            if window._redraw and window.invalid:
                 window.switch_to()
                 window.dispatch_event('on_draw')
                 window.flip()
-                window._legacy_invalid = False
+                window._redraw = False
 
         # Update timout
         return self.clock.get_sleep_time(True)
@@ -264,7 +271,7 @@ class EventLoop(event.EventDispatcher):
     def exit(self):
         """Safely exit the event loop at the end of the current iteration.
 
-        This method is a thread-safe equivalent for for setting 
+        This method is a thread-safe equivalent for setting
         :py:attr:`has_exit` to ``True``.  All waiting threads will be
         interrupted (see :py:meth:`sleep`).
         """

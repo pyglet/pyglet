@@ -95,7 +95,7 @@ the set when they are no longer referenced or are closed explicitly.
 """
 
 
-def run():
+def run(interval=1/60):
     """Begin processing events, scheduled functions and window updates.
 
     This is a convenience function, equivalent to::
@@ -103,7 +103,7 @@ def run():
         pyglet.app.event_loop.run()
 
     """
-    event_loop.run()
+    event_loop.run(interval)
 
 
 def exit():
