@@ -1,0 +1,3 @@
+Sphinx
+sphinx-rtd-theme
+pytest

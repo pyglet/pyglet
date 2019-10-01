@@ -1,0 +1,146 @@
+Documentation
+=============
+
+This is the pyglet documentation, generated with `Sphinx`_.
+
+.. _Sphinx: https://sphinx-doc.org
+
+.. _reStructuredText: http://www.sphinx-doc.org/en/stable/rest.html
+
+.. _autodoc: http://www.sphinx-doc.org/en/stable/ext/autodoc.html
+
+Details:
+
+.. include:: build.rst
+
+.. note::
+
+   See the `Sphinx warnings log file <../warnings.txt>`_ for errors.
+
+
+Writing documentation
+---------------------
+
+Familiarize yourself with `Sphinx`_ and `reStructuredText`_.
+
+Literature
+^^^^^^^^^^
+
+The home page is ``pyglet/doc/index.rst``. This file create three toctrees:
+
+* The programming guide
+* The API docs
+* The development guide, which you are reading now
+
+Source code
+-----------
+
+The API documentation is generated from the source code docstrings via
+`autodoc`_ and a few custom extensions.
+
+:Example:
+
+   .. code-block:: python
+
+      class Class1():
+      '''Short description.
+
+      Detailed explanation, formatted as reST.
+      Can be as detailed as it is needed.
+
+      :Ivariables:
+         `arg1`
+             description
+
+      .. versionadded:: 1.2
+
+      '''
+
+      attribute1 = None
+      '''This is an attribute.
+
+      More details.
+      '''
+
+      #: This is another attribute.
+      attribute2 = None
+
+      def __init__(self):
+          '''Constructor
+
+          :parameters:
+             `arg1` : type
+                description
+          '''
+
+          self.instance_attribute = None
+          '''This is an instance attribute.
+          '''
+
+      def method(self):
+          '''Short description.
+
+          :returns: return description
+          :rtype: returned type
+          '''
+
+      def _get_property1(self):
+          '''Getter Method contains docstrings for a property
+
+          :return: property1 value
+          :rtype: property1 type
+          '''
+
+      def _set_property1(self, value):
+          '''Setter Method docstrings are ignored
+          '''
+
+      property1 = property(_get_property1, _set_property1,
+                        doc='''Override docstring here if you want''')
+
+
+Pyglet has a special role for deprecations, ``:deprecated:``.
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Source
+          - Output
+        * - ``:deprecated: Do not use``
+          - .. warning:: Deprecated. Do not use
+
+
+Building
+--------
+
+The complete documentation can be generated using ``sphinx``.
+Make sure you prepare your environment as stated in :doc:`virtualenv`.
+
+To build the documentation, execute::
+
+   ./make.py docs --open
+
+.. note ::
+   Due to a bug in Sphinx, documentation generation currently only works using Python 3.x.
+
+If the build succeeds, the web pages are in ``doc/_build/html``.
+
+Optionally the standalone way to build docs is through
+``setup.py`` or ``make``.
+
+.. code:: bash
+
+    # using setup.py (output dir: _build in project root)
+    python setup.py build_sphinx
+
+    # make (make.bat for windows)
+    cd doc
+    make html
+
+HTML Theme
+----------
+
+.. Note:: The custom theme was disabled in 2019 and replaced with
+          the standard Read the Docs theme ``sphinx_rtd_theme``.
+
+The custom sphinx theme is in the ``ext/theme`` folder.

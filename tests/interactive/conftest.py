@@ -1,5 +1,5 @@
 """
-py.test hooks for interactive test cases.
+pytest hooks for interactive test cases.
 """
 import inspect
 import pytest
