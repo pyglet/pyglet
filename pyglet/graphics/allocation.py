@@ -91,6 +91,9 @@ class AllocatorMemoryException(Exception):
 
 class Allocator(object):
     """Buffer space allocation implementation."""
+
+    __slots__ = 'capacity', 'starts', 'sizes'
+
     def __init__(self, capacity):
         """Create an allocator for a buffer of the specified capacity.
 
@@ -151,9 +154,7 @@ class Allocator(object):
         if size == 0:
             return 0
 
-        # return start
-        # or raise AllocatorMemoryException
-
+        # Return start, or raise AllocatorMemoryException
         if not self.starts:
             if size <= self.capacity:
                 self.starts.append(0)
@@ -162,14 +163,19 @@ class Allocator(object):
             else:
                 raise AllocatorMemoryException(size)
 
+        # Restart from zero if space exists
+        if self.starts[0] > size:
+            self.starts.insert(0, 0)
+            self.sizes.insert(0, size)
+            return 0
+
         # Allocate in a free space
         free_start = self.starts[0] + self.sizes[0]
         for i, (alloc_start, alloc_size) in enumerate(zip(self.starts[1:], self.sizes[1:])):
             # Danger!  
             # i is actually index - 1 because of slicing above...
             # starts[i]   points to the block before this free space
-            # starts[i+1] points to the block after this free space, and is
-            #             always valid.
+            # starts[i+1] points to the block after this free space, and is always valid.
             free_size = alloc_start - free_start
             if free_size == size:
                 # Merge previous block with this one (removing this free space)
@@ -183,7 +189,7 @@ class Allocator(object):
                 self.sizes[i] += size
                 return free_start
             free_start = alloc_start + alloc_size
-        
+
         # Allocate at end of capacity
         free_size = self.capacity - free_start
         if free_size >= size:
