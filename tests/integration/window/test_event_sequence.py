@@ -1,10 +1,6 @@
-from future.standard_library import install_aliases
-install_aliases()
-
-from builtins import object
+import time
 import queue
 import unittest
-import time
 
 from pyglet import window
 
