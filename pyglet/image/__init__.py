@@ -1208,8 +1208,7 @@ class CompressedImageData(AbstractImage):
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width, height, gl_format, data,
-                 extension=None, decoder=None):
+    def __init__(self, width, height, gl_format, data, extension=None, decoder=None):
         """Construct a CompressedImageData with the given compressed data.
 
         :Parameters:
@@ -1230,9 +1229,6 @@ class CompressedImageData(AbstractImage):
                 required extension is not present.
                 
         """
-        if not _is_pow2(width) or not _is_pow2(height):
-            raise ImageException('Dimensions of %r must be powers of 2' % self)
-
         super(CompressedImageData, self).__init__(width, height)
         self.data = data
         self.gl_format = gl_format
@@ -1276,8 +1272,7 @@ class CompressedImageData(AbstractImage):
 
     def get_texture(self, rectangle=False, force_rectangle=False):
         if force_rectangle:
-            raise ImageException(
-                'Compressed texture rectangles not supported')
+            raise ImageException('Compressed texture rectangles not supported')
 
         if self._current_texture:
             return self._current_texture
@@ -1316,8 +1311,7 @@ class CompressedImageData(AbstractImage):
             # just return a non-mipmapped texture.
             return self.get_texture()
 
-        texture = Texture.create_for_size(
-            GL_TEXTURE_2D, self.width, self.height)
+        texture = Texture.create_for_size(GL_TEXTURE_2D, self.width, self.height)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
