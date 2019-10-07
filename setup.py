@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-import os
-import shutil
 import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.4.4'
+VERSION = '1.4.5'
     
 # The source dist comes with batteries included, the wheel can use pip to get the rest
 is_wheel = 'bdist_wheel' in sys.argv

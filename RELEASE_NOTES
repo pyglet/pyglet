@@ -1,3 +1,19 @@
+pyglet 1.4.5
+Bugfix and small improvement release
+
+Bugfixes
+--------
+- Fix Allocator creating orphaned regions.
+- Allow npot compressed texture loading.
+- Fix MachOLibraryLoader failing on lib names containing extra "."s.
+
+Improvements
+------------
+- Documentation has been rebased on the standard RTD theme.
+- Other documentation clarifications and improvements.
+- New `MouseStateHandler` convenience class.
+
+
 pyglet 1.4.4
 Bugfix release.
 
