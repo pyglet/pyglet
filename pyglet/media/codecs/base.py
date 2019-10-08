@@ -40,7 +40,7 @@ from io import BytesIO
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 
-class AudioFormat(object):
+class AudioFormat:
     """Audio details.
 
     An instance of this class is provided by sources with audio tracks.  You
@@ -75,11 +75,10 @@ class AudioFormat(object):
 
     def __repr__(self):
         return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__, self.channels, self.sample_size,
-            self.sample_rate)
+            self.__class__.__name__, self.channels, self.sample_size, self.sample_rate)
 
 
-class VideoFormat(object):
+class VideoFormat:
     """Video details.
 
     An instance of this class is provided by sources with a video stream. You
@@ -115,7 +114,7 @@ class VideoFormat(object):
         return False
 
 
-class AudioData(object):
+class AudioData:
     """A single packet of audio data.
 
     This class is used internally by pyglet.
@@ -162,7 +161,7 @@ class AudioData(object):
             self.data = None
             self.length = 0
             self.timestamp += self.duration
-            self.duration = 0.
+            self.duration = 0
             return
         elif num_bytes == 0:
             return
@@ -180,26 +179,8 @@ class AudioData(object):
         self.duration -= num_bytes / float(audio_format.bytes_per_second)
         self.timestamp += num_bytes / float(audio_format.bytes_per_second)
 
-    def get_string_data(self):
-        """Return data as a bytestring.
 
-        Returns:
-            bytes or str: Data as a (byte)string. For Python 3 it's a
-            bytestring while for Python 2 it's a string.
-        """
-        # PYTHON2 - remove old Python 2 type checks
-        if self.data is None:
-            return b''
-
-        if isinstance(self.data, bytes):
-            return self.data
-
-        buf = ctypes.create_string_buffer(self.length)
-        ctypes.memmove(buf, self.data, self.length)
-        return buf.raw
-
-
-class SourceInfo(object):
+class SourceInfo:
     """Source metadata information.
 
     Fields are the empty string or zero if the information is not available.
@@ -227,7 +208,7 @@ class SourceInfo(object):
     genre = ''
 
 
-class Source(object):
+class Source:
     """An audio and/or video source.
 
     Args:
@@ -434,8 +415,7 @@ class StaticSource(Source):
     def __init__(self, source):
         source = source.get_queue_source()
         if source.video_format:
-            raise NotImplementedError(
-                'Static sources not supported for video yet.')
+            raise NotImplementedError('Static sources not supported for video yet.')
 
         self.audio_format = source.audio_format
         if not self.audio_format:
@@ -456,8 +436,7 @@ class StaticSource(Source):
             data.write(audio_data.get_string_data())
         self._data = data.getvalue()
 
-        self._duration = (len(self._data) /
-                          float(self.audio_format.bytes_per_second))
+        self._duration = len(self._data) / float(self.audio_format.bytes_per_second)
 
     def get_queue_source(self):
         if self._data is not None:
@@ -539,7 +518,7 @@ class StaticMemorySource(StaticSource):
         return AudioData(data, len(data), timestamp, duration, [])
 
 
-class SourceGroup(object):
+class SourceGroup:
     """Group of like sources to allow gapless playback.
 
     Seamlessly read data from a group of sources to allow for

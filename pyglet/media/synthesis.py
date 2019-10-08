@@ -241,7 +241,7 @@ class SynthesisSource(Source):
 
         """
         self.seek(0)
-        data = self.get_audio_data(self._max_offset).get_string_data()
+        data = bytes(self.get_audio_data(self._max_offset).data)
         header = struct.pack('<4sI8sIHHIIHH4sI',
                              b"RIFF",
                              len(data) + 44 - 8,

@@ -58,13 +58,9 @@ class WaveSource(StreamingSource):
         except wave.Error as e:
             raise WAVEDecodeException(e)
 
-        # PYTHON2: use the named tuple instead of explicit unpacking
-        # parameters = self._wave.getparams()
         nchannels, sampwidth, framerate, nframes, comptype, compname = self._wave.getparams()
 
-        self.audio_format = AudioFormat(channels=nchannels,
-                                        sample_size=sampwidth * 8,
-                                        sample_rate=framerate)
+        self.audio_format = AudioFormat(channels=nchannels, sample_size=sampwidth * 8, sample_rate=framerate)
 
         self._bytes_per_frame = nchannels * sampwidth
         self._duration = nframes / framerate
