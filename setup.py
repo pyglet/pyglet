@@ -3,29 +3,11 @@ import sys
 from setuptools import setup, find_packages
 
 # Bump pyglet/__init__.py version as well.
-VERSION = '1.4.5'
-    
-# The source dist comes with batteries included, the wheel can use pip to get the rest
-is_wheel = 'bdist_wheel' in sys.argv
-
-excluded = []
-if is_wheel:
-    excluded.append('extlibs.future')
-
-
-def exclude_package(pkg):
-    for exclude in excluded:
-        if pkg.startswith(exclude):
-            return True
-    return False
+VERSION = '2.0.0'
 
 
 def create_package_list(base_package):
-    return ([base_package] +
-            [base_package + '.' + pkg
-             for pkg
-             in find_packages(base_package)
-             if not exclude_package(pkg)])
+    return [base_package] + [base_package + '.' + pkg for pkg in find_packages(base_package)]
 
 
 setup_info = dict(
@@ -55,13 +37,7 @@ setup_info = dict(
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
@@ -75,8 +51,5 @@ setup_info = dict(
     },
     zip_safe=True,
 )
-
-if is_wheel:
-    setup_info['install_requires'] = ['future']
 
 setup(**setup_info)
