@@ -62,7 +62,7 @@ is a list of locations to search for resources.  Locations are searched in the
 order given in the path.  If a location is not valid (for example, if the
 directory does not exist), it is skipped.
 
-Locations in the path beginning with an ampersand (''@'' symbol) specify
+Locations in the path beginning with an "at" symbol (''@'') specify
 Python packages.  Other locations specify a ZIP archive or directory on the
 filesystem.  Locations that are not absolute are assumed to be relative to the
 script home.  Some examples::

@@ -128,6 +128,15 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
+
+from __future__ import division
+from builtins import bytes
+from builtins import zip
+
+__docformat__ = 'restructuredtext'
+__version__ = '$Id$'
+
+from io import open
 import re
 import weakref
 
@@ -1175,9 +1184,6 @@ class CompressedImageData(AbstractImage):
                 required extension is not present.
                 
         """
-        if not _is_pow2(width) or not _is_pow2(height):
-            raise ImageException('Dimensions of %r must be powers of 2' % self)
-
         super(CompressedImageData, self).__init__(width, height)
         self.data = data
         self.gl_format = gl_format
@@ -1667,11 +1673,11 @@ class TextureArrayRegion(TextureRegion):
         v2 = (y + height) / owner.height * scale_v + owner_v1
         z = float(z)
         self.tex_coords = (u1, v1, z, u2, v1, z, u2, v2, z, u1, v2, z)
-        
+
     def __repr__(self):
         return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height, self.z)
-    
-        
+
+
 class TextureArray(Texture, UniformTextureSequence):
     allow_smaller_pack = True
     _max_depth = get_texture_array_max_depth()
@@ -1727,16 +1733,16 @@ class TextureArray(Texture, UniformTextureSequence):
         texture.mag_filter = mag_filter
 
         return texture
-        
+
     def _verify_size(self, image):
         if image.width > self.width or image.height > self.height:
             raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(
                 image.width, image.height, self.width, self.height))
-        
+
     def allocate(self, *images):
         if len(self.items) + len(images) > self.max_depth:
             raise Exception("The amount of images being added exceeds the depth of this TextureArray.")
-                    
+
         textures = []
         start_length = len(self.items)
         for i, image in enumerate(images):
@@ -1744,11 +1750,11 @@ class TextureArray(Texture, UniformTextureSequence):
             item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
             self.items.append(item)
             image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
-        
+
         glFlush()
-        
+
         return self.items[start_length:]
-        
+
     @classmethod
     def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
         texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))

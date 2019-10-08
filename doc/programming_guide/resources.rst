@@ -153,7 +153,7 @@ search in order.  This list is indexed, so after modifying it you will
 need to call :py:func:`pyglet.resource.reindex`.
 
 Each item in the path list is either a path relative to the script home, or
-the name of a Python module preceded with an ampersand (``@``).  For example,
+the name of a Python module preceded with an "at" symbol (``@``).  For example,
 if you would like to package all your resources in a ``res`` directory::
 
     pyglet.resource.path = ['res']
