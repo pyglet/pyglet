@@ -247,22 +247,26 @@ class Projection:
 class Projection2D(Projection):
     """A 2D orthographic projection"""
 
+    _view = None
+
     def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
         width = max(1, window_width)
         height = max(1, window_height)
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        projection = matrix.create_orthogonal(0, width, 0, height, -255, 255)
-        view = matrix.Mat4()       # Identity Matrix
-
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection[:] = projection
-            window_block.view[:] = view
+            window_block.projection[:] = matrix.create_orthogonal(0, width, 0, height, -255, 255)
+            if not self._view:
+                # Set view to Identity Matrix
+                self._view = matrix.Mat4()
+                window_block.view[:] = self._view
 
 
 class Projection3D(Projection):
     """A 3D perspective projection"""
+
+    _view = None
 
     def __init__(self, fov=60, znear=0.1, zfar=255):
         """Create a 3D projection
@@ -285,12 +289,12 @@ class Projection3D(Projection):
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        projection = matrix.create_perspective(0, width, 0, height, self.znear, self.zfar, self.fov)
-        view = matrix.Mat4()      # Identity Matrix
-
         with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection[:] = projection
-            window_block.view[:] = view
+            window_block.projection[:] = matrix.create_perspective(0, width, 0, height, self.znear, self.zfar, self.fov)
+            if not self._view:
+                # Set view to Identity Matrix
+                self._view = matrix.Mat4()
+                window_block.view[:] = self._view
 
 
 def _PlatformEventHandler(data):
