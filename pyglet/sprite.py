@@ -192,6 +192,10 @@ class Sprite(event.EventDispatcher):
     _vertex_list = None
     _texture = None
     _group = None
+    _texture = None
+    _subpixel = False
+    _x = None
+    _y = None
 
     def __init__(self,
                  img, x=0, y=0,
