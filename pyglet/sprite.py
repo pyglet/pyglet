@@ -438,8 +438,7 @@ class Sprite(event.EventDispatcher):
                         int(vertices[2]), int(vertices[3]),
                         int(vertices[4]), int(vertices[5]),
                         int(vertices[6]), int(vertices[7]))
-        if self._vertex_list:
-            self._vertex_list.vertices[:] = vertices
+        self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
         r, g, b = self._rgb
