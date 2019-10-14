@@ -191,6 +191,7 @@ class Sprite(event.EventDispatcher):
     _visible = True
     _vertex_list = None
     _texture = None
+    _group = None
 
     def __init__(self,
                  img, x=0, y=0,
@@ -307,7 +308,7 @@ class Sprite(event.EventDispatcher):
         if self._batch == batch:
             return
 
-        if batch is not None and self._batch is not None:
+        if batch is not None and self._batch is not None and self._vertex_list and self._group:
             self._batch.migrate(self._vertex_list, GL_QUADS, self._group, batch)
             self._batch = batch
         else:
