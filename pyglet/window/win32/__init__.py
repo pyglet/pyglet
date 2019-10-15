@@ -627,16 +627,7 @@ class Win32Window(BaseWindow):
             event_handler = event_handlers.get(msg, None)
             result = None
             if event_handler:
-
-                # if self._allow_dispatch_event:
-                # TEST: for Window hang on Windows:
-                if self._allow_dispatch_event or not self._enable_event_queue:
-
-                    result = event_handler(msg, wParam, lParam)
-                else:
-                    result = 0
-                    self._event_queue.append((event_handler, msg,
-                                              wParam, lParam))
+                result = event_handler(msg, wParam, lParam)
             if result is None:
                 result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam)
             return result

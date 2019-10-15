@@ -481,10 +481,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _mouse_in_window = False
 
     _event_queue = None
-
-    # TEST: for Window hang on Windows:
-    _enable_event_queue = False    # explicitly disabled for test
-
     _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
     # Class attributes
