@@ -32,13 +32,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import platform
-import queue
 import sys
+import queue
 import threading
 
 from pyglet import app
-from pyglet import compat_platform
 from pyglet import clock
 from pyglet import event
 
@@ -154,10 +152,6 @@ class EventLoop(event.EventDispatcher):
         implementation is platform-specific.
         """
         self.has_exit = False
-
-        # TEST: for Window hang on Windows:
-        from pyglet.window import Window
-        Window._enable_event_queue = False
 
         # Dispatch pending events
         for window in app.windows:
