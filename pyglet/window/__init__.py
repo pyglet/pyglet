@@ -448,8 +448,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: .. versionadded:: 1.1
     invalid = True
 
-    _redraw = True
-
     # Instance variables accessible only via properties
     _width = None
     _height = None

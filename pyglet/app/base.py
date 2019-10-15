@@ -143,11 +143,6 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
 
-    @staticmethod
-    def _window_redraw(dt):
-        for window in app.windows:
-            window._redraw = True
-
     def run(self, interval):
         """Begin processing events, scheduled functions and window updates.
 
@@ -163,8 +158,6 @@ class EventLoop(event.EventDispatcher):
             window.switch_to()
             window.dispatch_pending_events()
 
-        self.clock.schedule_interval(self._window_redraw, interval)
-
         platform_event_loop = app.platform_event_loop
         platform_event_loop.start()
         self.dispatch_event('on_enter')
@@ -172,11 +165,21 @@ class EventLoop(event.EventDispatcher):
 
         while not self.has_exit:
             timeout = self.idle()
+            timeout = self._redraw_windows(interval, timeout)
             platform_event_loop.step(timeout)
 
         self.is_running = False
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
+
+    def _redraw_windows(self, interval, timeout):
+        # TODO: respect interval
+        for window in app.windows:
+            if window.invalid:
+                window.switch_to()
+                window.dispatch_event('on_draw')
+                window.flip()
+        return timeout
 
     def enter_blocking(self):
         """Called by pyglet internal processes when the operating system
@@ -233,14 +236,6 @@ class EventLoop(event.EventDispatcher):
         """
         dt = self.clock.update_time()
         self.clock.call_scheduled_functions(dt)
-
-        # Redraw all windows
-        for window in app.windows:
-            if window._redraw and window.invalid:
-                window.switch_to()
-                window.dispatch_event('on_draw')
-                window.flip()
-                window._redraw = False
 
         # Update timout
         return self.clock.get_sleep_time(True)
