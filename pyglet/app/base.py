@@ -155,6 +155,10 @@ class EventLoop(event.EventDispatcher):
         """
         self.has_exit = False
 
+        # TEST: for Window hang on Windows:
+        from pyglet.window import Window
+        Window._enable_event_queue = False
+
         # Dispatch pending events
         for window in app.windows:
             window.switch_to()

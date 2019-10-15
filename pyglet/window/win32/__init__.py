@@ -627,7 +627,11 @@ class Win32Window(BaseWindow):
             event_handler = event_handlers.get(msg, None)
             result = None
             if event_handler:
-                if self._allow_dispatch_event:
+
+                # if self._allow_dispatch_event:
+                # TEST: for Window hang on Windows:
+                if self._allow_dispatch_event or not self._enable_event_queue:
+
                     result = event_handler(msg, wParam, lParam)
                 else:
                     result = 0
