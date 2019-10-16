@@ -114,7 +114,7 @@ class PlatformEventLoop:
         raise NotImplementedError('abstract')
 
     def set_timer(self, func, interval):
-        raise NotImplementedError('abstract')
+        pass
 
     def stop(self):
         pass
@@ -143,6 +143,15 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
 
+    @staticmethod
+    def _redraw_windows(dt):
+        for window in app.windows:
+            if not window.invalid:
+                continue
+            window.switch_to()
+            window.dispatch_event('on_draw')
+            window.flip()
+
     def run(self, interval):
         """Begin processing events, scheduled functions and window updates.
 
@@ -152,6 +161,7 @@ class EventLoop(event.EventDispatcher):
         implementation is platform-specific.
         """
         self.has_exit = False
+        self.clock.schedule_interval_soft(self._redraw_windows, interval)
 
         # Dispatch pending events
         for window in app.windows:
@@ -165,21 +175,11 @@ class EventLoop(event.EventDispatcher):
 
         while not self.has_exit:
             timeout = self.idle()
-            timeout = self._redraw_windows(interval, timeout)
             platform_event_loop.step(timeout)
 
         self.is_running = False
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
-
-    def _redraw_windows(self, interval, timeout):
-        # TODO: respect interval
-        for window in app.windows:
-            if window.invalid:
-                window.switch_to()
-                window.dispatch_event('on_draw')
-                window.flip()
-        return timeout
 
     def enter_blocking(self):
         """Called by pyglet internal processes when the operating system
