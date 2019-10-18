@@ -54,12 +54,21 @@ def _heading(heading):
     print('-' * 78)
 
 
+def dump_platform():
+    """Dump OS specific """
+    import platform
+    print('platform: ', platform.platform())
+    print('release:  ', platform.release())
+    print('machine:  ', platform.machine())
+
+
 def dump_python():
     """Dump Python version and environment to stdout."""
     import os
     import sys
+    import platform
+    print('implementation:', platform.python_implementation())
     print('sys.version:', sys.version)
-    print('sys.platform:', sys.platform)
     print('sys.maxint:', sys.maxsize)
     if sys.platform == 'darwin':
         try:
@@ -221,6 +230,7 @@ def _try_dump(heading, func):
 
 def dump():
     """Dump all information to stdout."""
+    _try_dump('Platform', dump_platform)
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
