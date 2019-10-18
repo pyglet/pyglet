@@ -25,7 +25,7 @@ before_install: pip3 install --upgrade pip flake8 pytest lektor
 install: python3 setup.py install
 
 before_script: flake8 . --count --exclude=./.*,*/future/* --select=E9,F63,F7,F82 --show-source --statistics || true
-script: pytest --ignore=tests/base --ignore=tests/interactive --ignore=tests/integration
+script: pytest --ignore=tests/base --ignore=tests/interactive --ignore=tests/integration --ignore=tests/unit/text/test_layout.py
 
 deploy:
   provider: script

@@ -171,6 +171,22 @@ class AudioData:
         self.duration -= num_bytes / float(audio_format.bytes_per_second)
         self.timestamp += num_bytes / float(audio_format.bytes_per_second)
 
+    def get_string_data(self):
+        """Return data as a bytestring.
+
+        Returns:
+            bytes: data as a bytestring.
+        """
+        if self.data is None:
+            return b''
+
+        # if isinstance(self.data, bytes):
+        #     return bytearray(self.data)
+
+        buf = ctypes.create_string_buffer(self.length)
+        ctypes.memmove(buf, self.data, self.length)
+        return buf.raw
+
 
 class SourceInfo:
     """Source metadata information.
