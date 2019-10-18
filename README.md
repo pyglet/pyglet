@@ -98,6 +98,7 @@ it is a sign that the docs should be improved.
 If you want to contribute to Pyglet, we suggest the following:
 
 * Fork the [official repository](https://github.com/pyglet/pyglet/fork).
+* Checkout the branch you wish to contribute to (such as *pyglet-1.4-maintenance*).
 * Apply your changes to your fork.
 * Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
 * Alternatively you can create a patch and submit it to the issue tracker.
