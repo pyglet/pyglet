@@ -59,7 +59,7 @@ from pyglet.compat import asstr
 class GLXInfoException(Exception):
     pass
 
-class GLXInfo(object):
+class GLXInfo:
     def __init__(self, display=None):
         # Set default display if not set
         if display and not _glx_info.display:

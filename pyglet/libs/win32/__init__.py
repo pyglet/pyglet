@@ -62,7 +62,7 @@ if _debug_win32:
                         c_void_p())
         return msg.value
     
-    class DebugLibrary(object):
+    class DebugLibrary:
         def __init__(self, lib):
             self.lib = lib
 

@@ -116,7 +116,7 @@ from heapq import heappush, heappop, heappushpop
 from collections import deque
 
 
-class _ScheduledItem(object):
+class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
 
     def __init__(self, func, args, kwargs):
@@ -125,7 +125,7 @@ class _ScheduledItem(object):
         self.kwargs = kwargs
 
 
-class _ScheduledIntervalItem(object):
+class _ScheduledIntervalItem:
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):

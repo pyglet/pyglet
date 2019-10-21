@@ -72,7 +72,7 @@ _mode_write_pipe = None
 #   width
 #   height
 #   rate
-class ModePacket(object):
+class ModePacket:
     format = '256siHHI'
     size = struct.calcsize(format)
     def __init__(self, display, screen, width, height, rate):

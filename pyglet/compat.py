@@ -70,7 +70,7 @@ def with_metaclass(meta, *bases):
 
     Use it like this::
 
-        class BaseForm(object):
+        class BaseForm:
             pass
 
         class FormType(type):

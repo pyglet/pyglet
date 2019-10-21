@@ -47,7 +47,7 @@ NSEvent = cocoapy.ObjCClass('NSEvent')
 NSUserDefaults = cocoapy.ObjCClass('NSUserDefaults')
 
 
-class AutoReleasePool(object):
+class AutoReleasePool:
     def __enter__(self):
         self.pool = NSAutoreleasePool.alloc().init()
         return self.pool

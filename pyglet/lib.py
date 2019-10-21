@@ -60,7 +60,7 @@ else:
     _local_lib_paths = None
 
 
-class _TraceFunction(object):
+class _TraceFunction:
     def __init__(self, func):
         self.__dict__['_func'] = func
 
@@ -77,7 +77,7 @@ class _TraceFunction(object):
         setattr(self._func, name, value)
 
 
-class _TraceLibrary(object):
+class _TraceLibrary:
     def __init__(self, library):
         self._library = library
         print(library)
@@ -89,7 +89,7 @@ class _TraceLibrary(object):
 
 
 if _is_pyglet_doc_run:
-    class LibraryMock(object):
+    class LibraryMock:
         """Mock library used when generating documentation."""
         def __getattr__(self, name):
             return LibraryMock()
@@ -101,7 +101,7 @@ if _is_pyglet_doc_run:
             return LibraryMock()
 
 
-class LibraryLoader(object):
+class LibraryLoader:
 
     platform = pyglet.compat_platform
     # this is only for library loading, don't include it in pyglet.platform

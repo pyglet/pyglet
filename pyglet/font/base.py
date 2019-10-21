@@ -247,7 +247,7 @@ class GlyphTextureAtlas(image.Texture):
         return region
 
 
-class GlyphRenderer(object):
+class GlyphRenderer:
     """Abstract class for creating glyph images.
     """
     def __init__(self, font):
@@ -263,7 +263,7 @@ class FontException(Exception):
     pass
 
 
-class Font(object):
+class Font:
     """Abstract font class able to produce glyphs.
 
     To construct a font, use :py:func:`pyglet.font.load`, which will instantiate the

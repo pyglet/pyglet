@@ -118,7 +118,7 @@ PY3K = sys.version_info >= (3, 0)
 #-- INTRO: MAINTAIN CACHED FONTS DB --
 
 # [ ] make it Django/NDB style model definition
-class FontEntry(object):
+class FontEntry:
   """
   Font classification.
   Level 0:

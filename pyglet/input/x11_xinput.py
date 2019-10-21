@@ -56,7 +56,7 @@ def ptr_add(ptr, offset):
     return ctypes.pointer(type(ptr.contents).from_address(address))
 
 
-class DeviceResponder(object):
+class DeviceResponder:
     def _key_press(self, e):
         pass
 
@@ -203,7 +203,7 @@ class XInputDevice(DeviceResponder, Device):
             self.proximity_control.value = False
 
 
-class XInputWindowEventDispatcher(object):
+class XInputWindowEventDispatcher:
     def __init__(self, window):
         self.window = window
         self._responders = {}

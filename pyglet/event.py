@@ -166,7 +166,7 @@ class EventException(Exception):
     pass
 
 
-class EventDispatcher(object):
+class EventDispatcher:
     """Generic event dispatcher interface.
 
     See the module docstring for usage.

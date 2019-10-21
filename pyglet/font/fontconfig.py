@@ -103,7 +103,7 @@ class FcValue(Structure):
 # End of library definitions
 
 
-class FontConfig(object):
+class FontConfig:
     def __init__(self):
         self._fontconfig = self._load_fontconfig_library()
         self._search_cache = OrderedDict()
@@ -188,7 +188,7 @@ class FontConfig(object):
         return fontconfig
 
 
-class FontConfigPattern(object):
+class FontConfigPattern:
     def __init__(self, fontconfig, pattern=None):
         self._fontconfig = fontconfig
         self._pattern = pattern

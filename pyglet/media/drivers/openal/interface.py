@@ -60,7 +60,7 @@ class OpenALException(MediaException):
                                                           self.message)
 
 
-class OpenALObject(object):
+class OpenALObject:
     """Base class for OpenAL objects."""
     @classmethod
     def _check_error(cls, message=None):

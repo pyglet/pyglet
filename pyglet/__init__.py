@@ -35,29 +35,18 @@
 
 """pyglet is a cross-platform games and multimedia package.
 
-Detailed documentation is available at http://www.pyglet.org
+More information is available at http://www.pyglet.org
 """
 import os
 import sys
+
+#: The release version
+version = '2.0.dev0'
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-
-#: The release version of this pyglet installation.
-#:
-#: Valid only if pyglet was installed from a source or binary distribution
-#: (i.e. not in a checked-out copy from SVN).
-#:
-#: Use setuptools if you need to check for a specific release version, e.g.::
-#:
-#:    >>> import pyglet
-#:    >>> from pkg_resources import parse_version
-#:    >>> parse_version(pyglet.version) >= parse_version('1.1')
-#:    True
-#:
-version = '2.0.dev0'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -316,7 +305,7 @@ if options['debug_trace']:
 # Lazy loading
 # ------------
 
-class _ModuleProxy(object):
+class _ModuleProxy:
     _module = None
 
     def __init__(self, name):
@@ -370,8 +359,8 @@ if True:
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
 
-# Fool py2exe, py2app into including all top-level modules (doesn't understand
-# lazy loading)
+# Fool py2exe, py2app into including all top-level modules
+# (doesn't understand lazy loading)
 if False:
     from . import app
     from . import canvas
@@ -389,9 +378,4 @@ if False:
     from . import resource
     from . import sprite
     from . import text
-    from . import window
-
-# Hack around some epydoc bug that causes it to think pyglet.window is None.
-# TODO: confirm if this is still needed
-if False:
     from . import window

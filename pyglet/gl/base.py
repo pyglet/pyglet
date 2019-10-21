@@ -37,7 +37,7 @@ from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 
 
-class Config(object):
+class Config:
     """Graphics configuration.
 
     A Config stores the preferences for OpenGL attributes such as the
@@ -233,7 +233,7 @@ class CanvasConfig(Config):
         return True
 
 
-class ObjectSpace(object):
+class ObjectSpace:
     def __init__(self):
         # Textures and buffers scheduled for deletion the next time
         # this object space is active.
@@ -241,7 +241,7 @@ class ObjectSpace(object):
         self.doomed_buffers = []
 
 
-class Context(object):
+class Context:
     """OpenGL context for drawing.
 
     Use `CanvasConfig.create_context` to create a context.

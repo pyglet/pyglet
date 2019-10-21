@@ -651,7 +651,7 @@ def get_instance_variable(obj, varname, vartype):
 
 ######################################################################
 
-class ObjCMethod(object):
+class ObjCMethod:
     """This represents an unbound Objective-C method (really an IMP)."""
 
     # Note, need to map 'c' to c_byte rather than c_char, because otherwise
@@ -768,7 +768,7 @@ class ObjCMethod(object):
 
 ######################################################################
 
-class ObjCBoundMethod(object):
+class ObjCBoundMethod:
     """This represents an Objective-C method (an IMP) which has been bound
     to some id which will be passed as the first parameter to the method."""
 
@@ -786,7 +786,7 @@ class ObjCBoundMethod(object):
 
 ######################################################################
 
-class ObjCClass(object):
+class ObjCClass:
     """Python wrapper for an Objective-C class."""
 
     # We only create one Python object for each Objective-C class.
@@ -909,7 +909,7 @@ class ObjCClass(object):
 
 ######################################################################
 
-class ObjCInstance(object):
+class ObjCInstance:
     """Python wrapper for an Objective-C instance."""
 
     _cached_objects = {}
@@ -1056,7 +1056,7 @@ def convert_method_arguments(encoding, args):
 #     myclass = ObjCClass('MySubclassName')
 #     myinstance = myclass.alloc().init()
 #
-class ObjCSubclass(object):
+class ObjCSubclass:
     """Use this to create a subclass of an existing Objective-C class.
     It consists primarily of function decorators which you use to add methods
     to the subclass."""
@@ -1166,7 +1166,7 @@ class ObjCSubclass(object):
 # to be careful to not create another ObjCInstance here (which
 # happens when the usual method decorator turns the self argument
 # into an ObjCInstance), or else get trapped in an infinite recursion.
-class DeallocationObserver_Implementation(object):
+class DeallocationObserver_Implementation:
     DeallocationObserver = ObjCSubclass('NSObject', 'DeallocationObserver', register=False)
     DeallocationObserver.add_ivar('observed_object', c_void_p)
     DeallocationObserver.register()

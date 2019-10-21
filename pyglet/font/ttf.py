@@ -48,7 +48,7 @@ import codecs
 import struct
 
 
-class TruetypeInfo(object):
+class TruetypeInfo:
     """Information about a single Truetype face.
 
     The class memory-maps the font file to read the tables, so
@@ -461,7 +461,7 @@ def _read_table(*entries):
         names.append(name)
         fmt += entry_type
 
-    class TableClass(object):
+    class TableClass:
         size = struct.calcsize(fmt)
 
         def __init__(self, data, offset):

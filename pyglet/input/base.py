@@ -890,7 +890,7 @@ AppleRemote.register_event_type('on_button_press')
 AppleRemote.register_event_type('on_button_release')
 
 
-class Tablet(object):
+class Tablet:
     """High-level interface to tablet devices.
 
     Unlike other devices, tablets must be opened for a specific window,
@@ -1006,7 +1006,7 @@ TabletCanvas.register_event_type('on_leave')
 TabletCanvas.register_event_type('on_motion')
 
 
-class TabletCursor(object):
+class TabletCursor:
     """A distinct cursor used on a tablet.
 
     Most tablets support at least a *stylus* and an *erasor* cursor; this

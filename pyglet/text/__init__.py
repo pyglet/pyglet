@@ -84,7 +84,7 @@ class DocumentDecodeException(Exception):
     pass
 
 
-class DocumentDecoder(object):
+class DocumentDecoder:
     """Abstract document decoder.
     """
 

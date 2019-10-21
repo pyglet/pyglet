@@ -46,7 +46,7 @@ _decoder_extensions = {}    # Map str -> list of matching MediaDecoders
 _encoder_extensions = {}    # Map str -> list of matching MediaEncoders
 
 
-class MediaDecoder(object):
+class MediaDecoder:
     def get_file_extensions(self):
         """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
@@ -71,7 +71,7 @@ class MediaDecoder(object):
         return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
 
 
-class MediaEncoder(object):
+class MediaEncoder:
     def get_file_extensions(self):
         """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.

@@ -140,7 +140,7 @@ def load(filename, file=None, decoder=None, batch=None):
         file.close()
 
 
-class Model(object):
+class Model:
     """Instance of a 3D object.
 
     See the module documentation for usage.
@@ -222,7 +222,7 @@ class Model(object):
         self._batch.draw_subset(self.vertex_lists)
 
 
-class Material(object):
+class Material:
     __slots__ = ("name", "diffuse", "ambient", "specular", "emission", "shininess", "texture_name")
 
     def __init__(self, name, diffuse, ambient, specular, emission, shininess, texture_name=None):
