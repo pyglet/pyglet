@@ -1,3 +1,12 @@
+pyglet 1.4.6
+Bugfix release
+
+Bugfixes
+--------
+- Fix PNG encoder saving upside-down images due to incorrect pitch. (#83)
+- pyglet.info shows more platform specific information.
+
+
 pyglet 1.4.5
 Bugfix and small improvement release
 
@@ -21,6 +30,7 @@ Bugfixes
 --------
 - Fixed incorrect glXSwapIntervalEXT arguments for Xlib contexts.
 
+
 pyglet 1.4.3
 Bugfix release.
 
@@ -28,6 +38,7 @@ Bugfixes
 --------
 - Fix crash due to inconsistent API when changing Label or HTMLLabel color. (#45)
 - Add support for GLX_EXT_swap_control on Linux platforms.
+
 
 pyglet 1.4.2
 Bugfix and cleanup release.
@@ -44,6 +55,7 @@ Bugfixes
 - Fix invalid argtype in image GDIplus decoder.
 - Change sys.is_epydoc to sys.is_pyglet_doc_run to prevent crashing with Anaconda, etc. (#9)
 - Prevent gl_info.get_version from crashing with blank version string. (#36)
+
 
 pyglet 1.4.1
 ============
