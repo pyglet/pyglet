@@ -120,7 +120,7 @@ class AudioData:
     This class is used internally by pyglet.
 
     Args:
-        data (str or ctypes array or pointer): Sample data.
+        data (bytes or ctypes array or pointer): Sample data.
         length (int): Size of sample data, in bytes.
         timestamp (float): Time of the first sample, in seconds.
         duration (float): Total data duration, in seconds.
@@ -172,20 +172,15 @@ class AudioData:
         self.timestamp += num_bytes / float(audio_format.bytes_per_second)
 
     def get_string_data(self):
-        """Return data as a bytestring.
+        """Return data as a bytes.
 
         Returns:
-            bytes: data as a bytestring.
+            bytes: data as raw bytes.
         """
         if self.data is None:
             return b''
 
-        # if isinstance(self.data, bytes):
-        #     return bytearray(self.data)
-
-        buf = ctypes.create_string_buffer(self.length)
-        ctypes.memmove(buf, self.data, self.length)
-        return buf.raw
+        return memoryview(self.data).tobytes()[:self.length]
 
 
 class SourceInfo:
