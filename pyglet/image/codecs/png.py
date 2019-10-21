@@ -36,9 +36,6 @@
 """Encoder and decoder for PNG files, using PyPNG (png.py).
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import array
 import itertools
 
@@ -72,8 +69,9 @@ class PNGImageDecoder(ImageDecoder):
                 fmt = 'RGB'
         pitch = len(fmt) * width
 
-        pixels = array.array('BH'[metadata['bitdepth']>8], itertools.chain(*pixels))
+        pixels = array.array('BH'[metadata['bitdepth'] > 8], itertools.chain(*pixels))
         return ImageData(width, height, fmt, pixels.tostring(), -pitch)
+
 
 class PNGImageEncoder(ImageEncoder):
     def get_file_extensions(self):
@@ -97,18 +95,17 @@ class PNGImageEncoder(ImageEncoder):
 
         image.pitch = -(image.width * len(image.format))
 
-        writer = pypng.Writer(
-            image.width, image.height,
-            bytes_per_sample=1,
-            greyscale=greyscale,
-            alpha=has_alpha)
+        writer = pypng.Writer(image.width, image.height, bytes_per_sample=1, greyscale=greyscale, alpha=has_alpha)
 
         data = array.array('B')
-        data.fromstring(image.get_data())
+        data.fromstring(image.get_data(image.format, image.pitch))
+
         writer.write_array(file, data)
+
 
 def get_decoders():
     return [PNGImageDecoder()]
+
 
 def get_encoders():
     return [PNGImageEncoder()]
