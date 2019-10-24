@@ -418,7 +418,11 @@ class ZipRunIterator(AbstractRunIterator):
                 start = min_end
                 for i, iterator in enumerate(iterators):
                     if ends[i] == min_end:
-                        starts[i], ends[i], values[i] = next(iterator)
+                        try:
+                            starts[i], ends[i], values[i] = next(iterator)
+                        except StopIteration:
+                            return
+
         except StopIteration:
             return
 
