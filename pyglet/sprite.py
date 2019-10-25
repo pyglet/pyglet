@@ -190,8 +190,12 @@ class Sprite(event.EventDispatcher):
     _scale_y = 1.0
     _visible = True
     _vertex_list = None
-    _texture = None
+    _subpixel = False
+    _usage = 'dynamic'
     _group = None
+    _texture = None
+    _x = 0
+    _y = 0
 
     def __init__(self,
                  img, x=0, y=0,
@@ -308,15 +312,14 @@ class Sprite(event.EventDispatcher):
         if self._batch == batch:
             return
 
-        if batch is not None and self._batch is not None and self._vertex_list and self._group:
+        if batch is not None and self._batch is not None:
             self._batch.migrate(self._vertex_list, GL_QUADS, self._group, batch)
             self._batch = batch
         else:
             if self._vertex_list:
                 self._vertex_list.delete()
             self._batch = batch
-            if self._texture:
-                self._create_vertex_list()
+            self._create_vertex_list()
 
     @property
     def group(self):
