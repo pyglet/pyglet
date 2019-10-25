@@ -1,5 +1,6 @@
 from tests import mock
 import os
+import ctypes
 import unittest
 
 import pyglet
