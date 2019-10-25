@@ -33,11 +33,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import ctypes
-
 from io import BytesIO
 
-from pyglet.media.exceptions import MediaException, CannotSeekException
+import pyglet
+from pyglet.media.exceptions import MediaException, CannotSeekException, MediaEncodeException
 
 
 class AudioFormat:
@@ -331,6 +330,40 @@ class Source:
             no more video frames.
         """
         pass
+
+    def save(self, filename=None, file=None, encoder=None):
+        """Save this Source to a file.
+
+        :Parameters:
+            `filename` : str
+                Used to set the file format, and to open the output file
+                if `file` is unspecified.
+            `file` : file-like object or None
+                File to write audio data to.
+            `encoder` : MediaEncoder or None
+                If unspecified, all encoders matching the filename extension
+                are tried.  If all fail, the exception from the first one
+                attempted is raised.
+
+        """
+        if not file:
+            file = open(filename, 'wb')
+
+        if encoder:
+            encoder.encode(self, file, filename)
+        else:
+            first_exception = None
+            for encoder in pyglet.media.get_encoders(filename):
+                try:
+                    encoder.encode(self, file, filename)
+                    return
+                except MediaEncodeException as e:
+                    first_exception = first_exception or e
+                    file.seek(0)
+
+            if not first_exception:
+                raise MediaEncodeException('No media encoders are available')
+            raise first_exception
 
     # Internal methods that Player calls on the source:
 
