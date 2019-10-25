@@ -196,6 +196,7 @@ class Sprite(event.EventDispatcher):
     _texture = None
     _x = 0
     _y = 0
+    _subpixel = False
 
     def __init__(self,
                  img, x=0, y=0,
@@ -445,7 +446,8 @@ class Sprite(event.EventDispatcher):
                         int(vertices[2]), int(vertices[3]),
                         int(vertices[4]), int(vertices[5]),
                         int(vertices[6]), int(vertices[7]))
-        self._vertex_list.vertices[:] = vertices
+        if self._vertex_list:
+            self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
         r, g, b = self._rgb
