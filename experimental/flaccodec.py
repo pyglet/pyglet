@@ -19,15 +19,21 @@ class FLACDecodeException(MediaDecodeException):
 FIXED_PREDICTION_COEFFICIENTS = ((), (1,), (2, -1), (3, -3, 1), (4, -6, 4, -1))
 
 
-def _initializer(filename):
+def _initializer(filename, numchannels, sample_size):
     """Function to open a copy of the file locally in each Process."""
     global _file
+    global _numchannels
+    global _sample_size
     _file = open(filename, 'rb')
+    _numchannels = numchannels
+    _sample_size = sample_size
 
 
-def decode_frame(offset, numchannels, sample_size):
+def decode_frame(offset):
     try:
         # Read a ton of header fields, and ignore most of them
+        numchannels = _numchannels
+        sample_size = _sample_size
         _file.seek(offset)
         inp = BitInputStream(_file)
 
@@ -253,6 +259,7 @@ class FLACSource(StreamingSource):
         self.frame_index = 0
         file.seek(0)
         self._file = BitInputStream(file)
+        self._filename = filename
 
         if file.read(4) != b'fLaC':
             raise FLACDecodeException("Does not appear to be a FLAC file.")
@@ -278,6 +285,10 @@ class FLACSource(StreamingSource):
                 for i in range(length):
                     self._file.read_byte()
 
+        for offset in self.frame_indices:
+            if offset < self._file.inp.tell():
+                self.frame_indices.remove(offset)
+
         if not samplerate:
             raise FLACDecodeException("Stream info metadata block absent")
         if bits_per_sample % 8 != 0:
@@ -287,23 +298,26 @@ class FLACSource(StreamingSource):
         self._duration = float(numsamples) / samplerate / 60
         self.audio_format = AudioFormat(numchannels, bits_per_sample, samplerate)
 
-        self.executor = ProcessPoolExecutor(max_workers=3, initializer=_initializer, initargs=(filename,))
+        self.executor = ProcessPoolExecutor(max_workers=3, initializer=_initializer,
+                                            initargs=(filename, numchannels, bits_per_sample))
 
     def __del__(self):
         self._file.close()
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
-        buffer = b""
-        self._file.inp.seek(0)
-        print(self._file.inp.tell(), self.frame_index, self.frame_indices)
-        while len(buffer) < num_bytes and self.frame_index <= len(self.frame_indices):
-            self._file.inp.seek(self.frame_indices[self.frame_index])
-            raw = self._file.inp.read(65536)
-            buffer += decode_frame(raw, self.audio_format.channels, self.audio_format.sample_size)
+
+        data = b''
+
+        while not data and (self.frame_index <= len(self.frame_indices)):
+            offset = self.frame_indices[self.frame_index]
+            future = self.executor.submit(decode_frame, offset)
+            data += future.result()
             self.frame_index += 1
-        if not buffer:
+
+        if not data:
             return None
-        return AudioData(buffer, len(buffer), timestamp=0.1, duration=0.5, events=[])
+
+        return AudioData(data, len(data), timestamp=0.1, duration=0.5, events=[])
 
     def save(self, filename="output.wav"):
         with open(filename, 'wb') as out:
@@ -332,7 +346,7 @@ class FLACSource(StreamingSource):
 
             import time
             start = time.time()
-            futures = [self.executor.submit(decode_frame, i, numchannels, sample_size) for i in self.frame_indices]
+            futures = [self.executor.submit(decode_frame, offset) for offset in self.frame_indices]
             print("elapsed future making", time.time() - start)
 
             while futures:
