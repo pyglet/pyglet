@@ -1,5 +1,3 @@
-from __future__ import division
-from builtins import range
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -37,17 +35,14 @@ from builtins import range
 
 from .codecs.base import Source, AudioFormat, AudioData
 
-from collections import deque
-
-import ctypes
 import os
 import math
-import struct
-import random
+import ctypes
 
 
-class Envelope(object):
+class Envelope:
     """Base class for SynthesisSource amplitude envelopes."""
+
     def get_generator(self, sample_rate, duration):
         raise NotImplementedError
 
@@ -60,6 +55,7 @@ class FlatEnvelope(Envelope):
             The amplitude (volume) of the wave, from 0.0 to 1.0.
             Values outside of this range will be clamped.
     """
+
     def __init__(self, amplitude=0.5):
         self.amplitude = max(min(1.0, amplitude), 0)
 
@@ -80,6 +76,7 @@ class LinearDecayEnvelope(Envelope):
             The Initial peak value of the envelope, from 0.0 to 1.0.
             Values outside of this range will be clamped.
     """
+
     def __init__(self, peak=1.0):
         self.peak = max(min(1.0, peak), 0)
 
@@ -109,6 +106,7 @@ class ADSREnvelope(Envelope):
         `sustain_amplitude` : float
             The sustain amplitude (volume), from 0.0 to 1.0.
     """
+
     def __init__(self, attack, decay, release, sustain_amplitude=0.5):
         self.attack = attack
         self.decay = decay
@@ -152,6 +150,7 @@ class TremoloEnvelope(Envelope):
         `amplitude` : float
             The peak amplitude (volume), from 0.0 to 1.0.
     """
+
     def __init__(self, depth, rate, amplitude=0.5):
         self.depth = max(min(1.0, depth), 0)
         self.rate = rate
@@ -179,6 +178,7 @@ class SynthesisSource(Source):
         `sample_size` : int
             The bit precision. Must be either 8 or 16.
     """
+
     def __init__(self, duration, sample_rate=44800, sample_size=16, envelope=None):
 
         self._duration = float(duration)
@@ -231,37 +231,6 @@ class SynthesisSource(Source):
 
         self._envelope_generator = self.envelope.get_generator(self._sample_rate, self._duration)
 
-    def save(self, filename):
-        """Save the audio to disk as a standard RIFF Wave.
-
-        A standard RIFF wave header will be added to the raw PCM
-        audio data when it is saved to disk.
-
-        :Parameters:
-            `filename` : str
-                The file name to save as.
-
-        """
-        self.seek(0)
-        data = self.get_audio_data(self._max_offset).get_string_data()
-        header = struct.pack('<4sI8sIHHIIHH4sI',
-                             b"RIFF",
-                             len(data) + 44 - 8,
-                             b"WAVEfmt ",
-                             16,                # Default for PCM
-                             1,                 # Default for PCM
-                             1,                 # Number of channels
-                             self._sample_rate,
-                             self._bytes_per_second,
-                             self._bytes_per_sample,
-                             self._sample_size,
-                             b"data",
-                             len(data))
-
-        with open(filename, "wb") as f:
-            f.write(header)
-            f.write(data)
-
 
 class Silence(SynthesisSource):
     """A silent waveform."""
@@ -293,6 +262,7 @@ class Sine(SynthesisSource):
         `sample_size` : int
             The bit precision. Must be either 8 or 16.
     """
+
     def __init__(self, duration, frequency=440, **kwargs):
         super(Sine, self).__init__(duration, **kwargs)
         self.frequency = frequency
@@ -328,10 +298,11 @@ class Triangle(SynthesisSource):
         `sample_size` : int
             The bit precision. Must be either 8 or 16.
     """
+
     def __init__(self, duration, frequency=440, **kwargs):
         super(Triangle, self).__init__(duration, **kwargs)
         self.frequency = frequency
-        
+
     def _generate_data(self, num_bytes):
         if self._bytes_per_sample == 1:
             samples = num_bytes
@@ -372,6 +343,7 @@ class Sawtooth(SynthesisSource):
         `sample_size` : int
             The bit precision. Must be either 8 or 16.
     """
+
     def __init__(self, duration, frequency=440, **kwargs):
         super(Sawtooth, self).__init__(duration, **kwargs)
         self.frequency = frequency
@@ -412,6 +384,7 @@ class Square(SynthesisSource):
         `sample_size` : int
             The bit precision. Must be either 8 or 16.
     """
+
     def __init__(self, duration, frequency=440, **kwargs):
 
         super(Square, self).__init__(duration, **kwargs)
@@ -463,6 +436,7 @@ class FM(SynthesisSource):
         `sample_size` : int
             The bit precision. Must be either 8 or 16.
     """
+
     def __init__(self, duration, carrier=440, modulator=440, mod_index=1, **kwargs):
         super(FM, self).__init__(duration, **kwargs)
         self.carrier = carrier
@@ -491,52 +465,4 @@ class FM(SynthesisSource):
             increment = i / sample_rate
             data[i] = int(sin(car_step * increment + mod_index * sin(mod_step * increment))
                           * amplitude * next(envelope) + bias)
-        return data
-
-
-class Digitar(SynthesisSource):
-    """A guitar-like waveform.
-
-    A guitar-like waveform, based on the Karplus-Strong algorithm.
-    The sound is similar to a plucked guitar string. The resulting
-    sound decays over time, and so the actual length will vary
-    depending on the frequency. Lower frequencies require a longer
-    `length` parameter to prevent cutting off abruptly.
-
-    :Parameters:
-        `duration` : float
-            The length, in seconds, of audio that you wish to generate.
-        `frequency` : int
-            The frequency, in Hz of the waveform you wish to produce.
-        `decay` : float
-            The decay rate of the effect. Defaults to 0.996.
-        `sample_rate` : int
-            Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
-    """
-    def __init__(self, duration, frequency=440, decay=0.996, **kwargs):
-        super(Digitar, self).__init__(duration, **kwargs)
-        self.frequency = frequency
-        self.decay = decay
-        self.period = int(self._sample_rate / self.frequency)
-
-    def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            bias = 127
-            amplitude = 127
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            bias = 0
-            amplitude = 32767
-            data = (ctypes.c_short * samples)()
-        random.seed(10)
-        period = self.period
-        ring_buffer = deque([random.uniform(-1, 1) for _ in range(period)], maxlen=period)
-        decay = self.decay
-        for i in range(samples):
-            data[i] = int(ring_buffer[0] * amplitude + bias)
-            ring_buffer.append(decay * (ring_buffer[0] + ring_buffer[1]) / 2)
         return data

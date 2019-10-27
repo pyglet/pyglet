@@ -1,4 +1,3 @@
-from builtins import str, isinstance
 import pytest
 from tests import mock
 import time

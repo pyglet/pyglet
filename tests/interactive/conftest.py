@@ -1,7 +1,6 @@
 """
 pytest hooks for interactive test cases.
 """
-from __future__ import absolute_import
 import inspect
 import pytest
 

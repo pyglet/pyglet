@@ -84,29 +84,32 @@ The default path is ``['.']``.  If you modify the path, you must call
 
 .. versionadded:: 1.1
 """
-from future import standard_library
-
-standard_library.install_aliases()
-from builtins import object, str
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os
-import weakref
 import sys
+import weakref
 import zipfile
 
+from io import BytesIO
+
 import pyglet
-from pyglet.compat import BytesIO
 
 
 class ResourceNotFoundException(Exception):
     """The named resource was not found on the search path."""
 
     def __init__(self, name):
-        message = ('Resource "%s" was not found on the path.  '
-                   'Ensure that the filename has the correct captialisation.') % name
+        message = ("Resource '{}' was not found on the path.  "
+                   "Ensure that the filename has the correct captialisation.".format(name))
+        Exception.__init__(self, message)
+
+
+class UndetectableShaderType(Exception):
+    """The type of the Shader source could not be identified."""
+
+    def __init__(self, name):
+        message = ("The Shader type of '{}' could not be determined.  "
+                   "Ensure that your source file has a standard extension, "
+                   "or provide a valid 'shader_type' parameter.".format(name))
         Exception.__init__(self, message)
 
 
@@ -192,7 +195,7 @@ def get_settings_path(name):
         return os.path.expanduser('~/.%s' % name)
 
 
-class Location(object):
+class Location:
     """Abstract resource location.
 
     Given a location, a file can be loaded from that location with the `open`
@@ -221,14 +224,14 @@ class FileLocation(Location):
     """Location on the filesystem.
     """
 
-    def __init__(self, path):
+    def __init__(self, filepath):
         """Create a location given a relative or absolute path.
 
         :Parameters:
-            `path` : str
+            `filepath` : str
                 Path on the filesystem.
         """
-        self.path = path
+        self.path = filepath
 
     def open(self, filename, mode='rb'):
         return open(os.path.join(self.path, filename), mode)
@@ -282,12 +285,13 @@ class URLLocation(Location):
         self.base = base_url
 
     def open(self, filename, mode='rb'):
-        import urllib.parse, urllib.request
+        import urllib.parse
+        import urllib.request
         url = urllib.parse.urljoin(self.base, filename)
         return urllib.request.urlopen(url)
 
 
-class Loader(object):
+class Loader:
     """Load program resource files from disk.
 
     The loader contains a search path which can include filesystem
@@ -511,12 +515,12 @@ class Loader(object):
             file.close()
 
         if not atlas:
-            return img.get_texture(True)
+            return img.get_texture()
 
         # find an atlas suitable for the image
         bin = self._get_texture_atlas_bin(img.width, img.height)
         if bin is None:
-            return img.get_texture(True)
+            return img.get_texture()
 
         return bin.add(img)
 
@@ -527,7 +531,7 @@ class Loader(object):
         """
         # Large images are not placed in an atlas
         max_texture_size = pyglet.image.get_max_texture_size()
-        max_size = min(1024, max_texture_size / 2)
+        max_size = min(2048, max_texture_size)
         if width > max_size or height > max_size:
             return None
 
@@ -756,8 +760,39 @@ class Loader(object):
         :rtype: `UnformattedDocument`
         """
         self._require_index()
-        file = self.file(name)
-        return pyglet.text.load(name, file, 'text/plain')
+        fileobj = self.file(name)
+        return pyglet.text.load(name, fileobj, 'text/plain')
+
+    def shader(self, name, shader_type=None):
+        """Load a Shader object.
+
+        :Parameters:
+            `name` : str
+                Filename of the Shader source to load.
+            `shader_type` : str
+                A hint for the type of shader, such as 'vertex', 'fragment', etc.
+                Not required if your shader has a standard file extension.
+
+        :rtype: A compiled `Shader` object.
+        """
+        # https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
+        shader_extensions = {'vert': "vertex",
+                             'geom': "geometry",
+                             'frag': "fragment"}
+        fileobj = self.file(name, 'r')
+        source_string = fileobj.read()
+
+        if not shader_type:
+            try:
+                _, extension = os.path.splitext(name)
+                shader_type = shader_extensions.get(extension.strip("."))
+            except KeyError:
+                raise UndetectableShaderType(name=name)
+
+        if shader_type not in shader_extensions.values():
+            raise UndetectableShaderType(name=name)
+
+        return pyglet.graphics.shader.Shader(source_string, shader_type)
 
     def get_cached_texture_names(self):
         """Get the names of textures currently cached.
@@ -804,6 +839,7 @@ texture = _default_loader.texture
 html = _default_loader.html
 attributed = _default_loader.attributed
 text = _default_loader.text
+shader = _default_loader.shader
 get_cached_texture_names = _default_loader.get_cached_texture_names
 get_cached_image_names = _default_loader.get_cached_image_names
 get_cached_animation_names = _default_loader.get_cached_animation_names

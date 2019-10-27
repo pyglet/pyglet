@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import print_function
-from __future__ import absolute_import
-
 import weakref
 
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
@@ -58,7 +55,7 @@ class PulseAudioDriver(AbstractAudioDriver):
         self.lock = self.mainloop
         self.context = None
 
-        self._players = pyglet.app.WeakSet()
+        self._players = weakref.WeakSet()
         self._listener = PulseAudioListener(self)
 
     def __del__(self):

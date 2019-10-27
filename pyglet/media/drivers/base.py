@@ -34,8 +34,9 @@
 # ----------------------------------------------------------------------------
 from abc import ABCMeta, abstractmethod
 import math
-from future.utils import with_metaclass
 import weakref
+
+from pyglet.compat import with_metaclass
 
 
 class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):

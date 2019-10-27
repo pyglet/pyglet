@@ -46,11 +46,6 @@ allocation.  The buffer is never resized smaller.
 The allocator maintains references to free space only; it is the caller's
 responsibility to maintain the allocated regions.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import str
-from builtins import zip
-from builtins import object
 
 # Common cases:
 # -regions will be the same size (instances of same object, e.g. sprites)
@@ -89,7 +84,7 @@ class AllocatorMemoryException(Exception):
         self.requested_capacity = requested_capacity
 
 
-class Allocator(object):
+class Allocator:
     """Buffer space allocation implementation."""
 
     __slots__ = 'capacity', 'starts', 'sizes'

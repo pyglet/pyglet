@@ -32,17 +32,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
-
-'''Software decoder for S3TC compressed texture (i.e., DDS).
+"""Software decoder for S3TC compressed texture (i.e., DDS).
 
 http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture_compression_s3tc.txt
-'''
-from __future__ import division
-from builtins import range
-
-import ctypes
+"""
 import re
+import ctypes
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -50,6 +45,7 @@ from pyglet.image import AbstractImage, Texture
 
 split_8byte = re.compile('.' * 8, flags=re.DOTALL)
 split_16byte = re.compile('.' * 16, flags=re.DOTALL)
+
 
 class PackedImageData(AbstractImage):
     _current_texture = None
@@ -66,8 +62,8 @@ class PackedImageData(AbstractImage):
             i = 0
             out = (ctypes.c_ubyte * (self.width * self.height * 3))()
             for c in self.data:
-                out[i+2] = (c & 0x1f) << 3
-                out[i+1] = (c & 0x7e0) >> 3
+                out[i + 2] = (c & 0x1f) << 3
+                out[i + 1] = (c & 0x7e0) >> 3
                 out[i] = (c & 0xf800) >> 8
                 i += 3
             self.data = out
@@ -77,8 +73,7 @@ class PackedImageData(AbstractImage):
         if self._current_texture:
             return self._current_texture
 
-        texture = Texture.create_for_size(
-            GL_TEXTURE_2D, self.width, self.height)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
         glBindTexture(texture.target, texture.id)
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 
@@ -86,12 +81,12 @@ class PackedImageData(AbstractImage):
             self.unpack()
 
         glTexImage2D(texture.target, texture.level,
-            self.format, self.width, self.height, 0,
-            self.format, self.packed_format, self.data)
+                     self.format, self.width, self.height, 0,
+                     self.format, self.packed_format, self.data)
 
         self._current_texture = texture
         return texture
-    
+
     texture = property(_get_texture)
 
     def get_texture(self, rectangle=False, force_rectangle=False):
@@ -99,6 +94,7 @@ class PackedImageData(AbstractImage):
            See the documentation of the method 'AbstractImage.get_texture' for
            a more detailed documentation of the method. '''
         return self._get_texture()
+
 
 def decode_dxt1_rgb(data, width, height):
     # Decode to 16-bit RGB UNSIGNED_SHORT_5_6_5
@@ -154,8 +150,9 @@ def decode_dxt1_rgb(data, width, height):
         advance_row = (image_offset + 4) % width == 0
         image_offset += width * 3 * advance_row + 4
 
-    return PackedImageData(width, height, 
-        GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
+    return PackedImageData(width, height,
+                           GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
+
 
 def decode_dxt1_rgba(data, width, height):
     # Decode to GL_RGBA
@@ -205,9 +202,9 @@ def decode_dxt1_rgba(data, width, height):
                         b = (b0 + b1) // 2
 
                 out[i] = b << 3
-                out[i+1] = g << 2
-                out[i+2] = r << 3
-                out[i+3] = a << 4
+                out[i + 1] = g << 2
+                out[i + 2] = r << 3
+                out[i + 3] = a << 4
 
                 bits >>= 2
                 i += 4
@@ -228,13 +225,13 @@ def decode_dxt3(data, width, height):
     # Read 16 bytes at a time
     image_offset = 0
     for (a0, a1, a2, a3, a4, a5, a6, a7,
-         c0_lo, c0_hi, c1_lo, c1_hi, 
+         c0_lo, c0_hi, c1_lo, c1_hi,
          b0, b1, b2, b3) in split_16byte.findall(data):
         color0 = ord(c0_lo) | ord(c0_hi) << 8
         color1 = ord(c1_lo) | ord(c1_hi) << 8
         bits = ord(b0) | ord(b1) << 8 | ord(b2) << 16 | ord(b3) << 24
         alpha = ord(a0) | ord(a1) << 8 | ord(a2) << 16 | ord(a3) << 24 | \
-            ord(a4) << 32 | ord(a5) << 40 | ord(a6) << 48 | ord(a7) << 56
+                ord(a4) << 32 | ord(a5) << 40 | ord(a6) << 48 | ord(a7) << 56
 
         r0 = color0 & 0x1f
         g0 = (color0 & 0x7e0) >> 5
@@ -272,9 +269,9 @@ def decode_dxt3(data, width, height):
                         b = (b0 + b1) // 2
 
                 out[i] = b << 3
-                out[i+1] = g << 2
-                out[i+2] = r << 3
-                out[i+3] = a << 4
+                out[i + 1] = g << 2
+                out[i + 2] = r << 3
+                out[i + 3] = a << 4
 
                 bits >>= 2
                 alpha >>= 4
@@ -287,6 +284,7 @@ def decode_dxt3(data, width, height):
 
     return PackedImageData(width, height, GL_RGBA, GL_UNSIGNED_BYTE, out)
 
+
 def decode_dxt5(data, width, height):
     # Decode to GL_RGBA
     out = (ctypes.c_ubyte * (width * height * 4))()
@@ -294,8 +292,8 @@ def decode_dxt5(data, width, height):
 
     # Read 16 bytes at a time
     image_offset = 0
-    for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5, 
-         c0_lo, c0_hi, c1_lo, c1_hi, 
+    for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5,
+         c0_lo, c0_hi, c1_lo, c1_hi,
          b0, b1, b2, b3) in split_16byte.findall(data):
         color0 = ord(c0_lo) | ord(c0_hi) << 8
         color1 = ord(c1_lo) | ord(c1_hi) << 8
@@ -303,7 +301,7 @@ def decode_dxt5(data, width, height):
         alpha1 = ord(alpha1)
         bits = ord(b0) | ord(b1) << 8 | ord(b2) << 16 | ord(b3) << 24
         abits = ord(ab0) | ord(ab1) << 8 | ord(ab2) << 16 | ord(ab3) << 24 | \
-            ord(ab4) << 32 | ord(ab5) << 40
+                ord(ab4) << 32 | ord(ab5) << 40
 
         r0 = color0 & 0x1f
         g0 = (color0 & 0x7e0) >> 5
@@ -339,7 +337,7 @@ def decode_dxt5(data, width, height):
                         r = (r0 + r1) / 2
                         g = (g0 + g1) / 2
                         b = (b0 + b1) / 2
-                
+
                 if acode == 0:
                     a = alpha0
                 elif acode == 1:
@@ -374,9 +372,9 @@ def decode_dxt5(data, width, height):
                         a = 255
 
                 out[i] = b << 3
-                out[i+1] = g << 2
-                out[i+2] = r << 3
-                out[i+3] = a
+                out[i + 1] = g << 2
+                out[i + 2] = r << 3
+                out[i + 3] = a
 
                 bits >>= 2
                 abits >>= 3

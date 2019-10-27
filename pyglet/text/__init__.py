@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
 
 """Text formatting, layout and display.
 
@@ -73,10 +72,6 @@ creating scrollable layouts.
 
 .. versionadded:: 1.1
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import os.path
 
@@ -89,7 +84,7 @@ class DocumentDecodeException(Exception):
     pass
 
 
-class DocumentDecoder(object):
+class DocumentDecoder:
     """Abstract document decoder.
     """
 
@@ -305,8 +300,7 @@ class DocumentLabel(layout.TextLayout):
 
     @color.setter
     def color(self, color):
-        self.document.set_style(0, len(self.document.text),
-                                {'color': color})
+        self.document.set_style(0, len(self.document.text), {'color': color})
 
     @property
     def font_name(self):
@@ -321,8 +315,7 @@ class DocumentLabel(layout.TextLayout):
 
     @font_name.setter
     def font_name(self, font_name):
-        self.document.set_style(0, len(self.document.text),
-                                {'font_name': font_name})
+        self.document.set_style(0, len(self.document.text), {'font_name': font_name})
 
     @property
     def font_size(self):

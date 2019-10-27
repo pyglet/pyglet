@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,14 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
-from __future__ import division
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from pyglet.input.base import Tablet, TabletCanvas
 from pyglet.input.base import TabletCursor, DeviceOpenException
 from pyglet.input.x11_xinput import XInputWindowEventDispatcher

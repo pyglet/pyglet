@@ -35,11 +35,6 @@
 
 """Use ffmpeg to decode audio and video media.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import range
-from builtins import object
-
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
                     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p,
                     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union,
@@ -59,7 +54,7 @@ from .ffmpeg_lib import *
 from . import MediaEncoder, MediaDecoder
 
 
-class FileInfo(object):
+class FileInfo:
     def __init__(self):
         self.n_streams = None
         self.start_time = None
@@ -74,7 +69,7 @@ class FileInfo(object):
         self.genre = ""
 
 
-class StreamVideoInfo(object):
+class StreamVideoInfo:
     def __init__(self, width, height, sample_aspect_num, sample_aspect_den,
                  frame_rate_num, frame_rate_den, codec_id):
         self.width = width
@@ -86,7 +81,7 @@ class StreamVideoInfo(object):
         self.codec_id = codec_id
 
 
-class StreamAudioInfo(object):
+class StreamAudioInfo:
     def __init__(self, sample_format, sample_rate, channels):
         self.sample_format = sample_format
         self.sample_rate = sample_rate
@@ -423,7 +418,7 @@ def timestamp_to_ffmpeg(timestamp):
     return int(timestamp * 1000000)
 
 
-class _Packet(object):
+class _Packet:
     def __init__(self, packet, timestamp):
         self.packet = AVPacket()
         ffmpeg_transfer_packet(byref(self.packet), packet)

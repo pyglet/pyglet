@@ -61,7 +61,7 @@ by the application; see the documentation for :class:`Screen`.
 
 import sys
 
-from pyglet.app import WeakSet
+from weakref import WeakSet
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run

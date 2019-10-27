@@ -32,11 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id$
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import str
-
 import ctypes
 from collections import namedtuple
 import weakref
@@ -65,7 +60,7 @@ class OpenALException(MediaException):
                                                           self.message)
 
 
-class OpenALObject(object):
+class OpenALObject:
     """Base class for OpenAL objects."""
     @classmethod
     def _check_error(cls, message=None):

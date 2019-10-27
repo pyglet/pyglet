@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import object
 from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
@@ -91,7 +90,7 @@ def getSymbol(nsevent):
     return None
 
 
-class PygletView_Implementation(object):
+class PygletView_Implementation:
     PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
 
     @PygletView.method(b'@'+cocoapy.NSRectEncoding+cocoapy.PyObjectEncoding)

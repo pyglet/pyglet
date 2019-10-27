@@ -33,11 +33,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
-
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import object
 import struct
 
 import pyglet
@@ -67,7 +62,7 @@ if _debug_win32:
                         c_void_p())
         return msg.value
     
-    class DebugLibrary(object):
+    class DebugLibrary:
         def __init__(self, lib):
             self.lib = lib
 

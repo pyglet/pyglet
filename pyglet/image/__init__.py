@@ -140,17 +140,19 @@ from io import open
 import re
 import weakref
 
+from io import BytesIO
 from ctypes import *
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.window import *
-from pyglet.compat import asbytes, bytes_type, BytesIO
+from pyglet.compat import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
 from .codecs import get_animation_decoders, get_decoders, get_encoders
 from .animation import Animation, AnimationFrame
+from .imagebuffer import *
 from . import atlas
 
 
@@ -198,8 +200,7 @@ def load(filename, file=None, decoder=None):
                     image = decoder.decode(file, filename)
                     return image
                 except ImageDecodeException as e:
-                    if (not first_exception or
-                            first_exception.exception_priority < e.exception_priority):
+                    if not first_exception or first_exception.exception_priority < e.exception_priority:
                         first_exception = e
                     file.seek(0)
 
@@ -281,25 +282,17 @@ def get_max_texture_size():
     return size.value
 
 
+def get_texture_array_max_depth():
+    """Query the maximum TextureArray depth"""
+    max_layers = c_int()
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
+    return max_layers.value
+
+
 def _color_as_bytes(color):
-    if sys.version.startswith('2'):
-        return '%c%c%c%c' % color
-    else:
-        if len(color) != 4:
-            raise TypeError("color is expected to have 4 components")
-        return bytes(color)
-
-
-def _nearest_pow2(v):
-    # From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-    # Credit: Sean Anderson
-    v -= 1
-    v |= v >> 1
-    v |= v >> 2
-    v |= v >> 4
-    v |= v >> 8
-    v |= v >> 16
-    return v + 1
+    if len(color) != 4:
+        raise TypeError("color is expected to have 4 components")
+    return bytes(color)
 
 
 def _is_pow2(v):
@@ -307,7 +300,7 @@ def _is_pow2(v):
     return (v & (v - 1)) == 0
 
 
-class ImagePattern(object):
+class ImagePattern:
     """Abstract image creation class."""
 
     def create_image(self, width, height):
@@ -373,7 +366,7 @@ class CheckerImagePattern(ImagePattern):
         return ImageData(width, height, 'RGBA', data)
 
 
-class AbstractImage(object):
+class AbstractImage:
     """Abstract class representing an image.
 
     :Parameters:
@@ -389,14 +382,12 @@ class AbstractImage(object):
     anchor_x = 0
     anchor_y = 0
 
-    _is_rectangle = False
-
     def __init__(self, width, height):
         self.width = width
         self.height = height
 
     def __repr__(self):
-        return '<%s %dx%d>' % (self.__class__.__name__, self.width, self.height)
+        return "{}(size={}x{})".format(self.__class__.__name__, self.width, self.height)
 
     def get_image_data(self):
         """Get an ImageData view of this image.  
@@ -410,7 +401,7 @@ class AbstractImage(object):
         """
         raise ImageException('Cannot retrieve image data for %r' % self)
 
-    def get_texture(self, rectangle=False, force_rectangle=False):
+    def get_texture(self, rectangle=False):
         """A :py:class:`~pyglet.image.Texture` view of this image.  
 
         By default, textures are created with dimensions that are powers of
@@ -427,21 +418,14 @@ class AbstractImage(object):
         dimensions, the `rectangle` parameter is ignored.
 
         Examine `Texture.target` to determine if the returned texture is a
-        rectangle (``GL_TEXTURE_RECTANGLE_ARB`` or
-        ``GL_TEXTURE_RECTANGLE_NV``) or not (``GL_TEXTURE_2D``).
+        rectangle (``GL_TEXTURE_RECTANGLE``) or not (``GL_TEXTURE_2D``).
 
-        If the `force_rectangle` parameter is ``True``, one of these
-        extensions must be present, and the returned texture always
-        has target ``GL_TEXTURE_RECTANGLE_ARB`` or ``GL_TEXTURE_RECTANGLE_NV``.
-        
         Changes to the returned instance may or may not be reflected in this
         image.
 
         :Parameters:
             `rectangle` : bool
                 True if the texture can be created as a rectangle.
-            `force_rectangle` : bool
-                True if the texture must be created as a rectangle.
 
                 .. versionadded:: 1.1.4.
         :rtype: :py:class:`~pyglet.image.Texture`
@@ -509,8 +493,7 @@ class AbstractImage(object):
                     file.seek(0)
 
             if not first_exception:
-                raise ImageEncodeException(
-                    'No image encoders are available')
+                raise ImageEncodeException('No image encoders are available')
             raise first_exception
 
     def blit(self, x, y, z=0):
@@ -545,7 +528,7 @@ class AbstractImage(object):
         raise ImageException('Cannot blit %r to a texture.' % self)
 
 
-class AbstractImageSequence(object):
+class AbstractImageSequence:
     """Abstract sequence of images.
 
     The sequence is useful for storing image animations or slices of a volume.
@@ -668,7 +651,7 @@ class ImageData(AbstractImage):
     _current_texture = None
     _current_mipmap_texture = None
 
-    def __init__(self, width, height, format, data, pitch=None):
+    def __init__(self, width, height, fmt, data, pitch=None):
         """Initialise image data.
 
         :Parameters:
@@ -676,7 +659,7 @@ class ImageData(AbstractImage):
                 Width of image data
             `height` : int
                 Height of image data
-            `format` : str
+            `fmt` : str
                 A valid format string, such as 'RGB', 'RGBA', 'ARGB', etc.
             `data` : sequence
                 String or array/list of bytes giving the decoded data.
@@ -688,11 +671,10 @@ class ImageData(AbstractImage):
         """
         super(ImageData, self).__init__(width, height)
 
-        self._current_format = self._desired_format = format.upper()
+        self._current_format = self._desired_format = fmt.upper()
         self._current_data = data
-        if not pitch:
-            pitch = width * len(format)
-        self._current_pitch = self.pitch = pitch
+        self.pitch = pitch or width * len(fmt)
+        self._current_pitch = self.pitch
         self.mipmap_images = []
 
     def __getstate__(self):
@@ -779,12 +761,10 @@ class ImageData(AbstractImage):
         """
 
         if level == 0:
-            raise ImageException(
-                'Cannot set mipmap image at level 0 (it is this image)')
+            raise ImageException('Cannot set mipmap image at level 0 (it is this image)')
 
         if not _is_pow2(self.width) or not _is_pow2(self.height):
-            raise ImageException(
-                'Image dimensions must be powers of 2 to use mipmaps.')
+            raise ImageException('Image dimensions must be powers of 2 to use mipmaps.')
 
         # Check dimensions of mipmap
         width, height = self.width, self.height
@@ -792,14 +772,13 @@ class ImageData(AbstractImage):
             width >>= 1
             height >>= 1
         if width != image.width or height != image.height:
-            raise ImageException(
-                'Mipmap image has wrong dimensions for level %d' % level)
+            raise ImageException('Mipmap image has wrong dimensions for level %d' % level)
 
         # Extend mipmap_images list to required level
         self.mipmap_images += [None] * (level - len(self.mipmap_images))
         self.mipmap_images[level - 1] = image
 
-    def create_texture(self, cls, rectangle=False, force_rectangle=False):
+    def create_texture(self, cls, rectangle=False):
         """Create a texture containing this image.
 
         If the image's dimensions are not powers of 2, a TextureRegion of
@@ -814,30 +793,23 @@ class ImageData(AbstractImage):
                 `AbstractImage.get_texture`.
 
                 .. versionadded:: 1.1
-            `force_rectangle` : bool
-                ``True`` if a rectangle must be created; see
-                `AbstractImage.get_texture`.
-
-                .. versionadded:: 1.1.4
 
         :rtype: cls or cls.region_class
         """
-        internalformat = self._get_internalformat(self.format)
-        texture = cls.create(self.width, self.height, internalformat,
-                             rectangle, force_rectangle)
+        target = GL_TEXTURE_RECTANGLE if rectangle else GL_TEXTURE_2D
+        internalformat = self._get_internalformat(self._desired_format)
+        texture = cls.create(self.width, self.height, target, internalformat)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        self.blit_to_texture(texture.target, texture.level,
-                             self.anchor_x, self.anchor_y, 0, None)
+        self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, None)
 
         return texture
 
-    def get_texture(self, rectangle=False, force_rectangle=False):
-        if (not self._current_texture or
-                (not self._current_texture._is_rectangle and force_rectangle)):
-            self._current_texture = self.create_texture(Texture, rectangle, force_rectangle)
+    def get_texture(self, rectangle=False):
+        if not self._current_texture or (not self._current_texture.target == GL_TEXTURE_RECTANGLE and rectangle):
+            self._current_texture = self.create_texture(Texture, rectangle)
         return self._current_texture
 
     def get_mipmapped_texture(self):
@@ -857,10 +829,9 @@ class ImageData(AbstractImage):
             return self._current_mipmap_texture
 
         if not _is_pow2(self.width) or not _is_pow2(self.height):
-            raise ImageException(
-                'Image dimensions must be powers of 2 to use mipmaps.')
+            raise ImageException('Image dimensions must be powers of 2 to use mipmaps.')
 
-        texture = Texture.create_for_size(GL_TEXTURE_2D, self.width, self.height)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -871,19 +842,16 @@ class ImageData(AbstractImage):
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
 
         if self.mipmap_images:
-            self.blit_to_texture(texture.target, texture.level,
-                                 self.anchor_x, self.anchor_y, 0, internalformat)
+            self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
             level = 0
             for image in self.mipmap_images:
                 level += 1
                 if image:
-                    image.blit_to_texture(texture.target, level,
-                                          self.anchor_x, self.anchor_y, 0, internalformat)
+                    image.blit_to_texture(texture.target, level, self.anchor_x, self.anchor_y, 0, internalformat)
                     # TODO: should set base and max mipmap level if some mipmaps are missing.
         else:
             glTexParameteri(texture.target, GL_GENERATE_MIPMAP, GL_TRUE)
-            self.blit_to_texture(texture.target, texture.level,
-                                 self.anchor_x, self.anchor_y, 0, internalformat)
+            self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
 
         self._current_mipmap_texture = texture
         return texture
@@ -926,10 +894,9 @@ class ImageData(AbstractImage):
 
         # Determine pixel format from format string
         matrix = None
-        format, type = self._get_gl_format_and_type(data_format)
-        if format is None:
-            if (len(data_format) in (3, 4) and
-                    gl_info.have_extension('GL_ARB_imaging')):
+        fmt, gl_type = self._get_gl_format_and_type(data_format)
+        if fmt is None:
+            if len(data_format) in (3, 4) and gl_info.have_extension('GL_ARB_imaging'):
                 # Construct a color matrix to convert to GL_RGBA
                 def component_column(component):
                     try:
@@ -944,10 +911,9 @@ class ImageData(AbstractImage):
                           component_column(lookup_format[1]) +
                           component_column(lookup_format[2]) +
                           component_column(lookup_format[3]))
-                format = {
-                    3: GL_RGB,
-                    4: GL_RGBA}.get(len(data_format))
-                type = GL_UNSIGNED_BYTE
+                fmt = {3: GL_RGB,
+                       4: GL_RGBA}.get(len(data_format))
+                gl_type = GL_UNSIGNED_BYTE
 
                 glMatrixMode(GL_COLOR)
                 glPushMatrix()
@@ -959,66 +925,58 @@ class ImageData(AbstractImage):
                     2: 'LA',
                     3: 'RGB',
                     4: 'RGBA'}.get(len(data_format))
-                format, type = self._get_gl_format_and_type(data_format)
+                fmt, gl_type = self._get_gl_format_and_type(data_format)
 
-        # Workaround: don't use GL_UNPACK_ROW_LENGTH
-        if gl.current_context._workaround_unpack_row_length:
-            data_pitch = self.width * len(data_format)
-
-        # Get data in required format (hopefully will be the same format it's
-        # already in, unless that's an obscure format, upside-down or the
-        # driver is old).
+        # Get data in required format (hopefully will be the same format it's already
+        # in, unless that's an obscure format, upside-down or the driver is old).
         data = self._convert(data_format, data_pitch)
 
         if data_pitch & 0x1:
-            alignment = 1
+            align = 1
         elif data_pitch & 0x2:
-            alignment = 2
+            align = 2
         else:
-            alignment = 4
+            align = 4
         row_length = data_pitch // len(data_format)
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, alignment)
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, align)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, row_length)
         self._apply_region_unpack()
 
-        if target == GL_TEXTURE_3D:
+        if target == GL_TEXTURE_3D or target == GL_TEXTURE_2D_ARRAY:
             assert not internalformat
             glTexSubImage3D(target, level,
                             x, y, z,
                             self.width, self.height, 1,
-                            format, type,
+                            fmt, gl_type,
                             data)
         elif internalformat:
             glTexImage2D(target, level,
                          internalformat,
                          self.width, self.height,
                          0,
-                         format, type,
+                         fmt, gl_type,
                          data)
         else:
             glTexSubImage2D(target, level,
                             x, y,
                             self.width, self.height,
-                            format, type,
+                            fmt, gl_type,
                             data)
-        glPopClientAttrib()
 
-        if matrix:
-            glPopMatrix()
-            glMatrixMode(GL_MODELVIEW)
-
-        # Flush image upload before data get GC'd.
+        # Unset GL_UNPACK_ROW_LENGTH:
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
+        # Flush image upload before data get GC'd:
         glFlush()
 
     def _apply_region_unpack(self):
         pass
 
-    def _convert(self, format, pitch):
+    def _convert(self, fmt, pitch):
         """Return data in the desired format; does not alter this instance's
         current format or pitch.
         """
-        if format == self._current_format and pitch == self._current_pitch:
+        if fmt == self._current_format and pitch == self._current_pitch:
             if type(self._current_data) is str:
                 return asbytes(self._current_data)
             return self._current_data
@@ -1028,11 +986,10 @@ class ImageData(AbstractImage):
         current_pitch = self._current_pitch
         current_format = self._current_format
         sign_pitch = current_pitch // abs(current_pitch)
-        if format != self._current_format:
-            # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to
-            # ARGB
+        if fmt != self._current_format:
+            # Create replacement string, e.g. r'\4\1\2\3' to convert RGBA to ARGB
             repl = asbytes('')
-            for c in format:
+            for c in fmt:
                 try:
                     idx = current_format.index(c) + 1
                 except ValueError:
@@ -1048,14 +1005,12 @@ class ImageData(AbstractImage):
             elif len(current_format) == 4:
                 swap_pattern = self._swap4_pattern
             else:
-                raise ImageException(
-                    'Current image format is wider than 32 bits.')
+                raise ImageException('Current image format is wider than 32 bits.')
 
             packed_pitch = self.width * len(current_format)
             if abs(self._current_pitch) != packed_pitch:
                 # Pitch is wider than pixel data, need to go row-by-row.
-                rows = re.findall(
-                    asbytes('.') * abs(self._current_pitch), data, re.DOTALL)
+                rows = re.findall(asbytes('.') * abs(self._current_pitch), data, re.DOTALL)
                 rows = [swap_pattern.sub(repl, r[:packed_pitch]) for r in rows]
                 data = asbytes('').join(rows)
             else:
@@ -1063,19 +1018,17 @@ class ImageData(AbstractImage):
                 data = swap_pattern.sub(repl, data)
 
             # After conversion, rows will always be tightly packed
-            current_pitch = sign_pitch * (len(format) * self.width)
+            current_pitch = sign_pitch * (len(fmt) * self.width)
 
         if pitch != current_pitch:
             diff = abs(current_pitch) - abs(pitch)
             if diff > 0:
                 # New pitch is shorter than old pitch, chop bytes off each row
-                pattern = re.compile(
-                    asbytes('(%s)%s' % ('.' * abs(pitch), '.' * diff)), re.DOTALL)
+                pattern = re.compile(asbytes('(%s)%s' % ('.' * abs(pitch), '.' * diff)), re.DOTALL)
                 data = pattern.sub(asbytes(r'\1'), data)
             elif diff < 0:
                 # New pitch is longer than old pitch, add '0' bytes to each row
-                pattern = re.compile(
-                    asbytes('(%s)' % ('.' * abs(current_pitch))), re.DOTALL)
+                pattern = re.compile(asbytes('(%s)' % ('.' * abs(current_pitch))), re.DOTALL)
                 pad = '.' * -diff
                 data = pattern.sub(asbytes(r'\1%s' % pad), data)
 
@@ -1088,58 +1041,60 @@ class ImageData(AbstractImage):
         return asbytes(data)
 
     def _ensure_string_data(self):
-        if type(self._current_data) is not bytes_type:
+        if type(self._current_data) is not bytes:
             buf = create_string_buffer(len(self._current_data))
             memmove(buf, self._current_data, len(self._current_data))
             self._current_data = buf.raw
 
-    def _get_gl_format_and_type(self, format):
-        if format == 'I':
+    @staticmethod
+    def _get_gl_format_and_type(fmt):
+        if fmt == 'I':
             return GL_LUMINANCE, GL_UNSIGNED_BYTE
-        elif format == 'L':
+        elif fmt == 'L':
             return GL_LUMINANCE, GL_UNSIGNED_BYTE
-        elif format == 'LA':
+        elif fmt == 'LA':
             return GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE
-        elif format == 'R':
+        elif fmt == 'R':
             return GL_RED, GL_UNSIGNED_BYTE
-        elif format == 'G':
+        elif fmt == 'G':
             return GL_GREEN, GL_UNSIGNED_BYTE
-        elif format == 'B':
+        elif fmt == 'B':
             return GL_BLUE, GL_UNSIGNED_BYTE
-        elif format == 'A':
+        elif fmt == 'A':
             return GL_ALPHA, GL_UNSIGNED_BYTE
-        elif format == 'RGB':
+        elif fmt == 'RGB':
             return GL_RGB, GL_UNSIGNED_BYTE
-        elif format == 'RGBA':
+        elif fmt == 'RGBA':
             return GL_RGBA, GL_UNSIGNED_BYTE
-        elif (format == 'ARGB' and
-                  gl_info.have_extension('GL_EXT_bgra') and
-                  gl_info.have_extension('GL_APPLE_packed_pixels')):
+        elif (fmt == 'ARGB' and
+              gl_info.have_extension('GL_EXT_bgra') and
+              gl_info.have_extension('GL_APPLE_packed_pixels')):
             return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
-        elif (format == 'ABGR' and
-                  gl_info.have_extension('GL_EXT_abgr')):
+        elif (fmt == 'ABGR' and
+              gl_info.have_extension('GL_EXT_abgr')):
             return GL_ABGR_EXT, GL_UNSIGNED_BYTE
-        elif (format == 'BGR' and
-                  gl_info.have_extension('GL_EXT_bgra')):
+        elif (fmt == 'BGR' and
+              gl_info.have_extension('GL_EXT_bgra')):
             return GL_BGR, GL_UNSIGNED_BYTE
-        elif (format == 'BGRA' and
-                  gl_info.have_extension('GL_EXT_bgra')):
+        elif (fmt == 'BGRA' and
+              gl_info.have_extension('GL_EXT_bgra')):
             return GL_BGRA, GL_UNSIGNED_BYTE
 
         return None, None
 
-    def _get_internalformat(self, format):
-        if len(format) == 4:
+    @staticmethod
+    def _get_internalformat(fmt):
+        if len(fmt) == 4:
             return GL_RGBA
-        elif len(format) == 3:
+        elif len(fmt) == 3:
             return GL_RGB
-        elif len(format) == 2:
+        elif len(fmt) == 2:
             return GL_LUMINANCE_ALPHA
-        elif format == 'A':
+        elif fmt == 'A':
             return GL_ALPHA
-        elif format == 'L':
+        elif fmt == 'L':
             return GL_LUMINANCE
-        elif format == 'I':
+        elif fmt == 'I':
             return GL_INTENSITY
         return GL_RGBA
 
@@ -1147,7 +1102,8 @@ class ImageData(AbstractImage):
 class ImageDataRegion(ImageData):
     def __init__(self, x, y, width, height, image_data):
         super(ImageDataRegion, self).__init__(width, height,
-                                              image_data._current_format, image_data._current_data,
+                                              image_data._current_format,
+                                              image_data._current_data,
                                               image_data._current_pitch)
         self.x = x
         self.y = y
@@ -1156,8 +1112,7 @@ class ImageDataRegion(ImageData):
         return {
             'width': self.width,
             'height': self.height,
-            '_current_data':
-                self.get_data(self._current_format, self._current_pitch),
+            '_current_data': self.get_data(self._current_format, self._current_pitch),
             '_current_format': self._current_format,
             '_desired_format': self._desired_format,
             '_current_pitch': self._current_pitch,
@@ -1270,15 +1225,15 @@ class CompressedImageData(AbstractImage):
         if not self._have_extension():
             raise ImageException('%s is required to decode %r' % (self.extension, self))
 
-    def get_texture(self, rectangle=False, force_rectangle=False):
-        if force_rectangle:
+    def get_texture(self, rectangle=False):
+        if rectangle:
             raise ImageException('Compressed texture rectangles not supported')
 
         if self._current_texture:
             return self._current_texture
 
-        texture = Texture.create_for_size(
-            GL_TEXTURE_2D, self.width, self.height)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
+
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -1311,7 +1266,8 @@ class CompressedImageData(AbstractImage):
             # just return a non-mipmapped texture.
             return self.get_texture()
 
-        texture = Texture.create_for_size(GL_TEXTURE_2D, self.width, self.height)
+        texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
+
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
@@ -1334,10 +1290,7 @@ class CompressedImageData(AbstractImage):
             width >>= 1
             height >>= 1
             level += 1
-            glCompressedTexImage2DARB(texture.target, level,
-                                      self.gl_format,
-                                      width, height, 0,
-                                      len(data), data)
+            glCompressedTexImage2DARB(texture.target, level, self.gl_format, width, height, 0, len(data), data)
 
         glFlush()
 
@@ -1384,7 +1337,7 @@ class Texture(AbstractImage):
     """
 
     region_class = None  # Set to TextureRegion after it's defined
-    tex_coords = (0., 0., 0., 1., 0., 0., 1., 1., 0., 0., 1., 0.)
+    tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     tex_coords_order = (0, 1, 2, 3)
     level = 0
     images = 1
@@ -1392,11 +1345,11 @@ class Texture(AbstractImage):
     default_min_filter = GL_LINEAR
     default_mag_filter = GL_LINEAR
 
-    def __init__(self, width, height, target, id):
+    def __init__(self, width, height, target, tex_id):
         super(Texture, self).__init__(width, height)
         self.target = target
-        self.id = id
-        self._context = gl.current_context
+        self.id = tex_id
+        self._context = pyglet.gl.current_context
 
     def __del__(self):
         try:
@@ -1405,118 +1358,22 @@ class Texture(AbstractImage):
             pass
 
     @classmethod
-    def create(cls, width, height, internalformat=GL_RGBA,
-               rectangle=False, force_rectangle=False, min_filter=None, mag_filter=None):
-        """Create an empty Texture.
+    def create(cls, width, height, target=GL_TEXTURE_2D, internalformat=GL_RGBA, min_filter=None, mag_filter=None):
+        """Create a Texture
 
-        If `rectangle` is ``False`` or the appropriate driver extensions are
-        not available, a larger texture than requested will be created, and
-        a :py:class:`~pyglet.image.TextureRegion` corresponding to the requested size will be
-        returned.
-
-        :Parameters:
-            `width` : int
-                Width of the texture.
-            `height` : int
-                Height of the texture.
-            `internalformat` : int
-                GL constant giving the internal format of the texture; for
-                example, ``GL_RGBA``.
-            `rectangle` : bool
-                ``True`` if a rectangular texture is permitted.  See
-                `AbstractImage.get_texture`.
-            `force_rectangle` : bool
-                ``True`` if a rectangular texture is required.  See
-                `AbstractImage.get_texture`.  
-                
-                .. versionadded:: 1.1.4.
-            `min_filter` : int
-                The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-            `mag_filter` : int
-                The magnification filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
-
-        :rtype: :py:class:`~pyglet.image.Texture`
-        
-        .. versionadded:: 1.1
-        """
-        min_filter = min_filter or cls.default_min_filter
-        mag_filter = mag_filter or cls.default_mag_filter
-        target = GL_TEXTURE_2D
-        if rectangle or force_rectangle:
-            if not force_rectangle and _is_pow2(width) and _is_pow2(height):
-                rectangle = False
-            elif gl_info.have_extension('GL_ARB_texture_rectangle'):
-                target = GL_TEXTURE_RECTANGLE_ARB
-                rectangle = True
-            elif gl_info.have_extension('GL_NV_texture_rectangle'):
-                target = GL_TEXTURE_RECTANGLE_NV
-                rectangle = True
-            else:
-                rectangle = False
-
-        if force_rectangle and not rectangle:
-            raise ImageException('Texture rectangle extensions not available')
-
-        if rectangle:
-            texture_width = width
-            texture_height = height
-        else:
-            texture_width = _nearest_pow2(width)
-            texture_height = _nearest_pow2(height)
-
-        id = GLuint()
-        glGenTextures(1, byref(id))
-        glBindTexture(target, id.value)
-        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
-        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
-
-        blank = (GLubyte * (texture_width * texture_height * 4))()
-        glTexImage2D(target, 0,
-                     internalformat,
-                     texture_width, texture_height,
-                     0,
-                     GL_RGBA, GL_UNSIGNED_BYTE,
-                     blank)
-
-        texture = cls(texture_width, texture_height, target, id.value)
-        texture.min_filter = min_filter
-        texture.mag_filter = mag_filter
-        if rectangle:
-            texture._is_rectangle = True
-            texture.tex_coords = (0., 0., 0.,
-                                  width, 0., 0.,
-                                  width, height, 0.,
-                                  0., height, 0.)
-
-        glFlush()
-
-        if texture_width == width and texture_height == height:
-            return texture
-
-        return texture.get_region(0, 0, width, height)
-
-    @classmethod
-    def create_for_size(cls, target, min_width, min_height,
-                        internalformat=None, min_filter=None, mag_filter=None):
-        """Create a Texture with dimensions at least min_width, min_height.
+        Create a Texture with the specified dimentions, target and format.
         On return, the texture will be bound.
 
         :Parameters:
+            `width` : int
+                Width of texture in pixels.
+            `height` : int
+                Height of texture in pixels.
             `target` : int
-                GL constant giving texture target to use, typically
-                ``GL_TEXTURE_2D``.
-            `min_width` : int
-                Minimum width of texture (may be increased to create a power
-                of 2).
-            `min_height` : int
-                Minimum height of texture (may be increased to create a power
-                of 2).
+                GL constant giving texture target to use, typically ``GL_TEXTURE_2D``.
             `internalformat` : int
-                GL constant giving internal format of texture; for example,
-                ``GL_RGBA``.  If unspecified, the texture will not be
-                initialised (only the texture name will be created on the
-                instance).   If specified, the image will be initialised
-                to this format with zero'd data.
+                GL constant giving internal format of texture; for example, ``GL_RGBA``.
+                If ``None``, the texture will be created but not initialized.
             `min_filter` : int
                 The minifaction filter used for this texture, commonly ``GL_LINEAR`` or ``GL_NEAREST``
             `mag_filter` : int
@@ -1524,22 +1381,12 @@ class Texture(AbstractImage):
 
         :rtype: :py:class:`~pyglet.image.Texture`
         """
-        if target not in (GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_RECTANGLE_ARB):
-            width = _nearest_pow2(min_width)
-            height = _nearest_pow2(min_height)
-            tex_coords = cls.tex_coords
-        else:
-            width = min_width
-            height = min_height
-            tex_coords = (0., 0., 0.,
-                          width, 0., 0.,
-                          width, height, 0.,
-                          0., height, 0.)
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
-        id = GLuint()
-        glGenTextures(1, byref(id))
-        glBindTexture(target, id.value)
+
+        tex_id = GLuint()
+        glGenTextures(1, byref(tex_id))
+        glBindTexture(target, tex_id.value)
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter)
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter)
 
@@ -1553,10 +1400,14 @@ class Texture(AbstractImage):
                          blank)
             glFlush()
 
-        texture = cls(width, height, target, id.value)
+        texture = cls(width, height, target, tex_id.value)
         texture.min_filter = min_filter
         texture.mag_filter = mag_filter
-        texture.tex_coords = tex_coords
+        if target is GL_TEXTURE_RECTANGLE:
+            texture.tex_coords = (0, 0, 0,  width, 0, 0,  width, height, 0,  0, height, 0)
+        else:
+            texture.tex_coords = cls.tex_coords
+
         return texture
 
     def get_image_data(self, z=0):
@@ -1575,52 +1426,40 @@ class Texture(AbstractImage):
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
-        format = 'RGBA'
+        fmt = 'RGBA'
         gl_format = GL_RGBA
 
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        buffer = (GLubyte * (self.width * self.height * self.images * len(format)))()
-        glGetTexImage(self.target, self.level,
-                      gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPopClientAttrib()
+        buffer = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
+        glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buffer)
 
-        data = ImageData(self.width, self.height, format, buffer)
+        data = ImageData(self.width, self.height, fmt, buffer)
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
 
-    def get_texture(self, rectangle=False, force_rectangle=False):
-        if force_rectangle and not self._is_rectangle:
-            raise ImageException('Texture is not a rectangle.')
+    def get_texture(self, rectangle=False):
+        if rectangle and not self.target == GL_TEXTURE_RECTANGLE:
+            raise ImageException('Texture is not a rectangle, it must be created as a rectangle.')
         return self
 
     # no implementation of blit_to_texture yet (could use aux buffer)
 
     def blit(self, x, y, z=0, width=None, height=None):
-        t = self.tex_coords
         x1 = x - self.anchor_x
         y1 = y - self.anchor_y
         x2 = x1 + (width is None and self.width or width)
         y2 = y1 + (height is None and self.height or height)
-        array = (GLfloat * 32)(
-            t[0], t[1], t[2], 1.,
-            x1, y1, z, 1.,
-            t[3], t[4], t[5], 1.,
-            x2, y1, z, 1.,
-            t[6], t[7], t[8], 1.,
-            x2, y2, z, 1.,
-            t[9], t[10], t[11], 1.,
-            x1, y2, z, 1.)
+        vertices = x1, y1, z,  x2, y1, z,  x2, y2, z,  x1, y2, z
 
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(self.target)
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
-        glInterleavedArrays(GL_T4F_V4F, 0, array)
-        glDrawArrays(GL_QUADS, 0, 4)
-        glPopClientAttrib()
-        glPopAttrib()
+
+        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                     ('v3f', vertices),
+                                     ('t3f', self.tex_coords))
+
+        glBindTexture(self.target, 0)
 
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
@@ -1664,18 +1503,14 @@ class Texture(AbstractImage):
             pass
         elif rotate == 90:
             bl, br, tr, tl = br, tr, tl, bl
-            transform.anchor_x, transform.anchor_y = \
-                transform.anchor_y, \
-                transform.width - transform.anchor_x
+            transform.anchor_x, transform.anchor_y = transform.anchor_y, transform.width - transform.anchor_x
         elif rotate == 180:
             bl, br, tr, tl = tr, tl, bl, br
             transform.anchor_x = transform.width - transform.anchor_x
             transform.anchor_y = transform.height - transform.anchor_y
         elif rotate == 270:
             bl, br, tr, tl = tl, bl, br, tr
-            transform.anchor_x, transform.anchor_y = \
-                transform.height - transform.anchor_y, \
-                transform.anchor_x
+            transform.anchor_x, transform.anchor_y = transform.height - transform.anchor_y, transform.anchor_x
         else:
             assert False, 'Only 90 degree rotations are supported.'
         if rotate in (90, 270):
@@ -1693,10 +1528,12 @@ class Texture(AbstractImage):
         order = self.tex_coords_order
         self.tex_coords_order = (order[bl], order[br], order[tr], order[tl])
 
+    def __repr__(self):
+        return "{}(id={}, size={}x{})".format(self.__class__.__name__, self.id, self.width, self.height)
+
 
 class TextureRegion(Texture):
-    """A rectangular region of a texture, presented as if it were
-    a separate texture.
+    """A rectangular region of a texture, presented as if it were a separate texture.
     """
 
     def __init__(self, x, y, z, width, height, owner):
@@ -1733,6 +1570,10 @@ class TextureRegion(Texture):
     def blit_into(self, source, x, y, z):
         self.owner.blit_into(source, x + self.x, y + self.y, z + self.z)
 
+    def __repr__(self):
+        return "{}(id={}, size={}x{}, owner={}x{})".format(self.__class__.__name__, self.id, self.width, self.height,
+                                                           self.owner.width, self.owner.height)
+
     def __del__(self):
         # only the owner Texture should handle deletion
         pass
@@ -1760,10 +1601,8 @@ class Texture3D(Texture, UniformTextureSequence):
                 raise ImageException('Images do not have same dimensions.')
 
         depth = len(images)
-        if not gl_info.have_version(2, 0):
-            depth = _nearest_pow2(depth)
 
-        texture = cls.create_for_size(GL_TEXTURE_3D, item_width, item_height)
+        texture = cls.create(item_width, item_height, GL_TEXTURE_3D, None)
         if images[0].anchor_x or images[0].anchor_y:
             texture.anchor_x = images[0].anchor_x
             texture.anchor_y = images[0].anchor_y
@@ -1782,8 +1621,7 @@ class Texture3D(Texture, UniformTextureSequence):
         for i, image in enumerate(images):
             item = cls.region_class(0, 0, i, item_width, item_height, texture)
             items.append(item)
-            image.blit_to_texture(texture.target, texture.level,
-                                  image.anchor_x, image.anchor_y, i)
+            image.blit_to_texture(texture.target, texture.level, image.anchor_x, image.anchor_y, i)
 
         glFlush()
 
@@ -1805,14 +1643,149 @@ class Texture3D(Texture, UniformTextureSequence):
     def __setitem__(self, index, value):
         if type(index) is slice:
             for item, image in zip(self[index], value):
-                image.blit_to_texture(self.target, self.level,
-                                      image.anchor_x, image.anchor_y, item.z)
+                image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, item.z)
         else:
-            value.blit_to_texture(self.target, self.level,
-                                  value.anchor_x, value.anchor_y, self[index].z)
+            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, self[index].z)
 
     def __iter__(self):
         return iter(self.items)
+
+
+class TextureArrayRegion(TextureRegion):
+    """A region of a TextureArray, presented as if it were a separate texture.
+    """
+    def __init__(self, x, y, z, width, height, owner):
+        super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
+
+        self.x = x
+        self.y = y
+        self.z = z
+        self.owner = owner
+        owner_u1 = owner.tex_coords[0]
+        owner_v1 = owner.tex_coords[1]
+        owner_u2 = owner.tex_coords[3]
+        owner_v2 = owner.tex_coords[7]
+        scale_u = owner_u2 - owner_u1
+        scale_v = owner_v2 - owner_v1
+        u1 = x / owner.width * scale_u + owner_u1
+        v1 = y / owner.height * scale_v + owner_v1
+        u2 = (x + width) / owner.width * scale_u + owner_u1
+        v2 = (y + height) / owner.height * scale_v + owner_v1
+        z = float(z)
+        self.tex_coords = (u1, v1, z, u2, v1, z, u2, v2, z, u1, v2, z)
+
+    def __repr__(self):
+        return "{}(id={}, size={}x{}, layer={})".format(self.__class__.__name__, self.id, self.width, self.height, self.z)
+
+
+class TextureArray(Texture, UniformTextureSequence):
+    allow_smaller_pack = True
+    _max_depth = get_texture_array_max_depth()
+
+    @classmethod
+    def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
+        """Create an empty TextureArray.
+
+        You may specify the maximum depth, or layers, the Texture Array should have. This defaults
+        to 256, but will be hardware and driver dependent.
+
+        :Parameters:
+            `width` : int
+                Width of the texture.
+            `height` : int
+                Height of the texture.
+            `internalformat` : int
+                GL constant giving the internal format of the texture array; for example, ``GL_RGBA``.
+            `min_filter` : int
+                The minifaction filter used for this texture array, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `mag_filter` : int
+                The magnification filter used for this texture array, commonly ``GL_LINEAR`` or ``GL_NEAREST``
+            `max_depth` : int
+                The number of layers in the texture array.
+
+        :rtype: :py:class:`~pyglet.image.TextureArray`
+
+        .. versionadded:: 2.0
+        """
+        min_filter = min_filter or cls.default_min_filter
+        mag_filter = mag_filter or cls.default_mag_filter
+
+        assert max_depth <= cls._max_depth, "TextureArray max_depth supported is {}.".format(cls._max_depth)
+
+        tex_id = GLuint()
+        glGenTextures(1, byref(tex_id))
+        glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id.value)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, min_filter)
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, mag_filter)
+
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                     internalformat,
+                     width, height, max_depth,
+                     0,
+                     internalformat, GL_UNSIGNED_BYTE,
+                     0)
+        glFlush()
+
+        texture = cls(width, height, GL_TEXTURE_2D_ARRAY, tex_id.value)
+        texture.items = []  # No items on creation
+        texture.max_depth = max_depth
+        texture.min_filter = min_filter
+        texture.mag_filter = mag_filter
+
+        return texture
+
+    def _verify_size(self, image):
+        if image.width > self.width or image.height > self.height:
+            raise ImageException('Image ({0}x{1}) exceeds the size of the TextureArray ({2}x{3})'.format(
+                image.width, image.height, self.width, self.height))
+
+    def allocate(self, *images):
+        if len(self.items) + len(images) > self.max_depth:
+            raise Exception("The amount of images being added exceeds the depth of this TextureArray.")
+
+        textures = []
+        start_length = len(self.items)
+        for i, image in enumerate(images):
+            self._verify_size(image)
+            item = self.region_class(0, 0, start_length + i, image.width, image.height, self)
+            self.items.append(item)
+            image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, start_length + i)
+
+        glFlush()
+
+        return self.items[start_length:]
+
+    @classmethod
+    def create_for_image_grid(cls, grid, internalformat=GL_RGBA):
+        texture_array = cls.create(grid[0].width, grid[0].height, internalformat, max_depth=len(grid))
+        texture_array.allocate(*grid[:])
+        return texture_array
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, index):
+        return self.items[index]
+
+    def __setitem__(self, index, value):
+        if type(index) is slice:
+            for old_item, image in zip(self[index], value):
+                self._verify_size(image)
+                item = self.region_class(0, 0, old_item.z, image.width, image.height, self)
+                image.blit_to_texture(self.target, self.level, image.anchor_x, image.anchor_y, old_item.z)
+                self.items[old_item.z] = item
+        else:
+            self._verify_size(value)
+            item = self.region_class(0, 0, index, value.width, value.height, self)
+            value.blit_to_texture(self.target, self.level, value.anchor_x, value.anchor_y, index)
+            self.items[index] = item
+
+    def __iter__(self):
+        return iter(self.items)
+
+
+TextureArray.region_class = TextureArrayRegion
+TextureArrayRegion.region_class = TextureArrayRegion
 
 
 class TileableTexture(Texture):
@@ -1823,8 +1796,7 @@ class TileableTexture(Texture):
 
     def __init__(self, width, height, target, id):
         if not _is_pow2(width) or not _is_pow2(height):
-            raise ImageException(
-                'TileableTexture requires dimensions that are powers of 2')
+            raise ImageException('TileableTexture requires dimensions that are powers of 2')
         super(TileableTexture, self).__init__(width, height, target, id)
 
     def get_region(self, x, y, width, height):
@@ -1836,50 +1808,32 @@ class TileableTexture(Texture):
         The image will be tiled with the bottom-left corner of the destination
         rectangle aligned with the anchor point of this texture.
         """
+        # TODO: Fix this method for GL3:
         u1 = self.anchor_x / self.width
         v1 = self.anchor_y / self.height
         u2 = u1 + width / self.width
         v2 = v1 + height / self.height
         w, h = width, height
         t = self.tex_coords
-        array = (GLfloat * 32)(
-            u1, v1, t[2], 1.,
-            x, y, z, 1.,
-            u2, v1, t[5], 1.,
-            x + w, y, z, 1.,
-            u2, v2, t[8], 1.,
-            x + w, y + h, z, 1.,
-            u1, v2, t[11], 1.,
-            x, y + h, z, 1.)
+        array = (GLfloat * 32)(u1, v1, t[2], 1.,
+                               x, y, z, 1.,
+                               u2, v1, t[5], 1.,
+                               x + w, y, z, 1.,
+                               u2, v2, t[8], 1.,
+                               x + w, y + h, z, 1.,
+                               u1, v2, t[11], 1.,
+                               x, y + h, z, 1.)
 
-        glPushAttrib(GL_ENABLE_BIT)
+
         glEnable(self.target)
         glBindTexture(self.target, self.id)
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)    # GL3
         glInterleavedArrays(GL_T4F_V4F, 0, array)
         glDrawArrays(GL_QUADS, 0, 4)
-        glPopClientAttrib()
-        glPopAttrib()
+        # # glPopClientAttrib    # GL3    # GL3()
 
     @classmethod
     def create_for_image(cls, image):
-        if not _is_pow2(image.width) or not _is_pow2(image.height):
-            # Potentially unnecessary conversion if a GL format exists.
-            image = image.get_image_data()
-            texture_width = _nearest_pow2(image.width)
-            texture_height = _nearest_pow2(image.height)
-            newdata = c_buffer(texture_width * texture_height * 4)
-            gluScaleImage(GL_RGBA,
-                          image.width, image.height,
-                          GL_UNSIGNED_BYTE,
-                          image.get_data('RGBA', image.width * 4),
-                          texture_width,
-                          texture_height,
-                          GL_UNSIGNED_BYTE,
-                          newdata)
-            image = ImageData(texture_width, texture_height, 'RGBA',
-                              newdata)
-
         image = image.get_image_data()
         return image.create_texture(cls)
 
@@ -1890,295 +1844,6 @@ class DepthTexture(Texture):
     def blit_into(self, source, x, y, z):
         glBindTexture(self.target, self.id)
         source.blit_to_texture(self.level, x, y, z)
-
-
-class BufferManager(object):
-    """Manages the set of framebuffers for a context.
-
-    Use :py:func:`~pyglet.image.get_buffer_manager` to obtain the instance of this class for the
-    current context.
-    """
-
-    def __init__(self):
-        self.color_buffer = None
-        self.depth_buffer = None
-
-        aux_buffers = GLint()
-        glGetIntegerv(GL_AUX_BUFFERS, byref(aux_buffers))
-        self.free_aux_buffers = [GL_AUX0,
-                                 GL_AUX1,
-                                 GL_AUX2,
-                                 GL_AUX3][:aux_buffers.value]
-
-        stencil_bits = GLint()
-        glGetIntegerv(GL_STENCIL_BITS, byref(stencil_bits))
-        self.free_stencil_bits = list(range(stencil_bits.value))
-
-        self.refs = []
-
-    def get_viewport(self):
-        """Get the current OpenGL viewport dimensions.
-
-        :rtype: 4-tuple of float.
-        :return: Left, top, right and bottom dimensions.
-        """
-        viewport = (GLint * 4)()
-        glGetIntegerv(GL_VIEWPORT, viewport)
-        return viewport
-
-    def get_color_buffer(self):
-        """Get the color buffer.
-
-        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
-        """
-        viewport = self.get_viewport()
-        viewport_width = viewport[2]
-        viewport_height = viewport[3]
-        if (not self.color_buffer or
-                    viewport_width != self.color_buffer.width or
-                    viewport_height != self.color_buffer.height):
-            self.color_buffer = ColorBufferImage(*viewport)
-        return self.color_buffer
-
-    def get_aux_buffer(self):
-        """Get a free auxiliary buffer.
-
-        If not aux buffers are available, `ImageException` is raised.  Buffers
-        are released when they are garbage collected.
-        
-        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
-        """
-        if not self.free_aux_buffers:
-            raise ImageException('No free aux buffer is available.')
-
-        gl_buffer = self.free_aux_buffers.pop(0)
-        viewport = self.get_viewport()
-        buffer = ColorBufferImage(*viewport)
-        buffer.gl_buffer = gl_buffer
-
-        def release_buffer(ref, self=self):
-            self.free_aux_buffers.insert(0, gl_buffer)
-
-        self.refs.append(weakref.ref(buffer, release_buffer))
-
-        return buffer
-
-    def get_depth_buffer(self):
-        """Get the depth buffer.
-
-        :rtype: :py:class:`~pyglet.image.DepthBufferImage`
-        """
-        viewport = self.get_viewport()
-        viewport_width = viewport[2]
-        viewport_height = viewport[3]
-        if (not self.depth_buffer or
-                    viewport_width != self.depth_buffer.width or
-                    viewport_height != self.depth_buffer.height):
-            self.depth_buffer = DepthBufferImage(*viewport)
-        return self.depth_buffer
-
-    def get_buffer_mask(self):
-        """Get a free bitmask buffer.
-
-        A bitmask buffer is a buffer referencing a single bit in the stencil
-        buffer.  If no bits are free, `ImageException` is raised.  Bits are
-        released when the bitmask buffer is garbage collected.
-
-        :rtype: :py:class:`~pyglet.image.BufferImageMask`
-        """
-        if not self.free_stencil_bits:
-            raise ImageException('No free stencil bits are available.')
-
-        stencil_bit = self.free_stencil_bits.pop(0)
-        x, y, width, height = self.get_viewport()
-        buffer = BufferImageMask(x, y, width, height)
-        buffer.stencil_bit = stencil_bit
-
-        def release_buffer(ref, self=self):
-            self.free_stencil_bits.insert(0, stencil_bit)
-
-        self.refs.append(weakref.ref(buffer, release_buffer))
-
-        return buffer
-
-
-def get_buffer_manager():
-    """Get the buffer manager for the current OpenGL context.
-    
-    :rtype: :py:class:`~pyglet.image.BufferManager`
-    """
-    context = gl.current_context
-    if not hasattr(context, 'image_buffer_manager'):
-        context.image_buffer_manager = BufferManager()
-    return context.image_buffer_manager
-
-
-class FrameBuffer(object):
-
-    def __init__(self):
-        self._id = GLuint()
-        glGenFramebuffers(1, self._id)
-
-    def is_complete(self):
-        return glCheckFramebufferStatus(GL_FRAMEBUFFER, self._id) == GL_FRAMEBUFFER_COMPLETE
-
-    def bind(self):
-        glBindFramebuffer(GL_FRAMEBUFFER, self._id)
-
-    @staticmethod
-    def unbind():
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-
-    def clear(self):
-        self.bind()
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
-        self.unbind()
-
-    @classmethod
-    def create(cls, width, height, depth=False, internal_format=GL_RGBA8, fmt=GL_RGBA, type=GL_UNSIGNED_BYTE, layers=1):
-        """
-        Convenient shortcut for creating single color attachment FBOs
-        :param width: Color buffer width
-        :param height: Coller buffer height
-        :param depth: (bool) Create a depth attachment
-        :param internal_format: The internalformat of the color buffer
-        :param fmt: The format of the color buffer
-        :param type: The type of the color buffer
-        :param layers: How many layers to create
-        :return: A new FBO
-        """
-        fbo = FrameBuffer()
-        fbo.bind()
-
-        # Add N layers of color attachments
-        for layer in range(layers):
-            c = Texture.create(width, height, internal_format)
-            c = Texture.create_2d(width=width, height=height, internal_format=internal_format, format=fmt, type=type,
-                                  wrap_s=GL_CLAMP_TO_EDGE, wrap_t=GL_CLAMP_TO_EDGE, wrap_r=GL_CLAMP_TO_EDGE)
-            fbo.add_color_attachment(c)
-
-        # Set depth attachment is specified
-        if depth:
-            pass
-
-        fbo.unbind()
-        return fbo
-
-
-# XXX BufferImage could be generalised to support EXT_framebuffer_object's
-# renderbuffer.
-class BufferImage(AbstractImage):
-    """An abstract framebuffer.
-    """
-    #: The OpenGL read and write target for this buffer.
-    gl_buffer = GL_BACK
-
-    #: The OpenGL format constant for image data.
-    gl_format = 0
-
-    #: The format string used for image data.
-    format = ''
-
-    owner = None
-
-    # TODO: enable methods
-
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-    def get_image_data(self):
-        buffer = (GLubyte * (len(self.format) * self.width * self.height))()
-
-        x = self.x
-        y = self.y
-        if self.owner:
-            x += self.owner.x
-            y += self.owner.y
-
-        glReadBuffer(self.gl_buffer)
-        glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT)
-        glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        glReadPixels(x, y, self.width, self.height,
-                     self.gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPopClientAttrib()
-
-        return ImageData(self.width, self.height, self.format, buffer)
-
-    def get_region(self, x, y, width, height):
-        if self.owner:
-            return self.owner.get_region(x + self.x, y + self.y, width, height)
-
-        region = self.__class__(x + self.x, y + self.y, width, height)
-        region.gl_buffer = self.gl_buffer
-        region.owner = self
-        return region
-
-
-class ColorBufferImage(BufferImage):
-    """A color framebuffer.
-
-    This class is used to wrap both the primary color buffer (i.e., the back
-    buffer) or any one of the auxiliary buffers.
-    """
-    gl_format = GL_RGBA
-    format = 'RGBA'
-
-    def get_texture(self, rectangle=False, force_rectangle=False):
-        texture = Texture.create(self.width, self.height, GL_RGBA,
-                                 rectangle, force_rectangle)
-        self.blit_to_texture(texture.target, texture.level,
-                             self.anchor_x, self.anchor_y, 0)
-        return texture
-
-    def blit_to_texture(self, target, level, x, y, z):
-        glReadBuffer(self.gl_buffer)
-        glCopyTexSubImage2D(target, level,
-                            x - self.anchor_x, y - self.anchor_y,
-                            self.x, self.y, self.width, self.height)
-
-
-class DepthBufferImage(BufferImage):
-    """The depth buffer.
-    """
-    gl_format = GL_DEPTH_COMPONENT
-    format = 'L'
-
-    def get_texture(self, rectangle=False, force_rectangle=False):
-        assert rectangle == False and force_rectangle == False, \
-            'Depth textures cannot be rectangular'
-        if not _is_pow2(self.width) or not _is_pow2(self.height):
-            raise ImageException(
-                'Depth texture requires that buffer dimensions be powers of 2')
-
-        texture = DepthTexture.create_for_size(GL_TEXTURE_2D, self.width, self.height)
-        if self.anchor_x or self.anchor_y:
-            texture.anchor_x = self.anchor_x
-            texture.anchor_y = self.anchor_y
-
-        glReadBuffer(self.gl_buffer)
-        glCopyTexImage2D(texture.target, 0,
-                         GL_DEPTH_COMPONENT,
-                         self.x, self.y, self.width, self.height,
-                         0)
-        return texture
-
-    def blit_to_texture(self, target, level, x, y, z):
-        glReadBuffer(self.gl_buffer)
-        glCopyTexSubImage2D(target, level,
-                            x - self.anchor_x, y - self.anchor_y,
-                            self.x, self.y, self.width, self.height)
-
-
-class BufferImageMask(BufferImage):
-    """A single bit of the stencil buffer.
-    """
-    gl_format = GL_STENCIL_INDEX
-    format = 'L'
-
-    # TODO mask methods
 
 
 class ImageGrid(AbstractImage, AbstractImageSequence):
@@ -2201,9 +1866,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
     _items = ()
     _texture_grid = None
 
-    def __init__(self, image, rows, columns,
-                 item_width=None, item_height=None,
-                 row_padding=0, column_padding=0):
+    def __init__(self, image, rows, columns, item_width=None, item_height=None, row_padding=0, column_padding=0):
         """Construct a grid for the given image.
 
         You can specify parameters for the grid, for example setting
@@ -2231,21 +1894,16 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                 inserted between columns, not at the edges of the grid.
         """
         super(ImageGrid, self).__init__(image.width, image.height)
-
-        if item_width is None:
-            item_width = (image.width - column_padding * (columns - 1)) // columns
-        if item_height is None:
-            item_height = (image.height - row_padding * (rows - 1)) // rows
         self.image = image
         self.rows = rows
         self.columns = columns
-        self.item_width = item_width
-        self.item_height = item_height
+        self.item_width = item_width or (image.width - column_padding * (columns - 1)) // columns
+        self.item_height = item_height or (image.height - row_padding * (rows - 1)) // rows
         self.row_padding = row_padding
         self.column_padding = column_padding
 
-    def get_texture(self, rectangle=False, force_rectangle=False):
-        return self.image.get_texture(rectangle, force_rectangle)
+    def get_texture(self, rectangle=False):
+        return self.image.get_texture(rectangle)
 
     def get_image_data(self):
         return self.image.get_image_data()
@@ -2265,8 +1923,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
             for row in range(self.rows):
                 x = 0
                 for col in range(self.columns):
-                    self._items.append(self.image.get_region(
-                        x, y, self.item_width, self.item_height))
+                    self._items.append(self.image.get_region(x, y, self.item_width, self.item_height))
                     x += self.item_width + self.column_padding
                 y += self.item_height + self.row_padding
 
@@ -2329,16 +1986,14 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         else:
             owner = image
 
-        super(TextureGrid, self).__init__(
-            image.x, image.y, image.z, image.width, image.height, owner)
+        super(TextureGrid, self).__init__(image.x, image.y, image.z, image.width, image.height, owner)
 
         items = []
         y = 0
         for row in range(grid.rows):
             x = 0
             for col in range(grid.columns):
-                items.append(
-                    self.get_region(x, y, grid.item_width, grid.item_height))
+                items.append(self.get_region(x, y, grid.item_width, grid.item_height))
                 x += grid.item_width + grid.column_padding
             y += grid.item_height + grid.row_padding
 
@@ -2409,3 +2064,232 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
 # Initialise default codecs
 add_default_image_codecs()
+
+# Default Framebuffer classes:
+###############################################################
+
+
+class BufferManager:
+    """Manages the set of framebuffers for a context.
+
+    Use :py:func:`~pyglet.image.get_buffer_manager` to obtain the instance of this class for the
+    current context.
+    """
+
+    def __init__(self):
+        self.color_buffer = None
+        self.depth_buffer = None
+
+        aux_buffers = GLint()
+        glGetIntegerv(GL_AUX_BUFFERS, byref(aux_buffers))
+        self.free_aux_buffers = [GL_AUX0,
+                                 GL_AUX1,
+                                 GL_AUX2,
+                                 GL_AUX3][:aux_buffers.value]
+
+        stencil_bits = GLint()
+        glGetIntegerv(GL_STENCIL_BITS, byref(stencil_bits))
+        self.free_stencil_bits = list(range(stencil_bits.value))
+
+        self.refs = []
+
+    def get_viewport(self):
+        """Get the current OpenGL viewport dimensions.
+
+        :rtype: 4-tuple of float.
+        :return: Left, top, right and bottom dimensions.
+        """
+        viewport = (GLint * 4)()
+        glGetIntegerv(GL_VIEWPORT, viewport)
+        return viewport
+
+    def get_color_buffer(self):
+        """Get the color buffer.
+
+        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
+        """
+        viewport = self.get_viewport()
+        viewport_width = viewport[2]
+        viewport_height = viewport[3]
+        if (not self.color_buffer or
+                viewport_width != self.color_buffer.width or
+                viewport_height != self.color_buffer.height):
+            self.color_buffer = ColorBufferImage(*viewport)
+        return self.color_buffer
+
+    def get_aux_buffer(self):
+        """Get a free auxiliary buffer.
+
+        If not aux buffers are available, `ImageException` is raised.  Buffers
+        are released when they are garbage collected.
+
+        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
+        """
+        if not self.free_aux_buffers:
+            raise ImageException('No free aux buffer is available.')
+
+        gl_buffer = self.free_aux_buffers.pop(0)
+        viewport = self.get_viewport()
+        buffer = ColorBufferImage(*viewport)
+        buffer.gl_buffer = gl_buffer
+
+        def release_buffer(ref, self=self):
+            self.free_aux_buffers.insert(0, gl_buffer)
+
+        self.refs.append(weakref.ref(buffer, release_buffer))
+
+        return buffer
+
+    def get_depth_buffer(self):
+        """Get the depth buffer.
+
+        :rtype: :py:class:`~pyglet.image.DepthBufferImage`
+        """
+        viewport = self.get_viewport()
+        viewport_width = viewport[2]
+        viewport_height = viewport[3]
+        if (not self.depth_buffer or
+                viewport_width != self.depth_buffer.width or
+                viewport_height != self.depth_buffer.height):
+            self.depth_buffer = DepthBufferImage(*viewport)
+        return self.depth_buffer
+
+    def get_buffer_mask(self):
+        """Get a free bitmask buffer.
+
+        A bitmask buffer is a buffer referencing a single bit in the stencil
+        buffer.  If no bits are free, `ImageException` is raised.  Bits are
+        released when the bitmask buffer is garbage collected.
+
+        :rtype: :py:class:`~pyglet.image.BufferImageMask`
+        """
+        if not self.free_stencil_bits:
+            raise ImageException('No free stencil bits are available.')
+
+        stencil_bit = self.free_stencil_bits.pop(0)
+        x, y, width, height = self.get_viewport()
+        buffer = BufferImageMask(x, y, width, height)
+        buffer.stencil_bit = stencil_bit
+
+        def release_buffer(ref, self=self):
+            self.free_stencil_bits.insert(0, stencil_bit)
+
+        self.refs.append(weakref.ref(buffer, release_buffer))
+
+        return buffer
+
+
+def get_buffer_manager():
+    """Get the buffer manager for the current OpenGL context.
+
+    :rtype: :py:class:`~pyglet.image.BufferManager`
+    """
+    context = pyglet.gl.current_context
+    if not hasattr(context, 'image_buffer_manager'):
+        context.image_buffer_manager = BufferManager()
+    return context.image_buffer_manager
+
+
+class BufferImage(AbstractImage):
+    """An abstract framebuffer.
+    """
+    #: The OpenGL read and write target for this buffer.
+    gl_buffer = GL_BACK
+
+    #: The OpenGL format constant for image data.
+    gl_format = 0
+
+    #: The format string used for image data.
+    format = ''
+
+    owner = None
+
+    # TODO: enable methods
+
+    def __init__(self, x, y, width, height):
+        super().__init__(width, height)
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def get_image_data(self):
+        buffer = (GLubyte * (len(self.format) * self.width * self.height))()
+
+        x = self.x
+        y = self.y
+        if self.owner:
+            x += self.owner.x
+            y += self.owner.y
+
+        glReadBuffer(self.gl_buffer)
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        glReadPixels(x, y, self.width, self.height, self.gl_format, GL_UNSIGNED_BYTE, buffer)
+        glPixelStorei(GL_PACK_ALIGNMENT, 0)
+        return ImageData(self.width, self.height, self.format, buffer)
+
+    def get_region(self, x, y, width, height):
+        if self.owner:
+            return self.owner.get_region(x + self.x, y + self.y, width, height)
+
+        region = self.__class__(x + self.x, y + self.y, width, height)
+        region.gl_buffer = self.gl_buffer
+        region.owner = self
+        return region
+
+
+class ColorBufferImage(BufferImage):
+    """A color framebuffer.
+
+    This class is used to wrap both the primary color buffer (i.e., the back
+    buffer) or any one of the auxiliary buffers.
+    """
+    gl_format = GL_RGBA
+    format = 'RGBA'
+
+    def get_texture(self, rectangle=False):
+        target = GL_TEXTURE_RECTANGLE if rectangle else GL_TEXTURE_2D
+        texture = Texture.create(self.width, self.height, target, GL_RGBA)
+        self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0)
+        return texture
+
+    def blit_to_texture(self, target, level, x, y, z):
+        glReadBuffer(self.gl_buffer)
+        glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
+
+
+class DepthBufferImage(BufferImage):
+    """The depth buffer.
+    """
+    gl_format = GL_DEPTH_COMPONENT
+    format = 'L'
+
+    def get_texture(self, rectangle=False):
+        assert rectangle is False, 'Depth textures cannot be rectangular'
+        if not _is_pow2(self.width) or not _is_pow2(self.height):
+            raise ImageException('Depth texture requires that buffer dimensions be powers of 2')
+
+        texture = DepthTexture.create(self.width, self.height, GL_TEXTURE_2D, None)
+        if self.anchor_x or self.anchor_y:
+            texture.anchor_x = self.anchor_x
+            texture.anchor_y = self.anchor_y
+
+        glReadBuffer(self.gl_buffer)
+        glCopyTexImage2D(texture.target, 0,
+                         GL_DEPTH_COMPONENT,
+                         self.x, self.y, self.width, self.height,
+                         0)
+        return texture
+
+    def blit_to_texture(self, target, level, x, y, z):
+        glReadBuffer(self.gl_buffer)
+        glCopyTexSubImage2D(target, level, x-self.anchor_x, y-self.anchor_y, self.x, self.y, self.width, self.height)
+
+
+class BufferImageMask(BufferImage):
+    """A single bit of the stencil buffer.
+    """
+    gl_format = GL_STENCIL_INDEX
+    format = 'L'
+
+    # TODO mask methods

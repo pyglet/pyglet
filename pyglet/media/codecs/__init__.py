@@ -46,7 +46,7 @@ _decoder_extensions = {}    # Map str -> list of matching MediaDecoders
 _encoder_extensions = {}    # Map str -> list of matching MediaEncoders
 
 
-class MediaDecoder(object):
+class MediaDecoder:
     def get_file_extensions(self):
         """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
@@ -71,14 +71,14 @@ class MediaDecoder(object):
         return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
 
 
-class MediaEncoder(object):
+class MediaEncoder:
     def get_file_extensions(self):
         """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
         """
         return []
 
-    def encode(self, media, file, filename):
+    def encode(self, source, file, filename):
         """Encode the given source to the given file.  `filename`
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
@@ -157,6 +157,7 @@ def add_default_media_codecs():
     try:
         from . import wave
         add_decoders(wave)
+        add_encoders(wave)
     except ImportError:
         pass
 

@@ -32,15 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
-from builtins import map
-from builtins import str
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 # TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI
 # independence?
 

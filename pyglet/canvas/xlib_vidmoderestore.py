@@ -46,8 +46,6 @@ the process is terminated uncleanly.
 The child process is communicated to via a pipe, and watches for parent
 death with a Linux extension signal handler.
 '''
-from builtins import object
-
 import ctypes
 import os
 import signal
@@ -74,7 +72,7 @@ _mode_write_pipe = None
 #   width
 #   height
 #   rate
-class ModePacket(object):
+class ModePacket:
     format = '256siHHI'
     size = struct.calcsize(format)
     def __init__(self, display, screen, width, height, rate):

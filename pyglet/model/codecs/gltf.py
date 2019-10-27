@@ -102,7 +102,7 @@ _attributes = {
 }
 
 
-class Buffer(object):
+class Buffer:
     # TODO: support GLB format
     # TODO: support data uris
     def __init__(self, length, uri):
@@ -117,7 +117,7 @@ class Buffer(object):
         return data
 
 
-class BufferView(object):
+class BufferView:
     def __init__(self, buffer, offset, length, target, stride):
         self.buffer = buffer
         self.offset = offset
@@ -126,7 +126,7 @@ class BufferView(object):
         self.stride = stride
 
 
-class Accessor(object):
+class Accessor:
     # TODO: support sparse accessors
     def __init__(self, buffer_view, offset, comp_type, count,
                  maximum, minimum, accessor_type, sparse):

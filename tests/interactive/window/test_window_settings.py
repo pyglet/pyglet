@@ -1,6 +1,4 @@
 """Tests for window settings."""
-from __future__ import print_function
-
 import pytest
 import time
 

@@ -51,24 +51,20 @@ context::
     info = GLInfo()
     info.set_active_context()
 
-    if info.have_version(2, 1):
+    if info.have_version(4, 5):
         # ...
 
 """
-from builtins import range
-from builtins import object
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-from ctypes import c_char_p, cast
 import warnings
+from ctypes import c_char_p, cast
 
-from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
+from pyglet.gl.gl import GLint, glGetIntegerv, glGetString
+from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
 from pyglet.compat import asstr
 
 
-class GLInfo(object):
+class GLInfo:
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context
@@ -79,7 +75,7 @@ class GLInfo(object):
     when the context is active for this `GLInfo` instance.
     """
     have_context = False
-    version = '0.0.0'
+    version = '0.0'
     vendor = ''
     renderer = ''
     extensions = set()
@@ -147,7 +143,7 @@ class GLInfo(object):
             warnings.warn('No GL context created yet.')
         return self.version
 
-    def have_version(self, major, minor=0, release=0):
+    def have_version(self, major, minor=0):
         """Determine if a version of OpenGL is supported.
 
         :Parameters:
@@ -155,9 +151,6 @@ class GLInfo(object):
                 The major revision number (typically 1 or 2).
             `minor` : int
                 The minor revision number.
-            `release` : int
-                The release number.
-                :deprecated: No longer used
 
         :rtype: bool
         :return: True if the requested or a later version is supported.
@@ -167,8 +160,8 @@ class GLInfo(object):
             warnings.warn('No GL context created yet.')
         if not self.version or 'None' in self.version:
             return False
-        ver = '%s.0.0' % self.version.strip().split(' ', 1)[0]
-        imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
+        ver = '%s.0' % self.version.split(' ', 1)[0]
+        imajor, iminor = [int(v) for v in ver.split('.', 3)[:2]]
         return (imajor > major or
                 (imajor == major and iminor >= minor) or
                 (imajor == major and iminor == minor))
@@ -192,8 +185,8 @@ class GLInfo(object):
         return self.vendor
 
 
-# Single instance useful for apps with only a single context (or all contexts
-# have same GL driver, common case). 
+# Single instance useful for apps with only a single context
+# (or all contexts have the same GL driver, a common case).
 _gl_info = GLInfo()
 
 set_active_context = _gl_info.set_active_context

@@ -39,15 +39,6 @@ These classes should not be constructed directly.  Instead, use the functions
 in `pyglet.font` to obtain platform-specific instances.  You can use these
 classes as a documented interface to the concrete classes.
 """
-from builtins import chr
-from builtins import str
-from builtins import map
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import unicodedata
 
 from pyglet.gl import *
@@ -70,7 +61,7 @@ _prepend = lambda c, cc: c in _logical_order_exception
 _spacing_mark = lambda c, cc: cc == 'Mc' and c not in _other_grapheme_extend
 
 
-def _grapheme_break(left, right):
+def grapheme_break(left, right):
     # GB1
     if left is None:
         return True
@@ -129,7 +120,7 @@ def get_grapheme_clusters(text):
     cluster = ''
     left = None
     for right in text:
-        if cluster and _grapheme_break(left, right):
+        if cluster and grapheme_break(left, right):
             clusters.append(cluster)
             cluster = ''
         elif cluster:
@@ -193,7 +184,7 @@ class Glyph(image.TextureRegion):
         glEnd()
 
     def draw_quad_vertices(self):
-        """Debug method. 
+        """Debug method.
 
         Use the higher level APIs for performance and kerning.
         """
@@ -256,7 +247,7 @@ class GlyphTextureAtlas(image.Texture):
         return region
 
 
-class GlyphRenderer(object):
+class GlyphRenderer:
     """Abstract class for creating glyph images.
     """
     def __init__(self, font):
@@ -272,7 +263,7 @@ class FontException(Exception):
     pass
 
 
-class Font(object):
+class Font:
     """Abstract font class able to produce glyphs.
 
     To construct a font, use :py:func:`pyglet.font.load`, which will instantiate the
@@ -287,9 +278,10 @@ class Font(object):
         `descent` : int
             Maximum descent below the baseline, in pixels. Usually negative.
     """
-    texture_width = 256
-    texture_height = 256
-    texture_internalformat = GL_ALPHA
+    texture_width = 512
+    texture_height = 512
+    # TODO: rewrite text.layout._default_shader_program to use GL_R8 or GL_RED
+    texture_internalformat = GL_RGBA
     texture_min_filter = GL_LINEAR
     texture_mag_filter = GL_LINEAR
 
@@ -354,12 +346,12 @@ class Font(object):
             if glyph:
                 break
         if not glyph:
-            texture = self.texture_class.create_for_size(GL_TEXTURE_2D,
-                                                         self.texture_width,
-                                                         self.texture_height,
-                                                         self.texture_internalformat,
-                                                         self.texture_min_filter,
-                                                         self.texture_mag_filter)
+            texture = self.texture_class.create(self.texture_width,
+                                                self.texture_height,
+                                                GL_TEXTURE_2D,
+                                                self.texture_internalformat,
+                                                self.texture_min_filter,
+                                                self.texture_mag_filter)
             self.textures.insert(0, texture)
             glyph = texture.fit(image)
         return glyph

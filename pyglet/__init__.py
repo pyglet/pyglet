@@ -35,55 +35,18 @@
 
 """pyglet is a cross-platform games and multimedia package.
 
-Detailed documentation is available at http://www.pyglet.org
+More information is available at http://www.pyglet.org
 """
-from __future__ import print_function
-from __future__ import absolute_import
-
-# Check if future is installed, if not use included batteries
-try:
-    import future
-except ImportError:
-    import os.path as op
-    import sys
-
-    future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
-    sys.path.insert(0, op.join(future_base, 'py2_3'))
-    if sys.version_info[:2] < (3, 0):
-        sys.path.insert(0, op.join(future_base, 'py2'))
-    del future_base
-    del sys
-    del op
-    try:
-        import future
-    except ImportError:
-        print('Failed to get python-future')
-        raise
-
-from builtins import range
-from builtins import object
-
 import os
 import sys
+
+#: The release version
+version = '2.0.dev0'
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-
-#: The release version of this pyglet installation.
-#:
-#: Valid only if pyglet was installed from a source or binary distribution
-#: (i.e. not in a checked-out copy from SVN).
-#:
-#: Use setuptools if you need to check for a specific release version, e.g.::
-#:
-#:    >>> import pyglet
-#:    >>> from pkg_resources import parse_version
-#:    >>> parse_version(pyglet.version) >= parse_version('1.1')
-#:    True
-#:
-version = '1.4.5'
 
 # Pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
@@ -169,6 +132,7 @@ options = {
     'debug_gl': not _enable_optimisations,
     'debug_gl_trace': False,
     'debug_gl_trace_args': False,
+    'debug_gl_shaders': False,
     'debug_graphics_batch': False,
     'debug_lib': False,
     'debug_media': False,
@@ -179,12 +143,10 @@ options = {
     'debug_trace_flush': True,
     'debug_win32': False,
     'debug_x11': False,
-    'graphics_vbo': True,
     'shadow_window': True,
     'vsync': None,
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
-    'darwin_cocoa': True,
     'search_local_libs': True,
 }
 
@@ -194,6 +156,7 @@ _option_types = {
     'debug_gl': bool,
     'debug_gl_trace': bool,
     'debug_gl_trace_args': bool,
+    'debug_gl_shaders': bool,
     'debug_graphics_batch': bool,
     'debug_lib': bool,
     'debug_media': bool,
@@ -205,11 +168,11 @@ _option_types = {
     'debug_win32': bool,
     'debug_x11': bool,
     'ffmpeg_libs_win': tuple,
-    'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
+    'search_local_libs': bool,
 }
 
 
@@ -342,7 +305,7 @@ if options['debug_trace']:
 # Lazy loading
 # ------------
 
-class _ModuleProxy(object):
+class _ModuleProxy:
     _module = None
 
     def __init__(self, name):
@@ -396,8 +359,8 @@ if True:
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
 
-# Fool py2exe, py2app into including all top-level modules (doesn't understand
-# lazy loading)
+# Fool py2exe, py2app into including all top-level modules
+# (doesn't understand lazy loading)
 if False:
     from . import app
     from . import canvas
@@ -415,9 +378,4 @@ if False:
     from . import resource
     from . import sprite
     from . import text
-    from . import window
-
-# Hack around some epydoc bug that causes it to think pyglet.window is None.
-# TODO: confirm if this is still needed
-if False:
     from . import window

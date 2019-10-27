@@ -34,90 +34,44 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-"""Byte abstractions of Vertex Buffer Objects and vertex arrays.
+"""Byte abstractions of OpenGL Buffer Objects.
 
-Use :py:func:`create_buffer` or :py:func:`create_mappable_buffer` to create a
-Vertex Buffer Object, or a vertex array if VBOs are not supported by the
-current context.
+Use `create_buffer` to create a Buffer Object.
 
 Buffers can optionally be created "mappable" (incorporating the
-:py:class:`AbstractMappable` mix-in).  In this case the buffer provides a
-:py:meth:`~AbstractMappable.get_region` method which provides the most
-efficient path for updating partial data within the buffer.
+`AbstractMappable` mix-in).  In this case the buffer provides a ``get_region``
+method which provides the most efficient path for updating partial data within
+the buffer.
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import ctypes
 import sys
 
 import pyglet
 from pyglet.gl import *
 
-_enable_vbo = pyglet.options['graphics_vbo']
 
-# Enable workaround permanently if any VBO is created on a context that has
-# this workaround.  (On systems with multiple contexts where one is
-# unaffected, the workaround will be enabled unconditionally on all of the
-# contexts anyway.  This is completely unlikely anyway).
-_workaround_vbo_finish = False
-
-
-def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True):
-    """Create a buffer of vertex data.
+def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, mappable=True):
+    """Create a buffer object for vertex or other data.
 
     :Parameters:
         `size` : int
             Size of the buffer, in bytes
         `target` : int
-            OpenGL target buffer
+            OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
         `usage` : int
-            OpenGL usage constant
-        `vbo` : bool
-            True if a `VertexBufferObject` should be created if the driver
-            supports it; otherwise only a `VertexArray` is created.
+            OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
+        `mappable` : bool
+            True to create a mappable buffer (defaults to True)
 
-    :rtype: `AbstractBuffer`
+    :rtype: `AbstractBuffer` or `AbstractBuffer` with `AbstractMappable`
     """
-    from pyglet import gl
-    if (vbo and
-        gl_info.have_version(1, 5) and
-        _enable_vbo and
-        not gl.current_context._workaround_vbo):
-        return VertexBufferObject(size, target, usage)
+    if mappable:
+        return MappableBufferObject(size, target, usage)
     else:
-        return VertexArray(size)
+        return BufferObject(size, target, usage)
 
 
-def create_mappable_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, vbo=True):
-    """Create a mappable buffer of vertex data.
-
-    :Parameters:
-        `size` : int
-            Size of the buffer, in bytes
-        `target` : int
-            OpenGL target buffer
-        `usage` : int
-            OpenGL usage constant
-        `vbo` : bool
-            True if a :py:class:`VertexBufferObject` should be created if the driver
-            supports it; otherwise only a :py:class:`VertexArray` is created.
-
-    :rtype: :py:class:`AbstractBuffer` with :py:class:`AbstractMappable`
-    """
-    from pyglet import gl
-    if (vbo and
-        gl_info.have_version(1, 5) and
-        _enable_vbo and
-        not gl.current_context._workaround_vbo):
-        return MappableVertexBufferObject(size, target, usage)
-    else:
-        return VertexArray(size)
-
-
-class AbstractBuffer(object):
+class AbstractBuffer:
     """Abstract buffer of byte data.
 
     :Ivariables:
@@ -202,7 +156,7 @@ class AbstractBuffer(object):
         raise NotImplementedError('abstract')
 
 
-class AbstractMappable(object):
+class AbstractMappable:
     def get_region(self, start, size, ptr_type):
         """Map a region of the buffer into a ctypes array of the desired
         type.  This region does not need to be unmapped, but will become
@@ -231,58 +185,8 @@ class AbstractMappable(object):
         raise NotImplementedError('abstract')
 
 
-class VertexArray(AbstractBuffer, AbstractMappable):
-    """A ctypes implementation of a vertex array.
-
-    Many of the methods on this class are effectively no-op's, such as
-    :py:meth:`bind`, :py:meth:`unbind`, :py:meth:`map`, :py:meth:`unmap` and
-    :py:meth:`delete`; they exist in order to present
-    a consistent interface with :py:class:`VertexBufferObject`.
-
-    This buffer type is also mappable, and so :py:meth:`get_region` can be used.
-    """
-
-    def __init__(self, size):
-        self.size = size
-
-        self.array = (ctypes.c_byte * size)()
-        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
-
-    def bind(self):
-        pass
-
-    def unbind(self):
-        pass
-
-    def set_data(self, data):
-        ctypes.memmove(self.ptr, data, self.size)
-
-    def set_data_region(self, data, start, length):
-        ctypes.memmove(self.ptr + start, data, length)
-
-    def map(self, invalidate=False):
-        return self.array
-
-    def unmap(self):
-        pass
-
-    def get_region(self, start, size, ptr_type):
-        array = ctypes.cast(self.ptr + start, ptr_type).contents
-        return VertexArrayRegion(array)
-
-    def delete(self):
-        pass
-
-    def resize(self, size):
-        array = (ctypes.c_byte * size)()
-        ctypes.memmove(array, self.array, min(size, self.size))
-        self.size = size
-        self.array = array
-        self.ptr = ctypes.cast(self.array, ctypes.c_void_p).value
-
-
-class VertexBufferObject(AbstractBuffer):
-    """Lightweight representation of an OpenGL VBO.
+class BufferObject(AbstractBuffer):
+    """Lightweight representation of an OpenGL Buffer Object.
 
     The data in the buffer is not replicated in any system memory (unless it
     is done so by the video driver).  While this can improve memory usage and
@@ -290,7 +194,7 @@ class VertexBufferObject(AbstractBuffer):
 
     This class does not implement :py:class:`AbstractMappable`, and so has no
     :py:meth:`~AbstractMappable.get_region` method.  See 
-    :py:class:`MappableVertexBufferObject` for a VBO class
+    :py:class:`MappableVertexBufferObject` for a Buffer class
     that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
@@ -300,17 +204,12 @@ class VertexBufferObject(AbstractBuffer):
         self.usage = usage
         self._context = pyglet.gl.current_context
 
-        id = GLuint()
-        glGenBuffers(1, id)
-        self.id = id.value
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+        buffer_id = GLuint()
+        glGenBuffers(1, buffer_id)
+        self.id = buffer_id.value
+
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
-        glPopClientAttrib()
-
-        global _workaround_vbo_finish
-        if pyglet.gl.current_context._workaround_vbo_finish:
-            _workaround_vbo_finish = True
 
     def bind(self):
         glBindBuffer(self.target, self.id)
@@ -319,31 +218,22 @@ class VertexBufferObject(AbstractBuffer):
         glBindBuffer(self.target, 0)
 
     def set_data(self, data):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, data, self.usage)
-        glPopClientAttrib()
 
     def set_data_region(self, data, start, length):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
-        glPopClientAttrib()
 
     def map(self, invalidate=False):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         if invalidate:
             glBufferData(self.target, self.size, None, self.usage)
-        ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY),
-                          ctypes.POINTER(ctypes.c_byte * self.size)).contents
-        glPopClientAttrib()
+        ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
     def unmap(self):
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glUnmapBuffer(self.target)
-        glPopClientAttrib()
 
     def __del__(self):
         try:
@@ -353,15 +243,14 @@ class VertexBufferObject(AbstractBuffer):
             pass
 
     def delete(self):
-        id = GLuint(self.id)
-        glDeleteBuffers(1, id)
+        buffer_id = GLuint(self.id)
+        glDeleteBuffers(1, buffer_id)
         self.id = None
 
     def resize(self, size):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
 
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glBindBuffer(self.target, self.id)
         data = glMapBuffer(self.target, GL_READ_ONLY)
         ctypes.memmove(temp, data, min(size, self.size))
@@ -369,24 +258,21 @@ class VertexBufferObject(AbstractBuffer):
 
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
-        glPopClientAttrib()
 
 
-class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
-    """A VBO with system-memory backed store.
+class MappableBufferObject(BufferObject, AbstractMappable):
+    """A buffer with system-memory backed store.
 
-    Updates to the data via :py:meth:`set_data`, :py:meth:`set_data_region` and
-    :py:meth:`map` will be held in local memory until :py:meth:`bind` is
-    called.  The advantage is that fewer OpenGL calls are needed, increasing
-    performance.
+    Updates to the data via `set_data`, `set_data_region` and `map` will be
+    held in local memory until `bind` is called.  The advantage is that fewer
+    OpenGL calls are needed, increasing performance.
 
     There may also be less performance penalty for resizing this buffer.
 
     Updates to data via :py:meth:`map` are committed immediately.
     """
-
     def __init__(self, size, target, usage):
-        super(MappableVertexBufferObject, self).__init__(size, target, usage)
+        super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
         self._dirty_min = sys.maxsize
@@ -394,19 +280,18 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
 
     def bind(self):
         # Commit pending data
-        super(MappableVertexBufferObject, self).bind()
+        super(MappableBufferObject, self).bind()
         size = self._dirty_max - self._dirty_min
         if size > 0:
             if size == self.size:
                 glBufferData(self.target, self.size, self.data, self.usage)
             else:
-                glBufferSubData(self.target, self._dirty_min, size,
-                                self.data_ptr + self._dirty_min)
+                glBufferSubData(self.target, self._dirty_min, size, self.data_ptr + self._dirty_min)
             self._dirty_min = sys.maxsize
             self._dirty_max = 0
 
     def set_data(self, data):
-        super(MappableVertexBufferObject, self).set_data(data)
+        super(MappableBufferObject, self).set_data(data)
         ctypes.memmove(self.data, data, self.size)
         self._dirty_min = 0
         self._dirty_max = self.size
@@ -426,7 +311,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
 
     def get_region(self, start, size, ptr_type):
         array = ctypes.cast(self.data_ptr + start, ptr_type).contents
-        return VertexBufferObjectRegion(self, start, start + size, array)
+        return BufferObjectRegion(self, start, start + size, array)
 
     def resize(self, size):
         data = (ctypes.c_byte * size)()
@@ -435,16 +320,15 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
 
         self.size = size
-        glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
+
         glBindBuffer(self.target, self.id)
         glBufferData(self.target, self.size, self.data, self.usage)
-        glPopClientAttrib()
 
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
 
-class AbstractBufferRegion(object):
+class AbstractBufferRegion:
     """A mapped region of a buffer.
 
     Buffer regions are obtained using :py:meth:`~AbstractMappable.get_region`.
@@ -455,7 +339,6 @@ class AbstractBufferRegion(object):
             :py:meth:`~AbstractMappable.get_region`.
 
     """
-
     def invalidate(self):
         """Mark this region as changed.
 
@@ -466,8 +349,10 @@ class AbstractBufferRegion(object):
         pass
 
 
-class VertexBufferObjectRegion(AbstractBufferRegion):
-    """A mapped region of a VBO."""
+class BufferObjectRegion(AbstractBufferRegion):
+    """A mapped region of a BufferObject."""
+
+    __slots__ = 'buffer', 'start', 'end', 'array'
 
     def __init__(self, buffer, start, end, array):
         self.buffer = buffer
@@ -479,18 +364,6 @@ class VertexBufferObjectRegion(AbstractBufferRegion):
         buffer = self.buffer
         buffer._dirty_min = min(buffer._dirty_min, self.start)
         buffer._dirty_max = max(buffer._dirty_max, self.end)
-
-
-class VertexArrayRegion(AbstractBufferRegion):
-    """A mapped region of a vertex array.
-
-    The :py:meth:`~AbstractBufferRegion.invalidate` method is a no-op but is
-    provided in order to present a consistent interface with
-    :py:meth:`VertexBufferObjectRegion`.
-    """
-
-    def __init__(self, array):
-        self.array = array
 
 
 class IndirectArrayRegion(AbstractBufferRegion):
@@ -551,7 +424,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
         elif stop < 0:
             stop = self.size + stop
 
-        assert step == 1 or step % count == 0, "Step must be multiple of component count"
+        assert step == 1 or step % count == 0, 'Step must be multiple of component count'
 
         data_start = (start // count) * self.stride + start % count
         data_stop = (stop // count) * self.stride + stop % count
@@ -584,7 +457,7 @@ class IndirectArrayRegion(AbstractBufferRegion):
         elif stop < 0:
             stop = self.size + stop
 
-        assert step == 1 or step % count == 0, "Step must be multiple of component count"
+        assert step == 1 or step % count == 0, 'Step must be multiple of component count'
 
         data_start = (start // count) * self.stride + start % count
         data_stop = (stop // count) * self.stride + stop % count

@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,9 +32,6 @@ from __future__ import absolute_import
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from .base import PlatformEventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants

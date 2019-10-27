@@ -32,13 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = ''
-
 from pyglet.window import key
 
 # From SDL: src/video/quartz/SDL_QuartzKeys.h

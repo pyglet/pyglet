@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Formatted and unformatted document interfaces used by text layout.
 
@@ -68,8 +67,8 @@ This can be useful to tag areas of interest in a document, or maintain
 references back to the source material.
 
 As well as text, the document can contain arbitrary elements represented by
-:py:class:`~pyglet.text.document.InlineElement`.  An inline element behaves like a single character in the
-documented, but can be rendered by the application.
+:py:class:`~pyglet.text.document.InlineElement`.  An inline element behaves
+like a single character in the document, but can be rendered by the application.
 
 Paragraph breaks
 ================
@@ -164,12 +163,6 @@ of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
-from builtins import next
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import re
 import sys
 
@@ -182,7 +175,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 STYLE_INDETERMINATE = 'indeterminate'
 
 
-class InlineElement(object):
+class InlineElement:
     """Arbitrary inline element positioned within a formatted document.
 
     Elements behave like a single glyph in the document.  They are
@@ -620,8 +613,7 @@ class UnformattedDocument(AbstractDocument):
         font_size = self.styles.get('font_size')
         bold = self.styles.get('bold', False)
         italic = self.styles.get('italic', False)
-        return font.load(font_name, font_size,
-                         bold=bool(bold), italic=bool(italic), dpi=dpi)
+        return font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), dpi=dpi)
 
     def get_element_runs(self):
         return runlist.ConstRunIterator(len(self._text), None)
@@ -713,7 +705,7 @@ class _ElementIterator(runlist.RunIterator):
         self.start, self.end, self.value = next(self)
 
 
-class _FontStyleRunsRangeIterator(object):
+class _FontStyleRunsRangeIterator:
     # XXX subclass runlist
     def __init__(self, font_names, font_sizes, bolds, italics, dpi):
         self.zip_iter = runlist.ZipRunIterator(
@@ -737,7 +729,7 @@ class _FontStyleRunsRangeIterator(object):
                          dpi=self.dpi)
 
 
-class _NoStyleRangeIterator(object):
+class _NoStyleRangeIterator:
     # XXX subclass runlist
     def ranges(self, start, end):
         yield start, end, None

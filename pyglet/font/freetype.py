@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import division
-from builtins import object
-
 import ctypes
 from collections import namedtuple
 
@@ -136,11 +133,10 @@ class FreeTypeGlyphRenderer(base.GlyphRenderer):
         return self._create_glyph()
 
 
-FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics',
-                                 ['ascent', 'descent'])
+FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics', ['ascent', 'descent'])
 
 
-class MemoryFaceStore(object):
+class MemoryFaceStore:
     def __init__(self):
         self._dict = {}
 
@@ -211,7 +207,7 @@ class FreeTypeFont(base.Font):
         cls._memory_faces.add(face)
 
 
-class FreeTypeFace(object):
+class FreeTypeFace:
     """FreeType typographic face object.
 
     Keeps the reference count to the face at +1 as long as this object exists. If other objects

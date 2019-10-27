@@ -36,11 +36,6 @@
 '''Cached information about version and extensions of current WGL
 implementation.
 '''
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: glx_info.py 615 2007-02-07 13:17:05Z Alex.Holkner $'
-
 from ctypes import *
 import warnings
 
@@ -54,7 +49,7 @@ from pyglet.compat import asstr
 class WGLInfoException(Exception):
     pass
 
-class WGLInfo(object):
+class WGLInfo:
     def get_extensions(self):
         if not gl_info.have_context():
             warnings.warn("Can't query WGL until a context is created.")

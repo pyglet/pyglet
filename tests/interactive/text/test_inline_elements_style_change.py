@@ -3,6 +3,8 @@ from tests.base.interactive import InteractiveTestCase
 
 import pyglet
 from pyglet.text import caret, document, layout
+from pyglet.text.layout import TextDecorationGroup, IncrementalTextLayout
+
 
 doctext = """ELEMENT.py test document.
 
@@ -43,10 +45,12 @@ class TestElement(document.InlineElement):
     def place(self, layout, x, y):
         ## assert layout.document.text[self._position] == '\x00'
             ### in bug 538, this fails after two characters are deleted.
-        self.vertex_list = layout.batch.add(4, pyglet.gl.GL_QUADS, 
-            layout.top_group, 
-            'v2i', 
-            ('c4B', [200, 200, 200, 255] * 4))
+
+        group = TextDecorationGroup(1, layout.top_group)
+        self.vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES,
+                                                    group,
+                                                    [0, 1, 2, 0, 2, 3],
+                                                    'v2i', ('c4B', [200, 200, 200, 255] * 4))
 
         y += self.descent
         w = self.advance
@@ -58,7 +62,8 @@ class TestElement(document.InlineElement):
     def remove(self, layout):
         self.vertex_list.delete()
         del self.vertex_list
-        
+
+
 class TestWindow(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
         super(TestWindow, self).__init__(*args, **kwargs)
@@ -68,8 +73,8 @@ class TestWindow(pyglet.window.Window):
         for i in [element_index]:
             self.document.insert_element(i, TestElement(60, -10, 70))
         self.margin = 2
-        self.layout = layout.IncrementalTextLayout(self.document,
-            self.width - self.margin * 2, self.height - self.margin * 2,
+        self.layout = IncrementalTextLayout(
+            self.document, self.width - self.margin * 2, self.height - self.margin * 2,
             multiline=True,
             batch=self.batch)
         self.caret = caret.Caret(self.layout)
@@ -89,6 +94,7 @@ class TestWindow(pyglet.window.Window):
 
         self.document.set_style(0, len(self.document.text), dict(bold = None)) ### trigger bug 538
 
+
 @pytest.mark.requires_user_action
 class InlineElementStyleChangeTestCase(InteractiveTestCase):
     """Test that inline elements can have their style changed, even after text
@@ -106,4 +112,3 @@ class InlineElementStyleChangeTestCase(InteractiveTestCase):
         self.window.set_visible()
         pyglet.app.run()
         self.user_verify('Pass test?', take_screenshot=False)
-

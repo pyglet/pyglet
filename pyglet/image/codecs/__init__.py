@@ -49,11 +49,6 @@ Modules must also implement the two functions::
         return []
 
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os.path
 from pyglet import compat_platform
 
@@ -72,7 +67,7 @@ class ImageEncodeException(Exception):
     pass
 
 
-class ImageDecoder(object):
+class ImageDecoder:
     def get_file_extensions(self):
         """Return a list of accepted file extensions, e.g. ['.png', '.bmp']
         Lower-case only.
@@ -105,7 +100,7 @@ class ImageDecoder(object):
                                self.get_file_extensions())
 
 
-class ImageEncoder(object):
+class ImageEncoder:
     def get_file_extensions(self):
         """Return a list of accepted file extensions, e.g. ['.png', '.bmp']
         Lower-case only.

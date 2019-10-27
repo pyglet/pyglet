@@ -1,5 +1,3 @@
-from builtins import str
-
 from ctypes import *
 from ctypes import util
 

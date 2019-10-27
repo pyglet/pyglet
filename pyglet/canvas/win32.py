@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,14 +32,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
-
-from __future__ import absolute_import
 from .base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
+
 
 class Win32Display(Display):
     def get_screens(self):
@@ -55,6 +52,7 @@ class Win32Display(Display):
         enum_proc_ptr = MONITORENUMPROC(enum_proc)
         _user32.EnumDisplayMonitors(None, None, enum_proc_ptr, 0)
         return screens
+
 
 class Win32Screen(Screen):
     _initial_mode = None
@@ -119,6 +117,7 @@ class Win32Screen(Screen):
         if self._initial_mode:
             self.set_mode(self._initial_mode)
 
+
 class Win32ScreenMode(ScreenMode):
     def __init__(self, screen, mode):
         super(Win32ScreenMode, self).__init__(screen)
@@ -127,6 +126,7 @@ class Win32ScreenMode(ScreenMode):
         self.height = mode.dmPelsHeight
         self.depth = mode.dmBitsPerPel
         self.rate = mode.dmDisplayFrequency
+
 
 class Win32Canvas(Canvas):
     def __init__(self, display, hwnd, hdc):

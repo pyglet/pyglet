@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import absolute_import
-from builtins import zip
-
 from pyglet.canvas.win32 import Win32Canvas
 from .base import Config, CanvasConfig, Context
 
@@ -207,10 +204,9 @@ class Win32CanvasConfigARB(CanvasConfig):
         return isinstance(canvas, Win32Canvas)
 
     def create_context(self, share):
-        if self.requires_gl_3() and wgl_info.have_extension('WGL_ARB_create_context'):
-            # For GPUs that ONLY support OpenGL 3.1/3.2, this
-            # extension should be present. Those GPUs should use
-            # the Win32ARBContext for GL3.1/3.2 contexts:
+        if wgl_info.have_extension('WGL_ARB_create_context'):
+            # Graphics adapters that ONLY support up to OpenGL 3.1/3.2
+            # should be using the Win32ARBContext class.
             return Win32ARBContext(self, share)
         else:
             return Win32Context(self, share)

@@ -9,7 +9,6 @@ Making a pyglet release
 
 #. Update version string in the following files and commit:
 
-   * setup.py
    * pyglet/__init__.py
    * doc/conf.py
 

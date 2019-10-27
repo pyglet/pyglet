@@ -32,10 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import zip
-#!/usr/bin/python
-# $Id:$
-
 import ctypes
 
 import pyglet
@@ -43,6 +39,7 @@ from pyglet.input import base
 from pyglet.libs import win32
 from pyglet.libs.win32 import dinput
 from pyglet.libs.win32 import _kernel32
+from .gamecontroller import is_game_controller
 
 # These instance names are not defined anywhere, obtained by experiment.  The
 # GUID names (which seem to be ideally what are needed) are wrong/missing for
@@ -65,29 +62,30 @@ _rel_instance_names = {
 
 _btn_instance_names = {}
 
+
 def _create_control(object_instance):
     raw_name = object_instance.tszName
-    type = object_instance.dwType
-    instance = dinput.DIDFT_GETINSTANCE(type)
+    ctrl_type = object_instance.dwType
+    instance = dinput.DIDFT_GETINSTANCE(ctrl_type)
 
-    if type & dinput.DIDFT_ABSAXIS:
+    if ctrl_type & dinput.DIDFT_ABSAXIS:
         name = _abs_instance_names.get(instance)
         control = base.AbsoluteAxis(name, 0, 0xffff, raw_name)
-    elif type & dinput.DIDFT_RELAXIS:
+    elif ctrl_type & dinput.DIDFT_RELAXIS:
         name = _rel_instance_names.get(instance)
         control = base.RelativeAxis(name, raw_name)
-    elif type & dinput.DIDFT_BUTTON:
+    elif ctrl_type & dinput.DIDFT_BUTTON:
         name = _btn_instance_names.get(instance)
         control = base.Button(name, raw_name)
-    elif type & dinput.DIDFT_POV:
-        control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 
-                                    0, 0xffffffff, raw_name)
+    elif ctrl_type & dinput.DIDFT_POV:
+        control = base.AbsoluteAxis(base.AbsoluteAxis.HAT, 0, 0xffffffff, raw_name)
     else:
         return
 
     control._type = object_instance.dwType
     return control
-        
+
+
 class DirectInputDevice(base.Device):
     def __init__(self, display, device, device_instance):
         name = device_instance.tszInstanceName
@@ -95,16 +93,25 @@ class DirectInputDevice(base.Device):
 
         self._type = device_instance.dwDevType & 0xff
         self._subtype = device_instance.dwDevType & 0xff00
-
         self._device = device
         self._init_controls()
         self._set_format()
 
+        self.id_name = device_instance.tszProductName
+        self.id_product_guid = format(device_instance.guidProduct.Data1, "08x")
+
+    def get_guid(self):
+        """Generate an SDL2 style GUID from the product guid."""
+        # "byte swap" the product id guid string:
+        swapped_guid = (self.id_product_guid[6:8] + self.id_product_guid[4:6] +
+                        self.id_product_guid[2:4] + self.id_product_guid[0:2])
+        # A string to be formatted into the final guid:
+        slug = "{0}000000000000504944564944"
+        return slug.format(swapped_guid)
+
     def _init_controls(self):
         self.controls = []
-        self._device.EnumObjects(
-            dinput.LPDIENUMDEVICEOBJECTSCALLBACK(self._object_enum), 
-            None, dinput.DIDFT_ALL)
+        self._device.EnumObjects(dinput.LPDIENUMDEVICEOBJECTSCALLBACK(self._object_enum), None, dinput.DIDFT_ALL)
 
     def _object_enum(self, object_instance, arg):
         control = _create_control(object_instance.contents)
@@ -122,16 +129,15 @@ class DirectInputDevice(base.Device):
             object_format.dwOfs = offset
             object_format.dwType = control._type
             offset += 4
-             
-        format = dinput.DIDATAFORMAT()
-        format.dwSize = ctypes.sizeof(format)
-        format.dwObjSize = ctypes.sizeof(dinput.DIOBJECTDATAFORMAT)
-        format.dwFlags = 0
-        format.dwDataSize = offset
-        format.dwNumObjs = len(object_formats)
-        format.rgodf = ctypes.cast(ctypes.pointer(object_formats),
-                                   dinput.LPDIOBJECTDATAFORMAT)
-        self._device.SetDataFormat(format)
+
+        fmt = dinput.DIDATAFORMAT()
+        fmt.dwSize = ctypes.sizeof(fmt)
+        fmt.dwObjSize = ctypes.sizeof(dinput.DIOBJECTDATAFORMAT)
+        fmt.dwFlags = 0
+        fmt.dwDataSize = offset
+        fmt.dwNumObjs = len(object_formats)
+        fmt.rgodf = ctypes.cast(ctypes.pointer(object_formats), dinput.LPDIOBJECTDATAFORMAT)
+        self._device.SetDataFormat(fmt)
 
         prop = dinput.DIPROPDWORD()
         prop.diph.dwSize = ctypes.sizeof(prop)
@@ -139,19 +145,17 @@ class DirectInputDevice(base.Device):
         prop.diph.dwObj = 0
         prop.diph.dwHow = dinput.DIPH_DEVICE
         prop.dwData = 64 * ctypes.sizeof(dinput.DIDATAFORMAT)
-        self._device.SetProperty(dinput.DIPROP_BUFFERSIZE, 
-                                 ctypes.byref(prop.diph))
+        self._device.SetProperty(dinput.DIPROP_BUFFERSIZE, ctypes.byref(prop.diph))
 
     def open(self, window=None, exclusive=False):
         if not self.controls:
             return
 
         if window is None:
-            # Pick any open window, or the shadow window if no windows
-            # have been created yet.
-            window = pyglet.gl._shadow_window
-            for window in pyglet.app.windows:
-                break
+            if not pyglet.app.windows:
+                return
+            # Pick any open window
+            window = pyglet.app.windows[0]
 
         flags = dinput.DISCL_BACKGROUND
         if exclusive:
@@ -161,8 +165,7 @@ class DirectInputDevice(base.Device):
         
         self._wait_object = _kernel32.CreateEventW(None, False, False, None)
         self._device.SetEventNotification(self._wait_object)
-        pyglet.app.platform_event_loop.add_wait_object(self._wait_object, 
-                                                       self._dispatch_events)
+        pyglet.app.platform_event_loop.add_wait_object(self._wait_object, self._dispatch_events)
 
         self._device.SetCooperativeLevel(window._hwnd, flags)
         self._device.Acquire()
@@ -188,15 +191,16 @@ class DirectInputDevice(base.Device):
         events = (dinput.DIDEVICEOBJECTDATA * 64)()
         n_events = win32.DWORD(len(events))
         self._device.GetDeviceData(ctypes.sizeof(dinput.DIDEVICEOBJECTDATA),
-                                   ctypes.cast(ctypes.pointer(events), 
-                                               dinput.LPDIDEVICEOBJECTDATA),
+                                   ctypes.cast(ctypes.pointer(events), dinput.LPDIDEVICEOBJECTDATA),
                                    ctypes.byref(n_events),
                                    0)
         for event in events[:n_events.value]:
             index = event.dwOfs // 4
             self.controls[index].value = event.dwData
 
+
 _i_dinput = None
+
 
 def _init_directinput():
     global _i_dinput
@@ -204,10 +208,13 @@ def _init_directinput():
         return
     
     _i_dinput = dinput.IDirectInput8()
-    module = _kernel32.GetModuleHandleW(None)
-    dinput.DirectInput8Create(module, dinput.DIRECTINPUT_VERSION,
+    module_handle = _kernel32.GetModuleHandleW(None)
+    dinput.DirectInput8Create(module_handle,
+                              dinput.DIRECTINPUT_VERSION,
                               dinput.IID_IDirectInput8W, 
-                              ctypes.byref(_i_dinput), None)
+                              ctypes.byref(_i_dinput),
+                              None)
+
 
 def get_devices(display=None):
     _init_directinput()
@@ -215,18 +222,16 @@ def get_devices(display=None):
 
     def _device_enum(device_instance, arg):
         device = dinput.IDirectInputDevice8()
-        _i_dinput.CreateDevice(device_instance.contents.guidInstance,
-                               ctypes.byref(device),
-                               None)
-        _devices.append(DirectInputDevice(display, 
-                                          device, device_instance.contents))
-        
+        _i_dinput.CreateDevice(device_instance.contents.guidInstance, ctypes.byref(device), None)
+        _devices.append(DirectInputDevice(display, device, device_instance.contents))
         return dinput.DIENUM_CONTINUE
 
     _i_dinput.EnumDevices(dinput.DI8DEVCLASS_ALL, 
                           dinput.LPDIENUMDEVICESCALLBACK(_device_enum), 
-                          None, dinput.DIEDFL_ATTACHEDONLY)
+                          None,
+                          dinput.DIEDFL_ATTACHEDONLY)
     return _devices
+
 
 def _create_joystick(device):
     if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
@@ -234,10 +239,23 @@ def _create_joystick(device):
                         dinput.DI8DEVTYPE_GAMEPAD):
         return base.Joystick(device)
 
+
 def get_joysticks(display=None):
-    return [joystick 
-            for joystick 
-            in [_create_joystick(device) 
-                for device
-                in get_devices(display)] 
+    return [joystick for joystick in
+            [_create_joystick(device) for device in get_devices(display)]
             if joystick is not None]
+
+
+def _create_game_controller(device):
+    if not is_game_controller(device):
+        return
+    if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
+                        dinput.DI8DEVTYPE_1STPERSON,
+                        dinput.DI8DEVTYPE_GAMEPAD):
+        return base.GameController(device)
+
+
+def get_game_controllers(display=None):
+    return [controller for controller in
+            [_create_game_controller(device) for device in get_devices(display)]
+            if controller is not None]

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import bytes, object
 from ctypes import sizeof
 from io import BytesIO
 import unittest
@@ -117,7 +115,3 @@ class SquareTest(SynthesisSourceTest, unittest.TestCase):
 
 class FMTest(SynthesisSourceTest, unittest.TestCase):
     source_class = FM
-
-
-class DigitarTest(SynthesisSourceTest, unittest.TestCase):
-    source_class = Digitar

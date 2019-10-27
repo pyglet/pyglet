@@ -146,7 +146,7 @@ copyright = u'2006-2008, Alex Holkner. 2008-2019 pyglet contributors'
 # built documents.
 #
 # The short X.Y version.
-version = '1.4'
+version = '2.0'
 # The full version, including alpha/beta/rc tags.
 release = pyglet.version
 

@@ -1,7 +1,5 @@
-#!/usr/bin/python
-# $Id:$
-
 from pyglet.gl import *
+
 
 def draw_client_border(window):
     glClearColor(0, 0, 0, 1)
@@ -13,6 +11,7 @@ def draw_client_border(window):
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
+
     def rect(x1, y1, x2, y2):
         glBegin(GL_LINE_LOOP)
         glVertex2f(x1, y1)
@@ -20,7 +19,7 @@ def draw_client_border(window):
         glVertex2f(x2, y2)
         glVertex2f(x1, y2)
         glEnd()
-    
+
     glColor3f(1, 0, 0)
     rect(-2, -2, window.width + 2, window.height + 2)
 

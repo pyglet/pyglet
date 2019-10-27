@@ -32,13 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import object
-
-from ctypes import cdll, util, CFUNCTYPE, byref, c_void_p
-from ctypes import c_int, c_ubyte, c_bool, c_uint32, c_uint32, c_uint64
-
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
 
@@ -48,6 +41,15 @@ __LP64__ = (sys.maxsize > 2**32)
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, \
     kCFRunLoopDefaultMode, CFAllocatorRef, known_cftypes, cf, \
     cfset_to_set, cftype_to_value, cfarray_to_list
+
+from ctypes import *
+from ctypes import util
+
+from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
+from .base import Joystick, GameController, AppleRemote
+from .base import DeviceExclusiveException
+from .gamecontroller import is_game_controller
+
 
 # Load iokit framework
 iokit = cdll.LoadLibrary(util.find_library('IOKit'))
@@ -80,7 +82,7 @@ kHIDUsage_Csmr_Menu            = 0x40
 kHIDUsage_Csmr_FastForward     = 0xB3
 kHIDUsage_Csmr_Rewind          = 0xB4
 kHIDUsage_Csmr_Eject	       = 0xB8
-kHIDUsage_Csmr_Mute	       = 0xE2
+kHIDUsage_Csmr_Mute	           = 0xE2
 kHIDUsage_Csmr_VolumeIncrement = 0xE9
 kHIDUsage_Csmr_VolumeDecrement = 0xEA
 
@@ -240,10 +242,11 @@ HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)
 
 # Lookup tables cache python objects for the devices and elements so that
 # we can avoid creating multiple wrapper objects for the same device.
-_device_lookup = {}  # IOHIDDeviceRef to python HIDDevice object
-_element_lookup = {} # IOHIDElementRef to python HIDDeviceElement object
+_device_lookup = {}     # IOHIDDeviceRef to python HIDDevice object
+_element_lookup = {}    # IOHIDElementRef to python HIDDeviceElement object
 
-class HIDValue(object):
+
+class HIDValue:
     def __init__(self, valueRef):
         # Check that this is a valid IOHIDValue.
         assert(valueRef)
@@ -261,7 +264,8 @@ class HIDValue(object):
         elementRef = c_void_p(iokit.IOHIDValueGetElement(valueRef))
         self.element = HIDDeviceElement.get_element(elementRef)
 
-class HIDDevice(object):
+
+class HIDDevice:
     @classmethod
     def get_device(cls, deviceRef):
         # deviceRef is a c_void_p pointing to an IOHIDDeviceRef
@@ -402,7 +406,7 @@ class HIDDevice(object):
             return None
 
 
-class HIDDeviceElement(object):
+class HIDDeviceElement:
     @classmethod
     def get_element(cls, elementRef):
         # elementRef is a c_void_p pointing to an IOHIDDeviceElementRef
@@ -414,8 +418,8 @@ class HIDDeviceElement(object):
 
     def __init__(self, elementRef):
         # Check that we've been passed a valid IOHIDElement.
-        assert(elementRef)
-        assert(cf.CFGetTypeID(elementRef) == iokit.IOHIDElementGetTypeID())
+        assert elementRef
+        assert cf.CFGetTypeID(elementRef) == iokit.IOHIDElementGetTypeID()
         _element_lookup[elementRef.value] = self
         self.elementRef = elementRef
         # Set element properties as attributes.
@@ -446,11 +450,11 @@ class HIDDeviceElement(object):
         self.physicalMax = iokit.IOHIDElementGetPhysicalMax(elementRef)
 
 
-class HIDManager(object):
+class HIDManager:
     def __init__(self):
         # Create the HID Manager.
         self.managerRef = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))
-        assert(self.managerRef)
+        assert self.managerRef
         assert cf.CFGetTypeID(self.managerRef) == iokit.IOHIDManagerGetTypeID()
         self.schedule_with_run_loop()
         self.matching_observers = set()
@@ -499,8 +503,8 @@ class HIDManager(object):
             self.matching_callback,
             None)
 
-######################################################################
 
+######################################################################
 # Add conversion methods for IOHIDDevices and IOHIDDeviceElements
 # to the list of known types used by cftype_to_value.
 known_cftypes[iokit.IOHIDDeviceGetTypeID()] = HIDDevice.get_device
@@ -509,10 +513,6 @@ known_cftypes[iokit.IOHIDElementGetTypeID()] = HIDDeviceElement.get_element
 
 ######################################################################
 # Pyglet interface to HID
-
-from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, AppleRemote
-from .base import DeviceExclusiveException
 
 _axis_names = {
     (0x01, 0x30): 'x',
@@ -524,6 +524,7 @@ _axis_names = {
     (0x01, 0x38): 'wheel',
     (0x01, 0x39): 'hat',
 }
+
 
 _button_names = {
     (kHIDPage_GenericDesktop, kHIDUsage_GD_SystemSleep): 'sleep',
@@ -544,9 +545,10 @@ _button_names = {
     (kHIDPage_Consumer, kHIDUsage_Csmr_VolumeDecrement): 'volume_down'
 }
 
+
 class PygletDevice(Device):
     def __init__(self, display, device, manager):
-        super(PygletDevice, self).__init__(display, device.product)
+        super(PygletDevice, self).__init__(display=display, name=device.product)
         self.device = device
         self.device_identifier = self.device.unique_identifier()
         self.device.add_value_observer(self)
@@ -571,6 +573,29 @@ class PygletDevice(Device):
 
     def get_controls(self):
         return list(self._controls.values())
+
+    def get_guid(self):
+        """Generate an SDL2 style GUID from the product guid."""
+
+        if self.device.transport == 'USB':
+            bustype = 0x03
+            vendor, product, version = self.device_identifier[2:5]
+            # Byte swap (ABCD --> CDAB):
+            bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
+            vendor = ((vendor << 8) | (vendor >> 8)) & 0xFFFF
+            product = ((product << 8) | (product >> 8)) & 0xFFFF
+            version = ((version << 8) | (version >> 8)) & 0xFFFF
+            return "{:04x}0000{:04x}0000{:04x}0000{:04x}0000".format(bustype, vendor, product, version)
+
+        elif self.device.transport == 'BLUETOOTH':
+            bustype = 0x05
+            # Byte swap (ABCD --> CDAB):
+            bustype = ((bustype << 8) | (bustype >> 8)) & 0xFFFF
+
+            # TODO: test fallback to vendor id if no product name:
+            name = self.device.product or str(self.device.vendorID)
+            name = name.encode().hex()
+            return "{:04x}0000{:0<24}".format(bustype, name)
 
     def device_removed(self, hid_device):
         # Called by device when it is unplugged.
@@ -627,16 +652,25 @@ class PygletDevice(Device):
 
 ######################################################################
 
+
 _manager = HIDManager()
 
+
 def get_devices(display=None):
-    return [ PygletDevice(display, device, _manager) for device in _manager.devices ]
+    return [PygletDevice(display, device, _manager) for device in _manager.devices]
+
 
 def get_joysticks(display=None):
-    return [ Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices
-             if device.is_joystick() or device.is_gamepad() or device.is_multi_axis() ]
+    return [Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices
+            if device.is_joystick() or device.is_gamepad() or device.is_multi_axis()]
+
 
 def get_apple_remote(display=None):
     for device in _manager.devices:
         if device.product == 'Apple IR':
             return AppleRemote(PygletDevice(display, device, _manager))
+
+
+def get_game_controllers(display=None):
+    return [GameController(PygletDevice(display, device, _manager)) for device in _manager.devices
+            if is_game_controller(device)]

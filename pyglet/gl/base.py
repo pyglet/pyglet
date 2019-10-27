@@ -32,13 +32,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import object
-
-from pyglet import gl, compat_platform
+from pyglet import gl
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 
-class Config(object):
+
+class Config:
     """Graphics configuration.
 
     A Config stores the preferences for OpenGL attributes such as the
@@ -140,7 +139,7 @@ class Config(object):
     def get_gl_attributes(self):
         """Return a list of attributes set on this config.
 
-        :rtype: list of tuple ``(name, value)``
+        :rtype: list of tuple (name, value)
         :return: All attributes, with unset attributes having a value of
             ``None``.
         """
@@ -149,7 +148,7 @@ class Config(object):
     def match(self, canvas):
         """Return a list of matching complete configs for the given canvas.
 
-        .. versionadded:: 1.2
+        :since: pyglet 1.2
 
         :Parameters:
             `canvas` : `Canvas`
@@ -192,15 +191,15 @@ class Config(object):
 
     def __repr__(self):
         import pprint
-        return '%s(%s)' % (self.__class__.__name__, 
-                           pprint.pformat(self.get_gl_attributes()))
+        return '%s(%s)' % (self.__class__.__name__, pprint.pformat(self.get_gl_attributes()))
+
 
 class CanvasConfig(Config):
     """OpenGL configuration for a particular canvas.
 
     Use `Config.match` to obtain an instance of this class.
 
-    .. versionadded:: 1.2
+    :since: pyglet 1.2
 
     :Ivariables:
         `canvas` : `Canvas`
@@ -232,16 +231,17 @@ class CanvasConfig(Config):
 
     def is_complete(self):
         return True
- 
 
-class ObjectSpace(object):
+
+class ObjectSpace:
     def __init__(self):
-        # Textures and buffers scheduled for deletion the next time this
-        # object space is active.
-        self._doomed_textures = []
-        self._doomed_buffers = []
+        # Textures and buffers scheduled for deletion the next time
+        # this object space is active.
+        self.doomed_textures = []
+        self.doomed_buffers = []
 
-class Context(object):
+
+class Context:
     """OpenGL context for drawing.
 
     Use `CanvasConfig.create_context` to create a context.
@@ -260,44 +260,13 @@ class Context(object):
     #: Context share behaviour indicating that objects are shared with
     #: the most recently created context (the default).
     CONTEXT_SHARE_EXISTING = 1
-    
+
     # Used for error checking, True if currently within a glBegin/End block.
     # Ignored if error checking is disabled.
     _gl_begin = False
 
     # gl_info.GLInfo instance, filled in on first set_current
     _info = None
-
-    # List of (attr, check) for each driver/device-specific workaround that is
-    # implemented.  The `attr` attribute on this context is set to the result
-    # of evaluating `check(gl_info)` the first time this context is used.
-    _workaround_checks = [
-        # GDI Generic renderer on Windows does not implement
-        # GL_UNPACK_ROW_LENGTH correctly.
-        ('_workaround_unpack_row_length',
-         lambda info: info.get_renderer() == 'GDI Generic'),
-
-        # Reportedly segfaults in text_input.py example with
-        #   "ATI Radeon X1600 OpenGL Engine"
-        # glGenBuffers not exported by
-        #   "ATI Radeon X1270 x86/MMX/3DNow!/SSE2"
-        #   "RADEON XPRESS 200M Series x86/MMX/3DNow!/SSE2"
-        # glGenBuffers not exported by
-        #   "Intel 965/963 Graphics Media Accelerator"
-        ('_workaround_vbo',
-         lambda info: (info.get_renderer().startswith('ATI Radeon X')
-                       or info.get_renderer().startswith('RADEON XPRESS 200M')
-                       or info.get_renderer() == 
-                            'Intel 965/963 Graphics Media Accelerator')),
-
-        # Some ATI cards on OS X start drawing from a VBO before it's written
-        # to.  In these cases pyglet needs to call glFinish() to flush the
-        # pipeline after updating a buffer but before rendering.
-        ('_workaround_vbo_finish',
-         lambda info: ('ATI' in info.get_renderer() and 
-                       info.have_version(1, 5) and
-                       compat_platform == 'darwin')),
-    ]
 
     def __init__(self, config, context_share=None):
         self.config = config
@@ -308,7 +277,7 @@ class Context(object):
             self.object_space = context_share.object_space
         else:
             self.object_space = ObjectSpace()
-    
+
     def __repr__(self):
         return '%s()' % self.__class__.__name__
 
@@ -333,27 +302,24 @@ class Context(object):
         gl_info.set_active_context()
         glu_info.set_active_context()
 
-        # Implement workarounds
         if not self._info:
             self._info = gl_info.GLInfo()
             self._info.set_active_context()
-            for attr, check in self._workaround_checks:
-                setattr(self, attr, check(self._info))
 
         # Release textures and buffers on this context scheduled for deletion.
         # Note that the garbage collector may introduce a race condition,
         # so operate on a copy of the textures/buffers and remove the deleted
         # items using list slicing (which is an atomic operation)
-        if self.object_space._doomed_textures:
-            textures = self.object_space._doomed_textures[:]
+        if self.object_space.doomed_textures:
+            textures = self.object_space.doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
             gl.glDeleteTextures(len(textures), textures)
-            self.object_space._doomed_textures[0:len(textures)] = []
-        if self.object_space._doomed_buffers:
-            buffers = self.object_space._doomed_buffers[:]
+            self.object_space.doomed_textures[0:len(textures)] = []
+        if self.object_space.doomed_buffers:
+            buffers = self.object_space.doomed_buffers[:]
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
-            self.object_space._doomed_buffers[0:len(buffers)] = []
+            self.object_space.doomed_buffers[0:len(buffers)] = []
 
     def destroy(self):
         """Release the context.
@@ -369,10 +335,6 @@ class Context(object):
             gl.current_context = None
             gl_info.remove_active_context()
 
-            # Switch back to shadow context.
-            if gl._shadow_window is not None:
-                gl._shadow_window.switch_to()
-
     def delete_texture(self, texture_id):
         """Safely delete a texture belonging to this context.
 
@@ -387,15 +349,15 @@ class Context(object):
 
         """
         if self.object_space is gl.current_context.object_space:
-            id = gl.GLuint(texture_id)
-            gl.glDeleteTextures(1, id)
+            tex_id = gl.GLuint(texture_id)
+            gl.glDeleteTextures(1, tex_id)
         else:
-            self.object_space._doomed_textures.append(texture_id)
+            self.object_space.doomed_textures.append(texture_id)
 
     def delete_buffer(self, buffer_id):
         """Safely delete a buffer object belonging to this context.
 
-        This method behaves similarly to :py:func:`~pyglet.text.document.AbstractDocument.delete_texture`, though for
+        This method behaves similarly to `delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
 
         :Parameters:
@@ -405,15 +367,15 @@ class Context(object):
         .. versionadded:: 1.1
         """
         if self.object_space is gl.current_context.object_space and False:
-            id = gl.GLuint(buffer_id)
-            gl.glDeleteBuffers(1, id)
+            buf_id = gl.GLuint(buffer_id)
+            gl.glDeleteBuffers(1, buf_id)
         else:
-            self.object_space._doomed_buffers.append(buffer_id)
+            self.object_space.doomed_buffers.append(buffer_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.
 
-        .. versionadded:: 1.2
+        :since: pyglet 1.2
 
         :rtype: `GLInfo`
         """

@@ -32,15 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-"""
-"""
-from __future__ import division
-from builtins import chr
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from ctypes import *
 import unicodedata
 import warnings
@@ -604,8 +595,7 @@ class Win32Window(BaseWindow):
         rect = RECT()
         rect.left = x
         rect.top = y
-        _user32.AdjustWindowRectEx(byref(rect),
-            self._ws_style, False, self._ex_ws_style)
+        _user32.AdjustWindowRectEx(byref(rect), self._ws_style, False, self._ex_ws_style)
         return rect.left, rect.top
 
     # Event dispatching
@@ -637,12 +627,7 @@ class Win32Window(BaseWindow):
             event_handler = event_handlers.get(msg, None)
             result = None
             if event_handler:
-                if self._allow_dispatch_event or not self._enable_event_queue:
-                    result = event_handler(msg, wParam, lParam)
-                else:
-                    result = 0
-                    self._event_queue.append((event_handler, msg,
-                                              wParam, lParam))
+                result = event_handler(msg, wParam, lParam)
             if result is None:
                 result = _user32.DefWindowProcW(hwnd, msg, wParam, lParam)
             return result

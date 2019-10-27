@@ -1,14 +1,13 @@
-from __future__ import division
-from builtins import range
 from tests import mock
 import random
-from tests.base.future_test import FutureTestCase
+import unittest
 
+from pyglet.gl import GL_TEXTURE_RECTANGLE
 from pyglet.media.player import Player, PlayerGroup
 from pyglet.media.codecs.base import AudioFormat, VideoFormat, Source
 
 
-class PlayerTestCase(FutureTestCase):
+class PlayerTestCase(unittest.TestCase):
     # Default values to use
     audio_format_1 = AudioFormat(1, 8, 11025)
     audio_format_2 = AudioFormat(2, 8, 11025)
@@ -134,7 +133,7 @@ class PlayerTestCase(FutureTestCase):
         source.get_queue_source.return_value.seek.assert_called_once_with(time)
 
     def assert_new_texture_created(self, video_format):
-        self.mock_texture_create.assert_called_once_with(video_format.width, video_format.height, rectangle=True)
+        self.mock_texture_create.assert_called_once_with(video_format.width, video_format.height, GL_TEXTURE_RECTANGLE)
 
     def assert_no_new_texture_created(self):
         self.assertFalse(self.mock_texture_create.called)
@@ -689,7 +688,7 @@ class PlayerTestCase(FutureTestCase):
         self.player.play()
 
 
-class PlayerGroupTestCase(FutureTestCase):
+class PlayerGroupTestCase(unittest.TestCase):
     def create_mock_player(self, has_audio=True):
         player = mock.MagicMock()
         if has_audio:
@@ -712,16 +711,13 @@ class PlayerGroupTestCase(FutureTestCase):
             audio_player = player._audio_player
             audio_players.append(audio_player)
             if call_args is not None:
-                self.assertFalse(audio_player._play_group.called,
-                                 msg='Only one player should be used to start the group')
+                self.assertFalse(audio_player._play_group.called, msg='Only one player should be used to start the group')
             elif audio_player._play_group.called:
                 call_args = audio_player._play_group.call_args
 
-        self.assertIsNotNone(call_args,
-                             msg='No player was used to start all audio players.')
+        self.assertIsNotNone(call_args, msg='No player was used to start all audio players.')
         started_players = call_args[0][0]
-        self.assertCountEqual(started_players, audio_players,
-                              msg='Not all players with audio players were started')
+        self.assertCountEqual(started_players, audio_players, msg='Not all players with audio players were started')
 
     def assert_players_stopped(self, *players):
         for player in players:

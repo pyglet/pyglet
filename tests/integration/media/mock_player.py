@@ -1,4 +1,3 @@
-from __future__ import absolute_import, print_function
 import pyglet
 import pytest
 _debug = False

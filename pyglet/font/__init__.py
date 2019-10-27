@@ -50,15 +50,13 @@ pyglet will automatically load any system-installed fonts.  You can add addition
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
 """
-from __future__ import absolute_import, division
-from builtins import str
-
 import os
 import sys
 import weakref
 
 import pyglet
 from pyglet import gl
+
 
 if not getattr(sys, 'is_pyglet_doc_run', False):
     if pyglet.compat_platform == 'darwin':
@@ -90,8 +88,7 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
             pyglet 1.1, the name may be omitted.
         `size` : float
             Size of the font, in points.  The returned font may be an exact
-            match or the closest available.  In pyglet 1.1, the size may be
-            omitted, and defaults to 12pt.
+            match or the closest available.
         `bold` : bool
             If True, a bold variant is returned, if one exists for the given
             family and size.

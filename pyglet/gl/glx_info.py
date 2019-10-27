@@ -51,11 +51,6 @@ Or, if using more than one display::
         # ...
 
 '''
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 from ctypes import *
 
 from pyglet.gl.glx import *
@@ -64,7 +59,7 @@ from pyglet.compat import asstr
 class GLXInfoException(Exception):
     pass
 
-class GLXInfo(object):
+class GLXInfo:
     def __init__(self, display=None):
         # Set default display if not set
         if display and not _glx_info.display:

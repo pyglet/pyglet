@@ -42,7 +42,7 @@ from .. import Model, Material, MaterialGroup, TexturedMaterialGroup
 from . import ModelDecodeException, ModelDecoder
 
 
-class Mesh(object):
+class Mesh:
     def __init__(self, name):
         self.name = name
         self.material = None

@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import division
 import pytest
 from tests.base.interactive import InteractiveTestCase
 
@@ -36,7 +34,7 @@ class WINDOW_MULTISAMPLE(InteractiveTestCase):
     samples = 2
 
     # This test does not work on all hardware, unless rendered to texture.
-    texture = pyglet.image.Texture.create(width, height, rectangle=True)
+    texture = pyglet.image.Texture.create(width, height, GL_TEXTURE_RECTANGLE)
 
     def set_window(self):
         oldwindow = self.win

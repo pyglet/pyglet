@@ -8,6 +8,9 @@
 and other visually rich applications. It supports windowing, user interface event handling, Joysticks,
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
+> **NOTE!**
+> The `pyglet-1.4-maintenance` branch is the current stable release. The `master` branch contains the the development code for the upcoming 2.0 release, and may be unstable. 
+
 * pyglet [documentation]
 * pyglet [wiki]
 * pyglet on [PyPI]
@@ -98,6 +101,7 @@ it is a sign that the docs should be improved.
 If you want to contribute to Pyglet, we suggest the following:
 
 * Fork the [official repository](https://github.com/pyglet/pyglet/fork).
+* Checkout the branch you wish to contribute to (such as *pyglet-1.4-maintenance*).
 * Apply your changes to your fork.
 * Submit a [pull request](https://github.com/pyglet/pyglet/pulls) describing the changes you have made.
 * Alternatively you can create a patch and submit it to the issue tracker.

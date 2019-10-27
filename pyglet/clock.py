@@ -110,63 +110,13 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
 of the system clock.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import range
-from builtins import object
-
-import sys
 import time
-import ctypes
 from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
 from collections import deque
 
-import pyglet.lib
-from pyglet import compat_platform
 
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-
-if sys.version_info[:2] < (3, 5):
-    # PYTHON2 - remove these legacy classes:
-
-    if compat_platform in ('win32', 'cygwin'):
-
-        class _ClockBase(object):
-
-            @staticmethod
-            def sleep(microseconds):
-                time.sleep(microseconds * 1e-6)
-
-        _default_time_function = time.clock
-
-    else:
-        _c = pyglet.lib.load_library('c')
-        _c.usleep.argtypes = [ctypes.c_ulong]
-
-        class _ClockBase(object):
-
-            @staticmethod
-            def sleep(microseconds):
-                _c.usleep(int(microseconds))
-
-        _default_time_function = time.time
-
-else:
-
-    class _ClockBase(object):
-
-        @staticmethod
-        def sleep(microseconds):
-            time.sleep(microseconds * 1e-6)
-
-    _default_time_function = time.perf_counter
-
-
-class _ScheduledItem(object):
+class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
 
     def __init__(self, func, args, kwargs):
@@ -175,7 +125,7 @@ class _ScheduledItem(object):
         self.kwargs = kwargs
 
 
-class _ScheduledIntervalItem(object):
+class _ScheduledIntervalItem:
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):
@@ -193,26 +143,11 @@ class _ScheduledIntervalItem(object):
             return self.next_ts < other
 
 
-class Clock(_ClockBase):
+class Clock:
     """Class for calculating and limiting framerate.
 
     It is also used for calling scheduled functions.
     """
-
-    #: The minimum amount of time in seconds this clock will attempt to sleep
-    #: for when framerate limiting.  Higher values will increase the
-    #: accuracy of the limiting but also increase CPU usage while
-    #: busy-waiting.  Lower values mean the process sleeps more often, but is
-    #: prone to over-sleep and run at a potentially lower or uneven framerate
-    #: than desired.
-    #: On Windows, MIN_SLEEP is larger because the default timer resolution
-    #: is set by default to 15 .6 ms.
-    MIN_SLEEP = 0.008 if compat_platform in ('win32', 'cygwin') else 0.005
-
-    #: The amount of time in seconds this clock subtracts from sleep values
-    #: to compensate for lazy operating systems.
-    SLEEP_UNDERSHOOT = MIN_SLEEP - 0.001
-
     # List of functions to call every tick.
     _schedule_items = None
 
@@ -222,7 +157,7 @@ class Clock(_ClockBase):
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep = False
 
-    def __init__(self, time_function=_default_time_function):
+    def __init__(self, time_function=time.perf_counter):
         """Initialise a Clock, with optional custom time function.
 
         :Parameters:
@@ -388,6 +323,10 @@ class Clock(_ClockBase):
         delta_t = self.update_time()
         self.call_scheduled_functions(delta_t)
         return delta_t
+
+    @staticmethod
+    def sleep(microseconds):
+        time.sleep(microseconds * 1e-6)
 
     def get_sleep_time(self, sleep_idle):
         """Get the time until the next item is scheduled.
@@ -609,9 +548,7 @@ class Clock(_ClockBase):
         # clever remove item without disturbing the heap:
         # 1. set function to an empty lambda -- original function is not called
         # 2. set interval to 0               -- item will be removed from heap eventually
-        valid_items = set(item
-                          for item in self._schedule_interval_items
-                          if item.func == func)
+        valid_items = set(item for item in self._schedule_interval_items if item.func == func)
 
         if self._current_interval_item:
             if self._current_interval_item.func == func:

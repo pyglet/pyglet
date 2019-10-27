@@ -5,6 +5,7 @@ from tests.base.interactive import InteractiveTestCase
 from pyglet import window
 from pyglet.gl import *
 
+
 @pytest.mark.requires_user_validation
 class WINDOW_OPEN(InteractiveTestCase):
     def open_window(self):

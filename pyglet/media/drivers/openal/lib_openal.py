@@ -45,8 +45,6 @@ TODO add alGetError check.
 10.4 user's installation.  They've also been removed for compatibility.
 '''
 
-__docformat__ =  'restructuredtext'
-__version__ = '$Id$'
 
 import ctypes
 from ctypes import *

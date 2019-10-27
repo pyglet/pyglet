@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Decode HTML into attributed text.
+"""Decode HTML into attributed text.
 
 A subset of HTML 4.01 Transitional is implemented.  The following elements are
 supported fully::
@@ -47,18 +47,16 @@ out-of-stream text.  This means lists display as expected, but behave a little
 oddly if edited.
 
 No CSS styling is supported.
-'''
-from builtins import chr
+"""
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
+from html.parser import HTMLParser
+from html import entities
 
-from future.moves.html.parser import HTMLParser
-from future.moves.html import entities
 import re
 
 import pyglet
 from pyglet.text.formats import structured
+
 
 def _hex_color(val):
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]

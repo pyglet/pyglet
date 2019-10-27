@@ -32,14 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-'''
-'''
 from ctypes import c_void_p, c_ubyte
-from builtins import range
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 from pyglet.image import ImageData, Animation, AnimationFrame
 from pyglet.image.codecs import *

@@ -105,8 +105,6 @@ appropriate typeface name and create the font using CreateFont or
 CreateFontIndirect.
 
 """
-from __future__ import print_function
-from builtins import object
 DEBUG = False
 
 __all__ = ['have_font', 'font_list']
@@ -120,7 +118,7 @@ PY3K = sys.version_info >= (3, 0)
 #-- INTRO: MAINTAIN CACHED FONTS DB --
 
 # [ ] make it Django/NDB style model definition
-class FontEntry(object):
+class FontEntry:
   """
   Font classification.
   Level 0:

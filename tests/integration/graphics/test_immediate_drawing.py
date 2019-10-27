@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Tests immediate drawing.
 """
-from __future__ import absolute_import
 import unittest
 
 import pyglet

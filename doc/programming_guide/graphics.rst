@@ -569,3 +569,14 @@ In general you should batch all drawing objects into as few batches as
 possible, and use groups to manage the draw order and other OpenGL state
 changes for optimal performance.   If you are creating your own drawable
 classes, consider adding ``batch`` and ``group`` parameters in a similar way.
+
+
+Shader program details
+----------------------
+
+* VAOs are generated at the Batch level.
+* Groups are used to segregate shader programs. Group set/unset state_calls
+  are used to activate and deactivate these programs.
+* Only one texture unit (GL_TEXTURE0) is currently being used by the image module,.
+  and therefore textures.
+

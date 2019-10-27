@@ -1,7 +1,3 @@
-"""High-level sound and video player."""
-from __future__ import print_function
-from __future__ import division
-from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -37,9 +33,12 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+"""High-level sound and video player."""
+
 from collections import deque
 
 import pyglet
+from pyglet.gl import GL_TEXTURE_RECTANGLE
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source
@@ -51,7 +50,7 @@ _debug = pyglet.options['debug_media']
 clock = pyglet.clock.get_default()
 
 
-class MasterClock(object):
+class MasterClock:
     """Master clock object.
 
     This is a simple clock object which tracks the time elapsed. It can be
@@ -98,7 +97,7 @@ class MasterClock(object):
         self._time = value
 
 
-class _PlayerProperty(object):
+class _PlayerProperty:
     """Descriptor for Player attributes to forward to the AudioPlayer.
 
     We want the Player to have attributes like volume, pitch, etc. These are
@@ -395,8 +394,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def _create_texture(self):
         video_format = self.source.video_format
-        self._texture = pyglet.image.Texture.create(
-            video_format.width, video_format.height, rectangle=True)
+        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height, GL_TEXTURE_RECTANGLE)
         self._texture = self._texture.get_transform(flip_y=True)
         # After flipping the texture along the y axis, the anchor_y is set
         # to the top of the image. We want to keep it at the bottom.
@@ -638,7 +636,7 @@ def _one_item_playlist(source):
     yield source
 
 
-class PlayerGroup(object):
+class PlayerGroup:
     """Group of players that can be played and paused simultaneously.
 
     Create a player group for the given list of players.
