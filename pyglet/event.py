@@ -421,9 +421,6 @@ class EventDispatcher:
             if func:
                 func(*args)
                 return EVENT_HANDLED
-        except AttributeError as exception:
-            self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
-            return EVENT_UNHANDLED
         except TypeError as exception:
             self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
         else:
