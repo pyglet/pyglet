@@ -421,7 +421,7 @@ class EventDispatcher:
             if func:
                 func(*args)
                 return EVENT_HANDLED
-        except TypeError as exception:
+        except BaseException as exception:
             self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
         else:
             invoked = True
