@@ -1277,21 +1277,22 @@ class CompressedImageData(AbstractImage):
         if self._current_texture:
             return self._current_texture
 
-        texture = Texture.create_for_size(
-            GL_TEXTURE_2D, self.width, self.height)
+        tex_id = GLuint()
+        glGenTextures(1, byref(tex_id))
+        texture = Texture(self.width, self.height, GL_TEXTURE_2D, tex_id.value)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, Texture.default_min_filter)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, Texture.default_mag_filter)
+
         if self.anchor_x or self.anchor_y:
             texture.anchor_x = self.anchor_x
             texture.anchor_y = self.anchor_y
 
-        glBindTexture(texture.target, texture.id)
-        glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, texture.min_filter)
-        glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture.mag_filter)
-
         if self._have_extension():
-            glCompressedTexImage2DARB(texture.target, texture.level,
-                                      self.gl_format,
-                                      self.width, self.height, 0,
-                                      len(self.data), self.data)
+            glCompressedTexImage2D(texture.target, texture.level,
+                                   self.gl_format,
+                                   self.width, self.height, 0,
+                                   len(self.data), self.data)
         else:
             image = self.decoder(self.data, self.width, self.height)
             texture = image.get_texture()
