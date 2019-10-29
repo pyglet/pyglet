@@ -44,7 +44,7 @@ from pyglet.gl import wgl
 from pyglet.gl import wglext_arb
 from pyglet.gl import wgl_info
 
-from pyglet.libs.win32 import _user32, _kernel32, _gdi32
+from pyglet.libs.win32 import _user32, _kernel32, _gdi32, _dwmapi
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 
@@ -222,6 +222,7 @@ class Win32CanvasConfigARB(CanvasConfig):
 class Win32Context(Context):
     def __init__(self, config, share):
         super(Win32Context, self).__init__(config, share)
+        self._interval = 0
         self._context = None
 
     def attach(self, canvas):
@@ -250,6 +251,9 @@ class Win32Context(Context):
         super(Win32Context, self).detach()
 
     def flip(self):
+        if self._interval:
+            _dwmapi.DwmFlush()
+            
         _gdi32.SwapBuffers(self.canvas.hdc)
 
     def get_vsync(self):
@@ -257,8 +261,9 @@ class Win32Context(Context):
             return bool(wglext_arb.wglGetSwapIntervalEXT())
 
     def set_vsync(self, vsync):
+        self._interval = int(vsync)
         if wgl_info.have_extension('WGL_EXT_swap_control'):
-            wglext_arb.wglSwapIntervalEXT(int(vsync))
+            wglext_arb.wglSwapIntervalEXT(0)
 
 
 class Win32ARBContext(Win32Context):
