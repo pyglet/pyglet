@@ -59,7 +59,7 @@ from pyglet.window import mouse
 
 from pyglet.canvas.win32 import Win32Canvas
 
-from pyglet.libs.win32 import _user32, _kernel32, _gdi32
+from pyglet.libs.win32 import _user32, _kernel32, _gdi32, _dwmapi
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.winkey import *
 from pyglet.libs.win32.types import *
@@ -97,6 +97,22 @@ _win32_cursor_visible = True
 Win32EventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
+def isWindows8OrHigher(win_ver):
+    """
+       Determine if Windows Version is 8 (6.2) or higher.
+       6.0 = Vista
+       6.1 = 7
+       6.2 = 8
+       6.3 = 8.1
+       10 = 10+
+    """
+    if win_ver.major >= 6:
+        if win_ver.major == 6 and win_ver.minor < 2:
+            return False
+
+        return True
+            
+    return False
 
 class Win32Window(BaseWindow):
     _window_class = None
@@ -134,7 +150,11 @@ class Win32Window(BaseWindow):
                     self._view_event_handlers[message] = func
                 else:
                     self._event_handlers[message] = func
-
+                    
+        self._win_ver = sys.getwindowsversion()
+        self._always_dwm = isWindows8OrHigher(self._win_ver)
+        self._interval = 0
+        
         super(Win32Window, self).__init__(*args, **kwargs)
 
     def _recreate(self, changes):
@@ -305,14 +325,32 @@ class Win32Window(BaseWindow):
         self._dc = None
         self._wgl_context = None
         super(Win32Window, self).close()
-
+        
+    def _dwm_composition_enabled(self):
+        """ Checks if Windows DWM is enabled (Windows Vista+)
+            Note: Always on for Windows 8+
+        """
+        isEnabled = c_int()
+        _dwmapi.DwmIsCompositionEnabled(byref(isEnabled))
+        return isEnabled.value
+        
     def _get_vsync(self):
-        return self.context.get_vsync()
+        return bool(self._interval)
     vsync = property(_get_vsync) # overrides BaseWindow property
 
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
+            
+        self._interval = vsync
+
+        if not self._fullscreen:
+            # Disable interval if composition is enabled to avoid conflict with DWM.
+            if self._win_ver.major >= 6:
+                if self._always_dwm or self._dwm_composition_enabled():
+                    print("TEATSDAsd")
+                    vsync = 0
+
         self.context.set_vsync(vsync)
 
     def switch_to(self):
@@ -320,6 +358,12 @@ class Win32Window(BaseWindow):
 
     def flip(self):
         self.draw_mouse_cursor()
+        
+        if not self._fullscreen:
+            if self._win_ver.major >= 6:
+                if self._always_dwm or self._dwm_composition_enabled():
+                    _dwmapi.DwmFlush()
+                    
         self.context.flip()
 
     def set_location(self, x, y):
