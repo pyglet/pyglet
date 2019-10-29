@@ -179,7 +179,7 @@ class Win32Window(BaseWindow):
             self._window_class.lpszClassName = u'GenericAppClass%d' % id(self)
             self._window_class.lpfnWndProc = WNDPROC(
                 self._get_window_proc(self._event_handlers))
-            self._window_class.style = CS_VREDRAW | CS_HREDRAW
+            self._window_class.style = CS_VREDRAW | CS_HREDRAW | CS_OWNDC
             self._window_class.hInstance = 0
             self._window_class.hIcon = _user32.LoadIconW(module, MAKEINTRESOURCE(1))
             self._window_class.hbrBackground = black
