@@ -423,6 +423,7 @@ class EventDispatcher:
                 return EVENT_HANDLED
         except BaseException as exception:
             self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
+            return EVENT_UNHANDLED
 
         return False
 
