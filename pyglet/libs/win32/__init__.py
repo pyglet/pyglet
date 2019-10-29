@@ -92,15 +92,6 @@ else:
 _gdi32 = DebugLibrary(windll.gdi32)
 _kernel32 = DebugLibrary(windll.kernel32)
 _user32 = DebugLibrary(windll.user32)
-_dwmapi = DebugLibrary(windll.dwmapi)
-
-#_dwmapi
-_dwmapi.DwmIsCompositionEnabled.restype = c_int
-_dwmapi.DwmIsCompositionEnabled.argtypes = [POINTER(INT)]
-_dwmapi.DwmFlush.restype = c_int
-_dwmapi.DwmFlush.argtypes = []
-#_dwmapi.DwmEnableBlurBehindWindow.restype
-#_dwmapi.DwmEnableBlurBehindWindow.argtypes
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -282,3 +273,11 @@ _user32.RegisterRawInputDevices.argtypes = [PCRAWINPUTDEVICE, UINT, UINT]
 _user32.GetRawInputData.restype = UINT
 _user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
 
+#dwmapi
+_dwmapi = None
+if sys.getwindowsversion().major >= 6:
+    _dwmapi = DebugLibrary(windll.dwmapi)
+    _dwmapi.DwmIsCompositionEnabled.restype = c_int
+    _dwmapi.DwmIsCompositionEnabled.argtypes = [POINTER(INT)]
+    _dwmapi.DwmFlush.restype = c_int
+    _dwmapi.DwmFlush.argtypes = []
