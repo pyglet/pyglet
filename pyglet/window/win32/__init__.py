@@ -97,23 +97,6 @@ _win32_cursor_visible = True
 Win32EventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
-def isWindows8OrHigher(win_ver):
-    """
-       Determine if Windows Version is 8 (6.2) or higher.
-       6.0 = Vista
-       6.1 = 7
-       6.2 = 8
-       6.3 = 8.1
-       10 = 10+
-    """
-    if win_ver.major >= 6:
-        if win_ver.major == 6 and win_ver.minor < 2:
-            return False
-
-        return True
-            
-    return False
-
 class Win32Window(BaseWindow):
     _window_class = None
     _hwnd = None
@@ -151,8 +134,7 @@ class Win32Window(BaseWindow):
                 else:
                     self._event_handlers[message] = func
                     
-        self._win_ver = sys.getwindowsversion()
-        self._always_dwm = isWindows8OrHigher(self._win_ver)
+        self._always_dwm = sys.getwindowsversion() >= (6, 2)
         self._interval = 0
         
         super(Win32Window, self).__init__(*args, **kwargs)
@@ -346,9 +328,8 @@ class Win32Window(BaseWindow):
 
         if not self._fullscreen:
             # Disable interval if composition is enabled to avoid conflict with DWM.
-            if self._win_ver.major >= 6:
-                if self._always_dwm or self._dwm_composition_enabled():
-                    vsync = 0
+            if self._always_dwm or self._dwm_composition_enabled():
+                vsync = 0
 
         self.context.set_vsync(vsync)
 
@@ -359,9 +340,8 @@ class Win32Window(BaseWindow):
         self.draw_mouse_cursor()
         
         if not self._fullscreen:
-            if self._win_ver.major >= 6:
-                if self._always_dwm or self._dwm_composition_enabled():
-                    _dwmapi.DwmFlush()
+            if self._always_dwm or self._dwm_composition_enabled():
+                _dwmapi.DwmFlush()
                     
         self.context.flip()
 
