@@ -330,9 +330,9 @@ class Win32Window(BaseWindow):
         """ Checks if Windows DWM is enabled (Windows Vista+)
             Note: Always on for Windows 8+
         """
-        isEnabled = c_int()
-        _dwmapi.DwmIsCompositionEnabled(byref(isEnabled))
-        return isEnabled.value
+        is_enabled = c_int()
+        _dwmapi.DwmIsCompositionEnabled(byref(is_enabled))
+        return is_enabled.value
         
     def _get_vsync(self):
         return bool(self._interval)
@@ -348,7 +348,6 @@ class Win32Window(BaseWindow):
             # Disable interval if composition is enabled to avoid conflict with DWM.
             if self._win_ver.major >= 6:
                 if self._always_dwm or self._dwm_composition_enabled():
-                    print("TEATSDAsd")
                     vsync = 0
 
         self.context.set_vsync(vsync)
