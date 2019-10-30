@@ -341,7 +341,8 @@ class Win32Window(BaseWindow):
         
         if not self._fullscreen:
             if self._always_dwm or self._dwm_composition_enabled():
-                _dwmapi.DwmFlush()
+                if self._interval:
+                    _dwmapi.DwmFlush()
                     
         self.context.flip()
 
