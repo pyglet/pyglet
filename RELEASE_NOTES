@@ -1,3 +1,11 @@
+pyglet 1.4.7
+Bugfix release
+
+Bugfixes
+--------
+- Allow creation of non-power-of-two compressed Textures. (#78)
+
+
 pyglet 1.4.6
 Bugfix release
 
