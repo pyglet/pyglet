@@ -124,6 +124,9 @@ above, "Working with multiple screens")::
 """
 import sys
 
+from statistics import mean
+from collections import deque
+
 import pyglet
 from pyglet import gl
 from pyglet import matrix
@@ -1750,7 +1753,7 @@ class FPSDisplay:
     #: :type: float
     update_period = 0.25
 
-    def __init__(self, window, color=(127, 127, 127, 127)):
+    def __init__(self, window, color=(127, 127, 127, 127), samples=60):
         from time import time
         from pyglet.text import Label
         self.label = Label('', x=10, y=10, font_size=24, bold=True, color=color)
@@ -1759,9 +1762,9 @@ class FPSDisplay:
         self._window_flip = window.flip
         window.flip = self._hook_flip
 
-        self.time = 0.0
+        self.elapsed = 0.0
         self.last_time = time()
-        self.count = 0
+        self.times = deque(maxlen=samples)
 
     def update(self):
         """Records a new data point at the current time.  This method
@@ -1769,14 +1772,14 @@ class FPSDisplay:
         """
         from time import time
         t = time()
-        self.count += 1
-        self.time += t - self.last_time
+        delta = t - self.last_time
+        self.elapsed += delta
+        self.times.append(delta)
         self.last_time = t
 
-        if self.time >= self.update_period:
-            self.set_fps(self.count / self.time)
-            self.time %= self.update_period
-            self.count = 0
+        if self.elapsed >= self.update_period:
+            self.elapsed = 0
+            self.set_fps(1 / mean(self.times))
 
     def set_fps(self, fps):
         """Set the label text for the given FPS estimation.
