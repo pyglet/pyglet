@@ -695,9 +695,9 @@ class FFmpegSource(StreamingSource):
         consume many packets to find the correct timestamp.
         """
         if len(self.audioq) < 2 or len(self.videoq) < 2:
-            assert len(self.audioq) < self._max_len_audioq
-            assert len(self.videoq) < self._max_len_videoq
-            self._fillq()
+            if (len(self.audioq) < self._max_len_audioq and
+                    len(self.videoq) < self._max_len_videoq):
+                self._fillq()
             return True
         return False
 
