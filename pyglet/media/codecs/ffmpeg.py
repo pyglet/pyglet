@@ -118,7 +118,7 @@ def ffmpeg_get_audio_buffer_size(audio_format):
 
 
 def ffmpeg_init():
-    """Initialize libavformat and register all the muxers, demuxers and 
+    """Initialize libavformat and register all the muxers, demuxers and
     protocols."""
     pass
 
@@ -211,7 +211,7 @@ def ffmpeg_file_info(file):
 
 
 def ffmpeg_stream_info(file, stream_index):
-    """Open the stream 
+    """Open the stream
     """
     av_stream = file.context.contents.streams[stream_index].contents
     context = av_stream.codecpar.contents
@@ -562,7 +562,7 @@ class FFmpegSource(StreamingSource):
         self._fillq()
         # Don't understand why, but some files show that seeking without
         # reading the first few packets results in a seeking where we lose
-        # many packets at the beginning. 
+        # many packets at the beginning.
         # We only seek back to 0 for media which have a start_time > 0
         if self.start_time > 0:
             self.seek(0.0)
@@ -695,9 +695,9 @@ class FFmpegSource(StreamingSource):
         consume many packets to find the correct timestamp.
         """
         if len(self.audioq) < 2 or len(self.videoq) < 2:
-            assert len(self.audioq) < self._max_len_audioq
-            assert len(self.videoq) < self._max_len_videoq
-            self._fillq()
+            if (len(self.audioq) < self._max_len_audioq and
+                    len(self.videoq) < self._max_len_videoq):
+                self._fillq()
             return True
         return False
 
