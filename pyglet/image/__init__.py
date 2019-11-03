@@ -2014,58 +2014,6 @@ def get_buffer_manager():
     return context.image_buffer_manager
 
 
-class FrameBuffer(object):
-
-    def __init__(self):
-        self._id = GLuint()
-        glGenFramebuffers(1, self._id)
-
-    def is_complete(self):
-        return glCheckFramebufferStatus(GL_FRAMEBUFFER, self._id) == GL_FRAMEBUFFER_COMPLETE
-
-    def bind(self):
-        glBindFramebuffer(GL_FRAMEBUFFER, self._id)
-
-    @staticmethod
-    def unbind():
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-
-    def clear(self):
-        self.bind()
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
-        self.unbind()
-
-    @classmethod
-    def create(cls, width, height, depth=False, internal_format=GL_RGBA8, fmt=GL_RGBA, type=GL_UNSIGNED_BYTE, layers=1):
-        """
-        Convenient shortcut for creating single color attachment FBOs
-        :param width: Color buffer width
-        :param height: Coller buffer height
-        :param depth: (bool) Create a depth attachment
-        :param internal_format: The internalformat of the color buffer
-        :param fmt: The format of the color buffer
-        :param type: The type of the color buffer
-        :param layers: How many layers to create
-        :return: A new FBO
-        """
-        fbo = FrameBuffer()
-        fbo.bind()
-
-        # Add N layers of color attachments
-        for layer in range(layers):
-            c = Texture.create(width, height, internal_format)
-            c = Texture.create_2d(width=width, height=height, internal_format=internal_format, format=fmt, type=type,
-                                  wrap_s=GL_CLAMP_TO_EDGE, wrap_t=GL_CLAMP_TO_EDGE, wrap_r=GL_CLAMP_TO_EDGE)
-            fbo.add_color_attachment(c)
-
-        # Set depth attachment is specified
-        if depth:
-            pass
-
-        fbo.unbind()
-        return fbo
-
-
 # XXX BufferImage could be generalised to support EXT_framebuffer_object's
 # renderbuffer.
 class BufferImage(AbstractImage):
