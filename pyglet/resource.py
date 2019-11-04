@@ -259,7 +259,7 @@ class ZIPLocation(Location):
         else:
             path = filename
 
-        forward_slash_path = path.replace(os.sep, '/')  # looks like zip can only handle forward slashes
+        forward_slash_path = path.replace(os.sep, '/')  # zip can only handle forward slashes
         text = self.zip.read(forward_slash_path)
         return BytesIO(text)
 
@@ -527,7 +527,7 @@ class Loader(object):
         """
         # Large images are not placed in an atlas
         max_texture_size = pyglet.image.get_max_texture_size()
-        max_size = min(1024, max_texture_size / 2)
+        max_size = min(2048, max_texture_size)
         if width > max_size or height > max_size:
             return None
 
@@ -540,7 +540,8 @@ class Loader(object):
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = self._texture_atlas_bins[bin_size] = pyglet.image.atlas.TextureBin()
+            texture_bin = pyglet.image.atlas.TextureBin(border=True)
+            self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin
 
