@@ -1,6 +1,10 @@
 pyglet 1.4.7
 Bugfix release
 
+Improvements
+------------
+- Add support for `conda`-installed FFmpeg on macOS (#xx)
+
 Bugfixes
 --------
 - Allow creation of non-power-of-two compressed Textures. (#78)
