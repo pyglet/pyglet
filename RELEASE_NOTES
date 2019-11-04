@@ -1,9 +1,14 @@
 pyglet 1.4.7
-Bugfix release
+Bugfix and small improvement release
 
 Bugfixes
 --------
 - Allow creation of non-power-of-two compressed Textures. (#78)
+
+Improvements
+------------
+- Windows: Add support for `Desktop Window Manager` composition for smoother rendering.
+- TextureAtlases allow a single pixel border to avoid rendering artifacts.
 
 
 pyglet 1.4.6
