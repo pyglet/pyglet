@@ -4,6 +4,7 @@ Bugfix and small improvement release
 Bugfixes
 --------
 - Allow creation of non-power-of-two compressed Textures. (#78)
+- Fix EventDispatchers surpressing `AttributeError`s. (#87)
 
 Improvements
 ------------
