@@ -222,6 +222,10 @@ class MachOLibraryLoader(LibraryLoader):
                 sys.frozen is True and pyglet.compat_platform == 'darwin'):
             search_path.append(os.path.join(sys._MEIPASS, libname))
 
+        # conda support
+        if os.environ.get('CONDA_PREFIX', False):
+            search_path.append(os.path.join(os.environ['CONDA_PREFIX'], 'lib', libname))
+
         if '/' in path:
             search_path.extend([os.path.join(p, libname) for p in self.dyld_library_path])
             search_path.append(path)
