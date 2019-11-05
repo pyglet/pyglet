@@ -222,6 +222,10 @@ class MachOLibraryLoader(LibraryLoader):
                                             'Frameworks',
                                             libname))
 
+        # conda support
+        if os.environ.get('CONDA_PREFIX', False):
+            search_path.append(os.path.join(os.environ['CONDA_PREFIX'], 'lib', libname))
+
         # pyinstaller.py sets sys.frozen to True, and puts dylibs in
         # Contents/MacOS, which path pyinstaller puts in sys._MEIPASS
         if (hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS') and

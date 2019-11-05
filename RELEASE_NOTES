@@ -9,6 +9,7 @@ Improvements
 ------------
 - Windows: Add support for `Desktop Window Manager` composition for smoother rendering.
 - TextureAtlases allow a single pixel border to avoid rendering artifacts.
+- Add support for `conda`-installed FFmpeg on macOS (#92)
 
 
 pyglet 1.4.6
