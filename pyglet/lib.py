@@ -224,8 +224,7 @@ class MachOLibraryLoader(LibraryLoader):
 
         # conda support
         if os.environ.get('CONDA_PREFIX', False):
-            search_path.append(os.path.join(os.environ['CONDA_PREFIX'], 'lib',
-                                            libname))
+            search_path.append(os.path.join(os.environ['CONDA_PREFIX'], 'lib', libname))
 
         if '/' in path:
             search_path.extend([os.path.join(p, libname) for p in self.dyld_library_path])
