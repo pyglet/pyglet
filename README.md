@@ -9,7 +9,7 @@ and other visually rich applications. It supports windowing, user interface even
 OpenGL graphics, loading images and videos, and playing sounds and music. *pyglet* works on Windows, OS X and Linux.
 
 > **NOTE!**
-> The `pyglet-1.4-maintenance` branch is the current stable release. The `master` branch contains the the development code for the upcoming 2.0 release, and may be unstable. 
+> The `pyglet-1.4-maintenance` branch is the current stable release. The `master` branch contains the the development code for the upcoming 2.0 release, and may be unstable. **If you want to do a pull request, please target the `pyglet-1.4-maintenance` branch where appropriate**. 
 
 * pyglet [documentation]
 * pyglet [wiki]
