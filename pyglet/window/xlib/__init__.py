@@ -256,7 +256,10 @@ class XlibWindow(BaseWindow):
             self.canvas = XlibCanvas(self.display, self._view)
 
             self.context.attach(self.canvas)
-            self.context.set_vsync(self._vsync) # XXX ?
+            try:
+                self.context.set_vsync(self._vsync) # XXX ?
+            except Exception as e:
+                print('Failed to set vsync:  request:', e)
 
             # Setting null background pixmap disables drawing the background,
             # preventing flicker while resizing (in theory).
