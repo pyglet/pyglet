@@ -152,9 +152,6 @@ class LibraryLoader(object):
                     lib = _TraceLibrary(lib)
                 return lib
             except OSError as o:
-                if self.platform == "win32" and o.winerror != 126:
-                    print("Unexpected error loading library %s: %s" % (name, str(o)))
-                    raise
                 path = self.find_library(name)
                 if path:
                     try:
@@ -166,6 +163,10 @@ class LibraryLoader(object):
                         return lib
                     except OSError:
                         pass
+                elif self.platform == "win32" and o.winerror != 126:
+                    print("Unexpected error loading library %s: %s" % (name, str(o)))
+                    raise
+
         raise ImportError('Library "%s" not found.' % names[0])
 
     def find_library(self, name):
@@ -291,7 +292,7 @@ class LinuxLibraryLoader(LibraryLoader):
     @staticmethod
     def _find_libs(directories):
         cache = {}
-        lib_re = re.compile('lib(.*)\.so(?:$|\.)')
+        lib_re = re.compile(r'lib(.*)\.so(?:$|\.)')
         for directory in directories:
             try:
                 for file in os.listdir(directory):
