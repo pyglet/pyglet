@@ -2,8 +2,14 @@
 import sys
 from setuptools import setup, find_packages
 
-# Bump pyglet/__init__.py version as well.
-VERSION = '1.4.7'
+# Parse version number from pyglet/__init__.py:
+with open('pyglet/__init__.py') as f:
+    info = {}
+    for line in f.readlines():
+        if line.startswith('version'):
+            exec(line, info)
+            break
+
     
 # The source dist comes with batteries included, the wheel can use pip to get the rest
 is_wheel = 'bdist_wheel' in sys.argv
@@ -31,7 +37,7 @@ def create_package_list(base_package):
 setup_info = dict(
     # Metadata
     name='pyglet',
-    version=VERSION,
+    version=info['version'],
     author='Alex Holkner',
     author_email='Alex.Holkner@gmail.com',
     url='http://pyglet.readthedocs.org/en/latest/',
