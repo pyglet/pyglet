@@ -124,9 +124,6 @@ above, "Working with multiple screens")::
 """
 import sys
 
-from statistics import mean
-from collections import deque
-
 import pyglet
 from pyglet import gl
 from pyglet import matrix
@@ -1755,33 +1752,35 @@ class FPSDisplay:
 
     def __init__(self, window, color=(127, 127, 127, 127), samples=60):
         from time import time
+        from statistics import mean
+        from collections import deque
         from pyglet.text import Label
+        self._time = time
+        self._mean = mean
+
+        # Hook into the Window.flip method:
+        self._window_flip, window.flip = window.flip, self._hook_flip
         self.label = Label('', x=10, y=10, font_size=24, bold=True, color=color)
 
-        self.window = window
-        self._window_flip = window.flip
-        window.flip = self._hook_flip
-
-        self.elapsed = 0.0
-        self.last_time = time()
-        self.times = deque(maxlen=samples)
+        self._elapsed = 0.0
+        self._last_time = time()
+        self._delta_times = deque(maxlen=samples)
 
     def update(self):
-        """Records a new data point at the current time.  This method
+        """Records a new data point at the current time. This method
         is called automatically when the window buffer is flipped.
         """
-        from time import time
-        t = time()
-        delta = t - self.last_time
-        self.elapsed += delta
-        self.times.append(delta)
-        self.last_time = t
+        t = self._time()
+        delta = t - self._last_time
+        self._elapsed += delta
+        self._delta_times.append(delta)
+        self._last_time = t
 
-        if self.elapsed >= self.update_period:
-            self.elapsed = 0
-            self.set_fps(1 / mean(self.times))
+        if self._elapsed >= self.update_period:
+            self._elapsed = 0
+            self._set_fps_text(1 / self._mean(self._delta_times))
 
-    def set_fps(self, fps):
+    def _set_fps_text(self, fps):
         """Set the label text for the given FPS estimation.
 
         Called by `update` every `update_period` seconds.
@@ -1794,8 +1793,7 @@ class FPSDisplay:
         self.label.text = '%.2f' % fps
 
     def draw(self):
-        """Draw the label.
-        """
+        """Draw the label."""
         self.label.draw()
 
     def _hook_flip(self):
