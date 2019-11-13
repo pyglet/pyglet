@@ -368,7 +368,7 @@ class _GlyphBox(_AbstractBox):
         context.add_list(vertex_list)
 
         # Decoration (background color and underline)
-        #
+        # -------------------------------------------
         # Should iterate over baseline too, but in practice any sensible
         # change in baseline will correspond with a change in font size,
         # and thus glyph run as well.  So we cheat and just use whatever
@@ -398,7 +398,7 @@ class _GlyphBox(_AbstractBox):
 
         if background_vertices:
             background_list = layout.batch.add_indexed(len(background_vertices) // 2,
-                                                       GL_TRIANGLES, layout.background_group,
+                                                       GL_TRIANGLES, layout.background_decoration_group,
                                                        [0, 1, 2, 0, 2, 3],
                                                        ('vertices2f/dynamic', background_vertices),
                                                        ('colors4Bn/dynamic', background_colors),
@@ -722,10 +722,8 @@ class TextLayout:
             Calculated height of the text in the layout.
         `top_group` : `~pyglet.graphics.Group`
             Top-level rendering group.
-        `background_group` : `~pyglet.graphics.Group`
+        `background_decoration_group` : `~pyglet.graphics.Group`
             Rendering group for background color.
-        `foreground_group` : `~pyglet.graphics.Group`
-            Rendering group for glyphs.
         `foreground_decoration_group` : `~pyglet.graphics.Group`
             Rendering group for glyph underlines.
 
@@ -835,9 +833,8 @@ class TextLayout:
 
     def _wrap_lines_invariant(self):
         self._wrap_lines = self._multiline and self._wrap_lines_flag
-        assert not self._wrap_lines or self._width, \
-            "When the parameters 'multiline' and 'wrap_lines' are True," \
-            "the parameter 'width' must be a number."
+        assert not self._wrap_lines or self._width,\
+            "When the parameters 'multiline' and 'wrap_lines' are True, the parameter 'width' must be a number."
 
     def parse_distance(self, distance):
         if distance is None:
@@ -878,10 +875,11 @@ class TextLayout:
         """
         for vertex_list in self._vertex_lists:
             vertex_list.delete()
-        self._vertex_lists = []
+        self._vertex_lists.clear()
 
         for box in self._boxes:
             box.delete(self)
+        self._boxes.clear()
 
     def draw(self):
         """Draw this text layout.
@@ -2344,3 +2342,172 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
 
 IncrementalTextLayout.register_event_type('on_layout_update')
+
+
+class NewIncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
+    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+        EventDispatcher.__init__(self)
+        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
+
+    def _update(self):
+        super()._update()
+        self.dispatch_event('on_layout_update')
+
+    def get_position_from_point(self, x, y):
+        """Get the closest document position to a point.
+
+        :Parameters:
+            `x` : int
+                X coordinate
+            `y` : int
+                Y coordinate
+
+        """
+        line = self.get_line_from_point(x, y)
+        return self.get_position_on_line(line, x)
+
+    def get_point_from_position(self, position, line=None):
+        """Get the X, Y coordinates of a position in the document.
+
+        The position that ends a line has an ambiguous point: it can be either
+        the end of the line, or the beginning of the next line.  You may
+        optionally specify a line index to disambiguate the case.
+
+        The resulting Y coordinate gives the baseline of the line.
+
+        :Parameters:
+            `position` : int
+                Character position within document.
+            `line` : int
+                Line index.
+
+        :rtype: (int, int)
+        :return: (x, y)
+        """
+
+        if line is None:
+            line = self.lines[0]
+            for next_line in self.lines:
+                if next_line.start > position:
+                    break
+                line = next_line
+        else:
+            line = self.lines[line]
+
+        x = line.x
+
+        baseline = self._document.get_style('baseline', max(0, position - 1))
+        if baseline is None:
+            baseline = 0
+        else:
+            baseline = self.parse_distance(baseline)
+
+        position -= line.start
+        for box in line.boxes:
+            if position - box.length <= 0:
+                x += box.get_point_in_box(position)
+                break
+            position -= box.length
+            x += box.advance
+
+        return x + self._translate_x, line.y + self._translate_y + baseline
+
+    def get_line_from_point(self, x, y):
+        """Get the closest line index to a point.
+
+        :Parameters:
+            `x` : int
+                X coordinate.
+            `y` : int
+                Y coordinate.
+
+        :rtype: int
+        """
+        x -= self._translate_x
+        y -= self._translate_y
+
+        line_index = 0
+        for line in self.lines:
+            if y > line.y + line.descent:
+                break
+            line_index += 1
+        if line_index >= len(self.lines):
+            line_index = len(self.lines) - 1
+        return line_index
+
+    def get_point_from_line(self, line):
+        """Get the X, Y coordinates of a line index.
+
+        :Parameters:
+            `line` : int
+                Line index.
+
+        :rtype: (int, int)
+        :return: (x, y)
+        """
+        line = self.lines[line]
+        return line.x + self._translate_x, line.y + self._translate_y
+
+    def get_line_from_position(self, position):
+        """Get the line index of a character position in the document.
+
+        :Parameters:
+            `position` : int
+                Document position.
+
+        :rtype: int
+        """
+        line = -1
+        for next_line in self.lines:
+            if next_line.start > position:
+                break
+            line += 1
+        return line
+
+    def get_position_from_line(self, line):
+        """Get the first document character position of a given line index.
+
+        :Parameters:
+            `line` : int
+                Line index.
+
+        :rtype: int
+        """
+        return self.lines[line].start
+
+    def get_position_on_line(self, line, x):
+        """Get the closest document position for a given line index and X
+        coordinate.
+
+        :Parameters:
+            `line` : int
+                Line index.
+            `x` : int
+                X coordinate.
+
+        :rtype: int
+        """
+        line = self.lines[line]
+        x -= self._translate_x
+
+        if x < line.x:
+            return line.start
+
+        position = line.start
+        last_glyph_x = line.x
+        for box in line.boxes:
+            if 0 <= x - last_glyph_x < box.advance:
+                position += box.get_position_in_box(x - last_glyph_x)
+                break
+            last_glyph_x += box.advance
+            position += box.length
+
+        return position
+
+    def get_line_count(self):
+        """Get the number of lines in the text layout.
+
+        :rtype: int
+        """
+        return len(self.lines)
+

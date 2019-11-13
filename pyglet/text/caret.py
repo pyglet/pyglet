@@ -385,14 +385,15 @@ class Caret:
         if update_ideal_x:
             self._ideal_x = x
 
-        x -= self._layout.translate_x
-        y -= self._layout.translate_y
+        x -= self._layout.view_x
+        y -= self._layout.view_y
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
 
+        print("Caret Vertices:", self._list.vertices[:])
+
         if self._mark is not None:
-            self._layout.set_selection(min(self._position, self._mark),
-                                       max(self._position, self._mark))
+            self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))
 
         self._layout.ensure_line_visible(line)
         self._layout.ensure_x_visible(x)
