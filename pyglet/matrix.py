@@ -1,5 +1,4 @@
 import math as _math
-from functools import lru_cache as _lru_cache
 
 
 def create_orthogonal(left, right, bottom, top, znear, zfar):
@@ -48,22 +47,33 @@ def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
                  0, 0, qn, 0))
 
 
-def rotate(matrix, angle=0, x=0, y=0, z=0):
-    # TODO: Fix this. NOT TESTED, and likely BROKEN
-    r = _math.radians(angle)
-    c = _math.cos(r)
-    s = _math.sin(r)
+def scale(matrix, x=1, y=1, z=1):
+    """Scale a matrix."""
+    temp = list(matrix)
+    temp[0] *= x
+    temp[5] *= y
+    temp[10] *= z
+    return Mat4(temp)
 
+
+def translate(matrix, x=0, y=0, z=0):
+    """Translate a matrix along x, y, and z axis."""
+    tmat = Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
+    return matrix @ tmat
+
+
+def rotate(matrix, angle=0, x=0, y=0, z=0):
+    assert all(abs(n) <= 1 for n in (x, y, z)), "x,y,z must be normalized (<=1)"
+    c = _math.cos(angle)
+    s = _math.sin(angle)
     tempx, tempy, tempz = (1 - c) * x, (1 - c) * y, (1 - c) * z
 
     ra = c + tempx * x
     rb = 0 + tempx * y + s * z
     rc = 0 + tempx * z - s * y
-
     re = 0 + tempy * x - s * z
     rf = c + tempy * y
     rg = 0 + tempy * z + s * x
-
     ri = 0 + tempz * x + s * y
     rj = 0 + tempz * y - s * x
     rk = c + tempz * z
@@ -73,23 +83,7 @@ def rotate(matrix, angle=0, x=0, y=0, z=0):
     # ri, rj, rk, --
     # --, --, --, --
 
-    rmat = Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 0))
-
-    return matrix @ rmat
-
-
-def scale(matrix, value):
-    """Scale a matrix."""
-    temp = list(matrix)
-    temp[0] *= value
-    temp[5] *= value
-    temp[10] *= value
-    return Mat4(temp)
-
-
-def translate(matrix, x=0, y=0, z=0):
-    """Translate a matrix along x, y, and z axis."""
-    return Mat4((*matrix[:12], matrix[12] + x, matrix[13] + y, matrix[14] + z, matrix[15]))
+    return matrix @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
 
 
 class Mat4(tuple):
@@ -150,17 +144,14 @@ class Mat4(tuple):
         b = sum(s * o for s, o in zip(r0, c1))
         c = sum(s * o for s, o in zip(r0, c2))
         d = sum(s * o for s, o in zip(r0, c3))
-
         e = sum(s * o for s, o in zip(r1, c0))
         f = sum(s * o for s, o in zip(r1, c1))
         g = sum(s * o for s, o in zip(r1, c2))
         h = sum(s * o for s, o in zip(r1, c3))
-
         i = sum(s * o for s, o in zip(r2, c0))
         j = sum(s * o for s, o in zip(r2, c1))
         k = sum(s * o for s, o in zip(r2, c2))
         l = sum(s * o for s, o in zip(r2, c3))
-
         m = sum(s * o for s, o in zip(r3, c0))
         n = sum(s * o for s, o in zip(r3, c1))
         o = sum(s * o for s, o in zip(r3, c2))
