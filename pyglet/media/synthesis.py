@@ -175,29 +175,22 @@ class SynthesisSource(Source):
             The length, in seconds, of audio that you wish to generate.
         `sample_rate` : int
             Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
     """
 
-    def __init__(self, duration, sample_rate=44800, sample_size=16, envelope=None):
+    def __init__(self, duration, sample_rate=44800, envelope=None):
 
         self._duration = float(duration)
-        self.audio_format = AudioFormat(
-            channels=1,
-            sample_size=sample_size,
-            sample_rate=sample_rate)
+        self.audio_format = AudioFormat(channels=1, sample_size=16, sample_rate=sample_rate)
 
         self._offset = 0
         self._sample_rate = sample_rate
-        self._sample_size = sample_size
-        self._bytes_per_sample = sample_size >> 3
+        self._bytes_per_sample = 2
         self._bytes_per_second = self._bytes_per_sample * sample_rate
         self._max_offset = int(self._bytes_per_second * self._duration)
         self.envelope = envelope or FlatEnvelope(amplitude=1.0)
         self._envelope_generator = self.envelope.get_generator(sample_rate, duration)
-
-        if self._bytes_per_sample == 2:
-            self._max_offset &= 0xfffffffe
+        # Align to sample:
+        self._max_offset &= 0xfffffffe
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         """Return `num_bytes` bytes of audio data."""
@@ -226,8 +219,7 @@ class SynthesisSource(Source):
         self._offset = min(max(self._offset, 0), self._max_offset)
 
         # Align to sample
-        if self._bytes_per_sample == 2:
-            self._offset &= 0xfffffffe
+        self._offset &= 0xfffffffe
 
         self._envelope_generator = self.envelope.get_generator(self._sample_rate, self._duration)
 
@@ -236,10 +228,7 @@ class Silence(SynthesisSource):
     """A silent waveform."""
 
     def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            return b'\127' * num_bytes
-        else:
-            return b'\0' * num_bytes
+        return b'\0' * num_bytes
 
 
 class WhiteNoise(SynthesisSource):
@@ -259,29 +248,20 @@ class Sine(SynthesisSource):
             The frequency, in Hz of the waveform you wish to produce.
         `sample_rate` : int
             Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
     """
 
     def __init__(self, duration, frequency=440, **kwargs):
-        super(Sine, self).__init__(duration, **kwargs)
+        super().__init__(duration, **kwargs)
         self.frequency = frequency
 
     def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            bias = 127
-            amplitude = 127
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            bias = 0
-            amplitude = 32767
-            data = (ctypes.c_short * samples)()
+        samples = num_bytes >> 1
+        amplitude = 32767
+        data = (ctypes.c_short * samples)()
         step = self.frequency * (math.pi * 2) / self.audio_format.sample_rate
         envelope = self._envelope_generator
         for i in range(samples):
-            data[i] = int(math.sin(step * i) * amplitude * next(envelope) + bias)
+            data[i] = int(math.sin(step * i) * amplitude * next(envelope))
         return data
 
 
@@ -295,27 +275,18 @@ class Triangle(SynthesisSource):
             The frequency, in Hz of the waveform you wish to produce.
         `sample_rate` : int
             Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
     """
 
     def __init__(self, duration, frequency=440, **kwargs):
-        super(Triangle, self).__init__(duration, **kwargs)
+        super().__init__(duration, **kwargs)
         self.frequency = frequency
 
     def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            value = 127
-            maximum = 255
-            minimum = 0
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            value = 0
-            maximum = 32767
-            minimum = -32768
-            data = (ctypes.c_short * samples)()
+        samples = num_bytes >> 1
+        value = 0
+        maximum = 32767
+        minimum = -32768
+        data = (ctypes.c_short * samples)()
         step = (maximum - minimum) * 2 * self.frequency / self.audio_format.sample_rate
         envelope = self._envelope_generator
         for i in range(samples):
@@ -340,27 +311,18 @@ class Sawtooth(SynthesisSource):
             The frequency, in Hz of the waveform you wish to produce.
         `sample_rate` : int
             Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
     """
 
     def __init__(self, duration, frequency=440, **kwargs):
-        super(Sawtooth, self).__init__(duration, **kwargs)
+        super().__init__(duration, **kwargs)
         self.frequency = frequency
 
     def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            value = 127
-            maximum = 255
-            minimum = 0
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            value = 0
-            maximum = 32767
-            minimum = -32768
-            data = (ctypes.c_short * samples)()
+        samples = num_bytes >> 1
+        value = 0
+        maximum = 32767
+        minimum = -32768
+        data = (ctypes.c_short * samples)()
         step = (maximum - minimum) * self.frequency / self._sample_rate
         envelope = self._envelope_generator
         for i in range(samples):
@@ -381,36 +343,26 @@ class Square(SynthesisSource):
             The frequency, in Hz of the waveform you wish to produce.
         `sample_rate` : int
             Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
     """
 
     def __init__(self, duration, frequency=440, **kwargs):
-
-        super(Square, self).__init__(duration, **kwargs)
+        super().__init__(duration, **kwargs)
         self.frequency = frequency
 
     def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            bias = 127
-            amplitude = 127
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            bias = 0
-            amplitude = 32767
-            data = (ctypes.c_short * samples)()
-        half_period = self.audio_format.sample_rate / self.frequency / 2
-        envelope = self._envelope_generator
+        samples = num_bytes >> 1
+        amplitude = 32767
         value = 1
         count = 0
+        data = (ctypes.c_short * samples)()
+        half_period = self.audio_format.sample_rate / self.frequency / 2
+        envelope = self._envelope_generator
         for i in range(samples):
             if count >= half_period:
                 value = -value
                 count %= half_period
             count += 1
-            data[i] = int(value * amplitude * next(envelope) + bias)
+            data[i] = int(value * amplitude * next(envelope))
         return data
 
 
@@ -433,8 +385,6 @@ class FM(SynthesisSource):
             The modulation index.
         `sample_rate` : int
             Audio samples per second. (CD quality is 44100).
-        `sample_size` : int
-            The bit precision. Must be either 8 or 16.
     """
 
     def __init__(self, duration, carrier=440, modulator=440, mod_index=1, **kwargs):
@@ -444,16 +394,9 @@ class FM(SynthesisSource):
         self.mod_index = mod_index
 
     def _generate_data(self, num_bytes):
-        if self._bytes_per_sample == 1:
-            samples = num_bytes
-            bias = 127
-            amplitude = 127
-            data = (ctypes.c_ubyte * samples)()
-        else:
-            samples = num_bytes >> 1
-            bias = 0
-            amplitude = 32767
-            data = (ctypes.c_short * samples)()
+        samples = num_bytes >> 1
+        amplitude = 32767
+        data = (ctypes.c_short * samples)()
         car_step = 2 * math.pi * self.carrier
         mod_step = 2 * math.pi * self.modulator
         mod_index = self.mod_index
@@ -463,6 +406,5 @@ class FM(SynthesisSource):
         # FM equation:  sin((2 * pi * carrier) + sin(2 * pi * modulator))
         for i in range(samples):
             increment = i / sample_rate
-            data[i] = int(sin(car_step * increment + mod_index * sin(mod_step * increment))
-                          * amplitude * next(envelope) + bias)
+            data[i] = int(sin(car_step * increment + mod_index * sin(mod_step * increment)) * amplitude * next(envelope))
         return data

@@ -28,12 +28,6 @@ class SynthesisSourceTest(object):
         if self.source_class is not WhiteNoise:
             self._test_generated_bytes(source)
 
-    def test_sample_size_8(self):
-        source = self.source_class(1., sample_size=8)
-        self._test_total_duration(source)
-        if self.source_class is not WhiteNoise:
-            self._test_generated_bytes(source, sample_size=8)
-
     def test_sample_rate_11025(self):
         source = self.source_class(1., sample_rate=11025)
         self._test_total_duration(source)
@@ -62,10 +56,6 @@ class SynthesisSourceTest(object):
 
     def test_seek_default(self):
         source = self.source_class(1.)
-        self._test_seek(source)
-
-    def test_seek_sample_size_8(self):
-        source = self.source_class(1., sample_size=8)
         self._test_seek(source)
 
     def _test_seek(self, source):
