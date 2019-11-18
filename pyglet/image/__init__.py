@@ -1054,8 +1054,8 @@ class ImageData(AbstractImage):
             packed_pitch = self.width * len(current_format)
             if abs(self._current_pitch) != packed_pitch:
                 # Pitch is wider than pixel data, need to go row-by-row.
-                rows = re.findall(
-                    asbytes('.') * abs(self._current_pitch), data, re.DOTALL)
+                new_pitch = abs(self._current_pitch)
+                rows = [data[i:i+new_pitch] for i in range(0, len(data), new_pitch)]
                 rows = [swap_pattern.sub(repl, r[:packed_pitch]) for r in rows]
                 data = asbytes('').join(rows)
             else:
@@ -1069,21 +1069,21 @@ class ImageData(AbstractImage):
             diff = abs(current_pitch) - abs(pitch)
             if diff > 0:
                 # New pitch is shorter than old pitch, chop bytes off each row
-                pattern = re.compile(
-                    asbytes('(%s)%s' % ('.' * abs(pitch), '.' * diff)), re.DOTALL)
-                data = pattern.sub(asbytes(r'\1'), data)
+                new_pitch = abs(pitch)
+                rows = [data[i:i+new_pitch-diff] for i in range(0, len(data), new_pitch)]
             elif diff < 0:
                 # New pitch is longer than old pitch, add '0' bytes to each row
-                pattern = re.compile(
-                    asbytes('(%s)' % ('.' * abs(current_pitch))), re.DOTALL)
-                pad = '.' * -diff
-                data = pattern.sub(asbytes(r'\1%s' % pad), data)
+                new_pitch = abs(current_pitch)
+                padding = asbytes(1) * -diff
+                rows = [data[i:i+new_pitch] + padding for i in range(0, len(data), new_pitch)]
 
             if current_pitch * pitch < 0:
                 # Pitch differs in sign, swap row order
-                rows = [data[i:i+abs(pitch)] for i in range(0, len(data), abs(pitch))]
+                new_pitch = abs(pitch)
+                rows = [data[i:i+new_pitch] for i in range(0, len(data), new_pitch)]
                 rows.reverse()
-                data = asbytes('').join(rows)
+            
+            data = asbytes('').join(rows)
 
         return asbytes(data)
 
@@ -1173,7 +1173,8 @@ class ImageDataRegion(ImageData):
 
         self._ensure_string_data()
         data = self._convert(self._current_format, abs(self._current_pitch))
-        rows = re.findall(b'.' * abs(self._current_pitch), data, re.DOTALL)
+        new_pitch = abs(self._current_pitch)
+        rows = [data[i:i+new_pitch] for i in range(0, len(data), new_pitch)]
         rows = [row[x1:x2] for row in rows[self.y:self.y + self.height]]
         self._current_data = b''.join(rows)
         self._current_pitch = self.width * len(self._current_format)
