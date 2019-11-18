@@ -199,7 +199,8 @@ avutil.av_dict_set.restype = c_int
 avutil.av_dict_set.argtypes = [POINTER(POINTER(AVDictionary)),
                                c_char_p, c_char_p, c_int]
 avutil.av_dict_free.argtypes = [POINTER(POINTER(AVDictionary))]
-
+avutil.av_log_set_level.restype = c_int
+avutil.av_log_set_level.argtypes = [c_uint]
 
 __all__ = [
 'avutil',
