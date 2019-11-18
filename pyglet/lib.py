@@ -146,9 +146,6 @@ class LibraryLoader:
                     lib = _TraceLibrary(lib)
                 return lib
             except OSError as o:
-                if self.platform == "win32" and o.winerror != 126:
-                    print("Unexpected error loading library %s: %s" % (name, str(o)))
-                    raise
                 path = self.find_library(name)
                 if path:
                     try:
@@ -160,6 +157,10 @@ class LibraryLoader:
                         return lib
                     except OSError:
                         pass
+                elif self.platform == "win32" and o.winerror != 126:
+                    print("Unexpected error loading library %s: %s" % (name, str(o)))
+                    raise
+
         raise ImportError('Library "%s" not found.' % names[0])
 
     def find_library(self, name):
@@ -215,6 +216,10 @@ class MachOLibraryLoader(LibraryLoader):
                                             '..',
                                             'Frameworks',
                                             libname))
+
+        # conda support
+        if os.environ.get('CONDA_PREFIX', False):
+            search_path.append(os.path.join(os.environ['CONDA_PREFIX'], 'lib', libname))
 
         # pyinstaller.py sets sys.frozen to True, and puts dylibs in
         # Contents/MacOS, which path pyinstaller puts in sys._MEIPASS
@@ -285,7 +290,7 @@ class LinuxLibraryLoader(LibraryLoader):
     @staticmethod
     def _find_libs(directories):
         cache = {}
-        lib_re = re.compile('lib(.*)\.so(?:$|\.)')
+        lib_re = re.compile(r'lib(.*)\.so(?:$|\.)')
         for directory in directories:
             try:
                 for file in os.listdir(directory):

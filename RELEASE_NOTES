@@ -1,4 +1,4 @@
-pyglet 1.4.7
+pyglet 1.4.8
 Bugfix release
 
 Improvements
@@ -7,7 +7,23 @@ Improvements
 
 Bugfixes
 --------
+- FFmpeg: fix an occasional crash during seek operation
+
+
+pyglet 1.4.7
+Bugfix and small improvement release
+
+Bugfixes
+--------
 - Allow creation of non-power-of-two compressed Textures. (#78)
+- Fix EventDispatchers surpressing `AttributeError`s. (#87)
+- Fix external lib loading on Windows under Python 3.8. (#90)
+
+Improvements
+------------
+- Windows: Add support for `Desktop Window Manager` composition for smoother rendering.
+- TextureAtlases allow a single pixel border to avoid rendering artifacts.
+- Add support for `conda`-installed FFmpeg on macOS (#92)
 
 
 pyglet 1.4.6
