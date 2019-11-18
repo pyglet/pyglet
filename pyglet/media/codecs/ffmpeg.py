@@ -1024,6 +1024,7 @@ if pyglet.options['debug_media']:
     _debug = True
 else:
     _debug = False
+    avutil.av_log_set_level(8)
 
 
 #########################################
