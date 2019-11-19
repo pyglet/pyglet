@@ -33,21 +33,24 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from .codecs.base import Source, AudioFormat, AudioData
-
 import os
 import math
 import ctypes
+import struct
+
+from .codecs.base import Source, AudioFormat, AudioData
 
 
-class Envelope:
+# Envelope classes:
+
+class _Envelope:
     """Base class for SynthesisSource amplitude envelopes."""
 
     def get_generator(self, sample_rate, duration):
         raise NotImplementedError
 
 
-class FlatEnvelope(Envelope):
+class FlatEnvelope(_Envelope):
     """A flat envelope, providing basic amplitude setting.
 
     :Parameters:
@@ -65,7 +68,7 @@ class FlatEnvelope(Envelope):
             yield amplitude
 
 
-class LinearDecayEnvelope(Envelope):
+class LinearDecayEnvelope(_Envelope):
     """A linearly decaying envelope.
 
     This envelope linearly decays the amplitude from the peak value
@@ -87,7 +90,7 @@ class LinearDecayEnvelope(Envelope):
             yield (total_bytes - i) / total_bytes * peak
 
 
-class ADSREnvelope(Envelope):
+class ADSREnvelope(_Envelope):
     """A four part Attack, Decay, Suspend, Release envelope.
 
     This is a four part ADSR envelope. The attack, decay, and release
@@ -132,7 +135,7 @@ class ADSREnvelope(Envelope):
             yield sustain_amplitude - (i * release_step)
 
 
-class TremoloEnvelope(Envelope):
+class TremoloEnvelope(_Envelope):
     """A tremolo envelope, for modulation amplitude.
 
     A tremolo envelope that modulates the amplitude of the
@@ -166,6 +169,8 @@ class TremoloEnvelope(Envelope):
             value = math.sin(step * i)
             yield value * (max_amplitude - min_amplitude) + min_amplitude
 
+
+# Source classes:
 
 class SynthesisSource(Source):
     """Base class for synthesized waveforms.
@@ -396,15 +401,15 @@ class FM(SynthesisSource):
     def _generate_data(self, num_bytes):
         samples = num_bytes >> 1
         amplitude = 32767
-        data = (ctypes.c_short * samples)()
-        car_step = 2 * math.pi * self.carrier
-        mod_step = 2 * math.pi * self.modulator
-        mod_index = self.mod_index
+        c_step = 2 * math.pi * self.carrier
+        m_step = 2 * math.pi * self.modulator
+        m_index = self.mod_index
         sample_rate = self._sample_rate
         envelope = self._envelope_generator
         sin = math.sin
         # FM equation:  sin((2 * pi * carrier) + sin(2 * pi * modulator))
+        data = []
         for i in range(samples):
             increment = i / sample_rate
-            data[i] = int(sin(car_step * increment + mod_index * sin(mod_step * increment)) * amplitude * next(envelope))
-        return data
+            data.append(int(sin(c_step * increment + m_index * sin(m_step * increment)) * amplitude * next(envelope)))
+        return struct.pack(str(samples) + 'h', *data)
