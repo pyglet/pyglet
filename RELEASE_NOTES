@@ -3,8 +3,9 @@ Bugfix release
 
 Bugfixes
 --------
-- FFmpeg: fix an occasional crash during seek operation
-- Revert Event Dispatcher changes from v1.4.7 due to possible bug
+- FFmpeg: fix an occasional crash during seek operation.
+- Revert Event Dispatcher changes from v1.4.7 due to possible bug.
+- Linux: Warn on failure to set vsync, instead of crashing.
 
 
 pyglet 1.4.7
