@@ -4,6 +4,7 @@ Bugfix release
 Bugfixes
 --------
 - FFmpeg: fix an occasional crash during seek operation
+- Revert Event Dispatcher changes from v1.4.7 due to possible bug
 
 
 pyglet 1.4.7
