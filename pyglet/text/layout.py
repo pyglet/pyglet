@@ -547,6 +547,15 @@ class TextLayoutGroup(graphics.Group):
     def unset_state(self):
         glPopAttrib()
 
+    def __hash__(self):
+        return hash((id(self.parent), GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA))
+
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and self.parent is other.parent
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.parent)
+
 
 class ScrollableTextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
@@ -703,7 +712,7 @@ class TextLayoutTextureGroup(graphics.Group):
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
                 self.texture.id == other.texture.id and
-                self.parent is other.parent)
+                self.parent == other.parent)
 
     def __repr__(self):
         return '%s(%d, %r)' % (self.__class__.__name__,
