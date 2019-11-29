@@ -463,7 +463,7 @@ class Sprite(event.EventDispatcher):
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.vertex[:] = (0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0)
         else:
             img = self._texture
             x1 = -img.anchor_x
