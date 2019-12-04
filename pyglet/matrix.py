@@ -59,7 +59,7 @@ def scale(matrix, x=1, y=1, z=1):
 def translate(matrix, x=0, y=0, z=0):
     """Translate a matrix along x, y, and z axis."""
     tmat = Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
-    return matrix @ tmat
+    return Mat4(matrix) @ tmat
 
 
 def rotate(matrix, angle=0, x=0, y=0, z=0):
