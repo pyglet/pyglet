@@ -358,6 +358,7 @@ if True:
     sprite = _ModuleProxy('sprite')
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
+    matrix = _ModuleProxy('matrix')
 
 # Fool py2exe, py2app into including all top-level modules
 # (doesn't understand lazy loading)
