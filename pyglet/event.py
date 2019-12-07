@@ -417,12 +417,16 @@ class EventDispatcher:
 
         # Check instance for an event handler
         try:
-            func = getattr(self, event_type, None)
-            if func:
-                func(*args)
+            if getattr(self, event_type)(*args):
                 return EVENT_HANDLED
-        except BaseException as exception:
+        except AttributeError:
+            pass
+        except TypeError as exception:
             self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
+        else:
+            invoked = True
+
+        if invoked:
             return EVENT_UNHANDLED
 
         return False

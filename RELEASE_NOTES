@@ -1,3 +1,11 @@
+pyglet 1.4.9
+Bugfix release
+
+Bugfixes
+--------
+- Fix TextLayoutGroup consolidation when using custom Groups for Labels.
+
+
 pyglet 1.4.8
 Bugfix release
 
@@ -7,7 +15,9 @@ Improvements
 
 Bugfixes
 --------
-- FFmpeg: fix an occasional crash during seek operation
+- FFmpeg: fix an occasional crash during seek operation.
+- Revert Event Dispatcher changes from v1.4.7 due to possible bug.
+- Linux: Warn on failure to set vsync, instead of crashing.
 
 
 pyglet 1.4.7

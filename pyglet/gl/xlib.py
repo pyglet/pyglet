@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+import warnings
 from ctypes import *
 
 from .base import Config, CanvasConfig, Context
@@ -40,6 +41,7 @@ from pyglet.gl import glx
 from pyglet.gl import glxext_arb
 from pyglet.gl import glx_info
 from pyglet.gl import glxext_mesa
+from pyglet.gl import lib
 from pyglet import gl
 
 
@@ -250,12 +252,15 @@ class BaseXlibContext(Context):
     def set_vsync(self, vsync=True):
         self._vsync = vsync
         interval = vsync and 1 or 0
-        if not self._use_video_sync and self._have_EXT_swap_control:
-            glxext_arb.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)
-        elif not self._use_video_sync and self._have_MESA_swap_control:
-            glxext_mesa.glXSwapIntervalMESA(interval)
-        elif self._have_SGI_swap_control:
-            glxext_arb.glXSwapIntervalSGI(interval)
+        try:
+            if not self._use_video_sync and self._have_EXT_swap_control:
+                glxext_arb.glXSwapIntervalEXT(self.x_display, glx.glXGetCurrentDrawable(), interval)
+            elif not self._use_video_sync and self._have_MESA_swap_control:
+                glxext_mesa.glXSwapIntervalMESA(interval)
+            elif self._have_SGI_swap_control:
+                glxext_arb.glXSwapIntervalSGI(interval)
+        except lib.MissingFunctionException as e:
+            warnings.warn(e)
 
     def get_vsync(self):
         return self._vsync
