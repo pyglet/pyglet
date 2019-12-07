@@ -69,6 +69,8 @@ class AllocatorException(Exception):
 
 
 class _Strip:
+    __slots__ = 'x', 'y', 'max_height', 'y2'
+
     def __init__(self, y, max_height):
         self.x = 0
         self.y = y
@@ -98,6 +100,8 @@ class Allocator:
     `Allocator` uses a fairly simple strips-based algorithm.  It performs best
     when rectangles are allocated in decreasing height order.
     """
+    __slots__ = 'width', 'height', 'strips', 'used_area'
+
     def __init__(self, width, height):
         """Create an `Allocator` of the given size.
 
@@ -153,7 +157,7 @@ class Allocator:
         :rtype: float
         """
         return self.used_area / float(self.width * self.height)
-            
+
     def get_fragmentation(self):
         """Get the fraction of area that's unlikely to ever be used, based on
         current allocation behaviour.
@@ -171,7 +175,8 @@ class Allocator:
 
 class TextureAtlas:
     """Collection of images within a texture."""
-    def __init__(self, width=2048, height=2048):
+
+    def __init__(self, width=2048, height=2048, border=False):
         """Create a texture atlas of the given size.
 
         :Parameters:
@@ -179,14 +184,18 @@ class TextureAtlas:
                 Width of the underlying texture.
             `height` : int
                 Height of the underlying texture.
+            `border` : bool
+                If True, one pixel of blank space is left
+                around each image added to the Atlas.
 
         """
         max_texture_size = pyglet.image.get_max_texture_size()
         width = min(width, max_texture_size)
         height = min(height, max_texture_size)
 
-        self.texture = pyglet.image.Texture.create(width, height, pyglet.gl.GL_TEXTURE_RECTANGLE, pyglet.gl.GL_RGBA)
+        self.texture = pyglet.image.Texture.create(width, height)
         self.allocator = Allocator(width, height)
+        self._border = 1 if border else 0
 
     def add(self, img):
         """Add an image to the atlas.
@@ -205,9 +214,10 @@ class TextureAtlas:
         :rtype: :py:class:`~pyglet.image.TextureRegion`
         :return: The region of the atlas containing the newly added image.
         """
-        x, y = self.allocator.alloc(img.width, img.height)
-        self.texture.blit_into(img, x, y, 0)
-        return self.texture.get_region(x, y, img.width, img.height)
+        b = self._border
+        x, y = self.allocator.alloc(img.width + b*2, img.height + b*2)
+        self.texture.blit_into(img, x+b, y+b, 0)
+        return self.texture.get_region(x+b, y+b, img.width, img.height)
 
 
 class TextureBin:
@@ -216,7 +226,8 @@ class TextureBin:
     :py:class:`~pyglet.image.atlas.TextureBin` maintains a collection of texture atlases, and creates new
     ones as necessary to accommodate images added to the bin.
     """
-    def __init__(self, texture_width=2048, texture_height=2048):
+
+    def __init__(self, texture_width=2048, texture_height=2048, border=False):
         """Create a texture bin for holding atlases of the given size.
 
         :Parameters:
@@ -224,12 +235,16 @@ class TextureBin:
                 Width of texture atlases to create.
             `texture_height` : int
                 Height of texture atlases to create.
+            `border` : bool
+                If True, one pixel of blank space is left
+                around each image added to the Atlases.
 
         """
         max_texture_size = pyglet.image.get_max_texture_size()
         self.texture_width = min(texture_width, max_texture_size)
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
+        self._border = border
 
     def add(self, img):
         """Add an image into this texture bin.
@@ -251,12 +266,11 @@ class TextureBin:
             try:
                 return atlas.add(img)
             except AllocatorException:
-                # Remove atlases that are no longer useful (this is so their
-                # textures can later be freed if the images inside them get
-                # collected).
+                # Remove atlases that are no longer useful (so that their textures
+                # can later be freed if the images inside them get collected).
                 if img.width < 64 and img.height < 64:
                     self.atlases.remove(atlas)
 
-        atlas = TextureAtlas(self.texture_width, self.texture_height)
+        atlas = TextureAtlas(self.texture_width, self.texture_height, self._border)
         self.atlases.append(atlas)
         return atlas.add(img)
