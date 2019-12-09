@@ -1,9 +1,13 @@
 pyglet 1.4.9
-Bugfix release
+Bugfix and small improvement release
 
 Bugfixes
 --------
 - Fix TextLayoutGroup consolidation when using custom Groups for Labels.
+
+Improvements
+------------
+- Pillow (PIL) image decoder can now decode animated GIFs.
 
 
 pyglet 1.4.8
