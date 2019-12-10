@@ -103,10 +103,12 @@ class PILImageDecoder(ImageDecoder):
             if image.mode not in ('L', 'LA', 'RGB', 'RGBA'):
                 raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
 
-            # Convert duration milliseconds to seconds
-            duration = None if image.info['duration'] == 0 else image.info['duration'] / 1000
+            duration = None if image.info['duration'] == 0 else image.info['duration']
+            # Follow Firefox/Mac behaviour: use 100ms delay for any delay less than 10ms.
+            if duration <= 10:
+                duration = 100
 
-            frames.append(AnimationFrame(ImageData(*image.size, image.mode, image.tobytes()), duration))
+            frames.append(AnimationFrame(ImageData(*image.size, image.mode, image.tobytes()), duration / 1000))
 
         return Animation(frames)
 
