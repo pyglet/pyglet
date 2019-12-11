@@ -205,9 +205,10 @@ class SpriteGroup(graphics.Group):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                Optional Shader Program.
+            `parent` : `~pyglet.graphics.Group`
+                Optional parent group.
         """
+        super(SpriteGroup, self).__init__(parent)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
@@ -233,13 +234,14 @@ class SpriteGroup(graphics.Group):
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
                 self.program is other.program and
+                self.parent is other.parent and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id and
                 self.blend_src == other.blend_src and
                 self.blend_dest == other.blend_dest)
 
     def __hash__(self):
-        return hash((id(self.program),
+        return hash((id(self.parent), id(self.program),
                      self.texture.id, self.texture.target,
                      self.blend_src, self.blend_dest))
 
@@ -308,7 +310,7 @@ class Sprite(event.EventDispatcher):
                 clock.schedule_once(self._animate, self._next_dt)
         else:
             self._texture = img.get_texture()
-            
+
         if isinstance(img, image.TextureArrayRegion):
             program = _default_array_program
         else:
@@ -379,8 +381,14 @@ class Sprite(event.EventDispatcher):
     def batch(self, batch):
         if self._batch == batch:
             return
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
-        self._batch = batch
+
+        if batch is not None and self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, batch)
+            self._batch = batch
+        else:
+            self._vertex_list.delete()
+            self._batch = batch
+            self._create_vertex_list()
 
     @property
     def group(self):
@@ -391,25 +399,18 @@ class Sprite(event.EventDispatcher):
 
         :type: :py:class:`pyglet.graphics.Group`
         """
-        return self._group
+        return self._group.parent
 
     @group.setter
     def group(self, group):
-        if self._group == group:
+        if self._group.parent == group:
             return
-        self._group = group
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, group, self._batch)
-
-    @property
-    def shader_program(self):
-        return self._group.program
-
-    @shader_program.setter
-    def shader_program(self, program):
-        if self._group.program == program:
-            return
-        self._group = self._group.__class__(self._texture, self._group.blend_src, self._group.blend_dest, program)
-        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+        self._group = SpriteGroup(self._texture,
+                                  self._group.blend_src,
+                                  self._group.blend_dest,
+                                  group)
+        if self._batch is not None:
+            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self):
@@ -708,7 +709,9 @@ class Sprite(event.EventDispatcher):
         See the module documentation for hints on drawing multiple sprites
         efficiently.
         """
-        self._batch.draw()
+        self._group.set_state_recursive()
+        self._vertex_list.draw(GL_TRIANGLES)
+        self._group.unset_state_recursive()
 
     if _is_pyglet_doc_run:
         def on_animation_end(self):
