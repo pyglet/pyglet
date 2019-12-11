@@ -262,7 +262,7 @@ class BaseXlibContext(Context):
             elif self._have_SGI_swap_control:
                 glxext_arb.glXSwapIntervalSGI(interval)
         except lib.MissingFunctionException as e:
-            warnings.warn(e)
+            warnings.warn(e.message)
 
     def get_vsync(self):
         return self._vsync
