@@ -54,8 +54,8 @@ class PILImageDecoder(ImageDecoder):
         return ['.bmp', '.cur', '.gif', '.ico', '.jpg', '.jpeg', '.pcx', '.png',
                 '.tga', '.tif', '.tiff', '.xbm', '.xpm']
 
-    def get_animation_file_extensions(self):
-        return ['.gif', '.ani']
+    # def get_animation_file_extensions(self):
+    #     return ['.gif', '.ani']
 
     def decode(self, file, filename):
         try:
@@ -82,35 +82,35 @@ class PILImageDecoder(ImageDecoder):
         image_data_fn = getattr(image, "tobytes", getattr(image, "tostring"))
         return ImageData(width, height, image.mode, image_data_fn())
 
-    def decode_animation(self, file, filename):
-        try:
-            image = Image.open(file)
-        except Exception as e:
-            raise ImageDecodeException('PIL cannot read %r: %s' % (filename or file, e))
-
-        frames = []
-
-        for image in ImageSequence.Iterator(image):
-            try:
-                image = image.transpose(Image.FLIP_TOP_BOTTOM)
-            except Exception as e:
-                raise ImageDecodeException('PIL failed to transpose %r: %s' % (filename or file, e))
-
-            # Convert bitmap and palette images to component
-            if image.mode in ('1', 'P'):
-                image = image.convert()
-
-            if image.mode not in ('L', 'LA', 'RGB', 'RGBA'):
-                raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
-
-            duration = None if image.info['duration'] == 0 else image.info['duration']
-            # Follow Firefox/Mac behaviour: use 100ms delay for any delay less than 10ms.
-            if duration <= 10:
-                duration = 100
-
-            frames.append(AnimationFrame(ImageData(*image.size, image.mode, image.tobytes()), duration / 1000))
-
-        return Animation(frames)
+    # def decode_animation(self, file, filename):
+    #     try:
+    #         image = Image.open(file)
+    #     except Exception as e:
+    #         raise ImageDecodeException('PIL cannot read %r: %s' % (filename or file, e))
+    #
+    #     frames = []
+    #
+    #     for image in ImageSequence.Iterator(image):
+    #         try:
+    #             image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    #         except Exception as e:
+    #             raise ImageDecodeException('PIL failed to transpose %r: %s' % (filename or file, e))
+    #
+    #         # Convert bitmap and palette images to component
+    #         if image.mode in ('1', 'P'):
+    #             image = image.convert()
+    #
+    #         if image.mode not in ('L', 'LA', 'RGB', 'RGBA'):
+    #             raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
+    #
+    #         duration = None if image.info['duration'] == 0 else image.info['duration']
+    #         # Follow Firefox/Mac behaviour: use 100ms delay for any delay less than 10ms.
+    #         if duration <= 10:
+    #             duration = 100
+    #
+    #         frames.append(AnimationFrame(ImageData(*image.size, image.mode, image.tobytes()), duration / 1000))
+    #
+    #     return Animation(frames)
 
 
 class PILImageEncoder(ImageEncoder):
