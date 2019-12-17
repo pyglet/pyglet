@@ -7,7 +7,7 @@ Bugfixes
 
 Improvements
 ------------
-- Pillow (PIL) image decoder can now decode animated GIFs.
+- Added a simple 2D Camera example to examples/camera.py in the repository.
 
 
 pyglet 1.4.8
