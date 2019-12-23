@@ -58,15 +58,15 @@ def scale(matrix, x=1, y=1, z=1):
 
 def translate(matrix, x=0, y=0, z=0):
     """Translate a matrix along x, y, and z axis."""
-    tmat = Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
-    return Mat4(matrix) @ tmat
+    return Mat4(matrix) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
 
 
 def rotate(matrix, angle=0, x=0, y=0, z=0):
     assert all(abs(n) <= 1 for n in (x, y, z)), "x,y,z must be normalized (<=1)"
     c = _math.cos(angle)
     s = _math.sin(angle)
-    tempx, tempy, tempz = (1 - c) * x, (1 - c) * y, (1 - c) * z
+    t = 1 - c
+    tempx, tempy, tempz = t * x, t * y, t * z
 
     ra = c + tempx * x
     rb = 0 + tempx * y + s * z
@@ -102,7 +102,8 @@ class Mat4(tuple):
 
         A Matrix can be created with list or tuple of 16 values.
         If nothing is provided, an "identity Matrix" will be created
-        (1.0 on the main diagonal). Matrix objects are immutable.
+        (1.0 on the main diagonal). Matrix objects are immutable, so
+        all operations return a new Mat4 object.
 
         :Parameters:
             `values` : tuple of float or int
@@ -116,19 +117,19 @@ class Mat4(tuple):
         return super().__new__(Mat4, values)
 
     def __add__(self, other):
-        assert isinstance(other, Mat4), "Can only add to other Mat4 types"
+        assert len(other) == 16, "Can only multiply with other Mat4 types"
         return Mat4(tuple(s + o for s, o in zip(self, other)))
 
     def __sub__(self, other):
-        assert isinstance(other, Mat4), "Can only subtract from other Mat4 types"
+        assert len(other) == 16, "Can only multiply with other Mat4 types"
         return Mat4(tuple(s - o for s, o in zip(self, other)))
 
     def __mul__(self, other):
-        assert isinstance(other, Mat4), "Can only multiply with other Mat4 types"
+        assert len(other) == 16, "Can only multiply with other Mat4 types"
         return Mat4(tuple(s * o for s, o in zip(self, other)))
 
     def __matmul__(self, other):
-        assert isinstance(other, Mat4), "Can only multiply with other Mat4 types"
+        assert len(other) == 16, "Can only multiply with other Mat4 types"
         # Rows:
         r0 = self[0:4]
         r1 = self[4:8]
