@@ -4,6 +4,7 @@ Bugfix and small improvement release
 Bugfixes
 --------
 - Fix TextLayoutGroup consolidation when using custom Groups for Labels.
+- FFmpeg: Cast 'date' to string instead of int in file_info. (#109)
 
 Improvements
 ------------

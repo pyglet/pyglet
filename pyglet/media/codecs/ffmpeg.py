@@ -202,7 +202,7 @@ def ffmpeg_file_info(file):
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('date'), None, 0)
     if entry:
-        info.year = int(entry.contents.value)
+        info.year = asstr(entry.contents.value)
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('track'), None, 0)
     if entry:
