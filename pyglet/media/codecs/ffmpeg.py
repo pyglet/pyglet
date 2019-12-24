@@ -222,37 +222,37 @@ def ffmpeg_stream_info(file, stream_index):
     context = av_stream.codecpar.contents
     if context.codec_type == AVMEDIA_TYPE_VIDEO:
         if _debug:
-            print ("codec_type=",context.codec_type)
-            print (" codec_id=",context.codec_id)
+            print("codec_type=", context.codec_type)
+            print(" codec_id=", context.codec_id)
             codec_name = avcodec.avcodec_get_name(context.codec_id).decode('utf-8')
-            print (" codec name=", codec_name)
-            print (" codec_tag=",context.codec_tag)
-            print (" extradata=",context.extradata)
-            print (" extradata_size=",context.extradata_size)
-            print (" format=",context.format)
-            print (" bit_rate=",context.bit_rate)
-            print (" bits_per_coded_sample=",context.bits_per_coded_sample)
-            print (" bits_per_raw_sample=",context.bits_per_raw_sample)
-            print (" profile=",context.profile)
-            print (" level=",context.level)
-            print (" width=",context.width)
-            print (" height=",context.height)
-            print (" sample_aspect_ratio=",context.sample_aspect_ratio.num,context.sample_aspect_ratio.den)
-            print (" field_order=",context.field_order)
-            print (" color_range=",context.color_range)
-            print (" color_primaries=",context.color_primaries)
-            print (" color_trc=",context.color_trc)
-            print (" color_space=",context.color_space)
-            print (" chroma_location=",context.chroma_location)
-            print (" video_delay=",context.video_delay)
-            print (" channel_layout=",context.channel_layout)
-            print (" channels=",context.channels)
-            print (" sample_rate=",context.sample_rate)
-            print (" block_align=",context.block_align)
-            print (" frame_size=",context.frame_size)
-            print (" initial_padding=",context.initial_padding)
-            print (" trailing_padding=",context.trailing_padding)
-            print (" seek_preroll=",context.seek_preroll)
+            print(" codec name=", codec_name)
+            print(" codec_tag=", context.codec_tag)
+            print(" extradata=", context.extradata)
+            print(" extradata_size=", context.extradata_size)
+            print(" format=", context.format)
+            print(" bit_rate=", context.bit_rate)
+            print(" bits_per_coded_sample=", context.bits_per_coded_sample)
+            print(" bits_per_raw_sample=", context.bits_per_raw_sample)
+            print(" profile=", context.profile)
+            print(" level=", context.level)
+            print(" width=", context.width)
+            print(" height=", context.height)
+            print(" sample_aspect_ratio=", context.sample_aspect_ratio.num, context.sample_aspect_ratio.den)
+            print(" field_order=", context.field_order)
+            print(" color_range=", context.color_range)
+            print(" color_primaries=", context.color_primaries)
+            print(" color_trc=", context.color_trc)
+            print(" color_space=", context.color_space)
+            print(" chroma_location=", context.chroma_location)
+            print(" video_delay=", context.video_delay)
+            print(" channel_layout=", context.channel_layout)
+            print(" channels=", context.channels)
+            print(" sample_rate=", context.sample_rate)
+            print(" block_align=", context.block_align)
+            print(" frame_size=", context.frame_size)
+            print(" initial_padding=", context.initial_padding)
+            print(" trailing_padding=", context.trailing_padding)
+            print(" seek_preroll=", context.seek_preroll)
         #
         frame_rate = avformat.av_guess_frame_rate(file.context, av_stream, None)
         info = StreamVideoInfo(
@@ -495,17 +495,17 @@ class FFmpegSource(StreamingSource):
                     height=info.height)
                 if info.sample_aspect_num != 0:
                     self.video_format.sample_aspect = (
-                        float(info.sample_aspect_num) /
-                        info.sample_aspect_den)
+                            float(info.sample_aspect_num) /
+                            info.sample_aspect_den)
                 self.video_format.frame_rate = (
-                    float(info.frame_rate_num) /
-                    info.frame_rate_den)
+                        float(info.frame_rate_num) /
+                        info.frame_rate_den)
                 self._video_stream = stream
                 self._video_stream_index = i
 
             elif (isinstance(info, StreamAudioInfo) and
-                          info.sample_bits in (8, 16) and
-                          self._audio_stream is None):
+                  info.sample_bits in (8, 16) and
+                  self._audio_stream is None):
 
                 stream = ffmpeg_open_stream(self._file, i)
 
@@ -540,7 +540,7 @@ class FFmpegSource(StreamingSource):
                                                                        sample_rate,
                                                                        0, None)
                 if (not self.audio_convert_ctx or
-                            swresample.swr_init(self.audio_convert_ctx) < 0):
+                        swresample.swr_init(self.audio_convert_ctx) < 0):
                     swresample.swr_free(self.audio_convert_ctx)
                     raise FFmpegException('Cannot create sample rate converter.')
 
@@ -681,7 +681,7 @@ class FFmpegSource(StreamingSource):
         # We clear our flag.
         self._fillq_scheduled = False
         while (len(self.audioq) < self._max_len_audioq and
-                       len(self.videoq) < self._max_len_videoq):
+               len(self.videoq) < self._max_len_videoq):
             if self._get_packet():
                 self._process_packet()
             else:
@@ -731,7 +731,7 @@ class FFmpegSource(StreamingSource):
             return video_packet
 
         elif (self.audio_format and
-                      self._packet.contents.stream_index == self._audio_stream_index):
+              self._packet.contents.stream_index == self._audio_stream_index):
             audio_packet = AudioPacket(self._packet, timestamp)
             self._append_audio_data(audio_packet)
             return audio_packet
