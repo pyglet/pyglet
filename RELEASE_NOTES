@@ -9,7 +9,7 @@ Bugfixes
 Improvements
 ------------
 - Added a simple 2D Camera example to examples/camera.py in the repository.
-
+- OSX: OpenGL context creation is more lenient with requested versions.
 
 pyglet 1.4.8
 Bugfix release
