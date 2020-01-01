@@ -5,6 +5,7 @@ Bugfixes
 --------
 - Fix TextLayoutGroup consolidation when using custom Groups for Labels.
 - FFmpeg: Cast 'date' to string instead of int in file_info. (#109)
+- Fix ctypes error causing by incorrectly specifying a Union as an argtype. (#112)
 
 Improvements
 ------------

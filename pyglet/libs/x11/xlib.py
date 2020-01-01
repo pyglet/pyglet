@@ -38,6 +38,11 @@ Generated with:
 tools/genwrappers.py xlib
 
 Do not modify this file.
+
+####### NOTICE! ########
+This file has been manually modified to fix
+a limitation of the current wrapping tools.
+
 '''
 
 __docformat__ =  'restructuredtext'
@@ -2959,7 +2964,7 @@ XFindOnExtensionList.argtypes = [POINTER(POINTER(XExtData)), c_int]
 # /usr/include/X11/Xlib.h:1770
 XEHeadOfExtensionList = _lib.XEHeadOfExtensionList
 XEHeadOfExtensionList.restype = POINTER(POINTER(XExtData))
-XEHeadOfExtensionList.argtypes = [XEDataObject]
+XEHeadOfExtensionList.argtypes = [POINTER(XEDataObject)]
 
 # /usr/include/X11/Xlib.h:1775
 XRootWindow = _lib.XRootWindow
