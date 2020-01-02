@@ -46,7 +46,7 @@ To set up a window, simply `import pyglet`, create a new instance of
 :class:`pyglet.window.Window`, and call `pyglet.app.run()`::
 
     import pyglet
-    game_window = pyglet.window.Window()
+    game_window = pyglet.window.Window(800, 600)
 
     if __name__ == '__main__':
         pyglet.app.run()
