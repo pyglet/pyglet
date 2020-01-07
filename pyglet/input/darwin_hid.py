@@ -481,13 +481,16 @@ class HIDManager(object):
         self.devices = self._get_devices()
 
     def _get_devices(self):
-        # Tell manager that we are willing to match *any* device.
-        # (Alternatively, we could restrict by device usage, or usage page.)
-        iokit.IOHIDManagerSetDeviceMatching(self.managerRef, None)
-        # Copy the device set and convert it to python.
-        cfset = c_void_p(iokit.IOHIDManagerCopyDevices(self.managerRef))
-        devices = cfset_to_set(cfset)
-        cf.CFRelease(cfset)
+        try:
+            # Tell manager that we are willing to match *any* device.
+            # (Alternatively, we could restrict by device usage, or usage page.)
+            iokit.IOHIDManagerSetDeviceMatching(self.managerRef, None)
+            # Copy the device set and convert it to python.
+            cfset = c_void_p(iokit.IOHIDManagerCopyDevices(self.managerRef))
+            devices = cfset_to_set(cfset)
+            cf.CFRelease(cfset)
+        except:
+            return set()
         return devices
 
     def open(self):
