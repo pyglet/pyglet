@@ -1,19 +1,15 @@
-#!/usr/bin/python
-# $Id:$
+#!/usr/bin/env python3
 
+import os
+import sys
+import datetime
+import optparse
 """Rewrite the license header of source files.
 
 Usage:
     license.py file.py file.py dir/ dir/ ...
     license.py --help  for more information
 """
-
-from __future__ import print_function
-
-import os
-import sys
-import datetime
-import optparse
 
 
 license_str = """# pyglet
@@ -50,8 +46,8 @@ license_str = """# pyglet
 # POSSIBILITY OF SUCH DAMAGE.""".format(datetime.datetime.now().year)
 
 marker = '# ' + '-' * 76
-
 license_lines = [marker] + license_str.split('\n') + [marker]
+skipped_files = 0
 
 
 def update_license(file_name):
@@ -59,7 +55,8 @@ def update_license(file_name):
     lines = [l.strip('\r\n') for l in open(file_name).readlines()]
 
     if marker not in lines and options.update_only is True:
-        print("Skipping %s" % file_name, file=sys.stderr)
+        global skipped_files
+        skipped_files += 1
 
     elif marker in lines:
         # Update existing license
@@ -114,3 +111,6 @@ if __name__ == '__main__':
                         update_license(os.path.join(root, filename))
         else:
             update_license(path)
+
+    if skipped_files > 0:
+        print("Skipped {} files.".format(skipped_files))
