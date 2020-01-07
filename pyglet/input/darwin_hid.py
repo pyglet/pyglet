@@ -345,12 +345,12 @@ class HIDDevice(object):
             kCFRunLoopDefaultMode)
 
     def _get_elements(self):
-        try:
-            cfarray = c_void_p(iokit.IOHIDDeviceCopyMatchingElements(self.deviceRef, None, 0))
-            elements = cfarray_to_list(cfarray)
-            cf.CFRelease(cfarray)
-        except:
+        cfarray = c_void_p(iokit.IOHIDDeviceCopyMatchingElements(self.deviceRef, None, 0))
+        if not cfarray:
+            # requires "Security & Privacy / Input Monitoring", see #95
             return []
+        elements = cfarray_to_list(cfarray)
+        cf.CFRelease(cfarray)
         return elements
 
     # Page and usage IDs are from the HID usage tables located at
