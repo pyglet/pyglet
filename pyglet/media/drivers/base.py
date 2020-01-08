@@ -214,9 +214,9 @@ class AbstractAudioDriver(with_metaclass(ABCMeta, object)):
 
 
 class BackgroundScheduler(object):
-    def __init__(self, interval, func):
-        self._interval = interval
+    def __init__(self, func, interval):
         self._func = func
+        self._interval = interval
         self._timer = None
 
     def _run_function(self):

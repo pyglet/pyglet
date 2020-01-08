@@ -42,7 +42,7 @@ import pyglet
 from . import interface
 from pyglet.debug import debug_print
 from pyglet.media.events import MediaEvent
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, BackgroundScheduler
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -128,19 +128,24 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         self._ds_buffer.current_position = 0
 
+        self._refill_scheduler = BackgroundScheduler(self._check_refill, 0.1)
+
         self.refill(self._buffer_size)
 
     def __del__(self):
         assert _debug("Delete DirectSoundAudioPlayer")
         # We decrease the IDirectSound refcount
+        self._refill_scheduler.stop()
         self.driver._ds_driver._native_dsound.Release()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self._refill_scheduler.stop()
+        # pyglet.clock.unschedule(self._check_refill)
 
     def play(self):
         assert _debug('DirectSound play')
-        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        self._refill_scheduler.start()
+        # pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
 
         if not self._playing:
             self._get_audiodata()  # prebuffer if needed
@@ -151,7 +156,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
-        pyglet.clock.unschedule(self._check_refill)
+        self._refill_scheduler.stop()
+        # pyglet.clock.unschedule(self._check_refill)
 
         if self._playing:
             self._playing = False
@@ -170,7 +176,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         del self._events[:]
         del self._timestamps[:]
 
-    def _check_refill(self, dt): # Need a better name!
+    def _check_refill(self, dt=0):
         write_size = self.get_write_size()
         if write_size > self.min_buffer_size:
             self.refill(write_size)

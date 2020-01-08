@@ -163,7 +163,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         # buffer.  See refill().
         self._audiodata_buffer = None
 
-        self._refill_scheduler = BackgroundScheduler(0.1, self._check_refill)
+        self._refill_scheduler = BackgroundScheduler(self._check_refill, 0.1)
 
         self.refill(self.ideal_buffer_size)
 
