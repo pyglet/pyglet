@@ -41,7 +41,7 @@ import weakref
 import pyglet
 from . import interface
 from pyglet.debug import debug_print
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, BackgroundScheduler
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.listener import AbstractListener
 
@@ -52,8 +52,7 @@ class OpenALDriver(AbstractAudioDriver):
     def __init__(self, device_name=None):
         super(OpenALDriver, self).__init__()
 
-        # TODO devices must be enumerated on Windows, otherwise 1.0 context is
-        # returned.
+        # TODO devices must be enumerated on Windows, otherwise 1.0 context is returned.
 
         self.device = interface.OpenALDevice(device_name)
         self.context = self.device.create_context()
@@ -164,6 +163,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         # buffer.  See refill().
         self._audiodata_buffer = None
 
+        self._refill_scheduler = BackgroundScheduler(0.1, self._check_refill)
+
         self.refill(self.ideal_buffer_size)
 
     def __del__(self):
@@ -171,7 +172,8 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self.delete()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self._refill_scheduler.stop()
+        # pyglet.clock.unschedule(self._check_refill)
         self.alsource = None
 
     @property
@@ -189,16 +191,16 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._playing = True
         self._clearing = False
 
-        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        self._refill_scheduler.start()
+        # pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
 
     def stop(self):
         assert _debug('OpenALAudioPlayer.stop()')
-        pyglet.clock.unschedule(self._check_refill)
+        self._refill_scheduler.stop()
+        # pyglet.clock.unschedule(self._check_refill)
 
         assert self.driver is not None
         assert self.alsource is not None
-
-        self._pause_timestamp = self.get_time()
 
         self.alsource.pause()
         self._playing = False
@@ -225,7 +227,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         del self._buffer_sizes[:]
         del self._buffer_timestamps[:]
 
-    def _check_refill(self, dt): # Need a better name!
+    def _check_refill(self, dt=0):
         write_size = self.get_write_size()
         if write_size > self.min_buffer_size:
             self.refill(write_size)
@@ -256,7 +258,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
                 # Underrun, take note of timestamp.
                 # We check that the timestamp is not None, because otherwise
                 # our source could have been cleared.
-                self._underrun_timestamp =  self._buffer_timestamps[-1] + \
+                self._underrun_timestamp = self._buffer_timestamps[-1] + \
                     self._buffer_sizes[-1] / float(self.source.audio_format.bytes_per_second)
             self._update_buffer_cursor(processed)
 
