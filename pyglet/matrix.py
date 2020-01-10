@@ -1,4 +1,5 @@
 import math as _math
+import operator as _operator
 
 
 def create_orthogonal(left, right, bottom, top, znear, zfar):
@@ -48,7 +49,7 @@ def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
 
 
 def scale(matrix, x=1, y=1, z=1):
-    """Scale a matrix."""
+    """Scale a Matrix."""
     temp = list(matrix)
     temp[0] *= x
     temp[5] *= y
@@ -57,7 +58,7 @@ def scale(matrix, x=1, y=1, z=1):
 
 
 def translate(matrix, x=0, y=0, z=0):
-    """Translate a matrix along x, y, and z axis."""
+    """Translate a Matrix along x, y, and z axis."""
     return Mat4(matrix) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
 
 
@@ -141,22 +142,23 @@ class Mat4(tuple):
         c2 = other[2::4]
         c3 = other[3::4]
 
-        a = sum(s * o for s, o in zip(r0, c0))
-        b = sum(s * o for s, o in zip(r0, c1))
-        c = sum(s * o for s, o in zip(r0, c2))
-        d = sum(s * o for s, o in zip(r0, c3))
-        e = sum(s * o for s, o in zip(r1, c0))
-        f = sum(s * o for s, o in zip(r1, c1))
-        g = sum(s * o for s, o in zip(r1, c2))
-        h = sum(s * o for s, o in zip(r1, c3))
-        i = sum(s * o for s, o in zip(r2, c0))
-        j = sum(s * o for s, o in zip(r2, c1))
-        k = sum(s * o for s, o in zip(r2, c2))
-        l = sum(s * o for s, o in zip(r2, c3))
-        m = sum(s * o for s, o in zip(r3, c0))
-        n = sum(s * o for s, o in zip(r3, c1))
-        o = sum(s * o for s, o in zip(r3, c2))
-        p = sum(s * o for s, o in zip(r3, c3))
+        # Multiply and sum rows * colums:
+        a = sum(map(_operator.mul, r0, c0))
+        b = sum(map(_operator.mul, r0, c1))
+        c = sum(map(_operator.mul, r0, c2))
+        d = sum(map(_operator.mul, r0, c3))
+        e = sum(map(_operator.mul, r1, c0))
+        f = sum(map(_operator.mul, r1, c1))
+        g = sum(map(_operator.mul, r1, c2))
+        h = sum(map(_operator.mul, r1, c3))
+        i = sum(map(_operator.mul, r2, c0))
+        j = sum(map(_operator.mul, r2, c1))
+        k = sum(map(_operator.mul, r2, c2))
+        l = sum(map(_operator.mul, r2, c3))
+        m = sum(map(_operator.mul, r3, c0))
+        n = sum(map(_operator.mul, r3, c1))
+        o = sum(map(_operator.mul, r3, c2))
+        p = sum(map(_operator.mul, r3, c3))
 
         return Mat4((a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p))
 
