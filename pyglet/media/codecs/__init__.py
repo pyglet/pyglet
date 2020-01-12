@@ -182,7 +182,7 @@ def have_ffmpeg():
             print('FFmpeg available, using to load media files.')
         return True
 
-    except ImportError:
+    except (ImportError, FileNotFoundError):
         if _debug:
             print('FFmpeg not available.')
         return False
