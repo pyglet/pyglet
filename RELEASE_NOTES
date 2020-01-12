@@ -1,3 +1,12 @@
+pyglet 1.4.10
+Bugfix release
+
+Bugfixes
+--------
+- Explicitly set Window size in game example. (#116)
+- Prevent crash when checking if FFMpeg is available. (#121)
+
+
 pyglet 1.4.9
 Bugfix and small improvement release
 
@@ -5,12 +14,13 @@ Bugfixes
 --------
 - Fix TextLayoutGroup consolidation when using custom Groups for Labels.
 - FFmpeg: Cast 'date' to string instead of int in file_info. (#109)
-- Fix ctypes error causing by incorrectly specifying a Union as an argtype. (#112)
+- Fix ctypes error caused by incorrectly specifying a Union as an argtype. (#112)
 
 Improvements
 ------------
 - Added a simple 2D Camera example to examples/camera.py in the repository.
 - OSX: OpenGL context creation is more lenient with requested versions.
+
 
 pyglet 1.4.8
 Bugfix release
