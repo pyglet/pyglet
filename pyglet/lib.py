@@ -164,8 +164,7 @@ class LibraryLoader(object):
                     except OSError:
                         pass
                 elif self.platform == "win32" and o.winerror != 126:
-                    print("Unexpected error loading library %s: %s" % (name, str(o)))
-                    raise
+                    raise ImportError("Unexpected error loading library %s: %s" % (name, str(o)))
 
         raise ImportError('Library "%s" not found.' % names[0])
 
