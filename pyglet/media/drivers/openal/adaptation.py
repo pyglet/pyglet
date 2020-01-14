@@ -35,7 +35,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import time
 import weakref
 
 import pyglet
@@ -120,7 +119,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
     min_buffer_size = 512
 
     #: Aggregate (desired) buffer size, in seconds
-    _ideal_buffer_size = 1.
+    _ideal_buffer_size = 1.0
 
     def __init__(self, driver, source, player):
         super(OpenALAudioPlayer, self).__init__(source, player)
@@ -163,8 +162,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         # buffer.  See refill().
         self._audiodata_buffer = None
 
-        self._refill_scheduler = BackgroundScheduler(self._check_refill, 0.1)
-
         self.refill(self.ideal_buffer_size)
 
     def __del__(self):
@@ -172,8 +169,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self.delete()
 
     def delete(self):
-        self._refill_scheduler.stop()
-        # pyglet.clock.unschedule(self._check_refill)
+        pyglet.clock.unschedule(self._check_refill)
         self.alsource = None
 
     @property
@@ -191,13 +187,11 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._playing = True
         self._clearing = False
 
-        self._refill_scheduler.start()
-        # pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
 
     def stop(self):
         assert _debug('OpenALAudioPlayer.stop()')
-        self._refill_scheduler.stop()
-        # pyglet.clock.unschedule(self._check_refill)
+        pyglet.clock.unschedule(self._check_refill)
 
         assert self.driver is not None
         assert self.alsource is not None

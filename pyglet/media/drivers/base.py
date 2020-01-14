@@ -36,7 +36,6 @@ from future.utils import with_metaclass
 
 import math
 import weakref
-import threading
 
 from abc import ABCMeta, abstractmethod
 
@@ -211,27 +210,3 @@ class AbstractAudioDriver(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def delete(self):
         pass
-
-
-class BackgroundScheduler(object):
-    def __init__(self, func, interval):
-        self._func = func
-        self._interval = interval
-        self._timer = None
-
-    def _run_function(self):
-        if not self._func:
-            return
-        self._func()
-        self._timer = threading.Timer(self._interval, self._run_function)
-        self._timer.start()
-
-    def start(self):
-        self._run_function()
-
-    def stop(self):
-        if self._timer:
-            self._timer.cancel()
-
-    def __del__(self):
-        self.stop()

@@ -36,13 +36,12 @@ from __future__ import absolute_import, print_function
 
 import ctypes
 import math
-import weakref
 
 import pyglet
 from . import interface
 from pyglet.debug import debug_print
 from pyglet.media.events import MediaEvent
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer, BackgroundScheduler
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -50,7 +49,7 @@ _debug = debug_print('debug_media')
 
 def _convert_coordinates(coordinates):
     x, y, z = coordinates
-    return (x, y, -z)
+    return x, y, -z
 
 
 def _gain2db(gain):
@@ -128,24 +127,19 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
         self._ds_buffer.current_position = 0
 
-        self._refill_scheduler = BackgroundScheduler(self._check_refill, 0.1)
-
         self.refill(self._buffer_size)
 
     def __del__(self):
         assert _debug("Delete DirectSoundAudioPlayer")
         # We decrease the IDirectSound refcount
-        self._refill_scheduler.stop()
         self.driver._ds_driver._native_dsound.Release()
 
     def delete(self):
-        self._refill_scheduler.stop()
-        # pyglet.clock.unschedule(self._check_refill)
+        pyglet.clock.unschedule(self._check_refill)
 
     def play(self):
         assert _debug('DirectSound play')
-        self._refill_scheduler.start()
-        # pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
 
         if not self._playing:
             self._get_audiodata()  # prebuffer if needed
@@ -156,8 +150,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
-        self._refill_scheduler.stop()
-        # pyglet.clock.unschedule(self._check_refill)
+        pyglet.clock.unschedule(self._check_refill)
 
         if self._playing:
             self._playing = False
@@ -176,7 +169,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         del self._events[:]
         del self._timestamps[:]
 
-    def _check_refill(self, dt=0):
+    def _check_refill(self, dt):
         write_size = self.get_write_size()
         if write_size > self.min_buffer_size:
             self.refill(write_size)
@@ -248,7 +241,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
     def _add_audiodata_events(self, audio_data):
         for event in audio_data.events:
             event_cursor = self._write_cursor + event.timestamp * \
-                self.source.audio_format.bytes_per_second
+                           self.source.audio_format.bytes_per_second
             assert _debug('Adding event', event, 'at', event_cursor)
             self._events.append((event_cursor, event))
 
@@ -332,8 +325,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self.update_play_cursor()
         if self._timestamps:
             cursor, ts = self._timestamps[0]
-            result = ts + (self._play_cursor - cursor) / \
-                float(self.source.audio_format.bytes_per_second)
+            result = ts + (self._play_cursor - cursor) / float(self.source.audio_format.bytes_per_second)
         else:
             result = None
 
@@ -416,6 +408,7 @@ class DirectSoundDriver(AbstractAudioDriver):
         # Make sure the _ds_listener is deleted before the _ds_driver
         self._ds_listener = None
 
+
 class DirectSoundListener(AbstractListener):
     def __init__(self, ds_listener, ds_buffer):
         self._ds_listener = ds_listener
@@ -443,4 +436,3 @@ class DirectSoundListener(AbstractListener):
     def _set_orientation(self):
         self._ds_listener.orientation = (_convert_coordinates(self._forward_orientation)
                                          + _convert_coordinates(self._up_orientation))
-
