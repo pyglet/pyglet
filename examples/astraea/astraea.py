@@ -33,24 +33,24 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''A sprite-based game loosely based on the classic "Asteroids".
+"""A sprite-based game loosely based on the classic "Asteroids".
 
 Shoot the asteroids, get high score.
 
 Left/right: Turn ship
 Up: Thrusters
 Space: Shoot
-'''
+"""
 
-import math
-import os
-import random
 import sys
+import math
+import random
 
 import pyglet
 from pyglet.gl import *
 from pyglet import resource
 from pyglet.window import key
+
 
 PLAYER_SPIN_SPEED = 360.
 PLAYER_ACCEL = 200.
@@ -84,17 +84,19 @@ LIFE_LOST_DELAY = 2.
 FONT_NAME = ('Verdana', 'Helvetica', 'Arial')
 
 INSTRUCTIONS = \
-'''Your ship is lost in a peculiar unchartered area of space-time infested with asteroids!  You have no chance for survival except to rack up the highest score possible.
+    """Your ship is lost in a peculiar unchartered area of space-time infested with asteroids! You have no chance for survival except to rack up the highest score possible.
+    
+    Left/Right: Turn ship
+    Up: Thrusters
+    Space: Shoot
+    
+    Be careful, there's not much friction in space."""
 
-Left/Right: Turn ship
-Up: Thrusters
-Space: Shoot
-
-Be careful, there's not much friction in space.'''
 
 def center_anchor(img):
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
+
 
 # --------------------------------------------------------------------------
 # Game objects
@@ -107,8 +109,10 @@ def wrap(value, width):
         value += width
     return value
 
+
 def to_radians(degrees):
     return math.pi * degrees / 180.0
+
 
 class WrappingSprite(pyglet.sprite.Sprite):
     dx = 0
@@ -117,20 +121,20 @@ class WrappingSprite(pyglet.sprite.Sprite):
 
     def __init__(self, img, x, y, batch=None):
         super(WrappingSprite, self).__init__(img, x, y, batch=batch)
-        self.collision_radius = self.image.width // COLLISION_RESOLUTION // 2 
+        self.collision_radius = self.image.width // COLLISION_RESOLUTION // 2
 
     def update(self, dt):
         x = self.x + self.dx * dt
         y = self.y + self.dy * dt
         rotation = self.rotation + self.rotation_speed * dt
-        
+
         self.x = wrap(x, ARENA_WIDTH)
         self.y = wrap(y, ARENA_HEIGHT)
         self.rotation = wrap(rotation, 360.)
 
     def collision_cells(self):
-        '''Generate a sequence of (x, y) cells this object covers,
-        approximately.''' 
+        """Generate a sequence of (x, y) cells this object covers,
+        approximately."""
         radius = self.collision_radius
         cellx = int(self.x / COLLISION_RESOLUTION)
         celly = int(self.y / COLLISION_RESOLUTION)
@@ -138,12 +142,14 @@ class WrappingSprite(pyglet.sprite.Sprite):
             for x in range(cellx - radius, cellx + radius + 1):
                 yield x, y
 
+
 class AsteroidSize(object):
     def __init__(self, filename, points):
         self.img = resource.image(filename)
         center_anchor(self.img)
         self.next_size = None
         self.points = points
+
 
 class Asteroid(WrappingSprite):
     def __init__(self, size, x, y, batch=None):
@@ -170,10 +176,11 @@ class Asteroid(WrappingSprite):
         self.delete()
         asteroids.remove(self)
 
+
 class Player(WrappingSprite, key.KeyStateHandler):
     def __init__(self, img, batch=None):
         super(Player, self).__init__(img, ARENA_WIDTH // 2, ARENA_HEIGHT // 2,
-            batch=batch)
+                                     batch=batch)
         center_anchor(img)
         self.reset()
 
@@ -218,7 +225,7 @@ class Player(WrappingSprite, key.KeyStateHandler):
             # For simplicity, start the bullet at the player position.  If the
             # ship were bigger, or if bullets moved slower we'd adjust this
             # based on the orientation of the ship.
-            bullets.append(Bullet(self.x, self.y, 
+            bullets.append(Bullet(self.x, self.y,
                                   rotation_x * BULLET_SPEED,
                                   rotation_y * BULLET_SPEED, batch=batch))
 
@@ -236,6 +243,7 @@ class Player(WrappingSprite, key.KeyStateHandler):
 
         self.opacity = (self.visible and self.flash_visible) and 255 or 0
 
+
 class MovingSprite(pyglet.sprite.Sprite):
     def __init__(self, image, x, y, dx, dy, batch=None):
         super(MovingSprite, self).__init__(image, x, y, batch=batch)
@@ -246,6 +254,7 @@ class MovingSprite(pyglet.sprite.Sprite):
         self.x += self.dx * dt
         self.y += self.dy * dt
 
+
 class Bullet(MovingSprite):
     def __init__(self, x, y, dx, dy, batch=None):
         super(Bullet, self).__init__(bullet_image, x, y, dx, dy, batch=batch)
@@ -253,15 +262,16 @@ class Bullet(MovingSprite):
     def update(self, dt):
         self.x += self.dx * dt
         self.y += self.dy * dt
-        if not (self.x >= 0 and self.x < ARENA_WIDTH and
-                self.y >= 0 and self.y < ARENA_HEIGHT):
+        if not 0 <= self.x < ARENA_WIDTH and 0 <= self.y < ARENA_HEIGHT:
             self.delete()
             bullets.remove(self)
+
 
 class EffectSprite(MovingSprite):
     def on_animation_end(self):
         self.delete()
         animations.remove(self)
+
 
 class Starfield(object):
     def __init__(self, img):
@@ -281,11 +291,12 @@ class Starfield(object):
         glMatrixMode(GL_TEXTURE)
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
-        
+
         self.img.blit(0, 0, width=ARENA_WIDTH, height=ARENA_HEIGHT)
-        
+
         glPopMatrix()
         glMatrixMode(GL_MODELVIEW)
+
 
 # --------------------------------------------------------------------------
 # Overlays, such as menus and "Game Over" banners
@@ -298,12 +309,13 @@ class Overlay(object):
     def draw(self):
         pass
 
+
 class Banner(Overlay):
     def __init__(self, label, dismiss_func=None, timeout=None):
         self.text = pyglet.text.Label(label,
                                       font_name=FONT_NAME,
                                       font_size=36,
-                                      x=ARENA_WIDTH // 2, 
+                                      x=ARENA_WIDTH // 2,
                                       y=ARENA_HEIGHT // 2,
                                       anchor_x='center',
                                       anchor_y='center')
@@ -321,13 +333,14 @@ class Banner(Overlay):
             self.dismiss_func()
         return True
 
+
 class Menu(Overlay):
     def __init__(self, title):
         self.items = []
-        self.title_text = pyglet.text.Label(title, 
+        self.title_text = pyglet.text.Label(title,
                                             font_name=FONT_NAME,
                                             font_size=36,
-                                            x=ARENA_WIDTH // 2, 
+                                            x=ARENA_WIDTH // 2,
                                             y=350,
                                             anchor_x='center',
                                             anchor_y='center')
@@ -341,7 +354,7 @@ class Menu(Overlay):
             self.selected_index += 1
         elif symbol == key.UP:
             self.selected_index -= 1
-        self.selected_index = min(max(self.selected_index, 0), 
+        self.selected_index = min(max(self.selected_index, 0),
                                   len(self.items) - 1)
 
         if symbol in (key.DOWN, key.UP) and enable_sound:
@@ -355,6 +368,7 @@ class Menu(Overlay):
         for i, item in enumerate(self.items):
             item.draw(i == self.selected_index)
 
+
 class MenuItem(object):
     pointer_color = (.46, 0, 1.)
     inverted_pointers = False
@@ -364,7 +378,7 @@ class MenuItem(object):
         self.text = pyglet.text.Label(label,
                                       font_name=FONT_NAME,
                                       font_size=14,
-                                      x=ARENA_WIDTH // 2, 
+                                      x=ARENA_WIDTH // 2,
                                       y=y,
                                       anchor_x='center',
                                       anchor_y='center')
@@ -385,14 +399,14 @@ class MenuItem(object):
 
         if selected:
             self.draw_pointer(
-                self.text.x - self.text.content_width // 2 - 
-                    pointer_image.width // 2,
-                self.y, 
+                self.text.x - self.text.content_width // 2 -
+                pointer_image.width // 2,
+                self.y,
                 self.pointer_color,
                 self.inverted_pointers)
             self.draw_pointer(
-                self.text.x + self.text.content_width // 2 + 
-                    pointer_image.width // 2,
+                self.text.x + self.text.content_width // 2 +
+                pointer_image.width // 2,
                 self.y,
                 self.pointer_color,
                 not self.inverted_pointers)
@@ -402,6 +416,7 @@ class MenuItem(object):
             self.activate_func()
             if enable_sound:
                 bullet_sound.play()
+
 
 class ToggleMenuItem(MenuItem):
     pointer_color = (.27, .82, .25)
@@ -423,6 +438,7 @@ class ToggleMenuItem(MenuItem):
             self.toggle_func(self.value)
             if enable_sound:
                 bullet_sound.play()
+
 
 class DifficultyMenuItem(MenuItem):
     pointer_color = (.27, .82, .25)
@@ -455,42 +471,49 @@ class DifficultyMenuItem(MenuItem):
         if symbol in (key.LEFT, key.RIGHT) and enable_sound:
             bullet_sound.play()
 
+
 class MainMenu(Menu):
     def __init__(self):
         super(MainMenu, self).__init__('Astraea')
 
         self.items.append(MenuItem('New Game', 240, begin_game))
-        self.items.append(MenuItem('Instructions', 200, 
+        self.items.append(MenuItem('Instructions', 200,
                                    begin_instructions_menu))
         self.items.append(MenuItem('Options', 160, begin_options_menu))
         self.items.append(MenuItem('Quit', 120, sys.exit))
         self.reset()
+
 
 class OptionsMenu(Menu):
     def __init__(self):
         super(OptionsMenu, self).__init__('Options')
 
         self.items.append(DifficultyMenuItem(280))
+
         def set_enable_sound(value):
             global enable_sound
             enable_sound = value
+
         self.items.append(ToggleMenuItem('Sound', enable_sound, 240,
                                          set_enable_sound))
 
         def set_enable_fullscreen(value):
             win.set_fullscreen(value, width=ARENA_WIDTH, height=ARENA_HEIGHT)
+
         self.items.append(ToggleMenuItem('Fullscreen', win.fullscreen, 200,
                                          set_enable_fullscreen))
-                                
-        self.items.append(ToggleMenuItem('Vsync', win.vsync, 160, 
+
+        self.items.append(ToggleMenuItem('Vsync', win.vsync, 160,
                                          win.set_vsync))
 
         def set_show_fps(value):
             global show_fps
             show_fps = value
+
         self.items.append(ToggleMenuItem('FPS', show_fps, 120, set_show_fps))
         self.items.append(MenuItem('Ok', 60, begin_main_menu))
         self.reset()
+
 
 class InstructionsMenu(Menu):
     def __init__(self):
@@ -511,6 +534,7 @@ class InstructionsMenu(Menu):
         super(InstructionsMenu, self).draw()
         self.instruction_text.draw()
 
+
 class PauseMenu(Menu):
     def __init__(self):
         super(PauseMenu, self).__init__('Paused')
@@ -518,6 +542,7 @@ class PauseMenu(Menu):
         self.items.append(MenuItem('Continue Game', 240, resume_game))
         self.items.append(MenuItem('Main Menu', 200, end_game))
         self.reset()
+
 
 # --------------------------------------------------------------------------
 # Game state functions
@@ -543,7 +568,7 @@ def check_collisions():
     # 1. Mark all grid cells that the bullets are in.  Assume bullets
     #    occupy a single cell.
     for bullet in bullets:
-        hit_squares[int(bullet.x / COLLISION_RESOLUTION), 
+        hit_squares[int(bullet.x / COLLISION_RESOLUTION),
                     int(bullet.y / COLLISION_RESOLUTION)] = bullet
 
     # 2. Mark all grid cells that the player is in.
@@ -553,19 +578,23 @@ def check_collisions():
     # 3. Check grid cells of each asteroid for a collision.
     for asteroid in asteroids:
         for x, y in asteroid.collision_cells():
-           if (x, y) in hit_squares:
+            if (x, y) in hit_squares:
                 asteroid.hit = True
                 hit_squares[x, y].hit = True
                 del hit_squares[x, y]
 
+
 def begin_main_menu():
     set_overlay(MainMenu())
-    
+
+
 def begin_options_menu():
     set_overlay(OptionsMenu())
 
+
 def begin_instructions_menu():
     set_overlay(InstructionsMenu())
+
 
 def begin_game():
     global player_lives
@@ -576,16 +605,19 @@ def begin_game():
     begin_clear_background()
     set_overlay(Banner('Get Ready', begin_first_round, GET_READY_DELAY))
 
+
 def begin_first_round(*args):
     player.reset()
     player.visible = True
     begin_round()
+
 
 def next_round(*args):
     global in_game
     player.invincible = True
     in_game = False
     set_overlay(Banner('Get Ready', begin_round, GET_READY_DELAY))
+
 
 def begin_round(*args):
     global asteroids
@@ -610,13 +642,16 @@ def begin_round(*args):
     set_overlay(None)
     pyglet.clock.schedule_once(begin_play, BEGIN_PLAY_DELAY)
 
+
 def begin_play(*args):
     player.invincible = False
+
 
 def begin_life(*args):
     player.reset()
     pyglet.clock.schedule_once(begin_play, BEGIN_PLAY_DELAY)
-    
+
+
 def life_lost(*args):
     global player_lives
     player_lives -= 1
@@ -626,18 +661,22 @@ def life_lost(*args):
     else:
         game_over()
 
+
 def game_over():
     set_overlay(Banner('Game Over', end_game))
+
 
 def pause_game():
     global paused
     paused = True
     set_overlay(PauseMenu())
 
+
 def resume_game():
     global paused
     paused = False
     set_overlay(None)
+
 
 def end_game():
     global in_game
@@ -650,6 +689,7 @@ def end_game():
     begin_menu_background()
     set_overlay(MainMenu())
 
+
 def set_overlay(new_overlay):
     global overlay
     if overlay:
@@ -657,6 +697,7 @@ def set_overlay(new_overlay):
     overlay = new_overlay
     if overlay:
         win.push_handlers(overlay)
+
 
 def begin_menu_background():
     global asteroids
@@ -683,6 +724,7 @@ def begin_menu_background():
     player_lives = 0
     player.visible = False
 
+
 def begin_clear_background():
     global asteroids
     global bullets
@@ -699,11 +741,14 @@ def begin_clear_background():
     animations = []
     player.visible = False
 
+
 # --------------------------------------------------------------------------
 # Create window
 # --------------------------------------------------------------------------
 
 win = pyglet.window.Window(ARENA_WIDTH, ARENA_HEIGHT, caption='Astraea')
+win.set_mouse_visible(False)
+
 
 @win.event
 def on_key_press(symbol, modifiers):
@@ -718,6 +763,7 @@ def on_key_press(symbol, modifiers):
         sys.exit()
     return pyglet.event.EVENT_HANDLED
 
+
 @win.event
 def on_draw():
     win.clear()
@@ -726,11 +772,11 @@ def on_draw():
     # Render
     starfield.draw()
 
-    for (x, y) in ((0, ARENA_HEIGHT),   # Top
-                   (-ARENA_WIDTH, 0),   # Left
-                   (0, 0),              # Center
-                   (ARENA_WIDTH, 0),    # Right
-                   (0, -ARENA_HEIGHT)): # Bottom
+    for (x, y) in ((0, ARENA_HEIGHT),  # Top
+                   (-ARENA_WIDTH, 0),  # Left
+                   (0, 0),  # Center
+                   (ARENA_WIDTH, 0),  # Right
+                   (0, -ARENA_HEIGHT)):  # Bottom
         glLoadIdentity()
         glTranslatef(x, y, 0)
         wrapping_batch.draw()
@@ -746,7 +792,7 @@ def on_draw():
         for i in range(player_lives - 1):
             player.image.blit(x, win.height - player.image.height // 2 - 10, 0)
             x += player.image.width + 10
-        
+
         # HUD score
         score_text.text = str(score)
         score_text.draw()
@@ -804,7 +850,7 @@ pointer_image_flip = resource.image('pointer.png', flip_x=True)
 explosion_sound = resource.media('explosion.wav', streaming=False)
 bullet_sound = resource.media('bullet.wav', streaming=False)
 
-starfield = Starfield(resource.image('starfield.jpg'))
+starfield = Starfield(resource.texture('starfield.jpg'))
 player = Player(resource.image('ship.png'), wrapping_batch)
 win.push_handlers(player)
 
@@ -824,7 +870,7 @@ enable_sound = True
 score_text = pyglet.text.Label('',
                                font_name=FONT_NAME,
                                font_size=18,
-                               x=ARENA_WIDTH - 10, 
+                               x=ARENA_WIDTH - 10,
                                y=ARENA_HEIGHT - 10,
                                anchor_x='right',
                                anchor_y='top')
@@ -833,6 +879,7 @@ fps_display = pyglet.window.FPSDisplay(win)
 
 bullets = []
 animations = []
+
 
 # --------------------------------------------------------------------------
 # Game update
@@ -853,7 +900,6 @@ def update(dt):
         for animation in animations[:]:
             animation.update(dt)
 
-
     if not player.invincible:
         # Collide bullets and player with asteroids
         check_collisions()
@@ -861,7 +907,7 @@ def update(dt):
         # Destroy asteroids that were hit
         for asteroid in [a for a in asteroids if a.hit]:
             animations.append(EffectSprite(smoke_animation,
-                                           asteroid.x, asteroid.y, 
+                                           asteroid.x, asteroid.y,
                                            asteroid.dx, asteroid.dy,
                                            batch=batch))
             asteroid.destroy()
@@ -872,7 +918,7 @@ def update(dt):
         if player.hit:
             animations.append(EffectSprite(explosion_animation,
                                            player.x, player.y,
-                                           player.dx, player.dy, 
+                                           player.dx, player.dy,
                                            batch=batch))
             player.invincible = True
             player.visible = False
@@ -881,7 +927,9 @@ def update(dt):
         # Check if the area is clear
         if not asteroids:
             next_round()
-pyglet.clock.schedule_interval(update, 1/60.)
+
+
+pyglet.clock.schedule_interval(update, 1 / 60.)
 
 # --------------------------------------------------------------------------
 # Start game
