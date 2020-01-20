@@ -33,12 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from ctypes import *
 
 import pyglet.lib
@@ -46,10 +40,9 @@ from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_AGL']
 
-gl_lib = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/OpenGL.framework')
-agl_lib = pyglet.lib.load_library(
-    framework='/System/Library/Frameworks/AGL.framework')
+gl_lib = pyglet.lib.load_library(framework='/System/Library/Frameworks/OpenGL.framework')
+agl_lib = pyglet.lib.load_library(framework='/System/Library/Frameworks/AGL.framework')
+
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
@@ -61,7 +54,9 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     except AttributeError:
         return missing_function(name, requires, suggestions)
 
+
 link_GLU = link_GL
+
 
 def link_AGL(name, restype, argtypes, requires=None, suggestions=None):
     try:
@@ -72,4 +67,3 @@ def link_AGL(name, restype, argtypes, requires=None, suggestions=None):
         return func
     except AttributeError:
         return missing_function(name, requires, suggestions)
-

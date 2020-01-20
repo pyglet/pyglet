@@ -35,16 +35,11 @@
 
 """Base class for structured (hierarchical) document formats.
 """
-from __future__ import division
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import re
 
 import pyglet
+
 
 class ImageElement(pyglet.text.document.InlineElement):
     def __init__(self, image, width=None, height=None):
@@ -74,6 +69,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         self.vertex_lists[layout].delete()
         del self.vertex_lists[layout]
 
+
 def _int_to_roman(input):
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
     if not 0 < input < 4000:
@@ -86,6 +82,7 @@ def _int_to_roman(input):
         result += nums[i] * count
         input -= ints[i] * count
     return result
+
 
 class ListBuilder:
     def begin(self, decoder, style):
@@ -139,6 +136,7 @@ class ListBuilder:
         """
         return ''
 
+
 class UnorderedListBuilder(ListBuilder):
     def __init__(self, mark):
         """Create an unordered list with constant mark text.
@@ -150,9 +148,9 @@ class UnorderedListBuilder(ListBuilder):
         """
         self.mark = mark
 
-
     def get_mark(self, value):
         return self.mark
+
 
 class OrderedListBuilder(ListBuilder):
     format_re = re.compile('(.*?)([1aAiI])(.*)')
@@ -212,6 +210,7 @@ class OrderedListBuilder(ListBuilder):
             return '%s%s%s' % (self.prefix, mark, self.suffix)
         else:
             return '%s%d%s' % (self.prefix, value, self.suffix)
+
 
 class StructuredTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):

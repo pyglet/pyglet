@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -34,31 +33,25 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import ctypes
 import pyglet
-from pyglet.input.base import \
-    Device, DeviceException, DeviceOpenException, \
-    Control, Button, RelativeAxis, AbsoluteAxis
+from pyglet.input.base import Device, DeviceException, DeviceOpenException
+from pyglet.input.base import Control, Button, RelativeAxis, AbsoluteAxis
 from pyglet.libs.x11 import xlib
 from pyglet.compat import asstr
 
 try:
     from pyglet.libs.x11 import xinput as xi
+
     _have_xinput = True
 except:
     _have_xinput = False
 
+
 def ptr_add(ptr, offset):
     address = ctypes.addressof(ptr.contents) + offset
     return ctypes.pointer(type(ptr.contents).from_address(address))
+
 
 class DeviceResponder:
     def _key_press(self, e):
@@ -81,6 +74,7 @@ class DeviceResponder:
 
     def _proximity_out(self, e):
         pass
+
 
 class XInputDevice(DeviceResponder, Device):
     def __init__(self, display, device_info):
@@ -110,7 +104,7 @@ class XInputDevice(DeviceResponder, Device):
                 cp = ctypes.cast(ptr, ctypes.POINTER(xi.XButtonInfo))
                 num_buttons = cp.contents.num_buttons
                 # Pointer buttons start at index 1, with 0 as 'AnyButton'
-                for i in range(num_buttons+1):
+                for i in range(num_buttons + 1):
                     self.buttons.append(Button('button%d' % i))
 
             elif cls_class == xi.ValuatorClass:
@@ -123,8 +117,8 @@ class XInputDevice(DeviceResponder, Device):
                     axis = axes[i]
                     if mode == xi.Absolute:
                         self.axes.append(AbsoluteAxis('axis%d' % i,
-                            min=axis.min_value,
-                            max=axis.max_value))
+                                                      min=axis.min_value,
+                                                      max=axis.max_value))
                     elif mode == xi.Relative:
                         self.axes.append(RelativeAxis('axis%d' % i))
 
@@ -165,7 +159,7 @@ class XInputDevice(DeviceResponder, Device):
         if not self._device:
             self.is_open = False
             raise DeviceOpenException('Cannot open device')
-        
+
         self._install_events(window)
 
     def close(self):
@@ -206,6 +200,7 @@ class XInputDevice(DeviceResponder, Device):
     def _proximity_out(self, e):
         if self.proximity_control:
             self.proximity_control.value = False
+
 
 class XInputWindowEventDispatcher:
     def __init__(self, window):
@@ -279,7 +274,7 @@ class XInputWindowEventDispatcher:
 
             elif class_info.input_class == xi.FocusClass:
                 pass
-                
+
             elif class_info.input_class == xi.OtherClass:
                 pass
 
@@ -292,7 +287,7 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_key_press(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XDeviceKeyEvent)).contents
+                        ctypes.POINTER(xi.XDeviceKeyEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
@@ -301,7 +296,7 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_key_release(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XDeviceKeyEvent)).contents
+                        ctypes.POINTER(xi.XDeviceKeyEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
@@ -310,7 +305,7 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_button_press(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XDeviceButtonEvent)).contents
+                        ctypes.POINTER(xi.XDeviceButtonEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
@@ -319,7 +314,7 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_button_release(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XDeviceButtonEvent)).contents
+                        ctypes.POINTER(xi.XDeviceButtonEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
@@ -328,7 +323,7 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_motion(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XDeviceMotionEvent)).contents
+                        ctypes.POINTER(xi.XDeviceMotionEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
@@ -337,7 +332,7 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(0)
     def _event_xinput_proximity_in(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XProximityNotifyEvent)).contents
+                        ctypes.POINTER(xi.XProximityNotifyEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
@@ -346,11 +341,12 @@ class XInputWindowEventDispatcher:
     @pyglet.window.xlib.XlibEventHandler(-1)
     def _event_xinput_proximity_out(self, ev):
         e = ctypes.cast(ctypes.byref(ev),
-            ctypes.POINTER(xi.XProximityNotifyEvent)).contents
+                        ctypes.POINTER(xi.XProximityNotifyEvent)).contents
 
         device = self._responders.get(e.deviceid)
         if device is not None:
             device._proximity_out(e)
+
 
 def _check_extension(display):
     major_opcode = ctypes.c_int()
@@ -361,6 +357,7 @@ def _check_extension(display):
                          ctypes.byref(first_event),
                          ctypes.byref(first_error))
     return bool(major_opcode.value)
+
 
 def get_devices(display=None):
     if display is None:
@@ -380,4 +377,3 @@ def get_devices(display=None):
     xi.XFreeDeviceList(device_list)
 
     return devices
-

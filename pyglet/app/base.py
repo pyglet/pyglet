@@ -32,22 +32,17 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import print_function
-from __future__ import division
-from future import standard_library
-standard_library.install_aliases()
-from builtins import next
-from builtins import object
 
-import platform
-import queue
 import sys
+import queue
+import platform
 import threading
 
 from pyglet import app
-from pyglet import compat_platform
 from pyglet import clock
 from pyglet import event
+from pyglet import compat_platform
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 

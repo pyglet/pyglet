@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Access byte arrays as arrays of vertex attributes.
 
@@ -131,13 +130,9 @@ Some examples follow:
     2-float texture coordinate for texture unit 3.
 
 """
-from builtins import object
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import ctypes
 import re
+import ctypes
 
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer
@@ -175,8 +170,10 @@ _attribute_format_re = re.compile(r"""
 
 _attribute_cache = {}
 
+
 def _align(v, align):
     return ((v - 1) & ~(align - 1)) + align
+
 
 def interleave_attributes(attributes):
     """Interleave attribute offsets.
@@ -192,13 +189,14 @@ def interleave_attributes(attributes):
     stride = 0
     max_size = 0
     for attribute in attributes:
-        stride = _align(stride, attribute.align)    
+        stride = _align(stride, attribute.align)
         attribute.offset = stride
         stride += attribute.size
         max_size = max(max_size, attribute.size)
     stride = _align(stride, max_size)
     for attribute in attributes:
         attribute.stride = stride
+
 
 def serialize_attributes(count, attributes):
     """Serialize attribute offsets.
@@ -218,6 +216,7 @@ def serialize_attributes(count, attributes):
         offset = _align(offset, attribute.align)
         attribute.offset = offset
         offset += count * attribute.stride
+
 
 def create_attribute(format):
     """Create a vertex attribute description from a format string.
@@ -259,16 +258,17 @@ def create_attribute(format):
             args = (gl_type,)
         else:
             args = (count, gl_type)
-    
+
     _attribute_cache[format] = attr_class, args
     return attr_class(*args)
+
 
 class AbstractAttribute:
     """Abstract accessor for an attribute in a mapped buffer.
     """
-    
+
     _fixed_count = None
-    
+
     def __init__(self, count, gl_type):
         """Create the attribute accessor.
 
@@ -374,28 +374,30 @@ class AbstractAttribute:
             region = self.get_region(buffer, start, count)
             region[:] = data
 
+
 class ColorAttribute(AbstractAttribute):
     """Color vertex attribute."""
 
     plural = 'colors'
-    
+
     def __init__(self, count, gl_type):
         assert count in (3, 4), 'Color attributes must have count of 3 or 4'
         super(ColorAttribute, self).__init__(count, gl_type)
 
     def enable(self):
         glEnableClientState(GL_COLOR_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glColorPointer(self.count, self.gl_type, self.stride,
                        self.offset + pointer)
+
 
 class EdgeFlagAttribute(AbstractAttribute):
     """Edge flag attribute."""
 
     plural = 'edge_flags'
     _fixed_count = 1
-    
+
     def __init__(self, gl_type):
         assert gl_type in (GL_BYTE, GL_UNSIGNED_BYTE, GL_BOOL), \
             'Edge flag attribute must have boolean type'
@@ -403,24 +405,26 @@ class EdgeFlagAttribute(AbstractAttribute):
 
     def enable(self):
         glEnableClientState(GL_EDGE_FLAG_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glEdgeFlagPointer(self.stride, self.offset + pointer)
+
 
 class FogCoordAttribute(AbstractAttribute):
     """Fog coordinate attribute."""
 
     plural = 'fog_coords'
-    
+
     def __init__(self, count, gl_type):
         super(FogCoordAttribute, self).__init__(count, gl_type)
 
     def enable(self):
         glEnableClientState(GL_FOG_COORD_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glFogCoordPointer(self.count, self.gl_type, self.stride,
                           self.offset + pointer)
+
 
 class NormalAttribute(AbstractAttribute):
     """Normal vector attribute."""
@@ -435,9 +439,10 @@ class NormalAttribute(AbstractAttribute):
 
     def enable(self):
         glEnableClientState(GL_NORMAL_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glNormalPointer(self.gl_type, self.stride, self.offset + pointer)
+
 
 class SecondaryColorAttribute(AbstractAttribute):
     """Secondary color attribute."""
@@ -450,10 +455,11 @@ class SecondaryColorAttribute(AbstractAttribute):
 
     def enable(self):
         glEnableClientState(GL_SECONDARY_COLOR_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glSecondaryColorPointer(3, self.gl_type, self.stride,
                                 self.offset + pointer)
+
 
 class TexCoordAttribute(AbstractAttribute):
     """Texture coordinate attribute."""
@@ -467,16 +473,17 @@ class TexCoordAttribute(AbstractAttribute):
 
     def enable(self):
         glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glTexCoordPointer(self.count, self.gl_type, self.stride,
-                       self.offset + pointer)
+                          self.offset + pointer)
 
     def convert_to_multi_tex_coord_attribute(self):
         """Changes the class of the attribute to `MultiTexCoordAttribute`.
         """
         self.__class__ = MultiTexCoordAttribute
         self.texture = 0
+
 
 class MultiTexCoordAttribute(AbstractAttribute):
     """Texture coordinate attribute."""
@@ -490,10 +497,11 @@ class MultiTexCoordAttribute(AbstractAttribute):
     def enable(self):
         glClientActiveTexture(GL_TEXTURE0 + self.texture)
         glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-    
+
     def set_pointer(self, pointer):
         glTexCoordPointer(self.count, self.gl_type, self.stride,
-                       self.offset + pointer)
+                          self.offset + pointer)
+
 
 class VertexAttribute(AbstractAttribute):
     """Vertex coordinate attribute."""
@@ -514,6 +522,7 @@ class VertexAttribute(AbstractAttribute):
         glVertexPointer(self.count, self.gl_type, self.stride,
                         self.offset + pointer)
 
+
 class GenericAttribute(AbstractAttribute):
     """Generic vertex attribute, used by shader programs."""
 
@@ -527,8 +536,10 @@ class GenericAttribute(AbstractAttribute):
 
     def set_pointer(self, pointer):
         glVertexAttribPointer(self.index, self.count, self.gl_type,
-                              self.normalized, self.stride, 
+                              self.normalized, self.stride,
                               self.offset + pointer)
+
+
 _attribute_classes = {
     'c': ColorAttribute,
     'e': EdgeFlagAttribute,

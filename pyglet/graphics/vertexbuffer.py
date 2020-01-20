@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Byte abstractions of Vertex Buffer Objects and vertex arrays.
 
@@ -45,13 +44,9 @@ Buffers can optionally be created "mappable" (incorporating the
 :py:meth:`~AbstractMappable.get_region` method which provides the most
 efficient path for updating partial data within the buffer.
 """
-from builtins import object
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import ctypes
 import sys
+import ctypes
 
 import pyglet
 from pyglet.gl import *

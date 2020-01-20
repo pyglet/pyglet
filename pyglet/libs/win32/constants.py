@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 # Most of this file is win32con.py from Python for Windows Extensions:
 # http://www.python.net/crew/mhammond/win32/
 

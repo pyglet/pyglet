@@ -34,11 +34,10 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libswscale/swscale.h
 """
-from __future__ import unicode_literals
-from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64, 
-    c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p, 
-    c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union, 
-    create_string_buffer, memmove)
+from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
+from ctypes import c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p
+from ctypes import c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union
+from ctypes import create_string_buffer, memmove
 
 import pyglet
 import pyglet.lib
@@ -51,27 +50,33 @@ swscale = pyglet.lib.load_library(
 
 SWS_FAST_BILINEAR = 1
 
-class SwsContext(Structure): pass
-class SwsFilter(Structure): pass
+
+class SwsContext(Structure):
+    pass
+
+
+class SwsFilter(Structure):
+    pass
+
 
 swscale.sws_getCachedContext.restype = POINTER(SwsContext)
 swscale.sws_getCachedContext.argtypes = [POINTER(SwsContext),
-            c_int, c_int, c_int, c_int, 
-            c_int, c_int, c_int, 
-            POINTER(SwsFilter), POINTER(SwsFilter), 
-            POINTER(c_double)]
+                                         c_int, c_int, c_int, c_int,
+                                         c_int, c_int, c_int,
+                                         POINTER(SwsFilter), POINTER(SwsFilter),
+                                         POINTER(c_double)]
 swscale.sws_freeContext.argtypes = [POINTER(SwsContext)]
 swscale.sws_scale.restype = c_int
 swscale.sws_scale.argtypes = [POINTER(SwsContext),
-        POINTER(POINTER(c_uint8)),
-        POINTER(c_int),
-        c_int, c_int,
-        POINTER(POINTER(c_uint8)),
-        POINTER(c_int)]
+                              POINTER(POINTER(c_uint8)),
+                              POINTER(c_int),
+                              c_int, c_int,
+                              POINTER(POINTER(c_uint8)),
+                              POINTER(c_int)]
 
 __all__ = [
-'swscale',
-'SWS_FAST_BILINEAR',
-'SwsContext',
-'SwsFilter'
+    'swscale',
+    'SWS_FAST_BILINEAR',
+    'SwsContext',
+    'SwsFilter'
 ]

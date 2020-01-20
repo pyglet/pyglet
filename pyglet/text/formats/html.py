@@ -48,39 +48,39 @@ oddly if edited.
 
 No CSS styling is supported.
 """
-from builtins import chr
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-from future.moves.html.parser import HTMLParser
-from future.moves.html import entities
 import re
+
+from html.parser import HTMLParser
+from html import entities
 
 import pyglet
 from pyglet.text.formats import structured
 
+
 def _hex_color(val):
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
 
+
 _color_names = {
-    'black':    _hex_color(0x000000),
-    'silver':   _hex_color(0xc0c0c0),
-    'gray':     _hex_color(0x808080),
-    'white':    _hex_color(0xffffff),
-    'maroon':   _hex_color(0x800000),
-    'red':      _hex_color(0xff0000),
-    'purple':   _hex_color(0x800080),
-    'fucsia':   _hex_color(0x008000),
-    'green':    _hex_color(0x00ff00),
-    'lime':     _hex_color(0xffff00),
-    'olive':    _hex_color(0x808000),
-    'yellow':   _hex_color(0xff0000),
-    'navy':     _hex_color(0x000080),
-    'blue':     _hex_color(0x0000ff),
-    'teal':     _hex_color(0x008080),
-    'aqua':     _hex_color(0x00ffff),
+    'black': _hex_color(0x000000),
+    'silver': _hex_color(0xc0c0c0),
+    'gray': _hex_color(0x808080),
+    'white': _hex_color(0xffffff),
+    'maroon': _hex_color(0x800000),
+    'red': _hex_color(0xff0000),
+    'purple': _hex_color(0x800080),
+    'fucsia': _hex_color(0x008000),
+    'green': _hex_color(0x00ff00),
+    'lime': _hex_color(0xffff00),
+    'olive': _hex_color(0x808000),
+    'yellow': _hex_color(0xff0000),
+    'navy': _hex_color(0x000080),
+    'blue': _hex_color(0x0000ff),
+    'teal': _hex_color(0x008080),
+    'aqua': _hex_color(0x00ffff),
 }
+
 
 def _parse_color(value):
     if value.startswith('#'):
@@ -91,20 +91,20 @@ def _parse_color(value):
         except KeyError:
             raise ValueError()
 
+
 _whitespace_re = re.compile(u'[\u0020\u0009\u000c\u200b\r\n]+', re.DOTALL)
 
 _metadata_elements = ['head', 'title']
 
-_block_elements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-                   'ul', 'ol', 'dir', 'menu', 
-                   'pre', 'dl', 'div', 'center', 
+_block_elements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                   'ul', 'ol', 'dir', 'menu',
+                   'pre', 'dl', 'div', 'center',
                    'noscript', 'noframes', 'blockquote', 'form',
                    'isindex', 'hr', 'table', 'fieldset', 'address',
-                    # Incorrect, but we treat list items as blocks:
+                   # Incorrect, but we treat list items as blocks:
                    'li', 'dd', 'dt', ]
-                  
 
-_block_containers = ['_top_block', 
+_block_containers = ['_top_block',
                      'body', 'div', 'center', 'object', 'applet',
                      'blockquote', 'ins', 'del', 'dd', 'li', 'form',
                      'fieldset', 'button', 'th', 'td', 'iframe', 'noscript',
@@ -209,7 +209,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             style['font_name'] = 'Courier New'
         elif element == 'u':
             color = self.current_style.get('color')
-            if color is None: 
+            if color is None:
                 color = [0, 0, 0, 255]
             style['underline'] = color
         elif element == 'font':
@@ -353,7 +353,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
     def handle_entityref(self, name):
         if name in entities.name2codepoint:
             self.handle_data(chr(entities.name2codepoint[name]))
-    
+
     def handle_charref(self, name):
         name = name.lower()
         try:

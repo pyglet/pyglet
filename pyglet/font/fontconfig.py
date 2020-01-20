@@ -35,10 +35,6 @@
 """
 Wrapper around the Linux FontConfig library. Used to find available fonts.
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 from collections import OrderedDict
 from ctypes import *
@@ -46,6 +42,7 @@ from ctypes import *
 import pyglet.lib
 from pyglet.compat import asbytes, asstr
 from pyglet.font.base import FontException
+
 
 # fontconfig library definitions
 

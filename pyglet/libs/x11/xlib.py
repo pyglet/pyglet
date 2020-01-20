@@ -45,9 +45,6 @@ a limitation of the current wrapping tools.
 
 """
 
-__docformat__ =  'restructuredtext'
-__version__ = '$Id$'
-
 import ctypes
 from ctypes import *
 

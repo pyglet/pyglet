@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
 
 """Render simple text and formatted documents efficiently.
 
@@ -153,14 +152,6 @@ document; they will be ignored by the built-in text classes.
 
 .. versionadded:: 1.1
 """
-from __future__ import division
-from builtins import zip
-from builtins import map
-from builtins import range
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import re
 import sys

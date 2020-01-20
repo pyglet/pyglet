@@ -32,12 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from builtins import object
-# !/usr/bin/python
-# $Id:$
 
-from pyglet import app
 from pyglet import gl
+from pyglet import app
 from pyglet import window
 from pyglet import canvas
 

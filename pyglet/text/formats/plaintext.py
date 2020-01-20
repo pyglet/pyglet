@@ -36,10 +36,8 @@
 """Plain text decoder.
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import pyglet
+
 
 class PlainTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):

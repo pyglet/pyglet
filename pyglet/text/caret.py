@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Provides keyboard and mouse editing procedures for text layout.
 
@@ -48,10 +47,6 @@ Example usage::
 
 .. versionadded:: 1.1
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import re
 import time
@@ -59,6 +54,7 @@ import time
 from pyglet import clock
 from pyglet import event
 from pyglet.window import key
+
 
 class Caret:
     """Visible text insertion marker for 
@@ -102,7 +98,7 @@ class Caret:
 
     #: Pixels to scroll viewport per mouse scroll wheel movement.  Defaults
     #: to 12pt at 96dpi.
-    SCROLL_INCREMENT= 12 * 96 // 72
+    SCROLL_INCREMENT = 12 * 96 // 72
 
     def __init__(self, layout, batch=None, color=(0, 0, 0)):
         """Create a caret for a layout.
@@ -125,8 +121,7 @@ class Caret:
             batch = layout.batch
         r, g, b = color
         colors = (r, g, b, 255, r, g, b, 255)
-        self._list = batch.add(2, gl.GL_LINES, layout.background_group, 
-            'v2f', ('c4B', colors))
+        self._list = batch.add(2, gl.GL_LINES, layout.background_group, 'v2f', ('c4B', colors))
 
         self._ideal_x = None
         self._ideal_line = None
@@ -168,9 +163,8 @@ class Caret:
     def _get_visible(self):
         return self._visible
 
-    visible = property(_get_visible, _set_visible, 
-                       doc="""Caret visibility.
-    
+    visible = property(_get_visible, _set_visible, doc="""Caret visibility.
+
     The caret may be hidden despite this property due to the periodic blinking
     or by `on_deactivate` if the event handler is attached to a window.
 
@@ -184,8 +178,7 @@ class Caret:
     def _get_color(self):
         return self._list.colors[:3]
 
-    color = property(_get_color, _set_color, 
-                     doc="""Caret color.
+    color = property(_get_color, _set_color, doc="""Caret color.
 
     The default caret color is ``[0, 0, 0]`` (black).  Each RGB color
     component is in the range 0 to 255.
@@ -201,13 +194,13 @@ class Caret:
     def _get_position(self):
         return self._position
 
-    position = property(_get_position, _set_position, 
-                        doc="""Position of caret within document.
+    position = property(_get_position, _set_position, doc="""Position of caret within document.
 
     :type: int
     """)
 
     _mark = None
+
     def _set_mark(self, mark):
         self._mark = mark
         self._update(line=self._ideal_line)
@@ -218,8 +211,7 @@ class Caret:
         return self._mark
 
     mark = property(_get_mark, _set_mark,
-                    doc="""Position of immovable end of text selection within
-    document.
+                    doc="""Position of immovable end of text selection within document.
 
     An interactive text selection is determined by its immovable end (the
     caret's position when a mouse drag begins) and the caret's position, which
@@ -232,10 +224,8 @@ class Caret:
 
     def _set_line(self, line):
         if self._ideal_x is None:
-            self._ideal_x, _ = \
-                self._layout.get_point_from_position(self._position)
-        self._position = \
-            self._layout.get_position_on_line(line, self._ideal_x)
+            self._ideal_x, _ = self._layout.get_point_from_position(self._position)
+        self._position = self._layout.get_position_on_line(line, self._ideal_x)
         self._update(line=line, update_ideal_x=False)
 
     def _get_line(self):
@@ -271,8 +261,7 @@ class Caret:
             try:
                 return self._next_attributes[attribute]
             except KeyError:
-                return self._layout.document.get_style(attribute, 
-                                                          self._position)
+                return self._layout.document.get_style(attribute, self._position)
 
         start = min(self._position, self._mark)
         end = max(self._position, self._mark)
@@ -356,8 +345,7 @@ class Caret:
         """
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
-        m1 = self._previous_word_re.search(self._layout.document.text, 
-                                           0, p+1)
+        m1 = self._previous_word_re.search(self._layout.document.text, 0, p+1)
         if not m1:
             m1 = 0
         else:
@@ -407,7 +395,7 @@ class Caret:
 
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark),
-                                          max(self._position, self._mark))
+                                       max(self._position, self._mark))
 
         self._layout.ensure_line_visible(line)
         self._layout.ensure_x_visible(x)
@@ -474,8 +462,7 @@ class Caret:
         elif motion == key.MOTION_END_OF_LINE:
             line = self.line
             if line < self._layout.get_line_count() - 1:
-                self._position = \
-                    self._layout.get_position_from_line(line + 1) - 1
+                self._position = self._layout.get_position_from_line(line + 1) - 1
                 self._update(line)
             else:
                 self.position = len(self._layout.document.text)
@@ -492,8 +479,7 @@ class Caret:
                 self.position = m.start()
         elif motion == key.MOTION_PREVIOUS_WORD:
             pos = self._position
-            m = self._previous_word_re.search(self._layout.document.text, 
-                                              0, pos)
+            m = self._previous_word_re.search(self._layout.document.text, 0, pos)
             if not m:
                 self.position = 0
             else:

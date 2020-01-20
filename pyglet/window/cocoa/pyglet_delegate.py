@@ -32,8 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import absolute_import
-from builtins import object
 
 from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, ObjCInstance
 from pyglet.libs.darwin.cocoapy import NSApplicationDidHideNotification

@@ -33,12 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 from ctypes import *
 
 import pyglet.lib
@@ -51,8 +45,7 @@ __all__ = ['link_GL', 'link_GLU', 'link_GLX']
 gl_lib = pyglet.lib.load_library('GL')
 glu_lib = pyglet.lib.load_library('GLU')
 
-# Look for glXGetProcAddressARB extension, use it as fallback (for
-# ATI fglrx and DRI drivers).
+# Look for glXGetProcAddressARB extension, use it as fallback (for ATI fglrx and DRI drivers).
 try:
     glXGetProcAddressARB = getattr(gl_lib, 'glXGetProcAddressARB')
     glXGetProcAddressARB.restype = POINTER(CFUNCTYPE(None))
@@ -60,7 +53,8 @@ try:
     _have_getprocaddress = True
 except AttributeError:
     _have_getprocaddress = False
-    
+
+
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
         func = getattr(gl_lib, name)
@@ -81,7 +75,9 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
 
     return missing_function(name, requires, suggestions)
 
+
 link_GLX = link_GL
+
 
 def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
     try:
@@ -92,4 +88,3 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
         return func
     except AttributeError:
         return missing_function(name, requires, suggestions)
-

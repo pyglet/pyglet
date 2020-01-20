@@ -35,7 +35,6 @@
 
 """Decoder for RIFF Wave files, using the standard library wave module.
 """
-from __future__ import absolute_import, division
 
 from ..exceptions import MediaDecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource

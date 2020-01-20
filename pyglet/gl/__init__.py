@@ -91,12 +91,6 @@ by default:
 The information modules are provided for convenience, and are documented
 below.
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import range
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 from pyglet.gl.lib import GLException
 from pyglet.gl.gl import *
@@ -104,7 +98,14 @@ from pyglet.gl.glu import *
 from pyglet.gl.glext_arb import *
 from pyglet.gl import gl_info
 
+import pyglet as _pyglet
+
+from pyglet import compat_platform
+from .base import ObjectSpace, CanvasConfig, Context
+
+
 import sys as _sys
+
 _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_run
 
 #: The active OpenGL context.
@@ -116,6 +117,7 @@ _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_r
 #:
 #: .. versionadded:: 1.1
 current_context = None
+
 
 def get_current_context():
     """Return the active OpenGL context.
@@ -130,13 +132,14 @@ def get_current_context():
     """
     return current_context
 
+
 class ContextException(Exception):
     pass
+
 
 class ConfigException(Exception):
     pass
 
-import pyglet as _pyglet
 
 if _pyglet.options['debug_texture']:
     _debug_texture_total = 0
@@ -160,15 +163,20 @@ if _pyglet.options['debug_texture']:
 
         print('%d (-%d)' % (_debug_texture_total, size))
 
+
     _glBindTexture = glBindTexture
+
+
     def glBindTexture(target, texture):
         global _debug_texture
         _debug_texture = texture
         return _glBindTexture(target, texture)
 
+
     _glTexImage2D = glTexImage2D
-    def glTexImage2D(target, level, internalformat, width, height, border,
-                     format, type, pixels):
+
+
+    def glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels):
         try:
             _debug_texture_dealloc(_debug_texture)
         except KeyError:
@@ -181,14 +189,16 @@ if _pyglet.options['debug_texture']:
         elif internalformat in (3, GL_RGB):
             depth = 3
         else:
-            depth = 4 # Pretty crap assumption
+            depth = 4  # Pretty crap assumption
         size = (width + 2 * border) * (height + 2 * border) * depth
         _debug_texture_alloc(_debug_texture, size)
 
-        return _glTexImage2D(target, level, internalformat, width, height,
-                             border, format, type, pixels)
+        return _glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+
 
     _glDeleteTextures = glDeleteTextures
+
+
     def glDeleteTextures(n, textures):
         if not hasattr(textures, '__len__'):
             _debug_texture_dealloc(textures.value)
@@ -197,6 +207,7 @@ if _pyglet.options['debug_texture']:
                 _debug_texture_dealloc(textures[i].value)
 
         return _glDeleteTextures(n, textures)
+
 
 def _create_shadow_window():
     global _shadow_window
@@ -212,8 +223,7 @@ def _create_shadow_window():
     from pyglet import app
     app.windows.remove(_shadow_window)
 
-from pyglet import compat_platform
-from .base import ObjectSpace, CanvasConfig, Context
+
 if _is_pyglet_doc_run:
     from .base import Config
 elif compat_platform in ('win32', 'cygwin'):
@@ -224,14 +234,11 @@ elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
 del base  # noqa: F821
 
-# XXX remove
+
 _shadow_window = None
 
-# Import pyglet.window now if it isn't currently being imported (this creates
-# the shadow window).
-if (not _is_pyglet_doc_run and
-    'pyglet.window' not in _sys.modules and
-    _pyglet.options['shadow_window']):
+# Import pyglet.window now if it isn't currently being imported (this creates the shadow window).
+if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
     # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window

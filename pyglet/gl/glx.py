@@ -32,13 +32,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 """Wrapper for /usr/include/GL/glx.h
 
 Do not modify generated portions of this file.
 """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 from ctypes import *
 from pyglet.gl.lib import link_GLX as _link_function

@@ -33,16 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
-from builtins import map
-from builtins import str
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-# TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI
-# independence?
+# TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI independence?
 
 import math
 from ctypes import c_void_p, c_int32, byref, c_byte
@@ -55,6 +46,7 @@ from pyglet.libs.darwin import cocoapy
 cf = cocoapy.cf
 ct = cocoapy.ct
 quartz = cocoapy.quartz
+
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
@@ -177,7 +169,6 @@ class QuartzFont(base.Font):
         # Otherwise return whatever we have.
         return list(fonts.values())[0]
 
-
     def _create_font_descriptor(self, family_name, traits):
         # Create an attribute dictionary.
         attributes = c_void_p(cf.CFDictionaryCreateMutable(None, 0, cf.kCFTypeDictionaryKeyCallBacks, cf.kCFTypeDictionaryValueCallBacks))
@@ -214,8 +205,10 @@ class QuartzFont(base.Font):
 
         # Construct traits value.
         traits = 0
-        if bold: traits |= cocoapy.kCTFontBoldTrait
-        if italic: traits |= cocoapy.kCTFontItalicTrait
+        if bold:
+            traits |= cocoapy.kCTFontBoldTrait
+        if italic:
+            traits |= cocoapy.kCTFontItalicTrait
 
         name = str(name)
         # First see if we can find an appropriate font from our table of loaded fonts.

@@ -37,13 +37,9 @@
 
 .. versionadded:: 1.2
 """
-from __future__ import division
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import sys
+
 from pyglet.event import EventDispatcher
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run

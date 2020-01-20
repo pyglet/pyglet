@@ -46,6 +46,3 @@ class DirectSoundNativeError(DirectSoundException):
 
     def __repr__(self):
         return "{}: Error {}".format(self.__class__.__name__, self.hresult)
-
-
-

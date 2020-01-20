@@ -34,7 +34,6 @@
 # ----------------------------------------------------------------------------
 
 from ctypes import c_void_p, c_bool
-from builtins import object
 
 from pyglet.libs.darwin.cocoapy import ObjCClass, ObjCSubclass, send_super
 from pyglet.libs.darwin.cocoapy import NSUInteger, NSUIntegerEncoding

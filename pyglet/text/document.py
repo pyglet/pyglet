@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Formatted and unformatted document interfaces used by text layout.
 
@@ -164,11 +163,6 @@ of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
-from builtins import next
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import re
 import sys

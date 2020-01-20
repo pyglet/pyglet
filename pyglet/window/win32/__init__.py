@@ -32,18 +32,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-"""
-"""
-from __future__ import division
-from builtins import chr
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 from ctypes import *
 import unicodedata
-import warnings
 
 from pyglet import compat_platform
 
@@ -54,8 +44,7 @@ import pyglet
 from pyglet.window import BaseWindow, WindowException, MouseCursor
 from pyglet.window import DefaultMouseCursor, _PlatformEventHandler, _ViewEventHandler
 from pyglet.event import EventDispatcher
-from pyglet.window import key
-from pyglet.window import mouse
+from pyglet.window import key, mouse
 
 from pyglet.canvas.win32 import Win32Canvas
 
@@ -66,20 +55,20 @@ from pyglet.libs.win32.types import *
 
 # symbol,ctrl -> motion mapping
 _motion_map = {
-    (key.UP, False):        key.MOTION_UP,
-    (key.RIGHT, False):     key.MOTION_RIGHT,
-    (key.DOWN, False):      key.MOTION_DOWN,
-    (key.LEFT, False):      key.MOTION_LEFT,
-    (key.RIGHT, True):      key.MOTION_NEXT_WORD,
-    (key.LEFT, True):       key.MOTION_PREVIOUS_WORD,
-    (key.HOME, False):      key.MOTION_BEGINNING_OF_LINE,
-    (key.END, False):       key.MOTION_END_OF_LINE,
-    (key.PAGEUP, False):    key.MOTION_PREVIOUS_PAGE,
-    (key.PAGEDOWN, False):  key.MOTION_NEXT_PAGE,
-    (key.HOME, True):       key.MOTION_BEGINNING_OF_FILE,
-    (key.END, True):        key.MOTION_END_OF_FILE,
+    (key.UP, False): key.MOTION_UP,
+    (key.RIGHT, False): key.MOTION_RIGHT,
+    (key.DOWN, False): key.MOTION_DOWN,
+    (key.LEFT, False): key.MOTION_LEFT,
+    (key.RIGHT, True): key.MOTION_NEXT_WORD,
+    (key.LEFT, True): key.MOTION_PREVIOUS_WORD,
+    (key.HOME, False): key.MOTION_BEGINNING_OF_LINE,
+    (key.END, False): key.MOTION_END_OF_LINE,
+    (key.PAGEUP, False): key.MOTION_PREVIOUS_PAGE,
+    (key.PAGEDOWN, False): key.MOTION_NEXT_PAGE,
+    (key.HOME, True): key.MOTION_BEGINNING_OF_FILE,
+    (key.END, True): key.MOTION_END_OF_FILE,
     (key.BACKSPACE, False): key.MOTION_BACKSPACE,
-    (key.DELETE, False):    key.MOTION_DELETE,
+    (key.DELETE, False): key.MOTION_DELETE,
 }
 
 
@@ -96,6 +85,7 @@ _win32_cursor_visible = True
 
 Win32EventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
+
 
 class Win32Window(BaseWindow):
     _window_class = None
@@ -133,10 +123,10 @@ class Win32Window(BaseWindow):
                     self._view_event_handlers[message] = func
                 else:
                     self._event_handlers[message] = func
-                    
+
         self._always_dwm = sys.getwindowsversion() >= (6, 2)
         self._interval = 0
-        
+
         super(Win32Window, self).__init__(*args, **kwargs)
 
     def _recreate(self, changes):
@@ -149,14 +139,14 @@ class Win32Window(BaseWindow):
         # Ensure style is set before determining width/height.
         if self._fullscreen:
             self._ws_style = WS_POPUP
-            self._ex_ws_style = 0 # WS_EX_TOPMOST
+            self._ex_ws_style = 0  # WS_EX_TOPMOST
         else:
             styles = {
                 self.WINDOW_STYLE_DEFAULT: (WS_OVERLAPPEDWINDOW, 0),
-                self.WINDOW_STYLE_DIALOG:  (WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,
-                                            WS_EX_DLGMODALFRAME),
-                self.WINDOW_STYLE_TOOL:    (WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU,
-                                            WS_EX_TOOLWINDOW),
+                self.WINDOW_STYLE_DIALOG: (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+                                           WS_EX_DLGMODALFRAME),
+                self.WINDOW_STYLE_TOOL: (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+                                         WS_EX_TOOLWINDOW),
                 self.WINDOW_STYLE_BORDERLESS: (WS_POPUP, 0),
             }
             self._ws_style, self._ex_ws_style = styles[self._style]
@@ -164,7 +154,7 @@ class Win32Window(BaseWindow):
         if self._resizable and not self._fullscreen:
             self._ws_style |= WS_THICKFRAME
         else:
-            self._ws_style &= ~(WS_THICKFRAME|WS_MAXIMIZEBOX)
+            self._ws_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX)
 
         if self._fullscreen:
             width = self.screen.width
@@ -239,11 +229,11 @@ class Win32Window(BaseWindow):
             _user32.ShowWindow(self._hwnd, SW_HIDE)
 
             _user32.SetWindowLongW(self._hwnd,
-                GWL_STYLE,
-                self._ws_style)
+                                   GWL_STYLE,
+                                   self._ws_style)
             _user32.SetWindowLongW(self._hwnd,
-                GWL_EXSTYLE,
-                self._ex_ws_style)
+                                   GWL_EXSTYLE,
+                                   self._ex_ws_style)
 
         if self._fullscreen:
             hwnd_after = HWND_TOPMOST
@@ -253,14 +243,14 @@ class Win32Window(BaseWindow):
         # Position and size window
         if self._fullscreen:
             _user32.SetWindowPos(self._hwnd, hwnd_after,
-                self._screen.x, self._screen.y, width, height, SWP_FRAMECHANGED)
-        elif False: # TODO location not in pyglet API
+                                 self._screen.x, self._screen.y, width, height, SWP_FRAMECHANGED)
+        elif False:  # TODO location not in pyglet API
             x, y = self._client_to_window_pos(*factory.get_location())
             _user32.SetWindowPos(self._hwnd, hwnd_after,
-                x, y, width, height, SWP_FRAMECHANGED)
+                                 x, y, width, height, SWP_FRAMECHANGED)
         else:
             _user32.SetWindowPos(self._hwnd, hwnd_after,
-                0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
+                                 0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
 
         self._update_view_location(self._width, self._height)
 
@@ -288,7 +278,7 @@ class Win32Window(BaseWindow):
         else:
             x = y = 0
         _user32.SetWindowPos(self._view_hwnd, 0,
-            x, y, width, height, SWP_NOZORDER | SWP_NOOWNERZORDER)
+                             x, y, width, height, SWP_NOZORDER | SWP_NOOWNERZORDER)
 
     def close(self):
         if not self._hwnd:
@@ -307,7 +297,7 @@ class Win32Window(BaseWindow):
         self._dc = None
         self._wgl_context = None
         super(Win32Window, self).close()
-        
+
     def _dwm_composition_enabled(self):
         """ Checks if Windows DWM is enabled (Windows Vista+)
             Note: Always on for Windows 8+
@@ -315,15 +305,16 @@ class Win32Window(BaseWindow):
         is_enabled = c_int()
         _dwmapi.DwmIsCompositionEnabled(byref(is_enabled))
         return is_enabled.value
-        
+
     def _get_vsync(self):
         return bool(self._interval)
-    vsync = property(_get_vsync) # overrides BaseWindow property
+
+    vsync = property(_get_vsync)  # overrides BaseWindow property
 
     def set_vsync(self, vsync):
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
-            
+
         self._interval = vsync
 
         if not self._fullscreen:
@@ -338,20 +329,20 @@ class Win32Window(BaseWindow):
 
     def flip(self):
         self.draw_mouse_cursor()
-        
+
         if not self._fullscreen:
             if self._always_dwm or self._dwm_composition_enabled():
                 if self._interval:
                     _dwmapi.DwmFlush()
-                    
+
         self.context.flip()
 
     def set_location(self, x, y):
         x, y = self._client_to_window_pos(x, y)
         _user32.SetWindowPos(self._hwnd, 0, x, y, 0, 0,
-            (SWP_NOZORDER |
-             SWP_NOSIZE |
-             SWP_NOOWNERZORDER))
+                             (SWP_NOZORDER |
+                              SWP_NOSIZE |
+                              SWP_NOOWNERZORDER))
 
     def get_location(self):
         rect = RECT()
@@ -367,14 +358,14 @@ class Win32Window(BaseWindow):
             raise WindowException('Cannot set size of fullscreen window.')
         width, height = self._client_to_window_size(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
-            (SWP_NOZORDER |
-             SWP_NOMOVE |
-             SWP_NOOWNERZORDER))
+                             (SWP_NOZORDER |
+                              SWP_NOMOVE |
+                              SWP_NOOWNERZORDER))
 
     def get_size(self):
-        #rect = RECT()
-        #_user32.GetClientRect(self._hwnd, byref(rect))
-        #return rect.right - rect.left, rect.bottom - rect.top
+        # rect = RECT()
+        # _user32.GetClientRect(self._hwnd, byref(rect))
+        # return rect.right - rect.left, rect.bottom - rect.top
         return self._width, self._height
 
     def set_minimum_size(self, width, height):
@@ -390,7 +381,7 @@ class Win32Window(BaseWindow):
         if visible:
             insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
+                                 SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
             self.dispatch_event('on_resize', self._width, self._height)
             self.activate()
             self.dispatch_event('on_show')
@@ -454,7 +445,7 @@ class Win32Window(BaseWindow):
 
     def set_exclusive_mouse(self, exclusive=True):
         if self._exclusive_mouse == exclusive and \
-           self._exclusive_mouse_focus == self._has_focus:
+                self._exclusive_mouse_focus == self._has_focus:
             return
 
         # Mouse: UsagePage = 1, Usage = 2
@@ -503,7 +494,7 @@ class Win32Window(BaseWindow):
 
     def set_exclusive_keyboard(self, exclusive=True):
         if self._exclusive_keyboard == exclusive and \
-           self._exclusive_keyboard_focus == self._has_focus:
+                self._exclusive_keyboard_focus == self._has_focus:
             return
 
         if exclusive and self._has_focus:
@@ -519,24 +510,24 @@ class Win32Window(BaseWindow):
             return DefaultMouseCursor()
 
         names = {
-            self.CURSOR_CROSSHAIR:       IDC_CROSS,
-            self.CURSOR_HAND:            IDC_HAND,
-            self.CURSOR_HELP:            IDC_HELP,
-            self.CURSOR_NO:              IDC_NO,
-            self.CURSOR_SIZE:            IDC_SIZEALL,
-            self.CURSOR_SIZE_UP:         IDC_SIZENS,
-            self.CURSOR_SIZE_UP_RIGHT:   IDC_SIZENESW,
-            self.CURSOR_SIZE_RIGHT:      IDC_SIZEWE,
+            self.CURSOR_CROSSHAIR: IDC_CROSS,
+            self.CURSOR_HAND: IDC_HAND,
+            self.CURSOR_HELP: IDC_HELP,
+            self.CURSOR_NO: IDC_NO,
+            self.CURSOR_SIZE: IDC_SIZEALL,
+            self.CURSOR_SIZE_UP: IDC_SIZENS,
+            self.CURSOR_SIZE_UP_RIGHT: IDC_SIZENESW,
+            self.CURSOR_SIZE_RIGHT: IDC_SIZEWE,
             self.CURSOR_SIZE_DOWN_RIGHT: IDC_SIZENWSE,
-            self.CURSOR_SIZE_DOWN:       IDC_SIZENS,
-            self.CURSOR_SIZE_DOWN_LEFT:  IDC_SIZENESW,
-            self.CURSOR_SIZE_LEFT:       IDC_SIZEWE,
-            self.CURSOR_SIZE_UP_LEFT:    IDC_SIZENWSE,
-            self.CURSOR_SIZE_UP_DOWN:    IDC_SIZENS,
+            self.CURSOR_SIZE_DOWN: IDC_SIZENS,
+            self.CURSOR_SIZE_DOWN_LEFT: IDC_SIZENESW,
+            self.CURSOR_SIZE_LEFT: IDC_SIZEWE,
+            self.CURSOR_SIZE_UP_LEFT: IDC_SIZENWSE,
+            self.CURSOR_SIZE_UP_DOWN: IDC_SIZENS,
             self.CURSOR_SIZE_LEFT_RIGHT: IDC_SIZEWE,
-            self.CURSOR_TEXT:            IDC_IBEAM,
-            self.CURSOR_WAIT:            IDC_WAIT,
-            self.CURSOR_WAIT_ARROW:      IDC_APPSTARTING,
+            self.CURSOR_TEXT: IDC_IBEAM,
+            self.CURSOR_WAIT: IDC_WAIT,
+            self.CURSOR_WAIT_ARROW: IDC_APPSTARTING,
         }
         if name not in names:
             raise RuntimeError('Unknown cursor name "%s"' % name)
@@ -555,7 +546,7 @@ class Win32Window(BaseWindow):
                     # Exact match always used
                     return img
                 elif img.width >= width and \
-                     img.width * img.height > image.width * image.height:
+                        img.width * img.height > image.width * image.height:
                     # At least wide enough, and largest area
                     image = img
             return image
@@ -580,7 +571,7 @@ class Win32Window(BaseWindow):
             hdc = _user32.GetDC(None)
             dataptr = c_void_p()
             bitmap = _gdi32.CreateDIBSection(hdc, byref(header), DIB_RGB_COLORS,
-                byref(dataptr), None, 0)
+                                             byref(dataptr), None, 0)
             _user32.ReleaseDC(None, hdc)
 
             image = image.get_image_data()
@@ -621,7 +612,7 @@ class Win32Window(BaseWindow):
         rect.right = width
         rect.bottom = height
         _user32.AdjustWindowRectEx(byref(rect),
-            self._ws_style, False, self._ex_ws_style)
+                                   self._ws_style, False, self._ex_ws_style)
         return rect.right - rect.left, rect.bottom - rect.top
 
     def _client_to_window_pos(self, x, y):
@@ -629,7 +620,7 @@ class Win32Window(BaseWindow):
         rect.left = x
         rect.top = y
         _user32.AdjustWindowRectEx(byref(rect),
-            self._ws_style, False, self._ex_ws_style)
+                                   self._ws_style, False, self._ex_ws_style)
         return rect.left, rect.top
 
     # Event dispatching
@@ -683,11 +674,11 @@ class Win32Window(BaseWindow):
             modifiers |= key.MOD_CTRL
         if _user32.GetKeyState(VK_LWIN) & 0xff00:
             modifiers |= key.MOD_WINDOWS
-        if _user32.GetKeyState(VK_CAPITAL) & 0x00ff:    # toggle
+        if _user32.GetKeyState(VK_CAPITAL) & 0x00ff:  # toggle
             modifiers |= key.MOD_CAPSLOCK
-        if _user32.GetKeyState(VK_NUMLOCK) & 0x00ff:    # toggle
+        if _user32.GetKeyState(VK_NUMLOCK) & 0x00ff:  # toggle
             modifiers |= key.MOD_NUMLOCK
-        if _user32.GetKeyState(VK_SCROLL) & 0x00ff:    # toggle
+        if _user32.GetKeyState(VK_SCROLL) & 0x00ff:  # toggle
             modifiers |= key.MOD_SCROLLLOCK
         if key_lParam:
             if key_lParam & (1 << 29):
@@ -727,8 +718,8 @@ class Win32Window(BaseWindow):
         elif symbol == key.LALT and lParam & (1 << 24):
             symbol = key.RALT
         elif symbol == key.LSHIFT:
-            pass # TODO: some magic with getstate to find out if it's the
-                 # right or left shift key.
+            pass  # TODO: some magic with getstate to find out if it's the
+            # right or left shift key.
 
         modifiers = self._get_modifiers(lParam)
 
@@ -766,7 +757,7 @@ class Win32Window(BaseWindow):
         inp = RAWINPUT()
         size = UINT(sizeof(inp))
         _user32.GetRawInputData(hRawInput, RID_INPUT, byref(inp),
-                        byref(size), sizeof(RAWINPUTHEADER))
+                                byref(size), sizeof(RAWINPUTHEADER))
 
         if inp.header.dwType == RIM_TYPEMOUSE:
             rmouse = inp.data.mouse
@@ -798,7 +789,7 @@ class Win32Window(BaseWindow):
             if rmouse.usButtonFlags & RI_MOUSE_WHEEL:
                 delta = SHORT(rmouse.usButtonData).value
                 self.dispatch_event('on_mouse_scroll',
-                    0, 0, 0, delta / float(WHEEL_DELTA))
+                                    0, 0, 0, delta / float(WHEEL_DELTA))
 
             if rmouse.usFlags & 0x01 == MOUSE_MOVE_RELATIVE:
                 if rmouse.lLastX != 0 or rmouse.lLastY != 0:
@@ -828,7 +819,7 @@ class Win32Window(BaseWindow):
                                             self._get_modifiers())
                     else:
                         self.dispatch_event('on_mouse_motion', 0, 0,
-                                        rel_x, rel_y)
+                                            rel_x, rel_y)
                     self._exclusive_mouse_lpos = rmouse.lLastX, rmouse.lLastY
 
         return 0
@@ -880,7 +871,7 @@ class Win32Window(BaseWindow):
             # Drag event
             modifiers = self._get_modifiers()
             self.dispatch_event('on_mouse_drag',
-                x, y, dx, dy, buttons, modifiers)
+                                x, y, dx, dy, buttons, modifiers)
         else:
             # Motion event
             self.dispatch_event('on_mouse_motion', x, y, dx, dy)
@@ -950,7 +941,7 @@ class Win32Window(BaseWindow):
     def _event_mousewheel(self, msg, wParam, lParam):
         delta = c_short(wParam >> 16).value
         self.dispatch_event('on_mouse_scroll',
-            self._mouse_x, self._mouse_y, 0, delta / float(WHEEL_DELTA))
+                            self._mouse_x, self._mouse_y, 0, delta / float(WHEEL_DELTA))
         return 0
 
     @Win32EventHandler(WM_CLOSE)

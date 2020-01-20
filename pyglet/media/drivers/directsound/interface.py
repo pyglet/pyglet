@@ -47,6 +47,7 @@ from .exceptions import DirectSoundNativeError
 
 _debug = debug_print('debug_media')
 
+
 def _check(hresult):
     if hresult != lib.DS_OK:
         raise DirectSoundNativeError(hresult)

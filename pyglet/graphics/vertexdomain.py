@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Manage related vertex attributes within a single vertex domain.
 
@@ -56,14 +55,9 @@ The entire domain can be efficiently drawn in one step with the
 :py:meth:`VertexDomain.draw` method, assuming all the vertices comprise
 primitives of the same OpenGL primitive mode.
 """
-from builtins import zip
-from builtins import object
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import ctypes
 import re
+import ctypes
 
 from pyglet.gl import *
 from pyglet.graphics import allocation, vertexattribute, vertexbuffer

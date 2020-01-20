@@ -58,11 +58,6 @@ the application's responsibility to keep track of the regions returned by the
 
 .. versionadded:: 1.1
 """
-from __future__ import division
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import pyglet
 

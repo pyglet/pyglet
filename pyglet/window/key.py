@@ -60,12 +60,8 @@ Usage::
         if modifiers & key.MOD_CTRL:
 
 """
-from builtins import str
 
 from pyglet import compat_platform
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 
 class KeyStateHandler(dict):

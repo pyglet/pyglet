@@ -100,11 +100,8 @@ sprites within batches.
 .. versionadded:: 1.1
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-import math
 import sys
+import math
 
 from pyglet.gl import *
 from pyglet import clock

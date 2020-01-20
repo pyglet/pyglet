@@ -1,7 +1,3 @@
-"""High-level sound and video player."""
-from __future__ import print_function
-from __future__ import division
-from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -36,6 +32,7 @@ from builtins import object
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+"""High-level sound and video player."""
 
 from collections import deque
 
@@ -43,8 +40,6 @@ import pyglet
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source
-
-# import cProfile
 
 _debug = pyglet.options['debug_media']
 

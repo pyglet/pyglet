@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from __future__ import absolute_import
 
 import warnings
 from ctypes import *
@@ -85,13 +84,11 @@ class XlibConfig(Config):
 
         if have_13:
             elements = c_int()
-            configs = glx.glXChooseFBConfig(x_display, x_screen,
-                                            attrib_list, byref(elements))
+            configs = glx.glXChooseFBConfig(x_display, x_screen, attrib_list, byref(elements))
             if not configs:
                 return []
 
-            configs = cast(configs,
-                           POINTER(glx.GLXFBConfig * elements.value)).contents
+            configs = cast(configs, POINTER(glx.GLXFBConfig * elements.value)).contents
 
             result = [config_class(canvas, info, c, self) for c in configs]
 
@@ -281,8 +278,7 @@ class XlibContext10(BaseXlibContext):
     def _create_glx_context(self, share):
         if self.config.requires_gl_3():
             raise gl.ContextException(
-                'Require GLX_ARB_create_context extension to create ' +
-                'OpenGL 3 contexts.')
+                'Require GLX_ARB_create_context extension to create OpenGL 3 contexts.')
 
         if share:
             share_context = share.glx_context
@@ -298,8 +294,7 @@ class XlibContext10(BaseXlibContext):
         self.set_current()
 
     def set_current(self):
-        glx.glXMakeCurrent(self.x_display, self.canvas.x_window,
-                           self.glx_context)
+        glx.glXMakeCurrent(self.x_display, self.canvas.x_window, self.glx_context)
         super(XlibContext10, self).set_current()
 
     def detach(self):

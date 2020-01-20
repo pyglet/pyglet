@@ -51,18 +51,16 @@ Or, if using more than one display::
         # ...
 
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 from ctypes import *
 
 from pyglet.gl.glx import *
 from pyglet.compat import asstr
 
+
 class GLXInfoException(Exception):
     pass
+
 
 class GLXInfo:
     def __init__(self, display=None):
@@ -89,13 +87,13 @@ class GLXInfo:
 
         server = [int(i) for i in server_version.split('.')]
         client = [int(i) for i in client_version.split('.')]
-        return (tuple(server) >= (major, minor) and 
+        return (tuple(server) >= (major, minor) and
                 tuple(client) >= (major, minor))
 
     def get_server_vendor(self):
         self.check_display()
         return asstr(glXQueryServerString(self.display, 0, GLX_VENDOR))
-    
+
     def get_server_version(self):
         # glXQueryServerString was introduced in GLX 1.1, so we need to use the
         # 1.0 function here which queries the server implementation for its
@@ -105,7 +103,7 @@ class GLXInfo:
         minor = c_int()
         if not glXQueryVersion(self.display, byref(major), byref(minor)):
             raise GLXInfoException('Could not determine GLX server version')
-        return '%s.%s'%(major.value, minor.value)
+        return '%s.%s' % (major.value, minor.value)
 
     def get_server_extensions(self):
         self.check_display()
@@ -132,6 +130,7 @@ class GLXInfo:
         if not self.have_version(1, 1):
             return False
         return extension in self.get_extensions()
+
 
 # Single instance suitable for apps that use only a single display.
 _glx_info = GLXInfo()

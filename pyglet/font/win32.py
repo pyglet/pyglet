@@ -33,14 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
+# TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls as well as font.
 
-# TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls
-# as well as font.
-
-from ctypes import *
-import ctypes
 import math
 
 from sys import byteorder

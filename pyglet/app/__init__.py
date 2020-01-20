@@ -63,10 +63,6 @@ default policy is to wait until all windows are closed)::
 
 .. versionadded:: 1.1
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 import sys
 import weakref
@@ -92,40 +88,7 @@ class AppException(Exception):
     pass
 
 
-class WeakSet:
-    """Set of objects, referenced weakly.
-
-    Adding an object to this set does not prevent it from being garbage
-    collected.  Upon being garbage collected, the object is automatically
-    removed from the set.
-    """
-
-    def __init__(self):
-        self._dict = weakref.WeakKeyDictionary()
-
-    def add(self, value):
-        self._dict[value] = True
-
-    def remove(self, value):
-        # Value might be removed already if this is during __del__ of the item.
-        self._dict.pop(value, None)
-
-    def pop(self):
-        value, _ = self._dict.popitem()
-        return value
-
-    def __iter__(self):
-        for key in self._dict.keys():
-            yield key
-
-    def __contains__(self, other):
-        return other in self._dict
-
-    def __len__(self):
-        return len(self._dict)
-
-
-windows = WeakSet()
+windows = weakref.WeakSet()
 """Set of all open windows (including invisible windows).  Instances of
 :class:`pyglet.window.Window` are automatically added to this set upon 
 construction. The set uses weak references, so windows are removed from 

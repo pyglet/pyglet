@@ -33,12 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import sys
 import ctypes
 from ctypes import *

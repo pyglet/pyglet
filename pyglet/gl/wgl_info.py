@@ -36,10 +36,6 @@
 """Cached information about version and extensions of current WGL
 implementation.
 """
-from builtins import object
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: glx_info.py 615 2007-02-07 13:17:05Z Alex.Holkner $'
 
 from ctypes import *
 import warnings
@@ -51,8 +47,10 @@ from pyglet.gl.wgl import *
 from pyglet.gl.wglext_arb import *
 from pyglet.compat import asstr
 
+
 class WGLInfoException(Exception):
     pass
+
 
 class WGLInfo:
     def get_extensions(self):
@@ -67,6 +65,7 @@ class WGLInfo:
 
     def have_extension(self, extension):
         return extension in self.get_extensions()
+
 
 _wgl_info = WGLInfo()
 

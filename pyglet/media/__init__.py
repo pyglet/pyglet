@@ -85,9 +85,6 @@ from .codecs import Source, StaticSource, StreamingSource, SourceGroup
 
 from . import synthesis
 
-# deprecated:: 1.4
-# Procedural was renamed to `synthesis` in 1.4
-from . import synthesis as procedural
 
 __all__ = (
     'load',

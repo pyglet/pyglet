@@ -32,14 +32,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Software decoder for S3TC compressed texture (i.e., DDS).
 
 http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture_compression_s3tc.txt
 """
-from __future__ import division
-from builtins import range
 
 import ctypes
 import re
@@ -50,6 +47,7 @@ from pyglet.image import AbstractImage, Texture
 
 split_8byte = re.compile('.' * 8, flags=re.DOTALL)
 split_16byte = re.compile('.' * 16, flags=re.DOTALL)
+
 
 class PackedImageData(AbstractImage):
     _current_texture = None
@@ -99,6 +97,7 @@ class PackedImageData(AbstractImage):
            See the documentation of the method 'AbstractImage.get_texture' for
            a more detailed documentation of the method. """
         return self._get_texture()
+
 
 def decode_dxt1_rgb(data, width, height):
     # Decode to 16-bit RGB UNSIGNED_SHORT_5_6_5
@@ -154,8 +153,8 @@ def decode_dxt1_rgb(data, width, height):
         advance_row = (image_offset + 4) % width == 0
         image_offset += width * 3 * advance_row + 4
 
-    return PackedImageData(width, height, 
-        GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
+    return PackedImageData(width, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
+
 
 def decode_dxt1_rgba(data, width, height):
     # Decode to GL_RGBA
@@ -286,6 +285,7 @@ def decode_dxt3(data, width, height):
         image_offset += pitch * 3 * advance_row + 16
 
     return PackedImageData(width, height, GL_RGBA, GL_UNSIGNED_BYTE, out)
+
 
 def decode_dxt5(data, width, height):
     # Decode to GL_RGBA

@@ -33,14 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-from builtins import chr, str
-
-from ctypes import *
 import unicodedata
-import warnings
+from ctypes import *
 
 import pyglet
 from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
