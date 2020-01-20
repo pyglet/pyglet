@@ -6,9 +6,9 @@ A simple example of a Camera class that can be used to easily scroll and
 zoom when rendering. For example, you might have a playfield that needs  
 to scroll and/or zoom, and a GUI layer that will remain static. For that
 scenario, you can create two Camera instances. You can optionally set
-the maximum allowed zoom, and scrolling speed::
+the minimum allowed zoom, maximum allowed zoom, and scrolling speed::
 
-    world_camera = Camera(scroll_speed=5, max_zoom=4)
+    world_camera = Camera(scroll_speed=5, min_zoom=1, max_zoom=4)
     gui_camera = Camera()
 
 After creating Camera instances, the zoom can be easily updated. It will
@@ -58,12 +58,14 @@ manager, allowing easy use of "with"::
 class Camera:
     """ A simple 2D camera that contains the speed and offset."""
 
-    def __init__(self, scroll_speed=1, max_zoom=4):
+    def __init__(self, scroll_speed=1, min_zoom=1, max_zoom=4):
+        assert min_zoom <= max_zoom, "Minimum zoom must not be greater than maximum zoom"
         self.scroll_speed = scroll_speed
         self.max_zoom = max_zoom
+        self.min_zoom = min_zoom
         self.offset_x = 0
         self.offset_y = 0
-        self._zoom = 1
+        self._zoom = max(min(1, self.max_zoom), self.min_zoom)
 
     @property
     def zoom(self):
@@ -71,8 +73,8 @@ class Camera:
 
     @zoom.setter
     def zoom(self, value):
-        """ Here we set zoom, clamp value to minimum of 1 and max of max_zoom."""
-        self._zoom = max(min(value, self.max_zoom), 1)
+        """ Here we set zoom, clamp value to minimum of min_zoom and max of max_zoom."""
+        self._zoom = max(min(value, self.max_zoom), self.min_zoom)
 
     @property
     def position(self):
