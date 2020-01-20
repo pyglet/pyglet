@@ -64,7 +64,7 @@ class Camera:
         self.min_zoom = min_zoom
         self.offset_x = 0
         self.offset_y = 0
-        self._zoom = self.min_zoom
+        self._zoom = max(min(1, self.max_zoom), self.min_zoom)
 
     @property
     def zoom(self):
