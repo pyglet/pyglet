@@ -47,7 +47,7 @@ NSNotificationCenter = ObjCClass('NSNotificationCenter')
 NSApplication = ObjCClass('NSApplication')
 
 
-class PygletDelegate_Implementation(object):
+class PygletDelegate_Implementation:
     PygletDelegate = ObjCSubclass('NSObject', 'PygletDelegate')
 
     @PygletDelegate.method(b'@'+PyObjectEncoding)

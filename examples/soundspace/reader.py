@@ -42,7 +42,7 @@ class ReaderException(Exception):
     pass
 
 
-class PlayerReader(object):
+class PlayerReader:
     def __init__(self, player):
         self.player = player
 
@@ -70,7 +70,7 @@ class PlayerReader(object):
             self.player.label = parts[1]
 
 
-class SpaceReader(object):
+class SpaceReader:
     def __init__(self, space):
         self.basedir = ''
         self.space = space

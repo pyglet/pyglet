@@ -29,7 +29,7 @@ __all__ = ["NinePatch"]
 
 from pyglet.gl import *
 
-class PixelData(object):
+class PixelData:
     def __init__(self, image):
         image_data = image.get_image_data()
         self.has_alpha = 'A' in image_data.format
@@ -45,7 +45,7 @@ class PixelData(object):
 
         return self.data[p:p+3] == '\x00\x00\x00'
 
-class NinePatch(object):
+class NinePatch:
     """A scalable 9-patch image.
     """
 

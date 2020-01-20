@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-'''Access byte arrays as arrays of vertex attributes.
+"""Access byte arrays as arrays of vertex attributes.
 
 Use :py:func:`create_attribute` to create an attribute accessor given a
 simple format string.  Alternatively, the classes may be constructed directly.
@@ -130,7 +130,7 @@ Some examples follow:
 ``3t2f``
     2-float texture coordinate for texture unit 3.
 
-'''
+"""
 from builtins import object
 
 __docformat__ = 'restructuredtext'
@@ -164,14 +164,14 @@ _gl_types = {
     'd': GL_DOUBLE,
 }
 
-_attribute_format_re = re.compile(r'''
+_attribute_format_re = re.compile(r"""
     (?P<name>
        [cefnstv] | 
        (?P<generic_index>[0-9]+) g (?P<generic_normalized>n?) |
        (?P<texcoord_texture>[0-9]+) t)
     (?P<count>[1234])
     (?P<type>[bBsSiIfd])
-''', re.VERBOSE)
+""", re.VERBOSE)
 
 _attribute_cache = {}
 
@@ -179,7 +179,7 @@ def _align(v, align):
     return ((v - 1) & ~(align - 1)) + align
 
 def interleave_attributes(attributes):
-    '''Interleave attribute offsets.
+    """Interleave attribute offsets.
 
     Adjusts the offsets and strides of the given attributes so that
     they are interleaved.  Alignment constraints are respected.
@@ -188,7 +188,7 @@ def interleave_attributes(attributes):
         `attributes` : sequence of `AbstractAttribute`
             Attributes to interleave in-place.
 
-    '''
+    """
     stride = 0
     max_size = 0
     for attribute in attributes:
@@ -201,7 +201,7 @@ def interleave_attributes(attributes):
         attribute.stride = stride
 
 def serialize_attributes(count, attributes):
-    '''Serialize attribute offsets.
+    """Serialize attribute offsets.
     
     Adjust the offsets of the given attributes so that they are
     packed serially against each other for `count` vertices.
@@ -212,7 +212,7 @@ def serialize_attributes(count, attributes):
         `attributes` : sequence of `AbstractAttribute`
             Attributes to serialize in-place.
 
-    '''
+    """
     offset = 0
     for attribute in attributes:
         offset = _align(offset, attribute.align)
@@ -220,7 +220,7 @@ def serialize_attributes(count, attributes):
         offset += count * attribute.stride
 
 def create_attribute(format):
-    '''Create a vertex attribute description from a format string.
+    """Create a vertex attribute description from a format string.
     
     The initial stride and offset of the attribute will be 0.
 
@@ -229,7 +229,7 @@ def create_attribute(format):
             Attribute format string.  See the module summary for details.
 
     :rtype: `AbstractAttribute`
-    '''
+    """
     try:
         cls, args = _attribute_cache[format]
         return cls(*args)
@@ -263,14 +263,14 @@ def create_attribute(format):
     _attribute_cache[format] = attr_class, args
     return attr_class(*args)
 
-class AbstractAttribute(object):
-    '''Abstract accessor for an attribute in a mapped buffer.
-    '''
+class AbstractAttribute:
+    """Abstract accessor for an attribute in a mapped buffer.
+    """
     
     _fixed_count = None
     
     def __init__(self, count, gl_type):
-        '''Create the attribute accessor.
+        """Create the attribute accessor.
 
         :Parameters:
             `count` : int
@@ -278,7 +278,7 @@ class AbstractAttribute(object):
             `gl_type` : int
                 OpenGL type enumerant; for example, ``GL_FLOAT``
 
-        '''
+        """
         assert count in (1, 2, 3, 4), 'Component count out of range'
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
@@ -289,11 +289,11 @@ class AbstractAttribute(object):
         self.offset = 0
 
     def enable(self):
-        '''Enable the attribute using ``glEnableClientState``.'''
+        """Enable the attribute using ``glEnableClientState``."""
         raise NotImplementedError('abstract')
 
     def set_pointer(self, offset):
-        '''Setup this attribute to point to the currently bound buffer at
+        """Setup this attribute to point to the currently bound buffer at
         the given offset.
 
         ``offset`` should be based on the currently bound buffer's ``ptr``
@@ -304,11 +304,11 @@ class AbstractAttribute(object):
                 Pointer offset to the currently bound buffer for this
                 attribute.
 
-        '''
+        """
         raise NotImplementedError('abstract')
 
     def get_region(self, buffer, start, count):
-        '''Map a buffer region using this attribute as an accessor.
+        """Map a buffer region using this attribute as an accessor.
 
         The returned region can be modified as if the buffer was a contiguous
         array of this attribute (though it may actually be interleaved or
@@ -328,7 +328,7 @@ class AbstractAttribute(object):
                 Number of vertices to map
 
         :rtype: `AbstractBufferRegion`
-        '''
+        """
         byte_start = self.stride * start
         byte_size = self.stride * count
         array_count = self.count * count
@@ -349,7 +349,7 @@ class AbstractAttribute(object):
                 region, array_count, self.count, elem_stride)
 
     def set_region(self, buffer, start, count, data):
-        '''Set the data over a region of the buffer.
+        """Set the data over a region of the buffer.
 
         :Parameters:
             `buffer` : AbstractMappable`
@@ -361,7 +361,7 @@ class AbstractAttribute(object):
             `data` : sequence
                 Sequence of data components.
 
-        '''
+        """
         if self.stride == self.size:
             # non-interleaved
             byte_start = self.stride * start
@@ -375,7 +375,7 @@ class AbstractAttribute(object):
             region[:] = data
 
 class ColorAttribute(AbstractAttribute):
-    '''Color vertex attribute.'''
+    """Color vertex attribute."""
 
     plural = 'colors'
     
@@ -391,7 +391,7 @@ class ColorAttribute(AbstractAttribute):
                        self.offset + pointer)
 
 class EdgeFlagAttribute(AbstractAttribute):
-    '''Edge flag attribute.'''
+    """Edge flag attribute."""
 
     plural = 'edge_flags'
     _fixed_count = 1
@@ -408,7 +408,7 @@ class EdgeFlagAttribute(AbstractAttribute):
         glEdgeFlagPointer(self.stride, self.offset + pointer)
 
 class FogCoordAttribute(AbstractAttribute):
-    '''Fog coordinate attribute.'''
+    """Fog coordinate attribute."""
 
     plural = 'fog_coords'
     
@@ -423,7 +423,7 @@ class FogCoordAttribute(AbstractAttribute):
                           self.offset + pointer)
 
 class NormalAttribute(AbstractAttribute):
-    '''Normal vector attribute.'''
+    """Normal vector attribute."""
 
     plural = 'normals'
     _fixed_count = 3
@@ -440,7 +440,7 @@ class NormalAttribute(AbstractAttribute):
         glNormalPointer(self.gl_type, self.stride, self.offset + pointer)
 
 class SecondaryColorAttribute(AbstractAttribute):
-    '''Secondary color attribute.'''
+    """Secondary color attribute."""
 
     plural = 'secondary_colors'
     _fixed_count = 3
@@ -456,7 +456,7 @@ class SecondaryColorAttribute(AbstractAttribute):
                                 self.offset + pointer)
 
 class TexCoordAttribute(AbstractAttribute):
-    '''Texture coordinate attribute.'''
+    """Texture coordinate attribute."""
 
     plural = 'tex_coords'
 
@@ -473,13 +473,13 @@ class TexCoordAttribute(AbstractAttribute):
                        self.offset + pointer)
 
     def convert_to_multi_tex_coord_attribute(self):
-        '''Changes the class of the attribute to `MultiTexCoordAttribute`.
-        '''
+        """Changes the class of the attribute to `MultiTexCoordAttribute`.
+        """
         self.__class__ = MultiTexCoordAttribute
         self.texture = 0
 
 class MultiTexCoordAttribute(AbstractAttribute):
-    '''Texture coordinate attribute.'''
+    """Texture coordinate attribute."""
 
     def __init__(self, texture, count, gl_type):
         assert gl_type in (GL_SHORT, GL_INT, GL_INT, GL_FLOAT, GL_DOUBLE), \
@@ -496,7 +496,7 @@ class MultiTexCoordAttribute(AbstractAttribute):
                        self.offset + pointer)
 
 class VertexAttribute(AbstractAttribute):
-    '''Vertex coordinate attribute.'''
+    """Vertex coordinate attribute."""
 
     plural = 'vertices'
 
@@ -515,7 +515,7 @@ class VertexAttribute(AbstractAttribute):
                         self.offset + pointer)
 
 class GenericAttribute(AbstractAttribute):
-    '''Generic vertex attribute, used by shader programs.'''
+    """Generic vertex attribute, used by shader programs."""
 
     def __init__(self, index, normalized, count, gl_type):
         self.normalized = bool(normalized)

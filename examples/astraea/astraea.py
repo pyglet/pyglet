@@ -143,7 +143,7 @@ class WrappingSprite(pyglet.sprite.Sprite):
                 yield x, y
 
 
-class AsteroidSize(object):
+class AsteroidSize:
     def __init__(self, filename, points):
         self.img = resource.image(filename)
         center_anchor(self.img)
@@ -273,7 +273,7 @@ class EffectSprite(MovingSprite):
         animations.remove(self)
 
 
-class Starfield(object):
+class Starfield:
     def __init__(self, img):
         self.x = 0
         self.y = 0
@@ -302,7 +302,7 @@ class Starfield(object):
 # Overlays, such as menus and "Game Over" banners
 # --------------------------------------------------------------------------
 
-class Overlay(object):
+class Overlay:
     def update(self, dt):
         pass
 
@@ -369,7 +369,7 @@ class Menu(Overlay):
             item.draw(i == self.selected_index)
 
 
-class MenuItem(object):
+class MenuItem:
     pointer_color = (.46, 0, 1.)
     inverted_pointers = False
 

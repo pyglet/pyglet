@@ -68,7 +68,7 @@ from pyglet.gl.glu import *
 from pyglet.compat import asstr
 
 
-class GLUInfo(object):
+class GLUInfo:
     """Information interface for the GLU library. 
 
     A default instance is created automatically when the first OpenGL context

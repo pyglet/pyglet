@@ -1,8 +1,7 @@
-from __future__ import absolute_import
-from builtins import bytes, object
+import unittest
+
 from ctypes import sizeof
 from io import BytesIO
-import unittest
 
 from pyglet.media.synthesis import *
 
@@ -20,7 +19,7 @@ def get_test_data_file(*file_parts):
     return os.path.join(test_data_path, *file_parts)
 
 
-class SynthesisSourceTest(object):
+class SynthesisSourceTest:
     """Simple test to check if synthesized sources provide data."""
     source_class = None
 

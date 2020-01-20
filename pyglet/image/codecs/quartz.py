@@ -33,8 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 from ctypes import c_void_p, c_ubyte
 from builtins import range
 

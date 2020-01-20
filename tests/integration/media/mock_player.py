@@ -4,7 +4,7 @@ import pytest
 _debug = False
 
 
-class MockPlayer(object):
+class MockPlayer:
     def __init__(self, event_loop):
         self.event_loop = event_loop
         self.events = []

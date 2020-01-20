@@ -33,8 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 from builtins import object
 
 __docformat__ = 'restructuredtext'
@@ -72,13 +72,13 @@ except AttributeError:
 class_slots = ['name', 'requires', 'suggestions', 'ftype','func']
 
 def makeWGLFunction(func):
-    class WGLFunction(object):
+    class WGLFunction:
         __slots__ = class_slots
         __call__ = func
         
     return WGLFunction
 
-class WGLFunctionProxy(object):
+class WGLFunctionProxy:
     __slots__ = class_slots
 
     def __init__(self, name, ftype, requires, suggestions):

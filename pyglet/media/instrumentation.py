@@ -133,7 +133,7 @@ mp_events = {
 mp_bads = {"crash", "p.P.ut.1.5", "p.P.ut.1.7", "p.P.ut.1.8"}
 
 
-class MediaPlayerStateIterator(object):
+class MediaPlayerStateIterator:
     """Exposes for analysis the sequence of media_player states
 
     Typical use
@@ -199,7 +199,7 @@ class MediaPlayerStateIterator(object):
             self.state["frame_num"] += 1
 
 
-class TimelineBuilder(object):
+class TimelineBuilder:
     """At each call to player.Player.update_texture we capture selected player
     state, before accepting the changes in the event. This is the same as
     capturing the state at the end of previous update call.
@@ -260,7 +260,7 @@ def crash_detected(recorded_events):
     return crashed
 
 
-class CountBads(object):
+class CountBads:
     """Helper to report anomalies in the media_player states seen when playing
      a sample.
 

@@ -47,7 +47,7 @@ NSApplication = ObjCClass('NSApplication')
 
 # This custom NSTextView subclass is used for capturing all of the
 # on_text, on_text_motion, and on_text_motion_select events.
-class PygletTextView_Implementation(object):
+class PygletTextView_Implementation:
     PygletTextView = ObjCSubclass('NSTextView', 'PygletTextView')
 
     @PygletTextView.method(b'@'+PyObjectEncoding)

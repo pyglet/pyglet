@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''OpenGL and GLU interface.
+"""OpenGL and GLU interface.
 
 This package imports all OpenGL, GLU and registered OpenGL extension
 functions.  Functions have identical signatures to their C counterparts.  For
@@ -90,7 +90,7 @@ by default:
 
 The information modules are provided for convenience, and are documented
 below.
-'''
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from builtins import range
@@ -118,7 +118,7 @@ _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_r
 current_context = None
 
 def get_current_context():
-    '''Return the active OpenGL context.
+    """Return the active OpenGL context.
 
     You can change the current context by calling `Context.set_current`.
 
@@ -127,7 +127,7 @@ def get_current_context():
     :rtype: `Context`
     :return: the context to which OpenGL commands are directed, or None
         if there is no selected context.
-    '''
+    """
     return current_context
 
 class ContextException(Exception):

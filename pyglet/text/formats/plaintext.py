@@ -33,8 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Plain text decoder.
-'''
+"""Plain text decoder.
+"""
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: $'

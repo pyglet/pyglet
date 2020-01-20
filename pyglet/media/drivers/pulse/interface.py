@@ -83,7 +83,7 @@ class PulseAudioException(MediaException):
     __repr__ = __str__
 
 
-class PulseAudioMainLoop(object):
+class PulseAudioMainLoop:
     def __init__(self):
         self._pa_threaded_mainloop = pa.pa_threaded_mainloop_new()
         self._pa_mainloop = pa.pa_threaded_mainloop_get_api(
@@ -166,7 +166,7 @@ class PulseAudioMainLoop(object):
         self.unlock()
 
 
-class PulseAudioLockable(object):
+class PulseAudioLockable:
     def __init__(self, mainloop):
         assert mainloop is not None
         self.mainloop = weakref.ref(mainloop)

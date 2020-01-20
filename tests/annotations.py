@@ -9,7 +9,7 @@ from pyglet.gl import gl_info
 
 
 # Platform identifiers
-class Platform(object):
+class Platform:
     """
     Predefined lists of identifiers for platforms. For use with
     :func:`.require_platform` and :func:`.skip_platform`. Combine platforms using +.

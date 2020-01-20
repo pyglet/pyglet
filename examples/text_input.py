@@ -12,7 +12,7 @@ __version__ = '$Id: $'
 import pyglet
 
 
-class Rectangle(object):
+class Rectangle:
     """Draws a rectangle into a batch."""
     def __init__(self, x1, y1, x2, y2, batch):
         self.vertex_list = batch.add(4, pyglet.gl.GL_QUADS, None,
@@ -20,7 +20,7 @@ class Rectangle(object):
                                      ('c4B', [200, 200, 220, 255] * 4))
 
 
-class TextWidget(object):
+class TextWidget:
     def __init__(self, text, x, y, width, batch):
         self.document = pyglet.text.document.UnformattedDocument(text)
         self.document.set_style(0, len(self.document.text), dict(color=(0, 0, 0, 255)))

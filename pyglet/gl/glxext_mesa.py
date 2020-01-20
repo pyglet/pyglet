@@ -32,9 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''This file is currently hand-coded; I don't have a MESA header file to build
+"""This file is currently hand-coded; I don't have a MESA header file to build
 off.
-'''
+"""
 
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'

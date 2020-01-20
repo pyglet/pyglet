@@ -78,7 +78,7 @@ DDSCAPS2_CUBEMAP_NEGATIVEZ  = 0x00008000
 DDSCAPS2_VOLUME 	        = 0x00200000
 
 
-class _FileStruct(object):
+class _FileStruct:
     _fields = []
 
     def __init__(self, data):

@@ -52,7 +52,7 @@ def _check(hresult):
         raise DirectSoundNativeError(hresult)
 
 
-class DirectSoundDriver(object):
+class DirectSoundDriver:
     def __init__(self):
         assert _debug('Constructing DirectSoundDriver')
 
@@ -84,7 +84,7 @@ class DirectSoundDriver(object):
         return self.primary_buffer.create_listener()
 
 
-class DirectSoundBufferFactory(object):
+class DirectSoundBufferFactory:
     default_buffer_size = 2.0
 
     def __init__(self, native_dsound):
@@ -154,7 +154,7 @@ class DirectSoundBufferFactory(object):
 
         return buffer_desc
 
-class DirectSoundBuffer(object):
+class DirectSoundBuffer:
     def __init__(self, native_buffer, audio_format, buffer_size):
         self.audio_format = audio_format
         self.buffer_size = buffer_size
@@ -384,7 +384,7 @@ class DirectSoundBuffer(object):
             self._native_buffer.Stop()
         )
 
-    class _WritePointer(object):
+    class _WritePointer:
         def __init__(self):
             self.audio_ptr_1 = ctypes.c_void_p()
             self.audio_length_1 = lib.DWORD()
@@ -414,7 +414,7 @@ class DirectSoundBuffer(object):
         )
 
 
-class DirectSoundListener(object):
+class DirectSoundListener:
     def __init__(self, ds_buffer, native_listener):
         # We only keep a weakref to ds_buffer as it is owned by
         # interface.DirectSound or a DirectSoundAudioPlayer

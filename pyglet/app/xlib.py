@@ -46,7 +46,7 @@ from pyglet.app.base import PlatformEventLoop
 from pyglet.compat import asbytes
 
 
-class XlibSelectDevice(object):
+class XlibSelectDevice:
     def fileno(self):
         """Get the file handle for ``select()`` for this device.
 

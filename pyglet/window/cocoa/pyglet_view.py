@@ -91,7 +91,7 @@ def getSymbol(nsevent):
     return None
 
 
-class PygletView_Implementation(object):
+class PygletView_Implementation:
     PygletView = cocoapy.ObjCSubclass('NSView', 'PygletView')
 
     @PygletView.method(b'@'+cocoapy.NSRectEncoding+cocoapy.PyObjectEncoding)

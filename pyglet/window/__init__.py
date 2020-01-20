@@ -166,7 +166,7 @@ class MouseCursorException(WindowException):
     pass
 
 
-class MouseCursor(object):
+class MouseCursor:
     """An abstract mouse cursor."""
 
     #: Indicates if the cursor is drawn using OpenGL.  This is True
@@ -231,7 +231,7 @@ class ImageMouseCursor(MouseCursor):
         gl.glPopAttrib()
 
 
-class Projection(object):
+class Projection:
     """Abstract OpenGL projection."""
 
     def set(self, window_width, window_height, viewport_width, viewport_height):
@@ -1756,7 +1756,7 @@ BaseWindow.register_event_type('on_context_state_lost')
 BaseWindow.register_event_type('on_draw')
 
 
-class FPSDisplay(object):
+class FPSDisplay:
     """Display of a window's framerate.
 
     This is a convenience class to aid in profiling and debugging.  Typical

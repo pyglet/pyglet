@@ -12,7 +12,7 @@ import os
 import fs
 
 
-class OverallDefectsCounter(object):
+class OverallDefectsCounter:
     """Helper class to count defects over a range of media player sample plays
 
     Collaborates with a caller, which determines which samples to process and
@@ -112,7 +112,7 @@ def single_session_overall_defect_counters(pathserv, fn_count_bads):
     return overall
 
 
-class CollectSessionComparisonData(object):
+class CollectSessionComparisonData:
     """Collects data to compare two sessions
 
     Constructs the sets samples, other_samples, common_samples, no_dbg_samples,

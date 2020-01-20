@@ -299,7 +299,7 @@ def _is_pow2(v):
     return (v & (v - 1)) == 0
 
 
-class ImagePattern(object):
+class ImagePattern:
     """Abstract image creation class."""
 
     def create_image(self, width, height):
@@ -365,7 +365,7 @@ class CheckerImagePattern(ImagePattern):
         return ImageData(width, height, 'RGBA', data)
 
 
-class AbstractImage(object):
+class AbstractImage:
     """Abstract class representing an image.
 
     :Parameters:
@@ -537,7 +537,7 @@ class AbstractImage(object):
         raise ImageException('Cannot blit %r to a texture.' % self)
 
 
-class AbstractImageSequence(object):
+class AbstractImageSequence:
     """Abstract sequence of images.
 
     The sequence is useful for storing image animations or slices of a volume.
@@ -1886,7 +1886,7 @@ class DepthTexture(Texture):
         source.blit_to_texture(self.level, x, y, z)
 
 
-class BufferManager(object):
+class BufferManager:
     """Manages the set of framebuffers for a context.
 
     Use :py:func:`~pyglet.image.get_buffer_manager` to obtain the instance of this class for the

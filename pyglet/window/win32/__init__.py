@@ -439,8 +439,8 @@ class Win32Window(BaseWindow):
         self._mouse_platform_visible = platform_visible
 
     def _reset_exclusive_mouse_screen(self):
-        '''Recalculate screen coords of mouse warp point for exclusive
-        mouse.'''
+        """Recalculate screen coords of mouse warp point for exclusive
+        mouse."""
         p = POINT()
         rect = RECT()
         _user32.GetClientRect(self._view_hwnd, byref(rect))
@@ -1028,7 +1028,7 @@ class Win32Window(BaseWindow):
         if app.event_loop is not None:
             app.event_loop.exit_blocking()
 
-    '''
+    """
     # Alternative to using WM_SETFOCUS and WM_KILLFOCUS.  Which
     # is better?
 
@@ -1040,7 +1040,7 @@ class Win32Window(BaseWindow):
             self.dispatch_event('on_activate')
             _user32.SetFocus(self._hwnd)
         return 0
-    '''
+    """
 
     @Win32EventHandler(WM_SETFOCUS)
     def _event_setfocus(self, msg, wParam, lParam):

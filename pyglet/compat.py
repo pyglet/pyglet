@@ -69,7 +69,7 @@ def with_metaclass(meta, *bases):
     """
     Function from jinja2/_compat.py. License: BSD.
     Use it like this::
-        class BaseForm(object):
+        class BaseForm:
             pass
         class FormType(type):
             pass

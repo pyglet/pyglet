@@ -35,7 +35,7 @@
 # ----------------------------------------------------------------------------
 # $Id: $
 
-'''Fork a child process and inform it of mode changes to each screen.  The
+"""Fork a child process and inform it of mode changes to each screen.  The
 child waits until the parent process dies, and then connects to each X server 
 with a mode change and restores the mode.
 
@@ -45,7 +45,7 @@ the process is terminated uncleanly.
 
 The child process is communicated to via a pipe, and watches for parent
 death with a Linux extension signal handler.
-'''
+"""
 from builtins import object
 
 import ctypes
@@ -74,7 +74,7 @@ _mode_write_pipe = None
 #   width
 #   height
 #   rate
-class ModePacket(object):
+class ModePacket:
     format = '256siHHI'
     size = struct.calcsize(format)
     def __init__(self, display, screen, width, height, rate):

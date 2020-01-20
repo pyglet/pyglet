@@ -32,7 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for openal
+"""Wrapper for openal
 
 Generated with:
 ../tools/wraptypes/wrap.py /usr/include/AL/al.h -lopenal -olib_openal.py
@@ -43,7 +43,7 @@ TODO add alGetError check.
 
 .. alListener3i and alListeneriv are present in my OS X 10.4 but not another
 10.4 user's installation.  They've also been removed for compatibility.
-'''
+"""
 
 __docformat__ =  'restructuredtext'
 __version__ = '$Id$'

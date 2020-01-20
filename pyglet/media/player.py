@@ -51,7 +51,7 @@ _debug = pyglet.options['debug_media']
 clock = pyglet.clock.get_default()
 
 
-class MasterClock(object):
+class MasterClock:
     """Master clock object.
 
     This is a simple clock object which tracks the time elapsed. It can be
@@ -98,7 +98,7 @@ class MasterClock(object):
         self._time = value
 
 
-class _PlayerProperty(object):
+class _PlayerProperty:
     """Descriptor for Player attributes to forward to the AudioPlayer.
 
     We want the Player to have attributes like volume, pitch, etc. These are
@@ -638,7 +638,7 @@ def _one_item_playlist(source):
     yield source
 
 
-class PlayerGroup(object):
+class PlayerGroup:
     """Group of players that can be played and paused simultaneously.
 
     Create a player group for the given list of players.

@@ -32,7 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for pulse
+"""Wrapper for pulse
 
 Generated with:
 tools/genwrappers.py pulseaudio
@@ -41,7 +41,7 @@ Do not modify this file.
 
 IMPORTANT: struct_timeval is incorrectly parsed by tools/genwrappers.py and
 was manually edited in this file.
-'''
+"""
 
 __docformat__ =  'restructuredtext'
 __version__ = '$Id$'

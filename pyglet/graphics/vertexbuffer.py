@@ -117,7 +117,7 @@ def create_mappable_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, 
         return VertexArray(size)
 
 
-class AbstractBuffer(object):
+class AbstractBuffer:
     """Abstract buffer of byte data.
 
     :Ivariables:
@@ -202,7 +202,7 @@ class AbstractBuffer(object):
         raise NotImplementedError('abstract')
 
 
-class AbstractMappable(object):
+class AbstractMappable:
     def get_region(self, start, size, ptr_type):
         """Map a region of the buffer into a ctypes array of the desired
         type.  This region does not need to be unmapped, but will become
@@ -444,7 +444,7 @@ class MappableVertexBufferObject(VertexBufferObject, AbstractMappable):
         self._dirty_max = 0
 
 
-class AbstractBufferRegion(object):
+class AbstractBufferRegion:
     """A mapped region of a buffer.
 
     Buffer regions are obtained using :py:meth:`~AbstractMappable.get_region`.

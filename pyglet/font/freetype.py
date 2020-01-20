@@ -140,7 +140,7 @@ FreeTypeFontMetrics = namedtuple('FreeTypeFontMetrics',
                                  ['ascent', 'descent'])
 
 
-class MemoryFaceStore(object):
+class MemoryFaceStore:
     def __init__(self):
         self._dict = {}
 
@@ -211,7 +211,7 @@ class FreeTypeFont(base.Font):
         cls._memory_faces.add(face)
 
 
-class FreeTypeFace(object):
+class FreeTypeFace:
     """FreeType typographic face object.
 
     Keeps the reference count to the face at +1 as long as this object exists. If other objects

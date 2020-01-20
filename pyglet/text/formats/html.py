@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Decode HTML into attributed text.
+"""Decode HTML into attributed text.
 
 A subset of HTML 4.01 Transitional is implemented.  The following elements are
 supported fully::
@@ -47,7 +47,7 @@ out-of-stream text.  This means lists display as expected, but behave a little
 oddly if edited.
 
 No CSS styling is supported.
-'''
+"""
 from builtins import chr
 
 __docformat__ = 'restructuredtext'
@@ -114,8 +114,8 @@ _block_containers = ['_top_block',
 
 
 class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
-    '''Decoder for HTML documents.
-    '''
+    """Decoder for HTML documents.
+    """
     #: Default style attributes for unstyled text in the HTML document.
     #:
     #: :type: dict

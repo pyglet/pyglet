@@ -208,7 +208,7 @@ class WintabTabletCanvas(TabletCanvas):
         # can actually grab a cursor id.
         self._current_cursor = None
         
-class WintabTabletCursor(object):
+class WintabTabletCursor:
     def __init__(self, device, index):
         self.device = device
         self._cursor = wintab.WTI_CURSORS + index

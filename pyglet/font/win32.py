@@ -33,8 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 
 # TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls
 # as well as font.

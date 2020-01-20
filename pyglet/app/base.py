@@ -52,7 +52,7 @@ from pyglet import event
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
-class PlatformEventLoop(object):
+class PlatformEventLoop:
     """ Abstract class, implementation depends on platform.
     
     .. versionadded:: 1.2

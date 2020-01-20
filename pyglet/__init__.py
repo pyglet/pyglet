@@ -318,7 +318,7 @@ if options['debug_trace']:
 # Lazy loading
 # ------------
 
-class _ModuleProxy(object):
+class _ModuleProxy:
     _module = None
 
     def __init__(self, name):

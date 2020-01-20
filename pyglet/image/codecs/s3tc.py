@@ -34,10 +34,10 @@
 # ----------------------------------------------------------------------------
 # $Id:$
 
-'''Software decoder for S3TC compressed texture (i.e., DDS).
+"""Software decoder for S3TC compressed texture (i.e., DDS).
 
 http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture_compression_s3tc.txt
-'''
+"""
 from __future__ import division
 from builtins import range
 
@@ -95,9 +95,9 @@ class PackedImageData(AbstractImage):
     texture = property(_get_texture)
 
     def get_texture(self, rectangle=False, force_rectangle=False):
-        '''The parameters 'rectangle' and 'force_rectangle' are ignored.
+        """The parameters 'rectangle' and 'force_rectangle' are ignored.
            See the documentation of the method 'AbstractImage.get_texture' for
-           a more detailed documentation of the method. '''
+           a more detailed documentation of the method. """
         return self._get_texture()
 
 def decode_dxt1_rgb(data, width, height):

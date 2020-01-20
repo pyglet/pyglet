@@ -32,13 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for Xext
+"""Wrapper for Xext
 
 Generated with:
 tools/genwrappers.py xsync
 
 Do not modify this file.
-'''
+"""
 from __future__ import absolute_import
 
 __docformat__ =  'restructuredtext'

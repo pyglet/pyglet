@@ -39,7 +39,7 @@ import ctypes
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 
-class AudioFormat(object):
+class AudioFormat:
     """Audio details.
 
     An instance of this class is provided by sources with audio tracks.  You
@@ -78,7 +78,7 @@ class AudioFormat(object):
             self.sample_rate)
 
 
-class VideoFormat(object):
+class VideoFormat:
     """Video details.
 
     An instance of this class is provided by sources with a video stream. You
@@ -114,7 +114,7 @@ class VideoFormat(object):
         return False
 
 
-class AudioData(object):
+class AudioData:
     """A single packet of audio data.
 
     This class is used internally by pyglet.
@@ -197,7 +197,7 @@ class AudioData(object):
         return buf.raw
 
 
-class SourceInfo(object):
+class SourceInfo:
     """Source metadata information.
 
     Fields are the empty string or zero if the information is not available.
@@ -225,7 +225,7 @@ class SourceInfo(object):
     genre = ''
 
 
-class Source(object):
+class Source:
     """An audio and/or video source.
 
     Args:
@@ -537,7 +537,7 @@ class StaticMemorySource(StaticSource):
         return AudioData(data, len(data), timestamp, duration, [])
 
 
-class SourceGroup(object):
+class SourceGroup:
     """Group of like sources to allow gapless playback.
 
     Seamlessly read data from a group of sources to allow for

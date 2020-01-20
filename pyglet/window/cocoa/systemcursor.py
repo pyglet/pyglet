@@ -39,7 +39,7 @@ from pyglet.libs.darwin import cocoapy
 # sending too many hide or unhide messages in a row.  Apparently
 # NSCursor treats them like retain/release messages, which can be
 # problematic when we are e.g. switching between window & fullscreen.
-class SystemCursor(object):
+class SystemCursor:
     cursor_is_hidden = False
     @classmethod
     def hide(cls):

@@ -1085,7 +1085,7 @@ like they come from the same object::
 
     import random
 
-    class Asteroid(object):
+    class Asteroid:
         def handle_collision_with(self, other_object):
             super(Asteroid, self).handle_collision_with(other_object)
             if self.dead and self.scale > 0.25:

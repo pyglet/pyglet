@@ -84,21 +84,14 @@ The default path is ``['.']``.  If you modify the path, you must call
 
 .. versionadded:: 1.1
 """
-from future import standard_library
 
-standard_library.install_aliases()
-from builtins import object, str
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
+import io
 import os
-import weakref
 import sys
 import zipfile
+import weakref
 
 import pyglet
-from pyglet.compat import BytesIO
 
 
 class ResourceNotFoundException(Exception):
@@ -192,7 +185,7 @@ def get_settings_path(name):
         return os.path.expanduser('~/.%s' % name)
 
 
-class Location(object):
+class Location:
     """Abstract resource location.
 
     Given a location, a file can be loaded from that location with the `open`
@@ -261,7 +254,7 @@ class ZIPLocation(Location):
 
         forward_slash_path = path.replace(os.sep, '/')  # zip can only handle forward slashes
         text = self.zip.read(forward_slash_path)
-        return BytesIO(text)
+        return io.BytesIO(text)
 
 
 class URLLocation(Location):
@@ -287,7 +280,7 @@ class URLLocation(Location):
         return urllib.request.urlopen(url)
 
 
-class Loader(object):
+class Loader:
     """Load program resource files from disk.
 
     The loader contains a search path which can include filesystem
@@ -433,7 +426,7 @@ class Loader(object):
 
                 volume_index += 1
 
-            zip_stream = BytesIO(bytes_)
+            zip_stream = io.BytesIO(bytes_)
             if zipfile.is_zipfile(zip_stream):
                 return zip_stream
             else:

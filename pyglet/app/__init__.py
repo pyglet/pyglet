@@ -92,7 +92,7 @@ class AppException(Exception):
     pass
 
 
-class WeakSet(object):
+class WeakSet:
     """Set of objects, referenced weakly.
 
     Adding an object to this set does not prevent it from being garbage

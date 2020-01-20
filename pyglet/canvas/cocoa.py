@@ -34,8 +34,8 @@
 # ----------------------------------------------------------------------------
 # Note: The display mode API used here is Mac OS 10.6 only.
 
-'''
-'''
+"""
+"""
 from __future__ import absolute_import
 
 __docformat__ = 'restructuredtext'

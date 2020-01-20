@@ -34,8 +34,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 from __future__ import absolute_import
 from builtins import hex
 from builtins import range

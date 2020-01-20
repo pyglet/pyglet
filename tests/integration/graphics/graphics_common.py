@@ -49,7 +49,7 @@ def get_feedback(func):
     return vertices, colors, tex_coords
 
 
-class GraphicsGenericTestCase(object):
+class GraphicsGenericTestCase:
     """
     A generic test for asserting vertices positions
     using openGL Feedback Buffer.

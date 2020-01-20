@@ -68,7 +68,7 @@ from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLin
 from pyglet.compat import asstr
 
 
-class GLInfo(object):
+class GLInfo:
     """Information interface for a single GL context.
 
     A default instance is created automatically when the first OpenGL context

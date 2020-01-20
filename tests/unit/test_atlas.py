@@ -7,7 +7,7 @@ from pyglet.image import atlas
 
 __noninteractive = True
 
-class Rect(object):
+class Rect:
     def __init__(self, x1, y1, x2, y2):
         self.x1 = x1
         self.y1 = y1
@@ -22,7 +22,7 @@ class Rect(object):
         return self.x2 > other.x1 and self.x1 < other.x2 and \
                self.y2 > other.y1 and self.y1 < other.y2
 
-class AllocatorEnvironment(object):
+class AllocatorEnvironment:
     def __init__(self, test_case, width, height):
         self.test_case = test_case
         self.rectes = []

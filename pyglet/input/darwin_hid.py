@@ -249,7 +249,7 @@ _device_lookup = {}   # IOHIDDeviceRef to python HIDDevice object
 _element_lookup = {}  # IOHIDElementRef to python HIDDeviceElement object
 
 
-class HIDValue(object):
+class HIDValue:
     def __init__(self, valueRef):
         # Check that this is a valid IOHIDValue.
         assert valueRef
@@ -268,7 +268,7 @@ class HIDValue(object):
         self.element = HIDDeviceElement.get_element(elementRef)
 
 
-class HIDDevice(object):
+class HIDDevice:
     @classmethod
     def get_device(cls, deviceRef):
         # deviceRef is a c_void_p pointing to an IOHIDDeviceRef
@@ -425,7 +425,7 @@ class HIDDevice(object):
             return None
 
 
-class HIDDeviceElement(object):
+class HIDDeviceElement:
     @classmethod
     def get_element(cls, elementRef):
         # elementRef is a c_void_p pointing to an IOHIDDeviceElementRef
@@ -469,7 +469,7 @@ class HIDDeviceElement(object):
         self.physicalMax = iokit.IOHIDElementGetPhysicalMax(elementRef)
 
 
-class HIDManager(object):
+class HIDManager:
     def __init__(self):
         # Create the HID Manager.
         self.managerRef = c_void_p(iokit.IOHIDManagerCreate(None, kIOHIDOptionsTypeNone))

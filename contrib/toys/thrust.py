@@ -18,7 +18,7 @@ window = pyglet.window.Window(fullscreen='-fs' in sys.argv)
 
 GRAVITY = -200
 
-class Game(object):
+class Game:
     def __init__(self):
         self.batch = pyglet.graphics.Batch()
         self.ship = Ship(window.width//2, window.height//2, self.batch)
@@ -32,7 +32,7 @@ class Game(object):
         self.ship.update(dt)
 
 
-class Ship(object):
+class Ship:
     def __init__(self, x, y, batch):
         self.position = euclid.Point2(x, y)
         self.velocity = euclid.Point2(0, 0)

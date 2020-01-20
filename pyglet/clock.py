@@ -135,7 +135,7 @@ if sys.version_info[:2] < (3, 5):
 
     if compat_platform in ('win32', 'cygwin'):
 
-        class _ClockBase(object):
+        class _ClockBase:
 
             @staticmethod
             def sleep(microseconds):
@@ -147,7 +147,7 @@ if sys.version_info[:2] < (3, 5):
         _c = pyglet.lib.load_library('c')
         _c.usleep.argtypes = [ctypes.c_ulong]
 
-        class _ClockBase(object):
+        class _ClockBase:
 
             @staticmethod
             def sleep(microseconds):
@@ -157,7 +157,7 @@ if sys.version_info[:2] < (3, 5):
 
 else:
 
-    class _ClockBase(object):
+    class _ClockBase:
 
         @staticmethod
         def sleep(microseconds):
@@ -166,7 +166,7 @@ else:
     _default_time_function = time.perf_counter
 
 
-class _ScheduledItem(object):
+class _ScheduledItem:
     __slots__ = ['func', 'args', 'kwargs']
 
     def __init__(self, func, args, kwargs):
@@ -175,7 +175,7 @@ class _ScheduledItem(object):
         self.kwargs = kwargs
 
 
-class _ScheduledIntervalItem(object):
+class _ScheduledIntervalItem:
     __slots__ = ['func', 'interval', 'last_ts', 'next_ts', 'args', 'kwargs']
 
     def __init__(self, func, interval, last_ts, next_ts, args, kwargs):

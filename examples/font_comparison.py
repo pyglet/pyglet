@@ -55,7 +55,7 @@ import pyglet.font.win32query as wq
 # support to generate a sample text good to spot monospace compliance.
 # Chosen to do a table of fields_per_line columns, each column with field_size
 # characters. Fields are filled with a rolling subset of ASCII characters.
-class SampleTable(object):
+class SampleTable:
     field_size = 7
     gap_size = 3
     fields_per_line = 7

@@ -152,7 +152,7 @@ def create_indexed_domain(*attribute_usage_formats):
     return IndexedVertexDomain(attribute_usages)
 
 
-class VertexDomain(object):
+class VertexDomain:
     """Management of a set of vertex lists.
 
     Construction of a vertex domain is usually done with the
@@ -331,7 +331,7 @@ class VertexDomain(object):
         return '<%s@%x %s>' % (self.__class__.__name__, id(self), self.allocator)
 
 
-class VertexList(object):
+class VertexList:
     """A list of vertices within a :py:class:`VertexDomain`.  Use
     :py:meth:`VertexDomain.create` to construct this list.
     """

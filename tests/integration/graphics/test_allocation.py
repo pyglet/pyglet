@@ -8,7 +8,7 @@ import random
 from pyglet.graphics import allocation
 
 
-class Region(object):
+class Region:
     def __init__(self, start, size):
         self.start = start
         self.size = size
@@ -21,7 +21,7 @@ class Region(object):
         return 'Region(%r, %r)' % (self.start, self.size)
 
 
-class RegionAllocator(object):
+class RegionAllocator:
     def __init__(self, capacity):
         self.allocator = allocation.Allocator(capacity)
         self.regions = []

@@ -49,7 +49,7 @@ class ModelEncodeException(Exception):
     pass
 
 
-class ModelDecoder(object):
+class ModelDecoder:
     def get_file_extensions(self):
         """Return a list of accepted file extensions, e.g. ['.obj', '.gox']
         Lower-case only.
@@ -67,7 +67,7 @@ class ModelDecoder(object):
         return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
 
 
-class ModelEncoder(object):
+class ModelEncoder:
     def get_file_extensions(self):
         """Return a list of accepted file extensions, e.g. ['.obj', '.gox']
         Lower-case only.

@@ -1,5 +1,3 @@
-from __future__ import division
-from builtins import range
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -35,18 +33,18 @@ from builtins import range
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from .codecs.base import Source, AudioFormat, AudioData
-
-from collections import deque
-
-import ctypes
 import os
 import math
 import struct
 import random
+import ctypes
+
+from .codecs.base import Source, AudioFormat, AudioData
+
+from collections import deque
 
 
-class Envelope(object):
+class Envelope:
     """Base class for SynthesisSource amplitude envelopes."""
     def get_generator(self, sample_rate, duration):
         raise NotImplementedError

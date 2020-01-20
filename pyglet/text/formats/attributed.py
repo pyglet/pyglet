@@ -33,9 +33,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Extensible attributed text format for representing pyglet formatted
+"""Extensible attributed text format for representing pyglet formatted
 documents.
-'''
+"""
 from builtins import chr
 from builtins import map
 
@@ -47,7 +47,7 @@ import token
 
 import pyglet
 
-_pattern = re.compile(r'''
+_pattern = re.compile(r"""
     (?P<escape_hex>\{\#x(?P<escape_hex_val>[0-9a-fA-F]+)\})
   | (?P<escape_dec>\{\#(?P<escape_dec_val>[0-9]+)\})
   | (?P<escape_lbrace>\{\{)
@@ -60,7 +60,7 @@ _pattern = re.compile(r'''
   | (?P<nl_soft>\n(?=\S))
   | (?P<nl_para>\n\n+)
   | (?P<text>[^\{\}\n]+)
-    ''', re.VERBOSE | re.DOTALL)
+    """, re.VERBOSE | re.DOTALL)
 
 class AttributedTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):

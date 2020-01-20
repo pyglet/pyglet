@@ -32,7 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for X11
+"""Wrapper for X11
 
 Generated with:
 tools/genwrappers.py xlib
@@ -43,7 +43,7 @@ Do not modify this file.
 This file has been manually modified to fix
 a limitation of the current wrapping tools.
 
-'''
+"""
 
 __docformat__ =  'restructuredtext'
 __version__ = '$Id$'

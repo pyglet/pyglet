@@ -39,7 +39,7 @@ import time
 import pyglet
 
 
-class MediaEvent(object):
+class MediaEvent:
     """Representation of a media event.
 
     These events are used internally by some audio driver implementation to

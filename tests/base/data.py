@@ -23,7 +23,7 @@ class PygletTestCase(FutureTestCase):
         return os.path.join(test_data_path, *file_parts)
 
 
-class TestDataFixture(object):
+class TestDataFixture:
     """Fixture for accessing test data."""
     def __init__(self):
         local_dir = os.path.dirname(__file__)

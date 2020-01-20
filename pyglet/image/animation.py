@@ -76,7 +76,7 @@ If you wish to adjust this, you can manually create the Animation from a list of
 """
 
 
-class Animation(object):
+class Animation:
     """Sequence of images with timing information.
 
     If no frames of the animation have a duration of ``None``, the animation
@@ -188,7 +188,7 @@ class Animation(object):
         return "Animation(frames={0})".format(len(self.frames))
 
 
-class AnimationFrame(object):
+class AnimationFrame:
     """A single frame of an animation."""
 
     __slots__ = 'image', 'duration'

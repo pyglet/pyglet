@@ -34,8 +34,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 from __future__ import division
 
 __docformat__ = 'restructuredtext'

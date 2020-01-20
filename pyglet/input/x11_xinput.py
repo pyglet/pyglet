@@ -34,8 +34,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
+"""
+"""
 from builtins import range
 from builtins import object
 
@@ -60,7 +60,7 @@ def ptr_add(ptr, offset):
     address = ctypes.addressof(ptr.contents) + offset
     return ctypes.pointer(type(ptr.contents).from_address(address))
 
-class DeviceResponder(object):
+class DeviceResponder:
     def _key_press(self, e):
         pass
 
@@ -207,7 +207,7 @@ class XInputDevice(DeviceResponder, Device):
         if self.proximity_control:
             self.proximity_control.value = False
 
-class XInputWindowEventDispatcher(object):
+class XInputWindowEventDispatcher:
     def __init__(self, window):
         self.window = window
         self._responders = {}

@@ -89,7 +89,7 @@ class AllocatorMemoryException(Exception):
         self.requested_capacity = requested_capacity
 
 
-class Allocator(object):
+class Allocator:
     """Buffer space allocation implementation."""
 
     __slots__ = 'capacity', 'starts', 'sizes'

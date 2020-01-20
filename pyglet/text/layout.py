@@ -209,7 +209,7 @@ def _parse_distance(distance, dpi):
         assert False, 'Unknown distance unit %s' % unit
 
 
-class _Line(object):
+class _Line:
     align = 'left'
 
     margin_left = 0
@@ -250,7 +250,7 @@ class _Line(object):
             box.delete(layout)
 
 
-class _LayoutContext(object):
+class _LayoutContext:
     def __init__(self, layout, document, colors_iter, background_iter):
         self.colors_iter = colors_iter
         underline_iter = document.get_style_runs('underline')
@@ -286,7 +286,7 @@ class _IncrementalLayoutContext(_LayoutContext):
         pass
 
 
-class _AbstractBox(object):
+class _AbstractBox:
     owner = None
 
     def __init__(self, ascent, descent, advance, length):
@@ -483,7 +483,7 @@ class _InlineElementBox(_AbstractBox):
         return '_InlineElementBox(%r)' % self.element
 
 
-class _InvalidRange(object):
+class _InvalidRange:
     def __init__(self):
         self.start = sys.maxsize
         self.end = 0
@@ -720,7 +720,7 @@ class TextLayoutTextureGroup(graphics.Group):
                                self.parent)
 
 
-class TextLayout(object):
+class TextLayout:
     """Lay out and display documents.
 
     This class is intended for displaying documents that do not change

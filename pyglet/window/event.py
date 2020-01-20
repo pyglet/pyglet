@@ -49,7 +49,7 @@ from pyglet.window import key
 from pyglet.window import mouse
 
 
-class WindowEventLogger(object):
+class WindowEventLogger:
     """Print all events to a file.
 
     When this event handler is added to a window it prints out all events

@@ -41,7 +41,7 @@ from pyglet.libs.darwin.cocoapy import NSUInteger, NSUIntegerEncoding
 from pyglet.libs.darwin.cocoapy import NSRectEncoding
 
 
-class PygletWindow_Implementation(object):
+class PygletWindow_Implementation:
     PygletWindow = ObjCSubclass('NSWindow', 'PygletWindow')
 
     @PygletWindow.method('B')
@@ -82,7 +82,7 @@ class PygletWindow_Implementation(object):
         return 0.0
 
 
-class PygletToolWindow_Implementation(object):
+class PygletToolWindow_Implementation:
     PygletToolWindow = ObjCSubclass('NSPanel', 'PygletToolWindow')
 
     @PygletToolWindow.method(b'@'+NSUIntegerEncoding+b'@@B')

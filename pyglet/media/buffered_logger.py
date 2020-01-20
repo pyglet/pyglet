@@ -44,7 +44,7 @@ import pickle
 import time
 
 
-class BufferedLogger(object):
+class BufferedLogger:
     def __init__(self, outfile):
         self.outfile = outfile
         self.log_entries = []

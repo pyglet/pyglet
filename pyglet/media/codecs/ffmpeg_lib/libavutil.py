@@ -32,8 +32,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for include/libavutil/avutil.h
-'''
+"""Wrapper for include/libavutil/avutil.h
+"""
 from __future__ import unicode_literals
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64, 
     c_uint8, c_int8,  c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, 

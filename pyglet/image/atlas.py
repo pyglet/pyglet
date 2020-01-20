@@ -75,7 +75,7 @@ class AllocatorException(Exception):
     pass
 
 
-class _Strip(object):
+class _Strip:
     __slots__ = 'x', 'y', 'max_height', 'y2'
 
     def __init__(self, y, max_height):
@@ -97,7 +97,7 @@ class _Strip(object):
         self.max_height = self.y2 - self.y
 
 
-class Allocator(object):
+class Allocator:
     """Rectangular area allocation algorithm.
 
     Initialise with a given ``width`` and ``height``, then repeatedly
@@ -180,7 +180,7 @@ class Allocator(object):
         return 1.0 - self.used_area / float(possible_area)
 
 
-class TextureAtlas(object):
+class TextureAtlas:
     """Collection of images within a texture."""
 
     def __init__(self, width=2048, height=2048, border=False):
@@ -227,7 +227,7 @@ class TextureAtlas(object):
         return self.texture.get_region(x+b, y+b, img.width, img.height)
 
 
-class TextureBin(object):
+class TextureBin:
     """Collection of texture atlases.
 
     :py:class:`~pyglet.image.atlas.TextureBin` maintains a collection of texture atlases, and creates new

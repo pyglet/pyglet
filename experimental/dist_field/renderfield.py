@@ -9,7 +9,7 @@ import pyglet
 from pyglet.window import key
 from pyglet.gl import *
 
-class Shader(object):
+class Shader:
     '''Generic shader loader.'''
     def __init__(self, vertex_source, fragment_source=None):
         vertex_shader = self._create_shader(GL_VERTEX_SHADER, vertex_source)

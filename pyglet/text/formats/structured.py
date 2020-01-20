@@ -33,8 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Base class for structured (hierarchical) document formats.
-'''
+"""Base class for structured (hierarchical) document formats.
+"""
 from __future__ import division
 from builtins import range
 from builtins import object
@@ -87,9 +87,9 @@ def _int_to_roman(input):
         input -= ints[i] * count
     return result
 
-class ListBuilder(object):
+class ListBuilder:
     def begin(self, decoder, style):
-        '''Begin a list.
+        """Begin a list.
 
         :Parameters:
             `decoder` : `StructuredTextDecoder`
@@ -97,7 +97,7 @@ class ListBuilder(object):
             `style` : dict
                 Style dictionary that applies over the entire list.
 
-        '''
+        """
         left_margin = decoder.current_style.get('margin_left') or 0
         tab_stops = decoder.current_style.get('tab_stops')
         if tab_stops:
@@ -110,7 +110,7 @@ class ListBuilder(object):
         style['tab_stops'] = tab_stops
 
     def item(self, decoder, style, value=None):
-        '''Begin a list item.
+        """Begin a list item.
 
         :Parameters:
             `decoder` : `StructuredTextDecoder`
@@ -121,14 +121,14 @@ class ListBuilder(object):
                 Optional value of the list item.  The meaning is list-type
                 dependent.
 
-        '''            
+        """            
         mark = self.get_mark(value)
         if mark:
             decoder.add_text(mark)
         decoder.add_text('\t')
 
     def get_mark(self, value=None):
-        '''Get the mark text for the next list item.
+        """Get the mark text for the next list item.
 
         :Parameters:
             `value` : str
@@ -136,18 +136,18 @@ class ListBuilder(object):
                 dependent.
 
         :rtype: str
-        '''
+        """
         return ''
 
 class UnorderedListBuilder(ListBuilder):
     def __init__(self, mark):
-        '''Create an unordered list with constant mark text.
+        """Create an unordered list with constant mark text.
 
         :Parameters:
             `mark` : str
                 Mark to prepend to each list item.
 
-        '''
+        """
         self.mark = mark
 
 
@@ -158,7 +158,7 @@ class OrderedListBuilder(ListBuilder):
     format_re = re.compile('(.*?)([1aAiI])(.*)')
 
     def __init__(self, start, format):
-        '''Create an ordered list with sequentially numbered mark text.
+        """Create an ordered list with sequentially numbered mark text.
 
         The format is composed of an optional prefix text, a numbering
         scheme character followed by suffix text. Valid numbering schemes
@@ -184,7 +184,7 @@ class OrderedListBuilder(ListBuilder):
             `format` : str
                 Format style, for example ``"1."``.
 
-        '''
+        """
         self.next_value = start
 
         self.prefix, self.numbering, self.suffix = self.format_re.match(format).groups()

@@ -42,7 +42,7 @@ from pyglet import window
 from pyglet import canvas
 
 
-class Display(object):
+class Display:
     """A display device supporting one or more screens.
     
     .. versionadded:: 1.2
@@ -116,7 +116,7 @@ class Display(object):
         return [window for window in app.windows if window.display is self]
 
 
-class Screen(object):
+class Screen:
     """A virtual monitor that supports fullscreen windows.
 
     Screens typically map onto a physical display such as a
@@ -301,7 +301,7 @@ class Screen(object):
         raise NotImplementedError('abstract')
 
 
-class ScreenMode(object):
+class ScreenMode:
     """Screen resolution and display settings.
 
     Applications should not construct `ScreenMode` instances themselves; see
@@ -349,7 +349,7 @@ class ScreenMode(object):
             self.width, self.height, self.depth, self.rate)
 
 
-class Canvas(object):
+class Canvas:
     """Abstract drawing area.
 
     Canvases are used internally by pyglet to represent drawing areas --

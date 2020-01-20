@@ -138,7 +138,7 @@ related event handlers in a single class.  In the following example, a
 ``GameEventHandler`` class is defined.  An instance of that class can be
 pushed on and popped off of a window::
 
-    class GameEventHandler(object):
+    class GameEventHandler:
         def on_key_press(self, symbol, modifiers):
             print 'Key pressed in game'
             return True
@@ -252,7 +252,7 @@ without needing the bulky ``Attach``, ``Detach`` and ``Notify`` methods::
     ClockTimer.register_event_type('on_update')
 
     # Abstract observer class
-    class Observer(object):
+    class Observer:
         def __init__(self, subject):
             subject.push_handlers(self)
 
