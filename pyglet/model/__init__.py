@@ -82,11 +82,8 @@ instance when loading the Model::
 .. versionadded:: 1.4
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+import io
 
-
-from pyglet.compat import BytesIO
 from pyglet.gl import *
 from pyglet import graphics
 
@@ -125,7 +122,7 @@ def load(filename, file=None, decoder=None, batch=None):
         file = open(filename, 'rb')
 
     if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
+        file = io.BytesIO(file.read())
 
     try:
         if decoder:

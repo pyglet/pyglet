@@ -128,15 +128,7 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
-
-from __future__ import division
-from builtins import bytes
-from builtins import zip
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-from io import open
+from io import open, BytesIO
 import re
 import weakref
 
@@ -145,7 +137,7 @@ from ctypes import *
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.window import *
-from pyglet.compat import asbytes, bytes_type, BytesIO
+from pyglet.compat import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
@@ -1088,7 +1080,7 @@ class ImageData(AbstractImage):
         return asbytes(data)
 
     def _ensure_string_data(self):
-        if type(self._current_data) is not bytes_type:
+        if type(self._current_data) is not bytes:
             buf = create_string_buffer(len(self._current_data))
             memmove(buf, self._current_data, len(self._current_data))
             self._current_data = buf.raw

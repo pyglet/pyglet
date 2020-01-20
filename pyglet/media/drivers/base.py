@@ -32,12 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from future.utils import with_metaclass
 
 import math
 import weakref
 
 from abc import ABCMeta, abstractmethod
+
+from pyglet.compat import with_metaclass
 
 
 class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):

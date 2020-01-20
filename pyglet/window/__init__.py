@@ -122,24 +122,19 @@ above, "Working with multiple screens")::
         win = window.Window(config=configs[0])
 
 """
-from __future__ import division
-
-from builtins import object
-
-from future.utils import with_metaclass
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 import sys
 import math
 
 import pyglet
+import pyglet.window.key
+import pyglet.window.event
+
 from pyglet import gl
 from pyglet.event import EventDispatcher
 from pyglet.window import key
-import pyglet.window.key
-import pyglet.window.event
+from pyglet.compat import with_metaclass
+
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 

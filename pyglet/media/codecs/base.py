@@ -1,6 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import object
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -36,9 +33,9 @@ from builtins import object
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+import io
 import ctypes
 
-from pyglet.compat import bytes_type, BytesIO
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
 
@@ -186,14 +183,13 @@ class AudioData(object):
         """Return data as a bytestring.
 
         Returns:
-            bytes or str: Data as a (byte)string. For Python 3 it's a
-            bytestring while for Python 2 it's a string.
+            bytes: Data as a (byte)string.
         """
         # PYTHON2 - remove old Python 2 type checks
         if self.data is None:
             return b''
 
-        if isinstance(self.data, bytes_type):
+        if isinstance(self.data, bytes):
             return self.data
 
         buf = ctypes.create_string_buffer(self.length)
@@ -450,7 +446,7 @@ class StaticSource(Source):
 
         # Naive implementation.  Driver-specific implementations may override
         # to load static audio data into device (or at least driver) memory.
-        data = BytesIO()
+        data = io.BytesIO()
         while True:
             audio_data = source.get_audio_data(buffer_size)
             if not audio_data:
@@ -492,7 +488,7 @@ class StaticMemorySource(StaticSource):
 
     def __init__(self, data, audio_format):
         """Construct a memory source over the given data buffer."""
-        self._file = BytesIO(data)
+        self._file = io.BytesIO(data)
         self._max_offset = len(data)
         self.audio_format = audio_format
         self._duration = len(data) / float(audio_format.bytes_per_second)

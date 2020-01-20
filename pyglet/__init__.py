@@ -37,34 +37,10 @@
 
 Detailed documentation is available at http://www.pyglet.org
 """
-from __future__ import print_function
-from __future__ import absolute_import
-
-# Check if future is installed, if not use included batteries
-try:
-    import future
-except ImportError:
-    import os.path as op
-    import sys
-
-    future_base = op.abspath(op.join(op.dirname(__file__), 'extlibs', 'future'))
-    sys.path.insert(0, op.join(future_base, 'py2_3'))
-    if sys.version_info[:2] < (3, 0):
-        sys.path.insert(0, op.join(future_base, 'py2'))
-    del future_base
-    del sys
-    del op
-    try:
-        import future
-    except ImportError:
-        print('Failed to get python-future')
-        raise
-
-from builtins import range
-from builtins import object
 
 import os
 import sys
+
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
@@ -83,9 +59,9 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.4.10'
+version = '1.5.0'
 
-# Pyglet platform treats *BSD systems as Linux
+# pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
 if "bsd" in compat_platform:
     compat_platform = "linux-compat"
