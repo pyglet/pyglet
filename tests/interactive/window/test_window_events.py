@@ -1,8 +1,6 @@
 """
 Tests for events on windows.
 """
-from __future__ import print_function
-
 import pytest
 import random
 

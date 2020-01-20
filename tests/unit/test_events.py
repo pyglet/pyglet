@@ -11,7 +11,7 @@ from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
 
 @pytest.fixture
 def dispatcher():
-    "Event dispatcher to test"
+    """Event dispatcher to test"""
     dispatcher = pyglet.event.EventDispatcher()
     yield dispatcher
     # Let's remove previous handlers

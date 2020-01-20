@@ -1,7 +1,3 @@
-from future.standard_library import install_aliases
-install_aliases()
-
-from builtins import object
 import queue
 import unittest
 import time

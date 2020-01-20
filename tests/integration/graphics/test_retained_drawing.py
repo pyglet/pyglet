@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 """Tests vertex list drawing.
 """
-from __future__ import absolute_import
 import unittest
 
 import pyglet

@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 """Tests immediate drawing using indexed data.
 """
-from __future__ import absolute_import
 import unittest
 
 import pyglet

@@ -1,7 +1,6 @@
-from __future__ import division
-from builtins import range
-from tests import mock
 import random
+from unittest import mock
+
 from tests.base.future_test import FutureTestCase
 
 from pyglet.media.player import Player, PlayerGroup

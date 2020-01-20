@@ -1,15 +1,16 @@
-from __future__ import absolute_import
-from builtins import range
 import unittest
 
-from pyglet.gl import *
 from pyglet.image import *
 from pyglet.window import *
 
-from .texture_compat import colorbyte
+
+def colorbyte(color):
+    return bytes((color,))
+
 
 class ImageGridTestCase(unittest.TestCase):
     """Test the ImageGrid for textures."""
+
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
         data = b''
         color = 1
@@ -29,7 +30,7 @@ class ImageGridTestCase(unittest.TestCase):
         assert len(data) == width * height
         self.image = ImageData(width, height, 'L', data)
         self.grid = ImageGrid(self.image, rows, cols,
-            itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
+                              itemwidth, itemheight, rowpad, colpad).get_texture_sequence()
 
     def check_cell(self, cellimage, cellindex):
         self.assertTrue(cellimage.width == self.grid.item_width)
@@ -47,21 +48,21 @@ class ImageGridTestCase(unittest.TestCase):
         # Test a 3x3 grid with no padding and 4x4 images
         rows = cols = 3
         self.set_grid_image(4, 4, rows, cols, 0, 0)
-        for i in range(rows * cols): 
+        for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
 
     def testRect(self):
         # Test a 2x5 grid with no padding and 3x8 images
         rows, cols = 2, 5
         self.set_grid_image(3, 8, rows, cols, 0, 0)
-        for i in range(rows * cols): 
+        for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
 
     def testPad(self):
         # Test a 5x3 grid with rowpad=3 and colpad=7 and 10x9 images
         rows, cols = 5, 3
         self.set_grid_image(10, 9, rows, cols, 3, 7)
-        for i in range(rows * cols): 
+        for i in range(rows * cols):
             self.check_cell(self.grid[i], i)
 
     def testTuple(self):
@@ -84,10 +85,9 @@ class ImageGridTestCase(unittest.TestCase):
         # Test range over tuples
         rows, cols = 10, 10
         self.set_grid_image(4, 4, rows, cols, 0, 0)
-        images = self.grid[(3,2):(6,5)]
+        images = self.grid[(3, 2):(6, 5)]
         i = 0
-        for row in range(3,6):
-            for col in range(2,5):
+        for row in range(3, 6):
+            for col in range(2, 5):
                 self.check_cell(images[i], row * cols + col)
                 i += 1
-

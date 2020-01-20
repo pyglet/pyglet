@@ -1,12 +1,9 @@
-from __future__ import absolute_import, print_function
-from builtins import zip
-from builtins import input
-
-import array
 import os
-import pytest
+import array
 import shutil
 import warnings
+
+import pytest
 
 import pyglet
 from pyglet.image import get_buffer_manager

@@ -1,4 +1,3 @@
-from builtins import range
 import pytest
 from tests.base.interactive import InteractiveTestCase
 
