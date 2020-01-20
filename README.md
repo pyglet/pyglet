@@ -18,7 +18,7 @@ OpenGL graphics, loading images and videos, and playing sounds and music. *pygle
 
 Pyglet has an active developer and user community.  If you find a bug or a problem with the documentation,
 please [open an issue](https://github.com/pyglet/pyglet/issues).
-Anyone is welcome to join our [discord] server were a lot of the development discussion is going on.
+Anyone is welcome to join our [discord] server where a lot of the development discussion is going on.
 It's also a great place to ask for help.
 
 Some of the features of pyglet are:
@@ -40,12 +40,10 @@ Some of the features of pyglet are:
 
 ## Requirements
 
-pyglet runs under Python 2.7, and 3.4+. The entire codebase is fully 2/3 dual
-compatible, making use of the future module for backwards compatibility with
-legacy Python. Being written in pure Python, it also works on other Python
+Pyglet runs under Python 3.5+. Being written in pure Python, it also works on other Python
 interpreters such as PyPy. Supported platforms are:
 
-* Windows XP or later
+* Windows 7 or later
 * Mac OS X 10.3 or later
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
@@ -53,9 +51,9 @@ interpreters such as PyPy. Supported platforms are:
   * GDK 2.0+ or PIL (required for loading images other than PNG and BMP)
   * OpenAL or Pulseaudio (required for playing audio)
 
-**Please note that pyglet v1.4 will likely be the last version to support
-Python 2.7**. Future releases of pyglet will be Python 3 only, and will be
-targeting OpenGL 3.3+. Previous releases will remain available for download.
+**Please note that pyglet v1.5 will likely be the last version to support
+legacy OpenGL**. Future releases of pyglet will be targeting OpenGL 3.3+.
+Previous releases will remain available for download.
 
 Starting with version 1.4, to play compressed audio and video files,
 you will also need [FFmpeg](https://ffmpeg.org/).
@@ -64,7 +62,7 @@ you will also need [FFmpeg](https://ffmpeg.org/).
 
 pyglet is installable from PyPI:
 
-    pip install --upgrade pyglet --user
+    pip install --upgrade --user pyglet
 
 ## Installation from source
 
@@ -74,7 +72,7 @@ If you're reading this `README` from a source distribution, you can install pygl
 
 You can also install the latest development version direct from Github using:
 
-    pip install --upgrade https://github.com/pyglet/pyglet/archive/master.zip --user
+    pip install --upgrade --user https://github.com/pyglet/pyglet/archive/master.zip
 
 For local development install pyglet in editable mode:
 
@@ -95,7 +93,7 @@ installing it. You can also copy pyglet directly into your project folder.
 are going to work with, also read the associated docs. If you don't understand the code with the help of the docs,
 it is a sign that the docs should be improved.
 
-If you want to contribute to Pyglet, we suggest the following:
+If you want to contribute to pyglet, we suggest the following:
 
 * Fork the [official repository](https://github.com/pyglet/pyglet/fork).
 * Apply your changes to your fork.
