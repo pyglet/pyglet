@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 """High-level sound and video player."""
 
+import threading
 from collections import deque
 
 import pyglet
@@ -43,7 +44,36 @@ from pyglet.media.codecs.base import Source
 
 _debug = pyglet.options['debug_media']
 
-clock = pyglet.clock.get_default()
+# clock = pyglet.clock.get_default()
+
+
+class AudioClock(pyglet.clock.Clock):
+    """A background Clock dedicated to refilling audio buffers."""
+
+    def __init__(self, interval=0.1):
+        self._interval = interval
+        self._timer = threading.Timer(self._interval, self._tick_clock)
+        self._timer.daemon = True
+        self._timer.start()
+        super().__init__()
+
+    def _tick_clock(self):
+        self.tick()
+        timer = threading.Timer(self._interval, self._tick_clock)
+        timer.daemon = True
+        timer.start()
+        self._timer = timer
+
+    def schedule_interval_soft(self, func, interval, *args, **kwargs):
+        print(f"Scheduled: {func}")
+        super().schedule_once(func, interval, *args, **kwargs)
+
+    def unschedule(self, func):
+        print(f"Unscheduled: {func}")
+        super().unschedule(func)
+
+
+clock = AudioClock()
 
 
 class MasterClock:

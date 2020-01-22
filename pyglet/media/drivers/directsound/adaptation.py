@@ -134,11 +134,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self.driver._ds_driver._native_dsound.Release()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self.audio_clock.unschedule(self._check_refill)
 
     def play(self):
         assert _debug('DirectSound play')
-        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        self.audio_clock.schedule_interval(self._check_refill, 0.1)
 
         if not self._playing:
             self._get_audiodata()  # prebuffer if needed
@@ -149,7 +149,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
-        pyglet.clock.unschedule(self._check_refill)
+        self.audio_clock.unschedule(self._check_refill)
 
         if self._playing:
             self._playing = False
