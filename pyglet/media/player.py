@@ -44,11 +44,9 @@ from pyglet.media.codecs.base import Source
 
 _debug = pyglet.options['debug_media']
 
-# clock = pyglet.clock.get_default()
-
 
 class AudioClock(pyglet.clock.Clock):
-    """A background Clock dedicated to refilling audio buffers."""
+    """A dedicated background Clock for refilling audio buffers."""
 
     def __init__(self, interval=0.1):
         self._interval = interval
@@ -63,14 +61,6 @@ class AudioClock(pyglet.clock.Clock):
         timer.daemon = True
         timer.start()
         self._timer = timer
-
-    def schedule_interval_soft(self, func, interval, *args, **kwargs):
-        print(f"Scheduled: {func}")
-        super().schedule_once(func, interval, *args, **kwargs)
-
-    def unschedule(self, func):
-        print(f"Unscheduled: {func}")
-        super().unschedule(func)
 
 
 clock = AudioClock()

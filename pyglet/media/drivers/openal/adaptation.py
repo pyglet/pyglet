@@ -163,7 +163,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self.refill(self.ideal_buffer_size)
 
     def delete(self):
-        print("Delete!")
         self.audio_clock.unschedule(self._check_refill)
         self.alsource = None
 
@@ -279,7 +278,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
             if audio_data is None:
                 self.audio_clock.unschedule(self._check_refill)
-                print("End of DATA")
                 break
 
             length = min(write_size, audio_data.length)
