@@ -136,7 +136,9 @@ def ffmpeg_open_filename(filename):
                                           None,
                                           None)
     if result != 0:
-        raise FFmpegException('Error opening file ' + filename.decode("utf8"))
+        raise FFmpegException('avformat_open_input in ffmpeg_open_filename returned an error opening file '
+                              + filename.decode("utf8")
+                              + ' Error code: ' + str(result))
 
     result = avformat.avformat_find_stream_info(file.context, None)
     if result < 0:
