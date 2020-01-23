@@ -1,9 +1,14 @@
 pyglet 1.5.0
-Maintenance release
+Bugfix and Maintenance release
+
+Bugfixes
+--------
+- Removed global dubug function access in __del__ methods to prevent smooth shutdown.
 
 Changes
 -------
 - Support for Python 2 has been dropped. Python 3.5 is now the minimum supported version.
+- Audio can now be played back without a running event loop.
 
 
 pyglet 1.4.10

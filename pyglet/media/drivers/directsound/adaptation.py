@@ -129,7 +129,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self.refill(self._buffer_size)
 
     def __del__(self):
-        assert _debug("Delete DirectSoundAudioPlayer")
         # We decrease the IDirectSound refcount
         self.driver._ds_driver._native_dsound.Release()
 
@@ -403,7 +402,6 @@ class DirectSoundDriver(AbstractAudioDriver):
         return DirectSoundListener(self._ds_listener, self._ds_driver.primary_buffer)
 
     def delete(self):
-        assert _debug("Delete DirectSoundDriver")
         # Make sure the _ds_listener is deleted before the _ds_driver
         self._ds_listener = None
 
@@ -412,9 +410,6 @@ class DirectSoundListener(AbstractListener):
     def __init__(self, ds_listener, ds_buffer):
         self._ds_listener = ds_listener
         self._ds_buffer = ds_buffer
-
-    def __del__(self):
-        assert _debug("Delete DirectSoundListener")
 
     def _set_volume(self, volume):
         self._volume = volume
