@@ -450,6 +450,11 @@ class FFmpegSource(StreamingSource):
     SAMPLE_CORRECTION_PERCENT_MAX = 10
 
     def __init__(self, filename, file=None):
+        self._packet = None
+        self._video_stream = None
+        self._audio_stream = None
+        self._file = None
+
         if file is not None:
             raise NotImplementedError('Loading from file stream is not supported')
 
@@ -457,9 +462,7 @@ class FFmpegSource(StreamingSource):
         if not self._file:
             raise FFmpegException('Could not open "{0}"'.format(filename))
 
-        self._video_stream = None
         self._video_stream_index = None
-        self._audio_stream = None
         self._audio_stream_index = None
         self._audio_format = None
 
