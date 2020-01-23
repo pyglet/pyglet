@@ -73,7 +73,6 @@ class DirectSoundDriver:
         self.primary_buffer = self._buffer_factory.create_primary_buffer()
 
     def __del__(self):
-        assert _debug("Delete interface.DirectSoundDriver")
         self.primary_buffer = None
         self._native_dsound.Release()
 
@@ -91,9 +90,6 @@ class DirectSoundBufferFactory:
         # We only keep a weakref to native_dsound which is owned by
         # interface.DirectSoundDriver
         self._native_dsound = weakref.proxy(native_dsound)
-
-    def __del__(self):
-        assert _debug("Delete interface.DirectSoundBufferFactory")
 
     def create_buffer(self, audio_format):
         buffer_size = int(audio_format.sample_rate * self.default_buffer_size)
@@ -172,7 +168,6 @@ class DirectSoundBuffer:
         self.delete()
 
     def delete(self):
-        assert _debug("Delete interface.DirectSoundBuffer from AudioFormat {}".format(self.audio_format))
         if self._native_buffer is not None:
             self._native_buffer.Stop()
             self._native_buffer.Release()
@@ -425,7 +420,6 @@ class DirectSoundListener:
         self.delete()
 
     def delete(self):
-        assert _debug("Delete interface.DirectSoundListener")
         if self._native_listener:
             self._native_listener.Release()
             self._native_listener = None
@@ -436,7 +430,7 @@ class DirectSoundListener:
         _check(
             self._native_listener.GetPosition(ctypes.byref(vector))
         )
-        return (vector.x, vector.y, vector.z)
+        return vector.x, vector.y, vector.z
 
     @position.setter
     def position(self, value):
@@ -451,7 +445,7 @@ class DirectSoundListener:
         _check(
             self._native_listener.GetOrientation(ctypes.byref(front), ctypes.byref(top))
         )
-        return (front.x, front.y, front.z, top.x, top.y, top.z)
+        return front.x, front.y, front.z, top.x, top.y, top.z
 
     @orientation.setter
     def orientation(self, orientation):
