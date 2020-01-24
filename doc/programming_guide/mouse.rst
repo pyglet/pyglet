@@ -132,8 +132,8 @@ image, or hidden completely.  The change to the cursor will be applicable only
 to the window you make the change to.  To hide the mouse cursor, call
 :py:meth:`~pyglet.window.Window.set_mouse_visible`::
 
-    window = pyglet.window.Window()
-    window.set_mouse_visible(False)
+    win = pyglet.window.Window()
+    win.set_mouse_visible(False)
 
 This can be useful if the mouse would obscure text that the user is typing.
 If you are hiding the mouse cursor for use in a game environment, consider
@@ -145,8 +145,8 @@ of the mouse cursor. A mouse cursor is an instance of
 system-defined cursors with
 :py:meth:`~pyglet.window.Window.get_system_mouse_cursor`::
 
-    cursor = window.get_system_mouse_cursor(win.CURSOR_HELP)
-    window.set_mouse_cursor(cursor)
+    cursor = win.get_system_mouse_cursor(win.CURSOR_HELP)
+    win.set_mouse_cursor(cursor)
 
 The cursors that pyglet defines are listed below, along with their typical
 appearance on Windows and Mac OS X.  The pointer image on Linux is dependent
@@ -227,7 +227,7 @@ the point of the arrow::
 
     image = pyglet.image.load('cursor.png')
     cursor = pyglet.window.ImageMouseCursor(image, 16, 8)
-    window.set_mouse_cursor(cursor)
+    win.set_mouse_cursor(cursor)
 
 You can even render a mouse cursor directly with OpenGL.  You could draw a
 3-dimensional cursor, or a particle trail, for example.  To do this, subclass
@@ -253,8 +253,8 @@ and `dy` parameters to determine how the mouse was moved.
 Activate mouse exclusive mode with
 :py:meth:`~pyglet.window.Window.set_exclusive_mouse`::
 
-    window = pyglet.window.Window()
-    window.set_exclusive_mouse(True)
+    win = pyglet.window.Window()
+    win.set_exclusive_mouse(True)
 
 You should activate mouse exclusive mode even if your window is full-screen:
 it will prevent the window "hitting" the edges of the screen, and behave
