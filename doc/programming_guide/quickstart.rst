@@ -147,9 +147,10 @@ was pressed, relative to the lower-left corner of the window.
 
 There are more than 20 event types that you can handle on a window. An easy
 way to find the event names and parameters you need is to add the following
-line to your program::
+lines to your program::
 
-    window.push_handlers(pyglet.window.event.WindowEventLogger())
+    event_logger = pyglet.window.event.WindowEventLogger()
+    window.push_handlers(event_logger)
 
 This will cause all events received on the window to be printed to the
 console.
@@ -216,6 +217,7 @@ look at the :ref:`programming-guide-graphics` module.
 
 There are numerous examples of pyglet applications in the ``examples/``
 directory of the documentation and source distributions.  If you get
-stuck, or have any questions, join us on the `mailing list`_!
+stuck, or have any questions, join us on the `mailing list`_ or `Discord`_!
 
 .. _mailing list: http://groups.google.com/group/pyglet-users
+.. _Discord: https://discord.gg/QXyegWe
