@@ -315,7 +315,7 @@ class ChunkError(FormatError):
     pass
 
 
-class Writer(object):
+class Writer:
     """
     PNG encoder in pure Python.
     """
@@ -1237,7 +1237,7 @@ def from_array(a, mode=None, info={}):
 # So that refugee's from PIL feel more at home.  Not documented.
 fromarray = from_array
 
-class Image(object):
+class Image:
     """A PNG image.  You can create an :class:`Image` object from
     an array of pixels by calling :meth:`png.from_array`.  It can be
     saved to disk with the :meth:`save` method.
@@ -1278,7 +1278,7 @@ class Image(object):
         finally:
             close()
 
-class _readable(object):
+class _readable:
     """
     A simple file-like interface for strings and arrays.
     """
@@ -1302,7 +1302,7 @@ else:
     def as_str(x):
         return str(x, 'ascii')
 
-class Reader(object):
+class Reader:
     """
     PNG decoder in pure Python.
     """
@@ -2243,7 +2243,7 @@ def isinteger(x):
 try:
     pngfilters
 except NameError:
-    class pngfilters(object):
+    class pngfilters:
         def undo_filter_sub(filter_unit, scanline, previous, result):
             """Undo sub filter."""
 

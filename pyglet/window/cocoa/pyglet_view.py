@@ -37,6 +37,7 @@ from pyglet.libs.darwin.quartzkey import keymap, charmap
 
 from pyglet.libs.darwin import cocoapy
 
+
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
 
 # Event data helper functions.

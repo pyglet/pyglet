@@ -234,7 +234,7 @@ def get_session_configuration(pathserv):
 # path functionality according to path schema ##################################
 
 
-class PathServices(object):
+class PathServices:
     def __init__(self, samples_dir, session):
         self.samples_dir = samples_dir
         self.session = session

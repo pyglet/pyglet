@@ -45,12 +45,13 @@ Responsabilities
 # events definition
 mp_events = {
     "version": 1.1,
-#   <evname>: {
-#       "desc": <description used in reports to mention the event>,
-#       "update_names": <list of names of fields updated>,
-#       "other_fields": <list of additionals fields to show when mention the
-#                       event in a report>
-#       },
+
+    # <evname>: {
+    #     "desc": <description used in reports to mention the event>,
+    #     "update_names": <list of names of fields updated>,
+    #     "other_fields": <list of additionals fields to show when mention the event in a report>
+    #     },
+
     "crash": {
         "desc": "media_player crashed.",
         "update_names": ["evname", "sample"],
@@ -281,7 +282,6 @@ class CountBads:
         anomalies_description["scheduling_in_past"] = "Scheduling in the past"
         return anomalies_description
     
-
     def preprocessing(self, recorded_events):
         """
         I see all recordings ending with some potential anomalies in the few
@@ -291,24 +291,20 @@ class CountBads:
         """
         recorded_events = list(recorded_events)
         if (len(recorded_events) > 9 and
-            recorded_events[-2][0] == "p.P.ut.1.7" and
-            recorded_events[-6][0] == "p.P.ut.1.7" and
-            recorded_events[-10][0] == "p.P.ut.1.7"
-            ):
+                recorded_events[-2][0] == "p.P.ut.1.7" and
+                recorded_events[-6][0] == "p.P.ut.1.7" and
+                recorded_events[-10][0] == "p.P.ut.1.7"):
             del recorded_events[-10]
             del recorded_events[-6]
             del recorded_events[-2]
 
         elif (len(recorded_events) > 6 and
               recorded_events[-2][0] == "p.P.ut.1.7" and
-              recorded_events[-6][0] == "p.P.ut.1.7"
-              ):
+              recorded_events[-6][0] == "p.P.ut.1.7"):
             del recorded_events[-6]
             del recorded_events[-2]
 
-        elif (len(recorded_events) > 2 and
-              recorded_events[-2][0] == "p.P.ut.1.7"
-              ):
+        elif len(recorded_events) > 2 and recorded_events[-2][0] == "p.P.ut.1.7":
             del recorded_events[-2]
 
         return recorded_events

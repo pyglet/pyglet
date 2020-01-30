@@ -1,8 +1,8 @@
 import os
 import re
 import sys
-from tests import mock
 import unittest
+from unittest import mock
 
 import pyglet
 from pyglet.resource import get_script_home, get_settings_path

@@ -32,9 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from ctypes import *
 
-from pyglet.gl import *
 from pyglet.com import IUnknown
 from pyglet.image import *
 from pyglet.image.codecs import *

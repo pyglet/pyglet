@@ -37,6 +37,7 @@
 
 See :py:class:`~pyglet.window.Window` for a description of the window event types.
 """
+
 import sys
 
 from pyglet.window import key

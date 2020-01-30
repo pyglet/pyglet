@@ -32,10 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Document formats.
+"""Document formats.
 
 .. versionadded:: 1.1
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
+"""

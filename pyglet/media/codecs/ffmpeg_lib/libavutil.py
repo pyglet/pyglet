@@ -32,12 +32,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for include/libavutil/avutil.h
-'''
-from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
-    c_uint8, c_int8,  c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, 
-    c_char_p, c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, 
-    Union, create_string_buffer, memmove)
+"""Wrapper for include/libavutil/avutil.h
+"""
+from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
+from ctypes import c_uint8, c_int8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char
+from ctypes import c_char_p, c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure
+from ctypes import Union, create_string_buffer, memmove
 
 import pyglet
 import pyglet.lib
@@ -75,12 +75,14 @@ AV_PIX_FMT_RGB24 = 2
 AV_PIX_FMT_ARGB = 25
 AV_PIX_FMT_RGBA = 26
 
+
 class AVBuffer(Structure):
     _fields_ = [
         ('data', POINTER(c_uint8)),
         ('size', c_int),
-        #.. more
+        # .. more
     ]
+
 
 class AVBufferRef(Structure):
     _fields_ = [
@@ -95,21 +97,31 @@ class AVDictionaryEntry(Structure):
         ('key', c_char_p),
         ('value', c_char_p)
     ]
+
+
 class AVDictionary(Structure):
     _fields_ = [
         ('count', c_int),
         ('elems', POINTER(AVDictionaryEntry))
     ]
 
-class AVClass(Structure): pass
+
+class AVClass(Structure):
+    pass
+
+
 class AVRational(Structure):
     _fields_ = [
         ('num', c_int),
         ('den', c_int)
     ]
 
-class AVFrameSideData(Structure): pass
-class AVFrame(Structure): 
+
+class AVFrameSideData(Structure):
+    pass
+
+
+class AVFrame(Structure):
     _fields_ = [
         ('data', POINTER(c_uint8) * AV_NUM_DATA_POINTERS),
         ('linesize', c_int * AV_NUM_DATA_POINTERS),
@@ -122,13 +134,13 @@ class AVFrame(Structure):
         ('pict_type', c_int),
         ('sample_aspect_ratio', AVRational),
         ('pts', c_int64),
-        ('pkt_pts', c_int64), #Deprecated
+        ('pkt_pts', c_int64),  # Deprecated
         ('pkt_dts', c_int64),
         ('coded_picture_number', c_int),
         ('display_picture_number', c_int),
         ('quality', c_int),
         ('opaque', c_void_p),
-        ('error', c_uint64 * AV_NUM_DATA_POINTERS), #Deprecated
+        ('error', c_uint64 * AV_NUM_DATA_POINTERS),  # Deprecated
         ('repeat_pict', c_int),
         ('interlaced_frame', c_int),
         ('top_field_first', c_int),
@@ -150,38 +162,39 @@ class AVFrame(Structure):
         ('best_effort_timestamp', c_int64),
         ('pkt_pos', c_int64),
         ('pkt_duration', c_int64),
-        #!
+        # !
         ('metadata', POINTER(AVDictionary)),
         ('decode_error_flags', c_int),
         ('channels', c_int),
         ('pkt_size', c_int),
-        ('qscale_table', POINTER(c_int8)), #Deprecated
-        ('qstride', c_int), #Deprecated
-        ('qscale_type', c_int), #Deprecated
-        ('qp_table_buf', POINTER(AVBufferRef)), #Deprecated
+        ('qscale_table', POINTER(c_int8)),  # Deprecated
+        ('qstride', c_int),  # Deprecated
+        ('qscale_type', c_int),  # Deprecated
+        ('qp_table_buf', POINTER(AVBufferRef)),  # Deprecated
         ('hw_frames_ctx', POINTER(AVBufferRef)),
         ('opaque_ref', POINTER(AVBufferRef)),
-        ('crop_top', c_size_t), # video frames only
-        ('crop_bottom', c_size_t), # video frames only
-        ('crop_left', c_size_t), # video frames only
-        ('crop_right', c_size_t), # video frames only
+        ('crop_top', c_size_t),  # video frames only
+        ('crop_bottom', c_size_t),  # video frames only
+        ('crop_left', c_size_t),  # video frames only
+        ('crop_right', c_size_t),  # video frames only
         ('private_ref', POINTER(AVBufferRef)),
     ]
+
+
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
 AV_TIME_BASE_Q = AVRational(1, AV_TIME_BASE)
 
-
 avutil.av_version_info.restype = c_char_p
 avutil.av_dict_get.restype = POINTER(AVDictionaryEntry)
 avutil.av_dict_get.argtypes = [POINTER(AVDictionary),
-            c_char_p, POINTER(AVDictionaryEntry),
-            c_int]
+                               c_char_p, POINTER(AVDictionaryEntry),
+                               c_int]
 avutil.av_rescale_q.restype = c_int64
 avutil.av_rescale_q.argtypes = [c_int64, AVRational, AVRational]
 avutil.av_samples_get_buffer_size.restype = c_int
 avutil.av_samples_get_buffer_size.argtypes = [POINTER(c_int),
-            c_int, c_int, c_int]
+                                              c_int, c_int, c_int]
 avutil.av_frame_alloc.restype = POINTER(AVFrame)
 avutil.av_frame_free.argtypes = [POINTER(POINTER(AVFrame))]
 avutil.av_get_default_channel_layout.restype = c_int64
@@ -194,7 +207,7 @@ avutil.av_frame_get_best_effort_timestamp.restype = c_int64
 avutil.av_frame_get_best_effort_timestamp.argtypes = [POINTER(AVFrame)]
 avutil.av_image_fill_arrays.restype = c_int
 avutil.av_image_fill_arrays.argtypes = [POINTER(c_uint8) * 4, c_int * 4,
-            POINTER(c_uint8), c_int, c_int, c_int, c_int]
+                                        POINTER(c_uint8), c_int, c_int, c_int, c_int]
 avutil.av_dict_set.restype = c_int
 avutil.av_dict_set.argtypes = [POINTER(POINTER(AVDictionary)),
                                c_char_p, c_char_p, c_int]
@@ -203,34 +216,34 @@ avutil.av_log_set_level.restype = c_int
 avutil.av_log_set_level.argtypes = [c_uint]
 
 __all__ = [
-'avutil',
-'AVMEDIA_TYPE_UNKNOWN',
-'AVMEDIA_TYPE_VIDEO',
-'AVMEDIA_TYPE_AUDIO',
-'AVMEDIA_TYPE_DATA',
-'AVMEDIA_TYPE_SUBTITLE',
-'AVMEDIA_TYPE_ATTACHMENT',
-'AVMEDIA_TYPE_NB',
-'AV_SAMPLE_FMT_U8',
-'AV_SAMPLE_FMT_S16',
-'AV_SAMPLE_FMT_S32',
-'AV_SAMPLE_FMT_FLT',
-'AV_SAMPLE_FORMAT_DOUBLE',
-'AV_SAMPLE_FMT_U8P',
-'AV_SAMPLE_FMT_S16P',
-'AV_SAMPLE_FMT_S32P',
-'AV_SAMPLE_FMT_FLTP',
-'AV_SAMPLE_FMT_DBLP',
-'AV_SAMPLE_FMT_S64',
-'AV_SAMPLE_FMT_S64P',
-'AV_NUM_DATA_POINTERS',
-'AV_PIX_FMT_RGB24',
-'AV_PIX_FMT_ARGB',
-'AV_PIX_FMT_RGBA',
-'AV_NOPTS_VALUE',
-'AV_TIME_BASE',
-'AV_TIME_BASE_Q',
-'AVFrame',
-'AVRational',
-'AVDictionary',
+    'avutil',
+    'AVMEDIA_TYPE_UNKNOWN',
+    'AVMEDIA_TYPE_VIDEO',
+    'AVMEDIA_TYPE_AUDIO',
+    'AVMEDIA_TYPE_DATA',
+    'AVMEDIA_TYPE_SUBTITLE',
+    'AVMEDIA_TYPE_ATTACHMENT',
+    'AVMEDIA_TYPE_NB',
+    'AV_SAMPLE_FMT_U8',
+    'AV_SAMPLE_FMT_S16',
+    'AV_SAMPLE_FMT_S32',
+    'AV_SAMPLE_FMT_FLT',
+    'AV_SAMPLE_FORMAT_DOUBLE',
+    'AV_SAMPLE_FMT_U8P',
+    'AV_SAMPLE_FMT_S16P',
+    'AV_SAMPLE_FMT_S32P',
+    'AV_SAMPLE_FMT_FLTP',
+    'AV_SAMPLE_FMT_DBLP',
+    'AV_SAMPLE_FMT_S64',
+    'AV_SAMPLE_FMT_S64P',
+    'AV_NUM_DATA_POINTERS',
+    'AV_PIX_FMT_RGB24',
+    'AV_PIX_FMT_ARGB',
+    'AV_PIX_FMT_RGBA',
+    'AV_NOPTS_VALUE',
+    'AV_TIME_BASE',
+    'AV_TIME_BASE_Q',
+    'AVFrame',
+    'AVRational',
+    'AVDictionary',
 ]

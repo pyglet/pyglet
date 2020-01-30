@@ -60,7 +60,7 @@ window = pyglet.window.Window(fullscreen=True)
 # can change this to a more reasonable value such as 800x600 here.
 target_resolution = 320, 200
 
-class FixedResolutionViewport(object):
+class FixedResolutionViewport:
     def __init__(self, window, width, height, filtered=False):
         self.window = window
         self.width = width

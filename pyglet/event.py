@@ -151,7 +151,9 @@ the particular class documentation.
         dispatcher.push_handlers(my_handler_instance)
 
 """
+
 import inspect
+
 from functools import partial
 from weakref import WeakMethod
 

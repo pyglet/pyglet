@@ -32,16 +32,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for Xxf86vm
+"""Wrapper for Xxf86vm
 
 Generated with:
 tools/genwrappers.py xf86vmode
 
 Do not modify this file.
-'''
+"""
 
-__docformat__ =  'restructuredtext'
-__version__ = '$Id$'
 
 import ctypes
 from ctypes import *

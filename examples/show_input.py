@@ -24,7 +24,7 @@ class LineGroup(pyglet.graphics.OrderedGroup):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
 
-class Box(object):
+class Box:
     def __init__(self, batch, group=None,
                  stroke_color=(255, 255, 255, 255),
                  fill_color=(200, 200, 200, 255)):
@@ -56,7 +56,7 @@ class Box(object):
         self.stroke_vertices.delete()
 
 
-class DevicePanel(object):
+class DevicePanel:
     BORDER_MARGIN = 5
     CONTENT_MARGIN = 8
 
@@ -192,7 +192,7 @@ class DevicePanel(object):
         self.is_open = False
 
 
-class ControlWidget(object):
+class ControlWidget:
     BORDER_MARGIN = 2
     CONTENT_MARGIN = 4
 
@@ -317,7 +317,7 @@ class ButtonWidget(ControlWidget):
             changed_widgets.add(self)
 
 
-class NoControlsWidget(object):
+class NoControlsWidget:
     CONTENT_MARGIN = 4
 
     def __init__(self, batch, group):

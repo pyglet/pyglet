@@ -122,6 +122,7 @@ above, "Working with multiple screens")::
         win = window.Window(config=configs[0])
 
 """
+
 import sys
 
 import pyglet

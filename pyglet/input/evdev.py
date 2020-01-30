@@ -32,17 +32,18 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 import os
 import errno
 import ctypes
 
 import pyglet
+
 from pyglet.app.xlib import XlibSelectDevice
 from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button, Joystick, GameController
 from .base import DeviceOpenException
 from .evdev_constants import *
 from .gamecontroller import is_game_controller
-
 
 c = pyglet.lib.load_library('c')
 
@@ -51,19 +52,20 @@ _IOC_TYPEBITS = 8
 _IOC_SIZEBITS = 14
 _IOC_DIRBITS = 2
 
-_IOC_NRMASK = ((1 << _IOC_NRBITS)-1)
-_IOC_TYPEMASK = ((1 << _IOC_TYPEBITS)-1)
-_IOC_SIZEMASK = ((1 << _IOC_SIZEBITS)-1)
-_IOC_DIRMASK = ((1 << _IOC_DIRBITS)-1)
+_IOC_NRMASK = ((1 << _IOC_NRBITS) - 1)
+_IOC_TYPEMASK = ((1 << _IOC_TYPEBITS) - 1)
+_IOC_SIZEMASK = ((1 << _IOC_SIZEBITS) - 1)
+_IOC_DIRMASK = ((1 << _IOC_DIRBITS) - 1)
 
 _IOC_NRSHIFT = 0
-_IOC_TYPESHIFT = (_IOC_NRSHIFT+_IOC_NRBITS)
-_IOC_SIZESHIFT = (_IOC_TYPESHIFT+_IOC_TYPEBITS)
-_IOC_DIRSHIFT = (_IOC_SIZESHIFT+_IOC_SIZEBITS)
+_IOC_TYPESHIFT = (_IOC_NRSHIFT + _IOC_NRBITS)
+_IOC_SIZESHIFT = (_IOC_TYPESHIFT + _IOC_TYPEBITS)
+_IOC_DIRSHIFT = (_IOC_SIZESHIFT + _IOC_SIZEBITS)
 
 _IOC_NONE = 0
 _IOC_WRITE = 1
 _IOC_READ = 2
+
 
 def _IOC(dir, type, nr, size):
     return ((dir << _IOC_DIRSHIFT) |
@@ -71,15 +73,19 @@ def _IOC(dir, type, nr, size):
             (nr << _IOC_NRSHIFT) |
             (size << _IOC_SIZESHIFT))
 
+
 def _IOR(type, nr, struct):
     request = _IOC(_IOC_READ, ord(type), nr, ctypes.sizeof(struct))
+
     def f(fileno):
         buffer = struct()
         if c.ioctl(fileno, request, ctypes.byref(buffer)) < 0:
             err = ctypes.c_int.in_dll(c, 'errno').value
             raise OSError(err, errno.errorcode[err])
         return buffer
+
     return f
+
 
 def _IOR_len(type, nr):
     def f(fileno, buffer):
@@ -88,22 +94,29 @@ def _IOR_len(type, nr):
             err = ctypes.c_int.in_dll(c, 'errno').value
             raise OSError(err, errno.errorcode[err])
         return buffer
+
     return f
+
 
 def _IOR_str(type, nr):
     g = _IOR_len(type, nr)
+
     def f(fileno, len=256):
         return g(fileno, ctypes.create_string_buffer(len)).value
+
     return f
+
 
 time_t = ctypes.c_long
 suseconds_t = ctypes.c_long
+
 
 class timeval(ctypes.Structure):
     _fields_ = (
         ('tv_sec', time_t),
         ('tv_usec', suseconds_t)
     )
+
 
 class input_event(ctypes.Structure):
     _fields_ = (
@@ -113,6 +126,7 @@ class input_event(ctypes.Structure):
         ('value', ctypes.c_int32)
     )
 
+
 class input_id(ctypes.Structure):
     _fields_ = (
         ('bustype', ctypes.c_uint16),
@@ -120,6 +134,7 @@ class input_id(ctypes.Structure):
         ('product', ctypes.c_uint16),
         ('version', ctypes.c_uint16),
     )
+
 
 class input_absinfo(ctypes.Structure):
     _fields_ = (
@@ -130,16 +145,22 @@ class input_absinfo(ctypes.Structure):
         ('flat', ctypes.c_int32),
     )
 
+
 EVIOCGVERSION = _IOR('E', 0x01, ctypes.c_int)
 EVIOCGID = _IOR('E', 0x02, input_id)
 EVIOCGNAME = _IOR_str('E', 0x06)
 EVIOCGPHYS = _IOR_str('E', 0x07)
 EVIOCGUNIQ = _IOR_str('E', 0x08)
+
+
 def EVIOCGBIT(fileno, ev, buffer):
     return _IOR_len('E', 0x20 + ev)(fileno, buffer)
+
+
 def EVIOCGABS(fileno, abs):
     buffer = input_absinfo()
     return _IOR_len('E', 0x40 + abs)(fileno, buffer)
+
 
 def get_set_bits(bytes):
     bits = set()
@@ -151,6 +172,7 @@ def get_set_bits(bytes):
             byte >>= 1
         j += 8
     return bits
+
 
 _abs_names = {
     ABS_X: AbsoluteAxis.X,
@@ -197,7 +219,7 @@ def _create_control(fileno, event_type, event_code):
         name = None
         control = Button(name, raw_name)
     else:
-        value = min = max = 0 # TODO
+        value = minimum = maximum = 0  # TODO
         return None
     control._event_type = event_type
     control._event_code = event_code
@@ -216,7 +238,7 @@ event_types = {
 
 class EvdevDevice(XlibSelectDevice, Device):
     _fileno = None
-        
+
     def __init__(self, display, filename):
         self._filename = filename
 
@@ -237,7 +259,7 @@ class EvdevDevice(XlibSelectDevice, Device):
                 name = name.decode('latin-1')
             except UnicodeDecodeError:
                 pass
-            
+
         try:
             self.phys = EVIOCGPHYS(fileno)
         except OSError:
@@ -262,7 +284,7 @@ class EvdevDevice(XlibSelectDevice, Device):
             for event_code in get_set_bits(event_codes_bits):
                 control = _create_control(fileno, event_type, event_code)
                 if control:
-                    self.control_map[(event_type, event_code)] = control 
+                    self.control_map[(event_type, event_code)] = control
                     self.controls.append(control)
 
         os.close(fileno)
@@ -345,7 +367,7 @@ def get_devices(display=None):
             try:
                 _devices[path] = EvdevDevice(display, path)
             except OSError:
-                pass 
+                pass
 
     return list(_devices.values())
 

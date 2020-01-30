@@ -63,6 +63,7 @@ default policy is to wait until all windows are closed)::
 
 .. versionadded:: 1.1
 """
+
 import sys
 import weakref
 

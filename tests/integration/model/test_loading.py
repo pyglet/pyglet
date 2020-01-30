@@ -1,12 +1,10 @@
+import io
 import os
-from io import StringIO, BytesIO
 
 import pytest
 import pyglet
 
 from pyglet.model import ModelDecodeException
-from ...annotations import require_python_version
-
 
 test_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
@@ -25,11 +23,10 @@ def test_load_from_disk():
     assert isinstance(model, pyglet.model.Model)
 
 
-@require_python_version((3, 4))
 def test_load_from_object_str():
     file_path = get_test_data_file('models', 'logo3d.obj')
     with open(file_path, 'r') as f:
-        file_obj = StringIO(f.read())
+        file_obj = io.StringIO(f.read())
     model = pyglet.model.load(file_path, file=file_obj)
     assert isinstance(model, pyglet.model.Model)
 
@@ -37,7 +34,7 @@ def test_load_from_object_str():
 def test_load_from_object_bytes():
     file_path = get_test_data_file('models', 'logo3d.obj')
     with open(file_path, 'rb') as f:
-        file_obj = BytesIO(f.read())
+        file_obj = io.BytesIO(f.read())
     model = pyglet.model.load(file_path, file=file_obj)
     assert isinstance(model, pyglet.model.Model)
 

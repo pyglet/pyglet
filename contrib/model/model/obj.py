@@ -4,7 +4,7 @@ import warnings
 from pyglet.gl import *
 from pyglet import image
 
-class Material(object):
+class Material:
     diffuse = [.8, .8, .8]
     ambient = [.2, .2, .2]
     specular = [0., 0., 0.]
@@ -33,7 +33,7 @@ class Material(object):
             (GLfloat * 4)(*(self.emission + [self.opacity])))
         glMaterialf(face, GL_SHININESS, self.shininess)
 
-class MaterialGroup(object):
+class MaterialGroup:
     def __init__(self, material):
         self.material = material
 
@@ -41,7 +41,7 @@ class MaterialGroup(object):
         self.vertices = []
         self.array = None
 
-class Mesh(object):
+class Mesh:
     def __init__(self, name):
         self.name = name
         self.groups = []

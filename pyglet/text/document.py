@@ -163,6 +163,7 @@ of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
+
 import re
 import sys
 

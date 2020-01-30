@@ -32,9 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
 """High-level sound and video player."""
 
+import threading
 from collections import deque
 
 import pyglet
@@ -43,11 +43,28 @@ from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source
 
-# import cProfile
-
 _debug = pyglet.options['debug_media']
 
-clock = pyglet.clock.get_default()
+
+class AudioClock(pyglet.clock.Clock):
+    """A dedicated background Clock for refilling audio buffers."""
+
+    def __init__(self, interval=0.1):
+        self._interval = interval
+        self._timer = threading.Timer(self._interval, self._tick_clock)
+        self._timer.daemon = True
+        self._timer.start()
+        super().__init__()
+
+    def _tick_clock(self):
+        self.tick()
+        timer = threading.Timer(self._interval, self._tick_clock)
+        timer.daemon = True
+        timer.start()
+        self._timer = timer
+
+
+clock = AudioClock()
 
 
 class MasterClock:

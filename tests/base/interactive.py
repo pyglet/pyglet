@@ -1,8 +1,9 @@
-import array
 import os
-import pytest
+import array
 import shutil
 import warnings
+
+import pytest
 
 import pyglet
 from pyglet.image import get_buffer_manager
@@ -19,7 +20,7 @@ session_screenshot_path = os.path.join(base_screenshot_path, 'session')
 del local_dir, test_dir
 
 
-class InteractiveFixture(object):
+class InteractiveFixture:
     """Fixture for interactive test cases. Provides interactive prompts and
     verifying screenshots.
     """

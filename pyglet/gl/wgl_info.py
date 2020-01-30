@@ -33,9 +33,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Cached information about version and extensions of current WGL
+"""Cached information about version and extensions of current WGL
 implementation.
-'''
+"""
+
 from ctypes import *
 import warnings
 
@@ -46,8 +47,10 @@ from pyglet.gl.wgl import *
 from pyglet.gl.wglext_arb import *
 from pyglet.compat import asstr
 
+
 class WGLInfoException(Exception):
     pass
+
 
 class WGLInfo:
     def get_extensions(self):
@@ -62,6 +65,7 @@ class WGLInfo:
 
     def have_extension(self, extension):
         return extension in self.get_extensions()
+
 
 _wgl_info = WGLInfo()
 

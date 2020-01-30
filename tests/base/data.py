@@ -1,13 +1,14 @@
 import os
 import pytest
-import unittest
+
+from .future_test import FutureTestCase
 
 local_dir = os.path.dirname(__file__)
 test_data_path = os.path.abspath(os.path.join(local_dir, '..', 'data'))
 del local_dir
 
 
-class PygletTestCase(unittest.TestCase):
+class PygletTestCase(FutureTestCase):
     """
     Base class for pyglet tests.
     Specifies helper methods for all tests.
@@ -21,7 +22,7 @@ class PygletTestCase(unittest.TestCase):
         return os.path.join(test_data_path, *file_parts)
 
 
-class TestDataFixture(object):
+class TestDataFixture:
     """Fixture for accessing test data."""
     def __init__(self):
         local_dir = os.path.dirname(__file__)

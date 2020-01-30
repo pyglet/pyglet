@@ -1,5 +1,4 @@
 import pytest
-from tests import mock
 import time
 import weakref
 

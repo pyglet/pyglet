@@ -31,7 +31,7 @@ class SmoothLineGroup(pyglet.graphics.Group):
         glPopAttrib()
 
 
-class Curve(object):
+class Curve:
     PATH_RE = re.compile(r'([MLHVCSQTAZ])([^MLHVCSQTAZ]+)', re.IGNORECASE)
     INT = r'([+-]?\d+)'
     FLOAT = r'(?:[\s,]*)([+-]?\d+(?:\.\d+)?)'
@@ -308,7 +308,7 @@ class Curve(object):
         raise NotImplementedError('not implemented')
 
 
-class SVG(object):
+class SVG:
     def __init__(self, filename, rect=None):
         self._rect = rect
         self.scale_x = None

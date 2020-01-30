@@ -32,13 +32,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for Xext
+"""Wrapper for Xext
 
 Generated with:
 tools/genwrappers.py xsync
 
 Do not modify this file.
-'''
+"""
+
 import ctypes
 from ctypes import *
 

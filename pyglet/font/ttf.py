@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 """
 Implementation of the Truetype file format.
 
@@ -42,10 +43,11 @@ References:
  * http://developer.apple.com/fonts/TTRefMan/RM06
  * http://www.microsoft.com/typography/otspec
 """
+
 import os
 import mmap
-import codecs
 import struct
+import codecs
 
 
 class TruetypeInfo:

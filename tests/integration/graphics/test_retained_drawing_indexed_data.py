@@ -1,6 +1,6 @@
-#!/usr/bin/env python
 """Tests vertex list drawing using indexed data.
 """
+
 import unittest
 
 import pyglet

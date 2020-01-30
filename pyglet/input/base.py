@@ -37,10 +37,9 @@
 
 .. versionadded:: 1.2
 """
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
 
 import sys
+
 from pyglet.event import EventDispatcher
 from .gamecontroller import get_mapping
 

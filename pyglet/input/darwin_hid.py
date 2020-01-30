@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
 
@@ -87,7 +88,7 @@ kHIDUsage_Csmr_VolumeIncrement = 0xE9
 kHIDUsage_Csmr_VolumeDecrement = 0xEA
 
 IOReturn = c_int  # IOReturn.h
-IOOptionBits = c_uint32   # IOTypes.h
+IOOptionBits = c_uint32  # IOTypes.h
 
 # IOHIDKeys.h
 IOHIDElementType = c_int
@@ -242,15 +243,15 @@ HIDDeviceValueCallback = CFUNCTYPE(None, c_void_p, c_int, c_void_p, c_void_p)
 
 # Lookup tables cache python objects for the devices and elements so that
 # we can avoid creating multiple wrapper objects for the same device.
-_device_lookup = {}     # IOHIDDeviceRef to python HIDDevice object
-_element_lookup = {}    # IOHIDElementRef to python HIDDeviceElement object
+_device_lookup = {}   # IOHIDDeviceRef to python HIDDevice object
+_element_lookup = {}  # IOHIDElementRef to python HIDDeviceElement object
 
 
 class HIDValue:
     def __init__(self, valueRef):
         # Check that this is a valid IOHIDValue.
-        assert(valueRef)
-        assert(cf.CFGetTypeID(valueRef) == iokit.IOHIDValueGetTypeID())
+        assert valueRef
+        assert cf.CFGetTypeID(valueRef) == iokit.IOHIDValueGetTypeID()
         self.valueRef = valueRef
         self.timestamp = iokit.IOHIDValueGetTimeStamp(valueRef)
         self.length = iokit.IOHIDValueGetLength(valueRef)
@@ -277,8 +278,8 @@ class HIDDevice:
 
     def __init__(self, deviceRef):
         # Check that we've got a valid IOHIDDevice.
-        assert(deviceRef)
-        assert(cf.CFGetTypeID(deviceRef) == iokit.IOHIDDeviceGetTypeID())
+        assert deviceRef
+        assert cf.CFGetTypeID(deviceRef) == iokit.IOHIDDeviceGetTypeID()
         _device_lookup[deviceRef.value] = self
         self.deviceRef = deviceRef
         # Set attributes from device properties.
@@ -294,12 +295,12 @@ class HIDDevice:
         self.primaryUsage = self.get_property("PrimaryUsage")
         self.primaryUsagePage = self.get_property("PrimaryUsagePage")
         # Populate self.elements with our device elements.
-        self.get_elements()
+        self.elements = self._get_elements()
         # Set up callback functions.
         self.value_observers = set()
         self.removal_observers = set()
-        self.register_removal_callback()
-        self.register_input_value_callback()
+        self.removal_callback = self._register_removal_callback()
+        self.value_callback = self._register_input_value_callback()
 
     def dump_info(self):
         for x in ('manufacturer', 'product', 'transport', 'vendorID', 'vendorIDSource', 'productID',
@@ -320,8 +321,10 @@ class HIDDevice:
         return cftype_to_value(cfvalue)
 
     def open(self, exclusive_mode=False):
-        if exclusive_mode: options = kIOHIDOptionsTypeSeizeDevice
-        else: options = kIOHIDOptionsTypeNone
+        if exclusive_mode:
+            options = kIOHIDOptionsTypeSeizeDevice
+        else:
+            options = kIOHIDOptionsTypeNone
         return bool(iokit.IOHIDDeviceOpen(self.deviceRef, options))
 
     def close(self):
@@ -339,25 +342,43 @@ class HIDDevice:
             c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
-    def get_elements(self):
+    def _get_elements(self):
         cfarray = c_void_p(iokit.IOHIDDeviceCopyMatchingElements(self.deviceRef, None, 0))
-        self.elements = cfarray_to_list(cfarray)
+        if not cfarray:
+            # requires "Security & Privacy / Input Monitoring", see #95
+            return []
+        elements = cfarray_to_list(cfarray)
         cf.CFRelease(cfarray)
+        return elements
 
     # Page and usage IDs are from the HID usage tables located at
     # http://www.usb.org/developers/devclass_docs/Hut1_12.pdf
     def conforms_to(self, page, usage):
         return bool(iokit.IOHIDDeviceConformsTo(self.deviceRef, page, usage))
-    def is_pointer(self):    return self.conforms_to(0x01, 0x01)
-    def is_mouse(self):      return self.conforms_to(0x01, 0x02)
-    def is_joystick(self):   return self.conforms_to(0x01, 0x04)
-    def is_gamepad(self):    return self.conforms_to(0x01, 0x05)
-    def is_keyboard(self):   return self.conforms_to(0x01, 0x06)
-    def is_keypad(self):     return self.conforms_to(0x01, 0x07)
-    def is_multi_axis(self): return self.conforms_to(0x01, 0x08)
+
+    def is_pointer(self):
+        return self.conforms_to(0x01, 0x01)
+
+    def is_mouse(self):
+        return self.conforms_to(0x01, 0x02)
+
+    def is_joystick(self):
+        return self.conforms_to(0x01, 0x04)
+
+    def is_gamepad(self):
+        return self.conforms_to(0x01, 0x05)
+
+    def is_keyboard(self):
+        return self.conforms_to(0x01, 0x06)
+
+    def is_keypad(self):
+        return self.conforms_to(0x01, 0x07)
+
+    def is_multi_axis(self):
+        return self.conforms_to(0x01, 0x08)
 
     def py_removal_callback(self, context, result, sender):
-        self = _device_lookup[sender] # avoid wonky python context issues
+        self = _device_lookup[sender]  # avoid wonky python context issues
         # Dispatch removal message to all observers.
         for x in self.removal_observers:
             if hasattr(x, 'device_removed'):
@@ -369,12 +390,10 @@ class HIDDevice:
             if value in self.elements:
                 del _element_lookup[key]
 
-    def register_removal_callback(self):
-        self.removal_callback = HIDDeviceCallback(self.py_removal_callback)
-        iokit.IOHIDDeviceRegisterRemovalCallback(
-            self.deviceRef,
-            self.removal_callback,
-            None)
+    def _register_removal_callback(self):
+        removal_callback = HIDDeviceCallback(self.py_removal_callback)
+        iokit.IOHIDDeviceRegisterRemovalCallback(self.deviceRef, removal_callback, None)
+        return removal_callback
 
     def add_removal_observer(self, observer):
         self.removal_observers.add(observer)
@@ -386,12 +405,10 @@ class HIDDevice:
             if hasattr(x, 'device_value_changed'):
                 x.device_value_changed(self, v)
 
-    def register_input_value_callback(self):
-        self.value_callback = HIDDeviceValueCallback(self.py_value_callback)
-        iokit.IOHIDDeviceRegisterInputValueCallback(
-            self.deviceRef,
-            self.value_callback,
-            None)
+    def _register_input_value_callback(self):
+        value_callback = HIDDeviceValueCallback(self.py_value_callback)
+        iokit.IOHIDDeviceRegisterInputValueCallback(self.deviceRef, value_callback, None)
+        return value_callback
 
     def add_value_observer(self, observer):
         self.value_observers.add(observer)
@@ -458,17 +475,21 @@ class HIDManager:
         assert cf.CFGetTypeID(self.managerRef) == iokit.IOHIDManagerGetTypeID()
         self.schedule_with_run_loop()
         self.matching_observers = set()
-        self.register_matching_callback()
-        self.get_devices()
+        self.matching_callback = self._register_matching_callback()
+        self.devices = self._get_devices()
 
-    def get_devices(self):
-        # Tell manager that we are willing to match *any* device.
-        # (Alternatively, we could restrict by device usage, or usage page.)
-        iokit.IOHIDManagerSetDeviceMatching(self.managerRef, None)
-        # Copy the device set and convert it to python.
-        cfset = c_void_p(iokit.IOHIDManagerCopyDevices(self.managerRef))
-        self.devices = cfset_to_set(cfset)
-        cf.CFRelease(cfset)
+    def _get_devices(self):
+        try:
+            # Tell manager that we are willing to match *any* device.
+            # (Alternatively, we could restrict by device usage, or usage page.)
+            iokit.IOHIDManagerSetDeviceMatching(self.managerRef, None)
+            # Copy the device set and convert it to python.
+            cfset = c_void_p(iokit.IOHIDManagerCopyDevices(self.managerRef))
+            devices = cfset_to_set(cfset)
+            cf.CFRelease(cfset)
+        except:
+            return set()
+        return devices
 
     def open(self):
         iokit.IOHIDManagerOpen(self.managerRef, kIOHIDOptionsTypeNone)
@@ -488,7 +509,7 @@ class HIDManager:
             c_void_p(cf.CFRunLoopGetCurrent()),
             kCFRunLoopDefaultMode)
 
-    def py_matching_callback(self, context, result, sender, device):
+    def _py_matching_callback(self, context, result, sender, device):
         d = HIDDevice.get_device(c_void_p(device))
         if d not in self.devices:
             self.devices.add(d)
@@ -496,12 +517,10 @@ class HIDManager:
                 if hasattr(x, 'device_discovered'):
                     x.device_discovered(d)
 
-    def register_matching_callback(self):
-        self.matching_callback = HIDManagerCallback(self.py_matching_callback)
-        iokit.IOHIDManagerRegisterDeviceMatchingCallback(
-            self.managerRef,
-            self.matching_callback,
-            None)
+    def _register_matching_callback(self):
+        matching_callback = HIDManagerCallback(self._py_matching_callback)
+        iokit.IOHIDManagerRegisterDeviceMatchingCallback(self.managerRef, matching_callback, None)
+        return matching_callback
 
 
 ######################################################################
@@ -509,10 +528,10 @@ class HIDManager:
 # to the list of known types used by cftype_to_value.
 known_cftypes[iokit.IOHIDDeviceGetTypeID()] = HIDDevice.get_device
 known_cftypes[iokit.IOHIDElementGetTypeID()] = HIDDeviceElement.get_element
-
-
 ######################################################################
+
 # Pyglet interface to HID
+
 
 _axis_names = {
     (0x01, 0x30): 'x',
@@ -650,6 +669,7 @@ class PygletDevice(Device):
                 if hid_value:
                     control.value = hid_value.intvalue
 
+
 ######################################################################
 
 
@@ -658,7 +678,6 @@ _manager = HIDManager()
 
 def get_devices(display=None):
     return [PygletDevice(display, device, _manager) for device in _manager.devices]
-
 
 def get_joysticks(display=None):
     return [Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices

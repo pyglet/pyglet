@@ -35,6 +35,7 @@
 
 """Base class for structured (hierarchical) document formats.
 """
+
 import re
 
 import pyglet
@@ -149,7 +150,6 @@ class UnorderedListBuilder(ListBuilder):
 
         """
         self.mark = mark
-
 
     def get_mark(self, value):
         return self.mark

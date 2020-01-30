@@ -49,6 +49,7 @@ Modules must also implement the two functions::
         return []
 
 """
+
 import os.path
 from pyglet import compat_platform
 

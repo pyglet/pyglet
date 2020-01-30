@@ -35,6 +35,7 @@
 
 """Decoder for RIFF Wave files, using the standard library wave module.
 """
+
 import wave
 
 from ..exceptions import MediaDecodeException

@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 """Provides keyboard and mouse editing procedures for text layout.
 
 Example usage::
@@ -56,7 +57,7 @@ from pyglet.window import key
 
 
 class Caret:
-    """Visible text insertion marker for 
+    """Visible text insertion marker for
     `pyglet.text.layout.IncrementalTextLayout`.
 
     The caret is drawn as a single vertical bar at the document `position` 

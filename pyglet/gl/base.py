@@ -32,7 +32,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from pyglet import gl
+
+from pyglet import gl, compat_platform
 from pyglet.gl import gl_info
 from pyglet.gl import glu_info
 
@@ -148,7 +149,7 @@ class Config:
     def match(self, canvas):
         """Return a list of matching complete configs for the given canvas.
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
 
         :Parameters:
             `canvas` : `Canvas`
@@ -199,7 +200,7 @@ class CanvasConfig(Config):
 
     Use `Config.match` to obtain an instance of this class.
 
-    :since: pyglet 1.2
+    .. versionadded:: 1.2
 
     :Ivariables:
         `canvas` : `Canvas`
@@ -335,6 +336,10 @@ class Context:
             gl.current_context = None
             gl_info.remove_active_context()
 
+            # Switch back to shadow context.
+            if gl._shadow_window is not None:
+                gl._shadow_window.switch_to()
+
     def delete_texture(self, texture_id):
         """Safely delete a texture belonging to this context.
 
@@ -375,7 +380,7 @@ class Context:
     def get_info(self):
         """Get the OpenGL information for this context.
 
-        :since: pyglet 1.2
+        .. versionadded:: 1.2
 
         :rtype: `GLInfo`
         """

@@ -68,8 +68,9 @@ the return value.
 Don't forget to manually manage memory... call Release() when you're done with
 an interface.
 """
-import ctypes
+
 import sys
+import ctypes
 
 from pyglet.debug import debug_print
 
@@ -170,9 +171,9 @@ class InterfaceMetaclass(type(ctypes.POINTER(COMInterface))):
 
 # pyglet.compat.with_metaclass does not work here, as the base class is from _ctypes.lib
 # See https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef
-Interface = InterfaceMetaclass(str('Interface'), (ctypes.POINTER(COMInterface),), {
-    '__doc__': 'Base COM interface pointer.',
-})
+Interface = InterfaceMetaclass(str('Interface'),
+                               (ctypes.POINTER(COMInterface),),
+                               {'__doc__': 'Base COM interface pointer.'})
 
 
 class IUnknown(Interface):

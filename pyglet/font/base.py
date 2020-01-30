@@ -39,6 +39,7 @@ These classes should not be constructed directly.  Instead, use the functions
 in `pyglet.font` to obtain platform-specific instances.  You can use these
 classes as a documented interface to the concrete classes.
 """
+
 import unicodedata
 
 from pyglet.gl import *

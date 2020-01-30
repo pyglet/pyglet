@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 from .base import PlatformEventLoop
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants

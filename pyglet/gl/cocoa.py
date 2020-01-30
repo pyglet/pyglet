@@ -189,7 +189,7 @@ class CocoaConfig(Config):
             # check for opengl profile
             # This requires OS-X Lion (Darwin 11) or higher
             version = (
-                getattr(self, 'major_version', None),
+                getattr(self, 'major_version', None) or 2,
                 getattr(self, 'minor_version', None)
                 )
             # tell os-x we want to request a profile

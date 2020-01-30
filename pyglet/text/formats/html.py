@@ -49,10 +49,10 @@ oddly if edited.
 No CSS styling is supported.
 """
 
+import re
+
 from html.parser import HTMLParser
 from html import entities
-
-import re
 
 import pyglet
 from pyglet.text.formats import structured
@@ -60,6 +60,7 @@ from pyglet.text.formats import structured
 
 def _hex_color(val):
     return [(val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff, 255]
+
 
 _color_names = {
     'black':    _hex_color(0x000000),
@@ -80,6 +81,7 @@ _color_names = {
     'aqua':     _hex_color(0x00ffff),
 }
 
+
 def _parse_color(value):
     if value.startswith('#'):
         return _hex_color(int(value[1:], 16))
@@ -89,20 +91,20 @@ def _parse_color(value):
         except KeyError:
             raise ValueError()
 
+
 _whitespace_re = re.compile(u'[\u0020\u0009\u000c\u200b\r\n]+', re.DOTALL)
 
 _metadata_elements = ['head', 'title']
 
-_block_elements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-                   'ul', 'ol', 'dir', 'menu', 
-                   'pre', 'dl', 'div', 'center', 
+_block_elements = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                   'ul', 'ol', 'dir', 'menu',
+                   'pre', 'dl', 'div', 'center',
                    'noscript', 'noframes', 'blockquote', 'form',
                    'isindex', 'hr', 'table', 'fieldset', 'address',
-                    # Incorrect, but we treat list items as blocks:
+                   # Incorrect, but we treat list items as blocks:
                    'li', 'dd', 'dt', ]
-                  
 
-_block_containers = ['_top_block', 
+_block_containers = ['_top_block',
                      'body', 'div', 'center', 'object', 'applet',
                      'blockquote', 'ins', 'del', 'dd', 'li', 'form',
                      'fieldset', 'button', 'th', 'td', 'iframe', 'noscript',
@@ -112,8 +114,8 @@ _block_containers = ['_top_block',
 
 
 class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
-    '''Decoder for HTML documents.
-    '''
+    """Decoder for HTML documents.
+    """
     #: Default style attributes for unstyled text in the HTML document.
     #:
     #: :type: dict
@@ -207,7 +209,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
             style['font_name'] = 'Courier New'
         elif element == 'u':
             color = self.current_style.get('color')
-            if color is None: 
+            if color is None:
                 color = [0, 0, 0, 255]
             style['underline'] = color
         elif element == 'font':
@@ -351,7 +353,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
     def handle_entityref(self, name):
         if name in entities.name2codepoint:
             self.handle_data(chr(entities.name2codepoint[name]))
-    
+
     def handle_charref(self, name):
         name = name.lower()
         try:

@@ -32,13 +32,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+# Note: The display mode API used here is Mac OS 10.6 only.
+
 from ctypes import *
 
-from pyglet import app
 from .base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.darwin.cocoapy import CGDirectDisplayID, quartz, cf
 from pyglet.libs.darwin.cocoapy import cfstring_to_string, cfarray_to_list
+
 
 class CocoaDisplay(Display):
 
@@ -92,7 +94,7 @@ class CocoaScreen(Screen):
 
     def get_modes(self):
         cgmodes = c_void_p(quartz.CGDisplayCopyAllDisplayModes(self._cg_display_id, None))
-        modes = [ CocoaScreenMode(self, cgmode) for cgmode in cfarray_to_list(cgmodes) ]
+        modes = [CocoaScreenMode(self, cgmode) for cgmode in cfarray_to_list(cgmodes)]
         cf.CFRelease(cgmodes)
         return modes
 

@@ -32,11 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 import ctypes
 
 import pyglet
 
-__all__ = ['link_GL', 'link_GLU', 'link_AGL', 'link_GLX', 'link_WGL']
+__all__ = ['link_GL', 'link_GLU', 'link_AGL', 'link_GLX', 'link_WGL',
+           'GLException', 'missing_function', 'decorate_function']
 
 _debug_gl = pyglet.options['debug_gl']
 _debug_gl_trace = pyglet.options['debug_gl_trace']

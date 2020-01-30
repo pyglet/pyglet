@@ -33,13 +33,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Plain text decoder.
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
+"""Plain text decoder.
+"""
 
 import pyglet
+
 
 class PlainTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):

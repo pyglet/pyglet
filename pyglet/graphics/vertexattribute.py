@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Access byte arrays as arrays of vertex attributes.
 
@@ -116,12 +115,9 @@ Some examples follow:
     3-float texture coordinate
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import warnings
-import ctypes
 import re
+import ctypes
+import warnings
 
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer

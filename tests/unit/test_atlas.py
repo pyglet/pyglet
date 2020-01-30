@@ -1,13 +1,11 @@
-#!/usr/bin/python
-# $Id:$
-
 import unittest
 
 from pyglet.image import atlas
 
 __noninteractive = True
 
-class Rect(object):
+
+class Rect:
     def __init__(self, x1, y1, x2, y2):
         self.x1 = x1
         self.y1 = y1
@@ -22,7 +20,8 @@ class Rect(object):
         return self.x2 > other.x1 and self.x1 < other.x2 and \
                self.y2 > other.y1 and self.y1 < other.y2
 
-class AllocatorEnvironment(object):
+
+class AllocatorEnvironment:
     def __init__(self, test_case, width, height):
         self.test_case = test_case
         self.rectes = []
@@ -45,6 +44,7 @@ class AllocatorEnvironment(object):
     def add_fail(self, width, height):
         self.test_case.assertRaises(atlas.AllocatorException,
                                     self.allocator.alloc, width, height)
+
 
 class TestPack(unittest.TestCase):
     def test_over_x(self):
@@ -87,6 +87,7 @@ class TestPack(unittest.TestCase):
         env.add(4, 2)
         env.add(1, 2)
         env.add_fail(1, 1)
-   
+
+
 if __name__ == '__main__':
     unittest.main()

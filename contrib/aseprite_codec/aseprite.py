@@ -1,6 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2008-2020 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -89,7 +90,7 @@ def _chunked_iter(seq, size):
 #   Class for Aseprite compliant header
 #########################################
 
-class AsepriteHeader(object):
+class AsepriteHeader:
     def __init__(self, file):
         self.file_size = _unpack(DWORD, file)
         self.magic_number = hex(_unpack(WORD, file))
@@ -111,7 +112,7 @@ class AsepriteHeader(object):
 #   Class for Aseprite animation frames
 #########################################
 
-class Frame(object):
+class Frame:
     def __init__(self, num_chunks, duration, header, data):
         self.num_chunks = num_chunks
         self.duration = duration
@@ -230,7 +231,7 @@ class Frame(object):
 #   Aseprite Chunk type definitions
 #########################################
 
-class Chunk(object):
+class Chunk:
     def __init__(self, size, chunk_type):
         self.size = size
         self.chunk_type = chunk_type

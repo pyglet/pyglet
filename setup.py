@@ -43,6 +43,10 @@ setup_info = dict(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
@@ -51,9 +55,7 @@ setup_info = dict(
     packages=create_package_list('pyglet'),
 
     # Add _ prefix to the names of temporary build dirs
-    options={
-        'build': {'build_base': '_build'},
-    },
+    options={'build': {'build_base': '_build'}, },
     zip_safe=True,
 )
 

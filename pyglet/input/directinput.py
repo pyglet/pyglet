@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 import ctypes
 
 import pyglet
@@ -106,8 +107,7 @@ class DirectInputDevice(base.Device):
         swapped_guid = (self.id_product_guid[6:8] + self.id_product_guid[4:6] +
                         self.id_product_guid[2:4] + self.id_product_guid[0:2])
         # A string to be formatted into the final guid:
-        slug = "{0}000000000000504944564944"
-        return slug.format(swapped_guid)
+        return "{0}000000000000504944564944".format(swapped_guid)
 
     def _init_controls(self):
         self.controls = []

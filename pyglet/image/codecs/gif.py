@@ -37,6 +37,7 @@
 
 http://www.w3.org/Graphics/GIF/spec-gif89a.txt
 """
+
 import struct
 
 from pyglet.image.codecs import ImageDecodeException
@@ -62,12 +63,12 @@ LABEL_IMAGE_DESCRIPTOR = 0x2c
 LABEL_TRAILER = 0x3b
 
 
-def unpack(format, file):
-    size = struct.calcsize(format)
+def unpack(fmt, file):
+    size = struct.calcsize(fmt)
     data = file.read(size)
     if len(data) < size:
         raise ImageDecodeException('Unexpected EOF')
-    return struct.unpack(format, data)
+    return struct.unpack(fmt, data)
 
 
 def read_byte(file):

@@ -128,15 +128,7 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
-
-from __future__ import division
-from builtins import bytes
-from builtins import zip
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
-from io import open
+from io import open, BytesIO
 import re
 import weakref
 

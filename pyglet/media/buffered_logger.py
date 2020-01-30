@@ -38,8 +38,9 @@ Responsabilities
     Handles accumulation of debug events while playing media_player and  saves
     when sample's play ends.
 """
-import pickle
+
 import time
+import pickle
 
 
 class BufferedLogger:

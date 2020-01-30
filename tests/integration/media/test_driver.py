@@ -1,6 +1,6 @@
 """Test a specific audio driver for platform. Only checks the use of the
 interface. Any playback is silent."""
-from tests import mock
+
 import pytest
 import time
 

@@ -32,16 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for Xinerama
+"""Wrapper for Xinerama
 
 Generated with:
 tools/genwrappers.py xinerama
 
 Do not modify this file.
-'''
-
-__docformat__ =  'restructuredtext'
-__version__ = '$Id$'
+"""
 
 import ctypes
 from ctypes import *

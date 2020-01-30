@@ -77,7 +77,7 @@ class Material(graphics.Group):
         return hash((self.texture.id, self.texture.target))
 
 
-class MaterialGroup(object):
+class MaterialGroup:
     def __init__(self, material):
         self.material = material
 
@@ -88,13 +88,13 @@ class MaterialGroup(object):
         self.array = None
 
 
-class Mesh(object):
+class Mesh:
     def __init__(self, name):
         self.name = name
         self.groups = []
 
 
-class OBJ(object):
+class OBJ:
     @staticmethod
     def from_resource(filename):
         '''Load an object using the resource framework'''

@@ -80,6 +80,7 @@ handlers.
 .. versionadded:: 1.2
 
 """
+
 import sys
 
 from .base import Device, Control, RelativeAxis, AbsoluteAxis

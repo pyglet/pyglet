@@ -32,8 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from ctypes import *
+
 import ctypes
+from ctypes import *
 
 from pyglet import app
 from pyglet.app.xlib import XlibSelectDevice
@@ -276,6 +277,7 @@ class XlibScreen(Screen):
         return 'XlibScreen(display=%r, x=%d, y=%d, ' \
                'width=%d, height=%d, xinerama=%d)' % \
                (self.display, self.x, self.y, self.width, self.height, self._xinerama)
+
 
 
 class XlibScreenMode(ScreenMode):

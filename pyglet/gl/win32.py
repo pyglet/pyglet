@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 from pyglet.canvas.win32 import Win32Canvas
 from .base import Config, CanvasConfig, Context
 
@@ -185,6 +186,7 @@ class Win32CanvasConfigARB(CanvasConfig):
         'accum_blue_size': wglext_arb.WGL_ACCUM_BLUE_BITS_ARB,
         'accum_alpha_size': wglext_arb.WGL_ACCUM_ALPHA_BITS_ARB,
     }
+
     def __init__(self, canvas, pf, config):
         super(Win32CanvasConfigARB, self).__init__(canvas, config)
         self._pf = pf

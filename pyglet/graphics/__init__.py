@@ -158,6 +158,7 @@ video drivers, and requires indexed vertex lists.
 
 .. versionadded:: 1.1
 """
+
 import ctypes
 
 import pyglet
@@ -349,6 +350,7 @@ class Batch:
 
     Call `VertexList.delete` to remove a vertex list from the batch.
     """
+
     def __init__(self):
         """Create a graphics batch."""
         # Mapping to find domain.  
@@ -569,8 +571,7 @@ class Batch:
                     for key, attribute in domain.attribute_names.items():
                         print(indent, '      ', end=' ')
                         try:
-                            region = attribute.get_region(attribute.buffer,
-                                                          start, size)
+                            region = attribute.get_region(attribute.buffer, start, size)
                             print(key, region.array[:])
                         except:
                             print(key, '(unmappable)')
@@ -676,6 +677,7 @@ class Group:
 
     def __repr__(self):
         return "{}(order={})".format(self.__class__.__name__, self.order)
+
 
 
 class TextureGroup(Group):

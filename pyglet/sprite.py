@@ -99,6 +99,7 @@ sprites within batches.
 
 .. versionadded:: 1.1
 """
+
 import sys
 
 from pyglet.gl import *

@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 from .base import Display, Screen, ScreenMode, Canvas
 
 from pyglet.libs.win32 import _kernel32, _user32, types, constants
@@ -42,6 +43,7 @@ from pyglet.libs.win32.types import *
 class Win32Display(Display):
     def get_screens(self):
         screens = []
+
         def enum_proc(hMonitor, hdcMonitor, lprcMonitor, dwData):
             r = lprcMonitor.contents
             width = r.right - r.left
@@ -49,6 +51,7 @@ class Win32Display(Display):
             screens.append(
                 Win32Screen(self, hMonitor, r.left, r.top, width, height))
             return True
+
         enum_proc_ptr = MONITORENUMPROC(enum_proc)
         _user32.EnumDisplayMonitors(None, None, enum_proc_ptr, 0)
         return screens
@@ -95,7 +98,7 @@ class Win32Screen(Screen):
         mode = DEVMODE()
         mode.dmSize = sizeof(DEVMODE)
         _user32.EnumDisplaySettingsW(self.get_device_name(),
-                                     ENUM_CURRENT_SETTINGS, 
+                                     ENUM_CURRENT_SETTINGS,
                                      byref(mode))
         return Win32ScreenMode(self, mode)
 
@@ -133,4 +136,3 @@ class Win32Canvas(Canvas):
         super(Win32Canvas, self).__init__(display)
         self.hwnd = hwnd
         self.hdc = hdc
-

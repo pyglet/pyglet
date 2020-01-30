@@ -110,7 +110,9 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 "wall-time", or to synchronise your clock to an audio or video stream instead
 of the system clock.
 """
+
 import time
+
 from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
 from collections import deque
@@ -180,6 +182,10 @@ class Clock:
         self._schedule_items = []
         self._schedule_interval_items = []
         self._current_interval_item = None
+
+    @staticmethod
+    def sleep(microseconds):
+        time.sleep(microseconds * 1e-6)
 
     def update_time(self):
         """Get the elapsed time since the last call to `update_time`.
@@ -323,10 +329,6 @@ class Clock:
         delta_t = self.update_time()
         self.call_scheduled_functions(delta_t)
         return delta_t
-
-    @staticmethod
-    def sleep(microseconds):
-        time.sleep(microseconds * 1e-6)
 
     def get_sleep_time(self, sleep_idle):
         """Get the time until the next item is scheduled.
@@ -636,9 +638,9 @@ def get_fps():
 
     The result is the sliding average of the last "n" updates,
     where "n" is some number designed to cover approximately 1
-    second. This is **not** the Window redraw rate. Platform
-    events, such as moving the mouse rapidly, will cause the
-    clock to refresh more often
+    second. This is the internal clock update rate, **not** the
+    Window redraw rate. Platform events, such as moving the
+    mouse rapidly, will cause the clock to refresh more often.
 
     :rtype: float
     :return: The measured updates per second.

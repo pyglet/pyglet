@@ -33,18 +33,23 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''Extensible attributed text format for representing pyglet formatted
+"""Extensible attributed text format for representing pyglet formatted
 documents.
-'''
+"""
+
 from functools import reduce
 import operator
 import parser
 import re
 import token
+import parser
+import operator
+
+from functools import reduce
 
 import pyglet
 
-_pattern = re.compile(r'''
+_pattern = re.compile(r"""
     (?P<escape_hex>\{\#x(?P<escape_hex_val>[0-9a-fA-F]+)\})
   | (?P<escape_dec>\{\#(?P<escape_dec_val>[0-9]+)\})
   | (?P<escape_lbrace>\{\{)
@@ -57,7 +62,8 @@ _pattern = re.compile(r'''
   | (?P<nl_soft>\n(?=\S))
   | (?P<nl_para>\n\n+)
   | (?P<text>[^\{\}\n]+)
-    ''', re.VERBOSE | re.DOTALL)
+    """, re.VERBOSE | re.DOTALL)
+
 
 class AttributedTextDecoder(pyglet.text.DocumentDecoder):
     def decode(self, text, location=None):
@@ -84,7 +90,7 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):
                 self.append('\n')
                 trailing_newline = True
             elif group == 'nl_para':
-                self.append(m.group('nl_para')[1:]) # ignore the first \n
+                self.append(m.group('nl_para')[1:])  # ignore the first \n
                 trailing_newline = True
             elif group == 'attr':
                 try:
@@ -100,8 +106,7 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):
                     if trailing_newline:
                         self.attributes[name[1:]] = val
                     else:
-                        self.doc.set_paragraph_style(self.length, self.length, 
-                                                     {name[1:]: val})
+                        self.doc.set_paragraph_style(self.length, self.length, {name[1:]: val})
                 else:
                     self.attributes[name] = val
             elif group == 'escape_dec':

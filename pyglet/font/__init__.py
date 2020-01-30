@@ -50,6 +50,7 @@ pyglet will automatically load any system-installed fonts.  You can add addition
 See the :mod:`pyglet.font.base` module for documentation on the base classes used
 by this package.
 """
+
 import os
 import sys
 import weakref

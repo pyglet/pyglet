@@ -33,6 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 """Drivers for playing back media."""
+
 import atexit
 
 import pyglet

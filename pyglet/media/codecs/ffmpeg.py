@@ -35,6 +35,7 @@
 
 """Use ffmpeg to decode audio and video media.
 """
+
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
                     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p,
                     c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union,
@@ -199,7 +200,7 @@ def ffmpeg_file_info(file):
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('date'), None, 0)
     if entry:
-        info.year = int(entry.contents.value)
+        info.year = asstr(entry.contents.value)
 
     entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('track'), None, 0)
     if entry:
@@ -448,7 +449,7 @@ class AudioPacket(_Packet):
 
 class FFmpegSource(StreamingSource):
     # Max increase/decrease of original sample size
-    _SAMPLE_CORRECTION_PERCENT_MAX = 10
+    SAMPLE_CORRECTION_PERCENT_MAX = 10
 
     def __init__(self, filename, file=None):
         self._packet = None

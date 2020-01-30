@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -33,9 +32,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id: $
 
-'''Fork a child process and inform it of mode changes to each screen.  The
+"""Fork a child process and inform it of mode changes to each screen.  The
 child waits until the parent process dies, and then connects to each X server 
 with a mode change and restores the mode.
 
@@ -45,7 +43,8 @@ the process is terminated uncleanly.
 
 The child process is communicated to via a pipe, and watches for parent
 death with a Linux extension signal handler.
-'''
+"""
+
 import ctypes
 import os
 import signal
@@ -54,6 +53,7 @@ import threading
 
 from pyglet.libs.x11 import xlib
 from pyglet.compat import asbytes
+
 try:
     from pyglet.libs.x11 import xf86vmode
 except:
@@ -63,6 +63,7 @@ except:
 _restore_mode_child_installed = False
 _restorable_screens = set()
 _mode_write_pipe = None
+
 
 # Mode packets tell the child process how to restore a given display and
 # screen.  Only one packet should be sent per display/screen (more would
@@ -75,6 +76,7 @@ _mode_write_pipe = None
 class ModePacket:
     format = '256siHHI'
     size = struct.calcsize(format)
+
     def __init__(self, display, screen, width, height, rate):
         self.display = display
         self.screen = screen
@@ -83,13 +85,11 @@ class ModePacket:
         self.rate = rate
 
     def encode(self):
-        return struct.pack(self.format, self.display, self.screen,
-                           self.width, self.height, self.rate)
+        return struct.pack(self.format, self.display, self.screen, self.width, self.height, self.rate)
 
     @classmethod
     def decode(cls, data):
-        display, screen, width, height, rate = \
-            struct.unpack(cls.format, data)
+        display, screen, width, height, rate = struct.unpack(cls.format, data)
         return cls(display.strip(asbytes('\0')), screen, width, height, rate)
 
     def __repr__(self):
@@ -100,12 +100,12 @@ class ModePacket:
     def set(self):
         display = xlib.XOpenDisplay(self.display)
         modes, n_modes = get_modes_array(display, self.screen)
-        mode = get_matching_mode(modes, n_modes, 
-                                 self.width, self.height, self.rate)
+        mode = get_matching_mode(modes, n_modes, self.width, self.height, self.rate)
         if mode is not None:
             xf86vmode.XF86VidModeSwitchToMode(display, self.screen, mode)
         free_modes_array(modes, n_modes)
         xlib.XCloseDisplay(display)
+
 
 def get_modes_array(display, screen):
     count = ctypes.c_int()
@@ -113,15 +113,17 @@ def get_modes_array(display, screen):
     xf86vmode.XF86VidModeGetAllModeLines(display, screen, count, modes)
     return modes, count.value
 
+
 def get_matching_mode(modes, n_modes, width, height, rate):
     # Copy modes out of list and free list
     for i in range(n_modes):
         mode = modes.contents[i]
-        if (mode.hdisplay == width and 
-            mode.vdisplay == height and 
-            mode.dotclock == rate):
+        if (mode.hdisplay == width and
+                mode.vdisplay == height and
+                mode.dotclock == rate):
             return mode
     return None
+
 
 def free_modes_array(modes, n_modes):
     for i in range(n_modes):
@@ -129,6 +131,7 @@ def free_modes_array(modes, n_modes):
         if mode.privsize:
             xlib.XFree(mode.private)
     xlib.XFree(modes)
+
 
 def _install_restore_mode_child():
     global _mode_write_pipe
@@ -155,8 +158,9 @@ def _install_restore_mode_child():
         # stops reading from the mode packet pipe and restores video modes on
         # all displays/screens it knows about.
         def _sighup(signum, frame):
-            parent_wait_lock.release();
-        parent_wait_lock = threading.Lock();
+            parent_wait_lock.release()
+
+        parent_wait_lock = threading.Lock()
         parent_wait_lock.acquire()
         signal.signal(signal.SIGHUP, _sighup)
 
@@ -173,18 +177,19 @@ def _install_restore_mode_child():
                     packets.append(packet)
                     buffer = buffer[ModePacket.size:]
             except OSError:
-                pass # Interrupted system call
+                pass  # Interrupted system call
 
         for packet in packets:
             packet.set()
         os._exit(0)
-        
+
     else:
         # Parent process.  Clean up pipe then continue running program as
         # normal.  Send mode packets through pipe as additional
         # displays/screens are mode switched.
         os.close(mode_read_pipe)
         _restore_mode_child_installed = True
+
 
 def set_initial_mode(mode):
     _install_restore_mode_child()
@@ -200,5 +205,3 @@ def set_initial_mode(mode):
 
     os.write(_mode_write_pipe, packet.encode())
     _restorable_screens.add((display, screen))
-
-

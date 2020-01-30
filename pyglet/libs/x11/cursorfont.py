@@ -33,12 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-'''
-'''
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 # /usr/include/X11/cursorfont.h
 
 XC_num_glyphs = 154

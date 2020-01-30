@@ -32,16 +32,18 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-'''Wrapper for X11
+"""Wrapper for X11
 
 Generated with:
 tools/genwrappers.py xlib
 
 Do not modify this file.
-'''
 
-__docformat__ =  'restructuredtext'
-__version__ = '$Id$'
+####### NOTICE! ########
+This file has been manually modified to fix
+a limitation of the current wrapping tools.
+
+"""
 
 import ctypes
 from ctypes import *
@@ -2959,7 +2961,7 @@ XFindOnExtensionList.argtypes = [POINTER(POINTER(XExtData)), c_int]
 # /usr/include/X11/Xlib.h:1770
 XEHeadOfExtensionList = _lib.XEHeadOfExtensionList
 XEHeadOfExtensionList.restype = POINTER(POINTER(XExtData))
-XEHeadOfExtensionList.argtypes = [XEDataObject]
+XEHeadOfExtensionList.argtypes = [POINTER(XEDataObject)]
 
 # /usr/include/X11/Xlib.h:1775
 XRootWindow = _lib.XRootWindow

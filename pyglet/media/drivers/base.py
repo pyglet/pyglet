@@ -32,9 +32,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from abc import ABCMeta, abstractmethod
+
 import math
 import weakref
+from abc import ABCMeta, abstractmethod
 
 from pyglet.compat import with_metaclass
 
@@ -64,11 +65,13 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         self.source = source
         self.player = weakref.proxy(player)
 
+        self.audio_clock = clock
+
         # Audio synchronization
         self.audio_diff_avg_count = 0
         self.audio_diff_cum = 0.0
         self.audio_diff_avg_coef = math.exp(math.log10(0.01) / self.AUDIO_DIFF_AVG_NB)
-        self.audio_diff_threshold = 0.1 # Experimental. ffplay computes it differently
+        self.audio_diff_threshold = 0.1  # Experimental. ffplay computes it differently
 
     @abstractmethod
     def play(self):
@@ -189,7 +192,7 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
 
     @property
     def source(self):
-        "Source to play from."
+        """Source to play from."""
         return self._source
 
     @source.setter

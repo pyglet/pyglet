@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 import ctypes
 from ctypes import *
 
@@ -49,6 +50,7 @@ wgl_lib = gl_lib
 
 if _debug_trace:
     from pyglet.lib import _TraceLibrary
+
     gl_lib = _TraceLibrary(gl_lib)
     glu_lib = _TraceLibrary(glu_lib)
     wgl_lib = _TraceLibrary(wgl_lib)
@@ -61,14 +63,16 @@ try:
 except AttributeError:
     _have_get_proc_address = False
 
-class_slots = ['name', 'requires', 'suggestions', 'ftype','func']
+class_slots = ['name', 'requires', 'suggestions', 'ftype', 'func']
+
 
 def makeWGLFunction(func):
     class WGLFunction:
         __slots__ = class_slots
         __call__ = func
-        
+
     return WGLFunction
+
 
 class WGLFunctionProxy:
     __slots__ = class_slots
@@ -95,8 +99,9 @@ class WGLFunctionProxy:
                 self.name, self.requires, self.suggestions)
 
         self.__class__ = makeWGLFunction(self.func)
-        
+
         return self.func(*args, **kwargs)
+
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
     try:
@@ -126,6 +131,7 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
 
         return missing_function(name, requires, suggestions)
 
+
 def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
     try:
         func = getattr(glu_lib, name)
@@ -153,5 +159,6 @@ def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
             pass
 
         return missing_function(name, requires, suggestions)
+
 
 link_WGL = link_GL

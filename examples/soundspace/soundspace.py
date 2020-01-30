@@ -76,7 +76,7 @@ def orientation_angle(orientation):
     return math.atan2(orientation[2], orientation[0])
 
 
-class Handle(object):
+class Handle:
     tip = ''
 
     def __init__(self, player):
@@ -589,7 +589,7 @@ class SoundSpaceWindow(pyglet.window.Window):
             self.tip.text = ''
 
 
-class PanView(object):
+class PanView:
     def __init__(self, window):
         self.win = window
 

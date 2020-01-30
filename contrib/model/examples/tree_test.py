@@ -28,7 +28,7 @@ def setup_scene():
     glMatrixMode(GL_MODELVIEW)
     glClearColor(1, 1, 1, 1)
 
-class Tree(object):
+class Tree:
     def __init__(self, n=2, r=False):
         self.tree = tree_list(n, r)
         self.x = self.y = 0

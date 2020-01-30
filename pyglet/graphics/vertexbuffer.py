@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
 
 """Byte abstractions of OpenGL Buffer Objects.
 
@@ -43,8 +42,9 @@ Buffers can optionally be created "mappable" (incorporating the
 method which provides the most efficient path for updating partial data within
 the buffer.
 """
-import ctypes
+
 import sys
+import ctypes
 
 import pyglet
 from pyglet.gl import *

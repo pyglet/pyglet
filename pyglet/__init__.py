@@ -37,6 +37,7 @@
 
 More information is available at http://www.pyglet.org
 """
+
 import os
 import sys
 

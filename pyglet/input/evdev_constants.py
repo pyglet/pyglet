@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
@@ -35,9 +34,6 @@
 # ----------------------------------------------------------------------------
 
 """Event constants from /usr/include/linux/input.h """
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
 
 
 EV_SYN = 0x00

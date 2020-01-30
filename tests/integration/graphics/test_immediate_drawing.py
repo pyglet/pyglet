@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Tests immediate drawing.
 """
 import unittest

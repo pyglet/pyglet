@@ -32,10 +32,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 """Software decoder for S3TC compressed texture (i.e., DDS).
 
 http://oss.sgi.com/projects/ogl-sample/registry/EXT/texture_compression_s3tc.txt
 """
+
 import re
 import ctypes
 
@@ -90,9 +92,9 @@ class PackedImageData(AbstractImage):
     texture = property(_get_texture)
 
     def get_texture(self, rectangle=False, force_rectangle=False):
-        '''The parameters 'rectangle' and 'force_rectangle' are ignored.
+        """The parameters 'rectangle' and 'force_rectangle' are ignored.
            See the documentation of the method 'AbstractImage.get_texture' for
-           a more detailed documentation of the method. '''
+           a more detailed documentation of the method. """
         return self._get_texture()
 
 
@@ -150,8 +152,7 @@ def decode_dxt1_rgb(data, width, height):
         advance_row = (image_offset + 4) % width == 0
         image_offset += width * 3 * advance_row + 4
 
-    return PackedImageData(width, height,
-                           GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
+    return PackedImageData(width, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, out)
 
 
 def decode_dxt1_rgba(data, width, height):
@@ -292,8 +293,8 @@ def decode_dxt5(data, width, height):
 
     # Read 16 bytes at a time
     image_offset = 0
-    for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5,
-         c0_lo, c0_hi, c1_lo, c1_hi,
+    for (alpha0, alpha1, ab0, ab1, ab2, ab3, ab4, ab5, 
+         c0_lo, c0_hi, c1_lo, c1_hi, 
          b0, b1, b2, b3) in split_16byte.findall(data):
         color0 = ord(c0_lo) | ord(c0_hi) << 8
         color1 = ord(c1_lo) | ord(c1_hi) << 8
@@ -301,7 +302,7 @@ def decode_dxt5(data, width, height):
         alpha1 = ord(alpha1)
         bits = ord(b0) | ord(b1) << 8 | ord(b2) << 16 | ord(b3) << 24
         abits = ord(ab0) | ord(ab1) << 8 | ord(ab2) << 16 | ord(ab3) << 24 | \
-                ord(ab4) << 32 | ord(ab5) << 40
+            ord(ab4) << 32 | ord(ab5) << 40
 
         r0 = color0 & 0x1f
         g0 = (color0 & 0x7e0) >> 5

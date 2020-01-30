@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 import weakref
 
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
@@ -43,7 +44,6 @@ from pyglet.debug import debug_print
 from . import lib_pulseaudio as pa
 from .interface import PulseAudioContext, PulseAudioContext, PulseAudioMainLoop, PulseAudioStream
 
-import pyglet
 
 _debug = debug_print('debug_media')
 

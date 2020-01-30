@@ -84,10 +84,11 @@ The default path is ``['.']``.  If you modify the path, you must call
 
 .. versionadded:: 1.1
 """
+
 import os
 import sys
-import weakref
 import zipfile
+import weakref
 
 from io import BytesIO
 

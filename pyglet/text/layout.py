@@ -152,6 +152,7 @@ document; they will be ignored by the built-in text classes.
 
 .. versionadded:: 1.1
 """
+
 import re
 import sys
 

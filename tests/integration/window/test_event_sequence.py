@@ -1,11 +1,11 @@
-import time
 import queue
 import unittest
+import time
 
 from pyglet import window
 
 
-class EventSequenceFixture(object):
+class EventSequenceFixture:
     def __init__(self, event_loop):
         self.event_loop = event_loop
         self.listen_events = []
@@ -38,7 +38,7 @@ class EventSequenceFixture(object):
             self.event_loop.interrupt_event_loop()
 
 
-class EventSequenceTest(object):
+class EventSequenceTest:
     """Base for testing event sequences on a window."""
     next_sequence = 0
     last_sequence = 0

@@ -5,7 +5,7 @@ import pytest
 import time
 
 
-class PerformanceTimer(object):
+class PerformanceTimer:
     def __init__(self, max_time):
         self.max_time = max_time
         self.start_time = None
@@ -17,7 +17,7 @@ class PerformanceTimer(object):
         assert time.time() - self.start_time < self.max_time
 
 
-class PerformanceFixture(object):
+class PerformanceFixture:
     timer = PerformanceTimer
 
 
