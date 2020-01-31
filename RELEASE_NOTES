@@ -4,6 +4,7 @@ Bugfix and Maintenance release
 Bugfixes
 --------
 - Removed global dubug function access in __del__ methods to prevent smooth shutdown.
+- Fix regression not allow SourceGroups to be queued on Player objects. (#140)
 
 Changes
 -------
