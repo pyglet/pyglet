@@ -40,7 +40,7 @@ from collections import deque
 import pyglet
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
-from pyglet.media.codecs.base import Source
+from pyglet.media.codecs.base import Source, SourceGroup
 
 _debug = pyglet.options['debug_media']
 
@@ -193,7 +193,7 @@ class Player(pyglet.event.EventDispatcher):
         Args:
             source (Source or Iterable[Source]): The source to queue.
         """
-        if isinstance(source, Source):
+        if isinstance(source, (Source, SourceGroup)):
             source = _one_item_playlist(source)
         else:
             try:
