@@ -73,11 +73,8 @@ class XlibConfig(Config):
         else:
             attrs.extend([glx.GLX_RGBA, True])
 
-        if len(attrs):
-            attrs.extend([0, 0])
-            attrib_list = (c_int * len(attrs))(*attrs)
-        else:
-            attrib_list = None
+        attrs.extend([0, 0])  # attrib_list must be null terminated
+        attrib_list = (c_int * len(attrs))(*attrs)
 
         if have_13:
             elements = c_int()
