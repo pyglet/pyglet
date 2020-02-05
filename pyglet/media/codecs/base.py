@@ -185,16 +185,10 @@ class AudioData:
         Returns:
             bytes: Data as a (byte)string.
         """
-        # PYTHON2 - remove old Python 2 type checks
         if self.data is None:
             return b''
 
-        if isinstance(self.data, bytes):
-            return self.data
-
-        buf = ctypes.create_string_buffer(self.length)
-        ctypes.memmove(buf, self.data, self.length)
-        return buf.raw
+        return memoryview(self.data).tobytes()[:self.length]
 
 
 class SourceInfo:

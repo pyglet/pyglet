@@ -622,15 +622,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         else:
             self._vsync = vsync
 
-        if caption is None:
-            caption = sys.argv[0]
-            # PYTHON2 - Remove this decode hack for unicode support:
-            if hasattr(caption, "decode"):
-                try:
-                    caption = caption.decode("utf8")
-                except UnicodeDecodeError:
-                    caption = "pyglet"
-        self._caption = caption
+        self._caption = caption or sys.argv[0]
 
         from pyglet import app
         app.windows.add(self)
