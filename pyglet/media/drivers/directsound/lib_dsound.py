@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import ctypes
-from pyglet.util import com
+from pyglet import com
 
 lib = ctypes.oledll.dsound
 
