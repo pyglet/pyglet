@@ -49,18 +49,15 @@ class AudioClock(pyglet.clock.Clock):
     """A dedicated background Clock for refilling audio buffers."""
 
     def __init__(self, interval=0.1):
-        self._interval = interval
-        self._timer = threading.Timer(self._interval, self._tick_clock)
-        self._timer.daemon = True
-        self._timer.start()
         super().__init__()
+        self._interval = interval
+        self._thread = threading.Thread(target=self._tick_clock, daemon=True)
+        self._thread.start()
 
     def _tick_clock(self):
-        self.tick()
-        timer = threading.Timer(self._interval, self._tick_clock)
-        timer.daemon = True
-        timer.start()
-        self._timer = timer
+        while True:
+            self.tick()
+            self.sleep(self._interval * 1000000)
 
 
 clock = AudioClock()
