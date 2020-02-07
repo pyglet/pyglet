@@ -18,7 +18,7 @@ def test_window_caption_from_argv():
     for test_caption in window_captions:
 
         # Override sys.argv[0] so that the file name appears to be the caption:
-        sys.argv[0] = test_caption.encode('utf-8')
+        sys.argv[0] = test_caption
 
         # The window caption should be set to the file name:
         window = pyglet.window.Window()
