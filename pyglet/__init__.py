@@ -357,7 +357,6 @@ if True:
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
-    com = _ModuleProxy('com')
     event = _ModuleProxy('event')
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')
@@ -370,6 +369,7 @@ if True:
     resource = _ModuleProxy('resource')
     sprite = _ModuleProxy('sprite')
     text = _ModuleProxy('text')
+    util = _ModuleProxy('util')
     window = _ModuleProxy('window')
 
 # Fool py2exe, py2app into including all top-level modules (doesn't understand
@@ -378,7 +378,6 @@ if False:
     from . import app
     from . import canvas
     from . import clock
-    from . import com
     from . import event
     from . import font
     from . import gl
@@ -391,6 +390,7 @@ if False:
     from . import resource
     from . import sprite
     from . import text
+    from . import util
     from . import window
 
 # Hack around some epydoc bug that causes it to think pyglet.window is None.

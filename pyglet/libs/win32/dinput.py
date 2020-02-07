@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 import ctypes
 
-from pyglet import com
+from pyglet.util import com
 
 lib = ctypes.oledll.dinput8
 
