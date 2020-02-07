@@ -622,7 +622,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         else:
             self._vsync = vsync
 
-        self._caption = caption or sys.argv[0]
+        if caption is None:
+            caption = sys.argv[0]
+
+        self._caption = caption
 
         from pyglet import app
         app.windows.add(self)
