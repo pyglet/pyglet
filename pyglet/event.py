@@ -421,8 +421,10 @@ class EventDispatcher:
         try:
             if getattr(self, event_type)(*args):
                 return EVENT_HANDLED
-        except AttributeError:
-            pass
+        except AttributeError as e:
+            event_op = getattr(self, event_type, None)
+            if callable(event_op):
+                raise e
         except TypeError as exception:
             self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
         else:
