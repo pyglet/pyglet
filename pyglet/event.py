@@ -417,23 +417,19 @@ class EventDispatcher:
             except TypeError as exception:
                 self._raise_dispatch_exception(event_type, args, handler, exception)
 
-        # Check instance for an event handler
+        not_called = () # arbitrary unique, falsy value
         try:
-            if getattr(self, event_type)(*args):
-                return EVENT_HANDLED
-        except AttributeError as e:
-            event_op = getattr(self, event_type, None)
-            if callable(event_op):
-                raise e
+            # Check instance for an event handler
+            retval = getattr(self, event_type, lambda *args: not_called)(*args)
         except TypeError as exception:
             self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
+
+        if retval:
+            return EVENT_HANDLED
+        elif retval is not_called:
+            return False
         else:
-            invoked = True
-
-        if invoked:
             return EVENT_UNHANDLED
-
-        return False
 
     def _raise_dispatch_exception(self, event_type, args, handler, exception):
         # A common problem in applications is having the wrong number of
