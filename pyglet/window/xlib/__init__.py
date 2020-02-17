@@ -50,7 +50,7 @@ from pyglet.canvas.xlib import XlibCanvas
 from pyglet.libs.x11 import xlib
 from pyglet.libs.x11 import cursorfont
 
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 
 try:
     from pyglet.libs.x11 import xsync

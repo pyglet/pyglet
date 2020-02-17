@@ -46,7 +46,7 @@ from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _gdi32 as gdi32, _user32 as user32
 from pyglet.libs.win32 import _kernel32 as kernel32
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 
 _debug_font = pyglet.options['debug_font']
 

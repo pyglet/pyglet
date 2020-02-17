@@ -133,7 +133,7 @@ import pyglet.window.event
 from pyglet import gl
 from pyglet.event import EventDispatcher
 from pyglet.window import key
-from pyglet.compat import with_metaclass
+from pyglet.util import with_metaclass
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run

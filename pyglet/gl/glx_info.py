@@ -55,7 +55,7 @@ Or, if using more than one display::
 from ctypes import *
 
 from pyglet.gl.glx import *
-from pyglet.compat import asstr
+from pyglet.util import asstr
 
 
 class GLXInfoException(Exception):

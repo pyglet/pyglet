@@ -35,15 +35,12 @@
 """Decoder for Aseprite animation files in .ase or .aseprite format.
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
-import struct
+import io
 import zlib
+import struct
 
 from pyglet.image import ImageData, Animation, AnimationFrame
 from pyglet.image.codecs import ImageDecoder, ImageDecodeException
-from pyglet.compat import BytesIO
 
 #   Documentation for the Aseprite format can be found here:
 #   https://raw.githubusercontent.com/aseprite/aseprite/master/docs/ase-file-specs.md
@@ -127,7 +124,7 @@ class Frame:
         self.layers = [c for c in self.chunks if type(c) == LayerChunk]
 
     def _parse_chunks(self):
-        fileobj = BytesIO(self._data)
+        fileobj = io.BytesIO(self._data)
         chunks = []
         for chunk in range(self.num_chunks):
             chunk_size = _unpack(DWORD, fileobj)
@@ -155,7 +152,7 @@ class Frame:
 
     def _pad_pixels(self, cel):
         """For cels that dont fill the entire frame, pad with zeros."""
-        fileobj = BytesIO(cel.pixel_data)
+        fileobj = io.BytesIO(cel.pixel_data)
 
         padding = b'\x00\x00\x00\x00'
         top_pad = bytes(padding) * (self.width * cel.y_pos)
@@ -242,7 +239,7 @@ class Chunk:
 class LayerChunk(Chunk):
     def __init__(self, size, chunk_type, data):
         super(LayerChunk, self).__init__(size, chunk_type)
-        fileobj = BytesIO(data)
+        fileobj = io.BytesIO(data)
         self.flags = _unpack(WORD, fileobj)
         self.layer_type = _unpack(WORD, fileobj)
         self.child_level = _unpack(WORD, fileobj)
@@ -260,7 +257,7 @@ class LayerChunk(Chunk):
 class CelChunk(Chunk):
     def __init__(self, size, chunk_type, data):
         super(CelChunk, self).__init__(size, chunk_type)
-        fileobj = BytesIO(data)
+        fileobj = io.BytesIO(data)
         self.layer_index = _unpack(WORD, fileobj)
         self.x_pos = _unpack(SIGNED_WORD, fileobj)
         self.y_pos = _unpack(SIGNED_WORD, fileobj)
@@ -293,7 +290,7 @@ class FrameTagsChunk(Chunk):
 class PaletteChunk(Chunk):
     def __init__(self, size, chunk_type, data):
         super(PaletteChunk, self).__init__(size, chunk_type)
-        fileobj = BytesIO(data)
+        fileobj = io.BytesIO(data)
         self.palette_size = _unpack(DWORD, fileobj)
         self.first_color_index = _unpack(DWORD, fileobj)
         self.last_color_index = _unpack(DWORD, fileobj)

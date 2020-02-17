@@ -33,9 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Compatibility tools
-
-Various tools for simultaneous Python 2.x and Python 3.x support
+"""Various utility functions
 """
 
 import sys
@@ -84,7 +82,7 @@ def with_metaclass(meta, *bases):
     This has the advantage over six.with_metaclass of not introducing
     dummy classes into the final MRO.
     """
-    class metaclass(meta):
+    class MetaClass(meta):
         __call__ = type.__call__
         __init__ = type.__init__
 
@@ -93,4 +91,4 @@ def with_metaclass(meta, *bases):
                 return type.__new__(cls, name, (), d)
             return meta(name, bases, d)
 
-    return metaclass('temporary_class', None, {})
+    return MetaClass('temporary_class', None, {})

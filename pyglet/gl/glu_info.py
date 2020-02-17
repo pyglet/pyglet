@@ -61,7 +61,7 @@ from ctypes import *
 import warnings
 
 from pyglet.gl.glu import *
-from pyglet.compat import asstr
+from pyglet.util import asstr
 
 
 class GLUInfo:

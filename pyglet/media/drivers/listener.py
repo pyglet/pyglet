@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 from abc import ABCMeta, abstractmethod
 
-from pyglet.compat import with_metaclass
+from pyglet.util import with_metaclass
 
 
 class AbstractListener(with_metaclass(ABCMeta, object)):

@@ -36,7 +36,7 @@
 import ctypes
 from collections import namedtuple
 
-from pyglet.compat import asbytes, asstr
+from pyglet.util import asbytes, asstr
 from pyglet.font import base
 from pyglet import image
 from pyglet.font.fontconfig import get_fontconfig
