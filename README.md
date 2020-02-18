@@ -32,12 +32,12 @@ Some of the features of pyglet are:
 * **Take advantage of multiple windows and multi-monitor desktops.** *pyglet* allows you to use multiple
   platform-native windows, and is fully aware of multi-monitor setups for use with fullscreen games.
 * **Load images, sound, music and video in almost any format.** *pyglet* can optionally use FFmpeg to play back
-  audio formats such as MP3, OGG/Vorbis and WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
+  audio formats such as MP3, OGG/Vorbis and WMA, and video formats such as MPEG2, H.264, H.265, WMV and Xvid.
   Without FFmpeg, *pyglet* contains built-in support for standard formats such as wav, png, bmp, and others.
 * **pyglet is written entirely in pure Python**, and makes use of the *ctypes* module to interface with system
   libraries. You can modify the codebase or make a contribution without any second language compilation steps or
   compiler setup. Despite being pure Python, *pyglet* has excellent performance thanks to advanced batching for
-  drawing thousands of sprites or animations.
+  drawing thousands of objects.
 * **pyglet is provided under the BSD open-source license**, allowing you to use it for both commercial and other
   open-source projects with very little restriction.
 
@@ -51,7 +51,7 @@ interpreters such as PyPy. Supported platforms are:
 * Linux, with the following libraries (most recent distributions will have
   these in a default installation):
   * OpenGL and GLX
-  * GDK 2.0+ or PIL (required for loading images other than PNG and BMP)
+  * GDK 2.0+ or Pillow (required for loading images other than PNG and BMP)
   * OpenAL or Pulseaudio (required for playing audio)
 
 **Please note that pyglet v1.5 will likely be the last version to support

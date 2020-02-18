@@ -46,7 +46,7 @@ import pyglet
 import pyglet.lib
 
 from pyglet import image
-from pyglet.compat import asbytes, asbytes_filename, asstr
+from pyglet.util import asbytes, asbytes_filename, asstr
 from ..events import MediaEvent
 from ..exceptions import MediaFormatException
 from .base import StreamingSource, VideoFormat, AudioFormat

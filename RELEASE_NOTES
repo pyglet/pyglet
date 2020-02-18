@@ -9,7 +9,6 @@ Bugfixes
 Changes
 -------
 - Support for Python 2 has been dropped. Python 3.5 is now the minimum supported version.
-- Audio can now be played back without a running event loop.
 
 
 pyglet 1.4.10

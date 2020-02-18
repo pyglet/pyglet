@@ -37,7 +37,8 @@ import math
 import weakref
 from abc import ABCMeta, abstractmethod
 
-from pyglet.compat import with_metaclass
+from pyglet.util import with_metaclass
+from pyglet.media.player import clock
 
 
 class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):

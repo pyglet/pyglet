@@ -138,7 +138,7 @@ from ctypes import *
 from pyglet.gl import *
 from pyglet.gl import gl_info
 from pyglet.window import *
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders

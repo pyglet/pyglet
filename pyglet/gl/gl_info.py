@@ -56,12 +56,12 @@ context::
 
 """
 
-import warnings
 from ctypes import c_char_p, cast
+import warnings
 
 from pyglet.gl.gl import GLint, glGetIntegerv, glGetString
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
-from pyglet.compat import asstr
+from pyglet.util import asstr
 
 
 class GLInfo:

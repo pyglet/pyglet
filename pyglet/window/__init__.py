@@ -129,8 +129,8 @@ import pyglet
 from pyglet import gl
 from pyglet import matrix
 from pyglet.event import EventDispatcher
-from pyglet.compat import with_metaclass
 from pyglet.window import key
+from pyglet.util import with_metaclass
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run

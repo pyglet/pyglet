@@ -52,7 +52,7 @@ import struct
 import threading
 
 from pyglet.libs.x11 import xlib
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 
 try:
     from pyglet.libs.x11 import xf86vmode

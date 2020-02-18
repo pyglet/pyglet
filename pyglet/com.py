@@ -169,7 +169,7 @@ class InterfaceMetaclass(type(ctypes.POINTER(COMInterface))):
         return super(InterfaceMetaclass, cls).__new__(cls, name, bases, dct)
 
 
-# pyglet.compat.with_metaclass does not work here, as the base class is from _ctypes.lib
+# pyglet.util.with_metaclass does not work here, as the base class is from _ctypes.lib
 # See https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef
 Interface = InterfaceMetaclass(str('Interface'),
                                (ctypes.POINTER(COMInterface),),

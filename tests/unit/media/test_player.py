@@ -151,7 +151,7 @@ class PlayerTestCase(unittest.TestCase):
         self.mock_clock.unschedule.assert_called_with(self.player.update_texture)
 
     def pretend_player_at_time(self, t):
-        self.player._mclock.set_time(t)
+        self.player._timer.set_time(t)
 
     def pretend_silent_driver_player_at_time(self, t):
         self.mock_silent_audio_driver_player.get_time.return_value = t

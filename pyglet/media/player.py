@@ -46,56 +46,55 @@ from pyglet.media.codecs.base import Source, SourceGroup
 _debug = pyglet.options['debug_media']
 
 
-class AudioClock(pyglet.clock.Clock):
-    """A dedicated background Clock for refilling audio buffers."""
+# class AudioClock(pyglet.clock.Clock):
+#     """A dedicated background Clock for refilling audio buffers."""
+#
+#     def __init__(self, interval=0.1):
+#         super().__init__()
+#         self._interval = interval
+#         self._thread = threading.Thread(target=self._tick_clock, daemon=True)
+#         self._thread.start()
+#
+#     def _tick_clock(self):
+#         while True:
+#             self.tick()
+#             self.sleep(self._interval * 1000000)
+#
+#
+# clock = AudioClock()
 
-    def __init__(self, interval=0.1):
-        self._interval = interval
-        self._timer = threading.Timer(self._interval, self._tick_clock)
-        self._timer.daemon = True
-        self._timer.start()
-        super().__init__()
-
-    def _tick_clock(self):
-        self.tick()
-        timer = threading.Timer(self._interval, self._tick_clock)
-        timer.daemon = True
-        timer.start()
-        self._timer = timer
+clock = pyglet.clock.get_default()
 
 
-clock = AudioClock()
+class PlaybackTimer:
+    """Playback Timer.
 
-
-class MasterClock:
-    """Master clock object.
-
-    This is a simple clock object which tracks the time elapsed. It can be
+    This is a simple timer object which tracks the time elapsed. It can be
     paused and reset.
     """
 
     def __init__(self):
-        """Initialize the clock with time 0."""
+        """Initialize the timer with time 0."""
         self._time = 0.0
         self._systime = None
 
-    def play(self):
-        """Start the clock."""
+    def start(self):
+        """Start the timer."""
         self._systime = clock.time()
 
     def pause(self):
-        """Pause the clock."""
+        """Pause the timer."""
         self._time = self.get_time()
         self._systime = None
 
     def reset(self):
-        """Reset the clock to 0."""
+        """Reset the timer to 0."""
         self._time = 0.0
         if self._systime is not None:
             self._systime = clock.time()
 
     def get_time(self):
-        """Current master clock time."""
+        """Get the elapsed time."""
         if self._systime is None:
             now = self._time
         else:
@@ -104,11 +103,10 @@ class MasterClock:
 
     def set_time(self, value):
         """
-        Set the master clock time.
+        Manually set the elapsed time.
 
         Args:
-            value (float): The new :class:`~pyglet.media.player.MasterClock`
-                time.
+            value (float): the new elapsed time value
         """
         self.reset()
         self._time = value
@@ -169,7 +167,7 @@ class Player(pyglet.event.EventDispatcher):
         # Desired play state (not an indication of actual state).
         self._playing = False
 
-        self._mclock = MasterClock()
+        self._timer = PlaybackTimer()
         #: Loop the current source indefinitely or until
         #: :meth:`~Player.next_source` is called. Defaults to ``False``.
         #:
@@ -241,7 +239,7 @@ class Player(pyglet.event.EventDispatcher):
             # add a delay to de-synchronize the audio.
             # Negative number means audio runs ahead.
             # self._mclock._systime += -0.3
-            self._mclock.play()
+            self._timer.start()
             if self._audio_player is None and source.video_format is None:
                 pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
 
@@ -250,7 +248,7 @@ class Player(pyglet.event.EventDispatcher):
                 self._audio_player.stop()
 
             pyglet.clock.unschedule(self.update_texture)
-            self._mclock.pause()
+            self._timer.pause()
 
     @property
     def playing(self):
@@ -299,7 +297,7 @@ class Player(pyglet.event.EventDispatcher):
         """
         was_playing = self._playing
         self.pause()
-        self._mclock.reset()
+        self._timer.reset()
 
         if self.source:
             # Reset source to the beginning
@@ -362,7 +360,7 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.sk", time)
 
-        self._mclock.set_time(time)
+        self._timer.set_time(time)
         self.source.seek(time)
         if self._audio_player:
             # XXX: According to docstring in AbstractAudioPlayer this cannot
@@ -407,7 +405,7 @@ class Player(pyglet.event.EventDispatcher):
         player master clock time which is used to synchronize both the audio
         and the video.
         """
-        return self._mclock.get_time()
+        return self._timer.get_time()
 
     def _create_texture(self):
         video_format = self.source.video_format
@@ -622,7 +620,7 @@ class Player(pyglet.event.EventDispatcher):
         if self.loop:
             was_playing = self._playing
             self.pause()
-            self._mclock.reset()
+            self._timer.reset()
 
             if self.source:
                 # Reset source to the beginning

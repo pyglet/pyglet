@@ -13,7 +13,7 @@ import ctypes
 import optparse
 import sys
 
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 from pyglet.media.drivers import openal
 from pyglet.media.drivers.openal.interface import al
 from pyglet.media.drivers.openal.interface import alc

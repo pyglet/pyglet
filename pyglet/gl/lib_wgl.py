@@ -38,7 +38,7 @@ from ctypes import *
 
 import pyglet
 from pyglet.gl.lib import missing_function, decorate_function
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 
 __all__ = ['link_GL', 'link_GLU', 'link_WGL']
 

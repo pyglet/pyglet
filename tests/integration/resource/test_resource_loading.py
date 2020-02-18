@@ -23,7 +23,7 @@ import os
 import pytest
 
 from pyglet import resource
-from pyglet.compat import asbytes
+from pyglet.util import asbytes
 
 
 @pytest.fixture
