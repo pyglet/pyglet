@@ -629,6 +629,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         from pyglet import app
         app.windows.add(self)
+        app.event_loop.update_window_count()
         self._create()
 
         self.switch_to()
@@ -821,6 +822,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if not self._context:
             return
         app.windows.remove(self)
+        app.event_loop.update_window_count()
         self._context.destroy()
         self._config = None
         self._context = None

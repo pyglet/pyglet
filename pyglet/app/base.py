@@ -146,6 +146,7 @@ class EventLoop(event.EventDispatcher):
         self._has_exit_condition = threading.Condition()
         self.clock = clock.get_default()
         self.is_running = False
+        self._redraw_window_func = self._redraw_window
 
     def run(self):
         """Begin processing events, scheduled functions and window updates.
@@ -302,6 +303,12 @@ class EventLoop(event.EventDispatcher):
         dt = self.clock.update_time()
         redraw_all = self.clock.call_scheduled_functions(dt)
 
+        self._redraw_window_func(redraw_all)
+
+        # Update timout
+        return self.clock.get_sleep_time(True)
+
+    def _redraw_windows(self, redraw_all):
         # Redraw all windows
         for window in app.windows:
             if redraw_all or (window._legacy_invalid and window.invalid):
@@ -310,8 +317,22 @@ class EventLoop(event.EventDispatcher):
                 window.flip()
                 window._legacy_invalid = False
 
-        # Update timout
-        return self.clock.get_sleep_time(True)
+    def _redraw_window(self, redraw_all):
+        # Redraw a single window, no need to switch_to.
+        for window in app.windows:
+            if redraw_all or (window._legacy_invalid and window.invalid):
+                window.dispatch_event('on_draw')
+                window.flip()
+                window._legacy_invalid = False
+
+    def update_window_count(self):
+        """ Adjust window drawing function, we only need to switch_to when using multiple windows.
+            This function will adjust it depending on window count to save performance.
+        """
+        if len(app.windows) == 1:
+            self._redraw_window_func = self._redraw_window
+        else:
+            self._redraw_window_func = self._redraw_windows
 
     @property
     def has_exit(self):
