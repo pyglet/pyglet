@@ -1,3 +1,16 @@
+pyglet 1.5.1
+Bugfix and Maintenance release
+
+Bugfixes
+--------
+- Fix issue with changing Label positions by fractional values.
+- Avoid performance issue due to unnecessary context switching with single Window programs.
+
+Changes
+--------
+- text.TextLayouts are no longer bound to int positioning.
+
+
 pyglet 1.5.0
 Bugfix and Maintenance release
 
