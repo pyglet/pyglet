@@ -70,6 +70,10 @@ sz_xGetExtensionVersionReq = 8 	# /usr/include/X11/extensions/XI.h:56
 sz_xGetExtensionVersionReply = 32 	# /usr/include/X11/extensions/XI.h:57
 sz_xListInputDevicesReq = 4 	# /usr/include/X11/extensions/XI.h:58
 sz_xListInputDevicesReply = 32 	# /usr/include/X11/extensions/XI.h:59
+sz_xListDevicePropertiesReq = 8     # /usr/include/X11/extensions/XI.h
+sz_xListDevicePropertiesReply = 32  # /usr/include/X11/extensions/XI.h
+sz_xGetDevicePropertyReq = 24     # /usr/include/X11/extensions/XI.h
+sz_xGetDevicePropertyReply = 32  # /usr/include/X11/extensions/XI.h
 sz_xOpenDeviceReq = 8 	# /usr/include/X11/extensions/XI.h:60
 sz_xOpenDeviceReply = 32 	# /usr/include/X11/extensions/XI.h:61
 sz_xCloseDeviceReq = 8 	# /usr/include/X11/extensions/XI.h:62
@@ -1509,6 +1513,16 @@ XListInputDevices = _lib.XListInputDevices
 XListInputDevices.restype = POINTER(XDeviceInfo)
 XListInputDevices.argtypes = [POINTER(Display), POINTER(c_int)]
 
+# /usr/include/X11/extensions/XInput.h
+XListDeviceProperties = _lib.XListDeviceProperties
+XListDeviceProperties.restype = POINTER(Atom)
+XListDeviceProperties.argtypes = [POINTER(Display), POINTER(XDevice), POINTER(c_int)]
+
+# /usr/include/X11/extensions/XInput.h
+XGetDeviceProperty = _lib.XGetDeviceProperty
+XGetDeviceProperty.restype = c_int
+XGetDeviceProperty.argtypes = [POINTER(Display), POINTER(XDevice), Atom, c_long, c_long, c_bool, Atom, POINTER(Atom), POINTER(c_int), POINTER(c_ulong), POINTER(c_ulong), POINTER(c_char_p)]
+
 # /usr/include/X11/extensions/XInput.h:5943
 XFreeDeviceList = _lib.XFreeDeviceList
 XFreeDeviceList.restype = None
@@ -1672,8 +1686,9 @@ __all__ = ['sz_xGetExtensionVersionReq', 'sz_xGetExtensionVersionReply',
 'XGetDeviceKeyMapping', 'XChangeDeviceKeyMapping',
 'XGetDeviceModifierMapping', 'XSetDeviceModifierMapping',
 'XSetDeviceButtonMapping', 'XGetDeviceButtonMapping', 'XQueryDeviceState',
-'XFreeDeviceState', 'XGetExtensionVersion', 'XListInputDevices',
-'XFreeDeviceList', 'XOpenDevice', 'XCloseDevice', 'XSetDeviceMode',
+'XFreeDeviceState', 'XGetExtensionVersion', 'XListInputDevices', 
+'XListDeviceProperties', 'XGetDeviceProperty', 'XFreeDeviceList', 
+'XOpenDevice', 'XCloseDevice', 'XSetDeviceMode',
 'XSetDeviceValuators', 'XGetDeviceControl', 'XChangeDeviceControl',
 'XSelectExtensionEvent', 'XGetSelectedExtensionEvents',
 'XChangeDeviceDontPropagateList', 'XGetDeviceDontPropagateList',
