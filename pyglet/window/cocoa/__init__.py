@@ -405,9 +405,6 @@ class CocoaWindow(BaseWindow):
         bounds = view.convertRectToBacking_(view.bounds()).size
         return int(bounds.width), int(bounds.height)
 
-    # :deprecated: Use Window.get_framebuffer_size
-    get_viewport_size = get_framebuffer_size
-
     def set_size(self, width, height):
         if self._fullscreen:
             raise WindowException('Cannot set size of fullscreen window.')

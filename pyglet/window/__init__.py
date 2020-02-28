@@ -782,8 +782,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         Override this event handler with your own to create another
         projection, for example in perspective.
         """
-        viewport_width, viewport_height = self.get_framebuffer_size()
-        self._projection.set(width, height, viewport_width, viewport_height)
+        self._projection.set(width, height, *self.get_framebuffer_size())
 
     def on_close(self):
         """Default on_close handler."""
@@ -1079,9 +1078,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         :return: The width and height of the Window viewport, in pixels.
         """
         return self.get_size()
-
-    # :deprecated: Use Window.get_framebuffer_size
-    get_viewport_size = get_framebuffer_size
 
     def set_location(self, x, y):
         """Set the position of the window.

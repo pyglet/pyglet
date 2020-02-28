@@ -143,15 +143,40 @@ class EventLoop(event.EventDispatcher):
         self._has_exit_condition = threading.Condition()
         self.clock = clock.get_default()
         self.is_running = False
+        self._redraw_window_func = self._redraw_window
+        self._redraw_interval = 0
 
-    @staticmethod
-    def _redraw_windows(dt):
+    def _redraw_windows(self, redraw_all):
+        # Redraw all windows
         for window in app.windows:
             if not window.invalid:
                 continue
             window.switch_to()
             window.dispatch_event('on_draw')
             window.flip()
+            window._legacy_invalid = False
+
+    def _redraw_window(self, redraw_all):
+        # Redraw a single window, no need to switch_to.
+        for window in app.windows:
+            if not window.invalid:
+                continue
+            window.dispatch_event('on_draw')
+            window.flip()
+            window._legacy_invalid = False
+
+    def update_window_count(self):
+        """ Adjust window drawing function, we only need to switch_to when using multiple windows.
+            This function will adjust it depending on window count to save performance.
+        """
+        self.clock.unschedule(self._redraw_window_func)
+
+        if len(app.windows) == 1:
+            self._redraw_window_func = self._redraw_window
+        else:
+            self._redraw_window_func = self._redraw_windows
+
+        self.clock.schedule_interval_soft(self._redraw_window_func, self._redraw_interval)
 
     def run(self, interval):
         """Begin processing events, scheduled functions and window updates.
@@ -161,8 +186,10 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
+        self._redraw_interval = interval
+        self.update_window_count()
+
         self.has_exit = False
-        self.clock.schedule_interval_soft(self._redraw_windows, interval)
 
         # Dispatch pending events
         for window in app.windows:
