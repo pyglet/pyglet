@@ -480,6 +480,9 @@ class Batch:
         if group not in self.group_map:
             self._add_group(group)
 
+        # If not a ShaderGroup, use the default ShaderProgram
+        shader_program = getattr(group, 'program', default_group.program)
+
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
         key = (formats, mode, indexed, group.program.id)
@@ -499,14 +502,15 @@ class Batch:
 
     def _add_group(self, group):
         self.group_map[group] = {}
-        self.top_groups.append(group)
-        # else:
-        #     if group.parent not in self.group_map:
-        #         self._add_group(group.parent)
-        #     if group.parent not in self.group_children:
-        #         self.group_children[group.parent] = []
-        #     self.group_children[group.parent].append(group)
-        # self._draw_list_dirty = True
+        if group.parent is None:
+            self.top_groups.append(group)
+        else:
+            if group.parent not in self.group_map:
+                self._add_group(group.parent)
+            if group.parent not in self.group_children:
+                self.group_children[group.parent] = []
+            self.group_children[group.parent].append(group)
+        self._draw_list_dirty = True
 
     def _update_draw_list(self):
         """Visit group tree in preorder and create a list of bound methods
@@ -537,8 +541,8 @@ class Batch:
             else:
                 # Remove unused group from batch
                 del self.group_map[group]
-                # if group.parent:
-                #     self.group_children[group.parent].remove(group)
+                if group.parent:
+                    self.group_children[group.parent].remove(group)
                 try:
                     del self.group_children[group]
                 except KeyError:
@@ -643,6 +647,75 @@ class Group:
     This should includes at least the Shader Program, in addition to any
     optional state required.
     """
+    def __init__(self, parent=None):
+        """Create a group.
+
+        :Parameters:
+            `parent` : `~pyglet.graphics.Group`
+                Group to contain this group; its state will be set before this
+                state's.
+
+        """
+        self.parent = parent
+
+    def __lt__(self, other):
+        return hash(self) < hash(other)
+
+    def set_state(self):
+        """Apply the OpenGL state change.
+        
+        The default implementation does nothing."""
+        pass
+
+    def unset_state(self):
+        """Repeal the OpenGL state change.
+        
+        The default implementation does nothing."""
+        pass
+
+    def set_state_recursive(self):
+        """Set this group and its ancestry.
+
+        Call this method if you are using a group in isolation: the
+        parent groups will be called in top-down order, with this class's
+        `set` being called last.
+        """
+        if self.parent:
+            self.parent.set_state_recursive()
+        self.set_state()
+
+    def unset_state_recursive(self):
+        """Unset this group and its ancestry.
+
+        The inverse of `set_state_recursive`.
+        """
+        self.unset_state()
+        if self.parent:
+            self.parent.unset_state_recursive()
+
+
+class ShaderGroup(Group):
+    def __init__(self, *shaders, parent=None):
+        super(ShaderGroup, self).__init__(parent)
+        self.program = ShaderProgram(*shaders)
+
+        if _debug_graphics_batch:
+            print("Created ShaderGroup, containing {0}".format(self.program))
+
+    def set_state(self):
+        self.program.use_program()
+
+    def unset_state(self):
+        self.program.stop_program()
+
+
+class NewerGroup:
+    """Group of common OpenGL state.
+
+    Before a vertex list is rendered, its group's OpenGL state is set.
+    This should includes at least the Shader Program, in addition to any
+    optional state required.
+    """
 
     order = 0
 
@@ -688,18 +761,21 @@ class TextureGroup(Group):
 
     # Don't use this, create your own group classes that are more specific.
     # This is just an example.
-    def __init__(self, texture, program=None, order=0):
+    def __init__(self, texture, parent=None, order=0):
         """Create a texture group.
 
         :Parameters:
             `texture` : `~pyglet.image.Texture`
                 Texture to bind.
+            `parent` : `~pyglet.graphics.Group`
+                Parent group.
             `program` : `~pyglet.graphics.shader.ShaderProgram`
                 Optional custom Shader Program.
             `order` : int
                 Change the order to render above or below other Groups.
+
         """
-        super(TextureGroup, self).__init__(program, order)
+        super(TextureGroup, self).__init__(parent, order)
         self.texture = texture
 
     def set_state(self):
@@ -710,14 +786,14 @@ class TextureGroup(Group):
         glDisable(self.texture.target)
 
     def __hash__(self):
-        return hash((self.order, self.program, self.texture.target, self.texture.id))
+        return hash((self.order, self.program, self.texture.target, self.texture.id, self.parent))
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
-                self.program is other.program and
                 self.order == other.order and
                 self.texture.target == other.texture.target and
-                self.texture.id == other.texture.id)
+                self.texture.id == other.texture.id and
+                self.parent == other.parent)
 
     def __repr__(self):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
