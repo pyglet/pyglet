@@ -191,7 +191,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, program=None):
+    def __init__(self, texture, blend_src, blend_dest, parent=None, order=0, program=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -209,7 +209,7 @@ class SpriteGroup(graphics.Group):
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super(SpriteGroup, self).__init__(parent)
+        super().__init__(parent, order)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
@@ -318,8 +318,7 @@ class Sprite(event.EventDispatcher):
             program = _default_program
 
         self._batch = batch or graphics.get_default_batch()
-        self._group = group or SpriteGroup(self._texture, blend_src, blend_dest, program)
-        assert isinstance(self._group, SpriteGroup), "Group must be a subclass of pyglet.sprite.SpriteGroup"
+        self._group = group or SpriteGroup(self._texture, blend_src, blend_dest, group, 0, program)
         self._usage = usage
         self._subpixel = subpixel
         self._create_vertex_list()
@@ -409,7 +408,9 @@ class Sprite(event.EventDispatcher):
         self._group = SpriteGroup(self._texture,
                                   self._group.blend_src,
                                   self._group.blend_dest,
-                                  group)
+                                  group,
+                                  0,
+                                  self._group.program)
         if self._batch is not None:
             self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 

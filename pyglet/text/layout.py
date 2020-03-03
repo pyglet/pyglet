@@ -608,8 +608,9 @@ class TextLayoutGroup(graphics.Group):
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
-        super().__init__(order=order, program=program)
+        super().__init__(order=order)
         self.texture = texture
+        self.program = program
 
     def set_state(self):
         self.program.use_program()
@@ -646,7 +647,8 @@ class TextDecorationGroup(graphics.Group):
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
-        super().__init__(order=order, program=program)
+        super().__init__(order=order)
+        self.program = program
 
     def set_state(self):
         self.program.use_program()
@@ -666,8 +668,9 @@ class ScrollableTextLayoutGroup(graphics.Group):
         area, and for scrolling. Because the group has internal state
         specific to the text layout, the group is never shared.
         """
-        super().__init__(order=order, program=program)
+        super().__init__(order=order)
         self.texture = texture
+        self.program = program
         self.scissor_box = (0, 0, 0, 0)
 
     def set_state(self):

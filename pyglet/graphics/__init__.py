@@ -299,7 +299,7 @@ def get_default_group():
     try:
         return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
     except AttributeError:
-        pyglet.gl.current_context.object_space.pyglet_graphics_default_group = Group()
+        pyglet.gl.current_context.object_space.pyglet_graphics_default_group = ShaderGroup(default_shader_program)
         return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
 
 
@@ -481,19 +481,19 @@ class Batch:
             self._add_group(group)
 
         # If not a ShaderGroup, use the default ShaderProgram
-        shader_program = getattr(group, 'program', default_group.program)
+        shader_program = getattr(group, 'program', default_shader_program)
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (formats, mode, indexed, group.program.id)
+        key = (formats, mode, indexed, shader_program.id)
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.create_indexed_domain(group.program.id, *formats)
+                domain = vertexdomain.create_indexed_domain(shader_program.id, *formats)
             else:
-                domain = vertexdomain.create_domain(group.program.id, *formats)
+                domain = vertexdomain.create_domain(shader_program.id, *formats)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True
@@ -647,19 +647,35 @@ class Group:
     This should includes at least the Shader Program, in addition to any
     optional state required.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, order=0):
         """Create a group.
 
         :Parameters:
             `parent` : `~pyglet.graphics.Group`
                 Group to contain this group; its state will be set before this
                 state's.
+            `order` : int
+                Change the order to render above or below other Groups.
 
         """
         self.parent = parent
+        self._order = order
+
+    @property
+    def order(self):
+        return self._order
 
     def __lt__(self, other):
-        return hash(self) < hash(other)
+        return self._order < other.order
+
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and self._order == other.order
+
+    def __hash__(self):
+        return hash((self._order, self.parent))
+
+    def __repr__(self):
+        return "{}(order={})".format(self.__class__.__name__, self._order)
 
     def set_state(self):
         """Apply the OpenGL state change.
@@ -695,12 +711,9 @@ class Group:
 
 
 class ShaderGroup(Group):
-    def __init__(self, *shaders, parent=None):
-        super(ShaderGroup, self).__init__(parent)
-        self.program = ShaderProgram(*shaders)
-
-        if _debug_graphics_batch:
-            print("Created ShaderGroup, containing {0}".format(self.program))
+    def __init__(self, program, parent=None, order=0):
+        super().__init__(parent, order)
+        self.program = program
 
     def set_state(self):
         self.program.use_program()
@@ -709,49 +722,48 @@ class ShaderGroup(Group):
         self.program.stop_program()
 
 
-class NewerGroup:
-    """Group of common OpenGL state.
-
-    Before a vertex list is rendered, its group's OpenGL state is set.
-    This should includes at least the Shader Program, in addition to any
-    optional state required.
-    """
-
-    order = 0
-
-    def __init__(self, program=None, order=0):
-        """Create a group.
-
-        :Parameters:
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                Optional custom Shader Program.
-            `order` : int
-                Change the order to render above or below other Groups.
-        """
-        self.program = program or default_shader_program
-        self.order = order
-
-    def set_state(self):
-        """Bind the Shader, and apply additional OpenGL state."""
-        self.program.use_program()
-
-    def unset_state(self):
-        """Unbind the Shader, and repeal OpenGL state change."""
-        self.program.stop_program()
-
-    def __lt__(self, other):
-        return self.order < other.order
-
-    def __eq__(self, other):
-        return self.__class__ is other.__class__ and self.program is other.program and self.order == other.order
-
-    def __hash__(self):
-        return hash((self.order, self.program))
-
-    def __repr__(self):
-        return "{}(order={})".format(self.__class__.__name__, self.order)
-
-
+# class NewerGroup:
+#     """Group of common OpenGL state.
+#
+#     Before a vertex list is rendered, its group's OpenGL state is set.
+#     This should includes at least the Shader Program, in addition to any
+#     optional state required.
+#     """
+#
+#     order = 0
+#
+#     def __init__(self, program=None, order=0):
+#         """Create a group.
+#
+#         :Parameters:
+#             `program` : `~pyglet.graphics.shader.ShaderProgram`
+#                 Optional custom Shader Program.
+#             `order` : int
+#                 Change the order to render above or below other Groups.
+#         """
+#         self.program = program or default_shader_program
+#         self.order = order
+#
+#     def set_state(self):
+#         """Bind the Shader, and apply additional OpenGL state."""
+#         self.program.use_program()
+#
+#     def unset_state(self):
+#         """Unbind the Shader, and repeal OpenGL state change."""
+#         self.program.stop_program()
+#
+#     def __lt__(self, other):
+#         return self.order < other.order
+#
+#     def __eq__(self, other):
+#         return self.__class__ is other.__class__ and self.program is other.program and self.order == other.order
+#
+#     def __hash__(self):
+#         return hash((self.order, self.program))
+#
+#     def __repr__(self):
+#         return "{}(order={})".format(self.__class__.__name__, self.order)
+#
 
 class TextureGroup(Group):
     """A group that enables and binds a texture.

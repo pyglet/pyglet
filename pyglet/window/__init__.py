@@ -256,7 +256,7 @@ class Projection2D(Projection):
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
 
-        with pyglet.graphics.get_default_group().program.uniform_buffers['WindowBlock'] as window_block:
+        with pyglet.graphics.default_shader_program.uniform_buffers['WindowBlock'] as window_block:
             window_block.projection[:] = matrix.create_orthogonal(0, width, 0, height, -255, 255)
             if not self._view:
                 # Set view to Identity Matrix
