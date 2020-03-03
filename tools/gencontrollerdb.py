@@ -13,7 +13,7 @@ from urllib.request import urlopen
 
 
 # Get the raw database header file:
-DB_URL = "https://hg.libsdl.org/SDL/raw-file/70224e91e883/src/joystick/SDL_gamecontrollerdb.h"
+DB_URL = "https://hg.libsdl.org/SDL/raw-file/default/src/joystick/SDL_gamecontrollerdb.h"
 raw = urlopen(DB_URL).read().decode('ascii')
 
 # Format the output directory for the pyglet module:
