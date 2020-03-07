@@ -48,7 +48,7 @@ from pyglet.window import key, mouse
 
 from pyglet.canvas.win32 import Win32Canvas
 
-from pyglet.libs.win32 import _user32, _kernel32, _gdi32, _dwmapi
+from pyglet.libs.win32 import _user32, _kernel32, _gdi32, _dwmapi, _shell32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.winkey import *
 from pyglet.libs.win32.types import *
@@ -221,6 +221,18 @@ class Win32Window(BaseWindow):
                 0)
 
             self._dc = _user32.GetDC(self._view_hwnd)
+
+            # Only allow files being dropped if specified.
+            if self._file_drops:
+                # Allows UAC to not block the drop files request if low permissions. All 3 must be set.
+                if WINDOWS_7_OR_GREATER:
+                    _user32.ChangeWindowMessageFilterEx(self._hwnd, WM_DROPFILES, MSGFLT_ALLOW, None)
+                    _user32.ChangeWindowMessageFilterEx(self._hwnd, WM_COPYDATA, MSGFLT_ALLOW, None)
+                    _user32.ChangeWindowMessageFilterEx(self._hwnd, WM_COPYGLOBALDATA, MSGFLT_ALLOW, None)
+
+                _shell32.DragAcceptFiles(self._hwnd, True)
+
+
         else:
             # Window already exists, update it with new style
 
@@ -1084,3 +1096,30 @@ class Win32Window(BaseWindow):
     def _event_erasebkgnd_view(self, msg, wParam, lParam):
         # Prevent flicker during resize.
         return 1
+
+    @Win32EventHandler(WM_DROPFILES)
+    def _event_drop_files(self, msg, wParam, lParam):
+        drop = wParam
+
+        # Get the count so we can handle multiple files.
+        file_count = _shell32.DragQueryFileW(drop, 0xFFFFFFFF, None, 0)
+
+        # Get where drop point was.
+        point = POINT()
+        _shell32.DragQueryPoint(drop, ctypes.byref(point))
+
+        paths = []
+        for i in range(file_count):
+            length = _shell32.DragQueryFileW(drop, i, None, 0)  # Length of string.
+
+            buffer = create_unicode_buffer(length+1)
+
+            _shell32.DragQueryFileW(drop, i, buffer, length + 1)
+
+            paths.append(buffer.value)
+
+        _shell32.DragFinish(drop)
+
+        # Reverse Y and call event.
+        self.dispatch_event('on_file_drop', point.x, self._height - point.y, paths)
+        return 0
