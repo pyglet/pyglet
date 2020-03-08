@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 """High-level sound and video player."""
 
-import threading
+import time
 from collections import deque
 
 import pyglet
@@ -43,26 +43,6 @@ from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source, SourceGroup
 
 _debug = pyglet.options['debug_media']
-
-
-# class AudioClock(pyglet.clock.Clock):
-#     """A dedicated background Clock for refilling audio buffers."""
-#
-#     def __init__(self, interval=0.1):
-#         super().__init__()
-#         self._interval = interval
-#         self._thread = threading.Thread(target=self._tick_clock, daemon=True)
-#         self._thread.start()
-#
-#     def _tick_clock(self):
-#         while True:
-#             self.tick()
-#             self.sleep(self._interval * 1000000)
-#
-#
-# clock = AudioClock()
-
-clock = pyglet.clock.get_default()
 
 
 class PlaybackTimer:
@@ -79,7 +59,7 @@ class PlaybackTimer:
 
     def start(self):
         """Start the timer."""
-        self._systime = clock.time()
+        self._systime = time.time()
 
     def pause(self):
         """Pause the timer."""
@@ -90,14 +70,14 @@ class PlaybackTimer:
         """Reset the timer to 0."""
         self._time = 0.0
         if self._systime is not None:
-            self._systime = clock.time()
+            self._systime = time.time()
 
     def get_time(self):
         """Get the elapsed time."""
         if self._systime is None:
             now = self._time
         else:
-            now = clock.time() - self._systime + self._time
+            now = time.time() - self._systime + self._time
         return now
 
     def set_time(self, value):

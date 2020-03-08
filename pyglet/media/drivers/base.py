@@ -39,7 +39,6 @@ import weakref
 from abc import ABCMeta, abstractmethod
 
 from pyglet.util import with_metaclass
-from pyglet.media.player import clock
 
 
 class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
@@ -66,8 +65,6 @@ class AbstractAudioPlayer(with_metaclass(ABCMeta, object)):
         # the audio_player
         self.source = source
         self.player = weakref.proxy(player)
-
-        self.audio_clock = clock
 
         # Audio synchronization
         self.audio_diff_avg_count = 0
