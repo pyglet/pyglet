@@ -162,6 +162,9 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
 
         self.refill(self.ideal_buffer_size)
 
+    def __del__(self):
+        self.delete()
+
     def delete(self):
         pyglet.clock.unschedule(self._check_refill)
         self.alsource = None
@@ -181,7 +184,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._playing = True
         self._clearing = False
 
-        pyglet.clock.schedule_interval(self._check_refill, 0.1)
+        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
 
     def stop(self):
         assert _debug('OpenALAudioPlayer.stop()')
@@ -277,7 +280,6 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
             audio_data = self._get_audiodata()
 
             if audio_data is None:
-                pyglet.clock.unschedule(self._check_refill)
                 break
 
             length = min(write_size, audio_data.length)

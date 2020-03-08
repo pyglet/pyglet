@@ -5,8 +5,8 @@ addons:
   apt:
     update: true
     packages:
-    # - ffmpeg
-    - freeglut3-dev
+      - freeglut3-dev
+      - openal-soft
 
 language: python
 matrix:
