@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import unicodedata
+import urllib.parse
 from ctypes import *
 
 import pyglet
@@ -1384,8 +1385,7 @@ class XlibWindow(BaseWindow):
         for filename in different_files:
             if filename:
                 filename = filename.lstrip("file://")
-                filename = filename.replace("%20", " ")
-                parsed.append(filename)
+                parsed.append(urllib.parse.unquote(filename))
 
         return parsed
 
