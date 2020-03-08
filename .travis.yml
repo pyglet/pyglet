@@ -6,7 +6,7 @@ addons:
     update: true
     packages:
       - freeglut3-dev
-      - openal-soft
+      - libopenal1
 
 language: python
 matrix:
