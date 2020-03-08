@@ -209,6 +209,10 @@ class CocoaWindow(BaseWindow):
         if self._maximum_size is not None:
             self.set_maximum_size(*self._maximum_size)
 
+        # TODO: Add support for file drops.
+        if self._file_drops:
+            raise NotImplementedError("File drops are not implemented on MacOS")
+
         self.context.update_geometry()
         self.switch_to()
         self.set_vsync(self._vsync)
