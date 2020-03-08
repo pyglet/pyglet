@@ -298,7 +298,7 @@ class Player(pyglet.event.EventDispatcher):
         self.pause()
         self._timer.reset()
 
-        if self.source:
+        if self._source:
             # Reset source to the beginning
             self.seek(0.0)
             self.source.is_player_source = False
@@ -308,31 +308,32 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         try:
-            source = next(playlists[0])
+            new_source = next(playlists[0])
         except StopIteration:
             self._playlists.popleft()
             if not self._playlists:
-                source = None
+                new_source = None
             else:
                 # Could someone queue an iterator which is empty??
-                source = next(self._playlists[0])
+                new_source = next(self._playlists[0])
 
-        if source is None:
+        if new_source is None:
             self._source = None
             self.delete()
             self.dispatch_event('on_player_eos')
         else:
-            old_audio_format = self.source.audio_format
-            old_video_format = self.source.video_format
-            self._source = source.get_queue_source()
+            old_audio_format = self._source.audio_format
+            old_video_format = self._source.video_format
+            self._source = new_source.get_queue_source()
 
-            if old_audio_format == self.source.audio_format:
-                self._audio_player.clear()
-                self._audio_player.source = self.source
-            else:
-                self._audio_player.delete()
-                self._audio_player = None
-            if old_video_format != self.source.video_format:
+            if self._audio_player:
+                if old_audio_format == self._source.audio_format:
+                    self._audio_player.clear()
+                    self._audio_player.source = self._source
+                else:
+                    self._audio_player.delete()
+                    self._audio_player = None
+            if old_video_format != self._source.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
