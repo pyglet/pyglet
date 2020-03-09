@@ -332,7 +332,6 @@ class XlibWindow(BaseWindow):
                                      xlib.PropModeReplace,
                                      cast(ptr, POINTER(c_ubyte)), 1)
 
-
         # Set window attributes
         attributes = xlib.XSetWindowAttributes()
         attributes_mask = 0
@@ -553,11 +552,11 @@ class XlibWindow(BaseWindow):
         except UnicodeEncodeError:
             name = "pyglet"
 
-        hints = xlib.XAllocClassHint()
-        hints.contents.res_class = asbytes(name)
-        hints.contents.res_name = asbytes(name.lower())
-        xlib.XSetClassHint(self._x_display, self._window, hints.contents)
-        xlib.XFree(hints)
+        hint = xlib.XAllocClassHint()
+        hint.contents.res_class = asbytes(name)
+        hint.contents.res_name = asbytes(name.lower())
+        xlib.XSetClassHint(self._x_display, self._window, hint.contents)
+        xlib.XFree(hint)
 
     def get_caption(self):
         return self._caption
@@ -1256,8 +1255,8 @@ class XlibWindow(BaseWindow):
         if self._xdnd_version > XDND_VERSION:
             return
 
-        xoff = (ev.xclient.data.l[2] >> 16) & 0xffff;
-        yoff = (ev.xclient.data.l[2]) & 0xffff;
+        xoff = (ev.xclient.data.l[2] >> 16) & 0xffff
+        yoff = (ev.xclient.data.l[2]) & 0xffff
 
         # Need to convert the position to actual window coordinates with the screen offset
         child = xlib.Window()
@@ -1378,14 +1377,16 @@ class XlibWindow(BaseWindow):
         """All of the filenames from file drops come as one big string with
             some special characters (%20), this will parse them out.
         """
+        import sys
 
-        different_files = decoded_string.split('\r\n')
+        different_files = decoded_string.splitlines()
 
         parsed = []
         for filename in different_files:
             if filename:
-                filename = filename.lstrip("file://")
-                parsed.append(urllib.parse.unquote(filename))
+                filename = urllib.parse.urlsplit(filename).path
+                encoding = sys.getfilesystemencoding()
+                parsed.append(urllib.parse.unquote(filename, encoding))
 
         return parsed
 
