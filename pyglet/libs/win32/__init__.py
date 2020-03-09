@@ -88,6 +88,7 @@ _gdi32 = DebugLibrary(windll.gdi32)
 _kernel32 = DebugLibrary(windll.kernel32)
 _user32 = DebugLibrary(windll.user32)
 _dwmapi = DebugLibrary(windll.dwmapi)
+_shell32 = DebugLibrary(windll.shell32)
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -268,9 +269,21 @@ _user32.RegisterRawInputDevices.restype = BOOL
 _user32.RegisterRawInputDevices.argtypes = [PCRAWINPUTDEVICE, UINT, UINT]
 _user32.GetRawInputData.restype = UINT
 _user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
+_user32.ChangeWindowMessageFilterEx.restype = BOOL
+_user32.ChangeWindowMessageFilterEx.argtypes = [HWND, UINT, DWORD, c_void_p]
 
 #dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int
 _dwmapi.DwmIsCompositionEnabled.argtypes = [POINTER(INT)]
 _dwmapi.DwmFlush.restype = c_int
 _dwmapi.DwmFlush.argtypes = []
+
+#_shell32
+_shell32.DragAcceptFiles.restype = c_void
+_shell32.DragAcceptFiles.argtypes = [HWND, BOOL]
+_shell32.DragFinish.restype = c_void
+_shell32.DragFinish.argtypes = [HDROP]
+_shell32.DragQueryFileW.restype = UINT
+_shell32.DragQueryFileW.argtypes = [HDROP, UINT, LPWSTR, UINT]
+_shell32.DragQueryPoint.restype = BOOL
+_shell32.DragQueryPoint.argtypes = [HDROP, LPPOINT]

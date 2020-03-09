@@ -463,6 +463,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _fullscreen = False
     _visible = False
     _vsync = False
+    _file_drops = False
     _screen = None
     _config = None
     _context = None
@@ -484,6 +485,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _enable_event_queue = True     # overridden by EventLoop.
     _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
+
     # Class attributes
 
     _default_width = 640
@@ -498,6 +500,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                  fullscreen=False,
                  visible=True,
                  vsync=True,
+                 file_drops=False,
                  display=None,
                  screen=None,
                  config=None,
@@ -622,10 +625,12 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         else:
             self._vsync = vsync
 
+        self._file_drops = file_drops
         if caption is None:
             caption = sys.argv[0]
 
         self._caption = caption
+
 
         from pyglet import app
         app.windows.add(self)
@@ -1707,6 +1712,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
+        def on_file_drop(self, x, y, paths):
+            """File(s) were dropped into the window, will return the position of the cursor and
+            a list of paths to the files that were dropped.
+
+            :event:
+            """
+
         def on_draw(self):
             """The window contents must be redrawn.
 
@@ -1726,6 +1738,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
             :event:
             """
+
 
 
 BaseWindow.register_event_type('on_key_press')
@@ -1750,6 +1763,7 @@ BaseWindow.register_event_type('on_show')
 BaseWindow.register_event_type('on_hide')
 BaseWindow.register_event_type('on_context_lost')
 BaseWindow.register_event_type('on_context_state_lost')
+BaseWindow.register_event_type('on_file_drop')
 BaseWindow.register_event_type('on_draw')
 
 
