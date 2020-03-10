@@ -155,8 +155,6 @@ class Player(pyglet.event.EventDispatcher):
         #: .. versionadded:: 1.4
         self.loop = False
 
-        # self.pr = cProfile.Profile()
-
     def __del__(self):
         """Release the Player resources."""
         self.delete()
@@ -320,7 +318,7 @@ class Player(pyglet.event.EventDispatcher):
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
 
-    def seek(self, time):
+    def seek(self, timestamp):
         """
         Seek for playback to the indicated timestamp on the current source.
 
@@ -328,7 +326,7 @@ class Player(pyglet.event.EventDispatcher):
         duration of the source, it will be clamped to the end.
 
         Args:
-            time (float): The time where to seek in the source, clamped to the
+            timestamp (float): The time where to seek in the source, clamped to the
                 beginning and end of the source.
         """
         playing = self._playing
@@ -338,10 +336,10 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         if bl.logger is not None:
-            bl.logger.log("p.P.sk", time)
+            bl.logger.log("p.P.sk", timestamp)
 
-        self._timer.set_time(time)
-        self.source.seek(time)
+        self._timer.set_time(timestamp)
+        self._source.seek(timestamp)
         if self._audio_player:
             # XXX: According to docstring in AbstractAudioPlayer this cannot
             # be called when the player is not stopped
