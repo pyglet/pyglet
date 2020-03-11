@@ -61,6 +61,11 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:
 version = '1.5.1'
 
+
+if sys.version_info < (3, 5):
+    raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
+
+
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
 if "bsd" in compat_platform:
