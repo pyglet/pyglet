@@ -160,6 +160,13 @@ def add_default_media_codecs():
     except ImportError:
         pass
 
+    if pyglet.compat_platform.startswith('linux'):
+        try:
+            from . import gstreamer
+            add_decoders(gstreamer)
+        except ImportError:
+            pass
+
     try:
         if have_ffmpeg():
             from . import ffmpeg

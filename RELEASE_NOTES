@@ -1,5 +1,5 @@
 pyglet 1.5.1
-Bugfix and Maintenance release
+Bugfix and minor feature release
 
 Bugfixes
 --------
@@ -11,6 +11,7 @@ Changes
 --------
 - text.TextLayouts are no longer bound to int positioning.
 - Raise exception if attempting to import from legacy Python.
+- Add GStreamer decoder for compressed audio on Linux.
 
 
 pyglet 1.5.0
