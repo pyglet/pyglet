@@ -338,6 +338,8 @@ class Player(pyglet.event.EventDispatcher):
         if bl.logger is not None:
             bl.logger.log("p.P.sk", timestamp)
 
+        timestamp = max(timestamp, 0)
+
         self._timer.set_time(timestamp)
         self._source.seek(timestamp)
         if self._audio_player:
