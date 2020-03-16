@@ -39,12 +39,11 @@ from pyglet.image.codecs import *
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _kernel32 as kernel32
+from pyglet.libs.win32 import _ole32 as ole32
 
 
-ole32 = windll.ole32
 gdiplus = windll.gdiplus
 
-LPSTREAM = c_void_p
 REAL = c_float
 
 PixelFormat1bppIndexed    = 196865
@@ -118,7 +117,6 @@ class PropertyItem(Structure):
 INT_PTR = POINTER(INT)
 UINT_PTR = POINTER(UINT)
 
-ole32.CreateStreamOnHGlobal.argtypes = [HGLOBAL, BOOL, LPSTREAM]
 
 gdiplus.GdipBitmapLockBits.restype = c_int
 gdiplus.GdipBitmapLockBits.argtypes = [c_void_p, c_void_p, UINT, c_int, c_void_p]

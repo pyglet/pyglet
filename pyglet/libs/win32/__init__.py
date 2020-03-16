@@ -89,6 +89,7 @@ _kernel32 = DebugLibrary(windll.kernel32)
 _user32 = DebugLibrary(windll.user32)
 _dwmapi = DebugLibrary(windll.dwmapi)
 _shell32 = DebugLibrary(windll.shell32)
+_ole32 = DebugLibrary(windll.ole32)
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -287,3 +288,10 @@ _shell32.DragQueryFileW.restype = UINT
 _shell32.DragQueryFileW.argtypes = [HDROP, UINT, LPWSTR, UINT]
 _shell32.DragQueryPoint.restype = BOOL
 _shell32.DragQueryPoint.argtypes = [HDROP, LPPOINT]
+
+# ole32
+_ole32.CreateStreamOnHGlobal.argtypes = [HGLOBAL, BOOL, LPSTREAM]
+_ole32.CoInitializeEx.restype = HRESULT
+_ole32.CoInitializeEx.argtypes = [LPVOID, DWORD]
+_ole32.CoUninitialize.restype = HRESULT
+_ole32.CoUninitialize.argtypes = []
