@@ -26,10 +26,9 @@ try:
 
     mfreadwrite_lib = ctypes.windll.LoadLibrary(mfreadwrite)
     mfplat_lib = ctypes.windll.LoadLibrary(mfplat)
-except OSError as err:
+except OSError:
     # Doesn't exist? Should stop import of library.
     raise ImportError('Could not load WMF library.')
-
 
 MF_SOURCE_READERF_ERROR = 0x00000001
 MF_SOURCE_READERF_ENDOFSTREAM = 0x00000002
@@ -47,7 +46,7 @@ MF_MT_FIXED_SIZE_SAMPLES = com.GUID(0xb8ebefaf, 0xb718, 0x4e04, 0xb0, 0xa9, 0x11
 MF_MT_SAMPLE_SIZE = com.GUID(0xdad3ab78, 0x1990, 0x408b, 0xbc, 0xe2, 0xeb, 0xa6, 0x73, 0xda, 0xcc, 0x10)
 MF_MT_COMPRESSED = com.GUID(0x3afd0cee, 0x18f2, 0x4ba5, 0xa1, 0x10, 0x8b, 0xea, 0x50, 0x2e, 0x1f, 0x92)
 MF_MT_WRAPPED_TYPE = com.GUID(0x4d3f7b23, 0xd02f, 0x4e6c, 0x9b, 0xee, 0xe4, 0xbf, 0x2c, 0x6c, 0x69, 0x5d)
-MF_MT_AUDIO_NUM_CHANNELS = com.GUID( 0x37e48bf5, 0x645e, 0x4c5b, 0x89, 0xde, 0xad, 0xa9, 0xe2, 0x9b, 0x69, 0x6a)
+MF_MT_AUDIO_NUM_CHANNELS = com.GUID(0x37e48bf5, 0x645e, 0x4c5b, 0x89, 0xde, 0xad, 0xa9, 0xe2, 0x9b, 0x69, 0x6a)
 MF_MT_AUDIO_SAMPLES_PER_SECOND = com.GUID(0x5faeeae7, 0x0290, 0x4c31, 0x9e, 0x8a, 0xc5, 0x34, 0xf6, 0x8d, 0x9d, 0xba)
 MF_MT_AUDIO_FLOAT_SAMPLES_PER_SECOND = com.GUID(0xfb3b724a, 0xcfb5, 0x4319, 0xae, 0xfe, 0x6e, 0x42, 0xb2, 0x40, 0x61, 0x32)
 MF_MT_AUDIO_AVG_BYTES_PER_SECOND = com.GUID(0x1aab75c8, 0xcfef, 0x451c, 0xab, 0x95, 0xac, 0x03, 0x4b, 0x8e, 0x17, 0x31)
@@ -55,6 +54,8 @@ MF_MT_AUDIO_BLOCK_ALIGNMENT = com.GUID(0x322de230, 0x9eeb, 0x43bd, 0xab, 0x7a, 0
 MF_MT_AUDIO_BITS_PER_SAMPLE = com.GUID(0xf2deb57f, 0x40fa, 0x4764, 0xaa, 0x33, 0xed, 0x4f, 0x2d, 0x1f, 0xf6, 0x69)
 MF_MT_AUDIO_VALID_BITS_PER_SAMPLE = com.GUID(0xd9bf8d6a, 0x9530, 0x4b7c, 0x9d, 0xdf, 0xff, 0x6f, 0xd5, 0x8b, 0xbd, 0x06)
 MF_MT_AUDIO_SAMPLES_PER_BLOCK = com.GUID(0xaab15aac, 0xe13a, 0x4995, 0x92, 0x22, 0x50, 0x1e, 0xa1, 0x5c, 0x68, 0x77)
+MF_MT_AUDIO_CHANNEL_MASK = com.GUID(0x55fb5765, 0x644a, 0x4caf, 0x84, 0x79, 0x93, 0x89, 0x83, 0xbb, 0x15, 0x88)
+
 
 # Media types categories
 MF_MT_MAJOR_TYPE = com.GUID(0x48eba18e, 0xf8c9, 0x4687, 0xbf, 0x11, 0x0a, 0x74, 0xc9, 0xf9, 0x6a, 0x8f)
@@ -67,7 +68,6 @@ MFMediaType_Protected = com.GUID(0x7b4b6fe6, 0x9d04, 0x4494, 0xbe, 0x14, 0x7e, 0
 MFMediaType_Image = com.GUID(0x72178C23, 0xE45B, 0x11D5, 0xBC, 0x2A, 0x00, 0xB0, 0xD0, 0xF3, 0xF4, 0xAB)
 MFMediaType_HTML = com.GUID(0x72178C24, 0xE45B, 0x11D5, 0xBC, 0x2A, 0x00, 0xB0, 0xD0, 0xF3, 0xF4, 0xAB)
 MFMediaType_Subtitle = com.GUID(0xa6d13581, 0xed50, 0x4e65, 0xae, 0x08, 0x26, 0x06, 0x55, 0x76, 0xaa, 0xcc)
-
 
 # Video subtypes, attributes, and enums (Uncompressed)
 D3DFMT_X8R8G8B8 = 22
@@ -85,42 +85,27 @@ MF_MT_PIXEL_ASPECT_RATIO = com.GUID(0xc6376a1e, 0x8d0a, 0x4027, 0xbe, 0x45, 0x6d
 MF_MT_DRM_FLAGS = com.GUID(0x8772f323, 0x355a, 0x4cc7, 0xbb, 0x78, 0x6d, 0x61, 0xa0, 0x48, 0xae, 0x82)
 MF_MT_DEFAULT_STRIDE = com.GUID(0x644b4e48, 0x1e02, 0x4516, 0xb0, 0xeb, 0xc0, 0x1c, 0xa9, 0xd4, 0x9a, 0xc6)
 
-
 # Audio Subtypes (Uncompressed)
 WAVE_FORMAT_PCM = 1
 WAVE_FORMAT_IEEE_FLOAT = 3
 MFAudioFormat_PCM = com.GUID(WAVE_FORMAT_PCM, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71)
 MFAudioFormat_Float = com.GUID(WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71)
 
-
 # Image subtypes.
 MFImageFormat_RGB32 = com.GUID(0x00000016, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71)
 MFImageFormat_JPEG = com.GUID(0x19e4a5aa, 0x5662, 0x4fc5, 0xa0, 0xc0, 0x17, 0x58, 0x02, 0x8e, 0x10, 0x57)
 
-
-MF_MT_AUDIO_NUM_CHANNELS = com.GUID(0x37e48bf5, 0x645e, 0x4c5b, 0x89, 0xde, 0xad, 0xa9, 0xe2, 0x9b, 0x69, 0x6a)
-MF_MT_AUDIO_SAMPLES_PER_SECOND = com.GUID(0x5faeeae7, 0x0290, 0x4c31, 0x9e, 0x8a, 0xc5, 0x34, 0xf6, 0x8d, 0x9d, 0xba)
-MF_MT_AUDIO_FLOAT_SAMPLES_PER_SECOND = com.GUID(0xfb3b724a, 0xcfb5, 0x4319, 0xae, 0xfe, 0x6e, 0x42, 0xb2, 0x40, 0x61,
-                                                0x32)
-MF_MT_AUDIO_AVG_BYTES_PER_SECOND = com.GUID(0x1aab75c8, 0xcfef, 0x451c, 0xab, 0x95, 0xac, 0x03, 0x4b, 0x8e, 0x17, 0x31)
-MF_MT_AUDIO_BLOCK_ALIGNMENT = com.GUID(0x322de230, 0x9eeb, 0x43bd, 0xab, 0x7a, 0xff, 0x41, 0x22, 0x51, 0x54, 0x1d)
-MF_MT_AUDIO_BITS_PER_SAMPLE = com.GUID(0xf2deb57f, 0x40fa, 0x4764, 0xaa, 0x33, 0xed, 0x4f, 0x2d, 0x1f, 0xf6, 0x69)
-MF_MT_AUDIO_VALID_BITS_PER_SAMPLE = com.GUID(0xd9bf8d6a, 0x9530, 0x4b7c, 0x9d, 0xdf, 0xff, 0x6f, 0xd5, 0x8b, 0xbd,
-                                             0x06)
-MF_MT_AUDIO_SAMPLES_PER_BLOCK = com.GUID(0xaab15aac, 0xe13a, 0x4995, 0x92, 0x22, 0x50, 0x1e, 0xa1, 0x5c, 0x68, 0x77)
-MF_MT_AUDIO_CHANNEL_MASK = com.GUID(0x55fb5765, 0x644a, 0x4caf, 0x84, 0x79, 0x93, 0x89, 0x83, 0xbb, 0x15, 0x88)
-
 # Video attributes
 # Enables hardware decoding
-MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = com.GUID(0xa634a91c, 0x822b, 0x41b9, 0xa4, 0x94, 0x4d, 0xe4, 0x64, 0x36, 0x12, 0xb0)
+MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = com.GUID(0xa634a91c, 0x822b, 0x41b9, 0xa4, 0x94, 0x4d, 0xe4, 0x64, 0x36, 0x12,
+                                                   0xb0)
 # Enable video decoding
-MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING = com.GUID(0xfb394f3d, 0xccf1, 0x42ee, 0xbb, 0xb3, 0xf9, 0xb8, 0x45, 0xd5, 0x68, 0x1d)
+MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING = com.GUID(0xfb394f3d, 0xccf1, 0x42ee, 0xbb, 0xb3, 0xf9, 0xb8, 0x45, 0xd5,
+                                                    0x68, 0x1d)
 MF_SOURCE_READER_D3D_MANAGER = com.GUID(0xec822da2, 0xe1e9, 0x4b29, 0xa0, 0xd8, 0x56, 0x3c, 0x71, 0x9f, 0x52, 0x69)
 MF_MEDIA_ENGINE_DXGI_MANAGER = com.GUID(0x065702da, 0x1094, 0x486d, 0x86, 0x17, 0xee, 0x7c, 0xc4, 0xee, 0x46, 0x48)
-MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING = com.GUID(0xf81da2c, 0xb537, 0x4672, 0xa8, 0xb2, 0xa6, 0x81, 0xb1, 0x73, 0x7, 0xa3)
-
-MF_MT_ALL_SAMPLES_INDEPENDENT = com.GUID(0xc9173739, 0x5e56, 0x461c, 0xb7, 0x13, 0x46, 0xfb, 0x99, 0x5c, 0xb9, 0x5f)
-
+MF_SOURCE_READER_ENABLE_ADVANCED_VIDEO_PROCESSING = com.GUID(0xf81da2c, 0xb537, 0x4672, 0xa8, 0xb2, 0xa6, 0x81, 0xb1,
+                                                             0x73, 0x7, 0xa3)
 
 # Some common errors
 MF_E_INVALIDSTREAMNUMBER = -1072875853  # 0xC00D36B3
@@ -364,7 +349,6 @@ MF_SOURCE_READER_ANY_STREAM = 4294967294  # 0xfffffffe
 MF_SOURCE_READER_FIRST_AUDIO_STREAM = 4294967293  # 0xfffffffd
 MF_SOURCE_READER_FIRST_VIDEO_STREAM = 0xfffffffc
 
-
 # Version calculation
 if WINDOWS_7_OR_GREATER:
     MF_SDK_VERSION = 0x0002
@@ -419,7 +403,7 @@ class WMFSource(Source):
     decode_video = True
 
     def __init__(self, filename, file=None):
-        assert self.decode_audio is True or self.decode_video is True, "Source must decode audio, video, or both, not none."
+        assert any([self.decode_audio, self.decode_video]), "Source must decode audio, video, or both, not none."
         self._current_audio_sample = None
         self._current_audio_buffer = None
         self._current_video_sample = None
@@ -428,6 +412,7 @@ class WMFSource(Source):
         self._attributes = None
         self._stream_obj = None
         self._wfx = None
+        self._stride = 0
 
         self.set_config_attributes()
 
@@ -452,10 +437,10 @@ class WMFSource(Source):
 
             # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
             # (Also unsure how/if new Windows async functions and callbacks work with ctypes.)
-            hr = MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(imf_bytestream))  # Allows 7 support still
+            MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(imf_bytestream))  # Allows 7 support still
 
             try:
-                hr = MFCreateSourceReaderFromByteStream(imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
+                MFCreateSourceReaderFromByteStream(imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
                 raise MediaDecodeException(err) from None
         else:
@@ -484,7 +469,7 @@ class WMFSource(Source):
         imfmedia = IMFMediaType()
 
         try:
-            hr = self._source_reader.GetNativeMediaType(self._audio_stream_index, 0, ctypes.byref(imfmedia))
+            self._source_reader.GetNativeMediaType(self._audio_stream_index, 0, ctypes.byref(imfmedia))
         except OSError as err:
             if err.winerror == MF_E_INVALIDSTREAMNUMBER:
                 assert _debug('WMFAudioDecoder: No audio stream found.')
@@ -504,7 +489,7 @@ class WMFSource(Source):
                 self._source_reader.SetStreamSelection(MF_SOURCE_READER_ANY_STREAM, False)
 
             # Select first audio stream.
-            hr = self._source_reader.SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, True)
+            self._source_reader.SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, True)
 
             # Check sub media type, AKA what kind of codec
             guid_compressed = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -526,19 +511,17 @@ class WMFSource(Source):
                 except OSError as err:  # Can't decode codec.
                     raise MediaDecodeException(err) from None
 
-
             # Current media type should now be properly decoded at this point.
             decoded_media_type = IMFMediaType()  # Maybe reusing older IMFMediaType will work?
-            hr = self._source_reader.GetCurrentMediaType(self._audio_stream_index, ctypes.byref(decoded_media_type))
-
+            self._source_reader.GetCurrentMediaType(self._audio_stream_index, ctypes.byref(decoded_media_type))
 
             wfx_length = ctypes.c_uint32()
             wfx = POINTER(WAVEFORMATEX)()
 
-            hr = MFCreateWaveFormatExFromMFMediaType(decoded_media_type,
-                                                     ctypes.byref(wfx),
-                                                     ctypes.byref(wfx_length),
-                                                     0)
+            MFCreateWaveFormatExFromMFMediaType(decoded_media_type,
+                                                ctypes.byref(wfx),
+                                                ctypes.byref(wfx_length),
+                                                0)
 
             self._wfx = wfx.contents
             self.audio_format = AudioFormat(channels=self._wfx.nChannels,
@@ -558,7 +541,7 @@ class WMFSource(Source):
         imfmedia = IMFMediaType()
 
         try:
-            hr = self._source_reader.GetCurrentMediaType(self._video_stream_index, ctypes.byref(imfmedia))
+            self._source_reader.GetCurrentMediaType(self._video_stream_index, ctypes.byref(imfmedia))
         except OSError as err:
             if err.winerror == MF_E_INVALIDSTREAMNUMBER:
                 assert _debug('WMFVideoDecoder: No video stream found.')
@@ -568,23 +551,23 @@ class WMFSource(Source):
 
         # All video is basically compressed, try to decompress.
         uncompressed_mt = IMFMediaType()
-        hr = MFCreateMediaType(ctypes.byref(uncompressed_mt))
+        MFCreateMediaType(ctypes.byref(uncompressed_mt))
 
         imfmedia.CopyAllItems(uncompressed_mt)
 
         imfmedia.Release()
 
-        hr = uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
-        hr = uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
-        hr = uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
+        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
+        uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
+        uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
 
         guid_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0)  # TODO: Make GUID take no arguments for a null version.
+                             0)  # TODO: Make GUID take no arguments for a null version.
         uncompressed_mt.GetGUID(MF_MT_SUBTYPE, ctypes.byref(guid_type))
 
         try:
             self._source_reader.SetCurrentMediaType(self._video_stream_index, None, uncompressed_mt)
-        except OSError as err:   # Can't decode codec.
+        except OSError as err:  # Can't decode codec.
             raise MediaDecodeException(err) from None
 
         height, width = self._get_attribute_size(uncompressed_mt, MF_MT_FRAME_SIZE)
@@ -599,7 +582,7 @@ class WMFSource(Source):
 
         # Sometimes it can return negative? Variable bit rate? Needs further tests and examples.
         if self.video_format.frame_rate < 0:
-            self.video_format.frame_rate = 30000/1001
+            self.video_format.frame_rate = 30000 / 1001
             assert _debug('WARNING: Negative frame rate, attempting to use default, but may experience issues.')
 
         # Pixel ratio
@@ -607,7 +590,7 @@ class WMFSource(Source):
         self.video_format.sample_aspect = num / den
         assert _debug('WMFVideoDecoder: Pixel Ratio: {} / {} = {}'.format(num, den, self.video_format.sample_aspect))
 
-    def get_audio_data(self, bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
         flags = DWORD()
         timestamp = ctypes.c_longlong()
         audio_data_length = DWORD()
@@ -622,8 +605,8 @@ class WMFSource(Source):
         self._current_audio_buffer = IMFMediaBuffer()
 
         while True:
-            hr = self._source_reader.ReadSample(self._audio_stream_index, 0, None, ctypes.byref(flags),
-                                                ctypes.byref(timestamp), ctypes.byref(self._current_audio_sample))
+            self._source_reader.ReadSample(self._audio_stream_index, 0, None, ctypes.byref(flags),
+                                           ctypes.byref(timestamp), ctypes.byref(self._current_audio_sample))
 
             if flags.value & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED:
                 assert _debug('WMFAudioDecoder: Data is no longer valid.')
@@ -667,8 +650,8 @@ class WMFSource(Source):
         self._current_video_buffer = IMFMediaBuffer()
 
         while True:
-            hr = self._source_reader.ReadSample(self._video_stream_index, 0, None, ctypes.byref(flags),
-                                                ctypes.byref(timestamp), ctypes.byref(self._current_video_sample))
+            self._source_reader.ReadSample(self._video_stream_index, 0, None, ctypes.byref(flags),
+                                           ctypes.byref(timestamp), ctypes.byref(self._current_video_sample))
 
             if flags.value & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED:
                 assert _debug('WMFVideoDecoder: Data is no longer valid.')
@@ -677,8 +660,8 @@ class WMFSource(Source):
                 new = IMFMediaType()
                 self._source_reader.GetCurrentMediaType(self._video_stream_index, ctypes.byref(new))
 
-                # Sometimes this happens once. I
-                # I think this only changes because the stride is added/changed before playback?
+                # Sometimes this happens once. I think this only
+                # changes if the stride is added/changed before playback?
                 stride = ctypes.c_uint32()
                 new.GetUINT32(MF_MT_DEFAULT_STRIDE, ctypes.byref(stride))
 
@@ -700,7 +683,7 @@ class WMFSource(Source):
 
             video_data = POINTER(BYTE)()
 
-            hr = self._current_video_buffer.Lock(ctypes.byref(video_data), None, ctypes.byref(video_data_length))
+            self._current_video_buffer.Lock(ctypes.byref(video_data), None, ctypes.byref(video_data_length))
 
             width = self.video_format.width
             height = self.video_format.height
@@ -712,8 +695,7 @@ class WMFSource(Source):
 
             # This is made with the assumption that the video frame will be blitted into the player texture immediately
             # after, and then cleared next frame attempt.
-            return image.ImageData(width, height,
-                                   'RGBA', video_data, self._stride)
+            return image.ImageData(width, height, 'RGBA', video_data, self._stride)
 
         return None
 
@@ -728,14 +710,14 @@ class WMFSource(Source):
         prop.llVal = timestamp
 
         pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        hr = self._source_reader.SetCurrentPosition(pos_com, prop)
+        self._source_reader.SetCurrentPosition(pos_com, prop)
 
     @staticmethod
     def _get_attribute_size(attributes, guidKey):
         """ Convert int64 attributes to int32"""  # HI32/LOW32
 
         size = ctypes.c_uint64()
-        hr = attributes.GetUINT64(guidKey, size)
+        attributes.GetUINT64(guidKey, size)
         lParam = size.value
 
         x = ctypes.c_int32(lParam).value
@@ -751,14 +733,14 @@ class WMFSource(Source):
             MFCreateAttributes(ctypes.byref(self._attributes), 3)
 
         if self.low_latency:
-            hr = self._attributes.SetUINT32(ctypes.byref(MF_LOW_LATENCY), 1)
+            self._attributes.SetUINT32(ctypes.byref(MF_LOW_LATENCY), 1)
 
             assert _debug('WMFAudioDecoder: Setting configuration attributes.')
 
         # If it's a video we need to enable the streams to be accessed.
         if self.decode_video:
-            hr = self._attributes.SetUINT32(ctypes.byref(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS), 1)
-            hr = self._attributes.SetUINT32(ctypes.byref(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING), 1)
+            self._attributes.SetUINT32(ctypes.byref(MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS), 1)
+            self._attributes.SetUINT32(ctypes.byref(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING), 1)
 
             assert _debug('WMFVideoDecoder: Setting configuration attributes.')
 
@@ -775,7 +757,6 @@ class WMFSource(Source):
             self._current_video_sample.Release()
 
 
-
 #########################################
 #   Decoder class:
 #########################################
@@ -790,11 +771,12 @@ class WMFDecoder(MediaDecoder):
         except OSError as err:
             raise ImportError('WMF could not startup:', err.strerror)
 
-        self._build_decoder_extensions()
+        self.extensions = self._build_decoder_extensions()
 
         assert _debug('Windows Media Foundation: Initialized.')
 
-    def _build_decoder_extensions(self):
+    @staticmethod
+    def _build_decoder_extensions():
         """Extension support varies depending on OS version."""
         extensions = []
         if WINDOWS_VISTA_OR_GREATER:
@@ -808,13 +790,13 @@ class WMFDecoder(MediaDecoder):
                                '.aac', '.adts',
                                '.avi',
                                '.m4a', '.m4v', '.mov', '.mp4',
-                               #'.wav'  # Can do wav, but we have a WAVE decoder.
+                               # '.wav'  # Can do wav, but we have a WAVE decoder.
                                ])
 
         if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
             extensions.extend(['.mkv', '.flac', '.ogg'])
 
-        self.extensions = extensions
+        return extensions
 
     def get_file_extensions(self):
         return self.extensions

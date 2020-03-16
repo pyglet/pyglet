@@ -105,11 +105,11 @@ class GUID(ctypes.Structure):
         return -1
 
     def __eq__(self, other):
-        return isinstance(other, GUID) and \
-               bytes(self) == bytes(other)
+        return isinstance(other, GUID) and bytes(self) == bytes(other)
 
     def __hash__(self):
         return hash(bytes(self))
+
 
 LPGUID = ctypes.POINTER(GUID)
 IID = GUID
