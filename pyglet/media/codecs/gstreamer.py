@@ -75,9 +75,9 @@ class GStreamerSource(StreamingSource):
         # Create the major parts of the pipeline:
         self.filesrc = Gst.ElementFactory.make("filesrc", None)
         self.decoder = Gst.ElementFactory.make("decodebin", None)
-        self.converter = Gst.ElementFactory.make("audioconvert", None)
+        self.audio_converter = Gst.ElementFactory.make("audioconvert", None)
         self.sink = Gst.ElementFactory.make("appsink", None)
-        if not all((self.decoder, self.converter, self.sink)):
+        if not all((self.filesrc, self.decoder, self.audio_converter, self.sink)):
             raise ImportError("Could not initialize GStreamer.")
 
         # Set callbacks for EOS and errors:
@@ -94,7 +94,7 @@ class GStreamerSource(StreamingSource):
         self.decoder.connect("unknown-type", self._unknown_type)
 
         # Set the sink's capabilities and behavior:
-        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw'))
+        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw, format=S16LE'))
         self.sink.set_property('drop', False)
         self.sink.set_property('sync', False)
         self.sink.set_property('max-buffers', 5)
@@ -105,11 +105,11 @@ class GStreamerSource(StreamingSource):
         # Add all components to the pipeline:
         self._pipeline.add(self.filesrc)
         self._pipeline.add(self.decoder)
-        self._pipeline.add(self.converter)
+        self._pipeline.add(self.audio_converter)
         self._pipeline.add(self.sink)
         # Link together necessary components:
         self.filesrc.link(self.decoder)
-        self.converter.link(self.sink)
+        self.audio_converter.link(self.sink)
 
         # Callback to notify once the sink is ready:
         self.caps_handler = self.sink.get_static_pad("sink").connect("notify::caps", self._notify_caps)
@@ -122,17 +122,22 @@ class GStreamerSource(StreamingSource):
         self._finished = Event()
         # Wait until the is_ready event is set by a callback:
         self._is_ready = Event()
-        self._is_ready.wait()
+        if not self._is_ready.wait(timeout=1):
+            raise GStreamerDecodeException('Initialization Error')
 
     def __del__(self):
-        self._pipeline.bus.remove_signal_watch()
-        self.filesrc.set_property("location", None)
-        self.sink.get_static_pad("sink").disconnect(self.caps_handler)
+        try:
+            self._pipeline.bus.remove_signal_watch()
+            self.filesrc.set_property("location", None)
+            self.sink.get_static_pad("sink").disconnect(self.caps_handler)
 
-        while not self._queue.empty():
-            self._queue.get_nowait()
+            while not self._queue.empty():
+                self._queue.get_nowait()
 
-        self._pipeline.set_state(Gst.State.NULL)
+            self._pipeline.set_state(Gst.State.NULL)
+
+        except AttributeError:
+            pass
 
     def _notify_caps(self, pad, *args):
         """notify::caps callback"""
@@ -149,16 +154,17 @@ class GStreamerSource(StreamingSource):
                                         sample_rate=sample_rate)
 
         # Allow __init__ to complete:
-        self._is_ready.set()
+        # self._is_ready.set()
 
     def _pad_added(self, element, pad):
         """pad-added callback"""
         name = pad.query_caps(None).to_string()
         if name.startswith('audio/x-raw'):
-            nextpad = self.converter.get_static_pad('sink')
+            nextpad = self.audio_converter.get_static_pad('sink')
             if not nextpad.is_linked():
                 self._pads = True
                 pad.link(nextpad)
+                self._is_ready.set()
 
     def _no_more_pads(self, element):
         """Finished Adding pads"""
@@ -231,9 +237,14 @@ class GStreamerSource(StreamingSource):
 class GStreamerDecoder(MediaDecoder):
 
     def get_file_extensions(self):
-        return '.mp3', '.flac', '.ogg'
+        return '.mp3', '.flac', '.ogg', '.m4a'
 
     def decode(self, file, filename, streaming=True):
+
+        if not any(filename.endswith(ext) for ext in self.get_file_extensions()):
+            # Do not try to decode other formats or Video for now.
+            raise GStreamerDecodeException('Unsupported format.')
+
         if streaming:
             return GStreamerSource(filename, file)
         else:
