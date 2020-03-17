@@ -412,7 +412,7 @@ class WMFSource(Source):
         self._attributes = None
         self._stream_obj = None
         self._wfx = None
-        self._stride = 0
+        self._stride = None
 
         self.set_config_attributes()
 
