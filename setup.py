@@ -11,12 +11,7 @@ with open('pyglet/__init__.py') as f:
             break
 
 
-def create_package_list(base_package):
-    return [base_package] + [base_package + '.' + pkg for pkg in find_packages(base_package)]
-
-
 setup_info = dict(
-    # Metadata
     name='pyglet',
     version=info['version'],
     author='Alex Holkner',
@@ -52,7 +47,7 @@ setup_info = dict(
     ],
 
     # Package info
-    packages=create_package_list('pyglet'),
+    packages=['pyglet'] + ['pyglet.' + pkg for pkg in find_packages('pyglet')],
 
     # Add _ prefix to the names of temporary build dirs
     options={'build': {'build_base': '_build'}, },

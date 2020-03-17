@@ -1,14 +1,17 @@
 pyglet 1.5.1
-Bugfix and Maintenance release
+Bugfix and minor feature release
 
 Bugfixes
 --------
 - Fix issue with changing Label positions by fractional values.
 - Avoid performance issue due to unnecessary context switching with single Window programs.
+- Fix crash on Player.next_source when playing a video with no audio track.
 
 Changes
 --------
 - text.TextLayouts are no longer bound to int positioning.
+- Raise exception if attempting to import from legacy Python.
+- Add GStreamer decoder for compressed audio on Linux.
 
 
 pyglet 1.5.0

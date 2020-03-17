@@ -34,7 +34,7 @@
 # ----------------------------------------------------------------------------
 """High-level sound and video player."""
 
-import threading
+import time
 from collections import deque
 
 import pyglet
@@ -44,26 +44,6 @@ from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source, SourceGroup
 
 _debug = pyglet.options['debug_media']
-
-
-# class AudioClock(pyglet.clock.Clock):
-#     """A dedicated background Clock for refilling audio buffers."""
-#
-#     def __init__(self, interval=0.1):
-#         super().__init__()
-#         self._interval = interval
-#         self._thread = threading.Thread(target=self._tick_clock, daemon=True)
-#         self._thread.start()
-#
-#     def _tick_clock(self):
-#         while True:
-#             self.tick()
-#             self.sleep(self._interval * 1000000)
-#
-#
-# clock = AudioClock()
-
-clock = pyglet.clock.get_default()
 
 
 class PlaybackTimer:
@@ -80,7 +60,7 @@ class PlaybackTimer:
 
     def start(self):
         """Start the timer."""
-        self._systime = clock.time()
+        self._systime = time.time()
 
     def pause(self):
         """Pause the timer."""
@@ -91,14 +71,14 @@ class PlaybackTimer:
         """Reset the timer to 0."""
         self._time = 0.0
         if self._systime is not None:
-            self._systime = clock.time()
+            self._systime = time.time()
 
     def get_time(self):
         """Get the elapsed time."""
         if self._systime is None:
             now = self._time
         else:
-            now = clock.time() - self._systime + self._time
+            now = time.time() - self._systime + self._time
         return now
 
     def set_time(self, value):
@@ -175,8 +155,6 @@ class Player(pyglet.event.EventDispatcher):
         #:
         #: .. versionadded:: 1.4
         self.loop = False
-
-        # self.pr = cProfile.Profile()
 
     def __del__(self):
         """Release the Player resources."""
@@ -299,7 +277,7 @@ class Player(pyglet.event.EventDispatcher):
         self.pause()
         self._timer.reset()
 
-        if self.source:
+        if self._source:
             # Reset source to the beginning
             self.seek(0.0)
             self.source.is_player_source = False
@@ -309,38 +287,39 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         try:
-            source = next(playlists[0])
+            new_source = next(playlists[0])
         except StopIteration:
             self._playlists.popleft()
             if not self._playlists:
-                source = None
+                new_source = None
             else:
                 # Could someone queue an iterator which is empty??
-                source = next(self._playlists[0])
+                new_source = next(self._playlists[0])
 
-        if source is None:
+        if new_source is None:
             self._source = None
             self.delete()
             self.dispatch_event('on_player_eos')
         else:
-            old_audio_format = self.source.audio_format
-            old_video_format = self.source.video_format
-            self._source = source.get_queue_source()
+            old_audio_format = self._source.audio_format
+            old_video_format = self._source.video_format
+            self._source = new_source.get_queue_source()
 
-            if old_audio_format == self.source.audio_format:
-                self._audio_player.clear()
-                self._audio_player.source = self.source
-            else:
-                self._audio_player.delete()
-                self._audio_player = None
-            if old_video_format != self.source.video_format:
+            if self._audio_player:
+                if old_audio_format == self._source.audio_format:
+                    self._audio_player.clear()
+                    self._audio_player.source = self._source
+                else:
+                    self._audio_player.delete()
+                    self._audio_player = None
+            if old_video_format != self._source.video_format:
                 self._texture = None
                 pyglet.clock.unschedule(self.update_texture)
 
             self._set_playing(was_playing)
             self.dispatch_event('on_player_next_source')
 
-    def seek(self, time):
+    def seek(self, timestamp):
         """
         Seek for playback to the indicated timestamp on the current source.
 
@@ -348,7 +327,7 @@ class Player(pyglet.event.EventDispatcher):
         duration of the source, it will be clamped to the end.
 
         Args:
-            time (float): The time where to seek in the source, clamped to the
+            timestamp (float): The time where to seek in the source, clamped to the
                 beginning and end of the source.
         """
         playing = self._playing
@@ -358,10 +337,12 @@ class Player(pyglet.event.EventDispatcher):
             return
 
         if bl.logger is not None:
-            bl.logger.log("p.P.sk", time)
+            bl.logger.log("p.P.sk", timestamp)
 
-        self._timer.set_time(time)
-        self.source.seek(time)
+        timestamp = max(timestamp, 0)
+
+        self._timer.set_time(timestamp)
+        self._source.seek(timestamp)
         if self._audio_player:
             # XXX: According to docstring in AbstractAudioPlayer this cannot
             # be called when the player is not stopped

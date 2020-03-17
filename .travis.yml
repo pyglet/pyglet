@@ -5,8 +5,7 @@ addons:
   apt:
     update: true
     packages:
-    # - ffmpeg
-    - freeglut3-dev
+      - freeglut3-dev
 
 language: python
 matrix:

@@ -161,6 +161,22 @@ def add_default_media_codecs():
     except ImportError:
         pass
 
+    if pyglet.compat_platform.startswith('linux'):
+        try:
+            from . import gstreamer
+            add_decoders(gstreamer)
+        except ImportError:
+            pass
+
+    try:
+        if pyglet.compat_platform in ('win32', 'cygwin'):
+            from pyglet.libs.win32.constants import WINDOWS_VISTA_OR_GREATER
+            if WINDOWS_VISTA_OR_GREATER:  # Supports Vista and above.
+                from . import wmf
+                add_decoders(wmf)
+    except ImportError:
+        pass
+
     try:
         if have_ffmpeg():
             from . import ffmpeg

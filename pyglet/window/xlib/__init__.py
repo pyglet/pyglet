@@ -76,6 +76,9 @@ XkbSetDetectableAutoRepeat.argtypes = [POINTER(xlib.Display), c_int, POINTER(c_i
 _can_detect_autorepeat = None
 
 XA_CARDINAL = 6  # Xatom.h:14
+XA_ATOM = 4
+
+XDND_VERSION = 5
 
 # Do we have the November 2000 UTF8 extension?
 _have_utf8 = hasattr(xlib._lib, 'Xutf8TextListToTextProperty')
@@ -197,6 +200,20 @@ class XlibWindow(BaseWindow):
 
         self._create()
 
+    def _create_xdnd_atoms(self, display):
+        self._xdnd_atoms = {
+            'XdndAware' : xlib.XInternAtom(display, asbytes('XdndAware'), False),
+            'XdndEnter' : xlib.XInternAtom(display, asbytes('XdndEnter'), False),
+            'XdndTypeList' : xlib.XInternAtom(display, asbytes('XdndTypeList'), False),
+            'XdndDrop' : xlib.XInternAtom(display, asbytes('XdndDrop'), False),
+            'XdndFinished' : xlib.XInternAtom(display, asbytes('XdndFinished'), False),
+            'XdndSelection' : xlib.XInternAtom(display, asbytes('XdndSelection'), False),
+            'XdndPosition' : xlib.XInternAtom(display, asbytes('XdndPosition'), False),
+            'XdndStatus' : xlib.XInternAtom(display, asbytes('XdndStatus'), False),
+            'XdndActionCopy' : xlib.XInternAtom(display, asbytes('XdndActionCopy'), False),
+            'text/uri-list' : xlib.XInternAtom(display, asbytes("text/uri-list"), False)
+        }
+
     def _create(self):
         # Unmap existing window if necessary while we fiddle with it.
         if self._window and self._mapped:
@@ -292,6 +309,26 @@ class XlibWindow(BaseWindow):
                                      atom, XA_CARDINAL, 32,
                                      xlib.PropModeReplace,
                                      cast(ptr, POINTER(c_ubyte)), 1)
+
+            # Support for drag and dropping files needs to be enabled.
+            if self._file_drops:
+                # Some variables set because there are 4 different drop events that need shared data.
+                self._xdnd_source = None
+                self._xdnd_version = None
+                self._xdnd_format = None
+                self._xdnd_position = (0, 0)  # For position callback.
+
+                # Atoms required for Xdnd
+                self._create_xdnd_atoms(self._x_display)
+
+                VERSION = c_ulong(int(XDND_VERSION))
+                ptr = pointer(VERSION)
+
+                xlib.XChangeProperty(self._x_display, self._window,
+                                     self._xdnd_atoms['XdndAware'], XA_ATOM, 32,
+                                     xlib.PropModeReplace,
+                                     cast(ptr, POINTER(c_ubyte)), 1)
+
         # Set window attributes
         attributes = xlib.XSetWindowAttributes()
         attributes_mask = 0
@@ -512,11 +549,11 @@ class XlibWindow(BaseWindow):
         except UnicodeEncodeError:
             name = "pyglet"
 
-        hints = xlib.XAllocClassHint()
-        hints.contents.res_class = asbytes(name)
-        hints.contents.res_name = asbytes(name.lower())
-        xlib.XSetClassHint(self._x_display, self._window, hints.contents)
-        xlib.XFree(hints)
+        hint = xlib.XAllocClassHint()
+        hint.contents.res_class = asbytes(name)
+        hint.contents.res_name = asbytes(name.lower())
+        xlib.XSetClassHint(self._x_display, self._window, hint.contents)
+        xlib.XFree(hint)
 
     def get_caption(self):
         return self._caption
@@ -1164,6 +1201,191 @@ class XlibWindow(BaseWindow):
             lo = ev.xclient.data.l[2]
             hi = ev.xclient.data.l[3]
             self._current_sync_value = xsync.XSyncValue(hi, lo)
+
+        elif ev.xclient.message_type == self._xdnd_atoms['XdndPosition']:
+            self._event_drag_position(ev)
+
+        elif ev.xclient.message_type == self._xdnd_atoms['XdndDrop']:
+            self._event_drag_drop(ev)
+
+        elif ev.xclient.message_type == self._xdnd_atoms['XdndEnter']:
+            self._event_drag_enter(ev)
+
+    def _event_drag_drop(self, ev):
+        if self._xdnd_version > XDND_VERSION:
+            return
+
+        time = xlib.CurrentTime
+
+        if self._xdnd_format:
+            if self._xdnd_version >= 1:
+                time = ev.xclient.data.l[2]
+
+            # Convert to selection notification.
+            xlib.XConvertSelection(self._x_display,
+                                   self._xdnd_atoms['XdndSelection'],
+                                   self._xdnd_format,
+                                   self._xdnd_atoms['XdndSelection'],
+                                   self._window,
+                                   time)
+
+            xlib.XFlush(self._x_display)
+
+        elif self._xdnd_version >= 2:
+            # If no format send finished with no data.
+            e = xlib.XEvent()
+            e.xclient.type = xlib.ClientMessage
+            e.xclient.message_type = self._xdnd_atoms['XdndFinished']
+            e.xclient.display = cast(self._x_display, POINTER(xlib.Display))
+            e.xclient.window = self._window
+            e.xclient.format = 32
+            e.xclient.data.l[0] = self._window
+            e.xclient.data.l[1] = 0
+            e.xclient.data.l[2] = None
+
+            xlib.XSendEvent(self._x_display, self._xdnd_source,
+                            False, xlib.NoEventMask, byref(e))
+
+            xlib.XFlush(self._x_display)
+
+    def _event_drag_position(self, ev):
+        if self._xdnd_version > XDND_VERSION:
+            return
+
+        xoff = (ev.xclient.data.l[2] >> 16) & 0xffff
+        yoff = (ev.xclient.data.l[2]) & 0xffff
+
+        # Need to convert the position to actual window coordinates with the screen offset
+        child = xlib.Window()
+        x = c_int()
+        y = c_int()
+        xlib.XTranslateCoordinates(self._x_display,
+                                   self._get_root(),
+                                   self._window,
+                                   xoff, yoff,
+                                   byref(x),
+                                   byref(y),
+                                   byref(child))
+
+        self._xdnd_position = (x.value, y.value)
+
+        e = xlib.XEvent()
+        e.xclient.type = xlib.ClientMessage
+        e.xclient.message_type = self._xdnd_atoms['XdndStatus']
+        e.xclient.display = cast(self._x_display, POINTER(xlib.Display))
+        e.xclient.window = ev.xclient.data.l[0]
+        e.xclient.format = 32
+        e.xclient.data.l[0] = self._window
+        e.xclient.data.l[2] = 0
+        e.xclient.data.l[3] = 0
+
+        if self._xdnd_format:
+            e.xclient.data.l[1] = 1
+            if self._xdnd_version >= 2:
+                e.xclient.data.l[4] = self._xdnd_atoms['XdndActionCopy']
+
+        xlib.XSendEvent(self._x_display, self._xdnd_source,
+                        False, xlib.NoEventMask, byref(e))
+
+        xlib.XFlush(self._x_display)
+
+    def _event_drag_enter(self, ev):
+        self._xdnd_source = ev.xclient.data.l[0]
+        self._xdnd_version = ev.xclient.data.l[1] >> 24
+        self._xdnd_format = None
+
+        if self._xdnd_version > XDND_VERSION:
+            return
+
+        three_or_more = ev.xclient.data.l[1] & 1
+
+        # Search all of them (usually 8)
+        if three_or_more:
+            data, count = self.get_single_property(self._xdnd_source, self._xdnd_atoms['XdndTypeList'], XA_ATOM)
+
+            data = cast(data, POINTER(xlib.Atom))
+        else:
+            # Some old versions may only have 3? Needs testing.
+            count = 3
+            data = ev.xclient.data.l + 2
+
+        # Check all of the properties we received from the dropped item and verify it support URI.
+        for i in range(count):
+            if data[i] == self._xdnd_atoms['text/uri-list']:
+                self._xdnd_format = self._xdnd_atoms['text/uri-list']
+                break
+
+        if data:
+            xlib.XFree(data)
+
+    def get_single_property(self, window, atom_property, atom_type):
+        """ Returns the length and data of a window property. """
+        actualAtom = xlib.Atom()
+        actualFormat = c_int()
+        itemCount = c_ulong()
+        bytesAfter = c_ulong()
+        data = POINTER(c_ubyte)()
+
+        xlib.XGetWindowProperty(self._x_display, window,
+                                atom_property, 0, 2147483647, False, atom_type,
+                                byref(actualAtom),
+                                byref(actualFormat),
+                                byref(itemCount),
+                                byref(bytesAfter),
+                                data)
+
+        return data, itemCount.value
+
+    @XlibEventHandler(xlib.SelectionNotify)
+    def _event_selection_notification(self, ev):
+        if ev.xselection.property != 0 and ev.xselection.selection == self._xdnd_atoms['XdndSelection']:
+            if self._xdnd_format:
+                # This will get the data
+                data, count = self.get_single_property(ev.xselection.requestor,
+                                                         ev.xselection.property,
+                                                         ev.xselection.target)
+
+                buffer = create_string_buffer(count)
+                memmove(buffer, data, count)
+
+                formatted_paths = self.parse_filenames(buffer.value.decode())
+
+                e = xlib.XEvent()
+                e.xclient.type = xlib.ClientMessage
+                e.xclient.message_type = self._xdnd_atoms['XdndFinished']
+                e.xclient.display = cast(self._x_display, POINTER(xlib.Display))
+                e.xclient.window = self._window
+                e.xclient.format = 32
+                e.xclient.data.l[0] = self._xdnd_source
+                e.xclient.data.l[1] = 1
+                e.xclient.data.l[2] = self._xdnd_atoms['XdndActionCopy']
+
+                xlib.XSendEvent(self._x_display, self._get_root(),
+                                False, xlib.NoEventMask, byref(e))
+
+                xlib.XFlush(self._x_display)
+
+                xlib.XFree(data)
+
+                self.dispatch_event('on_file_drop', self._xdnd_position[0], self._height - self._xdnd_position[1], formatted_paths)
+
+    @staticmethod
+    def parse_filenames(decoded_string):
+        """All of the filenames from file drops come as one big string with
+            some special characters (%20), this will parse them out.
+        """
+        import sys
+
+        different_files = decoded_string.splitlines()
+
+        parsed = []
+        for filename in different_files:
+            if filename:
+                filename = urllib.parse.urlsplit(filename).path
+                encoding = sys.getfilesystemencoding()
+                parsed.append(urllib.parse.unquote(filename, encoding))
+
+        return parsed
 
     def _sync_resize(self):
         if self._enable_xsync and self._current_sync_valid:

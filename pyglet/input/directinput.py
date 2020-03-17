@@ -190,10 +190,15 @@ class DirectInputDevice(base.Device):
         
         events = (dinput.DIDEVICEOBJECTDATA * 64)()
         n_events = win32.DWORD(len(events))
-        self._device.GetDeviceData(ctypes.sizeof(dinput.DIDEVICEOBJECTDATA),
-                                   ctypes.cast(ctypes.pointer(events), dinput.LPDIDEVICEOBJECTDATA),
-                                   ctypes.byref(n_events),
-                                   0)
+        try:
+            self._device.GetDeviceData(ctypes.sizeof(dinput.DIDEVICEOBJECTDATA),
+                                       ctypes.cast(ctypes.pointer(events),
+                                                   dinput.LPDIDEVICEOBJECTDATA),
+                                       ctypes.byref(n_events),
+                                       0)
+        except OSError:
+            return
+
         for event in events[:n_events.value]:
             index = event.dwOfs // 4
             self.controls[index].value = event.dwData

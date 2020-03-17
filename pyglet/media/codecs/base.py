@@ -171,7 +171,7 @@ class AudioData:
         self.timestamp += num_bytes / float(audio_format.bytes_per_second)
 
     def get_string_data(self):
-        """Return data as a bytes.
+        """Return data as raw bytes.
 
         Returns:
             bytes: data as raw bytes.
@@ -383,11 +383,11 @@ class Source:
         """
         return self
 
-    def get_audio_data(self, bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
         """Get next packet of audio data.
 
         Args:
-            bytes (int): Maximum number of bytes of data to return.
+            num_bytes (int): Maximum number of bytes of data to return.
             compensation_time (float): Time in sec to compensate due to a
                 difference between the master clock and the audio clock.
 
@@ -426,7 +426,7 @@ class StreamingSource(Source):
             :class:`.Source`
         """
         if self.is_player_source:
-            raise MediaException('This source is already a source on a player.')
+            raise MediaException('This source is already queued on a player.')
         self.is_player_source = True
         return self
 
@@ -451,7 +451,7 @@ class StaticSource(Source):
     def __init__(self, source):
         source = source.get_queue_source()
         if source.video_format:
-            raise NotImplementedError('Static sources not supported for video yet.')
+            raise NotImplementedError('Static sources not supported for video.')
 
         self.audio_format = source.audio_format
         if not self.audio_format:
@@ -472,13 +472,13 @@ class StaticSource(Source):
             data.write(audio_data.get_string_data())
         self._data = data.getvalue()
 
-        self._duration = len(self._data) / float(self.audio_format.bytes_per_second)
+        self._duration = len(self._data) / self.audio_format.bytes_per_second
 
     def get_queue_source(self):
         if self._data is not None:
             return StaticMemorySource(self._data, self.audio_format)
 
-    def get_audio_data(self, bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
         """The StaticSource does not provide audio data.
 
         When the StaticSource is queued on a
@@ -526,11 +526,11 @@ class StaticMemorySource(StaticSource):
 
         self._file.seek(offset)
 
-    def get_audio_data(self, bytes, compensation_time=0.0):
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
         """Get next packet of audio data.
 
         Args:
-            bytes (int): Maximum number of bytes of data to return.
+            num_bytes (int): Maximum number of bytes of data to return.
             compensation_time (float): Not used in this class.
 
         Returns:
@@ -542,11 +542,11 @@ class StaticMemorySource(StaticSource):
 
         # Align to sample size
         if self.audio_format.bytes_per_sample == 2:
-            bytes &= 0xfffffffe
+            num_bytes &= 0xfffffffe
         elif self.audio_format.bytes_per_sample == 4:
-            bytes &= 0xfffffffc
+            num_bytes &= 0xfffffffc
 
-        data = self._file.read(bytes)
+        data = self._file.read(num_bytes)
         if not len(data):
             return None
 

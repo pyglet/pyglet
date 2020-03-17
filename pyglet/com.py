@@ -99,6 +99,17 @@ class GUID(ctypes.Structure):
         return 'GUID(%x, %x, %x, %x, %x, %x, %x, %x, %x, %x, %x)' % (
             self.Data1, self.Data2, self.Data3, b1, b2, b3, b4, b5, b6, b7, b8)
 
+    def __cmp__(self, other):
+        if isinstance(other, GUID):
+            return ctypes.cmp(bytes(self), bytes(other))
+        return -1
+
+    def __eq__(self, other):
+        return isinstance(other, GUID) and bytes(self) == bytes(other)
+
+    def __hash__(self):
+        return hash(bytes(self))
+
 
 LPGUID = ctypes.POINTER(GUID)
 IID = GUID
@@ -134,9 +145,9 @@ class COMMethodInstance:
     def __get__(self, obj, tp):
         if obj is not None:
             def _call(*args):
-                assert _debug_com('COM: IN {}({}, {})'.format(self.name, obj.__class__.__name__, args))
+                assert _debug_com('COM: #{} IN {}({}, {})'.format(self.i, self.name, obj.__class__.__name__, args))
                 ret = self.method.get_field()(self.i, self.name)(obj, *args)
-                assert _debug_com('COM: OUT {}({}, {})'.format(self.name, obj.__class__.__name__, args))
+                assert _debug_com('COM: #{} OUT {}({}, {})'.format(self.i, self.name, obj.__class__.__name__, args))
                 assert _debug_com('COM: RETURN {}'.format(ret))
                 return ret
 
