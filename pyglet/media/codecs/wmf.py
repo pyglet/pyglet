@@ -773,6 +773,9 @@ class WMFDecoder(MediaDecoder):
 
         self.extensions = self._build_decoder_extensions()
 
+        self.ole32 = ole32
+        self.MFShutdown = MFShutdown
+
         assert _debug('Windows Media Foundation: Initialized.')
 
     @staticmethod
@@ -808,8 +811,8 @@ class WMFDecoder(MediaDecoder):
             return StaticSource(WMFSource(filename, file))
 
     def __del__(self):
-        MFShutdown()
-        ole32.CoUninitialize()
+        self.MFShutdown()
+        self.ole32.CoUninitialize()
 
 
 def get_decoders():
