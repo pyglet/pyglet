@@ -46,8 +46,6 @@ import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GLib
 
-Gst.init(None)
-
 
 class GStreamerDecodeException(MediaDecodeException):
     pass
@@ -57,16 +55,15 @@ class GLibMainLoopThread(Thread):
     """A background Thread for a GLib MainLoop"""
     def __init__(self):
         super().__init__(daemon=True)
-        self._glib_loop = GLib.MainLoop.new(None, False)
+        self.mainloop = GLib.MainLoop.new(None, False)
         self.start()
 
     def run(self):
-        self._glib_loop.run()
+        self.mainloop.run()
 
 
 class GStreamerSource(StreamingSource):
 
-    _glib_loop = GLibMainLoopThread()
     _sentinal = object()
 
     def __init__(self, filename, file=None):
@@ -78,7 +75,7 @@ class GStreamerSource(StreamingSource):
         self.audio_converter = Gst.ElementFactory.make("audioconvert", None)
         self.sink = Gst.ElementFactory.make("appsink", None)
         if not all((self.filesrc, self.decoder, self.audio_converter, self.sink)):
-            raise ImportError("Could not initialize GStreamer.")
+            raise GStreamerDecodeException("Could not initialize GStreamer.")
 
         # Set callbacks for EOS and errors:
         self._pipeline.bus.add_signal_watch()
@@ -94,7 +91,7 @@ class GStreamerSource(StreamingSource):
         self.decoder.connect("unknown-type", self._unknown_type)
 
         # Set the sink's capabilities and behavior:
-        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw, format=S16LE'))
+        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw'))
         self.sink.set_property('drop', False)
         self.sink.set_property('sync', False)
         self.sink.set_property('max-buffers', 5)
@@ -154,7 +151,7 @@ class GStreamerSource(StreamingSource):
                                         sample_rate=sample_rate)
 
         # Allow __init__ to complete:
-        # self._is_ready.set()
+        self._is_ready.set()
 
     def _pad_added(self, element, pad):
         """pad-added callback"""
@@ -164,7 +161,6 @@ class GStreamerSource(StreamingSource):
             if not nextpad.is_linked():
                 self._pads = True
                 pad.link(nextpad)
-                self._is_ready.set()
 
     def _no_more_pads(self, element):
         """Finished Adding pads"""
@@ -236,6 +232,10 @@ class GStreamerSource(StreamingSource):
 
 class GStreamerDecoder(MediaDecoder):
 
+    def __init__(self):
+        Gst.init(None)
+        self._glib_loop = GLibMainLoopThread()
+
     def get_file_extensions(self):
         return '.mp3', '.flac', '.ogg', '.m4a'
 
@@ -249,6 +249,9 @@ class GStreamerDecoder(MediaDecoder):
             return GStreamerSource(filename, file)
         else:
             return StaticSource(GStreamerSource(filename, file))
+
+    def __del__(self):
+        self._glib_loop.mainloop.quit()
 
 
 def get_decoders():
