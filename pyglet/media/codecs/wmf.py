@@ -413,10 +413,6 @@ MFCreateSourceReaderFromByteStream = mfreadwrite_lib.MFCreateSourceReaderFromByt
 MFCreateSourceReaderFromByteStream.restype = HRESULT
 MFCreateSourceReaderFromByteStream.argtypes = [IMFByteStream, IMFAttributes, POINTER(IMFSourceReader)]
 
-MFCreateMFByteStreamOnStreamEx = mfplat_lib.MFCreateMFByteStreamOnStreamEx
-MFCreateMFByteStreamOnStreamEx.restype = HRESULT
-MFCreateMFByteStreamOnStreamEx.argtypes = [c_void_p, POINTER(IMFByteStream)]
-
 MFCreateMFByteStreamOnStream = mfplat_lib.MFCreateMFByteStreamOnStream
 MFCreateMFByteStreamOnStream.restype = HRESULT
 MFCreateMFByteStreamOnStream.argtypes = [c_void_p, POINTER(IMFByteStream)]
@@ -594,10 +590,6 @@ class WMFSource(Source):
         uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
         uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
         uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
-
-        guid_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0)  # TODO: Make GUID take no arguments for a null version.
-        uncompressed_mt.GetGUID(MF_MT_SUBTYPE, ctypes.byref(guid_type))
 
         try:
             self._source_reader.SetCurrentMediaType(self._video_stream_index, None, uncompressed_mt)
