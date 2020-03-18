@@ -1716,6 +1716,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             """File(s) were dropped into the window, will return the position of the cursor and
             a list of paths to the files that were dropped.
 
+            .. versionadded:: 1.5.1
+
             :event:
             """
 
@@ -1738,7 +1740,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
             :event:
             """
-
 
 
 BaseWindow.register_event_type('on_key_press')
@@ -1882,14 +1883,8 @@ else:
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.window.win32 import Win32Window as Window
     else:
-        # XXX HACK around circ problem, should be fixed after removal of
-        # shadow nonsense
-        #pyglet.window = sys.modules[__name__]
-        #import key, mouse
-
         from pyglet.window.xlib import XlibWindow as Window
 
-# XXX remove
 # Create shadow window. (trickery is for circular import)
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
