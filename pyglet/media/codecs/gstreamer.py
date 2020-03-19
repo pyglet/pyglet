@@ -36,6 +36,7 @@
 """Multi-format decoder using Gstreamer.
 """
 import queue
+import tempfile
 from threading import Event, Thread
 
 from ..exceptions import MediaDecodeException
@@ -68,6 +69,11 @@ class GStreamerSource(StreamingSource):
 
     def __init__(self, filename, file=None):
         self._pipeline = Gst.Pipeline()
+
+        if file:
+            self._file = tempfile.NamedTemporaryFile(buffering=False)
+            self._file.write(file.read())
+            filename = self._file.name
 
         # Create the major parts of the pipeline:
         self.filesrc = Gst.ElementFactory.make("filesrc", None)
@@ -123,16 +129,16 @@ class GStreamerSource(StreamingSource):
             raise GStreamerDecodeException('Initialization Error')
 
     def __del__(self):
+        if hasattr(self, '_file'):
+            self._file.close()
+
         try:
             self._pipeline.bus.remove_signal_watch()
             self.filesrc.set_property("location", None)
             self.sink.get_static_pad("sink").disconnect(self.caps_handler)
-
             while not self._queue.empty():
                 self._queue.get_nowait()
-
             self._pipeline.set_state(Gst.State.NULL)
-
         except AttributeError:
             pass
 

@@ -576,15 +576,16 @@ class FFmpegSource(StreamingSource):
     def __del__(self):
         if _debug:
             print('del ffmpeg source')
-
-        ffmpeg_free_packet(self._packet)
+        if self._packet:
+            ffmpeg_free_packet(self._packet)
         if self._video_stream:
             swscale.sws_freeContext(self.img_convert_ctx)
             ffmpeg_close_stream(self._video_stream)
         if self._audio_stream:
             swresample.swr_free(self.audio_convert_ctx)
             ffmpeg_close_stream(self._audio_stream)
-        ffmpeg_close_file(self._file)
+        if self._file:
+            ffmpeg_close_file(self._file)
 
     def seek(self, timestamp):
         if _debug:
