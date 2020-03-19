@@ -309,7 +309,7 @@ class IMFByteStream(com.IUnknown):
         ('GetCurrentPosition',
          com.STDMETHOD()),
         ('SetCurrentPosition',
-         com.STDMETHOD()),
+         com.STDMETHOD(c_ulonglong)),
         ('IsEndOfStream',
          com.STDMETHOD()),
         ('Read',
@@ -319,7 +319,7 @@ class IMFByteStream(com.IUnknown):
         ('EndRead',
          com.STDMETHOD()),
         ('Write',
-         com.STDMETHOD()),
+         com.STDMETHOD(POINTER(BYTE), ULONG, POINTER(ULONG))),
         ('BeginWrite',
          com.STDMETHOD()),
         ('EndWrite',
@@ -413,9 +413,14 @@ MFCreateSourceReaderFromByteStream = mfreadwrite_lib.MFCreateSourceReaderFromByt
 MFCreateSourceReaderFromByteStream.restype = HRESULT
 MFCreateSourceReaderFromByteStream.argtypes = [IMFByteStream, IMFAttributes, POINTER(IMFSourceReader)]
 
-MFCreateMFByteStreamOnStream = mfplat_lib.MFCreateMFByteStreamOnStream
-MFCreateMFByteStreamOnStream.restype = HRESULT
-MFCreateMFByteStreamOnStream.argtypes = [c_void_p, POINTER(IMFByteStream)]
+if WINDOWS_7_OR_GREATER:
+    MFCreateMFByteStreamOnStream = mfplat_lib.MFCreateMFByteStreamOnStream
+    MFCreateMFByteStreamOnStream.restype = HRESULT
+    MFCreateMFByteStreamOnStream.argtypes = [c_void_p, POINTER(IMFByteStream)]
+
+MFCreateTempFile = mfplat_lib.MFCreateTempFile
+MFCreateTempFile.restype = HRESULT
+MFCreateTempFile.argtypes = [UINT, UINT, UINT, POINTER(IMFByteStream)]
 
 MFCreateMediaType = mfplat_lib.MFCreateMediaType
 MFCreateMediaType.restype = HRESULT
@@ -441,6 +446,7 @@ class WMFSource(Source):
         self._timestamp = 0
         self._attributes = None
         self._stream_obj = None
+        self._imf_bytestream = None
         self._wfx = None
         self._stride = None
 
@@ -453,24 +459,43 @@ class WMFSource(Source):
         if file is not None:
             data = file.read()
 
-            # Stole code from GDIPlus for older IStream support.
-            hglob = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(data))
-            ptr = kernel32.GlobalLock(hglob)
-            ctypes.memmove(ptr, data, len(data))
-            kernel32.GlobalUnlock(hglob)
+            self._imf_bytestream = IMFByteStream()
 
-            # Create IStream
-            self._stream_obj = com.IUnknown()
-            ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
+            data_len = len(data)
 
-            imf_bytestream = IMFByteStream()
+            if False:
+                # Stole code from GDIPlus for older IStream support.
+                hglob = kernel32.GlobalAlloc(GMEM_MOVEABLE, data_len)
+                ptr = kernel32.GlobalLock(hglob)
+                ctypes.memmove(ptr, data, data_len)
+                kernel32.GlobalUnlock(hglob)
 
-            # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
-            # (Also unsure how/if new Windows async functions and callbacks work with ctypes.)
-            MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(imf_bytestream))  # Allows 7 support still
+                # Create IStream
+                self._stream_obj = com.IUnknown()
+                ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
+
+                # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
+                # (Also unsure how/if new Windows async functions and callbacks work with ctypes.)
+                MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(self._imf_bytestream))
+            else:
+                # Vista does not support MFCreateMFByteStreamOnStream.
+                # HACK: Create file in Windows temp folder to write our byte data to.
+                # (Will be automatically deleted when IMFByteStream is Released.)
+                MFCreateTempFile(MF_ACCESSMODE_READWRITE,
+                                 MF_OPENMODE_DELETE_IF_EXIST,
+                                 MF_FILEFLAGS_NONE,
+                                 ctypes.byref(self._imf_bytestream))
+
+                wrote_length = ULONG()
+                data_ptr = cast(data, POINTER(BYTE))
+                self._imf_bytestream.Write(data_ptr, data_len, ctypes.byref(wrote_length))
+                self._imf_bytestream.SetCurrentPosition(0)
+
+                if wrote_length.value != data_len:
+                    raise MediaDecodeException("Could not write all of the data to the bytestream file.")
 
             try:
-                MFCreateSourceReaderFromByteStream(imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
+                MFCreateSourceReaderFromByteStream(self._imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
                 raise MediaDecodeException(err) from None
         else:
@@ -753,12 +778,11 @@ class WMFSource(Source):
     def set_config_attributes(self):
         """ Here we set user specified attributes, by default we try to set low latency mode. (Win7+)"""
         if self.low_latency or self.decode_video:
-            # Low Latency is Windows 7 only.
             self._attributes = IMFAttributes()
 
             MFCreateAttributes(ctypes.byref(self._attributes), 3)
 
-        if self.low_latency:
+        if self.low_latency and WINDOWS_7_OR_GREATER:
             self._attributes.SetUINT32(ctypes.byref(MF_LOW_LATENCY), 1)
 
             assert _debug('WMFAudioDecoder: Setting configuration attributes.')
@@ -772,7 +796,10 @@ class WMFSource(Source):
 
     def __del__(self):
         if self._stream_obj:
-            self._stream_obj.Release()  # If we have a stream and we delete this, release the stream.
+            self._stream_obj.Release()
+
+        if self._imf_bytestream:
+            self._imf_bytestream.Release()
 
         if self._current_audio_sample:
             self._current_audio_buffer.Release()
