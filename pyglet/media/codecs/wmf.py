@@ -463,7 +463,7 @@ class WMFSource(Source):
 
             data_len = len(data)
 
-            if False:
+            if WINDOWS_7_OR_GREATER:
                 # Stole code from GDIPlus for older IStream support.
                 hglob = kernel32.GlobalAlloc(GMEM_MOVEABLE, data_len)
                 ptr = kernel32.GlobalLock(hglob)
