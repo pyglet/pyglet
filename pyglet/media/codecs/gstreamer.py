@@ -71,6 +71,7 @@ class GStreamerSource(StreamingSource):
         self._pipeline = Gst.Pipeline()
 
         if file:
+            file.seek(0)
             self._file = tempfile.NamedTemporaryFile(buffering=False)
             self._file.write(file.read())
             filename = self._file.name
@@ -139,7 +140,7 @@ class GStreamerSource(StreamingSource):
             while not self._queue.empty():
                 self._queue.get_nowait()
             self._pipeline.set_state(Gst.State.NULL)
-        except AttributeError:
+        except (ImportError, AttributeError):
             pass
 
     def _notify_caps(self, pad, *args):
