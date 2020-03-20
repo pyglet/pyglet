@@ -89,6 +89,7 @@ MF_MT_AUDIO_BITS_PER_SAMPLE = com.GUID(0xf2deb57f, 0x40fa, 0x4764, 0xaa, 0x33, 0
 MF_MT_AUDIO_VALID_BITS_PER_SAMPLE = com.GUID(0xd9bf8d6a, 0x9530, 0x4b7c, 0x9d, 0xdf, 0xff, 0x6f, 0xd5, 0x8b, 0xbd, 0x06)
 MF_MT_AUDIO_SAMPLES_PER_BLOCK = com.GUID(0xaab15aac, 0xe13a, 0x4995, 0x92, 0x22, 0x50, 0x1e, 0xa1, 0x5c, 0x68, 0x77)
 MF_MT_AUDIO_CHANNEL_MASK = com.GUID(0x55fb5765, 0x644a, 0x4caf, 0x84, 0x79, 0x93, 0x89, 0x83, 0xbb, 0x15, 0x88)
+MF_PD_DURATION = com.GUID(0x6c990d33, 0xbb8e, 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a)
 
 
 # Media types categories
@@ -146,6 +147,9 @@ MF_E_INVALIDSTREAMNUMBER = -1072875853  # 0xC00D36B3
 MF_E_UNSUPPORTED_BYTESTREAM_TYPE = -1072875836  # 0xC00D36C4
 MF_E_NO_MORE_TYPES = 0xC00D36B9
 MF_E_TOPO_CODEC_NOT_FOUND = -1072868846  # 0xC00D5212
+
+
+VT_I8 = 20  # Only enum we care about: https://docs.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
 
 
 def timestamp_from_wmf(timestamp):  # 100-nanoseconds
@@ -269,20 +273,6 @@ class IMFSample(IMFAttributes, com.IUnknown):
     ]
 
 
-# PROPVARIANT wrapper, doesn't require InitPropVariantFromInt64 this way.
-class PROPVARIANT(ctypes.Structure):
-    _fields_ = [
-        ('vt', ctypes.c_ushort),
-        ('wReserved1', ctypes.c_ubyte),
-        ('wReserved2', ctypes.c_ubyte),
-        ('wReserved3', ctypes.c_ulong),
-        ('llVal', ctypes.c_longlong),
-    ]
-
-
-VT_I8 = 20  # Only enum we care about: https://docs.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
-
-
 class IMFMediaType(IMFAttributes, com.IUnknown):
     _methods_ = [
         ('GetMajorType',
@@ -354,7 +344,7 @@ class IMFSourceReader(com.IUnknown):
         ('GetServiceForStream',
          com.STDMETHOD()),
         ('GetPresentationAttribute',
-         com.STDMETHOD()),
+         com.STDMETHOD(DWORD, com.REFIID, POINTER(PROPVARIANT))),
     ]
 
 
@@ -382,6 +372,7 @@ MF_SOURCE_READER_ALL_STREAMS = 0xfffffffe
 MF_SOURCE_READER_ANY_STREAM = 4294967294  # 0xfffffffe
 MF_SOURCE_READER_FIRST_AUDIO_STREAM = 4294967293  # 0xfffffffd
 MF_SOURCE_READER_FIRST_VIDEO_STREAM = 0xfffffffc
+MF_SOURCE_READER_MEDIASOURCE = 0xffffffff
 
 # Version calculation
 if WINDOWS_7_OR_GREATER:
@@ -512,6 +503,19 @@ class WMFSource(Source):
             self._load_video()
 
         assert self.audio_format or self.video_format, "Source was decoded, but no video or audio streams were found."
+
+        # Get duration of the media file after everything has been ok to decode.
+        try:
+            prop = PROPVARIANT()
+            self._source_reader.GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE,
+                                                         ctypes.byref(MF_PD_DURATION),
+                                                         ctypes.byref(prop))
+
+            self._duration = timestamp_from_wmf(prop.llVal)
+            ole32.PropVariantClear(ctypes.byref(prop))
+        except OSError:
+            print("Could not determine duration of media file.")
+
 
     def _load_audio(self, stream=MF_SOURCE_READER_FIRST_AUDIO_STREAM):
         """ Prepares the audio stream for playback by detecting if it's compressed and attempting to decompress to PCM.
@@ -762,6 +766,8 @@ class WMFSource(Source):
 
         pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         self._source_reader.SetCurrentPosition(pos_com, prop)
+
+        ole32.PropVariantClear(ctypes.byref(prop))
 
     @staticmethod
     def _get_attribute_size(attributes, guidKey):

@@ -466,3 +466,15 @@ class RAWINPUT(Structure):
         ('header', RAWINPUTHEADER),
         ('data', _RAWINPUTDEVICEUNION),
     ]
+
+
+# PROPVARIANT wrapper, doesn't require InitPropVariantFromInt64 this way.
+class PROPVARIANT(ctypes.Structure):
+    _fields_ = [
+        ('vt', ctypes.c_ushort),
+        ('wReserved1', ctypes.c_ubyte),
+        ('wReserved2', ctypes.c_ubyte),
+        ('wReserved3', ctypes.c_ulong),
+        ('llVal', ctypes.c_longlong),
+    ]
+
