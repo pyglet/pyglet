@@ -295,3 +295,5 @@ _ole32.CoInitializeEx.restype = HRESULT
 _ole32.CoInitializeEx.argtypes = [LPVOID, DWORD]
 _ole32.CoUninitialize.restype = HRESULT
 _ole32.CoUninitialize.argtypes = []
+_ole32.PropVariantClear.restype = HRESULT
+_ole32.PropVariantClear.argtypes = [c_void_p]
