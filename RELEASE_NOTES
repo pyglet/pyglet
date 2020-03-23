@@ -1,11 +1,15 @@
 pyglet 1.5.2
-Bugfix release
+Bugfix and minor feature release
 
 Bugfixes
 --------
 - Fix WMF decoder for pre-Windows 8 systems.
 - Fix WMF decoder loading from file-like objects for Windows Vista.
+- Fix WMF decoder crashing when attempting to seek past file duration.
 
+Changes
+-------
+- Allow GStreamer and FFmpeg decoder to load from file-like objects.
 
 
 pyglet 1.5.1
