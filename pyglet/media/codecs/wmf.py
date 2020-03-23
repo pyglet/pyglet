@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 import os
 import platform
+import warnings
 
 from pyglet import com, image
 from pyglet.debug import debug_print
@@ -514,8 +515,7 @@ class WMFSource(Source):
             self._duration = timestamp_from_wmf(prop.llVal)
             ole32.PropVariantClear(ctypes.byref(prop))
         except OSError:
-            print("Could not determine duration of media file.")
-
+            warnings.warn("Could not determine duration of media file: '{}'.".format(filename))
 
     def _load_audio(self, stream=MF_SOURCE_READER_FIRST_AUDIO_STREAM):
         """ Prepares the audio stream for playback by detecting if it's compressed and attempting to decompress to PCM.
@@ -535,8 +535,8 @@ class WMFSource(Source):
             return
 
         # Get Major media type (Audio, Video, etc)
-        guid_audio_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0)  # TODO: Make GUID take no arguments for a null version.
+        # TODO: Make GUID take no arguments for a null version:
+        guid_audio_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
         imfmedia.GetGUID(MF_MT_MAJOR_TYPE, ctypes.byref(guid_audio_type))
 
@@ -758,14 +758,17 @@ class WMFSource(Source):
         return self._timestamp
 
     def seek(self, timestamp):
-        timestamp = timestamp_to_wmf(timestamp)
+        timestamp = min(timestamp, self._duration) if self._duration else timestamp
 
         prop = PROPVARIANT()
         prop.vt = VT_I8
-        prop.llVal = timestamp
+        prop.llVal = timestamp_to_wmf(timestamp)
 
         pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        self._source_reader.SetCurrentPosition(pos_com, prop)
+        try:
+            self._source_reader.SetCurrentPosition(pos_com, prop)
+        except OSError as e:
+            warnings.warn(e)
 
         ole32.PropVariantClear(ctypes.byref(prop))
 
