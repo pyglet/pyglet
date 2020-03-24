@@ -1,5 +1,40 @@
+# ----------------------------------------------------------------------------
+# pyglet
+# Copyright (c) 2006-2008 Alex Holkner
+# Copyright (c) 2008-2020 pyglet contributors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of pyglet nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
 import os
 import platform
+import warnings
 
 from pyglet import com, image
 from pyglet.debug import debug_print
@@ -55,6 +90,7 @@ MF_MT_AUDIO_BITS_PER_SAMPLE = com.GUID(0xf2deb57f, 0x40fa, 0x4764, 0xaa, 0x33, 0
 MF_MT_AUDIO_VALID_BITS_PER_SAMPLE = com.GUID(0xd9bf8d6a, 0x9530, 0x4b7c, 0x9d, 0xdf, 0xff, 0x6f, 0xd5, 0x8b, 0xbd, 0x06)
 MF_MT_AUDIO_SAMPLES_PER_BLOCK = com.GUID(0xaab15aac, 0xe13a, 0x4995, 0x92, 0x22, 0x50, 0x1e, 0xa1, 0x5c, 0x68, 0x77)
 MF_MT_AUDIO_CHANNEL_MASK = com.GUID(0x55fb5765, 0x644a, 0x4caf, 0x84, 0x79, 0x93, 0x89, 0x83, 0xbb, 0x15, 0x88)
+MF_PD_DURATION = com.GUID(0x6c990d33, 0xbb8e, 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a)
 
 
 # Media types categories
@@ -112,6 +148,9 @@ MF_E_INVALIDSTREAMNUMBER = -1072875853  # 0xC00D36B3
 MF_E_UNSUPPORTED_BYTESTREAM_TYPE = -1072875836  # 0xC00D36C4
 MF_E_NO_MORE_TYPES = 0xC00D36B9
 MF_E_TOPO_CODEC_NOT_FOUND = -1072868846  # 0xC00D5212
+
+
+VT_I8 = 20  # Only enum we care about: https://docs.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
 
 
 def timestamp_from_wmf(timestamp):  # 100-nanoseconds
@@ -235,20 +274,6 @@ class IMFSample(IMFAttributes, com.IUnknown):
     ]
 
 
-# PROPVARIANT wrapper, doesn't require InitPropVariantFromInt64 this way.
-class PROPVARIANT(ctypes.Structure):
-    _fields_ = [
-        ('vt', ctypes.c_ushort),
-        ('wReserved1', ctypes.c_ubyte),
-        ('wReserved2', ctypes.c_ubyte),
-        ('wReserved3', ctypes.c_ulong),
-        ('llVal', ctypes.c_longlong),
-    ]
-
-
-VT_I8 = 20  # Only enum we care about: https://docs.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
-
-
 class IMFMediaType(IMFAttributes, com.IUnknown):
     _methods_ = [
         ('GetMajorType',
@@ -275,7 +300,7 @@ class IMFByteStream(com.IUnknown):
         ('GetCurrentPosition',
          com.STDMETHOD()),
         ('SetCurrentPosition',
-         com.STDMETHOD()),
+         com.STDMETHOD(c_ulonglong)),
         ('IsEndOfStream',
          com.STDMETHOD()),
         ('Read',
@@ -285,7 +310,7 @@ class IMFByteStream(com.IUnknown):
         ('EndRead',
          com.STDMETHOD()),
         ('Write',
-         com.STDMETHOD()),
+         com.STDMETHOD(POINTER(BYTE), ULONG, POINTER(ULONG))),
         ('BeginWrite',
          com.STDMETHOD()),
         ('EndWrite',
@@ -320,7 +345,7 @@ class IMFSourceReader(com.IUnknown):
         ('GetServiceForStream',
          com.STDMETHOD()),
         ('GetPresentationAttribute',
-         com.STDMETHOD()),
+         com.STDMETHOD(DWORD, com.REFIID, POINTER(PROPVARIANT))),
     ]
 
 
@@ -348,6 +373,7 @@ MF_SOURCE_READER_ALL_STREAMS = 0xfffffffe
 MF_SOURCE_READER_ANY_STREAM = 4294967294  # 0xfffffffe
 MF_SOURCE_READER_FIRST_AUDIO_STREAM = 4294967293  # 0xfffffffd
 MF_SOURCE_READER_FIRST_VIDEO_STREAM = 0xfffffffc
+MF_SOURCE_READER_MEDIASOURCE = 0xffffffff
 
 # Version calculation
 if WINDOWS_7_OR_GREATER:
@@ -379,13 +405,14 @@ MFCreateSourceReaderFromByteStream = mfreadwrite_lib.MFCreateSourceReaderFromByt
 MFCreateSourceReaderFromByteStream.restype = HRESULT
 MFCreateSourceReaderFromByteStream.argtypes = [IMFByteStream, IMFAttributes, POINTER(IMFSourceReader)]
 
-MFCreateMFByteStreamOnStreamEx = mfplat_lib.MFCreateMFByteStreamOnStreamEx
-MFCreateMFByteStreamOnStreamEx.restype = HRESULT
-MFCreateMFByteStreamOnStreamEx.argtypes = [c_void_p, POINTER(IMFByteStream)]
+if WINDOWS_7_OR_GREATER:
+    MFCreateMFByteStreamOnStream = mfplat_lib.MFCreateMFByteStreamOnStream
+    MFCreateMFByteStreamOnStream.restype = HRESULT
+    MFCreateMFByteStreamOnStream.argtypes = [c_void_p, POINTER(IMFByteStream)]
 
-MFCreateMFByteStreamOnStream = mfplat_lib.MFCreateMFByteStreamOnStream
-MFCreateMFByteStreamOnStream.restype = HRESULT
-MFCreateMFByteStreamOnStream.argtypes = [c_void_p, POINTER(IMFByteStream)]
+MFCreateTempFile = mfplat_lib.MFCreateTempFile
+MFCreateTempFile.restype = HRESULT
+MFCreateTempFile.argtypes = [UINT, UINT, UINT, POINTER(IMFByteStream)]
 
 MFCreateMediaType = mfplat_lib.MFCreateMediaType
 MFCreateMediaType.restype = HRESULT
@@ -411,6 +438,7 @@ class WMFSource(Source):
         self._timestamp = 0
         self._attributes = None
         self._stream_obj = None
+        self._imf_bytestream = None
         self._wfx = None
         self._stride = None
 
@@ -423,24 +451,43 @@ class WMFSource(Source):
         if file is not None:
             data = file.read()
 
-            # Stole code from GDIPlus for older IStream support.
-            hglob = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(data))
-            ptr = kernel32.GlobalLock(hglob)
-            ctypes.memmove(ptr, data, len(data))
-            kernel32.GlobalUnlock(hglob)
+            self._imf_bytestream = IMFByteStream()
 
-            # Create IStream
-            self._stream_obj = com.IUnknown()
-            ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
+            data_len = len(data)
 
-            imf_bytestream = IMFByteStream()
+            if WINDOWS_7_OR_GREATER:
+                # Stole code from GDIPlus for older IStream support.
+                hglob = kernel32.GlobalAlloc(GMEM_MOVEABLE, data_len)
+                ptr = kernel32.GlobalLock(hglob)
+                ctypes.memmove(ptr, data, data_len)
+                kernel32.GlobalUnlock(hglob)
 
-            # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
-            # (Also unsure how/if new Windows async functions and callbacks work with ctypes.)
-            MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(imf_bytestream))  # Allows 7 support still
+                # Create IStream
+                self._stream_obj = com.IUnknown()
+                ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
+
+                # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
+                # (Also unsure how/if new Windows async functions and callbacks work with ctypes.)
+                MFCreateMFByteStreamOnStream(self._stream_obj, ctypes.byref(self._imf_bytestream))
+            else:
+                # Vista does not support MFCreateMFByteStreamOnStream.
+                # HACK: Create file in Windows temp folder to write our byte data to.
+                # (Will be automatically deleted when IMFByteStream is Released.)
+                MFCreateTempFile(MF_ACCESSMODE_READWRITE,
+                                 MF_OPENMODE_DELETE_IF_EXIST,
+                                 MF_FILEFLAGS_NONE,
+                                 ctypes.byref(self._imf_bytestream))
+
+                wrote_length = ULONG()
+                data_ptr = cast(data, POINTER(BYTE))
+                self._imf_bytestream.Write(data_ptr, data_len, ctypes.byref(wrote_length))
+                self._imf_bytestream.SetCurrentPosition(0)
+
+                if wrote_length.value != data_len:
+                    raise MediaDecodeException("Could not write all of the data to the bytestream file.")
 
             try:
-                MFCreateSourceReaderFromByteStream(imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
+                MFCreateSourceReaderFromByteStream(self._imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
                 raise MediaDecodeException(err) from None
         else:
@@ -457,6 +504,18 @@ class WMFSource(Source):
             self._load_video()
 
         assert self.audio_format or self.video_format, "Source was decoded, but no video or audio streams were found."
+
+        # Get duration of the media file after everything has been ok to decode.
+        try:
+            prop = PROPVARIANT()
+            self._source_reader.GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE,
+                                                         ctypes.byref(MF_PD_DURATION),
+                                                         ctypes.byref(prop))
+
+            self._duration = timestamp_from_wmf(prop.llVal)
+            ole32.PropVariantClear(ctypes.byref(prop))
+        except OSError:
+            warnings.warn("Could not determine duration of media file: '{}'.".format(filename))
 
     def _load_audio(self, stream=MF_SOURCE_READER_FIRST_AUDIO_STREAM):
         """ Prepares the audio stream for playback by detecting if it's compressed and attempting to decompress to PCM.
@@ -476,8 +535,8 @@ class WMFSource(Source):
             return
 
         # Get Major media type (Audio, Video, etc)
-        guid_audio_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0)  # TODO: Make GUID take no arguments for a null version.
+        # TODO: Make GUID take no arguments for a null version:
+        guid_audio_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
         imfmedia.GetGUID(MF_MT_MAJOR_TYPE, ctypes.byref(guid_audio_type))
 
@@ -560,10 +619,6 @@ class WMFSource(Source):
         uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
         uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
         uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
-
-        guid_type = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0)  # TODO: Make GUID take no arguments for a null version.
-        uncompressed_mt.GetGUID(MF_MT_SUBTYPE, ctypes.byref(guid_type))
 
         try:
             self._source_reader.SetCurrentMediaType(self._video_stream_index, None, uncompressed_mt)
@@ -703,14 +758,19 @@ class WMFSource(Source):
         return self._timestamp
 
     def seek(self, timestamp):
-        timestamp = timestamp_to_wmf(timestamp)
+        timestamp = min(timestamp, self._duration) if self._duration else timestamp
 
         prop = PROPVARIANT()
         prop.vt = VT_I8
-        prop.llVal = timestamp
+        prop.llVal = timestamp_to_wmf(timestamp)
 
         pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        self._source_reader.SetCurrentPosition(pos_com, prop)
+        try:
+            self._source_reader.SetCurrentPosition(pos_com, prop)
+        except OSError as e:
+            warnings.warn(e)
+
+        ole32.PropVariantClear(ctypes.byref(prop))
 
     @staticmethod
     def _get_attribute_size(attributes, guidKey):
@@ -727,12 +787,11 @@ class WMFSource(Source):
     def set_config_attributes(self):
         """ Here we set user specified attributes, by default we try to set low latency mode. (Win7+)"""
         if self.low_latency or self.decode_video:
-            # Low Latency is Windows 7 only.
             self._attributes = IMFAttributes()
 
             MFCreateAttributes(ctypes.byref(self._attributes), 3)
 
-        if self.low_latency:
+        if self.low_latency and WINDOWS_7_OR_GREATER:
             self._attributes.SetUINT32(ctypes.byref(MF_LOW_LATENCY), 1)
 
             assert _debug('WMFAudioDecoder: Setting configuration attributes.')
@@ -746,7 +805,10 @@ class WMFSource(Source):
 
     def __del__(self):
         if self._stream_obj:
-            self._stream_obj.Release()  # If we have a stream and we delete this, release the stream.
+            self._stream_obj.Release()
+
+        if self._imf_bytestream:
+            self._imf_bytestream.Release()
 
         if self._current_audio_sample:
             self._current_audio_buffer.Release()
@@ -772,6 +834,9 @@ class WMFDecoder(MediaDecoder):
             raise ImportError('WMF could not startup:', err.strerror)
 
         self.extensions = self._build_decoder_extensions()
+
+        self.ole32 = ole32
+        self.MFShutdown = MFShutdown
 
         assert _debug('Windows Media Foundation: Initialized.')
 
@@ -808,8 +873,8 @@ class WMFDecoder(MediaDecoder):
             return StaticSource(WMFSource(filename, file))
 
     def __del__(self):
-        MFShutdown()
-        ole32.CoUninitialize()
+        self.MFShutdown()
+        self.ole32.CoUninitialize()
 
 
 def get_decoders():

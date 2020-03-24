@@ -1677,6 +1677,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             """File(s) were dropped into the window, will return the position of the cursor and
             a list of paths to the files that were dropped.
 
+            .. versionadded:: 1.5.1
+
             :event:
             """
 

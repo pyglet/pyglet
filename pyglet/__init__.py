@@ -44,6 +44,9 @@ import sys
 #: The release version
 version = '2.0.dev0'
 
+if sys.version_info < (3, 5):
+    raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
+
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
