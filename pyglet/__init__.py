@@ -170,6 +170,7 @@ options = {
     'xlib_fullscreen_override_redirect': False,
     'darwin_cocoa': True,
     'search_local_libs': True,
+    'egl': False,
 }
 
 _option_types = {
@@ -188,12 +189,12 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
-    'ffmpeg_libs_win': tuple,
     'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
+    'egl': bool,
 }
 
 

@@ -1,5 +1,6 @@
-from pyglet.gl import libegl
-from pyglet.gl.libegl import *
+from pyglet.gl import egl as libegl
+from pyglet.gl.egl import *
+
 
 _buffer_types = {EGL_SINGLE_BUFFER: "EGL_RENDER_BUFFER",
                  EGL_BACK_BUFFER: "EGL_BACK_BUFFER",
@@ -35,6 +36,7 @@ config_attribs = (EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
                   EGL_RED_SIZE, 8,
                   EGL_DEPTH_SIZE, 8,
                   EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+                  EGL_CONTEXT_MAJOR_VERSION, 2,
                   EGL_NONE)
 config_attrib_array = (libegl.EGLint * len(config_attribs))(*config_attribs)
 egl_config = libegl.EGLConfig()

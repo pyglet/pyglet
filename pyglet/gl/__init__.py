@@ -212,6 +212,9 @@ def _create_shadow_window():
 
 if _is_pyglet_doc_run:
     from .base import Config
+
+elif _pyglet.options['egl']:
+    from .headless import EGLConfig as Config
 elif compat_platform in ('win32', 'cygwin'):
     from .win32 import Win32Config as Config
 elif compat_platform.startswith('linux'):
