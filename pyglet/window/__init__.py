@@ -485,7 +485,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _enable_event_queue = True     # overridden by EventLoop.
     _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
-
     # Class attributes
 
     _default_width = 640
@@ -631,10 +630,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         self._caption = caption
 
-
         from pyglet import app
         app.windows.add(self)
-        app.event_loop.update_window_count()
         self._create()
 
         self.switch_to()
@@ -827,7 +824,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if not self._context:
             return
         app.windows.remove(self)
-        app.event_loop.update_window_count()
         self._context.destroy()
         self._config = None
         self._context = None

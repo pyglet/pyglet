@@ -238,7 +238,7 @@ class Win32Context(Context):
                 raise gl.ContextException('Unable to share contexts.')
 
     def set_current(self):
-        if self._context is not None:
+        if self._context is not None and self != gl.current_context:
             wgl.wglMakeCurrent(self.canvas.hdc, self._context)
         super(Win32Context, self).set_current()
 
