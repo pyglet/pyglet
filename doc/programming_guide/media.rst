@@ -518,5 +518,9 @@ to use some kind of loop to tick the pyglet clock periodically (perhaps every
 
     pyglet.clock.tick()
 
+If you wish to have a media source loop continuously (`player.loop = True`) you will also need to ensure Pyglet's eevnts are dispatched inside your loop:
+
+    pyglet.app.platform_event_loop.dispatch_posted_events()
+
 If you are inside a pyglet app then calling `pyglet.app.run()` takes care of 
-this for you.
+all this for you.
