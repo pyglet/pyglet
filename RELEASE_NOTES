@@ -1,3 +1,11 @@
+pyglet 1.5.3
+Bugfix release
+
+Bugfixes
+--------
+- Fix memory leak caused by not freeing stale buffers and textures.
+
+
 pyglet 1.5.2
 Bugfix and minor feature release
 
