@@ -384,3 +384,4 @@ if False:
     from . import sprite
     from . import text
     from . import window
+    from . import matrix

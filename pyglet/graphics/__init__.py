@@ -289,18 +289,27 @@ def _parse_data(data):
 
 def get_default_batch():
     try:
-        return pyglet.gl.current_context.object_space.pyglet_graphics_default_batch
+        return current_context.object_space.pyglet_graphics_default_batch
     except AttributeError:
-        pyglet.gl.current_context.object_space.pyglet_graphics_default_batch = Batch()
-        return pyglet.gl.current_context.object_space.pyglet_graphics_default_batch
+        current_context.object_space.pyglet_graphics_default_batch = Batch()
+        return current_context.object_space.pyglet_graphics_default_batch
 
 
 def get_default_group():
     try:
-        return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
+        return current_context.object_space.pyglet_graphics_default_group
     except AttributeError:
-        pyglet.gl.current_context.object_space.pyglet_graphics_default_group = ShaderGroup(default_shader_program)
-        return pyglet.gl.current_context.object_space.pyglet_graphics_default_group
+        current_context.object_space.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
+        return current_context.object_space.pyglet_graphics_default_group
+
+
+def get_default_shader():
+    try:
+        return current_context.object_space.pyglet_graphics_default_shader
+    except AttributeError:
+        default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
+        current_context.object_space.pyglet_graphics_default_shader = default_shader_program
+        return current_context.object_space.pyglet_graphics_default_shader
 
 
 def vertex_list(count, *data):
@@ -481,7 +490,7 @@ class Batch:
             self._add_group(group)
 
         # If not a ShaderGroup, use the default ShaderProgram
-        shader_program = getattr(group, 'program', default_shader_program)
+        shader_program = getattr(group, 'program', get_default_shader())
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
@@ -811,7 +820,7 @@ class TextureGroup(Group):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
 
-#: The default Group and Shaders
+#: The default Shaders
 
 vertex_source = """#version 330 core
     in vec4 vertices;
@@ -851,4 +860,3 @@ fragment_source = """#version 330 core
 
 _default_vert_shader = Shader(vertex_source, 'vertex')
 _default_frag_shader = Shader(fragment_source, 'fragment')
-default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
