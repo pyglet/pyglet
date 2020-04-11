@@ -129,7 +129,7 @@ def rotate(matrix, angle=0, x=0, y=0, z=0):
     # ri, rj, rk, --
     # --, --, --, --
 
-    return matrix @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
+    return Mat4(matrix) @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
 
 
 class Mat4(tuple):
