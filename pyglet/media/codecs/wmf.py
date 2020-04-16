@@ -825,10 +825,13 @@ class WMFSource(Source):
 
 class WMFDecoder(MediaDecoder):
     def __init__(self):
-        # Coinitialize supposed to be called for COMs?
-        ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
+
+        self.ole32 = None
+        self.MFShutdown = None
 
         try:
+            # Coinitialize supposed to be called for COMs?
+            ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
             MFStartup(MF_VERSION, 0)
         except OSError as err:
             raise ImportError('WMF could not startup:', err.strerror)
@@ -873,8 +876,10 @@ class WMFDecoder(MediaDecoder):
             return StaticSource(WMFSource(filename, file))
 
     def __del__(self):
-        self.MFShutdown()
-        self.ole32.CoUninitialize()
+        if self.MFShutdown is not None:
+            self.MFShutdown()
+        if self.ole32 is not None:
+            self.ole32.CoUninitialize()
 
 
 def get_decoders():
