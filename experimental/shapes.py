@@ -1,6 +1,6 @@
 import math
 
-from pyglet.gl import GL_TRIANGLES, GL_TRIANGLE_FAN, GL_BLEND, GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from pyglet.gl import GL_TRIANGLES, GL_BLEND, GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable
 from pyglet.graphics import Group, Batch
 
@@ -154,6 +154,78 @@ class _Shape:
     @visible.setter
     def visible(self, value):
         self._visible = value
+        self._update_position()
+
+
+class Line(_Shape):
+    def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255), batch=None, group=None):
+        self._x = x
+        self._y = y
+        self._x2 = x2
+        self._y2 = y2
+
+        self._width = width
+        self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
+        self._rgb = color
+
+        self._batch = batch or Batch()
+        self._group = ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        else:
+            x1 = -self._anchor_y
+            y1 = self._anchor_x - self._width / 2
+            x = self._x
+            y = self._y
+            x2 = x1 + math.hypot(self._y2 - y, self._x2 - x)
+            y2 = y1 + self._width
+
+            r = math.atan2(self._y2 - y, self._x2 - x)
+            cr = math.cos(r)
+            sr = math.sin(r)
+            ax = x1 * cr - y1 * sr + x
+            ay = x1 * sr + y1 * cr + y
+            bx = x2 * cr - y1 * sr + x
+            by = x2 * sr + y1 * cr + y
+            cx = x2 * cr - y2 * sr + x
+            cy = x2 * sr + y2 * cr + y
+            dx = x1 * cr - y2 * sr + x
+            dy = x1 * sr + y2 * cr + y
+            self._vertex_list.vertices[:] = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 6
+
+    @property
+    def x2(self):
+        return self._x2
+
+    @x2.setter
+    def x2(self, value):
+        self._x2 = value
+        self._update_position()
+
+    @property
+    def y2(self):
+        return self._y2
+
+    @y2.setter
+    def y2(self, value):
+        self._y2 = value
+        self._update_position()
+
+    @property
+    def position(self):
+        return self._x, self._y, self._x2, self._y2
+
+    @position.setter
+    def position(self, values):
+        self._x, self._y, self._x2, self._y2 = values
         self._update_position()
 
 
