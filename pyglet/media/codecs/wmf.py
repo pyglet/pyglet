@@ -832,6 +832,10 @@ class WMFDecoder(MediaDecoder):
         try:
             # Coinitialize supposed to be called for COMs?
             ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
+        except OSError as err:
+            warnings.warn('WMF failed to initialize threading:', err.strerror)
+
+        try:
             MFStartup(MF_VERSION, 0)
         except OSError as err:
             raise ImportError('WMF could not startup:', err.strerror)
