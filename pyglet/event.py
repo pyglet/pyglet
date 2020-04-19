@@ -164,7 +164,9 @@ from .compat import WeakMethod
 
 # PYTHON2 - remove this legacy backwards compatibility hack:
 if sys.version_info < (3, 2):
-    inspect.getfullargspec = inspect.getargspec
+    get_arg_spec = inspect.getargspec
+else:
+    get_arg_spec = inspect.getfullargspec
 
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
@@ -447,7 +449,7 @@ class EventDispatcher(object):
         n_args = len(args)
 
         # Inspect the handler
-        argspecs = inspect.getfullargspec(handler)
+        argspecs = get_arg_spec(handler)
         handler_args = argspecs.args
         handler_varargs = argspecs.varargs
         handler_defaults = argspecs.defaults
