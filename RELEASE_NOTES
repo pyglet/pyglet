@@ -1,3 +1,11 @@
+pyglet 1.4.11
+Bugfix release
+
+Bugfixes
+--------
+- Avoid overwriting standard module methods (#184)
+
+
 pyglet 1.4.10
 Bugfix release
 
