@@ -82,7 +82,11 @@ from pyglet.graphics import Group, Batch
 
 
 class _ShapeGroup(Group):
-    """Shared Shape rendering Group."""
+    """Shared Shape rendering Group.
+
+    The group is automatically coalesced with other shape groups
+    sharing the same parent group and blend parameters.
+    """
 
     def __init__(self, blend_src, blend_dest, parent=None):
         """Create a Shape group.
@@ -126,6 +130,8 @@ class _ShapeGroup(Group):
 
 
 class _ShapeBase:
+    """Base class for Shape objects"""
+
     _rgb = (255, 255, 255)
     _opacity = 255
     _visible = True
@@ -291,6 +297,7 @@ class _ShapeBase:
 
 class Arc(_ShapeBase):
     def __init__(self, x, y, radius, segments=25, angle=math.pi*2, color=(255, 255, 255), batch=None, group=None):
+        # TODO: Finish this shape and add docstring.
         self._x = x
         self._y = y
         self._radius = radius
@@ -340,10 +347,33 @@ class Arc(_ShapeBase):
 
 class Circle(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, color=(255, 255, 255), batch=None, group=None):
+        """Create a circle.
+
+        The circle's anchor point (x, y) defaults to the center of the circle.
+
+        :Parameters:
+            `x` : float
+                X coordinate of the circle.
+            `y` : float
+                Y coordinate of the circle.
+            `radius` : float
+                The desired radius.
+            `segments` : int
+                You can optionally specifify how many distict triangles
+                the circle should be made from. If not specified, it will
+                be automatically calculated based on the radius.
+            `color` : (int, int, int)
+                The RGB color of the circle, specified as a tuple of
+                three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the circle to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the circle.
+        """
         self._x = x
         self._y = y
         self._radius = radius
-        self._segments = segments or int(radius // 1.25)
+        self._segments = segments or int(radius / 1.25)
         self._rgb = color
 
         self._batch = batch or Batch()
@@ -380,6 +410,30 @@ class Circle(_ShapeBase):
 
 class Line(_ShapeBase):
     def __init__(self, x, y, x2, y2, width=1, color=(255, 255, 255), batch=None, group=None):
+        """Create a line.
+
+        The line's anchor point defaults to the center of the line's
+        width on the X axis, and the Y axis.
+
+        :Parameters:
+            `x` : float
+                The first X coordinate of the line.
+            `y` : float
+                The first Y coordinate of the line.
+            `x2` : float
+                The second X coordinate of the line.
+            `y2` : float
+                The second Y coordinate of the line.
+            `width` : float
+                The desired width of the line.
+            `color` : (int, int, int)
+                The RGB color of the line, specified as a tuple of
+                three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the line to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the line.
+        """
         self._x = x
         self._y = y
         self._x2 = x2
@@ -472,6 +526,28 @@ class Line(_ShapeBase):
 
 class Rectangle(_ShapeBase):
     def __init__(self, x, y, width, height, color=(255, 255, 255), batch=None, group=None):
+        """Create a rectangle or square.
+
+        The rectangles's anchor point defaults to the (x, y) coordinates,
+        which are at the bottom left.
+
+        :Parameters:
+            `x` : float
+                The X coordinate of the rectangle.
+            `y` : float
+                The Y coordinate of the rectangle.
+            `width` : float
+                The width of the rectangle.
+            `height` : float
+                The height of the rectangle.
+            `color` : (int, int, int)
+                The RGB color of the rectangle, specified as
+                a tuple of three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the rectangle to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the rectangle.
+        """
         self._x = x
         self._y = y
         self._width = width
