@@ -313,6 +313,9 @@ class XlibWindow(BaseWindow):
                                      xlib.PropModeReplace,
                                      cast(ptr, POINTER(c_ubyte)), 1)
 
+            # Atoms required for Xdnd
+            self._create_xdnd_atoms(self._x_display)
+
             # Support for drag and dropping files needs to be enabled.
             if self._file_drops:
                 # Some variables set because there are 4 different drop events that need shared data.
@@ -320,9 +323,6 @@ class XlibWindow(BaseWindow):
                 self._xdnd_version = None
                 self._xdnd_format = None
                 self._xdnd_position = (0, 0)  # For position callback.
-
-                # Atoms required for Xdnd
-                self._create_xdnd_atoms(self._x_display)
 
                 VERSION = c_ulong(int(XDND_VERSION))
                 ptr = pointer(VERSION)
