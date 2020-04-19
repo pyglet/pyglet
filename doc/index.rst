@@ -73,6 +73,7 @@ If this is your first time reading about pyglet, we suggest you start at
    modules/media
    modules/resource
    modules/sprite
+   modules/shapes
    modules/text/index
    modules/window
 

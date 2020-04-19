@@ -59,7 +59,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.5.3'
+version = '1.5.4'
 
 
 if sys.version_info < (3, 5):
@@ -374,6 +374,7 @@ if True:
     model = _ModuleProxy('model')
     resource = _ModuleProxy('resource')
     sprite = _ModuleProxy('sprite')
+    shapes = _ModuleProxy('shapes')
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
 
@@ -395,6 +396,7 @@ if False:
     from . import model
     from . import resource
     from . import sprite
+    from . import shapes
     from . import text
     from . import window
 

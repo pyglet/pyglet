@@ -1,3 +1,15 @@
+pyglet 1.5.4
+Bugfix and minor feature release
+
+Bugfixes
+--------
+- Avoid WMFDecoder crash when mixing pyglet with other tookits. (#174)
+
+Improvements
+------------
+- Added `pyglet.graphics.shapes` module for creating simple 2D shapes.
+
+
 pyglet 1.5.3
 Bugfix release
 
