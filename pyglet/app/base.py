@@ -154,7 +154,6 @@ class EventLoop(event.EventDispatcher):
             window.switch_to()
             window.dispatch_event('on_draw')
             window.flip()
-            window._legacy_invalid = False
 
     def _redraw_window(self, redraw_all):
         # Redraw a single window, no need to switch_to.
@@ -163,7 +162,6 @@ class EventLoop(event.EventDispatcher):
                 continue
             window.dispatch_event('on_draw')
             window.flip()
-            window._legacy_invalid = False
 
     def update_window_count(self):
         """ Adjust window drawing function, we only need to switch_to when using multiple windows.
@@ -190,6 +188,9 @@ class EventLoop(event.EventDispatcher):
         self.update_window_count()
 
         self.has_exit = False
+
+        from pyglet.window import Window
+        Window._enable_event_queue = False
 
         # Dispatch pending events
         for window in app.windows:

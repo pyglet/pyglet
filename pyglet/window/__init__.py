@@ -477,6 +477,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _mouse_in_window = False
 
     _event_queue = None
+    _enable_event_queue = True     # overridden by EventLoop.
     _allow_dispatch_event = False  # controlled by dispatch_events stack frame
 
     # Class attributes
@@ -1288,8 +1289,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     def dispatch_event(self, *args):
-        if not self._allow_dispatch_event:
-            EventDispatcher.dispatch_event(self, *args)
+        if not self._enable_event_queue or self._allow_dispatch_event:
+            super().dispatch_event(*args)
         else:
             self._event_queue.append(args)
 
