@@ -167,7 +167,7 @@ def interleave_attributes(attributes):
     they are interleaved.  Alignment constraints are respected.
 
     :Parameters:
-        `attributes` : sequence of `GenericAttribute`
+        `attributes` : sequence of `VertexAttribute`
             Attributes to interleave in-place.
 
     """
@@ -192,7 +192,7 @@ def serialize_attributes(count, attributes):
     :Parameters:
         `count` : int
             Number of vertices.
-        `attributes` : sequence of `GenericAttribute`
+        `attributes` : sequence of `VertexAttribute`
             Attributes to serialize in-place.
 
     """

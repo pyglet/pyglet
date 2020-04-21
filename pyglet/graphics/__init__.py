@@ -351,11 +351,11 @@ def vertex_list_indexed(count, indices, *data):
 class Batch:
     """Manage a collection of vertex lists for batched rendering.
 
-    Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the `add` and `add_indexed`
-    methods.  An optional group can be specified along with the vertex list,
-    which gives the OpenGL state required for its rendering.  Vertex lists
-    with shared mode and group are allocated into adjacent areas of memory and
-    sent to the graphics card in a single operation.
+    Vertex lists are added to a :py:class:`~pyglet.graphics.Batch` using the
+    `add` and `add_indexed` methods. An optional group can be specified along
+    with the vertex list, which gives the OpenGL state required for its rendering.
+    Vertex lists with shared mode and group are allocated into adjacent areas of
+    memory and sent to the graphics card in a single operation.
 
     Call `VertexList.delete` to remove a vertex list from the batch.
     """
@@ -653,22 +653,20 @@ class Group:
     """Group of common OpenGL state.
 
     Before a vertex list is rendered, its group's OpenGL state is set.
-    This should includes at least the Shader Program, in addition to any
-    optional state required.
+    This can including binding textures, or setting any other parameters.
     """
-    def __init__(self, parent=None, order=0):
+    def __init__(self, order=0, parent=None):
         """Create a group.
 
         :Parameters:
-            `parent` : `~pyglet.graphics.Group`
-                Group to contain this group; its state will be set before this
-                state's.
             `order` : int
-                Change the order to render above or below other Groups.
-
+                Set the order to render above or below other Groups.
+            `parent` : `~pyglet.graphics.Group`
+                Group to contain this group; its state will be set
+                before this Group's state.
         """
-        self.parent = parent
         self._order = order
+        self.parent = parent
 
     @property
     def order(self):
@@ -720,8 +718,8 @@ class Group:
 
 
 class ShaderGroup(Group):
-    def __init__(self, program, parent=None, order=0):
-        super().__init__(parent, order)
+    def __init__(self, program, order=0, parent=None):
+        super().__init__(order, parent)
         self.program = program
 
     def set_state(self):
@@ -731,49 +729,6 @@ class ShaderGroup(Group):
         self.program.stop()
 
 
-# class NewerGroup:
-#     """Group of common OpenGL state.
-#
-#     Before a vertex list is rendered, its group's OpenGL state is set.
-#     This should includes at least the Shader Program, in addition to any
-#     optional state required.
-#     """
-#
-#     order = 0
-#
-#     def __init__(self, program=None, order=0):
-#         """Create a group.
-#
-#         :Parameters:
-#             `program` : `~pyglet.graphics.shader.ShaderProgram`
-#                 Optional custom Shader Program.
-#             `order` : int
-#                 Change the order to render above or below other Groups.
-#         """
-#         self.program = program or default_shader_program
-#         self.order = order
-#
-#     def set_state(self):
-#         """Bind the Shader, and apply additional OpenGL state."""
-#         self.program.use()
-#
-#     def unset_state(self):
-#         """Unbind the Shader, and repeal OpenGL state change."""
-#         self.program.stop_program()
-#
-#     def __lt__(self, other):
-#         return self.order < other.order
-#
-#     def __eq__(self, other):
-#         return self.__class__ is other.__class__ and self.program is other.program and self.order == other.order
-#
-#     def __hash__(self):
-#         return hash((self.order, self.program))
-#
-#     def __repr__(self):
-#         return "{}(order={})".format(self.__class__.__name__, self.order)
-#
-
 class TextureGroup(Group):
     """A group that enables and binds a texture.
 
@@ -782,21 +737,18 @@ class TextureGroup(Group):
 
     # Don't use this, create your own group classes that are more specific.
     # This is just an example.
-    def __init__(self, texture, parent=None, order=0):
+    def __init__(self, texture, order=0, parent=None):
         """Create a texture group.
 
         :Parameters:
             `texture` : `~pyglet.image.Texture`
                 Texture to bind.
-            `parent` : `~pyglet.graphics.Group`
-                Parent group.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                Optional custom Shader Program.
             `order` : int
                 Change the order to render above or below other Groups.
-
+            `parent` : `~pyglet.graphics.Group`
+                Parent group.
         """
-        super(TextureGroup, self).__init__(parent, order)
+        super(TextureGroup, self).__init__(order, parent)
         self.texture = texture
 
     def set_state(self):
@@ -807,13 +759,13 @@ class TextureGroup(Group):
         glDisable(self.texture.target)
 
     def __hash__(self):
-        return hash((self.order, self.program, self.texture.target, self.texture.id, self.parent))
+        return hash((self.texture.target, self.texture.id, self.order, self.parent))
 
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
-                self.order == other.order and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id and
+                self.order == other.order and
                 self.parent == other.parent)
 
     def __repr__(self):
@@ -822,7 +774,7 @@ class TextureGroup(Group):
 
 #: The default Shaders
 
-vertex_source = """#version 330 core
+_vertex_source = """#version 330 core
     in vec4 vertices;
     in vec4 colors;
     in vec2 tex_coords;
@@ -845,7 +797,7 @@ vertex_source = """#version 330 core
     }
 """
 
-fragment_source = """#version 330 core
+_fragment_source = """#version 330 core
     in vec4 vertex_colors;
     in vec2 texture_coords;
     out vec4 final_colors;
@@ -858,5 +810,5 @@ fragment_source = """#version 330 core
     }
 """
 
-_default_vert_shader = Shader(vertex_source, 'vertex')
-_default_frag_shader = Shader(fragment_source, 'fragment')
+_default_vert_shader = Shader(_vertex_source, 'vertex')
+_default_frag_shader = Shader(_fragment_source, 'fragment')

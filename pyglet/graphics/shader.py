@@ -125,7 +125,7 @@ class Shader:
             `shader_type` : str
                 The Shader type, such as "vertex" or "fragment".
         """
-        if shader_type not in shader_types.keys():
+        if shader_type not in shader_types:
             raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
         self.type = shader_type
 
@@ -133,7 +133,7 @@ class Shader:
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
-        shader_id = glCreateShader(shader_types[self.type])
+        shader_id = glCreateShader(shader_types[shader_type])
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
@@ -183,8 +183,9 @@ class ShaderProgram:
 
     __slots__ = '_id', '_active', '_attributes', '_uniforms', '_uniform_blocks'
 
-    # Cache UBOs to ensure all Shader Programs are using the same object.
-    # If the UBOs are recreated, they will not link to the same data.
+    # Cache UBOs, and return the same object for any Shader that defines a UBO
+    # with the same name. UBOs must be shared instead of recreated, or else
+    # they will not link to the same data.
     uniform_buffers = {}
 
     def __init__(self, *shaders):

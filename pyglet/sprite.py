@@ -191,7 +191,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, parent=None, order=0, program=None):
+    def __init__(self, texture, blend_src, blend_dest, program=None, order=0, parent=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -206,10 +206,14 @@ class SpriteGroup(graphics.Group):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                A custom ShaderProgram.
+            `order` : int
+                Change the order to render above or below other Groups.
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super().__init__(parent, order)
+        super().__init__(order, parent)
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
@@ -271,7 +275,8 @@ class Sprite(event.EventDispatcher):
                  batch=None,
                  group=None,
                  usage='dynamic',
-                 subpixel=False):
+                 subpixel=False,
+                 program=None):
         """Create a sprite.
 
         :Parameters:
@@ -298,6 +303,8 @@ class Sprite(event.EventDispatcher):
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                A custom ShaderProgram.
         """
         self._x = x
         self._y = y
@@ -318,7 +325,7 @@ class Sprite(event.EventDispatcher):
             program = _default_program
 
         self._batch = batch or graphics.get_default_batch()
-        self._group = group or SpriteGroup(self._texture, blend_src, blend_dest, group, 0, program)
+        self._group = SpriteGroup(self._texture, blend_src, blend_dest, program, 0, group)
         self._usage = usage
         self._subpixel = subpixel
         self._create_vertex_list()
@@ -408,11 +415,10 @@ class Sprite(event.EventDispatcher):
         self._group = SpriteGroup(self._texture,
                                   self._group.blend_src,
                                   self._group.blend_dest,
-                                  group,
+                                  self._group.program,
                                   0,
-                                  self._group.program)
-        if self._batch is not None:
-            self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
+                                  group)
+        self._batch.migrate(self._vertex_list, GL_TRIANGLES, self._group, self._batch)
 
     @property
     def image(self):
