@@ -4,6 +4,7 @@ Bugfix and minor feature release
 Bugfixes
 --------
 - Avoid WMFDecoder crash when mixing pyglet with other tookits. (#174)
+- Prevent EventDispatcher subclasses from hiding AttributeError exceptions.
 
 Improvements
 ------------
