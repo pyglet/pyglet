@@ -613,7 +613,7 @@ class TextLayoutGroup(graphics.Group):
         self.program = program
 
     def set_state(self):
-        self.program.use_program()
+        self.program.use()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -624,7 +624,7 @@ class TextLayoutGroup(graphics.Group):
     def unset_state(self):
         glDisable(GL_BLEND)
         glBindTexture(self.texture.target, 0)
-        self.program.stop_program()
+        self.program.stop()
 
     def __repr__(self):
         return "{0}({1})".format(self.__class__.__name__, self.texture)
@@ -651,13 +651,13 @@ class TextDecorationGroup(graphics.Group):
         self.program = program
 
     def set_state(self):
-        self.program.use_program()
+        self.program.use()
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def unset_state(self):
         glDisable(GL_BLEND)
-        self.program.stop_program()
+        self.program.stop()
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
@@ -674,7 +674,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         self.scissor_box = (0, 0, 0, 0)
 
     def set_state(self):
-        self.program.use_program()
+        self.program.use()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -689,7 +689,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glDisable(GL_BLEND)
         glDisable(GL_SCISSOR_TEST)
         glBindTexture(self.texture.target, 0)
-        self.program.stop_program()
+        self.program.stop()
 
     def __repr__(self):
         return "{0}({1})".format(self.__class__.__name__, self.texture)

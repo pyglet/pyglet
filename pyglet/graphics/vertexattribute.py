@@ -226,11 +226,11 @@ def create_attribute(shader_program_id, fmt):
         `fmt` : str
             Attribute format string.  See the module summary for details.
 
-    :rtype: `GenericAttribute`
+    :rtype: `VertexAttribute`
     """
     try:
         args = _attribute_cache[fmt]
-        return GenericAttribute(*args)
+        return VertexAttribute(*args)
     except KeyError:
         pass
 
@@ -251,10 +251,10 @@ def create_attribute(shader_program_id, fmt):
 
     _attribute_cache[fmt] = name, shader_program_id, count, gl_type, normalize
 
-    return GenericAttribute(name, shader_program_id, count, gl_type, normalize)
+    return VertexAttribute(name, shader_program_id, count, gl_type, normalize)
 
 
-class GenericAttribute:
+class VertexAttribute:
     """Abstract accessor for an attribute in a mapped buffer."""
 
     def __init__(self, name, shader, count, gl_type, normalize):

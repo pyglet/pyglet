@@ -55,6 +55,15 @@ _uniform_setters = {
 }
 
 
+class _Attribute:
+    __slots__ = 'type', 'size', 'location'
+
+    def __init__(self, attr_type, size, location):
+        self.type = attr_type
+        self.size = size
+        self.location = location
+
+
 class _Uniform:
     __slots__ = 'setter', 'getter'
 
@@ -157,9 +166,9 @@ class Shader:
     def __del__(self):
         try:
             glDeleteShader(self._id)
-            # There are potentially several different exceptions that could
-            # be raised here, none of them are vital to catch when deleting.
         except:
+            # There are potentially several different exceptions that
+            # could be raised here. None of them are vital to catch.
             pass
 
         if _debug_gl_shaders:
@@ -172,7 +181,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    __slots__ = '_id', '_active', '_uniforms', '_uniform_blocks'
+    __slots__ = '_id', '_active', '_attributes', '_uniforms', '_uniform_blocks'
 
     # Cache UBOs to ensure all Shader Programs are using the same object.
     # If the UBOs are recreated, they will not link to the same data.
@@ -191,9 +200,11 @@ class ShaderProgram:
         self._id = self._link_program(shaders)
         self._active = False
 
+        self._attributes = {}
         self._uniforms = {}
         self._uniform_blocks = {}
 
+        self._introspect_attributes()
         self._introspect_uniforms()
         self._introspect_uniform_blocks()
 
@@ -237,15 +248,17 @@ class ShaderProgram:
             glDetachShader(program_id, shader.id)
         return program_id
 
-    def use_program(self):
+    def use(self):
         glUseProgram(self._id)
         self._active = True
 
-    def stop_program(self):
+    def stop(self):
         glUseProgram(0)
         self._active = False
 
-    __enter__ = use_program
+    __enter__ = use
+    bind = use
+    unbind = stop
 
     def __exit__(self, *_):
         glUseProgram(0)
@@ -254,9 +267,9 @@ class ShaderProgram:
     def __del__(self):
         try:
             glDeleteProgram(self._id)
-        # There are potentially several different exceptions that could
-        # be raised here, none of them are vital to catch when deleting.
         except:
+            # There are potentially several different exceptions that
+            # could be raised here. None of them are vital to catch.
             pass
 
     def __setitem__(self, key, value):
@@ -284,16 +297,22 @@ class ShaderProgram:
         except GLException:
             raise
 
-    def _get_num_active(self, variable_type):
+    def _get_number(self, variable_type):
         """Get the number of active variables of the passed GL type."""
-        num_active = GLint(0)
-        glGetProgramiv(self._id, variable_type, byref(num_active))
-        return num_active.value
+        number = GLint(0)
+        glGetProgramiv(self._id, variable_type, byref(number))
+        return number.value
+
+    def _introspect_attributes(self):
+        for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
+            attrib_name, a_type, a_size = self._query_attribute(index)
+            loc = glGetAttribLocation(self._id, create_string_buffer(attrib_name.encode('utf-8')))
+            self._attributes[attrib_name] = _Attribute(a_type, a_size, loc)
 
     def _introspect_uniforms(self):
-        for index in range(self._get_num_active(GL_ACTIVE_UNIFORMS)):
+        for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):
             uniform_name, u_type, u_size = self._query_uniform(index)
-            loc = self._get_uniform_location(uniform_name)
+            loc = glGetUniformLocation(self._id, create_string_buffer(uniform_name.encode('utf-8')))
 
             if loc == -1:      # Skip uniforms that may be in Uniform Blocks
                 continue
@@ -328,7 +347,7 @@ class ShaderProgram:
 
         block_uniforms = {}
 
-        for index in range(self._get_num_active(GL_ACTIVE_UNIFORM_BLOCKS)):
+        for index in range(self._get_number(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self._get_uniform_block_name(index)
             
             block_uniforms[name] = {}
@@ -368,8 +387,16 @@ class ShaderProgram:
         except GLException:
             return None
 
-    def _get_uniform_location(self, name):
-        return glGetUniformLocation(self._id, create_string_buffer(name.encode('utf-8')))
+    def _query_attribute(self, index):
+        asize = GLint()
+        atype = GLenum()
+        buf_size = 192
+        aname = create_string_buffer(buf_size)
+        try:
+            glGetActiveAttrib(self._id, index, buf_size, None, asize, atype, aname)
+            return aname.value.decode(), atype.value, asize.value
+        except GLException:
+            raise
 
     def _query_uniform(self, index):
         usize = GLint()

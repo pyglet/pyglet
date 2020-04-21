@@ -325,13 +325,13 @@ class TexturedMaterialGroup(graphics.Group):
     def set_state(self):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
-        self.program.use_program()
+        self.program.use()
         self.program['rotation'] = self.rotation
         self.program['translation'] = self.translation
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
-        self.program.stop_program()
+        self.program.stop()
 
     def __eq__(self, other):
         return False
@@ -350,12 +350,12 @@ class MaterialGroup(graphics.Group):
         self.translation = 0, 0, 0
 
     def set_state(self):
-        self.program.use_program()
+        self.program.use()
         self.program['rotation'] = self.rotation
         self.program['translation'] = self.translation
 
     def unset_state(self):
-        self.program.stop_program()
+        self.program.stop()
 
     def __eq__(self, other):
         return False

@@ -725,10 +725,10 @@ class ShaderGroup(Group):
         self.program = program
 
     def set_state(self):
-        self.program.use_program()
+        self.program.use()
 
     def unset_state(self):
-        self.program.stop_program()
+        self.program.stop()
 
 
 # class NewerGroup:
@@ -755,7 +755,7 @@ class ShaderGroup(Group):
 #
 #     def set_state(self):
 #         """Bind the Shader, and apply additional OpenGL state."""
-#         self.program.use_program()
+#         self.program.use()
 #
 #     def unset_state(self):
 #         """Unbind the Shader, and repeal OpenGL state change."""

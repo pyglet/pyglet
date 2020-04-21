@@ -216,7 +216,7 @@ class SpriteGroup(graphics.Group):
         self.program = program or _default_program
 
     def set_state(self):
-        self.program.use_program()
+        self.program.use()
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -227,7 +227,7 @@ class SpriteGroup(graphics.Group):
     def unset_state(self):
         glDisable(GL_BLEND)
         glBindTexture(self.texture.target, 0)
-        self.program.stop_program()
+        self.program.stop()
 
     def __repr__(self):
         return "{0}({1})".format(self.__class__.__name__, self.texture)
