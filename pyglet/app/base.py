@@ -41,16 +41,14 @@ from pyglet import app
 from pyglet import clock
 from pyglet import event
 
-
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
 class PlatformEventLoop:
     """ Abstract class, implementation depends on platform.
-    
+
     .. versionadded:: 1.2
     """
-
     def __init__(self):
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
@@ -71,8 +69,8 @@ class PlatformEventLoop:
         is able to dispatch the event.  This method can be safely called
         from any thread.
 
-        If the method is called from the :py:meth:`run` method's thread (for 
-        example, from within an event handler), the event may be dispatched 
+        If the method is called from the :py:meth:`run` method's thread (for
+        example, from within an event handler), the event may be dispatched
         within the same runloop iteration or the next one; the choice is
         nondeterministic.
 
@@ -127,7 +125,7 @@ class EventLoop(event.EventDispatcher):
     """The main run loop of the application.
 
     Calling `run` begins the application event loop, which processes
-    operating system events, calls :py:func:`pyglet.clock.tick` to call 
+    operating system events, calls :py:func:`pyglet.clock.tick` to call
     scheduled functions and calls :py:meth:`pyglet.window.Window.on_draw` and
     :py:meth:`pyglet.window.Window.flip` to update window contents.
 
@@ -146,7 +144,14 @@ class EventLoop(event.EventDispatcher):
         self.clock = clock.get_default()
         self.is_running = False
 
-        self.clock.schedule_interval_soft(self._redraw_window_func, self._redraw_interval)
+    @staticmethod
+    def _redraw_windows(dt):
+        # Redraw all windows
+        for window in app.windows:
+            window.switch_to()
+            window.dispatch_event('on_draw')
+            window.flip()
+            window._legacy_invalid = False
 
     def run(self, interval):
         """Begin processing events, scheduled functions and window updates.
@@ -156,8 +161,7 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
-        self._redraw_interval = interval
-        self.update_window_count()
+        self.clock.schedule_interval_soft(self._redraw_windows, interval)
 
         self.has_exit = False
 
@@ -178,19 +182,6 @@ class EventLoop(event.EventDispatcher):
             timeout = self.idle()
             platform_event_loop.step(timeout)
 
-        self.is_running = False
-        self.dispatch_event('on_exit')
-        platform_event_loop.stop()
-
-    def _legacy_setup(self):
-        # Disable event queuing for dispatch_events
-        from pyglet.window import Window
-        Window._enable_event_queue = False
-
-        # Dispatch pending events
-        for window in app.windows:
-            window.switch_to()
-            window.dispatch_pending_events()
         self.is_running = False
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
@@ -249,15 +240,7 @@ class EventLoop(event.EventDispatcher):
             be called again, or `None` to block for user input.
         """
         dt = self.clock.update_time()
-        redraw_all = self.clock.call_scheduled_functions(dt)
-
-        # Redraw all windows
-        for window in app.windows:
-            if redraw_all or (window._legacy_invalid and window.invalid):
-                window.switch_to()
-                window.dispatch_event('on_draw')
-                window.flip()
-                window._legacy_invalid = False
+        self.clock.call_scheduled_functions(dt)
 
         # Update timout
         return self.clock.get_sleep_time(True)
