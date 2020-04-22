@@ -1,3 +1,24 @@
+pyglet 1.5.4
+Bugfix and minor feature release
+
+Bugfixes
+--------
+- Avoid WMFDecoder crash when mixing pyglet with other tookits. (#174)
+- Prevent EventDispatcher subclasses from hiding AttributeError exceptions.
+
+Improvements
+------------
+- Added `pyglet.graphics.shapes` module for creating simple 2D shapes.
+
+
+pyglet 1.5.3
+Bugfix release
+
+Bugfixes
+--------
+- Fix memory leak caused by not freeing stale buffers and textures.
+
+
 pyglet 1.5.2
 Bugfix and minor feature release
 

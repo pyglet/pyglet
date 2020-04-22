@@ -41,6 +41,7 @@ from pyglet import app
 from pyglet import clock
 from pyglet import event
 
+
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
@@ -49,12 +50,13 @@ class PlatformEventLoop:
     
     .. versionadded:: 1.2
     """
+
     def __init__(self):
         self._event_queue = queue.Queue()
         self._is_running = threading.Event()
         self._is_running.clear()
 
-    def is_running(self):  
+    def is_running(self):
         """Return True if the event loop is currently processing, or False
         if it is blocked or not activated.
 
@@ -143,36 +145,6 @@ class EventLoop(event.EventDispatcher):
         self._has_exit_condition = threading.Condition()
         self.clock = clock.get_default()
         self.is_running = False
-        self._redraw_window_func = self._redraw_window
-        self._redraw_interval = 0
-
-    def _redraw_windows(self, redraw_all):
-        # Redraw all windows
-        for window in app.windows:
-            if not window.invalid:
-                continue
-            window.switch_to()
-            window.dispatch_event('on_draw')
-            window.flip()
-
-    def _redraw_window(self, redraw_all):
-        # Redraw a single window, no need to switch_to.
-        for window in app.windows:
-            if not window.invalid:
-                continue
-            window.dispatch_event('on_draw')
-            window.flip()
-
-    def update_window_count(self):
-        """ Adjust window drawing function, we only need to switch_to when using multiple windows.
-            This function will adjust it depending on window count to save performance.
-        """
-        self.clock.unschedule(self._redraw_window_func)
-
-        if len(app.windows) == 1:
-            self._redraw_window_func = self._redraw_window
-        else:
-            self._redraw_window_func = self._redraw_windows
 
         self.clock.schedule_interval_soft(self._redraw_window_func, self._redraw_interval)
 
@@ -206,6 +178,19 @@ class EventLoop(event.EventDispatcher):
             timeout = self.idle()
             platform_event_loop.step(timeout)
 
+        self.is_running = False
+        self.dispatch_event('on_exit')
+        platform_event_loop.stop()
+
+    def _legacy_setup(self):
+        # Disable event queuing for dispatch_events
+        from pyglet.window import Window
+        Window._enable_event_queue = False
+
+        # Dispatch pending events
+        for window in app.windows:
+            window.switch_to()
+            window.dispatch_pending_events()
         self.is_running = False
         self.dispatch_event('on_exit')
         platform_event_loop.stop()
@@ -264,7 +249,15 @@ class EventLoop(event.EventDispatcher):
             be called again, or `None` to block for user input.
         """
         dt = self.clock.update_time()
-        self.clock.call_scheduled_functions(dt)
+        redraw_all = self.clock.call_scheduled_functions(dt)
+
+        # Redraw all windows
+        for window in app.windows:
+            if redraw_all or (window._legacy_invalid and window.invalid):
+                window.switch_to()
+                window.dispatch_event('on_draw')
+                window.flip()
+                window._legacy_invalid = False
 
         # Update timout
         return self.clock.get_sleep_time(True)

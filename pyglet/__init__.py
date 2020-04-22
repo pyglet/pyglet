@@ -360,6 +360,7 @@ if True:
     model = _ModuleProxy('model')
     resource = _ModuleProxy('resource')
     sprite = _ModuleProxy('sprite')
+    shapes = _ModuleProxy('shapes')
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
     matrix = _ModuleProxy('matrix')
@@ -382,6 +383,7 @@ if False:
     from . import model
     from . import resource
     from . import sprite
+    from . import shapes
     from . import text
     from . import window
     from . import matrix

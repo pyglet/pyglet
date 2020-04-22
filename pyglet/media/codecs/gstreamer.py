@@ -249,16 +249,17 @@ class GStreamerDecoder(MediaDecoder):
     def decode(self, file, filename, streaming=True):
 
         if not any(filename.endswith(ext) for ext in self.get_file_extensions()):
-            # Do not try to decode other formats or Video for now.
+            # Refuse to decode anything not specifically listed in the supported
+            # file extensions list. This decoder does not yet support video, but
+            # it would still decode it and return only the Audio track. This is
+            # not desired, since the other decoders will not get a turn. Instead
+            # we bail out and let pyglet pass it to the next codec (FFmpeg).
             raise GStreamerDecodeException('Unsupported format.')
 
         if streaming:
             return GStreamerSource(filename, file)
         else:
             return StaticSource(GStreamerSource(filename, file))
-
-    def __del__(self):
-        self._glib_loop.mainloop.quit()
 
 
 def get_decoders():
