@@ -34,13 +34,13 @@
 # ----------------------------------------------------------------------------
 
 import ctypes
-from collections import namedtuple
 import weakref
+from collections import namedtuple
 
 from . import lib_openal as al
 from . import lib_alc as alc
 import pyglet
-from pyglet.debug import debug_print
+from pyglet.util import debug_print
 from pyglet.media.exceptions import MediaException
 
 _debug = debug_print('debug_media')
