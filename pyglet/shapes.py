@@ -48,7 +48,7 @@ See the :ref:`programming-guide-graphics` for more details.
 A simple example of drawing shapes::
 
     import pyglet
-    from pyglet.graphics import shapes
+    from pyglet import shapes
 
     window = pyglet.window.Window(960, 540)
     batch = pyglet.graphics.Batch()
@@ -140,6 +140,7 @@ class _ShapeBase:
     _anchor_x = 0
     _anchor_y = 0
     _batch = None
+    _group = None
     _vertex_list = None
 
     def _update_position(self):
@@ -154,7 +155,9 @@ class _ShapeBase:
         Using this method is not recommended. Instead, add the
         shape to a `pyglet.graphics.Batch` for efficient rendering.
         """
+        self._group.set_state_recursive()
         self._vertex_list.draw(GL_TRIANGLES)
+        self._group.unset_state_recursive()
 
     @property
     def x(self):
@@ -406,6 +409,19 @@ class Circle(_ShapeBase):
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
+
+    @property
+    def radius(self):
+        """The radius of the circle.
+
+        :type: float
+        """
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        self._radius = value
+        self._update_position()
 
 
 class Line(_ShapeBase):

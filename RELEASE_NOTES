@@ -1,3 +1,14 @@
+pyglet 1.5.5
+Bugfix and minor improvement release
+
+Bugfixes
+--------
+
+Improvements
+------------
+- shapes module: added `Circle.rotation` property and blending to standalone shape `draw` methods.
+
+
 pyglet 1.5.4
 Bugfix and minor feature release
 
