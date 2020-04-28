@@ -172,6 +172,7 @@ class MouseCursor:
     #: Indicates if the cursor is drawn using OpenGL.  This is True
     #: for all mouse cursors except system cursors.
     drawable = True
+    acceleration = False
 
     def draw(self, x, y):
         """Abstract render method.
@@ -194,6 +195,7 @@ class MouseCursor:
 class DefaultMouseCursor(MouseCursor):
     """The default mouse cursor #sed by the operating system."""
     drawable = False
+    acceleration = True
 
 
 class ImageMouseCursor(MouseCursor):
@@ -204,7 +206,7 @@ class ImageMouseCursor(MouseCursor):
     """
     drawable = True
 
-    def __init__(self, image, hot_x=0, hot_y=0):
+    def __init__(self, image, hot_x=0, hot_y=0, acceleration=True):
         """Create a mouse cursor from an image.
 
         :Parameters:
@@ -217,10 +219,19 @@ class ImageMouseCursor(MouseCursor):
             `hot_y` : int
                 Y coordinate of the "hot" spot in the image, relative to the
                 image's anchor.
+            `acceleration` : int
+                Uses hardware acceleration for the cursor so it does not rely
+                on software rendering.
         """
+        self.cursor = None
+        self.image = image
         self.texture = image.get_texture()
         self.hot_x = hot_x
         self.hot_y = hot_y
+
+        if acceleration:
+            self.drawable = False
+        self.acceleration = acceleration
 
     def draw(self, x, y):
         gl.glPushAttrib(gl.GL_ENABLE_BIT | gl.GL_CURRENT_BIT)

@@ -74,6 +74,7 @@ _motion_map = {
 
 class Win32MouseCursor(MouseCursor):
     drawable = False
+    acceleration = True
 
     def __init__(self, cursor):
         self.cursor = cursor
@@ -417,15 +418,20 @@ class Win32Window(BaseWindow):
         if platform_visible is None:
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
-                                not self._mouse_cursor.drawable) or \
+                                (not self._mouse_cursor.drawable or self._mouse_cursor.acceleration)) or \
                                (not self._mouse_in_window or
                                 not self._has_focus)
 
-        if platform_visible and not self._mouse_cursor.drawable:
+        if platform_visible and self._mouse_cursor.acceleration:
             if isinstance(self._mouse_cursor, Win32MouseCursor):
                 cursor = self._mouse_cursor.cursor
-            else:
+            elif isinstance(self._mouse_cursor, DefaultMouseCursor):
                 cursor = _user32.LoadCursorW(None, MAKEINTRESOURCE(IDC_ARROW))
+            else:
+                if self._mouse_cursor.cursor is None:
+                    cursor = self._mouse_cursor.cursor = self.create_icon_from_cursor(self._mouse_cursor)
+                cursor = self._mouse_cursor.cursor
+
             _user32.SetClassLongW(self._view_hwnd, GCL_HCURSOR, cursor)
             _user32.SetCursor(cursor)
 
@@ -614,6 +620,44 @@ class Win32Window(BaseWindow):
                            _user32.GetSystemMetrics(SM_CYSMICON))
         icon = get_icon(image)
         _user32.SetClassLongPtrW(self._hwnd, GCL_HICONSM, icon)
+
+    def create_icon_from_cursor(self, cursor):
+        """Creates icon from cursor with an image."""
+        format = 'BGRA'
+        image = cursor.image
+        pitch = len(format) * image.width
+
+        header = BITMAPINFOHEADER()
+        header.biSize = sizeof(header)
+        header.biWidth = image.width
+        header.biHeight = image.height
+        header.biPlanes = 1
+        header.biBitCount = 32
+
+        hdc = _user32.GetDC(None)
+        dataptr = c_void_p()
+        bitmap = _gdi32.CreateDIBSection(hdc, byref(header), DIB_RGB_COLORS,
+            byref(dataptr), None, 0)
+        _user32.ReleaseDC(None, hdc)
+
+        image = image.get_image_data()
+        data = image.get_data(format, pitch)
+        memmove(dataptr, data, len(data))
+
+        mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)
+
+        iconinfo = ICONINFO()
+        iconinfo.fIcon = False
+        iconinfo.hbmMask = mask
+        iconinfo.hbmColor = bitmap
+        iconinfo.xHotspot = cursor.hot_x
+        iconinfo.yHotspot = cursor.hot_y
+        icon = _user32.CreateIconIndirect(byref(iconinfo))
+
+        _gdi32.DeleteObject(mask)
+        _gdi32.DeleteObject(bitmap)
+
+        return icon
 
     # Private util
 
