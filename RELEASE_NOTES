@@ -3,10 +3,12 @@ Bugfix and minor improvement release
 
 Bugfixes
 --------
+- GStreamer decoder clamped to 16bit sample width, since OpenAL does not support anything higher.
 
 Improvements
 ------------
 - shapes module: added `Circle.rotation` property and blending to standalone shape `draw` methods.
+- shapes module: added missing `delete` and `__del__` methods.
 
 
 pyglet 1.5.4

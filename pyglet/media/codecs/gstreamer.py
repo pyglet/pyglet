@@ -98,7 +98,7 @@ class GStreamerSource(StreamingSource):
         self.decoder.connect("unknown-type", self._unknown_type)
 
         # Set the sink's capabilities and behavior:
-        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw'))
+        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw,format=S16LE'))
         self.sink.set_property('drop', False)
         self.sink.set_property('sync', False)
         self.sink.set_property('max-buffers', 5)

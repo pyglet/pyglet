@@ -143,6 +143,13 @@ class _ShapeBase:
     _group = None
     _vertex_list = None
 
+    def __del__(self):
+        try:
+            if self._vertex_list is not None:
+                self._vertex_list.delete()
+        except:
+            pass
+
     def _update_position(self):
         raise NotImplementedError
 
@@ -158,6 +165,10 @@ class _ShapeBase:
         self._group.set_state_recursive()
         self._vertex_list.draw(GL_TRIANGLES)
         self._group.unset_state_recursive()
+
+    def delete(self):
+        self._vertex_list.delete()
+        self._vertex_list = None
 
     @property
     def x(self):
