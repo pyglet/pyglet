@@ -419,11 +419,11 @@ class Win32Window(BaseWindow):
         if platform_visible is None:
             platform_visible = (self._mouse_visible and
                                 not self._exclusive_mouse and
-                                (not self._mouse_cursor.drawable or self._mouse_cursor.acceleration)) or \
+                                (not self._mouse_cursor.gl_drawable or self._mouse_cursor.hw_drawable)) or \
                                (not self._mouse_in_window or
                                 not self._has_focus)
 
-        if platform_visible and self._mouse_cursor.acceleration:
+        if platform_visible and self._mouse_cursor.hw_drawable:
             if isinstance(self._mouse_cursor, Win32MouseCursor):
                 cursor = self._mouse_cursor.cursor
             elif isinstance(self._mouse_cursor, DefaultMouseCursor):
@@ -650,8 +650,8 @@ class Win32Window(BaseWindow):
         iconinfo.fIcon = False
         iconinfo.hbmMask = mask
         iconinfo.hbmColor = bitmap
-        iconinfo.xHotspot = cursor.hot_x
-        iconinfo.yHotspot = cursor.hot_y
+        iconinfo.xHotspot = int(cursor.hot_x)
+        iconinfo.yHotspot = int(image.height - cursor.hot_y)
         icon = _user32.CreateIconIndirect(byref(iconinfo))
 
         _gdi32.DeleteObject(mask)
