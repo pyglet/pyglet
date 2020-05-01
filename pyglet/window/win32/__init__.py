@@ -33,6 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 from ctypes import *
+from functools import lru_cache
 import unicodedata
 
 from pyglet import compat_platform
@@ -73,8 +74,8 @@ _motion_map = {
 
 
 class Win32MouseCursor(MouseCursor):
-    drawable = False
-    acceleration = True
+    gl_drawable = False
+    hw_drawable = True
 
     def __init__(self, cursor):
         self.cursor = cursor
@@ -428,9 +429,7 @@ class Win32Window(BaseWindow):
             elif isinstance(self._mouse_cursor, DefaultMouseCursor):
                 cursor = _user32.LoadCursorW(None, MAKEINTRESOURCE(IDC_ARROW))
             else:
-                if self._mouse_cursor.cursor is None:
-                    cursor = self._mouse_cursor.cursor = self.create_icon_from_cursor(self._mouse_cursor)
-                cursor = self._mouse_cursor.cursor
+                cursor = self._create_cursor_from_image(self._mouse_cursor)
 
             _user32.SetClassLongW(self._view_hwnd, GCL_HCURSOR, cursor)
             _user32.SetCursor(cursor)
@@ -621,11 +620,12 @@ class Win32Window(BaseWindow):
         icon = get_icon(image)
         _user32.SetClassLongPtrW(self._hwnd, GCL_HICONSM, icon)
 
-    def create_icon_from_cursor(self, cursor):
-        """Creates icon from cursor with an image."""
-        format = 'BGRA'
-        image = cursor.image
-        pitch = len(format) * image.width
+    @lru_cache()
+    def _create_cursor_from_image(self, cursor):
+        """Creates platform cursor from an ImageCursor instance."""
+        fmt = 'BGRA'
+        image = cursor.texture
+        pitch = len(fmt) * image.width
 
         header = BITMAPINFOHEADER()
         header.biSize = sizeof(header)
@@ -637,11 +637,11 @@ class Win32Window(BaseWindow):
         hdc = _user32.GetDC(None)
         dataptr = c_void_p()
         bitmap = _gdi32.CreateDIBSection(hdc, byref(header), DIB_RGB_COLORS,
-            byref(dataptr), None, 0)
+                                         byref(dataptr), None, 0)
         _user32.ReleaseDC(None, hdc)
 
         image = image.get_image_data()
-        data = image.get_data(format, pitch)
+        data = image.get_data(fmt, pitch)
         memmove(dataptr, data, len(data))
 
         mask = _gdi32.CreateBitmap(image.width, image.height, 1, 1, None)

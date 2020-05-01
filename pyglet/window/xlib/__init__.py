@@ -36,6 +36,7 @@
 import unicodedata
 import urllib.parse
 from ctypes import *
+from functools import lru_cache
 
 import pyglet
 from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
@@ -110,7 +111,8 @@ class XlibException(WindowException):
 
 
 class XlibMouseCursor(MouseCursor):
-    drawable = False
+    gl_drawable = False
+    hw_drawable = True
 
     def __init__(self, cursor):
         self.cursor = cursor
@@ -636,23 +638,66 @@ class XlibWindow(BaseWindow):
         self._set_wm_state('_NET_WM_STATE_MAXIMIZED_HORZ',
                            '_NET_WM_STATE_MAXIMIZED_VERT')
 
+    @staticmethod
+    def _downsample_1bit(pixelarray):
+        byte_list = []
+        value = 0
+
+        for i, pixel in enumerate(pixelarray):
+            index = i % 8
+            if pixel:
+                value |= 1 << index
+            if index == 7:
+                byte_list.append(value)
+                value = 0
+
+        return bytes(byte_list)
+
+    @lru_cache()
+    def _create_cursor_from_image(self, cursor):
+        """Creates platform cursor from an ImageCursor instance."""
+        image = cursor.texture
+        width = image.width
+        height = image.height
+
+        alpha_luma_bytes = image.get_image_data().get_data('AL', -width * 2)
+        mask_data = self._downsample_1bit(alpha_luma_bytes[0::2])
+        bmp_data = self._downsample_1bit(alpha_luma_bytes[1::2])
+
+        bitmap = xlib.XCreateBitmapFromData(self._x_display, self._window, bmp_data, width, height)
+        mask = xlib.XCreateBitmapFromData(self._x_display, self._window, mask_data, width, height)
+        white = xlib.XColor(red=65535, green=65535, blue=65535)     # background color
+        black = xlib.XColor()                                       # foreground color
+
+        # hot_x/y must be within the image dimension, or the cursor will not display:
+        hot_x = min(max(0, int(self._mouse_cursor.hot_x)), width)
+        hot_y = min(max(0, int(height - self._mouse_cursor.hot_y)), height)
+        cursor = xlib.XCreatePixmapCursor(self._x_display, bitmap, mask, white, black, hot_x, hot_y)
+        xlib.XFreePixmap(self._x_display, bitmap)
+        xlib.XFreePixmap(self._x_display, mask)
+
+        return cursor
+
     def set_mouse_platform_visible(self, platform_visible=None):
         if not self._window:
             return
         if platform_visible is None:
-            platform_visible = self._mouse_visible and not self._mouse_cursor.drawable
+            platform_visible = self._mouse_visible and not self._mouse_cursor.gl_drawable
 
-        if not platform_visible:
-            # Hide pointer by creating an empty cursor
-            black = xlib.XBlackPixel(self._x_display, self._x_screen_id)
+        if platform_visible is False:
+            # Hide pointer by creating an empty cursor:
             black = xlib.XColor()
-            bmp = xlib.XCreateBitmapFromData(self._x_display, self._window, c_buffer(8), 8, 8)
-            cursor = xlib.XCreatePixmapCursor(self._x_display, bmp, bmp, black, black, 0, 0)
+            bitmap = xlib.XCreateBitmapFromData(self._x_display, self._window, bytes(8), 8, 8)
+            cursor = xlib.XCreatePixmapCursor(self._x_display, bitmap, bitmap, black, black, 0, 0)
             xlib.XDefineCursor(self._x_display, self._window, cursor)
             xlib.XFreeCursor(self._x_display, cursor)
-            xlib.XFreePixmap(self._x_display, bmp)
+            xlib.XFreePixmap(self._x_display, bitmap)
+        elif isinstance(self._mouse_cursor, ImageMouseCursor) and self._mouse_cursor.hw_drawable:
+            # Create a custom hardware cursor:
+            cursor = self._create_cursor_from_image(self._mouse_cursor)
+            xlib.XDefineCursor(self._x_display, self._window, cursor)
         else:
-            # Restore cursor
+            # Restore standard hardware cursor:
             if isinstance(self._mouse_cursor, XlibMouseCursor):
                 xlib.XDefineCursor(self._x_display, self._window, self._mouse_cursor.cursor)
             else:

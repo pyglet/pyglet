@@ -9,6 +9,7 @@ Improvements
 ------------
 - shapes module: added `Circle.rotation` property and blending to standalone shape `draw` methods.
 - shapes module: added missing `delete` and `__del__` methods.
+- New ImageMouseCursor `accelerated` parameter to allow native drawing on Windows and Linux.
 
 
 pyglet 1.5.4
