@@ -1,15 +1,17 @@
 pyglet 1.5.5
-Bugfix and minor improvement release
+Bugfix and feature release
 
 Bugfixes
 --------
-- GStreamer decoder clamped to 16bit sample width, since OpenAL does not support anything higher.
+- GStreamer decoder clamped to 16bit sample width, since the default OpenAL backend on Linux does
+  not support anything higher.
 
 Improvements
 ------------
 - shapes module: added `Circle.rotation` property and blending to standalone shape `draw` methods.
 - shapes module: added missing `delete` and `__del__` methods.
-- New ImageMouseCursor `accelerated` parameter to allow native drawing on Windows and Linux.
+- The ImageMouseCursor has a new `accelerated` parameter to allow custom mouse points to be drawn
+  natively on Windows and Linux.
 
 
 pyglet 1.5.4
