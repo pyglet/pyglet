@@ -35,11 +35,11 @@
 """
 Pythonic interface to DirectSound.
 """
-from collections import namedtuple
 import ctypes
 import weakref
+from collections import namedtuple
 
-from pyglet.debug import debug_print
+from pyglet.util import debug_print
 from pyglet.window.win32 import _user32
 
 from . import lib_dsound as lib

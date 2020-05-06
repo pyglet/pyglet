@@ -33,13 +33,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import ctypes
 import sys
 import weakref
 
 from . import lib_pulseaudio as pa
 from pyglet.media.exceptions import MediaException
-from pyglet.debug import debug_print
+from pyglet.util import debug_print
 
 import pyglet
 _debug = debug_print('debug_media')

@@ -37,7 +37,7 @@ import weakref
 
 import pyglet
 from . import interface
-from pyglet.debug import debug_print
+from pyglet.util import debug_print
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.listener import AbstractListener

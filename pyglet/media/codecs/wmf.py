@@ -37,7 +37,7 @@ import platform
 import warnings
 
 from pyglet import com, image
-from pyglet.debug import debug_print
+from pyglet.util import debug_print
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.constants import *

@@ -166,9 +166,10 @@ class MouseCursorException(WindowException):
 class MouseCursor:
     """An abstract mouse cursor."""
 
-    #: Indicates if the cursor is drawn using OpenGL.  This is True
-    #: for all mouse cursors except system cursors.
-    drawable = True
+    #: Indicates if the cursor is drawn
+    #: using OpenGL, or natively.
+    gl_drawable = True
+    hw_drawable = False
 
     def draw(self, x, y):
         """Abstract render method.
@@ -189,19 +190,22 @@ class MouseCursor:
 
 
 class DefaultMouseCursor(MouseCursor):
-    """The default mouse cursor set by the operating system."""
-    drawable = False
+    """The default mouse cursor #sed by the operating system."""
+    gl_drawable = False
+    hw_drawable = True
 
 
 class ImageMouseCursor(MouseCursor):
     """A user-defined mouse cursor created from an image.
 
     Use this class to create your own mouse cursors and assign them
-    to windows.  There are no constraints on the image size or format.
+    to windows. Cursors can be drawn by OpenGL, or optionally passed
+    to the OS to render natively. There are no restrictions on cursors
+    drawn by OpenGL, but natively rendered cursors may have some
+    platform limitations (such as color depth, or size). In general,
+    reasonably sized cursors will render correctly
     """
-    drawable = True
-
-    def __init__(self, image, hot_x=0, hot_y=0):
+    def __init__(self, image, hot_x=0, hot_y=0, acceleration=False):
         """Create a mouse cursor from an image.
 
         :Parameters:
@@ -210,14 +214,23 @@ class ImageMouseCursor(MouseCursor):
                 valid ``texture`` attribute.
             `hot_x` : int
                 X coordinate of the "hot" spot in the image relative to the
-                image's anchor.
+                image's anchor. May be clamped to the maximum image width
+                if ``acceleration=True``.
             `hot_y` : int
                 Y coordinate of the "hot" spot in the image, relative to the
-                image's anchor.
+                image's anchor. May be clamped to the maximum image height
+                if ``acceleration=True``.
+            `acceleration` : int
+                If True, draw the cursor natively instead of usign OpenGL.
+                The image may be downsampled or color reduced to fit the
+                platform limitations.
         """
         self.texture = image.get_texture()
         self.hot_x = hot_x
         self.hot_y = hot_y
+
+        self.gl_drawable = not acceleration
+        self.hw_drawable = acceleration
 
     def draw(self, x, y):
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
@@ -833,7 +846,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         # Draw mouse cursor if set and visible.
 
-        if self._mouse_cursor.drawable and self._mouse_visible and self._mouse_in_window:
+        if self._mouse_cursor.gl_drawable and self._mouse_visible and self._mouse_in_window:
             # TODO: consider projection differences
             self._mouse_cursor.draw(self._mouse_x, self._mouse_y)
 

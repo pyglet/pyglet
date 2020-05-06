@@ -72,7 +72,7 @@ an interface.
 import sys
 import ctypes
 
-from pyglet.debug import debug_print
+from pyglet.util import debug_print
 
 _debug_com = debug_print('debug_com')
 
