@@ -166,7 +166,10 @@ class DirectSoundBuffer:
             self._native_buffer3d = None
 
     def __del__(self):
-        self.delete()
+        try:
+            self.delete()
+        except OSError:
+            pass
 
     def delete(self):
         if self._native_buffer is not None:
