@@ -54,14 +54,43 @@ _uniform_setters = {
     # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv,
 }
 
+_attribute_types = {
+    GL_BOOL: (c_bool, 1),
+    GL_BOOL_VEC2: (c_bool, 2),
+    GL_BOOL_VEC3: (c_bool, 3),
+    GL_BOOL_VEC4: (c_bool, 4),
+
+    GL_INT: (c_int, 1),
+    GL_INT_VEC2: (c_int, 2),
+    GL_INT_VEC3: (c_int, 3),
+    GL_INT_VEC4: (c_int, 4),
+
+    GL_UNSIGNED_INT: (c_uint, 1),
+    GL_UNSIGNED_INT_VEC2: (c_uint, 2),
+    GL_UNSIGNED_INT_VEC3: (c_uint, 3),
+    GL_UNSIGNED_INT_VEC4: (c_uint, 4),
+
+    GL_FLOAT: (c_float, 1),
+    GL_FLOAT_VEC2: (c_float, 2),
+    GL_FLOAT_VEC3: (c_float, 3),
+    GL_FLOAT_VEC4: (c_float, 4),
+
+    GL_DOUBLE: (c_double, 1),
+    GL_DOUBLE_VEC2: (c_double, 2),
+    GL_DOUBLE_VEC3: (c_double, 3),
+    GL_DOUBLE_VEC4: (c_double, 4),
+}
+
 
 class _Attribute:
-    __slots__ = 'type', 'size', 'location'
+    __slots__ = 'name', 'type', 'size', 'location', 'c_type_count'
 
-    def __init__(self, attr_type, size, location):
+    def __init__(self, name, attr_type, size, location):
+        self.name = name
         self.type = attr_type
         self.size = size
         self.location = location
+        self.c_type_count = _attribute_types[attr_type]
 
 
 class _Uniform:
@@ -166,9 +195,8 @@ class Shader:
     def __del__(self):
         try:
             glDeleteShader(self._id)
-        except:
-            # There are potentially several different exceptions that
-            # could be raised here. None of them are vital to catch.
+        except ImportError:
+            # The interpreter is shutting down.
             pass
 
         if _debug_gl_shaders:
@@ -268,9 +296,8 @@ class ShaderProgram:
     def __del__(self):
         try:
             glDeleteProgram(self._id)
-        except:
-            # There are potentially several different exceptions that
-            # could be raised here. None of them are vital to catch.
+        except ImportError:
+            # The interpreter is shutting down.
             pass
 
     def __setitem__(self, key, value):
@@ -306,9 +333,9 @@ class ShaderProgram:
 
     def _introspect_attributes(self):
         for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
-            attrib_name, a_type, a_size = self._query_attribute(index)
-            loc = glGetAttribLocation(self._id, create_string_buffer(attrib_name.encode('utf-8')))
-            self._attributes[attrib_name] = _Attribute(a_type, a_size, loc)
+            a_name, a_type, a_size = self._query_attribute(index)
+            loc = glGetAttribLocation(self._id, create_string_buffer(a_name.encode('utf-8')))
+            self._attributes[a_name] = _Attribute(a_name, a_type, a_size, loc)
 
     def _introspect_uniforms(self):
         for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):

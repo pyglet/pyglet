@@ -467,7 +467,7 @@ class Sprite(event.EventDispatcher):
             ('translate2f/%s' % usage, (self._x, self._y) * 4),
             ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
             ('rotation1f/%s' % usage, (self._rotation,) * 4),
-            ('tex_coords3f', self._texture.tex_coords))
+            ('tex_coords3f/%s' % usage, self._texture.tex_coords))
         self._update_position()
 
     def _update_position(self):

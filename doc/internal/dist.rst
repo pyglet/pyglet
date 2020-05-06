@@ -19,6 +19,7 @@ Making a pyglet release
 #. Push the changes to the central repo::
 
     git push
+    git push --tags
 
 #. Build the wheels and documentation::
 

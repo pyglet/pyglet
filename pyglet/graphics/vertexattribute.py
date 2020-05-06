@@ -377,3 +377,37 @@ class VertexAttribute:
 
     def __repr__(self):
         return "VertexAttribute(name='{}', count={}, location={})".format(self.name, self.count, self.location)
+
+
+class GenericAttribute(VertexAttribute):
+    """Abstract accessor for an attribute in a mapped buffer."""
+
+    def __init__(self, name, location, count, gl_type, normalize):
+        """Create the attribute accessor.
+
+        :Parameters:
+            `name` : str
+                Name of the vertex attribute.
+            `location` : int
+                Index of the Attribute in the ShaderProgram.
+            `count` : int
+                Number of components in the attribute.
+            `gl_type` : int
+                OpenGL type enumerant; for example, ``GL_FLOAT``
+            `normalize`: bool
+                True if OpenGL should normalize the values
+
+        """
+        assert count in (1, 2, 3, 4), 'Vertex attribute component count out of range'
+        self.name = name
+        self.location = location
+        self.count = count
+        self.gl_type = gl_type
+        self.normalize = normalize
+
+        self.c_type = _c_types[gl_type]
+        self.align = ctypes.sizeof(self.c_type)
+
+        self.size = count * self.align
+        self.stride = self.size
+        self.offset = 0
