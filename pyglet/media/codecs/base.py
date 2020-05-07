@@ -166,18 +166,10 @@ class AudioData:
         elif num_bytes == 0:
             return
 
-        if not isinstance(self.data, str):
-            # XXX Create a string buffer for the whole packet then
-            #     chop it up.  Could do some pointer arith here and
-            #     save a bit of data pushing, but my guess is this is
-            #     faster than fudging aruond with ctypes (and easier).
-            data = ctypes.create_string_buffer(self.length)
-            ctypes.memmove(data, self.data, self.length)
-            self.data = data
         self.data = self.data[num_bytes:]
         self.length -= num_bytes
-        self.duration -= num_bytes / float(audio_format.bytes_per_second)
-        self.timestamp += num_bytes / float(audio_format.bytes_per_second)
+        self.duration -= num_bytes / audio_format.bytes_per_second
+        self.timestamp += num_bytes / audio_format.bytes_per_second
 
     def get_string_data(self):
         """Return data as a bytestring.

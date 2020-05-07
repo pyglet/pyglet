@@ -678,11 +678,13 @@ class WMFSource(Source):
             # Convert to single buffer as a sample could potentially(rarely) have multiple buffers.
             self._current_audio_sample.ConvertToContiguousBuffer(ctypes.byref(self._current_audio_buffer))
 
-            audio_data = POINTER(BYTE)()
+            audio_data_ptr = POINTER(BYTE)()
 
-            self._current_audio_buffer.Lock(ctypes.byref(audio_data), None, ctypes.byref(audio_data_length))
-
+            self._current_audio_buffer.Lock(ctypes.byref(audio_data_ptr), None, ctypes.byref(audio_data_length))
             self._current_audio_buffer.Unlock()
+
+            audio_data = create_string_buffer(audio_data_length.value)
+            memmove(audio_data, audio_data_ptr, audio_data_length.value)
 
             return AudioData(audio_data,
                              audio_data_length.value,
