@@ -483,10 +483,12 @@ OBJC_SUPER_PTR = POINTER(OBJC_SUPER)
 
 #http://stackoverflow.com/questions/3095360/what-exactly-is-super-in-objective-c
 def send_super(receiver, selName, *args, **kwargs):
-    #print 'send_super', receiver, selName, args
     if hasattr(receiver, '_as_parameter_'):
         receiver = receiver._as_parameter_
     superclass = get_superclass_of_object(receiver)
+    superclass_ptr = c_void_p(objc.class_getSuperclass(superclass))
+    if superclass_ptr.value is not None:
+        superclass = superclass_ptr
     super_struct = OBJC_SUPER(receiver, superclass)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
