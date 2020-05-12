@@ -166,13 +166,18 @@ class PygletView_Implementation:
     # This method is called whenever the view changes size.
     @PygletView.method(b'v'+cocoapy.NSSizeEncoding)
     def setFrameSize_(self, size):
-        cocoapy.send_super(self, 'setFrameSize:', size, argtypes=[cocoapy.NSSize])
-
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
         # This also helps ensure correct window creation event ordering.
         if not self._window.context.canvas:
+            cocoapy.send_super(self, 'setFrameSize:', size,
+                               preventSuperclassRecursion=False,
+                               argtypes=[cocoapy.NSSize])
             return
+
+        cocoapy.send_super(self, 'setFrameSize:', size,
+                           preventSuperclassRecursion=True,
+                           argtypes=[cocoapy.NSSize])
 
         width, height = int(size.width), int(size.height)
         self._window.switch_to()

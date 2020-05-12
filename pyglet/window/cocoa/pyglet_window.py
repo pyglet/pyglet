@@ -68,7 +68,9 @@ class PygletWindow_Implementation:
                 app.event_loop.idle()
 
         event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
-                           mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
+                           mask, date, mode, dequeue,
+                           preventSuperclassRecursion=True,
+                           argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value is None:
             return 0

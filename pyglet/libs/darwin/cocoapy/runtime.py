@@ -481,14 +481,18 @@ class OBJC_SUPER(Structure):
 
 OBJC_SUPER_PTR = POINTER(OBJC_SUPER)
 
-#http://stackoverflow.com/questions/3095360/what-exactly-is-super-in-objective-c
-def send_super(receiver, selName, *args, **kwargs):
+# http://stackoverflow.com/questions/3095360/what-exactly-is-super-in-objective-c
+#
+# Setting preventSuperclassRecursion to True prevents a bug in which the method
+# is called on the same object, leading to infinite recursion, see
+# https://github.com/pyglet/pyglet/issues/5. This is a temporary hack that
+# solves the problem, but doesn't resolve the underlying issue.
+def send_super(receiver, selName, *args, preventSuperclassRecursion=False, **kwargs):
     if hasattr(receiver, '_as_parameter_'):
         receiver = receiver._as_parameter_
     superclass = get_superclass_of_object(receiver)
-    superclass_ptr = c_void_p(objc.class_getSuperclass(superclass))
-    if superclass_ptr.value is not None:
-        superclass = superclass_ptr
+    if preventSuperclassRecursion:
+        superclass = c_void_p(objc.class_getSuperclass(superclass))
     super_struct = OBJC_SUPER(receiver, superclass)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
