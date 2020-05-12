@@ -483,18 +483,17 @@ OBJC_SUPER_PTR = POINTER(OBJC_SUPER)
 
 # http://stackoverflow.com/questions/3095360/what-exactly-is-super-in-objective-c
 #
-# Setting preventSuperclassRecursion to True prevents a bug in which the method
-# is called on the same object, leading to infinite recursion, see
-# https://github.com/pyglet/pyglet/issues/5. This is a temporary hack that
-# solves the problem, but doesn't resolve the underlying issue.
-def send_super(receiver, selName, *args, preventSuperclassRecursion=False, **kwargs):
+# `superclass_name` is optional and can be used to force finding the superclass
+# by name. It is used to circumvent a bug in which the superclass was resolved
+# incorrectly which lead to an infinite recursion:
+# https://github.com/pyglet/pyglet/issues/5
+def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
     if hasattr(receiver, '_as_parameter_'):
         receiver = receiver._as_parameter_
-    superclass = get_superclass_of_object(receiver)
-    if preventSuperclassRecursion:
-        supersuperclass = c_void_p(objc.class_getSuperclass(superclass))
-        if supersuperclass.value is not None:
-            superclass = supersuperclass
+    if superclass_name is None:
+        superclass = get_superclass_of_object(receiver)
+    else:
+        superclass = get_class(superclass_name)
     super_struct = OBJC_SUPER(receiver, superclass)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
@@ -1046,7 +1045,7 @@ def convert_method_arguments(encoding, args):
 # if you do so, you must call the __init__ method with register=False,
 # and then call the register method after the ivars have been added.
 # But rather than creating the ivars in Objective-C land, it is easier
-# to just define python-based instance variables in your subclass's init
+# to just define python-based instance yvariables in your subclass's init
 # method.
 #
 # This class is used only to *define* the interface and implementation

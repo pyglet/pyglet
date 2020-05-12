@@ -69,7 +69,7 @@ class PygletWindow_Implementation:
 
         event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
                            mask, date, mode, dequeue,
-                           preventSuperclassRecursion=True,
+                           superclass_name='NSWindow',
                            argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value is None:
