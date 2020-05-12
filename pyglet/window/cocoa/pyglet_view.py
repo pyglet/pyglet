@@ -46,7 +46,7 @@ NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
 def getMouseDelta(nsevent):
     dx = nsevent.deltaX()
     dy = -nsevent.deltaY()
-    return int(round(dx)), int(round(dy))
+    return dx, dy
 
 
 def getMousePosition(self, nsevent):
