@@ -492,7 +492,9 @@ def send_super(receiver, selName, *args, preventSuperclassRecursion=False, **kwa
         receiver = receiver._as_parameter_
     superclass = get_superclass_of_object(receiver)
     if preventSuperclassRecursion:
-        superclass = c_void_p(objc.class_getSuperclass(superclass))
+        supersuperclass = c_void_p(objc.class_getSuperclass(superclass))
+        if supersuperclass.value is not None:
+            superclass = supersuperclass
     super_struct = OBJC_SUPER(receiver, superclass)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
