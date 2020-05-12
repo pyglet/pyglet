@@ -1045,7 +1045,7 @@ def convert_method_arguments(encoding, args):
 # if you do so, you must call the __init__ method with register=False,
 # and then call the register method after the ivars have been added.
 # But rather than creating the ivars in Objective-C land, it is easier
-# to just define python-based instance yvariables in your subclass's init
+# to just define python-based instance variables in your subclass's init
 # method.
 #
 # This class is used only to *define* the interface and implementation
