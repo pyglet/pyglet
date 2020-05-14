@@ -1,3 +1,13 @@
+pyglet 1.5.6
+Bugfix release
+
+Bugfixes
+--------
+- The on_mouse_scroll event no longer clamps to int, preventing lost motion trackpads.
+- Prevent traceback when DirectSound buffers are garbage collected on exit.
+- Fix StaticSource with WMF decoder (streaming=False).
+
+
 pyglet 1.5.5
 Bugfix and feature release
 

@@ -1557,11 +1557,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     Distance in pixels from the left edge of the window.
                 `y` : int
                     Distance in pixels from the bottom edge of the window.
-                `scroll_x` : int
-                    Number of "clicks" towards the right (left if negative).
-                `scroll_y` : int
-                    Number of "clicks" upwards (downwards if negative).
-
+                `scroll_x` : float
+                    Amount of movement on the horizontal axis.
+                `scroll_y` : float
+                    Amount of movement on the vertical axis.
             :event:
             """
 
