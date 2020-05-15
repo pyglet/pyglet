@@ -40,7 +40,7 @@
 
 import sys
 
-from pyglet.event import EventDispatcher
+from pyglet.event import EventDispatcher, register_event_type
 from .gamecontroller import get_mapping
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -126,6 +126,7 @@ class Device:
         return '%s(name=%s)' % (self.__class__.__name__, self.name)
 
 
+@register_event_type('on_change')
 class Control(EventDispatcher):
     """Single value input provided by a device.
 
@@ -189,9 +190,6 @@ class Control(EventDispatcher):
 
             :event:
             """
-
-
-Control.register_event_type('on_change')
 
 
 class RelativeAxis(Control):
@@ -265,6 +263,8 @@ class AbsoluteAxis(Control):
         self.max = max
 
 
+@register_event_type('on_press')
+@register_event_type('on_release')
 class Button(Control):
     """A control whose value is boolean. """
 
@@ -297,10 +297,10 @@ class Button(Control):
             """
 
 
-Button.register_event_type('on_press')
-Button.register_event_type('on_release')
-
-
+@register_event_type('on_joyaxis_motion')
+@register_event_type('on_joybutton_press')
+@register_event_type('on_joybutton_release')
+@register_event_type('on_joyhat_motion')
 class Joystick(EventDispatcher):
     """High-level interface for joystick-like devices.  This includes analogue
     and digital joysticks, gamepads, game controllers, and possibly even
@@ -526,12 +526,11 @@ class Joystick(EventDispatcher):
         """
 
 
-Joystick.register_event_type('on_joyaxis_motion')
-Joystick.register_event_type('on_joybutton_press')
-Joystick.register_event_type('on_joybutton_release')
-Joystick.register_event_type('on_joyhat_motion')
-
-
+@register_event_type('on_button_press')
+@register_event_type('on_button_release')
+@register_event_type('on_stick_motion')
+@register_event_type('on_dpad_motion')
+@register_event_type('on_trigger_motion')
 class GameController(EventDispatcher):
 
     __slots__ = ('device', 'guid', '_mapping', 'name', 'a', 'b', 'x', 'y',
@@ -786,13 +785,8 @@ class GameController(EventDispatcher):
         """
 
 
-GameController.register_event_type('on_button_press')
-GameController.register_event_type('on_button_release')
-GameController.register_event_type('on_stick_motion')
-GameController.register_event_type('on_dpad_motion')
-GameController.register_event_type('on_trigger_motion')
-
-
+@register_event_type('on_button_press')
+@register_event_type('on_button_release')
 class AppleRemote(EventDispatcher):
     """High-level interface for Apple remote control.
 
@@ -885,10 +879,6 @@ class AppleRemote(EventDispatcher):
         """
 
 
-AppleRemote.register_event_type('on_button_press')
-AppleRemote.register_event_type('on_button_release')
-
-
 class Tablet:
     """High-level interface to tablet devices.
 
@@ -913,6 +903,9 @@ class Tablet:
         raise NotImplementedError('abstract')
 
 
+@register_event_type('on_enter')
+@register_event_type('on_leave')
+@register_event_type('on_motion')
 class TabletCanvas(EventDispatcher):
     """Event dispatcher for tablets.
 
@@ -998,11 +991,6 @@ class TabletCanvas(EventDispatcher):
 
             :event:
             """
-
-
-TabletCanvas.register_event_type('on_enter')
-TabletCanvas.register_event_type('on_leave')
-TabletCanvas.register_event_type('on_motion')
 
 
 class TabletCursor:

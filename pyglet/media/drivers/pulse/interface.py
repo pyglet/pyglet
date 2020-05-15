@@ -36,6 +36,7 @@
 import sys
 import weakref
 
+from pyglet.event import register_event_type
 from . import lib_pulseaudio as pa
 from pyglet.media.exceptions import MediaException
 from pyglet.util import debug_print
@@ -384,6 +385,7 @@ class PulseAudioContext(PulseAudioLockable):
         raise PulseAudioException(error, get_ascii_str_or_none(pa.pa_strerror(error)))
 
 
+@register_event_type('on_write_needed')
 class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
     """PulseAudio audio stream."""
 
@@ -656,8 +658,6 @@ class PulseAudioStream(PulseAudioLockable, pyglet.event.EventDispatcher):
 
         :event:
         """
-
-PulseAudioStream.register_event_type('on_write_needed')
 
 
 class PulseAudioOperation(PulseAudioLockable):

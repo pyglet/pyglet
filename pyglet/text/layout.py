@@ -158,7 +158,7 @@ import sys
 
 from pyglet import graphics
 from pyglet.gl import *
-from pyglet.event import EventDispatcher
+from pyglet.event import EventDispatcher, register_event_type
 from pyglet.text import runlist
 from pyglet.graphics import shader
 from pyglet.font.base import grapheme_break
@@ -1684,6 +1684,7 @@ class ScrollableTextLayout(TextLayout):
         self._view_y_setter(view_y)
 
 
+@register_event_type('on_layout_update')
 class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
@@ -2343,9 +2344,6 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
             :event:
             """
-
-
-IncrementalTextLayout.register_event_type('on_layout_update')
 
 
 class NewIncrementalTextLayout(ScrollableTextLayout, EventDispatcher):

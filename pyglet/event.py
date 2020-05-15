@@ -168,6 +168,17 @@ class EventException(Exception):
     pass
 
 
+def register_event_type(name):
+    def _reg_evt_type(cls):
+        if not hasattr(cls, 'event_types'):
+            cls.event_types = []
+
+        cls.event_types.append(name)
+        return cls
+
+    return _reg_evt_type
+
+
 class EventDispatcher:
     """Generic event dispatcher interface.
 
@@ -175,24 +186,6 @@ class EventDispatcher:
     """
     # Placeholder empty stack; real stack is created only if needed
     _event_stack = ()
-
-    @classmethod
-    def register_event_type(cls, name):
-        """Register an event type with the dispatcher.
-
-        Registering event types allows the dispatcher to validate event
-        handler names as they are attached, and to search attached objects for
-        suitable handlers.
-
-        :Parameters:
-            `name` : str
-                Name of the event to register.
-
-        """
-        if not hasattr(cls, 'event_types'):
-            cls.event_types = []
-        cls.event_types.append(name)
-        return name
 
     def push_handlers(self, *args, **kwargs):
         """Push a level onto the top of the handler stack, then attach zero or

@@ -38,6 +38,7 @@ import time
 from collections import deque
 
 import pyglet
+from pyglet.event import register_event_type
 from pyglet.gl import GL_TEXTURE_RECTANGLE
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
@@ -121,6 +122,9 @@ class _PlayerProperty:
             getattr(obj._audio_player, 'set_' + self.attribute)(value)
 
 
+@register_event_type('on_eos')
+@register_event_type('on_player_eos')
+@register_event_type('on_player_next_source')
 class Player(pyglet.event.EventDispatcher):
     """High-level sound and video player."""
 
@@ -621,11 +625,6 @@ class Player(pyglet.event.EventDispatcher):
         :event:
         """
         pass
-
-
-Player.register_event_type('on_eos')
-Player.register_event_type('on_player_eos')
-Player.register_event_type('on_player_next_source')
 
 
 def _one_item_playlist(source):

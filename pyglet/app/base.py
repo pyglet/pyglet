@@ -40,6 +40,7 @@ import threading
 from pyglet import app
 from pyglet import clock
 from pyglet import event
+from pyglet.event import register_event_type
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -121,6 +122,9 @@ class PlatformEventLoop:
         pass
 
 
+@register_event_type('on_window_close')
+@register_event_type('on_enter')
+@register_event_type('on_exit')
 class EventLoop(event.EventDispatcher):
     """The main run loop of the application.
 
@@ -338,8 +342,3 @@ class EventLoop(event.EventDispatcher):
 
             :event:
             """
-
-
-EventLoop.register_event_type('on_window_close')
-EventLoop.register_event_type('on_enter')
-EventLoop.register_event_type('on_exit')

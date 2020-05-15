@@ -168,6 +168,7 @@ import re
 import sys
 
 from pyglet import event
+from pyglet.event import register_event_type
 from pyglet.text import runlist
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -257,6 +258,9 @@ class InlineElement:
         raise NotImplementedError('abstract')
 
 
+@register_event_type('on_delete_text')
+@register_event_type('on_insert_text')
+@register_event_type('on_style_text')
 class AbstractDocument(event.EventDispatcher):
     """Abstract document interface used by all :py:mod:`pyglet.text` classes.
 
@@ -567,11 +571,6 @@ class AbstractDocument(event.EventDispatcher):
 
             :event:
             """
-
-
-AbstractDocument.register_event_type('on_insert_text')
-AbstractDocument.register_event_type('on_delete_text')
-AbstractDocument.register_event_type('on_style_text')
 
 
 class UnformattedDocument(AbstractDocument):

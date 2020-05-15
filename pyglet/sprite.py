@@ -102,6 +102,7 @@ sprites within batches.
 
 import sys
 
+from pyglet.event import register_event_type
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import event
@@ -251,6 +252,7 @@ class SpriteGroup(graphics.Group):
                      self.blend_src, self.blend_dest))
 
 
+@register_event_type('on_animation_end')
 class Sprite(event.EventDispatcher):
     """Instance of an on-screen image.
 
@@ -732,5 +734,3 @@ class Sprite(event.EventDispatcher):
             :event:
             """
 
-
-Sprite.register_event_type('on_animation_end')

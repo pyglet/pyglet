@@ -128,7 +128,7 @@ import sys
 import pyglet
 from pyglet import gl
 from pyglet import matrix
-from pyglet.event import EventDispatcher
+from pyglet.event import EventDispatcher, register_event_type
 from pyglet.window import key
 from pyglet.util import with_metaclass
 
@@ -358,6 +358,30 @@ class _WindowMetaclass(type):
         super(_WindowMetaclass, cls).__init__(name, bases, dict)
 
 
+@register_event_type('on_key_press')
+@register_event_type('on_key_release')
+@register_event_type('on_text')
+@register_event_type('on_text_motion')
+@register_event_type('on_text_motion_select')
+@register_event_type('on_mouse_motion')
+@register_event_type('on_mouse_drag')
+@register_event_type('on_mouse_press')
+@register_event_type('on_mouse_release')
+@register_event_type('on_mouse_scroll')
+@register_event_type('on_mouse_enter')
+@register_event_type('on_mouse_leave')
+@register_event_type('on_close')
+@register_event_type('on_expose')
+@register_event_type('on_resize')
+@register_event_type('on_move')
+@register_event_type('on_activate')
+@register_event_type('on_deactivate')
+@register_event_type('on_show')
+@register_event_type('on_hide')
+@register_event_type('on_context_lost')
+@register_event_type('on_context_state_lost')
+@register_event_type('on_file_drop')
+@register_event_type('on_draw')
 class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     """Platform-independent application window.
 
@@ -1713,32 +1737,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
             :event:
             """
-
-
-BaseWindow.register_event_type('on_key_press')
-BaseWindow.register_event_type('on_key_release')
-BaseWindow.register_event_type('on_text')
-BaseWindow.register_event_type('on_text_motion')
-BaseWindow.register_event_type('on_text_motion_select')
-BaseWindow.register_event_type('on_mouse_motion')
-BaseWindow.register_event_type('on_mouse_drag')
-BaseWindow.register_event_type('on_mouse_press')
-BaseWindow.register_event_type('on_mouse_release')
-BaseWindow.register_event_type('on_mouse_scroll')
-BaseWindow.register_event_type('on_mouse_enter')
-BaseWindow.register_event_type('on_mouse_leave')
-BaseWindow.register_event_type('on_close')
-BaseWindow.register_event_type('on_expose')
-BaseWindow.register_event_type('on_resize')
-BaseWindow.register_event_type('on_move')
-BaseWindow.register_event_type('on_activate')
-BaseWindow.register_event_type('on_deactivate')
-BaseWindow.register_event_type('on_show')
-BaseWindow.register_event_type('on_hide')
-BaseWindow.register_event_type('on_context_lost')
-BaseWindow.register_event_type('on_context_state_lost')
-BaseWindow.register_event_type('on_file_drop')
-BaseWindow.register_event_type('on_draw')
 
 
 class FPSDisplay:
