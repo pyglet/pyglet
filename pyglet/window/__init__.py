@@ -193,7 +193,7 @@ class MouseCursor:
 
 
 class DefaultMouseCursor(MouseCursor):
-    """The default mouse cursor #sed by the operating system."""
+    """The default mouse cursor set by the operating system."""
     gl_drawable = False
     hw_drawable = True
 
