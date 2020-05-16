@@ -40,7 +40,7 @@ The source code archives include examples. Archives are
     python examples/graphics.py
 
 
-You mentioned above, you can  also clone the repository using Git:
+As mentioned above, you can also clone the repository using Git:
 
 .. code-block:: sh
 
