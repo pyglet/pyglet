@@ -9,7 +9,7 @@ classes easily, by subclassing :py:class:`~pyglet.event.EventDispatcher`.
 
 Throughout this documentation, an "event dispatcher" is an object that has
 events it needs to notify other objects about, and an "event handler" is some
-code that can be attached to a dispatcher.:
+code that can be attached to a dispatcher.
 
 Setting event handlers
 ----------------------
@@ -24,7 +24,7 @@ corresponding to the event type. For example, the
 
 The :py:class:`~pyglet.window.Window` class subclasses
 :py:class:`~pyglet.event.EventDispatcher`, which enables it to dispatch
-it's own events.  There are a few different ways in which event handlers
+its own events.  There are a few different ways in which event handlers
 can be attached to recieve them. The simplest way is to directly attach the
 event handler to the corresponding attribute on the object.  This will
 completely replace the default event handler::
@@ -60,7 +60,7 @@ to replace this with your own custom event handler.
 
 In most simple cases, the :py:class:`~pyglet.event.EventDispatcher.event`
 decorator is most convienent.  One limitation of using the decorator,
-however, is that you can only add one additinal event handler.
+however, is that you can only add one additional event handler.
 If you want to add multiple additional event handlers, the next section
 describes how to accomplish that.
 
@@ -78,7 +78,7 @@ Stacking event handlers
 It is often convenient to attach more than one event handler for an event.
 :py:class:`~pyglet.event.EventDispatcher` allows you to stack event handlers
 upon one another, rather than replacing them outright. The event will
-propogate from the top of the stack to the bottom, but can be stopped
+propagate from the top of the stack to the bottom, but can be stopped
 by any handler along the way.
 
 To push an event handler onto the stack,
@@ -218,7 +218,7 @@ Event handlers can then be attached as described in the preceding sections::
 
     widget.push_handlers(on_clicked=override_on_clicked)
 
-The :py:class:`~pyglet.event.EventDispatcher` takes care of propogating the
+The :py:class:`~pyglet.event.EventDispatcher` takes care of propagating the
 event to all attached handlers or ignoring it if there are no handlers for
 that event.
 
