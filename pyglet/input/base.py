@@ -297,10 +297,10 @@ class Button(Control):
             """
 
 
+@register_event_type('on_joyhat_motion')
 @register_event_type('on_joyaxis_motion')
 @register_event_type('on_joybutton_press')
 @register_event_type('on_joybutton_release')
-@register_event_type('on_joyhat_motion')
 class Joystick(EventDispatcher):
     """High-level interface for joystick-like devices.  This includes analogue
     and digital joysticks, gamepads, game controllers, and possibly even
@@ -526,10 +526,10 @@ class Joystick(EventDispatcher):
         """
 
 
+@register_event_type('on_dpad_motion')
+@register_event_type('on_stick_motion')
 @register_event_type('on_button_press')
 @register_event_type('on_button_release')
-@register_event_type('on_stick_motion')
-@register_event_type('on_dpad_motion')
 @register_event_type('on_trigger_motion')
 class GameController(EventDispatcher):
 

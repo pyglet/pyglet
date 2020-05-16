@@ -170,6 +170,7 @@ class EventException(Exception):
 
 def register_event_type(name):
     def _reg_evt_type(cls):
+        assert issubclass(cls, EventDispatcher), "Event types can only be registered on EventDispatcher subclasses"
         if not hasattr(cls, 'event_types'):
             cls.event_types = []
 

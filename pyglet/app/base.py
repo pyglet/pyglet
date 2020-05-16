@@ -122,9 +122,9 @@ class PlatformEventLoop:
         pass
 
 
-@register_event_type('on_window_close')
-@register_event_type('on_enter')
 @register_event_type('on_exit')
+@register_event_type('on_enter')
+@register_event_type('on_window_close')
 class EventLoop(event.EventDispatcher):
     """The main run loop of the application.
 
