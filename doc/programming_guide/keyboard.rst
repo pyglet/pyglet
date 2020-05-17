@@ -148,7 +148,7 @@ User-defined key symbols
 
 pyglet does not define key symbols for every keyboard ever made.  For example,
 non-Latin languages will have many keys not recognised by pyglet (however,
-their Unicode representation will still be valid, see
+their Unicode representations will still be valid, see
 :ref:`guide_text-and-motion-events`).
 Even English keyboards often have additional so-called "OEM" keys
 added by the manufacturer, which might be labelled "Media", "Volume" or
@@ -276,7 +276,7 @@ and their keyboard mapping on each operating system.
           - Right
           - Right
         * - ``MOTION_PREVIOUS_WORD``
-          - Move the cursor to the previuos word
+          - Move the cursor to the previous word
           - Ctrl + Left
           - Option + Left
         * - ``MOTION_NEXT_WORD``
