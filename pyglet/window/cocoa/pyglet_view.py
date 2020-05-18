@@ -46,7 +46,7 @@ NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
 def getMouseDelta(nsevent):
     dx = nsevent.deltaX()
     dy = -nsevent.deltaY()
-    return int(round(dx)), int(round(dy))
+    return dx, dy
 
 
 def getMousePosition(self, nsevent):
@@ -166,7 +166,9 @@ class PygletView_Implementation:
     # This method is called whenever the view changes size.
     @PygletView.method(b'v'+cocoapy.NSSizeEncoding)
     def setFrameSize_(self, size):
-        cocoapy.send_super(self, 'setFrameSize:', size, argtypes=[cocoapy.NSSize])
+        cocoapy.send_super(self, 'setFrameSize:', size,
+                           superclass_name='NSView',
+                           argtypes=[cocoapy.NSSize])
 
         # This method is called when view is first installed as the
         # contentView of window.  Don't do anything on first call.
