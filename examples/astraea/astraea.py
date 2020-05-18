@@ -479,7 +479,7 @@ class MainMenu(Menu):
         self.items.append(MenuItem('Instructions', 200,
                                    begin_instructions_menu))
         self.items.append(MenuItem('Options', 160, begin_options_menu))
-        self.items.append(MenuItem('Quit', 120, pyglet.app.exit))
+        self.items.append(MenuItem('Quit', 120, win.close))
         self.reset()
 
 
@@ -759,7 +759,7 @@ def on_key_press(symbol, modifiers):
             resume_game()
         return True
     elif symbol == key.ESCAPE:
-        pyglet.app.exit()
+        win.close()
     return pyglet.event.EVENT_HANDLED
 
 
