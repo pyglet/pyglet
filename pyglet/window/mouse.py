@@ -55,11 +55,20 @@ class MouseStateHandler(dict):
         False
 
     """
+    
+    def __init__(self):
+        self["x"] = 0
+        self["y"] = 0
+    
     def on_mouse_press(self, x, y, button, modifiers):
         self[button] = True
         
     def on_mouse_release(self, x, y, button, modifiers):
         self[button] = False
+    
+    def on_mouse_motion(self, x, y, dx, dy):
+        self["x"] = x
+        self["y"] = y
         
     def __getitem__(self, key):
         return self.get(key, False)
