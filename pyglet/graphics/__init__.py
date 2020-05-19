@@ -728,6 +728,12 @@ class ShaderGroup(Group):
     def unset_state(self):
         self.program.stop()
 
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and self._order == other.order and self.program == other.program
+
+    def __hash__(self):
+        return hash((self._order, self.parent, self.program))
+
 
 class TextureGroup(Group):
     """A group that enables and binds a texture.
