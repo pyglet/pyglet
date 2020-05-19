@@ -1,3 +1,23 @@
+"""
+This example demonstrates an alternative way to register an event type.
+The original way looks like this:
+
+    class Foo(EventDispatcher):
+        # ...
+
+
+    Foo.register_event_type('bar')
+
+Instead of calling the classmethod register_event_type() below the implementation of your dispatcher,
+you can decorate the latter with the function decorator:
+
+    @register_event_type('bar')
+    class Foo(EventDispatcher):
+        # ...
+
+All in one place.
+"""
+
 import pyglet
 from pyglet.event import EventDispatcher
 
