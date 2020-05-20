@@ -377,7 +377,7 @@ class ShaderProgram:
 
         for index in range(self._get_number(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self._get_uniform_block_name(index)
-            
+
             block_uniforms[name] = {}
             
             num_active = GLint()
@@ -462,7 +462,7 @@ class UniformBufferObject:
         assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = uniform_block
         self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
-        glBindBufferBase(GL_UNIFORM_BUFFER, self.block.index, self.buffer.id)
+        glBindBufferBase(GL_UNIFORM_BUFFER, len(ShaderProgram.uniform_buffers), self.buffer.id)
 
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
