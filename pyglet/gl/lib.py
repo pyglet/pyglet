@@ -100,40 +100,16 @@ def errcheck(result, func, arguments):
     context = gl.current_context
     if not context:
         raise GLException('No GL context; create a Window first')
-    if not context._gl_begin:
-        error = gl.glGetError()
-        if error:
-            msg = ctypes.cast(gl.gluErrorString(error), ctypes.c_char_p).value
-            raise GLException(msg)
-        return result
-
-
-def errcheck_glbegin(result, func, arguments):
-    from pyglet import gl
-    context = gl.current_context
-    if not context:
-        raise GLException('No GL context; create a Window first')
-    context._gl_begin = True
+    error = gl.glGetError()
+    if error:
+        msg = ctypes.cast(gl.gluErrorString(error), ctypes.c_char_p).value
+        raise GLException(msg)
     return result
-
-
-def errcheck_glend(result, func, arguments):
-    from pyglet import gl
-    context = gl.current_context
-    if not context:
-        raise GLException('No GL context; create a Window first')
-    context._gl_begin = False
-    return errcheck(result, func, arguments)
 
 
 def decorate_function(func, name):
     if _debug_gl:
-        if name == 'glBegin':
-            func.errcheck = errcheck_glbegin
-        elif name == 'glEnd':
-            func.errcheck = errcheck_glend
-        elif name not in ('glGetError', 'gluErrorString') and \
-                name[:3] not in ('glX', 'agl', 'wgl'):
+        if name not in ('glGetError', 'gluErrorString') and name[:3] not in ('glX', 'agl', 'wgl'):
             func.errcheck = errcheck
 
 

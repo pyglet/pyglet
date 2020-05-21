@@ -262,10 +262,6 @@ class Context:
     #: the most recently created context (the default).
     CONTEXT_SHARE_EXISTING = 1
 
-    # Used for error checking, True if currently within a glBegin/End block.
-    # Ignored if error checking is disabled.
-    _gl_begin = False
-
     # gl_info.GLInfo instance, filled in on first set_current
     _info = None
 
