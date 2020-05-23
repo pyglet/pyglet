@@ -1,3 +1,4 @@
+from weakref import proxy
 from ctypes import *
 
 from pyglet.graphics.vertexbuffer import create_buffer
@@ -209,7 +210,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    __slots__ = '_id', '_active', '_attributes', '_uniforms', '_uniform_blocks'
+    __slots__ = '_id', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
 
     # Cache UBOs, and return the same object for any Shader that defines a UBO
     # with the same name. UBOs must be shared instead of recreated, or else
@@ -242,7 +243,7 @@ class ShaderProgram:
                 if _debug_gl_shaders:
                     print("Skipping cached Uniform Buffer Object: `{0}`".format(block.name))
                 continue
-            self.uniform_buffers[block.name] = UniformBufferObject(uniform_block=block)
+            self.uniform_buffers[block.name] = UniformBufferObject(block=block)
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -403,7 +404,7 @@ class ShaderProgram:
                 
                 block_uniforms[name][i] = (uniform_name, gl_type, length)
 
-            self._uniform_blocks[name] = UniformBlock(p_id, name, index, block_data_size.value, block_uniforms[name])
+            self._uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, block_uniforms[name])
 
     def _get_uniform_block_name(self, index):
         buf_size = 128
@@ -442,10 +443,10 @@ class ShaderProgram:
 
 
 class UniformBlock:
-    __slots__ = 'program_id', 'name', 'index', 'size', 'uniforms'
+    __slots__ = 'program', 'name', 'index', 'size', 'uniforms'
 
-    def __init__(self, program_id, name, index, size, uniforms):
-        self.program_id = program_id
+    def __init__(self, program, name, index, size, uniforms):
+        self.program = proxy(program)
         self.name = name
         self.index = index
         self.size = size
@@ -458,17 +459,18 @@ class UniformBlock:
 class UniformBufferObject:
     __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr'
 
-    def __init__(self, uniform_block):
-        assert type(uniform_block) == UniformBlock, "Must be a UniformBlock instance"
-        self.block = uniform_block
+    def __init__(self, block):
+        assert type(block) == UniformBlock, "Must be a UniformBlock instance"
+        self.block = block
         self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
-        glBindBufferBase(GL_UNIFORM_BUFFER, len(ShaderProgram.uniform_buffers), self.buffer.id)
-
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
+        index = len(block.program.uniform_buffers)
+        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
+        glUniformBlockBinding(self.block.program.id, self.block.index, index)
 
     def _introspect_uniforms(self):
-        p_id = self.block.program_id
+        p_id = self.block.program.id
         index = self.block.index
 
         # Query the number of active Uniforms:
