@@ -232,7 +232,6 @@ elif compat_platform.startswith('linux'):
     from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
-del base  # noqa: F821
 
 
 _shadow_window = None
