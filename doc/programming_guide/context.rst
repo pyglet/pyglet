@@ -11,7 +11,7 @@ Displays, screens, configs and contexts
 
 .. figure:: img/context_flow.png
 
-    Flow of construction, from the abstract Canvas to a newly
+    Flow of construction, from the singleton Platform to a newly
     created Window with its Context.
 
 Contexts and configs
@@ -293,7 +293,8 @@ the :class:`~pyglet.window.Window` constructor do this for you.  In this case
 use :meth:`~pyglet.canvas.Screen.get_best_config` to obtain a "complete"
 config, which you can then use to create the context::
 
-    display = pyglet.canvas.get_display()
+    platform = pyglet.window.get_platform()
+    display = platform.get_default_display()
     screen = display.get_default_screen()
 
     template = pyglet.gl.Config(alpha_size=8)
@@ -316,7 +317,7 @@ You can use this to support newer hardware features where available, but also
 accept a lesser config if necessary.  For example, the following code creates
 a window with multisampling if possible, otherwise leaves multisampling off::
 
-    template = pyglet.gl.Config(sample_buffers=1, samples=4)
+    template = gl.Config(sample_buffers=1, samples=4)
     try:
         config = screen.get_best_config(template)
     except pyglet.window.NoSuchConfigException:
@@ -340,12 +341,13 @@ the screen.
 In the following example, all configurations with either an auxilliary buffer
 or an accumulation buffer are printed::
 
-    display = pyglet.canvas.get_display()
+    platform = pyglet.window.get_platform()
+    display = platform.get_default_display()
     screen = display.get_default_screen()
 
     for config in screen.get_matching_configs(gl.Config()):
         if config.aux_buffers or config.accum_red_size:
-            print(config)
+            print config
 
 As well as supporting more complex configuration selection algorithms,
 enumeration allows you to efficiently find the maximum value of an attribute

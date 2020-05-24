@@ -34,10 +34,6 @@ Classes
   :members:
   :undoc-members:
 
-.. autoclass:: WeakSet
-  :members:
-  :undoc-members:
-
 Functions
 ---------
 
