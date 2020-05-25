@@ -215,3 +215,83 @@ def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     handler = None
     result = dispatcher.dispatch_event('mock_event')
     assert result is False
+
+
+class MockDispatcher(pyglet.event.EventDispatcher):
+    def __init__(self):
+        self.handled = []
+
+    def on_mock_event1(self):
+        self.handled.append('MockDispatcher')
+
+    def on_mock_event2(self):
+        self.handled.append('MockDispatcher')
+
+MockDispatcher.register_event_type('on_mock_event1')
+MockDispatcher.register_event_type('on_mock_event2')
+
+class MockListener1(object):
+    def __init__(self, dispatcher):
+        self.dispatcher = dispatcher
+        self.dispatcher.push_handlers(self)
+
+    def on_mock_event1(self):
+        self.dispatcher.handled.append('MockListener1')
+
+    def on_mock_event2(self):
+        self.dispatcher.handled.append('MockListener1')
+
+class MockListener2(object):
+    def __init__(self, dispatcher):
+        self.dispatcher = dispatcher
+        self.dispatcher.push_handlers(self)
+
+    def on_mock_event1(self):
+        self.dispatcher.handled.append('MockListener2')
+
+    def on_mock_event2(self):
+        self.dispatcher.handled.append('MockListener2')
+        return EVENT_HANDLED
+
+
+def test_listener_then_dispatcher():
+    dispatcher = MockDispatcher()
+    listener1 = MockListener1(dispatcher)
+    listener2 = MockListener2(dispatcher)
+    result = dispatcher.dispatch_event('on_mock_event1')
+    assert result is EVENT_UNHANDLED
+    assert (dispatcher.handled ==
+            ['MockListener2', 'MockListener1', 'MockDispatcher'])
+
+
+def test_listener_handles():
+    dispatcher = MockDispatcher()
+    listener1 = MockListener1(dispatcher)
+    listener2 = MockListener2(dispatcher)
+    result = dispatcher.dispatch_event('on_mock_event2')
+    assert result is EVENT_HANDLED
+    assert (dispatcher.handled == ['MockListener2'])
+
+
+def test_func_listener():
+    dispatcher = MockDispatcher()
+    @dispatcher.event
+    def on_mock_event1():
+        dispatcher.handled.append('func')
+    result = dispatcher.dispatch_event('on_mock_event1')
+    assert result is EVENT_UNHANDLED
+    assert (dispatcher.handled == ['func', 'MockDispatcher'])
+
+
+def test_func_listener_overrides():
+    dispatcher = MockDispatcher()
+    listener1 = MockListener1(dispatcher)
+    listener2 = MockListener2(dispatcher)
+    @dispatcher.event
+    def on_mock_event1():
+        dispatcher.handled.append('func')
+    result = dispatcher.dispatch_event('on_mock_event1')
+    assert result is EVENT_UNHANDLED
+    # The top handler on the stack (MockListener2) got overwritten by
+    # the decorator.
+    assert (dispatcher.handled == ['func', 'MockListener1', 'MockDispatcher'])
