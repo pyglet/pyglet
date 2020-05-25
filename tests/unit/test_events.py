@@ -6,7 +6,7 @@ import types
 import sys
 import pyglet
 from tests import mock
-from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventException
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ def test_push_handlers_instance(dispatcher, mock_instance_handler):
 
 def test_push_handlers_not_setup(dispatcher):
     dispatcher.push_handlers()
-    assert dispatcher._event_stack == [{}]
+    assert dispatcher._event_stack == ()
 
 
 def test_set_handlers_args(dispatcher, mock_handler):
@@ -110,7 +110,7 @@ def test_set_handlers_kwargs(dispatcher, mock_handler):
 
 def test_set_handlers_not_setup(dispatcher):
     dispatcher.set_handlers()
-    assert dispatcher._event_stack == [{}]
+    assert dispatcher._event_stack == ()
 
 
 def test_set_handler_dispatch(dispatcher, mock_handler):
@@ -169,12 +169,12 @@ def test_remove_handler(dispatcher, mock_handler):
 
 def test_dispatch_unhandled_event(dispatcher):
     dispatcher.register_event_type('mock_event')
-    with pytest.raises(AssertionError):
+    with pytest.raises(EventException):
         dispatcher.dispatch_event('not_handled')
 
 
 def test_dispatch_event_not_setup(dispatcher):
-    with pytest.raises(AssertionError):
+    with pytest.raises(EventException):
         dispatcher.dispatch_event('mock_event')
 
 
@@ -227,8 +227,20 @@ class MockDispatcher(pyglet.event.EventDispatcher):
     def on_mock_event2(self):
         self.handled.append('MockDispatcher')
 
+    @pyglet.event.intercept
+    def on_mock_event3(self):
+        self.handled.append('MockDispatcher')
+
+    @pyglet.event.intercept
+    def on_mock_event4(self):
+        self.handled.append('MockDispatcher')
+
+
 MockDispatcher.register_event_type('on_mock_event1')
 MockDispatcher.register_event_type('on_mock_event2')
+MockDispatcher.register_event_type('on_mock_event3')
+MockDispatcher.register_event_type('on_mock_event4')
+
 
 class MockListener1(object):
     def __init__(self, dispatcher):
@@ -239,6 +251,13 @@ class MockListener1(object):
         self.dispatcher.handled.append('MockListener1')
 
     def on_mock_event2(self):
+        self.dispatcher.handled.append('MockListener1')
+
+    def on_mock_event3(self):
+        self.dispatcher.handled.append('MockListener1')
+
+    @pyglet.event.intercept
+    def on_mock_event4(self):
         self.dispatcher.handled.append('MockListener1')
 
 class MockListener2(object):
@@ -252,6 +271,12 @@ class MockListener2(object):
     def on_mock_event2(self):
         self.dispatcher.handled.append('MockListener2')
         return EVENT_HANDLED
+
+    def on_mock_event3(self):
+        self.dispatcher.handled.append('MockListener2')
+
+    def on_mock_event4(self):
+        self.dispatcher.handled.append('MockListener2')
 
 
 def test_listener_then_dispatcher():
@@ -295,3 +320,25 @@ def test_func_listener_overrides():
     # The top handler on the stack (MockListener2) got overwritten by
     # the decorator.
     assert (dispatcher.handled == ['func', 'MockListener1', 'MockDispatcher'])
+
+def test_dispatcher_intercepts():
+    dispatcher = MockDispatcher()
+    listener1 = MockListener1(dispatcher)
+    listener2 = MockListener2(dispatcher)
+    result = dispatcher.dispatch_event('on_mock_event3')
+    assert result is EVENT_UNHANDLED
+    # Handler on the dispatcher is annotated @intercept, so it's called first.
+    assert (dispatcher.handled ==
+            ['MockDispatcher', 'MockListener2', 'MockListener1'])
+
+def test_listener_intercepts():
+    dispatcher = MockDispatcher()
+    listener1 = MockListener1(dispatcher)
+    listener2 = MockListener2(dispatcher)
+    result = dispatcher.dispatch_event('on_mock_event4')
+    assert result is EVENT_UNHANDLED
+    # Handler on the dispatcher is annotated @intercept, so it's called first.
+    # After that the handler on MockListener1 is called because it's also
+    # annotated as intercept, but was added later.
+    assert (dispatcher.handled ==
+            ['MockDispatcher', 'MockListener1', 'MockListener2'])

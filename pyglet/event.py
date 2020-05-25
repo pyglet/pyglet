@@ -162,6 +162,12 @@ EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
 
+def intercept(handler):
+    """Decorator to ensure that an event handler is invoked before later handlers."""
+    handler.__intercept = True
+    return handler
+
+
 class EventException(Exception):
     """An exception raised when an event handler could not be attached.
     """
@@ -194,6 +200,47 @@ class EventDispatcher:
         cls.event_types.append(name)
         return name
 
+    def _add_frame(self, intercept=False):
+        """Adds a set of handlers to _event_stack.
+
+        Both *intercept* and *default* frames are added to the same place: after
+        all currently added intercept frames, before all default frames.
+        """
+        # Create event stack if necessary
+        if type(self._event_stack) is tuple:
+            self._event_stack = []
+        new_frame = {'__intercept': intercept}
+        for i, frame in enumerate(self._event_stack):
+            if not frame['__intercept']:
+                self._event_stack.insert(i, new_frame)
+                return new_frame
+        self._event_stack.append(new_frame)
+        return new_frame
+
+    def _get_current_frame(self, intercept=False):
+        """Finds or adds the current frame of a given type.
+
+        The "current" frame is the last intercept frame, or the first default
+        frame.
+        """
+        if type(self._event_stack) is tuple:
+            self._event_stack = []
+        for i, frame in enumerate(self._event_stack):
+            if not frame['__intercept']:
+                if not intercept:
+                    # Return the first non-intercept frame.
+                    return frame
+                if i > 0:
+                    # Return the last intercept frame.
+                    return self._event_stack[i - 1]
+                # Create and return the first intercept frame
+                self._event_stack.insert(0, {'__intercept': True})
+                return self._event_stack[0]
+
+        # Create and return the first non-intercept frame
+        self._event_stack.append({'__intercept': False})
+        return self._event_stack[-1]
+
     def push_handlers(self, *args, **kwargs):
         """Push a level onto the top of the handler stack, then attach zero or
         more event handlers.
@@ -203,13 +250,39 @@ class EventDispatcher:
         object may also be specified, in which case it will be searched for
         callables with event names.
         """
-        # Create event stack if necessary
-        if type(self._event_stack) is tuple:
-            self._event_stack = []
+        default_frame = None
+        intercept_frame = None
+        for name, handler, intercept in self._get_handlers(args, kwargs):
+            if intercept:
+                if intercept_frame is None:
+                    intercept_frame = self._add_frame(intercept=True)
+                intercept_frame[name] = handler
+            else:
+                if default_frame is None:
+                    default_frame = self._add_frame(intercept=False)
+                default_frame[name] = handler
 
-        # Place dict full of new handlers at beginning of stack
-        self._event_stack.insert(0, {})
-        self.set_handlers(*args, **kwargs)
+    def _prepare_handler(self, name, handler):
+        """Checks that event is registered and wraps the handler in weak ref.
+
+        This function checks that the event `name` is registered. If it's not,
+        it raises EventException. If `handler` is a method, it wraps it in
+        WeakMethod. If `handler` doesn't have an `__intercept` field, it sets
+        it to False.
+
+        Args:
+            name: event name, a string
+            handler: a function or a method
+
+        Returns:
+            name, handler, intercept
+        """
+        if name not in self.event_types:
+            raise EventException('Unknown event "%s"' % name)
+        intercept = getattr(handler, '__intercept', False)
+        if inspect.ismethod(handler):
+            handler = WeakMethod(handler, partial(self._remove_handler, name))
+        return name, handler, intercept
 
     def _get_handlers(self, args, kwargs):
         """Implement handler matching on arguments for set_handlers and
@@ -217,42 +290,38 @@ class EventDispatcher:
         """
         for obj in args:
             if inspect.isroutine(obj):
-                # Single magically named function
-                name = obj.__name__
-                if name not in self.event_types:
-                    raise EventException('Unknown event "%s"' % name)
-                if inspect.ismethod(obj):
-                    yield name, WeakMethod(obj, partial(self._remove_handler, name))
-                else:
-                    yield name, obj
+                # Single magically function, matched with event by name.
+                yield self._prepare_handler(obj.__name__, obj)
             else:
                 # Single instance with magically named methods
                 for name in dir(obj):
                     if name in self.event_types:
-                        meth = getattr(obj, name)
-                        yield name, WeakMethod(meth, partial(self._remove_handler, name))
+                        method = getattr(obj, name)
+                        yield self._prepare_handler(name, method)
 
         for name, handler in kwargs.items():
-            # Function for handling given event (no magic)
-            if name not in self.event_types:
-                raise EventException('Unknown event "%s"' % name)
-            if inspect.ismethod(handler):
-                yield name, WeakMethod(handler, partial(self._remove_handler, name))
-            else:
-                yield name, handler
+            # Function for handling given event (with explicit event name)
+            yield self._prepare_handler(name, handler)
 
     def set_handlers(self, *args, **kwargs):
         """Attach one or more event handlers to the top level of the handler
         stack.
 
-        See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the accepted argument types.
+        See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the
+        accepted argument types.
         """
-        # Create event stack if necessary
-        if type(self._event_stack) is tuple:
-            self._event_stack = [{}]
+        default_frame = None
+        intercept_frame = None
+        for name, handler, intercept in self._get_handlers(args, kwargs):
+            if intercept:
+                if intercept_frame is None:
+                    intercept_frame = self._get_current_frame(intercept=True)
+                intercept_frame[name] = handler
+            else:
+                if default_frame is None:
+                    default_frame = self._get_current_frame(intercept=False)
+                default_frame[name] = handler
 
-        for name, handler in self._get_handlers(args, kwargs):
-            self.set_handler(name, handler)
 
     def set_handler(self, name, handler):
         """Attach a single event handler.
@@ -264,11 +333,9 @@ class EventDispatcher:
                 Event handler to attach.
 
         """
-        # Create event stack if necessary
-        if type(self._event_stack) is tuple:
-            self._event_stack = [{}]
-
-        self._event_stack[0][name] = handler
+        name, handler, intercept = self._prepare_handler(name, handler)
+        frame = self._get_current_frame(intercept)
+        frame[name] = handler
 
     def pop_handlers(self):
         """Pop the top level of event handlers off the stack.
@@ -296,7 +363,7 @@ class EventDispatcher:
         # Find the first stack frame containing any of the handlers
         def find_frame():
             for frame in self._event_stack:
-                for name, handler in handlers:
+                for name, handler, _ in handlers:
                     try:
                         if frame[name] == handler:
                             return frame
@@ -309,7 +376,7 @@ class EventDispatcher:
             return
 
         # Remove each handler from the frame.
-        for name, handler in handlers:
+        for name, handler, _ in handlers:
             try:
                 if frame[name] == handler:
                     del frame[name]
@@ -358,6 +425,27 @@ class EventDispatcher:
                 if not frame:
                     self._event_stack.remove(frame)
 
+    def _iter_handlers(self, event_type):
+        """Iterates over the handlers of a given event."""
+        dispatcher_handler = getattr(self, event_type, None)
+
+        if (dispatcher_handler is not None and
+            getattr(dispatcher_handler, '__intercept', False)):
+            yield dispatcher_handler
+
+        for frame in self._event_stack:
+            handler = frame.get(event_type, None)
+            if not handler:
+                continue
+            if isinstance(handler, WeakMethod):
+                handler = handler()
+                assert handler is not None
+            yield handler
+
+        if (dispatcher_handler is not None and
+            not getattr(dispatcher_handler, '__intercept', False)):
+            yield dispatcher_handler
+
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
 
@@ -385,48 +473,27 @@ class EventDispatcher:
             is always ``None``.
 
         """
-        assert hasattr(self, 'event_types'), (
-            "No events registered on this EventDispatcher. "
-            "You need to register events with the class method "
-            "EventDispatcher.register_event_type('event_name')."
-        )
-        assert event_type in self.event_types,\
-            "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
+        if not hasattr(self, 'event_types'):
+            raise EventException(
+                'No events registered on this EventDispatcher. '
+                'You need to register events with the class method '
+                'EventDispatcher.register_event_type(\'event_name\').')
+
+        if event_type not in self.event_types:
+            raise EventException('Unknown event "%s"' % event_type)
 
         invoked = False
 
-        # Search handler stack for matching event handlers
-        for frame in list(self._event_stack):
-            handler = frame.get(event_type, None)
-            if not handler:
-                continue
-            if isinstance(handler, WeakMethod):
-                handler = handler()
-                assert handler is not None
+        for handler in self._iter_handlers(event_type):
             try:
-                invoked = True
-                if handler(*args):
-                    return EVENT_HANDLED
+                result = handler(*args)
             except TypeError as exception:
                 self._raise_dispatch_exception(event_type, args, handler, exception)
-
-        # Check instance for an event handler
-        try:
-            if getattr(self, event_type)(*args):
+            if result:
                 return EVENT_HANDLED
-        except AttributeError as e:
-            event_op = getattr(self, event_type, None)
-            if callable(event_op):
-                raise e
-        except TypeError as exception:
-            self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
-        else:
             invoked = True
 
-        if invoked:
-            return EVENT_UNHANDLED
-
-        return False
+        return EVENT_UNHANDLED if invoked else False
 
     def _raise_dispatch_exception(self, event_type, args, handler, exception):
         # A common problem in applications is having the wrong number of
