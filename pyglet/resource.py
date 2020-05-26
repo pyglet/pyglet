@@ -99,7 +99,7 @@ class ResourceNotFoundException(Exception):
 
     def __init__(self, name):
         message = ('Resource "%s" was not found on the path.  '
-                   'Ensure that the filename has the correct captialisation.') % name
+                   'Ensure that the filename has the correct capitalization.') % name
         Exception.__init__(self, message)
 
 
