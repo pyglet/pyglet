@@ -288,6 +288,8 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         play_cursor = self._play_cursor
         write_cursor = self._write_cursor
 
+        print("write_size", self._buffer_size - max(write_cursor - play_cursor, 0))
+
         return self._buffer_size - max(write_cursor - play_cursor, 0)
 
     def write(self, audio_data, length):
