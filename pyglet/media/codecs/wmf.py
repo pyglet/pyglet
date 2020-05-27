@@ -337,7 +337,7 @@ class IMFSourceReader(com.IUnknown):
         ('SetCurrentMediaType',
          com.STDMETHOD(DWORD, POINTER(DWORD), IMFMediaType)),
         ('SetCurrentPosition',
-         com.STDMETHOD(com.REFIID, PROPVARIANT)),
+         com.STDMETHOD(com.REFIID, POINTER(PROPVARIANT))),
         ('ReadSample',
          com.STDMETHOD(DWORD, DWORD, POINTER(DWORD), POINTER(DWORD), POINTER(c_longlong), POINTER(IMFSample))),
         ('Flush',
