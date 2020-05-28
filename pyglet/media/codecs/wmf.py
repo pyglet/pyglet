@@ -769,8 +769,8 @@ class WMFSource(Source):
         pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         try:
             self._source_reader.SetCurrentPosition(pos_com, prop)
-        except OSError as e:
-            warnings.warn(e)
+        except OSError as err:
+            warnings.warn(err)
 
         ole32.PropVariantClear(ctypes.byref(prop))
 
@@ -835,7 +835,7 @@ class WMFDecoder(MediaDecoder):
             # Coinitialize supposed to be called for COMs?
             ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
         except OSError as err:
-            warnings.warn('WMF failed to initialize threading:', err.strerror)
+            warnings.warn(err)
 
         try:
             MFStartup(MF_VERSION, 0)
