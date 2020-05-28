@@ -205,6 +205,17 @@ def add_default_image_codecs():
         except ImportError:
             pass
 
+    # Windows 7 default: Windows Imaging Component
+    if compat_platform in ('win32', 'cygwin'):
+        from pyglet.libs.win32.constants import WINDOWS_7_OR_GREATER
+        if WINDOWS_7_OR_GREATER:  # Supports Vista and above.
+            try:
+                from pyglet.image.codecs import wic
+                add_encoders(wic)
+                add_decoders(wic)
+            except ImportError:
+                pass
+
     # Windows XP default: GDI+
     if compat_platform in ('win32', 'cygwin'):
         try:
