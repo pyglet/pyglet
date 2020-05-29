@@ -178,7 +178,7 @@ class Allocator:
 class TextureAtlas:
     """Collection of images within a texture."""
 
-    def __init__(self, width=2048, height=2048, border=False):
+    def __init__(self, width=2048, height=2048, border=0):
         """Create a texture atlas of the given size.
 
         :Parameters:
@@ -186,9 +186,9 @@ class TextureAtlas:
                 Width of the underlying texture.
             `height` : int
                 Height of the underlying texture.
-            `border` : bool
-                If True, one pixel of blank space is left
-                around each image added to the Atlas.
+            `border` : int
+                Leaves specified pixels of blank space around
+                each image added to the Atlas.
 
         """
         max_texture_size = pyglet.image.get_max_texture_size()
@@ -197,7 +197,7 @@ class TextureAtlas:
 
         self.texture = pyglet.image.Texture.create(width, height, GL_RGBA, rectangle=True)
         self.allocator = Allocator(width, height)
-        self._border = 1 if border else 0
+        self._border = border
 
     def add(self, img):
         """Add an image to the atlas.
@@ -229,7 +229,7 @@ class TextureBin:
     ones as necessary to accommodate images added to the bin.
     """
 
-    def __init__(self, texture_width=2048, texture_height=2048, border=False):
+    def __init__(self, texture_width=2048, texture_height=2048, border=0):
         """Create a texture bin for holding atlases of the given size.
 
         :Parameters:
@@ -237,9 +237,9 @@ class TextureBin:
                 Width of texture atlases to create.
             `texture_height` : int
                 Height of texture atlases to create.
-            `border` : bool
-                If True, one pixel of blank space is left
-                around each image added to the Atlases.
+            `border` : int
+                Leaves specified pixels of blank space around
+                each image added to the Atlases.
 
         """
         max_texture_size = pyglet.image.get_max_texture_size()
@@ -274,6 +274,6 @@ class TextureBin:
                 if img.width < 64 and img.height < 64:
                     self.atlases.remove(atlas)
 
-        atlas = TextureAtlas(self.texture_width, self.texture_height)
+        atlas = TextureAtlas(self.texture_width, self.texture_height, self._border)
         self.atlases.append(atlas)
         return atlas.add(img)

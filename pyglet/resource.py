@@ -496,7 +496,7 @@ class Loader:
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name, atlas=True):
+    def _alloc_image(self, name, atlas=True, atlas_border=1):
         file = self.file(name)
         try:
             img = pyglet.image.load(name, file=file)
@@ -507,13 +507,13 @@ class Loader:
             return img.get_texture(True)
 
         # find an atlas suitable for the image
-        bin = self._get_texture_atlas_bin(img.width, img.height)
+        bin = self._get_texture_atlas_bin(img.width, img.height, atlas_border)
         if bin is None:
             return img.get_texture(True)
 
         return bin.add(img)
 
-    def _get_texture_atlas_bin(self, width, height):
+    def _get_texture_atlas_bin(self, width, height, border):
         """A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
@@ -533,12 +533,12 @@ class Loader:
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = pyglet.image.atlas.TextureBin(border=True)
+            texture_bin = pyglet.image.atlas.TextureBin(border=border)
             self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin
 
-    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True):
+    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True, atlas_border=1):
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
@@ -560,6 +560,9 @@ class Loader:
                 pyglet. If atlas loading is not appropriate for specific
                 texturing reasons (e.g. border control is required) then set
                 this argument to False.
+            `atlas_border` : int
+                Leaves specified pixels of blank space around each image in
+                an atlas, which may help reduce texture bleeding.
 
         :rtype: `Texture`
         :return: A complete texture if the image is large or not in an atlas,
@@ -569,7 +572,7 @@ class Loader:
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas)
+            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas, atlas_border=atlas_border)
 
         if not rotate and not flip_x and not flip_y:
             return identity
