@@ -579,7 +579,7 @@ class Loader:
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name, flip_x=False, flip_y=False, rotate=0):
+    def animation(self, name, flip_x=False, flip_y=False, rotate=0, atlas_border=1):
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -595,7 +595,10 @@ class Loader:
             `rotate` : int
                 The returned image will be rotated clockwise by the given
                 number of degrees (a multiple of 90).
-
+            `atlas_border` : int
+                Leaves specified pixels of blank space around each image in
+                an atlas, which may help reduce texture bleeding.
+                
         :rtype: :py:class:`~pyglet.image.Animation`
         """
         self._require_index()
@@ -604,7 +607,8 @@ class Loader:
         except KeyError:
             animation = pyglet.image.load_animation(name, self.file(name))
             bin = self._get_texture_atlas_bin(animation.get_max_width(),
-                                              animation.get_max_height())
+                                              animation.get_max_height(),
+                                              atlas_border)
             if bin:
                 animation.add_to_texture_bin(bin)
 
