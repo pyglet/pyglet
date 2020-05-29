@@ -496,7 +496,7 @@ class Loader:
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name, atlas=True):
+    def _alloc_image(self, name, atlas=True, atlas_border=1):
         file = self.file(name)
         try:
             img = pyglet.image.load(name, file=file)
@@ -507,13 +507,13 @@ class Loader:
             return img.get_texture(True)
 
         # find an atlas suitable for the image
-        bin = self._get_texture_atlas_bin(img.width, img.height)
+        bin = self._get_texture_atlas_bin(img.width, img.height, atlas_border)
         if bin is None:
             return img.get_texture(True)
 
         return bin.add(img)
 
-    def _get_texture_atlas_bin(self, width, height):
+    def _get_texture_atlas_bin(self, width, height, border):
         """A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
@@ -533,12 +533,12 @@ class Loader:
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = pyglet.image.atlas.TextureBin(border=True)
+            texture_bin = pyglet.image.atlas.TextureBin(border=border)
             self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin
 
-    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True):
+    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True, atlas_border=1):
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
@@ -560,6 +560,9 @@ class Loader:
                 pyglet. If atlas loading is not appropriate for specific
                 texturing reasons (e.g. border control is required) then set
                 this argument to False.
+            `atlas_border` : int
+                Leaves specified pixels of blank space around each image in
+                an atlas, which may help reduce texture bleeding.
 
         :rtype: `Texture`
         :return: A complete texture if the image is large or not in an atlas,
@@ -569,14 +572,14 @@ class Loader:
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas)
+            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas, atlas_border=atlas_border)
 
         if not rotate and not flip_x and not flip_y:
             return identity
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name, flip_x=False, flip_y=False, rotate=0):
+    def animation(self, name, flip_x=False, flip_y=False, rotate=0, atlas_border=1):
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -592,7 +595,10 @@ class Loader:
             `rotate` : int
                 The returned image will be rotated clockwise by the given
                 number of degrees (a multiple of 90).
-
+            `atlas_border` : int
+                Leaves specified pixels of blank space around each image in
+                an atlas, which may help reduce texture bleeding.
+                
         :rtype: :py:class:`~pyglet.image.Animation`
         """
         self._require_index()
@@ -601,7 +607,8 @@ class Loader:
         except KeyError:
             animation = pyglet.image.load_animation(name, self.file(name))
             bin = self._get_texture_atlas_bin(animation.get_max_width(),
-                                              animation.get_max_height())
+                                              animation.get_max_height(),
+                                              atlas_border)
             if bin:
                 animation.add_to_texture_bin(bin)
 
