@@ -44,103 +44,129 @@ Event types
 
 For each event dispatcher there is a set of events that it dispatches; these
 correspond with the type of event handlers you can attach.  Event types are
-identified by their name, for example, ''on_resize''.  If you are creating a
-new class which implements :py:class:`~pyglet.event.EventDispatcher`, you must call
-`EventDispatcher.register_event_type` for each event type.
+identified by their name, for example, ''on_resize''.
+
+If you are creating a new class which implements
+:py:class:`~pyglet.event.EventDispatcher`, or want to add new events
+to an existing dispatcher, you must call `EventDispatcher.register_event_type`
+for each event type:
+
+    class MyDispatcher(pyglet.event.EventDispatcher):
+        # ...
+
+    MyDispatcher.register_event_type('on_resize')
 
 Attaching event handlers
 ========================
 
-An event handler is simply a function or method.  You can attach an event
-handler by setting the appropriate function on the instance::
+An event handler is simply a function or method, that is called when system or
+program event happens. There are several ways to add a handler for an event.
 
-    def on_resize(width, height):
-        # ...
-    dispatcher.on_resize = on_resize
+When the dispatcher object is available as a global variable, it is convenient
+to use the `event` decorator:
 
-There is also a convenience decorator that reduces typing::
-
-    @dispatcher.event
+    @window.event
     def on_resize(width, height):
         # ...
 
-You may prefer to subclass and override the event handlers instead::
+Here `window` is a variable containing an instance of `pyglet.window.Window`,
+which inherits from `EventDispatcher` class. This decorator assumes that
+the function is named after the event. To use the decorator with a function with
+another name, pass the name of the event as the argument for the decorator:
 
-    class MyDispatcher(DispatcherClass):
+    @window.event('on_resize')
+    def my_resize_handler(width, height);
+        # ...
+
+The most universal way to add an event handler is to call the `push_handlers`
+method on the dispatcher object:
+
+    window.push_handlers(on_resize)
+    window.push_handlers(on_resize=my_handler)
+    window.push_handlers(on_resize=obj.my_handler)
+    window.push_handlers(obj)
+
+This methods accepts both positional and keyword parameters. In case of keyword
+arguments, the name of the event matches the name of the argument. Otherwise,
+the name of the passed function or method is used as the event name.
+
+If an object is passed as a positional argument, all its methods that match
+the names of registered events are added as handlers. For example:
+
+    class MyDispatcher(pyglet.event.EventDispatcher):
+        # ...
+    MyDispatcher.register_event_type('on_resize')
+    MyDispatcher.register_event_type('on_keypress')
+
+    class Listener(object):
+        def on_resize(self, w, h):
+            # ...
+
+        def on_keypress(self, key):
+            # ...
+
+        def other_method(self):
+            # ...
+
+    dispatcher = MyDispatcher()
+    listener = Listener()
+    dispatcher.push_handlers(listener)
+
+In this example both `listener.on_resize` and `listener.on_keypress` are
+registered as handlers for respective events, but `listener.other_method` is
+not affected, because it doesn't correspond to a registered event type.
+
+Finally, yet another option is to subclass the dispatcher and override the event
+handler methods::
+
+    class MyDispatcher(pyglet.event.EventDispatcher):
         def on_resize(self, width, height):
             # ...
 
-Event handler stack
-===================
+If both a parent class and the child class have a handler for the same event,
+only the child's version of the method is invoked. If both event handlers are
+needed, the child's handler must explicitly call the parent's handler:
 
-When attaching an event handler to a dispatcher using the above methods, it
-replaces any existing handler (causing the original handler to no longer be
-called).  Each dispatcher maintains a stack of event handlers, allowing you to
-insert an event handler "above" the existing one rather than replacing it.
+    class ParentDispatcher(pyglet.event.EventDispatcher):
+        def on_resize(self, w, h);
+            # ...
 
-There are two main use cases for "pushing" event handlers:
+    class ChildDispatcher(ParentDispatcher):
+        def on_resize(self, w, h):
+            super().on_resize(w, h)
+            # ...
 
-* Temporarily intercepting the events coming from the dispatcher by pushing a
-  custom set of handlers onto the dispatcher, then later "popping" them all
-  off at once.
-* Creating "chains" of event handlers, where the event propagates from the
-  top-most (most recently added) handler to the bottom, until a handler
-  takes care of it.
+Multiple handlers for an event
+==============================
 
-Use `EventDispatcher.push_handlers` to create a new level in the stack and
-attach handlers to it.  You can push several handlers at once::
+A single event can be handled by multiple handlers. The handlers are invoked in
+the order opposite to the order of their registration. So, the handler
+registered last will be the first to be invoke when the event is fired.
 
-    dispatcher.push_handlers(on_resize, on_key_press)
+An event handler can return the value `pyglet.event.EVENT_HANDLED` to prevent
+running the subsequent handlers. Alternatively if the handle returns
+`pyglet.event.EVENT_UNHANDLED` or doesn't return an explicit value, the next
+event handler will be called (if there is one).
 
-If your function handlers have different names to the events they handle, use
-keyword arguments::
+Stopping the event propagation is useful to prevent a single user action from
+being handled by two unrelated systems. For instance, in game using WASD keys
+for movement, should suppress movement when a chat window is opened: the
+"keypress" event should be handled by the chat or by the character
+movement system, but not both.
 
-    dispatcher.push_handlers(on_resize=my_resize, on_key_press=my_key_press)
+Removing event handlers
+=======================
 
-After an event handler has processed an event, it is passed on to the
-next-lowest event handler, unless the handler returns `EVENT_HANDLED`, which
-prevents further propagation.
-
-To remove all handlers on the top stack level, use
-`EventDispatcher.pop_handlers`.
-
-Note that any handlers pushed onto the stack have precedence over the
-handlers set directly on the instance (for example, using the methods
-described in the previous section), regardless of when they were set.
-For example, handler ``foo`` is called before handler ``bar`` in the following
-example::
-
-    dispatcher.push_handlers(on_resize=foo)
-    dispatcher.on_resize = bar
-
-Dispatching events
-==================
-
-pyglet uses a single-threaded model for all application code.  Event
-handlers are only ever invoked as a result of calling
-EventDispatcher.dispatch_events`.
-
-It is up to the specific event dispatcher to queue relevant events until they
-can be dispatched, at which point the handlers are called in the order the
-events were originally generated.
-
-This implies that your application runs with a main loop that continuously
-updates the application state and checks for new events::
-
-    while True:
-        dispatcher.dispatch_events()
-        # ... additional per-frame processing
-
-Not all event dispatchers require the call to ``dispatch_events``; check with
-the particular class documentation.
+In most cases it is not necessary to remove event handlers manually. When
+the handler is an object method, the event dispatcher keeps only a weak
+reference to it. It means, that the dispatcher will not prevent the object from
+being deleted when it goes out of scope. In that case the handler will be
+silently removed from the list of handlers.
 
 .. note::
 
-    In order to prevent issues with garbage collection, the
-    :py:class:`~pyglet.event.EventDispatcher` class only holds weak
-    references to pushed event handlers. That means the following example
-    will not work, because the pushed object will fall out of scope and be
-    collected::
+    This means the following example will not work, because the pushed object
+    will fall out of scope and be collected::
 
         dispatcher.push_handlers(MyHandlerClass())
 
@@ -150,6 +176,43 @@ the particular class documentation.
         my_handler_instance = MyHandlerClass()
         dispatcher.push_handlers(my_handler_instance)
 
+When explicit removal of handlers is required, the method `remove_handlers`
+can be used. Its arguments are the same as the arguments of `push_handlers`:
+
+    dispatcher.remove_handlers(on_resize)
+    dispatcher.remove_handlers(on_resize=my_handler)
+    dispatcher.remove_handlers(on_resize=obj.my_handler)
+    dispatcher.remove_handlers(obj)
+
+When an object is passed as a positional parameter to `remove_handlers`, all its
+methods are removed from the handlers, regardless of their names.
+
+Dispatching events
+==================
+
+pyglet uses a single-threaded model for all application code. Normally event
+handlers are invoked while running an event loop by calling
+
+    pyglet.app.run()
+
+or
+
+    event_loop = pyglet.app.EventLoop()
+    event_loop.run()
+
+Application code can invoke events directly by calling the method
+`dispatch_event` of `EventDispatcher`:
+
+    dispatcher.dispatch_event('on_resize', 640, 480)
+
+The first argument of this method is the event name, that has to be previously
+registered using `register_event_type` class method. The rest of the arguments
+are pass to event handlers.
+
+The handlers of an event fired by calling `dispatch_event` are called directly
+from this method. If any of the handlers returns `EVENT_HANDLED`, then
+`dispatch_event` also returns `EVENT_HANDLED` otherwise (or if there weren't
+any handlers for a given event) it returns `EVENT_UNHANDLED`.
 """
 
 import inspect
@@ -207,7 +270,8 @@ class EventDispatcher(object):
             # Iterate through all the methods of an object and yield those that
             # match registered events.
             for name in dir(handler):
-                if name in self.event_types:
+                if (name in self.event_types and
+                    callable(getattr(handler, name))):
                     yield name
 
     def _finalize_weak_method(self, name, weak_method):
