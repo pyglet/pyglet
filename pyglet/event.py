@@ -173,10 +173,10 @@ class EventDispatcher(object):
 
     See the module docstring for usage.
     """
-    # This field will contain the queues of event handlers for every supported event type.
-    # It is lazily initialized when the first event handler is added to the class. After
-    # that it contains a dictionary of lists, in which handlers are sorted according to
-    # their priority:
+    # This field will contain the queues of event handlers for every supported
+    # event type. It is lazily initialized when the first event handler is added
+    # to the class. After that it contains a dictionary of lists, in which
+    # handlers are sorted according to their priority:
     #     {'on_event': [handler1, handler2]}
     # Handlers are invoked until any one of them returns EVENT_HANDLED
     _handlers = None
@@ -198,23 +198,24 @@ class EventDispatcher(object):
         cls.event_types.append(name)
 
     def _get_names_from_handler(self, handler):
-        """Yields event names handled by a handler function, method or object."""
+        """Yields event names handled by a handler function, method or object.
+        """
         if callable(handler) and hasattr(handler, '__name__'):
             # Take the name of a function or a method.
             yield handler.__name__
         else:
-            # Iterate through all the methods of an object and yield those that match
-            # registered events.
+            # Iterate through all the methods of an object and yield those that
+            # match registered events.
             for name in dir(handler):
                 if name in self.event_types:
                     yield name
 
     def _finalize_weak_method(self, name, weak_method):
-        """Called as a finalizer for WeakMethods registered as handlers in push_handler."""
+        """Called to remove dead WeakMethods from handlers."""
         handlers = self._handlers[name]
         i = 0
-        # This is not the most efficient way of removing several elements from an array,
-        # but in almost all cases only one element has to be removed.
+        # This is not the most efficient way of removing several elements from
+        # an array, but in almost all cases only one element has to be removed.
         while i < len(handlers):
             if handlers[i] is weak_method:
                 del handlers[i]
@@ -224,44 +225,51 @@ class EventDispatcher(object):
     def _remove_handler_from_queue(self, handlers_queue, handler):
         """Remove all instances of a handler from a queue for a single event.
 
-        If `handler` is an object, then all the methods bound to this object will
-        be removed from the queue.
+        If `handler` is an object, then all the methods bound to this object
+        will be removed from the queue.
         """
         i = 0
-        # This is not the most efficient way of removing several elements from an array,
-        # but in almost all cases only one element has to be removed.
-        while i < len(handlers):
-            registered_handler = handlers[i]
+        # This is not the most efficient way of removing several elements from
+        # an array, but in almost all cases only one element has to be removed.
+        while i < len(handlers_queue):
+            registered_handler = handlers_queue[i]
             if isinstance(registered_handler, WeakMethod):
                 # Wrapped in WeakMethod in `push_handler`.
                 registered_handler = registered_handler()
             if (registered_handler is handler or
-                getattr(registered_handler, '__class__', None) is handler):
-                del handlers[i]
+                    getattr(registered_handler, '__class__', None) is handler):
+                del handlers_queue[i]
             else:
                 i += 1
 
     def push_handler(self, name, handler):
         """Adds a single event handler.
 
-        If the `handler` parameter is callable, it will be registered directly. Otherwise it's
-        expected to be an object having a method with a name matching the name of the event.
+        If the `handler` parameter is callable, it will be registered directly.
+        Otherwise it's expected to be an object having a method with a name
+        matching the name of the event.
         """
         if not hasattr(self.__class__, 'event_types'):
             self.__class__.event_types = []
         if name not in self.event_types:
             raise EventException('Unknown event "{}"'.format(name))
         if not callable(handler):
-            # If handler is not callable, search for in it for a method with a name matching the name of the event.
+            # If handler is not callable, search for in it for a method with
+            # a name matching the name of the event.
             if hasattr(handler, name):
                 method = getattr(handler, name)
                 if not callable(method):
-                    raise EventException('Field {} on "{}" is not callable'.format(name, repr(handler)))
+                    raise EventException(
+                        'Field {} on "{}" is not callable'.format(
+                            name, repr(handler)))
                 handler = method
             else:
-                raise EventException('"{}" is not callable and doesn\'t have a method "{}"'.format(repr(handler), name))
-        if inspect.isroutine(handler):
-            handler = WeakMethod(handler, partial(self._finalize_weak_method, name))
+                raise EventException(
+                    '"{}" is not callable and doesn\'t have '
+                    'a method "{}"'.format(repr(handler), name))
+        if inspect.ismethod(handler):
+            handler = WeakMethod(handler, partial(
+                self._finalize_weak_method, name))
 
         # Create handler queues if necessary.
         if self._handlers is None:
@@ -282,11 +290,11 @@ class EventDispatcher(object):
         as a handler directly. If the argument is an object, it is searched for
         a method with the name matching the name of the event/argument.
 
-        When a callable named object (usually a function or a method) is passed as a positional argument, its name
-        is used as the event name. When an object is passed as a positional
-        argument, it is scanned for methods with names that match the names of
-        registered events. These methods are added as handlers for the respective
-        events.
+        When a callable named object (usually a function or a method) is passed
+        as a positional argument, its name is used as the event name. When
+        an object is passed as a positional argument, it is scanned for methods
+        with names that match the names of registered events. These methods are
+        added as handlers for the respective events.
 
         EventException is raised if the event name is not registered.
         """
@@ -297,11 +305,11 @@ class EventDispatcher(object):
             for name in self._get_names_from_handler(handler):
                 self.push_handler(name, handler)
 
-        for name, handler in kwargs:
+        for name, handler in kwargs.items():
             self.push_handler(name, handler)
 
     def remove_handler(self, name_or_handler=None, handler=None, name=None):
-        """Remove a single event handler.
+        """Removes a single event handler.
 
         Can be called in one of the following ways:
 
@@ -338,7 +346,7 @@ class EventDispatcher(object):
                 self._remove_handler_from_queue(self._handlers[name], handler)
         else:
             for handlers_queue in self._handlers.values():
-                self._remove_handler_from_queue(handlers_queue, hander)
+                self._remove_handler_from_queue(handlers_queue, handler)
 
     def remove_handlers(self, *args, **kwargs):
         """Removes event handlers from the event handlers queue.
@@ -353,7 +361,7 @@ class EventDispatcher(object):
         for handler in args:
             self.remove_handler(None, handler)
 
-        for name, handler in kwargs:
+        for name, handler in kwargs.items():
             self.remove_handler(name, handler)
 
     def dispatch_event(self, event_type, *args):
@@ -361,8 +369,8 @@ class EventDispatcher(object):
 
         The event is propagated to all handlers from from the top of the stack
         until one returns `EVENT_HANDLED`.  This method should be used only by
-        :py:class:`~pyglet.event.EventDispatcher` implementors; applications should call
-        the ``dispatch_events`` method.
+        :py:class:`~pyglet.event.EventDispatcher` implementors; applications
+        should call the ``dispatch_events`` method.
 
         Since pyglet 1.2, the method returns `EVENT_HANDLED` if an event
         handler returned `EVENT_HANDLED` or `EVENT_UNHANDLED` if all events
@@ -386,9 +394,11 @@ class EventDispatcher(object):
         if not hasattr(self.__class__, 'event_types'):
             self.__class__.event_types = []
         if event_type not in self.event_types:
-            raise EventException('Attempted to dispatch an event of unknown event type "{}". '
-                                 'Event types have to be registered by calling '
-                                 'DispatcherClass.register_event_type({})'.format(event_type, repr(event_type)))
+            raise EventException(
+                'Attempted to dispatch an event of unknown event type "{}". '
+                'Event types have to be registered by calling '
+                'DispatcherClass.register_event_type({})'.format(
+                    event_type, repr(event_type)))
 
         if self._handlers is None:
             # Initialize the handlers with the object itself.
@@ -404,7 +414,8 @@ class EventDispatcher(object):
                 if handler(*args):
                     return EVENT_HANDLED
             except TypeError as exception:
-                self._raise_dispatch_exception(event_type, args, handler, exception)
+                self._raise_dispatch_exception(
+                    event_type, args, handler, exception)
 
         return EVENT_UNHANDLED
 
@@ -438,7 +449,7 @@ class EventDispatcher(object):
 
         # Allow default values to overspecify arguments
         if (n_handler_args > n_args and handler_defaults and
-            n_handler_args - len(handler_defaults) <= n_args):
+                n_handler_args - len(handler_defaults) <= n_args):
             n_handler_args = n_args
 
         if n_handler_args != n_args:
@@ -451,7 +462,7 @@ class EventDispatcher(object):
 
             raise TypeError("The '{0}' event was dispatched with {1} arguments, "
                             "but your handler {2} accepts only {3} arguments.".format(
-                             event_type, len(args), descr, len(handler_args)))
+                                event_type, len(args), descr, len(handler_args)))
         else:
             raise exception
 
@@ -486,6 +497,7 @@ class EventDispatcher(object):
             return args[0]
         elif isinstance(args[0], str):          # @window.event('on_resize')
             name = args[0]
+
             def decorator(func):
                 self.push_handler(name, func)
                 return func

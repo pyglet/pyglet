@@ -6,7 +6,7 @@ import types
 import sys
 import pyglet
 from tests import mock
-from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED
+from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventException
 
 
 @pytest.fixture
@@ -40,20 +40,16 @@ def mock_handler(dispatcher):
     return mock_handler
 
 
-@pytest.fixture
-def mock_instance_handler(dispatcher):
-    """Class event handler.
+class MockInstanceHandler(object):
+    called = False
+    args = None
+    kwargs = None
 
-    If an instance is given to push_handlers and it implements methods with similar
-    names as the events, those will become event handlers. This mock imitates this
-    behaviour.
-    """
-    dispatcher.register_event_type('mock_event')
-    mock_instance_handler = mock.Mock()
-    mock_handler = mock.Mock(spec=types.MethodType)
-    mock_handler.__name__ = 'mock_event'
-    mock_instance_handler.mock_event = mock_handler
-    return mock_instance_handler
+    def mock_event(self, *args, **kwargs):
+        self.called = True
+        self.args = args
+        self.kwargs = kwargs
+        return EVENT_HANDLED
 
 
 def test_register_event_type(dispatcher):
@@ -62,8 +58,6 @@ def test_register_event_type(dispatcher):
 
 
 def test_push_handlers_args(dispatcher, mock_handler):
-    print('test_push_handlers_args')
-    print(callable(mock_handler))
     dispatcher.push_handlers(mock_handler)
     result = dispatcher.dispatch_event('mock_event')
     assert result == EVENT_HANDLED
@@ -77,83 +71,57 @@ def test_push_handlers_kwargs(dispatcher, mock_handler):
     assert mock_handler.called
 
 
-def test_push_handlers_instance(dispatcher, mock_instance_handler):
+def test_push_handlers_instance(dispatcher):
+    mock_instance_handler = MockInstanceHandler()
+    dispatcher.register_event_type('mock_event')
     dispatcher.push_handlers(mock_instance_handler)
-    result = dispatcher.dispatch_event('mock_event')
+    result = dispatcher.dispatch_event('mock_event', 1, 2)
     assert result == EVENT_HANDLED
-    # Cannot just check that mock_instance_handler.mock_event.called is True because
-    # EventDispatcher took a WeakMethod of a Mock, and it cannot reconstruct the
-    # original Mock method. But we check instead that mock_instance_handler had a
-    # method call.
-    calls = mock_instance_handler.method_calls
-    assert len(calls) == 1
-    name, args, kwargs = calls[0]
-    assert name == 'mock_event.__self__'
+    assert mock_instance_handler.called
+    assert mock_instance_handler.args == (1, 2)
+    assert mock_instance_handler.kwargs == {}
 
 
-def test_push_handlers_not_setup(dispatcher):
-    dispatcher.push_handlers()
-    assert dispatcher._event_stack == [{}]
-
-
-def test_set_handlers_args(dispatcher, mock_handler):
-    dispatcher.set_handlers(mock_handler)
+def test_push_handlers_args(dispatcher, mock_handler):
+    dispatcher.push_handlers(mock_handler)
     result = dispatcher.dispatch_event('mock_event')
     assert result == EVENT_HANDLED
     assert mock_handler.called
 
 
-def test_set_handlers_kwargs(dispatcher, mock_handler):
-    dispatcher.set_handlers(mock_event=mock_handler)
+def test_push_handlers_kwargs(dispatcher, mock_handler):
+    dispatcher.push_handlers(mock_event=mock_handler)
     result = dispatcher.dispatch_event('mock_event')
     assert result == EVENT_HANDLED
     assert mock_handler.called
 
 
-def test_set_handlers_not_setup(dispatcher):
-    dispatcher.set_handlers()
-    assert dispatcher._event_stack == [{}]
-
-
-def test_set_handler_dispatch(dispatcher, mock_handler):
-    dispatcher.set_handler('mock_event', mock_handler)
+def test_push_handler_dispatch(dispatcher, mock_handler):
+    dispatcher.push_handler('mock_event', mock_handler)
     result = dispatcher.dispatch_event('mock_event')
     assert result == EVENT_HANDLED
     assert mock_handler.called
 
 
-def test_set_handler_not_setup(dispatcher, mock_handler):
-    dispatcher.set_handler('mock_event', None)
-    result = dispatcher.dispatch_event('mock_event')
-    assert result is False
-    assert not mock_handler.called
-
-
-def test_pop_handlers(dispatcher, mock_handler):
-    dispatcher.set_handler('mock_event', None)
-    dispatcher.pop_handlers()
-    with pytest.raises(AssertionError):
-        dispatcher.pop_handlers()
-
-
-def test_pop_handlers_not_setup(dispatcher):
-    with pytest.raises(AssertionError):
-        dispatcher.pop_handlers()
+def test_push_bad_handler(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    with pytest.raises(EventException):
+        dispatcher.push_handler('mock_event', None)
 
 
 def test_remove_handlers_args(dispatcher, mock_handler):
-    dispatcher.set_handler('mock_event', mock_handler)
+    dispatcher.push_handler('mock_event', mock_handler)
     dispatcher.remove_handlers(mock_handler)
     result = dispatcher.dispatch_event('mock_event')
-    assert result is False
+    assert result is EVENT_UNHANDLED
     assert not mock_handler.called
 
 
 def test_remove_handlers_kwargs(dispatcher, mock_handler):
-    dispatcher.set_handler('mock_event', mock_handler)
+    dispatcher.push_handler('mock_event', mock_handler)
     dispatcher.remove_handlers(mock_event=mock_handler)
     result = dispatcher.dispatch_event('mock_event')
-    assert result is False
+    assert result is EVENT_UNHANDLED
     assert not mock_handler.called
 
 
@@ -162,21 +130,21 @@ def test_remove_handlers_not_setup(dispatcher):
 
 
 def test_remove_handler(dispatcher, mock_handler):
-    dispatcher.set_handler('mock_event', mock_handler)
+    dispatcher.push_handler('mock_event', mock_handler)
     dispatcher.remove_handler('mock_event', mock_handler)
     result = dispatcher.dispatch_event('mock_event')
-    assert result is False
+    assert result is EVENT_UNHANDLED
     assert not mock_handler.called
 
 
 def test_dispatch_unhandled_event(dispatcher):
     dispatcher.register_event_type('mock_event')
-    with pytest.raises(AssertionError):
+    with pytest.raises(EventException):
         dispatcher.dispatch_event('not_handled')
 
 
 def test_dispatch_event_not_setup(dispatcher):
-    with pytest.raises(AssertionError):
+    with pytest.raises(EventException):
         dispatcher.dispatch_event('mock_event')
 
 
@@ -216,4 +184,4 @@ def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     dispatcher.push_handlers(handler.mock_event)
     handler = None
     result = dispatcher.dispatch_event('mock_event')
-    assert result is False
+    assert result is EVENT_UNHANDLED
