@@ -62,6 +62,8 @@ def test_register_event_type(dispatcher):
 
 
 def test_push_handlers_args(dispatcher, mock_handler):
+    print('test_push_handlers_args')
+    print(callable(mock_handler))
     dispatcher.push_handlers(mock_handler)
     result = dispatcher.dispatch_event('mock_event')
     assert result == EVENT_HANDLED

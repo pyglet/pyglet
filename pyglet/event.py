@@ -168,17 +168,22 @@ class EventException(Exception):
     pass
 
 
-class EventDispatcher:
+class EventDispatcher(object):
     """Generic event dispatcher interface.
 
     See the module docstring for usage.
     """
-    # Placeholder empty stack; real stack is created only if needed
-    _event_stack = ()
+    # This field will contain the queues of event handlers for every supported event type.
+    # It is lazily initialized when the first event handler is added to the class. After
+    # that it contains a dictionary of lists, in which handlers are sorted according to
+    # their priority:
+    #     {'on_event': [handler1, handler2]}
+    # Handlers are invoked until any one of them returns EVENT_HANDLED
+    _handlers = None
 
     @classmethod
     def register_event_type(cls, name):
-        """Register an event type with the dispatcher.
+        """Registers an event type with the dispatcher.
 
         Registering event types allows the dispatcher to validate event
         handler names as they are attached, and to search attached objects for
@@ -187,183 +192,169 @@ class EventDispatcher:
         :Parameters:
             `name` : str
                 Name of the event to register.
-
         """
         if not hasattr(cls, 'event_types'):
             cls.event_types = []
         cls.event_types.append(name)
-        return name
+
+    def _get_names_from_handler(self, handler):
+        """Yields event names handled by a handler function, method or object."""
+        if callable(handler) and hasattr(handler, '__name__'):
+            # Take the name of a function or a method.
+            yield handler.__name__
+        else:
+            # Iterate through all the methods of an object and yield those that match
+            # registered events.
+            for name in dir(handler):
+                if name in self.event_types:
+                    yield name
+
+    def _finalize_weak_method(self, name, weak_method):
+        """Called as a finalizer for WeakMethods registered as handlers in push_handler."""
+        handlers = self._handlers[name]
+        i = 0
+        # This is not the most efficient way of removing several elements from an array,
+        # but in almost all cases only one element has to be removed.
+        while i < len(handlers):
+            if handlers[i] is weak_method:
+                del handlers[i]
+            else:
+                i += 1
+
+    def _remove_handler_from_queue(self, handlers_queue, handler):
+        """Remove all instances of a handler from a queue for a single event.
+
+        If `handler` is an object, then all the methods bound to this object will
+        be removed from the queue.
+        """
+        i = 0
+        # This is not the most efficient way of removing several elements from an array,
+        # but in almost all cases only one element has to be removed.
+        while i < len(handlers):
+            registered_handler = handlers[i]
+            if isinstance(registered_handler, WeakMethod):
+                # Wrapped in WeakMethod in `push_handler`.
+                registered_handler = registered_handler()
+            if (registered_handler is handler or
+                getattr(registered_handler, '__class__', None) is handler):
+                del handlers[i]
+            else:
+                i += 1
+
+    def push_handler(self, name, handler):
+        """Adds a single event handler.
+
+        If the `handler` parameter is callable, it will be registered directly. Otherwise it's
+        expected to be an object having a method with a name matching the name of the event.
+        """
+        if not hasattr(self.__class__, 'event_types'):
+            self.__class__.event_types = []
+        if name not in self.event_types:
+            raise EventException('Unknown event "{}"'.format(name))
+        if not callable(handler):
+            # If handler is not callable, search for in it for a method with a name matching the name of the event.
+            if hasattr(handler, name):
+                method = getattr(handler, name)
+                if not callable(method):
+                    raise EventException('Field {} on "{}" is not callable'.format(name, repr(handler)))
+                handler = method
+            else:
+                raise EventException('"{}" is not callable and doesn\'t have a method "{}"'.format(repr(handler), name))
+        if inspect.isroutine(handler):
+            handler = WeakMethod(handler, partial(self._finalize_weak_method, name))
+
+        # Create handler queues if necessary.
+        if self._handlers is None:
+            self._handlers = {}
+            self.push_handlers(self)
+        if name not in self._handlers:
+            self._handlers[name] = []
+
+        self._handlers[name].insert(0, handler)
 
     def push_handlers(self, *args, **kwargs):
-        """Push a level onto the top of the handler stack, then attach zero or
-        more event handlers.
+        """Adds new handlers to registered events.
 
-        If keyword arguments are given, they name the event type to attach.
-        Otherwise, a callable's `__name__` attribute will be used.  Any other
-        object may also be specified, in which case it will be searched for
-        callables with event names.
+        Multiple positional and keyword arguments can be provided.
+
+        For a keyword argument, the name of the event is taken from the name
+        of the argument. If the argument is callable, it is used
+        as a handler directly. If the argument is an object, it is searched for
+        a method with the name matching the name of the event/argument.
+
+        When a callable named object (usually a function or a method) is passed as a positional argument, its name
+        is used as the event name. When an object is passed as a positional
+        argument, it is scanned for methods with names that match the names of
+        registered events. These methods are added as handlers for the respective
+        events.
+
+        EventException is raised if the event name is not registered.
         """
-        # Create event stack if necessary
-        if type(self._event_stack) is tuple:
-            self._event_stack = []
+        if not hasattr(self.__class__, 'event_types'):
+            self.__class__.event_types = []
 
-        # Place dict full of new handlers at beginning of stack
-        self._event_stack.insert(0, {})
-        self.set_handlers(*args, **kwargs)
+        for handler in args:
+            for name in self._get_names_from_handler(handler):
+                self.push_handler(name, handler)
 
-    def _get_handlers(self, args, kwargs):
-        """Implement handler matching on arguments for set_handlers and
-        remove_handlers.
-        """
-        for obj in args:
-            if inspect.isroutine(obj):
-                # Single magically named function
-                name = obj.__name__
-                if name not in self.event_types:
-                    raise EventException('Unknown event "%s"' % name)
-                if inspect.ismethod(obj):
-                    yield name, WeakMethod(obj, partial(self._remove_handler, name))
-                else:
-                    yield name, obj
-            else:
-                # Single instance with magically named methods
-                for name in dir(obj):
-                    if name in self.event_types:
-                        meth = getattr(obj, name)
-                        yield name, WeakMethod(meth, partial(self._remove_handler, name))
+        for name, handler in kwargs:
+            self.push_handler(name, handler)
 
-        for name, handler in kwargs.items():
-            # Function for handling given event (no magic)
-            if name not in self.event_types:
-                raise EventException('Unknown event "%s"' % name)
-            if inspect.ismethod(handler):
-                yield name, WeakMethod(handler, partial(self._remove_handler, name))
-            else:
-                yield name, handler
-
-    def set_handlers(self, *args, **kwargs):
-        """Attach one or more event handlers to the top level of the handler
-        stack.
-
-        See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the accepted argument types.
-        """
-        # Create event stack if necessary
-        if type(self._event_stack) is tuple:
-            self._event_stack = [{}]
-
-        for name, handler in self._get_handlers(args, kwargs):
-            self.set_handler(name, handler)
-
-    def set_handler(self, name, handler):
-        """Attach a single event handler.
-
-        :Parameters:
-            `name` : str
-                Name of the event type to attach to.
-            `handler` : callable
-                Event handler to attach.
-
-        """
-        # Create event stack if necessary
-        if type(self._event_stack) is tuple:
-            self._event_stack = [{}]
-
-        self._event_stack[0][name] = handler
-
-    def pop_handlers(self):
-        """Pop the top level of event handlers off the stack.
-        """
-        assert self._event_stack and 'No handlers pushed'
-
-        del self._event_stack[0]
-
-    def remove_handlers(self, *args, **kwargs):
-        """Remove event handlers from the event stack.
-
-        See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the
-        accepted argument types. All handlers are removed from the first stack
-        frame that contains any of the given handlers. No error is raised if
-        any handler does not appear in that frame, or if no stack frame
-        contains any of the given handlers.
-
-        If the stack frame is empty after removing the handlers, it is
-        removed from the stack.  Note that this interferes with the expected
-        symmetry of :py:meth:`~pyglet.event.EventDispatcher.push_handlers` and
-        :py:meth:`~pyglet.event.EventDispatcher.pop_handlers`.
-        """
-        handlers = list(self._get_handlers(args, kwargs))
-
-        # Find the first stack frame containing any of the handlers
-        def find_frame():
-            for frame in self._event_stack:
-                for name, handler in handlers:
-                    try:
-                        if frame[name] == handler:
-                            return frame
-                    except KeyError:
-                        pass
-        frame = find_frame()
-
-        # No frame matched; no error.
-        if not frame:
-            return
-
-        # Remove each handler from the frame.
-        for name, handler in handlers:
-            try:
-                if frame[name] == handler:
-                    del frame[name]
-            except KeyError:
-                pass
-
-        # Remove the frame if it's empty.
-        if not frame:
-            self._event_stack.remove(frame)
-
-    def remove_handler(self, name, handler):
+    def remove_handler(self, name_or_handler=None, handler=None, name=None):
         """Remove a single event handler.
 
-        The given event handler is removed from the first handler stack frame
-        it appears in.  The handler must be the exact same callable as passed
-        to `set_handler`, `set_handlers` or
-        :py:meth:`~pyglet.event.EventDispatcher.push_handlers`; and the name
-        must match the event type it is bound to.
+        Can be called in one of the following ways:
+
+            dispatcher.remove_handler(my_handler)
+            dispatcher.remove_handler(handler=my_handler)
+            dispatcher.remove_handler("event_name", my_handler)
+            dispatcher.remove_handler(name="event_name", handler=my_handler)
+
+        If the event name is specified, only the queue of handlers for that
+        event is scanned, and the handler is removed from it. Otherwise all
+        handler queues are scanned and the handler is removed from all of them.
+
+        If the handler is an object, then all the registered handlers that are
+        bound to this object are removed. Unlike `push_handler`, the method
+        names in the class are not taken into account.
 
         No error is raised if the event handler is not set.
-
-        :Parameters:
-            `name` : str
-                Name of the event type to remove.
-            `handler` : callable
-                Event handler to remove.
         """
-        for frame in self._event_stack:
-            try:
-                if frame[name] == handler:
-                    del frame[name]
-                    break
-            except KeyError:
-                pass
+        if handler is None:
+            # Called with one positional argument (example #1)
+            assert name is None
+            assert name_or_handler is not None
+            handler = name_or_handler
+        elif name is not None:
+            # Called with keyword arguments for handler and name (example #4)
+            assert name_or_handler is None
+        else:
+            # Called with two positional arguments, or only with handler as
+            # a keyword argument (examples #2, #3)
+            name = name_or_handler
 
-    def _remove_handler(self, name, handler):
-        """Used internally to remove all handler instances for the given event name.
+        if name is not None:
+            if name in self._handlers:
+                self._remove_handler_from_queue(self._handlers[name], handler)
+        else:
+            for handlers_queue in self._handlers.values():
+                self._remove_handler_from_queue(handlers_queue, hander)
 
-        This is normally called from a dead ``WeakMethod`` to remove itself from the
-        event stack.
+    def remove_handlers(self, *args, **kwargs):
+        """Removes event handlers from the event handlers queue.
+
+        See :py:meth:`~pyglet.event.EventDispatcher.push_handlers` for the
+        accepted argument types. Handlers, passed as positional arguments
+        are removed from all events, regardless of their names.
+
+        No error is raised if any handler does not appear among
+        the registered handlers.
         """
+        for handler in args:
+            self.remove_handler(None, handler)
 
-        # Iterate over a copy as we might mutate the list
-        for frame in list(self._event_stack):
-
-            if name in frame:
-                try:
-                    if frame[name] == handler:
-                        del frame[name]
-                        if not frame:
-                            self._event_stack.remove(frame)
-                except TypeError:
-                    # weakref is already dead
-                    pass
+        for name, handler in kwargs:
+            self.remove_handler(name, handler)
 
     def dispatch_event(self, event_type, *args):
         """Dispatch a single event to the attached handlers.
@@ -392,48 +383,30 @@ class EventDispatcher:
             is always ``None``.
 
         """
-        assert hasattr(self, 'event_types'), (
-            "No events registered on this EventDispatcher. "
-            "You need to register events with the class method "
-            "EventDispatcher.register_event_type('event_name')."
-        )
-        assert event_type in self.event_types,\
-            "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
+        if not hasattr(self.__class__, 'event_types'):
+            self.__class__.event_types = []
+        if event_type not in self.event_types:
+            raise EventException('Attempted to dispatch an event of unknown event type "{}". '
+                                 'Event types have to be registered by calling '
+                                 'DispatcherClass.register_event_type({})'.format(event_type, repr(event_type)))
 
-        invoked = False
+        if self._handlers is None:
+            # Initialize the handlers with the object itself.
+            self._handlers = {}
+            self.push_handlers(self)
 
-        # Search handler stack for matching event handlers
-        for frame in list(self._event_stack):
-            handler = frame.get(event_type, None)
-            if not handler:
-                continue
+        handlers_queue = self._handlers.get(event_type, ())
+        for handler in handlers_queue:
             if isinstance(handler, WeakMethod):
                 handler = handler()
                 assert handler is not None
             try:
-                invoked = True
                 if handler(*args):
                     return EVENT_HANDLED
             except TypeError as exception:
                 self._raise_dispatch_exception(event_type, args, handler, exception)
 
-        # Check instance for an event handler
-        try:
-            if getattr(self, event_type)(*args):
-                return EVENT_HANDLED
-        except AttributeError as e:
-            event_op = getattr(self, event_type, None)
-            if callable(event_op):
-                raise e
-        except TypeError as exception:
-            self._raise_dispatch_exception(event_type, args, getattr(self, event_type), exception)
-        else:
-            invoked = True
-
-        if invoked:
-            return EVENT_UNHANDLED
-
-        return False
+        return EVENT_UNHANDLED
 
     def _raise_dispatch_exception(self, event_type, args, handler, exception):
         # A common problem in applications is having the wrong number of
@@ -503,17 +476,17 @@ class EventDispatcher:
         if len(args) == 0:                      # @window.event()
             def decorator(func):
                 name = func.__name__
-                self.set_handler(name, func)
+                self.push_handler(name, func)
                 return func
             return decorator
         elif inspect.isroutine(args[0]):        # @window.event
             func = args[0]
             name = func.__name__
-            self.set_handler(name, func)
+            self.push_handler(name, func)
             return args[0]
         elif isinstance(args[0], str):          # @window.event('on_resize')
             name = args[0]
             def decorator(func):
-                self.set_handler(name, func)
+                self.push_handler(name, func)
                 return func
             return decorator
