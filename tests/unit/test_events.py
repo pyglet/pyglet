@@ -51,6 +51,29 @@ class MockInstanceHandler(object):
         self.kwargs = kwargs
         return EVENT_HANDLED
 
+    def mock_event2(self, *args, **kwargs):
+        self.called = True
+        self.args = args
+        self.kwargs = kwargs
+        return EVENT_HANDLED
+
+
+class Child(pyglet.event.EventDispatcher):
+    def __init__(self):
+        self.calls = 0
+        self.arg = None
+
+    def mock_event(self, arg):
+        self.calls += 1
+        self.arg = arg
+        return EVENT_HANDLED
+
+    def other_method(self, arg):
+        # This method should not be called by the event dispatcher
+        assert False
+Child.register_event_type('mock_event')
+Child.register_event_type('mock_event2')
+
 
 def test_register_event_type(dispatcher):
     dispatcher.register_event_type('mock_event')
@@ -80,6 +103,80 @@ def test_push_handlers_instance(dispatcher):
     assert mock_instance_handler.called
     assert mock_instance_handler.args == (1, 2)
     assert mock_instance_handler.kwargs == {}
+
+
+def test_push_handlers_instance_unknown_event(dispatcher):
+    mock_instance_handler = MockInstanceHandler()
+    dispatcher.register_event_type('mock_event_other')
+    dispatcher.push_handlers(mock_instance_handler)
+    with pytest.raises(EventException):
+        dispatcher.dispatch_event('mock_event')
+
+    result = dispatcher.dispatch_event('mock_event_other')
+    assert result == EVENT_UNHANDLED
+
+
+def test_handler_on_child():
+    child = Child()
+    result = child.dispatch_event('mock_event', 123)
+    assert result == EVENT_HANDLED
+    assert child.calls == 1
+    assert child.arg == 123
+
+
+def test_unknown_handler_on_child():
+    child = Child()
+    with pytest.raises(EventException):
+        result = child.dispatch_event('other_method', 123)
+
+
+def test_unhandled_event_on_child():
+    child = Child()
+    result = child.dispatch_event('mock_event2', 123)
+    assert result == EVENT_UNHANDLED
+
+
+def test_two_handlers():
+    child = Child()
+    called = False
+
+    @child.event
+    def mock_event(arg):
+        assert arg == 123
+        return EVENT_UNHANDLED
+
+    result = child.dispatch_event('mock_event', 123)
+    assert result == EVENT_HANDLED
+    assert child.calls == 1
+    assert child.arg == 123
+
+
+def test_stop_propagation():
+    child = Child()
+    called = False
+
+    @child.event
+    def mock_event(arg):
+        assert arg == 123
+        return EVENT_HANDLED
+
+    result = child.dispatch_event('mock_event', 123)
+    assert result == EVENT_HANDLED
+    assert child.calls == 0
+
+
+def test_other_event_on_child():
+    child = Child()
+    called = False
+
+    @child.event
+    def mock_event2(arg):
+        assert arg == 123
+        return EVENT_UNHANDLED
+
+    result = child.dispatch_event('mock_event2', 123)
+    assert result == EVENT_UNHANDLED
+    assert child.calls == 0
 
 
 def test_push_handlers_args(dispatcher, mock_handler):
@@ -135,6 +232,54 @@ def test_remove_handler(dispatcher, mock_handler):
     result = dispatcher.dispatch_event('mock_event')
     assert result is EVENT_UNHANDLED
     assert not mock_handler.called
+
+
+def test_remove_handler_obj():
+    child = Child()
+    handler = MockInstanceHandler()
+    child.push_handlers(handler)
+
+    result = child.dispatch_event('mock_event', 123)
+    assert result == EVENT_HANDLED
+    assert handler.called
+    assert child.calls == 0
+
+    handler.called = False
+    result = child.dispatch_event('mock_event2', 123)
+    assert result == EVENT_HANDLED
+    assert handler.called
+    assert child.calls == 0
+
+    child.remove_handler(handler)
+
+    handler.called = False
+    result = child.dispatch_event('mock_event', 123)
+    assert result == EVENT_HANDLED
+    assert not handler.called
+    assert child.calls == 1
+
+    handler.called = False
+    result = child.dispatch_event('mock_event2', 123)
+    assert result == EVENT_UNHANDLED
+    assert not handler.called
+    assert child.calls == 1
+
+
+def test_remove_method(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    dispatcher.register_event_type('mock_event2')
+    handler = MockInstanceHandler()
+    dispatcher.push_handlers(handler)
+    # Remove mock_handler but not mock_handler2
+    dispatcher.remove_handlers(mock_event=handler)
+
+    result = dispatcher.dispatch_event('mock_event')
+    assert result == EVENT_UNHANDLED
+    assert not handler.called
+
+    result = dispatcher.dispatch_event('mock_event2')
+    assert result == EVENT_HANDLED
+    assert handler.called
 
 
 def test_dispatch_unhandled_event(dispatcher):

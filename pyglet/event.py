@@ -237,7 +237,7 @@ class EventDispatcher(object):
                 # Wrapped in WeakMethod in `push_handler`.
                 registered_handler = registered_handler()
             if (registered_handler is handler or
-                    getattr(registered_handler, '__class__', None) is handler):
+                getattr(registered_handler, '__self__', None) is handler):
                 del handlers_queue[i]
             else:
                 i += 1
