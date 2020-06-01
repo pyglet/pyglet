@@ -379,6 +379,9 @@ class EventDispatcher(object):
         # Determine priority
         if priority is None:
             priority = getattr(handler, '__priority', 0)
+            # A hack for the case when handler is a MagicMock.
+            if type(priority) not in (int, float):
+                priority = int(priority)
 
         # Wrap methods in weak references.
         if inspect.ismethod(handler):
