@@ -330,3 +330,136 @@ def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     handler = None
     result = dispatcher.dispatch_event('mock_event')
     assert result is EVENT_UNHANDLED
+
+
+def test_default_order(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    def handler1():
+        invocations.append(1)
+    def handler2():
+        invocations.append(2)
+    dispatcher.push_handlers(mock_event=handler1)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [2, 1]
+
+
+def test_low_priority(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    def handler1():
+        invocations.append(1)
+    def handler2():
+        invocations.append(2)
+    dispatcher.push_handlers(mock_event=handler1)
+    dispatcher.push_handlers(mock_event=handler2, priority=-1)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [1, 2]
+
+
+def test_high_priority(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    def handler1():
+        invocations.append(1)
+    def handler2():
+        invocations.append(2)
+    dispatcher.push_handlers(mock_event=handler1, priority=1)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [1, 2]
+
+
+def test_priority_decorator_func(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    @pyglet.event.priority(1)
+    def handler1():
+        invocations.append(1)
+    def handler2():
+        invocations.append(2)
+    dispatcher.push_handlers(mock_event=handler1)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [1, 2]
+
+
+def test_priority_handler_decorator_func(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    @dispatcher.event('mock_event')
+    @pyglet.event.priority(1)
+    def handler1():
+        invocations.append(1)
+    @dispatcher.event('mock_event')
+    def handler2():
+        invocations.append(2)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [1, 2]
+
+
+def test_priority_decorator_method(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    class Handler1(object):
+        @pyglet.event.priority(1)
+        def mock_event(self):
+            invocations.append(1)
+    handler1 = Handler1()
+    def handler2():
+        invocations.append(2)
+    dispatcher.push_handlers(handler1)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [1, 2]
+
+
+def test_default_priority_class(dispatcher):
+    dispatcher.register_event_type('mock_event')
+    invocations = []
+    class Handler1(object):
+        def mock_event(self):
+            invocations.append(1)
+    handler1 = Handler1()
+    def handler2():
+        invocations.append(2)
+    dispatcher.push_handlers(handler1)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [2, 1]
+
+
+def test_dispatcher_handler():
+    invocations = []
+    class Dispatcher(pyglet.event.EventDispatcher):
+        def mock_event(self):
+            invocations.append(1)
+    Dispatcher.register_event_type('mock_event')
+    dispatcher = Dispatcher()
+    def handler2():
+        invocations.append(2)
+    def handler3():
+        invocations.append(3)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.push_handlers(mock_event=handler3, priority=-1)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [2, 1, 3]
+
+
+def test_dispatcher_handler_prio():
+    invocations = []
+    class Dispatcher(pyglet.event.EventDispatcher):
+        @pyglet.event.priority(1)
+        def mock_event(self):
+            invocations.append(1)
+    Dispatcher.register_event_type('mock_event')
+    dispatcher = Dispatcher()
+    def handler2():
+        invocations.append(2)
+    def handler3():
+        invocations.append(3)
+    dispatcher.push_handlers(mock_event=handler2)
+    dispatcher.push_handlers(mock_event=handler3, priority=-1)
+    dispatcher.dispatch_event('mock_event')
+    assert invocations == [1, 2, 3]

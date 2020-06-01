@@ -154,6 +154,32 @@ for movement, should suppress movement when a chat window is opened: the
 "keypress" event should be handled by the chat or by the character
 movement system, but not both.
 
+The order of execution of event handlers can be changed by assigning them
+priority. Default priority for all handlers is 0. If handler needs to be run
+before other handlers even though it was added early, it can be assigned
+priority 1. Conversely, a handler added late can be assigned priority -1 to be
+run late.
+
+Priority can be assigned by passing the `priority` named parameter to
+`push_handlers` method:
+
+    window.push_handlers(on_resize, priority=-1)
+
+It can also be specified by using the `@priority` decorators on handler
+functions and methods:
+
+    @pyglet.event.priority(1)
+    def on_resize(w, h):
+        # ...
+
+    class Listener(object):
+        @pyglet.event.priority(-1)
+        def on_resize(self, w, h):
+            # ...
+    listener = Listener()
+
+    dispatcher.push_handlers(on_resize, listener)
+
 Removing event handlers
 =======================
 
@@ -231,6 +257,19 @@ class EventException(Exception):
     pass
 
 
+def priority(prio=0):
+    """A decorator to set priority on handler functions and handlers.
+
+    Default priority is 0. Handlers with higher priority are invoked first.
+    Recommended priority values are 1 and -1. In most cases more than 3 priority
+    classes are not required.
+    """
+    def wrap(func):
+        func.__priority = prio
+        return func
+    return wrap
+
+
 class EventDispatcher(object):
     """Generic event dispatcher interface.
 
@@ -240,7 +279,8 @@ class EventDispatcher(object):
     # event type. It is lazily initialized when the first event handler is added
     # to the class. After that it contains a dictionary of lists, in which
     # handlers are sorted according to their priority:
-    #     {'on_event': [handler1, handler2]}
+    #     {'on_event': [(priority1, handler1),
+    #                   (priority2, handler2)]}
     # Handlers are invoked until any one of them returns EVENT_HANDLED
     _handlers = None
 
@@ -281,7 +321,7 @@ class EventDispatcher(object):
         # This is not the most efficient way of removing several elements from
         # an array, but in almost all cases only one element has to be removed.
         while i < len(handlers):
-            if handlers[i] is weak_method:
+            if handlers[i][1] is weak_method:
                 del handlers[i]
             else:
                 i += 1
@@ -296,7 +336,7 @@ class EventDispatcher(object):
         # This is not the most efficient way of removing several elements from
         # an array, but in almost all cases only one element has to be removed.
         while i < len(handlers_queue):
-            registered_handler = handlers_queue[i]
+            _, registered_handler = handlers_queue[i]
             if isinstance(registered_handler, WeakMethod):
                 # Wrapped in WeakMethod in `push_handler`.
                 registered_handler = registered_handler()
@@ -306,12 +346,16 @@ class EventDispatcher(object):
             else:
                 i += 1
 
-    def push_handler(self, name, handler):
+    def push_handler(self, name, handler, priority=None):
         """Adds a single event handler.
 
         If the `handler` parameter is callable, it will be registered directly.
         Otherwise it's expected to be an object having a method with a name
         matching the name of the event.
+
+        If the `priority` parameter is not None, it is used as a priotity.
+        Otherwise, the value specified by the @priority decorator is used. If
+        neither is specified the default value of 0 is used.
         """
         if not hasattr(self.__class__, 'event_types'):
             self.__class__.event_types = []
@@ -331,6 +375,12 @@ class EventDispatcher(object):
                 raise EventException(
                     '"{}" is not callable and doesn\'t have '
                     'a method "{}"'.format(repr(handler), name))
+
+        # Determine priority
+        if priority is None:
+            priority = getattr(handler, '__priority', 0)
+
+        # Wrap methods in weak references.
         if inspect.ismethod(handler):
             handler = WeakMethod(handler, partial(
                 self._finalize_weak_method, name))
@@ -342,9 +392,23 @@ class EventDispatcher(object):
         if name not in self._handlers:
             self._handlers[name] = []
 
-        self._handlers[name].insert(0, handler)
+        handlers = self._handlers[name]
 
-    def push_handlers(self, *args, **kwargs):
+        # Finding the place to insert the new handler. All the previous handlers
+        # have to have strictly higher priority.
+        #
+        # A binary search would theoretically be faster, but a) there's
+        # usually just a handful of handlers, b) we are going to shift
+        # the elements in the list anyway, which will take O(n), c) we are
+        # doing this only during handler registration, and we are more
+        # conserned in the efficiency of dispatching event.
+        i = 0
+        while i < len(handlers) and handlers[i][0] > priority:
+            i += 1
+
+        handlers.insert(i, (priority, handler))
+
+    def push_handlers(self, *args, priority=None, **kwargs):
         """Adds new handlers to registered events.
 
         Multiple positional and keyword arguments can be provided.
@@ -360,6 +424,11 @@ class EventDispatcher(object):
         with names that match the names of registered events. These methods are
         added as handlers for the respective events.
 
+        An optional argument priority can be used to override the priority for
+        all the added handlers. Default priority is 0, and handlers with higher
+        priority will be invoked first. The priority specified in the call will
+        take precedence of priority, specified in @priority decorator.
+
         EventException is raised if the event name is not registered.
         """
         if not hasattr(self.__class__, 'event_types'):
@@ -367,10 +436,10 @@ class EventDispatcher(object):
 
         for handler in args:
             for name in self._get_names_from_handler(handler):
-                self.push_handler(name, handler)
+                self.push_handler(name, handler, priority=priority)
 
         for name, handler in kwargs.items():
-            self.push_handler(name, handler)
+            self.push_handler(name, handler, priority)
 
     def remove_handler(self, name_or_handler=None, handler=None, name=None):
         """Removes a single event handler.
@@ -470,7 +539,7 @@ class EventDispatcher(object):
             self.push_handlers(self)
 
         handlers_queue = self._handlers.get(event_type, ())
-        for handler in handlers_queue:
+        for _, handler in handlers_queue:
             if isinstance(handler, WeakMethod):
                 handler = handler()
                 assert handler is not None

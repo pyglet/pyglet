@@ -16,7 +16,7 @@ def pytest_addoption(parser):
 
 # Import shared fixtures
 from .base.data import test_data
-from .base.event_loop import event_loop
-from .base.interactive import interactive
+# from .base.event_loop import event_loop
+# from .base.interactive import interactive
 from .base.performance import performance
 
