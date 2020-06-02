@@ -178,8 +178,6 @@ class Allocator:
 class TextureAtlas:
     """Collection of images within a texture."""
 
-    default_border = 0
-
     def __init__(self, width=2048, height=2048):
         """Create a texture atlas of the given size.
 
@@ -197,7 +195,7 @@ class TextureAtlas:
         self.texture = pyglet.image.Texture.create(width, height, GL_RGBA, rectangle=True)
         self.allocator = Allocator(width, height)
 
-    def add(self, img, border=None):
+    def add(self, img, border=0):
         """Add an image to the atlas.
 
         This method will fail if the given image cannot be transferred
@@ -217,7 +215,6 @@ class TextureAtlas:
         :rtype: :py:class:`~pyglet.image.TextureRegion`
         :return: The region of the atlas containing the newly added image.
         """
-        border = border or self.default_border
         x, y = self.allocator.alloc(img.width + border*2, img.height + border*2)
         self.texture.blit_into(img, x+border, y+border, 0)
         return self.texture.get_region(x+border, y+border, img.width, img.height)
@@ -250,7 +247,7 @@ class TextureBin:
         self.texture_height = min(texture_height, max_texture_size)
         self.atlases = []
 
-    def add(self, img, border=None):
+    def add(self, img, border=0):
         """Add an image into this texture bin.
 
         This method calls `TextureAtlas.add` for the first atlas that has room
@@ -269,7 +266,6 @@ class TextureBin:
         :rtype: :py:class:`~pyglet.image.TextureRegion`
         :return: The region of an atlas containing the newly added image.
         """
-        border = border or self.default_border
         for atlas in list(self.atlases):
             try:
                 return atlas.add(img, border)

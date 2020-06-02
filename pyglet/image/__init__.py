@@ -128,11 +128,12 @@ Retrieving data with the format and pitch given in `ImageData.format` and
 use of the data in this arbitrary format).
 
 """
-from io import open, BytesIO
 import re
 import weakref
 
 from ctypes import *
+from io import open, BytesIO
+from functools import lru_cache
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -266,6 +267,7 @@ def create(width, height, pattern=None):
     return pattern.create_image(width, height)
 
 
+@lru_cache()
 def get_max_texture_size():
     """Query the maximum texture size available"""
     size = c_int()
@@ -273,15 +275,14 @@ def get_max_texture_size():
     return size.value
 
 
+@lru_cache()
 def _color_as_bytes(color):
-    if sys.version.startswith('2'):
-        return '%c%c%c%c' % color
-    else:
-        if len(color) != 4:
-            raise TypeError("color is expected to have 4 components")
-        return bytes(color)
+    if len(color) != 4:
+        raise TypeError("color is expected to have 4 components")
+    return bytes(color)
 
 
+@lru_cache()
 def _nearest_pow2(v):
     # From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     # Credit: Sean Anderson
@@ -294,6 +295,7 @@ def _nearest_pow2(v):
     return v + 1
 
 
+@lru_cache()
 def _is_pow2(v):
     # http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
     return (v & (v - 1)) == 0

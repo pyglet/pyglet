@@ -496,7 +496,7 @@ class Loader:
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name, atlas=True, border=1):
+    def _alloc_image(self, name, atlas, border):
         file = self.file(name)
         try:
             img = pyglet.image.load(name, file=file)
@@ -507,20 +507,20 @@ class Loader:
             return img.get_texture(True)
 
         # find an atlas suitable for the image
-        bin = self._get_texture_atlas_bin(img.width, img.height)
+        bin = self._get_texture_atlas_bin(img.width, img.height, border)
         if bin is None:
             return img.get_texture(True)
 
         return bin.add(img, border)
 
-    def _get_texture_atlas_bin(self, width, height):
+    def _get_texture_atlas_bin(self, width, height, border):
         """A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
         max_texture_size = pyglet.image.get_max_texture_size()
-        max_size = min(2048, max_texture_size)
+        max_size = min(2048, max_texture_size) - border
         if width > max_size or height > max_size:
             return None
 
@@ -572,7 +572,7 @@ class Loader:
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas, border=border)
+            identity = self._cached_images[name] = self._alloc_image(name, atlas, border)
 
         if not rotate and not flip_x and not flip_y:
             return identity
@@ -610,7 +610,7 @@ class Loader:
                                               animation.get_max_height(),
                                               border)
             if bin:
-                animation.add_to_texture_bin(bin)
+                animation.add_to_texture_bin(bin, border)
 
             identity = self._cached_animations[name] = animation
 
