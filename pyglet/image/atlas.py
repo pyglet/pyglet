@@ -227,8 +227,6 @@ class TextureBin:
     ones as necessary to accommodate images added to the bin.
     """
 
-    default_border = 0
-
     def __init__(self, texture_width=2048, texture_height=2048):
         """Create a texture bin for holding atlases of the given size.
 
