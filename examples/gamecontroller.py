@@ -121,5 +121,4 @@ def on_draw():
 
 
 glPointSize(10)
-pyglet.clock.schedule(lambda dt: 1/60)
 pyglet.app.run()

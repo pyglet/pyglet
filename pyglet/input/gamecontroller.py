@@ -173,7 +173,8 @@ def is_game_controller(device):
 
     :rtype True if this device is a GameController.
     """
-    return any(device.get_guid() == m.split(",")[0] for m in mapping_list)
+    guid = device.get_guid()
+    return any(m.startswith(guid) for m in mapping_list)
 
 
 def get_mapping(guid):
