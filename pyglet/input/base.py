@@ -691,15 +691,19 @@ class GameController(EventDispatcher):
 
         for name, relation in self._mapping.items():
 
-            if relation is None:
-                continue
-            elif type(relation) is str:
+            if relation is None or type(relation) is str:
                 continue
 
             if relation.control_type == "button":
-                add_button(self._button_controls[relation.index], name)
+                try:
+                    add_button(self._button_controls[relation.index], name)
+                except IndexError:
+                    continue
             elif relation.control_type == "axis":
-                add_axis(self._axis_controls[relation.index], name)
+                try:
+                    add_axis(self._axis_controls[relation.index], name)
+                except IndexError:
+                    continue
             elif relation.control_type == "hat0":
                 if self._hat_control:
                     # TODO: test this on Windows/Mac.

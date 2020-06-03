@@ -73,6 +73,9 @@ class _Relation:
         self.index = index
         self.inverted = inverted
 
+    def __repr__(self):
+        return f"Relation(type={self.control_type}, index={self.index}, inverted={self.inverted})"
+
 
 def _map_pair(raw_relation):
     inverted = False
