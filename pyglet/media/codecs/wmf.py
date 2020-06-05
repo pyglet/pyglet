@@ -752,7 +752,7 @@ class WMFSource(Source):
 
             # This is made with the assumption that the video frame will be blitted into the player texture immediately
             # after, and then cleared next frame attempt.
-            return image.ImageData(width, height, 'RGBA', video_data, self._stride)
+            return image.ImageData(width, height, 'BGRA', video_data, self._stride)
 
         return None
 
