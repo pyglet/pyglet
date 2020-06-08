@@ -40,8 +40,8 @@ such as Rectangles, Circles, and Lines. These shapes are are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicible). If you need to create
-something more complex than what is provided here, the lower level
+and opacity, and rotation (where applicible). To create more
+complex shapes than what is provided here, the lower evel
 graphics API is more appropriate.
 See the :ref:`programming-guide-graphics` for more details.
 
@@ -662,3 +662,6 @@ class Rectangle(_ShapeBase):
     def rotation(self, rotation):
         self._rotation = rotation
         self._update_position()
+
+
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle')

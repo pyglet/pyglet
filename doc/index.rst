@@ -39,6 +39,7 @@ If this is your first time reading about pyglet, we suggest you start at
    programming_guide/context
    programming_guide/gl
    programming_guide/graphics
+   programming_guide/shapes
    programming_guide/windowing
    programming_guide/eventloop
    programming_guide/events

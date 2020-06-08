@@ -1,4 +1,4 @@
-.. _programming-guide-graphics:
+.. _guide_graphics:
 
 Graphics
 ========
