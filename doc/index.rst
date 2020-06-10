@@ -3,9 +3,9 @@ pyglet Documentation
 
 **pyglet** is a cross-platform windowing and multimedia library for Python,
 intended for developing games and other visually rich applications. It supports
-windowing, user interface event handling, OpenGL graphics, loading images
-and videos, and playing sounds and music. **pyglet** works on Windows, OS X
-and Linux.
+windowing, user interface event handling, game controllers and joysticks,
+OpenGL graphics, loading images and videos, and playing sounds and music.
+**pyglet** works on Windows, OS X and Linux.
 
 Some of the features of pyglet are:
 
@@ -15,16 +15,16 @@ Some of the features of pyglet are:
 * **Take advantage of multiple windows and multi-monitor desktops.** pyglet
   allows you to use as many windows as you need, and is fully aware of
   multi-monitor setups for use with fullscreen games and applications.
-* **Load images, sound, music and video in almost any format.** pyglet can
-  optionally use ffmpeg to play back audio formats such as MP3, OGG/Vorbis and
-  WMA, and video formats such as DivX, MPEG-2, H.264, WMV and Xvid.
+* **Load images, sound, music and video in almost any format.** pyglet has
+  built-in support for common audio and image formats, and can optionally use
+  ffmpeg to load almost any other compressed audio or video files.
 * **pyglet is provided under the BSD open-source license**, allowing you to
   use it for both commercial and other open-source projects with very little
   restriction.
-* **Supports Python 2 and 3.** Pick your favorite!
 
-Please join us on the `mailing list`_!
+Please join our `Discord` server, or join us on the `mailing list`_!
 
+.. _Discord: https://discord.gg/QXyegWe
 .. _mailing list: http://groups.google.com/group/pyglet-users
 
 If this is your first time reading about pyglet, we suggest you start at
@@ -36,21 +36,21 @@ If this is your first time reading about pyglet, we suggest you start at
 
    programming_guide/installation
    programming_guide/quickstart
-   programming_guide/context
-   programming_guide/gl
-   programming_guide/graphics
-   programming_guide/shapes
    programming_guide/windowing
-   programming_guide/eventloop
-   programming_guide/events
    programming_guide/keyboard
    programming_guide/mouse
    programming_guide/input
-   programming_guide/time
+   programming_guide/graphics
+   programming_guide/shapes
    programming_guide/text
    programming_guide/image
    programming_guide/media
    programming_guide/resources
+   programming_guide/events
+   programming_guide/time
+   programming_guide/context
+   programming_guide/gl
+   programming_guide/eventloop
    programming_guide/options
    programming_guide/debug
    programming_guide/advanced
