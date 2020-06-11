@@ -78,6 +78,14 @@ import os.path
 import pyglet
 from pyglet.text import layout, document, caret
 
+BOTTOM = 'bottom'
+TOP = 'top'
+
+LEFT = 'left'
+RIGHT = 'right'
+
+CENTER = 'center'
+
 
 class DocumentDecodeException(Exception):
     """An error occurred decoding document text."""
