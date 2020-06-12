@@ -84,18 +84,6 @@ class ScissorGroup(pyglet.graphics.Group):
     def unset_state(self):
         glDisable(GL_SCISSOR_TEST)
 
-    # For efficient drawing, pyglet will internally consolidate equivalent
-    # Groups into the same draw call when you add objects to a Batch. For
-    # this to work, __eq__ and __hash__ methods must be defined so that the
-    # Groups can be checked for equality.
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.parent is other.parent and
-                self._area == other._area)
-
-    def __hash__(self):
-        return hash((id(self.parent), self._area))
-
 
 ###################################################
 # Create an instance of our Group, and some Sprites
