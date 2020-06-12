@@ -510,7 +510,7 @@ Note that only mono sounds can be positioned. Stereo sounds will play back as
 normal, and only their volume and pitch properties will affect the sound.
 
 Ticking the clock
-----------------
+-----------------
 
 If you are using pyglet's media libraries outside of a pyglet app, you will need 
 to use some kind of loop to tick the pyglet clock periodically (perhaps every 
@@ -518,7 +518,8 @@ to use some kind of loop to tick the pyglet clock periodically (perhaps every
 
     pyglet.clock.tick()
 
-If you wish to have a media source loop continuously (`player.loop = True`) you will also need to ensure Pyglet's events are dispatched inside your loop:
+If you wish to have a media source loop continuously (`player.loop = True`) you will
+also need to ensure Pyglet's events are dispatched inside your loop:
 
     pyglet.app.platform_event_loop.dispatch_posted_events()
 

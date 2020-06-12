@@ -43,7 +43,7 @@ Convenience methods are provided for positioning, changing color
 and opacity, and rotation (where applicible). To create more
 complex shapes than what is provided here, the lower evel
 graphics API is more appropriate.
-See the :ref:`programming-guide-graphics` for more details.
+See the :ref:`guide_graphics` for more details.
 
 A simple example of drawing shapes::
 

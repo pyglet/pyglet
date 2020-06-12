@@ -213,7 +213,7 @@ section.
 To write advanced 3D applications or achieve optimal performance in your 2D
 applications, you'll need to work with OpenGL directly.  If you only want to
 work with OpenGL primitives, but want something slightly higher-level, have a
-look at the :ref:`programming-guide-graphics` module.
+look at the :ref:`guide_graphics` module.
 
 There are numerous examples of pyglet applications in the ``examples/``
 directory of the documentation and source distributions.  If you get
