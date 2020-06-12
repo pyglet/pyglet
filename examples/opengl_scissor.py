@@ -28,6 +28,9 @@ class ScissorGroup(pyglet.graphics.Group):
 
     If a Sprite/Label is in this Group, any parts of it that
     fall outside of the specified area will not be drawn.
+    NOTE: You should use the same exact group instance
+    for every object that will use the group, equal groups
+    will still be kept seperate.
 
     :Parameters:
         `x` : int
