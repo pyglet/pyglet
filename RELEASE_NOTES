@@ -1,11 +1,21 @@
 pyglet 1.5.6
-Bugfix release
+Bugfix and feature release
 
 Bugfixes
 --------
-- The on_mouse_scroll event no longer clamps to int, preventing lost motion trackpads.
+- Fix infinite recursion error on OSX. (#5)
+- The on_mouse_scroll event no longer clamps to int, preventing lost motion on trackpads.
 - Prevent traceback when DirectSound buffers are garbage collected on exit.
-- Fix StaticSource with WMF decoder (streaming=False).
+- Fix StaticSource playback with WMF decoder (streaming=False).
+- Fix colorspace for WMF video decoding.
+- Prevent crash on garbage collection for FFmpeg decoder.
+
+Improvements
+------------
+- New image decoder leveraging Windows Imaging Component (WIC).
+- TextureAtlas/Bins now have a `border` argument for leaving n-pixels of blank space around
+  images when adding. By default the `resource` module leaves a 1-pixel space around images.
+- Many small documentation fixes and corrections.
 
 
 pyglet 1.5.5
