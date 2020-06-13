@@ -46,43 +46,20 @@ class ScissorGroup(pyglet.graphics.Group):
 
     def __init__(self, x, y, width, height, parent=None):
         super().__init__(parent)
-        self._area = x, y, width, height
+        self.x, self.y = x, y
+        self.width, self.height = width, height
 
     @property
-    def x(self):
-        return self._area[0]
+    def area(self):
+        return self.x, self.y, self.width, self.height
 
-    @x.setter
-    def x(self, x):
-        self._area = x, self.y, self.width, self.height
-
-    @property
-    def y(self):
-        return self._area[1]
-
-    @y.setter
-    def y(self, y):
-        self._area = self.x, y, self.width, self.height
-
-    @property
-    def width(self):
-        return self._area[2]
-
-    @width.setter
-    def width(self, width):
-        self._area = self.x, self.y, width, self.height
-
-    @property
-    def height(self):
-        return self._area[3]
-
-    @height.setter
-    def height(self, height):
-        self._area = self.x, self.y, self.width, height
+    @area.setter
+    def area(self, area):
+        self.x, self.y, self.width, self.height = area
 
     def set_state(self):
         glEnable(GL_SCISSOR_TEST)
-        glScissor(*self._area)
+        glScissor(self.x, self.y, self.width, self.height)
 
     def unset_state(self):
         glDisable(GL_SCISSOR_TEST)
