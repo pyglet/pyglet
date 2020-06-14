@@ -28,6 +28,9 @@ class ScissorGroup(pyglet.graphics.Group):
 
     If a Sprite/Label is in this Group, any parts of it that
     fall outside of the specified area will not be drawn.
+    NOTE: You should use the same exact group instance
+    for every object that will use the group, equal groups
+    will still be kept seperate.
 
     :Parameters:
         `x` : int
@@ -40,28 +43,26 @@ class ScissorGroup(pyglet.graphics.Group):
             The height of the Scissor area.
 
     """
+
     def __init__(self, x, y, width, height, parent=None):
         super().__init__(parent)
-        self._area = x, y, width, height
+        self.x, self.y = x, y
+        self.width, self.height = width, height
+
+    @property
+    def area(self):
+        return self.x, self.y, self.width, self.height
+
+    @area.setter
+    def area(self, area):
+        self.x, self.y, self.width, self.height = area
 
     def set_state(self):
         glEnable(GL_SCISSOR_TEST)
-        glScissor(*self._area)
+        glScissor(self.x, self.y, self.width, self.height)
 
     def unset_state(self):
         glDisable(GL_SCISSOR_TEST)
-
-    # For efficient drawing, pyglet will internally consolidate equivalent
-    # Groups into the same draw call when you add objects to a Batch. For
-    # this to work, __eq__ and __hash__ methods must be defined so that the
-    # Groups can be checked for equality.
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.parent is other.parent and
-                self._area == other._area)
-
-    def __hash__(self):
-        return hash((id(self.parent), self._area))
 
 
 ###################################################
@@ -77,9 +78,9 @@ sprites = []
 img = pyglet.resource.image('pyglet.png')
 for x in range(5):
     for y in range(5):
-        sprite = pyglet.sprite.Sprite(img, x*img.width, y*img.height, group=scissor_group, batch=batch)
+        sprite = pyglet.sprite.Sprite(
+            img, x*img.width, y*img.height, group=scissor_group, batch=batch)
         sprites.append(sprite)
 
 
 pyglet.app.run()
-
