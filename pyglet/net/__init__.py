@@ -27,13 +27,11 @@ class _BaseConnection(_EventDispatcher):
     def _recv(self):    # Thread
         while not self._alive.is_set():
             try:
-                length = _struct.unpack('I', self._socket.recv(4))
-                if not length:
-                    break
+                size = _struct.unpack('I', self._socket.recv(4))[0]
 
-                message = self._socket.recv(length[0])
-                while len(message) < length[0]:
-                    message += self._socket.recv(length[0])
+                message = self._socket.recv(size)
+                while len(message) < size:
+                    message += self._socket.recv(size)
 
                 self.dispatch_event('on_receive', message)
             except (BrokenPipeError, OSError, _struct.error):
