@@ -372,6 +372,7 @@ if True:
     lib = _ModuleProxy('lib')
     media = _ModuleProxy('media')
     model = _ModuleProxy('model')
+    net = _ModuleProxy('net')
     resource = _ModuleProxy('resource')
     sprite = _ModuleProxy('sprite')
     shapes = _ModuleProxy('shapes')
@@ -394,13 +395,9 @@ if False:
     from . import lib
     from . import media
     from . import model
+    from . import net
     from . import resource
     from . import sprite
     from . import shapes
     from . import text
-    from . import window
-
-# Hack around some epydoc bug that causes it to think pyglet.window is None.
-# TODO: confirm if this is still needed
-if False:
     from . import window
