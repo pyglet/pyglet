@@ -8,6 +8,7 @@ from pyglet.event import EventDispatcher as _EventDispatcher
 
 class _BaseConnection(_EventDispatcher):
     """Base class for threaded socket connections."""
+
     def __init__(self, socket, address):
         self._socket = socket
         self._address = address[0]
@@ -24,16 +25,23 @@ class _BaseConnection(_EventDispatcher):
         self._queue.put(self._sentinal)
         self._socket.close()
 
-    def _recv(self):    # Thread
+    def _recv(self):  # Thread
+        socket = self._socket
+
         while not self._alive.is_set():
             try:
-                size = _struct.unpack('I', self._socket.recv(4))[0]
+                header = socket.recv(4)
+                while len(header) < 4:
+                    header += socket.recv(4)
 
-                message = self._socket.recv(size)
+                size = _struct.unpack('I', header)[0]
+
+                message = socket.recv(size)
                 while len(message) < size:
-                    message += self._socket.recv(size)
+                    message += socket.recv(size)
 
                 self.dispatch_event('on_receive', message)
+
             except (BrokenPipeError, OSError, _struct.error):
                 self._alive.set()
                 break
