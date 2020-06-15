@@ -52,10 +52,16 @@ class _BaseConnection(_EventDispatcher):
     def send(self, message):
         """Queue a message to send.
 
+        Put a string of bytes into the queue to send.
+        raises a `ConnectionError` if the connection
+        has been closed or dropped.
+
        :Parameters:
             `message` : bytes
                 A string of bytes to send.
         """
+        if self._alive.is_set():
+            raise ConnectionError("Connection is closed.")
         self._queue.put(message)
 
     def _send(self):    # Thread
