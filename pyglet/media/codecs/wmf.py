@@ -770,7 +770,7 @@ class WMFSource(Source):
         try:
             self._source_reader.SetCurrentPosition(pos_com, prop)
         except OSError as err:
-            warnings.warn(err)
+            warnings.warn(str(err))
 
         ole32.PropVariantClear(ctypes.byref(prop))
 
@@ -835,7 +835,7 @@ class WMFDecoder(MediaDecoder):
             # Coinitialize supposed to be called for COMs?
             ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
         except OSError as err:
-            warnings.warn(err)
+            warnings.warn(str(err))
 
         try:
             MFStartup(MF_VERSION, 0)
