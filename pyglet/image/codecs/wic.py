@@ -289,7 +289,7 @@ class WICDecoder(ImageDecoder):
         try:
             ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
         except OSError as err:
-            warnings.warn(err)
+            warnings.warn(str(err))
 
         ole32.CoCreateInstance(CLSID_WICImagingFactory,
                                None,
