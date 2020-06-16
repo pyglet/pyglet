@@ -15,8 +15,8 @@ class _BaseConnection(_EventDispatcher):
         self._port = address[1]
         self._alive = _threading.Event()
         self._queue = _queue.Queue()
-        _recv_thread = _threading.Thread(target=self._recv, daemon=True).start()
-        _send_thread = _threading.Thread(target=self._send, daemon=True).start()
+        _threading.Thread(target=self._recv, daemon=True).start()
+        _threading.Thread(target=self._send, daemon=True).start()
         self._sentinal = object()   # poison pill
 
     def close(self):
@@ -40,14 +40,11 @@ class _BaseConnection(_EventDispatcher):
                 while len(message) < size:
                     message += socket.recv(size)
 
-                self.dispatch_event('on_receive', message)
-
-            except (BrokenPipeError, OSError, _struct.error):
-                self._alive.set()
+                self.dispatch_event('on_receive', self, message)
+            except BaseException:
+                self.close()
+                self.dispatch_event('on_disconnect', self)
                 break
-        self.dispatch_event('on_disconnect', self)
-        self.close()
-        self._queue.put(self._sentinal)
 
     def send(self, message):
         """Queue a message to send.
@@ -72,11 +69,12 @@ class _BaseConnection(_EventDispatcher):
             try:
                 packet = _struct.pack('I', len(message)) + message
                 self._socket.sendall(packet)
-            except (BrokenPipeError, OSError):
+            except BaseException:
+                self.dispatch_event('on_disconnect', self)
+                self._alive.set()
                 break
-        self._alive.set()
 
-    def on_receive(self, message):
+    def on_receive(self, connection, message):
         """Event for received messages."""
 
     def on_disconnect(self, connection):
