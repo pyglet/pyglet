@@ -74,8 +74,11 @@ class DirectSoundDriver:
         self.primary_buffer = self._buffer_factory.create_primary_buffer()
 
     def __del__(self):
-        self.primary_buffer = None
-        self._native_dsound.Release()
+        try:
+            self.primary_buffer = None
+            self._native_dsound.Release()
+        except ValueError:
+            pass
 
     def create_buffer(self, audio_format):
         return self._buffer_factory.create_buffer(audio_format)
@@ -150,6 +153,7 @@ class DirectSoundBufferFactory:
                                lib.DSBCAPS_PRIMARYBUFFER)
 
         return buffer_desc
+
 
 class DirectSoundBuffer:
     def __init__(self, native_buffer, audio_format, buffer_size):
@@ -456,5 +460,3 @@ class DirectSoundListener:
         _check(
             self._native_listener.SetOrientation(*(list(orientation) + [lib.DS3D_IMMEDIATE]))
         )
-
-
