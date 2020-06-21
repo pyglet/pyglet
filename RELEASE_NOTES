@@ -1,3 +1,13 @@
+pyglet 1.5.7
+Bugfix release
+
+Bugfixes
+--------
+- Fix crash when no audio device is available.
+- Prevent `__del__` spam in DirectSound buffers and Wave decoder.
+- Explicitly cast warnings.warn message to a str to prevent numba error.
+
+
 pyglet 1.5.6
 Bugfix and feature release
 
