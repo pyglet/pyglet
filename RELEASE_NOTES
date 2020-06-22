@@ -1,3 +1,14 @@
+pyglet 1.5.8
+Bugfix and maintenance release
+
+Bugfixes
+--------
+
+Improvements
+------------
+- Consolidate Codec logic into base class to reuse among various modules.
+
+
 pyglet 1.5.7
 Bugfix release
 

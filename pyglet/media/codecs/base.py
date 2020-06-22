@@ -34,7 +34,6 @@
 # ----------------------------------------------------------------------------
 
 import io
-import ctypes
 
 from pyglet.media.exceptions import MediaException, CannotSeekException
 
