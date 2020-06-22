@@ -33,58 +33,89 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.util import Codecs, Decoder, Encoder, DecodeException, EncodeException
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.drivers.listener import AbstractListener
 
 
-_codecs = Codecs()
+class SilentAudioPlayer(AbstractAudioPlayer):
 
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
-
-
-class ModelDecodeException(DecodeException):
-    pass
-
-
-class ModelEncodeException(EncodeException):
-    pass
-
-
-class ModelDecoder(Decoder):
-    def decode(self, file, filename, batch):
-        """Decode the given file object and return an instance of `Model`.
-        Throws ModelDecodeException if there is an error.  filename
-        can be a file type hint.
-        """
-        raise NotImplementedError()
-
-
-class ModelEncoder(Encoder):
-
-    def encode(self, model, file, filename):
-        """Encode the given model to the given file.  filename
-        provides a hint to the file format desired.  options are
-        encoder-specific, and unknown options should be ignored or
-        issue warnings.
-        """
-        raise NotImplementedError()
-
-
-def add_default_model_codecs():
-    # Add all bundled codecs. These should be listed in order of
-    # preference. This is called automatically by pyglet.model.
-
-    try:
-        from pyglet.model.codecs import obj
-        add_decoders(obj)
-    except ImportError:
+    def delete(self):
         pass
 
-    # TODO: complete this decoder, and enable it by default
-    # try:
-    #     from pyglet.model.codecs import gltf
-    #     add_decoders(gltf)
-    # except ImportError:
-    #     pass
+    def play(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def clear(self):
+        pass
+
+    def get_write_size(self):
+        pass
+
+    def write(self, audio_data, length):
+        pass
+
+    def get_time(self):
+        return 0
+
+    def set_volume(self, volume):
+        pass
+
+    def set_position(self, position):
+        pass
+
+    def set_min_distance(self, min_distance):
+        pass
+
+    def set_max_distance(self, max_distance):
+        pass
+
+    def set_pitch(self, pitch):
+        pass
+
+    def set_cone_orientation(self, cone_orientation):
+        pass
+
+    def set_cone_inner_angle(self, cone_inner_angle):
+        pass
+
+    def set_cone_outer_angle(self, cone_outer_angle):
+        pass
+
+    def set_cone_outer_gain(self, cone_outer_gain):
+        pass
+
+    def prefill_audio(self):
+        pass
+
+
+class SilentDriver(AbstractAudioDriver):
+
+    def create_audio_player(self, source, player):
+        return SilentAudioPlayer(source, player)
+
+    def get_listener(self):
+        return SilentListener()
+
+    def delete(self):
+        pass
+
+
+class SilentListener(AbstractListener):
+
+    def _set_volume(self, volume):
+        pass
+
+    def _set_position(self, position):
+        pass
+
+    def _set_forward_orientation(self, orientation):
+        pass
+
+    def _set_up_orientation(self, orientation):
+        pass
+
+    def _set_orientation(self):
+        pass

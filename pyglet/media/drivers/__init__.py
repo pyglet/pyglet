@@ -76,7 +76,8 @@ def get_audio_driver():
                 _audio_driver = directsound.create_audio_driver()
                 break
             elif driver_name == 'silent':
-                _audio_driver = None
+                from . import silent
+                _audio_driver = silent.create_audio_driver()
                 break
         except Exception:
             if _debug:

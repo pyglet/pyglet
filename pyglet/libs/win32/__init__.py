@@ -38,6 +38,7 @@ import struct
 import pyglet
 from . import constants
 from .types import *
+from pyglet import com
 
 IS64 = struct.calcsize("P") == 8
 
@@ -297,3 +298,5 @@ _ole32.CoUninitialize.restype = HRESULT
 _ole32.CoUninitialize.argtypes = []
 _ole32.PropVariantClear.restype = HRESULT
 _ole32.PropVariantClear.argtypes = [c_void_p]
+_ole32.CoCreateInstance.restype = HRESULT
+_ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]

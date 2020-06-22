@@ -39,8 +39,7 @@ This module provides an efficient low-level abstraction over OpenGL.  It gives
 very good performance for rendering OpenGL primitives. The module is used
 internally by other areas of pyglet.
 
-See the :ref:`programming-guide-graphics` for details on how to use this
-graphics API.
+See the :ref:`guide_graphics` for details on how to use this graphics API.
 
 Batches and groups
 ==================

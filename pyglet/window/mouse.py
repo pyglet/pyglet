@@ -43,7 +43,7 @@ class MouseStateHandler(dict):
 
     For example::
 
-        >>> win = window.Window
+        >>> win = window.Window()
         >>> mousebuttons = mouse.MouseStateHandler()
         >>> win.push_handlers(mousebuttons)
 

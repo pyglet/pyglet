@@ -207,15 +207,12 @@ elif compat_platform.startswith('linux'):
     from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
-del base
 
 
-# XXX remove
 _shadow_window = None
 
-# Import pyglet.window now if it isn't currently being imported (this creates
-# the shadow window).
+# Import pyglet.window now if it isn't currently being imported (this creates the shadow window).
 if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
-    # trickery is for circular import 
+    # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window
