@@ -38,9 +38,53 @@ from ctypes import *
 
 from .base import Config, CanvasConfig, Context
 from pyglet.gl import egl
+from pyglet.gl.egl import *
 
 
-class HeadlessConfig(Config):
+class EGLConfig(Config):
+
+    _attribute_names = [
+        'double_buffer',
+        'stereo',
+        'buffer_size',
+        'aux_buffers',
+        'sample_buffers',
+        'samples',
+        'red_size',
+        'green_size',
+        'blue_size',
+        'alpha_size',
+        'depth_size',
+        'stencil_size',
+        'accum_red_size',
+        'accum_green_size',
+        'accum_blue_size',
+        'accum_alpha_size',
+        'major_version',
+        'minor_version',
+        'forward_compatible',
+        'debug'
+    ]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # Choose a config:
+        config_attribs = (EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+                          EGL_BLUE_SIZE, self.blue_size or 0,
+                          EGL_GREEN_SIZE, self.green_size or 0,
+                          EGL_RED_SIZE, self.red_size or 0,
+                          EGL_DEPTH_SIZE, self.depth_size or 0,
+                          EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+                          EGL_CONTEXT_MAJOR_VERSION, self.major_version or 2,
+                          EGL_CONTEXT_MINOR_VERSION, self.minor_version or 0,
+                          EGL_NONE)
+
+        self._config_attrib_array = (egl.EGLint * len(config_attribs))(*config_attribs)
+        self._egl_config = egl.EGLConfig()
+
+        # egl.eglChooseConfig(display_connection, config_attrib_array, egl_config, 1, num_configs)
+
     def match(self, canvas):
         pass
 

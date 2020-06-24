@@ -42,7 +42,7 @@ class HeadlessDisplay(Display):
     def __init__(self):
         super().__init__()
         # TODO: fix this placeholder:
-        self._screens = [Screen(self, 0, 0, 1920, 1080)]
+        self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
 
     def get_screens(self):
         return self._screens
@@ -53,8 +53,17 @@ class HeadlessCanvas(Canvas):
 
 
 class HeadlessScreen(Screen):
+    def __init__(self, display, x, y, width, height):
+        super().__init__(display, x, y, width, height)
+
     def get_matching_configs(self, template):
-        print("Template:", template)
+        canvas = HeadlessCanvas(self.display)
+        configs = template.match(canvas)
+        # XXX deprecate
+        for config in configs:
+            config.screen = self
+        print("Canvas", canvas, "configs", configs)
+        return configs
 
     def get_modes(self):
         pass

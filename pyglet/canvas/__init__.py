@@ -97,13 +97,11 @@ def get_display():
 if _is_pyglet_doc_run:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
 else:
-    from pyglet import compat_platform
-    from pyglet import options
+    from pyglet import compat_platform, options
     if options['egl']:
         from pyglet.canvas.headless import HeadlessDisplay as Display
         from pyglet.canvas.headless import HeadlessScreen as Screen
         from pyglet.canvas.headless import HeadlessCanvas as Canvas
-        print("Eagle!!")
     elif compat_platform == 'darwin':
         from pyglet.canvas.cocoa import CocoaDisplay as Display
         from pyglet.canvas.cocoa import CocoaScreen as Screen

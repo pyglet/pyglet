@@ -33,16 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import pyglet
+from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler
 from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
 from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
-from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler
 
-from pyglet.window import key
-from pyglet.window import mouse
-from pyglet.event import EventDispatcher
-
-from pyglet.canvas.xlib import XlibCanvas
+# from pyglet.window import key
+# from pyglet.window import mouse
+# from pyglet.event import EventDispatcher
 
 # Platform event data is single item, so use platform event handler directly.
 HeadlessEventHandler = _PlatformEventHandler
@@ -50,6 +47,12 @@ ViewEventHandler = _ViewEventHandler
 
 
 class HeadlessWindow(BaseWindow):
+
+    def __init__(self, *args, **kwargs):
+        print("Makin window")
+        super().__init__(*args, **kwargs)
+        print("Made it!")
+
     def _recreate(self, changes):
         pass
 
