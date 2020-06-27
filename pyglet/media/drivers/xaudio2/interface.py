@@ -32,13 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from collections import namedtuple
 import weakref
+from collections import namedtuple
+
 import pyglet
-from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from . import lib_xaudio2 as lib
 from pyglet.util import debug_print
+from . import lib_xaudio2 as lib
 
 _debug = debug_print('debug_media')
 
@@ -139,9 +139,13 @@ class XAudio2Driver:
         self._apply3d(source_voice._voice, commit)
 
     def __del__(self):
-        self._xaudio2.Release()
-        self._xaudio2 = None
-        pyglet.clock.unschedule(self._calculate_3d_sources)
+        try:
+            pyglet.clock.unschedule(self._calculate_3d_sources)
+            self._xaudio2.Release()
+        except AttributeError:
+            # Usually gets unloaded by default on app exit, but be safe.
+            pass
+
 
     def get_performance(self):
         """Retrieve some basic XAudio2 performance data such as memory usage and source counts."""
@@ -155,18 +159,18 @@ class XAudio2Driver:
         self._listener = XAudio2Listener(self)
         return self._listener
 
-    def create_source_voice(self, source):
+    def create_source_voice(self, source, callback):
         """ Source voice handles all of the audio playing and state for a single source."""
         voice = lib.IXAudio2SourceVoice()
 
         wfx_format = self.create_wave_format(source.audio_format)
 
-
         self._xaudio2.CreateSourceVoice(ctypes.byref(voice),
                                       ctypes.byref(wfx_format),
                                       0,
                                       2.0,
-                                      None, None, None)
+                                      callback,
+                                      None, None)
 
         source_voice = XA2SourceVoice(voice, source.audio_format, self)
         return source_voice

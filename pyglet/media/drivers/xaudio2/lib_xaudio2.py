@@ -133,7 +133,6 @@ else:
     XAUDIO2_DEFAULT_PROCESSOR = 0x00000001  # Windows 8/8.1
 
 
-
 XAUDIO2_LOG_ERRORS = 0x0001   # For handled errors with serious effects.
 XAUDIO2_LOG_WARNINGS = 0x0002   # For handled errors that may be recoverable.
 XAUDIO2_LOG_INFO = 0x0004   # Informational chit-chat (e.g. state changes).
@@ -191,9 +190,26 @@ XAUDIO2_1024_QUANTUM =            0x8000    # Used in XAudio2Create to specify n
 XAUDIO2_NO_VIRTUAL_AUDIO_CLIENT = 0x10000   # Used in CreateMasteringVoice to create a virtual audio client
 
 
+class IXAudio2VoiceCallback(com.Interface):
+    _methods_ = [
+        ('OnVoiceProcessingPassStart',
+         com.STDMETHOD(UINT32)),
+        ('OnVoiceProcessingPassEnd',
+         com.STDMETHOD()),
+        ('onStreamEnd',
+         com.STDMETHOD()),
+        ('onBufferStart',
+         com.STDMETHOD(ctypes.c_void_p)),
+        ('OnBufferEnd',
+         com.STDMETHOD(ctypes.c_void_p)),
+        ('OnLoopEnd',
+         com.STDMETHOD(ctypes.c_void_p)),
+    ]
+
+
 class XAUDIO2_EFFECT_DESCRIPTOR(Structure):
     _fields_ = [
-        ('pEffect', com.IUnknown),
+        ('pEffect', com.pIUnknown),
         ('InitialState', c_bool),
         ('OutputChannels', UINT32)
     ]
@@ -223,7 +239,7 @@ class XAUDIO2_VOICE_DETAILS(Structure):
     ]
 
 
-class IXAudio2Voice(com.Interface):
+class IXAudio2Voice(com.pInterface):
     _methods_ = [
         ('GetVoiceDetails',
          com.STDMETHOD(POINTER(XAUDIO2_VOICE_DETAILS))),
@@ -569,7 +585,7 @@ class XAUDIO2FX_REVERB_PARAMETERS(Structure):
     ]
 
 
-class IXAudio2(com.IUnknown):
+class IXAudio2(com.pIUnknown):
     _methods_ = [
         ('RegisterForCallbacks',
            com.STDMETHOD()),
@@ -577,7 +593,7 @@ class IXAudio2(com.IUnknown):
            com.METHOD(c_void_p)),
         ('CreateSourceVoice',
          com.STDMETHOD(POINTER(IXAudio2SourceVoice), POINTER(WAVEFORMATEX), UINT32, c_float,
-                       c_void_p, POINTER(XAUDIO2_VOICE_SENDS), POINTER(XAUDIO2_EFFECT_CHAIN))),
+                       POINTER(IXAudio2VoiceCallback), POINTER(XAUDIO2_VOICE_SENDS), POINTER(XAUDIO2_EFFECT_CHAIN))),
         ('CreateSubmixVoice',
          com.STDMETHOD(POINTER(IXAudio2SubmixVoice), UINT32, UINT32, UINT32, UINT32,
                        POINTER(XAUDIO2_VOICE_SENDS), POINTER(XAUDIO2_EFFECT_CHAIN))),
@@ -603,5 +619,5 @@ XAudio2Create.argtypes = [POINTER(IXAudio2), UINT32, UINT32]
 
 CreateAudioReverb = xaudio2_lib.CreateAudioReverb
 CreateAudioReverb.restype = HRESULT
-CreateAudioReverb.argtypes = [POINTER(com.IUnknown)]
+CreateAudioReverb.argtypes = [POINTER(com.pIUnknown)]
 

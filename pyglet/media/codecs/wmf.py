@@ -161,7 +161,7 @@ def timestamp_to_wmf(timestamp):  # 100-nanoseconds
     return int(timestamp * 10000000)
 
 
-class IMFAttributes(com.IUnknown):
+class IMFAttributes(com.pIUnknown):
     _methods_ = [
         ('GetItem',
          com.STDMETHOD()),
@@ -212,7 +212,7 @@ class IMFAttributes(com.IUnknown):
         ('SetBlob',
          com.STDMETHOD()),
         ('SetUnknown',
-         com.STDMETHOD(com.REFIID, com.IUnknown)),
+         com.STDMETHOD(com.REFIID, com.pIUnknown)),
         ('LockStore',
          com.STDMETHOD()),
         ('UnlockStore',
@@ -226,7 +226,7 @@ class IMFAttributes(com.IUnknown):
     ]
 
 
-class IMFMediaBuffer(com.IUnknown):
+class IMFMediaBuffer(com.pIUnknown):
     _methods_ = [
         ('Lock',
          com.STDMETHOD(POINTER(POINTER(BYTE)), POINTER(DWORD), POINTER(DWORD))),
@@ -241,7 +241,7 @@ class IMFMediaBuffer(com.IUnknown):
     ]
 
 
-class IMFSample(IMFAttributes, com.IUnknown):
+class IMFSample(IMFAttributes, com.pIUnknown):
     _methods_ = [
         ('GetSampleFlags',
          com.STDMETHOD()),
@@ -274,7 +274,7 @@ class IMFSample(IMFAttributes, com.IUnknown):
     ]
 
 
-class IMFMediaType(IMFAttributes, com.IUnknown):
+class IMFMediaType(IMFAttributes, com.pIUnknown):
     _methods_ = [
         ('GetMajorType',
          com.STDMETHOD()),
@@ -289,7 +289,7 @@ class IMFMediaType(IMFAttributes, com.IUnknown):
     ]
 
 
-class IMFByteStream(com.IUnknown):
+class IMFByteStream(com.pIUnknown):
     _methods_ = [
         ('GetCapabilities',
          com.STDMETHOD()),
@@ -324,7 +324,7 @@ class IMFByteStream(com.IUnknown):
     ]
 
 
-class IMFSourceReader(com.IUnknown):
+class IMFSourceReader(com.pIUnknown):
     _methods_ = [
         ('GetStreamSelection',
          com.STDMETHOD(DWORD, POINTER(BOOL))),  # in, out
@@ -463,7 +463,7 @@ class WMFSource(Source):
                 kernel32.GlobalUnlock(hglob)
 
                 # Create IStream
-                self._stream_obj = com.IUnknown()
+                self._stream_obj = com.pIUnknown()
                 ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
 
                 # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface

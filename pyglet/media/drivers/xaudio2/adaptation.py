@@ -34,13 +34,14 @@
 # ----------------------------------------------------------------------------
 
 import math
-import pyglet
-from pyglet.util import debug_print
-from . import interface
-from pyglet.media.events import MediaEvent
+
+from pyglet import com
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
-
+from pyglet.media.events import MediaEvent
+from pyglet.util import debug_print
+from . import interface
+from .lib_xaudio2 import IXAudio2VoiceCallback, XAUDIO2_END_OF_STREAM
 
 _debug = debug_print('debug_media')
 
@@ -48,6 +49,49 @@ _debug = debug_print('debug_media')
 def _convert_coordinates(coordinates):
     x, y, z = coordinates
     return x, y, -z
+
+
+class XA2SourceCallback(com.COMObject):
+    """Callback class used to trigger when buffers or streams end..
+           WARNING: Whenever a callback is running, XAudio2 cannot generate audio.
+           Make sure these functions run as fast as possible and do not block/delay more than a few milliseconds.
+           MS Recommendation:
+           At a minimum, callback functions must not do the following:
+                - Access the hard disk or other permanent storage
+                - Make expensive or blocking API calls
+                - Synchronize with other parts of client code
+                - Require significant CPU usage
+    """
+    _interfaces_ = [IXAudio2VoiceCallback]
+
+    def __init__(self, xa2_player):
+        self.xa2_player = xa2_player
+
+    def OnVoiceProcessingPassStart(self, bytesRequired):
+        pass
+
+    def OnVoiceProcessingPassEnd(self):
+        pass
+
+    def onStreamEnd(self):
+        #print("STREAM END")
+        self.xa2_player.stop()
+        MediaEvent(0, "on_eos")._sync_dispatch_to_player(self.xa2_player.player)
+
+    def onBufferStart(self, pBufferContext):
+        pass
+
+    def OnBufferEnd(self, pBufferContext):
+        """At the end of playing one buffer, attempt to refill again.
+        Even if the player is out of sources, it needs to be called to purge all buffers.
+        """
+        self.xa2_player.refill_source_player()
+
+    def OnLoopEnd(self, pBufferContext):
+        pass
+
+    def onVoiceError(self, pBufferContext, hresult):
+        raise Exception("Error occurred during audio playback.", hresult)
 
 
 class XAudio2AudioPlayer(AbstractAudioPlayer):
@@ -62,7 +106,6 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
     def __init__(self, driver, xa2_driver, source, player):
         super(XAudio2AudioPlayer, self).__init__(source, player)
-
         # We keep here a strong reference because the AudioDriver is anyway
         # a singleton object which will only be deleted when the application
         # shuts down. The AudioDriver does not keep a ref to the AudioPlayer.
@@ -72,11 +115,6 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         # Desired play state (may be actually paused due to underrun -- not
         # implemented yet).
         self._playing = False
-
-        # Up to one audio data may be buffered if too much data was received
-        # from the source that could not be written immediately into the
-        # buffer.  See refill().
-        self._audiodata_buffer = None
 
         # Theoretical write and play cursors for an infinite buffer.  play
         # cursor is always <= write cursor (when equal, underrun is
@@ -91,29 +129,28 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         # place of the timestamp)
         self._timestamps = []
 
-        audio_format = source.audio_format
+        self._callback = XA2SourceCallback(self)
 
-        self._buffers_queued = 0
+        # This will be True if the last buffer has already been submitted.
+        self.buffer_end_submitted = False
 
         self._buffers = []
 
-        self._xa2_source_player = self._xa2_driver.create_source_voice(source)
+        self._xa2_source_player = self._xa2_driver.create_source_voice(source, self._callback)
 
-        self._buffer_size = int(audio_format.sample_rate * 2)
+        self._buffer_size = int(source.audio_format.sample_rate * 2)
 
     def __del__(self):
+        self.delete()
+
+    def delete(self):
+        """Called from Player. Docs says to cleanup resources, but other drivers wait for GC to do it?"""
         if self._xa2_source_player:
             self._xa2_source_player.delete()
             self._xa2_source_player = None
 
-    def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
-
     def play(self):
         assert _debug('XAudio2 play')
-
-        # Testing ffmpeg, sometime sources are only 0.02s. 0.1 too slow to refill.
-        pyglet.clock.schedule_interval(self._check_refill, 0.01)
 
         if not self._playing:
             self._playing = True
@@ -123,10 +160,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('XAudio2 stop')
-        pyglet.clock.unschedule(self._check_refill)
 
         if self._playing:
             self._playing = False
+            self.buffer_end_submitted = False
             self._xa2_source_player.stop()
 
         assert _debug('return XAudio2 stop')
@@ -136,56 +173,57 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         super(XAudio2AudioPlayer, self).clear()
         self._play_cursor = 0
         self._write_cursor = 0
-        self._audiodata_buffer = None
+        self.buffer_end_submitted = False
+        self._buffers.clear()
         del self._events[:]
         del self._timestamps[:]
 
-    def _check_refill(self, dt):
-        if self.refill(0):
-            # We only need to dispatch events if the play cursor has been updated.
-            self._dispatch_pending_events()
-
-    def refill(self, write_size):
+    def refill_source_player(self):
         """Obtains audio data from the source, puts it into a buffer to submit to the voice.
         Unlike the other drivers this does not carve pieces of audio from the buffer and slowly
         consume it. This submits the buffer retrieved from the decoder in it's entirety.
         """
         buffers_queued = self._xa2_source_player.buffers_queued
 
-        cursor_updated = False
+        # Free any buffers already played.
         while len(self._buffers) > buffers_queued:
-            # Free buffers? Probably a better way?
+            # Clean out any buffers that have played.
             buffer = self._buffers.pop(0)
-            # Played this many bytes so far.
             self._play_cursor += buffer.AudioBytes
-            self._write_cursor = self._play_cursor
-            buffer.pAudioData = None
-            del buffer
-            cursor_updated = True
+            del buffer  # Does this remove AudioData within the buffer?
 
-        while buffers_queued < self.max_buffer_count:
-            audio_data = self.source.get_audio_data(self._buffer_size, 0.0)
+        current_buffers = []
+        if not self.buffer_end_submitted:
+            while buffers_queued < self.max_buffer_count:
+                audio_data = self.source.get_audio_data(self._buffer_size, 0.0)
 
-            if audio_data:
-                assert _debug('Xaudio2: audio data - length: {}, duration: {}, buffer size: {}'.format(audio_data.length, audio_data.duration, self._buffer_size))
+                if audio_data:
+                    assert _debug('Xaudio2: audio data - length: {}, duration: {}, buffer size: {}'.format(audio_data.length, audio_data.duration, self._buffer_size))
 
-                x2_buffer = self._xa2_driver.create_buffer(audio_data)
+                    x2_buffer = self._xa2_driver.create_buffer(audio_data)
 
-                self._xa2_source_player.submit_buffer(x2_buffer)
+                    current_buffers.append(x2_buffer)
 
-                self._add_audiodata_events(audio_data)
-                self._add_audiodata_timestamp(audio_data)
+                    self._write_cursor += x2_buffer.AudioBytes  # We've pushed this many bytes into the source player.
 
-                self._buffers.append(x2_buffer)
+                    self._add_audiodata_events(audio_data)
+                    self._add_audiodata_timestamp(audio_data)
 
-                buffers_queued += 1
-            else:
-                # End of audio data.
-                pyglet.clock.unschedule(self._check_refill)
-                self._dispatch_new_event('on_eos')
-                break
+                    buffers_queued += 1
+                else:
+                    # End of audio data, set last packet as end.
+                    current_buffers[-1].Flags = XAUDIO2_END_OF_STREAM
+                    self.buffer_end_submitted = True
+                    break
 
-        return cursor_updated
+            # We submit the buffers here, just incase the end of stream was found.
+            for cx2_buffer in current_buffers:
+                self._xa2_source_player.submit_buffer(cx2_buffer)
+
+            # Store buffers temporarily, otherwise they get GC'd.
+            self._buffers.extend(current_buffers)
+
+        self._dispatch_pending_events()
 
     def _dispatch_new_event(self, event_name):
         MediaEvent(0, event_name)._sync_dispatch_to_player(self.player)
@@ -271,7 +309,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._xa2_source_player.cone_outside_volume = cone_outer_gain
 
     def prefill_audio(self):
-        self.refill(0)
+        self.refill_source_player()
 
 
 class XAudio2Driver(AbstractAudioDriver):

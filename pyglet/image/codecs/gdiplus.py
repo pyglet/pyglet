@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.com import IUnknown
+from pyglet.com import pIUnknown
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32.constants import *
@@ -208,7 +208,7 @@ class GDIPlusDecoder(ImageDecoder):
         kernel32.GlobalUnlock(hglob)
 
         # Create IStream for the HGLOBAL
-        self.stream = IUnknown()
+        self.stream = pIUnknown()
         ole32.CreateStreamOnHGlobal(hglob, True, byref(self.stream))
 
         # Load image from stream
