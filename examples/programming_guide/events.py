@@ -47,15 +47,21 @@ from pyglet.window import mouse
 
 window = pyglet.window.Window()
 
+key_handler = key.KeyStateHandler()
 
-@window.event
-def on_key_press(symbol, modifiers):
-    if symbol == key.A:
+window.push_handlers(key_handler)
+
+
+def update(td):
+    if key_handler[key.A]:
         print('The "A" key was pressed.')
-    elif symbol == key.LEFT:
+    elif key_handler[key.LEFT]:
         print('The left arrow key was pressed.')
-    elif symbol == key.ENTER:
+    elif key_handler[key.ENTER]:
         print('The enter key was pressed.')
+
+
+pyglet.clock.schedule_interval(update, 1/120.0)
 
 
 @window.event
@@ -70,3 +76,5 @@ def on_draw():
 
 
 pyglet.app.run()
+
+
