@@ -1,3 +1,5 @@
+from pyglet.media.events import MediaEvent
+
 import pyglet
 import ctypes
 from pyglet.libs.win32.constants import *
@@ -207,6 +209,48 @@ class IXAudio2VoiceCallback(com.Interface):
     ]
 
 
+class XA2SourceCallback(com.COMObject):
+    """Callback class used to trigger when buffers or streams end..
+           WARNING: Whenever a callback is running, XAudio2 cannot generate audio.
+           Make sure these functions run as fast as possible and do not block/delay more than a few milliseconds.
+           MS Recommendation:
+           At a minimum, callback functions must not do the following:
+                - Access the hard disk or other permanent storage
+                - Make expensive or blocking API calls
+                - Synchronize with other parts of client code
+                - Require significant CPU usage
+    """
+    _interfaces_ = [IXAudio2VoiceCallback]
+
+    def __init__(self, xa2_player):
+        self.xa2_player = xa2_player
+
+    def OnVoiceProcessingPassStart(self, bytesRequired):
+        pass
+
+    def OnVoiceProcessingPassEnd(self):
+        pass
+
+    def onStreamEnd(self):
+        pass
+
+    def onBufferStart(self, pBufferContext):
+        pass
+
+    def OnBufferEnd(self, pBufferContext):
+        """At the end of playing one buffer, attempt to refill again.
+        Even if the player is out of sources, it needs to be called to purge all buffers.
+        """
+        if self.xa2_player:
+            self.xa2_player.refill_source_player()
+
+    def OnLoopEnd(self, this, pBufferContext):
+        pass
+
+    def onVoiceError(self, this, pBufferContext, hresult):
+        raise Exception("Error occurred during audio playback.", hresult)
+
+
 class XAUDIO2_EFFECT_DESCRIPTOR(Structure):
     _fields_ = [
         ('pEffect', com.pIUnknown),
@@ -317,19 +361,33 @@ class IXAudio2MasteringVoice(IXAudio2Voice):
          com.STDMETHOD(POINTER(DWORD)))
     ]
 
+
 class IXAudio2EngineCallback(com.Interface):
     _methods_ = [
-        ('OnCriticalError',
-         com.METHOD(ctypes.HRESULT)),
+        ('OnProcessingPassStart',
+         com.METHOD(ctypes.c_void_p)),
         ('OnProcessingPassEnd',
          com.METHOD(ctypes.c_void_p)),
-        ('OnProcessingPassStart',
-         com.METHOD(ctypes.c_void_p))
+        ('OnCriticalError',
+         com.METHOD(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong)),
     ]
 
 
-# -------------- 3D Audio Positioning----------
+class XA2EngineCallback(com.COMObject):
+    _interfaces_ = [IXAudio2EngineCallback]
 
+    def OnProcessingPassStart(self):
+        pass
+
+    def OnProcessingPassEnd(self):
+        pass
+
+    def OnCriticalError(self, this, hresult):
+        raise Exception("Critical Error:", hresult)
+
+
+
+# -------------- 3D Audio Positioning----------
 class X3DAUDIO_DISTANCE_CURVE_POINT(ctypes.Structure):
     _fields_ = [
         ('Distance', FLOAT32),
@@ -588,9 +646,9 @@ class XAUDIO2FX_REVERB_PARAMETERS(Structure):
 class IXAudio2(com.pIUnknown):
     _methods_ = [
         ('RegisterForCallbacks',
-           com.STDMETHOD()),
+           com.STDMETHOD(POINTER(IXAudio2EngineCallback))),
         ('UnregisterForCallbacks',
-           com.METHOD(c_void_p)),
+           com.METHOD(ctypes.c_void_p, POINTER(IXAudio2EngineCallback))),
         ('CreateSourceVoice',
          com.STDMETHOD(POINTER(IXAudio2SourceVoice), POINTER(WAVEFORMATEX), UINT32, c_float,
                        POINTER(IXAudio2VoiceCallback), POINTER(XAUDIO2_VOICE_SENDS), POINTER(XAUDIO2_EFFECT_CHAIN))),
