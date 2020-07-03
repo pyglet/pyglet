@@ -33,58 +33,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.util import Codecs, Decoder, Encoder, DecodeException, EncodeException
+from . import adaptation
 
 
-_codecs = Codecs()
-
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
+def create_audio_driver():
+    return adaptation.SilentDriver()
 
 
-class ModelDecodeException(DecodeException):
-    pass
-
-
-class ModelEncodeException(EncodeException):
-    pass
-
-
-class ModelDecoder(Decoder):
-    def decode(self, file, filename, batch):
-        """Decode the given file object and return an instance of `Model`.
-        Throws ModelDecodeException if there is an error.  filename
-        can be a file type hint.
-        """
-        raise NotImplementedError()
-
-
-class ModelEncoder(Encoder):
-
-    def encode(self, model, file, filename):
-        """Encode the given model to the given file.  filename
-        provides a hint to the file format desired.  options are
-        encoder-specific, and unknown options should be ignored or
-        issue warnings.
-        """
-        raise NotImplementedError()
-
-
-def add_default_model_codecs():
-    # Add all bundled codecs. These should be listed in order of
-    # preference. This is called automatically by pyglet.model.
-
-    try:
-        from pyglet.model.codecs import obj
-        add_decoders(obj)
-    except ImportError:
-        pass
-
-    # TODO: complete this decoder, and enable it by default
-    # try:
-    #     from pyglet.model.codecs import gltf
-    #     add_decoders(gltf)
-    # except ImportError:
-    #     pass
+__all__ = ["create_audio_driver"]

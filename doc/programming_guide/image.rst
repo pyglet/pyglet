@@ -755,7 +755,7 @@ draw order::
         batch.draw()
 
 For best performance, you should use as few batches and groups as required.
-(See the :ref:`programming-guide-graphics` section for more details on batch
+(See the :ref:`guide_graphics` section for more details on batch
 and group rendering). This will reduce the number of internal and OpenGL
 operations for drawing each frame.
 

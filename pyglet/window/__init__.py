@@ -1561,6 +1561,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     Amount of movement on the horizontal axis.
                 `scroll_y` : float
                     Amount of movement on the vertical axis.
+
             :event:
             """
 

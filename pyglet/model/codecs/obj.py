@@ -117,10 +117,12 @@ def parse_obj_file(filename, file=None):
             file_contents = f.read()
     else:
         file_contents = file.read()
-        file.close()
 
     if hasattr(file_contents, 'decode'):
-        file_contents = file_contents.decode()
+        try:
+            file_contents = file_contents.decode()
+        except UnicodeDecodeError as e:
+            raise ModelDecodeException("Unable to decode obj: {}".format(e))
 
     material = None
     mesh = None

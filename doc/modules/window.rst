@@ -7,6 +7,7 @@ pyglet.window
    :maxdepth: 1
 
    window_key
+   window_mouse
 
 .. rubric:: Details
 

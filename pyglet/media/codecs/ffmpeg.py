@@ -429,7 +429,8 @@ class _Packet:
         self.timestamp = timestamp
 
     def __del__(self):
-        ffmpeg_unref_packet(self.packet)
+        if ffmpeg_unref_packet is not None:
+            ffmpeg_unref_packet(self.packet)
 
 
 class VideoPacket(_Packet):
@@ -580,15 +581,15 @@ class FFmpegSource(StreamingSource):
     def __del__(self):
         if hasattr(self, '_tempfile'):
             self._tempfile.close()
-        if self._packet:
+        if self._packet and ffmpeg_free_packet is not None:
             ffmpeg_free_packet(self._packet)
-        if self._video_stream:
+        if self._video_stream and swscale is not None:
             swscale.sws_freeContext(self.img_convert_ctx)
             ffmpeg_close_stream(self._video_stream)
         if self._audio_stream:
             swresample.swr_free(self.audio_convert_ctx)
             ffmpeg_close_stream(self._audio_stream)
-        if self._file:
+        if self._file and ffmpeg_close_file is not None:
             ffmpeg_close_file(self._file)
 
     def seek(self, timestamp):

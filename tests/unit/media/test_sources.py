@@ -1,4 +1,5 @@
 import os
+import ctypes
 import unittest
 from unittest import mock
 
