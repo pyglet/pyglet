@@ -75,13 +75,47 @@ A simple example of drawing shapes::
 
 import math
 
-from pyglet.gl import GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_MULTISAMPLE, GL_BLEND
-from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisable
-from pyglet.graphics import Group, Batch
+from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
+from pyglet.gl import glBlendFunc, glEnable, glDisable
+from pyglet.graphics import Batch, Shader, ShaderGroup, ShaderProgram
 
 
-class _ShapeGroup(Group):
+vertex_source = """#version 150 core
+    in vec4 position;
+    in vec4 colors;
+
+    out vec4 vertex_colors;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        gl_Position = window.projection * window.view * position;
+        vertex_colors = colors;
+    }
+"""
+
+fragment_source = """#version 150 core
+    in vec4 vertex_colors;
+    out vec4 final_color;
+
+    void main()
+    {
+        final_color = vertex_colors;
+    }
+"""
+
+_default_vert_shader = Shader(vertex_source, 'vertex')
+_default_frag_shader = Shader(fragment_source, 'fragment')
+_default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
+
+
+class _ShapeGroup(ShaderGroup):
     """Shared Shape rendering Group.
 
     The group is automatically coalesced with other shape groups
@@ -104,29 +138,29 @@ class _ShapeGroup(Group):
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super().__init__(parent)
+        super().__init__(_default_program, parent=parent)
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
     def set_state(self):
-        glPushAttrib(GL_COLOR_BUFFER_BIT)
+        self.program.bind()
         glEnable(GL_BLEND)
         glBlendFunc(self.blend_src, self.blend_dest)
-        glEnable(GL_MULTISAMPLE)
 
     def unset_state(self):
         glDisable(GL_BLEND)
-        glDisable(GL_MULTISAMPLE)
-        glPopAttrib()
+        self.program.unbind()
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
-                self.parent is other.parent and
+                self.parent == other.parent and
+                self.order == other.order and
                 self.blend_src == other.blend_src and
-                self.blend_dest == other.blend_dest)
+                self.blend_dest == other.blend_dest and
+                self.program == other.program)
 
     def __hash__(self):
-        return hash((id(self.parent), self.blend_src, self.blend_dest))
+        return hash((id(self.parent), self.blend_src, self.blend_dest, self.order, self.program))
 
 
 class _ShapeBase:
@@ -393,7 +427,7 @@ class Circle(_ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add(self._segments*3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._segments*3, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
@@ -416,7 +450,7 @@ class Circle(_ShapeBase):
                 triangle = x, y, *points[i-1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
@@ -472,13 +506,13 @@ class Line(_ShapeBase):
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.vertices[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             x1 = -self._anchor_y
             y1 = self._anchor_x - self._width / 2
@@ -498,7 +532,7 @@ class Line(_ShapeBase):
             cy = x2 * sr + y2 * cr + y
             dx = x1 * cr - y2 * sr + x
             dy = x1 * sr + y2 * cr + y
-            self._vertex_list.vertices[:] = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
+            self._vertex_list.position[:] = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 6
@@ -584,13 +618,13 @@ class Rectangle(_ShapeBase):
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         elif self._rotation:
             x1 = -self._anchor_x
             y1 = -self._anchor_y
@@ -610,13 +644,13 @@ class Rectangle(_ShapeBase):
             cy = x2 * sr + y2 * cr + y
             dx = x1 * cr - y2 * sr + x
             dy = x1 * sr + y2 * cr + y
-            self._vertex_list.vertices = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
+            self._vertex_list.position[:] = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
         else:
             x1 = self._x - self._anchor_x
             y1 = self._y - self._anchor_y
             x2 = x1 + self._width
             y2 = y1 + self._height
-            self._vertex_list.vertices = (x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2)
+            self._vertex_list.position[:] = (x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2)
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 6
