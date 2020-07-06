@@ -33,6 +33,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+"""
+This example shows the KeyStateHandler polling approach when it comes to catching keyboard events.
+"""
+
 import pyglet
 
 window = pyglet.window.Window()
