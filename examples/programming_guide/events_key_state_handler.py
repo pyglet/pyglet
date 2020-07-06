@@ -33,14 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-"""
-
-from __future__ import print_function
-
-__docformat__ = 'restructuredtext'
-__version__ = '$Id$'
-
 import pyglet
 
 window = pyglet.window.Window()
