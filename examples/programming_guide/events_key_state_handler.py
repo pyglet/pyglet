@@ -49,7 +49,7 @@ key_handler = pyglet.window.key.KeyStateHandler()
 window.push_handlers(key_handler)
 
 
-def update(*args):
+def update(dt):
 
     if key_handler[pyglet.window.key.A]:
         print('The "A" key was pressed')
