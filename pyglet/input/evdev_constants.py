@@ -599,6 +599,10 @@ BUS_HOST = 0x19
 FF_STATUS_STOPPED = 0x00
 FF_STATUS_PLAYING = 0x01
 FF_STATUS_MAX = 0x01
+FF_RUMBLE = 0x50
+FF_MAX = 0x7f
+FF_CNT = FF_MAX + 1
+
 
 rel_raw_names = {}
 abs_raw_names = {}

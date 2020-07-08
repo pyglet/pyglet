@@ -35,6 +35,8 @@
 
 import os
 import errno
+import fcntl
+import struct
 import ctypes
 
 import pyglet
@@ -289,7 +291,7 @@ class EvdevDevice(XlibSelectDevice, Device):
 
         os.close(fileno)
 
-        super(EvdevDevice, self).__init__(display, name)
+        super().__init__(display, name)
 
     def get_guid(self):
         """Generate an SDL2 style GUID from the device ID"""
@@ -309,7 +311,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         super(EvdevDevice, self).open(window, exclusive)
 
         try:
-            self._fileno = os.open(self._filename, os.O_RDONLY | os.O_NONBLOCK)
+            self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
         except OSError as e:
             raise DeviceOpenException(e)
 
@@ -327,6 +329,26 @@ class EvdevDevice(XlibSelectDevice, Device):
 
     def get_controls(self):
         return self.controls
+
+    # Force Feedback methods
+
+    def ff_create_effect(self, weak, strong, duration, effect=-1):
+        weak = int(max(min(1, weak), 0) * 0xFFFF)         # Clamp range from 0-1, convert to 16bit
+        strong = int(max(min(1, strong), 0) * 0xFFFF)     # Clamp range from 0-1, convert to 16bit
+        duration = int(duration * 1000)
+        effect = bytearray(struct.pack('HhHHHHHxHH', FF_RUMBLE, effect, 0, 0, 0, duration, 0, strong, weak))
+        view = memoryview(effect).cast('h')
+
+        fcntl.ioctl(self._fileno, 0x40304580, view, True)
+        return view[1]  # effect ID
+
+    def ff_play(self, effect):
+        ev_play = struct.pack('LLHHi', 0, 0, EV_FF, effect, 1)
+        os.write(self._fileno, ev_play)
+
+    def ff_stop(self, effect):
+        ev_stop = struct.pack('LLHHi', 0, 0, EV_FF, effect, 0)
+        os.write(self._fileno, ev_stop)
 
     # XlibSelectDevice interface
 
@@ -353,6 +375,34 @@ class EvdevDevice(XlibSelectDevice, Device):
                 control.value = event.value
             except KeyError:
                 pass
+
+
+class EvdevGameController(GameController):
+
+    _rumble_weak = -1
+    _rumble_strong = -1
+
+    def open(self, window=None, exclusive=False):
+        super().open(window, exclusive)
+        # Create Force Feedback effects when the device is opened:
+        self._rumble_weak = self.device.ff_create_effect(0, 0, 0)
+        self._rumble_strong = self.device.ff_create_effect(0, 0, 0)
+
+    def rumble_play_weak(self, strength=1.0, duration=0.5):
+        effect = self.device.ff_create_effect(strength, 0, duration, self._rumble_weak)
+        self.device.ff_play(effect)
+
+    def rumble_play_strong(self, strength=1.0, duration=0.5):
+        effect = self.device.ff_create_effect(0, strength, duration, self._rumble_strong)
+        self.device.ff_play(effect)
+
+    def rumble_stop_weak(self):
+        """Stop playing rumble effects on the weak motor."""
+        self.device.ff_stop(self._rumble_weak)
+
+    def rumble_stop_strong(self):
+        """Stop playing rumble effects on the strong motor."""
+        self.device.ff_stop(self._rumble_strong)
 
 
 def get_devices(display=None):
@@ -414,7 +464,7 @@ def _create_game_controller(device):
     if not (have_x and have_y and have_button):
         return
 
-    return GameController(device)
+    return EvdevGameController(device)
 
 
 def get_game_controllers(display=None):
