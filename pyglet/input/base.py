@@ -727,6 +727,36 @@ class GameController(EventDispatcher):
         """Close the game controller.  See `Device.close`. """
         self.device.close()
 
+    # Rumble (force feedback) methods:
+
+    def rumble_play_weak(self, strength=1.0, duration=0.5):
+        """Play a rumble effect on the weak motor.
+
+        :Parameters:
+            `strength` : float
+                The strength of the effect, from 0 to 1.
+            `duration` : float
+                The duration of the effect in seconds.
+        """
+
+    def rumble_play_strong(self, strength=1.0, duration=0.5):
+        """Play a rumble effect on the strong motor.
+
+        :Parameters:
+            `strength` : float
+                The strength of the effect, from 0 to 1.
+            `duration` : float
+                The duration of the effect in seconds.
+        """
+
+    def rumble_stop_weak(self):
+        """Stop playing rumble effects on the weak motor."""
+
+    def rumble_stop_strong(self):
+        """Stop playing rumble effects on the strong motor."""
+
+    # Event types:
+
     def on_stick_motion(self, gamecontroller, axis, xvalue, yvalue):
         """The value of a game controller analogue stick changed.
 
