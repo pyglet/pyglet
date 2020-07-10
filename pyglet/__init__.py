@@ -367,6 +367,7 @@ if True:
     font = _ModuleProxy('font')
     gl = _ModuleProxy('gl')
     graphics = _ModuleProxy('graphics')
+    gui = _ModuleProxy('gui')
     image = _ModuleProxy('image')
     input = _ModuleProxy('input')
     lib = _ModuleProxy('lib')
@@ -389,6 +390,7 @@ if False:
     from . import font
     from . import gl
     from . import graphics
+    from . import gui
     from . import input
     from . import image
     from . import lib
