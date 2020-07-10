@@ -33,5 +33,5 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from .widgets import *
-from .frame import *
+from .widgets import WidgetBase, PushButton, ToggleButton, Slider
+from .frame import Frame
