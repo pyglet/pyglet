@@ -38,26 +38,46 @@ import pyglet
 
 class WidgetBase(pyglet.event.EventDispatcher):
 
-    def __init__(self, x, y, width, height):
-        self._x = x
-        self._y = y
-        self._width = width
-        self._height = height
+    def __init__(self, x, y, width, height, parent=None):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
 
+        self.parent = parent
+    
     @property
-    def x(self):
-        return self._x
+    def position(self):
+        return self.x, self.y
 
-    @property
-    def y(self):
-        return self._y
+    @position.setter
+    def position(self, position):
+        self.x, self.y = position
 
     @property
     def aabb(self):
-        return self._x, self._y, self._x + self._width, self._y + self._height
+        return self.x, self.y, self.x + self.width, self.y + self.height
+    
+    @property
+    def real_x(self):
+        if self.parent is not None:
+            return self.x + self.parent.x
+        else:
+            return self.x
+
+    @property 
+    def real_y(self):
+        if self.parent is not None:
+            return self.y + self.parent.y
+        else:
+            return self.y
+    
+    @property
+    def real_position(self):
+        return self.real_x, self.real_y
 
     def _check_hit(self, x, y):
-        return self._x < x < self._x + self._width and self._y < y < self._y + self._height
+        return self.real_x < x < self.real_x + self.width and self.real_y < y < self.real_y + self.height
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         pass
@@ -81,12 +101,16 @@ WidgetBase.register_event_type('on_mouse_drag')
 
 class PushButton(WidgetBase):
 
-    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
-        super().__init__(x, y, depressed.width, depressed.height)
+    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None, parent=None):
+        super().__init__(x, y, depressed.width, depressed.height, parent)
         self._pressed_img = pressed
         self._depressed_img = depressed
         self._hover_img = hover
-        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=group)
+        self._sprite = pyglet.sprite.Sprite(
+            self._depressed_img, 
+            self.real_x, self.real_y, 
+            batch=batch, group=group
+        )
         self._pressed = False
 
     def on_mouse_press(self, x, y, buttons, modifiers):
@@ -134,37 +158,48 @@ ToggleButton.register_event_type('on_toggle')
 
 class Slider(WidgetBase):
 
-    def __init__(self, x, y, base, knob, batch=None, group=None):
-        super().__init__(x, y, base.width, knob.height)
+    def __init__(self, x, y, base, knob, batch=None, group=None, parent=None):
+        super().__init__(x, y, base.width, knob.height, parent)
         self._base_img = base
         self._knob_img = knob
         self._half_knob_width = knob.width / 2
         self._half_knob_height = knob.height / 2
         self._knob_img.anchor_y = knob.height / 2
-        self._max_knob_x = x + base.width - knob.width
 
         bg_group = pyglet.graphics.OrderedGroup(0, parent=group)
         fg_group = pyglet.graphics.OrderedGroup(1, parent=group)
-        self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
-        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x, y + base.height / 2, batch=batch, group=fg_group)
+        self._base_spr = pyglet.sprite.Sprite(
+            self._base_img, 
+            self.real_x, self.real_y, 
+            batch=batch, group=bg_group
+        )
+        self._knob_spr = pyglet.sprite.Sprite(
+            self._knob_img, 
+            self.real_x, self.real_y + base.height / 2, 
+            batch=batch, group=fg_group
+        )
 
         self._value = 0
         self._in_update = False
+    
+    @property
+    def _max_knob_x(self):
+        return self.real_x + self.width - self._knob_img.width
 
     @property
     def _min_y(self):
-        return self._y - self._half_knob_height
+        return self.real_y - self._half_knob_height
 
     @property
     def _max_y(self):
-        return self._y + self._half_knob_height + self._base_img.height / 2
+        return self.real_y + self._half_knob_height + self.height / 2
 
     def _check_hit(self, x, y):
-        return self._x < x < self._x + self._width and self._min_y < y < self._max_y
+        return self.real_x < x < self.real_x + self.width and self._min_y < y < self._max_y
 
     def _update_knob(self, x):
-        self._knob_spr.x = max(self._x, min(x - self._half_knob_width, self._max_knob_x))
-        self._value = abs(((self._knob_spr.x - self._x) * 100) / (self._x - self._max_knob_x))
+        self._knob_spr.x = max(self.real_x, min(x - self._half_knob_width, self._max_knob_x))
+        self._value = abs(((self._knob_spr.x - self.real_x) * 100) / (self.real_x - self._max_knob_x))
         self.dispatch_event('on_change', self._value)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
