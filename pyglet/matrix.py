@@ -36,10 +36,10 @@
 """Matrix operations.
 
 This module provides a convenient :py:class:`~pyglet.matrix.Mat4` class for
-representing 4x4 matricies, and some associated helper functions for creating,
-rotating, scaling, and transforming these matrices. The internal datatype of
-:py:class:`~pyglet.matrix.Mat4` instances is a 1-dimensional array, so they
-can be passed directly to OpenGL.
+representing 4x4 matricies. Helper functions for creating, rotating, scaling,
+and transforming these matrices are also provided. The internal datatype of
+:py:class:`~pyglet.matrix.Mat4` is a 1-dimensional array, so instances can
+be passed directly to OpenGL.
 
 """
 
@@ -48,7 +48,7 @@ import operator as _operator
 
 
 def create_orthogonal(left, right, bottom, top, znear, zfar):
-    """Create a Mat4 with orthographic projection."""
+    """Create a Mat4 orthographic projection matrix."""
     width = right - left
     height = top - bottom
     depth = zfar - znear
@@ -68,7 +68,7 @@ def create_orthogonal(left, right, bottom, top, znear, zfar):
 
 
 def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
-    """Create a Mat4 with perspective projection."""
+    """Create a Mat4 perspective projection matrix."""
     width = right - left
     height = top - bottom
     aspect = width / height
@@ -94,7 +94,7 @@ def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
 
 
 def scale(matrix, x=1, y=1, z=1):
-    """Scale a Matrix."""
+    """Scale a Matrix on x, y, or z axis."""
     temp = list(matrix)
     temp[0] *= x
     temp[5] *= y
@@ -108,6 +108,7 @@ def translate(matrix, x=0, y=0, z=0):
 
 
 def rotate(matrix, angle=0, x=0, y=0, z=0):
+    """Rotate a Matrix on x, y, or z axis."""
     assert all(abs(n) <= 1 for n in (x, y, z)), "x,y,z must be normalized (<=1)"
     c = _math.cos(angle)
     s = _math.sin(angle)
@@ -133,22 +134,20 @@ def rotate(matrix, angle=0, x=0, y=0, z=0):
 
 
 def transpose(matrix):
-    values = tuple()
-    for i in range(4):
-        r = matrix[i:16 - (3 - i):4]
-        values += r
-    return Mat4(values)
+    """The transpose of a Matrix."""
+    return Mat4(matrix[0::4] + matrix[1::4] + matrix[2::4] + matrix[3::4])
 
 
-def invert(matrix):
-    I = Mat4()
+def inverse(matrix):
+    """The inverse of a Matrix."""
+    i = Mat4()
     for c in range(4):
         # Swap pivot row into place
         if matrix[4*c + c] == 0:
             for r in range(c + 1, 4):
                 if matrix[4*r + c] != 0:
                     matrix = row_swap(matrix, c, r)
-                    I = row_swap(I, c, r)
+                    i = row_swap(i, c, r)
 
         # Make 0's in column for rows that aren't pivot row
         for r in range(4):
@@ -159,14 +158,14 @@ def invert(matrix):
                     scalar = r_piv / piv
                     matrix = row_mul(matrix, c, scalar)
                     matrix = row_sub(matrix, c, r)
-                    I = row_mul(I, c, scalar)
-                    I = row_sub(I, c, r)
-        
+                    i = row_mul(i, c, scalar)
+                    i = row_sub(i, c, r)
+
         # Put matrix in reduced row-echelon form.
         piv = matrix[4*c + c]
         matrix = row_mul(matrix, c, 1/piv)
-        I = row_mul(I, c, 1/piv)
-    return I
+        i = row_mul(i, c, 1/piv)
+    return i
 
 
 def row_swap(matrix, r1, r2):
@@ -191,19 +190,7 @@ def row_mul(matrix, sr, x):
     return Mat4(values)
 
 
-#adds r1 to r2
-def row_add(matrix, r1, r2):
-    values = tuple()
-    row1 = matrix[4*r1:4*r1 + 4]
-    for r in range(4):
-        row = matrix[4*r:4*r + 4]
-        if r == r2:
-            row = tuple(row[i] + row1[i] for i in range(4))
-        values += row
-    return Mat4(values)
-
-
-#subtracts r1 from r2
+# subtracts r1 from r2
 def row_sub(matrix, r1, r2):
     values = tuple()
     row1 = matrix[4*r1:4*r1 + 4]
@@ -218,7 +205,7 @@ def row_sub(matrix, r1, r2):
 class Mat4(tuple):
     """A 4x4 Matrix
 
-    `Mat4` is a simple immutable 4x4 matrix, with a few operators.
+    `Mat4` is a simple immutable 4x4 Matrix, with a few operators.
     Two types of multiplication are possible. The "*" operator
     will perform elementwise multiplication, wheras the "@"
     operator will perform Matrix multiplication. Internally,
@@ -229,14 +216,14 @@ class Mat4(tuple):
     def __new__(cls, values=None):
         """Create a 4x4 Matrix
 
-        A Matrix can be created with list or tuple of 16 values.
-        If nothing is provided, an "identity Matrix" will be created
+        A Matrix can be created with a list or tuple of 16 values.
+        If no values are provided, an "identity matrix" will be created
         (1.0 on the main diagonal). Matrix objects are immutable, so
         all operations return a new Mat4 object.
 
         :Parameters:
             `values` : tuple of float or int
-                A tuple containing 16 values.
+                A tuple or list containing 16 floats or ints.
         """
         assert values is None or len(values) == 16, "A 4x4 Matrix requires 16 values"
         values = values or (1.0, 0.0, 0.0, 0.0,
@@ -245,6 +232,12 @@ class Mat4(tuple):
                             0.0, 0.0, 0.0, 1.0)
         return super().__new__(Mat4, values)
 
+    def row(self, index):
+        return self[index*4:index*4+4]
+
+    def column(self, index):
+        return self[index::4]
+
     def __add__(self, other):
         assert len(other) == 16, "Can only multiply with other Mat4 types"
         return Mat4(tuple(s + o for s, o in zip(self, other)))
@@ -252,6 +245,18 @@ class Mat4(tuple):
     def __sub__(self, other):
         assert len(other) == 16, "Can only multiply with other Mat4 types"
         return Mat4(tuple(s - o for s, o in zip(self, other)))
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self):
+        return Mat4(tuple(-v for v in self))
+
+    def __invert__(self):
+        return inverse(self)
+
+    def __round__(self, n=None):
+        return Mat4(tuple(round(v, n) for v in self))
 
     def __mul__(self, other):
         assert len(other) == 16, "Can only multiply with other Mat4 types"
