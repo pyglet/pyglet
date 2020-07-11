@@ -132,6 +132,89 @@ def rotate(matrix, angle=0, x=0, y=0, z=0):
     return Mat4(matrix) @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
 
 
+def transpose(matrix):
+    values = tuple()
+    for i in range(4):
+        r = matrix[i:16 - (3 - i):4]
+        values += r
+    return Mat4(values)
+
+
+def invert(matrix):
+    I = Mat4()
+    for c in range(4):
+        # Swap pivot row into place
+        if matrix[4*c + c] == 0:
+            for r in range(c + 1, 4):
+                if matrix[4*r + c] != 0:
+                    matrix = row_swap(matrix, c, r)
+                    I = row_swap(I, c, r)
+
+        # Make 0's in column for rows that aren't pivot row
+        for r in range(4):
+            if r != c:
+                r_piv = matrix[4*r + c]
+                if r_piv != 0:
+                    piv = matrix[4*c + c]
+                    scalar = r_piv / piv
+                    matrix = row_mul(matrix, c, scalar)
+                    matrix = row_sub(matrix, c, r)
+                    I = row_mul(I, c, scalar)
+                    I = row_sub(I, c, r)
+        
+        # Put matrix in reduced row-echelon form.
+        piv = matrix[4*c + c]
+        matrix = row_mul(matrix, c, 1/piv)
+        I = row_mul(I, c, 1/piv)
+    return I
+
+
+def row_swap(matrix, r1, r2):
+    values = tuple()
+    for r in range(4):
+        if r == r1:
+            values += matrix[4*r2:4*r2 + 4]
+        elif r == r2:
+            values += matrix[4*r1:4*r1 + 4]
+        else:
+            values += matrix[4*r:4*r + 4]
+    return Mat4(values)
+
+
+def row_mul(matrix, sr, x):
+    values = tuple()
+    for r in range(4):
+        row = matrix[4*r:4*r + 4]
+        if r == sr:
+            row = tuple(v * x for v in row)
+        values += row
+    return Mat4(values)
+
+
+#adds r1 to r2
+def row_add(matrix, r1, r2):
+    values = tuple()
+    row1 = matrix[4*r1:4*r1 + 4]
+    for r in range(4):
+        row = matrix[4*r:4*r + 4]
+        if r == r2:
+            row = tuple(row[i] + row1[i] for i in range(4))
+        values += row
+    return Mat4(values)
+
+
+#subtracts r1 from r2
+def row_sub(matrix, r1, r2):
+    values = tuple()
+    row1 = matrix[4*r1:4*r1 + 4]
+    for r in range(4):
+        row = matrix[4*r:4*r + 4]
+        if r == r2:
+            row = tuple(row[i] - row1[i] for i in range(4))
+        values += row
+    return Mat4(values)
+
+
 class Mat4(tuple):
     """A 4x4 Matrix
 
