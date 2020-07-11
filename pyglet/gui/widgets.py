@@ -35,8 +35,11 @@
 
 import pyglet
 
+from pyglet.event import EventDispatcher
+from pyglet.graphics import OrderedGroup
 
-class WidgetBase(pyglet.event.EventDispatcher):
+
+class WidgetBase(EventDispatcher):
 
     def __init__(self, x, y, width, height):
         self._x = x
@@ -143,8 +146,8 @@ class Slider(WidgetBase):
         self._knob_img.anchor_y = knob.height / 2
         self._max_knob_x = x + base.width - knob.width
 
-        bg_group = pyglet.graphics.OrderedGroup(0, parent=group)
-        fg_group = pyglet.graphics.OrderedGroup(1, parent=group)
+        bg_group = OrderedGroup(0, parent=group)
+        fg_group = OrderedGroup(1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
         self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x, y + base.height / 2, batch=batch, group=fg_group)
 

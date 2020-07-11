@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+from pyglet.graphics import OrderedGroup
 
 
 class Frame:
@@ -52,6 +53,7 @@ class Frame:
         for i in range(min_vec[0], max_vec[0] + 1):
             for j in range(min_vec[1], max_vec[1] + 1):
                 self._cells.setdefault((i, j), set()).add(widget)
+                # TODO: return ID and track Widgets for later deletion.
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
