@@ -139,10 +139,26 @@ def transpose(matrix):
 
 
 def inverse(matrix):
-    """The inverse of a Matrix."""
-    i = Mat4()
+    """The inverse of a Matrix.
+
+    Using Gauss-Jordan ekimination, the matrix supplied is transformed into
+    the identity matrix using a sequence of elementary row operations (below).
+    The same sequence of operations is applied to the identity matrix,
+    transforming it into the supplied matrix's inverse.
+
+    Elementary row operations:
+        - multiply row by a scalar
+        - swap two rows
+        - add two rows together"""
+
+    i = Mat4() # identity matrix
+
+    # The pivot in each column is the element at Matrix[c, c] (diagonal elements).
+    # The pivot row is the row containing the pivot element. Pivot elements must
+    # be non-zero.
+    # Any time matrix is changed, so is i.
     for c in range(4):
-        # Swap pivot row into place
+        # Find and swap pivot row into place
         if matrix[4*c + c] == 0:
             for r in range(c + 1, 4):
                 if matrix[4*r + c] != 0:
@@ -151,7 +167,7 @@ def inverse(matrix):
 
         # Make 0's in column for rows that aren't pivot row
         for r in range(4):
-            if r != c:
+            if r != c: # not the pivot row
                 r_piv = matrix[4*r + c]
                 if r_piv != 0:
                     piv = matrix[4*c + c]
@@ -169,36 +185,30 @@ def inverse(matrix):
 
 
 def row_swap(matrix, r1, r2):
-    values = tuple()
-    for r in range(4):
-        if r == r1:
-            values += matrix[4*r2:4*r2 + 4]
-        elif r == r2:
-            values += matrix[4*r1:4*r1 + 4]
-        else:
-            values += matrix[4*r:4*r + 4]
+    lo = min(r1, r2)
+    hi = max(r1, r2)
+    values = (matrix[:lo*4]
+            + matrix[hi*4:hi*4 + 4]
+            + matrix[lo*4 + 4:hi*4]
+            + matrix[lo*4:lo*4 + 4]
+            + matrix[hi*4 + 4:])
     return Mat4(values)
 
 
-def row_mul(matrix, sr, x):
-    values = tuple()
-    for r in range(4):
-        row = matrix[4*r:4*r + 4]
-        if r == sr:
-            row = tuple(v * x for v in row)
-        values += row
+def row_mul(matrix, r, x):
+    values = (matrix[:r*4]
+            + tuple(v * x for v in matrix[r*4:r*4 + 4])
+            + matrix[r*4 + 4:])
     return Mat4(values)
 
 
 # subtracts r1 from r2
 def row_sub(matrix, r1, r2):
-    values = tuple()
     row1 = matrix[4*r1:4*r1 + 4]
-    for r in range(4):
-        row = matrix[4*r:4*r + 4]
-        if r == r2:
-            row = tuple(row[i] - row1[i] for i in range(4))
-        values += row
+    row2 = matrix[4*r2:4*r2 + 4]
+    values = (matrix[:r2*4]
+            + tuple(v2 - v1 for (v1, v2) in zip(row1, row2))
+            + matrix[r2*4 + 4:])
     return Mat4(values)
 
 
