@@ -88,7 +88,7 @@ class PushButton(WidgetBase):
         super().__init__(x, y, depressed.width, depressed.height)
         self._pressed_img = pressed
         self._depressed_img = depressed
-        self._hover_img = hover
+        self._hover_img = hover or depressed
         self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=group)
         self._pressed = False
 
@@ -102,17 +102,19 @@ class PushButton(WidgetBase):
     def on_mouse_release(self, x, y, buttons, modifiers):
         if not self._pressed:
             return
-        self._sprite.image = self._depressed_img
+        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
         self._pressed = False
         self.dispatch_event('on_release')
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self._pressed:
             return
-        if self._check_hit(x, y) and self._hover_img:
-            self._sprite.image = self._hover_img
-        else:
-            self._sprite.image = self._depressed_img
+        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self._pressed:
+            return
+        self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
 
 PushButton.register_event_type('on_press')
@@ -121,15 +123,20 @@ PushButton.register_event_type('on_release')
 
 class ToggleButton(PushButton):
 
+    def _get_release_image(self, x, y):
+        return self._hover_img if self._check_hit(x, y) else self._depressed_img
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self._check_hit(x, y):
             return
-        self._sprite.image = self._depressed_img if self._pressed else self._pressed_img
         self._pressed = not self._pressed
+        self._sprite.image = self._pressed_img if self._pressed else self._get_release_image(x, y)
         self.dispatch_event('on_toggle', self._pressed)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
-        return
+        if self._pressed:
+            return
+        self._sprite.image = self._get_release_image(x, y)
 
 
 ToggleButton.register_event_type('on_toggle')
