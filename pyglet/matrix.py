@@ -45,6 +45,7 @@ be passed directly to OpenGL.
 
 import math as _math
 import operator as _operator
+import warnings as _warnings
 
 
 def create_orthogonal(left, right, bottom, top, znear, zfar):
@@ -151,7 +152,7 @@ def inverse(matrix):
         - swap two rows
         - add two rows together"""
 
-    i = Mat4() # identity matrix
+    i = Mat4()  # identity matrix
 
     # The pivot in each column is the element at Matrix[c, c] (diagonal elements).
     # The pivot row is the row containing the pivot element. Pivot elements must
@@ -167,7 +168,7 @@ def inverse(matrix):
 
         # Make 0's in column for rows that aren't pivot row
         for r in range(4):
-            if r != c: # not the pivot row
+            if r != c:  # not the pivot row
                 r_piv = matrix[4*r + c]
                 if r_piv != 0:
                     piv = matrix[4*c + c]
@@ -263,14 +264,60 @@ class Mat4(tuple):
         return Mat4(tuple(-v for v in self))
 
     def __invert__(self):
-        return inverse(self)
+        mat = list(self)
+        a = mat[10] * mat[15] - mat[11] * mat[14]
+        b = mat[9] * mat[15] - mat[11] * mat[13]
+        c = mat[9] * mat[14] - mat[10] * mat[13]
+        d = mat[8] * mat[15] - mat[11] * mat[12]
+        e = mat[8] * mat[14] - mat[10] * mat[12]
+        f = mat[8] * mat[13] - mat[9] * mat[12]
+        g = mat[6] * mat[15] - mat[7] * mat[14]
+        h = mat[5] * mat[15] - mat[7] * mat[13]
+        i = mat[5] * mat[14] - mat[6] * mat[13]
+        j = mat[6] * mat[11] - mat[7] * mat[10]
+        k = mat[5] * mat[11] - mat[7] * mat[9]
+        l = mat[5] * mat[10] - mat[6] * mat[9]
+        m = mat[4] * mat[15] - mat[7] * mat[12]
+        n = mat[4] * mat[14] - mat[6] * mat[12]
+        o = mat[4] * mat[11] - mat[7] * mat[8]
+        p = mat[4] * mat[10] - mat[6] * mat[8]
+        q = mat[4] * mat[13] - mat[5] * mat[12]
+        r = mat[4] * mat[9] - mat[5] * mat[8]
+
+        det = (mat[0] * (mat[5] * a - mat[6] * b + mat[7] * c)
+               - mat[1] * (mat[4] * a - mat[6] * d + mat[7] * e)
+               + mat[2] * (mat[4] * b - mat[5] * d + mat[7] * f)
+               - mat[3] * (mat[4] * c - mat[5] * e + mat[6] * f))
+
+        if det == 0:
+            _warnings.warn("Unable to calculate inverse of singular Matrix")
+            return self
+
+        pdet = 1 / det
+        ndet = -pdet
+
+        return Mat4((pdet * (mat[5] * a - mat[6] * b + mat[7] * c),
+                     ndet * (mat[1] * a - mat[2] * b + mat[3] * c),
+                     pdet * (mat[1] * g - mat[2] * h + mat[3] * i),
+                     ndet * (mat[1] * j - mat[2] * k + mat[3] * l),
+                     ndet * (mat[4] * a - mat[6] * d + mat[7] * e),
+                     pdet * (mat[0] * a - mat[2] * d + mat[3] * e),
+                     ndet * (mat[0] * g - mat[2] * m + mat[3] * n),
+                     pdet * (mat[0] * j - mat[2] * o + mat[3] * p),
+                     pdet * (mat[4] * b - mat[5] * d + mat[7] * f),
+                     ndet * (mat[0] * b - mat[1] * d + mat[3] * f),
+                     pdet * (mat[0] * h - mat[1] * m + mat[3] * q),
+                     ndet * (mat[0] * k - mat[1] * o + mat[3] * r),
+                     ndet * (mat[4] * c - mat[5] * e + mat[6] * f),
+                     pdet * (mat[0] * c - mat[1] * e + mat[2] * f),
+                     ndet * (mat[0] * i - mat[1] * n + mat[2] * q),
+                     pdet * (mat[0] * l - mat[1] * p + mat[2] * r)))
 
     def __round__(self, n=None):
         return Mat4(tuple(round(v, n) for v in self))
 
     def __mul__(self, other):
-        assert len(other) == 16, "Can only multiply with other Mat4 types"
-        return Mat4(tuple(s * o for s, o in zip(self, other)))
+        raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
 
     def __matmul__(self, other):
         assert len(other) == 16, "Can only multiply with other Mat4 types"
