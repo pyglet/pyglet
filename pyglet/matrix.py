@@ -141,7 +141,7 @@ def transpose(matrix):
 def inverse(matrix):
     """The inverse of a Matrix.
 
-    Using Gauss-Jordan ekimination, the matrix supplied is transformed into
+    Using Gauss-Jordan elimination, the matrix supplied is transformed into
     the identity matrix using a sequence of elementary row operations (below).
     The same sequence of operations is applied to the identity matrix,
     transforming it into the supplied matrix's inverse.
