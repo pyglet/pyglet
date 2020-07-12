@@ -144,22 +144,33 @@ ToggleButton.register_event_type('on_toggle')
 
 class Slider(WidgetBase):
 
-    def __init__(self, x, y, base, knob, batch=None, group=None):
+    def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
         super().__init__(x, y, base.width, knob.height)
+        self._edge = edge
         self._base_img = base
         self._knob_img = knob
         self._half_knob_width = knob.width / 2
         self._half_knob_height = knob.height / 2
         self._knob_img.anchor_y = knob.height / 2
-        self._max_knob_x = x + base.width - knob.width
+
+        self._min_knob_x = x + edge
+        self._max_knob_x = x + base.width - knob.width - edge
 
         bg_group = OrderedGroup(0, parent=group)
         fg_group = OrderedGroup(1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
-        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x, y + base.height / 2, batch=batch, group=fg_group)
+        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x+edge, y+base.height/2, batch=batch, group=fg_group)
 
         self._value = 0
         self._in_update = False
+
+    @property
+    def _min_x(self):
+        return self._x + self._edge
+
+    @property
+    def _max_x(self):
+        return self._x + self._width - self._edge
 
     @property
     def _min_y(self):
@@ -170,11 +181,11 @@ class Slider(WidgetBase):
         return self._y + self._half_knob_height + self._base_img.height / 2
 
     def _check_hit(self, x, y):
-        return self._x < x < self._x + self._width and self._min_y < y < self._max_y
+        return self._min_x < x < self._max_x and self._min_y < y < self._max_y
 
     def _update_knob(self, x):
-        self._knob_spr.x = max(self._x, min(x - self._half_knob_width, self._max_knob_x))
-        self._value = abs(((self._knob_spr.x - self._x) * 100) / (self._x - self._max_knob_x))
+        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
+        self._value = abs(((self._knob_spr.x - self._min_knob_x) * 100) / (self._min_knob_x - self._max_knob_x))
         self.dispatch_event('on_change', self._value)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
