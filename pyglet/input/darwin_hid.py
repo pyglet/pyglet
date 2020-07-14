@@ -386,9 +386,9 @@ class HIDDevice:
         # Remove self from device lookup table.
         del _device_lookup[sender]
         # Remove device elements from lookup table.
-        for key, value in _element_lookup.items():
-            if value in self.elements:
-                del _element_lookup[key]
+        to_remove = [k for k, v in _element_lookup.items() if v in self.elements]
+        for key in to_remove:
+            del _element_lookup[key]
 
     def _register_removal_callback(self):
         removal_callback = HIDDeviceCallback(self.py_removal_callback)

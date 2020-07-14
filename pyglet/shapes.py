@@ -698,4 +698,91 @@ class Rectangle(_ShapeBase):
         self._update_position()
 
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle')
+class BorderedRectangle(_ShapeBase):
+    def __init__(self, x, y, width, height, border=1, color=(255, 255, 255),
+                 border_color=(100, 100, 100), batch=None, group=None):
+        """Create a rectangle or square.
+
+        The rectangles's anchor point defaults to the (x, y) coordinates,
+        which are at the bottom left.
+
+        :Parameters:
+            `x` : float
+                The X coordinate of the rectangle.
+            `y` : float
+                The Y coordinate of the rectangle.
+            `width` : float
+                The width of the rectangle.
+            `height` : float
+                The height of the rectangle.
+            `color` : (int, int, int)
+                The RGB color of the rectangle, specified as
+                a tuple of three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the rectangle to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the rectangle.
+        """
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+        self._border = border
+        self._rgb = color
+        self._brgb = border_color
+
+        self._batch = batch or Batch()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
+        self._vertex_list = self._batch.add_indexed(8, GL_TRIANGLES, self._group, indices, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            self._vertex_list.vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        else:
+            b = self._border
+            bx1 = self._x - self._anchor_x
+            by1 = self._y - self._anchor_y
+            bx2 = bx1 + self._width
+            by2 = by1 + self._height
+            ix1 = bx1 + b
+            iy1 = by1 + b
+            ix2 = bx2 - b
+            iy2 = by2 - b
+            self._vertex_list.vertices[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+                                             bx1, by1, bx2, by1, bx2, by2, bx1, by2,)
+
+    def _update_color(self):
+        opacity = int(self._opacity)
+        self._vertex_list.colors[:] = [*self._rgb, opacity] * 4 + [*self._brgb, opacity] * 4
+
+    @property
+    def width(self):
+        """The width of the rectangle.
+
+        :type: float
+        """
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+        self._update_position()
+
+    @property
+    def height(self):
+        """The height of the rectangle.
+
+        :type: float
+        """
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+        self._update_position()
+
+
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle')
