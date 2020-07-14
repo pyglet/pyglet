@@ -46,6 +46,11 @@ class WidgetBase(EventDispatcher):
         self._y = y
         self._width = width
         self._height = height
+        self._bg_group = None
+        self._fg_group = None
+
+    def update_groups(self, order):
+        pass
 
     @property
     def x(self):
@@ -89,8 +94,18 @@ class PushButton(WidgetBase):
         self._pressed_img = pressed
         self._depressed_img = depressed
         self._hover_img = hover or depressed
-        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=group)
+
+        # TODO: add `draw` method or make Batch required.
+        self._batch = batch or pyglet.graphics.Batch()
+        self._group = OrderedGroup(0, parent=group)
+        self._user_group = group
+        self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=self._group)
+
         self._pressed = False
+
+    def update_groups(self, order):
+        self._group = OrderedGroup(order + 1, self._user_group)
+        self._sprite.group = self._group
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self._check_hit(x, y):

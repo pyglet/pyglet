@@ -43,15 +43,14 @@ http://developer.android.com/guide/topics/graphics/2d-graphics.html#nine-patch.
 
 """
 
-import pyglet
-
+from pyglet.graphics import OrderedGroup
 from pyglet.gl import GL_BLEND, GL_ENABLE_BIT, GL_ONE_MINUS_SRC_ALPHA, GL_QUADS, GL_SRC_ALPHA
-from pyglet.gl import glBindTexture, glBlendFunc, glClearColor, glEnable, glPopAttrib, glPushAttrib
+from pyglet.gl import glBindTexture, glBlendFunc, glEnable, glPopAttrib, glPushAttrib
 
 
-class _NinePatchGroup(pyglet.graphics.Group):
-    def __init__(self, texture, parent=None):
-        super().__init__(parent)
+class NinePatchGroup(OrderedGroup):
+    def __init__(self, texture, order=0, parent=None):
+        super().__init__(order, parent)
         self.texture = texture
 
     def set_state(self):
@@ -87,16 +86,16 @@ class NinePatch:
     """
 
     # Content area of the image, in pixels from the edge.
-    padding_top = 0
-    padding_bottom = 0
-    padding_right = 0
-    padding_left = 0
+    _padding_top = 0
+    _padding_bottom = 0
+    _padding_right = 0
+    _padding_left = 0
 
     # Resizable area of the image, in pixels from the closest edge
-    stretch_top = 0
-    stretch_left = 0
-    stretch_right = 0
-    stretch_bottom = 0
+    _stretch_top = 0
+    _stretch_left = 0
+    _stretch_right = 0
+    _stretch_bottom = 0
 
     def __init__(self, image):
         """Create NinePatch cuts of an image
@@ -120,60 +119,60 @@ class NinePatch:
         # Find stretch area markers
         for x in range(1, width - 1):
             if pixel_data.is_black(x, height - 1):
-                self.stretch_left = x
+                self._stretch_left = x
                 break
         else:
-            self.stretch_left = 1
+            self._stretch_left = 1
 
         for x in range(width - 2, 0, -1):
             if pixel_data.is_black(x, height - 1):
-                self.stretch_right = width - x
+                self._stretch_right = width - x
                 break
         else:
-            self.stretch_right = 1
+            self._stretch_right = 1
 
         for y in range(1, height - 1):
             if pixel_data.is_black(0, y):
-                self.stretch_bottom = y
+                self._stretch_bottom = y
                 break
         else:
-            self.stretch_bottom = 1
+            self._stretch_bottom = 1
 
         for y in range(height - 2, 0, -1):
             if pixel_data.is_black(0, y):
-                self.stretch_top = height - y
+                self._stretch_top = height - y
                 break
         else:
-            self.stretch_top = 1
+            self._stretch_top = 1
 
         # Find content area markers, if any
         for x in range(1, width - 1):
             if pixel_data.is_black(x, 0):
-                self.padding_left = x - 1
+                self._padding_left = x - 1
                 break
 
         for x in range(width - 2, 0, -1):
             if pixel_data.is_black(x, 0):
-                self.padding_right = self.width - x
+                self._padding_right = self.width - x
                 break
 
         for y in range(1, height - 1):
             if pixel_data.is_black(width - 1, y):
-                self.padding_bottom = y - 1
+                self._padding_bottom = y - 1
                 break
 
         for y in range(height - 2, 0, -1):
             if pixel_data.is_black(width - 1, y):
-                self.padding_top = self.height - y
+                self._padding_top = self.height - y
                 break
 
         # Texture coordinates, in pixels
         u1 = 1
         v1 = 1
-        u2 = self.stretch_left + 1
-        v2 = self.stretch_bottom + 1
-        u3 = width - self.stretch_right - 1
-        v3 = height - self.stretch_top - 1
+        u2 = self._stretch_left + 1
+        v2 = self._stretch_bottom + 1
+        u3 = width - self._stretch_right - 1
+        v3 = height - self._stretch_top - 1
         u4 = width - 1
         v4 = height - 1
 
@@ -222,12 +221,18 @@ class NinePatch:
 
     def get_vertices(self, x, y, width, height):
         """Get 16 2D vertices for the given image region"""
+        x = int(x)
+        y = int(y)
+        # TODO: raise exception instead of clamping.
+        width = int(max(width, self.width + 2))
+        height = int(max(height, self.height + 2))
+
         x1 = x
         y1 = y
-        x2 = x + self.stretch_left
-        y2 = y + self.stretch_bottom
-        x3 = x + width - self.stretch_right
-        y3 = y + height - self.stretch_top
+        x2 = x + self._stretch_left
+        y2 = y + self._stretch_bottom
+        x3 = x + width - self._stretch_right
+        y3 = y + height - self._stretch_top
         x4 = x + width
         y4 = y + height
 
@@ -251,26 +256,17 @@ class NinePatch:
             x4, y4,
         )
 
-    def draw(self, x, y, width, height):
-        """Draw the nine-patch at the given image dimensions."""
-        width = max(width, self.width + 2)
-        height = max(height, self.height + 2)
-        vertices = self.get_vertices(int(x), int(y), int(width), int(height))
-
-        glPushAttrib(GL_ENABLE_BIT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(self.texture.target)
-        glBindTexture(self.texture.target, self.texture.id)
-        pyglet.graphics.draw_indexed(
-            16, GL_QUADS, self.indices,
-            ('v2i', vertices),
-            ('t2f', self.tex_coords))
-        glPopAttrib()
-
-    def draw_around(self, x, y, width, height):
-        """Draw the nine-patch around the given content area"""
-        self.draw(x - self.padding_left,
-                  y - self.padding_bottom,
-                  width + self.padding_left + self.padding_right,
-                  height + self.padding_bottom + self.padding_top)
+    # def draw(self, x, y, width, height):
+    #     """Draw the nine-patch at the given image dimensions."""
+    #     vertices = self.get_vertices(int(x), int(y), int(width), int(height))
+    #
+    #     glPushAttrib(GL_ENABLE_BIT)
+    #     glEnable(GL_BLEND)
+    #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    #     glEnable(self.texture.target)
+    #     glBindTexture(self.texture.target, self.texture.id)
+    #     pyglet.graphics.draw_indexed(
+    #         16, GL_QUADS, self.indices,
+    #         ('v2i', vertices),
+    #         ('t2f', self.tex_coords))
+    #     glPopAttrib()
