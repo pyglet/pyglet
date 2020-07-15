@@ -118,11 +118,10 @@ class Mat4(tuple):
                 A tuple or list containing 16 floats or ints.
         """
         assert values is None or len(values) == 16, "A 4x4 Matrix requires 16 values"
-        values = values or (1.0, 0.0, 0.0, 0.0,
-                            0.0, 1.0, 0.0, 0.0,
-                            0.0, 0.0, 1.0, 0.0,
-                            0.0, 0.0, 0.0, 1.0)
-        return super().__new__(Mat4, values)
+        return super().__new__(Mat4, values or (1.0, 0.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0, 0.0,
+                                                0.0, 0.0, 1.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0))
 
     def row(self, index):
         """Get a specific row as a tuple."""
@@ -188,30 +187,29 @@ class Mat4(tuple):
         return Mat4(tuple(-v for v in self))
 
     def __invert__(self):
-        mat = list(self)
-        a = mat[10] * mat[15] - mat[11] * mat[14]
-        b = mat[9] * mat[15] - mat[11] * mat[13]
-        c = mat[9] * mat[14] - mat[10] * mat[13]
-        d = mat[8] * mat[15] - mat[11] * mat[12]
-        e = mat[8] * mat[14] - mat[10] * mat[12]
-        f = mat[8] * mat[13] - mat[9] * mat[12]
-        g = mat[6] * mat[15] - mat[7] * mat[14]
-        h = mat[5] * mat[15] - mat[7] * mat[13]
-        i = mat[5] * mat[14] - mat[6] * mat[13]
-        j = mat[6] * mat[11] - mat[7] * mat[10]
-        k = mat[5] * mat[11] - mat[7] * mat[9]
-        l = mat[5] * mat[10] - mat[6] * mat[9]
-        m = mat[4] * mat[15] - mat[7] * mat[12]
-        n = mat[4] * mat[14] - mat[6] * mat[12]
-        o = mat[4] * mat[11] - mat[7] * mat[8]
-        p = mat[4] * mat[10] - mat[6] * mat[8]
-        q = mat[4] * mat[13] - mat[5] * mat[12]
-        r = mat[4] * mat[9] - mat[5] * mat[8]
+        a = self[10] * self[15] - self[11] * self[14]
+        b = self[9] * self[15] - self[11] * self[13]
+        c = self[9] * self[14] - self[10] * self[13]
+        d = self[8] * self[15] - self[11] * self[12]
+        e = self[8] * self[14] - self[10] * self[12]
+        f = self[8] * self[13] - self[9] * self[12]
+        g = self[6] * self[15] - self[7] * self[14]
+        h = self[5] * self[15] - self[7] * self[13]
+        i = self[5] * self[14] - self[6] * self[13]
+        j = self[6] * self[11] - self[7] * self[10]
+        k = self[5] * self[11] - self[7] * self[9]
+        l = self[5] * self[10] - self[6] * self[9]
+        m = self[4] * self[15] - self[7] * self[12]
+        n = self[4] * self[14] - self[6] * self[12]
+        o = self[4] * self[11] - self[7] * self[8]
+        p = self[4] * self[10] - self[6] * self[8]
+        q = self[4] * self[13] - self[5] * self[12]
+        r = self[4] * self[9] - self[5] * self[8]
 
-        det = (mat[0] * (mat[5] * a - mat[6] * b + mat[7] * c)
-               - mat[1] * (mat[4] * a - mat[6] * d + mat[7] * e)
-               + mat[2] * (mat[4] * b - mat[5] * d + mat[7] * f)
-               - mat[3] * (mat[4] * c - mat[5] * e + mat[6] * f))
+        det = (self[0] * (self[5] * a - self[6] * b + self[7] * c)
+               - self[1] * (self[4] * a - self[6] * d + self[7] * e)
+               + self[2] * (self[4] * b - self[5] * d + self[7] * f)
+               - self[3] * (self[4] * c - self[5] * e + self[6] * f))
 
         if det == 0:
             _warnings.warn("Unable to calculate inverse of singular Matrix")
@@ -220,22 +218,22 @@ class Mat4(tuple):
         pdet = 1 / det
         ndet = -pdet
 
-        return Mat4((pdet * (mat[5] * a - mat[6] * b + mat[7] * c),
-                     ndet * (mat[1] * a - mat[2] * b + mat[3] * c),
-                     pdet * (mat[1] * g - mat[2] * h + mat[3] * i),
-                     ndet * (mat[1] * j - mat[2] * k + mat[3] * l),
-                     ndet * (mat[4] * a - mat[6] * d + mat[7] * e),
-                     pdet * (mat[0] * a - mat[2] * d + mat[3] * e),
-                     ndet * (mat[0] * g - mat[2] * m + mat[3] * n),
-                     pdet * (mat[0] * j - mat[2] * o + mat[3] * p),
-                     pdet * (mat[4] * b - mat[5] * d + mat[7] * f),
-                     ndet * (mat[0] * b - mat[1] * d + mat[3] * f),
-                     pdet * (mat[0] * h - mat[1] * m + mat[3] * q),
-                     ndet * (mat[0] * k - mat[1] * o + mat[3] * r),
-                     ndet * (mat[4] * c - mat[5] * e + mat[6] * f),
-                     pdet * (mat[0] * c - mat[1] * e + mat[2] * f),
-                     ndet * (mat[0] * i - mat[1] * n + mat[2] * q),
-                     pdet * (mat[0] * l - mat[1] * p + mat[2] * r)))
+        return Mat4((pdet * (self[5] * a - self[6] * b + self[7] * c),
+                     ndet * (self[1] * a - self[2] * b + self[3] * c),
+                     pdet * (self[1] * g - self[2] * h + self[3] * i),
+                     ndet * (self[1] * j - self[2] * k + self[3] * l),
+                     ndet * (self[4] * a - self[6] * d + self[7] * e),
+                     pdet * (self[0] * a - self[2] * d + self[3] * e),
+                     ndet * (self[0] * g - self[2] * m + self[3] * n),
+                     pdet * (self[0] * j - self[2] * o + self[3] * p),
+                     pdet * (self[4] * b - self[5] * d + self[7] * f),
+                     ndet * (self[0] * b - self[1] * d + self[3] * f),
+                     pdet * (self[0] * h - self[1] * m + self[3] * q),
+                     ndet * (self[0] * k - self[1] * o + self[3] * r),
+                     ndet * (self[4] * c - self[5] * e + self[6] * f),
+                     pdet * (self[0] * c - self[1] * e + self[2] * f),
+                     ndet * (self[0] * i - self[1] * n + self[2] * q),
+                     pdet * (self[0] * l - self[1] * p + self[2] * r)))
 
     def __round__(self, n=None):
         return Mat4(tuple(round(v, n) for v in self))
@@ -257,24 +255,25 @@ class Mat4(tuple):
         c3 = other[3::4]
 
         # Multiply and sum rows * colums:
-        a = sum(map(_operator.mul, r0, c0))
-        b = sum(map(_operator.mul, r0, c1))
-        c = sum(map(_operator.mul, r0, c2))
-        d = sum(map(_operator.mul, r0, c3))
-        e = sum(map(_operator.mul, r1, c0))
-        f = sum(map(_operator.mul, r1, c1))
-        g = sum(map(_operator.mul, r1, c2))
-        h = sum(map(_operator.mul, r1, c3))
-        i = sum(map(_operator.mul, r2, c0))
-        j = sum(map(_operator.mul, r2, c1))
-        k = sum(map(_operator.mul, r2, c2))
-        l = sum(map(_operator.mul, r2, c3))
-        m = sum(map(_operator.mul, r3, c0))
-        n = sum(map(_operator.mul, r3, c1))
-        o = sum(map(_operator.mul, r3, c2))
-        p = sum(map(_operator.mul, r3, c3))
+        return Mat4((sum(map(_operator.mul, r0, c0)),
+                     sum(map(_operator.mul, r0, c1)),
+                     sum(map(_operator.mul, r0, c2)),
+                     sum(map(_operator.mul, r0, c3)),
 
-        return Mat4((a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p))
+                     sum(map(_operator.mul, r1, c0)),
+                     sum(map(_operator.mul, r1, c1)),
+                     sum(map(_operator.mul, r1, c2)),
+                     sum(map(_operator.mul, r1, c3)),
+
+                     sum(map(_operator.mul, r2, c0)),
+                     sum(map(_operator.mul, r2, c1)),
+                     sum(map(_operator.mul, r2, c2)),
+                     sum(map(_operator.mul, r2, c3)),
+
+                     sum(map(_operator.mul, r3, c0)),
+                     sum(map(_operator.mul, r3, c1)),
+                     sum(map(_operator.mul, r3, c2)),
+                     sum(map(_operator.mul, r3, c3))))
 
     def __repr__(self):
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
