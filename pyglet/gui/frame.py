@@ -32,7 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-from pyglet.graphics import OrderedGroup
+import pyglet
+
+from .ninepatch import NinePatch, NinePatchGroup
 
 
 class Frame:
@@ -86,3 +88,20 @@ class Frame:
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.dispatch_event('on_mouse_motion', x, y, dx, dy)
             self._active_widgets.add(widget)
+
+
+class NinePatchFrame(Frame):
+
+    def __init__(self, x, y, width, height, window, image, group=None, batch=None, cell_size=128, order=0):
+        super().__init__(window, cell_size, order)
+        self._npatch = NinePatch(image)
+        self._npatch.get_vertices(x, y, width, height)
+        self._group = NinePatchGroup(image.get_texture(), order, group)
+        self._batch = batch or pyglet.graphics.Batch()
+
+        vertices = self._npatch.get_vertices(x, y, width, height)
+        indices = self._npatch.indices
+        tex_coords = self._npatch.tex_coords
+
+        self._vlist = self._batch.add_indexed(16, pyglet.gl.GL_QUADS, self._group, indices,
+                                              ('v2i', vertices), ('t2f', tex_coords))

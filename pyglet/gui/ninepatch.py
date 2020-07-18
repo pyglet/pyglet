@@ -44,8 +44,12 @@ http://developer.android.com/guide/topics/graphics/2d-graphics.html#nine-patch.
 """
 
 from pyglet.graphics import OrderedGroup
-from pyglet.gl import GL_BLEND, GL_ENABLE_BIT, GL_ONE_MINUS_SRC_ALPHA, GL_QUADS, GL_SRC_ALPHA
+from pyglet.gl import GL_BLEND, GL_ENABLE_BIT, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA
 from pyglet.gl import glBindTexture, glBlendFunc, glEnable, glPopAttrib, glPushAttrib
+
+
+class NinePatchException(Exception):
+    pass
 
 
 class NinePatchGroup(OrderedGroup):
@@ -112,9 +116,6 @@ class NinePatch:
         # Texture dimensions after removing the 9patch outline.
         self.width = width - 2
         self.height = height - 2
-
-        # Only need to retain the texture for drawing
-        self.texture = image.get_texture()
 
         # Find stretch area markers
         for x in range(1, width - 1):
@@ -185,7 +186,7 @@ class NinePatch:
         (tu1, tv1, ___,
          ___, ___, ___,
          tu2, tv2, ___,
-         ___, ___, ___) = self.texture.tex_coords
+         ___, ___, ___) = image.get_texture().tex_coords
         u_scale = tu2 - tu1
         u_bias = tu1
         v_scale = tv2 - tv1
@@ -194,24 +195,10 @@ class NinePatch:
         v1, v2, v3, v4 = [v_bias + v_scale * s for s in (v1, v2, v3, v4)]
 
         # 2D texture coordinates, bottom-left to top-right
-        self.tex_coords = (
-            u1, v1,
-            u2, v1,
-            u3, v1,
-            u4, v1,
-            u1, v2,
-            u2, v2,
-            u3, v2,
-            u4, v2,
-            u1, v3,
-            u2, v3,
-            u3, v3,
-            u4, v3,
-            u1, v4,
-            u2, v4,
-            u3, v4,
-            u4, v4,
-        )
+        self.tex_coords = (u1, v1,  u2, v1,  u3, v1,  u4, v1,
+                           u1, v2,  u2, v2,  u3, v2,  u4, v2,
+                           u1, v3,  u2, v3,  u3, v3,  u4, v3,
+                           u1, v4,  u2, v4,  u3, v4,  u4, v4)
 
         # Quad indices
         self.indices = []
@@ -223,9 +210,12 @@ class NinePatch:
         """Get 16 2D vertices for the given image region"""
         x = int(x)
         y = int(y)
-        # TODO: raise exception instead of clamping.
-        width = int(max(width, self.width + 2))
-        height = int(max(height, self.height + 2))
+
+        if width < self.width + 2 or height < self.height + 2:
+            raise NinePatchException("Requested size is smaller than the image.")
+
+        width = int(width)
+        height = int(height)
 
         x1 = x
         y1 = y
@@ -237,36 +227,7 @@ class NinePatch:
         y4 = y + height
 
         # To match tex coords, vertices are bottom-left to top-right
-        return (
-            x1, y1,
-            x2, y1,
-            x3, y1,
-            x4, y1,
-            x1, y2,
-            x2, y2,
-            x3, y2,
-            x4, y2,
-            x1, y3,
-            x2, y3,
-            x3, y3,
-            x4, y3,
-            x1, y4,
-            x2, y4,
-            x3, y4,
-            x4, y4,
-        )
-
-    # def draw(self, x, y, width, height):
-    #     """Draw the nine-patch at the given image dimensions."""
-    #     vertices = self.get_vertices(int(x), int(y), int(width), int(height))
-    #
-    #     glPushAttrib(GL_ENABLE_BIT)
-    #     glEnable(GL_BLEND)
-    #     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    #     glEnable(self.texture.target)
-    #     glBindTexture(self.texture.target, self.texture.id)
-    #     pyglet.graphics.draw_indexed(
-    #         16, GL_QUADS, self.indices,
-    #         ('v2i', vertices),
-    #         ('t2f', self.tex_coords))
-    #     glPopAttrib()
+        return (x1, y1,  x2, y1,  x3, y1,  x4, y1,
+                x1, y2,  x2, y2,  x3, y2,  x4, y2,
+                x1, y3,  x2, y3,  x3, y3,  x4, y3,
+                x1, y4,  x2, y4,  x3, y4,  x4, y4)

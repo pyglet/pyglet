@@ -61,6 +61,14 @@ class WidgetBase(EventDispatcher):
         return self._y
 
     @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    @property
     def aabb(self):
         return self._x, self._y, self._x + self._width, self._y + self._height
 
