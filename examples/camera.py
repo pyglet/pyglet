@@ -96,20 +96,32 @@ class Camera:
     def begin(self):
         # Set the current camera offset so you can draw your scene.
         # Translate using the zoom and the offset.
-        pyglet.gl.glTranslatef(-self.offset_x * self._zoom, -self.offset_y * self._zoom, 0)
+        pyglet.gl.glTranslatef(
+            -self.offset_x * self._zoom,
+            -self.offset_y * self._zoom, 0
+        )
 
         # Scale by zoom level.
-        pyglet.gl.glScalef(self._zoom, self._zoom, 1)
+        pyglet.gl.glScalef(
+            self._zoom,
+            self._zoom, 1
+        )
 
     def end(self):
         # Since this is a matrix, you will need to reverse the translate after rendering otherwise
         # it will multiply the current offset every draw update pushing it further and further away.
 
         # Reverse scale, since that was the last transform.
-        pyglet.gl.glScalef(1 / self._zoom, 1 / self._zoom, 1)
+        pyglet.gl.glScalef(
+            1 / self._zoom,
+            1 / self._zoom, 1
+        )
 
         # Reverse translate.
-        pyglet.gl.glTranslatef(self.offset_x * self._zoom, self.offset_y * self._zoom, 0)
+        pyglet.gl.glTranslatef(
+            self.offset_x * self._zoom,
+            self.offset_y * self._zoom, 0
+        )
 
     def __enter__(self):
         self.begin()
