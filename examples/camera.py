@@ -128,3 +128,39 @@ class Camera:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.end()
+
+
+class CentredCamera(Camera):
+    """A simple 2D camera class. 0, 0 will be the centre of the screen, as opposed to the bottom left."""
+
+    def __init__(self, window: pyglet.window.Window, *args, **kwargs):
+        self.window = window
+        super().__init__(*args, **kwargs)
+
+    def begin(self):
+        x = -self.window.width//2/self._zoom + self.offset_x
+        y = -self.window.height//2/self._zoom + self.offset_y
+
+        pyglet.gl.glTranslatef(
+            -x * self._zoom,
+            -y * self._zoom, 0
+        )
+
+        pyglet.gl.glScalef(
+            self._zoom,
+            self._zoom, 1
+        )
+
+    def end(self):
+        x = -self.window.width//2/self._zoom + self.offset_x
+        y = -self.window.height//2/self._zoom + self.offset_y
+
+        pyglet.gl.glScalef(
+            1 / self._zoom,
+            1 / self._zoom, 1
+        )
+
+        pyglet.gl.glTranslatef(
+            x * self._zoom,
+            y * self._zoom, 0
+        )
