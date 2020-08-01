@@ -130,7 +130,7 @@ class Camera:
         self.end()
 
 
-class CentredCamera(Camera):
+class CenteredCamera(Camera):
     """A simple 2D camera class. 0, 0 will be the centre of the screen, as opposed to the bottom left."""
 
     def __init__(self, window: pyglet.window.Window, *args, **kwargs):
