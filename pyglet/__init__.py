@@ -364,7 +364,7 @@ if True:
     shapes = _ModuleProxy('shapes')
     text = _ModuleProxy('text')
     window = _ModuleProxy('window')
-    matrix = _ModuleProxy('matrix')
+    math = _ModuleProxy('math')
 
 # Fool py2exe, py2app into including all top-level modules
 # (doesn't understand lazy loading)
@@ -388,4 +388,4 @@ if False:
     from . import shapes
     from . import text
     from . import window
-    from . import matrix
+    from . import math

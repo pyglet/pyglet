@@ -33,13 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Matrix operations.
+"""Matrix and Vector operations.
 
-This module provides a convenient :py:class:`~pyglet.matrix.Mat4` class for
-representing 4x4 matricies. Helper functions for creating, rotating, scaling,
-and transforming these matrices are also provided. The internal datatype of
-:py:class:`~pyglet.matrix.Mat4` is a 1-dimensional array, so instances can
-be passed directly to OpenGL.
+This module provides classes for Matrix and Vector math.
+A :py:class:`~pyglet.matrix.Mat4` class is available for representing
+4x4 matricies, including helper methods for rotating, scaling, and
+transforming. The internal datatype of :py:class:`~pyglet.matrix.Mat4`
+is a 1-dimensional array, so instances can be passed directly to OpenGL.
 
 """
 
