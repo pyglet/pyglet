@@ -70,9 +70,9 @@ def on_draw():
     rx = (.5*joystick.rx + 1) * 20 
     ry = (-.5*joystick.ry + 1) * 20
     z = joystick.z *10 
-    
 
     # Axes
+    
     joystick_rect = pyglet.shapes.Rectangle(x, y, 10+rx+z, 10+ry+z)
     joystick_rect.anchor_x = joystick_rect.width//2
     joystick_rect.anchor_y = joystick_rect.height//2
