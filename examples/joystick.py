@@ -33,6 +33,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
 '''
 '''
 
@@ -51,15 +52,18 @@ window = pyglet.window.Window()
 main_batch = pyglet.graphics.Batch()
 
 #Labels
-
-pyglet.text.Label("Buttons:", x = 10, y = window.height - 25,
+pyglet.text.Label("Buttons:", x = 15, y = window.height - 25,
                   font_size = 14, batch = main_batch)
 pyglet.text.Label("D Pad:", x = window.width - 125, y = window.height - 25,
                   font_size = 14, batch = main_batch)
-y = window.height - 25
+rows = len(joystick.buttons)//2
+buttton_labels = []
 for i in range(len(joystick.buttons)):
-    y-= 25
-    pyglet.text.Label(f"{i}:", x = 10, y = y,font_size = 14, batch = main_batch)
+    y = window.height-50 - 25*(i%rows)
+    x = 35 + 60*(i//rows)
+    label = pyglet.text.Label(f"{i}:", x = x, y = y,font_size = 14,
+                anchor_x='right', batch = main_batch)
+    buttton_labels.append(label)
 
 @window.event
 def on_draw():
@@ -67,31 +71,26 @@ def on_draw():
     main_batch.draw()
     x = round((.5*joystick.x + 1),2) * window.width / 2
     y = round((-.5*joystick.y + 1),2) * window.height / 2
-    rx = (.5*joystick.rx + 1) * 20 
-    ry = (-.5*joystick.ry + 1) * 20
-    z = joystick.z *10 
-
-    # Axes
+    rx = (.5*joystick.rx + 1) * 60 
+    ry = (-.5*joystick.ry + 1) * 60
+    z = joystick.z * 50 
     
-    joystick_rect = pyglet.shapes.Rectangle(x, y, 10+rx+z, 10+ry+z)
+    # Axes
+    joystick_rect = pyglet.shapes.Rectangle(x, y, 10+rx+z, 10+ry+z,color = (255,0,255))
     joystick_rect.anchor_x = joystick_rect.width//2
     joystick_rect.anchor_y = joystick_rect.height//2
     joystick_rect.draw()
     
-
     # Buttons
-    
-    x = 10
-    y = window.height - 25
     for i in range(len(joystick.buttons)):
-        y-= 25
-        rect = pyglet.shapes.Rectangle(x + 20, y + 2, 10, 10, color = (255,0,0))
+        x = buttton_labels[i].x
+        y = buttton_labels[i].y  
+        rect = pyglet.shapes.Rectangle(x + 10 , y +1, 10, 10, color = (255,0,0))
         if joystick.buttons[i]:
             rect.color = (0,255,0)
         rect.draw()
 
     # Hat
-
     x = window.width-75
     y = window.height- 100
     d_pad_rect = pyglet.shapes.Rectangle(x + joystick.hat_x * 50, y + joystick.hat_y * 50, 10, 10)
