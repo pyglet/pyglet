@@ -663,6 +663,13 @@ class Sprite(event.EventDispatcher):
         self._visible = visible
         self._update_position()
 
+    @property
+    def current_frame_image(self):
+        if not hasattr(self.image, "frames"):
+            return self.image
+        frame = self.image.frames[self._frame_index]
+        return frame.image
+
     def draw(self):
         """Draw the sprite at its current position.
 
