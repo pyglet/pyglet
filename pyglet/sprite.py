@@ -179,6 +179,8 @@ class Sprite(event.EventDispatcher):
 
     _batch = None
     _animation = None
+    _frame_index = 0
+    _paused = False
     _rotation = 0
     _opacity = 255
     _rgb = (255, 255, 255)
@@ -231,7 +233,6 @@ class Sprite(event.EventDispatcher):
 
         if isinstance(img, image.Animation):
             self._animation = img
-            self._frame_index = 0
             self._texture = img.frames[0].image.get_texture()
             self._next_dt = img.frames[0].duration
             if self._next_dt:
@@ -519,7 +520,7 @@ class Sprite(event.EventDispatcher):
     @property
     def scale_x(self):
         """Horizontal scaling factor.
-        
+
          A scaling factor of 1 (the default) has no effect.  A scale of 2 will
          draw the sprite at twice the native width of its image.
 
@@ -535,7 +536,7 @@ class Sprite(event.EventDispatcher):
     @property
     def scale_y(self):
         """Vertical scaling factor.
-        
+
          A scaling factor of 1 (the default) has no effect.  A scale of 2 will
          draw the sprite at twice the native height of its image.
 
