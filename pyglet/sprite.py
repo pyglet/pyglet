@@ -663,12 +663,32 @@ class Sprite(event.EventDispatcher):
         self._visible = visible
         self._update_position()
 
+    def pause_animation(self):
+        if self._paused or not hasattr(self, '_animation'):
+            return
+        clock.unschedule(self._animate)
+        self._paused = True
+
+    def resume_animation(self):
+        if not self._paused or not hasattr(self, '_animation'):
+            return
+        frame = self._animation.frames[self._frame_index]
+        self._texture = frame.image.get_texture()
+        self._next_dt = frame.duration
+        if self._next_dt:
+            clock.schedule_once(self._animate, self._next_dt)
+        self._paused = False
+
     @property
-    def current_frame_image(self):
-        if not hasattr(self.image, "frames"):
-            return self.image
-        frame = self.image.frames[self._frame_index]
-        return frame.image
+    def frame_index(self):
+        return self._frame_index
+
+    @frame_index.setter
+    def frame_index(self, index):
+        # Bound to available number of frames
+        if self._animation is None:
+            return
+        self._frame_index = max(0, min(index, len(self._animation.frames)-1))
 
     def draw(self):
         """Draw the sprite at its current position.
