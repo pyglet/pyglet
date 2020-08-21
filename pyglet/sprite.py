@@ -664,24 +664,42 @@ class Sprite(event.EventDispatcher):
         self._visible = visible
         self._update_position()
 
-    def pause_animation(self):
-        if self._paused or not hasattr(self, '_animation'):
-            return
-        clock.unschedule(self._animate)
-        self._paused = True
+    @property
+    def paused(self):
+        """Pause/resume the Sprite's Animation
 
-    def resume_animation(self):
-        if not self._paused or not hasattr(self, '_animation'):
+        If `Sprite.image` is an Animation, you can pause or resume
+        the animation by setting this property to True or False.
+        If not an Animation, this has no effect.
+
+        :type: bool
+        """
+        return self._paused
+
+    @paused.setter
+    def paused(self, pause):
+        if not hasattr(self, '_animation') or pause == self._paused:
             return
-        frame = self._animation.frames[self._frame_index]
-        self._texture = frame.image.get_texture()
-        self._next_dt = frame.duration
-        if self._next_dt:
-            clock.schedule_once(self._animate, self._next_dt)
-        self._paused = False
+        if pause is True:
+            clock.unschedule(self._animate)
+        else:
+            frame = self._animation.frames[self._frame_index]
+            self._next_dt = frame.duration
+            if self._next_dt:
+                clock.schedule_once(self._animate, self._next_dt)
+        self._paused = pause
 
     @property
     def frame_index(self):
+        """The current Animation frame.
+
+        If the `Sprite.image` is an `Animation`,
+        you can query or set the current frame.
+        If not an Animation, this will always
+        be 0.
+
+        :type: int
+        """
         return self._frame_index
 
     @frame_index.setter
