@@ -371,6 +371,7 @@ if True:
     image = _ModuleProxy('image')
     input = _ModuleProxy('input')
     lib = _ModuleProxy('lib')
+    math = _ModuleProxy('math')
     media = _ModuleProxy('media')
     model = _ModuleProxy('model')
     resource = _ModuleProxy('resource')
@@ -394,6 +395,7 @@ if False:
     from . import input
     from . import image
     from . import lib
+    from . import math
     from . import media
     from . import model
     from . import resource
