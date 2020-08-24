@@ -105,13 +105,13 @@ Whitespace is prohibited within the format string.
 
 Some examples follow:
 
-``position3f``
+``vertices3f``
     3-float vertex position
-``color4bn``
+``colors4bn``
     4-byte color, normalized
-``color3Bn``
+``colors3Bn``
     3-unsigned byte color, normalized
-``texcoord3f``
+``tex_coords3f``
     3-float texture coordinate
 """
 
