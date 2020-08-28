@@ -142,7 +142,8 @@ def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_mat
 
 class Shader:
     """OpenGL Shader object"""
-
+    
+    __compiled = False
     def __init__(self, source_string, shader_type):
         """Create an instance of a Shader object.
 
@@ -177,7 +178,7 @@ class Shader:
             print("Shader compilation log: {0}".format(self._get_shader_log(shader_id)))
 
         self._id = shader_id
-
+        self.__compiled = True
     @property
     def id(self):
         return self._id
@@ -194,14 +195,15 @@ class Shader:
             return "Compiled {0} shader successfully.".format(self.type)
 
     def __del__(self):
-        try:
-            glDeleteShader(self._id)
-        except ImportError:
-            # The interpreter is shutting down.
-            pass
+        if self.__compiled:
+            try:
+                glDeleteShader(self._id)
+            except ImportError:
+                # The interpreter is shutting down.
+                pass
 
-        if _debug_gl_shaders:
-            print("Destroyed {0} shader object id {1}.".format(self.type, self.id))
+            if _debug_gl_shaders:
+                print("Destroyed {0} shader object id {1}.".format(self.type, self.id))
 
     def __repr__(self):
         return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
