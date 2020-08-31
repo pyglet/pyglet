@@ -17,9 +17,6 @@ if WINDOWS_8_OR_GREATER:
 else:
     CLSID_WICImagingFactory = CLSID_WICImagingFactory1
 
-CLSCTX_INPROC_SERVER = 0x1
-
-
 WICBitmapCreateCacheOption = UINT
 WICBitmapNoCache = 0
 WICBitmapCacheOnDemand = 0x1
@@ -224,7 +221,7 @@ else:
 IID_IWICPixelFormatInfo = com.GUID(0xE8EDA601, 0x3D48, 0x431a, 0xAB, 0x44, 0x69, 0x05, 0x9B, 0xE8, 0x8B, 0xBE)
 
 
-class IWICImagingFactory(com.IUnknown):
+class IWICImagingFactory(com.pIUnknown):
     _methods_ = [
         ('CreateDecoderFromFilename',
          com.STDMETHOD(LPCWSTR, com.GUID, DWORD, WICDecodeOptions, POINTER(IWICBitmapDecoder))),

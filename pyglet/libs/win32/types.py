@@ -469,12 +469,22 @@ class RAWINPUT(Structure):
 
 
 # PROPVARIANT wrapper, doesn't require InitPropVariantFromInt64 this way.
+class _VarTable(ctypes.Union):
+    """Must be in an anonymous union or values will not work across various VT's."""
+    _fields_ = [
+        ('llVal', ctypes.c_longlong),
+        ('pwszVal', LPWSTR)
+    ]
+
+
 class PROPVARIANT(ctypes.Structure):
+    _anonymous_ = ['union']
+
     _fields_ = [
         ('vt', ctypes.c_ushort),
         ('wReserved1', ctypes.c_ubyte),
         ('wReserved2', ctypes.c_ubyte),
         ('wReserved3', ctypes.c_ulong),
-        ('llVal', ctypes.c_longlong),
+        ('union', _VarTable)
     ]
 

@@ -221,6 +221,7 @@ class Player(pyglet.event.EventDispatcher):
             if self._audio_player is None and source.video_format is None:
                 pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
 
+
         else:
             if self._audio_player:
                 self._audio_player.stop()
@@ -622,11 +623,30 @@ class Player(pyglet.event.EventDispatcher):
         """
         pass
 
+    def on_driver_reset(self):
+        """The audio driver has been reset, by default this will kill the current audio player and create a new one,
+        and requeue the buffers. Any buffers that may have been queued in a player will be resubmitted.  It will
+        continue from from the last buffers submitted, not played and may cause sync issues if using video.
+
+        :event:
+        """
+        if self._audio_player:
+            self._audio_player.on_driver_reset()
+
+            # Voice has been changed, will need to reset all options on the voice.
+            for attr in ('volume', 'min_distance', 'max_distance', 'position',
+                         'pitch', 'cone_orientation', 'cone_inner_angle',
+                         'cone_outer_angle', 'cone_outer_gain'):
+                value = getattr(self, attr)
+                setattr(self, attr, value)
+
+            if self._playing:
+                self._audio_player.play()
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_player_next_source')
-
+Player.register_event_type('on_driver_reset')
 
 def _one_item_playlist(source):
     yield source
