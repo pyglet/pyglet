@@ -46,8 +46,8 @@ frame. You can load Animations from disk, such as from GIF files::
 Alternatively, you can create your own Animations from a sequence of images
 by using the :py:meth:`~Animation.from_image_sequence` method::
 
-    images = [pyglet.resource.image('walk_a.png')
-              pyglet.resource.image('walk_b.png')
+    images = [pyglet.resource.image('walk_a.png'),
+              pyglet.resource.image('walk_b.png'),
               pyglet.resource.image('walk_c.png')]
 
     ani = pyglet.image.Animation.from_image_sequence(images, duration=0.1, loop=True)
