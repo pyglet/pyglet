@@ -42,7 +42,7 @@ class Config:
     """Graphics configuration.
 
     A Config stores the preferences for OpenGL attributes such as the
-    number of auxilliary buffers, size of the colour and depth buffers,
+    number of auxiliary buffers, size of the colour and depth buffers,
     double buffering, stencilling, multi- and super-sampling, and so on.
 
     Different platforms support a different set of attributes, so these
@@ -56,7 +56,7 @@ class Config:
         `buffer_size` : int
             Total bits per sample per color buffer.
         `aux_buffers` : int
-            The number of auxilliary color buffers.
+            The number of auxiliary color buffers.
         `sample_buffers` : int
             The number of multisample buffers.
         `samples` : int
