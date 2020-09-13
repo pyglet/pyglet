@@ -1,6 +1,6 @@
 import pytest
 
-from pyglet.matrix import Mat4
+from pyglet.math import Mat4
 
 
 @pytest.fixture()
