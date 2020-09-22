@@ -250,7 +250,8 @@ context will currently prevent usage of these modules.
 .. note::
    To request a higher higher version OpenGL context on Mac OSX, it is necessary
    to disable the pyglet shadow context. To do this, set the pyglet option
-   ``pyglet.options['shadow_window']`` to ``False`` before creating a Window.
+   ``pyglet.options['shadow_window']`` to ``False`` `before` creating a Window, 
+   or importing ``pyglet.window``.
 
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
