@@ -52,7 +52,7 @@ import pyglet.lib
 
 _lib = pyglet.lib.load_library('openal',
                                win32='openal32',
-                               framework='/System/Library/Frameworks/OpenAL.framework')
+                               framework='OpenAL')
 
 _int_types = (c_int16, c_int32)
 if hasattr(ctypes, 'c_int64'):
