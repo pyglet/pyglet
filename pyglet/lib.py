@@ -42,6 +42,7 @@ import re
 import sys
 
 import ctypes
+import ctypes.util
 
 import pyglet
 
