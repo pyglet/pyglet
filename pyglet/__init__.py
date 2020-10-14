@@ -370,7 +370,7 @@ if not TYPE_CHECKING:
 
 # Fool py2exe, py2app into including all top-level modules
 # (doesn't understand lazy loading)
-if TYPE_CHECKING:
+else:
     from . import app
     from . import canvas
     from . import clock
