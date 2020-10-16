@@ -41,6 +41,8 @@ Detailed documentation is available at http://www.pyglet.org
 import os
 import sys
 
+from typing import TYPE_CHECKING
+
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
@@ -358,31 +360,9 @@ class _ModuleProxy:
             setattr(module, name, value)
 
 
-if True:
-    app = _ModuleProxy('app')
-    canvas = _ModuleProxy('canvas')
-    clock = _ModuleProxy('clock')
-    com = _ModuleProxy('com')
-    event = _ModuleProxy('event')
-    font = _ModuleProxy('font')
-    gl = _ModuleProxy('gl')
-    graphics = _ModuleProxy('graphics')
-    gui = _ModuleProxy('gui')
-    image = _ModuleProxy('image')
-    input = _ModuleProxy('input')
-    lib = _ModuleProxy('lib')
-    math = _ModuleProxy('math')
-    media = _ModuleProxy('media')
-    model = _ModuleProxy('model')
-    resource = _ModuleProxy('resource')
-    sprite = _ModuleProxy('sprite')
-    shapes = _ModuleProxy('shapes')
-    text = _ModuleProxy('text')
-    window = _ModuleProxy('window')
-
-# Fool py2exe, py2app into including all top-level modules (doesn't understand
-# lazy loading)
-if False:
+# Lazily load all modules, except if performing
+# type checking or code inspection.
+if TYPE_CHECKING:
     from . import app
     from . import canvas
     from . import clock
@@ -403,8 +383,24 @@ if False:
     from . import shapes
     from . import text
     from . import window
-
-# Hack around some epydoc bug that causes it to think pyglet.window is None.
-# TODO: confirm if this is still needed
-if False:
-    from . import window
+else:
+    app = _ModuleProxy('app')
+    canvas = _ModuleProxy('canvas')
+    clock = _ModuleProxy('clock')
+    com = _ModuleProxy('com')
+    event = _ModuleProxy('event')
+    font = _ModuleProxy('font')
+    gl = _ModuleProxy('gl')
+    graphics = _ModuleProxy('graphics')
+    gui = _ModuleProxy('gui')
+    image = _ModuleProxy('image')
+    input = _ModuleProxy('input')
+    lib = _ModuleProxy('lib')
+    math = _ModuleProxy('math')
+    media = _ModuleProxy('media')
+    model = _ModuleProxy('model')
+    resource = _ModuleProxy('resource')
+    sprite = _ModuleProxy('sprite')
+    shapes = _ModuleProxy('shapes')
+    text = _ModuleProxy('text')
+    window = _ModuleProxy('window')
