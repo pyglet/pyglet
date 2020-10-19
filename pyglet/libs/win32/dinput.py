@@ -337,7 +337,7 @@ class DIPROPDWORD(ctypes.Structure):
 
 # IDirect* interfaces are all Unicode (e.g. IDirectInputDevice8W).
 
-class IDirectInputDevice8(com.IUnknown):
+class IDirectInputDevice8(com.pIUnknown):
     _methods_ = [
         ('GetCapabilities',
          com.STDMETHOD()),
@@ -399,7 +399,7 @@ class IDirectInputDevice8(com.IUnknown):
          com.STDMETHOD()),
      ]
 
-class IDirectInput8(com.IUnknown):
+class IDirectInput8(com.pIUnknown):
     _methods_ = [
         ('CreateDevice',
          com.STDMETHOD(ctypes.POINTER(com.GUID), 

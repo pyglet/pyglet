@@ -67,13 +67,23 @@ def get_audio_driver():
                 from . import pulse
                 _audio_driver = pulse.create_audio_driver()
                 break
-            elif driver_name == 'openal':
-                from . import openal
-                _audio_driver = openal.create_audio_driver()
-                break
+            elif driver_name == 'xaudio2':
+                from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER
+                if WINDOWS_8_OR_GREATER:
+                    from . import xaudio2
+                    try:
+                        _audio_driver = xaudio2.create_audio_driver()
+                    except ImportError:
+                        # Occurs when default audio device is not found, and cannot bind.
+                        pass
+                    break
             elif driver_name == 'directsound':
                 from . import directsound
                 _audio_driver = directsound.create_audio_driver()
+                break
+            elif driver_name == 'openal':
+                from . import openal
+                _audio_driver = openal.create_audio_driver()
                 break
             elif driver_name == 'silent':
                 from . import silent
@@ -84,6 +94,7 @@ def get_audio_driver():
                 print('Error importing driver %s:' % driver_name)
                 import traceback
                 traceback.print_exc()
+
     return _audio_driver
 
 
