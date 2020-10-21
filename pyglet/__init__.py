@@ -41,6 +41,8 @@ More information is available at http://www.pyglet.org
 import os
 import sys
 
+from typing import TYPE_CHECKING
+
 #: The release version
 version = '2.0.dev0'
 
@@ -344,7 +346,7 @@ class _ModuleProxy:
             setattr(module, name, value)
 
 
-if True:
+if not TYPE_CHECKING:
     app = _ModuleProxy('app')
     canvas = _ModuleProxy('canvas')
     clock = _ModuleProxy('clock')
@@ -368,7 +370,7 @@ if True:
 
 # Fool py2exe, py2app into including all top-level modules
 # (doesn't understand lazy loading)
-if False:
+else:
     from . import app
     from . import canvas
     from . import clock
