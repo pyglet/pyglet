@@ -76,9 +76,9 @@ class PILImageDecoder(ImageDecoder):
         # tostring is deprecated, replaced by tobytes in Pillow (PIL fork)
         # (1.1.7) PIL still uses it
         try:
-            image_data_fn = getattr(image, "tostring")
-        except AttributeError:
             image_data_fn = getattr(image, "tobytes")
+        except AttributeError:
+            image_data_fn = getattr(image, "tostring")
         return ImageData(width, height, image.mode, image_data_fn())
 
     # def decode_animation(self, file, filename):
