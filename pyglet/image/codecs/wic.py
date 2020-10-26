@@ -81,7 +81,7 @@ GUID_WICPixelFormat48bppRGB = com.GUID(0x6fddc324, 0x4e03, 0x4bfe, 0xb1, 0x85, 0
 GUID_WICPixelFormat48bppBGR = com.GUID(0xe605a384, 0xb468, 0x46ce, 0xbb, 0x2e, 0x36, 0xf1, 0x80, 0xe6, 0x43, 0x13)
 
 
-class IWICComponentInfo(com.IUnknown):
+class IWICComponentInfo(com.pIUnknown):
     _methods_ = [
         ('GetComponentType',
          com.STDMETHOD()),
@@ -102,7 +102,7 @@ class IWICComponentInfo(com.IUnknown):
     ]
 
 
-class IWICPixelFormatInfo(IWICComponentInfo, com.IUnknown):
+class IWICPixelFormatInfo(IWICComponentInfo, com.pIUnknown):
     _methods_ = [
         ('GetFormatGUID',
          com.STDMETHOD(POINTER(com.GUID))),
@@ -117,7 +117,7 @@ class IWICPixelFormatInfo(IWICComponentInfo, com.IUnknown):
     ]
 
 
-class IWICBitmapSource(com.IUnknown):
+class IWICBitmapSource(com.pIUnknown):
     _methods_ = [
         ('GetSize',
          com.STDMETHOD(POINTER(UINT), POINTER(UINT))),
@@ -132,7 +132,7 @@ class IWICBitmapSource(com.IUnknown):
     ]
 
 
-class IWICFormatConverter(IWICBitmapSource, com.IUnknown):
+class IWICFormatConverter(IWICBitmapSource, com.pIUnknown):
     _methods_ = [
         ('Initialize',
          com.STDMETHOD(IWICBitmapSource, POINTER(REFWICPixelFormatGUID), WICBitmapDitherType, c_void_p, DOUBLE, WICBitmapPaletteType)),
@@ -141,7 +141,7 @@ class IWICFormatConverter(IWICBitmapSource, com.IUnknown):
     ]
 
 
-class IWICMetadataQueryReader(com.IUnknown):
+class IWICMetadataQueryReader(com.pIUnknown):
     _methods_ = [
         ('GetContainerFormat',
          com.STDMETHOD()),
@@ -154,7 +154,7 @@ class IWICMetadataQueryReader(com.IUnknown):
     ]
 
 
-class IWICBitmapFrameDecode(IWICBitmapSource, com.IUnknown):
+class IWICBitmapFrameDecode(IWICBitmapSource, com.pIUnknown):
     _methods_ = [
         ('GetMetadataQueryReader',
          com.STDMETHOD(POINTER(IWICMetadataQueryReader))),
@@ -165,14 +165,14 @@ class IWICBitmapFrameDecode(IWICBitmapSource, com.IUnknown):
     ]
 
 
-class IWICBitmapFlipRotator(IWICBitmapSource, com.IUnknown):
+class IWICBitmapFlipRotator(IWICBitmapSource, com.pIUnknown):
     _methods_ = [
         ('Initialize',
          com.STDMETHOD(IWICBitmapSource, WICBitmapTransformOptions)),
     ]
 
 
-class IWICBitmap(IWICBitmapSource, com.IUnknown):
+class IWICBitmap(IWICBitmapSource, com.pIUnknown):
     _methods_ = [
         ('Lock',
          com.STDMETHOD()),
@@ -183,7 +183,7 @@ class IWICBitmap(IWICBitmapSource, com.IUnknown):
     ]
 
 
-class IWICBitmapDecoder(com.IUnknown):
+class IWICBitmapDecoder(com.pIUnknown):
     _methods_ = [
         ('QueryCapability',
          com.STDMETHOD()),
@@ -226,7 +226,7 @@ class IWICImagingFactory(com.pIUnknown):
         ('CreateDecoderFromFilename',
          com.STDMETHOD(LPCWSTR, com.GUID, DWORD, WICDecodeOptions, POINTER(IWICBitmapDecoder))),
         ('CreateDecoderFromStream',
-         com.STDMETHOD(com.IUnknown, c_void_p, WICDecodeOptions, POINTER(IWICBitmapDecoder))),
+         com.STDMETHOD(com.pIUnknown, c_void_p, WICDecodeOptions, POINTER(IWICBitmapDecoder))),
         ('CreateDecoderFromFileHandle',
          com.STDMETHOD()),
         ('CreateComponentInfo',
@@ -307,7 +307,7 @@ class WICDecoder(ImageDecoder):
         kernel32.GlobalUnlock(hglob)
 
         # Create IStream for the HGLOBAL
-        stream = com.IUnknown()
+        stream = com.pIUnknown()
         ole32.CreateStreamOnHGlobal(hglob, True, byref(stream))
 
         # Load image from stream
