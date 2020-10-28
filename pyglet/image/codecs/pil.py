@@ -75,7 +75,10 @@ class PILImageDecoder(ImageDecoder):
 
         # tostring is deprecated, replaced by tobytes in Pillow (PIL fork)
         # (1.1.7) PIL still uses it
-        image_data_fn = getattr(image, "tobytes", getattr(image, "tostring"))
+        try:
+            image_data_fn = getattr(image, "tobytes")
+        except AttributeError:
+            image_data_fn = getattr(image, "tostring")
         return ImageData(width, height, image.mode, image_data_fn())
 
     # def decode_animation(self, file, filename):
@@ -132,7 +135,10 @@ class PILImageEncoder(ImageEncoder):
 
         # fromstring is deprecated, replaced by frombytes in Pillow (PIL fork)
         # (1.1.7) PIL still uses it
-        image_from_fn = getattr(Image, "frombytes", getattr(Image, "fromstring"))
+        try:
+            image_from_fn = getattr(Image, "frombytes")
+        except AttributeError:
+            image_from_fn = getattr(Image, "fromstring")
         pil_image = image_from_fn(fmt, (image.width, image.height), image.get_data(fmt, pitch))
 
         try:
