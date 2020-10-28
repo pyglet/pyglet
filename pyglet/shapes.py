@@ -397,7 +397,7 @@ class Circle(_ShapeBase):
 
     def _update_position(self):
         if not self._visible:
-            vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            vertices = tuple(0 for i in range(self._segments*6))
         else:
             x = self._x + self._anchor_x
             y = self._y + self._anchor_y
