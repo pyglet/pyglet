@@ -86,6 +86,10 @@ def buttons_string(buttons):
         button_names.append('MIDDLE')
     if buttons & RIGHT:
         button_names.append('RIGHT')
+    if buttons & XBUTTON1:
+        button_names.append('XBUTTON1')
+    if buttons & XBUTTON2:
+        button_names.append('XBUTTON2')
     return '|'.join(button_names)
 
 
@@ -93,3 +97,5 @@ def buttons_string(buttons):
 LEFT = 1 << 0
 MIDDLE = 1 << 1
 RIGHT = 1 << 2
+XBUTTON1 = 1 << 3
+XBUTTON2 = 1 << 4
