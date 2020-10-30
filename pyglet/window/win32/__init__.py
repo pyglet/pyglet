@@ -1000,9 +1000,9 @@ class Win32Window(BaseWindow):
     @ViewEventHandler
     @Win32EventHandler(WM_XBUTTONDOWN)
     def _event_xbuttondown(self, msg, wParam, lParam):
-        if wParam & MK_XBUTTON1:
+        if c_short(wParam >> 16).value == 1:
             button = mouse.XBUTTON1
-        if wParam & MK_XBUTTON2:
+        if c_short(wParam >> 16).value == 2:
             button = mouse.XBUTTON2
         return self._event_mousebutton(
             'on_mouse_press', button, lParam)
@@ -1010,14 +1010,12 @@ class Win32Window(BaseWindow):
     @ViewEventHandler
     @Win32EventHandler(WM_XBUTTONUP)
     def _event_xbuttonup(self, msg, wParam, lParam):
-        if wParam & MK_XBUTTON1:
-            print("1")
+        if c_short(wParam >> 16).value == 1:
             button = mouse.XBUTTON1
-        if wParam & MK_XBUTTON2:
+        if c_short(wParam >> 16).value == 2:
             button = mouse.XBUTTON2
-            print("2")
-        # return self._event_mousebutton(
-        #     'on_mouse_release', button, lParam)
+        return self._event_mousebutton(
+            'on_mouse_release', button, lParam)
 
     @Win32EventHandler(WM_MOUSEWHEEL)
     def _event_mousewheel(self, msg, wParam, lParam):
