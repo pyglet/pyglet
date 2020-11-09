@@ -39,12 +39,13 @@ from .ninepatch import NinePatch, NinePatchGroup
 
 class Frame:
 
-    def __init__(self, window, cell_size=128, order=0):
+    def __init__(self, window, cell_size=64, order=0):
         window.push_handlers(self)
         self._cell_size = cell_size
         self._cells = {}
         self._active_widgets = set()
         self._order = order
+        self._mouse_pos = 0, 0
 
     def _hash(self, x, y):
         """Normalize position to cell"""
@@ -75,6 +76,7 @@ class Frame:
         """Pass the event to any widgets that are currently active"""
         for widget in self._active_widgets:
             widget.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        self._mouse_pos = x, y
 
     def on_mouse_scroll(self, x, y, index, direction):
         """Pass the event to any widgets within range of the mouse"""
@@ -88,6 +90,19 @@ class Frame:
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.dispatch_event('on_mouse_motion', x, y, dx, dy)
             self._active_widgets.add(widget)
+        self._mouse_pos = x, y
+
+    def on_text(self, text):
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.dispatch_event('on_text', text)
+
+    def on_text_motion(self, motion):
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.dispatch_event('on_text_motion', motion)
+
+    def on_text_motion_select(self, motion):
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.dispatch_event('on_text_motion_select', motion)
 
 
 class NinePatchFrame(Frame):
