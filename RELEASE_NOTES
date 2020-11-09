@@ -13,6 +13,7 @@ Improvements
 ------------
 - Add new Xaudio2 driver. (#288)
 - Refactor pyglet's lazy module loading to better support code inspection.
+- Added new `TextEntry` widget.
 
 
 pyglet 1.5.8
