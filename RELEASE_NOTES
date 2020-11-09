@@ -1,3 +1,20 @@
+pyglet 1.5.9
+Bugfix and feature release
+
+
+Bugfixes
+--------
+- Explicitly cast media.synthesis data to bytes to prevent issues on some audio drivers.
+- Refactor WIC module to work with new com module. (#298)
+- Prevent crash when setting `shapes.Circle.visable`. (#294)
+- Remove deprecated `tostring` calls in PIL/PNG decoders to prevent crash on Python 3.9. (#295, #302)
+
+Improvements
+------------
+- Add new Xaudio2 driver. (#288)
+- Refactor pyglet's lazy module loading to better support code inspection.
+
+
 pyglet 1.5.8
 Bugfix and feature release
 

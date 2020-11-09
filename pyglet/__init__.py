@@ -61,7 +61,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.5.8'
+version = '1.5.9'
 
 
 if sys.version_info < (3, 5):
