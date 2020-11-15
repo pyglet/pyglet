@@ -2200,7 +2200,6 @@ class BufferImage(AbstractImage):
         glReadBuffer(self.gl_buffer)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
         glReadPixels(x, y, self.width, self.height, self.gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPixelStorei(GL_PACK_ALIGNMENT, 0)
         return ImageData(self.width, self.height, self.format, buffer)
 
     def get_region(self, x, y, width, height):
