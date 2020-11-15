@@ -70,7 +70,7 @@ directory and display it within the window::
     import pyglet
 
     window = pyglet.window.Window()
-    image = pyglet.resource.image('kitten.png')
+    image = pyglet.resource.image('kitten.jpg')
 
     @window.event
     def on_draw():
