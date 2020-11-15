@@ -40,8 +40,8 @@ from pyglet.gl.lib import missing_function, decorate_function
 
 __all__ = ['link_GL', 'link_GLU', 'link_AGL']
 
-gl_lib = pyglet.lib.load_library(framework='/System/Library/Frameworks/OpenGL.framework')
-agl_lib = pyglet.lib.load_library(framework='/System/Library/Frameworks/AGL.framework')
+gl_lib = pyglet.lib.load_library(framework='OpenGL')
+agl_lib = pyglet.lib.load_library(framework='AGL')
 
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
