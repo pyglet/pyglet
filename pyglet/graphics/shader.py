@@ -155,6 +155,8 @@ class Shader:
             `shader_type` : str
                 The Shader type, such as "vertex" or "fragment".
         """
+        self._id = None
+
         if shader_type not in shader_types:
             raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
         self.type = shader_type
@@ -195,7 +197,8 @@ class Shader:
 
     def __del__(self):
         try:
-            glDeleteShader(self._id)
+            if self._id is not None:
+                glDeleteShader(self._id)
         except ImportError:
             # The interpreter is shutting down.
             pass
