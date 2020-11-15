@@ -68,6 +68,10 @@ mavericks:      13.0 -> 13.4
 yosemite:       14.0 -> 14.5
 el_capitan:     15.0 -> 15.6
 sierra:         16.0 -> 16.6
+high_sierra:    17.0 -> 17.7
+mojave:         18.0 -> 18.2
+catalina:       19.0 -> 19.6
+big_sur:        20.0 ->
 """
 os_x_release = {
     'pre-release':      (0,1),
@@ -85,7 +89,11 @@ os_x_release = {
     'yosemite':         (14,),
     'el_capitan':       (15,),
     'sierra':           (16,),
-    }
+    'high_sierra':      (17,),
+    'mojave':           (18,),
+    'catalina':         (19,),
+    'big_sur':          (20,)
+}
 
 def os_x_version():
     version = tuple([int(v) for v in platform.release().split('.')])
