@@ -248,39 +248,17 @@ class MachOLibraryLoader(LibraryLoader):
         return None
 
     @staticmethod
-    def find_framework(path):
-        """Implement runtime framework search as described by:
-
-        http://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkBinding.html
-        """
-
-        # e.g. path == '/System/Library/Frameworks/OpenGL.framework'
-        #      name == 'OpenGL'
-        # return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
-        name = os.path.splitext(os.path.split(path)[1])[0]
-
-        realpath = os.path.join(path, name) 
-        if os.path.exists(realpath):
-            return realpath
-
-        for directory in ('/Library/Frameworks', '/System/Library/Frameworks'):
-            realpath = os.path.join(directory, '%s.framework' % name, name)
-            if os.path.exists(realpath):
-                return realpath
-
-        return None
-
-    def load_framework(self, path):
-        realpath = self.find_framework(path)
-        if realpath:
-            lib = ctypes.cdll.LoadLibrary(realpath)
+    def load_framework(name):
+        path = ctypes.util.find_library(name)
+        if path:
+            lib = ctypes.cdll.LoadLibrary(path)
             if _debug_lib:
-                print(realpath)
+                print(path)
             if _debug_trace:
                 lib = _TraceLibrary(lib)
             return lib
 
-        raise ImportError("Can't find framework %s." % path)
+        raise ImportError("Can't find framework %s." % name)
 
 
 class LinuxLibraryLoader(LibraryLoader):
