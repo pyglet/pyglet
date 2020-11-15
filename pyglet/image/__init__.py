@@ -1443,7 +1443,7 @@ class Texture(AbstractImage):
             raise ImageException('Texture is not a rectangle, it must be created as a rectangle.')
         return self
 
-    # no implementation of blit_to_texture yet (could use aux buffer)
+    # no implementation of blit_to_texture yet
 
     def blit(self, x, y, z=0, width=None, height=None):
         x1 = x - self.anchor_x
@@ -2080,15 +2080,13 @@ class BufferManager:
         self.color_buffer = None
         self.depth_buffer = None
 
-        aux_buffers = GLint()
-        glGetIntegerv(GL_AUX_BUFFERS, byref(aux_buffers))
-        self.free_aux_buffers = [GL_AUX0,
-                                 GL_AUX1,
-                                 GL_AUX2,
-                                 GL_AUX3][:aux_buffers.value]
-
         stencil_bits = GLint()
-        glGetIntegerv(GL_STENCIL_BITS, byref(stencil_bits))
+        glGetFramebufferAttachmentParameteriv(
+            GL_DRAW_FRAMEBUFFER,
+            GL_STENCIL,
+            GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE,
+            stencil_bits,
+        )
         self.free_stencil_bits = list(range(stencil_bits.value))
 
         self.refs = []
@@ -2116,29 +2114,6 @@ class BufferManager:
                 viewport_height != self.color_buffer.height):
             self.color_buffer = ColorBufferImage(*viewport)
         return self.color_buffer
-
-    def get_aux_buffer(self):
-        """Get a free auxiliary buffer.
-
-        If not aux buffers are available, `ImageException` is raised.  Buffers
-        are released when they are garbage collected.
-
-        :rtype: :py:class:`~pyglet.image.ColorBufferImage`
-        """
-        if not self.free_aux_buffers:
-            raise ImageException('No free aux buffer is available.')
-
-        gl_buffer = self.free_aux_buffers.pop(0)
-        viewport = self.get_viewport()
-        buffer = ColorBufferImage(*viewport)
-        buffer.gl_buffer = gl_buffer
-
-        def release_buffer(ref, self=self):
-            self.free_aux_buffers.insert(0, gl_buffer)
-
-        self.refs.append(weakref.ref(buffer, release_buffer))
-
-        return buffer
 
     def get_depth_buffer(self):
         """Get the depth buffer.
@@ -2225,7 +2200,6 @@ class BufferImage(AbstractImage):
         glReadBuffer(self.gl_buffer)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
         glReadPixels(x, y, self.width, self.height, self.gl_format, GL_UNSIGNED_BYTE, buffer)
-        glPixelStorei(GL_PACK_ALIGNMENT, 0)
         return ImageData(self.width, self.height, self.format, buffer)
 
     def get_region(self, x, y, width, height):
@@ -2241,8 +2215,8 @@ class BufferImage(AbstractImage):
 class ColorBufferImage(BufferImage):
     """A color framebuffer.
 
-    This class is used to wrap both the primary color buffer (i.e., the back
-    buffer) or any one of the auxiliary buffers.
+    This class is used to wrap the primary color buffer (i.e., the back
+    buffer)
     """
     gl_format = GL_RGBA
     format = 'RGBA'

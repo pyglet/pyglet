@@ -237,12 +237,13 @@ class Material:
 
 vertex_source = """#version 330 core
     in vec4 vertices;
-    in vec4 normals;
+    in vec3 normals;
     in vec4 colors;
     in vec2 tex_coords;
     out vec4 vertex_colors;
-    out vec4 vertex_normals;
+    out vec3 vertex_normals;
     out vec2 texture_coords;
+    out vec3 vertex_position;
 
     uniform vec3 rotation;
     uniform vec3 translation;
@@ -251,7 +252,7 @@ vertex_source = """#version 330 core
     {
         mat4 projection;
         mat4 view;
-    } window;  
+    } window;
 
     mat4 m_translation = mat4(1.0);
     mat4 m_rotation_x = mat4(1.0);
@@ -283,27 +284,31 @@ vertex_source = """#version 330 core
         m_translation[3][2] = translation.z;
         vec4 vertices_final = m_translation * vertices_rxyz;
 
-        gl_Position = window.projection * window.view * vertices_final;
+        vec4 pos = window.view * vertices_final;
+        gl_Position = window.projection * pos;
 
+        mat3 normal_matrix = transpose(inverse(mat3((m_rotation_x * m_rotation_y * m_rotation_z * m_translation) * window.view)));
+
+        vertex_position = pos.xyz;
         vertex_colors = colors;
-        vertex_normals = normals;
+        vertex_normals = normal_matrix * normals;
         texture_coords = tex_coords;
     }
 """
 
 fragment_source = """#version 330 core
     in vec4 vertex_colors;
-    in vec4 vertex_normals;
+    in vec3 vertex_normals;
     in vec2 texture_coords;
+    in vec3 vertex_position;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        // TODO: implement lighting, and do something with normals and materials.
-        vec4 nothing = vertex_normals - vec4(1.0, 1.0, 1.0, 1.0);
-        final_colors = texture(our_texture, texture_coords) + vertex_colors * nothing;
+        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
+        final_colors = (texture(our_texture, texture_coords) + vertex_colors) * l;
     }
 """
 
