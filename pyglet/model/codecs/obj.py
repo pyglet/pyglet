@@ -246,7 +246,8 @@ class OBJModelDecoder(ModelDecoder):
                                           group,
                                           ('vertices3f', mesh.vertices),
                                           ('normals3f', mesh.normals),
-                                          ('tex_coords2f', mesh.tex_coords)))
+                                          ('tex_coords2f', mesh.tex_coords),
+                                          ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
 
         return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
 
