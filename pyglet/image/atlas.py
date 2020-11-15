@@ -271,6 +271,6 @@ class TextureBin:
                 if img.width < 64 and img.height < 64:
                     self.atlases.remove(atlas)
 
-        atlas = TextureAtlas(self.texture_width, self.texture_height, self._border)
+        atlas = TextureAtlas(self.texture_width, self.texture_height)
         self.atlases.append(atlas)
         return atlas.add(img, border)
