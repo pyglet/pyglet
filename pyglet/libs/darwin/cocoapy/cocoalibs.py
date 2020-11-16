@@ -194,11 +194,11 @@ cf.CFRunLoopGetMain.argtypes = []
 
 # Even though we don't use this directly, it must be loaded so that
 # we can find the NSApplication, NSWindow, and NSView classes.
-#lib = util.find_library('AppKit')
+lib = util.find_library('AppKit')
 
 # Hack for compatibility with macOS > 11.0
-#if lib is None and sys.platform == 'darwin':
-lib = '/System/Library/Frameworks/AppKit.framework/AppKit'
+if lib is None and sys.platform == 'darwin':
+    lib = '/System/Library/Frameworks/AppKit.framework/AppKit'
 
 appkit = cdll.LoadLibrary(lib)
 
