@@ -48,58 +48,12 @@ import operator as _operator
 import warnings as _warnings
 
 
-def create_orthogonal(left, right, bottom, top, znear, zfar):
-    """Create a Mat4 orthographic projection matrix."""
-    width = right - left
-    height = top - bottom
-    depth = zfar - znear
-
-    sx = 2.0 / width
-    sy = 2.0 / height
-    sz = 2.0 / -depth
-
-    tx = -(right + left) / width
-    ty = -(top + bottom) / height
-    tz = -(zfar + znear) / depth
-
-    return Mat4((sx, 0.0, 0.0, 0.0,
-                 0.0, sy, 0.0, 0.0,
-                 0.0, 0.0, sz, 0.0,
-                 tx, ty, tz, 1.0))
-
-
-def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
-    """Create a Mat4 perspective projection matrix."""
-    width = right - left
-    height = top - bottom
-    aspect = width / height
-
-    xymax = znear * _math.tan(fov * _math.pi / 360)
-    ymin = -xymax
-    xmin = -xymax
-
-    width = xymax - xmin
-    height = xymax - ymin
-    depth = zfar - znear
-    q = -(zfar + znear) / depth
-    qn = -2 * zfar * znear / depth
-
-    w = 2 * znear / width
-    w = w / aspect
-    h = 2 * znear / height
-
-    return Mat4((w, 0, 0, 0,
-                 0, h, 0, 0,
-                 0, 0, q, -1,
-                 0, 0, qn, 0))
-
-
 class Mat4(tuple):
     """A 4x4 Matrix
 
     `Mat4` is a simple immutable 4x4 Matrix, with a few operators.
     Two types of multiplication are possible. The "*" operator
-    will perform elementwise multiplication, wheras the "@"
+    will perform elementwise multiplication, whereas the "@"
     operator will perform Matrix multiplication. Internally,
     data is stored in a linear 1D array, allowing direct passing
     to OpenGL.
@@ -122,6 +76,52 @@ class Mat4(tuple):
                                                 0.0, 1.0, 0.0, 0.0,
                                                 0.0, 0.0, 1.0, 0.0,
                                                 0.0, 0.0, 0.0, 1.0))
+
+    @classmethod
+    def orthogonal_projection(cls, left, right, bottom, top, z_near, z_far):
+        """Create a Mat4 orthographic projection matrix."""
+        width = right - left
+        height = top - bottom
+        depth = z_far - z_near
+
+        sx = 2.0 / width
+        sy = 2.0 / height
+        sz = 2.0 / -depth
+
+        tx = -(right + left) / width
+        ty = -(top + bottom) / height
+        tz = -(z_far + z_near) / depth
+
+        return cls((sx, 0.0, 0.0, 0.0,
+                    0.0, sy, 0.0, 0.0,
+                    0.0, 0.0, sz, 0.0,
+                    tx, ty, tz, 1.0))
+
+    @classmethod
+    def perspective_projection(cls, left, right, bottom, top, z_near, z_far, fov=60):
+        """Create a Mat4 perspective projection matrix."""
+        width = right - left
+        height = top - bottom
+        aspect = width / height
+
+        xy_max = z_near * _math.tan(fov * _math.pi / 360)
+        y_min = -xy_max
+        x_min = -xy_max
+
+        width = xy_max - x_min
+        height = xy_max - y_min
+        depth = z_far - z_near
+        q = -(z_far + z_near) / depth
+        qn = -2 * z_far * z_near / depth
+
+        w = 2 * z_near / width
+        w = w / aspect
+        h = 2 * z_near / height
+
+        return cls((w, 0, 0, 0,
+                   0, h, 0, 0,
+                   0, 0, q, -1,
+                   0, 0, qn, 0))
 
     def row(self, index):
         """Get a specific row as a tuple."""
