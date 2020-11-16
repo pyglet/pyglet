@@ -56,42 +56,46 @@ _uniform_setters = {
 }
 
 _attribute_types = {
-    GL_BOOL: (c_bool, 1),
-    GL_BOOL_VEC2: (c_bool, 2),
-    GL_BOOL_VEC3: (c_bool, 3),
-    GL_BOOL_VEC4: (c_bool, 4),
+    GL_BOOL: '1?',
+    GL_BOOL_VEC2: '2?',
+    GL_BOOL_VEC3: '3?',
+    GL_BOOL_VEC4: '4?',
 
-    GL_INT: (c_int, 1),
-    GL_INT_VEC2: (c_int, 2),
-    GL_INT_VEC3: (c_int, 3),
-    GL_INT_VEC4: (c_int, 4),
+    GL_INT: '1i',
+    GL_INT_VEC2: '2i',
+    GL_INT_VEC3: '3i',
+    GL_INT_VEC4: '4i',
 
-    GL_UNSIGNED_INT: (c_uint, 1),
-    GL_UNSIGNED_INT_VEC2: (c_uint, 2),
-    GL_UNSIGNED_INT_VEC3: (c_uint, 3),
-    GL_UNSIGNED_INT_VEC4: (c_uint, 4),
+    GL_UNSIGNED_INT: '1I',
+    GL_UNSIGNED_INT_VEC2: '2I',
+    GL_UNSIGNED_INT_VEC3: '3I',
+    GL_UNSIGNED_INT_VEC4: '4I',
 
-    GL_FLOAT: (c_float, 1),
-    GL_FLOAT_VEC2: (c_float, 2),
-    GL_FLOAT_VEC3: (c_float, 3),
-    GL_FLOAT_VEC4: (c_float, 4),
+    GL_FLOAT: '1f',
+    GL_FLOAT_VEC2: '2f',
+    GL_FLOAT_VEC3: '3f',
+    GL_FLOAT_VEC4: '4f',
 
-    GL_DOUBLE: (c_double, 1),
-    GL_DOUBLE_VEC2: (c_double, 2),
-    GL_DOUBLE_VEC3: (c_double, 3),
-    GL_DOUBLE_VEC4: (c_double, 4),
+    GL_DOUBLE: '1d',
+    GL_DOUBLE_VEC2: '2d',
+    GL_DOUBLE_VEC3: '3d',
+    GL_DOUBLE_VEC4: '4d',
 }
 
 
 class _Attribute:
-    __slots__ = 'name', 'type', 'size', 'location', 'c_type_count'
+    __slots__ = 'program', 'name', 'type', 'size', 'location', 'format'
 
-    def __init__(self, name, attr_type, size, location):
+    def __init__(self, program, name, attr_type, size, location):
+        self.program = program
         self.name = name
         self.type = attr_type
         self.size = size
         self.location = location
-        self.c_type_count = _attribute_types[attr_type]
+        self.format = _attribute_types[attr_type]
+
+    def __repr__(self):
+        return f"Attribute('{self.name}', program={self.program}, location={self.location}, format={self.format})"
 
 
 class _Uniform:
@@ -176,7 +180,7 @@ class Shader:
             raise GLException("The {0} shader failed to compile. "
                               "\n{1}".format(self.type, self._get_shader_log(shader_id)))
         elif _debug_gl_shaders:
-            print("Shader compilation log: {0}".format(self._get_shader_log(shader_id)))
+            print(f"Shader '{shader_id}' compilation log: '{self._get_shader_log(shader_id)}'")
 
         self._id = shader_id
 
@@ -197,14 +201,13 @@ class Shader:
 
     def __del__(self):
         try:
-            if self._id is not None:
-                glDeleteShader(self._id)
-        except ImportError:
-            # The interpreter is shutting down.
+            glDeleteShader(self._id)
+            if _debug_gl_shaders:
+                print(f"Destroyed {self.type} Shader '{self._id}'")
+        except (ImportError, AttributeError):
+            # Interpreter is shutting down,
+            # or Shader failed to compile.
             pass
-
-        if _debug_gl_shaders:
-            print("Destroyed {0} shader object id {1}.".format(self.type, self.id))
 
     def __repr__(self):
         return "{0}(id={1}, type={2})".format(self.__class__.__name__, self.id, self.type)
@@ -233,7 +236,7 @@ class ShaderProgram:
         self._id = self._link_program(shaders)
         self._active = False
 
-        self._attributes = {}
+        self._attributes = []
         self._uniforms = {}
         self._uniform_blocks = {}
 
@@ -256,6 +259,10 @@ class ShaderProgram:
         return self._id
 
     @property
+    def attributes(self):
+        return self._attributes
+
+    @property
     def is_active(self):
         return self._active
 
@@ -268,7 +275,7 @@ class ShaderProgram:
             return ("OpenGL returned the following message when linking the program: "
                     "\n{0}".format(result_str.value))
         else:
-            return "Program linked successfully."
+            return f"Program '{self._id}' linked successfully."
 
     @staticmethod
     def _link_program(shaders):
@@ -300,8 +307,9 @@ class ShaderProgram:
     def __del__(self):
         try:
             glDeleteProgram(self._id)
-        except ImportError:
-            # The interpreter is shutting down.
+        except (ImportError, AttributeError):
+            # Interpreter is shutting down,
+            # or ShaderProgram failed to link.
             pass
 
     def __setitem__(self, key, value):
@@ -336,15 +344,22 @@ class ShaderProgram:
         return number.value
 
     def _introspect_attributes(self):
+        program = self._id
+        attributes = []
         for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
             a_name, a_type, a_size = self._query_attribute(index)
-            loc = glGetAttribLocation(self._id, create_string_buffer(a_name.encode('utf-8')))
-            self._attributes[a_name] = _Attribute(a_name, a_type, a_size, loc)
+            loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
+            attributes.append(_Attribute(program, a_name, a_type, a_size, loc))
+
+            if _debug_gl_shaders:
+                print("Found attribute: {0}, type: {1}, size: {2}, location: {3}".format(a_name, a_type, a_size, loc))
+
+        self._attributes = tuple(attributes)
 
     def _introspect_uniforms(self):
         for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):
-            uniform_name, u_type, u_size = self._query_uniform(index)
-            loc = glGetUniformLocation(self._id, create_string_buffer(uniform_name.encode('utf-8')))
+            u_name, u_type, u_size = self._query_uniform(index)
+            loc = glGetUniformLocation(self._id, create_string_buffer(u_name.encode('utf-8')))
 
             if loc == -1:      # Skip uniforms that may be in Uniform Blocks
                 continue
@@ -367,12 +382,12 @@ class ShaderProgram:
 
                 if _debug_gl_shaders:
                     print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4},"
-                          " count: {5}".format(uniform_name, u_type, u_size, loc, length, count))
+                          " count: {5}".format(u_name, u_type, u_size, loc, length, count))
 
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(u_type))
 
-            self._uniforms[uniform_name] = _Uniform(setter=setter, getter=getter)
+            self._uniforms[u_name] = _Uniform(setter=setter, getter=getter)
 
     def _introspect_uniform_blocks(self):
         p_id = self._id
