@@ -1,6 +1,14 @@
+pyglet 1.5.10
+Bugfix release
+
+Bugfixes
+--------
+- Fix library loading on OSX Big Sur. Currently this only works with the system version of Python.
+  Non OSX system versions will not yet work, pending upstream fixes: https://bugs.python.org/issue41100
+
+
 pyglet 1.5.9
 Bugfix and feature release
-
 
 Bugfixes
 --------
