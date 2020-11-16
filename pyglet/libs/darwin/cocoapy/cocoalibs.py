@@ -4,6 +4,8 @@ from ctypes import util
 from .runtime import send_message, ObjCInstance
 from .cocoatypes import *
 
+import sys
+
 ######################################################################
 
 # CORE FOUNDATION
@@ -192,7 +194,13 @@ cf.CFRunLoopGetMain.argtypes = []
 
 # Even though we don't use this directly, it must be loaded so that
 # we can find the NSApplication, NSWindow, and NSView classes.
-appkit = cdll.LoadLibrary(util.find_library('AppKit'))
+#lib = util.find_library('AppKit')
+
+# Hack for compatibility with macOS > 11.0
+#if lib is None and sys.platform == 'darwin':
+lib = '/System/Library/Frameworks/AppKit.framework/AppKit'
+
+appkit = cdll.LoadLibrary(lib)
 
 NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
 NSEventTrackingRunLoopMode = c_void_p.in_dll(appkit, 'NSEventTrackingRunLoopMode')
