@@ -37,7 +37,7 @@ The source code archives include examples. Archives are
 
     unzip pyglet-x.x.x.zip
     cd pyglet-x.x.x
-    python examples/graphics.py
+    python examples/hello_world.py
 
 
 As mentioned above, you can also clone the repository using Git:
@@ -46,4 +46,4 @@ As mentioned above, you can also clone the repository using Git:
 
     git clone https://github.com/pyglet/pyglet.git
     cd pyglet
-    python example/graphics.py
+    python examples/hello_world.py
