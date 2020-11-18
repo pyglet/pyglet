@@ -487,6 +487,10 @@ class UniformBufferObject:
         glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
         glUniformBlockBinding(self.block.program.id, self.block.index, index)
 
+    @property
+    def id(self):
+        return self.buffer.id
+
     def _introspect_uniforms(self):
         p_id = self.block.program.id
         index = self.block.index
@@ -521,6 +525,7 @@ class UniformBufferObject:
             c_type_size = sizeof(gl_type)
             actual_size = c_type_size * length
             padding = size - actual_size
+
             # TODO: handle stride for multiple matrixes in the same UBO (crashes now)
             m_stride = mat_stride[i]
 
@@ -537,6 +542,17 @@ class UniformBufferObject:
 
         return view()
 
+    def bind(self, index=0):
+        glBindBufferRange(GL_UNIFORM_BUFFER, index, self.buffer.id, 0, self.buffer.size)
+
+    def read(self):
+        """Read the byte contents of the buffer"""
+        glBindBuffer(GL_UNIFORM_BUFFER, self.buffer.id)
+        ptr = glMapBufferRange(GL_UNIFORM_BUFFER, 0, self.buffer.size, GL_MAP_READ_BIT)
+        data = string_at(ptr, size=self.buffer.size)
+        glUnmapBuffer(GL_UNIFORM_BUFFER)
+        return data
+
     def __enter__(self):
         # Return the view to the user in a `with` context:
         return self.view
@@ -547,3 +563,41 @@ class UniformBufferObject:
 
     def __repr__(self):
         return "{0}(id={1})".format(self.block.name + 'Buffer', self.buffer.id)
+
+
+class WindowBlock:
+    """The standardized WindowBlock uniform buffer"""
+
+    def __init__(self):
+        self.id = gl.GLuint()
+        self.size = 128
+        glGenBuffers(1, byref(self.id))
+        self.bind()
+        glBufferData(GL_UNIFORM_BUFFER, self.size, None, GL_STATIC_DRAW)
+
+    def set_projection(self, value):
+        data = (c_float * 16)(*value)
+        self.write(data, 0, self.size // 2)
+
+    def set_modelview(self, value):
+        data = (c_float * 16)(*value)
+        self.write(data, self.size // 2, self.size // 2)
+
+    def read(self):
+        """Read the byte contents of the buffer"""
+        glBindBuffer(GL_UNIFORM_BUFFER, self.id)
+        ptr = glMapBufferRange(GL_UNIFORM_BUFFER, 0, self.size, GL_MAP_READ_BIT)
+        data = string_at(ptr, size=self.size)
+        glUnmapBuffer(GL_UNIFORM_BUFFER)
+        return data
+
+    def write(self, data, offset: int = 0, size: int = 0):
+        glBindBuffer(GL_UNIFORM_BUFFER, self.id)
+        glBufferSubData(GL_UNIFORM_BUFFER, GLintptr(offset), size, data)
+
+    def bind(self, index=0):
+        glBindBufferRange(GL_UNIFORM_BUFFER, index, self.id, 0, self.size)
+
+    # NOTE: Worry about this later
+    # def __del__(self):
+    #     pass
