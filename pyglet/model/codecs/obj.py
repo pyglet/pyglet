@@ -238,15 +238,23 @@ class OBJModelDecoder(ModelDecoder):
             if material.texture_name:
                 texture = pyglet.resource.texture(material.texture_name)
                 group = TexturedMaterialGroup(material, texture)
+                vertex_lists.append(batch.add(len(mesh.vertices) // 3,
+                                            GL_TRIANGLES,
+                                            group,
+                                            ('vertices3f', mesh.vertices),
+                                            ('normals3f', mesh.normals),
+                                            ('tex_coords2f', mesh.tex_coords),
+                                            ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
             else:
                 group = MaterialGroup(material)
+                vertex_lists.append(batch.add(len(mesh.vertices) // 3,
+                                            GL_TRIANGLES,
+                                            group,
+                                            ('vertices3f', mesh.vertices),
+                                            ('normals3f', mesh.normals),
+                                            ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
+
             groups.append(group)
-            vertex_lists.append(batch.add(len(mesh.vertices) // 3,
-                                          GL_TRIANGLES,
-                                          group,
-                                          ('v3f/static', mesh.vertices),
-                                          ('n3f/static', mesh.normals),
-                                          ('t2f/static', mesh.tex_coords)))
 
         return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
 

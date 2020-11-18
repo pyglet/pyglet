@@ -70,7 +70,7 @@ class PNGImageDecoder(ImageDecoder):
         pitch = len(fmt) * width
 
         pixels = array.array('BH'[metadata['bitdepth'] > 8], itertools.chain(*pixels))
-        return ImageData(width, height, fmt, pixels.tostring(), -pitch)
+        return ImageData(width, height, fmt, pixels.tobytes(), -pitch)
 
 
 class PNGImageEncoder(ImageEncoder):

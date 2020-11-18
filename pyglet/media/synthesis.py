@@ -266,8 +266,8 @@ class Sine(SynthesisSource):
         step = self.frequency * (math.pi * 2) / self.audio_format.sample_rate
         envelope = self._envelope_generator
         for i in range(samples):
-            data[i] = int(math.sin(step * i) * amplitude * next(envelope))
-        return data
+            data[i] = int(math.sin(step * i) * amplitude * next(envelope) + bias)
+        return bytes(data)
 
 
 class Triangle(SynthesisSource):
@@ -303,7 +303,7 @@ class Triangle(SynthesisSource):
                 value = minimum - (value - minimum)
                 step = -step
             data[i] = int(value * next(envelope))
-        return data
+        return bytes(data)
 
 
 class Sawtooth(SynthesisSource):
@@ -335,7 +335,7 @@ class Sawtooth(SynthesisSource):
             if value > maximum:
                 value = minimum + (value % maximum)
             data[i] = int(value * next(envelope))
-        return data
+        return bytes(data)
 
 
 class Square(SynthesisSource):
@@ -367,8 +367,8 @@ class Square(SynthesisSource):
                 value = -value
                 count %= half_period
             count += 1
-            data[i] = int(value * amplitude * next(envelope))
-        return data
+            data[i] = int(value * amplitude * next(envelope) + bias)
+        return bytes(data)
 
 
 class FM(SynthesisSource):
@@ -412,4 +412,4 @@ class FM(SynthesisSource):
         for i in range(samples):
             increment = i / sample_rate
             data.append(int(sin(c_step * increment + m_index * sin(m_step * increment)) * amplitude * next(envelope)))
-        return struct.pack(str(samples) + 'h', *data)
+        return bytes(struct.pack(str(samples) + 'h', *data))

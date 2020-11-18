@@ -37,7 +37,7 @@
 
 This module provides classes for Matrix and Vector math.
 A :py:class:`~pyglet.matrix.Mat4` class is available for representing
-4x4 matricies, including helper methods for rotating, scaling, and
+4x4 matrices, including helper methods for rotating, scaling, and
 transforming. The internal datatype of :py:class:`~pyglet.matrix.Mat4`
 is a 1-dimensional array, so instances can be passed directly to OpenGL.
 
@@ -48,64 +48,18 @@ import operator as _operator
 import warnings as _warnings
 
 
-def create_orthogonal(left, right, bottom, top, znear, zfar):
-    """Create a Mat4 orthographic projection matrix."""
-    width = right - left
-    height = top - bottom
-    depth = zfar - znear
-
-    sx = 2.0 / width
-    sy = 2.0 / height
-    sz = 2.0 / -depth
-
-    tx = -(right + left) / width
-    ty = -(top + bottom) / height
-    tz = -(zfar + znear) / depth
-
-    return Mat4((sx, 0.0, 0.0, 0.0,
-                 0.0, sy, 0.0, 0.0,
-                 0.0, 0.0, sz, 0.0,
-                 tx, ty, tz, 1.0))
-
-
-def create_perspective(left, right, bottom, top, znear, zfar, fov=60):
-    """Create a Mat4 perspective projection matrix."""
-    width = right - left
-    height = top - bottom
-    aspect = width / height
-
-    xymax = znear * _math.tan(fov * _math.pi / 360)
-    ymin = -xymax
-    xmin = -xymax
-
-    width = xymax - xmin
-    height = xymax - ymin
-    depth = zfar - znear
-    q = -(zfar + znear) / depth
-    qn = -2 * zfar * znear / depth
-
-    w = 2 * znear / width
-    w = w / aspect
-    h = 2 * znear / height
-
-    return Mat4((w, 0, 0, 0,
-                 0, h, 0, 0,
-                 0, 0, q, -1,
-                 0, 0, qn, 0))
-
-
 class Mat4(tuple):
     """A 4x4 Matrix
 
     `Mat4` is a simple immutable 4x4 Matrix, with a few operators.
     Two types of multiplication are possible. The "*" operator
-    will perform elementwise multiplication, wheras the "@"
+    will perform elementwise multiplication, whereas the "@"
     operator will perform Matrix multiplication. Internally,
     data is stored in a linear 1D array, allowing direct passing
     to OpenGL.
     """
 
-    def __new__(cls, values=None):
+    def __new__(cls, values=None) -> 'Mat4':
         """Create a 4x4 Matrix
 
         A Matrix can be created with a list or tuple of 16 values.
@@ -123,15 +77,74 @@ class Mat4(tuple):
                                                 0.0, 0.0, 1.0, 0.0,
                                                 0.0, 0.0, 0.0, 1.0))
 
-    def row(self, index):
+    @classmethod
+    def orthogonal_projection(cls, left, right, bottom, top, z_near, z_far) -> 'Mat4':
+        """Create a Mat4 orthographic projection matrix."""
+        width = right - left
+        height = top - bottom
+        depth = z_far - z_near
+
+        sx = 2.0 / width
+        sy = 2.0 / height
+        sz = 2.0 / -depth
+
+        tx = -(right + left) / width
+        ty = -(top + bottom) / height
+        tz = -(z_far + z_near) / depth
+
+        return cls((sx, 0.0, 0.0, 0.0,
+                    0.0, sy, 0.0, 0.0,
+                    0.0, 0.0, sz, 0.0,
+                    tx, ty, tz, 1.0))
+
+    @classmethod
+    def perspective_projection(cls, left, right, bottom, top, z_near, z_far, fov=60) -> 'Mat4':
+        """Create a Mat4 perspective projection matrix."""
+        width = right - left
+        height = top - bottom
+        aspect = width / height
+
+        xy_max = z_near * _math.tan(fov * _math.pi / 360)
+        y_min = -xy_max
+        x_min = -xy_max
+
+        width = xy_max - x_min
+        height = xy_max - y_min
+        depth = z_far - z_near
+        q = -(z_far + z_near) / depth
+        qn = -2 * z_far * z_near / depth
+
+        w = 2 * z_near / width
+        w = w / aspect
+        h = 2 * z_near / height
+
+        return cls((w, 0, 0, 0,
+                   0, h, 0, 0,
+                   0, 0, q, -1,
+                   0, 0, qn, 0))
+
+    @classmethod
+    def from_translation(cls, x=0, y=0, z=0) -> 'Mat4':
+        """Create a translaton matrix from .
+        
+        :Parameters:
+            `values` : 3 component tuple of float or int
+                A 3 component list containing an x, y and z translaton
+        """
+        return cls((1.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    x, y, z, 1.0))
+
+    def row(self, index: int):
         """Get a specific row as a tuple."""
         return self[index*4:index*4+4]
 
-    def column(self, index):
+    def column(self, index: int):
         """Get a specific column as a tuple."""
         return self[index::4]
 
-    def scale(self, x=1, y=1, z=1):
+    def scale(self, x=1, y=1, z=1) -> 'Mat4':
         """Get a scale Matrix on x, y, or z axis."""
         temp = list(self)
         temp[0] *= x
@@ -139,27 +152,27 @@ class Mat4(tuple):
         temp[10] *= z
         return Mat4(temp)
 
-    def translate(self, x=0, y=0, z=0):
+    def translate(self, x=0, y=0, z=0) -> 'Mat4':
         """Get a translate Matrix along x, y, and z axis."""
         return Mat4(self) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
 
-    def rotate(self, angle=0, x=0, y=0, z=0):
+    def rotate(self, angle=0, x=0, y=0, z=0) -> 'Mat4':
         """Get a rotation Matrix on x, y, or z axis."""
         assert all(abs(n) <= 1 for n in (x, y, z)), "x,y,z must be normalized (<=1)"
         c = _math.cos(angle)
         s = _math.sin(angle)
         t = 1 - c
-        tempx, tempy, tempz = t * x, t * y, t * z
+        temp_x, temp_y, temp_z = t * x, t * y, t * z
 
-        ra = c + tempx * x
-        rb = 0 + tempx * y + s * z
-        rc = 0 + tempx * z - s * y
-        re = 0 + tempy * x - s * z
-        rf = c + tempy * y
-        rg = 0 + tempy * z + s * x
-        ri = 0 + tempz * x + s * y
-        rj = 0 + tempz * y - s * x
-        rk = c + tempz * z
+        ra = c + temp_x * x
+        rb = 0 + temp_x * y + s * z
+        rc = 0 + temp_x * z - s * y
+        re = 0 + temp_y * x - s * z
+        rf = c + temp_y * y
+        rg = 0 + temp_y * z + s * x
+        ri = 0 + temp_z * x + s * y
+        rj = 0 + temp_z * y - s * x
+        rk = c + temp_z * z
 
         # ra, rb, rc, --
         # re, rf, rg, --
@@ -168,25 +181,25 @@ class Mat4(tuple):
 
         return Mat4(self) @ Mat4((ra, rb, rc, 0, re, rf, rg, 0, ri, rj, rk, 0, 0, 0, 0, 1))
 
-    def transpose(self):
+    def transpose(self) -> 'Mat4':
         """Get a tranpose of this Matrix."""
         return Mat4(self[0::4] + self[1::4] + self[2::4] + self[3::4])
 
-    def __add__(self, other):
+    def __add__(self, other) -> 'Mat4':
         assert len(other) == 16, "Can only add to other Mat4 types"
         return Mat4(tuple(s + o for s, o in zip(self, other)))
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> 'Mat4':
         assert len(other) == 16, "Can only subtract from other Mat4 types"
         return Mat4(tuple(s - o for s, o in zip(self, other)))
 
     def __pos__(self):
         return self
 
-    def __neg__(self):
+    def __neg__(self) -> 'Mat4':
         return Mat4(tuple(-v for v in self))
 
-    def __invert__(self):
+    def __invert__(self) -> 'Mat4':
         a = self[10] * self[15] - self[11] * self[14]
         b = self[9] * self[15] - self[11] * self[13]
         c = self[9] * self[14] - self[10] * self[13]
@@ -235,13 +248,13 @@ class Mat4(tuple):
                      ndet * (self[0] * i - self[1] * n + self[2] * q),
                      pdet * (self[0] * l - self[1] * p + self[2] * r)))
 
-    def __round__(self, n=None):
+    def __round__(self, n=None) -> 'Mat4':
         return Mat4(tuple(round(v, n) for v in self))
 
     def __mul__(self, other):
         raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
 
-    def __matmul__(self, other):
+    def __matmul__(self, other) -> 'Mat4':
         assert len(other) == 16, "Can only multiply with other Mat4 types"
         # Rows:
         r0 = self[0:4]
@@ -275,5 +288,5 @@ class Mat4(tuple):
                      sum(map(_operator.mul, r3, c2)),
                      sum(map(_operator.mul, r3, c3))))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"

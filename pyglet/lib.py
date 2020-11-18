@@ -49,7 +49,7 @@ import pyglet
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+_is_pyglet_doc_run = getattr(sys, "is_pyglet_doc_run", False)
 
 if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
@@ -166,7 +166,8 @@ class LibraryLoader:
     def find_library(self, name):
         return ctypes.util.find_library(name)
 
-    def load_framework(self, path):
+    @staticmethod
+    def load_framework(name):
         raise RuntimeError("Can't load framework on this platform.")
 
 
@@ -190,10 +191,8 @@ class MachOLibraryLoader(LibraryLoader):
         if 'DYLD_FALLBACK_LIBRARY_PATH' in os.environ:
             self.dyld_fallback_library_path = os.environ['DYLD_FALLBACK_LIBRARY_PATH'].split(':')
         else:
-            self.dyld_fallback_library_path = [os.path.expanduser('~/lib'),
-                                               '/usr/local/lib',
-                                               '/usr/lib']
- 
+            self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
+
     def find_library(self, path):
         """Implements the dylib search as specified in Apple documentation:
 
@@ -248,39 +247,27 @@ class MachOLibraryLoader(LibraryLoader):
         return None
 
     @staticmethod
-    def find_framework(path):
-        """Implement runtime framework search as described by:
+    def load_framework(name):
+        path = ctypes.util.find_library(name)
 
-        http://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkBinding.html
-        """
+        # Hack for compatibility with macOS > 11.0
+        if path is None:
+            frameworks = {
+                'AGL': '/System/Library/Frameworks/AGL.framework/AGL',
+                'OpenAL': '/System/Library/Frameworks/OpenAL.framework/OpenAL',
+                'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL'
+            }
+            path = frameworks.get(name, None)
 
-        # e.g. path == '/System/Library/Frameworks/OpenGL.framework'
-        #      name == 'OpenGL'
-        # return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
-        name = os.path.splitext(os.path.split(path)[1])[0]
-
-        realpath = os.path.join(path, name) 
-        if os.path.exists(realpath):
-            return realpath
-
-        for directory in ('/Library/Frameworks', '/System/Library/Frameworks'):
-            realpath = os.path.join(directory, '%s.framework' % name, name)
-            if os.path.exists(realpath):
-                return realpath
-
-        return None
-
-    def load_framework(self, path):
-        realpath = self.find_framework(path)
-        if realpath:
-            lib = ctypes.cdll.LoadLibrary(realpath)
+        if path:
+            lib = ctypes.cdll.LoadLibrary(path)
             if _debug_lib:
-                print(realpath)
+                print(path)
             if _debug_trace:
                 lib = _TraceLibrary(lib)
             return lib
 
-        raise ImportError("Can't find framework %s." % path)
+        raise ImportError("Can't find framework %s." % name)
 
 
 class LinuxLibraryLoader(LibraryLoader):

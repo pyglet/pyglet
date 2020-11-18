@@ -81,12 +81,13 @@ instance when loading the Model::
 
 .. versionadded:: 1.4
 """
-
+from math import radians
 from io import BytesIO
 
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.gl import *
 from pyglet import graphics
+from pyglet.math import Mat4
 
 from .codecs import ModelDecodeException
 from .codecs import add_encoders, add_decoders, add_default_model_codecs
@@ -235,103 +236,91 @@ class Material:
         self.texture_name = texture_name
 
 
-vertex_source = """#version 330 core
-    in vec4 vertices;
-    in vec4 normals;
-    in vec4 colors;
-    in vec2 tex_coords;
-    out vec4 vertex_colors;
-    out vec4 vertex_normals;
-    out vec2 texture_coords;
 
-    uniform vec3 rotation;
-    uniform vec3 translation;
+
+class BaseMaterialGroup(graphics.Group):
+    _default_vert_shader = None
+    _default_frag_shader = None
+    _default_program = None
+
+    def __init__(self, material, *args, **kwargs):
+        super().__init__()
+        self.material = material
+        self.rotation = 0, 0, 0
+        self.translation = 0, 0, 0
+        self.program = self._default_program
+
+    def _set_modelview_matrix(self):
+        # NOTE: Matrix operations can be optimized later with transform feedback
+        translate = Mat4.from_translation(*self.translation)
+        rotate_x = Mat4().rotate(radians(self.rotation[0]), x=1)
+        rotate_y = Mat4().rotate(radians(self.rotation[1]), y=1)
+        rotate_z = Mat4().rotate(radians(self.rotation[2]), z=1)
+        view = rotate_z @ rotate_y @ rotate_x @ translate
+
+        with self.program.uniform_buffers['WindowBlock'] as window_block:
+            window_block.view[:] = view
+
+
+class TexturedMaterialGroup(BaseMaterialGroup):
+    _default_vert_shader = Shader("""#version 330 core
+    in vec3 vertices;
+    in vec3 normals;
+    in vec2 tex_coords;
+    in vec4 colors;
+
+    out vec4 vertex_colors;
+    out vec3 vertex_normals;
+    out vec2 texture_coords;
+    out vec3 vertex_position;
 
     uniform WindowBlock
     {
         mat4 projection;
         mat4 view;
-    } window;  
-
-    mat4 m_translation = mat4(1.0);
-    mat4 m_rotation_x = mat4(1.0);
-    mat4 m_rotation_y = mat4(1.0);
-    mat4 m_rotation_z = mat4(1.0);
+    } window;
 
     void main()
     {
-        m_rotation_x[1][1] =  cos(-radians(rotation.x)); 
-        m_rotation_x[1][2] =  sin(-radians(rotation.x));
-        m_rotation_x[2][1] = -sin(-radians(rotation.x));
-        m_rotation_x[2][2] =  cos(-radians(rotation.x));
-        vec4 vertices_rx = m_rotation_x * vertices;
+        vec4 pos = window.view * vec4(vertices, 1.0);
+        gl_Position = window.projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
 
-        m_rotation_y[0][0] =  cos(-radians(rotation.y)); 
-        m_rotation_y[0][2] = -sin(-radians(rotation.y));    
-        m_rotation_y[2][0] =  sin(-radians(rotation.y)); 
-        m_rotation_y[2][2] =  cos(-radians(rotation.y));
-        vec4 vertices_rxy = m_rotation_y * vertices_rx;
-
-        m_rotation_z[0][0] =  cos(-radians(rotation.z)); 
-        m_rotation_z[0][1] =  sin(-radians(rotation.z));
-        m_rotation_z[1][0] = -sin(-radians(rotation.z));
-        m_rotation_z[1][1] =  cos(-radians(rotation.z));
-        vec4 vertices_rxyz = m_rotation_z * vertices_rxy;
-
-        m_translation[3][0] = translation.x;
-        m_translation[3][1] = translation.y;
-        m_translation[3][2] = translation.z;
-        vec4 vertices_final = m_translation * vertices_rxyz;
-
-        gl_Position = window.projection * window.view * vertices_final;
-
+        vertex_position = pos.xyz;
         vertex_colors = colors;
-        vertex_normals = normals;
         texture_coords = tex_coords;
+        vertex_normals = normal_matrix * normals;
     }
-"""
-
-fragment_source = """#version 330 core
+    """, 'vertex')
+    _default_frag_shader = Shader("""#version 330 core
     in vec4 vertex_colors;
-    in vec4 vertex_normals;
+    in vec3 vertex_normals;
     in vec2 texture_coords;
+    in vec3 vertex_position;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        // TODO: implement lighting, and do something with normals and materials.
-        vec4 nothing = vertex_normals - vec4(1.0, 1.0, 1.0, 1.0);
-        final_colors = texture(our_texture, texture_coords) + vertex_colors * nothing;
+        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
+        final_colors = (texture(our_texture, texture_coords) * vertex_colors) * l * 1.2;
     }
-"""
-
-_default_vert_shader = Shader(vertex_source, 'vertex')
-_default_frag_shader = Shader(fragment_source, 'fragment')
-default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-
-
-class TexturedMaterialGroup(graphics.Group):
+    """, 'fragment')
+    _default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
 
     def __init__(self, material, texture):
-        super().__init__()
-        self.material = material
+        super().__init__(material)
         self.texture = texture
-        self.program = default_shader_program
-        self.rotation = 0, 0, 0
-        self.translation = 0, 0, 0
 
     def set_state(self):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
-        self.program['rotation'] = self.rotation
-        self.program['translation'] = self.translation
+        self._set_modelview_matrix()
 
     def unset_state(self):
         glBindTexture(self.texture.target, 0)
-        self.program.stop()
 
     def __eq__(self, other):
         return False
@@ -340,22 +329,53 @@ class TexturedMaterialGroup(graphics.Group):
         return hash((id(self.parent), self.texture.id, self.texture.target))
 
 
-class MaterialGroup(graphics.Group):
+class MaterialGroup(BaseMaterialGroup):
+    _default_vert_shader = Shader("""#version 330 core
+    in vec3 vertices;
+    in vec3 normals;
+    in vec4 colors;
+
+    out vec4 vertex_colors;
+    out vec3 vertex_normals;
+    out vec3 vertex_position;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        vec4 pos = window.view * vec4(vertices, 1.0);
+        gl_Position = window.projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
+
+        vertex_position = pos.xyz;
+        vertex_colors = colors;
+        vertex_normals = normal_matrix * normals;
+    }
+    """, 'vertex')
+    _default_frag_shader = Shader("""#version 330 core
+    in vec4 vertex_colors;
+    in vec3 vertex_normals;
+    in vec3 vertex_position;
+    out vec4 final_colors;
+
+    void main()
+    {
+        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
+        final_colors = vertex_colors * l * 1.2;
+    }
+    """, 'fragment')
+    _default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
 
     def __init__(self, material):
-        super(MaterialGroup, self).__init__()
-        self.material = material
-        self.program = default_shader_program
-        self.rotation = 0, 0, 0
-        self.translation = 0, 0, 0
+        super().__init__(material)
 
     def set_state(self):
         self.program.use()
-        self.program['rotation'] = self.rotation
-        self.program['translation'] = self.translation
-
-    def unset_state(self):
-        self.program.stop()
+        self._set_modelview_matrix()
 
     def __eq__(self, other):
         return False
