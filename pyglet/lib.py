@@ -250,6 +250,16 @@ class MachOLibraryLoader(LibraryLoader):
     @staticmethod
     def load_framework(name):
         path = ctypes.util.find_library(name)
+
+        # Hack for compatibility with macOS > 11.0
+        if path is None and sys.platform == 'darwin':
+            frameworks = {
+                'AGL': '/System/Library/Frameworks/AGL.framework/AGL',
+                'OpenAL': '/System/Library/Frameworks/OpenAL.framework/OpenAL',
+                'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL'
+            }
+            path = frameworks.get(name)
+
         if path:
             lib = ctypes.cdll.LoadLibrary(path)
             if _debug_lib:
