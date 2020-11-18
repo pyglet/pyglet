@@ -4,8 +4,6 @@ from ctypes import util
 from .runtime import send_message, ObjCInstance
 from .cocoatypes import *
 
-import sys
-
 ######################################################################
 
 # CORE FOUNDATION
@@ -197,7 +195,7 @@ cf.CFRunLoopGetMain.argtypes = []
 lib = util.find_library('AppKit')
 
 # Hack for compatibility with macOS > 11.0
-if lib is None and sys.platform == 'darwin':
+if lib is None:
     lib = '/System/Library/Frameworks/AppKit.framework/AppKit'
 
 appkit = cdll.LoadLibrary(lib)

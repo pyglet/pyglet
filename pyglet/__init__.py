@@ -346,31 +346,9 @@ class _ModuleProxy:
             setattr(module, name, value)
 
 
-if not TYPE_CHECKING:
-    app = _ModuleProxy('app')
-    canvas = _ModuleProxy('canvas')
-    clock = _ModuleProxy('clock')
-    com = _ModuleProxy('com')
-    event = _ModuleProxy('event')
-    font = _ModuleProxy('font')
-    gl = _ModuleProxy('gl')
-    graphics = _ModuleProxy('graphics')
-    gui = _ModuleProxy('gui')
-    image = _ModuleProxy('image')
-    input = _ModuleProxy('input')
-    lib = _ModuleProxy('lib')
-    media = _ModuleProxy('media')
-    model = _ModuleProxy('model')
-    resource = _ModuleProxy('resource')
-    sprite = _ModuleProxy('sprite')
-    shapes = _ModuleProxy('shapes')
-    text = _ModuleProxy('text')
-    window = _ModuleProxy('window')
-    math = _ModuleProxy('math')
-
-# Fool py2exe, py2app into including all top-level modules
-# (doesn't understand lazy loading)
-else:
+# Lazily load all modules, except if performing
+# type checking or code inspection.
+if TYPE_CHECKING:
     from . import app
     from . import canvas
     from . import clock
@@ -383,6 +361,7 @@ else:
     from . import input
     from . import image
     from . import lib
+    from . import math
     from . import media
     from . import model
     from . import resource
@@ -390,4 +369,24 @@ else:
     from . import shapes
     from . import text
     from . import window
-    from . import math
+else:
+    app = _ModuleProxy('app')
+    canvas = _ModuleProxy('canvas')
+    clock = _ModuleProxy('clock')
+    com = _ModuleProxy('com')
+    event = _ModuleProxy('event')
+    font = _ModuleProxy('font')
+    gl = _ModuleProxy('gl')
+    graphics = _ModuleProxy('graphics')
+    gui = _ModuleProxy('gui')
+    image = _ModuleProxy('image')
+    input = _ModuleProxy('input')
+    lib = _ModuleProxy('lib')
+    math = _ModuleProxy('math')
+    media = _ModuleProxy('media')
+    model = _ModuleProxy('model')
+    resource = _ModuleProxy('resource')
+    sprite = _ModuleProxy('sprite')
+    shapes = _ModuleProxy('shapes')
+    text = _ModuleProxy('text')
+    window = _ModuleProxy('window')

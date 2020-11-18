@@ -159,6 +159,7 @@ video drivers, and requires indexed vertex lists.
 """
 
 import ctypes
+import weakref
 
 import pyglet
 from pyglet.gl import *
@@ -518,6 +519,8 @@ class Batch:
             if group.parent not in self.group_children:
                 self.group_children[group.parent] = []
             self.group_children[group.parent].append(group)
+
+        group._assigned_batches.add(self)
         self._draw_list_dirty = True
 
     def _update_draw_list(self):
@@ -542,13 +545,15 @@ class Batch:
             if children:
                 children.sort()
                 for child in list(children):
-                    draw_list.extend(visit(child))
+                    if child.visible:
+                        draw_list.extend(visit(child))
 
             if children or domain_map:
                 return [group.set_state] + draw_list + [group.unset_state]
             else:
                 # Remove unused group from batch
                 del self.group_map[group]
+                group._assigned_batches.remove(self)
                 if group.parent:
                     self.group_children[group.parent].remove(group)
                 try:
@@ -559,13 +564,15 @@ class Batch:
                     self.top_groups.remove(group)
                 except ValueError:
                     pass
+
                 return []
 
         self._draw_list = []
 
         self.top_groups.sort()
         for group in list(self.top_groups):
-            self._draw_list.extend(visit(group))
+            if group.visible:
+                self._draw_list.extend(visit(group))
 
         self._draw_list_dirty = False
 
@@ -639,13 +646,15 @@ class Batch:
             if children:
                 children.sort()
                 for child in children:
-                    visit(child)
+                    if child.visible:
+                        visit(child)
 
             group.unset_state()
 
         self.top_groups.sort()
         for group in self.top_groups:
-            visit(group)
+            if group.visible:
+                visit(group)
 
 
 class Group:
@@ -661,15 +670,38 @@ class Group:
             `order` : int
                 Set the order to render above or below other Groups.
             `parent` : `~pyglet.graphics.Group`
+                Group to contain this group; its state will be set before this
+                state's.
+            `visible` : bool
+                Determines whether this group is visible in any of the batches it is assigned to.
+            `batches` : list
+                Read Only. A list of which batches this group is a part of.
                 Group to contain this group; its state will be set
                 before this Group's state.
         """
         self._order = order
         self.parent = parent
+        self._visible = True
+        self._assigned_batches = weakref.WeakSet()
 
     @property
     def order(self):
         return self._order
+
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        self._visible = value
+
+        for batch in self._assigned_batches:
+            batch.invalidate()
+
+    @property
+    def batches(self):
+        return [batch for batch in self._assigned_batches]
 
     def __lt__(self, other):
         return self._order < other.order

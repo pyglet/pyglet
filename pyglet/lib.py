@@ -49,7 +49,7 @@ import pyglet
 _debug_lib = pyglet.options['debug_lib']
 _debug_trace = pyglet.options['debug_trace']
 
-_is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
+_is_pyglet_doc_run = getattr(sys, "is_pyglet_doc_run", False)
 
 if pyglet.options['search_local_libs']:
     script_path = pyglet.resource.get_script_home()
@@ -166,7 +166,8 @@ class LibraryLoader:
     def find_library(self, name):
         return ctypes.util.find_library(name)
 
-    def load_framework(self, path):
+    @staticmethod
+    def load_framework(name):
         raise RuntimeError("Can't load framework on this platform.")
 
 
@@ -190,10 +191,8 @@ class MachOLibraryLoader(LibraryLoader):
         if 'DYLD_FALLBACK_LIBRARY_PATH' in os.environ:
             self.dyld_fallback_library_path = os.environ['DYLD_FALLBACK_LIBRARY_PATH'].split(':')
         else:
-            self.dyld_fallback_library_path = [os.path.expanduser('~/lib'),
-                                               '/usr/local/lib',
-                                               '/usr/lib']
- 
+            self.dyld_fallback_library_path = [os.path.expanduser('~/lib'), '/usr/local/lib', '/usr/lib']
+
     def find_library(self, path):
         """Implements the dylib search as specified in Apple documentation:
 
@@ -252,13 +251,13 @@ class MachOLibraryLoader(LibraryLoader):
         path = ctypes.util.find_library(name)
 
         # Hack for compatibility with macOS > 11.0
-        if path is None and sys.platform == 'darwin':
+        if path is None:
             frameworks = {
                 'AGL': '/System/Library/Frameworks/AGL.framework/AGL',
                 'OpenAL': '/System/Library/Frameworks/OpenAL.framework/OpenAL',
                 'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL'
             }
-            path = frameworks.get(name)
+            path = frameworks.get(name, None)
 
         if path:
             lib = ctypes.cdll.LoadLibrary(path)

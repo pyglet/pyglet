@@ -32,15 +32,20 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+import pyglet
+
+from .ninepatch import NinePatch, NinePatchGroup
 
 
 class Frame:
 
-    def __init__(self, window, cell_size=128):
+    def __init__(self, window, cell_size=64, order=0):
         window.push_handlers(self)
         self._cell_size = cell_size
         self._cells = {}
         self._active_widgets = set()
+        self._order = order
+        self._mouse_pos = 0, 0
 
     def _hash(self, x, y):
         """Normalize position to cell"""
@@ -52,6 +57,8 @@ class Frame:
         for i in range(min_vec[0], max_vec[0] + 1):
             for j in range(min_vec[1], max_vec[1] + 1):
                 self._cells.setdefault((i, j), set()).add(widget)
+                # TODO: return ID and track Widgets for later deletion.
+        widget.update_groups(self._order)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
@@ -69,6 +76,7 @@ class Frame:
         """Pass the event to any widgets that are currently active"""
         for widget in self._active_widgets:
             widget.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+        self._mouse_pos = x, y
 
     def on_mouse_scroll(self, x, y, index, direction):
         """Pass the event to any widgets within range of the mouse"""
@@ -77,5 +85,38 @@ class Frame:
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Pass the event to any widgets within range of the mouse"""
+        for widget in self._active_widgets:
+            widget.dispatch_event('on_mouse_motion', x, y, dx, dy)
         for widget in self._cells.get(self._hash(x, y), set()):
             widget.dispatch_event('on_mouse_motion', x, y, dx, dy)
+            self._active_widgets.add(widget)
+        self._mouse_pos = x, y
+
+    def on_text(self, text):
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.dispatch_event('on_text', text)
+
+    def on_text_motion(self, motion):
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.dispatch_event('on_text_motion', motion)
+
+    def on_text_motion_select(self, motion):
+        for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
+            widget.dispatch_event('on_text_motion_select', motion)
+
+
+class NinePatchFrame(Frame):
+
+    def __init__(self, x, y, width, height, window, image, group=None, batch=None, cell_size=128, order=0):
+        super().__init__(window, cell_size, order)
+        self._npatch = NinePatch(image)
+        self._npatch.get_vertices(x, y, width, height)
+        self._group = NinePatchGroup(image.get_texture(), order, group)
+        self._batch = batch or pyglet.graphics.Batch()
+
+        vertices = self._npatch.get_vertices(x, y, width, height)
+        indices = self._npatch.indices
+        tex_coords = self._npatch.tex_coords
+
+        self._vlist = self._batch.add_indexed(16, pyglet.gl.GL_QUADS, self._group, indices,
+                                              ('v2i', vertices), ('t2f', tex_coords))
