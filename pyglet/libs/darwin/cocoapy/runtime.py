@@ -457,7 +457,7 @@ def send_message(receiver, selName, *args, **kwargs):
         receiver = get_class(receiver)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
-    #print 'send_message', receiver, selName, args, kwargs
+    #print('send_message', receiver, selName, args, kwargs)
     argtypes = kwargs.get('argtypes', [])
     # Choose the correct version of objc_msgSend based on return type.
     if should_use_fpret(restype):
@@ -693,7 +693,7 @@ class ObjCMethod:
         try:
             self.argtypes = [self.ctype_for_encoding(t) for t in self.argument_types]
         except:
-            #print 'no argtypes encoding for %s (%s)' % (self.name, self.argument_types)
+            #print('no argtypes encoding for %s (%s)' % (self.name, self.argument_types))
             self.argtypes = None
         # Get types for the return type.
         try:
@@ -704,7 +704,7 @@ class ObjCMethod:
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
         except:
-            #print 'no restype encoding for %s (%s)' % (self.name, self.return_type)
+            #print('no restype encoding for %s (%s)' % (self.name, self.return_type))
             self.restype = None
         self.func = None
 
