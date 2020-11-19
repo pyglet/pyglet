@@ -222,11 +222,11 @@ created based on the values of these properties:
         If you require an accumulation buffer, specify ``8`` for each
         of these attributes (the alpha component is optional, of course).
     ``aux_buffers``
-        Each auxilliary buffer is configured the same as the colour buffer.
-        Up to four auxilliary buffers can typically be created.  Specify ``0``
-        if you do not require any auxilliary buffers.
+        Each auxiliary buffer is configured the same as the colour buffer.
+        Up to four auxiliary buffers can typically be created.  Specify ``0``
+        if you do not require any auxiliary buffers.
 
-        Like the accumulation buffer, auxilliary buffers are used less often
+        Like the accumulation buffer, auxiliary buffers are used less often
         nowadays as more efficient techniques such as render-to-texture are
         available.  They are almost universally available on older hardware,
         though, where the newer techniques are not possible.
@@ -250,7 +250,8 @@ context will currently prevent usage of these modules.
 .. note::
    To request a higher higher version OpenGL context on Mac OSX, it is necessary
    to disable the pyglet shadow context. To do this, set the pyglet option
-   ``pyglet.options['shadow_window']`` to ``False`` before creating a Window.
+   ``pyglet.options['shadow_window']`` to ``False`` `before` creating a Window,
+   or importing ``pyglet.window``.
 
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -337,7 +338,7 @@ template as a minimum specification, but you can supply an "empty" template
 (one with no attributes set) to get a list of all configurations supported by
 the screen.
 
-In the following example, all configurations with either an auxilliary buffer
+In the following example, all configurations with either an auxiliary buffer
 or an accumulation buffer are printed::
 
     display = pyglet.canvas.get_display()
