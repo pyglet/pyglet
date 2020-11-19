@@ -228,11 +228,8 @@ def create_attribute(shader_program_id, fmt):
 
     :rtype: `VertexAttribute`
     """
-    try:
-        args = _attribute_cache[fmt]
-        return VertexAttribute(*args)
-    except KeyError:
-        pass
+
+    # TODO: use the ShaderProgram's attribute introspection
 
     match = _attribute_format_re.match(fmt)
     assert match, 'Invalid attribute format %r' % fmt

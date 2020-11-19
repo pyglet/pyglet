@@ -55,7 +55,6 @@ class Mesh:
 
 
 def load_material_library(filename):
-
     file = open(filename, 'r')
 
     name = None
@@ -239,20 +238,20 @@ class OBJModelDecoder(ModelDecoder):
                 texture = pyglet.resource.texture(material.texture_name)
                 group = TexturedMaterialGroup(material, texture)
                 vertex_lists.append(batch.add(len(mesh.vertices) // 3,
-                                            GL_TRIANGLES,
-                                            group,
-                                            ('vertices3f', mesh.vertices),
-                                            ('normals3f', mesh.normals),
-                                            ('tex_coords2f', mesh.tex_coords),
-                                            ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
+                                              GL_TRIANGLES,
+                                              group,
+                                              ('vertices3f', mesh.vertices),
+                                              ('normals3f', mesh.normals),
+                                              ('tex_coords2f', mesh.tex_coords),
+                                              ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
             else:
                 group = MaterialGroup(material)
                 vertex_lists.append(batch.add(len(mesh.vertices) // 3,
-                                            GL_TRIANGLES,
-                                            group,
-                                            ('vertices3f', mesh.vertices),
-                                            ('normals3f', mesh.normals),
-                                            ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
+                                              GL_TRIANGLES,
+                                              group,
+                                              ('vertices3f', mesh.vertices),
+                                              ('normals3f', mesh.normals),
+                                              ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
 
             groups.append(group)
 
