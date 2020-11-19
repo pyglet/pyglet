@@ -85,7 +85,7 @@ from math import radians
 from io import BytesIO
 
 from pyglet.graphics.shader import Shader, ShaderProgram
-from pyglet.gl import *
+from pyglet import gl
 from pyglet import graphics
 from pyglet.math import Mat4
 
@@ -220,6 +220,7 @@ class Model:
         This is not recommended. See the module documentation
         for information on efficient drawing of multiple models.
         """
+        current_context.window_block.bind(0)
         self._batch.draw_subset(self.vertex_lists)
 
 
@@ -239,18 +240,16 @@ class Material:
 
 
 class BaseMaterialGroup(graphics.Group):
-    _default_vert_shader = None
-    _default_frag_shader = None
-    _default_program = None
+    default_vert_src = None
+    default_frag_src = None
 
     def __init__(self, material, *args, **kwargs):
         super().__init__()
         self.material = material
         self.rotation = 0, 0, 0
         self.translation = 0, 0, 0
-        self.program = self._default_program
 
-    def _set_modelview_matrix(self):
+    def set_modelview_matrix(self):
         # NOTE: Matrix operations can be optimized later with transform feedback
         translate = Mat4.from_translation(*self.translation)
         rotate_x = Mat4().rotate(radians(self.rotation[0]), x=1)
@@ -258,12 +257,11 @@ class BaseMaterialGroup(graphics.Group):
         rotate_z = Mat4().rotate(radians(self.rotation[2]), z=1)
         view = rotate_z @ rotate_y @ rotate_x @ translate
 
-        with self.program.uniform_buffers['WindowBlock'] as window_block:
-            window_block.view[:] = view
+        gl.current_context.window_block.set_modelview(view)
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
-    _default_vert_shader = Shader("""#version 330 core
+    default_vert_src = """#version 330 core
     in vec3 vertices;
     in vec3 normals;
     in vec2 tex_coords;
@@ -291,8 +289,8 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         texture_coords = tex_coords;
         vertex_normals = normal_matrix * normals;
     }
-    """, 'vertex')
-    _default_frag_shader = Shader("""#version 330 core
+    """
+    default_frag_src = """#version 330 core
     in vec4 vertex_colors;
     in vec3 vertex_normals;
     in vec2 texture_coords;
@@ -306,21 +304,20 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         float l = dot(normalize(-vertex_position), normalize(vertex_normals));
         final_colors = (texture(our_texture, texture_coords) * vertex_colors) * l * 1.2;
     }
-    """, 'fragment')
-    _default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-
+    """
     def __init__(self, material, texture):
         super().__init__(material)
         self.texture = texture
+        self.program = gl.current_context.default_texturematerial_group_program
 
     def set_state(self):
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
-        self._set_modelview_matrix()
+        self.set_modelview_matrix()
 
     def unset_state(self):
-        glBindTexture(self.texture.target, 0)
+        gl.glBindTexture(self.texture.target, 0)
 
     def __eq__(self, other):
         return False
@@ -330,7 +327,7 @@ class TexturedMaterialGroup(BaseMaterialGroup):
 
 
 class MaterialGroup(BaseMaterialGroup):
-    _default_vert_shader = Shader("""#version 330 core
+    default_vert_src = """#version 330 core
     in vec3 vertices;
     in vec3 normals;
     in vec4 colors;
@@ -355,8 +352,8 @@ class MaterialGroup(BaseMaterialGroup):
         vertex_colors = colors;
         vertex_normals = normal_matrix * normals;
     }
-    """, 'vertex')
-    _default_frag_shader = Shader("""#version 330 core
+    """
+    default_frag_src = """#version 330 core
     in vec4 vertex_colors;
     in vec3 vertex_normals;
     in vec3 vertex_position;
@@ -367,15 +364,14 @@ class MaterialGroup(BaseMaterialGroup):
         float l = dot(normalize(-vertex_position), normalize(vertex_normals));
         final_colors = vertex_colors * l * 1.2;
     }
-    """, 'fragment')
-    _default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-
+    """
     def __init__(self, material):
         super().__init__(material)
+        self.program = gl.current_context.default_material_group_program
 
     def set_state(self):
         self.program.use()
-        self._set_modelview_matrix()
+        self.set_modelview_matrix()
 
     def __eq__(self, other):
         return False
