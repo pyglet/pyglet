@@ -1,6 +1,7 @@
 import math
 import pyglet
 pyglet.options['debug_gl_shaders'] = True
+pyglet.options['shadow_window'] = False
 from pyglet.gl import *
 
 window = pyglet.window.Window(width=720, height=480)
