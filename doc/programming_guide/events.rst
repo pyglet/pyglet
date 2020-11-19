@@ -117,11 +117,11 @@ returning to some menu screen) the handlers are popped off in one go::
 
     def start_game():
         def on_key_press(symbol, modifiers):
-            print 'Key pressed in game'
+            print('Key pressed in game')
             return True
 
         def on_mouse_press(x, y, button, modifiers):
-            print 'Mouse button pressed in game'
+            print('Mouse button pressed in game')
             return True
 
         window.push_handlers(on_key_press, on_mouse_press)
@@ -140,11 +140,11 @@ pushed on and popped off of a window::
 
     class GameEventHandler:
         def on_key_press(self, symbol, modifiers):
-            print 'Key pressed in game'
+            print('Key pressed in game')
             return True
 
         def on_mouse_press(self, x, y, button, modifiers):
-            print 'Mouse button pressed in game'
+            print('Mouse button pressed in game')
             return True
 
     game_handlers = GameEventHandler()
@@ -196,7 +196,7 @@ In the following example, a hypothetical GUI widget provides several events::
             self.dispatch_event('on_clicked', clicks)
 
         def on_clank(self):
-            print 'Default clank handler.'
+            print('Default clank handler.')
 
     ClankingWidget.register_event_type('on_clank')
     ClankingWidget.register_event_type('on_clicked')
