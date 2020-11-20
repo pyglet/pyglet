@@ -261,22 +261,17 @@ class TextEntry(WidgetBase):
         bg_group = OrderedGroup(0, parent=group)
         fg_group = OrderedGroup(1, parent=group)
 
-        # Rectangular outline:
-        pad = 2
-        x1 = x - pad
-        y1 = y - pad
-        x2 = x + width + pad
-        y2 = y + height + pad
-        self._outline = batch.add(4, pyglet.gl.GL_QUADS, bg_group,
-                                  ('v2i', [x1, y1, x2, y1, x2, y2, x1, y2]),
-                                  ('c4B', color * 4))
+        # Rectangular outline with 2-pixel pad:
+        p = 2
+        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color[:3], batch, bg_group)
+        self._outline.opacity = color[3]
+
         # Text and Caret:
         self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
-        self._caret = Caret(self._layout)
-        self._caret.visible = False
-
         self._layout.x = x
         self._layout.y = y
+        self._caret = Caret(self._layout)
+        self._caret.visible = False
 
         self._focus = False
 
