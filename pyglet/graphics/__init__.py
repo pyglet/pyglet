@@ -673,7 +673,8 @@ class Group:
                 Group to contain this group; its state will be set before this
                 state's.
             `visible` : bool
-                Determines whether this group is visible in any of the batches it is assigned to.
+                Determines whether this group is visible in any of the batches
+                it is assigned to.
             `batches` : list
                 Read Only. A list of which batches this group is a part of.
                 Group to contain this group; its state will be set
@@ -707,7 +708,9 @@ class Group:
         return self._order < other.order
 
     def __eq__(self, other):
-        return self.__class__ is other.__class__ and self._order == other.order
+        return (self.__class__ is other.__class__ and
+                self._order == other.order and
+                self.parent == other.parent)
 
     def __hash__(self):
         return hash((self._order, self.parent))
@@ -760,7 +763,10 @@ class ShaderGroup(Group):
         self.program.stop()
 
     def __eq__(self, other):
-        return self.__class__ is other.__class__ and self._order == other.order and self.program == other.program
+        return (self.__class__ is other.__class__ and
+                self._order == other.order and
+                self.program == other.program and
+                self.parent == other.parent)
 
     def __hash__(self):
         return hash((self._order, self.parent, self.program))
