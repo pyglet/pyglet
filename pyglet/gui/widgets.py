@@ -36,7 +36,7 @@
 import pyglet
 
 from pyglet.event import EventDispatcher
-from pyglet.graphics import OrderedGroup
+from pyglet.graphics import Group
 from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
 
@@ -120,13 +120,13 @@ class PushButton(WidgetBase):
         # TODO: add `draw` method or make Batch required.
         self._batch = batch or pyglet.graphics.Batch()
         self._user_group = group
-        bg_group = OrderedGroup(0, parent=group)
+        bg_group = Group(order=0, parent=group)
         self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
 
         self._pressed = False
 
     def update_groups(self, order):
-        self._sprite.group = OrderedGroup(order + 1, self._user_group)
+        self._sprite.group = Group(order=order + 1, parent=self._user_group)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if not self._check_hit(x, y):
@@ -193,8 +193,8 @@ class Slider(WidgetBase):
         self._max_knob_x = x + base.width - knob.width - edge
 
         self._user_group = group
-        bg_group = OrderedGroup(0, parent=group)
-        fg_group = OrderedGroup(1, parent=group)
+        bg_group = Group(order=0, parent=group)
+        fg_group = Group(order=1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
         self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x+edge, y+base.height/2, batch=batch, group=fg_group)
 
@@ -202,8 +202,8 @@ class Slider(WidgetBase):
         self._in_update = False
 
     def update_groups(self, order):
-        self._base_spr.group = OrderedGroup(order + 1, self._user_group)
-        self._knob_spr.group = OrderedGroup(order + 2, self._user_group)
+        self._base_spr.group = Group(order=order + 1, parent=self._user_group)
+        self._knob_spr.group = Group(order=order + 2, parent=self._user_group)
 
     @property
     def _min_x(self):
@@ -258,8 +258,8 @@ class TextEntry(WidgetBase):
         height = font.ascent - font.descent
 
         self._user_group = group
-        bg_group = OrderedGroup(0, parent=group)
-        fg_group = OrderedGroup(1, parent=group)
+        bg_group = Group(order=0, parent=group)
+        fg_group = Group(order=1, parent=group)
 
         # Rectangular outline:
         pad = 2
@@ -290,8 +290,8 @@ class TextEntry(WidgetBase):
         self._caret.visible = value
 
     def update_groups(self, order):
-        self._outline.group = OrderedGroup(order + 1, self._user_group)
-        self._layout.group = OrderedGroup(order + 2, self._user_group)
+        self._outline.group = Group(order=order + 1, parent=self._user_group)
+        self._layout.group = Group(order=order + 2, parent=self._user_group)
 
     def on_mouse_motion(self, x, y, dx, dy):
         if not self._check_hit(x, y):

@@ -43,7 +43,7 @@ http://developer.android.com/guide/topics/graphics/2d-graphics.html#nine-patch.
 
 """
 
-from pyglet.graphics import OrderedGroup
+from pyglet.graphics import Group
 from pyglet.gl import GL_BLEND, GL_ENABLE_BIT, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA
 from pyglet.gl import glBindTexture, glBlendFunc, glEnable, glPopAttrib, glPushAttrib
 
@@ -52,7 +52,7 @@ class NinePatchException(Exception):
     pass
 
 
-class NinePatchGroup(OrderedGroup):
+class NinePatchGroup(Group):
     def __init__(self, texture, order=0, parent=None):
         super().__init__(order, parent)
         self.texture = texture

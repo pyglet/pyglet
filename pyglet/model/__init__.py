@@ -255,11 +255,11 @@ class BaseMaterialGroup(graphics.ShaderGroup):
 
     def _set_modelview_matrix(self):
         # NOTE: Matrix operations can be optimized later with transform feedback
-        translate = Mat4.from_translation(*self.translation)
-        rotate_x = Mat4().rotate(radians(self.rotation[0]), x=1)
-        rotate_y = Mat4().rotate(radians(self.rotation[1]), y=1)
-        rotate_z = Mat4().rotate(radians(self.rotation[2]), z=1)
-        view = rotate_z @ rotate_y @ rotate_x @ translate
+        view = Mat4()
+        view = view.rotate(radians(self.rotation[2]), z=1)
+        view = view.rotate(radians(self.rotation[1]), y=1)
+        view = view.rotate(radians(self.rotation[0]), x=1)
+        view = view.translate(*self.translation)
 
         with self.program.uniform_buffers['WindowBlock'] as window_block:
             window_block.view[:] = view
