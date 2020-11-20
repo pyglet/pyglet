@@ -103,7 +103,7 @@ def errcheck(result, func, arguments):
     error = gl.glGetError()
     if error:
         msg = ctypes.cast(gl.gluErrorString(error), ctypes.c_char_p).value
-        raise GLException(msg)
+        raise GLException('(0x%x): %s' % (error, msg))
     return result
 
 
