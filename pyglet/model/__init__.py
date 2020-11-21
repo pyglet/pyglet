@@ -236,26 +236,34 @@ class Material:
         self.shininess = shininess
         self.texture_name = texture_name
 
+    def __eq__(self, other):
+        return (self.name == other.name and
+                self.diffuse == other.diffuse and
+                self.ambient == other.ambient and
+                self.specular == other.specular and
+                self.emission == other.emission and
+                self.shininess == other.shininess and
+                self.texture_name == other.texture_name)
 
 
-
-class BaseMaterialGroup(graphics.Group):
+class BaseMaterialGroup(graphics.ShaderGroup):
     default_vert_src = None
     default_frag_src = None
 
-    def __init__(self, material, *args, **kwargs):
-        super().__init__()
+    def __init__(self, material, program, order=0, parent=None):
+        super().__init__(program, order, parent)
+
         self.material = material
         self.rotation = 0, 0, 0
         self.translation = 0, 0, 0
 
     def set_modelview_matrix(self):
         # NOTE: Matrix operations can be optimized later with transform feedback
-        translate = Mat4.from_translation(*self.translation)
-        rotate_x = Mat4().rotate(radians(self.rotation[0]), x=1)
-        rotate_y = Mat4().rotate(radians(self.rotation[1]), y=1)
-        rotate_z = Mat4().rotate(radians(self.rotation[2]), z=1)
-        view = rotate_z @ rotate_y @ rotate_x @ translate
+        view = Mat4()
+        view = view.rotate(radians(self.rotation[2]), z=1)
+        view = view.rotate(radians(self.rotation[1]), y=1)
+        view = view.rotate(radians(self.rotation[0]), x=1)
+        view = view.translate(*self.translation)
 
         gl.current_context.window_block.set_modelview(view)
 
@@ -306,9 +314,8 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     }
     """
     def __init__(self, material, texture):
-        super().__init__(material)
+        super().__init__(material, gl.current_context.default_texturematerial_group_program)
         self.texture = texture
-        self.program = gl.current_context.default_texturematerial_group_program
 
     def set_state(self):
         gl.glActiveTexture(gl.GL_TEXTURE0)
@@ -319,11 +326,18 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     def unset_state(self):
         gl.glBindTexture(self.texture.target, 0)
 
-    def __eq__(self, other):
-        return False
-
     def __hash__(self):
-        return hash((id(self.parent), self.texture.id, self.texture.target))
+        return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self.material == other.material and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id and
+                self.program == other.program and
+                self.order == other.order and
+                self.parent == other.parent)
+
 
 
 class MaterialGroup(BaseMaterialGroup):
@@ -366,18 +380,11 @@ class MaterialGroup(BaseMaterialGroup):
     }
     """
     def __init__(self, material):
-        super().__init__(material)
-        self.program = gl.current_context.default_material_group_program
+        super().__init__(material, gl.current_context.default_material_group_program)
 
     def set_state(self):
         self.program.use()
         self.set_modelview_matrix()
-
-    def __eq__(self, other):
-        return False
-
-    def __hash__(self):
-        return hash((id(self.parent)))
 
 
 add_default_model_codecs()
