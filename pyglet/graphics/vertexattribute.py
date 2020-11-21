@@ -117,7 +117,6 @@ Some examples follow:
 
 import re
 import ctypes
-import warnings
 
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer
@@ -151,9 +150,6 @@ _attribute_format_re = re.compile(r"""
     (?P<type>[bBsSiIfd])
     (?P<normalize>n?)
 """, re.VERBOSE)
-
-
-_attribute_cache = {}
 
 
 def _align(v, align):
@@ -203,19 +199,7 @@ def serialize_attributes(count, attributes):
         offset += count * attribute.stride
 
 
-_legacy_attributes = {
-    #      name,  normalized
-    'c': ("colors", True),
-    'e': ("edge_flags", True),
-    'f': ("fog_coords", False),
-    'n': ("normals", False),
-    's': ("secondary_colors", True),
-    't': ("tex_coords", False),
-    'v': ("vertices", False),
-}
-
-
-def create_attribute(shader_program_id, fmt):
+def create_attribute(shader_program, fmt):
     """Create a vertex attribute description from a format string.
     
     The initial stride and offset of the attribute will be 0.
@@ -229,8 +213,6 @@ def create_attribute(shader_program_id, fmt):
     :rtype: `VertexAttribute`
     """
 
-    # TODO: use the ShaderProgram's attribute introspection
-
     match = _attribute_format_re.match(fmt)
     assert match, 'Invalid attribute format %r' % fmt
 
@@ -239,29 +221,24 @@ def create_attribute(shader_program_id, fmt):
     gl_type = _gl_types[match.group('type')]
     normalize = True if match.group('normalize') else False
 
-    if name in _legacy_attributes:
-        # TODO: remove deprecated fallback:
-        name, normalize = _legacy_attributes[name]
-        message = ("Vertex attribute shorthand notation is deprecated: '{0}'. "
-                   "Please use the actual attribute names as defined in the Shader Program.".format(fmt))
-        warnings.warn(message)
+    attribute_meta = shader_program.attributes.get(name, None)
+    assert attribute_meta, f"No '{name}' attribute found in {shader_program}.\n"\
+                           f"Valid attibutes are: {shader_program.attributes}"
 
-    _attribute_cache[fmt] = name, shader_program_id, count, gl_type, normalize
-
-    return VertexAttribute(name, shader_program_id, count, gl_type, normalize)
+    return VertexAttribute(name, attribute_meta.location, count, gl_type, normalize)
 
 
 class VertexAttribute:
     """Abstract accessor for an attribute in a mapped buffer."""
 
-    def __init__(self, name, shader, count, gl_type, normalize):
+    def __init__(self, name, location, count, gl_type, normalize):
         """Create the attribute accessor.
 
         :Parameters:
             `name` : str
                 Name of the vertex attribute.
-            `shader` : int
-                ID of the Shader Program that this attribute will belong to.
+            `location` : int
+                Location of the vertex attribute.
             `count` : int
                 Number of components in the attribute.
             `gl_type` : int
@@ -272,8 +249,9 @@ class VertexAttribute:
         """
         assert count in (1, 2, 3, 4), 'Vertex attribute component count out of range'
         self.name = name
-        self.shader = shader
+        self.location = location
         self.count = count
+
         self.gl_type = gl_type
         self.c_type = _c_types[gl_type]
         self.normalize = normalize
@@ -282,10 +260,6 @@ class VertexAttribute:
         self.size = count * self.align
         self.stride = self.size
         self.offset = 0
-
-        attr_name = ctypes.create_string_buffer(self.name.encode('utf8'))
-        self.location = glGetAttribLocation(shader, attr_name)
-        assert self.location != -1, "'{0}' attribute not found in Shader".format(self.name)
 
     def enable(self):
         """Enable the attribute."""
@@ -374,37 +348,3 @@ class VertexAttribute:
 
     def __repr__(self):
         return "VertexAttribute(name='{}', count={}, location={})".format(self.name, self.count, self.location)
-
-
-class GenericAttribute(VertexAttribute):
-    """Abstract accessor for an attribute in a mapped buffer."""
-
-    def __init__(self, name, location, count, gl_type, normalize):
-        """Create the attribute accessor.
-
-        :Parameters:
-            `name` : str
-                Name of the vertex attribute.
-            `location` : int
-                Index of the Attribute in the ShaderProgram.
-            `count` : int
-                Number of components in the attribute.
-            `gl_type` : int
-                OpenGL type enumerant; for example, ``GL_FLOAT``
-            `normalize`: bool
-                True if OpenGL should normalize the values
-
-        """
-        assert count in (1, 2, 3, 4), 'Vertex attribute component count out of range'
-        self.name = name
-        self.location = location
-        self.count = count
-        self.gl_type = gl_type
-        self.normalize = normalize
-
-        self.c_type = _c_types[gl_type]
-        self.align = ctypes.sizeof(self.c_type)
-
-        self.size = count * self.align
-        self.stride = self.size
-        self.offset = 0

@@ -88,7 +88,7 @@ def _nearest_pow2(v):
     return v + 1
 
 
-def create_attribute_usage(shader_program_id, fmt):
+def create_attribute_usage(shader_program, fmt):
     """Create an attribute and usage pair from a format string.  The
     format string is as documented in `pyglet.graphics.vertexattribute`, with
     the addition of an optional usage component::
@@ -110,7 +110,7 @@ def create_attribute_usage(shader_program_id, fmt):
     """
     match = _usage_format_re.match(fmt)
     attribute_format = match.group('attribute')
-    attribute = vertexattribute.create_attribute(shader_program_id, attribute_format)
+    attribute = vertexattribute.create_attribute(shader_program, attribute_format)
     usage = match.group('usage')
     if usage:
         usage = _gl_usages[usage]
@@ -120,7 +120,7 @@ def create_attribute_usage(shader_program_id, fmt):
     return attribute, usage
 
 
-def create_domain(shader_program_id, *attribute_usage_formats):
+def create_domain(shader_program, *attribute_usage_formats):
     """Create a vertex domain covering the given attribute usage formats.
     See documentation for :py:func:`create_attribute_usage` and
     :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
@@ -128,12 +128,12 @@ def create_domain(shader_program_id, *attribute_usage_formats):
 
     :rtype: :py:class:`VertexDomain`
     """
-    attribute_usages = [create_attribute_usage(shader_program_id, f)
+    attribute_usages = [create_attribute_usage(shader_program, f)
                         for f in attribute_usage_formats]
     return VertexDomain(attribute_usages)
 
 
-def create_indexed_domain(shader_program_id, *attribute_usage_formats):
+def create_indexed_domain(shader_program, *attribute_usage_formats):
     """Create an indexed vertex domain covering the given attribute usage
     formats.  See documentation for :py:class:`create_attribute_usage` and
     :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
@@ -141,7 +141,7 @@ def create_indexed_domain(shader_program_id, *attribute_usage_formats):
 
     :rtype: :py:class:`VertexDomain`
     """
-    attribute_usages = [create_attribute_usage(shader_program_id, f)
+    attribute_usages = [create_attribute_usage(shader_program, f)
                         for f in attribute_usage_formats]
     return IndexedVertexDomain(attribute_usages)
 

@@ -236,7 +236,7 @@ class ShaderProgram:
         self._id = self._link_program(shaders)
         self._active = False
 
-        self._attributes = []
+        self._attributes = {}
         self._uniforms = {}
         self._uniform_blocks = {}
 
@@ -345,16 +345,16 @@ class ShaderProgram:
 
     def _introspect_attributes(self):
         program = self._id
-        attributes = []
+        attributes = {}
         for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
             a_name, a_type, a_size = self._query_attribute(index)
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
-            attributes.append(_Attribute(program, a_name, a_type, a_size, loc))
+            attributes[a_name] = _Attribute(program, a_name, a_type, a_size, loc)
+        self._attributes = attributes
 
-            if _debug_gl_shaders:
-                print("Found attribute: {0}, type: {1}, size: {2}, location: {3}".format(a_name, a_type, a_size, loc))
-
-        self._attributes = tuple(attributes)
+        if _debug_gl_shaders:
+            for attribute in attributes.values():
+                print(f"Found attribute: {attribute}")
 
     def _introspect_uniforms(self):
         for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):
