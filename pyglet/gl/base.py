@@ -318,6 +318,15 @@ class Context:
             gl.glDeleteBuffers(len(buffers), buffers)
             self.object_space.doomed_buffers[0:len(buffers)] = []
 
+    def get_bound_uniform_block(self, index: int = 0) -> int:
+        """
+        Returns the name of the buffer object currently
+        bound to the target GL_UNIFORM_BUFFER.
+        """
+        ptr = gl.GLint()
+        gl.glGetIntegeri_v(gl.GL_UNIFORM_BUFFER_BINDING, index, ptr)
+        return ptr.value
+
     def destroy(self):
         """Release the context.
 
