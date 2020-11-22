@@ -17,7 +17,7 @@ The modules
 
 Core modules (required by all others):
 
-pyglet.GL, pyglet.GLU
+pyglet.GL
   OpenGL, including all extensions and versions to 2.0.  This is a very
   lightweight wrap, and requires knowledge of ctypes to use.  An application
   developer writing an OpenGL application would want to use PyOpenGL or
@@ -95,7 +95,7 @@ pyglet.gui (requires pyglet.font)
             CSS model possibly too complicated and obfuscated?
 
 pyglet.draw
-  Draw ellipses, polygons, rectangles (using GLU?).
+  Draw ellipses, polygons, rectangles.
 
 pyglet.scene2d  (alternate name suggestions welcome)
   2D sprites with collision detection, square and hexagon tile maps.  A

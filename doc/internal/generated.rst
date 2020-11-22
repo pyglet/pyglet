@@ -8,7 +8,6 @@ more C header files:
 * pyglet.gl.gl
 * pyglet.gl.glext_abi
 * pyglet.gl.glext_nv
-* pyglet.gl.glu
 * pyglet.gl.glx
 * pyglet.gl.glxext_abi
 * pyglet.gl.glxext_nv
@@ -35,13 +34,13 @@ merely caches header files so they don't need to be repeatedly downloaded (but
 you'd prefer to use the most recent uncached copies if you're reading this,
 presumably).
 
-On Linux, generate ``pyglet.gl.gl``, ``pyglet.gl.glext_abi``,
-``pyglet.gl.glext_nv`` and ``pyglet.gl.glu`` (the complete user-visible GL
+On Linux, generate ``pyglet.gl.gl``, ``pyglet.gl.glext_abi`` and
+``pyglet.gl.glext_nv`` (the complete user-visible GL
 package)::
 
-    python tools/gengl.py gl glext_abi glext_nv glu
+    python tools/gengl.py gl glext_abi glext_nv
 
-The header files for ``pyglet.gl.gl`` and ``pyglet.gl.glu`` are located in
+The header files for ``pyglet.gl.gl`` are located in
 ``/usr/include/GL``.  Ensure your Linux distribution has recent versions
 of these files (unfortunately they do not seem to be accessible outside of a
 distribution or OS).

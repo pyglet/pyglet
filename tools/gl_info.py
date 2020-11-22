@@ -48,7 +48,6 @@ import pyglet.canvas
 import pyglet.window
 from pyglet.gl import *
 from pyglet.gl import gl_info
-from pyglet.gl import glu_info
 
 print('Pyglet:     %s' % pyglet.version)
 print('Platform:   %s' % sys.platform)
@@ -76,11 +75,6 @@ print('GL vendor:', gl_info.get_vendor())
 print('GL renderer:', gl_info.get_renderer())
 print('GL extensions:')
 exts = ' '.join(gl_info.get_extensions())
-print(' ', '\n  '.join(textwrap.wrap(exts)))
-
-print('GLU version:', glu_info.get_version())
-print('GLU extensions:')
-exts = ' '.join(glu_info.get_extensions())
 print(' ', '\n  '.join(textwrap.wrap(exts)))
 
 print()

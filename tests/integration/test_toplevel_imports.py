@@ -18,7 +18,6 @@ modules = [
     'font.base',
     'gl',
     'gl.gl_info',
-    'gl.glu_info',
     'graphics',
     'graphics.allocation',
     'graphics.vertexattribute',
