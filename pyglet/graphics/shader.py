@@ -56,35 +56,35 @@ _uniform_setters = {
 }
 
 _attribute_types = {
-    GL_BOOL: '1?',
-    GL_BOOL_VEC2: '2?',
-    GL_BOOL_VEC3: '3?',
-    GL_BOOL_VEC4: '4?',
+    GL_BOOL: (1, '?'),
+    GL_BOOL_VEC2: (2, '?'),
+    GL_BOOL_VEC3: (3, '?'),
+    GL_BOOL_VEC4: (4, '?'),
 
-    GL_INT: '1i',
-    GL_INT_VEC2: '2i',
-    GL_INT_VEC3: '3i',
-    GL_INT_VEC4: '4i',
+    GL_INT: (1, 'i'),
+    GL_INT_VEC2: (2, 'i'),
+    GL_INT_VEC3: (3, 'i'),
+    GL_INT_VEC4: (4, 'i'),
 
-    GL_UNSIGNED_INT: '1I',
-    GL_UNSIGNED_INT_VEC2: '2I',
-    GL_UNSIGNED_INT_VEC3: '3I',
-    GL_UNSIGNED_INT_VEC4: '4I',
+    GL_UNSIGNED_INT: (1, 'I'),
+    GL_UNSIGNED_INT_VEC2: (2, 'I'),
+    GL_UNSIGNED_INT_VEC3: (3, 'I'),
+    GL_UNSIGNED_INT_VEC4: (4, 'I'),
 
-    GL_FLOAT: '1f',
-    GL_FLOAT_VEC2: '2f',
-    GL_FLOAT_VEC3: '3f',
-    GL_FLOAT_VEC4: '4f',
+    GL_FLOAT: (1, 'f'),
+    GL_FLOAT_VEC2: (2, 'f'),
+    GL_FLOAT_VEC3: (3, 'f'),
+    GL_FLOAT_VEC4: (4, 'f'),
 
-    GL_DOUBLE: '1d',
-    GL_DOUBLE_VEC2: '2d',
-    GL_DOUBLE_VEC3: '3d',
-    GL_DOUBLE_VEC4: '4d',
+    GL_DOUBLE: (1, 'd'),
+    GL_DOUBLE_VEC2: (2, 'd'),
+    GL_DOUBLE_VEC3: (3, 'd'),
+    GL_DOUBLE_VEC4: (4, 'd'),
 }
 
 
 class _Attribute:
-    __slots__ = 'program', 'name', 'type', 'size', 'location', 'format'
+    __slots__ = 'program', 'name', 'type', 'size', 'location', 'count', 'format'
 
     def __init__(self, program, name, attr_type, size, location):
         self.program = program
@@ -92,10 +92,11 @@ class _Attribute:
         self.type = attr_type
         self.size = size
         self.location = location
-        self.format = _attribute_types[attr_type]
+        self.count, self.format = _attribute_types[attr_type]
 
     def __repr__(self):
-        return f"Attribute('{self.name}', program={self.program}, location={self.location}, format={self.format})"
+        return f"Attribute('{self.name}', program={self.program}, " \
+               f"location={self.location}, count={self.count}, format={self.format})"
 
 
 class _Uniform:
