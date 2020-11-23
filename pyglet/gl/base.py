@@ -35,7 +35,6 @@
 
 from pyglet import gl, compat_platform
 from pyglet.gl import gl_info
-from pyglet.gl import glu_info
 
 
 class Config:
@@ -297,7 +296,6 @@ class Context:
 
         # XXX
         gl_info.set_active_context()
-        glu_info.set_active_context()
 
         if not self._info:
             self._info = gl_info.GLInfo()

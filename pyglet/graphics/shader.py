@@ -572,8 +572,9 @@ class WindowBlock:
         self.id = gl.GLuint()
         self.size = 128
         glGenBuffers(1, byref(self.id))
-        self.bind()
+        glBindBuffer(GL_UNIFORM_BUFFER, self.id)
         glBufferData(GL_UNIFORM_BUFFER, self.size, None, GL_STATIC_DRAW)
+        self.bind()
 
     def set_projection(self, value):
         data = (c_float * 16)(*value)

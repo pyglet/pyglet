@@ -33,9 +33,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""OpenGL and GLU interface.
+"""OpenGL interface.
 
-This package imports all OpenGL, GLU and registered OpenGL extension
+This package imports all OpenGL and registered OpenGL extension
 functions.  Functions have identical signatures to their C counterparts.
 
 OpenGL is documented in full at the `OpenGL Reference Pages`_.
@@ -52,8 +52,6 @@ The following subpackages are imported into this "mega" package already
 
 ``pyglet.gl.gl``
     OpenGL
-``pyglet.gl.glu``
-    GLU
 ``pyglet.gl.gl.glext_arb``
     ARB registered OpenGL extension functions
 
@@ -83,7 +81,6 @@ import pyglet as _pyglet
 
 from pyglet.gl.lib import GLException
 from pyglet.gl.gl import *
-from pyglet.gl.glu import *
 from pyglet.gl.glext_arb import *
 from pyglet.gl import gl_info
 

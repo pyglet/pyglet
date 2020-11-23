@@ -17,7 +17,7 @@ imports linker functions for the appropriate platform: one of
 On any platform, the following steps are taken to link each function during
 import:
 
-1. Look in the appropriate library (e.g. libGL.so, libGLU.so, opengl32.dll,
+1. Look in the appropriate library (e.g. libGL.so, opengl32.dll,
    etc.) using ``cdll`` or ``windll``.
 
 2. If not found, call ``wglGetProcAddress`` or ``glxGetProcAddress`` to try to
@@ -44,7 +44,7 @@ import:
    older driver suggests ``glCreateShaderObjectARB``, etc.
 
 To access the linking function, import ``pyglet.gl.lib`` and use one of
-``link_AGL``, ``link_GLX``, ``link_WGL``, ``link_GL`` or ``link_GLU``.  This
+``link_AGL``, ``link_GLX``, ``link_WGL`` or ``link_GL``.  This
 is what the generated modules do.
 
 Missing extensions

@@ -37,7 +37,7 @@ import ctypes
 
 import pyglet
 
-__all__ = ['link_GL', 'link_GLU', 'link_AGL', 'link_GLX', 'link_WGL',
+__all__ = ['link_GL', 'link_AGL', 'link_GLX', 'link_WGL',
            'GLException', 'missing_function', 'decorate_function']
 
 _debug_gl = pyglet.options['debug_gl']
@@ -102,14 +102,22 @@ def errcheck(result, func, arguments):
         raise GLException('No GL context; create a Window first')
     error = gl.glGetError()
     if error:
-        msg = ctypes.cast(gl.gluErrorString(error), ctypes.c_char_p).value
+        # These are the 6 possible error codes we can get in opengl core 3.3+
+        error_types = {
+            gl.GL_INVALID_ENUM: "Invalid enum. An unacceptable value is specified for an enumerated argument.",
+            gl.GL_INVALID_VALUE: "Invalid value. A numeric argument is out of range.",
+            gl.GL_INVALID_OPERATION: "Invalid operation. The specified operation is not allowed in the current state.",
+            gl.GL_INVALID_FRAMEBUFFER_OPERATION: "Invalid framebuffer operation. The framebuffer object is not complete.",
+            gl.GL_OUT_OF_MEMORY: "Out of memory. There is not enough memory left to execute the command.",
+        }
+        msg = error_types.get(error, "Unknown error")
         raise GLException('(0x%x): %s' % (error, msg))
     return result
 
 
 def decorate_function(func, name):
     if _debug_gl:
-        if name not in ('glGetError', 'gluErrorString') and name[:3] not in ('glX', 'agl', 'wgl'):
+        if name not in ('glGetError',) and name[:3] not in ('glX', 'agl', 'wgl'):
             func.errcheck = errcheck
 
 
@@ -118,8 +126,8 @@ link_GLX = None
 link_WGL = None
 
 if pyglet.compat_platform in ('win32', 'cygwin'):
-    from pyglet.gl.lib_wgl import link_GL, link_GLU, link_WGL
+    from pyglet.gl.lib_wgl import link_GL, link_WGL
 elif pyglet.compat_platform == 'darwin':
-    from pyglet.gl.lib_agl import link_GL, link_GLU, link_AGL
+    from pyglet.gl.lib_agl import link_GL, link_AGL
 else:
-    from pyglet.gl.lib_glx import link_GL, link_GLU, link_GLX
+    from pyglet.gl.lib_glx import link_GL, link_GLX
