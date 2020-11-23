@@ -205,7 +205,7 @@ class Shader:
             glDeleteShader(self._id)
             if _debug_gl_shaders:
                 print(f"Destroyed {self.type} Shader '{self._id}'")
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ArgumentError):
             # Interpreter is shutting down,
             # or Shader failed to compile.
             pass
@@ -273,8 +273,7 @@ class ShaderProgram:
         result_str = create_string_buffer(result.value)
         glGetProgramInfoLog(self._id, result, None, result_str)
         if result_str.value:
-            return ("OpenGL returned the following message when linking the program: "
-                    "\n{0}".format(result_str.value))
+            return f"OpenGL returned the following message when linking the program: \n{result_str.value}"
         else:
             return f"Program '{self._id}' linked successfully."
 
