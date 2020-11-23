@@ -268,7 +268,12 @@ class Projection2D(Projection):
         height = max(1, window_height)
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
-        gl.current_context.window_block.set_projection(Mat4.orthogonal_projection(0, width, 0, height, -255, 255))
+        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+            window_block.projection[:] = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+            if not self._view:
+                # Set view to Identity Matrix
+                self._view = Mat4()
+                window_block.view[:] = self._view
 
 
 class Projection3D(Projection):
@@ -296,7 +301,13 @@ class Projection3D(Projection):
         height = max(1, window_height)
 
         gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
-        gl.current_context.window_block.set_projection(Mat4.perspective_projection(0, width, 0, height, self.znear, self.zfar, self.fov))
+
+        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+            window_block.projection[:] = Mat4.perspective_projection(0, width, 0, height, self.znear, self.zfar, self.fov)
+            if not self._view:
+                # Set view to Identity Matrix
+                self._view = Mat4()
+                window_block.view[:] = self._view
 
 
 def _PlatformEventHandler(data):
@@ -632,11 +643,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.set_visible(True)
             self.activate()
 
-        # Initialize context specific resources like UBOs
-        # WindowBlock
-        from pyglet.graphics.shader import WindowBlock
-
-        self.context.window_block = WindowBlock()
         self._projection.set(self._width, self._height, *self.get_framebuffer_size())
 
     def __del__(self):

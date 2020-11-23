@@ -604,7 +604,6 @@ class Batch:
 
     def draw(self):
         """Draw the batch."""
-        current_context.window_block.bind(0)
         self.vao.bind()
 
         if self._draw_list_dirty:

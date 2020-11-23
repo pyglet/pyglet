@@ -288,7 +288,8 @@ class BaseMaterialGroup(graphics.ShaderGroup):
         view = view.rotate(radians(self.rotation[0]), x=1)
         view = view.translate(*self.translation)
 
-        gl.current_context.window_block.set_modelview(view)
+        with graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+            window_block.view[:] = view
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
