@@ -194,7 +194,7 @@ def draw(size, mode, *data):
 
     buffers = []
     for fmt, array in data:
-        attribute = vertexattribute.create_attribute(group.program.id, fmt)
+        attribute = vertexattribute.create_attribute(group.program, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
@@ -239,7 +239,7 @@ def draw_indexed(size, mode, indices, *data):
 
     buffers = []
     for fmt, array in data:
-        attribute = vertexattribute.create_attribute(group.program.id, fmt)
+        attribute = vertexattribute.create_attribute(group.program, fmt)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
