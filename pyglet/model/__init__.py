@@ -87,6 +87,7 @@ from io import BytesIO
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet import gl
 from pyglet import graphics
+from pyglet.gl import current_context
 from pyglet.math import Mat4
 
 from .codecs import ModelDecodeException
@@ -141,6 +142,28 @@ def load(filename, file=None, decoder=None, batch=None):
         file.close()
 
 
+def get_default_shader():
+    try:
+        return current_context.object_space.model_default_plain_shader
+    except AttributeError:
+        vert_shader = Shader(MaterialGroup.default_vert_src, 'vertex')
+        frag_shader = Shader(MaterialGroup.default_frag_src, 'fragment')
+        program = ShaderProgram(vert_shader, frag_shader)
+        current_context.object_space.model_default_plain_shader = program
+        return current_context.object_space.model_default_plain_shader
+
+
+def get_default_textured_shader():
+    try:
+        return current_context.object_space.model_default_textured_shader
+    except AttributeError:
+        vert_shader = Shader(TexturedMaterialGroup.default_vert_src, 'vertex')
+        frag_shader = Shader(TexturedMaterialGroup.default_frag_src, 'fragment')
+        program = ShaderProgram(vert_shader, frag_shader)
+        current_context.object_space.model_default_textured_shader = program
+        return current_context.object_space.model_default_textured_shader
+
+
 class Model:
     """Instance of a 3D object.
 
@@ -190,7 +213,7 @@ class Model:
             batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
-            self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
+            self._batch.migrate(vlist, gl.GL_TRIANGLES, group, batch)
 
         self._batch = batch
 
@@ -220,7 +243,7 @@ class Model:
         This is not recommended. See the module documentation
         for information on efficient drawing of multiple models.
         """
-        current_context.window_block.bind(0)
+        gl.current_context.window_block.bind(0)
         self._batch.draw_subset(self.vertex_lists)
 
 
@@ -313,8 +336,9 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         final_colors = (texture(our_texture, texture_coords) * vertex_colors) * l * 1.2;
     }
     """
+
     def __init__(self, material, texture):
-        super().__init__(material, gl.current_context.default_texturematerial_group_program)
+        super().__init__(material, get_default_textured_shader())
         self.texture = texture
 
     def set_state(self):
@@ -337,7 +361,6 @@ class TexturedMaterialGroup(BaseMaterialGroup):
                 self.program == other.program and
                 self.order == other.order and
                 self.parent == other.parent)
-
 
 
 class MaterialGroup(BaseMaterialGroup):
@@ -379,8 +402,9 @@ class MaterialGroup(BaseMaterialGroup):
         final_colors = vertex_colors * l * 1.2;
     }
     """
+
     def __init__(self, material):
-        super().__init__(material, gl.current_context.default_material_group_program)
+        super().__init__(material, get_default_shader())
 
     def set_state(self):
         self.program.use()

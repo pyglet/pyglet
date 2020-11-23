@@ -632,25 +632,12 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.set_visible(True)
             self.activate()
 
-        # Initialize context specific resources like default programs and UBOs
+        # Initialize context specific resources like UBOs
         # WindowBlock
         from pyglet.graphics.shader import WindowBlock
 
         self.context.window_block = WindowBlock()
         self._projection.set(self._width, self._height, *self.get_framebuffer_size())
-
-        # Default shader programs
-        from pyglet.graphics.shader import Shader, ShaderProgram
-        from pyglet.model import MaterialGroup, TexturedMaterialGroup
-
-        self.context.default_material_group_program = ShaderProgram(
-            Shader(MaterialGroup.default_vert_src, "vertex"),
-            Shader(MaterialGroup.default_frag_src, "fragment"),
-        )
-        self.context.default_texturematerial_group_program = ShaderProgram(
-            Shader(TexturedMaterialGroup.default_vert_src, "vertex"),
-            Shader(TexturedMaterialGroup.default_frag_src, "fragment"),
-        )
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
