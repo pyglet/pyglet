@@ -471,21 +471,21 @@ class UniformBlock:
         self.uniforms = uniforms
 
     def __repr__(self):
-        return "{0}(name={1})".format(self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}(name={self.name}, index={self.index})"
 
 
 class UniformBufferObject:
-    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr'
+    __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr', 'index'
 
     def __init__(self, block):
         assert type(block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = block
         self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
+        self.buffer.bind()
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
-        index = len(block.program.uniform_buffers)
-        glBindBufferBase(GL_UNIFORM_BUFFER, index, self.buffer.id)
-        glUniformBlockBinding(self.block.program.id, self.block.index, index)
+        self.index = len(block.program.uniform_buffers)
+        glUniformBlockBinding(self.block.program.id, self.block.index, self.index)
 
     @property
     def id(self):
@@ -542,8 +542,8 @@ class UniformBufferObject:
 
         return view()
 
-    def bind(self, index=0):
-        glBindBufferRange(GL_UNIFORM_BUFFER, index, self.buffer.id, 0, self.buffer.size)
+    def bind(self, index=None):
+        glBindBufferBase(GL_UNIFORM_BUFFER, index or self.index, self.buffer.id)
 
     def read(self):
         """Read the byte contents of the buffer"""
@@ -555,6 +555,7 @@ class UniformBufferObject:
 
     def __enter__(self):
         # Return the view to the user in a `with` context:
+        glBindBufferBase(GL_UNIFORM_BUFFER, self.index, self.buffer.id)
         return self.view
 
     def __exit__(self, exc_type, exc_val, exc_tb):

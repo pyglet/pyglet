@@ -1,8 +1,10 @@
 import math
 import pyglet
+
+from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
+
 pyglet.options['debug_gl_shaders'] = True
-pyglet.options['shadow_window'] = False
-from pyglet.gl import *
+
 
 window = pyglet.window.Window(width=720, height=480)
 window.projection = pyglet.window.Projection3D()
