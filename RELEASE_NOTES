@@ -1,3 +1,11 @@
+pyglet 1.5.12
+Bugfix and feature release
+
+Bugfixes
+--------
+- Remove usage of deprecated `parser` module. (#312)
+
+
 pyglet 1.5.11
 Bugfix release
 

@@ -38,11 +38,7 @@ documents.
 """
 
 import re
-import token
-import parser
-import operator
-
-from functools import reduce
+import ast
 
 import pyglet
 
@@ -63,11 +59,13 @@ _pattern = re.compile(r"""
 
 
 class AttributedTextDecoder(pyglet.text.DocumentDecoder):
-    def decode(self, text, location=None):
-        self.doc = pyglet.text.document.FormattedDocument()
 
+    def __init__(self):
+        self.doc = pyglet.text.document.FormattedDocument()
         self.length = 0
         self.attributes = {}
+
+    def decode(self, text, location=None):
         next_trailing_space = True
         trailing_newline = True
 
@@ -90,22 +88,15 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):
                 self.append(m.group('nl_para')[1:])  # ignore the first \n
                 trailing_newline = True
             elif group == 'attr':
-                try:
-                    ast = parser.expr(m.group('attr_val'))
-                    if self.safe(ast):
-                        val = eval(ast.compile())
-                    else:
-                        val = None
-                except (parser.ParserError, SyntaxError):
-                    val = None
+                value = ast.literal_eval(m.group('attr_val'))
                 name = m.group('attr_name')
                 if name[0] == '.':
                     if trailing_newline:
-                        self.attributes[name[1:]] = val
+                        self.attributes[name[1:]] = value
                     else:
-                        self.doc.set_paragraph_style(self.length, self.length, {name[1:]: val})
+                        self.doc.set_paragraph_style(self.length, self.length, {name[1:]: value})
                 else:
-                    self.attributes[name] = val
+                    self.attributes[name] = value
             elif group == 'escape_dec':
                 self.append(chr(int(m.group('escape_dec_val'))))
             elif group == 'escape_hex':
@@ -122,17 +113,3 @@ class AttributedTextDecoder(pyglet.text.DocumentDecoder):
         self.doc.insert_text(self.length, text, self.attributes)
         self.length += len(text)
         self.attributes.clear()
-
-    _safe_names = ('True', 'False', 'None')
-
-    def safe(self, ast):
-        tree = ast.totuple()
-        return self.safe_node(tree)
-
-    def safe_node(self, node):
-        if token.ISNONTERMINAL(node[0]):
-            return reduce(operator.and_, map(self.safe_node, node[1:]))
-        elif node[0] == token.NAME:
-            return node[1] in self._safe_names
-        else:
-            return True
