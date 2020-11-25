@@ -3,11 +3,10 @@ import pyglet
 
 from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 
-pyglet.options['debug_gl_shaders'] = True
-
 
 window = pyglet.window.Window(width=720, height=480)
-window.projection = pyglet.window.Projection3D()
+window.projection = pyglet.window.Mat4.perspective_projection(0, 720, 0, 480, z_near=0.1, z_far=255)
+
 batch = pyglet.graphics.Batch()
 time = 0
 

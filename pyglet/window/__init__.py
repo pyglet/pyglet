@@ -236,80 +236,6 @@ class ImageMouseCursor(MouseCursor):
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
 
 
-class Projection:
-    """Abstract OpenGL projection."""
-
-    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
-        """Set the OpenGL projection
-
-        Using the passed in Window and framebuffer sizes,
-        set a desired orthographic or perspective projection.
-
-        :Parameters:
-            `window_width` : int
-                The Window width
-            `window_height` : int
-                The Window height
-            `framebuffer_width` : int
-                The Window framebuffer width.
-            `framebuffer_height` : int
-                The Window framebuffer height.
-        """
-        raise NotImplementedError('abstract')
-
-
-class Projection2D(Projection):
-    """A 2D orthographic projection"""
-
-    _view = None
-
-    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
-        width = max(1, window_width)
-        height = max(1, window_height)
-
-        gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
-        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection[:] = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
-            if not self._view:
-                # Set view to Identity Matrix
-                self._view = Mat4()
-                window_block.view[:] = self._view
-
-
-class Projection3D(Projection):
-    """A 3D perspective projection"""
-
-    _view = None
-
-    def __init__(self, fov=60, znear=0.1, zfar=255):
-        """Create a 3D projection
-
-        :Parameters:
-            `fov` : float
-                The field of vision. Defaults to 60.
-            `znear` : float
-                The near clipping plane. Defaults to 0.1.
-            `zfar` : float
-                The far clipping plane. Defaults to 255.
-        """
-        self.fov = fov
-        self.znear = znear
-        self.zfar = zfar
-
-    def set(self, window_width, window_height, framebuffer_width, framebuffer_height):
-        width = max(1, window_width)
-        height = max(1, window_height)
-
-        gl.glViewport(0, 0, framebuffer_width, framebuffer_height)
-
-        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection[:] = Mat4.perspective_projection(0, width, 0, height, self.znear, self.zfar, self.fov)
-            if not self._view:
-                # Set view to Identity Matrix
-                self._view = Mat4()
-                window_block.view[:] = self._view
-
-
 def _PlatformEventHandler(data):
     """Decorator for platform event handlers.
 
@@ -474,7 +400,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _screen = None
     _config = None
     _context = None
-    _projection = Projection2D()
+    _projection_matrix = pyglet.math.Mat4()
+    _view_matrix = pyglet.math.Mat4()
 
     # Used to restore window size and position after fullscreen
     _windowed_size = None
@@ -643,7 +570,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.set_visible(True)
             self.activate()
 
-        self._projection.set(self._width, self._height, *self.get_framebuffer_size())
+        self.view = pyglet.math.Mat4()
+        self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
@@ -793,14 +721,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """A default resize event handler.
 
         This default handler updates the GL viewport to cover the entire
-        window and sets the ``GL_PROJECTION`` matrix to be orthogonal in
-        window space.  The bottom-left corner is (0, 0) and the top-right
-        corner is the width and height of the window in pixels.
-
-        Override this event handler with your own to create another
-        projection, for example in perspective.
+        window. The bottom-left corner is (0, 0) and the top-right
+        corner is the width and height of the window's framebuffer.
         """
-        self._projection.set(width, height, *self.get_framebuffer_size())
+        gl.glViewport(0, 0, *self.get_framebuffer_size())
 
     def on_close(self):
         """Default on_close handler."""
@@ -962,24 +886,43 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @property
     def projection(self):
-        """The OpenGL window projection. Read-write.
+        """The OpenGL window projection matrix. Read-write.
 
-        The default window projection is orthographic (2D), but can
-        be changed to a 3D or custom projection. Custom projections
-        should subclass :py:class:`pyglet.window.Projection`. There
-        are two default projection classes are also provided, which
-        are :py:class:`pyglet.window.Projection3D` and
-        :py:class:`pyglet.window.Projection3D`.
+        The default projection matrix is orthographic (2D),
+        but a custom :py:class:`pyglet.math.Mat4` instance
+        can be set. Alternatively, you can supply a flat
+        tuple of 16 values.
 
-        :type: :py:class:`pyglet.window.Projection`
+        (2D), but can be changed to any 4x4 matrix desired.
+        See :py:class:`pyglet.math.Mat4`.
+
+        :type: :py:class:`pyglet.math.Mat4`
         """
-        return self._projection
+        return self._projection_matrix
 
     @projection.setter
-    def projection(self, projection):
-        assert isinstance(projection, Projection)
-        projection.set(self._width, self._height, *self.get_framebuffer_size())
-        self._projection = projection
+    def projection(self, matrix: Mat4):
+        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+            window_block.projection[:] = matrix
+        self._projection_matrix = matrix
+
+    @property
+    def view(self):
+        """The OpenGL window view matrix. Read-write.
+
+        The default view is an identity matrix, but a custom
+        :py:class:`pyglet.math.Mat4` instance can be set.
+        Alternatively, you can supply a flat tuple of 16 values.
+
+        :type: :py:class:`pyglet.math.Mat4`
+        """
+        return self._view_matrix
+
+    @view.setter
+    def view(self, matrix: Mat4):
+        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+            window_block.view[:] = matrix
+        self._view_matrix = matrix
 
     def set_caption(self, caption):
         """Set the window's caption.
