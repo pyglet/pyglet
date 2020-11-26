@@ -1,8 +1,8 @@
-"""In some cases, you may want to restrict drawing to a specific area
+"""In some cases, you may want to restrict drawing to a specific part
 of the Window. To accomplish this, you can use an OpenGL Scissor
-area. In this example we define a custom Group that enforces this
-Scissor area. Any Sprites/Labels that are assigned to this Group
-will not be drawn outside of the area.
+area. In this example we define a custom Group that enforces this.
+Any Sprites/Labels that are assigned to this Group will not be drawn
+outside of the specified area. Drag the mouse to move the position.
 """
 
 import pyglet
@@ -70,7 +70,7 @@ class ScissorGroup(pyglet.graphics.Group):
 ###################################################
 
 # Create an instance of the ScissorGroup that defines the center of the window:
-scissor_group = ScissorGroup(x=50, y=50, width=400, height=400)
+scissor_group = ScissorGroup(x=50, y=50, width=300, height=300)
 
 # Create a bunch of Sprites assigned to our custom Group. Any parts of these
 # Sprites that is outside of the specified area will not be drawn.
@@ -81,6 +81,14 @@ for x in range(5):
         sprite = pyglet.sprite.Sprite(
             img, x*img.width, y*img.height, group=scissor_group, batch=batch)
         sprites.append(sprite)
+
+
+@window.event
+def on_mouse_drag(x, y, dx, dy, *etc):
+    scissor_x, scissor_y, width, height = scissor_group.area
+    scissor_x += dx
+    scissor_y += dy
+    scissor_group.area = scissor_x, scissor_y, width, height
 
 
 pyglet.app.run()
