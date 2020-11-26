@@ -56,45 +56,40 @@ from pyglet.gl import *
 try:
     # Try and create a window with multisampling (antialiasing)
     config = Config(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
-    window = pyglet.window.Window(resizable=True, config=config)
+    window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
     # Fall back to no multisampling for old hardware
     window = pyglet.window.Window(resizable=True)
 
 # Change the window projection to 3D:
-window.projection = pyglet.window.Projection3D()
+window.projection = pyglet.window.Mat4.perspective_projection(0, 960, 0, 540, z_near=0.1, z_far=255)
 
 
 @window.event
 def on_draw():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()
-    glTranslatef(0, 0, -4)
-    glRotatef(rz, 0, 0, 1)
-    glRotatef(ry, 0, 1, 0)
-    glRotatef(rx, 1, 0, 0)
+    window.clear()
     batch.draw()
 
 
 def update(dt):
-    global rx, ry, rz
+    rx, ry, rz = torus_model.rotation
     rx += dt * 1
     ry += dt * 80
     rz += dt * 30
     rx %= 360
     ry %= 360
     rz %= 360
+    torus_model.rotation = rx, ry, rz
 
 
 def setup():
     # One-time GL setup
     glClearColor(1, 1, 1, 1)
-    glColor3f(1, 0, 0)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
-    # Uncomment this line for a wireframe view
-    #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    # Uncomment this line for a wireframe view:
+    # glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
     # Simple light setup.  On Windows GL_LIGHT0 is enabled by default,
     # but this is not the case on Linux or Mac, so remember to always 
@@ -149,24 +144,23 @@ def create_torus(radius, inner_radius, slices, inner_slices, batch):
     specular = [1.0, 1.0, 1.0, 1.0]
     emission = [0.0, 0.0, 0.0, 1.0]
     shininess = 50
-    material = pyglet.model.Material("", diffuse, ambient, specular, emission, shininess)
+
+    material = pyglet.model.Material("custom", diffuse, ambient, specular, emission, shininess)
     group = pyglet.model.MaterialGroup(material=material)
 
-    vertex_list = batch.add_indexed(len(vertices)//3,
-                                    GL_TRIANGLES,
-                                    group,
-                                    indices,
-                                    ('v3f/static', vertices),
-                                    ('n3f/static', normals))
+    vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+                                    ('vertices3f/static', vertices),
+                                    ('normals3f/static', normals),
+                                    ('colors4f/static', material.diffuse * (len(vertices) // 3)))
 
     return pyglet.model.Model([vertex_list], [group], batch)
 
 
 setup()
 batch = pyglet.graphics.Batch()
+
 torus_model = create_torus(1, 0.3, 50, 30, batch=batch)
-rx = ry = rz = 0
+torus_model.translation = 0, 0, -4
 
 pyglet.clock.schedule(update)
-
 pyglet.app.run()
