@@ -573,6 +573,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self.view = pyglet.math.Mat4()
         self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
+        self._viewport = 0, 0, *self.get_framebuffer_size()
+
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
         # Makes sure there are no dangling pointers or memory leaks.
@@ -717,14 +719,14 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             height = self.screen.height
         return width, height
 
-    def on_resize(self, width, height):
-        """A default resize event handler.
-
-        This default handler updates the GL viewport to cover the entire
-        window. The bottom-left corner is (0, 0) and the top-right
-        corner is the width and height of the window's framebuffer.
-        """
-        gl.glViewport(0, 0, *self.get_framebuffer_size())
+    # def on_resize(self, width, height):
+    #     """A default resize event handler.
+    #
+    #     This default handler updates the GL viewport to cover the entire
+    #     window. The bottom-left corner is (0, 0) and the top-right
+    #     corner is the width and height of the window's framebuffer.
+    #     """
+    #     gl.glViewport(0, 0, *self.get_framebuffer_size())
 
     def on_close(self):
         """Default on_close handler."""
@@ -924,6 +926,24 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             window_block.view[:] = matrix
         self._view_matrix = matrix
 
+    @property
+    def viewport(self):
+        """The Windows viewport size
+
+        The Window viewport, expressed as (x, y, width, height).
+
+        :rtype: (int, int, int, int)
+        :return: The viewport size as a tuple of four ints.
+        """
+        return self._viewport
+
+    @viewport.setter
+    def viewport(self, values):
+        pixel_ratio = self.get_pixel_ratio()
+        values = [int(v * pixel_ratio) for v in values]
+        pyglet.gl.glViewport(*values)
+        self._viewport = values
+
     def set_caption(self, caption):
         """Set the window's caption.
 
@@ -1035,7 +1055,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         projection or setting the glViewport size.
 
         :rtype: (int, int)
-        :return: The width and height of the Window viewport, in pixels.
+        :return: The width and height of the Window's framebuffer, in pixels.
         """
         return self.get_size()
 
