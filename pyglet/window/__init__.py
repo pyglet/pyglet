@@ -928,7 +928,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @property
     def viewport(self):
-        """The Windows viewport size
+        """The Window viewport
 
         The Window viewport, expressed as (x, y, width, height).
 
@@ -939,10 +939,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @viewport.setter
     def viewport(self, values):
-        pixel_ratio = self.get_pixel_ratio()
-        values = [int(v * pixel_ratio) for v in values]
-        pyglet.gl.glViewport(*values)
         self._viewport = values
+        pr = self.get_pixel_ratio()
+        x, y, w, h = values
+        pyglet.gl.glViewport(int(x * pr), int(y * pr), int(w * pr), int(h * pr))
 
     def set_caption(self, caption):
         """Set the window's caption.
