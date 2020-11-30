@@ -32,10 +32,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
+import unicodedata
+import urllib.parse
 from ctypes import *
 from functools import lru_cache
-import warnings
-import unicodedata
 
 import pyglet
 from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
@@ -653,11 +654,11 @@ class XlibWindow(BaseWindow):
     @lru_cache()
     def _create_cursor_from_image(self, cursor):
         """Creates platform cursor from an ImageCursor instance."""
-        image = cursor.texture
-        width = image.width
-        height = image.height
+        texture = cursor.texture
+        width = texture.width
+        height = texture.height
 
-        alpha_luma_bytes = image.get_image_data().get_data('AL', -width * 2)
+        alpha_luma_bytes = texture.get_image_data().get_data('AL', -width * 2)
         mask_data = self._downsample_1bit(alpha_luma_bytes[0::2])
         bmp_data = self._downsample_1bit(alpha_luma_bytes[1::2])
 
