@@ -567,6 +567,16 @@ class XAudio2Listener:
         self.xa2_driver = weakref.proxy(driver)
         self.listener = lib.X3DAUDIO_LISTENER()
 
+        # Default listener orientations for DirectSound/XAudio2:
+        # Front: (0, 0, 1), Up: (0, 1, 0)
+        self.listener.OrientFront.x = 0
+        self.listener.OrientFront.y = 0
+        self.listener.OrientFront.z = 1
+
+        self.listener.OrientTop.x = 0
+        self.listener.OrientTop.y = 1
+        self.listener.OrientTop.z = 0
+
     def __del__(self):
         self.delete()
 
