@@ -106,6 +106,8 @@ class Win32Window(BaseWindow):
     _exclusive_mouse_lpos = None
     _exclusive_mouse_buttons = 0
     _mouse_platform_visible = True
+    
+    _keyboard_state = {0x02A: False, 0x036: False}  # For shift keys.
 
     _ws_style = 0
     _ex_ws_style = 0
@@ -233,8 +235,12 @@ class Win32Window(BaseWindow):
                     _user32.ChangeWindowMessageFilterEx(self._hwnd, WM_COPYGLOBALDATA, MSGFLT_ALLOW, None)
 
                 _shell32.DragAcceptFiles(self._hwnd, True)
-
-
+                
+            # Register raw input keyboard to allow the window to receive input events.
+            raw_keyboard = RAWINPUTDEVICE(0x01, 0x06, 0, self._view_hwnd)
+            if not _user32.RegisterRawInputDevices(
+                byref(raw_keyboard), 1, sizeof(RAWINPUTDEVICE)):
+                    print("Warning: Failed to register raw input keyboard. on_key events for shift keys will not be called.")
         else:
             # Window already exists, update it with new style
 
@@ -682,6 +688,7 @@ class Win32Window(BaseWindow):
     # Event dispatching
 
     def dispatch_events(self):
+        """Legacy or manual dispatch."""
         from pyglet import app
         app.platform_event_loop.start()
         self._allow_dispatch_event = True
@@ -694,6 +701,7 @@ class Win32Window(BaseWindow):
         self._allow_dispatch_event = False
 
     def dispatch_pending_events(self):
+        """Legacy or manual dispatch."""
         while self._event_queue:
             event = self._event_queue.pop(0)
             if type(event[0]) is str:
@@ -773,9 +781,9 @@ class Win32Window(BaseWindow):
             symbol = key.RCTRL
         elif symbol == key.LALT and lParam & (1 << 24):
             symbol = key.RALT
-        elif symbol == key.LSHIFT:
-            pass  # TODO: some magic with getstate to find out if it's the
-            # right or left shift key.
+                    
+        if wParam == VK_SHIFT:
+            return  # Let raw input handle this instead.
 
         modifiers = self._get_modifiers(lParam)
 
@@ -806,9 +814,6 @@ class Win32Window(BaseWindow):
     @ViewEventHandler
     @Win32EventHandler(WM_INPUT)
     def _event_raw_input(self, msg, wParam, lParam):
-        if not self._exclusive_mouse:
-            return 0
-
         hRawInput = cast(lParam, HRAWINPUT)
         inp = RAWINPUT()
         size = UINT(sizeof(inp))
@@ -816,6 +821,9 @@ class Win32Window(BaseWindow):
                                 byref(size), sizeof(RAWINPUTHEADER))
 
         if inp.header.dwType == RIM_TYPEMOUSE:
+            if not self._exclusive_mouse:
+                return 0
+                
             rmouse = inp.data.mouse
 
             if rmouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN:
@@ -877,6 +885,29 @@ class Win32Window(BaseWindow):
                         self.dispatch_event('on_mouse_motion', 0, 0,
                                             rel_x, rel_y)
                     self._exclusive_mouse_lpos = rmouse.lLastX, rmouse.lLastY
+                    
+        elif inp.header.dwType == RIM_TYPEKEYBOARD:
+            if inp.data.keyboard.VKey == 255:
+                return 0
+
+            key_up = inp.data.keyboard.Flags & RI_KEY_BREAK
+  
+            if inp.data.keyboard.MakeCode == 0x02A:  # LEFT_SHIFT
+                if not key_up and not self._keyboard_state[0x02A]:
+                    self.dispatch_event('on_key_press', key.LSHIFT, self._get_modifiers())
+                    self._keyboard_state[0x02A] = True
+
+                elif key_up and self._keyboard_state[0x02A]:
+                    self.dispatch_event('on_key_release', key.LSHIFT, self._get_modifiers())
+                    self._keyboard_state[0x02A] = False
+            
+            elif inp.data.keyboard.MakeCode == 0x036: # RIGHT SHIFT
+                if not key_up and not self._keyboard_state[0x036]:
+                    self.dispatch_event('on_key_press', key.RSHIFT, self._get_modifiers())
+                    self._keyboard_state[0x036] = True
+                elif key_up and self._keyboard_state[0x036]:
+                    self.dispatch_event('on_key_release', key.RSHIFT, self._get_modifiers())
+                    self._keyboard_state[0x036] = False            
 
         return 0
 
