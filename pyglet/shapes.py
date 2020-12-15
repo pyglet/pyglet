@@ -569,13 +569,13 @@ class Line(_ShapeBase):
 
         :Parameters:
             `x` : int or float
-                X coordinate of the sprite.
+                X coordinate of the line.
             `y` : int or float
-                Y coordinate of the sprite.
+                Y coordinate of the line.
             `x2` : int or float
-                X2 coordinate of the sprite.
+                X2 coordinate of the line.
             `y2` : int or float
-                Y2 coordinate of the sprite.
+                Y2 coordinate of the line.
         """
         return self._x, self._y, self._x2, self._y2
 
@@ -785,4 +785,142 @@ class BorderedRectangle(_ShapeBase):
         self._update_position()
 
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle')
+class Triangle(_ShapeBase):
+    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255), batch=None, group=None):
+        """Create a triangle.
+
+        The triangle's anchor point defaults to the first vertex point.
+
+        :Parameters:
+            `x` : float
+                The first X coordinate of the triangle.
+            `y` : float
+                The first Y coordinate of the triangle.
+            `x2` : float
+                The second X coordinate of the triangle.
+            `y2` : float
+                The second Y coordinate of the triangle.
+            `x3` : float
+                The third X coordinate of the triangle.
+            `y3` : float
+                The third Y coordinate of the triangle.
+            `color` : (int, int, int)
+                The RGB color of the triangle, specified as
+                a tuple of three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the triangle to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the triangle.
+        """
+        self._x = x
+        self._y = y
+        self._x2 = x2
+        self._y2 = y2
+        self._x3 = x3
+        self._y3 = y3
+        self._rotation = 0
+
+        self._rgb = color
+
+        self._batch = batch or Batch()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._vertex_list = self._batch.add(3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            self._vertex_list.vertices = (0, 0, 0, 0, 0, 0)
+        else:
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            x1 = self._x - anchor_x
+            y1 = self._y - anchor_y
+            x2 = self._x2 - anchor_x
+            y2 = self._y2 - anchor_y
+            x3 = self._x3 - anchor_x
+            y3 = self._y3 - anchor_y
+            self._vertex_list.vertices = (x1, y1, x2, y2, x3, y3)
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 3
+
+    @property
+    def x2(self):
+        """Second X coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._x2
+
+    @x2.setter
+    def x2(self, value):
+        self._x2 = value
+        self._update_position()
+
+    @property
+    def y2(self):
+        """Second Y coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._y2
+
+    @y2.setter
+    def y2(self, value):
+        self._y2 = value
+        self._update_position()
+
+    @property
+    def x3(self):
+        """Third X coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._x3
+
+    @x3.setter
+    def x3(self, value):
+        self._x3 = value
+        self._update_position()
+
+    @property
+    def y3(self):
+        """Third Y coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._y3
+
+    @y3.setter
+    def y3(self, value):
+        self._y3 = value
+        self._update_position()
+
+    @property
+    def position(self):
+        """The (x, y, x2, y2, x3, y3) coordinates of the triangle, as a tuple.
+
+        :Parameters:
+            `x` : int or float
+                X coordinate of the triangle.
+            `y` : int or float
+                Y coordinate of the triangle.
+            `x2` : int or float
+                X2 coordinate of the triangle.
+            `y2` : int or float
+                Y2 coordinate of the triangle.
+            `x3` : int or float
+                X3 coordinate of the triangle.
+            `y3` : int or float
+                Y3 coordinate of the triangle.
+        """
+        return self._x, self._y, self._x2, self._y2, self._x3, self._y3
+
+    @position.setter
+    def position(self, values):
+        self._x, self._y, self._x2, self._y2, self._x3, self._y3 = values
+        self._update_position()
+
+
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle')

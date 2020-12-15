@@ -1,3 +1,20 @@
+pyglet 1.5.12
+Bugfix and feature release
+
+Bugfixes
+--------
+- Remove usage of deprecated `parser` module. (#312)
+
+
+pyglet 1.5.11
+Bugfix release
+
+Bugfixes
+--------
+- Added hardcoding of library paths for Big Sur temporary fallback.
+- Removed some legacy Python 2 code from the documentation.
+
+
 pyglet 1.5.10
 Bugfix release
 

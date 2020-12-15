@@ -607,7 +607,8 @@ class Player(pyglet.event.EventDispatcher):
             if self.source:
                 # Reset source to the beginning
                 self.seek(0.0)
-            self._audio_player.clear()
+            if self._audio_player:
+                self._audio_player.clear()
             self._set_playing(was_playing)
 
         else:
@@ -643,10 +644,12 @@ class Player(pyglet.event.EventDispatcher):
             if self._playing:
                 self._audio_player.play()
 
+
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_player_next_source')
 Player.register_event_type('on_driver_reset')
+
 
 def _one_item_playlist(source):
     yield source
