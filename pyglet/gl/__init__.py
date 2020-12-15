@@ -92,9 +92,9 @@ The information modules are provided for convenience, and are documented
 below.
 """
 
-from pyglet.gl.lib import GLException
 from pyglet.gl.gl import *
 from pyglet.gl.glu import *
+from pyglet.gl.lib import GLException
 from pyglet.gl.glext_arb import *
 from pyglet.gl import gl_info
 
@@ -117,20 +117,6 @@ _is_pyglet_doc_run = hasattr(_sys, "is_pyglet_doc_run") and _sys.is_pyglet_doc_r
 #:
 #: .. versionadded:: 1.1
 current_context = None
-
-
-def get_current_context():
-    """Return the active OpenGL context.
-
-    You can change the current context by calling `Context.set_current`.
-
-    :deprecated: Use `current_context`
-
-    :rtype: `Context`
-    :return: the context to which OpenGL commands are directed, or None
-        if there is no selected context.
-    """
-    return current_context
 
 
 class ContextException(Exception):
