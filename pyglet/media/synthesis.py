@@ -266,7 +266,7 @@ class Sine(SynthesisSource):
         step = self.frequency * (math.pi * 2) / self.audio_format.sample_rate
         envelope = self._envelope_generator
         for i in range(samples):
-            data[i] = int(math.sin(step * i) * amplitude * next(envelope) + bias)
+            data[i] = int(math.sin(step * i) * amplitude * next(envelope))
         return bytes(data)
 
 
@@ -367,7 +367,7 @@ class Square(SynthesisSource):
                 value = -value
                 count %= half_period
             count += 1
-            data[i] = int(value * amplitude * next(envelope) + bias)
+            data[i] = int(value * amplitude * next(envelope))
         return bytes(data)
 
 
