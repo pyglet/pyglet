@@ -356,7 +356,7 @@ class Arc(_ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add(self._segments*2, GL_LINES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._segments*2, GL_LINES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
@@ -734,7 +734,7 @@ class BorderedRectangle(_ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
-        self._vertex_list = self._batch.add_indexed(8, GL_TRIANGLES, self._group, indices, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add_indexed(8, GL_TRIANGLES, self._group, indices, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
@@ -824,13 +824,13 @@ class Triangle(_ShapeBase):
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(3, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.vertices = (0, 0, 0, 0, 0, 0)
+            self._vertex_list.position[:] = (0, 0, 0, 0, 0, 0)
         else:
             anchor_x = self._anchor_x
             anchor_y = self._anchor_y
@@ -840,7 +840,7 @@ class Triangle(_ShapeBase):
             y2 = self._y2 - anchor_y
             x3 = self._x3 - anchor_x
             y3 = self._y3 - anchor_y
-            self._vertex_list.vertices = (x1, y1, x2, y2, x3, y3)
+            self._vertex_list.position[:] = (x1, y1, x2, y2, x3, y3)
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 3

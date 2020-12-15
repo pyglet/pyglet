@@ -5,6 +5,7 @@ import math
 import pyglet
 from pyglet import shapes
 
+
 class ShapesDemo(pyglet.window.Window):
 
     def __init__(self, width, height):
@@ -26,6 +27,9 @@ class ShapesDemo(pyglet.window.Window):
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
+        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(20, 200, 20), batch=self.batch)
+        self.triangle.opacity = 150
+
     def on_draw(self):
         """Clear the screen and draw shapes"""
         self.clear()
@@ -43,6 +47,7 @@ class ShapesDemo(pyglet.window.Window):
             360 + math.sin(self.time * 1.34) * 360,
             480,
         )
+
 
 if __name__ == "__main__":
     demo = ShapesDemo(720, 480)
