@@ -362,8 +362,8 @@ class _GlyphBox(_AbstractBox):
         vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
                                                indices,
                                                ('vertices2f/dynamic', vertices),
-                                               ('tex_coords3f/dynamic', tex_coords),
                                                ('colors4Bn/dynamic', colors),
+                                               ('tex_coords3f/dynamic', tex_coords),
                                                'translation2f/dynamic')
 
         context.add_list(vertex_list)
@@ -517,9 +517,9 @@ class _InvalidRange:
 
 
 layout_vertex_source = """#version 330 core
-    in vec4 vertices;
+    in vec2 vertices;
     in vec4 colors;
-    in vec2 tex_coords;
+    in vec3 tex_coords;
     in vec2 translation;
 
     out vec4 text_colors;
@@ -536,10 +536,10 @@ layout_vertex_source = """#version 330 core
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vertices;
+        gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 1);
 
         text_colors = colors;
-        texture_coords = tex_coords;
+        texture_coords = tex_coords.xy;
     }
 """
 
@@ -558,7 +558,7 @@ layout_fragment_source = """#version 330 core
 """
 
 decoration_vertex_source = """#version 330 core
-    in vec4 vertices;
+    in vec2 vertices;
     in vec4 colors;
     in vec2 translation;
 
@@ -575,7 +575,7 @@ decoration_vertex_source = """#version 330 core
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vertices;
+        gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 0);
 
         vert_colors = colors;
     }
