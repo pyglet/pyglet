@@ -250,10 +250,11 @@ class MachOLibraryLoader(LibraryLoader):
         if path is None:
             frameworks = {
                 'AGL': '/System/Library/Frameworks/AGL.framework/AGL',
+                'IOKit': '/System/Library/Frameworks/IOKit.framework/IOKit',
                 'OpenAL': '/System/Library/Frameworks/OpenAL.framework/OpenAL',
                 'OpenGL': '/System/Library/Frameworks/OpenGL.framework/OpenGL'
             }
-            path = frameworks.get(name, None)
+            path = frameworks.get(name)
 
         if path:
             lib = ctypes.cdll.LoadLibrary(path)
