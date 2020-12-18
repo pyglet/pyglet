@@ -1,3 +1,18 @@
+pyglet 1.5.13
+Bugfix and feature release
+
+Bugfixes
+--------
+- Fix crash on looping video with no sound (#322)
+- OSX: Replace remaining usage of `find_library` to fix Big Sur issues (#332)
+- Windows: Fix default orientation for the XAudio2 listener.
+
+Features
+--------
+- Add new `shape.Triangle` shape.
+- Windows: `on_key_press` now dispatches unique events for left/right Shift keys.
+
+
 pyglet 1.5.12
 Bugfix and feature release
 

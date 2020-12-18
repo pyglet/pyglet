@@ -61,7 +61,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.5.11'
+version = '1.5.13'
 
 
 if sys.version_info < (3, 5):
@@ -97,6 +97,7 @@ if getattr(sys, 'frozen', None):
 #:     A sequence of the names of audio modules to attempt to load, in
 #:     order of preference.  Valid driver names are:
 #:
+#:     * xaudio2, the Windows Xaudio2 audio module (Windows only)
 #:     * directsound, the Windows DirectSound audio module (Windows only)
 #:     * pulse, the PulseAudio module (Linux only)
 #:     * openal, the OpenAL audio module

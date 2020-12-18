@@ -35,17 +35,16 @@
 
 import sys
 
-from ctypes import cdll, util, CFUNCTYPE, byref, c_void_p
-from ctypes import c_int, c_ubyte, c_bool, c_uint32, c_uint64
+from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
-from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
+from .base import Device, AbsoluteAxis, RelativeAxis, Button
 from .base import Joystick, AppleRemote
-from .base import DeviceExclusiveException
 
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
 from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf
 from pyglet.libs.darwin.cocoapy import cfset_to_set, cftype_to_value, cfarray_to_list
 from pyglet.lib import load_library
+
 
 __LP64__ = (sys.maxsize > 2 ** 32)
 
