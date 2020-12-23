@@ -79,15 +79,14 @@ class GStreamerSource(StreamingSource):
         # Create the major parts of the pipeline:
         self.filesrc = Gst.ElementFactory.make("filesrc", None)
         self.decoder = Gst.ElementFactory.make("decodebin", None)
-        self.audio_converter = Gst.ElementFactory.make("audioconvert", None)
-        self.sink = Gst.ElementFactory.make("appsink", None)
-        if not all((self.filesrc, self.decoder, self.audio_converter, self.sink)):
+        self.converter = Gst.ElementFactory.make("audioconvert", None)
+        self.appsink = Gst.ElementFactory.make("appsink", None)
+        if not all((self.filesrc, self.decoder, self.converter, self.appsink)):
             raise GStreamerDecodeException("Could not initialize GStreamer.")
 
-        # Set callbacks for EOS and errors:
+        # Set callbacks for EOS and error messages:
         self._pipeline.bus.add_signal_watch()
-        self._pipeline.bus.connect("message::eos", self._message)
-        self._pipeline.bus.connect("message::error", self._message)
+        self._pipeline.bus.connect("message", self._message)
 
         # Set the file path to load:
         self.filesrc.set_property("location", filename)
@@ -98,25 +97,26 @@ class GStreamerSource(StreamingSource):
         self.decoder.connect("unknown-type", self._unknown_type)
 
         # Set the sink's capabilities and behavior:
-        self.sink.set_property('caps', Gst.Caps.from_string('audio/x-raw,format=S16LE'))
-        self.sink.set_property('drop', False)
-        self.sink.set_property('sync', False)
-        self.sink.set_property('max-buffers', 5)
-        self.sink.set_property('emit-signals', True)
+        self.appsink.set_property('caps', Gst.Caps.from_string('audio/x-raw,format=S16LE,layout=interleaved'))
+        self.appsink.set_property('drop', False)
+        self.appsink.set_property('sync', False)
+        self.appsink.set_property('max-buffers', 0)     # unlimited
+        self.appsink.set_property('emit-signals', True)
         # The callback to receive decoded data:
-        self.sink.connect("new-sample", self._new_sample)
+        self.appsink.connect("new-sample", self._new_sample)
 
         # Add all components to the pipeline:
         self._pipeline.add(self.filesrc)
         self._pipeline.add(self.decoder)
-        self._pipeline.add(self.audio_converter)
-        self._pipeline.add(self.sink)
+        self._pipeline.add(self.converter)
+        self._pipeline.add(self.appsink)
         # Link together necessary components:
         self.filesrc.link(self.decoder)
-        self.audio_converter.link(self.sink)
+        self.decoder.link(self.converter)
+        self.converter.link(self.appsink)
 
         # Callback to notify once the sink is ready:
-        self.caps_handler = self.sink.get_static_pad("sink").connect("notify::caps", self._notify_caps)
+        self.caps_handler = self.appsink.get_static_pad("sink").connect("notify::caps", self._notify_caps)
 
         # Set by callbacks:
         self._pads = False
@@ -136,7 +136,7 @@ class GStreamerSource(StreamingSource):
         try:
             self._pipeline.bus.remove_signal_watch()
             self.filesrc.set_property("location", None)
-            self.sink.get_static_pad("sink").disconnect(self.caps_handler)
+            self.appsink.get_static_pad("sink").disconnect(self.caps_handler)
             while not self._queue.empty():
                 self._queue.get_nowait()
             self._pipeline.set_state(Gst.State.NULL)
@@ -153,9 +153,7 @@ class GStreamerSource(StreamingSource):
         sample_rate = info.get_int('rate')[1]
         sample_size = int("".join(filter(str.isdigit, info.get_string('format'))))
 
-        self.audio_format = AudioFormat(channels=channels,
-                                        sample_size=sample_size,
-                                        sample_rate=sample_rate)
+        self.audio_format = AudioFormat(channels=channels, sample_size=sample_size, sample_rate=sample_rate)
 
         # Allow __init__ to complete:
         self._is_ready.set()
@@ -164,7 +162,7 @@ class GStreamerSource(StreamingSource):
         """pad-added callback"""
         name = pad.query_caps(None).to_string()
         if name.startswith('audio/x-raw'):
-            nextpad = self.audio_converter.get_static_pad('sink')
+            nextpad = self.converter.get_static_pad('sink')
             if not nextpad.is_linked():
                 self._pads = True
                 pad.link(nextpad)
@@ -176,7 +174,7 @@ class GStreamerSource(StreamingSource):
 
     def _new_sample(self, sink):
         """new-sample callback"""
-        # Query the sample, and get it's buffer:
+        # Pull the sample, and get it's buffer:
         buffer = sink.emit('pull-sample').get_buffer()
         # Extract a copy of the memory in the buffer:
         mem = buffer.extract_dup(0, buffer.get_size())
