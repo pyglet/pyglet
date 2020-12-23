@@ -48,7 +48,13 @@ elif sizeof(c_void_p) == 8:
 
 ######################################################################
 
-objc = cdll.LoadLibrary(util.find_library('objc'))
+lib = util.find_library('objc')
+
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/usr/lib/libobjc.dylib'
+
+objc = cdll.LoadLibrary(lib)
 
 ######################################################################
 

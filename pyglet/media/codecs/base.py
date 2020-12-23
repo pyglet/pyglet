@@ -333,7 +333,7 @@ class Source:
         """
         pass
 
-    def save(self, filename=None, file=None, encoder=None):
+    def save(self, filename, file=None, encoder=None):
         """Save this Source to a file.
 
         :Parameters:
@@ -356,6 +356,7 @@ class Source:
         else:
             first_exception = None
             for encoder in pyglet.media.get_encoders(filename):
+
                 try:
                     encoder.encode(self, file, filename)
                     return
@@ -364,8 +365,10 @@ class Source:
                     file.seek(0)
 
             if not first_exception:
-                raise MediaEncodeException('No media encoders are available')
+                raise MediaEncodeException(f"No Encoders are available for this extension: '{filename}'")
             raise first_exception
+
+        file.close()
 
     # Internal methods that Player calls on the source:
 

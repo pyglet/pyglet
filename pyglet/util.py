@@ -38,7 +38,6 @@
 
 import os
 import sys
-import importlib
 
 import pyglet
 
@@ -136,7 +135,7 @@ def debug_print(enabled_or_option='debug'):
 
 
 class Codecs:
-    """utility class for handling adding and querying of codecs."""
+    """Utility class for handling adding and querying of codecs."""
 
     def __init__(self):
         self._decoders = []
@@ -145,15 +144,14 @@ class Codecs:
         self._encoder_extensions = {}   # Map str -> list of matching ImageEncoders
 
     def get_encoders(self, filename=None):
-        """Get an ordered list of all encoders. If a `filename` is provided,
-        encoders supporting that extension will be ordered first in the list.
+        """Get a list of all encoders. If a `filename` is provided, only
+        encoders supporting that extension will be returned. An empty list
+        will be return if no encoders for that extension are available.
         """
-        encoders = []
         if filename:
             extension = os.path.splitext(filename)[1].lower()
-            encoders += self._encoder_extensions.get(extension, [])
-        encoders += [e for e in self._encoders if e not in encoders]
-        return encoders
+            return self._encoder_extensions.get(extension, [])
+        return self._encoders
 
     def get_decoders(self, filename=None):
         """Get an ordered list of all decoders. If a `filename` is provided,
@@ -196,7 +194,7 @@ class Decoder:
         """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
         """
-        return []
+        raise NotImplementedError()
 
     def decode(self, *args, **kwargs):
         """Read and decode the given file object and return an approprite
@@ -220,7 +218,7 @@ class Encoder:
         """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
         Lower-case only.
         """
-        return []
+        raise NotImplementedError()
 
     def encode(self, media, file, filename):
         """Encode the given media type to the given file.  `filename`

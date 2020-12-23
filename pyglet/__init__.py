@@ -83,6 +83,7 @@ if getattr(sys, 'frozen', None):
 #:     A sequence of the names of audio modules to attempt to load, in
 #:     order of preference.  Valid driver names are:
 #:
+#:     * xaudio2, the Windows Xaudio2 audio module (Windows only)
 #:     * directsound, the Windows DirectSound audio module (Windows only)
 #:     * pulse, the PulseAudio module (Linux only)
 #:     * openal, the OpenAL audio module
