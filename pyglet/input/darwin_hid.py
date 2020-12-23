@@ -37,12 +37,9 @@ import sys
 
 from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
-from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, GameController, AppleRemote
-from .base import DeviceExclusiveException
 from .gamecontroller import is_game_controller
 from .base import Device, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, AppleRemote
+from .base import Joystick, GameController, AppleRemote
 
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
 from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf
