@@ -1,3 +1,15 @@
+pyglet 1.5.14
+Bugfix and feature release
+
+Bugfixes
+--------
+- Fix interlaced mp3 decoding in GStreamer backend.
+
+Features
+--------
+- Add a `WaveEncoder` for saving audio Sources to disk.
+
+
 pyglet 1.5.13
 Bugfix and feature release
 

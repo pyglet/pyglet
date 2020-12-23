@@ -62,7 +62,7 @@ class MediaDecoder(Decoder):
 
 class MediaEncoder(Encoder):
 
-    def encode(self, media, file, filename):
+    def encode(self, source, file, filename):
         """Encode the given source to the given file.  `filename`
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
@@ -78,6 +78,7 @@ def add_default_media_codecs():
     try:
         from . import wave
         add_decoders(wave)
+        add_encoders(wave)
     except ImportError:
         pass
 
