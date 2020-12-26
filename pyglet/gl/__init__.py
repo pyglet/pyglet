@@ -214,7 +214,7 @@ if _is_pyglet_doc_run:
     from .base import Config
 
 elif _pyglet.options['egl']:
-    from .headless import EGLConfig as Config
+    from .headless import HeadlessConfig as Config
 elif compat_platform in ('win32', 'cygwin'):
     from .win32 import Win32Config as Config
 elif compat_platform.startswith('linux'):

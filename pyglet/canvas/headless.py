@@ -37,32 +37,42 @@ from pyglet import app
 from .base import Display, Screen, ScreenMode, Canvas
 
 
+from pyglet.egl import egl
+
+
 class HeadlessDisplay(Display):
 
     def __init__(self):
         super().__init__()
         # TODO: fix this placeholder:
         self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
+        display = egl.EGLNativeDisplayType()
+        self._display_connection = egl.eglGetDisplay(display)
+        egl.eglInitialize(self._display_connection, None, None)
 
     def get_screens(self):
         return self._screens
 
+    def __del__(self):
+        egl.eglTerminate(self._display_connection)
+
 
 class HeadlessCanvas(Canvas):
-    pass
-
+    def __init__(self, display, egl_surface):
+        super(HeadlessCanvas, self).__init__(display)
+        self.egl_surface = egl_surface
 
 class HeadlessScreen(Screen):
     def __init__(self, display, x, y, width, height):
         super().__init__(display, x, y, width, height)
 
     def get_matching_configs(self, template):
-        canvas = HeadlessCanvas(self.display)
+        canvas = HeadlessCanvas(self.display, None)
         configs = template.match(canvas)
         # XXX deprecate
         for config in configs:
             config.screen = self
-        print("Canvas", canvas, "configs", configs)
+        # print("Canvas", canvas, "configs", configs)
         return configs
 
     def get_modes(self):

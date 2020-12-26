@@ -37,9 +37,15 @@ from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler
 from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
 from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
 
+
+from pyglet.egl import egl
+
+
+from pyglet.canvas.headless import HeadlessCanvas
+
 # from pyglet.window import key
 # from pyglet.window import mouse
-# from pyglet.event import EventDispatcher
+from pyglet.event import EventDispatcher
 
 # Platform event data is single item, so use platform event handler directly.
 HeadlessEventHandler = _PlatformEventHandler
@@ -47,6 +53,8 @@ ViewEventHandler = _ViewEventHandler
 
 
 class HeadlessWindow(BaseWindow):
+    _egl_display_connection = None
+    _egl_surface = None
 
     def __init__(self, *args, **kwargs):
         print("Makin window")
@@ -57,10 +65,12 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def flip(self):
-        pass
+        if self.context:
+            self.context.flip()
 
     def switch_to(self):
-        pass
+        if self.context:
+            self.context.set_current()
 
     def set_caption(self, caption):
         pass
@@ -75,7 +85,7 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def get_size(self):
-        pass
+        return self._width, self._height
 
     def set_location(self, x, y):
         pass
@@ -111,7 +121,21 @@ class HeadlessWindow(BaseWindow):
         pass
 
     def dispatch_events(self):
-        pass
+        while self._event_queue:
+            EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
 
     def _create(self):
-        pass
+        self._egl_display_connection = self.display._display_connection
+
+        if not self._egl_surface:
+            pbuffer_attribs = (egl.EGL_WIDTH, self._width, egl.EGL_HEIGHT, self._height, egl.EGL_NONE)
+            pbuffer_attrib_array = (egl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
+            self._egl_surface = egl.eglCreatePbufferSurface(self._egl_display_connection,
+                                                            self.config._egl_config,
+                                                            pbuffer_attrib_array)
+
+            self.canvas = HeadlessCanvas(self.display, self._egl_surface)
+
+            self.context.attach(self.canvas)
+
+            self.dispatch_event('on_resize', self._width, self._height)

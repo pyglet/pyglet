@@ -1,5 +1,5 @@
-from pyglet.gl import egl as libegl
-from pyglet.gl.egl import *
+from pyglet.egl import egl as libegl
+from pyglet.egl.egl import *
 
 
 _buffer_types = {EGL_SINGLE_BUFFER: "EGL_RENDER_BUFFER",
@@ -36,11 +36,11 @@ config_attribs = (EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
                   EGL_RED_SIZE, 8,
                   EGL_DEPTH_SIZE, 8,
                   EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-                  EGL_CONTEXT_MAJOR_VERSION, 2,
                   EGL_NONE)
 config_attrib_array = (libegl.EGLint * len(config_attribs))(*config_attribs)
 egl_config = libegl.EGLConfig()
-libegl.eglChooseConfig(display_connection, config_attrib_array, egl_config, 1, num_configs)
+result = libegl.eglChooseConfig(display_connection, config_attrib_array, egl_config, 1, num_configs)
+assert result == 1, "Failed to choose Config"
 
 # Create a surface:
 pbufferwidth = 1
@@ -48,13 +48,17 @@ pbufferheight = 1
 pbuffer_attribs = (EGL_WIDTH, pbufferwidth, EGL_HEIGHT, pbufferheight, EGL_NONE)
 pbuffer_attrib_array = (libegl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
 surface = libegl.eglCreatePbufferSurface(display_connection, egl_config, pbuffer_attrib_array)
+print("Surface: ", surface)
 
 # Bind the API:
 result = libegl.eglBindAPI(libegl.EGL_OPENGL_API)
 assert result == 1, "Failed to bind EGL_OPENGL_API"
 
 # Create a context:
-context = libegl.eglCreateContext(display_connection, egl_config, None, None)
+context_attribs = (EGL_CONTEXT_MAJOR_VERSION, 2, EGL_NONE)
+context_attrib_array = (libegl.EGLint * len(context_attribs))(*context_attribs)
+context = libegl.eglCreateContext(display_connection, egl_config, None, context_attrib_array)
+print("Context: ", context)
 
 # Make context current:
 result = libegl.eglMakeCurrent(display_connection, surface, surface, context)
