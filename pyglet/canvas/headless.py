@@ -37,7 +37,9 @@ from pyglet import app
 from .base import Display, Screen, ScreenMode, Canvas
 
 
+from ctypes import *
 from pyglet.egl import egl
+from pyglet.egl import eglext
 
 
 class HeadlessDisplay(Display):
@@ -46,8 +48,17 @@ class HeadlessDisplay(Display):
         super().__init__()
         # TODO: fix this placeholder:
         self._screens = [HeadlessScreen(self, 0, 0, 1920, 1080)]
-        display = egl.EGLNativeDisplayType()
-        self._display_connection = egl.eglGetDisplay(display)
+
+        num_devices = egl.EGLint()
+        eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
+        if num_devices.value > 0:
+            devices = (eglext.EGLDeviceEXT * num_devices.value)()
+            eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
+            self._display_connection  = eglext.eglGetPlatformDisplayEXT(eglext.EGL_PLATFORM_DEVICE_EXT, devices[0], None)
+        else:
+            display = egl.EGLNativeDisplayType()
+            self._display_connection = egl.eglGetDisplay(display)
+
         egl.eglInitialize(self._display_connection, None, None)
 
     def get_screens(self):
