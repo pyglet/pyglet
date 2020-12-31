@@ -4,6 +4,7 @@ Bugfix and feature release
 Bugfixes
 --------
 - Fix interlaced mp3 decoding in GStreamer backend.
+- Skip functions marked as OBJC_ARM64_UNAVAILABLE for new ARM Macs.
 
 Features
 --------
