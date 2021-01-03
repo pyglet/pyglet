@@ -575,7 +575,7 @@ class CocoaWindow(BaseWindow):
             quartz.CGDisplayMoveCursorToPoint(displayID, cocoapy.NSPoint(x, y))
 
     def set_exclusive_mouse(self, exclusive=True):
-        super().set_exclusive_mouse()
+        super().set_exclusive_mouse(exclusive)
         if exclusive:
             # Skip the next motion event, which would return a large delta.
             self._mouse_ignore_motion = True
@@ -599,7 +599,7 @@ class CocoaWindow(BaseWindow):
 
         # This flag is queried by window delegate to determine whether
         # the quit menu item is active.
-        super().set_exclusive_keyboard()
+        super().set_exclusive_keyboard(exclusive)
 
         if exclusive:
             # "Be nice! Don't disable force-quit!"

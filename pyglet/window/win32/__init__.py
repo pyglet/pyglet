@@ -498,7 +498,7 @@ class Win32Window(BaseWindow):
             # Release clip
             _user32.ClipCursor(None)
 
-        super().set_exclusive_mouse()
+        super().set_exclusive_mouse(exclusive)
         self._exclusive_mouse_focus = self._has_focus
         self.set_mouse_platform_visible(not exclusive)
 
@@ -523,7 +523,7 @@ class Win32Window(BaseWindow):
         else:
             _user32.UnregisterHotKey(self._hwnd, 0)
 
-        super().set_exclusive_keyboard()
+        super().set_exclusive_keyboard(exclusive)
         self._exclusive_keyboard_focus = self._has_focus
 
     def get_system_mouse_cursor(self, name):

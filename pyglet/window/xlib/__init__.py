@@ -769,14 +769,14 @@ class XlibWindow(BaseWindow):
         if exclusive == self._mouse_exclusive:
             return
 
-        super().set_exclusive_mouse()
+        super().set_exclusive_mouse(exclusive)
         self._update_exclusivity()
 
     def set_exclusive_keyboard(self, exclusive=True):
         if exclusive == self._keyboard_exclusive:
             return
 
-        super().set_exclusive_keyboard()
+        super().set_exclusive_keyboard(exclusive)
         self._update_exclusivity()
 
     def get_system_mouse_cursor(self, name):
