@@ -37,7 +37,7 @@ import ctypes
 
 import pyglet
 from pyglet.input.base import DeviceOpenException
-from pyglet.input.base import Tablet, TabletCursor, TabletCanvas
+from pyglet.input.base import Tablet, TabletCanvas
 
 from pyglet.libs.win32 import libwintab as wintab
 

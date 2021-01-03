@@ -38,7 +38,7 @@
 
 import wave
 
-from ..exceptions import MediaDecodeException, MediaEncodeException
+from ..exceptions import MediaDecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 

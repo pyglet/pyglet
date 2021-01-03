@@ -41,7 +41,7 @@ from pyglet.image.codecs import *
 try:
     import Image
 except ImportError:
-    from PIL import Image, ImageSequence
+    from PIL import Image
 
 
 class PILImageDecoder(ImageDecoder):

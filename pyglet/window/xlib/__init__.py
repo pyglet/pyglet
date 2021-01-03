@@ -39,7 +39,7 @@ from ctypes import *
 from functools import lru_cache
 
 import pyglet
-from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorException
+from pyglet.window import WindowException, MouseCursorException
 from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
 from pyglet.window import BaseWindow, _PlatformEventHandler, _ViewEventHandler
 

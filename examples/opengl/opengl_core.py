@@ -1,4 +1,3 @@
-import os
 import pyglet
 from pyglet.gl import *
 

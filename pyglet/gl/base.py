@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet import gl, compat_platform
+from pyglet import gl
 from pyglet.gl import gl_info
 
 
