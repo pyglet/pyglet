@@ -89,7 +89,7 @@ class PygletDelegate_Implementation:
 
     @PygletDelegate.method('v@')
     def applicationDidUnhide_(self, notification):
-        if self._window._is_mouse_exclusive and quartz.CGCursorIsVisible():
+        if self._window._mouse_exclusive and quartz.CGCursorIsVisible():
             # The cursor should be hidden, but for some reason it's not;
             # try to force the cursor to hide (without over-hiding).
             SystemCursor.unhide()
@@ -122,7 +122,7 @@ class PygletDelegate_Implementation:
     @PygletDelegate.method('v@')
     def windowDidResignKey_(self, notification):
         # Pause exclusive mouse mode if it is active.
-        if self._window._is_mouse_exclusive:
+        if self._window._mouse_exclusive:
             self._window.set_exclusive_mouse(False)
             self.did_pause_exclusive_mouse = True
             # We need to prevent the window from being unintentionally dragged
@@ -139,7 +139,7 @@ class PygletDelegate_Implementation:
 
     @PygletDelegate.method('v@')
     def windowDidDeminiaturize_(self, notification):
-        if self._window._is_mouse_exclusive and quartz.CGCursorIsVisible():
+        if self._window._mouse_exclusive and quartz.CGCursorIsVisible():
             # The cursor should be hidden, but for some reason it's not;
             # try to force the cursor to hide (without over-hiding).
             SystemCursor.unhide()
@@ -160,7 +160,7 @@ class PygletDelegate_Implementation:
     def validateMenuItem_(self, menuitem):
         # Disable quitting with command-q when in keyboard exclusive mode.
         if menuitem.action() == get_selector('terminate:'):
-            return not self._window._is_keyboard_exclusive
+            return not self._window._keyboard_exclusive
         return True
 
 

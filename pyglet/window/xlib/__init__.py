@@ -138,7 +138,6 @@ class XlibWindow(BaseWindow):
     _height = 0                     # Last known window size
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
     _mouse_buttons = [False] * 6    # State of each xlib button
-    _keyboard_exclusive = False
     _active = True
     _applied_mouse_exclusive = False
     _applied_keyboard_exclusive = False
@@ -770,14 +769,14 @@ class XlibWindow(BaseWindow):
         if exclusive == self._mouse_exclusive:
             return
 
-        self._mouse_exclusive = exclusive
+        super().set_exclusive_mouse(exclusive)
         self._update_exclusivity()
 
     def set_exclusive_keyboard(self, exclusive=True):
         if exclusive == self._keyboard_exclusive:
             return
 
-        self._keyboard_exclusive = exclusive
+        super().set_exclusive_keyboard(exclusive)
         self._update_exclusivity()
 
     def get_system_mouse_cursor(self, name):

@@ -363,7 +363,7 @@ class PygletView_Implementation:
     def mouseExited_(self, nsevent):
         x, y = getMousePosition(self, nsevent)
         self._window._mouse_in_window = False
-        if not self._window._is_mouse_exclusive:
+        if not self._window._mouse_exclusive:
             self._window.set_mouse_platform_visible()
         self._window.dispatch_event('on_mouse_leave', x, y)
 
@@ -377,7 +377,7 @@ class PygletView_Implementation:
         # the bottom right corner, the resize control will set the cursor
         # to the default arrow and screw up our cursor tracking.
         self._window._mouse_in_window = True
-        if not self._window._is_mouse_exclusive:
+        if not self._window._mouse_exclusive:
             self._window.set_mouse_platform_visible()
 
 
