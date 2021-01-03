@@ -1002,7 +1002,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def set_size(self, width: int, height: int):
+    def set_size(self, width: int, height: int) -> None:
         """Resize the window.
 
         The behaviour is undefined if the window is not resizable, or if

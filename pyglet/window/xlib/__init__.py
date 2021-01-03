@@ -558,7 +558,7 @@ class XlibWindow(BaseWindow):
     def get_caption(self):
         return self._caption
 
-    def set_size(self, width: int, height: int):
+    def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
         if not self._resizable:
             self.set_minimum_size(width, height)

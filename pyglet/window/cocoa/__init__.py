@@ -408,7 +408,7 @@ class CocoaWindow(BaseWindow):
         bounds = view.convertRectToBacking_(view.bounds()).size
         return int(bounds.width), int(bounds.height)
 
-    def set_size(self, width: int, height: int):
+    def set_size(self, width: int, height: int) -> None:
         super().set_size(width, height)
         # Move frame origin down so that top-left corner of window doesn't move.
         window_frame = self._nswindow.frame()
