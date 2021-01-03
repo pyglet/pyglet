@@ -134,8 +134,6 @@ class XlibWindow(BaseWindow):
 
     _x = 0
     _y = 0                          # Last known window position
-    _width = 0
-    _height = 0                     # Last known window size
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
     _mouse_buttons = [False] * 6    # State of each xlib button
     _active = True
