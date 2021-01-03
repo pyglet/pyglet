@@ -407,6 +407,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _windowed_size = None
     _windowed_location = None
 
+    _keyboard_exclusive = False
+
     # Subclasses should update these after relevant events
     _mouse_cursor = DefaultMouseCursor()
     _mouse_x = 0
@@ -1202,7 +1204,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 If True, exclusive mouse is enabled, otherwise it is disabled.
 
         """
-        raise NotImplementedError('abstract')
+        self._mouse_exclusive = exclusive
 
     def set_exclusive_keyboard(self, exclusive=True):
         """Prevent the user from switching away from this window using
@@ -1219,7 +1221,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 disabled.
 
         """
-        raise NotImplementedError('abstract')
+        self._keyboard_exclusive = exclusive
 
     def get_system_mouse_cursor(self, name):
         """Obtain a system mouse cursor.

@@ -87,11 +87,8 @@ class CocoaWindow(BaseWindow):
     _minimum_size = None
     _maximum_size = None
 
-    _is_mouse_exclusive = False
     _mouse_platform_visible = True
     _mouse_ignore_motion = False
-
-    _is_keyboard_exclusive = False
 
     # Flag set during close() method.
     _was_closed = False
@@ -498,7 +495,7 @@ class CocoaWindow(BaseWindow):
         # look like.
         else:
             # If we are in mouse exclusive mode, then hide the mouse cursor.
-            if self._is_mouse_exclusive:
+            if self._mouse_exclusive:
                 SystemCursor.hide()
             # If we aren't inside the window, then always show the mouse
             # and make sure that it is the default cursor.
@@ -578,7 +575,7 @@ class CocoaWindow(BaseWindow):
             quartz.CGDisplayMoveCursorToPoint(displayID, cocoapy.NSPoint(x, y))
 
     def set_exclusive_mouse(self, exclusive=True):
-        self._is_mouse_exclusive = exclusive
+        super().set_exclusive_mouse()
         if exclusive:
             # Skip the next motion event, which would return a large delta.
             self._mouse_ignore_motion = True
@@ -602,7 +599,7 @@ class CocoaWindow(BaseWindow):
 
         # This flag is queried by window delegate to determine whether
         # the quit menu item is active.
-        self._is_keyboard_exclusive = exclusive
+        super().set_exclusive_keyboard()
 
         if exclusive:
             # "Be nice! Don't disable force-quit!"
