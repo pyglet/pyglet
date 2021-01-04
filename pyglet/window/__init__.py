@@ -407,6 +407,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _windowed_size = None
     _windowed_location = None
 
+    _minimum_size = None
+
     _keyboard_exclusive = False
 
     # Subclasses should update these after relevant events
@@ -959,7 +961,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def set_minimum_size(self, width, height):
+    def set_minimum_size(self, width: int, height: int) -> None:
         """Set the minimum size of the window.
 
         Once set, the user will not be able to resize the window smaller
@@ -978,7 +980,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 Minimum height of the window, in pixels.
 
         """
-        raise NotImplementedError('abstract')
+        self._minimum_size = width, height
 
     def set_maximum_size(self, width, height):
         """Set the maximum size of the window.

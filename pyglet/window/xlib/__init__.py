@@ -128,7 +128,6 @@ class XlibWindow(BaseWindow):
     _x_screen_id = None             # X screen index
     _x_ic = None                    # X input context
     _window = None                  # Xlib window handle
-    _minimum_size = None
     _maximum_size = None
     _override_redirect = False
 
@@ -620,8 +619,8 @@ class XlibWindow(BaseWindow):
             self._unmap()
         self._visible = visible
 
-    def set_minimum_size(self, width, height):
-        self._minimum_size = width, height
+    def set_minimum_size(self, width: int, height: int) -> None:
+        super().set_minimum_size(width, height)
         self._set_wm_normal_hints()
 
     def set_maximum_size(self, width, height):

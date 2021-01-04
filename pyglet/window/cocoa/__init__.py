@@ -84,7 +84,6 @@ class CocoaWindow(BaseWindow):
     _delegate = None
 
     # Window properties
-    _minimum_size = None
     _maximum_size = None
 
     _mouse_platform_visible = True
@@ -425,11 +424,12 @@ class CocoaWindow(BaseWindow):
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
 
-    def set_minimum_size(self, width, height):
-        self._minimum_size = cocoapy.NSSize(width, height)
+    def set_minimum_size(self, width: int, height: int) -> None:
+        super().set_minimum_size(width, height)
 
         if self._nswindow is not None:
-            self._nswindow.setContentMinSize_(self._minimum_size)
+            ns_minimum_size = cocoapy.NSSize(*self._minimum_size)
+            self._nswindow.setContentMinSize_(ns_minimum_size)
 
     def set_maximum_size(self, width, height):
         self._maximum_size = cocoapy.NSSize(width, height)
