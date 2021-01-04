@@ -109,7 +109,6 @@ class Win32Window(BaseWindow):
 
     _ws_style = 0
     _ex_ws_style = 0
-    _maximum_size = None
 
     def __init__(self, *args, **kwargs):
         # Bind event handlers
@@ -384,9 +383,6 @@ class Win32Window(BaseWindow):
         # _user32.GetClientRect(self._hwnd, byref(rect))
         # return rect.right - rect.left, rect.bottom - rect.top
         return self._width, self._height
-
-    def set_maximum_size(self, width, height):
-        self._maximum_size = width, height
 
     def activate(self):
         _user32.SetForegroundWindow(self._hwnd)

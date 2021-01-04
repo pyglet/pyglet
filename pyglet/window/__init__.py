@@ -408,6 +408,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _windowed_location = None
 
     _minimum_size = None
+    _maximum_size = None
 
     _keyboard_exclusive = False
 
@@ -982,7 +983,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         self._minimum_size = width, height
 
-    def set_maximum_size(self, width, height):
+    def set_maximum_size(self, width: int, height: int) -> None:
         """Set the maximum size of the window.
 
         Once set, the user will not be able to resize the window larger
@@ -1002,7 +1003,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 Maximum height of the window, in pixels.
 
         """
-        raise NotImplementedError('abstract')
+        self._maximum_size = width, height
 
     def set_size(self, width, height):
         """Resize the window.
