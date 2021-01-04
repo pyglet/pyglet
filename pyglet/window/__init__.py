@@ -981,6 +981,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 Minimum height of the window, in pixels.
 
         """
+        if width < 1 or height < 1:
+            raise ValueError('width and height must be positive integers')
+
         self._minimum_size = width, height
 
     def set_maximum_size(self, width: int, height: int) -> None:
@@ -1003,6 +1006,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 Maximum height of the window, in pixels.
 
         """
+        if width < 1 or height < 1:
+            raise ValueError('width and height must be positive integers')
+
         self._maximum_size = width, height
 
     def set_size(self, width, height):
