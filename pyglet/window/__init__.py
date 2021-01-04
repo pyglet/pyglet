@@ -1019,8 +1019,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         if self._fullscreen:
             raise WindowException('Cannot set size of fullscreen window.')
-        self._width = max(width, 1)
-        self._height = max(height, 1)
+        if width < 1 or height < 1:
+            raise ValueError('width and height must both be positive integers')
+
+        self._width, self._height = width, height
 
     def get_pixel_ratio(self):
         """Return the framebuffer/window size ratio.
