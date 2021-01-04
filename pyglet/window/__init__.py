@@ -1020,7 +1020,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if self._fullscreen:
             raise WindowException('Cannot set size of fullscreen window.')
         if width < 1 or height < 1:
-            raise ValueError('width and height must both be positive integers')
+            raise ValueError('width and height must be positive integers')
 
         self._width, self._height = width, height
 
