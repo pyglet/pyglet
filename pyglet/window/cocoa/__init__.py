@@ -395,11 +395,6 @@ class CocoaWindow(BaseWindow):
         origin = cocoapy.NSPoint(x, screen_height - y - rect.size.height)
         self._nswindow.setFrameOrigin_(origin)
 
-    def get_size(self) -> Tuple[int, int]:
-        window_frame = self._nswindow.frame()
-        rect = self._nswindow.contentRectForFrameRect_(window_frame)
-        return int(rect.size.width), int(rect.size.height)
-
     def get_framebuffer_size(self):
         view = self.context._nscontext.view()
         bounds = view.convertRectToBacking_(view.bounds()).size
