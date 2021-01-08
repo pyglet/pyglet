@@ -36,7 +36,6 @@
 from ctypes import *
 
 import pyglet
-from pyglet import gl
 from pyglet.window import BaseWindow
 from pyglet.window import MouseCursor, DefaultMouseCursor
 from pyglet.event import EventDispatcher
