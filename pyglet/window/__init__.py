@@ -1108,16 +1108,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def set_visible(self, visible=True):
+    def set_visible(self, visible: bool = True) -> None:
         """Show or hide the window.
 
         :Parameters:
             `visible` : bool
                 If True, the window will be shown; otherwise it will be
                 hidden.
-
         """
-        raise NotImplementedError('abstract')
+        self._visible = visible
 
     def minimize(self):
         """Minimize the window.

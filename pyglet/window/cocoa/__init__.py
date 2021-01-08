@@ -439,8 +439,9 @@ class CocoaWindow(BaseWindow):
             NSApp.activateIgnoringOtherApps_(True)
             self._nswindow.makeKeyAndOrderFront_(None)
 
-    def set_visible(self, visible=True):
-        self._visible = visible
+    def set_visible(self, visible: bool = True) -> None:
+        super().set_visible()
+
         if self._nswindow is not None:
             if visible:
                 # Not really sure why on_resize needs to be here,
