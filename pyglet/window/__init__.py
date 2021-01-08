@@ -1011,7 +1011,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         self._maximum_size = width, height
 
-    def set_size(self, width, height):
+    def set_size(self, width: int, height: int) -> None:
         """Resize the window.
 
         The behaviour is undefined if the window is not resizable, or if
@@ -1026,7 +1026,12 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 New height of the window, in pixels.
 
         """
-        raise NotImplementedError('abstract')
+        if self._fullscreen:
+            raise WindowException('Cannot set size of fullscreen window.')
+        if width < 1 or height < 1:
+            raise ValueError('width and height must be positive integers')
+
+        self._width, self._height = width, height
 
     def get_pixel_ratio(self):
         """Return the framebuffer/window size ratio.

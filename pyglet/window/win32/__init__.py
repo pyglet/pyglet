@@ -369,9 +369,8 @@ class Win32Window(BaseWindow):
         _user32.ClientToScreen(self._hwnd, byref(point))
         return point.x, point.y
 
-    def set_size(self, width, height):
-        if self._fullscreen:
-            raise WindowException('Cannot set size of fullscreen window.')
+    def set_size(self, width: int, height: int) -> None:
+        super().set_size(width, height)
         width, height = self._client_to_window_size(width, height)
         _user32.SetWindowPos(self._hwnd, 0, 0, 0, width, height,
                              (SWP_NOZORDER |

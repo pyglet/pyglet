@@ -405,11 +405,8 @@ class CocoaWindow(BaseWindow):
         bounds = view.convertRectToBacking_(view.bounds()).size
         return int(bounds.width), int(bounds.height)
 
-    def set_size(self, width, height):
-        if self._fullscreen:
-            raise WindowException('Cannot set size of fullscreen window.')
-        self._width = max(1, int(width))
-        self._height = max(1, int(height))
+    def set_size(self, width: int, height: int) -> None:
+        super().set_size(width, height)
         # Move frame origin down so that top-left corner of window doesn't move.
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)

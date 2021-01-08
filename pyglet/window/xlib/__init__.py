@@ -132,8 +132,6 @@ class XlibWindow(BaseWindow):
 
     _x = 0
     _y = 0                          # Last known window position
-    _width = 0
-    _height = 0                     # Last known window size
     _mouse_exclusive_client = None  # x,y of "real" mouse during exclusive
     _mouse_buttons = [False] * 6    # State of each xlib button
     _active = True
@@ -558,11 +556,8 @@ class XlibWindow(BaseWindow):
     def get_caption(self):
         return self._caption
 
-    def set_size(self, width, height):
-        if self._fullscreen:
-            raise WindowException('Cannot set size of fullscreen window.')
-        self._width = width
-        self._height = height
+    def set_size(self, width: int, height: int) -> None:
+        super().set_size(width, height)
         if not self._resizable:
             self.set_minimum_size(width, height)
             self.set_maximum_size(width, height)
