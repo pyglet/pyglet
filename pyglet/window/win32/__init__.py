@@ -387,7 +387,7 @@ class Win32Window(BaseWindow):
         _user32.SetForegroundWindow(self._hwnd)
 
     def set_visible(self, visible: bool = True) -> None:
-        super().set_visible()
+        super().set_visible(visible)
 
         if visible:
             insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP

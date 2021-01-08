@@ -440,7 +440,7 @@ class CocoaWindow(BaseWindow):
             self._nswindow.makeKeyAndOrderFront_(None)
 
     def set_visible(self, visible: bool = True) -> None:
-        super().set_visible()
+        super().set_visible(visible)
 
         if self._nswindow is not None:
             if visible:

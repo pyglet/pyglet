@@ -607,7 +607,7 @@ class XlibWindow(BaseWindow):
             xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
 
     def set_visible(self, visible: bool = True) -> None:
-        super().set_visible()
+        super().set_visible(visible)
 
         if visible:
             self._map()
