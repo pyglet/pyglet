@@ -34,10 +34,11 @@
 # ----------------------------------------------------------------------------
 
 from ctypes import *
+from typing import Tuple
 
 import pyglet
 from pyglet import gl
-from pyglet.window import BaseWindow, WindowException
+from pyglet.window import BaseWindow
 from pyglet.window import MouseCursor, DefaultMouseCursor
 from pyglet.event import EventDispatcher
 
@@ -47,7 +48,6 @@ from pyglet.libs.darwin import cocoapy, CGPoint
 
 from .systemcursor import SystemCursor
 from .pyglet_delegate import PygletDelegate
-from .pyglet_textview import PygletTextView
 from .pyglet_window import PygletWindow, PygletToolWindow
 from .pyglet_view import PygletView
 
@@ -395,7 +395,7 @@ class CocoaWindow(BaseWindow):
         origin = cocoapy.NSPoint(x, screen_height - y - rect.size.height)
         self._nswindow.setFrameOrigin_(origin)
 
-    def get_size(self):
+    def get_size(self) -> Tuple[int, int]:
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
         return int(rect.size.width), int(rect.size.height)

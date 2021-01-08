@@ -377,12 +377,6 @@ class Win32Window(BaseWindow):
                               SWP_NOMOVE |
                               SWP_NOOWNERZORDER))
 
-    def get_size(self):
-        # rect = RECT()
-        # _user32.GetClientRect(self._hwnd, byref(rect))
-        # return rect.right - rect.left, rect.bottom - rect.top
-        return self._width, self._height
-
     def activate(self):
         _user32.SetForegroundWindow(self._hwnd)
 
