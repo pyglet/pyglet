@@ -386,7 +386,9 @@ class Win32Window(BaseWindow):
     def activate(self):
         _user32.SetForegroundWindow(self._hwnd)
 
-    def set_visible(self, visible=True):
+    def set_visible(self, visible: bool = True) -> None:
+        super().set_visible(visible)
+
         if visible:
             insertAfter = HWND_TOPMOST if self._fullscreen else HWND_TOP
             _user32.SetWindowPos(self._hwnd, insertAfter, 0, 0, 0, 0,
@@ -397,7 +399,6 @@ class Win32Window(BaseWindow):
         else:
             _user32.ShowWindow(self._hwnd, SW_HIDE)
             self.dispatch_event('on_hide')
-        self._visible = visible
         self.set_mouse_platform_visible()
 
     def minimize(self):

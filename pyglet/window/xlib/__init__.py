@@ -606,12 +606,13 @@ class XlibWindow(BaseWindow):
         if self._x_display and self._window:
             xlib.XSetInputFocus(self._x_display, self._window, xlib.RevertToParent, xlib.CurrentTime)
 
-    def set_visible(self, visible=True):
+    def set_visible(self, visible: bool = True) -> None:
+        super().set_visible(visible)
+
         if visible:
             self._map()
         else:
             self._unmap()
-        self._visible = visible
 
     def set_minimum_size(self, width: int, height: int) -> None:
         super().set_minimum_size(width, height)
