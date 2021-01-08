@@ -336,7 +336,10 @@ class Win32Window(BaseWindow):
         if not self._fullscreen:
             # Disable interval if composition is enabled to avoid conflict with DWM.
             if self._always_dwm or self._dwm_composition_enabled():
-                vsync = 0 # This seems odd, as vsync is normally a bool
+                # This seems odd, as vsync is normally a bool
+                # Win32Context.set_vsync casts vsync to an int anyways
+                # so this should probably be changed
+                vsync = 0
 
         self.context.set_vsync(vsync)
 
