@@ -39,7 +39,6 @@ import threading
 
 from pyglet import app
 from pyglet.app.base import PlatformEventLoop
-from pyglet.util import asbytes
 
 
 class XlibSelectDevice:

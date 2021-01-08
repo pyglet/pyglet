@@ -35,7 +35,7 @@
 
 from .base import Display, Screen, ScreenMode, Canvas
 
-from pyglet.libs.win32 import _kernel32, _user32, types, constants
+from pyglet.libs.win32 import _user32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 

@@ -1,5 +1,5 @@
-import pyglet, random, math
-from game import asteroid, load, player, resources
+import pyglet
+from game import asteroid, load, player
 
 # Set up a window
 game_window = pyglet.window.Window(800, 600)

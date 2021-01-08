@@ -6,8 +6,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id: gl_tree_test.py 114 2006-10-22 09:46:11Z r1chardj0n3s $'
 
-import math
-import random
 from pyglet.window import *
 from pyglet.window import mouse
 from pyglet import clock

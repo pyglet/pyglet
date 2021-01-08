@@ -1,12 +1,9 @@
-from pyglet.media.events import MediaEvent
-
-import pyglet
 import ctypes
+import platform
+import os
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from pyglet import com
-import platform
-import os
 from pyglet.util import debug_print
 
 _debug = debug_print('debug_media')

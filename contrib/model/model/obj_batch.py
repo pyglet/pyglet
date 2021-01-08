@@ -25,7 +25,7 @@ import os
 import logging
 
 from pyglet.gl import *
-from pyglet import image, resource, graphics
+from pyglet import graphics
 
 
 class Material(graphics.Group):

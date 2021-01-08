@@ -42,7 +42,7 @@ import ctypes
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
-from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button, Joystick, GameController
+from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, GameController
 from .base import DeviceOpenException
 from .evdev_constants import *
 from .gamecontroller import is_game_controller
