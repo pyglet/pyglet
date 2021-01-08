@@ -327,7 +327,7 @@ class Win32Window(BaseWindow):
 
     vsync = property(_get_vsync)  # overrides BaseWindow property
 
-    def set_vsync(self, vsync):
+    def set_vsync(self, vsync: bool) -> None:
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
 

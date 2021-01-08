@@ -1133,7 +1133,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def set_vsync(self, vsync):
+    def set_vsync(self, vsync: bool) -> None:
         """Enable or disable vertical sync control.
 
         When enabled, this option ensures flips from the back to the front
@@ -1154,7 +1154,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                 If True, vsync is enabled, otherwise it is disabled.
 
         """
-        raise NotImplementedError('abstract')
+        self._vsync = vsync
 
     def set_mouse_visible(self, visible=True):
         """Show or hide the mouse cursor.
