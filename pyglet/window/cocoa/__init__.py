@@ -34,7 +34,6 @@
 # ----------------------------------------------------------------------------
 
 from ctypes import *
-from typing import Tuple
 
 import pyglet
 from pyglet import gl
