@@ -124,6 +124,7 @@ above, "Working with multiple screens")::
 """
 
 import sys
+from typing import Tuple
 
 import pyglet
 from pyglet import gl
@@ -1050,15 +1051,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         return self.get_framebuffer_size()[0] / self.width
 
-    def get_size(self):
+    def get_size(self) -> Tuple[int, int]:
         """Return the current size of the window.
 
-        The window size does not include the border or title bar.
+        This does not include the windows' border or title bar.
 
         :rtype: (int, int)
         :return: The width and height of the window, in pixels.
         """
-        raise NotImplementedError('abstract')
+        return self._width, self._height
 
     def get_framebuffer_size(self):
         """Return the size in actual pixels of the Window framebuffer.

@@ -568,13 +568,6 @@ class XlibWindow(BaseWindow):
     def _update_view_size(self):
         xlib.XResizeWindow(self._x_display, self._view, self._width, self._height)
 
-    def get_size(self):
-        # XGetGeometry and XWindowAttributes seem to always return the
-        # original size of the window, which is wrong after the user
-        # has resized it.
-        # XXX this is probably fixed now, with fix of resize.
-        return self._width, self._height
-
     def set_location(self, x, y):
         if self._is_reparented():
             # Assume the window manager has reparented our top-level window
