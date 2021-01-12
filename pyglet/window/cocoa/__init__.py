@@ -466,9 +466,7 @@ class CocoaWindow(BaseWindow):
             vsync = pyglet.options['vsync']
 
         super().set_vsync(vsync)
-
-        if self.context:
-            self.context.set_vsync(vsync)
+        self.context.set_vsync(vsync)
 
     def _mouse_in_content_rect(self):
         # Returns true if mouse is inside the window's content rectangle.
