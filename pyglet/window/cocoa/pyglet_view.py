@@ -36,6 +36,7 @@ from pyglet.window import key, mouse
 from pyglet.libs.darwin.quartzkey import keymap, charmap
 
 from pyglet.libs.darwin import cocoapy
+from .pyglet_textview import PygletTextView
 
 
 NSTrackingArea = cocoapy.ObjCClass('NSTrackingArea')
@@ -117,7 +118,6 @@ class PygletView_Implementation:
         # "Option-e", "e" if the protocol isn't implemented.  So the easiest
         # thing to do is to subclass NSTextView which *does* implement the
         # protocol and let it handle text input.
-        PygletTextView = cocoapy.ObjCClass('PygletTextView')
         self._textview = PygletTextView.alloc().initWithCocoaWindow_(window)
         # Add text view to the responder chain.
         self.addSubview_(self._textview)
