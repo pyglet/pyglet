@@ -455,12 +455,12 @@ class CocoaWindow(BaseWindow):
         if self._nswindow is not None:
             self._nswindow.zoom_(None)
 
-    def set_vsync(self, vsync):
+    def set_vsync(self, vsync: bool) -> None:
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
-        self._vsync = vsync  # _recreate depends on this
-        if self.context:
-            self.context.set_vsync(vsync)
+
+        super().set_vsync(vsync)
+        self.context.set_vsync(vsync)
 
     def _mouse_in_content_rect(self):
         # Returns true if mouse is inside the window's content rectangle.

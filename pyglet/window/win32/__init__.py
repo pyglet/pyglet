@@ -327,7 +327,7 @@ class Win32Window(BaseWindow):
 
     vsync = property(_get_vsync)  # overrides BaseWindow property
 
-    def set_vsync(self, vsync):
+    def set_vsync(self, vsync: bool) -> None:
         if pyglet.options['vsync'] is not None:
             vsync = pyglet.options['vsync']
 
@@ -336,8 +336,9 @@ class Win32Window(BaseWindow):
         if not self._fullscreen:
             # Disable interval if composition is enabled to avoid conflict with DWM.
             if self._always_dwm or self._dwm_composition_enabled():
-                vsync = 0
+                vsync = False
 
+        super().set_vsync(vsync)
         self.context.set_vsync(vsync)
 
     def switch_to(self):
