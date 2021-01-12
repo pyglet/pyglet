@@ -339,8 +339,9 @@ class Win32Window(BaseWindow):
                 # This seems odd, as vsync is normally a bool
                 # Win32Context.set_vsync casts vsync to an int anyways
                 # so this should probably be changed
-                vsync = 0
+                vsync = False
 
+        super().set_vsync(vsync)
         self.context.set_vsync(vsync)
 
     def switch_to(self):
