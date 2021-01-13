@@ -1,5 +1,5 @@
-from pyglet.egl import egl as libegl
-from pyglet.egl.egl import *
+from pyglet.libs.egl import egl as libegl
+from pyglet.libs.egl.egl import *
 
 
 _buffer_types = {EGL_SINGLE_BUFFER: "EGL_RENDER_BUFFER",

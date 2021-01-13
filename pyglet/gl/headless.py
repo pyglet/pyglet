@@ -38,8 +38,8 @@ from ctypes import *
 
 from .base import Config, CanvasConfig, Context
 from pyglet.canvas.headless import HeadlessCanvas
-from pyglet.egl import egl
-from pyglet.egl.egl import *
+from pyglet.libs.egl import egl
+from pyglet.libs.egl.egl import *
 from pyglet import gl
 
 

@@ -38,7 +38,7 @@ from pyglet.window import WindowException, NoSuchDisplayException, MouseCursorEx
 from pyglet.window import MouseCursor, DefaultMouseCursor, ImageMouseCursor
 
 
-from pyglet.egl import egl
+from pyglet.libs.egl import egl
 
 
 from pyglet.canvas.headless import HeadlessCanvas
@@ -57,9 +57,7 @@ class HeadlessWindow(BaseWindow):
     _egl_surface = None
 
     def __init__(self, *args, **kwargs):
-        print("Makin window")
         super().__init__(*args, **kwargs)
-        print("Made it!")
 
     def _recreate(self, changes):
         pass

@@ -1,6 +1,6 @@
 from ctypes import *
-from pyglet.egl import egl
-from pyglet.egl.lib import link_EGL as _link_function
+from pyglet.libs.egl import egl
+from pyglet.libs.egl.lib import link_EGL as _link_function
 
 EGL_PLATFORM_DEVICE_EXT = 12607
 EGLDeviceEXT = POINTER(None)

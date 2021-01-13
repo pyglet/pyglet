@@ -1884,7 +1884,7 @@ if _is_pyglet_doc_run:
     del BaseWindow
 else:
     # Try to determine which platform to use.
-    if pyglet.options['egl']:
+    if pyglet.options['headless']:
         from pyglet.window.headless import HeadlessWindow as Window
     elif pyglet.compat_platform == 'darwin':
         from pyglet.window.cocoa import CocoaWindow as Window

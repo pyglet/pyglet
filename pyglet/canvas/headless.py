@@ -33,13 +33,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+import pyglet
+import warnings
 from pyglet import app
 from .base import Display, Screen, ScreenMode, Canvas
 
 
 from ctypes import *
-from pyglet.egl import egl
-from pyglet.egl import eglext
+from pyglet.libs.egl import egl
+from pyglet.libs.egl import eglext
 
 
 class HeadlessDisplay(Display):
@@ -52,10 +54,14 @@ class HeadlessDisplay(Display):
         num_devices = egl.EGLint()
         eglext.eglQueryDevicesEXT(0, None, byref(num_devices))
         if num_devices.value > 0:
+            headless_device = pyglet.options['headless_device']
+            if headless_device < 0 or headless_device >= num_devices.value:
+                 raise ValueError('Invalid EGL devide id: %d' % headless_device)
             devices = (eglext.EGLDeviceEXT * num_devices.value)()
             eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
-            self._display_connection  = eglext.eglGetPlatformDisplayEXT(eglext.EGL_PLATFORM_DEVICE_EXT, devices[0], None)
+            self._display_connection  = eglext.eglGetPlatformDisplayEXT(eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
         else:
+            warning.warn('No device available for EGL device platform. Using native display type.')
             display = egl.EGLNativeDisplayType()
             self._display_connection = egl.eglGetDisplay(display)
 
