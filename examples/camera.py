@@ -58,8 +58,9 @@ manager, allowing easy use of "with"::
 class Camera:
     """ A simple 2D camera that contains the speed and offset."""
 
-    def __init__(self, scroll_speed=1, min_zoom=1, max_zoom=4):
+    def __init__(self, window: pyglet.window.Window, scroll_speed=1, min_zoom=1, max_zoom=4):
         assert min_zoom <= max_zoom, "Minimum zoom must not be greater than maximum zoom"
+        self._window = window
         self.scroll_speed = scroll_speed
         self.max_zoom = max_zoom
         self.min_zoom = min_zoom
@@ -95,21 +96,24 @@ class Camera:
 
     def begin(self):
         # Set the current camera offset so you can draw your scene.
-        # Translate using the zoom and the offset.
-        pyglet.gl.glTranslatef(-self.offset_x * self._zoom, -self.offset_y * self._zoom, 0)
 
+        # Translate using the offset.
+        view_matrix = self._window.view.translate(-self.offset_x * self._zoom, -self.offset_y * self._zoom, 0)
         # Scale by zoom level.
-        pyglet.gl.glScalef(self._zoom, self._zoom, 1)
+        view_matrix = view_matrix.scale(self._zoom, self._zoom, 1)
+
+        self._window.view = view_matrix
 
     def end(self):
         # Since this is a matrix, you will need to reverse the translate after rendering otherwise
         # it will multiply the current offset every draw update pushing it further and further away.
 
         # Reverse scale, since that was the last transform.
-        pyglet.gl.glScalef(1 / self._zoom, 1 / self._zoom, 1)
-
+        view_matrix = self._window.view.scale(1 / self._zoom, 1 / self._zoom, 1)
         # Reverse translate.
-        pyglet.gl.glTranslatef(self.offset_x * self._zoom, self.offset_y * self._zoom, 0)
+        view_matrix = view_matrix.translate(self.offset_x * self._zoom, self.offset_y * self._zoom, 0)
+
+        self._window.view = view_matrix
 
     def __enter__(self):
         self.begin()
@@ -119,24 +123,21 @@ class Camera:
 
 
 class CenteredCamera(Camera):
-    """A simple 2D camera class. 0, 0 will be the centre of the screen, as opposed to the bottom left."""
-
-    def __init__(self, window: pyglet.window.Window, *args, **kwargs):
-        self.window = window
-        super().__init__(*args, **kwargs)
+    """A simple 2D camera class. 0, 0 will be the center of the screen, as opposed to the bottom left."""
 
     def begin(self):
-        x = -self.window.width//2/self._zoom + self.offset_x
-        y = -self.window.height//2/self._zoom + self.offset_y
+        x = -self._window.width // 2 / self._zoom + self.offset_x
+        y = -self._window.height // 2 / self._zoom + self.offset_y
 
-        pyglet.gl.glTranslatef(-x * self._zoom, -y * self._zoom, 0)
-
-        pyglet.gl.glScalef(self._zoom, self._zoom, 1)
+        view_matrix = self._window.view.translate(-x * self._zoom, -y * self._zoom, 0)
+        view_matrix = view_matrix.scale(self._zoom, self._zoom, 1)
+        self._window.view = view_matrix
 
     def end(self):
-        x = -self.window.width//2/self._zoom + self.offset_x
-        y = -self.window.height//2/self._zoom + self.offset_y
+        x = -self._window.width // 2 / self._zoom + self.offset_x
+        y = -self._window.height // 2 / self._zoom + self.offset_y
 
-        pyglet.gl.glScalef(1 / self._zoom, 1 / self._zoom, 1)
+        view_matrix = self._window.view.scale(1 / self._zoom, 1 / self._zoom, 1)
+        view_matrix = view_matrix.translate(x * self._zoom, y * self._zoom, 0)
+        self._window.view = view_matrix
 
-        pyglet.gl.glTranslatef(x * self._zoom, y * self._zoom, 0)
