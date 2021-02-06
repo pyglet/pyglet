@@ -308,7 +308,8 @@ class _ShapeBase:
 
 
 class Arc(_ShapeBase):
-    def __init__(self, x, y, radius, segments=25, angle=math.pi * 2, color=(255, 255, 255), batch=None, group=None):
+    def __init__(self, x, y, radius, segments=25, angle=math.pi * 2, color=(255, 255, 255), batch=None, group=None,
+                 closed=False, rotation=0.0):
         # TODO: Finish this shape and add docstring.
         self._x = x
         self._y = y
@@ -316,11 +317,13 @@ class Arc(_ShapeBase):
         self._segments = segments
         self._rgb = color
         self._angle = angle
+        self._closed = closed
+        self._rotation = rotation
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add(self._segments * 2, GL_LINES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._segments * 2 + (2 if self._closed else 0), GL_LINES, self._group, 'v2f', 'c4B')
         self._update_position()
         self._update_color()
 
@@ -331,22 +334,26 @@ class Arc(_ShapeBase):
             x = self._x + self._anchor_x
             y = self._y + self._anchor_y
             r = self._radius
-            tau_segs = self._angle / (self._segments - 1)
+            tau_segs = self._angle / (self._segments)
 
             # Calcuate the outer points of the arc:
-            points = [(x + (r * math.cos(i * tau_segs)),
-                       y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
+            points = [(x + (r * math.cos((i * tau_segs)+self._rotation)),
+                       y + (r * math.sin((i * tau_segs)+self._rotation))) for i in range(self._segments + 1)]
 
             # Create a list of doubled-up points from the points:
             vertices = []
-            for i, point in enumerate(points):
-                line_points = *points[i - 1], *point
+            for i in range(len(points) - 1):
+                line_points = *points[i], *points[i + 1]
                 vertices.extend(line_points)
+
+            if self._closed:
+                chord_points = *points[-1], *points[0]
+                vertices.extend(chord_points)
 
         self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 2
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * (self._segments * 2 + (2 if self._closed else 0))
 
     def draw(self):
         """Draw the shape at its current position.
