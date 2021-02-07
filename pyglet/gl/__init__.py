@@ -81,7 +81,6 @@ import pyglet as _pyglet
 
 from pyglet.gl.gl import *
 from pyglet.gl.lib import GLException
-from pyglet.gl.glext_arb import *
 from pyglet.gl import gl_info
 
 from pyglet import compat_platform
