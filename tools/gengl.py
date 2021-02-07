@@ -74,8 +74,8 @@ class PygletGLWriter:
         "GLdouble": "c_double",
         "GLclampd": "c_double",
         "GLchar": "c_char",
-        "GLintptr": "POINTER(c_int)",
-        "GLsizeiptr": "POINTER(c_int)",
+        "GLintptr": "c_ptrdiff_t",
+        "GLsizeiptr": "c_ptrdiff_t",
         "GLint64": "c_int64",
         "GLuint64": "c_uint64",
     }
@@ -166,10 +166,10 @@ class PygletGLWriter:
                     # Ensure we actually know what the type is
                     if not self.types.get(param.ptype):
                         raise ValueError(f"ptype {param.ptype} not a known type")
-                    # Handle pointer-pointer and pointers
-                    if "**" in param.value:
+                    # Handle pointer-pointer and pointers: *, **, *const*
+                    if param.value.count("*") == 2:
                         arguments.append(f"POINTER(POINTER({param.ptype}))")
-                    elif "*" in param.value:
+                    elif param.value.count("*") == 1:
                         arguments.append(f"POINTER({param.ptype})")
                     else:
                         arguments.append(param.ptype)
