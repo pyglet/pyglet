@@ -86,23 +86,18 @@ class GLInfo:
 
         This method is called automatically for the default context.
         """
-        from pyglet.gl.gl import GLint, glGetIntegerv, glGetString
+        from pyglet.gl.gl import GLint, glGetIntegerv, glGetString, glGetStringi, GL_NUM_EXTENSIONS
 
         self.have_context = True
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
-            if self.have_version(3):
-                from pyglet.gl.glext_arb import glGetStringi, GL_NUM_EXTENSIONS
-                num_extensions = GLint()
-                glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
-                self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
-                                   for i in range(num_extensions.value))
-            else:
-                self.extensions = asstr(cast(glGetString(GL_EXTENSIONS), c_char_p).value).split()
-            if self.extensions:
-                self.extensions = set(self.extensions)
+            num_extensions = GLint()
+            glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
+            self.extensions = (asstr(cast(glGetStringi(GL_EXTENSIONS, i), c_char_p).value)
+                                for i in range(num_extensions.value))
+            self.extensions = set(self.extensions)
             self._have_info = True
 
     def remove_active_context(self):
