@@ -62,8 +62,8 @@ GLclampf = c_float
 GLdouble = c_double
 GLclampd = c_double
 GLchar = c_char
-GLintptr = POINTER(c_int)
-GLsizeiptr = POINTER(c_int)
+GLintptr = c_ptrdiff_t
+GLsizeiptr = c_ptrdiff_t
 GLint64 = c_int64
 GLuint64 = c_uint64
 
@@ -1551,7 +1551,7 @@ glCreateQueries = _link_function('glCreateQueries', None, [GLenum, GLsizei, POIN
 glCreateRenderbuffers = _link_function('glCreateRenderbuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glCreateSamplers = _link_function('glCreateSamplers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glCreateShader = _link_function('glCreateShader', GLuint, [GLenum], requires='OpenGL 2.0')
-glCreateShaderProgramv = _link_function('glCreateShaderProgramv', GLuint, [GLenum, GLsizei, POINTER(GLchar)], requires='OpenGL 4.1')
+glCreateShaderProgramv = _link_function('glCreateShaderProgramv', GLuint, [GLenum, GLsizei, POINTER(POINTER(GLchar))], requires='OpenGL 4.1')
 glCreateTextures = _link_function('glCreateTextures', None, [GLenum, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glCreateTransformFeedbacks = _link_function('glCreateTransformFeedbacks', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glCreateVertexArrays = _link_function('glCreateVertexArrays', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
@@ -1736,7 +1736,7 @@ glGetTransformFeedbacki64_v = _link_function('glGetTransformFeedbacki64_v', None
 glGetTransformFeedbacki_v = _link_function('glGetTransformFeedbacki_v', None, [GLuint, GLenum, GLuint, POINTER(GLint)], requires='OpenGL 4.5')
 glGetTransformFeedbackiv = _link_function('glGetTransformFeedbackiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
 glGetUniformBlockIndex = _link_function('glGetUniformBlockIndex', GLuint, [GLuint, POINTER(GLchar)], requires='OpenGL 3.1')
-glGetUniformIndices = _link_function('glGetUniformIndices', None, [GLuint, GLsizei, POINTER(GLchar), POINTER(GLuint)], requires='OpenGL 3.1')
+glGetUniformIndices = _link_function('glGetUniformIndices', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLuint)], requires='OpenGL 3.1')
 glGetUniformLocation = _link_function('glGetUniformLocation', GLint, [GLuint, POINTER(GLchar)], requires='OpenGL 2.0')
 glGetUniformSubroutineuiv = _link_function('glGetUniformSubroutineuiv', None, [GLenum, GLint, POINTER(GLuint)], requires='OpenGL 4.0')
 glGetUniformdv = _link_function('glGetUniformdv', None, [GLuint, GLint, POINTER(GLdouble)], requires='OpenGL 4.0')
@@ -1926,7 +1926,7 @@ glScissorIndexedv = _link_function('glScissorIndexedv', None, [GLuint, POINTER(G
 glSecondaryColorP3ui = _link_function('glSecondaryColorP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glSecondaryColorP3uiv = _link_function('glSecondaryColorP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
 glShaderBinary = _link_function('glShaderBinary', None, [GLsizei, POINTER(GLuint), GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
-glShaderSource = _link_function('glShaderSource', None, [GLuint, GLsizei, POINTER(GLchar), POINTER(GLint)], requires='OpenGL 2.0')
+glShaderSource = _link_function('glShaderSource', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLint)], requires='OpenGL 2.0')
 glShaderStorageBlockBinding = _link_function('glShaderStorageBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.3')
 glSpecializeShader = _link_function('glSpecializeShader', None, [GLuint, POINTER(GLchar), GLuint, POINTER(GLuint), POINTER(GLuint)], requires='OpenGL 4.6')
 glStencilFunc = _link_function('glStencilFunc', None, [GLenum, GLint, GLuint], requires='OpenGL 1.0')
@@ -1984,7 +1984,7 @@ glTextureSubImage3D = _link_function('glTextureSubImage3D', None, [GLuint, GLint
 glTextureView = _link_function('glTextureView', None, [GLuint, GLenum, GLuint, GLenum, GLuint, GLuint, GLuint, GLuint], requires='OpenGL 4.3')
 glTransformFeedbackBufferBase = _link_function('glTransformFeedbackBufferBase', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.5')
 glTransformFeedbackBufferRange = _link_function('glTransformFeedbackBufferRange', None, [GLuint, GLuint, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
-glTransformFeedbackVaryings = _link_function('glTransformFeedbackVaryings', None, [GLuint, GLsizei, POINTER(GLchar), GLenum], requires='OpenGL 3.0')
+glTransformFeedbackVaryings = _link_function('glTransformFeedbackVaryings', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), GLenum], requires='OpenGL 3.0')
 glUniform1d = _link_function('glUniform1d', None, [GLint, GLdouble], requires='OpenGL 4.0')
 glUniform1dv = _link_function('glUniform1dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
 glUniform1f = _link_function('glUniform1f', None, [GLint, GLfloat], requires='OpenGL 2.0')
