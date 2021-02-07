@@ -35,9 +35,24 @@ def main():
         reader = RegistryReader.from_file(Path(REPO_ROOT / "tools" / "gl.xml"))
 
     registry = reader.read()
+    
+    # OpenGL extensions we want to include
+    extensions = [
+        "EXT_texture_compression_s3tc",
+    ]
 
-    core_profile = registry.get_profile(api="gl", profile="core", version="4.6")
-    compat_profile = registry.get_profile(api="gl", profile="compat", version="4.6")
+    core_profile = registry.get_profile(
+        api="gl",
+        profile="core",
+        version="4.6",
+        extensions=extensions,
+    )
+    compat_profile = registry.get_profile(
+        api="gl",
+        profile="compat",
+        version="4.6",
+        extensions=extensions,
+    )
 
     core_writer = PygletGLWriter(registry=core_profile, out_file=DEST_PATH / "gl.py")
     core_writer.run()
