@@ -59,7 +59,6 @@ context::
 from ctypes import c_char_p, cast
 import warnings
 
-from pyglet.gl.gl import GLint, glGetIntegerv, glGetString
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
 from pyglet.util import asstr
 
@@ -87,6 +86,8 @@ class GLInfo:
 
         This method is called automatically for the default context.
         """
+        from pyglet.gl.gl import GLint, glGetIntegerv, glGetString
+
         self.have_context = True
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
