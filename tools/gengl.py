@@ -1,5 +1,6 @@
 """
 Generate gl.py and gl_compat.py
+See : tools/requirements.txt
 
 We are using the opengl-registry project to extract this information from
 https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/master/xml/gl.xml
