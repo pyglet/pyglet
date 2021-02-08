@@ -76,6 +76,8 @@ GL_NO_ERROR = 0
 GL_TRUE = 1
 GL_LINES = 1
 GL_ONE = 1
+GL_CURRENT_BIT = 1
+GL_CLIENT_PIXEL_STORE_BIT = 1
 GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT = 1
 GL_MAP_READ_BIT = 1
 GL_CONTEXT_CORE_PROFILE_BIT = 1
@@ -83,6 +85,8 @@ GL_SYNC_FLUSH_COMMANDS_BIT = 1
 GL_VERTEX_SHADER_BIT = 1
 GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT = 1
 GL_LINE_LOOP = 2
+GL_POINT_BIT = 2
+GL_CLIENT_VERTEX_ARRAY_BIT = 2
 GL_MAP_WRITE_BIT = 2
 GL_CONTEXT_COMPATIBILITY_PROFILE_BIT = 2
 GL_FRAGMENT_SHADER_BIT = 2
@@ -90,6 +94,7 @@ GL_ELEMENT_ARRAY_BARRIER_BIT = 2
 GL_CONTEXT_FLAG_DEBUG_BIT = 2
 GL_LINE_STRIP = 3
 GL_TRIANGLES = 4
+GL_LINE_BIT = 4
 GL_MAP_INVALIDATE_RANGE_BIT = 4
 GL_GEOMETRY_SHADER_BIT = 4
 GL_UNIFORM_BARRIER_BIT = 4
@@ -97,28 +102,41 @@ GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT = 4
 GL_TRIANGLE_STRIP = 5
 GL_TRIANGLE_FAN = 6
 GL_QUADS = 7
+GL_POLYGON_BIT = 8
+GL_QUAD_STRIP = 8
 GL_MAP_INVALIDATE_BUFFER_BIT = 8
 GL_TESS_CONTROL_SHADER_BIT = 8
 GL_TEXTURE_FETCH_BARRIER_BIT = 8
 GL_CONTEXT_FLAG_NO_ERROR_BIT = 8
+GL_POLYGON = 9
 GL_LINES_ADJACENCY = 10
 GL_LINE_STRIP_ADJACENCY = 11
 GL_TRIANGLES_ADJACENCY = 12
 GL_TRIANGLE_STRIP_ADJACENCY = 13
 GL_PATCHES = 14
+GL_POLYGON_STIPPLE_BIT = 16
 GL_MAP_FLUSH_EXPLICIT_BIT = 16
 GL_TESS_EVALUATION_SHADER_BIT = 16
+GL_PIXEL_MODE_BIT = 32
 GL_MAP_UNSYNCHRONIZED_BIT = 32
 GL_SHADER_IMAGE_ACCESS_BARRIER_BIT = 32
 GL_COMPUTE_SHADER_BIT = 32
+GL_LIGHTING_BIT = 64
 GL_COMMAND_BARRIER_BIT = 64
 GL_MAP_PERSISTENT_BIT = 64
+GL_FOG_BIT = 128
 GL_PIXEL_BUFFER_BARRIER_BIT = 128
 GL_MAP_COHERENT_BIT = 128
 GL_DEPTH_BUFFER_BIT = 256
+GL_ACCUM = 256
 GL_TEXTURE_UPDATE_BARRIER_BIT = 256
 GL_DYNAMIC_STORAGE_BIT = 256
+GL_LOAD = 257
+GL_RETURN = 258
+GL_MULT = 259
+GL_ADD = 260
 GL_NEVER = 512
+GL_ACCUM_BUFFER_BIT = 512
 GL_BUFFER_UPDATE_BARRIER_BIT = 512
 GL_CLIENT_STORAGE_BIT = 512
 GL_LESS = 513
@@ -148,6 +166,10 @@ GL_BACK = 1029
 GL_LEFT = 1030
 GL_RIGHT = 1031
 GL_FRONT_AND_BACK = 1032
+GL_AUX0 = 1033
+GL_AUX1 = 1034
+GL_AUX2 = 1035
+GL_AUX3 = 1036
 GL_INVALID_ENUM = 1280
 GL_INVALID_VALUE = 1281
 GL_INVALID_OPERATION = 1282
@@ -157,9 +179,39 @@ GL_OUT_OF_MEMORY = 1285
 GL_INVALID_FRAMEBUFFER_OPERATION = 1286
 GL_INVALID_FRAMEBUFFER_OPERATION_EXT = 1286
 GL_CONTEXT_LOST = 1287
+GL_2D = 1536
+GL_3D = 1537
+GL_3D_COLOR = 1538
+GL_3D_COLOR_TEXTURE = 1539
+GL_4D_COLOR_TEXTURE = 1540
+GL_PASS_THROUGH_TOKEN = 1792
+GL_POINT_TOKEN = 1793
+GL_LINE_TOKEN = 1794
+GL_POLYGON_TOKEN = 1795
+GL_BITMAP_TOKEN = 1796
+GL_DRAW_PIXEL_TOKEN = 1797
+GL_COPY_PIXEL_TOKEN = 1798
+GL_LINE_RESET_TOKEN = 1799
+GL_VIEWPORT_BIT = 2048
+GL_EXP = 2048
 GL_TRANSFORM_FEEDBACK_BARRIER_BIT = 2048
+GL_EXP2 = 2049
 GL_CW = 2304
 GL_CCW = 2305
+GL_COEFF = 2560
+GL_ORDER = 2561
+GL_DOMAIN = 2562
+GL_CURRENT_COLOR = 2816
+GL_CURRENT_INDEX = 2817
+GL_CURRENT_NORMAL = 2818
+GL_CURRENT_TEXTURE_COORDS = 2819
+GL_CURRENT_RASTER_COLOR = 2820
+GL_CURRENT_RASTER_INDEX = 2821
+GL_CURRENT_RASTER_TEXTURE_COORDS = 2822
+GL_CURRENT_RASTER_POSITION = 2823
+GL_CURRENT_RASTER_POSITION_VALID = 2824
+GL_CURRENT_RASTER_DISTANCE = 2825
+GL_POINT_SMOOTH = 2832
 GL_POINT_SIZE = 2833
 GL_POINT_SIZE_RANGE = 2834
 GL_SMOOTH_POINT_SIZE_RANGE = 2834
@@ -171,16 +223,41 @@ GL_LINE_WIDTH_RANGE = 2850
 GL_SMOOTH_LINE_WIDTH_RANGE = 2850
 GL_LINE_WIDTH_GRANULARITY = 2851
 GL_SMOOTH_LINE_WIDTH_GRANULARITY = 2851
+GL_LINE_STIPPLE = 2852
+GL_LINE_STIPPLE_PATTERN = 2853
+GL_LINE_STIPPLE_REPEAT = 2854
+GL_LIST_MODE = 2864
+GL_MAX_LIST_NESTING = 2865
+GL_LIST_BASE = 2866
+GL_LIST_INDEX = 2867
 GL_POLYGON_MODE = 2880
 GL_POLYGON_SMOOTH = 2881
+GL_POLYGON_STIPPLE = 2882
+GL_EDGE_FLAG = 2883
 GL_CULL_FACE = 2884
 GL_CULL_FACE_MODE = 2885
 GL_FRONT_FACE = 2886
+GL_LIGHTING = 2896
+GL_LIGHT_MODEL_LOCAL_VIEWER = 2897
+GL_LIGHT_MODEL_TWO_SIDE = 2898
+GL_LIGHT_MODEL_AMBIENT = 2899
+GL_SHADE_MODEL = 2900
+GL_COLOR_MATERIAL_FACE = 2901
+GL_COLOR_MATERIAL_PARAMETER = 2902
+GL_COLOR_MATERIAL = 2903
+GL_FOG = 2912
+GL_FOG_INDEX = 2913
+GL_FOG_DENSITY = 2914
+GL_FOG_START = 2915
+GL_FOG_END = 2916
+GL_FOG_MODE = 2917
+GL_FOG_COLOR = 2918
 GL_DEPTH_RANGE = 2928
 GL_DEPTH_TEST = 2929
 GL_DEPTH_WRITEMASK = 2930
 GL_DEPTH_CLEAR_VALUE = 2931
 GL_DEPTH_FUNC = 2932
+GL_ACCUM_CLEAR_VALUE = 2944
 GL_STENCIL_TEST = 2960
 GL_STENCIL_CLEAR_VALUE = 2961
 GL_STENCIL_FUNC = 2962
@@ -190,23 +267,71 @@ GL_STENCIL_PASS_DEPTH_FAIL = 2965
 GL_STENCIL_PASS_DEPTH_PASS = 2966
 GL_STENCIL_REF = 2967
 GL_STENCIL_WRITEMASK = 2968
+GL_MATRIX_MODE = 2976
+GL_NORMALIZE = 2977
 GL_VIEWPORT = 2978
+GL_MODELVIEW_STACK_DEPTH = 2979
+GL_PROJECTION_STACK_DEPTH = 2980
+GL_TEXTURE_STACK_DEPTH = 2981
+GL_MODELVIEW_MATRIX = 2982
+GL_PROJECTION_MATRIX = 2983
+GL_TEXTURE_MATRIX = 2984
+GL_ATTRIB_STACK_DEPTH = 2992
+GL_CLIENT_ATTRIB_STACK_DEPTH = 2993
+GL_ALPHA_TEST = 3008
+GL_ALPHA_TEST_FUNC = 3009
+GL_ALPHA_TEST_REF = 3010
 GL_DITHER = 3024
 GL_BLEND_DST = 3040
 GL_BLEND_SRC = 3041
 GL_BLEND = 3042
 GL_LOGIC_OP_MODE = 3056
+GL_LOGIC_OP = 3057
+GL_INDEX_LOGIC_OP = 3057
 GL_COLOR_LOGIC_OP = 3058
+GL_AUX_BUFFERS = 3072
 GL_DRAW_BUFFER = 3073
 GL_READ_BUFFER = 3074
 GL_SCISSOR_BOX = 3088
 GL_SCISSOR_TEST = 3089
+GL_INDEX_CLEAR_VALUE = 3104
+GL_INDEX_WRITEMASK = 3105
 GL_COLOR_CLEAR_VALUE = 3106
 GL_COLOR_WRITEMASK = 3107
+GL_INDEX_MODE = 3120
+GL_RGBA_MODE = 3121
 GL_DOUBLEBUFFER = 3122
 GL_STEREO = 3123
+GL_RENDER_MODE = 3136
+GL_PERSPECTIVE_CORRECTION_HINT = 3152
+GL_POINT_SMOOTH_HINT = 3153
 GL_LINE_SMOOTH_HINT = 3154
 GL_POLYGON_SMOOTH_HINT = 3155
+GL_FOG_HINT = 3156
+GL_TEXTURE_GEN_S = 3168
+GL_TEXTURE_GEN_T = 3169
+GL_TEXTURE_GEN_R = 3170
+GL_TEXTURE_GEN_Q = 3171
+GL_PIXEL_MAP_I_TO_I = 3184
+GL_PIXEL_MAP_S_TO_S = 3185
+GL_PIXEL_MAP_I_TO_R = 3186
+GL_PIXEL_MAP_I_TO_G = 3187
+GL_PIXEL_MAP_I_TO_B = 3188
+GL_PIXEL_MAP_I_TO_A = 3189
+GL_PIXEL_MAP_R_TO_R = 3190
+GL_PIXEL_MAP_G_TO_G = 3191
+GL_PIXEL_MAP_B_TO_B = 3192
+GL_PIXEL_MAP_A_TO_A = 3193
+GL_PIXEL_MAP_I_TO_I_SIZE = 3248
+GL_PIXEL_MAP_S_TO_S_SIZE = 3249
+GL_PIXEL_MAP_I_TO_R_SIZE = 3250
+GL_PIXEL_MAP_I_TO_G_SIZE = 3251
+GL_PIXEL_MAP_I_TO_B_SIZE = 3252
+GL_PIXEL_MAP_I_TO_A_SIZE = 3253
+GL_PIXEL_MAP_R_TO_R_SIZE = 3254
+GL_PIXEL_MAP_G_TO_G_SIZE = 3255
+GL_PIXEL_MAP_B_TO_B_SIZE = 3256
+GL_PIXEL_MAP_A_TO_A_SIZE = 3257
 GL_UNPACK_SWAP_BYTES = 3312
 GL_UNPACK_LSB_FIRST = 3313
 GL_UNPACK_ROW_LENGTH = 3314
@@ -219,21 +344,102 @@ GL_PACK_ROW_LENGTH = 3330
 GL_PACK_SKIP_ROWS = 3331
 GL_PACK_SKIP_PIXELS = 3332
 GL_PACK_ALIGNMENT = 3333
+GL_MAP_COLOR = 3344
+GL_MAP_STENCIL = 3345
+GL_INDEX_SHIFT = 3346
+GL_INDEX_OFFSET = 3347
+GL_RED_SCALE = 3348
+GL_RED_BIAS = 3349
+GL_ZOOM_X = 3350
+GL_ZOOM_Y = 3351
+GL_GREEN_SCALE = 3352
+GL_GREEN_BIAS = 3353
+GL_BLUE_SCALE = 3354
+GL_BLUE_BIAS = 3355
+GL_ALPHA_SCALE = 3356
+GL_ALPHA_BIAS = 3357
+GL_DEPTH_SCALE = 3358
+GL_DEPTH_BIAS = 3359
+GL_MAX_EVAL_ORDER = 3376
+GL_MAX_LIGHTS = 3377
+GL_MAX_CLIP_PLANES = 3378
 GL_MAX_CLIP_DISTANCES = 3378
 GL_MAX_TEXTURE_SIZE = 3379
+GL_MAX_PIXEL_MAP_TABLE = 3380
+GL_MAX_ATTRIB_STACK_DEPTH = 3381
+GL_MAX_MODELVIEW_STACK_DEPTH = 3382
+GL_MAX_NAME_STACK_DEPTH = 3383
+GL_MAX_PROJECTION_STACK_DEPTH = 3384
+GL_MAX_TEXTURE_STACK_DEPTH = 3385
 GL_MAX_VIEWPORT_DIMS = 3386
+GL_MAX_CLIENT_ATTRIB_STACK_DEPTH = 3387
 GL_SUBPIXEL_BITS = 3408
+GL_INDEX_BITS = 3409
+GL_RED_BITS = 3410
+GL_GREEN_BITS = 3411
+GL_BLUE_BITS = 3412
+GL_ALPHA_BITS = 3413
+GL_DEPTH_BITS = 3414
+GL_STENCIL_BITS = 3415
+GL_ACCUM_RED_BITS = 3416
+GL_ACCUM_GREEN_BITS = 3417
+GL_ACCUM_BLUE_BITS = 3418
+GL_ACCUM_ALPHA_BITS = 3419
+GL_NAME_STACK_DEPTH = 3440
+GL_AUTO_NORMAL = 3456
+GL_MAP1_COLOR_4 = 3472
+GL_MAP1_INDEX = 3473
+GL_MAP1_NORMAL = 3474
+GL_MAP1_TEXTURE_COORD_1 = 3475
+GL_MAP1_TEXTURE_COORD_2 = 3476
+GL_MAP1_TEXTURE_COORD_3 = 3477
+GL_MAP1_TEXTURE_COORD_4 = 3478
+GL_MAP1_VERTEX_3 = 3479
+GL_MAP1_VERTEX_4 = 3480
+GL_MAP2_COLOR_4 = 3504
+GL_MAP2_INDEX = 3505
+GL_MAP2_NORMAL = 3506
+GL_MAP2_TEXTURE_COORD_1 = 3507
+GL_MAP2_TEXTURE_COORD_2 = 3508
+GL_MAP2_TEXTURE_COORD_3 = 3509
+GL_MAP2_TEXTURE_COORD_4 = 3510
+GL_MAP2_VERTEX_3 = 3511
+GL_MAP2_VERTEX_4 = 3512
+GL_MAP1_GRID_DOMAIN = 3536
+GL_MAP1_GRID_SEGMENTS = 3537
+GL_MAP2_GRID_DOMAIN = 3538
+GL_MAP2_GRID_SEGMENTS = 3539
 GL_TEXTURE_1D = 3552
 GL_TEXTURE_2D = 3553
+GL_FEEDBACK_BUFFER_POINTER = 3568
+GL_FEEDBACK_BUFFER_SIZE = 3569
+GL_FEEDBACK_BUFFER_TYPE = 3570
+GL_SELECTION_BUFFER_POINTER = 3571
+GL_SELECTION_BUFFER_SIZE = 3572
 GL_TEXTURE_WIDTH = 4096
+GL_TRANSFORM_BIT = 4096
 GL_ATOMIC_COUNTER_BARRIER_BIT = 4096
 GL_TEXTURE_HEIGHT = 4097
+GL_TEXTURE_COMPONENTS = 4099
 GL_TEXTURE_INTERNAL_FORMAT = 4099
 GL_TEXTURE_BORDER_COLOR = 4100
+GL_TEXTURE_BORDER = 4101
 GL_TEXTURE_TARGET = 4102
 GL_DONT_CARE = 4352
 GL_FASTEST = 4353
 GL_NICEST = 4354
+GL_AMBIENT = 4608
+GL_DIFFUSE = 4609
+GL_SPECULAR = 4610
+GL_POSITION = 4611
+GL_SPOT_DIRECTION = 4612
+GL_SPOT_EXPONENT = 4613
+GL_SPOT_CUTOFF = 4614
+GL_CONSTANT_ATTENUATION = 4615
+GL_LINEAR_ATTENUATION = 4616
+GL_QUADRATIC_ATTENUATION = 4617
+GL_COMPILE = 4864
+GL_COMPILE_AND_EXECUTE = 4865
 GL_BYTE = 5120
 GL_UNSIGNED_BYTE = 5121
 GL_SHORT = 5122
@@ -241,6 +447,9 @@ GL_UNSIGNED_SHORT = 5123
 GL_INT = 5124
 GL_UNSIGNED_INT = 5125
 GL_FLOAT = 5126
+GL_2_BYTES = 5127
+GL_3_BYTES = 5128
+GL_4_BYTES = 5129
 GL_DOUBLE = 5130
 GL_HALF_FLOAT = 5131
 GL_FIXED = 5132
@@ -260,10 +469,17 @@ GL_COPY_INVERTED = 5388
 GL_OR_INVERTED = 5389
 GL_NAND = 5390
 GL_SET = 5391
+GL_EMISSION = 5632
+GL_SHININESS = 5633
+GL_AMBIENT_AND_DIFFUSE = 5634
+GL_COLOR_INDEXES = 5635
+GL_MODELVIEW = 5888
+GL_PROJECTION = 5889
 GL_TEXTURE = 5890
 GL_COLOR = 6144
 GL_DEPTH = 6145
 GL_STENCIL = 6146
+GL_COLOR_INDEX = 6400
 GL_STENCIL_INDEX = 6401
 GL_DEPTH_COMPONENT = 6402
 GL_RED = 6403
@@ -272,9 +488,17 @@ GL_BLUE = 6405
 GL_ALPHA = 6406
 GL_RGB = 6407
 GL_RGBA = 6408
+GL_LUMINANCE = 6409
+GL_LUMINANCE_ALPHA = 6410
+GL_BITMAP = 6656
 GL_POINT = 6912
 GL_LINE = 6913
 GL_FILL = 6914
+GL_RENDER = 7168
+GL_FEEDBACK = 7169
+GL_SELECT = 7170
+GL_FLAT = 7424
+GL_SMOOTH = 7425
 GL_KEEP = 7680
 GL_REPLACE = 7681
 GL_INCR = 7682
@@ -283,7 +507,23 @@ GL_VENDOR = 7936
 GL_RENDERER = 7937
 GL_VERSION = 7938
 GL_EXTENSIONS = 7939
+GL_ENABLE_BIT = 8192
+GL_S = 8192
 GL_SHADER_STORAGE_BARRIER_BIT = 8192
+GL_T = 8193
+GL_R = 8194
+GL_Q = 8195
+GL_MODULATE = 8448
+GL_DECAL = 8449
+GL_TEXTURE_ENV_MODE = 8704
+GL_TEXTURE_ENV_COLOR = 8705
+GL_TEXTURE_ENV = 8960
+GL_EYE_LINEAR = 9216
+GL_OBJECT_LINEAR = 9217
+GL_SPHERE_MAP = 9218
+GL_TEXTURE_GEN_MODE = 9472
+GL_OBJECT_PLANE = 9473
+GL_EYE_PLANE = 9474
 GL_NEAREST = 9728
 GL_LINEAR = 9729
 GL_NEAREST_MIPMAP_NEAREST = 9984
@@ -294,21 +534,51 @@ GL_TEXTURE_MAG_FILTER = 10240
 GL_TEXTURE_MIN_FILTER = 10241
 GL_TEXTURE_WRAP_S = 10242
 GL_TEXTURE_WRAP_T = 10243
+GL_CLAMP = 10496
 GL_REPEAT = 10497
 GL_POLYGON_OFFSET_UNITS = 10752
 GL_POLYGON_OFFSET_POINT = 10753
 GL_POLYGON_OFFSET_LINE = 10754
 GL_R3_G3_B2 = 10768
+GL_V2F = 10784
+GL_V3F = 10785
+GL_C4UB_V2F = 10786
+GL_C4UB_V3F = 10787
+GL_C3F_V3F = 10788
+GL_N3F_V3F = 10789
+GL_C4F_N3F_V3F = 10790
+GL_T2F_V3F = 10791
+GL_T4F_V4F = 10792
+GL_T2F_C4UB_V3F = 10793
+GL_T2F_C3F_V3F = 10794
+GL_T2F_N3F_V3F = 10795
+GL_T2F_C4F_N3F_V3F = 10796
+GL_T4F_C4F_N3F_V4F = 10797
+GL_CLIP_PLANE0 = 12288
 GL_CLIP_DISTANCE0 = 12288
+GL_CLIP_PLANE1 = 12289
 GL_CLIP_DISTANCE1 = 12289
+GL_CLIP_PLANE2 = 12290
 GL_CLIP_DISTANCE2 = 12290
+GL_CLIP_PLANE3 = 12291
 GL_CLIP_DISTANCE3 = 12291
+GL_CLIP_PLANE4 = 12292
 GL_CLIP_DISTANCE4 = 12292
+GL_CLIP_PLANE5 = 12293
 GL_CLIP_DISTANCE5 = 12293
 GL_CLIP_DISTANCE6 = 12294
 GL_CLIP_DISTANCE7 = 12295
 GL_COLOR_BUFFER_BIT = 16384
+GL_LIGHT0 = 16384
 GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT = 16384
+GL_LIGHT1 = 16385
+GL_LIGHT2 = 16386
+GL_LIGHT3 = 16387
+GL_LIGHT4 = 16388
+GL_LIGHT5 = 16389
+GL_LIGHT6 = 16390
+GL_LIGHT7 = 16391
+GL_HINT_BIT = 32768
 GL_QUERY_BUFFER_BARRIER_BIT = 32768
 GL_CONSTANT_COLOR = 32769
 GL_ONE_MINUS_CONSTANT_COLOR = 32770
@@ -335,6 +605,26 @@ GL_UNSIGNED_INT_8_8_8_8 = 32821
 GL_UNSIGNED_INT_10_10_10_2 = 32822
 GL_POLYGON_OFFSET_FILL = 32823
 GL_POLYGON_OFFSET_FACTOR = 32824
+GL_RESCALE_NORMAL = 32826
+GL_ALPHA4 = 32827
+GL_ALPHA8 = 32828
+GL_ALPHA12 = 32829
+GL_ALPHA16 = 32830
+GL_LUMINANCE4 = 32831
+GL_LUMINANCE8 = 32832
+GL_LUMINANCE12 = 32833
+GL_LUMINANCE16 = 32834
+GL_LUMINANCE4_ALPHA4 = 32835
+GL_LUMINANCE6_ALPHA2 = 32836
+GL_LUMINANCE8_ALPHA8 = 32837
+GL_LUMINANCE12_ALPHA4 = 32838
+GL_LUMINANCE12_ALPHA12 = 32839
+GL_LUMINANCE16_ALPHA16 = 32840
+GL_INTENSITY = 32841
+GL_INTENSITY4 = 32842
+GL_INTENSITY8 = 32843
+GL_INTENSITY12 = 32844
+GL_INTENSITY16 = 32845
 GL_RGB4 = 32847
 GL_RGB5 = 32848
 GL_RGB8 = 32849
@@ -352,8 +642,12 @@ GL_TEXTURE_RED_SIZE = 32860
 GL_TEXTURE_GREEN_SIZE = 32861
 GL_TEXTURE_BLUE_SIZE = 32862
 GL_TEXTURE_ALPHA_SIZE = 32863
+GL_TEXTURE_LUMINANCE_SIZE = 32864
+GL_TEXTURE_INTENSITY_SIZE = 32865
 GL_PROXY_TEXTURE_1D = 32867
 GL_PROXY_TEXTURE_2D = 32868
+GL_TEXTURE_PRIORITY = 32870
+GL_TEXTURE_RESIDENT = 32871
 GL_TEXTURE_BINDING_1D = 32872
 GL_TEXTURE_BINDING_2D = 32873
 GL_TEXTURE_BINDING_3D = 32874
@@ -367,6 +661,31 @@ GL_TEXTURE_DEPTH = 32881
 GL_TEXTURE_WRAP_R = 32882
 GL_MAX_3D_TEXTURE_SIZE = 32883
 GL_VERTEX_ARRAY = 32884
+GL_NORMAL_ARRAY = 32885
+GL_COLOR_ARRAY = 32886
+GL_INDEX_ARRAY = 32887
+GL_TEXTURE_COORD_ARRAY = 32888
+GL_EDGE_FLAG_ARRAY = 32889
+GL_VERTEX_ARRAY_SIZE = 32890
+GL_VERTEX_ARRAY_TYPE = 32891
+GL_VERTEX_ARRAY_STRIDE = 32892
+GL_NORMAL_ARRAY_TYPE = 32894
+GL_NORMAL_ARRAY_STRIDE = 32895
+GL_COLOR_ARRAY_SIZE = 32897
+GL_COLOR_ARRAY_TYPE = 32898
+GL_COLOR_ARRAY_STRIDE = 32899
+GL_INDEX_ARRAY_TYPE = 32901
+GL_INDEX_ARRAY_STRIDE = 32902
+GL_TEXTURE_COORD_ARRAY_SIZE = 32904
+GL_TEXTURE_COORD_ARRAY_TYPE = 32905
+GL_TEXTURE_COORD_ARRAY_STRIDE = 32906
+GL_EDGE_FLAG_ARRAY_STRIDE = 32908
+GL_VERTEX_ARRAY_POINTER = 32910
+GL_NORMAL_ARRAY_POINTER = 32911
+GL_COLOR_ARRAY_POINTER = 32912
+GL_INDEX_ARRAY_POINTER = 32913
+GL_TEXTURE_COORD_ARRAY_POINTER = 32914
+GL_EDGE_FLAG_ARRAY_POINTER = 32915
 GL_MULTISAMPLE = 32925
 GL_MULTISAMPLE_ARB = 32925
 GL_SAMPLE_ALPHA_TO_COVERAGE = 32926
@@ -399,16 +718,24 @@ GL_MAX_ELEMENTS_VERTICES = 33000
 GL_MAX_ELEMENTS_INDICES = 33001
 GL_PARAMETER_BUFFER = 33006
 GL_PARAMETER_BUFFER_BINDING = 33007
+GL_POINT_SIZE_MIN = 33062
+GL_POINT_SIZE_MAX = 33063
 GL_POINT_FADE_THRESHOLD_SIZE = 33064
+GL_POINT_DISTANCE_ATTENUATION = 33065
 GL_CLAMP_TO_BORDER = 33069
 GL_CLAMP_TO_EDGE = 33071
 GL_TEXTURE_MIN_LOD = 33082
 GL_TEXTURE_MAX_LOD = 33083
 GL_TEXTURE_BASE_LEVEL = 33084
 GL_TEXTURE_MAX_LEVEL = 33085
+GL_GENERATE_MIPMAP = 33169
+GL_GENERATE_MIPMAP_HINT = 33170
 GL_DEPTH_COMPONENT16 = 33189
 GL_DEPTH_COMPONENT24 = 33190
 GL_DEPTH_COMPONENT32 = 33191
+GL_LIGHT_MODEL_COLOR_CONTROL = 33272
+GL_SINGLE_COLOR = 33273
+GL_SEPARATE_SPECULAR_COLOR = 33274
 GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 33296
 GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE = 33297
 GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE = 33298
@@ -427,6 +754,7 @@ GL_CONTEXT_FLAGS = 33310
 GL_BUFFER_IMMUTABLE_STORAGE = 33311
 GL_BUFFER_STORAGE_FLAGS = 33312
 GL_PRIMITIVE_RESTART_FOR_PATCHES_SUPPORTED = 33313
+GL_INDEX = 33314
 GL_COMPRESSED_RED = 33317
 GL_COMPRESSED_RG = 33318
 GL_RG = 33319
@@ -645,6 +973,30 @@ GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 33776
 GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 33777
 GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 33778
 GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 33779
+GL_FOG_COORDINATE_SOURCE = 33872
+GL_FOG_COORD_SRC = 33872
+GL_FOG_COORDINATE = 33873
+GL_FOG_COORD = 33873
+GL_FRAGMENT_DEPTH = 33874
+GL_CURRENT_FOG_COORDINATE = 33875
+GL_CURRENT_FOG_COORD = 33875
+GL_FOG_COORDINATE_ARRAY_TYPE = 33876
+GL_FOG_COORD_ARRAY_TYPE = 33876
+GL_FOG_COORDINATE_ARRAY_STRIDE = 33877
+GL_FOG_COORD_ARRAY_STRIDE = 33877
+GL_FOG_COORDINATE_ARRAY_POINTER = 33878
+GL_FOG_COORD_ARRAY_POINTER = 33878
+GL_FOG_COORDINATE_ARRAY = 33879
+GL_FOG_COORD_ARRAY = 33879
+GL_COLOR_SUM = 33880
+GL_CURRENT_SECONDARY_COLOR = 33881
+GL_SECONDARY_COLOR_ARRAY_SIZE = 33882
+GL_SECONDARY_COLOR_ARRAY_TYPE = 33883
+GL_SECONDARY_COLOR_ARRAY_STRIDE = 33884
+GL_SECONDARY_COLOR_ARRAY_POINTER = 33885
+GL_SECONDARY_COLOR_ARRAY = 33886
+GL_CURRENT_RASTER_SECONDARY_COLOR = 33887
+GL_ALIASED_POINT_SIZE_RANGE = 33901
 GL_ALIASED_LINE_WIDTH_RANGE = 33902
 GL_TEXTURE0 = 33984
 GL_TEXTURE1 = 33985
@@ -679,8 +1031,19 @@ GL_TEXTURE29 = 34013
 GL_TEXTURE30 = 34014
 GL_TEXTURE31 = 34015
 GL_ACTIVE_TEXTURE = 34016
+GL_CLIENT_ACTIVE_TEXTURE = 34017
+GL_MAX_TEXTURE_UNITS = 34018
+GL_TRANSPOSE_MODELVIEW_MATRIX = 34019
+GL_TRANSPOSE_PROJECTION_MATRIX = 34020
+GL_TRANSPOSE_TEXTURE_MATRIX = 34021
+GL_TRANSPOSE_COLOR_MATRIX = 34022
+GL_SUBTRACT = 34023
 GL_MAX_RENDERBUFFER_SIZE = 34024
 GL_MAX_RENDERBUFFER_SIZE_EXT = 34024
+GL_COMPRESSED_ALPHA = 34025
+GL_COMPRESSED_LUMINANCE = 34026
+GL_COMPRESSED_LUMINANCE_ALPHA = 34027
+GL_COMPRESSED_INTENSITY = 34028
 GL_COMPRESSED_RGB = 34029
 GL_COMPRESSED_RGBA = 34030
 GL_TEXTURE_COMPRESSION_HINT = 34031
@@ -695,9 +1058,12 @@ GL_UNSIGNED_INT_24_8 = 34042
 GL_MAX_TEXTURE_LOD_BIAS = 34045
 GL_TEXTURE_MAX_ANISOTROPY = 34046
 GL_MAX_TEXTURE_MAX_ANISOTROPY = 34047
+GL_TEXTURE_FILTER_CONTROL = 34048
 GL_TEXTURE_LOD_BIAS = 34049
 GL_INCR_WRAP = 34055
 GL_DECR_WRAP = 34056
+GL_NORMAL_MAP = 34065
+GL_REFLECTION_MAP = 34066
 GL_TEXTURE_CUBE_MAP = 34067
 GL_TEXTURE_BINDING_CUBE_MAP = 34068
 GL_TEXTURE_CUBE_MAP_POSITIVE_X = 34069
@@ -708,7 +1074,33 @@ GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 34073
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 34074
 GL_PROXY_TEXTURE_CUBE_MAP = 34075
 GL_MAX_CUBE_MAP_TEXTURE_SIZE = 34076
+GL_COMBINE = 34160
+GL_COMBINE_RGB = 34161
+GL_COMBINE_ALPHA = 34162
+GL_RGB_SCALE = 34163
+GL_ADD_SIGNED = 34164
+GL_INTERPOLATE = 34165
+GL_CONSTANT = 34166
+GL_PRIMARY_COLOR = 34167
+GL_PREVIOUS = 34168
+GL_SOURCE0_RGB = 34176
+GL_SRC0_RGB = 34176
+GL_SOURCE1_RGB = 34177
+GL_SRC1_RGB = 34177
+GL_SOURCE2_RGB = 34178
+GL_SRC2_RGB = 34178
+GL_SOURCE0_ALPHA = 34184
+GL_SRC0_ALPHA = 34184
+GL_SOURCE1_ALPHA = 34185
 GL_SRC1_ALPHA = 34185
+GL_SOURCE2_ALPHA = 34186
+GL_SRC2_ALPHA = 34186
+GL_OPERAND0_RGB = 34192
+GL_OPERAND1_RGB = 34193
+GL_OPERAND2_RGB = 34194
+GL_OPERAND0_ALPHA = 34200
+GL_OPERAND1_ALPHA = 34201
+GL_OPERAND2_ALPHA = 34202
 GL_VERTEX_ARRAY_BINDING = 34229
 GL_VERTEX_ATTRIB_ARRAY_ENABLED = 34338
 GL_VERTEX_ATTRIB_ARRAY_SIZE = 34339
@@ -717,12 +1109,15 @@ GL_VERTEX_ATTRIB_ARRAY_TYPE = 34341
 GL_CURRENT_VERTEX_ATTRIB = 34342
 GL_VERTEX_PROGRAM_POINT_SIZE = 34370
 GL_PROGRAM_POINT_SIZE = 34370
+GL_VERTEX_PROGRAM_TWO_SIDE = 34371
 GL_VERTEX_ATTRIB_ARRAY_POINTER = 34373
 GL_DEPTH_CLAMP = 34383
 GL_TEXTURE_COMPRESSED_IMAGE_SIZE = 34464
 GL_TEXTURE_COMPRESSED = 34465
 GL_NUM_COMPRESSED_TEXTURE_FORMATS = 34466
 GL_COMPRESSED_TEXTURE_FORMATS = 34467
+GL_DOT3_RGB = 34478
+GL_DOT3_RGBA = 34479
 GL_PROGRAM_BINARY_LENGTH = 34625
 GL_MIRROR_CLAMP_TO_EDGE = 34627
 GL_VERTEX_ATTRIB_ARRAY_LONG = 34638
@@ -757,10 +1152,14 @@ GL_DRAW_BUFFER14 = 34867
 GL_DRAW_BUFFER15 = 34868
 GL_BLEND_EQUATION_ALPHA = 34877
 GL_TEXTURE_DEPTH_SIZE = 34890
+GL_DEPTH_TEXTURE_MODE = 34891
 GL_TEXTURE_COMPARE_MODE = 34892
 GL_TEXTURE_COMPARE_FUNC = 34893
+GL_COMPARE_R_TO_TEXTURE = 34894
 GL_COMPARE_REF_TO_TEXTURE = 34894
 GL_TEXTURE_CUBE_MAP_SEAMLESS = 34895
+GL_POINT_SPRITE = 34913
+GL_COORD_REPLACE = 34914
 GL_QUERY_COUNTER_BITS = 34916
 GL_CURRENT_QUERY = 34917
 GL_QUERY_RESULT = 34918
@@ -769,12 +1168,23 @@ GL_MAX_VERTEX_ATTRIBS = 34921
 GL_VERTEX_ATTRIB_ARRAY_NORMALIZED = 34922
 GL_MAX_TESS_CONTROL_INPUT_COMPONENTS = 34924
 GL_MAX_TESS_EVALUATION_INPUT_COMPONENTS = 34925
+GL_MAX_TEXTURE_COORDS = 34929
 GL_MAX_TEXTURE_IMAGE_UNITS = 34930
 GL_GEOMETRY_SHADER_INVOCATIONS = 34943
 GL_ARRAY_BUFFER = 34962
 GL_ELEMENT_ARRAY_BUFFER = 34963
 GL_ARRAY_BUFFER_BINDING = 34964
 GL_ELEMENT_ARRAY_BUFFER_BINDING = 34965
+GL_VERTEX_ARRAY_BUFFER_BINDING = 34966
+GL_NORMAL_ARRAY_BUFFER_BINDING = 34967
+GL_COLOR_ARRAY_BUFFER_BINDING = 34968
+GL_INDEX_ARRAY_BUFFER_BINDING = 34969
+GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING = 34970
+GL_EDGE_FLAG_ARRAY_BUFFER_BINDING = 34971
+GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING = 34972
+GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING = 34973
+GL_FOG_COORD_ARRAY_BUFFER_BINDING = 34973
+GL_WEIGHT_ARRAY_BUFFER_BINDING = 34974
 GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = 34975
 GL_READ_ONLY = 35000
 GL_WRITE_ONLY = 35001
@@ -812,6 +1222,8 @@ GL_GEOMETRY_VERTICES_OUT = 35094
 GL_GEOMETRY_INPUT_TYPE = 35095
 GL_GEOMETRY_OUTPUT_TYPE = 35096
 GL_SAMPLER_BINDING = 35097
+GL_CLAMP_VERTEX_COLOR = 35098
+GL_CLAMP_FRAGMENT_COLOR = 35099
 GL_CLAMP_READ_COLOR = 35100
 GL_FIXED_ONLY = 35101
 GL_UNIFORM_BUFFER = 35345
@@ -902,6 +1314,8 @@ GL_TEXTURE_RED_TYPE = 35856
 GL_TEXTURE_GREEN_TYPE = 35857
 GL_TEXTURE_BLUE_TYPE = 35858
 GL_TEXTURE_ALPHA_TYPE = 35859
+GL_TEXTURE_LUMINANCE_TYPE = 35860
+GL_TEXTURE_INTENSITY_TYPE = 35861
 GL_TEXTURE_DEPTH_TYPE = 35862
 GL_UNSIGNED_NORMALIZED = 35863
 GL_TEXTURE_1D_ARRAY = 35864
@@ -928,8 +1342,14 @@ GL_SRGB = 35904
 GL_SRGB8 = 35905
 GL_SRGB_ALPHA = 35906
 GL_SRGB8_ALPHA8 = 35907
+GL_SLUMINANCE_ALPHA = 35908
+GL_SLUMINANCE8_ALPHA8 = 35909
+GL_SLUMINANCE = 35910
+GL_SLUMINANCE8 = 35911
 GL_COMPRESSED_SRGB = 35912
 GL_COMPRESSED_SRGB_ALPHA = 35913
+GL_COMPRESSED_SLUMINANCE = 35914
+GL_COMPRESSED_SLUMINANCE_ALPHA = 35915
 GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH = 35958
 GL_TRANSFORM_FEEDBACK_BUFFER_MODE = 35967
 GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS = 35968
@@ -1091,6 +1511,7 @@ GL_RGB8I = 36239
 GL_RED_INTEGER = 36244
 GL_GREEN_INTEGER = 36245
 GL_BLUE_INTEGER = 36246
+GL_ALPHA_INTEGER = 36247
 GL_RGB_INTEGER = 36248
 GL_RGBA_INTEGER = 36249
 GL_BGR_INTEGER = 36250
@@ -1507,16 +1928,28 @@ GL_SHADER_BINARY_FORMAT_SPIR_V = 38225
 GL_SPIR_V_BINARY = 38226
 GL_SPIR_V_EXTENSIONS = 38227
 GL_NUM_SPIR_V_EXTENSIONS = 38228
+GL_EVAL_BIT = 65536
+GL_LIST_BIT = 131072
+GL_TEXTURE_BIT = 262144
+GL_SCISSOR_BIT = 524288
+GL_MULTISAMPLE_BIT = 536870912
 GL_MULTISAMPLE_BIT_ARB = 536870912
+GL_ALL_ATTRIB_BITS = 4294967295
+GL_CLIENT_ALL_ATTRIB_BITS = 4294967295
 GL_INVALID_INDEX = 4294967295
 GL_ALL_SHADER_BITS = 4294967295
 GL_ALL_BARRIER_BITS = 4294967295
 GL_TIMEOUT_IGNORED = 18446744073709551615
 
 # GL command definitions
+glAccum = _link_function('glAccum', None, [GLenum, GLfloat], requires='OpenGL 1.0')
 glActiveShaderProgram = _link_function('glActiveShaderProgram', None, [GLuint, GLuint], requires='OpenGL 4.1')
 glActiveTexture = _link_function('glActiveTexture', None, [GLenum], requires='OpenGL 1.3')
+glAlphaFunc = _link_function('glAlphaFunc', None, [GLenum, GLfloat], requires='OpenGL 1.0')
+glAreTexturesResident = _link_function('glAreTexturesResident', GLboolean, [GLsizei, POINTER(GLuint), POINTER(GLboolean)], requires='OpenGL 1.1')
+glArrayElement = _link_function('glArrayElement', None, [GLint], requires='OpenGL 1.1')
 glAttachShader = _link_function('glAttachShader', None, [GLuint, GLuint], requires='OpenGL 2.0')
+glBegin = _link_function('glBegin', None, [GLenum], requires='OpenGL 1.0')
 glBeginConditionalRender = _link_function('glBeginConditionalRender', None, [GLuint, GLenum], requires='OpenGL 3.0')
 glBeginQuery = _link_function('glBeginQuery', None, [GLenum, GLuint], requires='OpenGL 1.5')
 glBeginQueryIndexed = _link_function('glBeginQueryIndexed', None, [GLenum, GLuint, GLuint], requires='OpenGL 4.0')
@@ -1545,6 +1978,7 @@ glBindTransformFeedback = _link_function('glBindTransformFeedback', None, [GLenu
 glBindVertexArray = _link_function('glBindVertexArray', None, [GLuint], requires='OpenGL 3.0')
 glBindVertexBuffer = _link_function('glBindVertexBuffer', None, [GLuint, GLuint, GLintptr, GLsizei], requires='OpenGL 4.3')
 glBindVertexBuffers = _link_function('glBindVertexBuffers', None, [GLuint, GLsizei, POINTER(GLuint), POINTER(GLintptr), POINTER(GLsizei)], requires='OpenGL 4.4')
+glBitmap = _link_function('glBitmap', None, [GLsizei, GLsizei, GLfloat, GLfloat, GLfloat, GLfloat, POINTER(GLubyte)], requires='OpenGL 1.0')
 glBlendColor = _link_function('glBlendColor', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.4')
 glBlendEquation = _link_function('glBlendEquation', None, [GLenum], requires='OpenGL 1.4')
 glBlendEquationSeparate = _link_function('glBlendEquationSeparate', None, [GLenum, GLenum], requires='OpenGL 2.0')
@@ -1559,11 +1993,14 @@ glBlitNamedFramebuffer = _link_function('glBlitNamedFramebuffer', None, [GLuint,
 glBufferData = _link_function('glBufferData', None, [GLenum, GLsizeiptr, POINTER(GLvoid), GLenum], requires='OpenGL 1.5')
 glBufferStorage = _link_function('glBufferStorage', None, [GLenum, GLsizeiptr, POINTER(GLvoid), GLbitfield], requires='OpenGL 4.4')
 glBufferSubData = _link_function('glBufferSubData', None, [GLenum, GLintptr, GLsizeiptr, POINTER(GLvoid)], requires='OpenGL 1.5')
+glCallList = _link_function('glCallList', None, [GLuint], requires='OpenGL 1.0')
+glCallLists = _link_function('glCallLists', None, [GLsizei, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
 glCheckFramebufferStatus = _link_function('glCheckFramebufferStatus', GLenum, [GLenum], requires='OpenGL 3.0')
 glCheckFramebufferStatusEXT = _link_function('glCheckFramebufferStatusEXT', GLenum, [GLenum], requires='None')
 glCheckNamedFramebufferStatus = _link_function('glCheckNamedFramebufferStatus', GLenum, [GLuint, GLenum], requires='OpenGL 4.5')
 glClampColor = _link_function('glClampColor', None, [GLenum, GLenum], requires='OpenGL 3.0')
 glClear = _link_function('glClear', None, [GLbitfield], requires='OpenGL 1.0')
+glClearAccum = _link_function('glClearAccum', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
 glClearBufferData = _link_function('glClearBufferData', None, [GLenum, GLenum, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.3')
 glClearBufferSubData = _link_function('glClearBufferSubData', None, [GLenum, GLenum, GLintptr, GLsizeiptr, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.3')
 glClearBufferfi = _link_function('glClearBufferfi', None, [GLenum, GLint, GLfloat, GLint], requires='OpenGL 3.0')
@@ -1573,6 +2010,7 @@ glClearBufferuiv = _link_function('glClearBufferuiv', None, [GLenum, GLint, POIN
 glClearColor = _link_function('glClearColor', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
 glClearDepth = _link_function('glClearDepth', None, [GLdouble], requires='OpenGL 1.0')
 glClearDepthf = _link_function('glClearDepthf', None, [GLfloat], requires='OpenGL 4.1')
+glClearIndex = _link_function('glClearIndex', None, [GLfloat], requires='OpenGL 1.0')
 glClearNamedBufferData = _link_function('glClearNamedBufferData', None, [GLuint, GLenum, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
 glClearNamedBufferSubData = _link_function('glClearNamedBufferSubData', None, [GLuint, GLenum, GLintptr, GLsizeiptr, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.5')
 glClearNamedFramebufferfi = _link_function('glClearNamedFramebufferfi', None, [GLuint, GLenum, GLint, GLfloat, GLint], requires='OpenGL 4.5')
@@ -1582,13 +2020,49 @@ glClearNamedFramebufferuiv = _link_function('glClearNamedFramebufferuiv', None, 
 glClearStencil = _link_function('glClearStencil', None, [GLint], requires='OpenGL 1.0')
 glClearTexImage = _link_function('glClearTexImage', None, [GLuint, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.4')
 glClearTexSubImage = _link_function('glClearTexSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 4.4')
+glClientActiveTexture = _link_function('glClientActiveTexture', None, [GLenum], requires='OpenGL 1.3')
 glClipControl = _link_function('glClipControl', None, [GLenum, GLenum], requires='OpenGL 4.5')
+glClipPlane = _link_function('glClipPlane', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
+glColor3b = _link_function('glColor3b', None, [GLbyte, GLbyte, GLbyte], requires='OpenGL 1.0')
+glColor3bv = _link_function('glColor3bv', None, [POINTER(GLbyte)], requires='OpenGL 1.0')
+glColor3d = _link_function('glColor3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glColor3dv = _link_function('glColor3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glColor3f = _link_function('glColor3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glColor3fv = _link_function('glColor3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glColor3i = _link_function('glColor3i', None, [GLint, GLint, GLint], requires='OpenGL 1.0')
+glColor3iv = _link_function('glColor3iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glColor3s = _link_function('glColor3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glColor3sv = _link_function('glColor3sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glColor3ub = _link_function('glColor3ub', None, [GLubyte, GLubyte, GLubyte], requires='OpenGL 1.0')
+glColor3ubv = _link_function('glColor3ubv', None, [POINTER(GLubyte)], requires='OpenGL 1.0')
+glColor3ui = _link_function('glColor3ui', None, [GLuint, GLuint, GLuint], requires='OpenGL 1.0')
+glColor3uiv = _link_function('glColor3uiv', None, [POINTER(GLuint)], requires='OpenGL 1.0')
+glColor3us = _link_function('glColor3us', None, [GLushort, GLushort, GLushort], requires='OpenGL 1.0')
+glColor3usv = _link_function('glColor3usv', None, [POINTER(GLushort)], requires='OpenGL 1.0')
+glColor4b = _link_function('glColor4b', None, [GLbyte, GLbyte, GLbyte, GLbyte], requires='OpenGL 1.0')
+glColor4bv = _link_function('glColor4bv', None, [POINTER(GLbyte)], requires='OpenGL 1.0')
+glColor4d = _link_function('glColor4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glColor4dv = _link_function('glColor4dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glColor4f = _link_function('glColor4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glColor4fv = _link_function('glColor4fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glColor4i = _link_function('glColor4i', None, [GLint, GLint, GLint, GLint], requires='OpenGL 1.0')
+glColor4iv = _link_function('glColor4iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glColor4s = _link_function('glColor4s', None, [GLshort, GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glColor4sv = _link_function('glColor4sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glColor4ub = _link_function('glColor4ub', None, [GLubyte, GLubyte, GLubyte, GLubyte], requires='OpenGL 1.0')
+glColor4ubv = _link_function('glColor4ubv', None, [POINTER(GLubyte)], requires='OpenGL 1.0')
+glColor4ui = _link_function('glColor4ui', None, [GLuint, GLuint, GLuint, GLuint], requires='OpenGL 1.0')
+glColor4uiv = _link_function('glColor4uiv', None, [POINTER(GLuint)], requires='OpenGL 1.0')
+glColor4us = _link_function('glColor4us', None, [GLushort, GLushort, GLushort, GLushort], requires='OpenGL 1.0')
+glColor4usv = _link_function('glColor4usv', None, [POINTER(GLushort)], requires='OpenGL 1.0')
 glColorMask = _link_function('glColorMask', None, [GLboolean, GLboolean, GLboolean, GLboolean], requires='OpenGL 1.0')
 glColorMaski = _link_function('glColorMaski', None, [GLuint, GLboolean, GLboolean, GLboolean, GLboolean], requires='OpenGL 3.0')
+glColorMaterial = _link_function('glColorMaterial', None, [GLenum, GLenum], requires='OpenGL 1.0')
 glColorP3ui = _link_function('glColorP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glColorP3uiv = _link_function('glColorP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
 glColorP4ui = _link_function('glColorP4ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glColorP4uiv = _link_function('glColorP4uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glColorPointer = _link_function('glColorPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
 glCompileShader = _link_function('glCompileShader', None, [GLuint], requires='OpenGL 2.0')
 glCompressedTexImage1D = _link_function('glCompressedTexImage1D', None, [GLenum, GLint, GLenum, GLsizei, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
 glCompressedTexImage2D = _link_function('glCompressedTexImage2D', None, [GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.3')
@@ -1602,6 +2076,7 @@ glCompressedTextureSubImage3D = _link_function('glCompressedTextureSubImage3D', 
 glCopyBufferSubData = _link_function('glCopyBufferSubData', None, [GLenum, GLenum, GLintptr, GLintptr, GLsizeiptr], requires='OpenGL 3.1')
 glCopyImageSubData = _link_function('glCopyImageSubData', None, [GLuint, GLenum, GLint, GLint, GLint, GLint, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei], requires='OpenGL 4.3')
 glCopyNamedBufferSubData = _link_function('glCopyNamedBufferSubData', None, [GLuint, GLuint, GLintptr, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
+glCopyPixels = _link_function('glCopyPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum], requires='OpenGL 1.0')
 glCopyTexImage1D = _link_function('glCopyTexImage1D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLint], requires='OpenGL 1.1')
 glCopyTexImage2D = _link_function('glCopyTexImage2D', None, [GLenum, GLint, GLenum, GLint, GLint, GLsizei, GLsizei, GLint], requires='OpenGL 1.1')
 glCopyTexSubImage1D = _link_function('glCopyTexSubImage1D', None, [GLenum, GLint, GLint, GLint, GLint, GLsizei], requires='OpenGL 1.1')
@@ -1628,6 +2103,7 @@ glDebugMessageInsert = _link_function('glDebugMessageInsert', None, [GLenum, GLe
 glDeleteBuffers = _link_function('glDeleteBuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
 glDeleteFramebuffers = _link_function('glDeleteFramebuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
 glDeleteFramebuffersEXT = _link_function('glDeleteFramebuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
+glDeleteLists = _link_function('glDeleteLists', None, [GLuint, GLsizei], requires='OpenGL 1.0')
 glDeleteProgram = _link_function('glDeleteProgram', None, [GLuint], requires='OpenGL 2.0')
 glDeleteProgramPipelines = _link_function('glDeleteProgramPipelines', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
 glDeleteQueries = _link_function('glDeleteQueries', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
@@ -1646,6 +2122,7 @@ glDepthRangeIndexed = _link_function('glDepthRangeIndexed', None, [GLuint, GLdou
 glDepthRangef = _link_function('glDepthRangef', None, [GLfloat, GLfloat], requires='OpenGL 4.1')
 glDetachShader = _link_function('glDetachShader', None, [GLuint, GLuint], requires='OpenGL 2.0')
 glDisable = _link_function('glDisable', None, [GLenum], requires='OpenGL 1.0')
+glDisableClientState = _link_function('glDisableClientState', None, [GLenum], requires='OpenGL 1.1')
 glDisableVertexArrayAttrib = _link_function('glDisableVertexArrayAttrib', None, [GLuint, GLuint], requires='OpenGL 4.5')
 glDisableVertexAttribArray = _link_function('glDisableVertexAttribArray', None, [GLuint], requires='OpenGL 2.0')
 glDisablei = _link_function('glDisablei', None, [GLenum, GLuint], requires='OpenGL 3.0')
@@ -1664,24 +2141,53 @@ glDrawElementsInstanced = _link_function('glDrawElementsInstanced', None, [GLenu
 glDrawElementsInstancedBaseInstance = _link_function('glDrawElementsInstancedBaseInstance', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei, GLuint], requires='OpenGL 4.2')
 glDrawElementsInstancedBaseVertex = _link_function('glDrawElementsInstancedBaseVertex', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei, GLint], requires='OpenGL 3.2')
 glDrawElementsInstancedBaseVertexBaseInstance = _link_function('glDrawElementsInstancedBaseVertexBaseInstance', None, [GLenum, GLsizei, GLenum, POINTER(GLvoid), GLsizei, GLint, GLuint], requires='OpenGL 4.2')
+glDrawPixels = _link_function('glDrawPixels', None, [GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
 glDrawRangeElements = _link_function('glDrawRangeElements', None, [GLenum, GLuint, GLuint, GLsizei, GLenum, POINTER(GLvoid)], requires='OpenGL 1.2')
 glDrawRangeElementsBaseVertex = _link_function('glDrawRangeElementsBaseVertex', None, [GLenum, GLuint, GLuint, GLsizei, GLenum, POINTER(GLvoid), GLint], requires='OpenGL 3.2')
 glDrawTransformFeedback = _link_function('glDrawTransformFeedback', None, [GLenum, GLuint], requires='OpenGL 4.0')
 glDrawTransformFeedbackInstanced = _link_function('glDrawTransformFeedbackInstanced', None, [GLenum, GLuint, GLsizei], requires='OpenGL 4.2')
 glDrawTransformFeedbackStream = _link_function('glDrawTransformFeedbackStream', None, [GLenum, GLuint, GLuint], requires='OpenGL 4.0')
 glDrawTransformFeedbackStreamInstanced = _link_function('glDrawTransformFeedbackStreamInstanced', None, [GLenum, GLuint, GLuint, GLsizei], requires='OpenGL 4.2')
+glEdgeFlag = _link_function('glEdgeFlag', None, [GLboolean], requires='OpenGL 1.0')
+glEdgeFlagPointer = _link_function('glEdgeFlagPointer', None, [GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
+glEdgeFlagv = _link_function('glEdgeFlagv', None, [POINTER(GLboolean)], requires='OpenGL 1.0')
 glEnable = _link_function('glEnable', None, [GLenum], requires='OpenGL 1.0')
+glEnableClientState = _link_function('glEnableClientState', None, [GLenum], requires='OpenGL 1.1')
 glEnableVertexArrayAttrib = _link_function('glEnableVertexArrayAttrib', None, [GLuint, GLuint], requires='OpenGL 4.5')
 glEnableVertexAttribArray = _link_function('glEnableVertexAttribArray', None, [GLuint], requires='OpenGL 2.0')
 glEnablei = _link_function('glEnablei', None, [GLenum, GLuint], requires='OpenGL 3.0')
+glEnd = _link_function('glEnd', None, [], requires='OpenGL 1.0')
 glEndConditionalRender = _link_function('glEndConditionalRender', None, [], requires='OpenGL 3.0')
+glEndList = _link_function('glEndList', None, [], requires='OpenGL 1.0')
 glEndQuery = _link_function('glEndQuery', None, [GLenum], requires='OpenGL 1.5')
 glEndQueryIndexed = _link_function('glEndQueryIndexed', None, [GLenum, GLuint], requires='OpenGL 4.0')
 glEndTransformFeedback = _link_function('glEndTransformFeedback', None, [], requires='OpenGL 3.0')
+glEvalCoord1d = _link_function('glEvalCoord1d', None, [GLdouble], requires='OpenGL 1.0')
+glEvalCoord1dv = _link_function('glEvalCoord1dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glEvalCoord1f = _link_function('glEvalCoord1f', None, [GLfloat], requires='OpenGL 1.0')
+glEvalCoord1fv = _link_function('glEvalCoord1fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glEvalCoord2d = _link_function('glEvalCoord2d', None, [GLdouble, GLdouble], requires='OpenGL 1.0')
+glEvalCoord2dv = _link_function('glEvalCoord2dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glEvalCoord2f = _link_function('glEvalCoord2f', None, [GLfloat, GLfloat], requires='OpenGL 1.0')
+glEvalCoord2fv = _link_function('glEvalCoord2fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glEvalMesh1 = _link_function('glEvalMesh1', None, [GLenum, GLint, GLint], requires='OpenGL 1.0')
+glEvalMesh2 = _link_function('glEvalMesh2', None, [GLenum, GLint, GLint, GLint, GLint], requires='OpenGL 1.0')
+glEvalPoint1 = _link_function('glEvalPoint1', None, [GLint], requires='OpenGL 1.0')
+glEvalPoint2 = _link_function('glEvalPoint2', None, [GLint, GLint], requires='OpenGL 1.0')
+glFeedbackBuffer = _link_function('glFeedbackBuffer', None, [GLsizei, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
 glFinish = _link_function('glFinish', None, [], requires='OpenGL 1.0')
 glFlush = _link_function('glFlush', None, [], requires='OpenGL 1.0')
 glFlushMappedBufferRange = _link_function('glFlushMappedBufferRange', None, [GLenum, GLintptr, GLsizeiptr], requires='OpenGL 3.0')
 glFlushMappedNamedBufferRange = _link_function('glFlushMappedNamedBufferRange', None, [GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
+glFogCoordPointer = _link_function('glFogCoordPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.4')
+glFogCoordd = _link_function('glFogCoordd', None, [GLdouble], requires='OpenGL 1.4')
+glFogCoorddv = _link_function('glFogCoorddv', None, [POINTER(GLdouble)], requires='OpenGL 1.4')
+glFogCoordf = _link_function('glFogCoordf', None, [GLfloat], requires='OpenGL 1.4')
+glFogCoordfv = _link_function('glFogCoordfv', None, [POINTER(GLfloat)], requires='OpenGL 1.4')
+glFogf = _link_function('glFogf', None, [GLenum, GLfloat], requires='OpenGL 1.0')
+glFogfv = _link_function('glFogfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glFogi = _link_function('glFogi', None, [GLenum, GLint], requires='OpenGL 1.0')
+glFogiv = _link_function('glFogiv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.0')
 glFramebufferParameteri = _link_function('glFramebufferParameteri', None, [GLenum, GLenum, GLint], requires='OpenGL 4.3')
 glFramebufferRenderbuffer = _link_function('glFramebufferRenderbuffer', None, [GLenum, GLenum, GLenum, GLuint], requires='OpenGL 3.0')
 glFramebufferRenderbufferEXT = _link_function('glFramebufferRenderbufferEXT', None, [GLenum, GLenum, GLenum, GLuint], requires='None')
@@ -1694,9 +2200,11 @@ glFramebufferTexture3D = _link_function('glFramebufferTexture3D', None, [GLenum,
 glFramebufferTexture3DEXT = _link_function('glFramebufferTexture3DEXT', None, [GLenum, GLenum, GLenum, GLuint, GLint, GLint], requires='None')
 glFramebufferTextureLayer = _link_function('glFramebufferTextureLayer', None, [GLenum, GLenum, GLuint, GLint, GLint], requires='OpenGL 3.0')
 glFrontFace = _link_function('glFrontFace', None, [GLenum], requires='OpenGL 1.0')
+glFrustum = _link_function('glFrustum', None, [GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
 glGenBuffers = _link_function('glGenBuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
 glGenFramebuffers = _link_function('glGenFramebuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
 glGenFramebuffersEXT = _link_function('glGenFramebuffersEXT', None, [GLsizei, POINTER(GLuint)], requires='None')
+glGenLists = _link_function('glGenLists', GLuint, [GLsizei], requires='OpenGL 1.0')
 glGenProgramPipelines = _link_function('glGenProgramPipelines', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 4.1')
 glGenQueries = _link_function('glGenQueries', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.5')
 glGenRenderbuffers = _link_function('glGenRenderbuffers', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 3.0')
@@ -1726,6 +2234,7 @@ glGetBufferParameteri64v = _link_function('glGetBufferParameteri64v', None, [GLe
 glGetBufferParameteriv = _link_function('glGetBufferParameteriv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.5')
 glGetBufferPointerv = _link_function('glGetBufferPointerv', None, [GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.5')
 glGetBufferSubData = _link_function('glGetBufferSubData', None, [GLenum, GLintptr, GLsizeiptr, POINTER(GLvoid)], requires='OpenGL 1.5')
+glGetClipPlane = _link_function('glGetClipPlane', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
 glGetCompressedTexImage = _link_function('glGetCompressedTexImage', None, [GLenum, GLint, POINTER(GLvoid)], requires='OpenGL 1.3')
 glGetCompressedTextureImage = _link_function('glGetCompressedTextureImage', None, [GLuint, GLint, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
 glGetCompressedTextureSubImage = _link_function('glGetCompressedTextureSubImage', None, [GLuint, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
@@ -1747,6 +2256,13 @@ glGetIntegeri_v = _link_function('glGetIntegeri_v', None, [GLenum, GLuint, POINT
 glGetIntegerv = _link_function('glGetIntegerv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.0')
 glGetInternalformati64v = _link_function('glGetInternalformati64v', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLint64)], requires='OpenGL 4.3')
 glGetInternalformativ = _link_function('glGetInternalformativ', None, [GLenum, GLenum, GLenum, GLsizei, POINTER(GLint)], requires='OpenGL 4.2')
+glGetLightfv = _link_function('glGetLightfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetLightiv = _link_function('glGetLightiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetMapdv = _link_function('glGetMapdv', None, [GLenum, GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
+glGetMapfv = _link_function('glGetMapfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetMapiv = _link_function('glGetMapiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetMaterialfv = _link_function('glGetMaterialfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetMaterialiv = _link_function('glGetMaterialiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
 glGetMultisamplefv = _link_function('glGetMultisamplefv', None, [GLenum, GLuint, POINTER(GLfloat)], requires='OpenGL 3.2')
 glGetNamedBufferParameteri64v = _link_function('glGetNamedBufferParameteri64v', None, [GLuint, GLenum, POINTER(GLint64)], requires='OpenGL 4.5')
 glGetNamedBufferParameteriv = _link_function('glGetNamedBufferParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
@@ -1757,7 +2273,11 @@ glGetNamedFramebufferParameteriv = _link_function('glGetNamedFramebufferParamete
 glGetNamedRenderbufferParameteriv = _link_function('glGetNamedRenderbufferParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 4.5')
 glGetObjectLabel = _link_function('glGetObjectLabel', None, [GLenum, GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.3')
 glGetObjectPtrLabel = _link_function('glGetObjectPtrLabel', None, [POINTER(GLvoid), GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 4.3')
+glGetPixelMapfv = _link_function('glGetPixelMapfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetPixelMapuiv = _link_function('glGetPixelMapuiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 1.0')
+glGetPixelMapusv = _link_function('glGetPixelMapusv', None, [GLenum, POINTER(GLushort)], requires='OpenGL 1.0')
 glGetPointerv = _link_function('glGetPointerv', None, [GLenum, POINTER(GLvoid)], requires='OpenGL 4.3')
+glGetPolygonStipple = _link_function('glGetPolygonStipple', None, [POINTER(GLubyte)], requires='OpenGL 1.0')
 glGetProgramBinary = _link_function('glGetProgramBinary', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLenum), POINTER(GLvoid)], requires='OpenGL 4.1')
 glGetProgramInfoLog = _link_function('glGetProgramInfoLog', None, [GLuint, GLsizei, POINTER(GLsizei), POINTER(GLchar)], requires='OpenGL 2.0')
 glGetProgramInterfaceiv = _link_function('glGetProgramInterfaceiv', None, [GLuint, GLenum, GLenum, POINTER(GLint)], requires='OpenGL 4.3')
@@ -1794,6 +2314,11 @@ glGetString = _link_function('glGetString', POINTER(GLubyte), [GLenum], requires
 glGetStringi = _link_function('glGetStringi', POINTER(GLubyte), [GLenum, GLuint], requires='OpenGL 3.0')
 glGetSubroutineIndex = _link_function('glGetSubroutineIndex', GLuint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.0')
 glGetSubroutineUniformLocation = _link_function('glGetSubroutineUniformLocation', GLint, [GLuint, GLenum, POINTER(GLchar)], requires='OpenGL 4.0')
+glGetTexEnvfv = _link_function('glGetTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetTexEnviv = _link_function('glGetTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glGetTexGendv = _link_function('glGetTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
+glGetTexGenfv = _link_function('glGetTexGenfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glGetTexGeniv = _link_function('glGetTexGeniv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
 glGetTexImage = _link_function('glGetTexImage', None, [GLenum, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
 glGetTexLevelParameterfv = _link_function('glGetTexLevelParameterfv', None, [GLenum, GLint, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
 glGetTexLevelParameteriv = _link_function('glGetTexLevelParameteriv', None, [GLenum, GLint, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
@@ -1850,6 +2375,20 @@ glGetnUniformfv = _link_function('glGetnUniformfv', None, [GLuint, GLint, GLsize
 glGetnUniformiv = _link_function('glGetnUniformiv', None, [GLuint, GLint, GLsizei, POINTER(GLint)], requires='OpenGL 4.5')
 glGetnUniformuiv = _link_function('glGetnUniformuiv', None, [GLuint, GLint, GLsizei, POINTER(GLuint)], requires='OpenGL 4.5')
 glHint = _link_function('glHint', None, [GLenum, GLenum], requires='OpenGL 1.0')
+glIndexMask = _link_function('glIndexMask', None, [GLuint], requires='OpenGL 1.0')
+glIndexPointer = _link_function('glIndexPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
+glIndexd = _link_function('glIndexd', None, [GLdouble], requires='OpenGL 1.0')
+glIndexdv = _link_function('glIndexdv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glIndexf = _link_function('glIndexf', None, [GLfloat], requires='OpenGL 1.0')
+glIndexfv = _link_function('glIndexfv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glIndexi = _link_function('glIndexi', None, [GLint], requires='OpenGL 1.0')
+glIndexiv = _link_function('glIndexiv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glIndexs = _link_function('glIndexs', None, [GLshort], requires='OpenGL 1.0')
+glIndexsv = _link_function('glIndexsv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glIndexub = _link_function('glIndexub', None, [GLubyte], requires='OpenGL 1.1')
+glIndexubv = _link_function('glIndexubv', None, [POINTER(GLubyte)], requires='OpenGL 1.1')
+glInitNames = _link_function('glInitNames', None, [], requires='OpenGL 1.0')
+glInterleavedArrays = _link_function('glInterleavedArrays', None, [GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
 glInvalidateBufferData = _link_function('glInvalidateBufferData', None, [GLuint], requires='OpenGL 4.3')
 glInvalidateBufferSubData = _link_function('glInvalidateBufferSubData', None, [GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.3')
 glInvalidateFramebuffer = _link_function('glInvalidateFramebuffer', None, [GLenum, GLsizei, POINTER(GLenum)], requires='OpenGL 4.3')
@@ -1863,6 +2402,7 @@ glIsEnabled = _link_function('glIsEnabled', GLboolean, [GLenum], requires='OpenG
 glIsEnabledi = _link_function('glIsEnabledi', GLboolean, [GLenum, GLuint], requires='OpenGL 3.0')
 glIsFramebuffer = _link_function('glIsFramebuffer', GLboolean, [GLuint], requires='OpenGL 3.0')
 glIsFramebufferEXT = _link_function('glIsFramebufferEXT', GLboolean, [GLuint], requires='None')
+glIsList = _link_function('glIsList', GLboolean, [GLuint], requires='OpenGL 1.0')
 glIsProgram = _link_function('glIsProgram', GLboolean, [GLuint], requires='OpenGL 2.0')
 glIsProgramPipeline = _link_function('glIsProgramPipeline', GLboolean, [GLuint], requires='OpenGL 4.1')
 glIsQuery = _link_function('glIsQuery', GLboolean, [GLuint], requires='OpenGL 1.5')
@@ -1873,16 +2413,49 @@ glIsShader = _link_function('glIsShader', GLboolean, [GLuint], requires='OpenGL 
 glIsTexture = _link_function('glIsTexture', GLboolean, [GLuint], requires='OpenGL 1.1')
 glIsTransformFeedback = _link_function('glIsTransformFeedback', GLboolean, [GLuint], requires='OpenGL 4.0')
 glIsVertexArray = _link_function('glIsVertexArray', GLboolean, [GLuint], requires='OpenGL 3.0')
+glLightModelf = _link_function('glLightModelf', None, [GLenum, GLfloat], requires='OpenGL 1.0')
+glLightModelfv = _link_function('glLightModelfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glLightModeli = _link_function('glLightModeli', None, [GLenum, GLint], requires='OpenGL 1.0')
+glLightModeliv = _link_function('glLightModeliv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glLightf = _link_function('glLightf', None, [GLenum, GLenum, GLfloat], requires='OpenGL 1.0')
+glLightfv = _link_function('glLightfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glLighti = _link_function('glLighti', None, [GLenum, GLenum, GLint], requires='OpenGL 1.0')
+glLightiv = _link_function('glLightiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glLineStipple = _link_function('glLineStipple', None, [GLint, GLushort], requires='OpenGL 1.0')
 glLineWidth = _link_function('glLineWidth', None, [GLfloat], requires='OpenGL 1.0')
 glLinkProgram = _link_function('glLinkProgram', None, [GLuint], requires='OpenGL 2.0')
+glListBase = _link_function('glListBase', None, [GLuint], requires='OpenGL 1.0')
+glLoadIdentity = _link_function('glLoadIdentity', None, [], requires='OpenGL 1.0')
+glLoadMatrixd = _link_function('glLoadMatrixd', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glLoadMatrixf = _link_function('glLoadMatrixf', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glLoadName = _link_function('glLoadName', None, [GLuint], requires='OpenGL 1.0')
+glLoadTransposeMatrixd = _link_function('glLoadTransposeMatrixd', None, [POINTER(GLdouble)], requires='OpenGL 1.3')
+glLoadTransposeMatrixf = _link_function('glLoadTransposeMatrixf', None, [POINTER(GLfloat)], requires='OpenGL 1.3')
 glLogicOp = _link_function('glLogicOp', None, [GLenum], requires='OpenGL 1.0')
+glMap1d = _link_function('glMap1d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], requires='OpenGL 1.0')
+glMap1f = _link_function('glMap1f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], requires='OpenGL 1.0')
+glMap2d = _link_function('glMap2d', None, [GLenum, GLdouble, GLdouble, GLint, GLint, GLdouble, GLdouble, GLint, GLint, POINTER(GLdouble)], requires='OpenGL 1.0')
+glMap2f = _link_function('glMap2f', None, [GLenum, GLfloat, GLfloat, GLint, GLint, GLfloat, GLfloat, GLint, GLint, POINTER(GLfloat)], requires='OpenGL 1.0')
 glMapBuffer = _link_function('glMapBuffer', POINTER(None), [GLenum, GLenum], requires='OpenGL 1.5')
 glMapBufferRange = _link_function('glMapBufferRange', POINTER(None), [GLenum, GLintptr, GLsizeiptr, GLbitfield], requires='OpenGL 3.0')
+glMapGrid1d = _link_function('glMapGrid1d', None, [GLint, GLdouble, GLdouble], requires='OpenGL 1.0')
+glMapGrid1f = _link_function('glMapGrid1f', None, [GLint, GLfloat, GLfloat], requires='OpenGL 1.0')
+glMapGrid2d = _link_function('glMapGrid2d', None, [GLint, GLdouble, GLdouble, GLint, GLdouble, GLdouble], requires='OpenGL 1.0')
+glMapGrid2f = _link_function('glMapGrid2f', None, [GLint, GLfloat, GLfloat, GLint, GLfloat, GLfloat], requires='OpenGL 1.0')
 glMapNamedBuffer = _link_function('glMapNamedBuffer', POINTER(None), [GLuint, GLenum], requires='OpenGL 4.5')
 glMapNamedBufferRange = _link_function('glMapNamedBufferRange', POINTER(None), [GLuint, GLintptr, GLsizeiptr, GLbitfield], requires='OpenGL 4.5')
+glMaterialf = _link_function('glMaterialf', None, [GLenum, GLenum, GLfloat], requires='OpenGL 1.0')
+glMaterialfv = _link_function('glMaterialfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glMateriali = _link_function('glMateriali', None, [GLenum, GLenum, GLint], requires='OpenGL 1.0')
+glMaterialiv = _link_function('glMaterialiv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glMatrixMode = _link_function('glMatrixMode', None, [GLenum], requires='OpenGL 1.0')
 glMemoryBarrier = _link_function('glMemoryBarrier', None, [GLbitfield], requires='OpenGL 4.2')
 glMemoryBarrierByRegion = _link_function('glMemoryBarrierByRegion', None, [GLbitfield], requires='OpenGL 4.5')
 glMinSampleShading = _link_function('glMinSampleShading', None, [GLfloat], requires='OpenGL 4.0')
+glMultMatrixd = _link_function('glMultMatrixd', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glMultMatrixf = _link_function('glMultMatrixf', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glMultTransposeMatrixd = _link_function('glMultTransposeMatrixd', None, [POINTER(GLdouble)], requires='OpenGL 1.3')
+glMultTransposeMatrixf = _link_function('glMultTransposeMatrixf', None, [POINTER(GLfloat)], requires='OpenGL 1.3')
 glMultiDrawArrays = _link_function('glMultiDrawArrays', None, [GLenum, POINTER(GLint), POINTER(GLsizei), GLsizei], requires='OpenGL 1.4')
 glMultiDrawArraysIndirect = _link_function('glMultiDrawArraysIndirect', None, [GLenum, POINTER(GLvoid), GLsizei, GLsizei], requires='OpenGL 4.3')
 glMultiDrawArraysIndirectCount = _link_function('glMultiDrawArraysIndirectCount', None, [GLenum, POINTER(GLvoid), GLintptr, GLsizei, GLsizei], requires='OpenGL 4.6')
@@ -1890,6 +2463,38 @@ glMultiDrawElements = _link_function('glMultiDrawElements', None, [GLenum, POINT
 glMultiDrawElementsBaseVertex = _link_function('glMultiDrawElementsBaseVertex', None, [GLenum, POINTER(GLsizei), GLenum, POINTER(GLvoid), GLsizei, POINTER(GLint)], requires='OpenGL 3.2')
 glMultiDrawElementsIndirect = _link_function('glMultiDrawElementsIndirect', None, [GLenum, GLenum, POINTER(GLvoid), GLsizei, GLsizei], requires='OpenGL 4.3')
 glMultiDrawElementsIndirectCount = _link_function('glMultiDrawElementsIndirectCount', None, [GLenum, GLenum, POINTER(GLvoid), GLintptr, GLsizei, GLsizei], requires='OpenGL 4.6')
+glMultiTexCoord1d = _link_function('glMultiTexCoord1d', None, [GLenum, GLdouble], requires='OpenGL 1.3')
+glMultiTexCoord1dv = _link_function('glMultiTexCoord1dv', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.3')
+glMultiTexCoord1f = _link_function('glMultiTexCoord1f', None, [GLenum, GLfloat], requires='OpenGL 1.3')
+glMultiTexCoord1fv = _link_function('glMultiTexCoord1fv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.3')
+glMultiTexCoord1i = _link_function('glMultiTexCoord1i', None, [GLenum, GLint], requires='OpenGL 1.3')
+glMultiTexCoord1iv = _link_function('glMultiTexCoord1iv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.3')
+glMultiTexCoord1s = _link_function('glMultiTexCoord1s', None, [GLenum, GLshort], requires='OpenGL 1.3')
+glMultiTexCoord1sv = _link_function('glMultiTexCoord1sv', None, [GLenum, POINTER(GLshort)], requires='OpenGL 1.3')
+glMultiTexCoord2d = _link_function('glMultiTexCoord2d', None, [GLenum, GLdouble, GLdouble], requires='OpenGL 1.3')
+glMultiTexCoord2dv = _link_function('glMultiTexCoord2dv', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.3')
+glMultiTexCoord2f = _link_function('glMultiTexCoord2f', None, [GLenum, GLfloat, GLfloat], requires='OpenGL 1.3')
+glMultiTexCoord2fv = _link_function('glMultiTexCoord2fv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.3')
+glMultiTexCoord2i = _link_function('glMultiTexCoord2i', None, [GLenum, GLint, GLint], requires='OpenGL 1.3')
+glMultiTexCoord2iv = _link_function('glMultiTexCoord2iv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.3')
+glMultiTexCoord2s = _link_function('glMultiTexCoord2s', None, [GLenum, GLshort, GLshort], requires='OpenGL 1.3')
+glMultiTexCoord2sv = _link_function('glMultiTexCoord2sv', None, [GLenum, POINTER(GLshort)], requires='OpenGL 1.3')
+glMultiTexCoord3d = _link_function('glMultiTexCoord3d', None, [GLenum, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.3')
+glMultiTexCoord3dv = _link_function('glMultiTexCoord3dv', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.3')
+glMultiTexCoord3f = _link_function('glMultiTexCoord3f', None, [GLenum, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.3')
+glMultiTexCoord3fv = _link_function('glMultiTexCoord3fv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.3')
+glMultiTexCoord3i = _link_function('glMultiTexCoord3i', None, [GLenum, GLint, GLint, GLint], requires='OpenGL 1.3')
+glMultiTexCoord3iv = _link_function('glMultiTexCoord3iv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.3')
+glMultiTexCoord3s = _link_function('glMultiTexCoord3s', None, [GLenum, GLshort, GLshort, GLshort], requires='OpenGL 1.3')
+glMultiTexCoord3sv = _link_function('glMultiTexCoord3sv', None, [GLenum, POINTER(GLshort)], requires='OpenGL 1.3')
+glMultiTexCoord4d = _link_function('glMultiTexCoord4d', None, [GLenum, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.3')
+glMultiTexCoord4dv = _link_function('glMultiTexCoord4dv', None, [GLenum, POINTER(GLdouble)], requires='OpenGL 1.3')
+glMultiTexCoord4f = _link_function('glMultiTexCoord4f', None, [GLenum, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.3')
+glMultiTexCoord4fv = _link_function('glMultiTexCoord4fv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.3')
+glMultiTexCoord4i = _link_function('glMultiTexCoord4i', None, [GLenum, GLint, GLint, GLint, GLint], requires='OpenGL 1.3')
+glMultiTexCoord4iv = _link_function('glMultiTexCoord4iv', None, [GLenum, POINTER(GLint)], requires='OpenGL 1.3')
+glMultiTexCoord4s = _link_function('glMultiTexCoord4s', None, [GLenum, GLshort, GLshort, GLshort, GLshort], requires='OpenGL 1.3')
+glMultiTexCoord4sv = _link_function('glMultiTexCoord4sv', None, [GLenum, POINTER(GLshort)], requires='OpenGL 1.3')
 glMultiTexCoordP1ui = _link_function('glMultiTexCoordP1ui', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.3')
 glMultiTexCoordP1uiv = _link_function('glMultiTexCoordP1uiv', None, [GLenum, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
 glMultiTexCoordP2ui = _link_function('glMultiTexCoordP2ui', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.3')
@@ -1910,15 +2515,35 @@ glNamedFramebufferTexture = _link_function('glNamedFramebufferTexture', None, [G
 glNamedFramebufferTextureLayer = _link_function('glNamedFramebufferTextureLayer', None, [GLuint, GLenum, GLuint, GLint, GLint], requires='OpenGL 4.5')
 glNamedRenderbufferStorage = _link_function('glNamedRenderbufferStorage', None, [GLuint, GLenum, GLsizei, GLsizei], requires='OpenGL 4.5')
 glNamedRenderbufferStorageMultisample = _link_function('glNamedRenderbufferStorageMultisample', None, [GLuint, GLsizei, GLenum, GLsizei, GLsizei], requires='OpenGL 4.5')
+glNewList = _link_function('glNewList', None, [GLuint, GLenum], requires='OpenGL 1.0')
+glNormal3b = _link_function('glNormal3b', None, [GLbyte, GLbyte, GLbyte], requires='OpenGL 1.0')
+glNormal3bv = _link_function('glNormal3bv', None, [POINTER(GLbyte)], requires='OpenGL 1.0')
+glNormal3d = _link_function('glNormal3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glNormal3dv = _link_function('glNormal3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glNormal3f = _link_function('glNormal3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glNormal3fv = _link_function('glNormal3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glNormal3i = _link_function('glNormal3i', None, [GLint, GLint, GLint], requires='OpenGL 1.0')
+glNormal3iv = _link_function('glNormal3iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glNormal3s = _link_function('glNormal3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glNormal3sv = _link_function('glNormal3sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
 glNormalP3ui = _link_function('glNormalP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glNormalP3uiv = _link_function('glNormalP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glNormalPointer = _link_function('glNormalPointer', None, [GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
 glObjectLabel = _link_function('glObjectLabel', None, [GLenum, GLuint, GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
 glObjectPtrLabel = _link_function('glObjectPtrLabel', None, [POINTER(GLvoid), GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
+glOrtho = _link_function('glOrtho', None, [GLdouble, GLdouble, GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glPassThrough = _link_function('glPassThrough', None, [GLfloat], requires='OpenGL 1.0')
 glPatchParameterfv = _link_function('glPatchParameterfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 4.0')
 glPatchParameteri = _link_function('glPatchParameteri', None, [GLenum, GLint], requires='OpenGL 4.0')
 glPauseTransformFeedback = _link_function('glPauseTransformFeedback', None, [], requires='OpenGL 4.0')
+glPixelMapfv = _link_function('glPixelMapfv', None, [GLenum, GLsizei, POINTER(GLfloat)], requires='OpenGL 1.0')
+glPixelMapuiv = _link_function('glPixelMapuiv', None, [GLenum, GLsizei, POINTER(GLuint)], requires='OpenGL 1.0')
+glPixelMapusv = _link_function('glPixelMapusv', None, [GLenum, GLsizei, POINTER(GLushort)], requires='OpenGL 1.0')
 glPixelStoref = _link_function('glPixelStoref', None, [GLenum, GLfloat], requires='OpenGL 1.0')
 glPixelStorei = _link_function('glPixelStorei', None, [GLenum, GLint], requires='OpenGL 1.0')
+glPixelTransferf = _link_function('glPixelTransferf', None, [GLenum, GLfloat], requires='OpenGL 1.0')
+glPixelTransferi = _link_function('glPixelTransferi', None, [GLenum, GLint], requires='OpenGL 1.0')
+glPixelZoom = _link_function('glPixelZoom', None, [GLfloat, GLfloat], requires='OpenGL 1.0')
 glPointParameterf = _link_function('glPointParameterf', None, [GLenum, GLfloat], requires='OpenGL 1.4')
 glPointParameterfv = _link_function('glPointParameterfv', None, [GLenum, POINTER(GLfloat)], requires='OpenGL 1.4')
 glPointParameteri = _link_function('glPointParameteri', None, [GLenum, GLint], requires='OpenGL 1.4')
@@ -1927,8 +2552,14 @@ glPointSize = _link_function('glPointSize', None, [GLfloat], requires='OpenGL 1.
 glPolygonMode = _link_function('glPolygonMode', None, [GLenum, GLenum], requires='OpenGL 1.0')
 glPolygonOffset = _link_function('glPolygonOffset', None, [GLfloat, GLfloat], requires='OpenGL 1.1')
 glPolygonOffsetClamp = _link_function('glPolygonOffsetClamp', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 4.6')
+glPolygonStipple = _link_function('glPolygonStipple', None, [POINTER(GLubyte)], requires='OpenGL 1.0')
+glPopAttrib = _link_function('glPopAttrib', None, [], requires='OpenGL 1.0')
+glPopClientAttrib = _link_function('glPopClientAttrib', None, [], requires='OpenGL 1.1')
 glPopDebugGroup = _link_function('glPopDebugGroup', None, [], requires='OpenGL 4.3')
+glPopMatrix = _link_function('glPopMatrix', None, [], requires='OpenGL 1.0')
+glPopName = _link_function('glPopName', None, [], requires='OpenGL 1.0')
 glPrimitiveRestartIndex = _link_function('glPrimitiveRestartIndex', None, [GLuint], requires='OpenGL 3.1')
+glPrioritizeTextures = _link_function('glPrioritizeTextures', None, [GLsizei, POINTER(GLuint), POINTER(GLfloat)], requires='OpenGL 1.1')
 glProgramBinary = _link_function('glProgramBinary', None, [GLuint, GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
 glProgramParameteri = _link_function('glProgramParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 4.1')
 glProgramUniform1d = _link_function('glProgramUniform1d', None, [GLuint, GLint, GLdouble], requires='OpenGL 4.1')
@@ -1982,16 +2613,55 @@ glProgramUniformMatrix4x2fv = _link_function('glProgramUniformMatrix4x2fv', None
 glProgramUniformMatrix4x3dv = _link_function('glProgramUniformMatrix4x3dv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLdouble)], requires='OpenGL 4.1')
 glProgramUniformMatrix4x3fv = _link_function('glProgramUniformMatrix4x3fv', None, [GLuint, GLint, GLsizei, GLboolean, POINTER(GLfloat)], requires='OpenGL 4.1')
 glProvokingVertex = _link_function('glProvokingVertex', None, [GLenum], requires='OpenGL 3.2')
+glPushAttrib = _link_function('glPushAttrib', None, [GLbitfield], requires='OpenGL 1.0')
+glPushClientAttrib = _link_function('glPushClientAttrib', None, [GLbitfield], requires='OpenGL 1.1')
 glPushDebugGroup = _link_function('glPushDebugGroup', None, [GLenum, GLuint, GLsizei, POINTER(GLchar)], requires='OpenGL 4.3')
+glPushMatrix = _link_function('glPushMatrix', None, [], requires='OpenGL 1.0')
+glPushName = _link_function('glPushName', None, [GLuint], requires='OpenGL 1.0')
 glQueryCounter = _link_function('glQueryCounter', None, [GLuint, GLenum], requires='OpenGL 3.3')
+glRasterPos2d = _link_function('glRasterPos2d', None, [GLdouble, GLdouble], requires='OpenGL 1.0')
+glRasterPos2dv = _link_function('glRasterPos2dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glRasterPos2f = _link_function('glRasterPos2f', None, [GLfloat, GLfloat], requires='OpenGL 1.0')
+glRasterPos2fv = _link_function('glRasterPos2fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glRasterPos2i = _link_function('glRasterPos2i', None, [GLint, GLint], requires='OpenGL 1.0')
+glRasterPos2iv = _link_function('glRasterPos2iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glRasterPos2s = _link_function('glRasterPos2s', None, [GLshort, GLshort], requires='OpenGL 1.0')
+glRasterPos2sv = _link_function('glRasterPos2sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glRasterPos3d = _link_function('glRasterPos3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glRasterPos3dv = _link_function('glRasterPos3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glRasterPos3f = _link_function('glRasterPos3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glRasterPos3fv = _link_function('glRasterPos3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glRasterPos3i = _link_function('glRasterPos3i', None, [GLint, GLint, GLint], requires='OpenGL 1.0')
+glRasterPos3iv = _link_function('glRasterPos3iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glRasterPos3s = _link_function('glRasterPos3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glRasterPos3sv = _link_function('glRasterPos3sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glRasterPos4d = _link_function('glRasterPos4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glRasterPos4dv = _link_function('glRasterPos4dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glRasterPos4f = _link_function('glRasterPos4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glRasterPos4fv = _link_function('glRasterPos4fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glRasterPos4i = _link_function('glRasterPos4i', None, [GLint, GLint, GLint, GLint], requires='OpenGL 1.0')
+glRasterPos4iv = _link_function('glRasterPos4iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glRasterPos4s = _link_function('glRasterPos4s', None, [GLshort, GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glRasterPos4sv = _link_function('glRasterPos4sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
 glReadBuffer = _link_function('glReadBuffer', None, [GLenum], requires='OpenGL 1.0')
 glReadPixels = _link_function('glReadPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
 glReadnPixels = _link_function('glReadnPixels', None, [GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 4.5')
+glRectd = _link_function('glRectd', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glRectdv = _link_function('glRectdv', None, [POINTER(GLdouble), POINTER(GLdouble)], requires='OpenGL 1.0')
+glRectf = _link_function('glRectf', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glRectfv = _link_function('glRectfv', None, [POINTER(GLfloat), POINTER(GLfloat)], requires='OpenGL 1.0')
+glRecti = _link_function('glRecti', None, [GLint, GLint, GLint, GLint], requires='OpenGL 1.0')
+glRectiv = _link_function('glRectiv', None, [POINTER(GLint), POINTER(GLint)], requires='OpenGL 1.0')
+glRects = _link_function('glRects', None, [GLshort, GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glRectsv = _link_function('glRectsv', None, [POINTER(GLshort), POINTER(GLshort)], requires='OpenGL 1.0')
 glReleaseShaderCompiler = _link_function('glReleaseShaderCompiler', None, [], requires='OpenGL 4.1')
+glRenderMode = _link_function('glRenderMode', GLint, [GLenum], requires='OpenGL 1.0')
 glRenderbufferStorage = _link_function('glRenderbufferStorage', None, [GLenum, GLenum, GLsizei, GLsizei], requires='OpenGL 3.0')
 glRenderbufferStorageEXT = _link_function('glRenderbufferStorageEXT', None, [GLenum, GLenum, GLsizei, GLsizei], requires='None')
 glRenderbufferStorageMultisample = _link_function('glRenderbufferStorageMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei], requires='OpenGL 3.0')
 glResumeTransformFeedback = _link_function('glResumeTransformFeedback', None, [], requires='OpenGL 4.0')
+glRotated = _link_function('glRotated', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glRotatef = _link_function('glRotatef', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
 glSampleCoverage = _link_function('glSampleCoverage', None, [GLfloat, GLboolean], requires='OpenGL 1.3')
 glSampleCoverageARB = _link_function('glSampleCoverageARB', None, [GLfloat, GLboolean], requires='None')
 glSampleMaski = _link_function('glSampleMaski', None, [GLuint, GLbitfield], requires='OpenGL 3.2')
@@ -2001,12 +2671,33 @@ glSamplerParameterf = _link_function('glSamplerParameterf', None, [GLuint, GLenu
 glSamplerParameterfv = _link_function('glSamplerParameterfv', None, [GLuint, GLenum, POINTER(GLfloat)], requires='OpenGL 3.3')
 glSamplerParameteri = _link_function('glSamplerParameteri', None, [GLuint, GLenum, GLint], requires='OpenGL 3.3')
 glSamplerParameteriv = _link_function('glSamplerParameteriv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.3')
+glScaled = _link_function('glScaled', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glScalef = _link_function('glScalef', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
 glScissor = _link_function('glScissor', None, [GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.0')
 glScissorArrayv = _link_function('glScissorArrayv', None, [GLuint, GLsizei, POINTER(GLint)], requires='OpenGL 4.1')
 glScissorIndexed = _link_function('glScissorIndexed', None, [GLuint, GLint, GLint, GLsizei, GLsizei], requires='OpenGL 4.1')
 glScissorIndexedv = _link_function('glScissorIndexedv', None, [GLuint, POINTER(GLint)], requires='OpenGL 4.1')
+glSecondaryColor3b = _link_function('glSecondaryColor3b', None, [GLbyte, GLbyte, GLbyte], requires='OpenGL 1.4')
+glSecondaryColor3bv = _link_function('glSecondaryColor3bv', None, [POINTER(GLbyte)], requires='OpenGL 1.4')
+glSecondaryColor3d = _link_function('glSecondaryColor3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.4')
+glSecondaryColor3dv = _link_function('glSecondaryColor3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.4')
+glSecondaryColor3f = _link_function('glSecondaryColor3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.4')
+glSecondaryColor3fv = _link_function('glSecondaryColor3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.4')
+glSecondaryColor3i = _link_function('glSecondaryColor3i', None, [GLint, GLint, GLint], requires='OpenGL 1.4')
+glSecondaryColor3iv = _link_function('glSecondaryColor3iv', None, [POINTER(GLint)], requires='OpenGL 1.4')
+glSecondaryColor3s = _link_function('glSecondaryColor3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.4')
+glSecondaryColor3sv = _link_function('glSecondaryColor3sv', None, [POINTER(GLshort)], requires='OpenGL 1.4')
+glSecondaryColor3ub = _link_function('glSecondaryColor3ub', None, [GLubyte, GLubyte, GLubyte], requires='OpenGL 1.4')
+glSecondaryColor3ubv = _link_function('glSecondaryColor3ubv', None, [POINTER(GLubyte)], requires='OpenGL 1.4')
+glSecondaryColor3ui = _link_function('glSecondaryColor3ui', None, [GLuint, GLuint, GLuint], requires='OpenGL 1.4')
+glSecondaryColor3uiv = _link_function('glSecondaryColor3uiv', None, [POINTER(GLuint)], requires='OpenGL 1.4')
+glSecondaryColor3us = _link_function('glSecondaryColor3us', None, [GLushort, GLushort, GLushort], requires='OpenGL 1.4')
+glSecondaryColor3usv = _link_function('glSecondaryColor3usv', None, [POINTER(GLushort)], requires='OpenGL 1.4')
 glSecondaryColorP3ui = _link_function('glSecondaryColorP3ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glSecondaryColorP3uiv = _link_function('glSecondaryColorP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glSecondaryColorPointer = _link_function('glSecondaryColorPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.4')
+glSelectBuffer = _link_function('glSelectBuffer', None, [GLsizei, POINTER(GLuint)], requires='OpenGL 1.0')
+glShadeModel = _link_function('glShadeModel', None, [GLenum], requires='OpenGL 1.0')
 glShaderBinary = _link_function('glShaderBinary', None, [GLsizei, POINTER(GLuint), GLenum, POINTER(GLvoid), GLsizei], requires='OpenGL 4.1')
 glShaderSource = _link_function('glShaderSource', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), POINTER(GLint)], requires='OpenGL 2.0')
 glShaderStorageBlockBinding = _link_function('glShaderStorageBlockBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.3')
@@ -2019,6 +2710,38 @@ glStencilOp = _link_function('glStencilOp', None, [GLenum, GLenum, GLenum], requ
 glStencilOpSeparate = _link_function('glStencilOpSeparate', None, [GLenum, GLenum, GLenum, GLenum], requires='OpenGL 2.0')
 glTexBuffer = _link_function('glTexBuffer', None, [GLenum, GLenum, GLuint], requires='OpenGL 3.1')
 glTexBufferRange = _link_function('glTexBufferRange', None, [GLenum, GLenum, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.3')
+glTexCoord1d = _link_function('glTexCoord1d', None, [GLdouble], requires='OpenGL 1.0')
+glTexCoord1dv = _link_function('glTexCoord1dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glTexCoord1f = _link_function('glTexCoord1f', None, [GLfloat], requires='OpenGL 1.0')
+glTexCoord1fv = _link_function('glTexCoord1fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexCoord1i = _link_function('glTexCoord1i', None, [GLint], requires='OpenGL 1.0')
+glTexCoord1iv = _link_function('glTexCoord1iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glTexCoord1s = _link_function('glTexCoord1s', None, [GLshort], requires='OpenGL 1.0')
+glTexCoord1sv = _link_function('glTexCoord1sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glTexCoord2d = _link_function('glTexCoord2d', None, [GLdouble, GLdouble], requires='OpenGL 1.0')
+glTexCoord2dv = _link_function('glTexCoord2dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glTexCoord2f = _link_function('glTexCoord2f', None, [GLfloat, GLfloat], requires='OpenGL 1.0')
+glTexCoord2fv = _link_function('glTexCoord2fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexCoord2i = _link_function('glTexCoord2i', None, [GLint, GLint], requires='OpenGL 1.0')
+glTexCoord2iv = _link_function('glTexCoord2iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glTexCoord2s = _link_function('glTexCoord2s', None, [GLshort, GLshort], requires='OpenGL 1.0')
+glTexCoord2sv = _link_function('glTexCoord2sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glTexCoord3d = _link_function('glTexCoord3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glTexCoord3dv = _link_function('glTexCoord3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glTexCoord3f = _link_function('glTexCoord3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glTexCoord3fv = _link_function('glTexCoord3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexCoord3i = _link_function('glTexCoord3i', None, [GLint, GLint, GLint], requires='OpenGL 1.0')
+glTexCoord3iv = _link_function('glTexCoord3iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glTexCoord3s = _link_function('glTexCoord3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glTexCoord3sv = _link_function('glTexCoord3sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glTexCoord4d = _link_function('glTexCoord4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glTexCoord4dv = _link_function('glTexCoord4dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glTexCoord4f = _link_function('glTexCoord4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glTexCoord4fv = _link_function('glTexCoord4fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexCoord4i = _link_function('glTexCoord4i', None, [GLint, GLint, GLint, GLint], requires='OpenGL 1.0')
+glTexCoord4iv = _link_function('glTexCoord4iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glTexCoord4s = _link_function('glTexCoord4s', None, [GLshort, GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glTexCoord4sv = _link_function('glTexCoord4sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
 glTexCoordP1ui = _link_function('glTexCoordP1ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glTexCoordP1uiv = _link_function('glTexCoordP1uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
 glTexCoordP2ui = _link_function('glTexCoordP2ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
@@ -2027,6 +2750,17 @@ glTexCoordP3ui = _link_function('glTexCoordP3ui', None, [GLenum, GLuint], requir
 glTexCoordP3uiv = _link_function('glTexCoordP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
 glTexCoordP4ui = _link_function('glTexCoordP4ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glTexCoordP4uiv = _link_function('glTexCoordP4uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glTexCoordPointer = _link_function('glTexCoordPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
+glTexEnvf = _link_function('glTexEnvf', None, [GLenum, GLenum, GLfloat], requires='OpenGL 1.0')
+glTexEnvfv = _link_function('glTexEnvfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexEnvi = _link_function('glTexEnvi', None, [GLenum, GLenum, GLint], requires='OpenGL 1.0')
+glTexEnviv = _link_function('glTexEnviv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
+glTexGend = _link_function('glTexGend', None, [GLenum, GLenum, GLdouble], requires='OpenGL 1.0')
+glTexGendv = _link_function('glTexGendv', None, [GLenum, GLenum, POINTER(GLdouble)], requires='OpenGL 1.0')
+glTexGenf = _link_function('glTexGenf', None, [GLenum, GLenum, GLfloat], requires='OpenGL 1.0')
+glTexGenfv = _link_function('glTexGenfv', None, [GLenum, GLenum, POINTER(GLfloat)], requires='OpenGL 1.0')
+glTexGeni = _link_function('glTexGeni', None, [GLenum, GLenum, GLint], requires='OpenGL 1.0')
+glTexGeniv = _link_function('glTexGeniv', None, [GLenum, GLenum, POINTER(GLint)], requires='OpenGL 1.0')
 glTexImage1D = _link_function('glTexImage1D', None, [GLenum, GLint, GLint, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
 glTexImage2D = _link_function('glTexImage2D', None, [GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, POINTER(GLvoid)], requires='OpenGL 1.0')
 glTexImage2DMultisample = _link_function('glTexImage2DMultisample', None, [GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLboolean], requires='OpenGL 3.2')
@@ -2067,6 +2801,8 @@ glTextureView = _link_function('glTextureView', None, [GLuint, GLenum, GLuint, G
 glTransformFeedbackBufferBase = _link_function('glTransformFeedbackBufferBase', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.5')
 glTransformFeedbackBufferRange = _link_function('glTransformFeedbackBufferRange', None, [GLuint, GLuint, GLuint, GLintptr, GLsizeiptr], requires='OpenGL 4.5')
 glTransformFeedbackVaryings = _link_function('glTransformFeedbackVaryings', None, [GLuint, GLsizei, POINTER(POINTER(GLchar)), GLenum], requires='OpenGL 3.0')
+glTranslated = _link_function('glTranslated', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glTranslatef = _link_function('glTranslatef', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
 glUniform1d = _link_function('glUniform1d', None, [GLint, GLdouble], requires='OpenGL 4.0')
 glUniform1dv = _link_function('glUniform1dv', None, [GLint, GLsizei, POINTER(GLdouble)], requires='OpenGL 4.0')
 glUniform1f = _link_function('glUniform1f', None, [GLint, GLfloat], requires='OpenGL 2.0')
@@ -2125,6 +2861,30 @@ glUseProgram = _link_function('glUseProgram', None, [GLuint], requires='OpenGL 2
 glUseProgramStages = _link_function('glUseProgramStages', None, [GLuint, GLbitfield, GLuint], requires='OpenGL 4.1')
 glValidateProgram = _link_function('glValidateProgram', None, [GLuint], requires='OpenGL 2.0')
 glValidateProgramPipeline = _link_function('glValidateProgramPipeline', None, [GLuint], requires='OpenGL 4.1')
+glVertex2d = _link_function('glVertex2d', None, [GLdouble, GLdouble], requires='OpenGL 1.0')
+glVertex2dv = _link_function('glVertex2dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glVertex2f = _link_function('glVertex2f', None, [GLfloat, GLfloat], requires='OpenGL 1.0')
+glVertex2fv = _link_function('glVertex2fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glVertex2i = _link_function('glVertex2i', None, [GLint, GLint], requires='OpenGL 1.0')
+glVertex2iv = _link_function('glVertex2iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glVertex2s = _link_function('glVertex2s', None, [GLshort, GLshort], requires='OpenGL 1.0')
+glVertex2sv = _link_function('glVertex2sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glVertex3d = _link_function('glVertex3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glVertex3dv = _link_function('glVertex3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glVertex3f = _link_function('glVertex3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glVertex3fv = _link_function('glVertex3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glVertex3i = _link_function('glVertex3i', None, [GLint, GLint, GLint], requires='OpenGL 1.0')
+glVertex3iv = _link_function('glVertex3iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glVertex3s = _link_function('glVertex3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glVertex3sv = _link_function('glVertex3sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
+glVertex4d = _link_function('glVertex4d', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
+glVertex4dv = _link_function('glVertex4dv', None, [POINTER(GLdouble)], requires='OpenGL 1.0')
+glVertex4f = _link_function('glVertex4f', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
+glVertex4fv = _link_function('glVertex4fv', None, [POINTER(GLfloat)], requires='OpenGL 1.0')
+glVertex4i = _link_function('glVertex4i', None, [GLint, GLint, GLint, GLint], requires='OpenGL 1.0')
+glVertex4iv = _link_function('glVertex4iv', None, [POINTER(GLint)], requires='OpenGL 1.0')
+glVertex4s = _link_function('glVertex4s', None, [GLshort, GLshort, GLshort, GLshort], requires='OpenGL 1.0')
+glVertex4sv = _link_function('glVertex4sv', None, [POINTER(GLshort)], requires='OpenGL 1.0')
 glVertexArrayAttribBinding = _link_function('glVertexArrayAttribBinding', None, [GLuint, GLuint, GLuint], requires='OpenGL 4.5')
 glVertexArrayAttribFormat = _link_function('glVertexArrayAttribFormat', None, [GLuint, GLuint, GLint, GLenum, GLboolean, GLuint], requires='OpenGL 4.5')
 glVertexArrayAttribIFormat = _link_function('glVertexArrayAttribIFormat', None, [GLuint, GLuint, GLint, GLenum, GLuint], requires='OpenGL 4.5')
@@ -2220,10 +2980,27 @@ glVertexP3ui = _link_function('glVertexP3ui', None, [GLenum, GLuint], requires='
 glVertexP3uiv = _link_function('glVertexP3uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
 glVertexP4ui = _link_function('glVertexP4ui', None, [GLenum, GLuint], requires='OpenGL 3.3')
 glVertexP4uiv = _link_function('glVertexP4uiv', None, [GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
+glVertexPointer = _link_function('glVertexPointer', None, [GLint, GLenum, GLsizei, POINTER(GLvoid)], requires='OpenGL 1.1')
 glViewport = _link_function('glViewport', None, [GLint, GLint, GLsizei, GLsizei], requires='OpenGL 1.0')
 glViewportArrayv = _link_function('glViewportArrayv', None, [GLuint, GLsizei, POINTER(GLfloat)], requires='OpenGL 4.1')
 glViewportIndexedf = _link_function('glViewportIndexedf', None, [GLuint, GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 4.1')
 glViewportIndexedfv = _link_function('glViewportIndexedfv', None, [GLuint, POINTER(GLfloat)], requires='OpenGL 4.1')
+glWindowPos2d = _link_function('glWindowPos2d', None, [GLdouble, GLdouble], requires='OpenGL 1.4')
+glWindowPos2dv = _link_function('glWindowPos2dv', None, [POINTER(GLdouble)], requires='OpenGL 1.4')
+glWindowPos2f = _link_function('glWindowPos2f', None, [GLfloat, GLfloat], requires='OpenGL 1.4')
+glWindowPos2fv = _link_function('glWindowPos2fv', None, [POINTER(GLfloat)], requires='OpenGL 1.4')
+glWindowPos2i = _link_function('glWindowPos2i', None, [GLint, GLint], requires='OpenGL 1.4')
+glWindowPos2iv = _link_function('glWindowPos2iv', None, [POINTER(GLint)], requires='OpenGL 1.4')
+glWindowPos2s = _link_function('glWindowPos2s', None, [GLshort, GLshort], requires='OpenGL 1.4')
+glWindowPos2sv = _link_function('glWindowPos2sv', None, [POINTER(GLshort)], requires='OpenGL 1.4')
+glWindowPos3d = _link_function('glWindowPos3d', None, [GLdouble, GLdouble, GLdouble], requires='OpenGL 1.4')
+glWindowPos3dv = _link_function('glWindowPos3dv', None, [POINTER(GLdouble)], requires='OpenGL 1.4')
+glWindowPos3f = _link_function('glWindowPos3f', None, [GLfloat, GLfloat, GLfloat], requires='OpenGL 1.4')
+glWindowPos3fv = _link_function('glWindowPos3fv', None, [POINTER(GLfloat)], requires='OpenGL 1.4')
+glWindowPos3i = _link_function('glWindowPos3i', None, [GLint, GLint, GLint], requires='OpenGL 1.4')
+glWindowPos3iv = _link_function('glWindowPos3iv', None, [POINTER(GLint)], requires='OpenGL 1.4')
+glWindowPos3s = _link_function('glWindowPos3s', None, [GLshort, GLshort, GLshort], requires='OpenGL 1.4')
+glWindowPos3sv = _link_function('glWindowPos3sv', None, [POINTER(GLshort)], requires='OpenGL 1.4')
 
 
 __all__ = [
@@ -2260,6 +3037,7 @@ __all__ = [
     'GL_TRIANGLES',
     'GL_TRIANGLE_STRIP',
     'GL_TRIANGLE_FAN',
+    'GL_QUADS',
     'GL_NEVER',
     'GL_LESS',
     'GL_EQUAL',
@@ -2368,6 +3146,8 @@ __all__ = [
     'GL_INT',
     'GL_UNSIGNED_INT',
     'GL_FLOAT',
+    'GL_STACK_OVERFLOW',
+    'GL_STACK_UNDERFLOW',
     'GL_CLEAR',
     'GL_AND',
     'GL_AND_REVERSE',
@@ -2418,6 +3198,257 @@ __all__ = [
     'GL_TEXTURE_WRAP_S',
     'GL_TEXTURE_WRAP_T',
     'GL_REPEAT',
+    'GL_CURRENT_BIT',
+    'GL_POINT_BIT',
+    'GL_LINE_BIT',
+    'GL_POLYGON_BIT',
+    'GL_POLYGON_STIPPLE_BIT',
+    'GL_PIXEL_MODE_BIT',
+    'GL_LIGHTING_BIT',
+    'GL_FOG_BIT',
+    'GL_ACCUM_BUFFER_BIT',
+    'GL_VIEWPORT_BIT',
+    'GL_TRANSFORM_BIT',
+    'GL_ENABLE_BIT',
+    'GL_HINT_BIT',
+    'GL_EVAL_BIT',
+    'GL_LIST_BIT',
+    'GL_TEXTURE_BIT',
+    'GL_SCISSOR_BIT',
+    'GL_ALL_ATTRIB_BITS',
+    'GL_QUAD_STRIP',
+    'GL_POLYGON',
+    'GL_ACCUM',
+    'GL_LOAD',
+    'GL_RETURN',
+    'GL_MULT',
+    'GL_ADD',
+    'GL_AUX0',
+    'GL_AUX1',
+    'GL_AUX2',
+    'GL_AUX3',
+    'GL_2D',
+    'GL_3D',
+    'GL_3D_COLOR',
+    'GL_3D_COLOR_TEXTURE',
+    'GL_4D_COLOR_TEXTURE',
+    'GL_PASS_THROUGH_TOKEN',
+    'GL_POINT_TOKEN',
+    'GL_LINE_TOKEN',
+    'GL_POLYGON_TOKEN',
+    'GL_BITMAP_TOKEN',
+    'GL_DRAW_PIXEL_TOKEN',
+    'GL_COPY_PIXEL_TOKEN',
+    'GL_LINE_RESET_TOKEN',
+    'GL_EXP',
+    'GL_EXP2',
+    'GL_COEFF',
+    'GL_ORDER',
+    'GL_DOMAIN',
+    'GL_PIXEL_MAP_I_TO_I',
+    'GL_PIXEL_MAP_S_TO_S',
+    'GL_PIXEL_MAP_I_TO_R',
+    'GL_PIXEL_MAP_I_TO_G',
+    'GL_PIXEL_MAP_I_TO_B',
+    'GL_PIXEL_MAP_I_TO_A',
+    'GL_PIXEL_MAP_R_TO_R',
+    'GL_PIXEL_MAP_G_TO_G',
+    'GL_PIXEL_MAP_B_TO_B',
+    'GL_PIXEL_MAP_A_TO_A',
+    'GL_CURRENT_COLOR',
+    'GL_CURRENT_INDEX',
+    'GL_CURRENT_NORMAL',
+    'GL_CURRENT_TEXTURE_COORDS',
+    'GL_CURRENT_RASTER_COLOR',
+    'GL_CURRENT_RASTER_INDEX',
+    'GL_CURRENT_RASTER_TEXTURE_COORDS',
+    'GL_CURRENT_RASTER_POSITION',
+    'GL_CURRENT_RASTER_POSITION_VALID',
+    'GL_CURRENT_RASTER_DISTANCE',
+    'GL_POINT_SMOOTH',
+    'GL_LINE_STIPPLE',
+    'GL_LINE_STIPPLE_PATTERN',
+    'GL_LINE_STIPPLE_REPEAT',
+    'GL_LIST_MODE',
+    'GL_MAX_LIST_NESTING',
+    'GL_LIST_BASE',
+    'GL_LIST_INDEX',
+    'GL_POLYGON_STIPPLE',
+    'GL_EDGE_FLAG',
+    'GL_LIGHTING',
+    'GL_LIGHT_MODEL_LOCAL_VIEWER',
+    'GL_LIGHT_MODEL_TWO_SIDE',
+    'GL_LIGHT_MODEL_AMBIENT',
+    'GL_SHADE_MODEL',
+    'GL_COLOR_MATERIAL_FACE',
+    'GL_COLOR_MATERIAL_PARAMETER',
+    'GL_COLOR_MATERIAL',
+    'GL_FOG',
+    'GL_FOG_INDEX',
+    'GL_FOG_DENSITY',
+    'GL_FOG_START',
+    'GL_FOG_END',
+    'GL_FOG_MODE',
+    'GL_FOG_COLOR',
+    'GL_ACCUM_CLEAR_VALUE',
+    'GL_MATRIX_MODE',
+    'GL_NORMALIZE',
+    'GL_MODELVIEW_STACK_DEPTH',
+    'GL_PROJECTION_STACK_DEPTH',
+    'GL_TEXTURE_STACK_DEPTH',
+    'GL_MODELVIEW_MATRIX',
+    'GL_PROJECTION_MATRIX',
+    'GL_TEXTURE_MATRIX',
+    'GL_ATTRIB_STACK_DEPTH',
+    'GL_ALPHA_TEST',
+    'GL_ALPHA_TEST_FUNC',
+    'GL_ALPHA_TEST_REF',
+    'GL_LOGIC_OP',
+    'GL_AUX_BUFFERS',
+    'GL_INDEX_CLEAR_VALUE',
+    'GL_INDEX_WRITEMASK',
+    'GL_INDEX_MODE',
+    'GL_RGBA_MODE',
+    'GL_RENDER_MODE',
+    'GL_PERSPECTIVE_CORRECTION_HINT',
+    'GL_POINT_SMOOTH_HINT',
+    'GL_FOG_HINT',
+    'GL_TEXTURE_GEN_S',
+    'GL_TEXTURE_GEN_T',
+    'GL_TEXTURE_GEN_R',
+    'GL_TEXTURE_GEN_Q',
+    'GL_PIXEL_MAP_I_TO_I_SIZE',
+    'GL_PIXEL_MAP_S_TO_S_SIZE',
+    'GL_PIXEL_MAP_I_TO_R_SIZE',
+    'GL_PIXEL_MAP_I_TO_G_SIZE',
+    'GL_PIXEL_MAP_I_TO_B_SIZE',
+    'GL_PIXEL_MAP_I_TO_A_SIZE',
+    'GL_PIXEL_MAP_R_TO_R_SIZE',
+    'GL_PIXEL_MAP_G_TO_G_SIZE',
+    'GL_PIXEL_MAP_B_TO_B_SIZE',
+    'GL_PIXEL_MAP_A_TO_A_SIZE',
+    'GL_MAP_COLOR',
+    'GL_MAP_STENCIL',
+    'GL_INDEX_SHIFT',
+    'GL_INDEX_OFFSET',
+    'GL_RED_SCALE',
+    'GL_RED_BIAS',
+    'GL_ZOOM_X',
+    'GL_ZOOM_Y',
+    'GL_GREEN_SCALE',
+    'GL_GREEN_BIAS',
+    'GL_BLUE_SCALE',
+    'GL_BLUE_BIAS',
+    'GL_ALPHA_SCALE',
+    'GL_ALPHA_BIAS',
+    'GL_DEPTH_SCALE',
+    'GL_DEPTH_BIAS',
+    'GL_MAX_EVAL_ORDER',
+    'GL_MAX_LIGHTS',
+    'GL_MAX_CLIP_PLANES',
+    'GL_MAX_PIXEL_MAP_TABLE',
+    'GL_MAX_ATTRIB_STACK_DEPTH',
+    'GL_MAX_MODELVIEW_STACK_DEPTH',
+    'GL_MAX_NAME_STACK_DEPTH',
+    'GL_MAX_PROJECTION_STACK_DEPTH',
+    'GL_MAX_TEXTURE_STACK_DEPTH',
+    'GL_INDEX_BITS',
+    'GL_RED_BITS',
+    'GL_GREEN_BITS',
+    'GL_BLUE_BITS',
+    'GL_ALPHA_BITS',
+    'GL_DEPTH_BITS',
+    'GL_STENCIL_BITS',
+    'GL_ACCUM_RED_BITS',
+    'GL_ACCUM_GREEN_BITS',
+    'GL_ACCUM_BLUE_BITS',
+    'GL_ACCUM_ALPHA_BITS',
+    'GL_NAME_STACK_DEPTH',
+    'GL_AUTO_NORMAL',
+    'GL_MAP1_COLOR_4',
+    'GL_MAP1_INDEX',
+    'GL_MAP1_NORMAL',
+    'GL_MAP1_TEXTURE_COORD_1',
+    'GL_MAP1_TEXTURE_COORD_2',
+    'GL_MAP1_TEXTURE_COORD_3',
+    'GL_MAP1_TEXTURE_COORD_4',
+    'GL_MAP1_VERTEX_3',
+    'GL_MAP1_VERTEX_4',
+    'GL_MAP2_COLOR_4',
+    'GL_MAP2_INDEX',
+    'GL_MAP2_NORMAL',
+    'GL_MAP2_TEXTURE_COORD_1',
+    'GL_MAP2_TEXTURE_COORD_2',
+    'GL_MAP2_TEXTURE_COORD_3',
+    'GL_MAP2_TEXTURE_COORD_4',
+    'GL_MAP2_VERTEX_3',
+    'GL_MAP2_VERTEX_4',
+    'GL_MAP1_GRID_DOMAIN',
+    'GL_MAP1_GRID_SEGMENTS',
+    'GL_MAP2_GRID_DOMAIN',
+    'GL_MAP2_GRID_SEGMENTS',
+    'GL_TEXTURE_COMPONENTS',
+    'GL_TEXTURE_BORDER',
+    'GL_AMBIENT',
+    'GL_DIFFUSE',
+    'GL_SPECULAR',
+    'GL_POSITION',
+    'GL_SPOT_DIRECTION',
+    'GL_SPOT_EXPONENT',
+    'GL_SPOT_CUTOFF',
+    'GL_CONSTANT_ATTENUATION',
+    'GL_LINEAR_ATTENUATION',
+    'GL_QUADRATIC_ATTENUATION',
+    'GL_COMPILE',
+    'GL_COMPILE_AND_EXECUTE',
+    'GL_2_BYTES',
+    'GL_3_BYTES',
+    'GL_4_BYTES',
+    'GL_EMISSION',
+    'GL_SHININESS',
+    'GL_AMBIENT_AND_DIFFUSE',
+    'GL_COLOR_INDEXES',
+    'GL_MODELVIEW',
+    'GL_PROJECTION',
+    'GL_COLOR_INDEX',
+    'GL_LUMINANCE',
+    'GL_LUMINANCE_ALPHA',
+    'GL_BITMAP',
+    'GL_RENDER',
+    'GL_FEEDBACK',
+    'GL_SELECT',
+    'GL_FLAT',
+    'GL_SMOOTH',
+    'GL_S',
+    'GL_T',
+    'GL_R',
+    'GL_Q',
+    'GL_MODULATE',
+    'GL_DECAL',
+    'GL_TEXTURE_ENV_MODE',
+    'GL_TEXTURE_ENV_COLOR',
+    'GL_TEXTURE_ENV',
+    'GL_EYE_LINEAR',
+    'GL_OBJECT_LINEAR',
+    'GL_SPHERE_MAP',
+    'GL_TEXTURE_GEN_MODE',
+    'GL_OBJECT_PLANE',
+    'GL_EYE_PLANE',
+    'GL_CLAMP',
+    'GL_CLIP_PLANE0',
+    'GL_CLIP_PLANE1',
+    'GL_CLIP_PLANE2',
+    'GL_CLIP_PLANE3',
+    'GL_CLIP_PLANE4',
+    'GL_CLIP_PLANE5',
+    'GL_LIGHT0',
+    'GL_LIGHT1',
+    'GL_LIGHT2',
+    'GL_LIGHT3',
+    'GL_LIGHT4',
+    'GL_LIGHT5',
+    'GL_LIGHT6',
+    'GL_LIGHT7',
     'GL_COLOR_LOGIC_OP',
     'GL_POLYGON_OFFSET_UNITS',
     'GL_POLYGON_OFFSET_POINT',
@@ -2448,6 +3479,80 @@ __all__ = [
     'GL_RGB10_A2',
     'GL_RGBA12',
     'GL_RGBA16',
+    'GL_CLIENT_PIXEL_STORE_BIT',
+    'GL_CLIENT_VERTEX_ARRAY_BIT',
+    'GL_CLIENT_ALL_ATTRIB_BITS',
+    'GL_VERTEX_ARRAY_POINTER',
+    'GL_NORMAL_ARRAY_POINTER',
+    'GL_COLOR_ARRAY_POINTER',
+    'GL_INDEX_ARRAY_POINTER',
+    'GL_TEXTURE_COORD_ARRAY_POINTER',
+    'GL_EDGE_FLAG_ARRAY_POINTER',
+    'GL_FEEDBACK_BUFFER_POINTER',
+    'GL_SELECTION_BUFFER_POINTER',
+    'GL_CLIENT_ATTRIB_STACK_DEPTH',
+    'GL_INDEX_LOGIC_OP',
+    'GL_MAX_CLIENT_ATTRIB_STACK_DEPTH',
+    'GL_FEEDBACK_BUFFER_SIZE',
+    'GL_FEEDBACK_BUFFER_TYPE',
+    'GL_SELECTION_BUFFER_SIZE',
+    'GL_VERTEX_ARRAY',
+    'GL_NORMAL_ARRAY',
+    'GL_COLOR_ARRAY',
+    'GL_INDEX_ARRAY',
+    'GL_TEXTURE_COORD_ARRAY',
+    'GL_EDGE_FLAG_ARRAY',
+    'GL_VERTEX_ARRAY_SIZE',
+    'GL_VERTEX_ARRAY_TYPE',
+    'GL_VERTEX_ARRAY_STRIDE',
+    'GL_NORMAL_ARRAY_TYPE',
+    'GL_NORMAL_ARRAY_STRIDE',
+    'GL_COLOR_ARRAY_SIZE',
+    'GL_COLOR_ARRAY_TYPE',
+    'GL_COLOR_ARRAY_STRIDE',
+    'GL_INDEX_ARRAY_TYPE',
+    'GL_INDEX_ARRAY_STRIDE',
+    'GL_TEXTURE_COORD_ARRAY_SIZE',
+    'GL_TEXTURE_COORD_ARRAY_TYPE',
+    'GL_TEXTURE_COORD_ARRAY_STRIDE',
+    'GL_EDGE_FLAG_ARRAY_STRIDE',
+    'GL_TEXTURE_LUMINANCE_SIZE',
+    'GL_TEXTURE_INTENSITY_SIZE',
+    'GL_TEXTURE_PRIORITY',
+    'GL_TEXTURE_RESIDENT',
+    'GL_ALPHA4',
+    'GL_ALPHA8',
+    'GL_ALPHA12',
+    'GL_ALPHA16',
+    'GL_LUMINANCE4',
+    'GL_LUMINANCE8',
+    'GL_LUMINANCE12',
+    'GL_LUMINANCE16',
+    'GL_LUMINANCE4_ALPHA4',
+    'GL_LUMINANCE6_ALPHA2',
+    'GL_LUMINANCE8_ALPHA8',
+    'GL_LUMINANCE12_ALPHA4',
+    'GL_LUMINANCE12_ALPHA12',
+    'GL_LUMINANCE16_ALPHA16',
+    'GL_INTENSITY',
+    'GL_INTENSITY4',
+    'GL_INTENSITY8',
+    'GL_INTENSITY12',
+    'GL_INTENSITY16',
+    'GL_V2F',
+    'GL_V3F',
+    'GL_C4UB_V2F',
+    'GL_C4UB_V3F',
+    'GL_C3F_V3F',
+    'GL_N3F_V3F',
+    'GL_C4F_N3F_V3F',
+    'GL_T2F_V3F',
+    'GL_T4F_V4F',
+    'GL_T2F_C4UB_V3F',
+    'GL_T2F_C3F_V3F',
+    'GL_T2F_N3F_V3F',
+    'GL_T2F_C4F_N3F_V3F',
+    'GL_T4F_C4F_N3F_V4F',
     'GL_UNSIGNED_BYTE_3_3_2',
     'GL_UNSIGNED_SHORT_4_4_4_4',
     'GL_UNSIGNED_SHORT_5_5_5_1',
@@ -2484,6 +3589,11 @@ __all__ = [
     'GL_SMOOTH_LINE_WIDTH_RANGE',
     'GL_SMOOTH_LINE_WIDTH_GRANULARITY',
     'GL_ALIASED_LINE_WIDTH_RANGE',
+    'GL_RESCALE_NORMAL',
+    'GL_LIGHT_MODEL_COLOR_CONTROL',
+    'GL_SINGLE_COLOR',
+    'GL_SEPARATE_SPECULAR_COLOR',
+    'GL_ALIASED_POINT_SIZE_RANGE',
     'GL_TEXTURE0',
     'GL_TEXTURE1',
     'GL_TEXTURE2',
@@ -2543,6 +3653,43 @@ __all__ = [
     'GL_NUM_COMPRESSED_TEXTURE_FORMATS',
     'GL_COMPRESSED_TEXTURE_FORMATS',
     'GL_CLAMP_TO_BORDER',
+    'GL_CLIENT_ACTIVE_TEXTURE',
+    'GL_MAX_TEXTURE_UNITS',
+    'GL_TRANSPOSE_MODELVIEW_MATRIX',
+    'GL_TRANSPOSE_PROJECTION_MATRIX',
+    'GL_TRANSPOSE_TEXTURE_MATRIX',
+    'GL_TRANSPOSE_COLOR_MATRIX',
+    'GL_MULTISAMPLE_BIT',
+    'GL_NORMAL_MAP',
+    'GL_REFLECTION_MAP',
+    'GL_COMPRESSED_ALPHA',
+    'GL_COMPRESSED_LUMINANCE',
+    'GL_COMPRESSED_LUMINANCE_ALPHA',
+    'GL_COMPRESSED_INTENSITY',
+    'GL_COMBINE',
+    'GL_COMBINE_RGB',
+    'GL_COMBINE_ALPHA',
+    'GL_SOURCE0_RGB',
+    'GL_SOURCE1_RGB',
+    'GL_SOURCE2_RGB',
+    'GL_SOURCE0_ALPHA',
+    'GL_SOURCE1_ALPHA',
+    'GL_SOURCE2_ALPHA',
+    'GL_OPERAND0_RGB',
+    'GL_OPERAND1_RGB',
+    'GL_OPERAND2_RGB',
+    'GL_OPERAND0_ALPHA',
+    'GL_OPERAND1_ALPHA',
+    'GL_OPERAND2_ALPHA',
+    'GL_RGB_SCALE',
+    'GL_ADD_SIGNED',
+    'GL_INTERPOLATE',
+    'GL_SUBTRACT',
+    'GL_CONSTANT',
+    'GL_PRIMARY_COLOR',
+    'GL_PREVIOUS',
+    'GL_DOT3_RGB',
+    'GL_DOT3_RGBA',
     'GL_BLEND_DST_RGB',
     'GL_BLEND_SRC_RGB',
     'GL_BLEND_DST_ALPHA',
@@ -2559,6 +3706,29 @@ __all__ = [
     'GL_TEXTURE_DEPTH_SIZE',
     'GL_TEXTURE_COMPARE_MODE',
     'GL_TEXTURE_COMPARE_FUNC',
+    'GL_POINT_SIZE_MIN',
+    'GL_POINT_SIZE_MAX',
+    'GL_POINT_DISTANCE_ATTENUATION',
+    'GL_GENERATE_MIPMAP',
+    'GL_GENERATE_MIPMAP_HINT',
+    'GL_FOG_COORDINATE_SOURCE',
+    'GL_FOG_COORDINATE',
+    'GL_FRAGMENT_DEPTH',
+    'GL_CURRENT_FOG_COORDINATE',
+    'GL_FOG_COORDINATE_ARRAY_TYPE',
+    'GL_FOG_COORDINATE_ARRAY_STRIDE',
+    'GL_FOG_COORDINATE_ARRAY_POINTER',
+    'GL_FOG_COORDINATE_ARRAY',
+    'GL_COLOR_SUM',
+    'GL_CURRENT_SECONDARY_COLOR',
+    'GL_SECONDARY_COLOR_ARRAY_SIZE',
+    'GL_SECONDARY_COLOR_ARRAY_TYPE',
+    'GL_SECONDARY_COLOR_ARRAY_STRIDE',
+    'GL_SECONDARY_COLOR_ARRAY_POINTER',
+    'GL_SECONDARY_COLOR_ARRAY',
+    'GL_TEXTURE_FILTER_CONTROL',
+    'GL_DEPTH_TEXTURE_MODE',
+    'GL_COMPARE_R_TO_TEXTURE',
     'GL_BLEND_COLOR',
     'GL_BLEND_EQUATION',
     'GL_CONSTANT_COLOR',
@@ -2598,6 +3768,28 @@ __all__ = [
     'GL_DYNAMIC_COPY',
     'GL_SAMPLES_PASSED',
     'GL_SRC1_ALPHA',
+    'GL_VERTEX_ARRAY_BUFFER_BINDING',
+    'GL_NORMAL_ARRAY_BUFFER_BINDING',
+    'GL_COLOR_ARRAY_BUFFER_BINDING',
+    'GL_INDEX_ARRAY_BUFFER_BINDING',
+    'GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING',
+    'GL_EDGE_FLAG_ARRAY_BUFFER_BINDING',
+    'GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING',
+    'GL_FOG_COORDINATE_ARRAY_BUFFER_BINDING',
+    'GL_WEIGHT_ARRAY_BUFFER_BINDING',
+    'GL_FOG_COORD_SRC',
+    'GL_FOG_COORD',
+    'GL_CURRENT_FOG_COORD',
+    'GL_FOG_COORD_ARRAY_TYPE',
+    'GL_FOG_COORD_ARRAY_STRIDE',
+    'GL_FOG_COORD_ARRAY_POINTER',
+    'GL_FOG_COORD_ARRAY',
+    'GL_FOG_COORD_ARRAY_BUFFER_BINDING',
+    'GL_SRC0_RGB',
+    'GL_SRC1_RGB',
+    'GL_SRC2_RGB',
+    'GL_SRC0_ALPHA',
+    'GL_SRC2_ALPHA',
     'GL_BLEND_EQUATION_RGB',
     'GL_VERTEX_ATTRIB_ARRAY_ENABLED',
     'GL_VERTEX_ATTRIB_ARRAY_SIZE',
@@ -2678,6 +3870,10 @@ __all__ = [
     'GL_STENCIL_BACK_REF',
     'GL_STENCIL_BACK_VALUE_MASK',
     'GL_STENCIL_BACK_WRITEMASK',
+    'GL_VERTEX_PROGRAM_TWO_SIDE',
+    'GL_POINT_SPRITE',
+    'GL_COORD_REPLACE',
+    'GL_MAX_TEXTURE_COORDS',
     'GL_PIXEL_PACK_BUFFER',
     'GL_PIXEL_UNPACK_BUFFER',
     'GL_PIXEL_PACK_BUFFER_BINDING',
@@ -2694,6 +3890,13 @@ __all__ = [
     'GL_SRGB8_ALPHA8',
     'GL_COMPRESSED_SRGB',
     'GL_COMPRESSED_SRGB_ALPHA',
+    'GL_CURRENT_RASTER_SECONDARY_COLOR',
+    'GL_SLUMINANCE_ALPHA',
+    'GL_SLUMINANCE8_ALPHA8',
+    'GL_SLUMINANCE',
+    'GL_SLUMINANCE8',
+    'GL_COMPRESSED_SLUMINANCE',
+    'GL_COMPRESSED_SLUMINANCE_ALPHA',
     'GL_COMPARE_REF_TO_TEXTURE',
     'GL_CLIP_DISTANCE0',
     'GL_CLIP_DISTANCE1',
@@ -2890,6 +4093,9 @@ __all__ = [
     'GL_RENDERBUFFER_STENCIL_SIZE',
     'GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE',
     'GL_MAX_SAMPLES',
+    'GL_INDEX',
+    'GL_TEXTURE_LUMINANCE_TYPE',
+    'GL_TEXTURE_INTENSITY_TYPE',
     'GL_FRAMEBUFFER_SRGB',
     'GL_HALF_FLOAT',
     'GL_MAP_READ_BIT',
@@ -2925,6 +4131,9 @@ __all__ = [
     'GL_RG32I',
     'GL_RG32UI',
     'GL_VERTEX_ARRAY_BINDING',
+    'GL_CLAMP_VERTEX_COLOR',
+    'GL_CLAMP_FRAGMENT_COLOR',
+    'GL_ALPHA_INTEGER',
     'GL_SAMPLER_2D_RECT',
     'GL_SAMPLER_2D_RECT_SHADOW',
     'GL_SAMPLER_BUFFER',
@@ -3116,7 +4325,6 @@ __all__ = [
     'GL_TESS_GEN_VERTEX_ORDER',
     'GL_TESS_GEN_POINT_MODE',
     'GL_ISOLINES',
-    'GL_QUADS',
     'GL_FRACTIONAL_ODD',
     'GL_FRACTIONAL_EVEN',
     'GL_MAX_PATCH_VERTICES',
@@ -3355,7 +4563,6 @@ __all__ = [
     'GL_BUFFER',
     'GL_SHADER',
     'GL_PROGRAM',
-    'GL_VERTEX_ARRAY',
     'GL_QUERY',
     'GL_PROGRAM_PIPELINE',
     'GL_SAMPLER',
@@ -3551,8 +4758,6 @@ __all__ = [
     'GL_MAX_VERTEX_ATTRIB_BINDINGS',
     'GL_VERTEX_BINDING_BUFFER',
     'GL_DISPLAY_LIST',
-    'GL_STACK_UNDERFLOW',
-    'GL_STACK_OVERFLOW',
     'GL_MAX_VERTEX_ATTRIB_STRIDE',
     'GL_PRIMITIVE_RESTART_FOR_PATCHES_SUPPORTED',
     'GL_TEXTURE_BUFFER_BINDING',
@@ -3692,9 +4897,14 @@ __all__ = [
     'GL_RENDERBUFFER_ALPHA_SIZE_EXT',
     'GL_RENDERBUFFER_DEPTH_SIZE_EXT',
     'GL_RENDERBUFFER_STENCIL_SIZE_EXT',
+    'glAccum',
     'glActiveShaderProgram',
     'glActiveTexture',
+    'glAlphaFunc',
+    'glAreTexturesResident',
+    'glArrayElement',
     'glAttachShader',
+    'glBegin',
     'glBeginConditionalRender',
     'glBeginQuery',
     'glBeginQueryIndexed',
@@ -3723,6 +4933,7 @@ __all__ = [
     'glBindVertexArray',
     'glBindVertexBuffer',
     'glBindVertexBuffers',
+    'glBitmap',
     'glBlendColor',
     'glBlendEquation',
     'glBlendEquationSeparate',
@@ -3737,11 +4948,14 @@ __all__ = [
     'glBufferData',
     'glBufferStorage',
     'glBufferSubData',
+    'glCallList',
+    'glCallLists',
     'glCheckFramebufferStatus',
     'glCheckFramebufferStatusEXT',
     'glCheckNamedFramebufferStatus',
     'glClampColor',
     'glClear',
+    'glClearAccum',
     'glClearBufferData',
     'glClearBufferSubData',
     'glClearBufferfi',
@@ -3751,6 +4965,7 @@ __all__ = [
     'glClearColor',
     'glClearDepth',
     'glClearDepthf',
+    'glClearIndex',
     'glClearNamedBufferData',
     'glClearNamedBufferSubData',
     'glClearNamedFramebufferfi',
@@ -3760,13 +4975,49 @@ __all__ = [
     'glClearStencil',
     'glClearTexImage',
     'glClearTexSubImage',
+    'glClientActiveTexture',
     'glClipControl',
+    'glClipPlane',
+    'glColor3b',
+    'glColor3bv',
+    'glColor3d',
+    'glColor3dv',
+    'glColor3f',
+    'glColor3fv',
+    'glColor3i',
+    'glColor3iv',
+    'glColor3s',
+    'glColor3sv',
+    'glColor3ub',
+    'glColor3ubv',
+    'glColor3ui',
+    'glColor3uiv',
+    'glColor3us',
+    'glColor3usv',
+    'glColor4b',
+    'glColor4bv',
+    'glColor4d',
+    'glColor4dv',
+    'glColor4f',
+    'glColor4fv',
+    'glColor4i',
+    'glColor4iv',
+    'glColor4s',
+    'glColor4sv',
+    'glColor4ub',
+    'glColor4ubv',
+    'glColor4ui',
+    'glColor4uiv',
+    'glColor4us',
+    'glColor4usv',
     'glColorMask',
     'glColorMaski',
+    'glColorMaterial',
     'glColorP3ui',
     'glColorP3uiv',
     'glColorP4ui',
     'glColorP4uiv',
+    'glColorPointer',
     'glCompileShader',
     'glCompressedTexImage1D',
     'glCompressedTexImage2D',
@@ -3780,6 +5031,7 @@ __all__ = [
     'glCopyBufferSubData',
     'glCopyImageSubData',
     'glCopyNamedBufferSubData',
+    'glCopyPixels',
     'glCopyTexImage1D',
     'glCopyTexImage2D',
     'glCopyTexSubImage1D',
@@ -3806,6 +5058,7 @@ __all__ = [
     'glDeleteBuffers',
     'glDeleteFramebuffers',
     'glDeleteFramebuffersEXT',
+    'glDeleteLists',
     'glDeleteProgram',
     'glDeleteProgramPipelines',
     'glDeleteQueries',
@@ -3824,6 +5077,7 @@ __all__ = [
     'glDepthRangef',
     'glDetachShader',
     'glDisable',
+    'glDisableClientState',
     'glDisableVertexArrayAttrib',
     'glDisableVertexAttribArray',
     'glDisablei',
@@ -3842,24 +5096,53 @@ __all__ = [
     'glDrawElementsInstancedBaseInstance',
     'glDrawElementsInstancedBaseVertex',
     'glDrawElementsInstancedBaseVertexBaseInstance',
+    'glDrawPixels',
     'glDrawRangeElements',
     'glDrawRangeElementsBaseVertex',
     'glDrawTransformFeedback',
     'glDrawTransformFeedbackInstanced',
     'glDrawTransformFeedbackStream',
     'glDrawTransformFeedbackStreamInstanced',
+    'glEdgeFlag',
+    'glEdgeFlagPointer',
+    'glEdgeFlagv',
     'glEnable',
+    'glEnableClientState',
     'glEnableVertexArrayAttrib',
     'glEnableVertexAttribArray',
     'glEnablei',
+    'glEnd',
     'glEndConditionalRender',
+    'glEndList',
     'glEndQuery',
     'glEndQueryIndexed',
     'glEndTransformFeedback',
+    'glEvalCoord1d',
+    'glEvalCoord1dv',
+    'glEvalCoord1f',
+    'glEvalCoord1fv',
+    'glEvalCoord2d',
+    'glEvalCoord2dv',
+    'glEvalCoord2f',
+    'glEvalCoord2fv',
+    'glEvalMesh1',
+    'glEvalMesh2',
+    'glEvalPoint1',
+    'glEvalPoint2',
+    'glFeedbackBuffer',
     'glFinish',
     'glFlush',
     'glFlushMappedBufferRange',
     'glFlushMappedNamedBufferRange',
+    'glFogCoordPointer',
+    'glFogCoordd',
+    'glFogCoorddv',
+    'glFogCoordf',
+    'glFogCoordfv',
+    'glFogf',
+    'glFogfv',
+    'glFogi',
+    'glFogiv',
     'glFramebufferParameteri',
     'glFramebufferRenderbuffer',
     'glFramebufferRenderbufferEXT',
@@ -3872,9 +5155,11 @@ __all__ = [
     'glFramebufferTexture3DEXT',
     'glFramebufferTextureLayer',
     'glFrontFace',
+    'glFrustum',
     'glGenBuffers',
     'glGenFramebuffers',
     'glGenFramebuffersEXT',
+    'glGenLists',
     'glGenProgramPipelines',
     'glGenQueries',
     'glGenRenderbuffers',
@@ -3904,6 +5189,7 @@ __all__ = [
     'glGetBufferParameteriv',
     'glGetBufferPointerv',
     'glGetBufferSubData',
+    'glGetClipPlane',
     'glGetCompressedTexImage',
     'glGetCompressedTextureImage',
     'glGetCompressedTextureSubImage',
@@ -3925,6 +5211,13 @@ __all__ = [
     'glGetIntegerv',
     'glGetInternalformati64v',
     'glGetInternalformativ',
+    'glGetLightfv',
+    'glGetLightiv',
+    'glGetMapdv',
+    'glGetMapfv',
+    'glGetMapiv',
+    'glGetMaterialfv',
+    'glGetMaterialiv',
     'glGetMultisamplefv',
     'glGetNamedBufferParameteri64v',
     'glGetNamedBufferParameteriv',
@@ -3935,7 +5228,11 @@ __all__ = [
     'glGetNamedRenderbufferParameteriv',
     'glGetObjectLabel',
     'glGetObjectPtrLabel',
+    'glGetPixelMapfv',
+    'glGetPixelMapuiv',
+    'glGetPixelMapusv',
     'glGetPointerv',
+    'glGetPolygonStipple',
     'glGetProgramBinary',
     'glGetProgramInfoLog',
     'glGetProgramInterfaceiv',
@@ -3972,6 +5269,11 @@ __all__ = [
     'glGetStringi',
     'glGetSubroutineIndex',
     'glGetSubroutineUniformLocation',
+    'glGetTexEnvfv',
+    'glGetTexEnviv',
+    'glGetTexGendv',
+    'glGetTexGenfv',
+    'glGetTexGeniv',
     'glGetTexImage',
     'glGetTexLevelParameterfv',
     'glGetTexLevelParameteriv',
@@ -4028,6 +5330,20 @@ __all__ = [
     'glGetnUniformiv',
     'glGetnUniformuiv',
     'glHint',
+    'glIndexMask',
+    'glIndexPointer',
+    'glIndexd',
+    'glIndexdv',
+    'glIndexf',
+    'glIndexfv',
+    'glIndexi',
+    'glIndexiv',
+    'glIndexs',
+    'glIndexsv',
+    'glIndexub',
+    'glIndexubv',
+    'glInitNames',
+    'glInterleavedArrays',
     'glInvalidateBufferData',
     'glInvalidateBufferSubData',
     'glInvalidateFramebuffer',
@@ -4041,6 +5357,7 @@ __all__ = [
     'glIsEnabledi',
     'glIsFramebuffer',
     'glIsFramebufferEXT',
+    'glIsList',
     'glIsProgram',
     'glIsProgramPipeline',
     'glIsQuery',
@@ -4051,16 +5368,49 @@ __all__ = [
     'glIsTexture',
     'glIsTransformFeedback',
     'glIsVertexArray',
+    'glLightModelf',
+    'glLightModelfv',
+    'glLightModeli',
+    'glLightModeliv',
+    'glLightf',
+    'glLightfv',
+    'glLighti',
+    'glLightiv',
+    'glLineStipple',
     'glLineWidth',
     'glLinkProgram',
+    'glListBase',
+    'glLoadIdentity',
+    'glLoadMatrixd',
+    'glLoadMatrixf',
+    'glLoadName',
+    'glLoadTransposeMatrixd',
+    'glLoadTransposeMatrixf',
     'glLogicOp',
+    'glMap1d',
+    'glMap1f',
+    'glMap2d',
+    'glMap2f',
     'glMapBuffer',
     'glMapBufferRange',
+    'glMapGrid1d',
+    'glMapGrid1f',
+    'glMapGrid2d',
+    'glMapGrid2f',
     'glMapNamedBuffer',
     'glMapNamedBufferRange',
+    'glMaterialf',
+    'glMaterialfv',
+    'glMateriali',
+    'glMaterialiv',
+    'glMatrixMode',
     'glMemoryBarrier',
     'glMemoryBarrierByRegion',
     'glMinSampleShading',
+    'glMultMatrixd',
+    'glMultMatrixf',
+    'glMultTransposeMatrixd',
+    'glMultTransposeMatrixf',
     'glMultiDrawArrays',
     'glMultiDrawArraysIndirect',
     'glMultiDrawArraysIndirectCount',
@@ -4068,6 +5418,38 @@ __all__ = [
     'glMultiDrawElementsBaseVertex',
     'glMultiDrawElementsIndirect',
     'glMultiDrawElementsIndirectCount',
+    'glMultiTexCoord1d',
+    'glMultiTexCoord1dv',
+    'glMultiTexCoord1f',
+    'glMultiTexCoord1fv',
+    'glMultiTexCoord1i',
+    'glMultiTexCoord1iv',
+    'glMultiTexCoord1s',
+    'glMultiTexCoord1sv',
+    'glMultiTexCoord2d',
+    'glMultiTexCoord2dv',
+    'glMultiTexCoord2f',
+    'glMultiTexCoord2fv',
+    'glMultiTexCoord2i',
+    'glMultiTexCoord2iv',
+    'glMultiTexCoord2s',
+    'glMultiTexCoord2sv',
+    'glMultiTexCoord3d',
+    'glMultiTexCoord3dv',
+    'glMultiTexCoord3f',
+    'glMultiTexCoord3fv',
+    'glMultiTexCoord3i',
+    'glMultiTexCoord3iv',
+    'glMultiTexCoord3s',
+    'glMultiTexCoord3sv',
+    'glMultiTexCoord4d',
+    'glMultiTexCoord4dv',
+    'glMultiTexCoord4f',
+    'glMultiTexCoord4fv',
+    'glMultiTexCoord4i',
+    'glMultiTexCoord4iv',
+    'glMultiTexCoord4s',
+    'glMultiTexCoord4sv',
     'glMultiTexCoordP1ui',
     'glMultiTexCoordP1uiv',
     'glMultiTexCoordP2ui',
@@ -4088,15 +5470,35 @@ __all__ = [
     'glNamedFramebufferTextureLayer',
     'glNamedRenderbufferStorage',
     'glNamedRenderbufferStorageMultisample',
+    'glNewList',
+    'glNormal3b',
+    'glNormal3bv',
+    'glNormal3d',
+    'glNormal3dv',
+    'glNormal3f',
+    'glNormal3fv',
+    'glNormal3i',
+    'glNormal3iv',
+    'glNormal3s',
+    'glNormal3sv',
     'glNormalP3ui',
     'glNormalP3uiv',
+    'glNormalPointer',
     'glObjectLabel',
     'glObjectPtrLabel',
+    'glOrtho',
+    'glPassThrough',
     'glPatchParameterfv',
     'glPatchParameteri',
     'glPauseTransformFeedback',
+    'glPixelMapfv',
+    'glPixelMapuiv',
+    'glPixelMapusv',
     'glPixelStoref',
     'glPixelStorei',
+    'glPixelTransferf',
+    'glPixelTransferi',
+    'glPixelZoom',
     'glPointParameterf',
     'glPointParameterfv',
     'glPointParameteri',
@@ -4105,8 +5507,14 @@ __all__ = [
     'glPolygonMode',
     'glPolygonOffset',
     'glPolygonOffsetClamp',
+    'glPolygonStipple',
+    'glPopAttrib',
+    'glPopClientAttrib',
     'glPopDebugGroup',
+    'glPopMatrix',
+    'glPopName',
     'glPrimitiveRestartIndex',
+    'glPrioritizeTextures',
     'glProgramBinary',
     'glProgramParameteri',
     'glProgramUniform1d',
@@ -4160,16 +5568,55 @@ __all__ = [
     'glProgramUniformMatrix4x3dv',
     'glProgramUniformMatrix4x3fv',
     'glProvokingVertex',
+    'glPushAttrib',
+    'glPushClientAttrib',
     'glPushDebugGroup',
+    'glPushMatrix',
+    'glPushName',
     'glQueryCounter',
+    'glRasterPos2d',
+    'glRasterPos2dv',
+    'glRasterPos2f',
+    'glRasterPos2fv',
+    'glRasterPos2i',
+    'glRasterPos2iv',
+    'glRasterPos2s',
+    'glRasterPos2sv',
+    'glRasterPos3d',
+    'glRasterPos3dv',
+    'glRasterPos3f',
+    'glRasterPos3fv',
+    'glRasterPos3i',
+    'glRasterPos3iv',
+    'glRasterPos3s',
+    'glRasterPos3sv',
+    'glRasterPos4d',
+    'glRasterPos4dv',
+    'glRasterPos4f',
+    'glRasterPos4fv',
+    'glRasterPos4i',
+    'glRasterPos4iv',
+    'glRasterPos4s',
+    'glRasterPos4sv',
     'glReadBuffer',
     'glReadPixels',
     'glReadnPixels',
+    'glRectd',
+    'glRectdv',
+    'glRectf',
+    'glRectfv',
+    'glRecti',
+    'glRectiv',
+    'glRects',
+    'glRectsv',
     'glReleaseShaderCompiler',
+    'glRenderMode',
     'glRenderbufferStorage',
     'glRenderbufferStorageEXT',
     'glRenderbufferStorageMultisample',
     'glResumeTransformFeedback',
+    'glRotated',
+    'glRotatef',
     'glSampleCoverage',
     'glSampleCoverageARB',
     'glSampleMaski',
@@ -4179,12 +5626,33 @@ __all__ = [
     'glSamplerParameterfv',
     'glSamplerParameteri',
     'glSamplerParameteriv',
+    'glScaled',
+    'glScalef',
     'glScissor',
     'glScissorArrayv',
     'glScissorIndexed',
     'glScissorIndexedv',
+    'glSecondaryColor3b',
+    'glSecondaryColor3bv',
+    'glSecondaryColor3d',
+    'glSecondaryColor3dv',
+    'glSecondaryColor3f',
+    'glSecondaryColor3fv',
+    'glSecondaryColor3i',
+    'glSecondaryColor3iv',
+    'glSecondaryColor3s',
+    'glSecondaryColor3sv',
+    'glSecondaryColor3ub',
+    'glSecondaryColor3ubv',
+    'glSecondaryColor3ui',
+    'glSecondaryColor3uiv',
+    'glSecondaryColor3us',
+    'glSecondaryColor3usv',
     'glSecondaryColorP3ui',
     'glSecondaryColorP3uiv',
+    'glSecondaryColorPointer',
+    'glSelectBuffer',
+    'glShadeModel',
     'glShaderBinary',
     'glShaderSource',
     'glShaderStorageBlockBinding',
@@ -4197,6 +5665,38 @@ __all__ = [
     'glStencilOpSeparate',
     'glTexBuffer',
     'glTexBufferRange',
+    'glTexCoord1d',
+    'glTexCoord1dv',
+    'glTexCoord1f',
+    'glTexCoord1fv',
+    'glTexCoord1i',
+    'glTexCoord1iv',
+    'glTexCoord1s',
+    'glTexCoord1sv',
+    'glTexCoord2d',
+    'glTexCoord2dv',
+    'glTexCoord2f',
+    'glTexCoord2fv',
+    'glTexCoord2i',
+    'glTexCoord2iv',
+    'glTexCoord2s',
+    'glTexCoord2sv',
+    'glTexCoord3d',
+    'glTexCoord3dv',
+    'glTexCoord3f',
+    'glTexCoord3fv',
+    'glTexCoord3i',
+    'glTexCoord3iv',
+    'glTexCoord3s',
+    'glTexCoord3sv',
+    'glTexCoord4d',
+    'glTexCoord4dv',
+    'glTexCoord4f',
+    'glTexCoord4fv',
+    'glTexCoord4i',
+    'glTexCoord4iv',
+    'glTexCoord4s',
+    'glTexCoord4sv',
     'glTexCoordP1ui',
     'glTexCoordP1uiv',
     'glTexCoordP2ui',
@@ -4205,6 +5705,17 @@ __all__ = [
     'glTexCoordP3uiv',
     'glTexCoordP4ui',
     'glTexCoordP4uiv',
+    'glTexCoordPointer',
+    'glTexEnvf',
+    'glTexEnvfv',
+    'glTexEnvi',
+    'glTexEnviv',
+    'glTexGend',
+    'glTexGendv',
+    'glTexGenf',
+    'glTexGenfv',
+    'glTexGeni',
+    'glTexGeniv',
     'glTexImage1D',
     'glTexImage2D',
     'glTexImage2DMultisample',
@@ -4245,6 +5756,8 @@ __all__ = [
     'glTransformFeedbackBufferBase',
     'glTransformFeedbackBufferRange',
     'glTransformFeedbackVaryings',
+    'glTranslated',
+    'glTranslatef',
     'glUniform1d',
     'glUniform1dv',
     'glUniform1f',
@@ -4303,6 +5816,30 @@ __all__ = [
     'glUseProgramStages',
     'glValidateProgram',
     'glValidateProgramPipeline',
+    'glVertex2d',
+    'glVertex2dv',
+    'glVertex2f',
+    'glVertex2fv',
+    'glVertex2i',
+    'glVertex2iv',
+    'glVertex2s',
+    'glVertex2sv',
+    'glVertex3d',
+    'glVertex3dv',
+    'glVertex3f',
+    'glVertex3fv',
+    'glVertex3i',
+    'glVertex3iv',
+    'glVertex3s',
+    'glVertex3sv',
+    'glVertex4d',
+    'glVertex4dv',
+    'glVertex4f',
+    'glVertex4fv',
+    'glVertex4i',
+    'glVertex4iv',
+    'glVertex4s',
+    'glVertex4sv',
     'glVertexArrayAttribBinding',
     'glVertexArrayAttribFormat',
     'glVertexArrayAttribIFormat',
@@ -4398,8 +5935,25 @@ __all__ = [
     'glVertexP3uiv',
     'glVertexP4ui',
     'glVertexP4uiv',
+    'glVertexPointer',
     'glViewport',
     'glViewportArrayv',
     'glViewportIndexedf',
     'glViewportIndexedfv',
+    'glWindowPos2d',
+    'glWindowPos2dv',
+    'glWindowPos2f',
+    'glWindowPos2fv',
+    'glWindowPos2i',
+    'glWindowPos2iv',
+    'glWindowPos2s',
+    'glWindowPos2sv',
+    'glWindowPos3d',
+    'glWindowPos3dv',
+    'glWindowPos3f',
+    'glWindowPos3fv',
+    'glWindowPos3i',
+    'glWindowPos3iv',
+    'glWindowPos3s',
+    'glWindowPos3sv',
 ]

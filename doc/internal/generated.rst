@@ -4,8 +4,9 @@ ctypes Wrapper Generation
 The following modules in pyglet are entirely (or mostly) generated from one or
 more C header files:
 
-* pyglet.gl.agl
 * pyglet.gl.gl
+* pyglet.gl.gl_compat
+* pyglet.gl.agl
 * pyglet.gl.glext_abi
 * pyglet.gl.glext_nv
 * pyglet.gl.glx
@@ -21,8 +22,31 @@ The wrapping framework is in ``tools/wraptypes``, and pyglet-specialised batch
 scripts are ``tools/genwrappers.py`` (generates xlib wrappers) and
 ``tools/gengl.py`` (generates gl wrappers).
 
-Generating GL wrappers
-----------------------
+Generating GL wrappers (new version)
+------------------------------------
+
+The new ``gengl.py`` script only generates the following modules:
+
+* ``gl.py``: OpenGL 4.6 core profile enums and functions. All deprecated
+  enums and functions are not included.
+* ``gl_compat.py``: OpenGL 4.6 compatibility profile with all enums and
+  functions all the way back to OpenGL 1.0.
+
+Running the script:
+
+    # Fetch latest gl.xml from Khronos github and generate new modules
+    python tools/gengl.py
+    python tools/gengl.py --source url
+
+    # Read the local gl.xml version
+    python tools/gengl.py --source local
+
+The old ``gengl.py`` script also handled agl, wgl and glx.
+The section below is still present for historical reasons
+and the old script is still around in the tools directory.
+
+Generating GL wrappers (old version)
+------------------------------------
 
 This process needs to be followed when the wraptypes is updated, the header
 files are updated (e.g., a new release of the operating system), or the GL
