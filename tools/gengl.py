@@ -39,8 +39,9 @@ def main():
     
     # OpenGL extensions we want to include
     extensions = [
-        "EXT_texture_compression_s3tc",
         "GL_ARB_multisample",
+        "EXT_texture_compression_s3tc",  # For pyglet.image.codecs.dds
+        "GL_EXT_framebuffer_object",  # Needed for GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
     ]
 
     core_profile = registry.get_profile(
