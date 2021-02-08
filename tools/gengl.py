@@ -40,6 +40,7 @@ def main():
     # OpenGL extensions we want to include
     extensions = [
         "EXT_texture_compression_s3tc",
+        "GL_ARB_multisample",
     ]
 
     core_profile = registry.get_profile(

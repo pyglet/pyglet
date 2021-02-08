@@ -686,13 +686,21 @@ GL_INDEX_ARRAY_POINTER = 32913
 GL_TEXTURE_COORD_ARRAY_POINTER = 32914
 GL_EDGE_FLAG_ARRAY_POINTER = 32915
 GL_MULTISAMPLE = 32925
+GL_MULTISAMPLE_ARB = 32925
 GL_SAMPLE_ALPHA_TO_COVERAGE = 32926
+GL_SAMPLE_ALPHA_TO_COVERAGE_ARB = 32926
 GL_SAMPLE_ALPHA_TO_ONE = 32927
+GL_SAMPLE_ALPHA_TO_ONE_ARB = 32927
 GL_SAMPLE_COVERAGE = 32928
+GL_SAMPLE_COVERAGE_ARB = 32928
 GL_SAMPLE_BUFFERS = 32936
+GL_SAMPLE_BUFFERS_ARB = 32936
 GL_SAMPLES = 32937
+GL_SAMPLES_ARB = 32937
 GL_SAMPLE_COVERAGE_VALUE = 32938
+GL_SAMPLE_COVERAGE_VALUE_ARB = 32938
 GL_SAMPLE_COVERAGE_INVERT = 32939
+GL_SAMPLE_COVERAGE_INVERT_ARB = 32939
 GL_BLEND_DST_RGB = 32968
 GL_BLEND_SRC_RGB = 32969
 GL_BLEND_DST_ALPHA = 32970
@@ -1874,6 +1882,7 @@ GL_LIST_BIT = 131072
 GL_TEXTURE_BIT = 262144
 GL_SCISSOR_BIT = 524288
 GL_MULTISAMPLE_BIT = 536870912
+GL_MULTISAMPLE_BIT_ARB = 536870912
 GL_ALL_ATTRIB_BITS = 4294967295
 GL_CLIENT_ALL_ATTRIB_BITS = 4294967295
 GL_INVALID_INDEX = 4294967295
@@ -2586,6 +2595,7 @@ glResumeTransformFeedback = _link_function('glResumeTransformFeedback', None, []
 glRotated = _link_function('glRotated', None, [GLdouble, GLdouble, GLdouble, GLdouble], requires='OpenGL 1.0')
 glRotatef = _link_function('glRotatef', None, [GLfloat, GLfloat, GLfloat, GLfloat], requires='OpenGL 1.0')
 glSampleCoverage = _link_function('glSampleCoverage', None, [GLfloat, GLboolean], requires='OpenGL 1.3')
+glSampleCoverageARB = _link_function('glSampleCoverageARB', None, [GLfloat, GLboolean], requires='None')
 glSampleMaski = _link_function('glSampleMaski', None, [GLuint, GLbitfield], requires='OpenGL 3.2')
 glSamplerParameterIiv = _link_function('glSamplerParameterIiv', None, [GLuint, GLenum, POINTER(GLint)], requires='OpenGL 3.3')
 glSamplerParameterIuiv = _link_function('glSamplerParameterIuiv', None, [GLuint, GLenum, POINTER(GLuint)], requires='OpenGL 3.3')
@@ -4759,6 +4769,15 @@ __all__ = [
     'GL_COMPRESSED_RGBA_S3TC_DXT1_EXT',
     'GL_COMPRESSED_RGBA_S3TC_DXT3_EXT',
     'GL_COMPRESSED_RGBA_S3TC_DXT5_EXT',
+    'GL_MULTISAMPLE_ARB',
+    'GL_SAMPLE_ALPHA_TO_COVERAGE_ARB',
+    'GL_SAMPLE_ALPHA_TO_ONE_ARB',
+    'GL_SAMPLE_COVERAGE_ARB',
+    'GL_SAMPLE_BUFFERS_ARB',
+    'GL_SAMPLES_ARB',
+    'GL_SAMPLE_COVERAGE_VALUE_ARB',
+    'GL_SAMPLE_COVERAGE_INVERT_ARB',
+    'GL_MULTISAMPLE_BIT_ARB',
     'glAccum',
     'glActiveShaderProgram',
     'glActiveTexture',
@@ -5463,6 +5482,7 @@ __all__ = [
     'glRotated',
     'glRotatef',
     'glSampleCoverage',
+    'glSampleCoverageARB',
     'glSampleMaski',
     'glSamplerParameterIiv',
     'glSamplerParameterIuiv',
