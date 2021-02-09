@@ -712,7 +712,7 @@ class Win32Window(BaseWindow):
 
     def _get_modifiers(self, key_lParam=0):
         modifiers = 0
-        if _user32.GetKeyState(VK_SHIFT) & 0xff00:
+        if self._keyboard_state[0x036] or self._keyboard_state[0x02A]:
             modifiers |= key.MOD_SHIFT
         if _user32.GetKeyState(VK_CONTROL) & 0xff00:
             modifiers |= key.MOD_CTRL
@@ -874,20 +874,21 @@ class Win32Window(BaseWindow):
   
             if inp.data.keyboard.MakeCode == 0x02A:  # LEFT_SHIFT
                 if not key_up and not self._keyboard_state[0x02A]:
-                    self.dispatch_event('on_key_press', key.LSHIFT, self._get_modifiers())
                     self._keyboard_state[0x02A] = True
+                    self.dispatch_event('on_key_press', key.LSHIFT, self._get_modifiers())
 
                 elif key_up and self._keyboard_state[0x02A]:
-                    self.dispatch_event('on_key_release', key.LSHIFT, self._get_modifiers())
                     self._keyboard_state[0x02A] = False
-            
-            elif inp.data.keyboard.MakeCode == 0x036: # RIGHT SHIFT
+                    self.dispatch_event('on_key_release', key.LSHIFT, self._get_modifiers())
+
+            elif inp.data.keyboard.MakeCode == 0x036:  # RIGHT SHIFT
                 if not key_up and not self._keyboard_state[0x036]:
-                    self.dispatch_event('on_key_press', key.RSHIFT, self._get_modifiers())
                     self._keyboard_state[0x036] = True
+                    self.dispatch_event('on_key_press', key.RSHIFT, self._get_modifiers())
+                    
                 elif key_up and self._keyboard_state[0x036]:
-                    self.dispatch_event('on_key_release', key.RSHIFT, self._get_modifiers())
-                    self._keyboard_state[0x036] = False            
+                    self._keyboard_state[0x036] = False
+                    self.dispatch_event('on_key_release', key.RSHIFT, self._get_modifiers())        
 
         return 0
 

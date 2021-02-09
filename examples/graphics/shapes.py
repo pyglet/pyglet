@@ -27,8 +27,10 @@ class ShapesDemo(pyglet.window.Window):
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
-        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(20, 200, 20), batch=self.batch)
-        self.triangle.opacity = 150
+        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(10, 255, 10), batch=self.batch)
+        self.triangle.opacity = 175
+
+        self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=4, color=(255, 255, 255), batch=self.batch)
 
     def on_draw(self):
         """Clear the screen and draw shapes"""
@@ -47,6 +49,7 @@ class ShapesDemo(pyglet.window.Window):
             360 + math.sin(self.time * 1.34) * 360,
             480,
         )
+        self.arc.rotation = self.time * 30
 
 
 if __name__ == "__main__":

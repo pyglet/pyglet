@@ -155,6 +155,8 @@ options = {
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
     'search_local_libs': True,
+    'headless': False,
+    'headless_device': 0,
 }
 
 _option_types = {
@@ -174,12 +176,13 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
-    'ffmpeg_libs_win': tuple,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
     'search_local_libs': bool,
+    'headless': bool,
+    'headless_device': int
 }
 
 

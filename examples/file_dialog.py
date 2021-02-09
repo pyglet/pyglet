@@ -9,7 +9,7 @@ from pyglet.event import EventDispatcher as _EventDispatcher
 This module provides example Dialog Windows for opening and
 saving files. These are made using the `tkinter` module, which
 is part of the Python standard library. Dialog Windows run in a
-background proccess to prevent any interference with your main
+background process to prevent any interference with your main
 application, and integrate using the standard pyglet Event
 framework.
 
@@ -43,6 +43,7 @@ The `FileSaveDialog` works similarly::
     @save_as.event
     def on_dialog_save(filename):
         print("FILENAMES ON SAVE!", filename)
+        # Your own code here to handle saving the file name(s).
 
     # Show the Dialog whenever you need. This is non-blocking:
     open_dialog.show()

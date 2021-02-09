@@ -170,9 +170,8 @@ class Config:
         :rtype: `Context`
         :return: The new context.
         """
-        raise gl.ConfigException(
-            'This config cannot be used to create contexts.  '
-            'Use Config.match to created a CanvasConfig')
+        raise gl.ConfigException('This config cannot be used to create contexts.  '
+                                 'Use Config.match to created a CanvasConfig')
 
     def is_complete(self):
         """Determine if this config is complete and able to create a context.
@@ -206,6 +205,7 @@ class CanvasConfig(Config):
             The canvas this config is valid on.
 
     """
+
     def __init__(self, canvas, base_config):
         self.canvas = canvas
 
@@ -235,8 +235,8 @@ class CanvasConfig(Config):
 
 class ObjectSpace:
     def __init__(self):
-        # Textures and buffers scheduled for deletion the next time
-        # this object space is active.
+        # Textures and buffers scheduled for deletion
+        # the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
 
