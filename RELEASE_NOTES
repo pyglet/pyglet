@@ -1,3 +1,12 @@
+pyglet 1.5.15
+Bugfix and maintenance release
+
+Bugfixes
+--------
+- shapes.Circle segment calculation will always use a minimum of 14 segments.
+- shapes.Arc is now made from line segments, and by default has unconnected ends.
+
+
 pyglet 1.5.14
 Bugfix and feature release
 
