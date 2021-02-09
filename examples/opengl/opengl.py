@@ -91,13 +91,6 @@ def setup():
     # Uncomment this line for a wireframe view:
     # glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
-    # Simple light setup.  On Windows GL_LIGHT0 is enabled by default,
-    # but this is not the case on Linux or Mac, so remember to always 
-    # include it.
-    glEnable(GL_LIGHTING)
-    glEnable(GL_LIGHT0)
-    glEnable(GL_LIGHT1)
-
 
 def create_torus(radius, inner_radius, slices, inner_slices, batch):
 
