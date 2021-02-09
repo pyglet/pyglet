@@ -44,9 +44,9 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.dev0'
+version = '2.0.dev1'
 
-if sys.version_info < (3, 5):
+if sys.version_info < (3, 6):
     raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
 
 if 'sphinx' in sys.modules:
