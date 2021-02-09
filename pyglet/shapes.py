@@ -369,7 +369,7 @@ class Arc(_ShapeBase):
             y = self._y + self._anchor_y
             r = self._radius
             tau_segs = self._angle / self._segments
-            start_angle = self._start_angle + math.radians(self._rotation)
+            start_angle = self._start_angle - math.radians(self._rotation)
 
             # Calcuate the outer points of the arc:
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
