@@ -27,7 +27,7 @@ pyglet).
 The most basic mouse event is :py:meth:`~pyglet.window.Window.on_mouse_motion`
 which is dispatched every time the mouse moves::
 
-    def on_mouse_motion(x, y, dx, dy):
+    def on_mouse_motion(ev, x, y, dx, dy):
         pass
 
 The `x` and `y` parameters give the coordinates of the mouse pointer, relative
@@ -57,13 +57,13 @@ parameters instead.
 The following events are dispatched when a mouse button is pressed or
 released, or the mouse is moved while any button is held down::
 
-    def on_mouse_press(x, y, button, modifiers):
+    def on_mouse_press(ev, x, y, button, modifiers):
         pass
 
-    def on_mouse_release(x, y, button, modifiers):
+    def on_mouse_release(ev, x, y, button, modifiers):
         pass
 
-    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(ev, x, y, dx, dy, buttons, modifiers):
         pass
 
 The `x`, `y`, `dx` and `dy` parameters are as for the
@@ -86,7 +86,7 @@ left button::
 
     from pyglet.window import mouse
 
-    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(ev, x, y, dx, dy, buttons, modifiers):
         if buttons & mouse.LEFT:
             pass
 
@@ -101,10 +101,10 @@ manipulation of the user interface widget.
 
 There are events for when the mouse enters or leaves a window::
 
-    def on_mouse_enter(x, y):
+    def on_mouse_enter(ev, x, y):
         pass
 
-    def on_mouse_leave(x, y):
+    def on_mouse_leave(ev, x, y):
         pass
 
 The coordinates for :py:meth:`~pyglet.window.Window.on_mouse_leave` will
@@ -114,7 +114,7 @@ operation is taking place.
 The mouse scroll wheel generates the
 :py:meth:`~pyglet.window.Window.on_mouse_scroll` event::
 
-    def on_mouse_scroll(x, y, scroll_x, scroll_y):
+    def on_mouse_scroll(ev, x, y, scroll_x, scroll_y):
         pass
 
 The `scroll_y` parameter gives the number of "clicks" the wheel moved, with
