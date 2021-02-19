@@ -416,7 +416,7 @@ In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,
 you can check for this attribute to determine if you need to load them again::
 
-    context = pyglet.gl.get_current_context()
+    context = pyglet.gl.current_context
     object_space = context.object_space
     object_space.my_game_objects_loaded = True
 

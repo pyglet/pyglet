@@ -35,24 +35,22 @@
 
 import sys
 
-from ctypes import cdll, util, CFUNCTYPE, byref, c_void_p
-from ctypes import c_int, c_ubyte, c_bool, c_uint32, c_uint64
+from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
-from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
+from .base import Device, AbsoluteAxis, RelativeAxis, Button
 from .base import Joystick, AppleRemote
-from .base import DeviceExclusiveException
 
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
 from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf
 from pyglet.libs.darwin.cocoapy import cfset_to_set, cftype_to_value, cfarray_to_list
+from pyglet.lib import load_library
+
 
 __LP64__ = (sys.maxsize > 2 ** 32)
 
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
-
-# Load iokit framework
-iokit = cdll.LoadLibrary(util.find_library('IOKit'))
+iokit = load_library(framework='IOKit')
 
 # IOKit constants from
 # /System/Library/Frameworks/IOKit.framework/Headers/hid/IOHIDKeys.h

@@ -171,9 +171,8 @@ class Config:
         :rtype: `Context`
         :return: The new context.
         """
-        raise gl.ConfigException(
-            'This config cannot be used to create contexts.  '
-            'Use Config.match to created a CanvasConfig')
+        raise gl.ConfigException('This config cannot be used to create contexts.  '
+                                 'Use Config.match to created a CanvasConfig')
 
     def is_complete(self):
         """Determine if this config is complete and able to create a context.
@@ -192,8 +191,8 @@ class Config:
 
     def __repr__(self):
         import pprint
-        return '%s(%s)' % (self.__class__.__name__, 
-                           pprint.pformat(self.get_gl_attributes()))
+        return '%s(%s)' % (self.__class__.__name__, pprint.pformat(self.get_gl_attributes()))
+
 
 class CanvasConfig(Config):
     """OpenGL configuration for a particular canvas.
@@ -207,6 +206,7 @@ class CanvasConfig(Config):
             The canvas this config is valid on.
 
     """
+
     def __init__(self, canvas, base_config):
         self.canvas = canvas
 
@@ -232,14 +232,15 @@ class CanvasConfig(Config):
 
     def is_complete(self):
         return True
- 
+
 
 class ObjectSpace:
     def __init__(self):
-        # Textures and buffers scheduled for deletion the next time this
-        # object space is active.
+        # Textures and buffers scheduled for deletion
+        # the next time this object space is active.
         self._doomed_textures = []
         self._doomed_buffers = []
+
 
 class Context:
     """OpenGL context for drawing.
@@ -260,7 +261,7 @@ class Context:
     #: Context share behaviour indicating that objects are shared with
     #: the most recently created context (the default).
     CONTEXT_SHARE_EXISTING = 1
-    
+
     # Used for error checking, True if currently within a glBegin/End block.
     # Ignored if error checking is disabled.
     _gl_begin = False
@@ -287,14 +288,14 @@ class Context:
         ('_workaround_vbo',
          lambda info: (info.get_renderer().startswith('ATI Radeon X')
                        or info.get_renderer().startswith('RADEON XPRESS 200M')
-                       or info.get_renderer() == 
-                            'Intel 965/963 Graphics Media Accelerator')),
+                       or info.get_renderer() ==
+                       'Intel 965/963 Graphics Media Accelerator')),
 
         # Some ATI cards on OS X start drawing from a VBO before it's written
         # to.  In these cases pyglet needs to call glFinish() to flush the
         # pipeline after updating a buffer but before rendering.
         ('_workaround_vbo_finish',
-         lambda info: ('ATI' in info.get_renderer() and 
+         lambda info: ('ATI' in info.get_renderer() and
                        info.have_version(1, 5) and
                        compat_platform == 'darwin')),
     ]
@@ -308,7 +309,7 @@ class Context:
             self.object_space = context_share.object_space
         else:
             self.object_space = ObjectSpace()
-    
+
     def __repr__(self):
         return '%s()' % self.__class__.__name__
 

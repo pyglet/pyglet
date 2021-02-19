@@ -1,3 +1,46 @@
+pyglet 1.5.15
+Bugfix and maintenance release
+
+Bugfixes
+--------
+- shapes.Circle segment calculation will always use a minimum of 14 segments.
+- shapes.Arc is now made from line segments, and by default has unconnected ends.
+- Windows - Use the internal keystate to determine the mod shift rather than relying on GetKeyState
+  which relies on another event that may be called after WM_INPUT.
+
+Maintenance
+-----------
+- Various Headless backend and EGL work.
+
+
+pyglet 1.5.14
+Bugfix and feature release
+
+Bugfixes
+--------
+- Fix interlaced mp3 decoding in GStreamer backend.
+- Skip functions marked as OBJC_ARM64_UNAVAILABLE for new ARM Macs.
+
+Features
+--------
+- Add a `WaveEncoder` for saving audio Sources to disk.
+
+
+pyglet 1.5.13
+Bugfix and feature release
+
+Bugfixes
+--------
+- Fix crash on looping video with no sound (#322)
+- OSX: Replace remaining usage of `find_library` to fix Big Sur issues (#332)
+- Windows: Fix default orientation for the XAudio2 listener.
+
+Features
+--------
+- Add new `shape.Triangle` shape.
+- Windows: `on_key_press` now dispatches unique events for left/right Shift keys.
+
+
 pyglet 1.5.12
 Bugfix and feature release
 

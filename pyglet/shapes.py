@@ -76,7 +76,7 @@ A simple example of drawing shapes::
 import math
 
 from pyglet.gl import GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_LINES, GL_BLEND
+from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Group, Batch
 
@@ -308,45 +308,103 @@ class _ShapeBase:
 
 
 class Arc(_ShapeBase):
-    def __init__(self, x, y, radius, segments=25, angle=math.pi * 2, color=(255, 255, 255), batch=None, group=None):
-        # TODO: Finish this shape and add docstring.
+    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
+                 closed=False, color=(255, 255, 255), batch=None, group=None):
+        """Create an Arc.
+
+        The Arc's anchor point (x, y) defaults to it's center.
+
+        :Parameters:
+            `x` : float
+                X coordinate of the circle.
+            `y` : float
+                Y coordinate of the circle.
+            `radius` : float
+                The desired radius.
+            `segments` : int
+                You can optionally specifify how many distict line segments
+                the arc should be made from. If not specified it will be
+                automatically calculated using the formula:
+                `max(14, int(radius / 1.25))`.
+            `angle` : float
+                The angle of the arc, in radians. Defaults to tau (pi * 2),
+                which is a full circle.
+            `start_angle` : float
+                The start angle of the arc, in radians. Defaults to 0.
+            `closed` : bool
+                If True, the ends of the arc will be connected with a line.
+                defaults to False.
+            `color` : (int, int, int)
+                The RGB color of the circle, specified as a tuple of
+                three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the circle to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the circle.
+        """
         self._x = x
         self._y = y
         self._radius = radius
-        self._segments = segments
+        self._segments = segments or max(14, int(radius / 1.25))
+        self._num_verts = self._segments * 2 + (2 if closed else 0)
+
         self._rgb = color
         self._angle = angle
+        self._start_angle = start_angle
+        self._closed = closed
+        self._rotation = 0
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add(self._segments * 2, GL_LINES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._num_verts, GL_LINES, self._group, 'v2f', 'c4B')
         self._update_position()
         self._update_color()
 
     def _update_position(self):
         if not self._visible:
-            vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            vertices = (0,) * self._segments * 4
         else:
             x = self._x + self._anchor_x
             y = self._y + self._anchor_y
             r = self._radius
-            tau_segs = self._angle / (self._segments - 1)
+            tau_segs = self._angle / self._segments
+            start_angle = self._start_angle - math.radians(self._rotation)
 
             # Calcuate the outer points of the arc:
-            points = [(x + (r * math.cos(i * tau_segs)),
-                       y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
+            points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
+                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
             # Create a list of doubled-up points from the points:
             vertices = []
-            for i, point in enumerate(points):
-                line_points = *points[i - 1], *point
+            for i in range(len(points) - 1):
+                line_points = *points[i], *points[i + 1]
                 vertices.extend(line_points)
+
+            if self._closed:
+                chord_points = *points[-1], *points[0]
+                vertices.extend(chord_points)
 
         self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 2
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_verts
+
+    @property
+    def rotation(self):
+        """Clockwise rotation of the arc, in degrees.
+
+        The arc will be rotated about its (anchor_x, anchor_y)
+        position.
+
+        :type: float
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = rotation
+        self._update_position()
 
     def draw(self):
         """Draw the shape at its current position.
@@ -372,8 +430,9 @@ class Circle(_ShapeBase):
                 The desired radius.
             `segments` : int
                 You can optionally specifify how many distict triangles
-                the circle should be made from. If not specified, it will
-                be automatically calculated based on the radius.
+                the circle should be made from. If not specified it will
+                be automatically calculated based using the formula:
+                `max(14, int(radius / 1.25))`.
             `color` : (int, int, int)
                 The RGB color of the circle, specified as a tuple of
                 three ints in the range of 0-255.
@@ -385,7 +444,7 @@ class Circle(_ShapeBase):
         self._x = x
         self._y = y
         self._radius = radius
-        self._segments = segments or int(radius / 1.25)
+        self._segments = segments or max(14, int(radius / 1.25))
         self._rgb = color
 
         self._batch = batch or Batch()
@@ -533,13 +592,13 @@ class Line(_ShapeBase):
 
         :Parameters:
             `x` : int or float
-                X coordinate of the sprite.
+                X coordinate of the line.
             `y` : int or float
-                Y coordinate of the sprite.
+                Y coordinate of the line.
             `x2` : int or float
-                X2 coordinate of the sprite.
+                X2 coordinate of the line.
             `y2` : int or float
-                Y2 coordinate of the sprite.
+                Y2 coordinate of the line.
         """
         return self._x, self._y, self._x2, self._y2
 
@@ -749,4 +808,142 @@ class BorderedRectangle(_ShapeBase):
         self._update_position()
 
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle')
+class Triangle(_ShapeBase):
+    def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255), batch=None, group=None):
+        """Create a triangle.
+
+        The triangle's anchor point defaults to the first vertex point.
+
+        :Parameters:
+            `x` : float
+                The first X coordinate of the triangle.
+            `y` : float
+                The first Y coordinate of the triangle.
+            `x2` : float
+                The second X coordinate of the triangle.
+            `y2` : float
+                The second Y coordinate of the triangle.
+            `x3` : float
+                The third X coordinate of the triangle.
+            `y3` : float
+                The third Y coordinate of the triangle.
+            `color` : (int, int, int)
+                The RGB color of the triangle, specified as
+                a tuple of three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the triangle to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the triangle.
+        """
+        self._x = x
+        self._y = y
+        self._x2 = x2
+        self._y2 = y2
+        self._x3 = x3
+        self._y3 = y3
+        self._rotation = 0
+
+        self._rgb = color
+
+        self._batch = batch or Batch()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._vertex_list = self._batch.add(3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            self._vertex_list.vertices = (0, 0, 0, 0, 0, 0)
+        else:
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            x1 = self._x - anchor_x
+            y1 = self._y - anchor_y
+            x2 = self._x2 - anchor_x
+            y2 = self._y2 - anchor_y
+            x3 = self._x3 - anchor_x
+            y3 = self._y3 - anchor_y
+            self._vertex_list.vertices = (x1, y1, x2, y2, x3, y3)
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 3
+
+    @property
+    def x2(self):
+        """Second X coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._x2
+
+    @x2.setter
+    def x2(self, value):
+        self._x2 = value
+        self._update_position()
+
+    @property
+    def y2(self):
+        """Second Y coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._y2
+
+    @y2.setter
+    def y2(self, value):
+        self._y2 = value
+        self._update_position()
+
+    @property
+    def x3(self):
+        """Third X coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._x3
+
+    @x3.setter
+    def x3(self, value):
+        self._x3 = value
+        self._update_position()
+
+    @property
+    def y3(self):
+        """Third Y coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._y3
+
+    @y3.setter
+    def y3(self, value):
+        self._y3 = value
+        self._update_position()
+
+    @property
+    def position(self):
+        """The (x, y, x2, y2, x3, y3) coordinates of the triangle, as a tuple.
+
+        :Parameters:
+            `x` : int or float
+                X coordinate of the triangle.
+            `y` : int or float
+                Y coordinate of the triangle.
+            `x2` : int or float
+                X2 coordinate of the triangle.
+            `y2` : int or float
+                Y2 coordinate of the triangle.
+            `x3` : int or float
+                X3 coordinate of the triangle.
+            `y3` : int or float
+                Y3 coordinate of the triangle.
+        """
+        return self._x, self._y, self._x2, self._y2, self._x3, self._y3
+
+    @position.setter
+    def position(self, values):
+        self._x, self._y, self._x2, self._y2, self._x3, self._y3 = values
+        self._update_position()
+
+
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle')

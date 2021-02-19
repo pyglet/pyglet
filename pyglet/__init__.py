@@ -61,10 +61,10 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:    >>> parse_version(pyglet.version) >= parse_version('1.1')
 #:    True
 #:
-version = '1.5.11'
+version = '1.5.15'
 
 
-if sys.version_info < (3, 5):
+if sys.version_info < (3, 6):
     raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
 
 
@@ -97,6 +97,7 @@ if getattr(sys, 'frozen', None):
 #:     A sequence of the names of audio modules to attempt to load, in
 #:     order of preference.  Valid driver names are:
 #:
+#:     * xaudio2, the Windows Xaudio2 audio module (Windows only)
 #:     * directsound, the Windows DirectSound audio module (Windows only)
 #:     * pulse, the PulseAudio module (Linux only)
 #:     * openal, the OpenAL audio module
@@ -170,6 +171,8 @@ options = {
     'darwin_cocoa': True,
     'search_local_libs': True,
     'advanced_font_features': False,
+    'headless': False,
+    'headless_device': 0,
 }
 
 _option_types = {
@@ -188,13 +191,14 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
-    'ffmpeg_libs_win': tuple,
     'graphics_vbo': bool,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
     'advanced_font_features': bool,
+    'headless': bool,
+    'headless_device': int
 }
 
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import os
 import os.path as op
 import sys
@@ -62,7 +61,7 @@ def _print_usage():
 if __name__ == '__main__':
     avail_cmds = dict(clean=clean, dist=dist, docs=docs)
     try:
-        cmd = avail_cmds[sys.argv[1]]
+        command = avail_cmds[sys.argv[1]]
     except IndexError:
         # Invalid number of arguments, just print help
         _print_usage()
@@ -71,4 +70,4 @@ if __name__ == '__main__':
         print()
         _print_usage()
     else:
-        cmd()
+        command()

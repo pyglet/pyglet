@@ -40,6 +40,7 @@ from .cocoatypes import *
 
 __LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
+__arm64__ = (platform.machine() == 'arm64')
 
 if sizeof(c_void_p) == 4:
     c_ptrdiff_t = c_int32
@@ -48,7 +49,13 @@ elif sizeof(c_void_p) == 8:
 
 ######################################################################
 
-objc = cdll.LoadLibrary(util.find_library('objc'))
+lib = util.find_library('objc')
+
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/usr/lib/libobjc.dylib'
+
+objc = cdll.LoadLibrary(lib)
 
 ######################################################################
 
@@ -129,9 +136,11 @@ objc.class_getIvarLayout.argtypes = [c_void_p]
 objc.class_getMethodImplementation.restype = c_void_p
 objc.class_getMethodImplementation.argtypes = [c_void_p, c_void_p]
 
-# IMP class_getMethodImplementation_stret(Class cls, SEL name)
-objc.class_getMethodImplementation_stret.restype = c_void_p
-objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
+# The function is marked as OBJC_ARM64_UNAVAILABLE.
+if not __arm64__:
+    # IMP class_getMethodImplementation_stret(Class cls, SEL name)
+    objc.class_getMethodImplementation_stret.restype = c_void_p
+    objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
 
 # const char * class_getName(Class cls)
 objc.class_getName.restype = c_char_p
@@ -278,14 +287,18 @@ objc.objc_getProtocol.argtypes = [c_char_p]
 # id objc_msgSend(id theReceiver, SEL theSelector, ...)
 # id objc_msgSendSuper(struct objc_super *super, SEL op,  ...)
 
-# void objc_msgSendSuper_stret(struct objc_super *super, SEL op, ...)
-objc.objc_msgSendSuper_stret.restype = None
+# The function is marked as OBJC_ARM64_UNAVAILABLE.
+if not __arm64__:
+    # void objc_msgSendSuper_stret(struct objc_super *super, SEL op, ...)
+    objc.objc_msgSendSuper_stret.restype = None
 
 # double objc_msgSend_fpret(id self, SEL op, ...)
 # objc.objc_msgSend_fpret.restype = c_double
 
-# void objc_msgSend_stret(void * stretAddr, id theReceiver, SEL theSelector,  ...)
-objc.objc_msgSend_stret.restype = None
+# The function is marked as OBJC_ARM64_UNAVAILABLE.
+if not __arm64__:
+    # void objc_msgSend_stret(void * stretAddr, id theReceiver, SEL theSelector,  ...)
+    objc.objc_msgSend_stret.restype = None
 
 # void objc_registerClassPair(Class cls)
 objc.objc_registerClassPair.restype = None

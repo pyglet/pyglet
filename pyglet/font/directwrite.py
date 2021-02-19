@@ -2263,25 +2263,5 @@ WICBitmapNoCache = 0
 WICBitmapCacheOnDemand = 0x1
 WICBitmapCacheOnLoad = 0x2
 
-black_color = D2D1_COLOR_F(0.0, 0.0, 0.0, 1.0)
-red_color = D2D1_COLOR_F(1.0, 0.0, 0.0, 1.0)
-
 transparent = D2D1_COLOR_F(0.0, 0.0, 0.0, 0.0)
 white = D2D1_COLOR_F(1.0, 1.0, 1.0, 1.0)
-red = D2D1_COLOR_F(1.0, 0.0, 0.0, 1.0)
-
-# tags = [DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES, DWRITE_FONT_FEATURE_TAG_KERNING]
-#
-# num_feature = len(tags)
-# if num_feature:
-#     typo_features = DWRITE_TYPOGRAPHIC_FEATURES()
-#     typo_features.featureCount = num_feature
-#
-#     typo_features.features = (DWRITE_FONT_FEATURE * num_feature)()
-#     for i in range(num_feature):
-#         typo_features.features[i] = DWRITE_FONT_FEATURE(tags[i], 1)
-#
-#     feature_range = (UINT32 * num_feature)(len(text))
-# else:
-#     typo_features = None
-#     feature_range = None
