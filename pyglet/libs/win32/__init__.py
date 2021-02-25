@@ -91,6 +91,7 @@ _user32 = DebugLibrary(windll.user32)
 _dwmapi = DebugLibrary(windll.dwmapi)
 _shell32 = DebugLibrary(windll.shell32)
 _ole32 = DebugLibrary(windll.ole32)
+_shcore = DebugLibrary(windll.shcore)
 
 # _gdi32
 _gdi32.AddFontMemResourceEx.restype = HANDLE
@@ -247,7 +248,9 @@ _user32.SetFocus.argtypes = [HWND]
 _user32.SetForegroundWindow.restype = BOOL
 _user32.SetForegroundWindow.argtypes = [HWND]
 _user32.SetTimer.restype = UINT_PTR
-_user32.SetTimer.argtypes = [HWND, UINT_PTR, UINT, TIMERPROC]
+_user32.SetTimer.argtypes = [HWND, UINT_PTR, UINT, POINTER(TIMERPROC)]
+_user32.KillTimer.restype = UINT_PTR
+_user32.KillTimer.argtypes = [HWND, UINT_PTR]
 _user32.SetWindowLongW.restype = LONG
 _user32.SetWindowLongW.argtypes = [HWND, c_int, LONG]
 _user32.SetWindowPos.restype = BOOL
@@ -273,6 +276,20 @@ _user32.GetRawInputData.restype = UINT
 _user32.GetRawInputData.argtypes = [HRAWINPUT, UINT, LPVOID, PUINT, UINT]
 _user32.ChangeWindowMessageFilterEx.restype = BOOL
 _user32.ChangeWindowMessageFilterEx.argtypes = [HWND, UINT, DWORD, c_void_p]
+_user32.SetProcessDPIAware.restype = BOOL
+_user32.SetProcessDPIAware.argtypes = []
+_user32.MonitorFromWindow.restype = HMONITOR
+_user32.MonitorFromWindow.argtypes = [HWND, DWORD]
+
+if constants.WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
+    _user32.SetProcessDpiAwarenessContext.restype = BOOL
+    _user32.SetProcessDpiAwarenessContext.argtypes = [DPI_AWARENESS_CONTEXT]
+
+if constants.WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
+    _user32.EnableNonClientDpiScaling.restype = BOOL
+    _user32.EnableNonClientDpiScaling.argtypes = [HWND]
+    _user32.GetDpiForWindow.restype = UINT
+    _user32.GetDpiForWindow.argtypes = [HWND]
 
 #dwmapi
 _dwmapi.DwmIsCompositionEnabled.restype = c_int
@@ -300,3 +317,9 @@ _ole32.PropVariantClear.restype = HRESULT
 _ole32.PropVariantClear.argtypes = [c_void_p]
 _ole32.CoCreateInstance.restype = HRESULT
 _ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]
+
+#shcore
+_shcore.SetProcessDpiAwareness.argtypes = [PROCESS_DPI_AWARENESS]
+_shcore.SetProcessDpiAwareness.restype = HRESULT
+_shcore.GetDpiForMonitor.argtypes = [HMONITOR, MONITOR_DPI_TYPE, POINTER(UINT), POINTER(UINT)]
+_shcore.GetDpiForMonitor.restype = HRESULT

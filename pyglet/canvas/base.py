@@ -103,7 +103,13 @@ class Display:
 
         :rtype: :class:`Screen`
         """
-        return self.get_screens()[0]
+        screens = self.get_screens()
+        for screen in screens:
+            if screen.x == 0 and screen.y == 0:
+                return screen
+
+        # No Primary screen found?
+        return screens[0]
 
     def get_windows(self):
         """Get the windows currently attached to this display.
