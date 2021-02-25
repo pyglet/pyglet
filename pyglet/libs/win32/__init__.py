@@ -319,7 +319,8 @@ _ole32.CoCreateInstance.restype = HRESULT
 _ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]
 
 #shcore
-_shcore.SetProcessDpiAwareness.argtypes = [PROCESS_DPI_AWARENESS]
-_shcore.SetProcessDpiAwareness.restype = HRESULT
-_shcore.GetDpiForMonitor.argtypes = [HMONITOR, MONITOR_DPI_TYPE, POINTER(UINT), POINTER(UINT)]
-_shcore.GetDpiForMonitor.restype = HRESULT
+if constants.WINDOWS_8_1_OR_GREATER:
+    _shcore.SetProcessDpiAwareness.argtypes = [PROCESS_DPI_AWARENESS]
+    _shcore.SetProcessDpiAwareness.restype = HRESULT
+    _shcore.GetDpiForMonitor.argtypes = [HMONITOR, MONITOR_DPI_TYPE, POINTER(UINT), POINTER(UINT)]
+    _shcore.GetDpiForMonitor.restype = HRESULT
