@@ -1270,7 +1270,7 @@ class Win32Window(BaseWindow):
 
     @Win32EventHandler(WM_GETDPISCALEDSIZE)
     def _event_dpi_scaled_size(self, msg, wParam, lParam):
-        if pyglet.options["scale_window_content"]:
+        if pyglet.options["scale_to_monitor"]:
             return None
 
         size = cast(lParam, POINTER(SIZE)).contents
@@ -1301,7 +1301,7 @@ class Win32Window(BaseWindow):
                  y_dpi / USER_DEFAULT_SCREEN_DPI)
 
         if not self._fullscreen and\
-                (pyglet.options["scale_window_content"] or WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
+                (pyglet.options["scale_to_monitor"] or WINDOWS_10_CREATORS_UPDATE_OR_GREATER):
             suggested_rect = cast(lParam, POINTER(RECT)).contents
 
             x = suggested_rect.left
