@@ -1,5 +1,4 @@
 import copy
-from profilehooks import profile
 
 import pyglet
 from pyglet.font import base
@@ -1523,7 +1522,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return image
 
-    # @profile
     def get_string_info(self, text):
         """Converts a string of text into a list of indices and advances."""
         text_length = len(text.encode('utf-16-le')) // 2
