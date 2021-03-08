@@ -160,7 +160,7 @@ class FreeTypeFont(base.Font):
     # Map font (name, bold, italic) to FreeTypeMemoryFace
     _memory_faces = MemoryFaceStore()
 
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
+    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
         super(FreeTypeFont, self).__init__()
 
         self.name = name

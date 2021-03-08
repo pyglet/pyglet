@@ -194,7 +194,7 @@ class QuartzFont(base.Font):
         cf.CFRelease(attributes)
         return descriptor
 
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
+    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
         super(QuartzFont, self).__init__()
 
         if not name: name = 'Helvetica'
