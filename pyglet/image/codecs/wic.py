@@ -252,7 +252,7 @@ class IWICImagingFactory(com.pIUnknown):
         ('CreateColorTransformer',
          com.STDMETHOD()),
         ('CreateBitmap',
-         com.STDMETHOD(UINT, UINT, REFWICPixelFormatGUID, WICBitmapCreateCacheOption, POINTER(IWICBitmap))),
+         com.STDMETHOD(UINT, UINT, POINTER(REFWICPixelFormatGUID), WICBitmapCreateCacheOption, POINTER(IWICBitmap))),
         ('CreateBitmapFromSource',
          com.STDMETHOD()),
         ('CreateBitmapFromSourceRect',
@@ -324,7 +324,7 @@ class WICDecoder(ImageDecoder):
         bitmap_decoder.GetFrame(frame_index, byref(bitmap))
         return bitmap
 
-    def _get_image(self, bitmap, target_fmt=GUID_WICPixelFormat32bppBGRA):
+    def get_image(self, bitmap, target_fmt=GUID_WICPixelFormat32bppBGRA):
         """Get's image from bitmap, specifying target format, bitmap is released before returning."""
         width = UINT()
         height = UINT()
@@ -385,7 +385,7 @@ class WICDecoder(ImageDecoder):
     def decode(self, file, filename):
         bitmap_decoder, stream = self._load_bitmap_decoder(file, filename)
         bitmap = self._get_bitmap_frame(bitmap_decoder, 0)
-        image = self._get_image(bitmap)
+        image = self.get_image(bitmap)
         self._delete_bitmap_decoder(bitmap_decoder, stream)
         return image
 

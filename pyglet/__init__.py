@@ -170,6 +170,7 @@ options = {
     'xlib_fullscreen_override_redirect': False,
     'darwin_cocoa': True,
     'search_local_libs': True,
+    'advanced_font_features': False,
     'headless': False,
     'headless_device': 0,
 }
@@ -195,6 +196,7 @@ _option_types = {
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
+    'advanced_font_features': bool,
     'headless': bool,
     'headless_device': int
 }

@@ -392,7 +392,7 @@ class Label(DocumentLabel):
     """
 
     def __init__(self, text='',
-                 font_name=None, font_size=None, bold=False, italic=False,
+                 font_name=None, font_size=None, bold=False, italic=False, stretch=False,
                  color=(255, 255, 255, 255),
                  x=0, y=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
@@ -408,10 +408,12 @@ class Label(DocumentLabel):
                 first matching name is used.
             `font_size` : float
                 Font size, in points.
-            `bold` : bool
+            `bold` : bool/str
                 Bold font style.
-            `italic` : bool
+            `italic` : bool/str
                 Italic font style.
+            `stretch` : bool/str
+                 Stretch font style.
             `color` : (int, int, int, int)
                 Font colour, as RGBA components in range [0, 255].
             `x` : int
@@ -453,6 +455,7 @@ class Label(DocumentLabel):
             'font_size': font_size,
             'bold': bold,
             'italic': italic,
+            'stretch': stretch,
             'color': color,
             'align': align,
         })

@@ -614,8 +614,9 @@ class UnformattedDocument(AbstractDocument):
         font_size = self.styles.get('font_size')
         bold = self.styles.get('bold', False)
         italic = self.styles.get('italic', False)
+        stretch = self.styles.get('stretch', False)
         return font.load(font_name, font_size,
-                         bold=bool(bold), italic=bool(italic), dpi=dpi)
+                         bold=bold, italic=italic, stretch=stretch, dpi=dpi)
 
     def get_element_runs(self):
         return runlist.ConstRunIterator(len(self._text), None)
@@ -659,6 +660,7 @@ class FormattedDocument(AbstractDocument):
             self.get_style_runs('font_size'),
             self.get_style_runs('bold'),
             self.get_style_runs('italic'),
+            self.get_style_runs('stretch'),
             dpi)
 
     def get_font(self, position, dpi=None):
@@ -709,25 +711,25 @@ class _ElementIterator(runlist.RunIterator):
 
 class _FontStyleRunsRangeIterator:
     # XXX subclass runlist
-    def __init__(self, font_names, font_sizes, bolds, italics, dpi):
+    def __init__(self, font_names, font_sizes, bolds, italics, stretch, dpi):
         self.zip_iter = runlist.ZipRunIterator(
-            (font_names, font_sizes, bolds, italics))
+            (font_names, font_sizes, bolds, italics, stretch))
         self.dpi = dpi
 
     def ranges(self, start, end):
         from pyglet import font
         for start, end, styles in self.zip_iter.ranges(start, end):
-            font_name, font_size, bold, italic = styles
+            font_name, font_size, bold, italic, stretch = styles
             ft = font.load(font_name, font_size,
-                           bold=bool(bold), italic=bool(italic),
+                           bold=bold, italic=italic, stretch=stretch,
                            dpi=self.dpi)
             yield start, end, ft
 
     def __getitem__(self, index):
         from pyglet import font
-        font_name, font_size, bold, italic = self.zip_iter[index]
+        font_name, font_size, bold, italic, stretch = self.zip_iter[index]
         return font.load(font_name, font_size,
-                         bold=bool(bold), italic=bool(italic),
+                         bold=bold, italic=italic, stretch=stretch,
                          dpi=self.dpi)
 
 

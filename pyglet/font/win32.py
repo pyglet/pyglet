@@ -222,7 +222,7 @@ class GDIGlyphRenderer(Win32GlyphRenderer):
 class Win32Font(base.Font):
     glyph_renderer_class = GDIGlyphRenderer
 
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
+    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
         super(Win32Font, self).__init__()
 
         self.logfont = self.get_logfont(name, size, bold, italic, dpi)
@@ -481,10 +481,10 @@ class GDIPlusFont(Win32Font):
 
     _default_name = 'Arial'
 
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
+    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
         if not name:
             name = self._default_name
-        super(GDIPlusFont, self).__init__(name, size, bold, italic, dpi)
+        super(GDIPlusFont, self).__init__(name, size, bold, italic, stretch, dpi)
 
         family = ctypes.c_void_p()
         name = ctypes.c_wchar_p(name)

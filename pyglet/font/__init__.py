@@ -64,8 +64,17 @@ if not getattr(sys, 'is_pyglet_doc_run', False):
         _font_class = QuartzFont
 
     elif pyglet.compat_platform in ('win32', 'cygwin'):
-        from pyglet.font.win32 import GDIPlusFont
-        _font_class = GDIPlusFont
+        from pyglet.libs.win32.constants import WINDOWS_7_OR_GREATER
+        if WINDOWS_7_OR_GREATER:
+            if pyglet.options["advanced_font_features"] is True:
+                from pyglet.font.directwrite import Win32DirectWriteFont
+                _font_class = Win32DirectWriteFont
+            else:
+                from pyglet.font.win32 import GDIPlusFont
+                _font_class = GDIPlusFont
+        else:
+            from pyglet.font.win32 import GDIPlusFont
+            _font_class = GDIPlusFont
 
     else:
         from pyglet.font.freetype import FreeTypeFont
@@ -77,7 +86,7 @@ def have_font(name):
     return _font_class.have_font(name)
 
 
-def load(name=None, size=None, bold=False, italic=False, dpi=None):
+def load(name=None, size=None, bold=False, italic=False, stretch=False, dpi=None):
     """Load a font for rendering.
 
     :Parameters:
@@ -127,18 +136,19 @@ def load(name=None, size=None, bold=False, italic=False, dpi=None):
     font_hold = shared_object_space.pyglet_font_font_hold
 
     # Look for font name in font cache
-    descriptor = (name, size, bold, italic, dpi)
+    descriptor = (name, size, bold, italic, stretch, dpi)
     if descriptor in font_cache:
         return font_cache[descriptor]
 
     # Not in cache, create from scratch
-    font = _font_class(name, size, bold=bold, italic=italic, dpi=dpi)
+    font = _font_class(name, size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
 
     # Save parameters for new-style layout classes to recover
     font.name = name
     font.size = size
     font.bold = bold
     font.italic = italic
+    font.stretch = stretch
     font.dpi = dpi
 
     # Cache font in weak-ref dictionary to avoid reloading while still in use

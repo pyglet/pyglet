@@ -167,6 +167,7 @@ class Glyph(image.TextureRegion):
                 Distance to move the horizontal advance to the next glyph.
 
         """
+        self.baseline = baseline
         self.advance = advance
         self.vertices = (
             left_side_bearing,
