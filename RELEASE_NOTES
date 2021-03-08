@@ -1,3 +1,15 @@
+pyglet 1.5.16
+Bugfix and feature release
+
+Bugfixes
+--------
+- 3d model obj decoder supports multiple material types
+
+Features
+--------
+- New DirectWrite based font loader. Enable with `pyglet.options["advanced_font_features"] = True`
+
+
 pyglet 1.5.15
 Bugfix and maintenance release
 
