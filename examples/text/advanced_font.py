@@ -1,7 +1,13 @@
 import pyglet
 pyglet.options["advanced_font_features"] = True
 
-# Change alias rendering options if you want! Uncomment below for options.
+
+"""Example of advanced font rendering features. Currently only supported on Windows."""
+
+
+# On Windows, it's possible to change the font anti-aliasing mode. 
+# Uncomment the below lines to set the options:
+#
 # from pyglet.font.directwrite import DirectWriteGlyphRenderer
 # D2D1_TEXT_ANTIALIAS_MODE_DEFAULT = 0
 # D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE = 1
@@ -10,7 +16,6 @@ pyglet.options["advanced_font_features"] = True
 # DirectWriteGlyphRenderer.antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_ALIASED
 
 window = pyglet.window.Window()
-
 batch = pyglet.graphics.Batch()
 
 arial_bold = pyglet.text.Label("Hello World 👽", font_name="Arial", bold=True, font_size=25, x=50, y=400, batch=batch)
@@ -24,17 +29,18 @@ segoe_ui_semilight = pyglet.text.Label("Hello World 🎱", font_name="Segoe UI",
 segoe_ui_light = pyglet.text.Label("Hello World 🥳👍", font_name="Segoe UI", bold="light", font_size=25, x=50, y=50, batch=batch)
 segoe_ui = pyglet.text.Label("Hello World 😀✌", font_name="Segoe UI", font_size=25, x=50, y=10, batch=batch)
 
-# Render a font purely with DirectWrite, directly to an image for special cases!
+# On Windows DirectWrite can render directly to an image for special cases!
 # Note: Labels are recommended unless you know what you are doing, or if you use these in a limited fashion.
 font = pyglet.font.load("Segoe UI")
 image = font.render_to_image("I am rendered as a texture! 🌎", 100, 300)
 sprite = pyglet.sprite.Sprite(image, x=400, y=400, batch=batch)
 sprite.rotation = 45
 
+
 @window.event
 def on_draw():
     window.clear()
-
     batch.draw()
+
 
 pyglet.app.run()
