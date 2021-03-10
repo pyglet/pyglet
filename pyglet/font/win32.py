@@ -36,6 +36,7 @@
 # TODO Windows Vista: need to call SetProcessDPIAware?  May affect GDI+ calls as well as font.
 
 import math
+import warnings
 
 from sys import byteorder
 import pyglet
@@ -484,6 +485,13 @@ class GDIPlusFont(Win32Font):
     def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
         if not name:
             name = self._default_name
+
+        assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
+
+        if stretch:
+            warnings.warn("The current font render does not support stretching.")
+
         super(GDIPlusFont, self).__init__(name, size, bold, italic, stretch, dpi)
 
         family = ctypes.c_void_p()

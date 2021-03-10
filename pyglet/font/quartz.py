@@ -36,6 +36,7 @@
 # TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI independence?
 
 import math
+import warnings
 from ctypes import c_void_p, c_int32, byref, c_byte
 
 from pyglet.font import base
@@ -195,6 +196,12 @@ class QuartzFont(base.Font):
         return descriptor
 
     def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
+        assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
+
+        if stretch:
+            warnings.warn("The current font render does not support stretching.")
+
         super(QuartzFont, self).__init__()
 
         if not name: name = 'Helvetica'
