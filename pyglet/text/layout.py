@@ -178,7 +178,7 @@ def _parse_distance(distance, dpi):
         return int(distance)
 
     match = _distance_re.match(distance)
-    assert match, 'Could not parse distance %s' % (distance)
+    assert match, 'Could not parse distance %s' % distance
     if not match:
         return 0
 
@@ -286,7 +286,7 @@ class _AbstractBox:
         self.advance = advance
         self.length = length
 
-    def place(self, layout, i, x, y):
+    def place(self, layout, i, x, y, context):
         raise NotImplementedError('abstract')
 
     def delete(self, layout):
@@ -316,8 +316,7 @@ class _GlyphBox(_AbstractBox):
                 and kerns in the glyph list.
 
         """
-        super(_GlyphBox, self).__init__(
-            font.ascent, font.descent, advance, len(glyphs))
+        super().__init__(font.ascent, font.descent, advance, len(glyphs))
         assert owner
         self.owner = owner
         self.font = font
@@ -329,8 +328,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = layout.groups[self.owner] = \
-                TextLayoutTextureGroup(self.owner, layout.foreground_group)
+            group = layout.groups[self.owner] = TextLayoutTextureGroup(self.owner, layout.foreground_group)
 
         n_glyphs = self.length
         vertices = []
@@ -384,13 +382,11 @@ class _GlyphBox(_AbstractBox):
                 x2 += glyph.advance + kern
 
             if bg is not None:
-                background_vertices.extend(
-                    [x1, y1, x2, y1, x2, y2, x1, y2])
+                background_vertices.extend([x1, y1, x2, y1, x2, y2, x1, y2])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
-                underline_vertices.extend(
-                    [x1, y + baseline - 2, x2, y + baseline - 2])
+                underline_vertices.extend([x1, y + baseline - 2, x2, y + baseline - 2])
                 underline_colors.extend(underline * 2)
 
             x1 = x2
@@ -548,109 +544,146 @@ class TextLayoutGroup(graphics.Group):
         return '%s(%r)' % (self.__class__.__name__, self.parent)
 
 
-class ScrollableTextLayoutGroup(graphics.Group):
+class NewScrollableTextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     The group maintains internal state for setting the clipping planes and
     view transform for scrolling.  Because the group has internal state
     specific to the text layout, the group is never shared.
     """
-    _clip_x = 0
-    _clip_y = 0
-    _clip_width = 0
-    _clip_height = 0
-    _view_x = 0
-    _view_y = 0
-    translate_x = 0  # x - view_x
-    translate_y = 0  # y - view_y
+    x = 0
+    y = 0
+    width = 0
+    height = 0
+    view_x = 0
+    view_y = 0
 
     def set_state(self):
         glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
+
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        # Disable clipping planes to check culling.
-        glEnable(GL_CLIP_PLANE0)
-        glEnable(GL_CLIP_PLANE1)
-        glEnable(GL_CLIP_PLANE2)
-        glEnable(GL_CLIP_PLANE3)
-        # Left
-        glClipPlane(GL_CLIP_PLANE0, (GLdouble * 4)(1, 0, 0, -(self._clip_x - 1)))
-        # Top
-        glClipPlane(GL_CLIP_PLANE1, (GLdouble * 4)(0, -1, 0, self._clip_y))
-        # Right
-        glClipPlane(GL_CLIP_PLANE2, (GLdouble * 4)(-1, 0, 0, self._clip_x + self._clip_width + 1))
-        # Bottom
-        glClipPlane(GL_CLIP_PLANE3, (GLdouble * 4)(0, 1, 0, -(self._clip_y - self._clip_height)))
-        glTranslatef(self.translate_x, self.translate_y, 0)
+
+        glEnable(GL_SCISSOR_TEST)
+        glScissor(self.x, self.y, self.width, self.height)
+
+        glTranslatef(-self.view_x, -self.view_y, 0)
 
     def unset_state(self):
-        glTranslatef(-self.translate_x, -self.translate_y, 0)
+        glTranslatef(self.view_x, self.view_y, 0)
+        glDisable(GL_SCISSOR_TEST)
         glPopAttrib()
-
-    def _set_top(self, top):
-        self._clip_y = top
-        self.translate_y = self._clip_y - self._view_y
-
-    top = property(lambda self: self._clip_y, _set_top,
-                   doc="""Top edge of the text layout (measured from the
-    bottom of the graphics viewport).
-
-    :type: int
-    """)
-
-    def _set_left(self, left):
-        self._clip_x = left
-        self.translate_x = self._clip_x - self._view_x
-
-    left = property(lambda self: self._clip_x, _set_left,
-                    doc="""Left edge of the text layout.
-
-    :type: int
-    """)
-
-    def _set_width(self, width):
-        self._clip_width = width
-
-    width = property(lambda self: self._clip_width, _set_width,
-                     doc="""Width of the text layout.
-
-    :type: int
-    """)
-
-    def _set_height(self, height):
-        self._clip_height = height
-
-    height = property(lambda self: self._height, _set_height,
-                      doc="""Height of the text layout.
-
-    :type: int
-    """)
-
-    def _set_view_x(self, view_x):
-        self._view_x = view_x
-        self.translate_x = self._clip_x - self._view_x
-
-    view_x = property(lambda self: self._view_x, _set_view_x,
-                      doc="""Horizontal scroll offset.
-
-    :type: int
-    """)
-
-    def _set_view_y(self, view_y):
-        self._view_y = view_y
-        self.translate_y = self._clip_y - self._view_y
-
-    view_y = property(lambda self: self._view_y, _set_view_y,
-                      doc="""Vertical scroll offset.
-
-    :type: int
-    """)
 
     def __eq__(self, other):
         return self is other
 
     def __hash__(self):
         return id(self)
+
+
+# class ScrollableTextLayoutGroup(graphics.Group):
+#     """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+#
+#     The group maintains internal state for setting the clipping planes and
+#     view transform for scrolling.  Because the group has internal state
+#     specific to the text layout, the group is never shared.
+#     """
+#     _clip_x = 0
+#     _clip_y = 0
+#     _clip_width = 0
+#     _clip_height = 0
+#     _view_x = 0
+#     _view_y = 0
+#     translate_x = 0  # x - view_x
+#     translate_y = 0  # y - view_y
+#
+#     def set_state(self):
+#         glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
+#         glEnable(GL_BLEND)
+#         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+#         # Disable clipping planes to check culling.
+#         glEnable(GL_CLIP_PLANE0)
+#         glEnable(GL_CLIP_PLANE1)
+#         glEnable(GL_CLIP_PLANE2)
+#         glEnable(GL_CLIP_PLANE3)
+#         # Left
+#         glClipPlane(GL_CLIP_PLANE0, (GLdouble * 4)(1, 0, 0, -(self._clip_x - 1)))
+#         # Top
+#         glClipPlane(GL_CLIP_PLANE1, (GLdouble * 4)(0, -1, 0, self._clip_y))
+#         # Right
+#         glClipPlane(GL_CLIP_PLANE2, (GLdouble * 4)(-1, 0, 0, self._clip_x + self._clip_width + 1))
+#         # Bottom
+#         glClipPlane(GL_CLIP_PLANE3, (GLdouble * 4)(0, 1, 0, -(self._clip_y - self._clip_height)))
+#         glTranslatef(self.translate_x, self.translate_y, 0)
+#
+#     def unset_state(self):
+#         glTranslatef(-self.translate_x, -self.translate_y, 0)
+#         glPopAttrib()
+#
+#     def _set_top(self, top):
+#         self._clip_y = top
+#         self.translate_y = self._clip_y - self._view_y
+#
+#     top = property(lambda self: self._clip_y, _set_top,
+#                    doc="""Top edge of the text layout (measured from the
+#     bottom of the graphics viewport).
+#
+#     :type: int
+#     """)
+#
+#     def _set_left(self, left):
+#         self._clip_x = left
+#         self.translate_x = self._clip_x - self._view_x
+#
+#     left = property(lambda self: self._clip_x, _set_left,
+#                     doc="""Left edge of the text layout.
+#
+#     :type: int
+#     """)
+#
+#     def _set_width(self, width):
+#         self._clip_width = width
+#
+#     width = property(lambda self: self._clip_width, _set_width,
+#                      doc="""Width of the text layout.
+#
+#     :type: int
+#     """)
+#
+#     def _set_height(self, height):
+#         self._clip_height = height
+#
+#     height = property(lambda self: self._height, _set_height,
+#                       doc="""Height of the text layout.
+#
+#     :type: int
+#     """)
+#
+#     def _set_view_x(self, view_x):
+#         self._view_x = view_x
+#         self.translate_x = self._clip_x - self._view_x
+#
+#     view_x = property(lambda self: self._view_x, _set_view_x,
+#                       doc="""Horizontal scroll offset.
+#
+#     :type: int
+#     """)
+#
+#     def _set_view_y(self, view_y):
+#         self._view_y = view_y
+#         self.translate_y = self._clip_y - self._view_y
+#
+#     view_y = property(lambda self: self._view_y, _set_view_y,
+#                       doc="""Vertical scroll offset.
+#
+#     :type: int
+#     """)
+#
+#     def __eq__(self, other):
+#         return self is other
+#
+#     def __hash__(self):
+#         return id(self)
 
 
 class TextLayoutForegroundGroup(graphics.OrderedGroup):
@@ -706,9 +739,7 @@ class TextLayoutTextureGroup(graphics.Group):
                 self.parent == other.parent)
 
     def __repr__(self):
-        return '%s(%d, %r)' % (self.__class__.__name__,
-                               self.texture.id,
-                               self.parent)
+        return '%s(%d, %r)' % (self.__class__.__name__, self.texture.id, self.parent)
 
 
 class TextLayout:
@@ -749,8 +780,7 @@ class TextLayout:
     top_group = TextLayoutGroup()
     background_group = graphics.OrderedGroup(0, top_group)
     foreground_group = TextLayoutForegroundGroup(1, top_group)
-    foreground_decoration_group = \
-        TextLayoutForegroundDecorationGroup(2, top_group)
+    foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, top_group)
 
     _update_enabled = True
     _own_batch = False
@@ -904,8 +934,7 @@ class TextLayout:
             self.top_group = TextLayoutGroup(group)
             self.background_group = graphics.OrderedGroup(0, self.top_group)
             self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-            self.foreground_decoration_group = \
-                TextLayoutForegroundDecorationGroup(2, self.top_group)
+            self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
             # Otherwise class groups are (re)used.
 
     def _get_document(self):
@@ -959,17 +988,16 @@ class TextLayout:
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
+        # TODO: remove "origin layout" now that Scroll layout is no longer using it:
         if self._origin_layout:
             left = top = 0
         else:
             left = self._get_left()
             top = self._get_top(lines)
 
-        context = _StaticLayoutContext(self, self._document,
-                                       colors_iter, background_iter)
+        context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
-            self._create_vertex_lists(left + line.x, top + line.y,
-                                      line.start, line.boxes, context)
+            self._create_vertex_lists(left + line.x, top + line.y, line.start, line.boxes, context)
 
     def _update_color(self):
         colors_iter = self._document.get_style_runs('color')
@@ -997,7 +1025,7 @@ class TextLayout:
         elif self._anchor_x == 'right':
             return self._x - width
         else:
-            assert False, 'Invalid anchor_x'
+            assert False, '`anchor_x` must be either "left", "center", or "right".'
 
     def _get_top(self, lines):
         if self._height is None:
@@ -1012,7 +1040,7 @@ class TextLayout:
             elif self._content_valign == 'center':
                 offset = max(0, self._height - self.content_height) // 2
             else:
-                assert False, 'Invalid content_valign'
+                assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
         if self._anchor_y == 'top':
             return self._y - offset
@@ -1028,7 +1056,21 @@ class TextLayout:
             else:
                 return self._y + height // 2 - offset
         else:
-            assert False, 'Invalid anchor_y'
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
+
+    def _get_bottom(self, lines):
+        height = self._height or self.content_height
+
+        if self._anchor_y == 'top':
+            return self._y - height
+        elif self._anchor_y == 'bottom':
+            return self._y
+        elif self._anchor_y == 'center':
+            return self._y - height // 2
+        elif self._anchor_y == 'baseline':
+            return self._y - height + lines[0].ascent
+        else:
+            assert False, '`anchor_y` must be either "top", "baseline", "bottom", or "center".'
 
     def _init_document(self):
         self._update()
@@ -1663,133 +1705,232 @@ class TextLayout:
     """)
 
 
-class ScrollableTextLayout(TextLayout):
-    """Display text in a scrollable viewport.
+class NewScrollableTextLayout(TextLayout):
+    """Display text in a scrollable viewport."""
 
-    This class does not display a scrollbar or handle scroll events; it merely
-    clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout` to the bounds of the
-    layout given by `x`, `y`, `width` and `height`; and offsets the text by a
-    scroll offset.
-
-    Use `view_x` and `view_y` to scroll the text within the viewport.
-    """
-    _origin_layout = True
-
-    def __init__(self, document, width, height, multiline=False, dpi=None,
-                 batch=None, group=None, wrap_lines=True):
-        super(ScrollableTextLayout, self).__init__(
-            document, width, height, multiline, dpi, batch, group, wrap_lines)
+    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
+        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
         self.top_group.width = self._width
         self.top_group.height = self._height
 
     def _init_groups(self, group):
         # Scrollable layout never shares group becauase of translation.
-        self.top_group = ScrollableTextLayoutGroup(group)
+        self.top_group = NewScrollableTextLayoutGroup(group)
         self.background_group = graphics.OrderedGroup(0, self.top_group)
         self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-        self.foreground_decoration_group = \
-            TextLayoutForegroundDecorationGroup(2, self.top_group)
+        self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
 
-    def _set_x(self, x):
-        self._x = x
-        self.top_group.left = self._get_left()
+    # Properties
 
-    def _get_x(self):
+    @property
+    def x(self):
         return self._x
 
-    x = property(_get_x, _set_x)
+    @x.setter
+    def x(self, x):
+        super()._set_x(x)
+        self.top_group.x = self._get_left()
 
-    def _set_y(self, y):
-        self._y = y
-        self.top_group.top = self._get_top(self._get_lines())
-
-    def _get_y(self):
+    @property
+    def y(self):
         return self._y
 
-    y = property(_get_y, _set_y)
+    @y.setter
+    def y(self, y):
+        super()._set_y(y)
+        self.top_group.y = y
 
-    def _set_width(self, width):
-        super(ScrollableTextLayout, self)._set_width(width)
-        self.top_group.left = self._get_left()
-        self.top_group.width = self._width
-
-    def _get_width(self):
-        return self._width
-
-    width = property(_get_width, _set_width)
-
-    def _set_height(self, height):
-        super(ScrollableTextLayout, self)._set_height(height)
-        self.top_group.top = self._get_top(self._get_lines())
-        self.top_group.height = self._height
-
-    def _get_height(self):
-        return self._height
-
-    height = property(_get_height, _set_height)
-
-    def _set_anchor_x(self, anchor_x):
-        self._anchor_x = anchor_x
-        self.top_group.left = self._get_left()
-
-    def _get_anchor_x(self):
+    @property
+    def anchor_x(self):
         return self._anchor_x
 
-    anchor_x = property(_get_anchor_x, _set_anchor_x)
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor_x = anchor_x
+        super()._update()
+        self.top_group.x = self._get_left()
 
-    def _set_anchor_y(self, anchor_y):
-        self._anchor_y = anchor_y
-        self.top_group.top = self._get_top(self._get_lines())
-
-    def _get_anchor_y(self):
+    @property
+    def anchor_y(self):
         return self._anchor_y
 
-    anchor_y = property(_get_anchor_y, _set_anchor_y)
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor_y = anchor_y
+        super()._update()
+        self.top_group.y = self._get_bottom(self._get_lines())
+        print(f"(anchor_y {anchor_y}) y, group.y: ", self._y, self.top_group.y)
 
     # Offset of content within viewport
 
-    def _set_view_x(self, view_x):
+    @property
+    def view_x(self):
+        """Horizontal scroll offset.
+
+        The initial value is 0, and the left edge of the text will touch the left
+        side of the layout bounds.  A positive value causes the text to "scroll"
+        to the right.  Values are automatically clipped into the range
+        ``[0, content_width - width]``
+
+        :type: int
+        """
+        return self.top_group.view_x
+
+    @view_x.setter
+    def view_x(self, view_x):
         view_x = max(0, min(self.content_width - self.width, view_x))
         self.top_group.view_x = view_x
 
-    def _get_view_x(self):
-        return self.top_group.view_x
+    @property
+    def view_y(self):
+        """Vertical scroll offset.
 
-    view_x = property(_get_view_x, _set_view_x,
-                      doc="""Horizontal scroll offset.
+        The initial value is 0, and the top of the text will touch the top of the
+        layout bounds (unless the content height is less than the layout height,
+        in which case `content_valign` is used).
 
-    The initial value is 0, and the left edge of the text will touch the left
-    side of the layout bounds.  A positive value causes the text to "scroll"
-    to the right.  Values are automatically clipped into the range
-    ``[0, content_width - width]``
+        A negative value causes the text to "scroll" upwards.  Values outside of
+        the range ``[height - content_height, 0]`` are automatically clipped in
+        range.
 
-    :type: int
-    """)
+        :type: int
+        """
+        return self.top_group.view_y
 
-    def _set_view_y(self, view_y):
+    @view_y.setter
+    def view_y(self, view_y):
         # view_y must be negative.
         view_y = min(0, max(self.height - self.content_height, view_y))
         self.top_group.view_y = view_y
 
-    def _get_view_y(self):
-        return self.top_group.view_y
 
-    view_y = property(_get_view_y, _set_view_y,
-                      doc="""Vertical scroll offset.
+# class ScrollableTextLayout(TextLayout):
+#     """Display text in a scrollable viewport.
+#
+#     This class does not display a scrollbar or handle scroll events; it merely
+#     clips the text that would be drawn in :py:func:`~pyglet.text.layout.TextLayout` to the bounds of the
+#     layout given by `x`, `y`, `width` and `height`; and offsets the text by a
+#     scroll offset.
+#
+#     Use `view_x` and `view_y` to scroll the text within the viewport.
+#     """
+#     _origin_layout = True
+#
+#     def __init__(self, document, width, height, multiline=False, dpi=None,
+#                  batch=None, group=None, wrap_lines=True):
+#         super(ScrollableTextLayout, self).__init__(
+#             document, width, height, multiline, dpi, batch, group, wrap_lines)
+#         self.top_group.width = self._width
+#         self.top_group.height = self._height
+#
+#     def _init_groups(self, group):
+#         # Scrollable layout never shares group becauase of translation.
+#         self.top_group = ScrollableTextLayoutGroup(group)
+#         self.background_group = graphics.OrderedGroup(0, self.top_group)
+#         self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+#         self.foreground_decoration_group = \
+#             TextLayoutForegroundDecorationGroup(2, self.top_group)
+#
+#     def _set_x(self, x):
+#         self._x = x
+#         self.top_group.left = self._get_left()
+#
+#     def _get_x(self):
+#         return self._x
+#
+#     x = property(_get_x, _set_x)
+#
+#     def _set_y(self, y):
+#         self._y = y
+#         self.top_group.top = self._get_top(self._get_lines())
+#
+#     def _get_y(self):
+#         return self._y
+#
+#     y = property(_get_y, _set_y)
+#
+#     def _set_width(self, width):
+#         super(ScrollableTextLayout, self)._set_width(width)
+#         self.top_group.left = self._get_left()
+#         self.top_group.width = self._width
+#
+#     def _get_width(self):
+#         return self._width
+#
+#     width = property(_get_width, _set_width)
+#
+#     def _set_height(self, height):
+#         super(ScrollableTextLayout, self)._set_height(height)
+#         self.top_group.top = self._get_top(self._get_lines())
+#         self.top_group.height = self._height
+#
+#     def _get_height(self):
+#         return self._height
+#
+#     height = property(_get_height, _set_height)
+#
+#     def _set_anchor_x(self, anchor_x):
+#         self._anchor_x = anchor_x
+#         self.top_group.left = self._get_left()
+#
+#     def _get_anchor_x(self):
+#         return self._anchor_x
+#
+#     anchor_x = property(_get_anchor_x, _set_anchor_x)
+#
+#     def _set_anchor_y(self, anchor_y):
+#         self._anchor_y = anchor_y
+#         self.top_group.top = self._get_top(self._get_lines())
+#
+#     def _get_anchor_y(self):
+#         return self._anchor_y
+#
+#     anchor_y = property(_get_anchor_y, _set_anchor_y)
+#
+#     # Offset of content within viewport
+#
+#     def _set_view_x(self, view_x):
+#         view_x = max(0, min(self.content_width - self.width, view_x))
+#         self.top_group.view_x = view_x
+#
+#     def _get_view_x(self):
+#         return self.top_group.view_x
+#
+#     view_x = property(_get_view_x, _set_view_x,
+#                       doc="""Horizontal scroll offset.
+#
+#     The initial value is 0, and the left edge of the text will touch the left
+#     side of the layout bounds.  A positive value causes the text to "scroll"
+#     to the right.  Values are automatically clipped into the range
+#     ``[0, content_width - width]``
+#
+#     :type: int
+#     """)
+#
+#     def _set_view_y(self, view_y):
+#         # view_y must be negative.
+#         view_y = min(0, max(self.height - self.content_height, view_y))
+#         self.top_group.view_y = view_y
+#
+#     def _get_view_y(self):
+#         return self.top_group.view_y
+#
+#     view_y = property(_get_view_y, _set_view_y,
+#                       doc="""Vertical scroll offset.
+#
+#     The initial value is 0, and the top of the text will touch the top of the
+#     layout bounds (unless the content height is less than the layout height,
+#     in which case `content_valign` is used).
+#
+#     A negative value causes the text to "scroll" upwards.  Values outside of
+#     the range ``[height - content_height, 0]`` are automatically clipped in
+#     range.
+#
+#     :type: int
+#     """)
 
-    The initial value is 0, and the top of the text will touch the top of the
-    layout bounds (unless the content height is less than the layout height,
-    in which case `content_valign` is used).
 
-    A negative value causes the text to "scroll" upwards.  Values outside of
-    the range ``[height - content_height, 0]`` are automatically clipped in
-    range.
-
-    :type: int
-    """)
-
-
-class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
+class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
@@ -1812,8 +1953,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     _selection_color = [255, 255, 255, 255]
     _selection_background_color = [46, 106, 197, 255]
 
-    def __init__(self, document, width, height, multiline=False, dpi=None,
-                 batch=None, group=None, wrap_lines=True):
+    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         event.EventDispatcher.__init__(self)
         self.glyphs = []
         self.lines = []
@@ -1827,9 +1967,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        ScrollableTextLayout.__init__(self,
-                                      document, width, height, multiline, dpi, batch, group,
-                                      wrap_lines)
+        NewScrollableTextLayout.__init__(self, document, width, height, multiline, dpi, batch, group, wrap_lines)
 
         self.top_group.width = width
         self.top_group.left = self._get_left()
@@ -1837,8 +1975,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         self.top_group.top = self._get_top(self._get_lines())
 
     def _init_document(self):
-        assert self._document, \
-            'Cannot remove document from IncrementalTextLayout'
+        assert self._document, 'Cannot remove document from IncrementalTextLayout'
         self.on_insert_text(0, self._document.text)
 
     def _uninit_document(self):
@@ -1893,15 +2030,11 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         self._update()
 
     def on_style_text(self, start, end, attributes):
-        if ('font_name' in attributes or
-                    'font_size' in attributes or
-                    'bold' in attributes or
-                    'italic' in attributes):
+        if 'font_name' in attributes or 'font_size' in attributes or 'bold' in attributes or 'italic' in attributes:
             self.invalid_glyphs.invalidate(start, end)
         elif False:  # Attributes that change flow
             self.invalid_flow.invalidate(start, end)
-        elif ('color' in attributes or
-                      'background_color' in attributes):
+        elif 'color' in attributes or 'background_color' in attributes:
             self.invalid_style.invalidate(start, end)
 
         self._update()
@@ -1964,8 +2097,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         runs = runlist.ZipRunIterator((
             self._document.get_font_runs(dpi=self._dpi),
             self._document.get_element_runs()))
-        for start, end, (font, element) in \
-                runs.ranges(invalid_start, invalid_end):
+        for start, end, (font, element) in runs.ranges(invalid_start, invalid_end):
             if element:
                 self.glyphs[start] = _InlineElementBox(element)
             else:
@@ -1973,8 +2105,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
                 self.glyphs[start:end] = font.get_glyphs(text)
 
         # Update owner runs
-        self._get_owner_runs(
-            self.owner_runs, self.glyphs, invalid_start, invalid_end)
+        self._get_owner_runs(self.owner_runs, self.glyphs, invalid_start, invalid_end)
 
         # Updated glyphs need flowing
         self.invalid_flow.invalidate(invalid_start, invalid_end)
@@ -1994,8 +2125,8 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         # Flow from previous line; fixes issue with adding a space into
         # overlong line (glyphs before space would then flow back onto
-        # previous line).  TODO Could optimise this by keeping track of where
-        # the overlong lines are.
+        # previous line).
+        # TODO:  Could optimise this by keeping track of where the overlong lines are.
         line_index = max(0, line_index - 1)
 
         # (No need to find last invalid line; the update loop below stops
@@ -2017,15 +2148,13 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         content_width_invalid = False
         next_start = invalid_start
 
-        for line in self._flow_glyphs(self.glyphs, self.owner_runs,
-                                      invalid_start, len(self._document.text)):
+        for line in self._flow_glyphs(self.glyphs, self.owner_runs, invalid_start, len(self._document.text)):
             try:
                 old_line = self.lines[line_index]
                 old_line.delete(self)
                 old_line_width = old_line.width + old_line.margin_left
                 new_line_width = line.width + line.margin_left
-                if (old_line_width == self.content_width and
-                            new_line_width < old_line_width):
+                if old_line_width == self.content_width and new_line_width < old_line_width:
                     content_width_invalid = True
                 self.lines[line_index] = line
                 self.invalid_lines.invalidate(line_index, line_index + 1)
@@ -2058,8 +2187,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             # Rescan all lines to look for the new maximum content width
             content_width = 0
             for line in self.lines:
-                content_width = max(line.width + line.margin_left,
-                                    content_width)
+                content_width = max(line.width + line.margin_left, content_width)
             self.content_width = content_width
 
     def _update_flow_lines(self):
@@ -2176,16 +2304,40 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
     # Invalidate invisible/visible lines when y scrolls
 
-    def _set_view_y(self, view_y):
+    @property
+    def view_y(self):
+        """Vertical scroll offset.
+
+        The initial value is 0, and the top of the text will touch the top of the
+        layout bounds (unless the content height is less than the layout height,
+        in which case `content_valign` is used).
+
+        A negative value causes the text to "scroll" upwards.  Values outside of
+        the range ``[height - content_height, 0]`` are automatically clipped in
+        range.
+
+        :type: int
+        """
+        return self.top_group.view_y
+
+    @view_y.setter
+    def view_y(self, view_y):
         # view_y must be negative.
-        super(IncrementalTextLayout, self)._set_view_y(view_y)
+        view_y = min(0, max(self.height - self.content_height, view_y))
+        self.top_group.view_y = view_y
         self._update_visible_lines()
         self._update_vertex_lists()
 
-    def _get_view_y(self):
-        return self.top_group.view_y
-
-    view_y = property(_get_view_y, _set_view_y)
+    # def _set_view_y(self, view_y):
+    #     # view_y must be negative.
+    #     super(IncrementalTextLayout, self)._set_view_y(view_y)
+    #     self._update_visible_lines()
+    #     self._update_vertex_lists()
+    #
+    # def _get_view_y(self):
+    #     return self.top_group.view_y
+    #
+    # view_y = property(_get_view_y, _set_view_y)
 
     # Visible selection
 
@@ -2335,8 +2487,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return (x + self.top_group.translate_x,
-                line.y + self.top_group.translate_y + baseline)
+        return x + self.top_group.view_x, line.y + self.top_group.view_y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2349,8 +2500,8 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
 
         :rtype: int
         """
-        x -= self.top_group.translate_x
-        y -= self.top_group.translate_y
+        x -= self.top_group.view_x
+        y -= self.top_group.view_y
 
         line_index = 0
         for line in self.lines:
@@ -2372,8 +2523,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         :return: (x, y)
         """
         line = self.lines[line]
-        return (line.x + self.top_group.translate_x,
-                line.y + self.top_group.translate_y)
+        return line.x + self.top_group.view_x, line.y + self.top_group.view_y
 
     def get_line_from_position(self, position):
         """Get the line index of a character position in the document.
@@ -2415,7 +2565,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
         :rtype: int
         """
         line = self.lines[line]
-        x -= self.top_group.translate_x
+        x -= self.top_group.view_x
 
         if x < line.x:
             return line.start
@@ -2468,8 +2618,7 @@ class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
             self.view_x = x - 10
         elif x >= self.view_x + self.width:
             self.view_x = x - self.width + 10
-        elif (x >= self.view_x + self.width - 10 and
-                      self.content_width > self.width):
+        elif x >= self.view_x + self.width - 10 and self.content_width > self.width:
             self.view_x = x - self.width + 10
 
     if _is_pyglet_doc_run:
