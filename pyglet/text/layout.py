@@ -841,6 +841,35 @@ class TextLayout:
         self.document = document
 
     @property
+    def dpi(self):
+        """Get DPI used by this layout.
+
+        :type: float
+        """
+        return self._dpi
+
+    @property
+    def document(self):
+        """Document to display.
+
+         For :py:class:`~pyglet.text.layout.IncrementalTextLayout` it is
+         far more efficient to modify a document in-place than to replace
+         the document instance on the layout.
+
+         :type: `AbstractDocument`
+         """
+        return self._document
+
+    @document.setter
+    def document(self, document):
+        if self._document:
+            self._document.remove_handlers(self)
+            self._uninit_document()
+        document.push_handlers(self)
+        self._document = document
+        self._init_document()
+
+    @property
     def batch(self):
         """The Batch that this Layout is assigned to.
 
@@ -899,14 +928,6 @@ class TextLayout:
         self._update_enabled = True
         self._update()
 
-    dpi = property(lambda self: self._dpi,
-                   doc="""Get DPI used by this layout.
-
-    Read-only.
-
-    :type: float
-    """)
-
     def delete(self):
         """Remove this layout from its batch.
         """
@@ -936,26 +957,6 @@ class TextLayout:
             self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
             self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
             # Otherwise class groups are (re)used.
-
-    def _get_document(self):
-        return self._document
-
-    def _set_document(self, document):
-        if self._document:
-            self._document.remove_handlers(self)
-            self._uninit_document()
-        document.push_handlers(self)
-        self._document = document
-        self._init_document()
-
-    document = property(_get_document, _set_document,
-                        doc="""Document to display.
- 
-     For :py:class:`~pyglet.text.layout.IncrementalTextLayout` it is far more efficient to modify a document
-     in-place than to replace the document instance on the layout.
- 
-     :type: `AbstractDocument`
-     """)
 
     def _get_lines(self):
         len_text = len(self._document.text)
@@ -1954,7 +1955,7 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
     _selection_background_color = [46, 106, 197, 255]
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
-        event.EventDispatcher.__init__(self)
+
         self.glyphs = []
         self.lines = []
 
@@ -1967,12 +1968,12 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        NewScrollableTextLayout.__init__(self, document, width, height, multiline, dpi, batch, group, wrap_lines)
+        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
-        self.top_group.width = width
-        self.top_group.left = self._get_left()
-        self.top_group.height = height
-        self.top_group.top = self._get_top(self._get_lines())
+        # self.top_group.width = width
+        # self.top_group.left = self._get_left()
+        # self.top_group.height = height
+        # self.top_group.top = self._get_top(self._get_lines())
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -2247,8 +2248,7 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
                 self._selection_end,
                 self._selection_background_color)
 
-        context = _IncrementalLayoutContext(self, self._document,
-                                            colors_iter, background_iter)
+        context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
 
         for line in self.lines[invalid_start:invalid_end]:
             line.delete(self)
@@ -2261,8 +2261,7 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
             elif y + line.ascent < self.view_y - self.height:
                 break
 
-            self._create_vertex_lists(line.x, y, line.start,
-                                      line.boxes, context)
+            self._create_vertex_lists(line.x, y, line.start, line.boxes, context)
 
     # Invalidate everything when width changes
 
@@ -2327,17 +2326,6 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
         self.top_group.view_y = view_y
         self._update_visible_lines()
         self._update_vertex_lists()
-
-    # def _set_view_y(self, view_y):
-    #     # view_y must be negative.
-    #     super(IncrementalTextLayout, self)._set_view_y(view_y)
-    #     self._update_visible_lines()
-    #     self._update_vertex_lists()
-    #
-    # def _get_view_y(self):
-    #     return self.top_group.view_y
-    #
-    # view_y = property(_get_view_y, _set_view_y)
 
     # Visible selection
 
