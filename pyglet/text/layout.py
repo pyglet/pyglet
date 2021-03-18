@@ -544,7 +544,7 @@ class TextLayoutGroup(graphics.Group):
         return '%s(%r)' % (self.__class__.__name__, self.parent)
 
 
-class NewScrollableTextLayoutGroup(graphics.Group):
+class ScrollableTextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
     The group maintains internal state for setting the clipping planes and
@@ -1706,7 +1706,7 @@ class TextLayout:
     """)
 
 
-class NewScrollableTextLayout(TextLayout):
+class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport."""
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
@@ -1716,7 +1716,7 @@ class NewScrollableTextLayout(TextLayout):
 
     def _init_groups(self, group):
         # Scrollable layout never shares group becauase of translation.
-        self.top_group = NewScrollableTextLayoutGroup(group)
+        self.top_group = ScrollableTextLayoutGroup(group)
         self.background_group = graphics.OrderedGroup(0, self.top_group)
         self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
         self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
@@ -1760,6 +1760,7 @@ class NewScrollableTextLayout(TextLayout):
         self._anchor_y = anchor_y
         super()._update()
         self.top_group.y = self._get_bottom(self._get_lines())
+        # TODO: remove this:
         print(f"(anchor_y {anchor_y}) y, group.y: ", self._y, self.top_group.y)
 
     # Offset of content within viewport
@@ -1931,7 +1932,7 @@ class NewScrollableTextLayout(TextLayout):
 #     """)
 
 
-class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
+class IncrementalTextLayout(ScrollableTextLayout, event.EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
@@ -1969,11 +1970,7 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
         self.owner_runs = runlist.RunList(0, None)
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-
-        # self.top_group.width = width
-        # self.top_group.left = self._get_left()
-        # self.top_group.height = height
-        # self.top_group.top = self._get_top(self._get_lines())
+        super()._update()
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -2070,7 +2067,9 @@ class IncrementalTextLayout(NewScrollableTextLayout, event.EventDispatcher):
         # Reclamp view_y in case content height has changed and reset top of
         # content.
         self.view_y = self.view_y
-        self.top_group.top = self._get_top(self._get_lines())
+
+        # TODO: is this necessary?
+        # self.top_group.top = self._get_top(self._get_lines())
 
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
