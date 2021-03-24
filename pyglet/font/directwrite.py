@@ -812,13 +812,13 @@ class MyFontFileStream(com.COMObject):
         self._size = len(data)
         self._ptrs = []
 
-    def AddRef(self):
+    def AddRef(self, this):
         return 1
 
-    def Release(self):
+    def Release(self, this):
         return 1
 
-    def QueryInterface(self, refiid, tester):
+    def QueryInterface(self, this, refiid, tester):
         return 0
 
     def ReadFileFragment(self, this, fragmentStart, fileOffset, fragmentSize, fragmentContext):
@@ -858,26 +858,25 @@ class LegacyFontFileLoader(com.COMObject):
     def __init__(self):
         self._streams = {}
 
-    def AddRef(self):
-        return 1
-
-    def Release(self):
-        return 1
-
-    def QueryInterface(self, refiid, tester):
+    def QueryInterface(self, this, refiid, tester):
         return 0
 
-    def SetCurrentFont(self, index, data):
-        self._streams[index] = MyFontFileStream(data)
+    def AddRef(self, this):
+        return 1
+
+    def Release(self, this):
+        return 1
 
     def CreateStreamFromKey(self, this, fontfileReferenceKey, fontFileReferenceKeySize, fontFileStream):
         convert_index = cast(fontfileReferenceKey, POINTER(c_uint32))
 
         self._ptr = ctypes.cast(self._streams[convert_index.contents.value]._pointers[IDWriteFontFileStream],
                                 POINTER(IDWriteFontFileStream))
-
         fontFileStream[0] = self._ptr
         return 0
+
+    def SetCurrentFont(self, index, data):
+        self._streams[index] = MyFontFileStream(data)
 
 
 class MyEnumerator(com.COMObject):
@@ -947,15 +946,15 @@ class LegacyCollectionLoader(com.COMObject):
     def AddFontData(self, fonts):
         self._enumerator.AddFontData(fonts)
 
-    def AddRef(self):
+    def AddRef(self, this):
         self._i = 1
         return 1
 
-    def Release(self):
+    def Release(self, this):
         self._i = 0
         return 1
 
-    def QueryInterface(self, refiid, tester):
+    def QueryInterface(self, this, refiid, tester):
         return 0
 
     def CreateEnumeratorFromKey(self, this, factory, key, key_size, enumerator):
@@ -963,6 +962,7 @@ class LegacyCollectionLoader(com.COMObject):
                                 POINTER(IDWriteFontFileEnumerator))
 
         enumerator[0] = self._ptr
+        return 0
 
 
 IID_IDWriteFactory = com.GUID(0xb859ee5a, 0xd838, 0x4b5b, 0xa2, 0xe8, 0x1a, 0xdc, 0x7d, 0x93, 0xdb, 0x48)
@@ -991,7 +991,7 @@ class IDWriteFactory(com.pIUnknown):
         ('CreateCustomRenderingParams',
          com.STDMETHOD()),
         ('RegisterFontFileLoader',
-         com.STDMETHOD(c_void_p)),
+         com.STDMETHOD(c_void_p)),  # Ambigious as newer is a pIUnknown and legacy is IUnknown.
         ('UnregisterFontFileLoader',
          com.STDMETHOD(POINTER(IDWriteFontFileLoader))),
         ('CreateTextFormat',
@@ -1139,12 +1139,11 @@ class IDWriteInMemoryFontFileLoader(com.pIUnknown):
     ]
 
 
-#IID_IDWriteFactory5 = com.GUID(0x30572f99, 0xdac6, 0x41db, 0xa1, 0x6e, 0x04, 0x86, 0x30, 0x7e, 0x60, 0x6a)
-
-
 IID_IDWriteFactory5 = com.GUID(0x958DB99A, 0xBE2A, 0x4F09, 0xAF, 0x7D, 0x65, 0x18, 0x98, 0x03, 0xD1, 0xD3)
 
-class IDWriteFactory5(IDWriteFactory4, IDWriteFactory3, IDWriteFactory2, IDWriteFactory1, IDWriteFactory, com.pIUnknown):
+
+class IDWriteFactory5(IDWriteFactory4, IDWriteFactory3, IDWriteFactory2, IDWriteFactory1, IDWriteFactory,
+                      com.pIUnknown):
     _methods_ = [
         ('CreateFontSetBuilder1',
          com.STDMETHOD(POINTER(IDWriteFontSetBuilder1))),
@@ -1471,15 +1470,9 @@ for decoder in pyglet.image.codecs.get_decoders():
 if not wic_decoder:
     raise Exception("Cannot use DirectWrite without a WIC Decoder")
 
-DWRITE_FONT_FEATURE_TAG_KERNING = 0x6e72656b
-
-DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES = 0x6167696c
-DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES = 0x67696c63
-
 
 class DirectWriteGlyphRenderer(base.GlyphRenderer):
     antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_DEFAULT
-    #antialias_mode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE
     draw_options = D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT
 
     def __init__(self, font):
@@ -1495,35 +1488,67 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         self._text_analysis = TextAnalysis()
 
-    def render_to_texture(self, text):
-        """This uses the built in layout to render a full string of text to a single image."""
-        text_layout = self.font.create_text_layout(text)
+    def render_to_image(self, text, width, height):
+        """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
+        This may allows more accurate fonts (bidi, rtl, etc) in very special circumstances."""
+        text_buffer = create_unicode_buffer(text)
+
+        text_layout = IDWriteTextLayout()
+        self.font._write_factory.CreateTextLayout(
+            text_buffer,
+            len(text_buffer),
+            self.font._text_format,
+            width,  # Doesn't affect bitmap size.
+            height,
+            byref(text_layout)
+        )
 
         layout_metrics = DWRITE_TEXT_METRICS()
         text_layout.GetMetrics(byref(layout_metrics))
 
-        self._create_bitmap(int(math.ceil(layout_metrics.width)),
-                            int(math.ceil(layout_metrics.height)))
+        width, height = int(math.ceil(layout_metrics.width)), int(math.ceil(layout_metrics.height))
 
+        bitmap = IWICBitmap()
+        wic_decoder._factory.CreateBitmap(width, height,
+                                          GUID_WICPixelFormat32bppPBGRA,
+                                          WICBitmapCacheOnDemand,
+                                          byref(bitmap))
+
+        rt = ID2D1RenderTarget()
+        d2d_factory.CreateWicBitmapRenderTarget(bitmap, default_target_properties, byref(rt))
+
+        # Font aliasing rendering quality.
+        rt.SetTextAntialiasMode(self.antialias_mode)
+
+        if not self._brush:
+            self._brush = ID2D1SolidColorBrush()
+
+        rt.CreateSolidColorBrush(white, None, byref(self._brush))
+
+        # This offsets the characters if needed.
         point = D2D_POINT_2F(0, 0)
 
-        self._render_target.BeginDraw()
+        rt.BeginDraw()
 
-        self._render_target.Clear(transparent)
+        rt.Clear(transparent)
 
-        self._render_target.DrawTextLayout(point,
-                                           text_layout,
-                                           self._brush,
-                                           self.draw_options)
+        rt.DrawTextLayout(point,
+                          text_layout,
+                          self._brush,
+                          self.draw_options)
 
-        self._render_target.EndDraw(None, None)
+        rt.EndDraw(None, None)
 
-        image = wic_decoder.get_image(self._bitmap)
+        rt.Release()
 
-        return image
+        image_data = wic_decoder.get_image(bitmap)
+
+        bitmap.Release()
+
+        return image_data
 
     def get_string_info(self, text):
-        """Converts a string of text into a list of indices and advances."""
+        """Converts a string of text into a list of indices and advances used for shaping."""
         text_length = len(text.encode('utf-16-le')) // 2
 
         # Unicode buffer splits each two byte chars into separate indices.
@@ -1586,72 +1611,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return text_buffer, actual_count.value, indices, advances, offsets, clusters
 
-    def get_actual_glyphs(self, text_buffer, actual_count, indices, advances, offsets, clusters):
-        # NOTE: it's possible symbols and other unicodes that are not supported and will return a 0.
-        metrics = self.get_glyph_metrics(self.font.font_face, indices, actual_count)
-
-        glyphs = []
-        for i in range(actual_count):
-            glyph_indice = indices[i]
-
-            # if self.glyphs[glyph_indice]:
-            #     glyphs.append(self.glyphs[glyph_indice])
-            #     continue
-
-            # if glyph_indice == 0:
-            #     # If an indice is 0, it will return no glyph. In this case we attempt to render leveraging
-            #     # the built in text layout from MS. Which depending on version can use fallback fonts and other tricks
-            #     # to possibly get something of use.
-            #     formatted_clusters = clusters[:]
-            #
-            #     # Some glyphs can be more than 1 char. We use the clusters to determine how many of an index exist.
-            #     text_length = formatted_clusters.count(i)
-            #
-            #     # Amount of glyphs don't always match 1:1 with text as some can be substituted or omitted. Get
-            #     # actual text buffer index.
-            #     text_index = formatted_clusters.index(i)
-            #
-            #     glyph = self.render_using_layout(text_buffer[text_index:text_index+text_length])
-            # else:
-            glyph = self.render_single_glyph(self.font.font_face, indices[i], advances[i], offsets[i], metrics[i])
-
-            # self.glyphs[glyph_indice] = glyph
-            glyphs.append(glyph)
-
-        return glyphs
-
-    def get_fallback(self, index, occurs, text, text_length):
-        """Only Windows 8.1+ exposes this. If an indice is not found, we attempt to get the font it uses."""
-        self.fallback = IDWriteFontFallback()
-
-        self.font._write_factory.GetSystemFontFallback(byref(self.fallback))
-
-        t = UINT32()
-        font = IDWriteFont()
-        scale = FLOAT()
-
-        self.fallback.MapCharacters(self._text_analysis, index, text_length, None, None,
-                                    self.font._weight, self.font._style, self.font._stretch,
-                                    byref(t),
-                                    byref(font),
-                                    byref(scale))
-
-        if not font:
-            raise Exception("Fallback not found")
-
-    def get_single_glyph_run(self, font_face, size, indices, advances, offsets, sideways, bidi):
-        run = DWRITE_GLYPH_RUN(
-            font_face,
-            size,
-            1,
-            indices,
-            advances,
-            offsets,
-            sideways,
-            bidi
-        )
-        return run
-
     def get_glyph_metrics(self, font_face, indices, count):
         """Returns a list of tuples with the following metrics per indice:
             (glyph width, glyph height, lsb, advanceWidth)
@@ -1662,13 +1621,15 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         metrics_out = []
         i = 0
         for metric in glyph_metrics:
-            glyph_width = (metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing) * self.font.font_scale_ratio
+            glyph_width = (
+                                      metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing) * self.font.font_scale_ratio
 
             # width must have a minimum of 1. For example, spaces are actually 0 width, still need glyph bitmap size.
             if glyph_width == 0:
                 glyph_width = 10
 
-            glyph_height = (metric.advanceHeight - metric.topSideBearing - metric.bottomSideBearing) * self.font.font_scale_ratio
+            glyph_height = (
+                                       metric.advanceHeight - metric.topSideBearing - metric.bottomSideBearing) * self.font.font_scale_ratio
 
             lsb = metric.leftSideBearing * self.font.font_scale_ratio
 
@@ -1681,7 +1642,21 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         return metrics_out
 
+    def _get_single_glyph_run(self, font_face, size, indices, advances, offsets, sideways, bidi):
+        run = DWRITE_GLYPH_RUN(
+            font_face,
+            size,
+            1,
+            indices,
+            advances,
+            offsets,
+            sideways,
+            bidi
+        )
+        return run
+
     def render_single_glyph(self, font_face, indice, advance, offset, metrics):
+        """Renders a single glyph using D2D DrawGlyphRun, doesn't handle fallbacks."""
         glyph_width, glyph_height, lsb, font_advance = metrics  # We use a shaped advance instead of the fonts.
 
         sideways = False
@@ -1691,20 +1666,20 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         new_indice = (UINT16 * 1)(indice)
         new_advance = (FLOAT * 1)(advance)
 
-        run = self.get_single_glyph_run(font_face,
-                                        self.font._real_size,
-                                        new_indice,  # indice,
-                                        new_advance,  # advance,
-                                        pointer(offset),  # offset,
-                                        sideways,
-                                        bidi)
+        run = self._get_single_glyph_run(font_face,
+                                         self.font._real_size,
+                                         new_indice,  # indice,
+                                         new_advance,  # advance,
+                                         pointer(offset),  # offset,
+                                         sideways,
+                                         bidi)
 
         offset_x = 0
         if lsb < 0:
             # Negative LSB: we shift the layout rect to the right
             # Otherwise we will cut the left part of the glyph
             offset_x = -lsb
-            
+
         font_height = (self.font._font_metrics.ascent + self.font._font_metrics.descent) * self.font.font_scale_ratio
 
         # Create new bitmap.
@@ -1730,90 +1705,10 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         glyph.set_bearings(self.font.descent, -offset_x, round(advance * self.font.font_scale_ratio))
         return glyph
 
-    def render(self, text):
-        """This is used to render a single character to a glyph image.
-        This uses TextLayout for rendering, because it can utilize fallback font rendering as well as color rendering.
-        The limitation of this is that, since we need the glyphs separately, this is unsuitable for proper text shaping
-        as this will not factor in any OpenType options.
-        However, it is faster than the shaping process, if your font does not need any special considerations.
-        """
-        text_layout = self.font.create_text_layout(text)
-
-        # All this just to get the glyph metrics.
-        layout_metrics = DWRITE_TEXT_METRICS()
-        text_layout.GetMetrics(byref(layout_metrics))
-
-        length = len(text)
-
-        indices = (UINT16 * length)()
-        code_points = (UINT32 * length)()
-
-        for i in range(length):
-            code_points[i] = ord(text[i])
-
-        self.font.font_face.GetGlyphIndices(code_points, length, indices)
-
-        glyph_metrics = (DWRITE_GLYPH_METRICS * length)()
-        self.font.font_face.GetDesignGlyphMetrics(indices, length, glyph_metrics, self.font.rtl)
-
-        metric = glyph_metrics[0]
-
-        glyph_width = (metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing) * self.font.font_scale_ratio
-        glyph_height = (metric.advanceHeight - metric.topSideBearing - metric.bottomSideBearing) * self.font.font_scale_ratio
-
-        lsb = metric.leftSideBearing * self.font.font_scale_ratio
-
-        advance = metric.advanceWidth * self.font.font_scale_ratio
-
-        # The glyph graphic itself is offset by the LSB.
-        actual_width = glyph_width
-
-        height = layout_metrics.height
-
-        offset_x = 0
-        if lsb < 0:
-            # Negative LSB: we shift the layout rect to the right
-            # Otherwise we will cut the left part of the glyph
-            offset_x = -lsb
-
-        actual_width += abs(lsb)
-
-        # Sometimes the glyph advance is 0 for things like spaces and emotes. Unknown why, possibly due to font not
-        # actually having a glyph for the character. Luckily we can rely on text layout to get us a correct advance.
-        if actual_width == 0:
-            actual_width = layout_metrics.width
-
-        # Create new bitmap.
-        self._create_bitmap(int(math.ceil(actual_width)),
-                            int(math.ceil(height)))
-
-        # This offsets the characters if needed.
-        point = D2D_POINT_2F(offset_x, 0)
-
-        self._render_target.BeginDraw()
-
-        self._render_target.Clear(transparent)
-
-        self._render_target.DrawTextLayout(point,
-                                           text_layout,
-                                           self._brush,
-                                           self.draw_options)
-
-        self._render_target.EndDraw(None, None)
-
-        image = wic_decoder.get_image(self._bitmap)
-
-        # image.save(f"font/correct/{text}.png")
-
-        text_layout.Release()
-
-        lsb = min(lsb, 0)
-
-        glyph = self.font.create_glyph(image)
-        glyph.set_bearings(self.font.descent, lsb, int(math.ceil(advance)))
-        return glyph
-
     def render_using_layout(self, text):
+        """This will render text given the built in DirectWrite layout. This process allows us to take
+        advantage of color glyphs and fallback handling that is built into DirectWrite.
+        This can also handle shaping and many other features if you want to render directly to a texture."""
         text_layout = self.font.create_text_layout(text)
 
         layout_metrics = DWRITE_TEXT_METRICS()
@@ -1821,7 +1716,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         self._create_bitmap(int(math.ceil(layout_metrics.width)),
                             int(math.ceil(layout_metrics.height)))
-                            
+
         # This offsets the characters if needed.
         point = D2D_POINT_2F(0, 0)
 
@@ -1867,10 +1762,6 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                 self._render_target.CreateSolidColorBrush(white, None, byref(self._brush))
 
 
-WINDOWS_10_CREATORS_UPDATE_OR_GREATER = True
-
-
-
 class Win32DirectWriteFont(base.Font):
     # To load fonts from files, we need to produce a custom collection.
     _custom_collection = None
@@ -1894,7 +1785,7 @@ class Win32DirectWriteFont(base.Font):
 
     glyph_renderer_class = DirectWriteGlyphRenderer
     texture_internalformat = pyglet.gl.GL_RGBA
-    
+
     _advance_cache = {}  # Stores glyph's by the indice and advance. 
 
     def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None, locale=None):
@@ -1985,8 +1876,26 @@ class Win32DirectWriteFont(base.Font):
         self.ascent = self._font_metrics.ascent * self.font_scale_ratio
         self.descent = self._font_metrics.descent * self.font_scale_ratio
 
+    def render_to_image(self, text, width=10000, height=80):
+        """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
+        This may allow more accurate fonts (bidi, rtl, etc) in very special circumstances at the cost of
+        additional texture space.
+
+        :Parameters:
+            `text` : str
+                String of text to render.
+
+        :rtype: `ImageData`
+        :return: An image of the text.
+        """
+        if not self._glyph_renderer:
+            self._glyph_renderer = self.glyph_renderer_class(self)
+
+        return self._glyph_renderer.render_to_image(text, width, height)
+
     def copy_glyph(self, glyph, advance):
-        """"""
+        """This takes the existing glyph texture and puts it into a new Glyph with a new advance.
+        Texture memory is shared between both glyphs."""
         new_glyph = base.Glyph(glyph.x, glyph.y, glyph.z, glyph.width, glyph.height, glyph.owner)
         new_glyph.set_bearings(glyph.baseline, 0, round(advance * self.font_scale_ratio))
         return new_glyph
@@ -2017,7 +1926,7 @@ class Win32DirectWriteFont(base.Font):
 
                 # Get actual text based on the index and length.
                 actual_text = text_buffer[text_index:text_index + text_length]
-            
+
                 # Since we can't store as indice 0 without overriding, we have to store as text
                 if actual_text not in self.glyphs:
                     glyph = self._glyph_renderer.render_using_layout(text_buffer[text_index:text_index + text_length])
@@ -2035,38 +1944,13 @@ class Win32DirectWriteFont(base.Font):
                         self._advance_cache[advance_key] = glyph
                 else:
                     glyph = self._glyph_renderer.render_single_glyph(self.font_face, indice, advances[i], offsets[i],
-                                                               metrics[i])
+                                                                     metrics[i])
                     self.glyphs[indice] = glyph
                     self._advance_cache[(indice, advances[i])] = glyph
 
                 glyphs.append(glyph)
 
         return glyphs
-
-    def get_glyph_kerning(self, text):
-        """This gets the kerning values for each glyph that is given in the text string.
-
-        Returns as a list of values.
-
-        """
-        length = len(text)
-        if not self.kerning:
-            return [0 for i in range(length)]
-
-        indices = (UINT16 * length)()
-        code_points = (UINT32 * length)()
-        # glyph_metrics = (DWRITE_GLYPH_METRICS * length)()
-
-        for i in range(length):
-            code_points[i] = ord(text[i])
-
-        self.font_face.GetGlyphIndices(code_points, length, indices)
-
-        kernAdvances = (INT32 * length)()
-        self.font_face.GetKerningPairAdjustments(length, indices, kernAdvances)
-
-        # Convert advance to real pixels
-        return [int(round(advance * self.font_scale_ratio)) for advance in kernAdvances]
 
     def create_text_layout(self, text):
         text_buffer = create_unicode_buffer(text)
@@ -2088,7 +1972,15 @@ class Win32DirectWriteFont(base.Font):
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
             cls._write_factory = IDWriteFactory5()
             DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IID_IDWriteFactory5, byref(cls._write_factory))
+        else:
+            # Windows 7 and 8 we need to create our own font loader, collection, enumerator, file streamer... Sigh.
+            cls._write_factory = IDWriteFactory()
+            DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IID_IDWriteFactory, byref(cls._write_factory))
 
+    @classmethod
+    def _initialize_custom_loaders(cls):
+        """Initialize the loaders needed to load custom fonts."""
+        if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
             # Windows 10 finally has a built in loader that can take data and make a font out of it w/ COMs.
             cls._font_loader = IDWriteInMemoryFontFileLoader()
             cls._write_factory.CreateInMemoryFontFileLoader(byref(cls._font_loader))
@@ -2098,12 +1990,11 @@ class Win32DirectWriteFont(base.Font):
             cls._font_builder = IDWriteFontSetBuilder1()
             cls._write_factory.CreateFontSetBuilder1(byref(cls._font_builder))
         else:
-            # Windows 7 and 8 we need to create our own font loader, collection, enumerator, file streamer... Sigh.
-            cls._write_factory = IDWriteFactory()
-            DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IID_IDWriteFactory, byref(cls._write_factory))
-
             cls._font_loader = LegacyFontFileLoader()
-            cls._write_factory.RegisterFontFileLoader(cls._font_loader)
+
+            # Note: RegisterFontLoader takes a pointer. However, for legacy we implement our own callback interface.
+            # Therefore we need to pass to the actual pointer directly.
+            cls._write_factory.RegisterFontFileLoader(cls._font_loader.pointers[IDWriteFontFileLoader])
 
             cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
             cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
@@ -2115,10 +2006,8 @@ class Win32DirectWriteFont(base.Font):
         if not cls._write_factory:
             cls._initialize_direct_write()
 
-        # if not cls._custom_collection:
-        #    pass
-        # else:
-        #     raise Exception("Font data cannot be added. Add all font data prior to creating a Font object or Label.")
+        if not cls._font_loader:
+            cls._initialize_custom_loaders()
 
         if WINDOWS_10_CREATORS_UPDATE_OR_GREATER:
             font_file = IDWriteFontFile()
@@ -2140,10 +2029,10 @@ class Win32DirectWriteFont(base.Font):
                 cls._custom_collection.Release()
 
             cls._font_set = IDWriteFontSet()
-            hr = cls._font_builder.CreateFontSet(byref(cls._font_set))
+            cls._font_builder.CreateFontSet(byref(cls._font_set))
 
             cls._custom_collection = IDWriteFontCollection1()
-            hr = cls._write_factory.CreateFontCollectionFromFontSet(cls._font_set, byref(cls._custom_collection))
+            cls._write_factory.CreateFontCollectionFromFontSet(cls._font_set, byref(cls._custom_collection))
         else:
             cls._font_cache.append(data)
 
@@ -2158,7 +2047,7 @@ class Win32DirectWriteFont(base.Font):
                 cls._font_collection_loader = LegacyCollectionLoader(cls._write_factory, cls._font_loader)
 
                 cls._write_factory.RegisterFontCollectionLoader(cls._font_collection_loader)
-                cls._write_factory.RegisterFontFileLoader(cls._font_loader)
+                cls._write_factory.RegisterFontFileLoader(cls._font_loader.pointers[IDWriteFontFileLoader])
 
             cls._font_collection_loader.AddFontData(cls._font_cache)
 
@@ -2206,7 +2095,7 @@ class Win32DirectWriteFont(base.Font):
 
     @classmethod
     def have_font(cls, name):
-        if cls.get_collection(name):
+        if cls.get_collection(name)[0] is not None:
             return True
 
         return False

@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import ctypes
+import warnings
 from collections import namedtuple
 
 from pyglet.util import asbytes, asstr
@@ -161,6 +162,12 @@ class FreeTypeFont(base.Font):
     _memory_faces = MemoryFaceStore()
 
     def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
+        assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
+
+        if stretch:
+            warnings.warn("The current font render does not support stretching.")
+
         super(FreeTypeFont, self).__init__()
 
         self.name = name
