@@ -4,6 +4,7 @@ Bugfix and feature release
 Bugfixes
 --------
 - 3d model obj decoder supports multiple material types
+- Fix GStreamerSources not being garbage collected #283
 
 Features
 --------
