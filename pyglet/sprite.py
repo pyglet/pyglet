@@ -455,8 +455,8 @@ class Sprite(event.EventDispatcher):
         return self._x, self._y
 
     @position.setter
-    def position(self, pos):
-        self._x, self._y = pos
+    def position(self, position):
+        self._x, self._y = position
         self._update_position()
 
     @property
