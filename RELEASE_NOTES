@@ -5,10 +5,12 @@ Bugfixes
 --------
 - 3d model obj decoder supports multiple material types
 - Fix GStreamerSources not being garbage collected #283
+- Fix ScrollableTextLayout not respecting anchors/alignment.
 
 Features
 --------
 - New DirectWrite based font loader. Enable with `pyglet.options["advanced_font_features"] = True`
+- Add `position` property to Text Layouts, to mimic other classes.
 
 
 pyglet 1.5.15
