@@ -469,8 +469,7 @@ class AbstractDocument(event.EventDispatcher):
                 inserted text.
 
         """
-        assert element._position is None, \
-            'Element is already in a document.'
+        assert element._position is None, 'Element is already in a document.'
         self.insert_text(position, '\0', attributes)
         element._position = position
         self._elements.append(element)
@@ -664,8 +663,8 @@ class FormattedDocument(AbstractDocument):
             dpi)
 
     def get_font(self, position, dpi=None):
-        iter = self.get_font_runs(dpi)
-        return iter[position]
+        runs_iter = self.get_font_runs(dpi)
+        return runs_iter[position]
 
     def get_element_runs(self):
         return _ElementIterator(self._elements, len(self._text))
@@ -682,8 +681,7 @@ class FormattedDocument(AbstractDocument):
                 try:
                     runs = self._style_runs[attribute]
                 except KeyError:
-                    runs = self._style_runs[attribute] = \
-                        runlist.RunList(0, None)
+                    runs = self._style_runs[attribute] = runlist.RunList(0, None)
                     runs.insert(0, len(self.text))
                 runs.set_run(start, start + len_text, value)
 
@@ -712,25 +710,20 @@ class _ElementIterator(runlist.RunIterator):
 class _FontStyleRunsRangeIterator:
     # XXX subclass runlist
     def __init__(self, font_names, font_sizes, bolds, italics, stretch, dpi):
-        self.zip_iter = runlist.ZipRunIterator(
-            (font_names, font_sizes, bolds, italics, stretch))
+        self.zip_iter = runlist.ZipRunIterator((font_names, font_sizes, bolds, italics, stretch))
         self.dpi = dpi
 
     def ranges(self, start, end):
         from pyglet import font
         for start, end, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, bold, italic, stretch = styles
-            ft = font.load(font_name, font_size,
-                           bold=bold, italic=italic, stretch=stretch,
-                           dpi=self.dpi)
+            ft = font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=self.dpi)
             yield start, end, ft
 
     def __getitem__(self, index):
         from pyglet import font
         font_name, font_size, bold, italic, stretch = self.zip_iter[index]
-        return font.load(font_name, font_size,
-                         bold=bold, italic=italic, stretch=stretch,
-                         dpi=self.dpi)
+        return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator:

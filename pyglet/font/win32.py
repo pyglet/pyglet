@@ -486,8 +486,8 @@ class GDIPlusFont(Win32Font):
         if not name:
             name = self._default_name
 
-        assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
-        assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        # assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        # assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
 
         if stretch:
             warnings.warn("The current font render does not support stretching.")
