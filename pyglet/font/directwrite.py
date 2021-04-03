@@ -15,7 +15,6 @@ from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
 from ctypes import *
 import os
-
 import platform
 
 try:
@@ -166,6 +165,22 @@ class DWRITE_GLYPH_OFFSET(ctypes.Structure):
         ('ascenderOffset', FLOAT),
     )
 
+    def __repr__(self):
+        return f"DWRITE_GLYPH_OFFSET({self.advanceOffset}, {self.ascenderOffset})"
+
+
+class DWRITE_CLUSTER_METRICS(ctypes.Structure):
+    _fields_ = (
+        ('width', FLOAT),
+        ('length', UINT16),
+        ('canWrapLineAfter', UINT16, 1),
+        ('isWhitespace', UINT16, 1),
+        ('isNewline', UINT16, 1),
+        ('isSoftHyphen', UINT16, 1),
+        ('isRightToLeft', UINT16, 1),
+        ('padding', UINT16, 11),
+    )
+
 
 class IDWriteFontFace(com.pIUnknown):
     _methods_ = [
@@ -270,6 +285,9 @@ class DWRITE_SHAPING_TEXT_PROPERTIES(ctypes.Structure):
         ('reserved', UINT16, 13),
     )
 
+    def __repr__(self):
+        return f"DWRITE_SHAPING_TEXT_PROPERTIES({self.isShapedAlone}, {self.reserved1}, {self.canBreakShapingAfter})"
+
 
 class DWRITE_SHAPING_GLYPH_PROPERTIES(ctypes.Structure):
     _fields_ = (
@@ -360,6 +378,9 @@ class TextAnalysis(com.COMObject):
         analyzer.AnalyzeScript(self, 0, text_length, self)
 
     def SetScriptAnalysis(self, this, textPosition, textLength, scriptAnalysis):
+        # textPosition - The index of the first character in the string that the result applies to
+        # textLength - How many characters of the string from the index that the result applies to
+        # scriptAnalysis - The analysis information for all glyphs starting at position for length.
         self.SetCurrentRun(textPosition)
         self.SplitCurrentRun(textPosition)
 
@@ -375,9 +396,15 @@ class TextAnalysis(com.COMObject):
         # return 0x80004001
 
     def GetTextBeforePosition(self, this):
-        raise Exception()
+        raise Exception("Currently not implemented.")
 
     def GetTextAtPosition(self, this, textPosition, textString, textLength):
+        # This method will retrieve a substring of the text in this layout
+        #   to be used in an analysis step.
+        # Arguments:
+        # textPosition - The index of the first character of the text to retrieve.
+        # textString - The pointer to the first character of text at the index requested.
+        # textLength - The characters available at/after the textString pointer (string length).
         if textPosition >= self._textlength:
             self._no_ptr = c_wchar_p(None)
             textString[0] = self._no_ptr
@@ -388,9 +415,6 @@ class TextAnalysis(com.COMObject):
             textString[0] = ptr
             textLength[0] = self._textlength - textPosition
 
-        return 0
-
-    def GetTextBeforePosition(self):
         return 0
 
     def GetParagraphReadingDirection(self):
@@ -750,7 +774,7 @@ class IDWriteTextLayout(IDWriteTextFormat, com.pIUnknown):
         ('GetOverhangMetrics',
          com.STDMETHOD(POINTER(DWRITE_OVERHANG_METRICS))),
         ('GetClusterMetrics',
-         com.STDMETHOD()),
+         com.STDMETHOD(POINTER(DWRITE_CLUSTER_METRICS), UINT32, POINTER(UINT32))),
         ('DetermineMinWidth',
          com.STDMETHOD(POINTER(FLOAT))),
         ('HitTestPoint',
@@ -1543,11 +1567,10 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         image_data = wic_decoder.get_image(bitmap)
 
-        bitmap.Release()
-
         return image_data
 
     def get_string_info(self, text):
+
         """Converts a string of text into a list of indices and advances used for shaping."""
         text_length = len(text.encode('utf-16-le')) // 2
 
@@ -1556,9 +1579,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
 
         # Analyze the text.
         # noinspection PyTypeChecker
-
-        # Possible to cache this result maybe?
-        self._text_analysis.GenerateResults(self._analyzer, text, text_length)
+        self._text_analysis.GenerateResults(self._analyzer, text_buffer, len(text_buffer))
 
         # Formula for text buffer size from Microsoft.
         max_glyph_size = int(3 * text_length / 2 + 16)
@@ -1571,7 +1592,7 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         actual_count = UINT32()
 
         self._analyzer.GetGlyphs(text_buffer,
-                                 text_length,
+                                 length,
                                  self.font.font_face,
                                  False,  # sideways
                                  False,  # righttoleft
@@ -1579,9 +1600,9 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                                  None,  # localName
                                  None,  # numberSub
                                  None,  # typo features
-                                 None,  # feature range
-                                 0,  # count
-                                 max_glyph_size,
+                                 None,  # feature range length
+                                 0,  # feature range
+                                 max_glyph_size,  # max glyph size
                                  clusters,  # cluster map
                                  text_props,  # text props
                                  indices,  # glyph indices
@@ -1621,23 +1642,21 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         metrics_out = []
         i = 0
         for metric in glyph_metrics:
-            glyph_width = (
-                                      metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing) * self.font.font_scale_ratio
+            glyph_width = (metric.advanceWidth - metric.leftSideBearing - metric.rightSideBearing)
 
             # width must have a minimum of 1. For example, spaces are actually 0 width, still need glyph bitmap size.
             if glyph_width == 0:
-                glyph_width = 10
+                glyph_width = 1
 
-            glyph_height = (
-                                       metric.advanceHeight - metric.topSideBearing - metric.bottomSideBearing) * self.font.font_scale_ratio
+            glyph_height = (metric.advanceHeight - metric.topSideBearing - metric.bottomSideBearing)
 
-            lsb = metric.leftSideBearing * self.font.font_scale_ratio
+            lsb = metric.leftSideBearing
 
-            glyph_width += abs(lsb)
+            bsb = metric.bottomSideBearing
 
-            advance_width = metric.advanceWidth * self.font.font_scale_ratio
+            advance_width = metric.advanceWidth
 
-            metrics_out.append((glyph_width, glyph_height, lsb, advance_width))
+            metrics_out.append((glyph_width, glyph_height, lsb, advance_width, bsb))
             i += 1
 
         return metrics_out
@@ -1656,11 +1675,8 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         return run
 
     def render_single_glyph(self, font_face, indice, advance, offset, metrics):
-        """Renders a single glyph using D2D DrawGlyphRun, doesn't handle fallbacks."""
-        glyph_width, glyph_height, lsb, font_advance = metrics  # We use a shaped advance instead of the fonts.
-
-        sideways = False
-        bidi = False
+        """Renders a single glyph using D2D DrawGlyphRun"""
+        glyph_width, glyph_height, lsb, font_advance, bsb = metrics  # We use a shaped advance instead of the fonts.
 
         # Slicing an array turns it into a python object. Maybe a better way to keep it a ctypes value?
         new_indice = (UINT16 * 1)(indice)
@@ -1671,29 +1687,32 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
                                          new_indice,  # indice,
                                          new_advance,  # advance,
                                          pointer(offset),  # offset,
-                                         sideways,
-                                         bidi)
+                                         False,
+                                         False)
 
-        offset_x = 0
+        render_width = int(math.ceil((glyph_width) * self.font.font_scale_ratio))
+        render_offset_x = int(math.floor(abs(lsb * self.font.font_scale_ratio)))
         if lsb < 0:
             # Negative LSB: we shift the layout rect to the right
             # Otherwise we will cut the left part of the glyph
-            offset_x = -lsb
-
-        font_height = (self.font._font_metrics.ascent + self.font._font_metrics.descent) * self.font.font_scale_ratio
+            render_offset_x = -(render_offset_x)
 
         # Create new bitmap.
-        self._create_bitmap(int(math.ceil(glyph_width)),
-                            int(math.ceil(font_height)))
+        # TODO: We can probably adjust bitmap/baseline to reduce the whitespace and save a lot of texture space.
+        # Note: Floating point precision makes this a giant headache, will need to be solved for this approach.
+        self._create_bitmap(render_width + 1,  # Add 1, sometimes AA can add an extra pixel or so.
+                            int(math.ceil(self.font.max_glyph_height)))
 
-        # This offsets the characters if needed.
-        point = D2D_POINT_2F(offset_x, self.font.ascent)
+        # Glyphs are drawn at the baseline, and with LSB, so we need to offset it based on top left position.
+        # Offsets are actually based on pixels somehow???
+        baseline_offset = D2D_POINT_2F(-render_offset_x - offset.advanceOffset,
+                                       self.font.ascent + offset.ascenderOffset)
 
         self._render_target.BeginDraw()
 
         self._render_target.Clear(transparent)
 
-        self._render_target.DrawGlyphRun(point,
+        self._render_target.DrawGlyphRun(baseline_offset,
                                          run,
                                          self._brush,
                                          DWRITE_MEASURING_MODE_NATURAL)
@@ -1702,7 +1721,12 @@ class DirectWriteGlyphRenderer(base.GlyphRenderer):
         image = wic_decoder.get_image(self._bitmap)
 
         glyph = self.font.create_glyph(image)
-        glyph.set_bearings(self.font.descent, -offset_x, round(advance * self.font.font_scale_ratio))
+
+        glyph.set_bearings(self.font.descent, render_offset_x,
+                           advance * self.font.font_scale_ratio,
+                           offset.advanceOffset * self.font.font_scale_ratio,
+                           offset.ascenderOffset * self.font.font_scale_ratio)
+
         return glyph
 
     def render_using_layout(self, text):
@@ -1786,9 +1810,9 @@ class Win32DirectWriteFont(base.Font):
     glyph_renderer_class = DirectWriteGlyphRenderer
     texture_internalformat = pyglet.gl.GL_RGBA
 
-    _advance_cache = {}  # Stores glyph's by the indice and advance. 
-
     def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None, locale=None):
+        self._advance_cache = {}  # Stores glyph's by the indice and advance.
+
         super(Win32DirectWriteFont, self).__init__()
 
         if not name:
@@ -1876,6 +1900,9 @@ class Win32DirectWriteFont(base.Font):
         self.ascent = self._font_metrics.ascent * self.font_scale_ratio
         self.descent = self._font_metrics.descent * self.font_scale_ratio
 
+        self.max_glyph_height = (self._font_metrics.ascent + self._font_metrics.descent) * self.font_scale_ratio
+        self.line_gap = self._font_metrics.lineGap * self.font_scale_ratio
+
     def render_to_image(self, text, width=10000, height=80):
         """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
         This may allow more accurate fonts (bidi, rtl, etc) in very special circumstances at the cost of
@@ -1893,11 +1920,15 @@ class Win32DirectWriteFont(base.Font):
 
         return self._glyph_renderer.render_to_image(text, width, height)
 
-    def copy_glyph(self, glyph, advance):
+    def copy_glyph(self, glyph, advance, offset):
         """This takes the existing glyph texture and puts it into a new Glyph with a new advance.
         Texture memory is shared between both glyphs."""
         new_glyph = base.Glyph(glyph.x, glyph.y, glyph.z, glyph.width, glyph.height, glyph.owner)
-        new_glyph.set_bearings(glyph.baseline, 0, round(advance * self.font_scale_ratio))
+        new_glyph.set_bearings(glyph.baseline,
+                               glyph.lsb,
+                               advance * self.font_scale_ratio,
+                               offset.advanceOffset * self.font_scale_ratio,
+                               offset.ascenderOffset * self.font_scale_ratio)
         return new_glyph
 
     def get_glyphs(self, text):
@@ -1934,19 +1965,20 @@ class Win32DirectWriteFont(base.Font):
 
                 glyphs.append(self.glyphs[actual_text])
             else:
-                # Since the glyphs can vary advances depending on text, we will cache it by both indice and advance.
+                # Glyphs can vary depending on shaping. We will cache it by indice, advance, and offset.
+                # Possible to just cache without offset and set them each time. This may be faster?
                 if indice in self.glyphs:
-                    advance_key = (indice, advances[i])
+                    advance_key = (indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)
                     if advance_key in self._advance_cache:
                         glyph = self._advance_cache[advance_key]
                     else:
-                        glyph = self.copy_glyph(glyph, advances[i])
+                        glyph = self.copy_glyph(self.glyphs[indice], advances[i], offsets[i])
                         self._advance_cache[advance_key] = glyph
                 else:
                     glyph = self._glyph_renderer.render_single_glyph(self.font_face, indice, advances[i], offsets[i],
                                                                      metrics[i])
                     self.glyphs[indice] = glyph
-                    self._advance_cache[(indice, advances[i])] = glyph
+                    self._advance_cache[(indice, advances[i], offsets[i].advanceOffset, offsets[i].ascenderOffset)] = glyph
 
                 glyphs.append(glyph)
 
