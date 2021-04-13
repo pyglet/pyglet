@@ -65,7 +65,7 @@ version = '1.5.16'
 
 
 if sys.version_info < (3, 6):
-    raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
+    raise Exception('pyglet %s requires Python 3.6 or newer.' % version)
 
 
 # pyglet platform treats *BSD systems as Linux
