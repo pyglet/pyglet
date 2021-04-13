@@ -76,10 +76,11 @@ A simple example of drawing shapes::
 
 import math
 
-from pyglet.gl import GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
-from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisable
-from pyglet.graphics import Group, Batch
+from pyglet.gl import (GL_BLEND, GL_COLOR_BUFFER_BIT, GL_LINES,
+                       GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_TRIANGLES,
+                       glBlendFunc, glDisable, glEnable, glPopAttrib,
+                       glPushAttrib)
+from pyglet.graphics import Batch, Group
 
 
 class _ShapeGroup(Group):
@@ -1068,4 +1069,4 @@ class Star(_ShapeBase):
         self._rotation = rotation
         self._update_position()
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle')
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star')
