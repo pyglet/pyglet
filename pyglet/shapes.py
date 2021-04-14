@@ -36,12 +36,12 @@
 """2D shapes.
 
 This module provides classes for a variety of simplistic 2D shapes,
-such as Rectangles, Circles, and Lines. These shapes are are made
+such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
 and opacity, and rotation (where applicible). To create more
-complex shapes than what is provided here, the lower evel
+complex shapes than what is provided here, the lower level
 graphics API is more appropriate.
 See the :ref:`guide_graphics` for more details.
 
@@ -60,6 +60,7 @@ A simple example of drawing shapes::
     rectangle.rotation = 33
     line = shapes.Line(100, 100, 100, 200, width=19, batch=batch)
     line2 = shapes.Line(150, 150, 444, 111, width=4, color=(200, 20, 20), batch=batch)
+    star = shapes.Star(800, 400, 60, 40, num_spikes=20, color=(255, 255, 0), batch=batch)
 
     @window.event
     def on_draw():
@@ -467,7 +468,7 @@ class Circle(_ShapeBase):
             points = [(x + (r * math.cos(i * tau_segs)),
                        y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
 
-            # Create a list of trianges from the points:
+            # Create a list of triangles from the points:
             vertices = []
             for i, point in enumerate(points):
                 triangle = x, y, *points[i - 1], *point
@@ -946,4 +947,125 @@ class Triangle(_ShapeBase):
         self._update_position()
 
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle')
+class Star(_ShapeBase):
+    def __init__(self, x, y, outer_radius, inner_radius, num_spikes, rotation=0,
+                 color=(255, 255, 255), batch=None, group=None) -> None:
+        """Create a star.
+
+        The star's anchor point (x, y) defaults to the center of the star.
+
+        :Parameters:
+            `x` : float
+                The X coordinate of the star.
+            `y` : float
+                The Y coordinate of the star.
+            `outer_radius` : float
+                The desired outer radius of the star.
+            `inner_radius` : float
+                The desired inner radius of the star.
+            `num_spikes` : float
+                The desired number of spikes of the star.
+            `rotation` : float
+                The rotation of the star in degrees. A rotation of 0 degrees
+                will result in one spike lining up with the X axis in 
+                positive direction. 
+            `color` : (int, int, int)
+                The RGB color of the star, specified as
+                a tuple of three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the star to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the star.
+        """
+        self._x = x
+        self._y = y
+        self._outer_radius = outer_radius
+        self._inner_radius = inner_radius
+        self._num_spikes = num_spikes
+        self._rgb = color
+        self._rotation = rotation
+
+        self._batch = batch or Batch()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+
+        self._vertex_list = self._batch.add(self._num_spikes*6, GL_TRIANGLES, 
+                                            self._group, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            vertices = (0, 0) * self._num_spikes * 6
+        else:
+            x = self._x + self._anchor_x
+            y = self._y + self._anchor_y
+            r_i = self._inner_radius
+            r_o = self._outer_radius
+
+            # get angle covered by each line (= half a spike)
+            d_theta = math.pi / self._num_spikes
+
+            # phase shift rotation
+            phi = self._rotation / 180 * math.pi
+
+            # calculate alternating points on outer and outer circles
+            points = []
+            for i in range(self._num_spikes):
+                points.append((x + (r_o * math.cos(2*i * d_theta + phi)),
+                               y + (r_o * math.sin(2*i * d_theta + phi))))
+                points.append((x + (r_i * math.cos((2*i+1) * d_theta + phi)),
+                               y + (r_i * math.sin((2*i+1) * d_theta + phi))))
+
+            # create a list of doubled-up points from the points
+            vertices = []
+            for i, point in enumerate(points):
+                triangle = x, y, *points[i - 1], *point
+                vertices.extend(triangle)
+        
+        self._vertex_list.vertices[:] = vertices
+                
+    def _update_color(self):
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_spikes * 6
+
+    @property
+    def outer_radius(self):
+        """The outer radius of the star."""
+        return self._outer_radius
+    
+    @outer_radius.setter
+    def outer_radius(self, value):
+        self._outer_radius = value
+        self._update_position()
+
+    @property
+    def inner_radius(self):
+        """The innter radius of the star."""
+        return self._inner_radius
+    
+    @inner_radius.setter
+    def inner_radius(self, value):
+        self._inner_radius = value
+        self._update_position()
+
+    @property
+    def num_spikes(self):
+        """Number of spikes of the star."""
+        return self._num_spikes
+
+    @num_spikes.setter
+    def num_spikes(self, value):
+        self._num_spikes = value
+        self._update_position()
+
+    @property
+    def rotation(self):
+        """Rotation of the star, in degrees.
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = rotation
+        self._update_position()
+
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star')
