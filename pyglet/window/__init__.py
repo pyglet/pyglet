@@ -577,7 +577,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.activate()
 
         self.view = pyglet.math.Mat4()
-        self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+        # ### Gets called already by on_resize:
+        # self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
         self._viewport = 0, 0, *self.get_framebuffer_size()
 
@@ -629,8 +630,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         """
         raise NotImplementedError('abstract')
 
-    def set_fullscreen(self, fullscreen=True, screen=None, mode=None,
-                       width=None, height=None):
+    def set_fullscreen(self, fullscreen=True, screen=None, mode=None, width=None, height=None):
         """Toggle to or from fullscreen.
 
         After toggling fullscreen, the GL context should have retained its
@@ -725,14 +725,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             height = self.screen.height
         return width, height
 
-    # def on_resize(self, width, height):
-    #     """A default resize event handler.
-    #
-    #     This default handler updates the GL viewport to cover the entire
-    #     window. The bottom-left corner is (0, 0) and the top-right
-    #     corner is the width and height of the window's framebuffer.
-    #     """
-    #     gl.glViewport(0, 0, *self.get_framebuffer_size())
+    def on_resize(self, width, height):
+        """A default resize event handler.
+
+        This default handler updates the GL viewport to cover the entire
+        window. The bottom-left corner is (0, 0) and the top-right
+        corner is the width and height of the window's framebuffer.
+        """
+        gl.glViewport(0, 0, *self.get_framebuffer_size())
+        self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def on_close(self):
         """Default on_close handler."""
@@ -910,8 +911,29 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @projection.setter
     def projection(self, matrix: Mat4):
-        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
-            window_block.projection[:] = matrix
+        # with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+        #     window_block.projection[:] = matrix
+
+        shader_program = pyglet.graphics.get_default_shader()
+        with shader_program:
+            shader_program['projection'] = matrix
+
+        shader_program = pyglet.sprite.get_default_shader()
+        with shader_program:
+            shader_program['projection'] = matrix
+
+        shader_program = pyglet.sprite.get_default_array_shader()
+        with shader_program:
+            shader_program['projection'] = matrix
+
+        shader_program = pyglet.text.layout.get_default_layout_shader()
+        with shader_program:
+            shader_program['projection'] = matrix
+
+        shader_program = pyglet.text.layout.get_default_decoration_shader()
+        with shader_program:
+            shader_program['projection'] = matrix
+
         self._projection_matrix = matrix
 
     @property
@@ -928,8 +950,29 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
     @view.setter
     def view(self, matrix: Mat4):
-        with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
-            window_block.view[:] = matrix
+        # with pyglet.graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
+        #     window_block.view[:] = matrix
+
+        shader_program = pyglet.graphics.get_default_shader()
+        with shader_program:
+            shader_program['view'] = matrix
+
+        shader_program = pyglet.sprite.get_default_shader()
+        with shader_program:
+            shader_program['view'] = matrix
+
+        shader_program = pyglet.sprite.get_default_array_shader()
+        with shader_program:
+            shader_program['view'] = matrix
+
+        shader_program = pyglet.text.layout.get_default_layout_shader()
+        with shader_program:
+            shader_program['view'] = matrix
+
+        shader_program = pyglet.text.layout.get_default_decoration_shader()
+        with shader_program:
+            shader_program['view'] = matrix
+
         self._view_matrix = matrix
 
     @property

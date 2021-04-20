@@ -102,6 +102,8 @@ sprites within batches.
 
 import sys
 
+import pyglet
+
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import event
@@ -122,11 +124,14 @@ vertex_source = """#version 150 core
     out vec4 vertex_colors;
     out vec3 texture_coords;
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+    // uniform WindowBlock
+    // {
+    //     mat4 projection;
+    //     mat4 view;
+    // } window;
+
+    uniform mat4 projection;
+    uniform mat4 view;
 
     mat4 m_trans_scale = mat4(1.0);
     mat4 m_rotation = mat4(1.0);
@@ -142,7 +147,8 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
+        // gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
+        gl_Position = projection * view * m_trans_scale * m_rotation * position;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -176,12 +182,34 @@ fragment_array_source = """#version 150 core
 """
 
 
-_default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
-_default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
-_default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+# _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+# _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+# _default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
 
-_default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
-_default_array_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
+# _default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
+# _default_array_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
+
+
+def get_default_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_sprite_default_shader
+    except AttributeError:
+        _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+        _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+        default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        pyglet.gl.current_context.pyglet_sprite_default_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_sprite_default_shader
+
+
+def get_default_array_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_sprite_default_array_shader
+    except AttributeError:
+        _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+        _default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
+        default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
+        pyglet.gl.current_context.pyglet_sprite_default_array_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_sprite_default_array_shader
 
 
 class SpriteGroup(graphics.Group):
@@ -191,7 +219,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, program=None, order=0, parent=None):
+    def __init__(self, texture, blend_src, blend_dest, program, order=0, parent=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -217,7 +245,7 @@ class SpriteGroup(graphics.Group):
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
-        self.program = program or _default_program
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -321,9 +349,9 @@ class Sprite(event.EventDispatcher):
             self._texture = img.get_texture()
 
         if isinstance(img, image.TextureArrayRegion):
-            program = _default_array_program
+            program = get_default_array_shader()
         else:
-            program = _default_program
+            program = get_default_shader()
 
         self._batch = batch or graphics.get_default_batch()
         self._group = SpriteGroup(self._texture, blend_src, blend_dest, program, 0, group)

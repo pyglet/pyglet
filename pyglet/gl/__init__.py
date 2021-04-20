@@ -82,6 +82,7 @@ import pyglet as _pyglet
 from pyglet.gl.gl import *
 from pyglet.gl.lib import GLException
 from pyglet.gl import gl_info
+from pyglet.gl.gl_compat import GL_LUMINANCE, GL_INTENSITY
 
 from pyglet import compat_platform
 from .base import ObjectSpace, CanvasConfig, Context
@@ -163,8 +164,7 @@ if _pyglet.options['debug_texture']:
         size = (width + 2 * border) * (height + 2 * border) * depth
         _debug_texture_alloc(_debug_texture, size)
 
-        return _glTexImage2D(target, level, internalformat, width, height,
-                             border, format, type, pixels)
+        return _glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
 
 
     _glDeleteTextures = glDeleteTextures

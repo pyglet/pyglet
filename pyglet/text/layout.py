@@ -156,6 +156,8 @@ document; they will be ignored by the built-in text classes.
 import re
 import sys
 
+import pyglet
+
 from pyglet import graphics
 from pyglet.gl import *
 from pyglet.event import EventDispatcher
@@ -324,7 +326,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.groups[self.owner]
         except KeyError:
-            group = layout.default_group_class(texture=self.owner, order=1, program=layout.default_shader)
+            group = layout.default_group_class(texture=self.owner, order=1, program=get_default_layout_shader())
             layout.groups[self.owner] = group
 
         n_glyphs = self.length
@@ -525,18 +527,22 @@ layout_vertex_source = """#version 330 core
     out vec4 text_colors;
     out vec2 texture_coords; 
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+    // uniform WindowBlock
+    // {
+    //     mat4 projection;
+    //     mat4 view;
+    // } window;
+
+    uniform mat4 projection;
+    uniform mat4 view;
 
     void main()
     {
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 1);
+        // gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 1);
+        gl_Position = projection * view * translate_mat * vec4(vertices, 0, 1);
 
         text_colors = colors;
         texture_coords = tex_coords.xy;
@@ -564,18 +570,23 @@ decoration_vertex_source = """#version 330 core
 
     out vec4 vert_colors;
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+    // uniform WindowBlock
+    // {
+    //     mat4 projection;
+    //     mat4 view;
+    // } window;
+
+    uniform mat4 projection;
+    uniform mat4 view;
 
     void main()
     {
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 0);
+        // gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 0);
+        gl_Position = projection * view * translate_mat * vec4(vertices, 0, 0);
+
 
         vert_colors = colors;
     }
@@ -592,17 +603,39 @@ decoration_fragment_source = """#version 330 core
     }
 """
 
-_layout_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
-_layout_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
-_layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
+# _layout_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
+# _layout_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
+# _layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
+#
+# _decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
+# _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
+# _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
 
-_decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
-_decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
-_decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
+
+def get_default_layout_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_text_layout_shader
+    except AttributeError:
+        _default_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
+        _default_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
+        default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        pyglet.gl.current_context.pyglet_text_layout_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_text_layout_shader
+
+
+def get_default_decoration_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_text_decoration_shader
+    except AttributeError:
+        _default_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
+        _default_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
+        default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        pyglet.gl.current_context.pyglet_text_decoration_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_text_decoration_shader
 
 
 class TextLayoutGroup(graphics.Group):
-    def __init__(self, texture, order=1, program=_layout_program):
+    def __init__(self, texture, order=1, program=get_default_layout_shader()):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -641,7 +674,7 @@ class TextLayoutGroup(graphics.Group):
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0, program=_decoration_program):
+    def __init__(self, order=0, program=get_default_decoration_shader()):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -661,7 +694,7 @@ class TextDecorationGroup(graphics.Group):
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
-    def __init__(self, texture, order=1, program=_layout_program):
+    def __init__(self, texture, order=1, program=get_default_layout_shader()):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
         The group maintains internal state for specifying the viewable
@@ -737,7 +770,7 @@ class TextLayout:
     _boxes = []
 
     default_group_class = TextLayoutGroup
-    default_shader = _layout_program
+    # default_shader = get_default_layout_shader()
 
     background_decoration_group = TextDecorationGroup(order=0)
     foreground_decoration_group = TextDecorationGroup(order=2)
@@ -1603,7 +1636,7 @@ class ScrollableTextLayout(TextLayout):
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
     default_group_class = ScrollableTextLayoutGroup
-    default_shader = _layout_program
+    # default_shader = get_default_layout_shader()
 
     _translate_x = 0
     _translate_y = 0

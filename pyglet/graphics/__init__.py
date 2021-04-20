@@ -289,27 +289,29 @@ def _parse_data(data):
 
 def get_default_batch():
     try:
-        return current_context.object_space.pyglet_graphics_default_batch
+        return current_context.pyglet_graphics_default_batch
     except AttributeError:
-        current_context.object_space.pyglet_graphics_default_batch = Batch()
-        return current_context.object_space.pyglet_graphics_default_batch
+        current_context.pyglet_graphics_default_batch = Batch()
+        return current_context.pyglet_graphics_default_batch
 
 
 def get_default_group():
     try:
-        return current_context.object_space.pyglet_graphics_default_group
+        return current_context.pyglet_graphics_default_group
     except AttributeError:
-        current_context.object_space.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
-        return current_context.object_space.pyglet_graphics_default_group
+        current_context.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
+        return current_context.pyglet_graphics_default_group
 
 
 def get_default_shader():
     try:
-        return current_context.object_space.pyglet_graphics_default_shader
+        return pyglet.gl.current_context.pyglet_graphics_default_shader
     except AttributeError:
+        _default_vert_shader = Shader(_vertex_source, 'vertex')
+        _default_frag_shader = Shader(_fragment_source, 'fragment')
         default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-        current_context.object_space.pyglet_graphics_default_shader = default_shader_program
-        return current_context.object_space.pyglet_graphics_default_shader
+        pyglet.gl.current_context.pyglet_graphics_default_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_graphics_default_shader
 
 
 def vertex_list(count, *data):
@@ -824,16 +826,19 @@ _vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;  
+//    uniform WindowBlock
+//    {
+//        mat4 projection;
+//        mat4 view;
+//    } window;  
 
+    uniform mat4 projection;
+    uniform mat4 view;
 
     void main()
     {
-        gl_Position = window.projection * window.view * vertices;
+        // gl_Position = window.projection * window.view * vertices;
+        gl_Position = projection * view * vertices;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -853,5 +858,5 @@ _fragment_source = """#version 330 core
     }
 """
 
-_default_vert_shader = Shader(_vertex_source, 'vertex')
-_default_frag_shader = Shader(_fragment_source, 'fragment')
+# _default_vert_shader = Shader(_vertex_source, 'vertex')
+# _default_frag_shader = Shader(_fragment_source, 'fragment')
