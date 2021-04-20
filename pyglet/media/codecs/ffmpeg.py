@@ -559,7 +559,7 @@ class FFmpegSource(StreamingSource):
         if self.audio_format:
             # Buffer 1 sec worth of audio
             nbytes = ffmpeg_get_audio_buffer_size(self.audio_format)
-            self._audio_buffer = (c_uint8 * nbytes)(*([0] * nbytes))
+            self._audio_buffer = (c_uint8 * nbytes)()
 
         self.videoq = deque()
         self._max_len_videoq = 50  # Need to figure out a correct amount
@@ -889,7 +889,7 @@ class FFmpegSource(StreamingSource):
         pitch = width * 4
         # https://ffmpeg.org/doxygen/3.3/group__lavc__decoding.html#ga8f5b632a03ce83ac8e025894b1fc307a
         nbytes = (pitch * height + FF_INPUT_BUFFER_PADDING_SIZE)
-        buffer = (c_uint8 * nbytes)(*([0] * nbytes))
+        buffer = (c_uint8 * nbytes)()
         try:
             result = self._ffmpeg_decode_video(video_packet.packet,
                                                buffer)
