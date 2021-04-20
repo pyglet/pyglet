@@ -307,7 +307,7 @@ class ShaderProgram:
     def __del__(self):
         try:
             glDeleteProgram(self._id)
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, GLException):
             # Interpreter is shutting down,
             # or ShaderProgram failed to link.
             pass
