@@ -116,7 +116,7 @@ def ffmpeg_get_audio_buffer_size(audio_format):
 
     Buffer size can accomodate 1 sec of audio data.
     """
-    return audio_format.bytes_per_second
+    return audio_format.bytes_per_second + FF_INPUT_BUFFER_PADDING_SIZE
 
 
 def ffmpeg_init():
@@ -558,8 +558,8 @@ class FFmpegSource(StreamingSource):
         self._max_len_audioq = 50  # Need to figure out a correct amount
         if self.audio_format:
             # Buffer 1 sec worth of audio
-            self._audio_buffer = \
-                (c_uint8 * ffmpeg_get_audio_buffer_size(self.audio_format))()
+            nbytes = ffmpeg_get_audio_buffer_size(self.audio_format)
+            self._audio_buffer = (c_uint8 * nbytes)()
 
         self.videoq = deque()
         self._max_len_videoq = 50  # Need to figure out a correct amount
@@ -887,7 +887,9 @@ class FFmpegSource(StreamingSource):
         width = self.video_format.width
         height = self.video_format.height
         pitch = width * 4
-        buffer = (c_uint8 * (pitch * height))()
+        # https://ffmpeg.org/doxygen/3.3/group__lavc__decoding.html#ga8f5b632a03ce83ac8e025894b1fc307a
+        nbytes = (pitch * height + FF_INPUT_BUFFER_PADDING_SIZE)
+        buffer = (c_uint8 * nbytes)()
         try:
             result = self._ffmpeg_decode_video(video_packet.packet,
                                                buffer)
