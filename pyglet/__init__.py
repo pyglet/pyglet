@@ -53,15 +53,7 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #:
 #: Valid only if pyglet was installed from a source or binary distribution
 #: (i.e. not in a checked-out copy from SVN).
-#:
-#: Use setuptools if you need to check for a specific release version, e.g.::
-#:
-#:    >>> import pyglet
-#:    >>> from pkg_resources import parse_version
-#:    >>> parse_version(pyglet.version) >= parse_version('1.1')
-#:    True
-#:
-version = '1.5.16'
+version = '1.5.17'
 
 
 if sys.version_info < (3, 6):

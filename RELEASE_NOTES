@@ -1,3 +1,19 @@
+pyglet 1.5.17
+Bugfix, feature and maintenance release
+
+Bugfixes
+--------
+- FFmpeg decoder add FF_INPUT_BUFFER_PADDING_SIZE to buffers.
+
+Maintenance
+-----------
+- Change IncrementalTextLayout to use glScissor instead of glClipPlane.
+
+Features
+--------
+- Add a new `shapes.Star` shape.
+
+
 pyglet 1.5.16
 Bugfix and feature release
 

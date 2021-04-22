@@ -595,27 +595,18 @@ class IncrementalTextLayoutGroup(graphics.Group):
 
     def set_state(self):
         glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
+
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        # Disable clipping planes to check culling.
-        glEnable(GL_CLIP_PLANE0)
-        glEnable(GL_CLIP_PLANE1)
-        glEnable(GL_CLIP_PLANE2)
-        glEnable(GL_CLIP_PLANE3)
-        # Left
-        glClipPlane(GL_CLIP_PLANE0, (GLdouble * 4)(1, 0, 0, -(self._clip_x - 1)))
-        # Top
-        glClipPlane(GL_CLIP_PLANE1, (GLdouble * 4)(0, -1, 0, self._clip_y))
-        # Right
-        glClipPlane(GL_CLIP_PLANE2, (GLdouble * 4)(-1, 0, 0, self._clip_x + self._clip_width + 1))
-        # Bottom
-        glClipPlane(GL_CLIP_PLANE3, (GLdouble * 4)(0, 1, 0, -(self._clip_y - self._clip_height)))
+        glEnable(GL_SCISSOR_TEST)
+        glScissor(self._clip_x, self._clip_y - self._clip_height, self._clip_width, self._clip_height)
 
         glTranslatef(self.translate_x, self.translate_y, 0)
 
     def unset_state(self):
         glTranslatef(-self.translate_x, -self.translate_y, 0)
+        glDisable(GL_SCISSOR_TEST)
         glPopAttrib()
 
     @property
