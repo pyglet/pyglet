@@ -98,8 +98,6 @@ class Renderbuffer:
 class Framebuffer:
     """OpenGL Framebuffer Object"""
 
-    _max_color_attachments = get_max_color_attachments()
-
     def __init__(self, target=GL_FRAMEBUFFER):
         """Create an OpenGL Framebuffer object.
 
