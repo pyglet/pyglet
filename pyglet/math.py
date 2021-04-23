@@ -44,8 +44,9 @@ is a 1-dimensional array, so instances can be passed directly to OpenGL.
 """
 
 import math as _math
-import operator as _operator
 import warnings as _warnings
+
+from operator import mul as _mul
 
 
 class Mat4(tuple):
@@ -268,25 +269,25 @@ class Mat4(tuple):
         c3 = other[3::4]
 
         # Multiply and sum rows * colums:
-        return Mat4((sum(map(_operator.mul, r0, c0)),
-                     sum(map(_operator.mul, r0, c1)),
-                     sum(map(_operator.mul, r0, c2)),
-                     sum(map(_operator.mul, r0, c3)),
+        return Mat4((sum(map(_mul, r0, c0)),
+                     sum(map(_mul, r0, c1)),
+                     sum(map(_mul, r0, c2)),
+                     sum(map(_mul, r0, c3)),
 
-                     sum(map(_operator.mul, r1, c0)),
-                     sum(map(_operator.mul, r1, c1)),
-                     sum(map(_operator.mul, r1, c2)),
-                     sum(map(_operator.mul, r1, c3)),
+                     sum(map(_mul, r1, c0)),
+                     sum(map(_mul, r1, c1)),
+                     sum(map(_mul, r1, c2)),
+                     sum(map(_mul, r1, c3)),
 
-                     sum(map(_operator.mul, r2, c0)),
-                     sum(map(_operator.mul, r2, c1)),
-                     sum(map(_operator.mul, r2, c2)),
-                     sum(map(_operator.mul, r2, c3)),
+                     sum(map(_mul, r2, c0)),
+                     sum(map(_mul, r2, c1)),
+                     sum(map(_mul, r2, c2)),
+                     sum(map(_mul, r2, c3)),
 
-                     sum(map(_operator.mul, r3, c0)),
-                     sum(map(_operator.mul, r3, c1)),
-                     sum(map(_operator.mul, r3, c2)),
-                     sum(map(_operator.mul, r3, c3))))
+                     sum(map(_mul, r3, c0)),
+                     sum(map(_mul, r3, c1)),
+                     sum(map(_mul, r3, c2)),
+                     sum(map(_mul, r3, c3))))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
