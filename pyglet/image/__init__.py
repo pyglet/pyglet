@@ -1680,7 +1680,6 @@ class TextureArrayRegion(TextureRegion):
 
 class TextureArray(Texture, UniformTextureSequence):
     allow_smaller_pack = True
-    _max_depth = get_texture_array_max_depth()
 
     @classmethod
     def create(cls, width, height, internalformat=GL_RGBA, min_filter=None, mag_filter=None, max_depth=256):
@@ -1710,7 +1709,8 @@ class TextureArray(Texture, UniformTextureSequence):
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
 
-        assert max_depth <= cls._max_depth, "TextureArray max_depth supported is {}.".format(cls._max_depth)
+        max_depth_limit = get_texture_array_max_depth()
+        assert max_depth <= max_depth_limit, "TextureArray max_depth supported is {}.".format(max_depth_limit)
 
         tex_id = GLuint()
         glGenTextures(1, byref(tex_id))
