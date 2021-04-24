@@ -198,6 +198,7 @@ def get_default_shader():
         _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
         default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_sprite_default_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_sprite_default_shader
 
 
@@ -209,6 +210,7 @@ def get_default_array_shader():
         _default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
         default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
         pyglet.gl.current_context.pyglet_sprite_default_array_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_sprite_default_array_shader
 
 

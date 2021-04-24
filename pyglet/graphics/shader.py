@@ -107,6 +107,29 @@ class _Uniform:
         self.getter = getter
 
 
+# class _Uniform:
+#
+#     def __init__(self, program, name, uniform_type, size, location, count, is_matrix):
+#         self.program = program
+#         self.name = name
+#         self.type = uniform_type
+#         self.size = size
+#         self.location = location
+#
+#         gl_type, gl_setter, length, count = _uniform_setters[uniform_type]
+#
+#         self._gl_getter = _uniform_getters[gl_type]
+#         self._c_array = (gl_type * length)()
+#
+#     def _get_single(self):
+#         self._gl_getter(self.program, self.location, self._c_array)
+#         return self._c_array[0]
+#
+#     def _get_multi(self):
+#         self._gl_getter(self.program, self.location, self._c_array)
+#         return self._c_array[:]
+
+
 def _create_getter_func(program_id, location, gl_getter, c_array, length):
     """Factory function for creating simplified Uniform getters"""
 

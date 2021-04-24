@@ -84,6 +84,8 @@ instance when loading the Model::
 from math import radians
 from io import BytesIO
 
+import pyglet
+
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet import gl
 from pyglet import graphics
@@ -144,23 +146,25 @@ def load(filename, file=None, decoder=None, batch=None):
 
 def get_default_shader():
     try:
-        return current_context.object_space.model_default_plain_shader
+        return pyglet.gl.current_context.object_space.model_default_plain_shader
     except AttributeError:
         vert_shader = Shader(MaterialGroup.default_vert_src, 'vertex')
         frag_shader = Shader(MaterialGroup.default_frag_src, 'fragment')
-        program = ShaderProgram(vert_shader, frag_shader)
-        current_context.object_space.model_default_plain_shader = program
-        return current_context.object_space.model_default_plain_shader
+        default_shader_program = ShaderProgram(vert_shader, frag_shader)
+        pyglet.gl.current_context.object_space.model_default_plain_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
+        return pyglet.gl.current_context.object_space.model_default_plain_shader
 
 
 def get_default_textured_shader():
     try:
-        return current_context.object_space.model_default_textured_shader
+        return pyglet.gl.current_context.object_space.model_default_textured_shader
     except AttributeError:
         vert_shader = Shader(TexturedMaterialGroup.default_vert_src, 'vertex')
         frag_shader = Shader(TexturedMaterialGroup.default_frag_src, 'fragment')
-        program = ShaderProgram(vert_shader, frag_shader)
-        current_context.object_space.model_default_textured_shader = program
+        default_shader_program = ShaderProgram(vert_shader, frag_shader)
+        pyglet.gl.current_context.object_space.model_default_textured_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return current_context.object_space.model_default_textured_shader
 
 
@@ -288,8 +292,7 @@ class BaseMaterialGroup(graphics.ShaderGroup):
         view = view.rotate(radians(self.rotation[0]), x=1)
         view = view.translate(*self.translation)
 
-        with graphics.get_default_shader().uniform_buffers['WindowBlock'] as window_block:
-            window_block.view[:] = view
+        self.program['view'] = view
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -304,17 +307,20 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     out vec2 texture_coords;
     out vec3 vertex_position;
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+    // uniform WindowBlock
+    // {
+    //     mat4 projection;
+    //     mat4 view;
+    // } window;
+
+    uniform mat4 projection;
+    uniform mat4 view;
 
     void main()
     {
-        vec4 pos = window.view * vec4(vertices, 1.0);
-        gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
+        vec4 pos = view * vec4(vertices, 1.0);
+        gl_Position = projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(view)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -374,17 +380,20 @@ class MaterialGroup(BaseMaterialGroup):
     out vec3 vertex_normals;
     out vec3 vertex_position;
 
-    uniform WindowBlock
-    {
-        mat4 projection;
-        mat4 view;
-    } window;
+    // uniform WindowBlock
+    // {
+    //     mat4 projection;
+    //     mat4 view;
+    // } window;
+
+    uniform mat4 projection;
+    uniform mat4 view;
 
     void main()
     {
-        vec4 pos = window.view * vec4(vertices, 1.0);
-        gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
+        vec4 pos = view * vec4(vertices, 1.0);
+        gl_Position = projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(view)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;

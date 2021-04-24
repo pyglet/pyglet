@@ -289,18 +289,18 @@ def _parse_data(data):
 
 def get_default_batch():
     try:
-        return current_context.pyglet_graphics_default_batch
+        return pyglet.gl.current_context.pyglet_graphics_default_batch
     except AttributeError:
-        current_context.pyglet_graphics_default_batch = Batch()
-        return current_context.pyglet_graphics_default_batch
+        pyglet.gl.current_context.pyglet_graphics_default_batch = Batch()
+        return pyglet.gl.current_context.pyglet_graphics_default_batch
 
 
 def get_default_group():
     try:
-        return current_context.pyglet_graphics_default_group
+        return pyglet.gl.current_context.pyglet_graphics_default_group
     except AttributeError:
-        current_context.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
-        return current_context.pyglet_graphics_default_group
+        pyglet.gl.current_context.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
+        return pyglet.gl.current_context.pyglet_graphics_default_group
 
 
 def get_default_shader():
@@ -311,6 +311,7 @@ def get_default_shader():
         _default_frag_shader = Shader(_fragment_source, 'fragment')
         default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_graphics_default_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_graphics_default_shader
 
 

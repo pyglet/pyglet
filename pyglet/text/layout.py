@@ -620,6 +620,7 @@ def get_default_layout_shader():
         _default_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
         default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_text_layout_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_text_layout_shader
 
 
@@ -631,6 +632,7 @@ def get_default_decoration_shader():
         _default_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
         default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_text_decoration_shader = default_shader_program
+        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_text_decoration_shader
 
 
