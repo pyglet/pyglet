@@ -86,11 +86,11 @@ from io import BytesIO
 
 import pyglet
 
-from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet import gl
 from pyglet import graphics
 from pyglet.gl import current_context
 from pyglet.math import Mat4
+from pyglet.graphics import shader
 
 from .codecs import ModelDecodeException
 from .codecs import add_encoders, add_decoders, add_default_model_codecs
@@ -146,26 +146,24 @@ def load(filename, file=None, decoder=None, batch=None):
 
 def get_default_shader():
     try:
-        return pyglet.gl.current_context.object_space.model_default_plain_shader
+        return pyglet.gl.current_context.model_default_plain_shader
     except AttributeError:
-        vert_shader = Shader(MaterialGroup.default_vert_src, 'vertex')
-        frag_shader = Shader(MaterialGroup.default_frag_src, 'fragment')
-        default_shader_program = ShaderProgram(vert_shader, frag_shader)
-        pyglet.gl.current_context.object_space.model_default_plain_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
-        return pyglet.gl.current_context.object_space.model_default_plain_shader
+        vert_shader = shader.Shader(MaterialGroup.default_vert_src, 'vertex')
+        frag_shader = shader.Shader(MaterialGroup.default_frag_src, 'fragment')
+        default_shader_program = shader.ShaderProgram(vert_shader, frag_shader)
+        pyglet.gl.current_context.model_default_plain_shader = default_shader_program
+        return pyglet.gl.current_context.model_default_plain_shader
 
 
 def get_default_textured_shader():
     try:
-        return pyglet.gl.current_context.object_space.model_default_textured_shader
+        return pyglet.gl.current_context.model_default_textured_shader
     except AttributeError:
-        vert_shader = Shader(TexturedMaterialGroup.default_vert_src, 'vertex')
-        frag_shader = Shader(TexturedMaterialGroup.default_frag_src, 'fragment')
-        default_shader_program = ShaderProgram(vert_shader, frag_shader)
-        pyglet.gl.current_context.object_space.model_default_textured_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
-        return current_context.object_space.model_default_textured_shader
+        vert_shader = shader.Shader(TexturedMaterialGroup.default_vert_src, 'vertex')
+        frag_shader = shader.Shader(TexturedMaterialGroup.default_frag_src, 'fragment')
+        default_shader_program = shader.ShaderProgram(vert_shader, frag_shader)
+        pyglet.gl.current_context.model_default_textured_shader = default_shader_program
+        return current_context.model_default_textured_shader
 
 
 class Model:
@@ -292,7 +290,12 @@ class BaseMaterialGroup(graphics.ShaderGroup):
         view = view.rotate(radians(self.rotation[0]), x=1)
         view = view.translate(*self.translation)
 
-        self.program['view'] = view
+        # TODO: separate the projection block, and remove this hack
+        block = self.program.uniform_blocks['WindowBlock']
+        ubo = block.create_ubo(0)
+        with ubo as window_block:
+            window_block.projection[:] = pyglet.math.Mat4.perspective_projection(0, 720, 0, 480, z_near=0.1, z_far=255)
+            window_block.view[:] = view
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -307,20 +310,18 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     out vec2 texture_coords;
     out vec3 vertex_position;
 
-    // uniform WindowBlock
-    // {
-    //     mat4 projection;
-    //     mat4 view;
-    // } window;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
 
-    uniform mat4 projection;
-    uniform mat4 view;
 
     void main()
     {
-        vec4 pos = view * vec4(vertices, 1.0);
-        gl_Position = projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(view)));
+        vec4 pos = window.view * vec4(vertices, 1.0);
+        gl_Position = window.projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -380,20 +381,17 @@ class MaterialGroup(BaseMaterialGroup):
     out vec3 vertex_normals;
     out vec3 vertex_position;
 
-    // uniform WindowBlock
-    // {
-    //     mat4 projection;
-    //     mat4 view;
-    // } window;
-
-    uniform mat4 projection;
-    uniform mat4 view;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
 
     void main()
     {
-        vec4 pos = view * vec4(vertices, 1.0);
-        gl_Position = projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(view)));
+        vec4 pos = window.view * vec4(vertices, 1.0);
+        gl_Position = window.projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;

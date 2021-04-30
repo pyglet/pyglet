@@ -1,3 +1,4 @@
+import ctypes
 from weakref import proxy
 from ctypes import *
 
@@ -100,34 +101,21 @@ class _Attribute:
 
 
 class _Uniform:
-    __slots__ = 'setter', 'getter'
+    __slots__ = 'name', 'type', 'size', 'location', 'count', 'is_matrix', 'setter', 'getter'
 
-    def __init__(self, setter, getter):
+    def __init__(self, name, uniform_type, size, location, count, is_matrix, setter, getter):
+        self.name = name
+        self.type = uniform_type
+        self.size = size
+        self.location = location
+        self.count = count
+        self.is_matrix = is_matrix
+
         self.setter = setter
         self.getter = getter
 
-
-# class _Uniform:
-#
-#     def __init__(self, program, name, uniform_type, size, location, count, is_matrix):
-#         self.program = program
-#         self.name = name
-#         self.type = uniform_type
-#         self.size = size
-#         self.location = location
-#
-#         gl_type, gl_setter, length, count = _uniform_setters[uniform_type]
-#
-#         self._gl_getter = _uniform_getters[gl_type]
-#         self._c_array = (gl_type * length)()
-#
-#     def _get_single(self):
-#         self._gl_getter(self.program, self.location, self._c_array)
-#         return self._c_array[0]
-#
-#     def _get_multi(self):
-#         self._gl_getter(self.program, self.location, self._c_array)
-#         return self._c_array[:]
+    def __repr__(self):
+        return f"Uniform('{self.name}', size={self.size}, location={self.location}, count={self.count})"
 
 
 def _create_getter_func(program_id, location, gl_getter, c_array, length):
@@ -242,11 +230,6 @@ class ShaderProgram:
 
     __slots__ = '_id', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
 
-    # Cache UBOs, and return the same object for any Shader that defines a UBO
-    # with the same name. UBOs must be shared instead of recreated, or else
-    # they will not link to the same data.
-    uniform_buffers = {}
-
     def __init__(self, *shaders):
         """Create an OpenGL ShaderProgram, from multiple Shaders.
 
@@ -268,13 +251,6 @@ class ShaderProgram:
         self._introspect_uniforms()
         self._introspect_uniform_blocks()
 
-        for block in self._uniform_blocks.values():
-            if block.name in self.uniform_buffers:
-                if _debug_gl_shaders:
-                    print("Skipping cached Uniform Buffer Object: `{0}`".format(block.name))
-                continue
-            self.uniform_buffers[block.name] = UniformBufferObject(block=block)
-
         if _debug_gl_shaders:
             print(self._get_program_log())
 
@@ -283,12 +259,20 @@ class ShaderProgram:
         return self._id
 
     @property
+    def is_active(self):
+        return self._active
+
+    @property
     def attributes(self):
         return self._attributes
 
     @property
-    def is_active(self):
-        return self._active
+    def uniforms(self):
+        return self._uniforms.keys()
+
+    @property
+    def uniform_blocks(self):
+        return self._uniform_blocks
 
     def _get_program_log(self):
         result = c_int(0)
@@ -410,17 +394,17 @@ class ShaderProgram:
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(u_type))
 
-            self._uniforms[u_name] = _Uniform(setter=setter, getter=getter)
+            self._uniforms[u_name] = _Uniform(u_name, u_type, u_size, loc, count, is_matrix, setter, getter)
 
     def _introspect_uniform_blocks(self):
         p_id = self._id
 
-        block_uniforms = {}
+        uniform_blocks = {}
 
         for index in range(self._get_number(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self._get_uniform_block_name(index)
 
-            block_uniforms[name] = {}
+            uniform_blocks[name] = {}
             
             num_active = GLint()
             block_data_size = GLint()
@@ -443,9 +427,9 @@ class ShaderProgram:
                 
                 gl_type, _, length, _ = _uniform_setters[u_type]
                 
-                block_uniforms[name][i] = (uniform_name, gl_type, length)
+                uniform_blocks[name][i] = (uniform_name, gl_type, length)
 
-            self._uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, block_uniforms[name])
+            self._uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, uniform_blocks[name])
 
     def _get_uniform_block_name(self, index):
         buf_size = 128
@@ -493,6 +477,9 @@ class UniformBlock:
         self.size = size
         self.uniforms = uniforms
 
+    def create_ubo(self, index=0):
+        return UniformBufferObject(self, index)
+
     def __repr__(self):
         return f"{self.__class__.__name__}(name={self.name}, index={self.index})"
 
@@ -500,15 +487,15 @@ class UniformBlock:
 class UniformBufferObject:
     __slots__ = 'block', 'buffer', 'view', '_view', '_view_ptr', 'index'
 
-    def __init__(self, block):
+    def __init__(self, block, index):
         assert type(block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = block
-        self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER)
+        self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER, mappable=False)
         self.buffer.bind()
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
-        self.index = len(block.program.uniform_buffers)
-        glUniformBlockBinding(self.block.program.id, self.block.index, self.index)
+        self.index = index
+        # glUniformBlockBinding(self.block.program.id, self.block.index, self.index)
 
     @property
     def id(self):
@@ -557,15 +544,17 @@ class UniformBufferObject:
 
             if padding > 0:
                 padding_bytes = padding // c_type_size
-                args.append(('_padding' + str(i), gl_type * padding_bytes))
+                args.append((f'_padding{i}', gl_type * padding_bytes))
 
         # Custom ctypes Structure for Uniform access:
-        repr_fn = lambda self: str(dict(self._fields_))
-        view = type(self.block.name + 'View', (Structure,), {'_fields_': args, '__repr__': repr_fn})
+        class View(ctypes.Structure):
+            _fields_ = args
+            __repr__ = lambda self: str(dict(self._fields_))
 
-        return view()
+        return View()
 
     def bind(self, index=None):
+        glUniformBlockBinding(self.block.program.id, self.block.index, index or self.index)
         glBindBufferBase(GL_UNIFORM_BUFFER, index or self.index, self.buffer.id)
 
     def read(self):
@@ -578,12 +567,12 @@ class UniformBufferObject:
 
     def __enter__(self):
         # Return the view to the user in a `with` context:
+        glUniformBlockBinding(self.block.program.id, self.block.index, self.index)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.index, self.buffer.id)
         return self.view
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.buffer.set_data(self._view_ptr)
-        self.buffer.bind()
 
     def __repr__(self):
         return "{0}(id={1})".format(self.block.name + 'Buffer', self.buffer.id)

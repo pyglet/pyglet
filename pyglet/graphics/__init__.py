@@ -164,7 +164,6 @@ import weakref
 import pyglet
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
-from pyglet.graphics.shader import Shader, ShaderProgram, UniformBufferObject
 from pyglet.graphics.vertexarray import VertexArray
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
@@ -307,11 +306,10 @@ def get_default_shader():
     try:
         return pyglet.gl.current_context.pyglet_graphics_default_shader
     except AttributeError:
-        _default_vert_shader = Shader(_vertex_source, 'vertex')
-        _default_frag_shader = Shader(_fragment_source, 'fragment')
-        default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
+        _default_vert_shader = pyglet.graphics.shader.Shader(_vertex_source, 'vertex')
+        _default_frag_shader = pyglet.graphics.shader.Shader(_fragment_source, 'fragment')
+        default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_graphics_default_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_graphics_default_shader
 
 
@@ -827,19 +825,15 @@ _vertex_source = """#version 330 core
     out vec4 vertex_colors;
     out vec2 texture_coords;
 
-//    uniform WindowBlock
-//    {
-//        mat4 projection;
-//        mat4 view;
-//    } window;  
-
-    uniform mat4 projection;
-    uniform mat4 view;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;  
 
     void main()
     {
-        // gl_Position = window.projection * window.view * vertices;
-        gl_Position = projection * view * vertices;
+        gl_Position = window.projection * window.view * vertices;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -858,6 +852,3 @@ _fragment_source = """#version 330 core
         final_colors = texture(our_texture, texture_coords) + vertex_colors;
     }
 """
-
-# _default_vert_shader = Shader(_vertex_source, 'vertex')
-# _default_frag_shader = Shader(_fragment_source, 'fragment')

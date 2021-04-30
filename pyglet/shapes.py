@@ -90,19 +90,15 @@ vertex_source = """#version 150 core
 
     out vec4 vertex_colors;
 
-    // uniform WindowBlock
-    // {
-    //     mat4 projection;
-    //     mat4 view;
-    // } window;
-
-    uniform mat4 projection;
-    uniform mat4 view;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
 
     void main()
     {
-        // gl_Position = window.projection * window.view * position;
-        gl_Position = projection * view * position;
+        gl_Position = window.projection * window.view * position;
         vertex_colors = colors;
     }
 """
@@ -120,8 +116,6 @@ fragment_source = """#version 150 core
 _default_vert_shader = Shader(vertex_source, 'vertex')
 _default_frag_shader = Shader(fragment_source, 'fragment')
 _default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-
-pyglet.gl.current_context.default_shaders.add(_default_program)
 
 
 class _ShapeGroup(ShaderGroup):

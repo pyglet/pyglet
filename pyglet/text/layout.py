@@ -527,22 +527,18 @@ layout_vertex_source = """#version 330 core
     out vec4 text_colors;
     out vec2 texture_coords; 
 
-    // uniform WindowBlock
-    // {
-    //     mat4 projection;
-    //     mat4 view;
-    // } window;
-
-    uniform mat4 projection;
-    uniform mat4 view;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
 
     void main()
     {
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        // gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 1);
-        gl_Position = projection * view * translate_mat * vec4(vertices, 0, 1);
+        gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 1);
 
         text_colors = colors;
         texture_coords = tex_coords.xy;
@@ -570,23 +566,18 @@ decoration_vertex_source = """#version 330 core
 
     out vec4 vert_colors;
 
-    // uniform WindowBlock
-    // {
-    //     mat4 projection;
-    //     mat4 view;
-    // } window;
-
-    uniform mat4 projection;
-    uniform mat4 view;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
 
     void main()
     {
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        // gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 0);
-        gl_Position = projection * view * translate_mat * vec4(vertices, 0, 0);
-
+        gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 0);
 
         vert_colors = colors;
     }

@@ -124,14 +124,11 @@ vertex_source = """#version 150 core
     out vec4 vertex_colors;
     out vec3 texture_coords;
 
-    // uniform WindowBlock
-    // {
-    //     mat4 projection;
-    //     mat4 view;
-    // } window;
-
-    uniform mat4 projection;
-    uniform mat4 view;
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
 
     mat4 m_trans_scale = mat4(1.0);
     mat4 m_rotation = mat4(1.0);
@@ -147,8 +144,7 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        // gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
-        gl_Position = projection * view * m_trans_scale * m_rotation * position;
+        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -198,7 +194,6 @@ def get_default_shader():
         _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
         default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_sprite_default_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_sprite_default_shader
 
 
@@ -210,7 +205,6 @@ def get_default_array_shader():
         _default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
         default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
         pyglet.gl.current_context.pyglet_sprite_default_array_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_sprite_default_array_shader
 
 

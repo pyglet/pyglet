@@ -133,7 +133,6 @@ import weakref
 
 from ctypes import *
 from io import open, BytesIO
-from functools import lru_cache
 
 from pyglet.gl import *
 from pyglet.gl import gl_info
@@ -267,7 +266,6 @@ def create(width, height, pattern=None):
     return pattern.create_image(width, height)
 
 
-@lru_cache()
 def get_max_texture_size():
     """Query the maximum texture size available"""
     size = c_int()
@@ -282,7 +280,6 @@ def get_texture_array_max_depth():
     return max_layers.value
 
 
-@lru_cache()
 def _color_as_bytes(color):
     if len(color) != 4:
         raise TypeError("color is expected to have 4 components")

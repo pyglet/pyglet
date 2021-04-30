@@ -132,6 +132,7 @@ from pyglet.math import Mat4
 from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.util import with_metaclass
+from pyglet.graphics import shader
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -429,6 +430,23 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _default_width = 960
     _default_height = 540
 
+    # Create a default ShaderProgram, so the Window instance can
+    # update the `WindowBlock` UBO shared by all default shaders.
+    _default_vertex_source = """#version 150 core
+        in vec4 position;
+
+        uniform WindowBlock
+        {
+            mat4 projection;
+            mat4 view;
+        } window;
+
+        void main()
+        {
+            gl_Position = window.projection * window.view * position;
+        }
+    """
+
     def __init__(self,
                  width=None,
                  height=None,
@@ -576,9 +594,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.set_visible(True)
             self.activate()
 
+        self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
+        self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
+
         self.view = pyglet.math.Mat4()
-        # ### Gets called already by on_resize:
-        # self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
         self._viewport = 0, 0, *self.get_framebuffer_size()
 
@@ -731,12 +750,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         This default handler updates the GL viewport to cover the entire
         window. The bottom-left corner is (0, 0) and the top-right
         corner is the width and height of the window's framebuffer.
-        In addition, the default Shader projection and
-        view matricies are updated.
+        In addition, the projection matrix is set to an orghogonal
+        projection based on the same dimensions.
         """
         gl.glViewport(0, 0, *self.get_framebuffer_size())
         self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
-        self.view = self._view_matrix
 
     def on_close(self):
         """Default on_close handler."""
@@ -915,9 +933,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     @projection.setter
     def projection(self, matrix: Mat4):
 
-        for shader_program in pyglet.gl.current_context.default_shaders:
-            with shader_program:
-                shader_program['projection'] = matrix
+        with self.ubo as window_block:
+            window_block.projection[:] = matrix
 
         self._projection_matrix = matrix
 
@@ -936,9 +953,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     @view.setter
     def view(self, matrix: Mat4):
 
-        for shader_program in pyglet.gl.current_context.default_shaders:
-            with shader_program:
-                shader_program['view'] = matrix
+        with self.ubo as window_block:
+            window_block.view[:] = matrix
 
         self._view_matrix = matrix
 
