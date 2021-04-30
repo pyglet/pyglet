@@ -81,7 +81,7 @@ import pyglet.gl
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glBlendFunc, glEnable, glDisable
-from pyglet.graphics import Batch, Shader, ShaderGroup, ShaderProgram
+from pyglet.graphics import shader, Batch, ShaderGroup
 
 
 vertex_source = """#version 150 core
@@ -113,9 +113,10 @@ fragment_source = """#version 150 core
     }
 """
 
-_default_vert_shader = Shader(vertex_source, 'vertex')
-_default_frag_shader = Shader(fragment_source, 'fragment')
-_default_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
+# TODO: cache these on the current_context, like Sprites/etc.?
+_default_vert_shader = shader.Shader(vertex_source, 'vertex')
+_default_frag_shader = shader.Shader(fragment_source, 'fragment')
+_default_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
 
 
 class _ShapeGroup(ShaderGroup):
