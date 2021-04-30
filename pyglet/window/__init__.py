@@ -124,6 +124,7 @@ above, "Working with multiple screens")::
 """
 
 import sys
+import warnings
 from typing import Tuple
 
 import pyglet
@@ -548,6 +549,19 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         if not context:
             context = config.create_context(gl.current_context)
+
+        # Warn the user about odd behavior with lower GL versions.
+        # This can be an issue on  certain intel hardware that was previously
+        # supported under Windows 8, but reports GL 1.1 under Windows 10. Linux
+        # tends to have better support for these GPUs.
+        if not pyglet.gl.gl_info.have_version(2, 0):
+            version_tuple = config.major_version, config.minor_version
+            warnings.warn(
+                f"OpenGL version lower than 2.0 {version_tuple!r}. "
+                f"Many features may not work if batching fails. "
+                f"If your hardware should support a higher version, your "
+                f"drivers or OS may be at fault."
+            )
 
         # Set these in reverse order to above, to ensure we get user preference
         self._context = context
