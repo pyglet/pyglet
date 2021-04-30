@@ -66,6 +66,8 @@ def load_material_library(filename):
     opacity = 1.0
     texture_name = None
 
+    matlib = {}
+
     for line in file:
         if line.startswith('#'):
             continue
@@ -74,7 +76,13 @@ def load_material_library(filename):
             continue
 
         if values[0] == 'newmtl':
+            if name is not None:
+                # save previous material
+                for item in (diffuse, ambient, specular, emission):
+                    item.append(opacity)
+                matlib[name] = Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
             name = values[1]
+
         elif name is None:
             raise ModelDecodeException('Expected "newmtl" in '.format(filename))
 
@@ -102,7 +110,9 @@ def load_material_library(filename):
     for item in (diffuse, ambient, specular, emission):
         item.append(opacity)
 
-    return Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
+    matlib[name] = Material(name, diffuse, ambient, specular, emission, shininess, texture_name)
+
+    return matlib
 
 
 def parse_obj_file(filename, file=None):
@@ -155,8 +165,7 @@ def parse_obj_file(filename, file=None):
 
         elif values[0] == 'mtllib':
             material_abspath = os.path.join(location, values[1])
-            material = load_material_library(filename=material_abspath)
-            materials[material.name] = material
+            materials = load_material_library(filename=material_abspath)            
 
         elif values[0] in ('usemtl', 'usemat'):
             material = materials.get(values[1])

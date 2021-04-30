@@ -343,7 +343,7 @@ class Caret:
         """
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
-        m1 = self._previous_word_re.search(self._layout.document.text, 0, p + 1)
+        m1 = self._previous_word_re.search(self._layout.document.text, 0, p+1)
         if not m1:
             m1 = 0
         else:
@@ -386,12 +386,12 @@ class Caret:
         if update_ideal_x:
             self._ideal_x = x
 
+        # x -= self._layout.top_group.view_x    # From 1.5
+        # y -= self._layout.top_group.view_y    # From 1.5
         x -= self._layout.view_x
         y -= self._layout.view_y
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
-
-        print("Caret Vertices:", self._list.vertices[:])
 
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))

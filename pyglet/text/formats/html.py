@@ -123,6 +123,8 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         'font_name': 'Times New Roman',
         'font_size': 12,
         'margin_bottom': '12pt',
+        'bold': False,
+        'italic': False,
     }
 
     #: Map HTML font sizes to actual font sizes, in points.

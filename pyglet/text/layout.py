@@ -248,8 +248,9 @@ class _LayoutContext:
         self.colors_iter = colors_iter
         underline_iter = document.get_style_runs('underline')
         self.decoration_iter = runlist.ZipRunIterator((background_iter, underline_iter))
-        self.baseline_iter = runlist.FilteredRunIterator(document.get_style_runs('baseline'),
-                                                         lambda value: value is not None, 0)
+        self.baseline_iter = runlist.FilteredRunIterator(
+            document.get_style_runs('baseline'),
+            lambda value: value is not None, 0)
 
 
 class _StaticLayoutContext(_LayoutContext):
@@ -447,7 +448,7 @@ class _InlineElementBox(_AbstractBox):
     def __init__(self, element):
         """Create a glyph run holding a single element.
         """
-        super(_InlineElementBox, self).__init__(element.ascent, element.descent, element.advance, 1)
+        super().__init__(element.ascent, element.descent, element.advance, 1)
         self.element = element
         self.placed = False
 
@@ -690,35 +691,32 @@ class ScrollableTextLayoutGroup(graphics.Group):
     def __init__(self, texture, order=1, program=get_default_layout_shader()):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
-        The group maintains internal state for specifying the viewable
-        area, and for scrolling. Because the group has internal state
-        specific to the text layout, the group is never shared.
-        """
-        super().__init__(order=order)
-        self.texture = texture
-        self.program = program
-        self.scissor_box = (0, 0, 0, 0)
+    The group maintains internal state for setting the clipping planes and
+    view transform for scrolling.  Because the group has internal state
+    specific to the text layout, the group is never shared.
+    """
+    x = 0
+    y = 0
+    width = 0
+    height = 0
+    view_x = 0
+    view_y = 0
 
     def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
+        glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glEnable(GL_SCISSOR_TEST)
-        glScissor(*self.scissor_box)
+        glScissor(self.x, self.y, self.width, self.height)
+
+        glTranslatef(-self.view_x, -self.view_y, 0)
 
     def unset_state(self):
-        glDisable(GL_BLEND)
+        glTranslatef(self.view_x, self.view_y, 0)
         glDisable(GL_SCISSOR_TEST)
-        glBindTexture(self.texture.target, 0)
-        self.program.stop()
-
-    def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__, self.texture)
+        glPopAttrib()
 
     def __eq__(self, other):
         return self is other
@@ -727,7 +725,177 @@ class ScrollableTextLayoutGroup(graphics.Group):
         return id(self)
 
 
-#####################
+class IncrementalTextLayoutGroup(graphics.Group):
+    """Top-level rendering group for :py:class:`~pyglet.text.layout.IncrementalTextLayout`.
+
+    The group maintains internal state for setting the clipping planes and
+    view transform for scrolling.  Because the group has internal state
+    specific to the text layout, the group is never shared.
+    """
+    _clip_x = 0
+    _clip_y = 0
+    _clip_width = 0
+    _clip_height = 0
+    _view_x = 0
+    _view_y = 0
+    translate_x = 0  # x - view_x
+    translate_y = 0  # y - view_y
+
+    def set_state(self):
+        glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glEnable(GL_SCISSOR_TEST)
+        glScissor(self._clip_x, self._clip_y - self._clip_height, self._clip_width, self._clip_height)
+
+        glTranslatef(self.translate_x, self.translate_y, 0)
+
+    def unset_state(self):
+        glTranslatef(-self.translate_x, -self.translate_y, 0)
+        glDisable(GL_SCISSOR_TEST)
+        glPopAttrib()
+
+    @property
+    def top(self):
+        return self._clip_y
+
+    @top.setter
+    def top(self, top):
+        """Top edge of the text layout (measured from the
+        bottom of the graphics viewport).
+
+        :type: int
+        """
+        self._clip_y = top
+        self.translate_y = self._clip_y - self._view_y
+
+    @property
+    def left(self):
+        return self._clip_x
+
+    @left.setter
+    def left(self, left):
+        """Left edge of the text layout.
+
+        :type: int
+        """
+        self._clip_x = left
+        self.translate_x = self._clip_x - self._view_x
+
+    @property
+    def width(self):
+        return self._clip_width
+
+    @width.setter
+    def width(self, width):
+        """Width of the text layout.
+
+        :type: int
+        """
+        self._clip_width = width
+
+    @property
+    def height(self):
+        return self._clip_height
+
+    @height.setter
+    def height(self, height):
+        """Height of the text layout.
+
+        :type: int
+        """
+        self._clip_height = height
+
+    @property
+    def view_x(self):
+        return self._view_x
+
+    @view_x.setter
+    def view_x(self, view_x):
+        """Horizontal scroll offset.
+
+        :type: int
+        """
+        self._view_x = view_x
+        self.translate_x = self._clip_x - self._view_x
+
+    @property
+    def view_y(self):
+        return self._view_y
+
+    @view_y.setter
+    def view_y(self, view_y):
+        """Vertical scroll offset.
+
+        :type: int
+        """
+        self._view_y = view_y
+        self.translate_y = self._clip_y - self._view_y
+
+    def __eq__(self, other):
+        return self is other
+
+    def __hash__(self):
+        return id(self)
+
+
+class TextLayoutForegroundGroup(graphics.OrderedGroup):
+    """Rendering group for foreground elements (glyphs) in all text layouts.
+
+    The group enables ``GL_TEXTURE_2D``.
+    """
+
+    def set_state(self):
+        glEnable(GL_TEXTURE_2D)
+
+    # unset_state not needed, as parent group will pop enable bit
+
+
+class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
+    """Rendering group for decorative elements (e.g., glyph underlines) in all
+    text layouts.
+
+    The group disables ``GL_TEXTURE_2D``.
+    """
+
+    def set_state(self):
+        glDisable(GL_TEXTURE_2D)
+
+    # unset_state not needed, as parent group will pop enable bit
+
+
+class TextLayoutTextureGroup(graphics.Group):
+    """Rendering group for a glyph texture in all text layouts.
+
+    The group binds its texture to ``GL_TEXTURE_2D``.  The group is shared
+    between all other text layout uses of the same texture.
+    """
+
+    def __init__(self, texture, parent):
+        assert texture.target == GL_TEXTURE_2D
+        super().__init__(parent)
+
+        self.texture = texture
+
+    def set_state(self):
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+
+    # unset_state not needed, as next group will either
+    # bind a new texture or pop enable bit.
+
+    def __hash__(self):
+        return hash((self.texture.id, self.parent))
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self.texture.id == other.texture.id and
+                self.parent == other.parent)
+
+    def __repr__(self):
+        return '%s(%d, %r)' % (self.__class__.__name__, self.texture.id, self.parent)
+
 
 class TextLayout:
     """Lay out and display documents.
@@ -768,21 +936,22 @@ class TextLayout:
     background_decoration_group = TextDecorationGroup(order=0)
     foreground_decoration_group = TextDecorationGroup(order=2)
 
-    _x = 0
-    _y = 0
-    _width = None
-    _height = None
-    _multiline = False
-    _anchor_x = 'left'
-    _anchor_y = 'bottom'
-    _content_valign = 'top'
-
     _update_enabled = True
     _own_batch = False
     _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
 
-    def __init__(self, document, width=None, height=None, multiline=False,
-                 dpi=None, batch=None, group=None, wrap_lines=True):
+    _x = 0
+    _y = 0
+    _width = None
+    _height = None
+    _anchor_x = 'left'
+    _anchor_y = 'bottom'
+    _content_valign = 'top'
+    _multiline = False
+
+    def __init__(self, document, width=None, height=None,
+                 multiline=False, dpi=None, batch=None, group=None,
+                 wrap_lines=True):
         """Create a text layout.
 
         :Parameters:
@@ -836,6 +1005,35 @@ class TextLayout:
         self.document = document
 
     @property
+    def dpi(self):
+        """Get DPI used by this layout.
+
+        :type: float
+        """
+        return self._dpi
+
+    @property
+    def document(self):
+        """Document to display.
+
+         For :py:class:`~pyglet.text.layout.IncrementalTextLayout` it is
+         far more efficient to modify a document in-place than to replace
+         the document instance on the layout.
+
+         :type: `AbstractDocument`
+         """
+        return self._document
+
+    @document.setter
+    def document(self, document):
+        if self._document:
+            self._document.remove_handlers(self)
+            self._uninit_document()
+        document.push_handlers(self)
+        self._document = document
+        self._init_document()
+
+    @property
     def batch(self):
         """The Batch that this Layout is assigned to.
 
@@ -860,6 +1058,206 @@ class TextLayout:
             self._batch = batch
             self._own_batch = False
             self._update()
+
+    @property
+    def x(self):
+        """X coordinate of the layout.
+
+        See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`.
+
+        :type: int
+        """
+        return self._x
+
+    @x.setter
+    def x(self, x):
+        self._set_x(x)
+
+    def _set_x(self, x):
+        if self._boxes:
+            self._x = x
+            self._update()
+        else:
+            dx = x - self._x
+            for vertex_list in self._vertex_lists:
+                vertex_list.vertices[::2] = [v + dx for v in vertex_list.vertices[::2]]
+            self._x = x
+
+    @property
+    def y(self):
+        """Y coordinate of the layout.
+
+        See also `anchor_y`.
+
+        :type: int
+        """
+        return self._y
+
+    @y.setter
+    def y(self, y):
+        self._set_y(y)
+
+    def _set_y(self, y):
+        if self._boxes:
+            self._y = y
+            self._update()
+        else:
+            dy = y - self._y
+            for vertex_list in self._vertex_lists:
+                vertex_list.vertices[1::2] = [v + dy for v in vertex_list.vertices[1::2]]
+            self._y = y
+
+    @property
+    def position(self):
+        """The (X, Y) coordinates of the layout, as a tuple.
+
+        See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`,
+        and :py:attr:`~pyglet.text.layout.TextLayout.anchor_y`.
+
+        :type: (int, int)
+        """
+        return self._x, self._y
+
+    @position.setter
+    def position(self, position):
+        x, y = position
+        self._set_x(x)
+        self._set_y(y)
+
+    @property
+    def width(self):
+        """Width of the layout.
+
+        This property has no effect if `multiline` is False or `wrap_lines` is False.
+
+        :type: int
+        """
+        return self._width
+
+    @width.setter
+    def width(self, width):
+        self._width = width
+        self._wrap_lines_invariant()
+        self._update()
+
+    @property
+    def height(self):
+        """Height of the layout.
+
+        :type: int
+        """
+        return self._height
+
+    @height.setter
+    def height(self, height):
+        self._height = height
+        self._update()
+
+    @property
+    def multiline(self):
+        """Set if multiline layout is enabled.
+
+        If multiline is False, newline and paragraph characters are ignored and
+        text is not word-wrapped.
+        If True, the text is word-wrapped only if the `wrap_lines` is True.
+
+        :type: bool
+        """
+        return self._multiline
+
+    @multiline.setter
+    def multiline(self, multiline):
+        self._multiline = multiline
+        self._wrap_lines_invariant()
+        self._update()
+
+    @property
+    def anchor_x(self):
+        """Horizontal anchor alignment.
+
+        This property determines the meaning of the `x` coordinate.
+        It is one of the enumerants:
+
+        ``"left"`` (default)
+            The X coordinate gives the position of the left edge of the layout.
+        ``"center"``
+            The X coordinate gives the position of the center of the layout.
+        ``"right"``
+            The X coordinate gives the position of the right edge of the layout.
+
+        For the purposes of calculating the position resulting from this
+        alignment, the width of the layout is taken to be `width` if `multiline`
+        is True and `wrap_lines` is True, otherwise `content_width`.
+
+        :type: str
+        """
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor_x = anchor_x
+        self._update()
+
+    @property
+    def anchor_y(self):
+        """Vertical anchor alignment.
+
+        This property determines the meaning of the `y` coordinate.
+        It is one of the enumerants:
+
+        ``"top"``
+            The Y coordinate gives the position of the top edge of the layout.
+        ``"center"``
+            The Y coordinate gives the position of the center of the layout.
+        ``"baseline"``
+            The Y coordinate gives the position of the baseline of the first
+            line of text in the layout.
+        ``"bottom"`` (default)
+            The Y coordinate gives the position of the bottom edge of the layout.
+
+        For the purposes of calculating the position resulting from this
+        alignment, the height of the layout is taken to be the smaller of
+        `height` and `content_height`.
+
+        See also `content_valign`.
+
+        :type: str
+        """
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor_y = anchor_y
+        self._update()
+
+    @property
+    def content_valign(self):
+        """Vertical alignment of content within larger layout box.
+
+        This property determines how content is positioned within the layout
+        box when ``content_height`` is less than ``height``.  It is one
+        of the enumerants:
+
+        ``top`` (default)
+            Content is aligned to the top of the layout box.
+        ``center``
+            Content is centered vertically within the layout box.
+        ``bottom``
+            Content is aligned to the bottom of the layout box.
+
+        This property has no effect when ``content_height`` is greater
+        than ``height`` (in which case the content is aligned to the top) or when
+        ``height`` is ``None`` (in which case there is no vertical layout box
+        dimension).
+
+        :type: str
+        """
+        return self._content_valign
+
+    @content_valign.setter
+    def content_valign(self, content_valign):
+        self._content_valign = content_valign
+        self._update()
 
     def _wrap_lines_invariant(self):
         self._wrap_lines = self._multiline and self._wrap_lines_flag
@@ -893,13 +1291,6 @@ class TextLayout:
         self._update_enabled = True
         self._update()
 
-    @property
-    def dpi(self):
-        """Get DPI used by this layout.
-        :type: float
-        """
-        return self._dpi
-
     def delete(self):
         """Remove this layout from its batch.
         """
@@ -923,25 +1314,13 @@ class TextLayout:
         else:
             self._batch.draw_subset(self._vertex_lists)
 
-    @property
-    def document(self):
-        """Document to display.
-
-             For :py:class:`~pyglet.text.layout.IncrementalTextLayout` it is far more efficient to modify a document
-             in-place than to replace the document instance on the layout.
-
-             :type: `AbstractDocument`
-         """
-        return self._document
-
-    @document.setter
-    def document(self, document):
-        if self._document:
-            self._document.remove_handlers(self)
-            self._uninit_document()
-        document.push_handlers(self)
-        self._document = document
-        self._init_document()
+    def _init_groups(self, group):
+        if group:
+            self.top_group = TextLayoutGroup(group)
+            self.background_group = graphics.OrderedGroup(0, self.top_group)
+            self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+            self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+            # Otherwise class groups are (re)used.
 
     def _get_lines(self):
         len_text = len(self._document.text)
@@ -1009,7 +1388,7 @@ class TextLayout:
         elif self._anchor_x == 'right':
             return self._x - width
         else:
-            assert False, 'Invalid anchor_x'
+            assert False, '`anchor_x` must be either "left", "center", or "right".'
 
     def _get_top(self, lines):
         if self._height is None:
@@ -1024,7 +1403,7 @@ class TextLayout:
             elif self._content_valign == 'center':
                 offset = max(0, self._height - self.content_height) // 2
             else:
-                assert False, 'Invalid content_valign'
+                assert False, '`content_valign` must be either "top", "bottom", or "center".'
 
         if self._anchor_y == 'top':
             return self._y - offset
@@ -1040,7 +1419,21 @@ class TextLayout:
             else:
                 return self._y + height // 2 - offset
         else:
-            assert False, 'Invalid anchor_y'
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
+
+    def _get_bottom(self, lines):
+        height = self._height or self.content_height
+
+        if self._anchor_y == 'top':
+            return self._y - height
+        elif self._anchor_y == 'bottom':
+            return self._y
+        elif self._anchor_y == 'center':
+            return self._y - height // 2
+        elif self._anchor_y == 'baseline':
+            return self._y - height + lines[0].ascent
+        else:
+            assert False, '`anchor_y` must be either "top", "bottom", "center", or "baseline".'
 
     def _init_document(self):
         self._update()
@@ -1199,8 +1592,7 @@ class TextLayout:
                     run_accum_width = 0
 
                     if text == '\t':
-                        # Fix up kern for this glyph to align to the next tab
-                        # stop
+                        # Fix up kern for this glyph to align to the next tab stop
                         for tab_stop in tab_stops_iterator[index]:
                             tab_stop = self.parse_distance(tab_stop)
                             if tab_stop > x + line.margin_left:
@@ -1229,7 +1621,7 @@ class TextLayout:
                 else:
                     new_paragraph = text in u'\n\u2029'
                     new_line = (text == u'\u2028') or new_paragraph
-                    if wrap and self._wrap_lines and x + kern + glyph.advance >= width or new_line:
+                    if (wrap and self._wrap_lines and x + kern + glyph.advance >= width) or new_line:
                         # Either the pending runs have overflowed the allowed
                         # line width or a newline was encountered.  Either
                         # way, the current line must be flushed.
@@ -1392,8 +1784,8 @@ class TextLayout:
             y = 0
         else:
             line = lines[start - 1]
-            line_spacing = self.parse_distance(line_spacing_iterator[line.start])
-            leading = self.parse_distance(leading_iterator[line.start])
+            line_spacing = self._parse_distance(line_spacing_iterator[line.start])
+            leading = self._parse_distance(leading_iterator[line.start])
 
             y = line.y
             if line_spacing is None:
@@ -1404,9 +1796,9 @@ class TextLayout:
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
-                y -= self.parse_distance(margin_top_iterator[line.start])
-                line_spacing = self.parse_distance(line_spacing_iterator[line.start])
-                leading = self.parse_distance(leading_iterator[line.start])
+                y -= self._parse_distance(margin_top_iterator[line.start])
+                line_spacing = self._parse_distance(line_spacing_iterator[line.start])
+                leading = self._parse_distance(leading_iterator[line.start])
             else:
                 y -= leading
 
@@ -1447,176 +1839,6 @@ class TextLayout:
             x += box.advance
             i += box.length
 
-    @property
-    def x(self):
-        """X coordinate of the layout.
-
-            See also :py:attr:`~pyglet.text.layout.TextLayout.anchor_x`.
-
-            :type: int
-        """
-        return self._x
-
-    def _x_setter(self, x):
-        if self._boxes:
-            self._x = x
-            self._update()
-        else:
-            dx = x - self._x
-            for vertex_list in self._vertex_lists:
-                vertex_list.vertices[::2] = [x + dx for x in vertex_list.vertices[::2]]
-            self._x = x
-
-    @x.setter
-    def x(self, x):
-        self._x_setter(x)
-
-    @property
-    def y(self):
-        """Y coordinate of the layout.
-
-            See also `anchor_y`.
-
-            :type: int
-        """
-        return self._y
-
-    def _y_setter(self, y):
-        if self._boxes:
-            self._y = y
-            self._update()
-        else:
-            dy = y - self._y
-            for vertex_list in self._vertex_lists:
-                vertex_list.vertices[1::2] = [y + dy for y in vertex_list.vertices[1::2]]
-            self._y = y
-
-    @y.setter
-    def y(self, y):
-        self._y_setter(y)
-
-    @property
-    def width(self):
-        """Width of the layout.
-
-            This property has no effect if `multiline` is False or `wrap_lines` is False.
-
-            :type: int
-        """
-        return self._width
-
-    def _width_setter(self, width):
-        self._width = width
-        self._wrap_lines_invariant()
-        self._update()
-
-    @width.setter
-    def width(self, width):
-        self._width_setter(width)
-
-    @property
-    def height(self):
-        """Height of the layout.
-
-            :type: int
-        """
-        return self._height
-
-    def _height_setter(self, height):
-        self._height = height
-        self._update()
-
-    @height.setter
-    def height(self, height):
-        self._height_setter(height)
-
-    @property
-    def multiline(self):
-        """Set if multiline layout is enabled.
-
-            If multiline is False, newline and paragraph characters are ignored and
-            text is not word-wrapped.
-            If True, the text is word-wrapped only if the `wrap_lines` is True.
-
-            :type: bool
-        """
-        return self._multiline
-
-    def _multiline_setter(self, multiline):
-        self._multiline = multiline
-        self._wrap_lines_invariant()
-        self._update()
-
-    @multiline.setter
-    def multiline(self, multiline):
-        self._multiline_setter(multiline)
-
-    @property
-    def anchor_x(self):
-        """Horizontal anchor alignment.
-
-            This property determines the meaning of the `x` coordinate.  It is one of
-            the enumerants:
-
-            ``"left"`` (default)
-                The X coordinate gives the position of the left edge of the layout.
-            ``"center"``
-                The X coordinate gives the position of the center of the layout.
-            ``"right"``
-                The X coordinate gives the position of the right edge of the layout.
-
-            For the purposes of calculating the position resulting from this
-            alignment, the width of the layout is taken to be `width` if `multiline`
-            is True and `wrap_lines` is True, otherwise `content_width`.
-
-            :type: str
-        """
-        return self._anchor_x
-
-    @anchor_x.setter
-    def anchor_x(self, anchor_x):
-        self._anchor_x = anchor_x
-        self._update()
-
-    @property
-    def anchor_y(self):
-        return self._anchor_y
-
-    @anchor_y.setter
-    def anchor_y(self, anchor_y):
-        self._anchor_y = anchor_y
-        self._update()
-
-    @property
-    def content_valign(self):
-        """Vertical alignment of content within
-            larger layout box.
-
-            This property determines how content is positioned within the layout
-            box when ``content_height`` is less than ``height``.  It is one
-            of the enumerants:
-
-            ``top`` (default)
-                Content is aligned to the top of the layout box.
-            ``center``
-                Content is centered vertically within the layout box.
-            ``bottom``
-                Content is aligned to the bottom of the layout box.
-
-            This property has no effect when ``content_height`` is greater
-            than ``height`` (in which case the content is aligned to the top) or when
-            ``height`` is ``None`` (in which case there is no vertical layout box
-            dimension).
-
-            :type: str
-        """
-        return self._content_valign
-
-    @content_valign.setter
-    def content_valign(self, content_valign):
-        self._content_valign = content_valign
-        self._update()
-
 
 class ScrollableTextLayout(TextLayout):
     """Display text in a scrollable viewport.
@@ -1628,89 +1850,111 @@ class ScrollableTextLayout(TextLayout):
 
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
-    default_group_class = ScrollableTextLayoutGroup
-    # default_shader = get_default_layout_shader()
-
-    _translate_x = 0
-    _translate_y = 0
-
-    _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self._calculate_scissor_box()
+        self.top_group.width = self._width
+        self.top_group.height = self._height
 
-    def _calculate_scissor_box(self):
-        for group in self.groups.values():
-            x = self._x
-            y = self._y
-            height = max(min(y + self.height, self.height), 0)
-            width = max(min(x + self.width, self.width), 0)
-            x = max(0, x)
-            y = max(0, y)
-            group.scissor_box = x, y, width, height
+    def _init_groups(self, group):
+        # Scrollable layout never shares group becauase of translation.
+        self.top_group = ScrollableTextLayoutGroup(group)
+        self.background_group = graphics.OrderedGroup(0, self.top_group)
+        self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+        self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
 
-    def _update_translation(self):
-        for _vertex_list in self._vertex_lists:
-            _vertex_list.translation[:] = (self._translate_x, self._translate_y) * (len(_vertex_list.translation) // 2)
+    # Properties
 
-    def _x_setter(self, x):
-        super()._x_setter(x)
-        self._calculate_scissor_box()
+    @property
+    def x(self):
+        return self._x
 
-    def _y_setter(self, y):
-        super()._y_setter(y)
-        self._calculate_scissor_box()
+    @x.setter
+    def x(self, x):
+        super()._set_x(x)
+        self.top_group.x = self._get_left()
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, y):
+        super()._set_y(y)
+        self.top_group.y = y
+
+    @property
+    def position(self):
+        return self._x, self._y
+
+    @position.setter
+    def position(self, position):
+        self.x, self.y = position
+
+    @property
+    def anchor_x(self):
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor_x = anchor_x
+        super()._update()
+        self.top_group.x = self._get_left()
+
+    @property
+    def anchor_y(self):
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor_y = anchor_y
+        super()._update()
+        self.top_group.y = self._get_bottom(self._get_lines())
 
     # Offset of content within viewport
+
     @property
     def view_x(self):
         """Horizontal scroll offset.
 
-            The initial value is 0, and the left edge of the text will touch the left
-            side of the layout bounds.  A positive value causes the text to "scroll"
-            to the right.  Values are automatically clipped into the range
-            ``[0, content_width - width]``
+        The initial value is 0, and the left edge of the text will touch the left
+        side of the layout bounds.  A positive value causes the text to "scroll"
+        to the right.  Values are automatically clipped into the range
+        ``[0, content_width - width]``
 
-            :type: int
+        :type: int
         """
-        return self._translate_x
-
-    def _view_x_setter(self, view_x):
-        self._translate_x = max(0, min(self.content_width - self._width, view_x))
-        self._update_translation()
+        return self.top_group.view_x
 
     @view_x.setter
     def view_x(self, view_x):
-        self._view_x_setter(view_x)
+        view_x = max(0, min(self.content_width - self.width, view_x))
+        self.top_group.view_x = view_x
 
     @property
     def view_y(self):
         """Vertical scroll offset.
 
-            The initial value is 0, and the top of the text will touch the top of the
-            layout bounds (unless the content height is less than the layout height,
-            in which case `content_valign` is used).
+        The initial value is 0, and the top of the text will touch the top of the
+        layout bounds (unless the content height is less than the layout height,
+        in which case `content_valign` is used).
 
-            A negative value causes the text to "scroll" upwards.  Values outside of
-            the range ``[height - content_height, 0]`` are automatically clipped in
-            range.
+        A negative value causes the text to "scroll" upwards.  Values outside of
+        the range ``[height - content_height, 0]`` are automatically clipped in
+        range.
 
-            :type: int
+        :type: int
         """
-        return self._translate_y
-
-    def _view_y_setter(self, view_y):
-        # view_y must be negative.
-        self._translate_y = min(0, max(self.height - self.content_height, view_y))
-        self._update_translation()
+        return self.top_group.view_y
 
     @view_y.setter
     def view_y(self, view_y):
-        self._view_y_setter(view_y)
+        # view_y must be negative.
+        view_y = min(0, max(self.height - self.content_height, view_y))
+        self.top_group.view_y = view_y
 
 
-class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
+class IncrementalTextLayout(TextLayout, event.EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
@@ -1734,8 +1978,10 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
     _selection_color = [255, 255, 255, 255]
     _selection_background_color = [46, 106, 197, 255]
 
+    _origin_layout = False
+
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
-        EventDispatcher.__init__(self)
+
         self.glyphs = []
         self.lines = []
 
@@ -1748,8 +1994,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
         self.owner_runs = runlist.RunList(0, None)
 
-        if group:
-            assert isinstance(group, ScrollableTextLayoutGroup), "Only subclasses of ScrollableTextLayoutGroup allowed."
+        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
@@ -1757,6 +2002,13 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         self.left = self._get_left()
         self.height = height
         self.top = self._get_top(self._get_lines())
+
+    def _init_groups(self, group):
+        # Scrollable layout never shares group becauase of translation.
+        self.top_group = IncrementalTextLayoutGroup(group)
+        self.background_group = graphics.OrderedGroup(0, self.top_group)
+        self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+        self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -1816,10 +2068,10 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
     def on_style_text(self, start, end, attributes):
         if 'font_name' in attributes or 'font_size' in attributes or 'bold' in attributes or 'italic' in attributes:
             self.invalid_glyphs.invalidate(start, end)
-        elif False:  # Attributes that change flow
-            self.invalid_flow.invalidate(start, end)
         elif 'color' in attributes or 'background_color' in attributes:
             self.invalid_style.invalidate(start, end)
+        else:  # Attributes that change flow
+            self.invalid_flow.invalidate(start, end)
 
         self._update()
 
@@ -1851,8 +2103,8 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         self.top = self._get_top(self.lines)
 
         # Reclamp view_y in case content height has changed and reset top of content.
-        # self.view_y = self.view_y
-        self.top = self._get_top(self._get_lines())
+        self.view_y = self.view_y
+        self.top_group.top = self._get_top(self._get_lines())
 
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
@@ -1908,8 +2160,8 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
         # Flow from previous line; fixes issue with adding a space into
         # overlong line (glyphs before space would then flow back onto
-        # previous line).  TODO Could optimise this by keeping track of where
-        # the overlong lines are.
+        # previous line).
+        # TODO:  Could optimise this by keeping track of where the overlong lines are.
         line_index = max(0, line_index - 1)
 
         # (No need to find last invalid line; the update loop below stops
@@ -2045,31 +2297,133 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
 
             self._create_vertex_lists(line.x, y, line.start, line.boxes, context)
 
-    # Method overrides:
+    @property
+    def x(self):
+        return self._x
 
-    def _width_setter(self, width):
+    @x.setter
+    def x(self, x):
+        self._x = x
+        self.top_group.left = self._get_left()
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, y):
+        self._y = y
+        self.top_group.top = self._get_top(self._get_lines())
+
+    @property
+    def position(self):
+        return self._x, self._y
+
+    @position.setter
+    def position(self, position):
+        self.x, self.y = position
+
+    @property
+    def anchor_x(self):
+        return self._anchor_x
+
+    @anchor_x.setter
+    def anchor_x(self, anchor_x):
+        self._anchor_x = anchor_x
+        self.top_group.left = self._get_left()
+
+    @property
+    def anchor_y(self):
+        return self._anchor_y
+
+    @anchor_y.setter
+    def anchor_y(self, anchor_y):
+        self._anchor_y = anchor_y
+        self.top_group.top = self._get_top(self._get_lines())
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, width):
         # Invalidate everything when width changes
-        if self._width == width:
+        if width == self._width:
             return
+        self._width = width
+        super()._update()
         self.invalid_flow.invalidate(0, len(self.document.text))
-        super()._width_setter(width)
+        self.top_group.left = self._get_left()
+        self.top_group.width = self._width
 
-    def _height_setter(self, height):
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, height):
         # Recalculate visible lines when height changes
         if height == self._height:
             return
-        super()._height_setter(height)
+        self._height = height
+        super()._update()
+        self.top_group.top = self._get_top(self._get_lines())
+        self.top_group.height = self._height
         if self._update_enabled:
             self._update_visible_lines()
             self._update_vertex_lists()
 
-    def _multiline_setter(self, multiline):
-        self.invalid_flow.invalidate(0, len(self.document.text))
-        super()._multiline_setter(multiline)
+    @property
+    def multiline(self):
+        return self._multiline
 
-    # Invalidate invisible/visible lines when y scrolls
-    def _view_y_setter(self, view_y):
-        super()._view_y_setter(view_y)
+    @multiline.setter
+    def multiline(self, multiline):
+        self.invalid_flow.invalidate(0, len(self.document.text))
+        self._multiline = multiline
+        self._wrap_lines_invariant()
+        self._update()
+
+    @property
+    def view_x(self):
+        """Horizontal scroll offset.
+
+        The initial value is 0, and the left edge of the text will touch the left
+        side of the layout bounds.  A positive value causes the text to "scroll"
+        to the right.  Values are automatically clipped into the range
+        ``[0, content_width - width]``
+
+        :type: int
+        """
+        return self.top_group.view_x
+
+    @view_x.setter
+    def view_x(self, view_x):
+        view_x = max(0, min(self.content_width - self.width, view_x))
+        self.top_group.view_x = view_x
+
+    @property
+    def view_y(self):
+        """Vertical scroll offset.
+
+        The initial value is 0, and the top of the text will touch the top of the
+        layout bounds (unless the content height is less than the layout height,
+        in which case `content_valign` is used).
+
+        A negative value causes the text to "scroll" upwards.  Values outside of
+        the range ``[height - content_height, 0]`` are automatically clipped in
+        range.
+
+        :type: int
+        """
+        return self.top_group.view_y
+
+    @view_y.setter
+    def view_y(self, view_y):
+        # Invalidate invisible/visible lines when y scrolls
+        # view_y must be negative.
+        view_y = min(0, max(self.height - self.content_height, view_y))
+        self.top_group.view_y = view_y
         self._update_visible_lines()
         self._update_vertex_lists()
 
@@ -2117,8 +2471,8 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         return self._selection_start
 
     @selection_start.setter
-    def selection_start(self, v):
-        self.set_selection(v, self._selection_end)
+    def selection_start(self, start):
+        self.set_selection(start, self._selection_end)
 
     @property
     def selection_end(self):
@@ -2131,8 +2485,8 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         return self._selection_end
 
     @selection_end.setter
-    def selection_end(self, v):
-        self.set_selection(self._selection_start, v)
+    def selection_end(self, end):
+        self.set_selection(self._selection_start, end)
 
     @property
     def selection_color(self):
@@ -2222,7 +2576,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return x + self._translate_x, line.y + self._translate_y + baseline
+        return x + self.top_group.view_x, line.y + self.top_group.view_y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2258,7 +2612,7 @@ class IncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
         :return: (x, y)
         """
         line = self.lines[line]
-        return line.x + self._translate_x, line.y + self._translate_y
+        return line.x + self.top_group.translate_x, line.y + self.top_group.translate_y
 
     def get_line_from_position(self, position):
         """Get the line index of a character position in the document.

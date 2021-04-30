@@ -524,9 +524,9 @@ class Sprite(event.EventDispatcher):
         return self._x, self._y
 
     @position.setter
-    def position(self, pos):
-        self._x, self._y = pos
-        self._vertex_list.translate[:] = (pos[0], pos[1]) * 4
+    def position(self, position):
+        self._x, self._y = position
+        self._vertex_list.translate[:] = (position[0], position[1]) * 4
 
     @property
     def x(self):
@@ -621,9 +621,8 @@ class Sprite(event.EventDispatcher):
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
 
-        This method is provided for convenience. As of pyglet
-        2.0, there is no performance benefit to updating multiple
-        Sprite attributes at once.
+        This method is provided for convenience. There is not much
+        performance benefit to updating multiple Sprite attributes at once.
 
         :Parameters:
             `x` : int
