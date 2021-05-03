@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 
 from ctypes import *
+from typing import Any, Callable
 
 import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function
@@ -54,7 +55,7 @@ except AttributeError:
     _have_getprocaddress = False
 
 
-def link_GL(name, restype, argtypes, requires=None, suggestions=None):
+def link_GL(name, restype, argtypes, requires=None, suggestions=None) -> Callable[..., Any]:
     try:
         func = getattr(gl_lib, name)
         func.restype = restype
