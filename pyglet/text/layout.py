@@ -612,7 +612,6 @@ def get_default_layout_shader():
         _default_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
         default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_text_layout_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_text_layout_shader
 
 
@@ -624,7 +623,6 @@ def get_default_decoration_shader():
         _default_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
         default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_text_decoration_shader = default_shader_program
-        pyglet.gl.current_context.default_shaders.add(default_shader_program)
         return pyglet.gl.current_context.pyglet_text_decoration_shader
 
 
@@ -691,32 +689,35 @@ class ScrollableTextLayoutGroup(graphics.Group):
     def __init__(self, texture, order=1, program=get_default_layout_shader()):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
-    The group maintains internal state for setting the clipping planes and
-    view transform for scrolling.  Because the group has internal state
-    specific to the text layout, the group is never shared.
-    """
-    x = 0
-    y = 0
-    width = 0
-    height = 0
-    view_x = 0
-    view_y = 0
+        The group maintains internal state for specifying the viewable
+        area, and for scrolling. Because the group has internal state
+        specific to the text layout, the group is never shared.
+        """
+        super().__init__(order=order)
+        self.texture = texture
+        self.program = program
+        self.scissor_box = (0, 0, 0, 0)
 
     def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
+        self.program.use()
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glEnable(GL_SCISSOR_TEST)
-        glScissor(self.x, self.y, self.width, self.height)
-
-        glTranslatef(-self.view_x, -self.view_y, 0)
+        glScissor(*self.scissor_box)
 
     def unset_state(self):
-        glTranslatef(self.view_x, self.view_y, 0)
+        glDisable(GL_BLEND)
         glDisable(GL_SCISSOR_TEST)
-        glPopAttrib()
+        glBindTexture(self.texture.target, 0)
+        self.program.stop()
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.texture)
 
     def __eq__(self, other):
         return self is other
@@ -728,8 +729,8 @@ class ScrollableTextLayoutGroup(graphics.Group):
 class IncrementalTextLayoutGroup(graphics.Group):
     """Top-level rendering group for :py:class:`~pyglet.text.layout.IncrementalTextLayout`.
 
-    The group maintains internal state for setting the clipping planes and
-    view transform for scrolling.  Because the group has internal state
+    The group maintains internal state for specifying the viewable
+    area, and for scrolling. Because the group has internal state
     specific to the text layout, the group is never shared.
     """
     _clip_x = 0
@@ -741,8 +742,22 @@ class IncrementalTextLayoutGroup(graphics.Group):
     translate_x = 0  # x - view_x
     translate_y = 0  # y - view_y
 
+    def __init__(self, texture, order=1, program=get_default_layout_shader()):
+        """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
+
+        The group maintains internal state for specifying the viewable
+        area, and for scrolling. Because the group has internal state
+        specific to the text layout, the group is never shared.
+        """
+        super().__init__(order=order)
+        self.texture = texture
+        self.program = program
+
     def set_state(self):
-        glPushAttrib(GL_ENABLE_BIT | GL_TRANSFORM_BIT | GL_CURRENT_BIT)
+        self.program.use()
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -750,12 +765,11 @@ class IncrementalTextLayoutGroup(graphics.Group):
         glEnable(GL_SCISSOR_TEST)
         glScissor(self._clip_x, self._clip_y - self._clip_height, self._clip_width, self._clip_height)
 
-        glTranslatef(self.translate_x, self.translate_y, 0)
-
     def unset_state(self):
-        glTranslatef(-self.translate_x, -self.translate_y, 0)
+        glDisable(GL_BLEND)
         glDisable(GL_SCISSOR_TEST)
-        glPopAttrib()
+        glBindTexture(self.texture.target, 0)
+        self.program.stop()
 
     @property
     def top(self):
@@ -841,60 +855,7 @@ class IncrementalTextLayoutGroup(graphics.Group):
         return id(self)
 
 
-class TextLayoutForegroundGroup(graphics.OrderedGroup):
-    """Rendering group for foreground elements (glyphs) in all text layouts.
-
-    The group enables ``GL_TEXTURE_2D``.
-    """
-
-    def set_state(self):
-        glEnable(GL_TEXTURE_2D)
-
-    # unset_state not needed, as parent group will pop enable bit
-
-
-class TextLayoutForegroundDecorationGroup(graphics.OrderedGroup):
-    """Rendering group for decorative elements (e.g., glyph underlines) in all
-    text layouts.
-
-    The group disables ``GL_TEXTURE_2D``.
-    """
-
-    def set_state(self):
-        glDisable(GL_TEXTURE_2D)
-
-    # unset_state not needed, as parent group will pop enable bit
-
-
-class TextLayoutTextureGroup(graphics.Group):
-    """Rendering group for a glyph texture in all text layouts.
-
-    The group binds its texture to ``GL_TEXTURE_2D``.  The group is shared
-    between all other text layout uses of the same texture.
-    """
-
-    def __init__(self, texture, parent):
-        assert texture.target == GL_TEXTURE_2D
-        super().__init__(parent)
-
-        self.texture = texture
-
-    def set_state(self):
-        glBindTexture(GL_TEXTURE_2D, self.texture.id)
-
-    # unset_state not needed, as next group will either
-    # bind a new texture or pop enable bit.
-
-    def __hash__(self):
-        return hash((self.texture.id, self.parent))
-
-    def __eq__(self, other):
-        return (self.__class__ is other.__class__ and
-                self.texture.id == other.texture.id and
-                self.parent == other.parent)
-
-    def __repr__(self):
-        return '%s(%d, %r)' % (self.__class__.__name__, self.texture.id, self.parent)
+# ####################
 
 
 class TextLayout:
@@ -930,11 +891,11 @@ class TextLayout:
     _vertex_lists = []
     _boxes = []
 
-    default_group_class = TextLayoutGroup
-    # default_shader = get_default_layout_shader()
-
-    background_decoration_group = TextDecorationGroup(order=0)
-    foreground_decoration_group = TextDecorationGroup(order=2)
+    # default_group_class = TextLayoutGroup
+    # # default_shader = get_default_layout_shader()
+    #
+    # background_decoration_group = TextDecorationGroup(order=0)
+    # foreground_decoration_group = TextDecorationGroup(order=2)
 
     _update_enabled = True
     _own_batch = False
@@ -981,7 +942,11 @@ class TextLayout:
         self.content_width = 0
         self.content_height = 0
 
-        assert not group, "Assigning custom Groups is not supported"
+        self._group = group
+
+        self.default_group_class = TextLayoutGroup
+        self.background_decoration_group = TextDecorationGroup(order=0)
+        self.foreground_decoration_group = TextDecorationGroup(order=2)
 
         self.groups = {}
 
@@ -1037,11 +1002,11 @@ class TextLayout:
     def batch(self):
         """The Batch that this Layout is assigned to.
 
-        If no Batch is assigned, an internal Batch is 
+        If no Batch is assigned, an internal Batch is
         created and used.
 
         :type: :py:class:`~pyglet.graphics.Batch`
-        
+
         """
         return self._batch
 
@@ -1314,13 +1279,13 @@ class TextLayout:
         else:
             self._batch.draw_subset(self._vertex_lists)
 
-    def _init_groups(self, group):
-        if group:
-            self.top_group = TextLayoutGroup(group)
-            self.background_group = graphics.OrderedGroup(0, self.top_group)
-            self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-            self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
-            # Otherwise class groups are (re)used.
+    # def _init_groups(self, group):
+    #     if group:
+    #         self.top_group = TextLayoutGroup(group)
+    #         self.background_group = graphics.OrderedGroup(0, self.top_group)
+    #         self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+    #         self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+    #         # Otherwise class groups are (re)used.
 
     def _get_lines(self):
         len_text = len(self._document.text)
@@ -1784,8 +1749,8 @@ class TextLayout:
             y = 0
         else:
             line = lines[start - 1]
-            line_spacing = self._parse_distance(line_spacing_iterator[line.start])
-            leading = self._parse_distance(leading_iterator[line.start])
+            line_spacing = self.parse_distance(line_spacing_iterator[line.start])
+            leading = self.parse_distance(leading_iterator[line.start])
 
             y = line.y
             if line_spacing is None:
@@ -1796,9 +1761,9 @@ class TextLayout:
         line_index = start
         for line in lines[start:]:
             if line.paragraph_begin:
-                y -= self._parse_distance(margin_top_iterator[line.start])
-                line_spacing = self._parse_distance(line_spacing_iterator[line.start])
-                leading = self._parse_distance(leading_iterator[line.start])
+                y -= self.parse_distance(margin_top_iterator[line.start])
+                line_spacing = self.parse_distance(line_spacing_iterator[line.start])
+                leading = self.parse_distance(leading_iterator[line.start])
             else:
                 y -= leading
 
@@ -1856,12 +1821,12 @@ class ScrollableTextLayout(TextLayout):
         self.top_group.width = self._width
         self.top_group.height = self._height
 
-    def _init_groups(self, group):
-        # Scrollable layout never shares group becauase of translation.
-        self.top_group = ScrollableTextLayoutGroup(group)
-        self.background_group = graphics.OrderedGroup(0, self.top_group)
-        self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-        self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+    # def _init_groups(self, group):
+    #     # Scrollable layout never shares group becauase of translation.
+    #     self.top_group = ScrollableTextLayoutGroup(group)
+    #     self.background_group = graphics.OrderedGroup(0, self.top_group)
+    #     self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+    #     self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
 
     # Properties
 
@@ -1954,7 +1919,7 @@ class ScrollableTextLayout(TextLayout):
         self.top_group.view_y = view_y
 
 
-class IncrementalTextLayout(TextLayout, event.EventDispatcher):
+class IncrementalTextLayout(TextLayout, EventDispatcher):
     """Displayed text suitable for interactive editing and/or scrolling
     large documents.
 
@@ -2003,12 +1968,12 @@ class IncrementalTextLayout(TextLayout, event.EventDispatcher):
         self.height = height
         self.top = self._get_top(self._get_lines())
 
-    def _init_groups(self, group):
-        # Scrollable layout never shares group becauase of translation.
-        self.top_group = IncrementalTextLayoutGroup(group)
-        self.background_group = graphics.OrderedGroup(0, self.top_group)
-        self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-        self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+    # def _init_groups(self, group):
+    #     # Scrollable layout never shares group becauase of translation.
+    #     self.top_group = IncrementalTextLayoutGroup(group)
+    #     self.background_group = graphics.OrderedGroup(0, self.top_group)
+    #     self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
+    #     self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -2726,172 +2691,3 @@ class IncrementalTextLayout(TextLayout, event.EventDispatcher):
 
 
 IncrementalTextLayout.register_event_type('on_layout_update')
-
-
-class NewIncrementalTextLayout(ScrollableTextLayout, EventDispatcher):
-    def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
-        EventDispatcher.__init__(self)
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-
-    def _update(self):
-        super()._update()
-        self.dispatch_event('on_layout_update')
-
-    def get_position_from_point(self, x, y):
-        """Get the closest document position to a point.
-
-        :Parameters:
-            `x` : int
-                X coordinate
-            `y` : int
-                Y coordinate
-
-        """
-        line = self.get_line_from_point(x, y)
-        return self.get_position_on_line(line, x)
-
-    def get_point_from_position(self, position, line=None):
-        """Get the X, Y coordinates of a position in the document.
-
-        The position that ends a line has an ambiguous point: it can be either
-        the end of the line, or the beginning of the next line.  You may
-        optionally specify a line index to disambiguate the case.
-
-        The resulting Y coordinate gives the baseline of the line.
-
-        :Parameters:
-            `position` : int
-                Character position within document.
-            `line` : int
-                Line index.
-
-        :rtype: (int, int)
-        :return: (x, y)
-        """
-
-        if line is None:
-            line = self.lines[0]
-            for next_line in self.lines:
-                if next_line.start > position:
-                    break
-                line = next_line
-        else:
-            line = self.lines[line]
-
-        x = line.x
-
-        baseline = self._document.get_style('baseline', max(0, position - 1))
-        if baseline is None:
-            baseline = 0
-        else:
-            baseline = self.parse_distance(baseline)
-
-        position -= line.start
-        for box in line.boxes:
-            if position - box.length <= 0:
-                x += box.get_point_in_box(position)
-                break
-            position -= box.length
-            x += box.advance
-
-        return x + self._translate_x, line.y + self._translate_y + baseline
-
-    def get_line_from_point(self, x, y):
-        """Get the closest line index to a point.
-
-        :Parameters:
-            `x` : int
-                X coordinate.
-            `y` : int
-                Y coordinate.
-
-        :rtype: int
-        """
-        x -= self._translate_x
-        y -= self._translate_y
-
-        line_index = 0
-        for line in self.lines:
-            if y > line.y + line.descent:
-                break
-            line_index += 1
-        if line_index >= len(self.lines):
-            line_index = len(self.lines) - 1
-        return line_index
-
-    def get_point_from_line(self, line):
-        """Get the X, Y coordinates of a line index.
-
-        :Parameters:
-            `line` : int
-                Line index.
-
-        :rtype: (int, int)
-        :return: (x, y)
-        """
-        line = self.lines[line]
-        return line.x + self._translate_x, line.y + self._translate_y
-
-    def get_line_from_position(self, position):
-        """Get the line index of a character position in the document.
-
-        :Parameters:
-            `position` : int
-                Document position.
-
-        :rtype: int
-        """
-        line = -1
-        for next_line in self.lines:
-            if next_line.start > position:
-                break
-            line += 1
-        return line
-
-    def get_position_from_line(self, line):
-        """Get the first document character position of a given line index.
-
-        :Parameters:
-            `line` : int
-                Line index.
-
-        :rtype: int
-        """
-        return self.lines[line].start
-
-    def get_position_on_line(self, line, x):
-        """Get the closest document position for a given line index and X
-        coordinate.
-
-        :Parameters:
-            `line` : int
-                Line index.
-            `x` : int
-                X coordinate.
-
-        :rtype: int
-        """
-        line = self.lines[line]
-        x -= self._translate_x
-
-        if x < line.x:
-            return line.start
-
-        position = line.start
-        last_glyph_x = line.x
-        for box in line.boxes:
-            if 0 <= x - last_glyph_x < box.advance:
-                position += box.get_position_in_box(x - last_glyph_x)
-                break
-            last_glyph_x += box.advance
-            position += box.length
-
-        return position
-
-    def get_line_count(self):
-        """Get the number of lines in the text layout.
-
-        :rtype: int
-        """
-        return len(self.lines)
-
