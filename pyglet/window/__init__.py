@@ -554,7 +554,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # This can be an issue on  certain intel hardware that was previously
         # supported under Windows 8, but reports GL 1.1 under Windows 10. Linux
         # tends to have better support for these GPUs.
-        if not pyglet.gl.gl_info.have_version(2, 0):
+        if config.major_version < 2:
             version_tuple = config.major_version, config.minor_version
             warnings.warn(
                 f"OpenGL version lower than 2.0 {version_tuple!r}. "
