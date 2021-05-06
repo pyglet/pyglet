@@ -33,8 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import weakref
-
 from pyglet import gl
 from pyglet.gl import gl_info
 
@@ -270,7 +268,6 @@ class Context:
         self.config = config
         self.context_share = context_share
         self.canvas = None
-        self.default_shaders = weakref.WeakSet()
 
         if context_share:
             self.object_space = context_share.object_space
