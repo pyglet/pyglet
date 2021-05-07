@@ -52,8 +52,20 @@ following dependencies::
 To create virtual environments, ``venv`` is included in the standard
 library since Python 3.3.
 
-Next, we'll create a virtual environment.::
+Depending on your platform, python may be installed as ``python`` or ``python3``.
+You may want to check which command runs python 3 on your system::
 
+    python --version
+    python3 --version
+
+For the rest of the guide, use whichever gives you the correct python version on your system.
+Some linux distros may install python with version numbers such as `python3.6`, so you may need
+to set up an alias.
+
+Next, we'll create a virtual environment.
+Choose the appropriate command for your system to create a virtual environment::
+
+    python -m venv pyglet-venv
     python3 -m venv pyglet-venv
 
 Once the virtual environment has been created, the next step is to activate
@@ -104,7 +116,7 @@ since Python 3.3.
 
 Next, we'll create a virtual environment.::
 
-    python3 -m venv pyglet-venv
+    python -m venv pyglet-venv
 
 Once the virtual environment has been created, the next step is to activate
 it. You'll then install the dependencies, which will be isolated
