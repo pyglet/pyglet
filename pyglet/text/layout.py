@@ -686,6 +686,9 @@ class TextDecorationGroup(graphics.Group):
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
+
+    scissor_area = 0, 0, 0, 0
+
     def __init__(self, texture, order=1, program=get_default_layout_shader()):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
@@ -696,7 +699,6 @@ class ScrollableTextLayoutGroup(graphics.Group):
         super().__init__(order=order)
         self.texture = texture
         self.program = program
-        self.scissor_box = (0, 0, 0, 0)
 
     def set_state(self):
         self.program.use()
@@ -708,7 +710,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glEnable(GL_SCISSOR_TEST)
-        glScissor(*self.scissor_box)
+        glScissor(*self.scissor_area)
 
     def unset_state(self):
         glDisable(GL_BLEND)
@@ -891,15 +893,11 @@ class TextLayout:
     _vertex_lists = []
     _boxes = []
 
-    # default_group_class = TextLayoutGroup
-    # # default_shader = get_default_layout_shader()
-    #
-    # background_decoration_group = TextDecorationGroup(order=0)
-    # foreground_decoration_group = TextDecorationGroup(order=2)
-
     _update_enabled = True
     _own_batch = False
     _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
+
+    default_group_class = TextLayoutGroup
 
     _x = 0
     _y = 0
@@ -944,7 +942,6 @@ class TextLayout:
 
         self._group = group
 
-        self.default_group_class = TextLayoutGroup
         self.background_decoration_group = TextDecorationGroup(order=0)
         self.foreground_decoration_group = TextDecorationGroup(order=2)
 
@@ -1278,14 +1275,6 @@ class TextLayout:
             self._batch.draw()
         else:
             self._batch.draw_subset(self._vertex_lists)
-
-    # def _init_groups(self, group):
-    #     if group:
-    #         self.top_group = TextLayoutGroup(group)
-    #         self.background_group = graphics.OrderedGroup(0, self.top_group)
-    #         self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-    #         self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
-    #         # Otherwise class groups are (re)used.
 
     def _get_lines(self):
         len_text = len(self._document.text)
@@ -1816,17 +1805,18 @@ class ScrollableTextLayout(TextLayout):
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
 
+    default_group_class = ScrollableTextLayoutGroup
+
+    _translate_x = 0
+    _translate_y = 0
+
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-        self.top_group.width = self._width
-        self.top_group.height = self._height
+        self._update_scissor_area()
 
-    # def _init_groups(self, group):
-    #     # Scrollable layout never shares group becauase of translation.
-    #     self.top_group = ScrollableTextLayoutGroup(group)
-    #     self.background_group = graphics.OrderedGroup(0, self.top_group)
-    #     self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-    #     self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+    def _update_scissor_area(self):
+        area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
+        self.default_group_class.scissor_area = area
 
     # Properties
 
@@ -1837,7 +1827,7 @@ class ScrollableTextLayout(TextLayout):
     @x.setter
     def x(self, x):
         super()._set_x(x)
-        self.top_group.x = self._get_left()
+        self._update_scissor_area()
 
     @property
     def y(self):
@@ -1846,7 +1836,7 @@ class ScrollableTextLayout(TextLayout):
     @y.setter
     def y(self, y):
         super()._set_y(y)
-        self.top_group.y = y
+        self._update_scissor_area()
 
     @property
     def position(self):
@@ -1864,7 +1854,7 @@ class ScrollableTextLayout(TextLayout):
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
         super()._update()
-        self.top_group.x = self._get_left()
+        self._update_scissor_area()
 
     @property
     def anchor_y(self):
@@ -1874,49 +1864,53 @@ class ScrollableTextLayout(TextLayout):
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
         super()._update()
-        self.top_group.y = self._get_bottom(self._get_lines())
+        self._update_scissor_area()
 
     # Offset of content within viewport
+
+    def _update_translation(self):
+        for _vertex_list in self._vertex_lists:
+            _vertex_list.translation[:] = (-self._translate_x, -self._translate_y) * (len(_vertex_list.translation)//2)
 
     @property
     def view_x(self):
         """Horizontal scroll offset.
 
-        The initial value is 0, and the left edge of the text will touch the left
-        side of the layout bounds.  A positive value causes the text to "scroll"
-        to the right.  Values are automatically clipped into the range
-        ``[0, content_width - width]``
+            The initial value is 0, and the left edge of the text will touch the left
+            side of the layout bounds.  A positive value causes the text to "scroll"
+            to the right.  Values are automatically clipped into the range
+            ``[0, content_width - width]``
 
-        :type: int
+            :type: int
         """
-        return self.top_group.view_x
+        return self._translate_x
 
     @view_x.setter
     def view_x(self, view_x):
-        view_x = max(0, min(self.content_width - self.width, view_x))
-        self.top_group.view_x = view_x
+        self._translate_x = max(0, min(self.content_width - self._width, view_x))
+        self._update_translation()
 
     @property
     def view_y(self):
         """Vertical scroll offset.
 
-        The initial value is 0, and the top of the text will touch the top of the
-        layout bounds (unless the content height is less than the layout height,
-        in which case `content_valign` is used).
+            The initial value is 0, and the top of the text will touch the top of the
+            layout bounds (unless the content height is less than the layout height,
+            in which case `content_valign` is used).
 
-        A negative value causes the text to "scroll" upwards.  Values outside of
-        the range ``[height - content_height, 0]`` are automatically clipped in
-        range.
+            A negative value causes the text to "scroll" upwards.  Values outside of
+            the range ``[height - content_height, 0]`` are automatically clipped in
+            range.
 
-        :type: int
+            :type: int
         """
-        return self.top_group.view_y
+        return self._translate_y
 
     @view_y.setter
     def view_y(self, view_y):
         # view_y must be negative.
-        view_y = min(0, max(self.height - self.content_height, view_y))
-        self.top_group.view_y = view_y
+        self._translate_y = min(0, max(self.height - self.content_height, view_y))
+        self._update_translation()
 
 
 class IncrementalTextLayout(TextLayout, EventDispatcher):
