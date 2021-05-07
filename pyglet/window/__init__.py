@@ -321,6 +321,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: A window style without any decoration.
     WINDOW_STYLE_BORDERLESS = 'borderless'
 
+    #: The default background opacity.
+    TRANSPARENT_BACKGROUND_DEFAULT = False
+
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
     #: A crosshair mouse cursor.
@@ -395,6 +398,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _caption = None
     _resizable = False
     _style = WINDOW_STYLE_DEFAULT
+    _transparent_background = TRANSPARENT_BACKGROUND_DEFAULT
     _fullscreen = False
     _visible = False
     _vsync = False
@@ -453,6 +457,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                  caption=None,
                  resizable=False,
                  style=WINDOW_STYLE_DEFAULT,
+                 transparent_background=TRANSPARENT_BACKGROUND_DEFAULT,
                  fullscreen=False,
                  visible=True,
                  vsync=True,
@@ -495,6 +500,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             `style` : int
                 One of the ``WINDOW_STYLE_*`` constants specifying the
                 border style of the window.
+            `transparent_background` : bool
+                If True, the window background will be transparent, if False,
+                the window background will be opaque.
             `fullscreen` : bool
                 If True, the window will cover the entire screen rather
                 than floating.  Defaults to False.
@@ -571,6 +579,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             if height is None:
                 height = self._default_height
 
+        self._transparent_background = transparent_background
         self._width = width
         self._height = height
         self._resizable = resizable
