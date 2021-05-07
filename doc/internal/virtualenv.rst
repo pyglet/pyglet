@@ -45,7 +45,7 @@ Setting up
 
 Setting up a virtual environment is almost the same for Linux and OS X.
 First, use your OS's package manager (apt, brew, etc) to install the
-following dependencies::
+following dependencies:
 
     - Python 3.6+
 
