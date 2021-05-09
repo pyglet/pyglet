@@ -627,7 +627,7 @@ def get_default_decoration_shader():
 
 
 class TextLayoutGroup(graphics.Group):
-    def __init__(self, texture, order=1, program=get_default_layout_shader()):
+    def __init__(self, texture, order=1, program=None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -635,7 +635,7 @@ class TextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order)
         self.texture = texture
-        self.program = program
+        self.program = program or get_default_layout_shader()
 
     def set_state(self):
         self.program.use()
@@ -666,14 +666,14 @@ class TextLayoutGroup(graphics.Group):
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0, program=get_default_decoration_shader()):
+    def __init__(self, order=0, program=None):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
         super().__init__(order=order)
-        self.program = program
+        self.program = program or get_default_decoration_shader()
 
     def set_state(self):
         self.program.use()
@@ -689,7 +689,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
     scissor_area = 0, 0, 0, 0
 
-    def __init__(self, texture, order=1, program=get_default_layout_shader()):
+    def __init__(self, texture, order=1, program=None):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
         The group maintains internal state for specifying the viewable
@@ -698,7 +698,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order)
         self.texture = texture
-        self.program = program
+        self.program = program or get_default_layout_shader()
 
     def set_state(self):
         self.program.use()
@@ -744,7 +744,7 @@ class IncrementalTextLayoutGroup(graphics.Group):
     translate_x = 0  # x - view_x
     translate_y = 0  # y - view_y
 
-    def __init__(self, texture, order=1, program=get_default_layout_shader()):
+    def __init__(self, texture, order=1, program=None):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
         The group maintains internal state for specifying the viewable
@@ -753,7 +753,7 @@ class IncrementalTextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order)
         self.texture = texture
-        self.program = program
+        self.program = program or get_default_layout_shader()
 
     def set_state(self):
         self.program.use()
