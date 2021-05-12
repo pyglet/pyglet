@@ -155,7 +155,7 @@ class DirectInputDevice(base.Device):
             if not pyglet.app.windows:
                 return
             # Pick any open window
-            window = pyglet.app.windows[0]
+            window = next(iter(pyglet.app.windows))
 
         flags = dinput.DISCL_BACKGROUND
         if exclusive:
