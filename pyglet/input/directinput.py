@@ -152,17 +152,18 @@ class DirectInputDevice(base.Device):
             return
 
         if window is None:
-            if not pyglet.app.windows:
-                return
-            # Pick any open window
-            window = pyglet.app.windows[0]
+            # Pick any open window, or the shadow window if no windows
+            # have been created yet.
+            window = pyglet.gl._shadow_window
+            for window in pyglet.app.windows:
+                break
 
         flags = dinput.DISCL_BACKGROUND
         if exclusive:
             flags |= dinput.DISCL_EXCLUSIVE
         else:
             flags |= dinput.DISCL_NONEXCLUSIVE
-        
+
         self._wait_object = _kernel32.CreateEventW(None, False, False, None)
         self._device.SetEventNotification(self._wait_object)
         pyglet.app.platform_event_loop.add_wait_object(self._wait_object, self._dispatch_events)

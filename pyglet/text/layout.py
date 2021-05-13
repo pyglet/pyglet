@@ -595,14 +595,6 @@ decoration_fragment_source = """#version 330 core
     }
 """
 
-# _layout_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
-# _layout_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
-# _layout_program = shader.ShaderProgram(_layout_vert_shader, _layout_frag_shader)
-#
-# _decoration_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
-# _decoration_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
-# _decoration_program = shader.ShaderProgram(_decoration_vert_shader, _decoration_frag_shader)
-
 
 def get_default_layout_shader():
     try:
@@ -710,7 +702,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glEnable(GL_SCISSOR_TEST)
-        glScissor(*self.scissor_area)
+        # glScissor(*self.scissor_area)
 
     def unset_state(self):
         glDisable(GL_BLEND)
@@ -719,7 +711,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         self.program.stop()
 
     def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__, self.texture)
+        return f"{self.__class__.__name__}({self.texture})"
 
     def __eq__(self, other):
         return self is other
@@ -728,134 +720,12 @@ class ScrollableTextLayoutGroup(graphics.Group):
         return id(self)
 
 
-class IncrementalTextLayoutGroup(graphics.Group):
-    """Top-level rendering group for :py:class:`~pyglet.text.layout.IncrementalTextLayout`.
-
-    The group maintains internal state for specifying the viewable
-    area, and for scrolling. Because the group has internal state
-    specific to the text layout, the group is never shared.
-    """
-    _clip_x = 0
-    _clip_y = 0
-    _clip_width = 0
-    _clip_height = 0
-    _view_x = 0
-    _view_y = 0
-    translate_x = 0  # x - view_x
-    translate_y = 0  # y - view_y
-
-    def __init__(self, texture, order=1, program=None):
-        """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
-
-        The group maintains internal state for specifying the viewable
-        area, and for scrolling. Because the group has internal state
-        specific to the text layout, the group is never shared.
-        """
-        super().__init__(order=order)
-        self.texture = texture
-        self.program = program or get_default_layout_shader()
-
-    def set_state(self):
-        self.program.use()
-
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        glEnable(GL_SCISSOR_TEST)
-        glScissor(self._clip_x, self._clip_y - self._clip_height, self._clip_width, self._clip_height)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        glDisable(GL_SCISSOR_TEST)
-        glBindTexture(self.texture.target, 0)
-        self.program.stop()
-
-    @property
-    def top(self):
-        return self._clip_y
-
-    @top.setter
-    def top(self, top):
-        """Top edge of the text layout (measured from the
-        bottom of the graphics viewport).
-
-        :type: int
-        """
-        self._clip_y = top
-        self.translate_y = self._clip_y - self._view_y
-
-    @property
-    def left(self):
-        return self._clip_x
-
-    @left.setter
-    def left(self, left):
-        """Left edge of the text layout.
-
-        :type: int
-        """
-        self._clip_x = left
-        self.translate_x = self._clip_x - self._view_x
-
-    @property
-    def width(self):
-        return self._clip_width
-
-    @width.setter
-    def width(self, width):
-        """Width of the text layout.
-
-        :type: int
-        """
-        self._clip_width = width
-
-    @property
-    def height(self):
-        return self._clip_height
-
-    @height.setter
-    def height(self, height):
-        """Height of the text layout.
-
-        :type: int
-        """
-        self._clip_height = height
-
-    @property
-    def view_x(self):
-        return self._view_x
-
-    @view_x.setter
-    def view_x(self, view_x):
-        """Horizontal scroll offset.
-
-        :type: int
-        """
-        self._view_x = view_x
-        self.translate_x = self._clip_x - self._view_x
-
-    @property
-    def view_y(self):
-        return self._view_y
-
-    @view_y.setter
-    def view_y(self, view_y):
-        """Vertical scroll offset.
-
-        :type: int
-        """
-        self._view_y = view_y
-        self.translate_y = self._clip_y - self._view_y
-
-    def __eq__(self, other):
-        return self is other
-
-    def __hash__(self):
-        return id(self)
-
+class IncrementalTextLayoutGroup(ScrollableTextLayoutGroup):
+    # Subclass so that the scissor_area isn't shared with the
+    # ScrollableTextLayout. We use a class variable here, and
+    # so that it can be set before the document glyphs are
+    # created.
+    scissor_area = 0, 0, 0, 0
 
 # ####################
 
@@ -881,7 +751,7 @@ class TextLayout:
             the desired width if word-wrapping failed.
         `content_height` : int
             Calculated height of the text in the layout.
-        `top_group` : `~pyglet.graphics.Group`
+        `default_group_class` : `~pyglet.graphics.Group`
             Top-level rendering group.
         `background_decoration_group` : `~pyglet.graphics.Group`
             Rendering group for background color.
@@ -895,8 +765,6 @@ class TextLayout:
 
     _update_enabled = True
     _own_batch = False
-    _origin_layout = False  # Lay out relative to origin?  Otherwise to box.
-
     default_group_class = TextLayoutGroup
 
     _x = 0
@@ -929,9 +797,9 @@ class TextLayout:
             `batch` : `~pyglet.graphics.Batch`
                 Optional graphics batch to add this layout to.
             `group` : `~pyglet.graphics.Group`
-                Optional rendering group to parent all groups this text layout
-                uses.  Note that layouts with different
-                rendered simultaneously in a batch.
+                Optional Group to parent all internal Groups that this text
+                layout uses.  Note that layouts with the same Groups will
+                be rendered simultaneously in a Batch.
             `wrap_lines` : bool
                 If True and `multiline` is True, the text is word-wrapped using
                 the specified width.
@@ -953,17 +821,16 @@ class TextLayout:
         self._batch = batch
 
         self._width = width
-        if height:
-            self._height = height
-        if multiline:
-            self._multiline = multiline
+        self._height = height
+        self._multiline = multiline
+
+        # Alias the correct flow method:
+        self._flow_glyphs = self._flow_glyphs_wrap if multiline else self._flow_glyphs_single_line
 
         self._wrap_lines_flag = wrap_lines
         self._wrap_lines_invariant()
 
-        if dpi is None:
-            dpi = 96
-        self._dpi = dpi
+        self._dpi = dpi or 96
         self.document = document
 
     @property
@@ -1306,11 +1173,8 @@ class TextLayout:
         colors_iter = self._document.get_style_runs('color')
         background_iter = self._document.get_style_runs('background_color')
 
-        if self._origin_layout:
-            left = top = 0
-        else:
-            left = self._get_left()
-            top = self._get_top(lines)
+        left = self._get_left()
+        top = self._get_top(lines)
 
         context = _StaticLayoutContext(self, self._document, colors_iter, background_iter)
         for line in lines:
@@ -1445,15 +1309,6 @@ class TextLayout:
                 owner = glyph.owner
                 run_start = i + start
         owner_runs.set_run(run_start, end, owner)
-
-    def _flow_glyphs(self, glyphs, owner_runs, start, end):
-        # TODO change flow generator on self, avoiding this conditional.
-        if not self._multiline:
-            for line in self._flow_glyphs_single_line(glyphs, owner_runs, start, end):
-                yield line
-        else:
-            for line in self._flow_glyphs_wrap(glyphs, owner_runs, start, end):
-                yield line
 
     def _flow_glyphs_wrap(self, glyphs, owner_runs, start, end):
         """Word-wrap styled text into lines of fixed width.
@@ -1870,7 +1725,7 @@ class ScrollableTextLayout(TextLayout):
 
     def _update_translation(self):
         for _vertex_list in self._vertex_lists:
-            _vertex_list.translation[:] = (-self._translate_x, -self._translate_y) * (len(_vertex_list.translation)//2)
+            _vertex_list.translation[:] = (-self._translate_x, -self._translate_y) * _vertex_list.count
 
     @property
     def view_x(self):
@@ -1932,12 +1787,16 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     a visible text cursor and provides event handlers for scrolling, selecting and
     editing text in an incremental text layout.
     """
+
     _selection_start = 0
     _selection_end = 0
     _selection_color = [255, 255, 255, 255]
     _selection_background_color = [46, 106, 197, 255]
 
-    _origin_layout = False
+    default_group_class = IncrementalTextLayoutGroup
+
+    _translate_x = 0
+    _translate_y = 0
 
     def __init__(self, document, width, height, multiline=False, dpi=None, batch=None, group=None, wrap_lines=True):
 
@@ -1955,19 +1814,12 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
-        super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
+        self._update_scissor_area()
+        self._update()
 
-        self.width = width
-        self.left = self._get_left()
-        self.height = height
-        self.top = self._get_top(self._get_lines())
-
-    # def _init_groups(self, group):
-    #     # Scrollable layout never shares group becauase of translation.
-    #     self.top_group = IncrementalTextLayoutGroup(group)
-    #     self.background_group = graphics.OrderedGroup(0, self.top_group)
-    #     self.foreground_group = TextLayoutForegroundGroup(1, self.top_group)
-    #     self.foreground_decoration_group = TextLayoutForegroundDecorationGroup(2, self.top_group)
+    def _update_scissor_area(self):
+        area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
+        self.default_group_class.scissor_area = area
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -2059,11 +1911,10 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._update_flow_lines()
         self._update_visible_lines()
         self._update_vertex_lists()
-        self.top = self._get_top(self.lines)
 
         # Reclamp view_y in case content height has changed and reset top of content.
-        self.view_y = self.view_y
-        self.top_group.top = self._get_top(self._get_lines())
+        # self.view_y = self._translate_y
+        # self._update_translation()
 
         if trigger_update_event:
             self.dispatch_event('on_layout_update')
@@ -2197,11 +2048,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def _update_visible_lines(self):
         start = sys.maxsize
         end = 0
+
         for i, line in enumerate(self.lines):
-            if line.y + line.descent < self.view_y:
+            if line.y + line.descent < self._translate_y:
                 start = min(start, i)
-            if line.y + line.ascent > self.view_y - self.height:
+            if line.y + line.ascent > self._translate_y - self.height:
                 end = max(end, i) + 1
+
+        # print("Visible line start/end:", self.visible_lines.start, self.visible_lines.end)
 
         # Delete newly invisible lines
         for i in range(self.visible_lines.start, min(start, len(self.lines))):
@@ -2225,6 +2079,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         invalid_start, invalid_end = self.invalid_vertex_lines.validate()
         if invalid_end - invalid_start <= 0:
+            print("return")
             return
 
         colors_iter = self.document.get_style_runs('color')
@@ -2243,18 +2098,21 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         context = _IncrementalLayoutContext(self, self._document, colors_iter, background_iter)
 
+        left = self._get_left()
+        top = self._get_top(self.lines[invalid_start:invalid_end])
+
         for line in self.lines[invalid_start:invalid_end]:
             line.delete(self)
             context.line = line
             y = line.y
 
             # Early out if not visible
-            if y + line.descent > self.view_y:
+            if y + line.descent > self._translate_y:
                 continue
-            elif y + line.ascent < self.view_y - self.height:
+            elif y + line.ascent < self._translate_y - self.height:
                 break
 
-            self._create_vertex_lists(line.x, y, line.start, line.boxes, context)
+            self._create_vertex_lists(left + line.x, top + y, line.start, line.boxes, context)
 
     @property
     def x(self):
@@ -2263,7 +2121,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self.top_group.left = self._get_left()
+        self.on_insert_text(0, self._document.text)
+        self._update()
 
     @property
     def y(self):
@@ -2272,7 +2131,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self.top_group.top = self._get_top(self._get_lines())
+        self.on_insert_text(0, self._document.text)
+        self._update()
 
     @property
     def position(self):
@@ -2289,7 +2149,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @anchor_x.setter
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
-        self.top_group.left = self._get_left()
+        self._update_scissor_area()
+        self._update()
 
     @property
     def anchor_y(self):
@@ -2298,7 +2159,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @anchor_y.setter
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
-        self.top_group.top = self._get_top(self._get_lines())
+        self._update_scissor_area()
+        self._update()
 
     @property
     def width(self):
@@ -2310,10 +2172,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if width == self._width:
             return
         self._width = width
-        super()._update()
         self.invalid_flow.invalidate(0, len(self.document.text))
-        self.top_group.left = self._get_left()
-        self.top_group.width = self._width
+        self._update_scissor_area()
 
     @property
     def height(self):
@@ -2325,9 +2185,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if height == self._height:
             return
         self._height = height
-        super()._update()
-        self.top_group.top = self._get_top(self._get_lines())
-        self.top_group.height = self._height
         if self._update_enabled:
             self._update_visible_lines()
             self._update_vertex_lists()
@@ -2343,6 +2200,13 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self._wrap_lines_invariant()
         self._update()
 
+    # Offset of content within viewport
+
+    def _update_translation(self):
+        for line in self.lines[self.visible_lines.start:self.visible_lines.end]:
+            for vlist in line.vertex_lists:
+                vlist.translation[:] = (-self._translate_x, -self._translate_y) * vlist.count
+
     @property
     def view_x(self):
         """Horizontal scroll offset.
@@ -2354,12 +2218,12 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :type: int
         """
-        return self.top_group.view_x
+        return self._translate_x
 
     @view_x.setter
     def view_x(self, view_x):
-        view_x = max(0, min(self.content_width - self.width, view_x))
-        self.top_group.view_x = view_x
+        self._translate_x = max(0, min(self.content_width - self._width, view_x))
+        self._update_translation()
 
     @property
     def view_y(self):
@@ -2375,14 +2239,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :type: int
         """
-        return self.top_group.view_y
+        return self._translate_y
 
     @view_y.setter
     def view_y(self, view_y):
         # Invalidate invisible/visible lines when y scrolls
         # view_y must be negative.
-        view_y = min(0, max(self.height - self.content_height, view_y))
-        self.top_group.view_y = view_y
+        self._translate_y = min(0, max(self.height - self.content_height, view_y))
+        self._update_translation()
         self._update_visible_lines()
         self._update_vertex_lists()
 
@@ -2535,7 +2399,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             position -= box.length
             x += box.advance
 
-        return x + self.top_group.view_x, line.y + self.top_group.view_y + baseline
+        return x + self._translate_x, line.y + self._translate_y + baseline
 
     def get_line_from_point(self, x, y):
         """Get the closest line index to a point.
@@ -2571,7 +2435,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         :return: (x, y)
         """
         line = self.lines[line]
-        return line.x + self.top_group.translate_x, line.y + self.top_group.translate_y
+        return line.x + self._translate_x, line.y + self._translate_y
 
     def get_line_from_position(self, position):
         """Get the line index of a character position in the document.
