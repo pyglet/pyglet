@@ -125,6 +125,7 @@ above, "Working with multiple screens")::
 
 import sys
 import math
+import warnings
 
 import pyglet
 import pyglet.window.key
@@ -648,9 +649,21 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self._create()
 
         self.switch_to()
+
         if visible:
             self.set_visible(True)
             self.activate()
+
+        # Warn when features might break due to odd GL support
+        info = self._context.get_info()
+        if info.major_version < 2:
+            version = info.major_version, info.minor_version
+            warnings.warn(
+                f"OpenGL version lower than 2.0 {version!r}. "
+                f"Batching may fail and break many features. "
+                f"If your hardware should support a higher version, your "
+                f"drivers or OS may be at fault."
+            )
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
