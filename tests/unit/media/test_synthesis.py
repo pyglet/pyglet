@@ -18,7 +18,7 @@ def get_test_data_file(*file_parts):
     return os.path.join(test_data_path, *file_parts)
 
 
-class SynthesisSourceTest(object):
+class SynthesisSourceTest:
     """Simple test to check if synthesized sources provide data."""
     source_class = None
 
@@ -45,10 +45,7 @@ class SynthesisSourceTest(object):
         self.assertAlmostEqual(expected_duration, data.duration)
 
         self.assertIsNotNone(data.data)
-        if isinstance(data.data, (bytes, str)):
-            self.assertAlmostEqual(expected_bytes, len(data.data), delta=20)
-        else:
-            self.assertAlmostEqual(expected_bytes, sizeof(data.data), delta=20)
+        self.assertAlmostEqual(expected_bytes, len(data.data), delta=20)
 
         # Should now be out of data
         last_data = source.get_audio_data(100)
@@ -104,4 +101,4 @@ class SquareTest(SynthesisSourceTest, unittest.TestCase):
 
 
 class FMTest(SynthesisSourceTest, unittest.TestCase):
-    source_class = FM
+    source_class = SimpleFM
