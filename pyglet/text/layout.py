@@ -2462,7 +2462,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         :rtype: int
         """
-        return self.lines[line].start
+        return self.lines[line].start + self._x
 
     def get_position_on_line(self, line, x):
         """Get the closest document position for a given line index and X
@@ -2477,7 +2477,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         :rtype: int
         """
         line = self.lines[line]
-        x -= self._translate_x
+        x -= self._x
 
         if x < line.x:
             return line.start
