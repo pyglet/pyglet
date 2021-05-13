@@ -212,12 +212,8 @@ class GLInfo:
                 or self.major_version is None:
             return False
 
-        ver = '%s.0.0' % self.version.strip().split(' ', 1)[0]
-        imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
-
-        return (imajor > major or
-                (imajor == major and iminor >= minor) or
-                (imajor == major and iminor == minor))
+        return (self.major_version > major or
+                (self.major_version == major and self.minor_version >= minor))
 
     def get_renderer(self):
         """Determine the renderer string of the OpenGL context.
