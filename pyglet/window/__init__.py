@@ -657,9 +657,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # Warn when features might break due to odd GL support
         info = self._context.get_info()
         if info.major_version < 2:
-            version = info.major_version, info.minor_version
             warnings.warn(
-                f"OpenGL version lower than 2.0 {version!r}. "
+                f"OpenGL version lower than 2.0 ({info.version}). "
                 f"Batching may fail and break many features. "
                 f"If your hardware should support a higher version, your "
                 f"drivers or OS may be at fault."
