@@ -32,8 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import warnings
-
 from pyglet import gl
 from pyglet import app
 from pyglet import window
