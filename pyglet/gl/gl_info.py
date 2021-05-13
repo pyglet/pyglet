@@ -59,8 +59,11 @@ context::
 from ctypes import c_char_p, cast
 import warnings
 
+from pyglet import gl
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION, GLint, glGetIntegerv, glGetString
 from pyglet.util import asstr
+
+ZERO_VERSION = '0.0.0'
 
 
 class GLInfo:
@@ -74,7 +77,11 @@ class GLInfo:
     when the context is active for this `GLInfo` instance.
     """
     have_context = False
-    version = '0.0.0'
+    version = ZERO_VERSION
+    major_version = None
+    minor_version = None
+    failures = None
+
     vendor = ''
     renderer = ''
     extensions = set()
@@ -88,9 +95,48 @@ class GLInfo:
         """
         self.have_context = True
         if not self._have_info:
+
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
-            self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
+
+            # standard version check for gl >= 3.0
+            if self.version == ZERO_VERSION:
+
+                try:
+                    glint_major = GLint()
+                    glint_minor = GLint()
+
+                    glGetIntegerv(gl.GL_MAJOR_VERSION, glint_major)
+                    glGetIntegerv(gl.GL_MINOR_VERSION, glint_minor)
+
+                    self.major_version = glint_major.value
+                    self.minor_version = glint_minor.value
+
+                    self.version = f"{self.major_version}.{self.minor_version}.0"
+
+                except Exception as e:
+                    # record
+                    self.failures = [e]
+
+            # deprecated legacy technique for gl <= 2
+            if self.version == ZERO_VERSION:
+                    try:
+
+                        self.version = asstr(
+                            cast(glGetString(GL_VERSION), c_char_p).value
+                        )
+
+                        # extract numbers, padding for single digit returns
+                        ver = '%s.0.0' % self.version.strip().split(' ', 1)[0]
+                        self.major_version, self.minor_version, _ =\
+                            [int(v) for v in ver.split('.', 3)[:3]]
+
+                    except Exception as e:
+                        if not self.failures:
+                            self.failures = []
+
+                        self.failures.append(e)
+
             if self.have_version(3):
                 from pyglet.gl.glext_arb import glGetStringi, GL_NUM_EXTENSIONS
                 num_extensions = GLint()
@@ -160,10 +206,15 @@ class GLInfo:
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        if not self.version or 'None' in self.version:
+
+        if not self.version\
+                or 'None' in self.version\
+                or self.major_version is None:
             return False
+
         ver = '%s.0.0' % self.version.strip().split(' ', 1)[0]
         imajor, iminor, irelease = [int(v) for v in ver.split('.', 3)[:3]]
+
         return (imajor > major or
                 (imajor == major and iminor >= minor) or
                 (imajor == major and iminor == minor))
