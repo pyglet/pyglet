@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import warnings
 
 from pyglet import gl
 from pyglet import app
@@ -193,18 +192,7 @@ class Screen:
             configs = self.get_matching_configs(template)
         if not configs:
             raise window.NoSuchConfigException()
-
-        best = configs[0]
-        if best.major_version < 2:
-            version = best.major_version, best.minor_version
-            warnings.warn(
-                f"OpenGL version lower than 2.0 {version!r}. "
-                f"Many features may not work if batching fails. "
-                f"If your hardware should support a higher version, your "
-                f"drivers or OS may be at fault."
-            )
-
-        return best
+        return configs[0]
 
     def get_matching_configs(self, template):
         """Get a list of configs that match a specification.
