@@ -125,6 +125,7 @@ above, "Working with multiple screens")::
 
 import sys
 import math
+import warnings
 
 import pyglet
 import pyglet.window.key
@@ -646,6 +647,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         from pyglet import app
         app.windows.add(self)
         self._create()
+
+        # Raise a warning if an OpenGL 2.0 context is not available. This is a common case
+        # with virtual machines, or on Windows without fully supported GPU drivers.
+        gl_info = context.get_info()
+        if not gl_info.have_version(2, 0):
+            message = ("\nYour graphics drivers do not support OpenGL 2.0.\n"
+                       "You may experience rendering issues or crashes.\n"
+                       f"{gl_info.get_vendor()}\n{gl_info.get_renderer()}\n{gl_info.get_version()}")
+            warnings.warn(message)
 
         self.switch_to()
         if visible:
