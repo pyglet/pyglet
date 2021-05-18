@@ -717,13 +717,17 @@ class _FontStyleRunsRangeIterator:
         from pyglet import font
         for start, end, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, bold, italic, stretch = styles
-            ft = font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
+            bold = False if bold is None else bold
+            italic = False if italic is None else italic
+            ft = font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=self.dpi)
             yield start, end, ft
 
     def __getitem__(self, index):
         from pyglet import font
         font_name, font_size, bold, italic, stretch = self.zip_iter[index]
-        return font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
+        bold = False if bold is None else bold
+        italic = False if italic is None else italic
+        return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator:
