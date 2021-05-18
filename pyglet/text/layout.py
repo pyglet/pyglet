@@ -1815,6 +1815,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
         self._update_scissor_area()
+        self._update_translation()
         self._update()
 
     def _update_scissor_area(self):
@@ -2203,7 +2204,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     # Offset of content within viewport
 
     def _update_translation(self):
-        for line in self.lines[self.visible_lines.start:self.visible_lines.end]:
+        for line in self.lines:
             for vlist in line.vertex_lists:
                 vlist.translation[:] = (-self._translate_x, -self._translate_y) * vlist.count
 
