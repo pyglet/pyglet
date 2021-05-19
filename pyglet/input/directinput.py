@@ -103,11 +103,9 @@ class DirectInputDevice(base.Device):
 
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
-        # "byte swap" the product id guid string:
-        swapped_guid = (self.id_product_guid[6:8] + self.id_product_guid[4:6] +
-                        self.id_product_guid[2:4] + self.id_product_guid[0:2])
-        # A string to be formatted into the final guid:
-        return "{0}000000000000504944564944".format(swapped_guid)
+        first = self.id_product_guid[6:8] + self.id_product_guid[4:6]
+        second = self.id_product_guid[2:4] + self.id_product_guid[0:2]
+        return f"03000000{first}0000{second}000000000000"
 
     def _init_controls(self):
         self.controls = []
