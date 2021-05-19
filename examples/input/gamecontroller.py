@@ -1,6 +1,6 @@
 import pyglet
-from pyglet.gl import *
 
+from pyglet.shapes import Circle, Rectangle, Arc
 
 # pyglet.input.gamecontroller.add_mappings_from_file("gamecontrollerdb.txt")
 controllers = pyglet.input.get_game_controllers()
@@ -14,54 +14,31 @@ controller.open()
 
 window = pyglet.window.Window(720, 480)
 batch = pyglet.graphics.Batch()
-text = "Detected: {0}\nController GUID: {1}".format(controller.name, controller.guid)
-controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multiline=True, width=720)
+
+text = f"Detected: {controller.name}\nController GUID: {controller.guid}"
+controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multiline=True, width=720, batch=batch)
 
 
-class Point:
-    def __init__(self, position, batch, color=(255, 255, 255), visible=True):
-        self._position = position
-        self._visible = visible
-        self.vlist = batch.add(1, GL_POINTS, None, ('vertices2f', position), ('colors3Bn', color))
-        self.visible = visible
+left_trigger = Rectangle(70, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
+right_trigger = Rectangle(610, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
+d_pad = Rectangle(280, 190, 10, 10, batch=batch)
+left_stick = Arc(180, 240, 20, batch=batch)
+right_stick = Arc(540, 240, 20, batch=batch)
 
-    @property
-    def position(self):
-        return self._position
+buttons = {'a': Circle(440, 170, 9, color=(50, 255, 50), batch=batch),
+           'b': Circle(460, 190, 9, color=(255, 50, 50), batch=batch),
+           'x': Circle(420, 190, 9, color=(50, 50, 255), batch=batch),
+           'y': Circle(440, 210, 9, color=(255, 255, 50), batch=batch),
+           'leftshoulder': Rectangle(70, 290, 40, 10, batch=batch),
+           'rightshoulder': Rectangle(610, 290, 40, 10, batch=batch),
+           'start': Circle(390, 240, 9, batch=batch),
+           'guide': Circle(360, 240, 9, color=(255, 255, 100), batch=batch),
+           'back': Circle(330, 240, 9, batch=batch),
+           'leftstick': Circle(180, 240, 9, batch=batch),
+           'rightstick': Circle(540, 240, 9, batch=batch)}
 
-    @position.setter
-    def position(self, value):
-        self._position = value
-        self.vlist.vertices[:] = value
-
-    @property
-    def visible(self):
-        return self._visible
-
-    @visible.setter
-    def visible(self, value):
-        self._visible = value
-        if value is False:
-            self.vlist.vertices[:] = -10, -10
-        else:
-            self.vlist.vertices[:] = self._position
-
-
-left_trigger = Point(position=(90, 360 + (controller.lefttrigger * 50)), batch=batch)
-right_trigger = Point(position=(630, 360 + (controller.lefttrigger * 50)), batch=batch)
-left_stick = Point(position=(180, 240), batch=batch)
-right_stick = Point(position=(540, 240), batch=batch)
-d_pad = Point(position=(280, 190), batch=batch)
-
-buttons = {'a': Point(position=(440, 170), color=(50, 255, 50), batch=batch, visible=False),
-           'b': Point(position=(460, 190), color=(255, 50, 50), batch=batch, visible=False),
-           'x': Point(position=(420, 190), color=(50, 50, 255), batch=batch, visible=False),
-           'y': Point(position=(440, 210), color=(255, 255, 50), batch=batch, visible=False),
-           'leftshoulder': Point(position=(90, 290), batch=batch, visible=False),
-           'rightshoulder': Point(position=(630, 290), batch=batch, visible=False),
-           'start': Point(position=(390, 240), batch=batch, visible=False),
-           'guide': Point(position=(360, 240), color=(255, 255, 100), batch=batch, visible=False),
-           'back': Point(position=(330, 240), batch=batch, visible=False)}
+for button in buttons.values():
+    button.visible = False
 
 
 @controller.event
@@ -122,8 +99,6 @@ def on_trigger_motion(controller, trigger, value):
 def on_draw():
     window.clear()
     batch.draw()
-    controller_label.draw()
 
 
-glPointSize(10)
 pyglet.app.run()
