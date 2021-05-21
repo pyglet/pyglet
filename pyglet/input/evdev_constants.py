@@ -35,7 +35,6 @@
 
 """Event constants from /usr/include/linux/input.h """
 
-
 EV_SYN = 0x00
 EV_KEY = 0x01
 EV_REL = 0x02
@@ -319,10 +318,14 @@ BTN_BASE6 = 0x12b
 BTN_DEAD = 0x12f
 
 BTN_GAMEPAD = 0x130
+BTN_SOUTH = 0x130
 BTN_A = 0x130
+BTN_EAST = 0x131
 BTN_B = 0x131
 BTN_C = 0x132
+BTN_NORTH = 0x133
 BTN_X = 0x133
+BTN_WEST = 0x134
 BTN_Y = 0x134
 BTN_Z = 0x135
 BTN_TL = 0x136
@@ -446,9 +449,14 @@ KEY_FN_F = 0x1e2
 KEY_FN_S = 0x1e3
 KEY_FN_B = 0x1e4
 
-BTN_TRIGGER_HAPPY = 0x2c0           # These HAPPY constants are used
-BTN_TRIGGER_HAPPY1 = 0x2c0          # by some recent joysticks for
-BTN_TRIGGER_HAPPY2 = 0x2c1          # directional pads or buttons.
+BTN_DPAD_UP = 0x220
+BTN_DPAD_DOWN = 0x221
+BTN_DPAD_LEFT = 0x222
+BTN_DPAD_RIGHT = 0x223
+
+BTN_TRIGGER_HAPPY = 0x2c0
+BTN_TRIGGER_HAPPY1 = 0x2c0
+BTN_TRIGGER_HAPPY2 = 0x2c1
 BTN_TRIGGER_HAPPY3 = 0x2c2
 BTN_TRIGGER_HAPPY4 = 0x2c3
 BTN_TRIGGER_HAPPY5 = 0x2c4
@@ -602,7 +610,6 @@ FF_STATUS_MAX = 0x01
 FF_RUMBLE = 0x50
 FF_MAX = 0x7f
 FF_CNT = FF_MAX + 1
-
 
 rel_raw_names = {}
 abs_raw_names = {}
