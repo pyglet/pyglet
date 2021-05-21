@@ -5,10 +5,12 @@ Bugfixes
 --------
 - FFmpeg decoder add FF_INPUT_BUFFER_PADDING_SIZE to buffers.
 - Add missing DI8DEVTYPE_SUPPLEMENTAL joystick device type.
+- Fix bool clamping causing crash with DirectWrite text decoder.
 
 Maintenance
 -----------
 - Change IncrementalTextLayout to use glScissor instead of glClipPlane.
+- Raise warning on Window creation if the GPU drivers do not support OpenGL 2.0
 
 Features
 --------
