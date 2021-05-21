@@ -189,3 +189,31 @@ def get_mapping(guid):
     for mapping in mapping_list:
         if mapping.startswith(guid):
             return _parse_mapping(mapping)
+
+
+def add_mappings_from_file(filename) -> None:
+    """Add mappings from a file.
+
+    Given a file path, open and parse the file for mappings.
+
+    :Parameters:
+        `filename` : str
+            A file path.
+    """
+    assert os.path.exists(filename), f"Invalid path: {filename}"
+    with open(filename) as f:
+        add_mappings_from_string(f.read())
+
+
+def add_mappings_from_string(string) -> None:
+    """Add one or more mappings from a raw string.
+
+        :Parameters:
+            `string` : str
+                A string containing one or more mappings,
+        """
+    for line in string.splitlines():
+        if line.startswith('#'):
+            continue
+        line = line.strip()
+        mapping_list.append(line)
