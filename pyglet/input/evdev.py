@@ -332,6 +332,16 @@ class EvdevDevice(XlibSelectDevice, Device):
 
     # Force Feedback methods
 
+    def supports_ff(self):
+        try:
+            self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
+            self.ff_create_effect(0, 0, 0)
+            os.close(self._fileno)
+            return True
+        except OSError:
+            os.close(self._fileno)
+            return False
+
     def ff_create_effect(self, weak, strong, duration, effect=-1):
         weak = int(max(min(1, weak), 0) * 0xFFFF)         # Clamp range from 0-1, convert to 16bit
         strong = int(max(min(1, strong), 0) * 0xFFFF)     # Clamp range from 0-1, convert to 16bit
@@ -464,7 +474,10 @@ def _create_game_controller(device):
     if not (have_x and have_y and have_button):
         return
 
-    return EvdevGameController(device)
+    if device.supports_ff():
+        return EvdevGameController(device)
+    else:
+        return GameController(device)
 
 
 def get_game_controllers(display=None):
