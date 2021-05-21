@@ -44,7 +44,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.dev2'
+__version__ = version = '2.0.dev3'
 
 if sys.version_info < (3, 6):
     raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
