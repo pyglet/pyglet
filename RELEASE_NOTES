@@ -4,6 +4,7 @@ Bugfix, feature and maintenance release
 Bugfixes
 --------
 - FFmpeg decoder add FF_INPUT_BUFFER_PADDING_SIZE to buffers.
+- Add missing DI8DEVTYPE_SUPPLEMENTAL joystick device type.
 
 Maintenance
 -----------
