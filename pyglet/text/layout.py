@@ -932,7 +932,9 @@ class TextLayout:
         else:
             dx = x - self._x
             for vertex_list in self._vertex_lists:
-                vertex_list.vertices[::2] = [v + dx for v in vertex_list.vertices[::2]]
+                vertices = vertex_list.vertices[:]
+                vertices[::2] = [x + dx for x in vertices[::2]]
+                vertex_list.vertices[:] = vertices
             self._x = x
 
     @property
@@ -956,7 +958,9 @@ class TextLayout:
         else:
             dy = y - self._y
             for vertex_list in self._vertex_lists:
-                vertex_list.vertices[1::2] = [v + dy for v in vertex_list.vertices[1::2]]
+                vertices = vertex_list.vertices[:]
+                vertices[1::2] = [y + dy for y in vertices[1::2]]
+                vertex_list.vertices[:] = vertices
             self._y = y
 
     @property
