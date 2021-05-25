@@ -44,10 +44,11 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-__version__ = version = '2.0.dev3'
+__version__ = '2.0.dev3'
+version = __version__
 
 if sys.version_info < (3, 6):
-    raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
+    raise Exception('pyglet %s requires Python 3.6 or newer.' % version)
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
@@ -191,6 +192,7 @@ _option_types = {
 def _read_environment():
     """Read defaults for options from environment"""
     for key in options:
+        assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
         env = 'PYGLET_%s' % key.upper()
         try:
             value = os.environ[env]
