@@ -10,7 +10,7 @@ from pyglet.gl import *
 _debug_gl_shaders = options['debug_gl_shaders']
 
 
-# TODO: test other shader types, and update pyglet GL bindings if necessary.
+# TODO: test other shader types, and update if necessary.
 shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'geometry': GL_GEOMETRY_SHADER,
@@ -101,21 +101,28 @@ class _Attribute:
 
 
 class _Uniform:
-    __slots__ = 'name', 'type', 'size', 'location', 'count', 'is_matrix', 'setter', 'getter'
+    __slots__ = 'program', 'name', 'type', 'location', 'length', 'count', 'get', 'set'
 
-    def __init__(self, name, uniform_type, size, location, count, is_matrix, setter, getter):
+    def __init__(self, program, name, uniform_type, gl_type, location, length, count, gl_setter, gl_getter):
+        self.program = program
         self.name = name
         self.type = uniform_type
-        self.size = size
         self.location = location
+        self.length = length
         self.count = count
-        self.is_matrix = is_matrix
 
-        self.setter = setter
-        self.getter = getter
+        is_matrix = uniform_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4,
+                                     GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4,
+                                     GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3)
+
+        c_array = (gl_type * length)()
+        ptr = cast(c_array, POINTER(gl_type))
+
+        self.get = _create_getter_func(program, location, gl_getter, c_array, length)
+        self.set = _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix)
 
     def __repr__(self):
-        return f"Uniform('{self.name}', size={self.size}, location={self.location}, count={self.count})"
+        return f"Uniform('{self.name}', location={self.location}, length={self.length}, count={self.count})"
 
 
 def _create_getter_func(program_id, location, gl_getter, c_array, length):
@@ -329,7 +336,7 @@ class ShaderProgram:
             raise Exception("Uniform with the name `{0}` was not found.".format(key))
 
         try:
-            uniform.setter(value)
+            uniform.set(value)
         except GLException:
             raise
 
@@ -340,7 +347,7 @@ class ShaderProgram:
             raise Exception("Uniform with the name `{0}` was not found.".format(item))
 
         try:
-            return uniform.getter()
+            return uniform.get()
         except GLException:
             raise
 
@@ -364,28 +371,17 @@ class ShaderProgram:
                 print(f"Found attribute: {attribute}")
 
     def _introspect_uniforms(self):
+        prg_id = self._id
         for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):
             u_name, u_type, u_size = self._query_uniform(index)
-            loc = glGetUniformLocation(self._id, create_string_buffer(u_name.encode('utf-8')))
+            loc = glGetUniformLocation(prg_id, create_string_buffer(u_name.encode('utf-8')))
 
-            if loc == -1:      # Skip uniforms that may be in Uniform Blocks
+            if loc == -1:      # Skip uniforms that may be inside of a Uniform Block
                 continue
 
             try:
                 gl_type, gl_setter, length, count = _uniform_setters[u_type]
                 gl_getter = _uniform_getters[gl_type]
-
-                is_matrix = u_type in (GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4,
-                                       GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4,
-                                       GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3)
-
-                # Create persistant mini c_array for getters and setters:
-                c_array = (gl_type * length)()
-                ptr = cast(c_array, POINTER(gl_type))
-
-                # Create custom dedicated getters and setters for each uniform:
-                getter = _create_getter_func(self._id, loc, gl_getter, c_array, length)
-                setter = _create_setter_func(loc, gl_setter, c_array, length, count, ptr, is_matrix)
 
                 if _debug_gl_shaders:
                     print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4},"
@@ -394,7 +390,7 @@ class ShaderProgram:
             except KeyError:
                 raise GLException("Unsupported Uniform type {0}".format(u_type))
 
-            self._uniforms[u_name] = _Uniform(u_name, u_type, u_size, loc, count, is_matrix, setter, getter)
+            self._uniforms[u_name] = _Uniform(prg_id, u_name, u_type, gl_type, loc, length, count, gl_setter, gl_getter)
 
     def _introspect_uniform_blocks(self):
         p_id = self._id

@@ -73,10 +73,9 @@ def on_draw():
     pyglet.graphics.draw(3, GL_TRIANGLES, ('vertices3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
                                           ('colors3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
 
-    # TODO: Uncomment when 2i format works
-    # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-    #                              ('vertices2i', (225, 300,   250, 300,   250, 325,   225, 325)),
-    #                              ('colors3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2, 1, 0.5, 0.2)))
+    pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                 ('vertices2i', (225, 300,   250, 300,   250, 325,   225, 325)),
+                                 ('colors3f', (0.5, 1, 0.2,  0.5, 0.2, 1,  0.2, 0.5, 1, 1, 0.5, 0.2)))
 
     vertex_list.draw(GL_TRIANGLES)
 
