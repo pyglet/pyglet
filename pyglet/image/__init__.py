@@ -273,7 +273,7 @@ def get_max_texture_size():
     return size.value
 
 
-def get_texture_array_max_depth():
+def get_max_array_texture_layers():
     """Query the maximum TextureArray depth"""
     max_layers = c_int()
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, max_layers)
@@ -841,7 +841,7 @@ class ImageData(AbstractImage):
                     image.blit_to_texture(texture.target, level, self.anchor_x, self.anchor_y, 0, internalformat)
                     # TODO: should set base and max mipmap level if some mipmaps are missing.
         else:
-            glTexParameteri(texture.target, GL_GENERATE_MIPMAP, GL_TRUE)
+            glGenerateMipmap(texture.target)
             self.blit_to_texture(texture.target, texture.level, self.anchor_x, self.anchor_y, 0, internalformat)
 
         self._current_mipmap_texture = texture
@@ -1048,8 +1048,6 @@ class ImageData(AbstractImage):
             return GL_LUMINANCE, GL_UNSIGNED_BYTE
         elif fmt == 'L':
             return GL_LUMINANCE, GL_UNSIGNED_BYTE
-        elif fmt == 'LA':
-            return GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE
         elif fmt == 'R':
             return GL_RED, GL_UNSIGNED_BYTE
         elif fmt == 'G':
@@ -1066,9 +1064,6 @@ class ImageData(AbstractImage):
               gl_info.have_extension('GL_EXT_bgra') and
               gl_info.have_extension('GL_APPLE_packed_pixels')):
             return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
-        elif (fmt == 'ABGR' and
-              gl_info.have_extension('GL_EXT_abgr')):
-            return GL_ABGR_EXT, GL_UNSIGNED_BYTE
         elif (fmt == 'BGR' and
               gl_info.have_extension('GL_EXT_bgra')):
             return GL_BGR, GL_UNSIGNED_BYTE
@@ -1084,8 +1079,6 @@ class ImageData(AbstractImage):
             return GL_RGBA
         elif len(fmt) == 3:
             return GL_RGB
-        elif len(fmt) == 2:
-            return GL_LUMINANCE_ALPHA
         elif fmt == 'A':
             return GL_ALPHA
         elif fmt == 'L':
@@ -1240,10 +1233,10 @@ class CompressedImageData(AbstractImage):
         glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, texture.mag_filter)
 
         if self._have_extension():
-            glCompressedTexImage2DARB(texture.target, texture.level,
-                                      self.gl_format,
-                                      self.width, self.height, 0,
-                                      len(self.data), self.data)
+            glCompressedTexImage2D(texture.target, texture.level,
+                                   self.gl_format,
+                                   self.width, self.height, 0,
+                                   len(self.data), self.data)
         else:
             image = self.decoder(self.data, self.width, self.height)
             texture = image.get_texture()
@@ -1274,9 +1267,9 @@ class CompressedImageData(AbstractImage):
         glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
 
         if not self.mipmap_data:
-            glTexParameteri(texture.target, GL_GENERATE_MIPMAP, GL_TRUE)
+            glGenerateMipmap(texture.target)
 
-        glCompressedTexImage2DARB(texture.target, texture.level,
+        glCompressedTexImage2D(texture.target, texture.level,
                                   self.gl_format,
                                   self.width, self.height, 0,
                                   len(self.data), self.data)
@@ -1287,7 +1280,7 @@ class CompressedImageData(AbstractImage):
             width >>= 1
             height >>= 1
             level += 1
-            glCompressedTexImage2DARB(texture.target, level, self.gl_format, width, height, 0, len(data), data)
+            glCompressedTexImage2D(texture.target, level, self.gl_format, width, height, 0, len(data), data)
 
         glFlush()
 
@@ -1298,17 +1291,17 @@ class CompressedImageData(AbstractImage):
         self._verify_driver_supported()
 
         if target == GL_TEXTURE_3D:
-            glCompressedTexSubImage3DARB(target, level,
-                                         x - self.anchor_x, y - self.anchor_y, z,
-                                         self.width, self.height, 1,
-                                         self.gl_format,
-                                         len(self.data), self.data)
+            glCompressedTexSubImage3D(target, level,
+                                      x - self.anchor_x, y - self.anchor_y, z,
+                                      self.width, self.height, 1,
+                                      self.gl_format,
+                                      len(self.data), self.data)
         else:
-            glCompressedTexSubImage2DARB(target, level,
-                                         x - self.anchor_x, y - self.anchor_y,
-                                         self.width, self.height,
-                                         self.gl_format,
-                                         len(self.data), self.data)
+            glCompressedTexSubImage2D(target, level,
+                                      x - self.anchor_x, y - self.anchor_y,
+                                      self.width, self.height,
+                                      self.gl_format,
+                                      len(self.data), self.data)
 
 
 class Texture(AbstractImage):
@@ -1706,7 +1699,7 @@ class TextureArray(Texture, UniformTextureSequence):
         min_filter = min_filter or cls.default_min_filter
         mag_filter = mag_filter or cls.default_mag_filter
 
-        max_depth_limit = get_texture_array_max_depth()
+        max_depth_limit = get_max_array_texture_layers()
         assert max_depth <= max_depth_limit, "TextureArray max_depth supported is {}.".format(max_depth_limit)
 
         tex_id = GLuint()
@@ -1798,36 +1791,6 @@ class TileableTexture(Texture):
 
     def get_region(self, x, y, width, height):
         raise ImageException('Cannot get region of %r' % self)
-
-    def blit_tiled(self, x, y, z, width, height):
-        """Blit this texture tiled over the given area.
-
-        The image will be tiled with the bottom-left corner of the destination
-        rectangle aligned with the anchor point of this texture.
-        """
-        # TODO: Fix this method for GL3:
-        u1 = self.anchor_x / self.width
-        v1 = self.anchor_y / self.height
-        u2 = u1 + width / self.width
-        v2 = v1 + height / self.height
-        w, h = width, height
-        t = self.tex_coords
-        array = (GLfloat * 32)(u1, v1, t[2], 1.,
-                               x, y, z, 1.,
-                               u2, v1, t[5], 1.,
-                               x + w, y, z, 1.,
-                               u2, v2, t[8], 1.,
-                               x + w, y + h, z, 1.,
-                               u1, v2, t[11], 1.,
-                               x, y + h, z, 1.)
-
-
-        glEnable(self.target)
-        glBindTexture(self.target, self.id)
-        # glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)    # GL3
-        glInterleavedArrays(GL_T4F_V4F, 0, array)
-        glDrawArrays(GL_QUADS, 0, 4)
-        # # glPopClientAttrib    # GL3    # GL3()
 
     @classmethod
     def create_for_image(cls, image):
@@ -1928,7 +1891,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
         self._update_items()
         if type(index) is tuple:
             row, column = index
-            assert row >= 0 and column >= 0 and row < self.rows and column < self.columns
+            assert 0 <= row < self.rows and 0 <= column < self.columns
             return self._items[row * self.columns + column]
         else:
             return self._items[index]
@@ -2017,14 +1980,14 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
                 elif type(index.start) is int:
                     row1 = index.start // self.columns
                     col1 = index.start % self.columns
-                assert row1 >= 0 and col1 >= 0 and row1 < self.rows and col1 < self.columns
+                assert 0 <= row1 < self.rows and 0 <= col1 < self.columns
 
                 if type(index.stop) is tuple:
                     row2, col2 = index.stop
                 elif type(index.stop) is int:
                     row2 = index.stop // self.columns
                     col2 = index.stop % self.columns
-                assert row2 >= 0 and col2 >= 0 and row2 <= self.rows and col2 <= self.columns
+                assert 0 <= row2 <= self.rows and 0 <= col2 <= self.columns
 
                 result = []
                 i = row1 * self.columns
@@ -2035,7 +1998,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         else:
             if type(index) is tuple:
                 row, column = index
-                assert row >= 0 and column >= 0 and row < self.rows and column < self.columns
+                assert 0 <= row < self.rows and 0 <= column < self.columns
                 return self.items[row * self.columns + column]
             elif type(index) is int:
                 return self.items[index]
