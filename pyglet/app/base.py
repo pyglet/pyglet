@@ -151,9 +151,8 @@ class EventLoop(event.EventDispatcher):
             window.switch_to()
             window.dispatch_event('on_draw')
             window.flip()
-            window._legacy_invalid = False
 
-    def run(self, interval):
+    def run(self, interval=1/60):
         """Begin processing events, scheduled functions and window updates.
 
         This method returns when :py:attr:`has_exit` is set to True.
