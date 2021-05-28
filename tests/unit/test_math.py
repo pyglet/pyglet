@@ -14,6 +14,7 @@ def mat4():
 
 def inverse(matrix):
     """The inverse of a Matrix.
+
     Using Gauss-Jordan elimination, the matrix supplied is transformed into
     the identity matrix using a sequence of elementary row operations (below).
     The same sequence of operations is applied to the identity matrix,

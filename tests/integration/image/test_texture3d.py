@@ -13,13 +13,13 @@ class TestTexture3D(unittest.TestCase):
 
     def create_image(self, width, height, color):
         data = colorbyte(color) * (width * height)
-        return ImageData(width, height, 'L', data)
+        return ImageData(width, height, 'R', data)
 
     def check_image(self, image, width, height, color):
         self.assertTrue(image.width == width)
         self.assertTrue(image.height == height)
         image = image.get_image_data()
-        data = image.get_data('L', image.width)
+        data = image.get_data('R', image.width)
         self.assertTrue(data == colorbyte(color) * len(data))
 
     def set_grid_image(self, itemwidth, itemheight, rows, cols, rowpad, colpad):
@@ -39,7 +39,7 @@ class TestTexture3D(unittest.TestCase):
             if row < rows - 1:
                 data += (width * b'\0') * rowpad
         assert len(data) == width * height
-        self.image = ImageData(width, height, 'L', data)
+        self.image = ImageData(width, height, 'R', data)
         grid = ImageGrid(self.image, rows, cols,
                          itemwidth, itemheight, rowpad, colpad)
         self.grid = Texture3D.create_for_image_grid(grid)
@@ -49,7 +49,7 @@ class TestTexture3D(unittest.TestCase):
         self.assertTrue(cellimage.height == self.grid.item_height)
 
         cellimage = cellimage.get_image_data()
-        data = cellimage.get_data('L', cellimage.width)
+        data = cellimage.get_data('R', cellimage.width)
         self.assertTrue(data == colorbyte(cellindex + 1) * len(data))
 
     def setUp(self):

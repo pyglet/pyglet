@@ -143,7 +143,7 @@ from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
 from .codecs import get_animation_decoders, get_decoders, get_encoders
 from .animation import Animation, AnimationFrame
-from .imagebuffer import *
+from .buffer import *
 from . import atlas
 
 
@@ -660,7 +660,7 @@ class ImageData(AbstractImage):
                 ``width * len(format)``.
 
         """
-        super(ImageData, self).__init__(width, height)
+        super().__init__(width, height)
 
         self._current_format = self._desired_format = fmt.upper()
         self._current_data = data
@@ -887,36 +887,13 @@ class ImageData(AbstractImage):
         matrix = None
         fmt, gl_type = self._get_gl_format_and_type(data_format)
         if fmt is None:
-            if len(data_format) in (3, 4) and gl_info.have_extension('GL_ARB_imaging'):
-                # Construct a color matrix to convert to GL_RGBA
-                def component_column(component):
-                    try:
-                        pos = 'RGBA'.index(component)
-                        return [0] * pos + [1] + [0] * (3 - pos)
-                    except ValueError:
-                        return [0, 0, 0, 0]
-
-                # pad to avoid index exceptions
-                lookup_format = data_format + 'XXX'
-                matrix = (component_column(lookup_format[0]) +
-                          component_column(lookup_format[1]) +
-                          component_column(lookup_format[2]) +
-                          component_column(lookup_format[3]))
-                fmt = {3: GL_RGB,
-                       4: GL_RGBA}.get(len(data_format))
-                gl_type = GL_UNSIGNED_BYTE
-
-                glMatrixMode(GL_COLOR)
-                glPushMatrix()
-                glLoadMatrixf((GLfloat * 16)(*matrix))
-            else:
-                # Need to convert data to a standard form
-                data_format = {
-                    1: 'L',
-                    2: 'LA',
-                    3: 'RGB',
-                    4: 'RGBA'}.get(len(data_format))
-                fmt, gl_type = self._get_gl_format_and_type(data_format)
+            # Need to convert data to a standard form
+            data_format = {
+                1: 'R',
+                2: 'RG',
+                3: 'RGB',
+                4: 'RGBA'}.get(len(data_format))
+            fmt, gl_type = self._get_gl_format_and_type(data_format)
 
         # Get data in required format (hopefully will be the same format it's already
         # in, unless that's an obscure format, upside-down or the driver is old).
@@ -1044,56 +1021,43 @@ class ImageData(AbstractImage):
 
     @staticmethod
     def _get_gl_format_and_type(fmt):
-        if fmt == 'I':
-            return GL_LUMINANCE, GL_UNSIGNED_BYTE
-        elif fmt == 'L':
-            return GL_LUMINANCE, GL_UNSIGNED_BYTE
-        elif fmt == 'R':
+        if fmt == 'R':
             return GL_RED, GL_UNSIGNED_BYTE
-        elif fmt == 'G':
-            return GL_GREEN, GL_UNSIGNED_BYTE
-        elif fmt == 'B':
-            return GL_BLUE, GL_UNSIGNED_BYTE
-        elif fmt == 'A':
-            return GL_ALPHA, GL_UNSIGNED_BYTE
+        elif fmt == 'RG':
+            return GL_RG, GL_UNSIGNED_BYTE
         elif fmt == 'RGB':
             return GL_RGB, GL_UNSIGNED_BYTE
+        elif fmt == 'BGR':
+            return GL_BGR, GL_UNSIGNED_BYTE
         elif fmt == 'RGBA':
             return GL_RGBA, GL_UNSIGNED_BYTE
-        elif (fmt == 'ARGB' and
-              gl_info.have_extension('GL_EXT_bgra') and
-              gl_info.have_extension('GL_APPLE_packed_pixels')):
-            return GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
-        elif (fmt == 'BGR' and
-              gl_info.have_extension('GL_EXT_bgra')):
-            return GL_BGR, GL_UNSIGNED_BYTE
-        elif (fmt == 'BGRA' and
-              gl_info.have_extension('GL_EXT_bgra')):
+        elif fmt == 'BGRA':
             return GL_BGRA, GL_UNSIGNED_BYTE
-
         return None, None
 
     @staticmethod
     def _get_internalformat(fmt):
-        if len(fmt) == 4:
-            return GL_RGBA
-        elif len(fmt) == 3:
+        if fmt == 'R':
+            return GL_RED
+        elif fmt == 'RG':
+            return GL_RG
+        elif fmt == 'RGB':
             return GL_RGB
-        elif fmt == 'A':
-            return GL_ALPHA
-        elif fmt == 'L':
-            return GL_LUMINANCE
-        elif fmt == 'I':
-            return GL_INTENSITY
+        elif fmt == 'RGBA':
+            return GL_RGBA
+        elif fmt == 'D':
+            return GL_DEPTH_COMPONENT
+        elif fmt == 'DS':
+            return GL_DEPTH_STENCIL
         return GL_RGBA
 
 
 class ImageDataRegion(ImageData):
     def __init__(self, x, y, width, height, image_data):
-        super(ImageDataRegion, self).__init__(width, height,
-                                              image_data._current_format,
-                                              image_data._current_data,
-                                              image_data._current_pitch)
+        super().__init__(width, height,
+                         image_data._current_format,
+                         image_data._current_data,
+                         image_data._current_pitch)
         self.x = x
         self.y = y
 
@@ -1128,12 +1092,12 @@ class ImageDataRegion(ImageData):
 
         fmt = fmt or self._desired_format
         pitch = pitch or self._current_pitch
-        return super(ImageDataRegion, self).get_data(fmt, pitch)
+        return super().get_data(fmt, pitch)
 
     def set_data(self, fmt, pitch, data):
         self.x = 0
         self.y = 0
-        super(ImageDataRegion, self).set_data(fmt, pitch, data)
+        super().set_data(fmt, pitch, data)
 
     def _apply_region_unpack(self):
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, self.x)
@@ -1142,7 +1106,7 @@ class ImageDataRegion(ImageData):
     def get_region(self, x, y, width, height):
         x += self.x
         y += self.y
-        return super(ImageDataRegion, self).get_region(x, y, width, height)
+        return super().get_region(x, y, width, height)
 
 
 class CompressedImageData(AbstractImage):
@@ -1174,7 +1138,7 @@ class CompressedImageData(AbstractImage):
                 required extension is not present.
 
         """
-        super(CompressedImageData, self).__init__(width, height)
+        super().__init__(width, height)
         self.data = data
         self.gl_format = gl_format
         self.extension = extension
@@ -1270,9 +1234,9 @@ class CompressedImageData(AbstractImage):
             glGenerateMipmap(texture.target)
 
         glCompressedTexImage2D(texture.target, texture.level,
-                                  self.gl_format,
-                                  self.width, self.height, 0,
-                                  len(self.data), self.data)
+                               self.gl_format,
+                               self.width, self.height, 0,
+                               len(self.data), self.data)
 
         width, height = self.width, self.height
         level = 0
@@ -1336,7 +1300,7 @@ class Texture(AbstractImage):
     default_mag_filter = GL_LINEAR
 
     def __init__(self, width, height, target, tex_id):
-        super(Texture, self).__init__(width, height)
+        super().__init__(width, height)
         self.target = target
         self.id = tex_id
         self._context = pyglet.gl.current_context
@@ -1420,10 +1384,10 @@ class Texture(AbstractImage):
         gl_format = GL_RGBA
 
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        buffer = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
-        glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buffer)
+        buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
+        glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
 
-        data = ImageData(self.width, self.height, fmt, buffer)
+        data = ImageData(self.width, self.height, fmt, buf)
         if self.images > 1:
             data = data.get_region(0, z * self.height, self.width, self.height)
         return data
@@ -1446,8 +1410,8 @@ class Texture(AbstractImage):
         glBindTexture(self.target, self.id)
 
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     ('v3f', vertices),
-                                     ('t3f', self.tex_coords))
+                                     ('vertices3f', vertices),
+                                     ('tex_coords3f', self.tex_coords))
 
         glBindTexture(self.target, 0)
 
@@ -1527,7 +1491,7 @@ class TextureRegion(Texture):
     """
 
     def __init__(self, x, y, z, width, height, owner):
-        super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
+        super().__init__(width, height, owner.target, owner.id)
 
         self.x = x
         self.y = y
@@ -1645,7 +1609,7 @@ class TextureArrayRegion(TextureRegion):
     """A region of a TextureArray, presented as if it were a separate texture.
     """
     def __init__(self, x, y, z, width, height, owner):
-        super(TextureRegion, self).__init__(width, height, owner.target, owner.id)
+        super().__init__(width, height, owner.target, owner.id)
 
         self.x = x
         self.y = y
@@ -1787,7 +1751,7 @@ class TileableTexture(Texture):
     def __init__(self, width, height, target, id):
         if not _is_pow2(width) or not _is_pow2(height):
             raise ImageException('TileableTexture requires dimensions that are powers of 2')
-        super(TileableTexture, self).__init__(width, height, target, id)
+        super().__init__(width, height, target, id)
 
     def get_region(self, x, y, width, height):
         raise ImageException('Cannot get region of %r' % self)
@@ -1853,7 +1817,7 @@ class ImageGrid(AbstractImage, AbstractImageSequence):
                 Pixels separating adjacent columns.  The padding is only
                 inserted between columns, not at the edges of the grid.
         """
-        super(ImageGrid, self).__init__(image.width, image.height)
+        super().__init__(image.width, image.height)
         self.image = image
         self.rows = rows
         self.columns = columns
@@ -1946,7 +1910,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
         else:
             owner = image
 
-        super(TextureGrid, self).__init__(image.x, image.y, image.z, image.width, image.height, owner)
+        super().__init__(image.x, image.y, image.z, image.width, image.height, owner)
 
         items = []
         y = 0
@@ -2149,7 +2113,7 @@ class BufferImage(AbstractImage):
         self.height = height
 
     def get_image_data(self):
-        buffer = (GLubyte * (len(self.format) * self.width * self.height))()
+        buf = (GLubyte * (len(self.format) * self.width * self.height))()
 
         x = self.x
         y = self.y
@@ -2159,8 +2123,8 @@ class BufferImage(AbstractImage):
 
         glReadBuffer(self.gl_buffer)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        glReadPixels(x, y, self.width, self.height, self.gl_format, GL_UNSIGNED_BYTE, buffer)
-        return ImageData(self.width, self.height, self.format, buffer)
+        glReadPixels(x, y, self.width, self.height, self.gl_format, GL_UNSIGNED_BYTE, buf)
+        return ImageData(self.width, self.height, self.format, buf)
 
     def get_region(self, x, y, width, height):
         if self.owner:
