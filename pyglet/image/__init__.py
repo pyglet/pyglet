@@ -884,8 +884,8 @@ class ImageData(AbstractImage):
         data_pitch = abs(self._current_pitch)
 
         # Determine pixel format from format string
-        matrix = None
         fmt, gl_type = self._get_gl_format_and_type(data_format)
+
         if fmt is None:
             # Need to convert data to a standard form
             data_format = {

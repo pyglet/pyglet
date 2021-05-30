@@ -475,7 +475,12 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture):
         if texture.id is not self._texture.id:
-            self._group = self._group.__class__(texture, self._group.blend_src, self._group.blend_dest)
+            self._group = self._group.__class__(texture,
+                                                self._group.blend_src,
+                                                self._group.blend_dest,
+                                                self._group.program,
+                                                0,
+                                                self._group.parent)
             self._vertex_list.delete()
             self._texture = texture
             self._create_vertex_list()
