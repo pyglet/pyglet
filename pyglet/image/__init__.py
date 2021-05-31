@@ -949,7 +949,7 @@ class ImageData(AbstractImage):
                 return asbytes(self._current_data)
             return self._current_data
 
-        self._ensure_string_data()
+        self._ensure_bytes()
         data = self._current_data
         current_pitch = self._current_pitch
         current_format = self._current_format
@@ -1013,11 +1013,9 @@ class ImageData(AbstractImage):
 
         return asbytes(data)
 
-    def _ensure_string_data(self):
+    def _ensure_bytes(self):
         if type(self._current_data) is not bytes:
-            buf = create_string_buffer(len(self._current_data))
-            memmove(buf, self._current_data, len(self._current_data))
-            self._current_data = buf.raw
+            self._current_data = asbytes(self._current_data)
 
     @staticmethod
     def _get_gl_format_and_type(fmt):
@@ -1033,6 +1031,12 @@ class ImageData(AbstractImage):
             return GL_RGBA, GL_UNSIGNED_BYTE
         elif fmt == 'BGRA':
             return GL_BGRA, GL_UNSIGNED_BYTE
+
+        elif fmt == 'L':
+            return GL_LUMINANCE, GL_UNSIGNED_BYTE
+        elif fmt == 'A':
+            return GL_ALPHA, GL_UNSIGNED_BYTE
+
         return None, None
 
     @staticmethod
@@ -1049,6 +1053,12 @@ class ImageData(AbstractImage):
             return GL_DEPTH_COMPONENT
         elif fmt == 'DS':
             return GL_DEPTH_STENCIL
+
+        elif fmt == 'L':
+            return GL_LUMINANCE
+        elif fmt == 'A':
+            return GL_ALPHA
+
         return GL_RGBA
 
 
@@ -1079,7 +1089,7 @@ class ImageDataRegion(ImageData):
         x1 = len(self._current_format) * self.x
         x2 = len(self._current_format) * (self.x + self.width)
 
-        self._ensure_string_data()
+        self._ensure_bytes()
         data = self._convert(self._current_format, abs(self._current_pitch))
         new_pitch = abs(self._current_pitch)
         rows = [data[i:i+new_pitch] for i in range(0, len(data), new_pitch)]

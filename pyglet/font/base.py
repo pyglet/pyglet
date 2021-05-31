@@ -181,29 +181,29 @@ class Glyph(image.TextureRegion):
             left_side_bearing + self.width + x_offset,
             -baseline + self.height + y_offset)
 
-    def draw(self):
-        """Debug method.
-        
-        Use the higher level APIs for performance and kerning.
-        """
-        glBindTexture(GL_TEXTURE_2D, self.owner.id)
-        glBegin(GL_QUADS)
-        self.draw_quad_vertices()
-        glEnd()
-
-    def draw_quad_vertices(self):
-        """Debug method.
-
-        Use the higher level APIs for performance and kerning.
-        """
-        glTexCoord3f(*self.tex_coords[:3])
-        glVertex2f(self.vertices[0], self.vertices[1])
-        glTexCoord3f(*self.tex_coords[3:6])
-        glVertex2f(self.vertices[2], self.vertices[1])
-        glTexCoord3f(*self.tex_coords[6:9])
-        glVertex2f(self.vertices[2], self.vertices[3])
-        glTexCoord3f(*self.tex_coords[9:12])
-        glVertex2f(self.vertices[0], self.vertices[3])
+    # def draw(self):
+    #     """Debug method.
+    #
+    #     Use the higher level APIs for performance and kerning.
+    #     """
+    #     glBindTexture(GL_TEXTURE_2D, self.owner.id)
+    #     glBegin(GL_QUADS)
+    #     self.draw_quad_vertices()
+    #     glEnd()
+    #
+    # def draw_quad_vertices(self):
+    #     """Debug method.
+    #
+    #     Use the higher level APIs for performance and kerning.
+    #     """
+    #     glTexCoord3f(*self.tex_coords[:3])
+    #     glVertex2f(self.vertices[0], self.vertices[1])
+    #     glTexCoord3f(*self.tex_coords[3:6])
+    #     glVertex2f(self.vertices[2], self.vertices[1])
+    #     glTexCoord3f(*self.tex_coords[6:9])
+    #     glVertex2f(self.vertices[2], self.vertices[3])
+    #     glTexCoord3f(*self.tex_coords[9:12])
+    #     glVertex2f(self.vertices[0], self.vertices[3])
 
     def get_kerning_pair(self, right_glyph):
         """Not implemented.
@@ -395,7 +395,6 @@ class Font:
             glyphs.append(self.glyphs[c])
         return glyphs
 
-
     def get_glyphs_for_width(self, text, width):
         """Return a list of glyphs for `text` that fit within the given width.
         
@@ -441,7 +440,7 @@ class Font:
             width -= glyph.advance
             
             # If over width and have some committed glyphs, finish.
-            if width <= 0 and len(glyphs) > 0:
+            if width <= 0 < len(glyphs):
                 break
 
             # If a valid breakpoint, commit holding buffer
