@@ -408,6 +408,13 @@ class VertexList:
         region.invalidate()
         return region.array
 
+    def __setattr__(self, name, value):
+        # Allow setting vertex attributes directly without overwriting them:
+        if 'domain' in self.__dict__ and name in self.__dict__['domain'].attribute_names:
+            getattr(self, name)[:] = value
+            return
+        super().__setattr__(name, value)
+
 
 class IndexedVertexDomain(VertexDomain):
     """Management of a set of indexed vertex lists.
@@ -554,7 +561,7 @@ class IndexedVertexList(VertexList):
     _indices_cache_version = None
 
     def __init__(self, domain, start, count, index_start, index_count):
-        super(IndexedVertexList, self).__init__(domain, start, count)
+        super().__init__(domain, start, count)
 
         self.index_start = index_start
         self.index_count = index_count
@@ -570,7 +577,7 @@ class IndexedVertexList(VertexList):
 
         """
         old_start = self.start
-        super(IndexedVertexList, self).resize(count)
+        super().resize(count)
 
         # Change indices (because vertices moved)
         if old_start != self.start:
@@ -593,7 +600,7 @@ class IndexedVertexList(VertexList):
 
     def delete(self):
         """Delete this group."""
-        super(IndexedVertexList, self).delete()
+        super().delete()
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
 
     def migrate(self, domain):
@@ -608,7 +615,7 @@ class IndexedVertexList(VertexList):
         """
         old_start = self.start
         old_domain = self.domain
-        super(IndexedVertexList, self).migrate(domain)
+        super().migrate(domain)
 
         # Note: this code renumber the indices of the *original* domain
         # because the vertices are in a new position in the new domain
