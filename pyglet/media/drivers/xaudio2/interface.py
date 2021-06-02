@@ -115,7 +115,11 @@ class XAudio2Driver:
 
     def _create_xa2(self, device_id=None):
         self._xaudio2 = lib.IXAudio2()
-        lib.XAudio2Create(ctypes.byref(self._xaudio2), 0, self.processor)
+
+        try:
+            lib.XAudio2Create(ctypes.byref(self._xaudio2), 0, self.processor)
+        except OSError:
+            raise ImportError("XAudio2 driver could not be initialized.")
 
         if _debug:
             # Debug messages are found in Windows Event Viewer, you must enable event logging:
