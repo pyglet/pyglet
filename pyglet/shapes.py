@@ -76,7 +76,7 @@ A simple example of drawing shapes::
 
 import math
 
-import pyglet.gl
+import pyglet
 
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
@@ -113,10 +113,16 @@ fragment_source = """#version 150 core
     }
 """
 
-# TODO: cache these on the current_context, like Sprites/etc.?
-_default_vert_shader = shader.Shader(vertex_source, 'vertex')
-_default_frag_shader = shader.Shader(fragment_source, 'fragment')
-_default_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+
+def get_default_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_shapes_default_shader
+    except AttributeError:
+        _default_vert_shader = pyglet.graphics.shader.Shader(vertex_source, 'vertex')
+        _default_frag_shader = pyglet.graphics.shader.Shader(fragment_source, 'fragment')
+        default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        pyglet.gl.current_context.pyglet_shapes_default_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_shapes_default_shader
 
 
 class _ShapeGroup(ShaderGroup):
@@ -142,7 +148,7 @@ class _ShapeGroup(ShaderGroup):
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super().__init__(_default_program, parent=parent)
+        super().__init__(get_default_shader(), parent=parent)
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
@@ -182,11 +188,8 @@ class _ShapeBase:
     _vertex_list = None
 
     def __del__(self):
-        try:
-            if self._vertex_list is not None:
-                self._vertex_list.delete()
-        except:
-            pass
+        if self._vertex_list is not None:
+            self._vertex_list.delete()
 
     def _update_position(self):
         raise NotImplementedError
