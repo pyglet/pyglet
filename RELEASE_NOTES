@@ -1,3 +1,11 @@
+pyglet 1.5.18
+Bugfix release
+
+Bugfixes
+--------
+- If XAudio2 device creation fails, catch exception so that the next driver can be tried.
+
+
 pyglet 1.5.17
 Bugfix, feature and maintenance release
 
