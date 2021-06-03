@@ -71,11 +71,7 @@ def get_audio_driver():
                 from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER
                 if WINDOWS_8_OR_GREATER:
                     from . import xaudio2
-                    try:
-                        _audio_driver = xaudio2.create_audio_driver()
-                    except ImportError:
-                        # Occurs when default audio device is not found, and cannot bind.
-                        pass
+                    _audio_driver = xaudio2.create_audio_driver()
                     break
             elif driver_name == 'directsound':
                 from . import directsound
@@ -94,6 +90,9 @@ def get_audio_driver():
                 print('Error importing driver %s:' % driver_name)
                 import traceback
                 traceback.print_exc()
+    else:
+        from . import silent
+        _audio_driver = silent.create_audio_driver()
 
     return _audio_driver
 
