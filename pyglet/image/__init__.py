@@ -1758,13 +1758,43 @@ class TileableTexture(Texture):
     Use :py:class:`~pyglet.image.create_for_Image` classmethod to construct.
     """
 
-    def __init__(self, width, height, target, id):
+    def __init__(self, width, height, target, tex_id):
         if not _is_pow2(width) or not _is_pow2(height):
             raise ImageException('TileableTexture requires dimensions that are powers of 2')
-        super().__init__(width, height, target, id)
+        super().__init__(width, height, target, tex_id)
 
     def get_region(self, x, y, width, height):
         raise ImageException('Cannot get region of %r' % self)
+
+    def blit_tiled(self, x, y, z, width, height):
+        """Blit this texture tiled over the given area.
+
+        The image will be tiled with the bottom-left corner of the destination
+        rectangle aligned with the anchor point of this texture.
+        """
+        u1 = self.anchor_x / self.width
+        v1 = self.anchor_y / self.height
+        u2 = u1 + width / self.width
+        v2 = v1 + height / self.height
+        w, h = width, height
+        t = self.tex_coords
+
+        vertices = (x, y, z,
+                    x + w, y, z,
+                    x + w, y + h, z,
+                    x, y + h, z)
+
+        tex_coords = (u1, v1, t[2],
+                      u2, v1, t[5],
+                      u2, v2, t[8],
+                      u1, v2, t[11],)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.target, self.id)
+        pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                     ('vertices3f', vertices),
+                                     ('tex_coords3f', tex_coords))
+        glBindTexture(self.target, 0)
 
     @classmethod
     def create_for_image(cls, image):
