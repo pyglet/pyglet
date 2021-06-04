@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
 
-    img = pyglet.image.load(filename).get_texture(rectangle=True)
+    img = pyglet.image.load(filename)
     img.anchor_x = img.width // 2
     img.anchor_y = img.height // 2
 
