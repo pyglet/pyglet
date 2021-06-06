@@ -110,6 +110,7 @@ class Framebuffer:
         self._attachment_types = 0
         self._width = 0
         self._height = 0
+        self.target = target
 
     @property
     def id(self):
@@ -125,12 +126,11 @@ class Framebuffer:
         """The width of the widest attachment."""
         return self._height
 
-    def bind(self, target=GL_FRAMEBUFFER):
-        glBindFramebuffer(target, self._id)
+    def bind(self):
+        glBindFramebuffer(self.target, self._id)
 
-    @staticmethod
-    def unbind(target=GL_FRAMEBUFFER):
-        glBindFramebuffer(target, 0)
+    def unbind(self):
+        glBindFramebuffer(self.target, 0)
 
     def clear(self):
         if self._attachment_types:
@@ -160,10 +160,13 @@ class Framebuffer:
 
         return states.get(gl_status, "Unknown error")
 
-    def attach_texture(self, target, attachment, texture):
+    def attach_texture(self, texture, target=GL_FRAMEBUFFER, attachment=GL_COLOR_ATTACHMENT0):
         """Attach a Texture to the Framebuffer
 
         :Parameters:
+            `texture` : pyglet.image.Texture
+                Specifies the texture object to attach to the framebuffer attachment
+                point named by attachment.
             `target` : int
                 Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
                 GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
@@ -172,9 +175,6 @@ class Framebuffer:
                 Specifies the attachment point of the framebuffer. attachment must be
                 GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
                 GL_DEPTH_STENCIL_ATTACHMENT.
-            `texture` : pyglet.image.Texture
-                Specifies the texture object to attach to the framebuffer attachment
-                point named by attachment.
         """
         self.bind()
         glFramebufferTexture(target, attachment, texture.id, texture.level)
@@ -184,10 +184,17 @@ class Framebuffer:
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_texture_layer(self, target, attachment, texture, level, layer):
+    def attach_texture_layer(self, texture, layer, level, target=GL_FRAMEBUFFER, attachment=GL_COLOR_ATTACHMENT0):
         """Attach a Texture layer to the Framebuffer
 
         :Parameters:
+            `texture` : pyglet.image.TextureArray
+                Specifies the texture object to attach to the framebuffer attachment
+                point named by attachment.
+            `layer` : int
+                Specifies the layer of texture to attach.
+            `level` : int
+                Specifies the mipmap level of texture to attach.
             `target` : int
                 Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
                 GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
@@ -196,13 +203,6 @@ class Framebuffer:
                 Specifies the attachment point of the framebuffer. attachment must be
                 GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
                 GL_DEPTH_STENCIL_ATTACHMENT.
-            `texture` : pyglet.image.TextureArray
-                Specifies the texture object to attach to the framebuffer attachment
-                point named by attachment.
-            `level` : int
-                Specifies the mipmap level of texture to attach.
-            `layer` : int
-                Specifies the layer of texture to attach.
         """
         self.bind()
         glFramebufferTextureLayer(target, attachment, texture.id, level, layer)
@@ -211,10 +211,13 @@ class Framebuffer:
         self._height = max(texture.height, self._height)
         self.unbind()
 
-    def attach_renderbuffer(self, target, attachment, renderbuffer):
+    def attach_renderbuffer(self, renderbuffer, target=GL_FRAMEBUFFER, attachment=GL_COLOR_ATTACHMENT0):
         """"Attach a Renderbuffer to the Framebuffer
 
         :Parameters:
+            `renderbuffer` : pyglet.image.Renderbuffer
+                Specifies the Renderbuffer to attach to the framebuffer attachment
+                point named by attachment.
             `target` : int
                 Specifies the framebuffer target. target must be GL_DRAW_FRAMEBUFFER,
                 GL_READ_FRAMEBUFFER, or GL_FRAMEBUFFER. GL_FRAMEBUFFER is equivalent
@@ -223,9 +226,6 @@ class Framebuffer:
                 Specifies the attachment point of the framebuffer. attachment must be
                 GL_COLOR_ATTACHMENTi, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT or
                 GL_DEPTH_STENCIL_ATTACHMENT.
-            `renderbuffer` : pyglet.image.Renderbuffer
-                Specifies the Renderbuffer to attach to the framebuffer attachment
-                point named by attachment.
         """
         self.bind()
         glFramebufferRenderbuffer(target, attachment, GL_RENDERBUFFER, renderbuffer.id)
