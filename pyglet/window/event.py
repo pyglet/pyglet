@@ -54,7 +54,8 @@ class WindowEventLogger:
     Example::
 
         win = window.Window()
-        win.push_handlers(WindowEventLogger())
+        event_logger = WindowEventLogger()
+        win.push_handlers(event_logger)
 
     """
     def __init__(self, logfile=None):
