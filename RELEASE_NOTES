@@ -4,6 +4,7 @@ Bugfix release
 Bugfixes
 --------
 - If XAudio2 device creation fails, catch exception so that the next driver can be tried.
+- Fix dangling file pointers in GStreamer decoder.
 
 
 pyglet 1.5.17

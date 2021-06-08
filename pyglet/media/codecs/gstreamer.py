@@ -67,7 +67,12 @@ class _GLibMainLoopThread(Thread):
 
 
 class _MessageHandler:
-    """Message Handler class for GStreamer Sources."""
+    """Message Handler class for GStreamer Sources.
+    
+    This separate class holds a weak reference to the
+    Source, preventing garbage collection issues. 
+    
+    """
     def __init__(self, source):
         self.source = weakref.proxy(source)
 
@@ -208,13 +213,13 @@ class GStreamerSource(StreamingSource):
             self._file.close()
 
         try:
-            # self._pipeline.bus.remove_signal_watch()
+            while not self.queue.empty():
+                self.queue.get_nowait()
             sink = self.appsink.get_static_pad("sink")
             if sink.handler_is_connected(self.caps_handler):
                 sink.disconnect(self.caps_handler)
-            while not self.queue.empty():
-                self.queue.get_nowait()
             self._pipeline.set_state(Gst.State.NULL)
+            self._pipeline.bus.remove_signal_watch()
             self.filesrc.set_property("location", None)
         except (ImportError, AttributeError):
             pass
