@@ -91,8 +91,8 @@ class XlibEventLoop(PlatformEventLoop):
     def __init__(self):
         super(XlibEventLoop, self).__init__()
         self._notification_device = NotificationDevice()
-        self._select_devices = set()
-        self._select_devices.add(self._notification_device)
+        self.select_devices = set()
+        self.select_devices.add(self._notification_device)
 
     def notify(self):
         self._notification_device.set()
@@ -103,13 +103,13 @@ class XlibEventLoop(PlatformEventLoop):
 
         # Poll devices to check for already pending events (select.select is not enough)
         pending_devices = []
-        for device in self._select_devices:
+        for device in self.select_devices:
             if device.poll():
                 pending_devices.append(device)
 
         # If no devices were ready, wait until one gets ready
         if not pending_devices:
-            pending_devices, _, _ = select.select(self._select_devices, (), (), timeout)
+            pending_devices, _, _ = select.select(self.select_devices, (), (), timeout)
 
         if not pending_devices:
             # Notify caller that timeout expired without incoming events
