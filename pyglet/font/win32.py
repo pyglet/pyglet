@@ -513,8 +513,6 @@ class GDIPlusFont(Win32Font):
             gdiplus.GdipCreateFontFamilyFromName(ctypes.c_wchar_p(name),
                 None, ctypes.byref(family)) 
 
-        self._name = name
-
         if dpi is None:
             unit = UnitPoint
             self.dpi = 96
@@ -529,9 +527,9 @@ class GDIPlusFont(Win32Font):
         if italic:
             style |= FontStyleItalic
         self._gdipfont = ctypes.c_void_p()
-        gdiplus.GdipCreateFont(family, ctypes.c_float(size),
-            style, unit, ctypes.byref(self._gdipfont))
+        gdiplus.GdipCreateFont(family, ctypes.c_float(size), style, unit, ctypes.byref(self._gdipfont))
         gdiplus.GdipDeleteFontFamily(family)
+        self._name = name
 
     @property
     def name(self):
@@ -539,7 +537,7 @@ class GDIPlusFont(Win32Font):
 
     def __del__(self):
         super(GDIPlusFont, self).__del__()
-        result = gdiplus.GdipDeleteFont(self._gdipfont)
+        gdiplus.GdipDeleteFont(self._gdipfont)
 
     @classmethod
     def add_font_data(cls, data):
