@@ -303,6 +303,11 @@ class Font:
         self.textures = []
         self.glyphs = {}
 
+    @property
+    def name(self):
+        """Return the Family Name of the font as a string."""
+        raise NotImplementedError
+
     @classmethod
     def add_font_data(cls, data):
         """Add font data to the font loader.
@@ -393,7 +398,6 @@ class Font:
                 self.glyphs[c] = glyph_renderer.render(c)
             glyphs.append(self.glyphs[c])
         return glyphs
-
 
     def get_glyphs_for_width(self, text, width):
         """Return a list of glyphs for `text` that fit within the given width.

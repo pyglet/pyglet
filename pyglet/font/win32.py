@@ -513,6 +513,8 @@ class GDIPlusFont(Win32Font):
             gdiplus.GdipCreateFontFamilyFromName(ctypes.c_wchar_p(name),
                 None, ctypes.byref(family)) 
 
+        self._name = name
+
         if dpi is None:
             unit = UnitPoint
             self.dpi = 96
@@ -530,6 +532,10 @@ class GDIPlusFont(Win32Font):
         gdiplus.GdipCreateFont(family, ctypes.c_float(size),
             style, unit, ctypes.byref(self._gdipfont))
         gdiplus.GdipDeleteFontFamily(family)
+
+    @property
+    def name(self):
+        return self._name
 
     def __del__(self):
         super(GDIPlusFont, self).__del__()

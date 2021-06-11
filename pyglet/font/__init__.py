@@ -144,7 +144,7 @@ def load(name=None, size=None, bold=False, italic=False, stretch=False, dpi=None
     font = _font_class(name, size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
 
     # Save parameters for new-style layout classes to recover
-    font.name = name
+    # TODO: add properties to the Font classes, so these can be queried:
     font.size = size
     font.bold = bold
     font.italic = italic

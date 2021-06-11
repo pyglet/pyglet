@@ -1821,7 +1821,7 @@ class Win32DirectWriteFont(base.Font):
         self._font_index, self._collection = self.get_collection(name)
         assert self._collection is not None, "Font: {} not found in loaded or system font collection.".format(name)
 
-        self.name = name
+        self._name = name
         self.bold = bold
         self.size = size
         self.italic = italic
@@ -1867,7 +1867,7 @@ class Win32DirectWriteFont(base.Font):
         # Create the text format this font will use permanently.
         # Could technically be recreated, but will keep to be inline with other font objects.
         self._text_format = IDWriteTextFormat()
-        self._write_factory.CreateTextFormat(self.name,
+        self._write_factory.CreateTextFormat(self._name,
                                              self._collection,
                                              self._weight,
                                              self._style,
@@ -1902,6 +1902,10 @@ class Win32DirectWriteFont(base.Font):
 
         self.max_glyph_height = (self._font_metrics.ascent + self._font_metrics.descent) * self.font_scale_ratio
         self.line_gap = self._font_metrics.lineGap * self.font_scale_ratio
+
+    @property
+    def name(self):
+        return self._name
 
     def render_to_image(self, text, width=10000, height=80):
         """This process takes Pyglet out of the equation and uses only DirectWrite to shape and render text.
