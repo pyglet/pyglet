@@ -492,26 +492,25 @@ class GDIPlusFont(Win32Font):
         if stretch:
             warnings.warn("The current font render does not support stretching.")
 
-        super(GDIPlusFont, self).__init__(name, size, bold, italic, stretch, dpi)
+        super().__init__(name, size, bold, italic, stretch, dpi)
+
+        self._name = name
 
         family = ctypes.c_void_p()
         name = ctypes.c_wchar_p(name)
 
         # Look in private collection first:
         if self._private_fonts:
-            gdiplus.GdipCreateFontFamilyFromName(name,
-                self._private_fonts, ctypes.byref(family)) 
+            gdiplus.GdipCreateFontFamilyFromName(name, self._private_fonts, ctypes.byref(family))
 
         # Then in system collection:
         if not family:
-            gdiplus.GdipCreateFontFamilyFromName(name,
-                None, ctypes.byref(family)) 
+            gdiplus.GdipCreateFontFamilyFromName(name, None, ctypes.byref(family))
 
         # Nothing found, use default font.
         if not family:
-            name = self._default_name
-            gdiplus.GdipCreateFontFamilyFromName(ctypes.c_wchar_p(name),
-                None, ctypes.byref(family)) 
+            self._name = self._default_name
+            gdiplus.GdipCreateFontFamilyFromName(ctypes.c_wchar_p(self._name), None, ctypes.byref(family))
 
         if dpi is None:
             unit = UnitPoint
@@ -529,7 +528,6 @@ class GDIPlusFont(Win32Font):
         self._gdipfont = ctypes.c_void_p()
         gdiplus.GdipCreateFont(family, ctypes.c_float(size), style, unit, ctypes.byref(self._gdipfont))
         gdiplus.GdipDeleteFontFamily(family)
-        self._name = name
 
     @property
     def name(self):
