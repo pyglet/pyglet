@@ -1,3 +1,11 @@
+pyglet 1.5.19
+Bugfix release
+
+Bugfixes
+--------
+- Expose font.name attribute to show the font family name.
+
+
 pyglet 1.5.18
 Bugfix release
 
