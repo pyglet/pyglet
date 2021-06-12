@@ -260,6 +260,8 @@ class Player(pyglet.event.EventDispatcher):
 
         The internal audio player and the texture will be deleted.
         """
+        if self._source:
+            self.source.is_player_source = False
         if self._audio_player:
             self._audio_player.delete()
             self._audio_player = None
