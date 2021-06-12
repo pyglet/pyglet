@@ -4,6 +4,8 @@ Bugfix release
 Bugfixes
 --------
 - Expose font.name attribute to show the font family name.
+- Un-associate queued Source from a deleted Player instance (#256)
+- Fix circular import when trying to create a Windows in 'headless' mode.
 
 
 pyglet 1.5.18

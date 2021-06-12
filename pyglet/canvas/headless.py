@@ -35,7 +35,7 @@
 
 import pyglet
 import warnings
-from pyglet import app
+
 from .base import Display, Screen, ScreenMode, Canvas
 
 
@@ -56,12 +56,13 @@ class HeadlessDisplay(Display):
         if num_devices.value > 0:
             headless_device = pyglet.options['headless_device']
             if headless_device < 0 or headless_device >= num_devices.value:
-                 raise ValueError('Invalid EGL devide id: %d' % headless_device)
+                raise ValueError('Invalid EGL devide id: %d' % headless_device)
             devices = (eglext.EGLDeviceEXT * num_devices.value)()
             eglext.eglQueryDevicesEXT(num_devices.value, devices, byref(num_devices))
-            self._display_connection  = eglext.eglGetPlatformDisplayEXT(eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
+            self._display_connection = eglext.eglGetPlatformDisplayEXT(
+                eglext.EGL_PLATFORM_DEVICE_EXT, devices[headless_device], None)
         else:
-            warning.warn('No device available for EGL device platform. Using native display type.')
+            warnings.warn('No device available for EGL device platform. Using native display type.')
             display = egl.EGLNativeDisplayType()
             self._display_connection = egl.eglGetDisplay(display)
 
@@ -76,8 +77,9 @@ class HeadlessDisplay(Display):
 
 class HeadlessCanvas(Canvas):
     def __init__(self, display, egl_surface):
-        super(HeadlessCanvas, self).__init__(display)
+        super().__init__(display)
         self.egl_surface = egl_surface
+
 
 class HeadlessScreen(Screen):
     def __init__(self, display, x, y, width, height):
@@ -89,7 +91,6 @@ class HeadlessScreen(Screen):
         # XXX deprecate
         for config in configs:
             config.screen = self
-        # print("Canvas", canvas, "configs", configs)
         return configs
 
     def get_modes(self):
