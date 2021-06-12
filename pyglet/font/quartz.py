@@ -231,8 +231,16 @@ class QuartzFont(base.Font):
             cf.CFRelease(descriptor)
             assert self.ctFont, "Couldn't load font: " + name
 
+        string = c_void_p(ct.CTFontCopyFamilyName(self.ctFont))
+        self._family_name = str(cocoapy.cfstring_to_string(string))
+        cf.CFRelease(string)
+
         self.ascent = int(math.ceil(ct.CTFontGetAscent(self.ctFont)))
         self.descent = -int(math.ceil(ct.CTFontGetDescent(self.ctFont)))
+
+    @property
+    def name(self):
+        return self._family_name
 
     def __del__(self):
         cf.CFRelease(self.ctFont)

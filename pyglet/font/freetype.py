@@ -168,7 +168,7 @@ class FreeTypeFont(base.Font):
             warnings.warn("The current font render does not support stretching.")
 
         super().__init__()
-        self.name = name
+        self._name = name
         self.size = size
         self.bold = bold
         self.italic = italic
@@ -176,6 +176,10 @@ class FreeTypeFont(base.Font):
 
         self._load_font_face()
         self.metrics = self.face.get_font_metrics(self.size, self.dpi)
+
+    @property
+    def name(self):
+        return self.face.family_name
 
     @property
     def ascent(self):
@@ -191,14 +195,14 @@ class FreeTypeFont(base.Font):
         return self.face.get_glyph_slot(glyph_index)
 
     def _load_font_face(self):
-        self.face = self._memory_faces.get(self.name, self.bold, self.italic)
+        self.face = self._memory_faces.get(self._name, self.bold, self.italic)
         if self.face is None:
             self._load_font_face_from_system()
 
     def _load_font_face_from_system(self):
-        match = get_fontconfig().find_font(self.name, self.size, self.bold, self.italic)
+        match = get_fontconfig().find_font(self._name, self.size, self.bold, self.italic)
         if not match:
-            raise base.FontException('Could not match font "%s"' % self.name)
+            raise base.FontException('Could not match font "%s"' % self._name)
         self.face = FreeTypeFace.from_fontconfig(match)
 
     @classmethod
@@ -320,7 +324,7 @@ class FreeTypeFace:
                                    descent=-ascent // 4)  # arbitrary.
 
     def _get_best_name(self):
-        self.name = self.family_name
+        self._name = self.family_name
         self._get_font_family_from_ttf
 
     def _get_font_family_from_ttf(self):
@@ -339,7 +343,7 @@ class FreeTypeFace:
                             name.encoding_id == TT_MS_ID_UNICODE_CS):
                         continue
                     # name.string is not 0 terminated! use name.string_len
-                    self.name = name.string.decode('utf-16be', 'ignore')
+                    self._name = name.string.decode('utf-16be', 'ignore')
                 except:
                     continue
 
