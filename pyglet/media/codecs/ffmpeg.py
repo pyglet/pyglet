@@ -36,6 +36,7 @@
 """Use ffmpeg to decode audio and video media.
 """
 
+import os
 import tempfile
 from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
                     c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p,
@@ -461,8 +462,10 @@ class FFmpegSource(StreamingSource):
 
         if file:
             file.seek(0)
-            self._tempfile = tempfile.NamedTemporaryFile(buffering=False)
+            self._tempfile = tempfile.NamedTemporaryFile(buffering=False,
+                                                        delete=False)
             self._tempfile.write(file.read())
+            self._tempfile.close()
             filename = self._tempfile.name
 
         self._file = ffmpeg_open_filename(asbytes_filename(filename))
@@ -581,6 +584,7 @@ class FFmpegSource(StreamingSource):
     def __del__(self):
         if hasattr(self, '_tempfile'):
             self._tempfile.close()
+            os.remove(self._tempfile.name)
         if self._packet and ffmpeg_free_packet is not None:
             ffmpeg_free_packet(self._packet)
         if self._video_stream and swscale is not None:
