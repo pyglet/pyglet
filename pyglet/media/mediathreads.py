@@ -34,6 +34,7 @@
 # ----------------------------------------------------------------------------
 
 import time
+import atexit
 import threading
 
 import pyglet
@@ -49,26 +50,22 @@ class MediaThread:
     a sleep method that can be interrupted and a termination method.
 
     :Ivariables:
-        `condition` : threading.Condition
-            Lock condition on all instance variables. 
-        `stopped` : bool
+        `_condition` : threading.Condition
+            Lock _condition on all instance variables.
+        `_stopped` : bool
             True if `stop` has been called.
 
     """
     _threads = set()
     _threads_lock = threading.Lock()
 
-    def __init__(self, target=None):
+    def __init__(self):
         self._thread = threading.Thread(target=self._thread_run, daemon=True)
-
-        if target is not None:
-            self.run = target
-
-        self.condition = threading.Condition()
-        self.stopped = False
+        self._condition = threading.Condition()
+        self._stopped = False
 
     def run(self):
-        pass
+        raise NotImplementedError
 
     def _thread_run(self):
         if pyglet.options['debug_trace']:
@@ -91,9 +88,9 @@ class MediaThread:
         the value of `stop` after each sleep or wait and to return if set.
         """
         assert _debug('MediaThread.stop()')
-        with self.condition:
-            self.stopped = True
-            self.condition.notify()
+        with self._condition:
+            self._stopped = True
+            self._condition.notify()
         self._thread.join()
 
     def sleep(self, timeout):
@@ -105,9 +102,9 @@ class MediaThread:
 
         """
         assert _debug('MediaThread.sleep(%r)' % timeout)
-        with self.condition:
-            if not self.stopped:
-                self.condition.wait(timeout)
+        with self._condition:
+            if not self._stopped:
+                self._condition.wait(timeout)
 
     def notify(self):
         """Interrupt the current sleep operation.
@@ -116,28 +113,27 @@ class MediaThread:
         instead of waiting the full duration of the timeout.
         """
         assert _debug('MediaThread.notify()')
-        with self.condition:
-            self.condition.notify()
+        with self._condition:
+            self._condition.notify()
 
-    def __del__(self):
-        with self._threads_lock:
-            threads = list(self._threads)
+    @classmethod
+    def atexit(cls):
+        with cls._threads_lock:
+            threads = list(cls._threads)
         for thread in threads:
             thread.stop()
+
+
+atexit.register(MediaThread.atexit)
 
 
 class PlayerWorker(MediaThread):
     """Worker thread for refilling players."""
 
-    # Time to wait if there are players, but they're all full.
+    # Time to wait if there are players, but they're all full:
     _nap_time = 0.05
 
-    # Time to wait if there are no players.
-    _sleep_time = None
-
-    def __init__(self):
-        super().__init__()
-        self.players = set()
+    players = set()
 
     def run(self):
         while True:
@@ -145,9 +141,9 @@ class PlayerWorker(MediaThread):
             # we're processing it -- this saves on extra checks in the
             # player's methods that would otherwise have to check that it's
             # still alive.
-            with self.condition:
+            with self._condition:
                 assert _debug('PlayerWorker: woke up @{}'.format(time.time()))
-                if self.stopped:
+                if self._stopped:
                     break
                 sleep_time = -1
 
@@ -162,7 +158,7 @@ class PlayerWorker(MediaThread):
                         sleep_time = self._nap_time
                 else:
                     assert _debug('PlayerWorker: No active players')
-                    sleep_time = self._sleep_time
+                    sleep_time = None   # sleep until a player is added
 
                 if sleep_time != -1:
                     self.sleep(sleep_time)
@@ -176,13 +172,13 @@ class PlayerWorker(MediaThread):
     def add(self, player):
         assert player is not None
         assert _debug('PlayerWorker: player added')
-        with self.condition:
+        with self._condition:
             self.players.add(player)
-            self.condition.notify()
+            self._condition.notify()
 
     def remove(self, player):
         assert _debug('PlayerWorker: player removed')
-        with self.condition:
+        with self._condition:
             if player in self.players:
                 self.players.remove(player)
-            self.condition.notify()
+            self._condition.notify()
