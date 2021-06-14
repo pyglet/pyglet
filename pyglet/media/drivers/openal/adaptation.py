@@ -38,8 +38,9 @@ import weakref
 import pyglet
 from . import interface
 from pyglet.util import debug_print
-from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.events import MediaEvent
+from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
+from pyglet.media.mediathreads import PlayerWorker
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -57,6 +58,10 @@ class OpenALDriver(AbstractAudioDriver):
 
         self._listener = OpenALListener(self)
 
+        # Start worker thread
+        self.worker = PlayerWorker()
+        self.worker.start()
+
     def __del__(self):
         assert _debug("Delete OpenALDriver")
         self.delete()
@@ -66,7 +71,7 @@ class OpenALDriver(AbstractAudioDriver):
         return OpenALAudioPlayer(self, source, player)
 
     def delete(self):
-        # Delete the context first
+        self.worker.stop()
         self.context = None
 
     def have_version(self, major, minor):
@@ -166,7 +171,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self.delete()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self.driver.worker.remove(self)
         self.alsource = None
 
     @property
@@ -184,11 +189,11 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         self._playing = True
         self._clearing = False
 
-        pyglet.clock.schedule_interval_soft(self._check_refill, 0.1)
+        self.driver.worker.add(self)
 
     def stop(self):
+        self.driver.worker.remove(self)
         assert _debug('OpenALAudioPlayer.stop()')
-        pyglet.clock.unschedule(self._check_refill)
         assert self.driver is not None
         assert self.alsource is not None
         self.alsource.pause()
@@ -200,7 +205,7 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         assert self.driver is not None
         assert self.alsource is not None
 
-        super(OpenALAudioPlayer, self).clear()
+        super().clear()
         self.alsource.stop()
         self._handle_processed_buffers()
         self.alsource.clear()
@@ -216,19 +221,13 @@ class OpenALAudioPlayer(AbstractAudioPlayer):
         del self._buffer_sizes[:]
         del self._buffer_timestamps[:]
 
-    def _check_refill(self, dt=0):
-        write_size = self.get_write_size()
-        if write_size > self.min_buffer_size:
-            self.refill(write_size)
-
     def _update_play_cursor(self):
         assert self.driver is not None
         assert self.alsource is not None
 
         self._handle_processed_buffers()
 
-        # Update play cursor using buffer cursor + estimate into current
-        # buffer
+        # Update play cursor using buffer cursor + estimate into current buffer
         if self._clearing:
             self._play_cursor = self._buffer_cursor
         else:
