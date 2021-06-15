@@ -39,7 +39,7 @@ from collections import namedtuple
 
 from . import lib_openal as al
 from . import lib_alc as alc
-import pyglet
+
 from pyglet.util import debug_print
 from pyglet.media.exceptions import MediaException
 
@@ -54,11 +54,9 @@ class OpenALException(MediaException):
 
     def __str__(self):
         if self.error_code is None:
-            return 'OpenAL Exception: {}'.format(self.message)
+            return f'OpenAL Exception: {self.message}'
         else:
-            return 'OpenAL Exception [{}: {}]: {}'.format(self.error_code,
-                                                          self.error_string,
-                                                          self.message)
+            return f'OpenAL Exception [{self.error_code}: {self.error_string}]: {self.message}'
 
 
 class OpenALObject:
@@ -130,7 +128,7 @@ class OpenALDevice(OpenALObject):
         error_code = alc.alcGetError(self._al_device)
         if error_code != 0:
             error_string = alc.alcGetString(self._al_device, error_code)
-            #TODO: Fix return type in generated code?
+            # TODO: Fix return type in generated code?
             error_string = ctypes.cast(error_string, ctypes.c_char_p)
             raise OpenALException(message=message,
                                   error_code=error_code,
@@ -193,7 +191,6 @@ class OpenALSource(OpenALObject):
             # Only delete source if the context still exists
             al.alDeleteSources(1, self._al_source)
             self._check_error('Failed to delete source.')
-            # TODO: delete buffers in use
             self.buffer_pool.clear()
             self._al_source = None
 
@@ -473,7 +470,7 @@ class OpenALBuffer(OpenALObject):
         try:
             al_format = self._format_map[(audio_format.channels, audio_format.sample_size)]
         except KeyError:
-            raise MediaException('Unsupported sample size')
+            raise MediaException(f"OpenAL does not support '{audio_format.sample_size}bit' audio.")
 
         al.alBufferData(self._al_buffer,
                         al_format,
@@ -516,7 +513,7 @@ class OpenALBufferPool(OpenALObject):
             if self._buffers:
                 b = self._buffers.pop()
             else:
-                b = self.create_buffer()
+                b = self._create_buffer()
             if b.is_valid:
                 # Protect against implementations that DO free buffers
                 # when they delete a source - carry on.
@@ -530,10 +527,9 @@ class OpenALBufferPool(OpenALObject):
         if buf.is_valid:
             self._buffers.append(buf)
 
-    def create_buffer(self):
+    def _create_buffer(self):
         """Create a new buffer."""
         al_buffer = al.ALuint()
         al.alGenBuffers(1, al_buffer)
         self._check_error('Error allocating buffer.')
         return OpenALBuffer(al_buffer, self.context)
-

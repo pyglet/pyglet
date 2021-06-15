@@ -36,7 +36,6 @@
 import math
 import ctypes
 
-import pyglet
 from . import interface
 from pyglet.util import debug_print
 from pyglet.media.events import MediaEvent

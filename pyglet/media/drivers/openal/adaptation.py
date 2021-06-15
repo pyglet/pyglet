@@ -35,7 +35,6 @@
 
 import weakref
 
-import pyglet
 from . import interface
 from pyglet.util import debug_print
 from pyglet.media.events import MediaEvent
@@ -48,9 +47,7 @@ _debug = debug_print('debug_media')
 
 class OpenALDriver(AbstractAudioDriver):
     def __init__(self, device_name=None):
-        super(OpenALDriver, self).__init__()
-
-        # TODO devices must be enumerated on Windows, otherwise 1.0 context is returned.
+        super().__init__()
 
         self.device = interface.OpenALDevice(device_name)
         self.context = self.device.create_context()
