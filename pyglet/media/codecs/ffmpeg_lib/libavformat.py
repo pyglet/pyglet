@@ -54,6 +54,8 @@ AVSEEK_FLAG_BACKWARD = 1  # ///< seek backward
 AVSEEK_FLAG_BYTE = 2  # ///< seeking based on position in bytes
 AVSEEK_FLAG_ANY = 4  # ///< seek to any frame, even non-keyframes
 AVSEEK_FLAG_FRAME = 8  # ///< seeking based on frame number
+AVSEEK_SIZE = 0x10000
+AVFMT_FLAG_CUSTOM_IO = 0x0080
 
 MAX_REORDER_DELAY = 16
 
@@ -334,6 +336,19 @@ avformat.avformat_seek_file.argtypes = [POINTER(AVFormatContext),
 avformat.av_guess_frame_rate.restype = AVRational
 avformat.av_guess_frame_rate.argtypes = [POINTER(AVFormatContext),
                                          POINTER(AVStream), POINTER(AVFrame)]
+
+ffmpeg_read_func = CFUNCTYPE(c_int, c_void_p, POINTER(c_char), c_int)
+ffmpeg_write_func = CFUNCTYPE(c_int, c_void_p, POINTER(c_char), c_int)
+ffmpeg_seek_func = CFUNCTYPE(c_int64, c_void_p, c_int64, c_int)
+
+avformat.avio_alloc_context.restype = POINTER(AVIOContext)
+avformat.avio_alloc_context.argtypes = [c_char_p, c_int, c_int, c_void_p, ffmpeg_read_func, c_void_p, ffmpeg_seek_func]
+
+avformat.avformat_alloc_context.restype = POINTER(AVFormatContext)
+avformat.avformat_alloc_context.argtypes = []
+
+avformat.avformat_free_context.restype = c_void_p
+avformat.avformat_free_context.argtypes = [POINTER(AVFormatContext)]
 
 __all__ = [
     'avformat',

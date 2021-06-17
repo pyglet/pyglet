@@ -214,6 +214,10 @@ avutil.av_dict_set.argtypes = [POINTER(POINTER(AVDictionary)),
 avutil.av_dict_free.argtypes = [POINTER(POINTER(AVDictionary))]
 avutil.av_log_set_level.restype = c_int
 avutil.av_log_set_level.argtypes = [c_uint]
+avutil.av_malloc.restype = c_void_p
+avutil.av_malloc.argtypes = [c_int]
+avutil.av_freep.restype = c_void_p
+avutil.av_freep.argtypes = [c_void_p]
 
 __all__ = [
     'avutil',
