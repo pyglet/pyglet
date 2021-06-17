@@ -148,7 +148,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
-
         self.driver.worker.remove(self)
 
         if self._playing:

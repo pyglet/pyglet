@@ -97,10 +97,9 @@ class PlatformEventLoop:
         while True:
             try:
                 dispatcher, evnt, args = self._event_queue.get(False)
+                dispatcher.dispatch_event(evnt, *args)
             except queue.Empty:
                 break
-            try:
-                dispatcher.dispatch_event(evnt, *args)
             except ReferenceError:
                 # weakly-referenced object no longer exists
                 pass
