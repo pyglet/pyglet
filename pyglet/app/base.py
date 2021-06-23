@@ -96,11 +96,13 @@ class PlatformEventLoop:
         """
         while True:
             try:
-                dispatcher, event, args = self._event_queue.get(False)
+                dispatcher, evnt, args = self._event_queue.get(False)
+                dispatcher.dispatch_event(evnt, *args)
             except queue.Empty:
                 break
-
-            dispatcher.dispatch_event(event, *args)
+            except ReferenceError:
+                # weakly-referenced object no longer exists
+                pass
 
     def notify(self):
         """Notify the event loop that something needs processing.
