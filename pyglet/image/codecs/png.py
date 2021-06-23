@@ -39,8 +39,8 @@
 import array
 import itertools
 
-from pyglet.image import *
-from pyglet.image.codecs import *
+from pyglet.image import ImageData, ImageDecodeException
+from pyglet.image.codecs import ImageDecoder, ImageEncoder
 
 import pyglet.extlibs.png as pypng
 
@@ -54,8 +54,7 @@ class PNGImageDecoder(ImageDecoder):
             reader = pypng.Reader(file=file)
             width, height, pixels, metadata = reader.asDirect()
         except Exception as e:
-            raise ImageDecodeException(
-                'PyPNG cannot read %r: %s' % (filename or file, e))
+            raise ImageDecodeException('PyPNG cannot read %r: %s' % (filename or file, e))
 
         if metadata['greyscale']:
             if metadata['alpha']:
@@ -95,10 +94,10 @@ class PNGImageEncoder(ImageEncoder):
 
         image.pitch = -(image.width * len(image.format))
 
-        writer = pypng.Writer(image.width, image.height, bytes_per_sample=1, greyscale=greyscale, alpha=has_alpha)
+        writer = pypng.Writer(image.width, image.height, greyscale=greyscale, alpha=has_alpha)
 
         data = array.array('B')
-        data.fromstring(image.get_data(image.format, image.pitch))
+        data.frombytes(image.get_data(image.format, image.pitch))
 
         writer.write_array(file, data)
 
