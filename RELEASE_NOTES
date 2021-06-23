@@ -1,13 +1,3 @@
-pyglet 1.5.19
-Bugfix release
-
-Bugfixes
---------
-- Expose font.name attribute to show the font family name.
-- Un-associate queued Source from a deleted Player instance (#256)
-- Fix circular import when trying to create a Windows in 'headless' mode.
-
-
 pyglet 1.5.18
 Bugfix release
 
@@ -15,6 +5,11 @@ Bugfixes
 --------
 - If XAudio2 device creation fails, catch exception so that the next driver can be tried.
 - Fix dangling file pointers in GStreamer decoder.
+- Expose font.name attribute to show the font family name.
+- Un-associate queued Source from a deleted Player instance (#256)
+- Fix circular import when trying to create a Windows in 'headless' mode.
+- Un-associate StreamingSources from deleted Player instances (#256)
+- Update pypng lib to avoid deprecated functions (#405)
 
 
 pyglet 1.5.17
