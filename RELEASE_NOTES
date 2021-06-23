@@ -1,3 +1,10 @@
+pyglet 1.5.19
+
+Maintenance
+-----------
+- Re-introduce background threads for refilling Player buffers.
+
+
 pyglet 1.5.18
 Bugfix release
 
