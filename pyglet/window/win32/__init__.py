@@ -235,12 +235,6 @@ class Win32Window(BaseWindow):
                     _user32.ChangeWindowMessageFilterEx(self._hwnd, WM_COPYGLOBALDATA, MSGFLT_ALLOW, None)
 
                 _shell32.DragAcceptFiles(self._hwnd, True)
-                
-            # Register raw input keyboard to allow the window to receive input events.
-            raw_keyboard = RAWINPUTDEVICE(0x01, 0x06, 0, self._view_hwnd)
-            if not _user32.RegisterRawInputDevices(
-                byref(raw_keyboard), 1, sizeof(RAWINPUTDEVICE)):
-                    print("Warning: Failed to register raw input keyboard. on_key events for shift keys will not be called.")
         else:
             # Window already exists, update it with new style
 
@@ -514,6 +508,24 @@ class Win32Window(BaseWindow):
             y = rect.top + (rect.bottom - rect.top) - y
 
         _user32.SetCursorPos(x, y)
+
+    def _set_shift_handler(self, enabled):
+        """Set the raw keyboard to handle shift state. This is required as legacy events cannot handle shift states
+        when both keys are used together. Needs to be set on focus lost/gained for multiple windows as calling
+        RegisterRawInputDevices overrides the previous Window. hwndTarget must be set since exclusive mouse locks
+        WM_INPUT event to the view_hwnd via ViewEventHandler."""
+        raw_keyboard = RAWINPUTDEVICE(0x01, 0x06, 0, self._view_hwnd)
+        if not enabled:
+            raw_keyboard.dwFlags = RIDEV_REMOVE
+            raw_keyboard.hwndTarget = None
+
+            # Reset shift state on Window focus loss.
+            for symbol in self._keyboard_state:
+                self._keyboard_state[symbol] = False
+
+        if not _user32.RegisterRawInputDevices(
+                byref(raw_keyboard), 1, sizeof(RAWINPUTDEVICE)):
+            print("Warning: Failed to register raw input keyboard. on_key events for shift keys may not be called.")
 
     def set_exclusive_keyboard(self, exclusive=True):
         if self._exclusive_keyboard == exclusive and \
@@ -1128,6 +1140,7 @@ class Win32Window(BaseWindow):
 
         self.set_exclusive_keyboard(self._exclusive_keyboard)
         self.set_exclusive_mouse(self._exclusive_mouse)
+        self._set_shift_handler(True)
         return 0
 
     @Win32EventHandler(WM_KILLFOCUS)
@@ -1139,6 +1152,7 @@ class Win32Window(BaseWindow):
         # Disable both exclusive keyboard and mouse
         self.set_exclusive_keyboard(False)
         self.set_exclusive_mouse(False)
+        self._set_shift_handler(False)
 
         # But save desired state and note that we lost focus
         # This will allow to reset the correct mode once we regain focus
