@@ -807,7 +807,7 @@ class BorderedRectangle(_ShapeBase):
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self._vertex_list.position = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         else:
             b = self._border
             bx1 = self._x - self._anchor_x
@@ -818,7 +818,7 @@ class BorderedRectangle(_ShapeBase):
             iy1 = by1 + b
             ix2 = bx2 - b
             iy2 = by2 - b
-            self._vertex_list.vertices[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
+            self._vertex_list.position[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
                                              bx1, by1, bx2, by1, bx2, by2, bx1, by2,)
 
     def _update_color(self):
