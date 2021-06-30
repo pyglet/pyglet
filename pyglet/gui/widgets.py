@@ -73,6 +73,17 @@ class WidgetBase(EventDispatcher):
     @property
     def aabb(self):
         return self._x, self._y, self._x + self._width, self._y + self._height
+    
+    # The value property should be overridden in such a way that the widget
+    # can be 'activated' or changed without requiring user input.
+    # The normal events for control activation should NOT be triggered.
+    @property
+    def value(self):
+        raise NotImplementedError("Value depends on control type!")
+    
+    @value.setter
+    def value(self, value):
+        raise NotImplementedError("Value depends on control type!")
 
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
@@ -124,6 +135,17 @@ class PushButton(WidgetBase):
         self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
 
         self._pressed = False
+
+    # Override
+    @property
+    def value(self):
+        return self._pressed
+    
+    # Override
+    @value.setter
+    def value(self, value):
+        self._pressed = value
+        self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
 
     def update_groups(self, order):
         self._sprite.group = OrderedGroup(order + 1, self._user_group)
@@ -200,6 +222,18 @@ class Slider(WidgetBase):
 
         self._value = 0
         self._in_update = False
+    
+    # Override
+    @property
+    def value(self):
+        return self._value
+    
+    # Override
+    @value.setter
+    def value(self, value):
+        self._value = value
+        x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
+        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
 
     def update_groups(self, order):
         self._base_spr.group = OrderedGroup(order + 1, self._user_group)
@@ -276,6 +310,16 @@ class TextEntry(WidgetBase):
         self._focus = False
 
         super().__init__(x, y, width, height)
+    
+    # Override
+    @property
+    def value(self):
+        return self._doc.text
+    
+    # Override
+    @value.setter
+    def value(self, value):
+        self._doc.text = value
 
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
