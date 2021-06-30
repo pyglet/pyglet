@@ -35,18 +35,172 @@
 
 """Matrix and Vector operations.
 
-This module provides classes for Matrix and Vector math.
+This module provides several Matrix and Vector objects.
 A :py:class:`~pyglet.matrix.Mat4` class is available for representing
 4x4 matrices, including helper methods for rotating, scaling, and
-transforming. The internal datatype of :py:class:`~pyglet.matrix.Mat4`
-is a 1-dimensional array, so instances can be passed directly to OpenGL.
-
+transforming. The :py:class:`~pyglet.matrix.Mat4` type is internally
+defined as a 1-dimensional array, so instances can be passed directly
+to OpenGL. Vec2, Vec3, and Vec4 classes are also available for Vector
+operations.
 """
 
 import math as _math
 import warnings as _warnings
 
 from operator import mul as _mul
+
+
+class Vec2(tuple):
+
+    def __new__(cls, *args):
+        assert len(args) == 2, "2 values are required for Vec2 types."
+        return super().__new__(Vec2, args)
+
+    @property
+    def x(self):
+        return self[0]
+
+    @property
+    def y(self):
+        return self[1]
+
+    def __add__(self, other):
+        return Vec2(self[0] + other[0], self[1] + other[1])
+
+    def __sub__(self, other):
+        return Vec2(self[0] - other[0], self[1] - other[1])
+
+    def __mul__(self, other):
+        return Vec2(self[0] * other[0], self[1] * other[1])
+
+    def __truediv__(self, other):
+        return Vec2(self[0] / other[0], self[1] / other[1])
+
+    def __abs__(self):
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2)
+
+    def normalize(self):
+        d = self.__abs__()
+        if d:
+            return Vec2(self[0] / d, self[1] / d)
+        return self
+
+    def dot(self, other):
+        return self[0] * other[0] + self[1] * other[1]
+
+    def __getattr__(self, attrs):
+        # Allow swizzed getting of attrs
+        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+        return vec_class(*(self['xy'.index(c)] for c in attrs))
+
+    def __repr__(self):
+        return f"Vec2({self[0]}, {self[1]})"
+
+
+class Vec3(tuple):
+
+    def __new__(cls, *args):
+        assert len(args) == 3, "3 values are required for Vec3 types."
+        return super().__new__(Vec3, args)
+
+    @property
+    def x(self):
+        return self[0]
+
+    @property
+    def y(self):
+        return self[1]
+
+    @property
+    def z(self):
+        return self[2]
+
+    def __add__(self, other):
+        return Vec3(self[0] + other[0], self[1] + other[1], self[2] + other[2])
+
+    def __sub__(self, other):
+        return Vec3(self[0] - other[0], self[1] - other[1], self[2] - other[2])
+
+    def __mul__(self, other):
+        return Vec3(self[0] * other[0], self[1] * other[1], self[2] * other[2])
+
+    def __truediv__(self, other):
+        return Vec3(self[0] / other[0], self[1] / other[1], self[2] / other[2])
+
+    def __abs__(self):
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
+
+    def normalize(self):
+        d = self.__abs__()
+        if d:
+            return Vec3(self[0] / d, self[1] / d, self[2] / d)
+        return self
+
+    def dot(self, other):
+        return self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
+
+    def __getattr__(self, attrs):
+        # Allow swizzed getting of attrs
+        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+        return vec_class(*(self['xyz'.index(c)] for c in attrs))
+
+    def __repr__(self):
+        return f"Vec3({self[0]}, {self[1]}, {self[2]})"
+
+
+class Vec4(tuple):
+
+    def __new__(cls, *args):
+        assert len(args) == 4, "4 values are required for Vec4 types."
+        return super().__new__(Vec4, args)
+
+    @property
+    def x(self):
+        return self[0]
+
+    @property
+    def y(self):
+        return self[1]
+
+    @property
+    def z(self):
+        return self[2]
+
+    @property
+    def w(self):
+        return self[3]
+
+    def __add__(self, other):
+        return Vec4(self[0] + other[0], self[1] + other[1], self[2] + other[2], self[3] + other[3])
+
+    def __sub__(self, other):
+        return Vec4(self[0] - other[0], self[1] - other[1], self[2] - other[2], self[3] - other[3])
+
+    def __mul__(self, other):
+        return Vec4(self[0] * other[0], self[1] * other[1], self[2] * other[2], self[3] * other[3])
+
+    def __truediv__(self, other):
+        return Vec4(self[0] / other[0], self[1] / other[1], self[2] / other[2], self[3] / other[3])
+
+    def __abs__(self):
+        return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
+
+    def normalize(self):
+        d = self.__abs__()
+        if d:
+            return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
+        return self
+
+    def dot(self, other):
+        return self[0] * other[0] + self[1] * other[1] + self[2] * other[2] + self[3] * other[3]
+
+    def __getattr__(self, attrs):
+        # Allow swizzed getting of attrs
+        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+        return vec_class(*(self['xyzw'.index(c)] for c in attrs))
+
+    def __repr__(self):
+        return f"Vec4({self[0]}, {self[1]}, {self[2]}, {self[3]})"
 
 
 class Mat4(tuple):
@@ -256,7 +410,19 @@ class Mat4(tuple):
         raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
 
     def __matmul__(self, other) -> 'Mat4':
-        assert len(other) == 16, "Can only multiply with other Mat4 types"
+        assert len(other) in (4, 16), "Can only multiply with Mat4 or Vec4 types"
+
+        if type(other) is Vec4:
+            # Columns:
+            c0 = self[0::4]
+            c1 = self[1::4]
+            c2 = self[2::4]
+            c3 = self[3::4]
+            return Vec4(sum(map(_mul, c0, other)),
+                        sum(map(_mul, c1, other)),
+                        sum(map(_mul, c2, other)),
+                        sum(map(_mul, c3, other)))
+
         # Rows:
         r0 = self[0:4]
         r1 = self[4:8]
