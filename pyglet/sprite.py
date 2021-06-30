@@ -180,7 +180,7 @@ fragment_array_source = """#version 150 core
 
 ############################
 
-vertex_src = """#version 330
+vertex_src = """#version 150
     in vec2 position;
     in vec4 size;
     in vec4 color;
@@ -202,8 +202,7 @@ vertex_src = """#version 330
 """
 
 
-geometry_src = """
-    #version 330
+geometry_src = """#version 150
     // We are taking single points form the vertex shader
     // and emitting 4 new vertices creating a quad/sprites
     layout (points) in;
@@ -287,7 +286,7 @@ geometry_src = """
     }
 """
 
-fragment_src = """#version 330
+fragment_src = """#version 150
     in vec2 uv;
     in vec4 frag_color;
 
