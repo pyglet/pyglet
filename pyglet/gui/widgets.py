@@ -73,12 +73,17 @@ class WidgetBase(EventDispatcher):
     @property
     def aabb(self):
         return self._x, self._y, self._x + self._width, self._y + self._height
-    
-    # The value property should be overridden in such a way that the widget
-    # can be 'activated' or changed without requiring user input.
-    # The normal events for control activation should NOT be triggered.
+
     @property
     def value(self):
+        """Query or set the Widget's value.
+        
+        This property allows you to set the value of a Widget directly, without any
+        user input.  This could be used, for example, to restore Widgets to a
+        previous state, or if some event in your program is meant to naturally
+        change the same value that the Widget controls.  Note that events are not
+        dispatched when changing this property.
+        """
         raise NotImplementedError("Value depends on control type!")
     
     @value.setter
@@ -136,14 +141,13 @@ class PushButton(WidgetBase):
 
         self._pressed = False
 
-    # Override
     @property
     def value(self):
         return self._pressed
     
-    # Override
     @value.setter
     def value(self, value):
+        assert type(value) is bool, "This Widget's value must be True or False."
         self._pressed = value
         self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
 
@@ -222,15 +226,14 @@ class Slider(WidgetBase):
 
         self._value = 0
         self._in_update = False
-    
-    # Override
+
     @property
     def value(self):
         return self._value
-    
-    # Override
+
     @value.setter
     def value(self, value):
+        assert type(value) in (int, float), "This Widget's value must be an int or float."
         self._value = value
         x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
         self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
@@ -310,15 +313,14 @@ class TextEntry(WidgetBase):
         self._focus = False
 
         super().__init__(x, y, width, height)
-    
-    # Override
+
     @property
     def value(self):
         return self._doc.text
-    
-    # Override
+
     @value.setter
     def value(self, value):
+        assert type(value) is str, "This Widget's value must be a string."
         self._doc.text = value
 
     def _check_hit(self, x, y):
