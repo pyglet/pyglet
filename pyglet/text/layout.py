@@ -1623,6 +1623,13 @@ class TextLayout:
         line = _Line(start)
         font = font_iterator[0]
 
+        if self._width:
+            align_iterator = runlist.FilteredRunIterator(
+                self._document.get_style_runs('align'),
+                lambda value: value in ('left', 'right', 'center'),
+                'left')
+            line.align = align_iterator[start]
+
         for start, end, owner in owner_iterator:
             font = font_iterator[start]
             width = 0
