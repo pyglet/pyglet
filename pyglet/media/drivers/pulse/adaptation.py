@@ -84,7 +84,6 @@ class PulseAudioDriver(AbstractAudioDriver):
 
     def dump_debug_info(self):
         print('Client version: ', pa.pa_get_library_version())
-
         print('Server:         ', self.context.server)
         print('Protocol:       ', self.context.protocol_version)
         print('Server protocol:', self.context.server_protocol_version)
