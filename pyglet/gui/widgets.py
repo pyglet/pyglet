@@ -74,6 +74,22 @@ class WidgetBase(EventDispatcher):
     def aabb(self):
         return self._x, self._y, self._x + self._width, self._y + self._height
 
+    @property
+    def value(self):
+        """Query or set the Widget's value.
+        
+        This property allows you to set the value of a Widget directly, without any
+        user input.  This could be used, for example, to restore Widgets to a
+        previous state, or if some event in your program is meant to naturally
+        change the same value that the Widget controls.  Note that events are not
+        dispatched when changing this property.
+        """
+        raise NotImplementedError("Value depends on control type!")
+    
+    @value.setter
+    def value(self, value):
+        raise NotImplementedError("Value depends on control type!")
+
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
 
@@ -124,6 +140,16 @@ class PushButton(WidgetBase):
         self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
 
         self._pressed = False
+
+    @property
+    def value(self):
+        return self._pressed
+    
+    @value.setter
+    def value(self, value):
+        assert type(value) is bool, "This Widget's value must be True or False."
+        self._pressed = value
+        self._sprite.image = self._pressed_img if self._pressed else self._depressed_img
 
     def update_groups(self, order):
         self._sprite.group = OrderedGroup(order + 1, self._user_group)
@@ -200,6 +226,17 @@ class Slider(WidgetBase):
 
         self._value = 0
         self._in_update = False
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        assert type(value) in (int, float), "This Widget's value must be an int or float."
+        self._value = value
+        x = (self._max_knob_x - self._min_knob_x) * value / 100 + self._min_knob_x + self._half_knob_width
+        self._knob_spr.x = max(self._min_knob_x, min(x - self._half_knob_width, self._max_knob_x))
 
     def update_groups(self, order):
         self._base_spr.group = OrderedGroup(order + 1, self._user_group)
@@ -278,6 +315,15 @@ class TextEntry(WidgetBase):
         self._focus = False
 
         super().__init__(x, y, width, height)
+
+    @property
+    def value(self):
+        return self._doc.text
+
+    @value.setter
+    def value(self, value):
+        assert type(value) is str, "This Widget's value must be a string."
+        self._doc.text = value
 
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
