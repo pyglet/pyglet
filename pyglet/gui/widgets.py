@@ -251,9 +251,11 @@ Slider.register_event_type('on_change')
 
 class TextEntry(WidgetBase):
 
-    def __init__(self, text, x, y, width, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, text, x, y, width,
+                 color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0),
+                 batch=None, group=None):
         self._doc = pyglet.text.document.UnformattedDocument(text)
-        self._doc.set_style(0, len(self._doc.text), dict(color=(0, 0, 0, 255)))
+        self._doc.set_style(0, len(self._doc.text), dict(color=text_color))
         font = self._doc.get_font()
         height = font.ascent - font.descent
 
@@ -270,7 +272,7 @@ class TextEntry(WidgetBase):
         self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
         self._layout.x = x
         self._layout.y = y
-        self._caret = Caret(self._layout)
+        self._caret = Caret(self._layout, color=caret_color)
         self._caret.visible = False
 
         self._focus = False
