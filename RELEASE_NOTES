@@ -1,8 +1,14 @@
 pyglet 1.5.19
 
+Bugfixes
+--------
+- Ensure that the FFmpegDecoder returns the requested number of bytes.
+
 Maintenance
 -----------
 - Re-introduce background threads for refilling Player buffers.
+- Allow directly setting Widget values.
+- Add docstrings for gui.widgets.
 
 
 pyglet 1.5.18
