@@ -1067,6 +1067,7 @@ class Star(_ShapeBase):
     def rotation(self, rotation):
         self._rotation = rotation
         self._update_position()
+    
 
 class Polygon(_ShapeBase):
     def __init__(self, *coordinates, color=(255, 255, 255), batch=None, group=None):
@@ -1105,6 +1106,29 @@ class Polygon(_ShapeBase):
     def _update_position(self):
         if not self._visible:
             self._vertex_list.vertices = tuple([0] * (len(self._coordinates) * 2))
+        elif self._rotation:
+            x = float(self.x) - self._anchor_x
+            y = float(self.y) - self._anchor_y
+
+            r = -math.radians(self._rotation)
+            cr = math.cos(r)
+            sr = math.sin(r)
+            
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            
+            coords = list(self._coordinates)
+            for i, c in enumerate(coords):
+                # Set to new object to avoid modification to self._coordinates.
+                c = [c[0] - x, c[1] - y]
+                c = [c[0] * cr - c[1] * sr + x, c[0] * sr + c[1] * cr + y]
+                coords[i] = c
+            
+            adjusted_coordinates = list(map(lambda c: (c[0] - anchor_x, c[1] - anchor_y),
+                                            coords))
+            # Flattening the list before setting vertices to it.
+            self._vertex_list.vertices = tuple(value for coordinate in adjusted_coordinates for value in coordinate)                                
+            
         else:
             anchor_x = self._anchor_x
             anchor_y = self._anchor_y
@@ -1158,6 +1182,22 @@ class Polygon(_ShapeBase):
     @position.setter
     def position(self, values):
         self._coordinates[0][0], self._coordinates[0][1] = values
+        self._update_position()
+    
+    @property
+    def rotation(self):
+        """Clockwise rotation of the polygon, in degrees.
+
+        The Polygon will be rotated about its (anchor_x, anchor_y)
+        position.
+
+        :type: float
+        """
+        return self._rotation
+    
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = rotation
         self._update_position()
     
     @property
