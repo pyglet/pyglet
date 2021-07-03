@@ -77,7 +77,7 @@ A simple example of drawing shapes::
 import math
 
 from pyglet.gl import GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
+from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND, GL_POLYGON
 from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Group, Batch
 
@@ -1068,4 +1068,96 @@ class Star(_ShapeBase):
         self._rotation = rotation
         self._update_position()
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star')
+class Polygon(_ShapeBase):
+    def __init__(self, *coordinates, color=(255, 255, 255), batch=None, group=None):
+        """Create a polygon.
+
+        The polygon's anchor point defaults to the first vertex point.
+
+        :Parameters:
+            `coordinates` : List[[int, int]]
+                The remaining coordinates for each point in the polygon.
+            `color` : (int, int, int)
+                The RGB color of the polygon, specified as
+                a tuple of three ints in the range of 0-255.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the polygon to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the polygon.
+        """
+        
+        # len(coordinate) = the number of vertices and sides in the shape.
+        self._coordinates = list(coordinates)
+
+        # x = self._coordinates[0][0]
+        # y = self._coordinates[0][1]
+        
+        self._rotation = 0
+        
+        self._rgb = color
+        
+        self._batch = batch or Batch()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._vertex_list = self._batch.add(len(self._coordinates), GL_POLYGON, self._group, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            self._vertex_list.vertices = tuple([0] * (len(self._coordinates) * 2))
+        else:
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+
+            adjusted_coordinates = list(map(lambda c: (c[0] - anchor_x, c[1] - anchor_y),
+                                            self._coordinates))
+            # Flattening the list before setting vertices to it.
+            self._vertex_list.vertices = tuple(value for coordinate in adjusted_coordinates for value in coordinate)
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * len(self._coordinates)
+
+    @property
+    def x(self):
+        """X coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._coordinates[0][0]
+
+    @x.setter
+    def x(self, value):
+        self._coordinates[0][0] = value
+        self._update_position()
+
+    @property
+    def y(self):
+        """Y coordinate of the shape.
+
+        :type: int or float
+        """
+        return self._coordinates[0][1]
+
+    @y.setter
+    def y(self, value):
+        self._coordinates[0][1] = value
+        self._update_position()
+
+    @property
+    def position(self):
+        """The (x, y) coordinates of the shape, as a tuple.
+
+        :Parameters:
+            `x` : int or float
+                X coordinate of the sprite.
+            `y` : int or float
+                Y coordinate of the sprite.
+        """
+        return self._coordinates[0][0], self._coordinates[0][1]
+
+    @position.setter
+    def position(self, values):
+        self._coordinates[0][0], self._coordinates[0][1] = values
+        self._update_position()
+
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon')
