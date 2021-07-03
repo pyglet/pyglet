@@ -1199,29 +1199,6 @@ class Polygon(_ShapeBase):
     def rotation(self, rotation):
         self._rotation = rotation
         self._update_position()
-    
-    @property
-    def center(self):
-        """The (x, y) center point of the polygon as a tuple.
-        
-        :Parameters:
-            `x` : int or float
-                X coordinate of the center of the shape.
-            `y` : int or float
-                Y coordinate of the center of the shape.
-        """
-        return tuple(map(lambda i: sum(i) / len(i), zip(*self._coordinates)))
-       
-    @center.setter
-    def center(self, coordinate):
-        dx = coordinate[0] - self.center[0]
-        dy = coordinate[1] - self.center[1]
-        
-        for coordinate in self._coordinates:
-            coordinate[0] += dx
-            coordinate[1] += dy
-        
-        self._update_position()
         
     
 
