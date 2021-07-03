@@ -63,46 +63,46 @@ class Frame:
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(x, y), set()):
-            widget.dispatch_event('on_mouse_press', x, y, buttons, modifiers)
+            widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         """Pass the event to any widgets that are currently active"""
         for widget in self._active_widgets:
-            widget.dispatch_event('on_mouse_release', x, y, buttons, modifiers)
+            widget.on_mouse_release(x, y, buttons, modifiers)
         self._active_widgets.clear()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         """Pass the event to any widgets that are currently active"""
         for widget in self._active_widgets:
-            widget.dispatch_event('on_mouse_drag', x, y, dx, dy, buttons, modifiers)
+            widget.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self._mouse_pos = x, y
 
     def on_mouse_scroll(self, x, y, index, direction):
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(x, y), set()):
-            widget.dispatch_event('on_mouse_scroll', x, y, index, direction)
+            widget.on_mouse_scroll(x, y, index, direction)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Pass the event to any widgets within range of the mouse"""
         for widget in self._active_widgets:
-            widget.dispatch_event('on_mouse_motion', x, y, dx, dy)
+            widget.on_mouse_motion(x, y, dx, dy)
         for widget in self._cells.get(self._hash(x, y), set()):
-            widget.dispatch_event('on_mouse_motion', x, y, dx, dy)
+            widget.on_mouse_motion(x, y, dx, dy)
             self._active_widgets.add(widget)
         self._mouse_pos = x, y
 
     def on_text(self, text):
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
-            widget.dispatch_event('on_text', text)
+            widget.on_text(text)
 
     def on_text_motion(self, motion):
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
-            widget.dispatch_event('on_text_motion', motion)
+            widget.on_text_motion(motion)
 
     def on_text_motion_select(self, motion):
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
-            widget.dispatch_event('on_text_motion_select', motion)
+            widget.on_text_motion_select(motion)
 
 
 class NinePatchFrame(Frame):

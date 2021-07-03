@@ -127,6 +127,9 @@ class WidgetBase(EventDispatcher):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         pass
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        pass
+
     def on_mouse_scroll(self, x, y, mouse, direction):
         pass
 
@@ -138,16 +141,6 @@ class WidgetBase(EventDispatcher):
 
     def on_text_motion_select(self, motion):
         pass
-
-
-WidgetBase.register_event_type('on_mouse_press')
-WidgetBase.register_event_type('on_mouse_release')
-WidgetBase.register_event_type('on_mouse_motion')
-WidgetBase.register_event_type('on_mouse_scroll')
-WidgetBase.register_event_type('on_mouse_drag')
-WidgetBase.register_event_type('on_text')
-WidgetBase.register_event_type('on_text_motion')
-WidgetBase.register_event_type('on_text_motion_select')
 
 
 class PushButton(WidgetBase):
