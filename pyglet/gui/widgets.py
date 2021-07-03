@@ -33,8 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""
-Display different types of interactive widgets.
+"""Display different types of interactive widgets.
 """
 
 import pyglet
@@ -128,6 +127,9 @@ class WidgetBase(EventDispatcher):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         pass
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        pass
+
     def on_mouse_scroll(self, x, y, mouse, direction):
         pass
 
@@ -141,21 +143,11 @@ class WidgetBase(EventDispatcher):
         pass
 
 
-WidgetBase.register_event_type('on_mouse_press')
-WidgetBase.register_event_type('on_mouse_release')
-WidgetBase.register_event_type('on_mouse_motion')
-WidgetBase.register_event_type('on_mouse_scroll')
-WidgetBase.register_event_type('on_mouse_drag')
-WidgetBase.register_event_type('on_text')
-WidgetBase.register_event_type('on_text_motion')
-WidgetBase.register_event_type('on_text_motion_select')
-
-
 class PushButton(WidgetBase):
     """Instance of a push button.
 
-    Triggers the event 'on_press' when it is clicked by the mouse. 
-    Triggers the event 'on_release' when the mouse is released. 
+    Triggers the event 'on_press' when it is clicked by the mouse.
+    Triggers the event 'on_release' when the mouse is released.
     """
 
     def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
@@ -234,8 +226,8 @@ PushButton.register_event_type('on_release')
 
 class ToggleButton(PushButton):
     """Instance of a toggle button.
-    
-    Triggers the event 'on_toggle' when the mouse is pressed inside its image.
+
+    Triggers the event 'on_toggle' when the mouse is pressed or released.
     """
 
     def _get_release_image(self, x, y):
@@ -259,13 +251,15 @@ ToggleButton.register_event_type('on_toggle')
 
 class Slider(WidgetBase):
     """Instance of a slider made of a base and a knob image.
-    
+
     Triggers the event 'on_change' when the knob position is changed.
+    The knob position can be changed by dragging with the mouse, or
+    scrolling the mouse wheel.
     """
 
     def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
         """Create a slider.
-        
+
         :Parameters:
             `x` : int
                 X coordinate of the slider.
@@ -364,13 +358,15 @@ Slider.register_event_type('on_change')
 
 class TextEntry(WidgetBase):
     """Instance of a text entry widget.
-    
+
     Allows the user to enter and submit text.
     """
 
-    def __init__(self, text, x, y, width, color=(255, 255, 255, 255), batch=None, group=None):
+    def __init__(self, text, x, y, width,
+                 color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0),
+                 batch=None, group=None):
         """Create a text entry widget.
-        
+
         :Parameters:
             `text` : str
                 Initial text to display.
@@ -381,14 +377,18 @@ class TextEntry(WidgetBase):
             `width` : int
                 The width of the text entry widget.
             `color` : (int, int, int, int)
-                The color of the widget in RGBA format.
+                The color of the outline box in RGBA format.
+            `text_color` : (int, int, int, int)
+                The color of the text in RGBA format.
+            `text_color` : (int, int, int)
+                The color of the caret in RGB format.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the text entry widget to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of text entry widget.
         """
         self._doc = pyglet.text.document.UnformattedDocument(text)
-        self._doc.set_style(0, len(self._doc.text), dict(color=(0, 0, 0, 255)))
+        self._doc.set_style(0, len(self._doc.text), dict(color=text_color))
         font = self._doc.get_font()
         height = font.ascent - font.descent
 
@@ -405,7 +405,7 @@ class TextEntry(WidgetBase):
         self._layout = IncrementalTextLayout(self._doc, width, height, multiline=False, batch=batch, group=fg_group)
         self._layout.x = x
         self._layout.y = y
-        self._caret = Caret(self._layout)
+        self._caret = Caret(self._layout, color=caret_color)
         self._caret.visible = False
 
         self._focus = False
