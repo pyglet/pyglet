@@ -33,6 +33,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+"""Display different types of interactive widgets.
+"""
+
 import pyglet
 
 from pyglet.event import EventDispatcher
@@ -56,22 +59,44 @@ class WidgetBase(EventDispatcher):
 
     @property
     def x(self):
+        """X coordinate of the widget.
+
+        :type: int
+        """
         return self._x
 
     @property
     def y(self):
+        """Y coordinate of the widget.
+
+        :type: int
+        """
         return self._y
 
     @property
     def width(self):
+        """Width of the widget.
+
+        :type: int
+        """
         return self._width
 
     @property
     def height(self):
+        """Height of the widget.
+
+        :type: int
+        """
         return self._height
 
     @property
     def aabb(self):
+        """Bounding box of the widget.
+
+        Expresesed as (x, y, x + width, y + height)
+
+        :type: (int, int, int, int)
+        """
         return self._x, self._y, self._x + self._width, self._y + self._height
 
     @property
@@ -126,8 +151,31 @@ WidgetBase.register_event_type('on_text_motion_select')
 
 
 class PushButton(WidgetBase):
+    """Instance of a push button.
+
+    Triggers the event 'on_press' when it is clicked by the mouse.
+    Triggers the event 'on_release' when the mouse is released.
+    """
 
     def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
+        """Create a push button.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the push button.
+            `y` : int
+                Y coordinate of the push button.
+            `pressed` : `~pyglet.image.AbstractImage`
+                Image to display when the button is pressed.
+            `depresseed` : `~pyglet.image.AbstractImage`
+                Image to display when the button isn't pressed.
+            `hover` : `~pyglet.image.AbstractImage`
+                Image to display when the button is being hovered over.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the push button to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the push button.
+        """
         super().__init__(x, y, depressed.width, depressed.height)
         self._pressed_img = pressed
         self._depressed_img = depressed
@@ -184,6 +232,10 @@ PushButton.register_event_type('on_release')
 
 
 class ToggleButton(PushButton):
+    """Instance of a toggle button.
+
+    Triggers the event 'on_toggle' when the mouse is pressed or released.
+    """
 
     def _get_release_image(self, x, y):
         return self._hover_img if self._check_hit(x, y) else self._depressed_img
@@ -205,8 +257,33 @@ ToggleButton.register_event_type('on_toggle')
 
 
 class Slider(WidgetBase):
+    """Instance of a slider made of a base and a knob image.
+
+    Triggers the event 'on_change' when the knob position is changed.
+    The knob position can be changed by dragging with the mouse, or
+    scrolling the mouse wheel.
+    """
 
     def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
+        """Create a slider.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the slider.
+            `y` : int
+                Y coordinate of the slider.
+            `base` : `~pyglet.image.AbstractImage`
+                Image to display as the background to the slider.
+            `knob` : `~pyglet.image.AbstractImage`
+                Knob that moves to show the position of the slider.
+            `edge` : int
+                Pixels from the maximum and minimum position of the slider,
+                to the edge of the base image.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the slider to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the slider.
+        """
         super().__init__(x, y, base.width, knob.height)
         self._edge = edge
         self._base_img = base
@@ -287,10 +364,36 @@ Slider.register_event_type('on_change')
 
 
 class TextEntry(WidgetBase):
+    """Instance of a text entry widget.
+
+    Allows the user to enter and submit text.
+    """
 
     def __init__(self, text, x, y, width,
                  color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0),
                  batch=None, group=None):
+        """Create a text entry widget.
+
+        :Parameters:
+            `text` : str
+                Initial text to display.
+            `x` : int
+                X coordinate of the text entry widget.
+            `y` : int
+                Y coordinate of the text entry widget.
+            `width` : int
+                The width of the text entry widget.
+            `color` : (int, int, int, int)
+                The color of the outline box in RGBA format.
+            `text_color` : (int, int, int, int)
+                The color of the text in RGBA format.
+            `text_color` : (int, int, int)
+                The color of the caret in RGB format.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the text entry widget to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of text entry widget.
+        """
         self._doc = pyglet.text.document.UnformattedDocument(text)
         self._doc.set_style(0, len(self._doc.text), dict(color=text_color))
         font = self._doc.get_font()
