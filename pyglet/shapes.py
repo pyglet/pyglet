@@ -77,7 +77,7 @@ A simple example of drawing shapes::
 import math
 
 from pyglet.gl import GL_COLOR_BUFFER_BIT, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
-from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND, GL_POLYGON
+from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisable
 from pyglet.graphics import Group, Batch
 
@@ -1071,7 +1071,7 @@ class Star(_ShapeBase):
 
 class Polygon(_ShapeBase):
     def __init__(self, *coordinates, color=(255, 255, 255), batch=None, group=None):
-        """Create a polygon.
+        """Create a convex polygon.
 
         The polygon's anchor point defaults to the first vertex point.
 
@@ -1087,7 +1087,7 @@ class Polygon(_ShapeBase):
                 Optional parent group of the polygon.
         """
         
-        # len(coordinate) = the number of vertices and sides in the shape.
+        # len(self._coordinates) = the number of vertices and sides in the shape.
         self._coordinates = list(coordinates)
 
         # x = self._coordinates[0][0]
@@ -1099,13 +1099,13 @@ class Polygon(_ShapeBase):
         
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(len(self._coordinates), GL_POLYGON, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add((len(self._coordinates) - 2) * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
         self._update_position()
         self._update_color()
 
     def _update_position(self):
         if not self._visible:
-            self._vertex_list.vertices = tuple([0] * (len(self._coordinates) * 2))
+            self._vertex_list.vertices = tuple([0] * ((len(self._coordinates) - 2) * 6))
         elif self._rotation:
             x = float(self.x) - self._anchor_x
             y = float(self.y) - self._anchor_y
@@ -1117,6 +1117,7 @@ class Polygon(_ShapeBase):
             anchor_x = self._anchor_x
             anchor_y = self._anchor_y
             
+            # Rotate the polygon around its first vertex.
             coords = list(self._coordinates)
             for i, c in enumerate(coords):
                 # Set to new object to avoid modification to self._coordinates.
@@ -1124,22 +1125,36 @@ class Polygon(_ShapeBase):
                 c = [c[0] * cr - c[1] * sr + x, c[0] * sr + c[1] * cr + y]
                 coords[i] = c
             
+            # Adjust all coordinates by the anchor.
             adjusted_coordinates = list(map(lambda c: (c[0] - anchor_x, c[1] - anchor_y),
                                             coords))
+            
+            # Triangulate the convex polygon.
+            triangles = []
+            for n in range(len(adjusted_coordinates) - 2):
+                triangles += [adjusted_coordinates[0], adjusted_coordinates[n+1], adjusted_coordinates[n+2]]
+            
             # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices = tuple(value for coordinate in adjusted_coordinates for value in coordinate)                                
+            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)                          
             
         else:
             anchor_x = self._anchor_x
             anchor_y = self._anchor_y
-
+            
+            # Adjust all coordinates by the anchor.
             adjusted_coordinates = list(map(lambda c: (c[0] - anchor_x, c[1] - anchor_y),
                                             self._coordinates))
+            
+            # Triangulate the convex polygon.
+            triangles = []
+            for n in range(len(adjusted_coordinates) - 2):
+                triangles += [adjusted_coordinates[0], adjusted_coordinates[n+1], adjusted_coordinates[n+2]]
+           
             # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices = tuple(value for coordinate in adjusted_coordinates for value in coordinate)
+            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * len(self._coordinates)
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * ((len(self._coordinates) - 2) * 3)
 
     @property
     def x(self):
