@@ -53,6 +53,7 @@ class WidgetBase(EventDispatcher):
         self._height = height
         self._bg_group = None
         self._fg_group = None
+        self.enabled = True
 
     def update_groups(self, order):
         pass
@@ -196,26 +197,26 @@ class PushButton(WidgetBase):
         self._sprite.group = OrderedGroup(order + 1, self._user_group)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
-        if not self._check_hit(x, y):
+        if not self.enabled or not self._check_hit(x, y):
             return
         self._sprite.image = self._pressed_img
         self._pressed = True
         self.dispatch_event('on_press')
 
     def on_mouse_release(self, x, y, buttons, modifiers):
-        if not self._pressed:
+        if not self.enabled or not self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
         self._pressed = False
         self.dispatch_event('on_release')
 
     def on_mouse_motion(self, x, y, dx, dy):
-        if self._pressed:
+        if not self.enabled or self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if self._pressed:
+        if not self.enabled or self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
 
@@ -234,14 +235,14 @@ class ToggleButton(PushButton):
         return self._hover_img if self._check_hit(x, y) else self._depressed_img
 
     def on_mouse_press(self, x, y, buttons, modifiers):
-        if not self._check_hit(x, y):
+        if not self.enabled or not self._check_hit(x, y):
             return
         self._pressed = not self._pressed
         self._sprite.image = self._pressed_img if self._pressed else self._get_release_image(x, y)
         self.dispatch_event('on_toggle', self._pressed)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
-        if self._pressed:
+        if not self.enabled or self._pressed:
             return
         self._sprite.image = self._get_release_image(x, y)
 
@@ -337,19 +338,27 @@ class Slider(WidgetBase):
         self.dispatch_event('on_change', self._value)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
+        if not self.enabled:
+            return
         if self._check_hit(x, y):
             self._in_update = True
             self._update_knob(x)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if not self.enabled:
+            return
         if self._in_update:
             self._update_knob(x)
 
     def on_mouse_scroll(self, x, y, mouse, direction):
+        if not self.enabled:
+            return
         if self._check_hit(x, y):
             self._update_knob(self._knob_spr.x + self._half_knob_width + direction)
 
     def on_mouse_release(self, x, y, buttons, modifiers):
+        if not self.enabled:
+            return
         self._in_update = False
 
 
@@ -433,19 +442,27 @@ class TextEntry(WidgetBase):
         self._layout.group = OrderedGroup(order + 2, self._user_group)
 
     def on_mouse_motion(self, x, y, dx, dy):
+        if not self.enabled:
+            return
         if not self._check_hit(x, y):
             self._set_focus(False)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if not self.enabled:
+            return
         if self._focus:
             self._caret.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
+        if not self.enabled:
+            return
         if self._check_hit(x, y):
             self._set_focus(True)
             self._caret.on_mouse_press(x, y, buttons, modifiers)
 
     def on_text(self, text):
+        if not self.enabled:
+            return
         if self._focus:
             if text in ('\r', '\n'):
                 self.dispatch_event('on_commit', self._layout.document.text)
@@ -454,14 +471,20 @@ class TextEntry(WidgetBase):
             self._caret.on_text(text)
 
     def on_text_motion(self, motion):
+        if not self.enabled:
+            return
         if self._focus:
             self._caret.on_text_motion(motion)
 
     def on_text_motion_select(self, motion):
+        if not self.enabled:
+            return
         if self._focus:
             self._caret.on_text_motion_select(motion)
 
     def on_commit(self, text):
+        if not self.enabled:
+            return
         """Text has been commited via Enter/Return key."""
 
 
