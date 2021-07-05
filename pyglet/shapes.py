@@ -1077,7 +1077,7 @@ class Polygon(_ShapeBase):
 
         :Parameters:
             `coordinates` : List[[int, int]]
-                The remaining coordinates for each point in the polygon.
+                The coordinates for each point in the polygon.
             `color` : (int, int, int)
                 The RGB color of the polygon, specified as
                 a tuple of three ints in the range of 0-255.
