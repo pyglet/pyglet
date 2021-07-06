@@ -32,14 +32,29 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-import pyglet
-
-from .ninepatch import NinePatch, NinePatchGroup
 
 
-class Frame:
+class SpatialHash:
+    """A 2D spatial hash.
+
+    `SpatialHash` provides an efficient way to handle dispatching
+    keyboard and mouse events to Widgets.
+    """
 
     def __init__(self, window, cell_size=64, order=0):
+        """Create an instance of a Spatial Hash.
+
+        :Parameters:
+            `window` : `~pyglet.window.Window`
+                The SpatialHash will recieve events from this Window.
+                Appropriate events will be passed on to all added Widgets.
+            `cell_size` : int
+                The cell ("bucket") size for each cell in the hash.
+                Widgets may span multiple cells.
+            `order` : int
+                Widgets use internal OrderedGroups for draw sorting.
+                This is the base value for these Groups.
+        """
         window.push_handlers(self)
         self._cell_size = cell_size
         self._cells = {}
@@ -52,13 +67,19 @@ class Frame:
         return int(x / self._cell_size), int(y / self._cell_size)
 
     def add_widget(self, widget):
-        """Insert Widget into the appropriate cell"""
+        """Add a Widget to the spatial hash."""
         min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
         for i in range(min_vec[0], max_vec[0] + 1):
             for j in range(min_vec[1], max_vec[1] + 1):
                 self._cells.setdefault((i, j), set()).add(widget)
-                # TODO: return ID and track Widgets for later deletion.
         widget.update_groups(self._order)
+
+    def remove_widget(self, widget):
+        """Remove a Widget from the spatial hash."""
+        min_vec, max_vec = self._hash(*widget.aabb[0:2]), self._hash(*widget.aabb[2:4])
+        for i in range(min_vec[0], max_vec[0] + 1):
+            for j in range(min_vec[1], max_vec[1] + 1):
+                self._cells.get((i, j)).remove(widget)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         """Pass the event to any widgets within range of the mouse"""
@@ -93,30 +114,20 @@ class Frame:
         self._mouse_pos = x, y
 
     def on_text(self, text):
+        """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text(text)
 
     def on_text_motion(self, motion):
+        """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text_motion(motion)
 
     def on_text_motion_select(self, motion):
+        """Pass the event to any widgets within range of the mouse"""
         for widget in self._cells.get(self._hash(*self._mouse_pos), set()):
             widget.on_text_motion_select(motion)
 
 
-class NinePatchFrame(Frame):
-
-    def __init__(self, x, y, width, height, window, image, group=None, batch=None, cell_size=128, order=0):
-        super().__init__(window, cell_size, order)
-        self._npatch = NinePatch(image)
-        self._npatch.get_vertices(x, y, width, height)
-        self._group = NinePatchGroup(image.get_texture(), order, group)
-        self._batch = batch or pyglet.graphics.Batch()
-
-        vertices = self._npatch.get_vertices(x, y, width, height)
-        indices = self._npatch.indices
-        tex_coords = self._npatch.tex_coords
-
-        self._vlist = self._batch.add_indexed(16, pyglet.gl.GL_QUADS, self._group, indices,
-                                              ('v2i', vertices), ('t2f', tex_coords))
+class Frame(SpatialHash):
+    pass
