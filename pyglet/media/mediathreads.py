@@ -127,7 +127,7 @@ class MediaThread:
 atexit.register(MediaThread.atexit)
 
 
-class PlayerWorker(MediaThread):
+class PlayerWorkerThread(MediaThread):
     """Worker thread for refilling players."""
 
     # Time to wait if there are players, but they're all full:
@@ -142,7 +142,7 @@ class PlayerWorker(MediaThread):
             # player's methods that would otherwise have to check that it's
             # still alive.
             with self._condition:
-                assert _debug('PlayerWorker: woke up @{}'.format(time.time()))
+                assert _debug('PlayerWorkerThread: woke up @{}'.format(time.time()))
                 if self._stopped:
                     break
                 sleep_time = -1
@@ -157,7 +157,7 @@ class PlayerWorker(MediaThread):
                     if not filled:
                         sleep_time = self._nap_time
                 else:
-                    assert _debug('PlayerWorker: No active players')
+                    assert _debug('PlayerWorkerThread: No active players')
                     sleep_time = None   # sleep until a player is added
 
                 if sleep_time != -1:
@@ -171,13 +171,13 @@ class PlayerWorker(MediaThread):
 
     def add(self, player):
         assert player is not None
-        assert _debug('PlayerWorker: player added')
+        assert _debug('PlayerWorkerThread: player added')
         with self._condition:
             self.players.add(player)
             self._condition.notify()
 
     def remove(self, player):
-        assert _debug('PlayerWorker: player removed')
+        assert _debug('PlayerWorkerThread: player removed')
         with self._condition:
             if player in self.players:
                 self.players.remove(player)

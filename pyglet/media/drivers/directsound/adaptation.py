@@ -39,7 +39,7 @@ import ctypes
 from . import interface
 from pyglet.util import debug_print
 from pyglet.media.events import MediaEvent
-from pyglet.media.mediathreads import PlayerWorker
+from pyglet.media.mediathreads import PlayerWorkerThread
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
@@ -380,8 +380,7 @@ class DirectSoundDriver(AbstractAudioDriver):
         assert self._ds_driver is not None
         assert self._ds_listener is not None
 
-        # Create worker thread
-        self.worker = PlayerWorker()
+        self.worker = PlayerWorkerThread()
         self.worker.start()
 
     def __del__(self):
