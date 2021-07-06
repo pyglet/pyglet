@@ -988,7 +988,7 @@ class Star(_ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add(self._num_spikes*6, GL_TRIANGLES, 
+        self._vertex_list = self._batch.add(self._num_spikes*6, GL_TRIANGLES,
                                             self._group, 'v2f', 'c4B')
         self._update_position()
         self._update_color()
@@ -1021,9 +1021,9 @@ class Star(_ShapeBase):
             for i, point in enumerate(points):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
-        
+
         self._vertex_list.vertices[:] = vertices
-                
+
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_spikes * 6
 
@@ -1031,7 +1031,7 @@ class Star(_ShapeBase):
     def outer_radius(self):
         """The outer radius of the star."""
         return self._outer_radius
-    
+
     @outer_radius.setter
     def outer_radius(self, value):
         self._outer_radius = value
@@ -1041,7 +1041,7 @@ class Star(_ShapeBase):
     def inner_radius(self):
         """The innter radius of the star."""
         return self._inner_radius
-    
+
     @inner_radius.setter
     def inner_radius(self, value):
         self._inner_radius = value
@@ -1067,7 +1067,7 @@ class Star(_ShapeBase):
     def rotation(self, rotation):
         self._rotation = rotation
         self._update_position()
-    
+
 
 class Polygon(_ShapeBase):
     def __init__(self, *coordinates, color=(255, 255, 255), batch=None, group=None):
@@ -1086,17 +1086,14 @@ class Polygon(_ShapeBase):
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the polygon.
         """
-        
+
         # len(self._coordinates) = the number of vertices and sides in the shape.
         self._coordinates = list(coordinates)
 
-        # x = self._coordinates[0][0]
-        # y = self._coordinates[0][1]
-        
         self._rotation = 0
-        
+
         self._rgb = color
-        
+
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
         self._vertex_list = self._batch.add((len(self._coordinates) - 2) * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
@@ -1107,49 +1104,41 @@ class Polygon(_ShapeBase):
         if not self._visible:
             self._vertex_list.vertices = tuple([0] * ((len(self._coordinates) - 2) * 6))
         elif self._rotation:
-            x = float(self.x) - self._anchor_x
-            y = float(self.y) - self._anchor_y
+            # Adjust all coordinates by the anchor.
+            anchor_x = self._anchor_x
+            anchor_y = self._anchor_y
+            coords = [[x - anchor_x, y - anchor_y] for x, y in self._coordinates]
 
+            # Rotate the polygon around its first vertex.
+            x, y = self._coordinates[0]
             r = -math.radians(self._rotation)
             cr = math.cos(r)
             sr = math.sin(r)
-            
-            anchor_x = self._anchor_x
-            anchor_y = self._anchor_y
-            
-            # Rotate the polygon around its first vertex.
-            coords = list(self._coordinates)
+
             for i, c in enumerate(coords):
-                # Set to new object to avoid modification to self._coordinates.
                 c = [c[0] - x, c[1] - y]
                 c = [c[0] * cr - c[1] * sr + x, c[0] * sr + c[1] * cr + y]
                 coords[i] = c
-            
-            # Adjust all coordinates by the anchor.
-            adjusted_coordinates = list(map(lambda c: (c[0] - anchor_x, c[1] - anchor_y),
-                                            coords))
-            
+
             # Triangulate the convex polygon.
             triangles = []
-            for n in range(len(adjusted_coordinates) - 2):
-                triangles += [adjusted_coordinates[0], adjusted_coordinates[n+1], adjusted_coordinates[n+2]]
-            
+            for n in range(len(coords) - 2):
+                triangles += [coords[0], coords[n + 1], coords[n + 2]]
+
             # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)                          
-            
+            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)
+
         else:
+            # Adjust all coordinates by the anchor.
             anchor_x = self._anchor_x
             anchor_y = self._anchor_y
-            
-            # Adjust all coordinates by the anchor.
-            adjusted_coordinates = list(map(lambda c: (c[0] - anchor_x, c[1] - anchor_y),
-                                            self._coordinates))
-            
+            coords = [[x - anchor_x, y - anchor_y] for x, y in self._coordinates]
+
             # Triangulate the convex polygon.
             triangles = []
-            for n in range(len(adjusted_coordinates) - 2):
-                triangles += [adjusted_coordinates[0], adjusted_coordinates[n+1], adjusted_coordinates[n+2]]
-           
+            for n in range(len(coords) - 2):
+                triangles += [coords[0], coords[n + 1], coords[n + 2]]
+
             # Flattening the list before setting vertices to it.
             self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)
 
@@ -1198,7 +1187,7 @@ class Polygon(_ShapeBase):
     def position(self, values):
         self._coordinates[0][0], self._coordinates[0][1] = values
         self._update_position()
-    
+
     @property
     def rotation(self):
         """Clockwise rotation of the polygon, in degrees.
@@ -1209,12 +1198,11 @@ class Polygon(_ShapeBase):
         :type: float
         """
         return self._rotation
-    
+
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
         self._update_position()
-        
-    
+
 
 __all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon')
