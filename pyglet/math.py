@@ -46,15 +46,19 @@ operations.
 
 import math as _math
 import warnings as _warnings
-
 from operator import mul as _mul
+
+
+def clamp(num, min_val, max_val):
+    return max(min(num, max_val), min_val)
 
 
 class Vec2(tuple):
 
     def __new__(cls, *args):
-        assert len(args) == 2, "2 values are required for Vec2 types."
-        return super().__new__(Vec2, args)
+        len_args = len(args)
+        assert len_args == 2 or len_args == 0, "0 or 2 values are required for Vec2 types."
+        return super().__new__(Vec2, args or (0, 0))
 
     @property
     def x(self):
@@ -79,11 +83,32 @@ class Vec2(tuple):
     def __abs__(self):
         return _math.sqrt(self[0] ** 2 + self[1] ** 2)
 
+    def lerp(self, other, alpha):
+        return Vec2(
+            self[0] + (alpha * (other[0] - self[0])),
+            self[1] + (alpha * (other[1] - self[1])),
+        )
+
+    def scale(self, value):
+        return Vec2(self[0] * value, self[1] * value)
+    
+    def distance(self, other):
+        return _math.sqrt(
+              ((other[0] - self[0]) ** 2) 
+            + ((other[1] - self[1]) ** 2)
+        )
+
+    def negate(self):
+        return Vec2(-self[0], -self[1])
+
     def normalize(self):
         d = self.__abs__()
         if d:
             return Vec2(self[0] / d, self[1] / d)
         return self
+
+    def clamp(self, min_val, max_val):
+        return Vec2(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val))
 
     def dot(self, other):
         return self[0] * other[0] + self[1] * other[1]
@@ -100,8 +125,9 @@ class Vec2(tuple):
 class Vec3(tuple):
 
     def __new__(cls, *args):
-        assert len(args) == 3, "3 values are required for Vec3 types."
-        return super().__new__(Vec3, args)
+        len_args = len(args)
+        assert len_args == 3 or len_args == 0, "0 or 3 values are required for Vec3 types."
+        return super().__new__(Vec3, args or (0, 0, 0))
 
     @property
     def x(self):
@@ -130,11 +156,44 @@ class Vec3(tuple):
     def __abs__(self):
         return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2)
 
+    def cross_product(self, other):
+        return Vec3(
+            (self[1] * other[2]) - (self[2] * other[1]),
+            (self[2] * other[0]) - (self[0] * other[2]),
+            (self[0] * other[1]) - (self[1] * other[0]),
+        )
+
+    def lerp(self, other, alpha):
+        return Vec3(
+            self[0] + (alpha * (other[0] - self[0])),
+            self[1] + (alpha * (other[1] - self[1])),
+            self[2] + (alpha * (other[2] - self[2])),
+        )
+
+    def scale(self, value):
+        return Vec3(self[0] * value, self[1] * value, self[2] * value)
+    
+    def distance(self, other):
+        return _math.sqrt(
+              ((other[0] - self[0]) ** 2) 
+            + ((other[1] - self[1]) ** 2)
+            + ((other[2] - self[2]) ** 2)
+        )
+
+    def round(self, value):
+        return Vec3(round(self[0], value), round(self[1], value), round(self[2], value))
+
+    def negate(self):
+        return Vec3(-self[0], -self[1], -self[2])
+
     def normalize(self):
         d = self.__abs__()
         if d:
             return Vec3(self[0] / d, self[1] / d, self[2] / d)
         return self
+
+    def clamp(self, min_val, max_val):
+        return Vec3(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val), clamp(self[2], min_val, max_val))
 
     def dot(self, other):
         return self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
@@ -151,8 +210,9 @@ class Vec3(tuple):
 class Vec4(tuple):
 
     def __new__(cls, *args):
-        assert len(args) == 4, "4 values are required for Vec4 types."
-        return super().__new__(Vec4, args)
+        len_args = len(args)
+        assert args == 4 or len_args == 0, "0 or 4 values are required for Vec4 types."
+        return super().__new__(Vec4, args or (0, 0, 0, 0))
 
     @property
     def x(self):
@@ -185,11 +245,36 @@ class Vec4(tuple):
     def __abs__(self):
         return _math.sqrt(self[0] ** 2 + self[1] ** 2 + self[2] ** 2 + self[3] ** 2)
 
+    def lerp(self, other, alpha):
+        return Vec3(
+            self[0] + (alpha * (other[0] - self[0])),
+            self[1] + (alpha * (other[1] - self[1])),
+            self[2] + (alpha * (other[2] - self[2])),
+            self[3] + (alpha * (other[3] - self[3])),
+        )
+
+    def scale(self, value):
+        return Vec3(self[0] * value, self[1] * value, self[2] * value, self[3] * value)
+    
+    def distance(self, other):
+        return _math.sqrt(
+              ((other[0] - self[0]) ** 2) 
+            + ((other[1] - self[1]) ** 2)
+            + ((other[2] - self[2]) ** 2)
+            + ((other[3] - self[3]) ** 2)
+        )
+
+    def negate(self):
+        return Vec4(-self[0], -self[1], -self[2], -self[3])
+
     def normalize(self):
         d = self.__abs__()
         if d:
             return Vec4(self[0] / d, self[1] / d, self[2] / d, self[3] / d)
         return self
+
+    def clamp(self, min_val, max_val):
+        return Vec3(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val), clamp(self[2], min_val, max_val), clamp(self[3], min_val, max_val))
 
     def dot(self, other):
         return self[0] * other[0] + self[1] * other[1] + self[2] * other[2] + self[3] * other[3]
@@ -201,6 +286,57 @@ class Vec4(tuple):
 
     def __repr__(self):
         return f"Vec4({self[0]}, {self[1]}, {self[2]}, {self[3]})"
+
+
+class Mat3(tuple):
+    """A 3x3 Matrix"""
+
+    def __new__(cls, values=None) -> 'Mat3':
+        assert values is None or len(values) == 9, "A 3x3 Matrix requires 9 values"
+        return super().__new__(Mat3, values or (1.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0,
+                                                0.0, 0.0, 1.0))
+
+    def __add__(self, other) -> 'Mat3':
+        assert len(other) == 16, "Can only add to other Mat4 types"
+        return Mat3(tuple(s + o for s, o in zip(self, other)))
+
+    def __sub__(self, other) -> 'Mat3':
+        assert len(other) == 16, "Can only subtract from other Mat4 types"
+        return Mat3(tuple(s - o for s, o in zip(self, other)))
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self) -> 'Mat3':
+        return Mat3(tuple(-v for v in self))
+
+    def __matmul__(self, other) -> 'Mat3':
+        assert len(other) in (4, 16), "Can only multiply with Mat4 or Vec4 types"
+
+        return Mat3((self[0] * other[0] + self[3] * other[1] + self[6] * other[2],
+                  self[1] * other[0] + self[4] * other[1] + self[7] * other[2],
+                  self[2] * other[0] + self[5] * other[1] + self[8] * other[2],
+                  self[0] * other[3] + self[3] * other[4] + self[6] * other[5],
+                  self[1] * other[3] + self[4] * other[4] + self[7] * other[5],
+                  self[2] * other[3] + self[5] * other[4] + self[8] * other[5],
+                  self[0] * other[6] + self[3] * other[7] + self[6] * other[8],
+                  self[1] * other[6] + self[4] * other[7] + self[7] * other[8],
+                  self[2] * other[6] + self[5] * other[7] + self[8] * other[8]))
+
+    def scale(self, sx: float, sy: float):
+        return self @ Mat3((1.0 / sx, 0.0, 0.0, 0.0, 1.0 / sy, 0.0, 0.0, 0.0, 1.0))
+
+    def translate(self, tx: float, ty: float):
+        return self @ Mat3((1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tx, ty, 1.0))
+
+    def rotate(self, phi: float):
+        s = _math.sin(_math.radians(phi))
+        c = _math.cos(_math.radians(phi))
+        return self @ ((c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0))
+
+    def shear(self, sx: float, sy: float):
+        return self @ ((1.0, sy, 0.0, sx, 1.0, 0.0, 0.0, 0.0, 1.0))
 
 
 class Mat4(tuple):
@@ -279,9 +415,9 @@ class Mat4(tuple):
                    0, 0, qn, 0))
 
     @classmethod
-    def from_translation(cls, x=0, y=0, z=0) -> 'Mat4':
+    def from_translation(cls, vector: Vec3) -> 'Mat4':
         """Create a translaton matrix from .
-        
+
         :Parameters:
             `values` : 3 component tuple of float or int
                 A 3 component list containing an x, y and z translaton
@@ -289,7 +425,25 @@ class Mat4(tuple):
         return cls((1.0, 0.0, 0.0, 0.0,
                     0.0, 1.0, 0.0, 0.0,
                     0.0, 0.0, 1.0, 0.0,
-                    x, y, z, 1.0))
+                    vector.x, vector.y, vector.z, 1.0))
+
+    @classmethod
+    def look_at_direction(cls, direction: Vec3, up: Vec3):
+        vec_z = direction.normalize()
+        vec_x = direction.cross_product(up).normalize()
+        vec_y = direction.cross_product(vec_z).normalize()
+
+        return cls((vec_x.x, vec_y.x, vec_z.x, 0.0,
+                    vec_x.y, vec_y.y, vec_z.y, 0.0,
+                    vec_x.z, vec_z.z, vec_z.z, 0.0,
+                    0.0, 0.0, 0.0, 1.0))
+
+    @classmethod
+    def look_at(cls, position: Vec3, target: Vec3, up: Vec3):
+        direction = target - position
+        direction_mat4 = cls.look_at_direction(direction, up)
+        position_mat4 = cls.from_translation(position.negate())
+        return direction_mat4 @ position_mat4
 
     def row(self, index: int):
         """Get a specific row as a tuple."""
@@ -378,6 +532,8 @@ class Mat4(tuple):
                - self[1] * (self[4] * a - self[6] * d + self[7] * e)
                + self[2] * (self[4] * b - self[5] * d + self[7] * f)
                - self[3] * (self[4] * c - self[5] * e + self[6] * f))
+
+        print(det)
 
         if det == 0:
             _warnings.warn("Unable to calculate inverse of singular Matrix")
