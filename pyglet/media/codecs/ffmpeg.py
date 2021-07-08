@@ -660,6 +660,8 @@ class FFmpegSource(StreamingSource):
         the queues if space is available. Multiple calls to this method will
         only result in one scheduled call to `_fillq`.
         """
+        if not self.videoq:
+            return None
         video_packet = self.videoq.popleft()
         low_lvl = self._check_low_level()
         if not low_lvl and not self._fillq_scheduled:
@@ -799,7 +801,7 @@ class FFmpegSource(StreamingSource):
             stream.frame,
             byref(got_frame),
             byref(packet))
-        if (bytes_used < 0):
+        if bytes_used < 0:
             buf = create_string_buffer(128)
             avutil.av_strerror(bytes_used, buf, 128)
             descr = buf.value
@@ -946,18 +948,22 @@ class FFmpegSource(StreamingSource):
         if not self.video_format:
             return
 
+        ts = None
+
         if self.videoq:
             while True:
                 # We skip video packets which are not video frames
                 # This happens in mkv files for the first few frames.
-                video_packet = self.videoq[0]
+                try:
+                    video_packet = self.videoq.popleft()
+                except IndexError:
+                    break
                 if video_packet.image == 0:
                     self._decode_video_packet(video_packet)
                 if video_packet.image is not None:
+                    ts = video_packet.timestamp
                     break
                 self._get_video_packet()
-
-            ts = video_packet.timestamp
         else:
             ts = None
 
