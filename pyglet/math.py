@@ -33,15 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Matrix and Vector operations.
+"""Matrix and Vector math.
 
-This module provides several Matrix and Vector objects.
-A :py:class:`~pyglet.matrix.Mat4` class is available for representing
-4x4 matrices, including helper methods for rotating, scaling, and
-transforming. The :py:class:`~pyglet.matrix.Mat4` type is internally
-defined as a 1-dimensional array, so instances can be passed directly
-to OpenGL. Vec2, Vec3, and Vec4 classes are also available for Vector
-operations.
+This module provides Vector and Matrix objects, include Vec2, Vec3, Vec4,
+Mat3 and Mat4. Most common operations are supported, and many helper
+methods are included for rotating, scaling, and transforming.
+The :py:class:`~pyglet.matrix.Mat4` includes class methods
+for creating orthographic and perspective projection matrixes.
 """
 
 import math as _math
@@ -85,8 +83,8 @@ class Vec2(tuple):
     def __neg__(self):
         return Vec2(-self[0], -self[1])
 
-    def __round__(self, n=None):
-        return Vec2(*(round(v, n) for v in self))
+    def __round__(self, ndigits=None):
+        return Vec2(*(round(v, ndigits) for v in self))
 
     def lerp(self, other, alpha):
         return Vec2(self[0] + (alpha * (other[0] - self[0])),
@@ -155,8 +153,8 @@ class Vec3(tuple):
     def __neg__(self):
         return Vec3(-self[0], -self[1], -self[2])
 
-    def __round__(self, n=None):
-        return Vec3(*(round(v, n) for v in self))
+    def __round__(self, ndigits=None):
+        return Vec3(*(round(v, ndigits) for v in self))
 
     def cross(self, other):
         return Vec3((self[1] * other[2]) - (self[2] * other[1]),
@@ -239,8 +237,8 @@ class Vec4(tuple):
     def __neg__(self):
         return Vec4(-self[0], -self[1], -self[2], -self[3])
 
-    def __round__(self, n=None):
-        return Vec4(*(round(v, n) for v in self))
+    def __round__(self, ndigits=None):
+        return Vec4(*(round(v, ndigits) for v in self))
 
     def lerp(self, other, alpha):
         return Vec4(self[0] + (alpha * (other[0] - self[0])),
@@ -282,48 +280,29 @@ class Vec4(tuple):
 
 
 class Mat3(tuple):
-    """A 3x3 Matrix"""
+    """A 3x3 Matrix class
+
+    `Mat3` is an immutable 4x4 Matrix, including most common
+    operators. Matrix multiplication must be performed using
+    the "@" operator.
+    """
 
     def __new__(cls, values=None) -> 'Mat3':
+        """Create a 3x3 Matrix
+
+        A Mat3 can be created with a list or tuple of 9 values.
+        If no values are provided, an "identity matrix" will be created
+        (1.0 on the main diagonal). Matrix objects are immutable, so
+        all operations return a new Mat3 object.
+
+        :Parameters:
+            `values` : tuple of float or int
+                A tuple or list containing 9 floats or ints.
+        """
         assert values is None or len(values) == 9, "A 3x3 Matrix requires 9 values"
         return super().__new__(Mat3, values or (1.0, 0.0, 0.0,
                                                 0.0, 1.0, 0.0,
                                                 0.0, 0.0, 1.0))
-
-    def __add__(self, other) -> 'Mat3':
-        assert len(other) == 9, "Can only add to other Mat3 types"
-        return Mat3(tuple(s + o for s, o in zip(self, other)))
-
-    def __sub__(self, other) -> 'Mat3':
-        assert len(other) == 9, "Can only subtract from other Mat3 types"
-        return Mat3(tuple(s - o for s, o in zip(self, other)))
-
-    def __pos__(self):
-        return self
-
-    def __neg__(self) -> 'Mat3':
-        return Mat3(tuple(-v for v in self))
-
-    def __round__(self, n=None) -> 'Mat3':
-        return Mat3(tuple(round(v, n) for v in self))
-
-    def __mul__(self, other):
-        raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
-
-    def __matmul__(self, other) -> 'Mat3':
-        assert len(other) in (3, 9), "Can only multiply with Mat3 or Vec3 types"
-
-        return Mat3((self[0] * other[0] + self[3] * other[1] + self[6] * other[2],
-                     self[1] * other[0] + self[4] * other[1] + self[7] * other[2],
-                     self[2] * other[0] + self[5] * other[1] + self[8] * other[2],
-
-                     self[0] * other[3] + self[3] * other[4] + self[6] * other[5],
-                     self[1] * other[3] + self[4] * other[4] + self[7] * other[5],
-                     self[2] * other[3] + self[5] * other[4] + self[8] * other[5],
-
-                     self[0] * other[6] + self[3] * other[7] + self[6] * other[8],
-                     self[1] * other[6] + self[4] * other[7] + self[7] * other[8],
-                     self[2] * other[6] + self[5] * other[7] + self[8] * other[8]))
 
     def scale(self, sx: float, sy: float):
         return self @ (1.0 / sx, 0.0, 0.0, 0.0, 1.0 / sy, 0.0, 0.0, 0.0, 1.0)
@@ -339,16 +318,72 @@ class Mat3(tuple):
     def shear(self, sx: float, sy: float):
         return self @ (1.0, sy, 0.0, sx, 1.0, 0.0, 0.0, 0.0, 1.0)
 
+    def __add__(self, other) -> 'Mat3':
+        assert len(other) == 9, "Can only add to other Mat3 types"
+        return Mat3(tuple(s + o for s, o in zip(self, other)))
+
+    def __sub__(self, other) -> 'Mat3':
+        assert len(other) == 9, "Can only subtract from other Mat3 types"
+        return Mat3(tuple(s - o for s, o in zip(self, other)))
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self) -> 'Mat3':
+        return Mat3(tuple(-v for v in self))
+
+    def __round__(self, ndigits=None) -> 'Mat3':
+        return Mat3(tuple(round(v, ndigits) for v in self))
+
+    def __mul__(self, other):
+        raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
+
+    def __matmul__(self, other) -> 'Mat3':
+        assert len(other) in (3, 9), "Can only multiply with Mat3 or Vec3 types"
+
+        if type(other) is Vec3:
+            # Columns:
+            c0 = self[0::3]
+            c1 = self[1::3]
+            c2 = self[2::3]
+            return Vec3(sum(map(_mul, c0, other)),
+                        sum(map(_mul, c1, other)),
+                        sum(map(_mul, c2, other)))
+
+        # Rows:
+        r0 = self[0:3]
+        r1 = self[3:6]
+        r2 = self[6:9]
+        # Columns:
+        c0 = other[0::3]
+        c1 = other[1::3]
+        c2 = other[2::3]
+
+        # Multiply and sum rows * colums:
+        return Mat3((sum(map(_mul, r0, c0)),
+                     sum(map(_mul, r0, c1)),
+                     sum(map(_mul, r0, c2)),
+
+                     sum(map(_mul, r1, c0)),
+                     sum(map(_mul, r1, c1)),
+                     sum(map(_mul, r1, c2)),
+
+                     sum(map(_mul, r2, c0)),
+                     sum(map(_mul, r2, c1)),
+                     sum(map(_mul, r2, c2))))
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
+
 
 class Mat4(tuple):
-    """A 4x4 Matrix
+    """A 4x4 Matrix class
 
-    `Mat4` is a simple immutable 4x4 Matrix, with a few operators.
-    Two types of multiplication are possible. The "*" operator
-    will perform elementwise multiplication, whereas the "@"
-    operator will perform Matrix multiplication. Internally,
-    data is stored in a linear 1D array, allowing direct passing
-    to OpenGL.
+    `Mat4` is an immutable 4x4 Matrix, including most common
+    operators. Matrix multiplication must be performed using
+    the "@" operator.
+    Class methods are available for creating orthogonal
+    and perspective projections matrixes.
     """
 
     def __new__(cls, values=None) -> 'Mat4':
@@ -417,16 +452,16 @@ class Mat4(tuple):
 
     @classmethod
     def from_translation(cls, vector: Vec3) -> 'Mat4':
-        """Create a translaton matrix from .
+        """Create a translaton matrix from a Vec3.
 
         :Parameters:
-            `values` : 3 component tuple of float or int
-                A 3 component list containing an x, y and z translaton
+            `vector` : A `Vec3`, or 3 component tuple of float or int
+                Vec3 or tuple with x, y and z translaton values
         """
         return cls((1.0, 0.0, 0.0, 0.0,
                     0.0, 1.0, 0.0, 0.0,
                     0.0, 0.0, 1.0, 0.0,
-                    vector.x, vector.y, vector.z, 1.0))
+                    vector[0], vector[1], vector[2], 1.0))
 
     @classmethod
     def look_at_direction(cls, direction: Vec3, up: Vec3) -> 'Mat4':
@@ -558,8 +593,8 @@ class Mat4(tuple):
                      ndet * (self[0] * i - self[1] * n + self[2] * q),
                      pdet * (self[0] * l - self[1] * p + self[2] * r)))
 
-    def __round__(self, n=None) -> 'Mat4':
-        return Mat4(tuple(round(v, n) for v in self))
+    def __round__(self, ndigits=None) -> 'Mat4':
+        return Mat4(tuple(round(v, ndigits) for v in self))
 
     def __mul__(self, other):
         raise NotImplementedError("Please use the @ operator for Matrix multiplication.")
@@ -609,6 +644,10 @@ class Mat4(tuple):
                      sum(map(_mul, r3, c1)),
                      sum(map(_mul, r3, c2)),
                      sum(map(_mul, r3, c3))))
+
+    # def __getitem__(self, item):
+    #     row = [slice(0, 4), slice(4, 8), slice(8, 12), slice(12, 16)][item]
+    #     return super().__getitem__(row)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
