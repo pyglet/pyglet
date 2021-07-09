@@ -32,6 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
+import pyglet
+
 from pyglet.gl import GLuint, glGenVertexArrays, glDeleteVertexArrays, glBindVertexArray
 
 
@@ -43,6 +46,7 @@ class VertexArray:
 
     def __init__(self):
         """Create an instance of a Vertex Array object."""
+        self._context = pyglet.gl.current_context
         self._id = GLuint()
         glGenVertexArrays(1, self._id)
 
@@ -67,7 +71,7 @@ class VertexArray:
 
     def __del__(self):
         try:
-            glDeleteVertexArrays(1, self._id)
+            self._context.delete_vao(self.id)
         # Python interpreter is shutting down:
         except ImportError:
             pass

@@ -130,6 +130,7 @@ class Config:
                 setattr(self, name, None)
 
     def requires_gl_3(self):
+        # TODO: remove deprecated
         if self.major_version is not None and self.major_version >= 3:
             return True
         if self.forward_compatible or self.debug:
@@ -239,6 +240,7 @@ class ObjectSpace:
         # the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
+        self.doomed_vaos = []
 
 
 class Context:
@@ -301,20 +303,24 @@ class Context:
             self._info = gl_info.GLInfo()
             self._info.set_active_context()
 
-        # Release textures and buffers on this context scheduled for deletion.
-        # Note that the garbage collector may introduce a race condition,
-        # so operate on a copy of the textures/buffers and remove the deleted
-        # items using list slicing (which is an atomic operation)
+        # Release Textures, Buffers, and VAOs on this context scheduled for
+        # deletion. Note that the garbage collector may introduce a race
+        # condition, so operate on a copy, and clear the list afterwards.
         if self.object_space.doomed_textures:
             textures = self.object_space.doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
             gl.glDeleteTextures(len(textures), textures)
-            self.object_space.doomed_textures[0:len(textures)] = []
+            self.object_space.doomed_textures.clear()
         if self.object_space.doomed_buffers:
             buffers = self.object_space.doomed_buffers[:]
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
-            self.object_space.doomed_buffers[0:len(buffers)] = []
+            self.object_space.doomed_buffers.clear()
+        if self.object_space.doomed_vaos:
+            vaos = self.object_space.doomed_vaos[:]
+            vaos = (gl.GLuint * len(vaos))(*vaos)
+            gl.glDeleteVertexArrays(len(vaos), vaos)
+            self.object_space.doomed_vaos.clear()
 
     def destroy(self):
         """Release the context.
@@ -335,16 +341,16 @@ class Context:
                 gl._shadow_window.switch_to()
 
     def delete_texture(self, texture_id):
-        """Safely delete a texture belonging to this context.
+        """Safely delete a Texture belonging to this context.
 
-        Usually, the texture is released immediately using
+        Usually, the Texture is released immediately using
         ``glDeleteTextures``, however if another context that does not share
         this context's object space is currently active, the deletion will
         be deferred until an appropriate context is activated.
 
         :Parameters:
             `texture_id` : int
-                The OpenGL name of the texture to delete.
+                The OpenGL name of the Texture to delete.
 
         """
         if self.object_space is gl.current_context.object_space:
@@ -354,7 +360,7 @@ class Context:
             self.object_space.doomed_textures.append(texture_id)
 
     def delete_buffer(self, buffer_id):
-        """Safely delete a buffer object belonging to this context.
+        """Safely delete a Buffer object belonging to this context.
 
         This method behaves similarly to `delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
@@ -370,6 +376,24 @@ class Context:
             gl.glDeleteBuffers(1, buf_id)
         else:
             self.object_space.doomed_buffers.append(buffer_id)
+
+    def delete_vao(self, vao_id):
+        """Safely delete a Vertex Array Object belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `vao_id` : int
+                The OpenGL name of the Vertex Array to delete.
+
+        .. versionadded:: 2.0
+        """
+        if self.object_space is gl.current_context.object_space and False:
+            v_id = gl.GLuint(vao_id)
+            gl.glDeleteVertexArrays(1, v_id)
+        else:
+            self.object_space.doomed_vaos.append(vao_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.
