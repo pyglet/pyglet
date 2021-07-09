@@ -282,7 +282,7 @@ class Vec4(tuple):
 class Mat3(tuple):
     """A 3x3 Matrix class
 
-    `Mat3` is an immutable 4x4 Matrix, including most common
+    `Mat3` is an immutable 3x3 Matrix, including most common
     operators. Matrix multiplication must be performed using
     the "@" operator.
     """
