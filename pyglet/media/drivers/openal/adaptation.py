@@ -39,7 +39,7 @@ from . import interface
 from pyglet.util import debug_print
 from pyglet.media.events import MediaEvent
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
-from pyglet.media.mediathreads import PlayerWorker
+from pyglet.media.mediathreads import PlayerWorkerThread
 from pyglet.media.drivers.listener import AbstractListener
 
 _debug = debug_print('debug_media')
@@ -55,8 +55,7 @@ class OpenALDriver(AbstractAudioDriver):
 
         self._listener = OpenALListener(self)
 
-        # Start worker thread
-        self.worker = PlayerWorker()
+        self.worker = PlayerWorkerThread()
         self.worker.start()
 
     def __del__(self):
