@@ -40,7 +40,7 @@ Abstract representation
 
 Styled text in pyglet is represented by one of the :py:class:`~pyglet.text.document.AbstractDocument` classes,
 which manage the state representation of text and style independently of how
-it is loaded or rendered.  
+it is loaded or rendered.
 
 A document consists of the document text (a Unicode string) and a set of
 named style ranges.  For example, consider the following (artificial)
@@ -131,7 +131,7 @@ entire paragraph, otherwise results are undefined.
 ``align``
     ``left`` (default), ``center`` or ``right``.
 ``indent``
-    Additional horizontal space to insert before the first 
+    Additional horizontal space to insert before the first
 ``leading``
     Additional space to insert between consecutive lines within a paragraph,
     in points.  Defaults to 0.
@@ -159,7 +159,7 @@ document; it will be ignored by the built-in text classes.
 
 All style attributes (including those not present in a document) default to
 ``None`` (including the so-called "boolean" styles listed above).  The meaning
-of a ``None`` style is style- and application-dependent. 
+of a ``None`` style is style- and application-dependent.
 
 .. versionadded:: 1.1
 """
@@ -181,8 +181,8 @@ class InlineElement:
 
     Elements behave like a single glyph in the document.  They are
     measured by their horizontal advance, ascent above the baseline, and
-    descent below the baseline.  
-    
+    descent below the baseline.
+
     The pyglet layout classes reserve space in the layout for elements and
     call the element's methods to ensure they are rendered at the
     appropriate position.
@@ -225,8 +225,8 @@ class InlineElement:
 
         It is the responsibility of the element to clip itself against
         the layout boundaries, and position itself appropriately with respect
-        to the layout's position and viewport offset.  
-        
+        to the layout's position and viewport offset.
+
         The `TextLayout.top_state` graphics state implements this transform
         and clipping into window space.
 
@@ -263,7 +263,7 @@ class AbstractDocument(event.EventDispatcher):
     This class can be overridden to interface pyglet with a third-party
     document format.  It may be easier to implement the document format in
     terms of one of the supplied concrete classes :py:class:`~pyglet.text.document.FormattedDocument` or
-    :py:class:`~pyglet.text.document.UnformattedDocument`. 
+    :py:class:`~pyglet.text.document.UnformattedDocument`.
     """
     _previous_paragraph_re = re.compile(u'\n[^\n\u2029]*$')
     _next_paragraph_re = re.compile(u'[\n\u2029]')
@@ -717,13 +717,13 @@ class _FontStyleRunsRangeIterator:
         from pyglet import font
         for start, end, styles in self.zip_iter.ranges(start, end):
             font_name, font_size, bold, italic, stretch = styles
-            ft = font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=self.dpi)
+            ft = font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
             yield start, end, ft
 
     def __getitem__(self, index):
         from pyglet import font
         font_name, font_size, bold, italic, stretch = self.zip_iter[index]
-        return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=self.dpi)
+        return font.load(font_name, font_size, bold=bool(bold), italic=bool(italic), stretch=stretch, dpi=self.dpi)
 
 
 class _NoStyleRangeIterator:

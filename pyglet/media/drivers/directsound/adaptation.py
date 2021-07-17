@@ -33,13 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import ctypes
 import math
+import ctypes
 
-import pyglet
 from . import interface
 from pyglet.util import debug_print
 from pyglet.media.events import MediaEvent
+from pyglet.media.mediathreads import PlayerWorkerThread
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
@@ -133,11 +133,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self.driver._ds_driver._native_dsound.Release()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self.driver.worker.remove(self)
 
     def play(self):
         assert _debug('DirectSound play')
-        pyglet.clock.schedule_interval(self._check_refill, 0.1)
+        self.driver.worker.add(self)
 
         if not self._playing:
             self._get_audiodata()  # prebuffer if needed
@@ -148,7 +148,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
-        pyglet.clock.unschedule(self._check_refill)
+        self.driver.worker.remove(self)
 
         if self._playing:
             self._playing = False
@@ -166,11 +166,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._audiodata_buffer = None
         del self._events[:]
         del self._timestamps[:]
-
-    def _check_refill(self, dt):
-        write_size = self.get_write_size()
-        if write_size > self.min_buffer_size:
-            self.refill(write_size)
 
     def refill(self, write_size):
         while write_size > 0:
@@ -385,6 +380,9 @@ class DirectSoundDriver(AbstractAudioDriver):
         assert self._ds_driver is not None
         assert self._ds_listener is not None
 
+        self.worker = PlayerWorkerThread()
+        self.worker.start()
+
     def __del__(self):
         self.delete()
 
@@ -403,6 +401,7 @@ class DirectSoundDriver(AbstractAudioDriver):
 
     def delete(self):
         # Make sure the _ds_listener is deleted before the _ds_driver
+        self.worker.stop()
         self._ds_listener = None
 
 

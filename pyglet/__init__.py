@@ -55,7 +55,7 @@ if 'sphinx' in sys.modules:
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
-# Pyglet platform treats *BSD systems as Linux
+# pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
 if "bsd" in compat_platform:
     compat_platform = "linux-compat"

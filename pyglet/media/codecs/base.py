@@ -410,18 +410,6 @@ class StreamingSource(Source):
     :class:`~pyglet.media.player.Player`.
     """
 
-    @property
-    def is_queued(self):
-        """
-        bool: Determine if this source is a player current source.
-
-        Check on a :py:class:`~pyglet.media.player.Player` if this source
-        is the current source.
-
-        :deprecated: Use :attr:`is_player_source` instead.
-        """
-        return self.is_player_source
-
     def get_queue_source(self):
         """Return the ``Source`` to be used as the source for a player.
 

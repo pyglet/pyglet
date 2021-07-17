@@ -1,9 +1,8 @@
 from ctypes import *
 
-import pyglet.lib
-from pyglet.gl.lib import missing_function
+import pyglet
+import pyglet.util
 
-from pyglet.util import asbytes
 
 __all__ = ['link_EGL']
 
@@ -22,11 +21,11 @@ def link_EGL(name, restype, argtypes, requires=None, suggestions=None):
         func.argtypes = argtypes
         return func
     except AttributeError:
-        bname = cast(pointer(create_string_buffer(asbytes(name))), POINTER(c_ubyte))
+        bname = cast(pointer(create_string_buffer(pyglet.util.asbytes(name))), POINTER(c_ubyte))
         addr = eglGetProcAddress(bname)
         if addr:
             ftype = CFUNCTYPE(*((restype,) + tuple(argtypes)))
             func = cast(addr, ftype)
             return func
 
-    return missing_function(name, requires, suggestions)
+    return pyglet.gl.lib.missing_function(name, requires, suggestions)
