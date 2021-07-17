@@ -1138,7 +1138,8 @@ class Polygon(_ShapeBase):
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add((len(self._coordinates) - 2) * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        length = (len(self._coordinates) - 2) * 3
+        self._vertex_list = self._batch.add(length, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
@@ -1168,7 +1169,7 @@ class Polygon(_ShapeBase):
                 triangles += [coords[0], coords[n + 1], coords[n + 2]]
 
             # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)
+            self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
 
         else:
             # Adjust all coordinates by the anchor.
@@ -1182,7 +1183,7 @@ class Polygon(_ShapeBase):
                 triangles += [coords[0], coords[n + 1], coords[n + 2]]
 
             # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)
+            self._vertex_list.position[:] = tuple(value for coordinate in triangles for value in coordinate)
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * ((len(self._coordinates) - 2) * 3)
