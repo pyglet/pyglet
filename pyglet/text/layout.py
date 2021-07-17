@@ -702,7 +702,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glEnable(GL_SCISSOR_TEST)
-        # glScissor(*self.scissor_area)
+        glScissor(*self.scissor_area)
 
     def unset_state(self):
         glDisable(GL_BLEND)
