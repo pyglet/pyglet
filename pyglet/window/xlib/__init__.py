@@ -1464,6 +1464,10 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event('on_mouse_scroll', x, y, 0, 1)
             elif ev.xbutton.button == 5:
                 self.dispatch_event('on_mouse_scroll', x, y, 0, -1)
+            elif ev.xbutton.button == 6:
+                self.dispatch_event('on_mouse_scroll', x, y, -1, 0)
+            elif ev.xbutton.button == 7:
+                self.dispatch_event('on_mouse_scroll', x, y, 1, 0)
             elif ev.xbutton.button < len(self._mouse_buttons):
                 self._mouse_buttons[ev.xbutton.button] = True
                 self.dispatch_event('on_mouse_press', x, y, button, modifiers)
