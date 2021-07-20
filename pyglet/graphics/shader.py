@@ -2,12 +2,13 @@ import ctypes
 from weakref import proxy
 from ctypes import *
 
-from pyglet.graphics.vertexbuffer import create_buffer
-from pyglet import options
+import pyglet
+
+from pyglet.graphics import vertexbuffer
 from pyglet.gl import *
 
 
-_debug_gl_shaders = options['debug_gl_shaders']
+_debug_gl_shaders = pyglet.options['debug_gl_shaders']
 
 
 # TODO: test other shader types, and update if necessary.
@@ -281,6 +282,10 @@ class ShaderProgram:
     def uniform_blocks(self):
         return self._uniform_blocks
 
+    @property
+    def formats(self):
+        return tuple(f"{atr.name}{atr.count}{atr.format}" for atr in self._attributes.values())
+
     def _get_program_log(self):
         result = c_int(0)
         glGetProgramiv(self._id, GL_INFO_LOG_LENGTH, byref(result))
@@ -486,7 +491,7 @@ class UniformBufferObject:
     def __init__(self, block, index):
         assert type(block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = block
-        self.buffer = create_buffer(self.block.size, target=GL_UNIFORM_BUFFER, mappable=False)
+        self.buffer = vertexbuffer.create_buffer(self.block.size, target=GL_UNIFORM_BUFFER, mappable=False)
         self.buffer.bind()
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)

@@ -500,10 +500,7 @@ class Batch:
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            if indexed:
-                domain = vertexdomain.create_indexed_domain(shader_program, *formats)
-            else:
-                domain = vertexdomain.create_domain(shader_program, *formats)
+            domain = vertexdomain.create_domain(shader_program, *formats, indexed=indexed)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True
