@@ -179,6 +179,7 @@ class PygletView_Implementation:
         width, height = int(size.width), int(size.height)
         self._window.switch_to()
         self._window.context.update_geometry()
+        self._window._width, self._window._height = width, height
         self._window.dispatch_event("on_resize", width, height)
         self._window.dispatch_event("on_expose")
         # Can't get app.event_loop.enter_blocking() working with Cocoa, because
