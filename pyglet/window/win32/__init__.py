@@ -1199,3 +1199,9 @@ class Win32Window(BaseWindow):
         # Reverse Y and call event.
         self.dispatch_event('on_file_drop', point.x, self._height - point.y, paths)
         return 0
+
+
+__all__ = [
+    "Win32MouseCursor",
+    "Win32Window"
+    ]
