@@ -1173,6 +1173,7 @@ class Star(_ShapeBase):
         self._rotation = rotation
         self._update_position()
 
+
 class Polygon(_ShapeBase):
     def __init__(self, *coordinates, color=(255, 255, 255), batch=None, group=None):
         """Create a convex polygon.
