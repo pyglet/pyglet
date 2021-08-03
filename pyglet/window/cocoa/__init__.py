@@ -619,3 +619,5 @@ class CocoaWindow(BaseWindow):
 
         NSApp = NSApplication.sharedApplication()
         NSApp.setPresentationOptions_(options)
+
+__all__ = []

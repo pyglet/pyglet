@@ -1558,3 +1558,5 @@ class XlibWindow(BaseWindow):
     def _event_unmapnotify(self, ev):
         self._mapped = False
         self.dispatch_event('on_hide')
+
+__all__ = [ "XlibEventHandler" ]
