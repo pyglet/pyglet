@@ -538,13 +538,13 @@ class Sector(_ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add((self._segments + 1) * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._segments * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
         self._update_position()
         self._update_color()
 
     def _update_position(self):
         if not self._visible:
-            vertices = (0,) * (self._segments + 1) * 6
+            vertices = (0,) * self._segments * 6
         else:
             x = self._x + self._anchor_x
             y = self._y + self._anchor_y
@@ -554,19 +554,18 @@ class Sector(_ShapeBase):
 
             # Calculate the outer points of the sector.
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
-                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
-            # TODO: self._segments + 1?
+                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range((self._segments + 1))]
 
             # Create a list of triangles from the points
             vertices = []
-            for i, point in enumerate(points):
+            for i, point in enumerate(points[1:], start=1):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
         self._vertex_list.vertices[:] = vertices
 
     def _update_color(self):
-        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * (self._segments + 1) * 3
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
 
     @property
     def radius(self):
@@ -1310,4 +1309,4 @@ class Polygon(_ShapeBase):
         self._update_position()
 
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon')
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector')
