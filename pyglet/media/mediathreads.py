@@ -133,7 +133,9 @@ class PlayerWorkerThread(MediaThread):
     # Time to wait if there are players, but they're all full:
     _nap_time = 0.05
 
-    players = set()
+    def __init__(self):
+        super().__init__()
+        self.players = set()
 
     def run(self):
         while True:
@@ -149,7 +151,7 @@ class PlayerWorkerThread(MediaThread):
 
                 if self.players:
                     filled = False
-                    for player in self.players:
+                    for player in list(self.players):
                         write_size = player.get_write_size()
                         if write_size > player.min_buffer_size:
                             player.refill(write_size)
