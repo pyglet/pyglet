@@ -1909,17 +1909,5 @@ if not _is_pyglet_doc_run:
     gl._create_shadow_window()
 
 __all__ = [
-    "WindowException",
-    "NoSuchDisplayException",
-    "NoSuchConfigException",
-    "NoSuchScreenModeException",
-    "MouseCursorException",
-    "MouseCursor",
-    "DefaultMouseCursor",
-    "ImageMouseCursor",
-    "Projection",
-    "Projection2D",
-    "Projection3D",
-    "BaseWindow",
-    "FPSDisplay"
+    "BaseWindow"
     ]
