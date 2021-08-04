@@ -1559,4 +1559,4 @@ class XlibWindow(BaseWindow):
         self._mapped = False
         self.dispatch_event('on_hide')
 
-__all__ = [ "XlibEventHandler" ]
+__all__ = [ "XlibEventHandler", "XlibWindow" ]

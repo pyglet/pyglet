@@ -1200,4 +1200,4 @@ class Win32Window(BaseWindow):
         self.dispatch_event('on_file_drop', point.x, self._height - point.y, paths)
         return 0
 
-__all__ = [ "Win32EventHandler" ]
+__all__ = [ "Win32EventHandler", "Win32Window" ]
