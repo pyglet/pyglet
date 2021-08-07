@@ -526,7 +526,8 @@ layout_vertex_source = """#version 330 core
     in vec2 translation;
 
     out vec4 text_colors;
-    out vec2 texture_coords; 
+    out vec2 texture_coords;
+    out vec4 position;
 
     uniform WindowBlock
     {
@@ -541,6 +542,7 @@ layout_vertex_source = """#version 330 core
 
         gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 1);
 
+        position = vec4(vertices + translation, 0, 1);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -549,14 +551,23 @@ layout_vertex_source = """#version 330 core
 layout_fragment_source = """#version 330 core
     in vec4 text_colors;
     in vec2 texture_coords;
+    in vec4 position;
 
     out vec4 final_colors;
 
     uniform sampler2D text;
+    uniform bool scissor = false;
+    uniform vec4 scissor_area;
 
     void main()
     {   
         final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a) * text_colors;
+        if (scissor == true) {
+            if (position.x < scissor_area[0]) discard;                     // left
+            if (position.y < scissor_area[1]) discard;                     // bottom
+            if (position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
     }
 """
 
@@ -566,6 +577,8 @@ decoration_vertex_source = """#version 330 core
     in vec2 translation;
 
     out vec4 vert_colors;
+    out vec4 position;
+
 
     uniform WindowBlock
     {
@@ -580,18 +593,29 @@ decoration_vertex_source = """#version 330 core
 
         gl_Position = window.projection * window.view * translate_mat * vec4(vertices, 0, 0);
 
+        position = vec4(vertices + translation, 0, 1);
         vert_colors = colors;
     }
 """
 
 decoration_fragment_source = """#version 330 core
     in vec4 vert_colors;
+    in vec4 position;
 
     out vec4 final_colors;
+
+    uniform bool scissor = false;
+    uniform vec4 scissor_area;
 
     void main()
     {   
         final_colors = vert_colors;
+        if (scissor == true) {
+            if (position.x < scissor_area[0]) discard;                     // left
+            if (position.y < scissor_area[1]) discard;                     // bottom
+            if (position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
     }
 """
 
@@ -631,6 +655,7 @@ class TextLayoutGroup(graphics.Group):
 
     def set_state(self):
         self.program.use()
+        self.program['scissor'] = False
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -657,26 +682,6 @@ class TextLayoutGroup(graphics.Group):
         return hash((self.program.id, self.order, self.texture.target, self.texture.id))
 
 
-class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0, program=None):
-        """Create a text decoration rendering group.
-
-        The group is created internally when a :py:class:`~pyglet.text.Label`
-        is created; applications usually do not need to explicitly create it.
-        """
-        super().__init__(order=order)
-        self.program = program or get_default_decoration_shader()
-
-    def set_state(self):
-        self.program.use()
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-        self.program.stop()
-
-
 class ScrollableTextLayoutGroup(graphics.Group):
 
     scissor_area = 0, 0, 0, 0
@@ -694,6 +699,8 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
     def set_state(self):
         self.program.use()
+        self.program['scissor'] = True
+        self.program['scissor_area'] = self.scissor_area
 
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
@@ -701,12 +708,8 @@ class ScrollableTextLayoutGroup(graphics.Group):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glEnable(GL_SCISSOR_TEST)
-        glScissor(*self.scissor_area)
-
     def unset_state(self):
         glDisable(GL_BLEND)
-        glDisable(GL_SCISSOR_TEST)
         glBindTexture(self.texture.target, 0)
         self.program.stop()
 
@@ -722,10 +725,65 @@ class ScrollableTextLayoutGroup(graphics.Group):
 
 class IncrementalTextLayoutGroup(ScrollableTextLayoutGroup):
     # Subclass so that the scissor_area isn't shared with the
-    # ScrollableTextLayout. We use a class variable here, and
-    # so that it can be set before the document glyphs are
-    # created.
+    # ScrollableTextLayout. We use a class variable here so
+    # that it can be set before the document glyphs are created.
     scissor_area = 0, 0, 0, 0
+
+
+class TextDecorationGroup(graphics.Group):
+    def __init__(self, order=0, program=None):
+        """Create a text decoration rendering group.
+
+        The group is created internally when a :py:class:`~pyglet.text.Label`
+        is created; applications usually do not need to explicitly create it.
+        """
+        super().__init__(order=order)
+        self.program = program or get_default_decoration_shader()
+
+    def set_state(self):
+        self.program.use()
+        self.program['scissor'] = False
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        self.program.stop()
+
+
+class ScrollableTextDecorationGroup(graphics.Group):
+
+    scissor_area = 0, 0, 0, 0
+
+    def __init__(self, order=0, program=None):
+        """Create a text decoration rendering group.
+
+        The group is created internally when a :py:class:`~pyglet.text.Label`
+        is created; applications usually do not need to explicitly create it.
+        """
+        super().__init__(order=order)
+        self.program = program or get_default_decoration_shader()
+
+    def set_state(self):
+        self.program.use()
+        self.program['scissor'] = True
+        self.program['scissor_area'] = self.scissor_area
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        self.program.stop()
+
+
+class IncrementalTextDecorationGroup(ScrollableTextDecorationGroup):
+    # Subclass so that the scissor_area isn't shared with the
+    # ScrollableTextDecorationGroup. We use a class variable here so
+    # that it can be set before the document glyphs are created.
+    scissor_area = 0, 0, 0, 0
+
 
 # ####################
 
@@ -2091,7 +2149,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         invalid_start, invalid_end = self.invalid_vertex_lines.validate()
         if invalid_end - invalid_start <= 0:
-            print("return")
             return
 
         colors_iter = self.document.get_style_runs('color')
