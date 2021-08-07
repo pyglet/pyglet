@@ -19,12 +19,18 @@ shader_types = {
 }
 
 _uniform_getters = {
-    GLint:   glGetUniformiv,
-    GLfloat: glGetUniformfv,
+    GLint:     glGetUniformiv,
+    GLfloat:   glGetUniformfv,
+    GLboolean: glGetUniformiv,
 }
 
 _uniform_setters = {
     # uniform type: (gl_type, setter, length, count)
+    GL_BOOL:      (GLint, glUniform1iv, 1, 1),
+    GL_BOOL_VEC2: (GLint, glUniform1iv, 2, 1),
+    GL_BOOL_VEC3: (GLint, glUniform1iv, 3, 1),
+    GL_BOOL_VEC4: (GLint, glUniform1iv, 4, 1),
+
     GL_INT:      (GLint, glUniform1iv, 1, 1),
     GL_INT_VEC2: (GLint, glUniform2iv, 2, 1),
     GL_INT_VEC3: (GLint, glUniform3iv, 3, 1),
@@ -35,9 +41,8 @@ _uniform_setters = {
     GL_FLOAT_VEC3: (GLfloat, glUniform3fv, 3, 1),
     GL_FLOAT_VEC4: (GLfloat, glUniform4fv, 4, 1),
 
-    GL_SAMPLER_1D: (GLint, glUniform1iv, 1, 1),
-    
-    GL_SAMPLER_2D: (GLint, glUniform1iv, 1, 1),
+    GL_SAMPLER_1D:       (GLint, glUniform1iv, 1, 1),
+    GL_SAMPLER_2D:       (GLint, glUniform1iv, 1, 1),
     GL_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, 1, 1),
         
     GL_SAMPLER_3D: (GLint, glUniform1iv, 1, 1),
@@ -119,49 +124,49 @@ class _Uniform:
         c_array = (gl_type * length)()
         ptr = cast(c_array, POINTER(gl_type))
 
-        self.get = _create_getter_func(program, location, gl_getter, c_array, length)
-        self.set = _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix)
+        self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
+        self.set = self._create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix)
+
+    @staticmethod
+    def _create_getter_func(program_id, location, gl_getter, c_array, length):
+        """Factory function for creating simplified Uniform getters"""
+
+        if length == 1:
+            def getter_func():
+                gl_getter(program_id, location, c_array)
+                return c_array[0]
+        else:
+            def getter_func():
+                gl_getter(program_id, location, c_array)
+                return c_array[:]
+
+        return getter_func
+
+    @staticmethod
+    def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix):
+        """Factory function for creating simplified Uniform setters"""
+
+        if is_matrix:
+            def setter_func(value):
+                c_array[:] = value
+                gl_setter(location, count, GL_FALSE, ptr)
+
+        elif length == 1 and count == 1:
+            def setter_func(value):
+                c_array[0] = value
+                gl_setter(location, count, ptr)
+        elif length > 1 and count == 1:
+            def setter_func(values):
+                c_array[:] = values
+                gl_setter(location, count, ptr)
+
+        else:
+            raise NotImplementedError("Uniform type not yet supported.")
+
+        return setter_func
 
     def __repr__(self):
         return f"Uniform('{self.name}', location={self.location}, length={self.length}, count={self.count})"
-
-
-def _create_getter_func(program_id, location, gl_getter, c_array, length):
-    """Factory function for creating simplified Uniform getters"""
-
-    if length == 1:
-        def getter_func():
-            gl_getter(program_id, location, c_array)
-            return c_array[0]
-    else:
-        def getter_func():
-            gl_getter(program_id, location, c_array)
-            return c_array[:]
-
-    return getter_func
-
-
-def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix):
-    """Factory function for creating simplified Uniform setters"""
-
-    if is_matrix:
-        def setter_func(value):
-            c_array[:] = value
-            gl_setter(location, count, GL_FALSE, ptr)
-
-    elif length == 1 and count == 1:
-        def setter_func(value):
-            c_array[0] = value
-            gl_setter(location, count, ptr)
-    elif length > 1 and count == 1:
-        def setter_func(values):
-            c_array[:] = values
-            gl_setter(location, count, ptr)
-
-    else:
-        raise NotImplementedError("Uniform type not yet supported.")
-
-    return setter_func
 
 
 class Shader:
