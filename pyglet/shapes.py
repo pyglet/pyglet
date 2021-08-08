@@ -40,7 +40,7 @@ such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicible). To create more
+and opacity, and rotation (where applicable). To create more
 complex shapes than what is provided here, the lower level
 graphics API is more appropriate.
 See the :ref:`guide_graphics` for more details.
@@ -143,11 +143,8 @@ class _ShapeBase:
     _vertex_list = None
 
     def __del__(self):
-        try:
-            if self._vertex_list is not None:
-                self._vertex_list.delete()
-        except:
-            pass
+        if self._vertex_list is not None:
+            self._vertex_list.delete()
 
     def _update_position(self):
         raise NotImplementedError
@@ -323,7 +320,7 @@ class Arc(_ShapeBase):
             `radius` : float
                 The desired radius.
             `segments` : int
-                You can optionally specifify how many distict line segments
+                You can optionally specify how many distinct line segments
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
@@ -372,7 +369,7 @@ class Arc(_ShapeBase):
             tau_segs = self._angle / self._segments
             start_angle = self._start_angle - math.radians(self._rotation)
 
-            # Calcuate the outer points of the arc:
+            # Calculate the outer points of the arc:
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
                        y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
@@ -464,7 +461,7 @@ class Circle(_ShapeBase):
             r = self._radius
             tau_segs = math.pi * 2 / self._segments
 
-            # Calcuate the outer points of the circle:
+            # Calculate the outer points of the circle:
             points = [(x + (r * math.cos(i * tau_segs)),
                        y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
 
@@ -495,7 +492,7 @@ class Circle(_ShapeBase):
 
 class Sector(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
-                 color=(255,255,255), batch=None, group=None):
+                 color=(255, 255, 255), batch=None, group=None):
         """Create a sector of a circle.
 
                 The sector's anchor point (x, y) defaults to the center of the circle.
@@ -554,7 +551,7 @@ class Sector(_ShapeBase):
 
             # Calculate the outer points of the sector.
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
-                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range((self._segments + 1))]
+                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
             # Create a list of triangles from the points
             vertices = []
@@ -717,7 +714,7 @@ class Rectangle(_ShapeBase):
     def __init__(self, x, y, width, height, color=(255, 255, 255), batch=None, group=None):
         """Create a rectangle or square.
 
-        The rectangles's anchor point defaults to the (x, y) coordinates,
+        The rectangle's anchor point defaults to the (x, y) coordinates,
         which are at the bottom left.
 
         :Parameters:
@@ -831,7 +828,7 @@ class BorderedRectangle(_ShapeBase):
                  border_color=(100, 100, 100), batch=None, group=None):
         """Create a rectangle or square.
 
-        The rectangles's anchor point defaults to the (x, y) coordinates,
+        The rectangle's anchor point defaults to the (x, y) coordinates,
         which are at the bottom left.
 
         :Parameters:
@@ -1143,7 +1140,7 @@ class Star(_ShapeBase):
 
     @property
     def inner_radius(self):
-        """The innter radius of the star."""
+        """The inner radius of the star."""
         return self._inner_radius
 
     @inner_radius.setter
