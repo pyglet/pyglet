@@ -840,8 +840,13 @@ class BorderedRectangle(_ShapeBase):
                 The width of the rectangle.
             `height` : float
                 The height of the rectangle.
+            `border` : float
+                The thickness of the border.
             `color` : (int, int, int)
                 The RGB color of the rectangle, specified as
+                a tuple of three ints in the range of 0-255.
+            `border_color` : (int, int, int)
+                The RGB color of the rectangle's border, specified as
                 a tuple of three ints in the range of 0-255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
