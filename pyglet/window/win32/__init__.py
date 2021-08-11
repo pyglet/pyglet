@@ -270,6 +270,10 @@ class Win32Window(BaseWindow):
             x, y = self._client_to_window_pos(*factory.get_location())
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  x, y, width, height, SWP_FRAMECHANGED)
+        elif self.style == 'transparent':
+            _user32.SetLayeredWindowAttributes(self._hwnd, 0, 254, LWA_ALPHA)
+            _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0,
+                                 0, width, height, SWP_NOMOVE | SWP_NOSIZE)
         else:
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
