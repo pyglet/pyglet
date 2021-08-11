@@ -152,6 +152,8 @@ class Win32Window(BaseWindow):
                 self.WINDOW_STYLE_TOOL: (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                                          WS_EX_TOOLWINDOW),
                 self.WINDOW_STYLE_BORDERLESS: (WS_POPUP, 0),
+                self.WINDOW_STYLE_TRANSPARENT_OVERLAY: (WS_POPUP,
+                                                        WS_EX_LAYERED | WS_EX_TRANSPARENT)
             }
             self._ws_style, self._ex_ws_style = styles[self._style]
 

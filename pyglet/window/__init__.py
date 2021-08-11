@@ -135,6 +135,9 @@ from pyglet import gl
 from pyglet.event import EventDispatcher
 from pyglet.window import key
 from pyglet.util import with_metaclass
+from pyglet.libs.win32.constants import LWA_ALPHA, HWND_TOPMOST, SWP_NOMOVE, SWP_NOSIZE
+from pyglet.libs.win32 import _gdi32, _dwmapi
+from pyglet.libs.win32.types import *
 
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
@@ -393,6 +396,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     WINDOW_STYLE_TOOL = 'tool'
     #: A window style without any decoration.
     WINDOW_STYLE_BORDERLESS = 'borderless'
+    #: A window style for overlays
+    WINDOW_STYLE_TRANSPARENT_OVERLAY = 'transparent'
 
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
@@ -588,9 +593,14 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if not screen:
             screen = display.get_default_screen()
 
+        # if self._style == 'transparent' and config and not config.alpha_size:
+        #     config.alpha_size = 8
+        # elif self._style == 'transparent' and not config:
+        #     config = gl.Config(alpha_size=8)
+
         if not config:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24),
-                                    gl.Config(double_buffer=True, depth_size=16),
+            for template_config in [gl.Config(double_buffer=True, depth_size=24, alpha_size=8),
+                                    gl.Config(double_buffer=True, depth_size=16, alpha_size=8),
                                     None]:
                 try:
                     config = screen.get_best_config(template_config)
@@ -599,6 +609,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     pass
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
+        elif config.alpha_size != 8:
+            config.alpha_size = 8
 
         if not config.is_complete():
             config = screen.get_best_config(config)
@@ -609,6 +621,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # Set these in reverse order to above, to ensure we get user preference
         self._context = context
         self._config = self._context.config
+
         # XXX deprecate config's being screen-specific
         if hasattr(self._config, 'screen'):
             self._screen = self._config.screen
@@ -661,6 +674,12 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if visible:
             self.set_visible(True)
             self.activate()
+
+        if self._style == 'transparent':
+            ctypes.windll.user32.SetLayeredWindowAttributes(
+                self._hwnd, 0, 254, LWA_ALPHA)
+            ctypes.windll.user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                                SWP_NOMOVE | SWP_NOSIZE)
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
