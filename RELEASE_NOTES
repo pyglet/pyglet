@@ -3,6 +3,7 @@ pyglet 1.5.19
 Bugfixes
 --------
 - Ensure that the FFmpegDecoder returns the requested number of bytes.
+- When subclassing EventHandlers, ensure that possible TyperErrors give correct feedback.
 
 Maintenance
 -----------
