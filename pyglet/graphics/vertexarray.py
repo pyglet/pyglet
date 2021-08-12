@@ -62,7 +62,10 @@ class VertexArray:
         glBindVertexArray(0)
 
     def delete(self):
-        glDeleteVertexArrays(1, self._id)
+        try:
+            glDeleteVertexArrays(1, self._id)
+        except Exception:
+            pass
 
     __enter__ = bind
 
