@@ -210,7 +210,7 @@ You can specify the style of the window in the
 :py:class:`~pyglet.window.Window` constructor.
 Once created, the window style cannot be altered::
 
-    window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
+    window = pyglet.window.Window(style=pyglet.window.Window.WINDOW_STYLE_DIALOG)
 
 Caption
 ^^^^^^^
