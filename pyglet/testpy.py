@@ -58,7 +58,7 @@ def updateTransparency(hwnd):
 topmost = True
 batch = Batch()
 config = Config(vsync=False, alpha_size=4)
-window = Window(500, 500, style=Window.WINDOW_STYLE_TRANSPARENT_OVERLAY) #, config=config)
+window = Window(500, 500, style=Window.WINDOW_STYLE_OVERLAY) #, config=config)
 label1 = Label("Test", x=100, y=250, batch=batch, font_size=72,
                color=(255, 255, 0, 255))
 

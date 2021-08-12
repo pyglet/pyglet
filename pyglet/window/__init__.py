@@ -393,8 +393,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     WINDOW_STYLE_TOOL = 'tool'
     #: A window style without any decoration.
     WINDOW_STYLE_BORDERLESS = 'borderless'
-    #: A window style for overlays
-    WINDOW_STYLE_TRANSPARENT_OVERLAY = 'transparent'
+    #: A window style for transparent, interactable windows
+    WINDOW_STYLE_TRANSPARENT = 'transparent'
+    #: A window style for transparent, topmost, click-through-able overlays
+    WINDOW_STYLE_OVERLAY = 'overlay'
+
 
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
@@ -601,7 +604,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     pass
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
-        elif config.alpha_size != 8 and self.style == 'transparent':
+
+        if config.alpha_size != 8 \
+                and (self.style == 'transparent' or self.style == 'overlay'):
             config.alpha_size = 8
 
         if not config.is_complete():

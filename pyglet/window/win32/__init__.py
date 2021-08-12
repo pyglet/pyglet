@@ -152,8 +152,10 @@ class Win32Window(BaseWindow):
                 self.WINDOW_STYLE_TOOL: (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                                          WS_EX_TOOLWINDOW),
                 self.WINDOW_STYLE_BORDERLESS: (WS_POPUP, 0),
-                self.WINDOW_STYLE_TRANSPARENT_OVERLAY: (WS_POPUP,
-                                                        WS_EX_LAYERED | WS_EX_TRANSPARENT)
+                self.WINDOW_STYLE_TRANSPARENT: (WS_OVERLAPPEDWINDOW,
+                                                WS_EX_LAYERED),
+                self.WINDOW_STYLE_OVERLAY: (WS_POPUP,
+                                            WS_EX_LAYERED | WS_EX_TRANSPARENT)
             }
             self._ws_style, self._ex_ws_style = styles[self._style]
 
@@ -270,10 +272,11 @@ class Win32Window(BaseWindow):
             x, y = self._client_to_window_pos(*factory.get_location())
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  x, y, width, height, SWP_FRAMECHANGED)
-        elif self.style == 'transparent':
+        elif self.style == 'transparent' or self.style == "overlay":
             _user32.SetLayeredWindowAttributes(self._hwnd, 0, 254, LWA_ALPHA)
-            _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0,
-                                 0, width, height, SWP_NOMOVE | SWP_NOSIZE)
+            if self.style == "overlay":
+                _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0,
+                                     0, width, height, SWP_NOMOVE | SWP_NOSIZE)
         else:
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
