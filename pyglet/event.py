@@ -157,7 +157,6 @@ import inspect
 from functools import partial
 from weakref import WeakMethod
 
-
 EVENT_HANDLED = True
 EVENT_UNHANDLED = None
 
@@ -302,6 +301,7 @@ class EventDispatcher:
                             return frame
                     except KeyError:
                         pass
+
         frame = find_frame()
 
         # No frame matched; no error.
@@ -397,7 +397,7 @@ class EventDispatcher:
             "You need to register events with the class method "
             "EventDispatcher.register_event_type('event_name')."
         )
-        assert event_type in self.event_types,\
+        assert event_type in self.event_types, \
             "%r not found in %r.event_types == %r" % (event_type, self, self.event_types)
 
         invoked = False
@@ -435,7 +435,8 @@ class EventDispatcher:
 
         return False
 
-    def _raise_dispatch_exception(self, event_type, args, handler, exception):
+    @staticmethod
+    def _raise_dispatch_exception(event_type, args, handler, exception):
         # A common problem in applications is having the wrong number of
         # arguments in an event handler.  This is caught as a TypeError in
         # dispatch_event but the error message is obfuscated.
@@ -464,21 +465,18 @@ class EventDispatcher:
             n_handler_args = max(n_handler_args, n_args)
 
         # Allow default values to overspecify arguments
-        if (n_handler_args > n_args and handler_defaults and
-            n_handler_args - len(handler_defaults) <= n_args):
+        if n_handler_args > n_args >= n_handler_args - len(handler_defaults) and handler_defaults:
             n_handler_args = n_args
 
         if n_handler_args != n_args:
             if inspect.isfunction(handler) or inspect.ismethod(handler):
-                descr = "'%s' at %s:%d" % (handler.__name__,
-                                           handler.__code__.co_filename,
-                                           handler.__code__.co_firstlineno)
+                descr = f"'{handler.__name__}' at {handler.__code__.co_filename}:{handler.__code__.co_firstlineno}"
             else:
                 descr = repr(handler)
 
-            raise TypeError("The '{0}' event was dispatched with {1} arguments, "
-                            "but your handler {2} accepts only {3} arguments.".format(
-                             event_type, len(args), descr, len(handler_args)))
+            raise TypeError(f"The '{event_type}' event was dispatched with {len(args)} arguments,\n"
+                            f"but your handler {descr} accepts only {n_handler_args} arguments.")
+
         else:
             raise exception
 
@@ -500,20 +498,23 @@ class EventDispatcher:
                 # ...
 
         """
-        if len(args) == 0:                      # @window.event()
+        if len(args) == 0:  # @window.event()
             def decorator(func):
-                name = func.__name__
-                self.set_handler(name, func)
+                func_name = func.__name__
+                self.set_handler(func_name, func)
                 return func
+
             return decorator
-        elif inspect.isroutine(args[0]):        # @window.event
+        elif inspect.isroutine(args[0]):  # @window.event
             func = args[0]
             name = func.__name__
             self.set_handler(name, func)
             return args[0]
-        elif isinstance(args[0], str):          # @window.event('on_resize')
+        elif isinstance(args[0], str):  # @window.event('on_resize')
             name = args[0]
+
             def decorator(func):
                 self.set_handler(name, func)
                 return func
+
             return decorator

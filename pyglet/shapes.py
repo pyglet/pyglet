@@ -40,7 +40,7 @@ such as Rectangles, Circles, and Lines. These shapes are made
 internally from OpenGL primitives, and provide excellent performance
 when drawn as part of a :py:class:`~pyglet.graphics.Batch`.
 Convenience methods are provided for positioning, changing color
-and opacity, and rotation (where applicible). To create more
+and opacity, and rotation (where applicable). To create more
 complex shapes than what is provided here, the lower level
 graphics API is more appropriate.
 See the :ref:`guide_graphics` for more details.
@@ -365,7 +365,7 @@ class Arc(_ShapeBase):
             `radius` : float
                 The desired radius.
             `segments` : int
-                You can optionally specifify how many distict line segments
+                You can optionally specify how many distinct line segments
                 the arc should be made from. If not specified it will be
                 automatically calculated using the formula:
                 `max(14, int(radius / 1.25))`.
@@ -415,7 +415,7 @@ class Arc(_ShapeBase):
             tau_segs = self._angle / self._segments
             start_angle = self._start_angle - math.radians(self._rotation)
 
-            # Calcuate the outer points of the arc:
+            # Calculate the outer points of the arc:
             points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
                        y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
 
@@ -473,7 +473,7 @@ class Circle(_ShapeBase):
             `radius` : float
                 The desired radius.
             `segments` : int
-                You can optionally specifify how many distict triangles
+                You can optionally specify how many distinct triangles
                 the circle should be made from. If not specified it will
                 be automatically calculated based using the formula:
                 `max(14, int(radius / 1.25))`.
@@ -507,7 +507,7 @@ class Circle(_ShapeBase):
             r = self._radius
             tau_segs = math.pi * 2 / self._segments
 
-            # Calcuate the outer points of the circle:
+            # Calculate the outer points of the circle:
             points = [(x + (r * math.cos(i * tau_segs)),
                        y + (r * math.sin(i * tau_segs))) for i in range(self._segments)]
 
@@ -533,6 +533,110 @@ class Circle(_ShapeBase):
     @radius.setter
     def radius(self, value):
         self._radius = value
+        self._update_position()
+
+
+class Sector(_ShapeBase):
+    def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
+                 color=(255, 255, 255), batch=None, group=None):
+        """Create a sector of a circle.
+
+                The sector's anchor point (x, y) defaults to the center of the circle.
+
+                :Parameters:
+                    `x` : float
+                        X coordinate of the sector.
+                    `y` : float
+                        Y coordinate of the sector.
+                    `radius` : float
+                        The desired radius.
+                    `segments` : int
+                        You can optionally specify how many distinct triangles
+                        the sector should be made from. If not specified it will
+                        be automatically calculated based using the formula:
+                        `max(14, int(radius / 1.25))`.
+                    `angle` : float
+                        The angle of the sector, in radians. Defaults to tau (pi * 2),
+                        which is a full circle.
+                    `start_angle` : float
+                        The start angle of the sector, in radians. Defaults to 0.
+                    `color` : (int, int, int)
+                        The RGB color of the sector, specified as a tuple of
+                        three ints in the range of 0-255.
+                    `batch` : `~pyglet.graphics.Batch`
+                        Optional batch to add the sector to.
+                    `group` : `~pyglet.graphics.Group`
+                        Optional parent group of the sector.
+                """
+        self._x = x
+        self._y = y
+        self._radius = radius
+        self._segments = segments or max(14, int(radius / 1.25))
+
+        self._rgb = color
+        self._angle = angle
+        self._start_angle = start_angle
+        self._rotation = 0
+
+        self._batch = batch or Batch()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+
+        self._vertex_list = self._batch.add(self._segments * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._update_position()
+        self._update_color()
+
+    def _update_position(self):
+        if not self._visible:
+            vertices = (0,) * self._segments * 6
+        else:
+            x = self._x + self._anchor_x
+            y = self._y + self._anchor_y
+            r = self._radius
+            tau_segs = self._angle / self._segments
+            start_angle = self._start_angle - math.radians(self._rotation)
+
+            # Calculate the outer points of the sector.
+            points = [(x + (r * math.cos((i * tau_segs) + start_angle)),
+                       y + (r * math.sin((i * tau_segs) + start_angle))) for i in range(self._segments + 1)]
+
+            # Create a list of triangles from the points
+            vertices = []
+            for i, point in enumerate(points[1:], start=1):
+                triangle = x, y, *points[i - 1], *point
+                vertices.extend(triangle)
+
+        self._vertex_list.vertices[:] = vertices
+
+    def _update_color(self):
+        self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
+
+    @property
+    def radius(self):
+        """The radius of the circle.
+
+        :type: float
+        """
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        self._radius = value
+        self._update_position()
+
+    @property
+    def rotation(self):
+        """Clockwise rotation of the sector, in degrees.
+
+        The sector will be rotated about its (anchor_x, anchor_y)
+        position.
+
+        :type: float
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = rotation
         self._update_position()
 
 
@@ -656,7 +760,7 @@ class Rectangle(_ShapeBase):
     def __init__(self, x, y, width, height, color=(255, 255, 255), batch=None, group=None):
         """Create a rectangle or square.
 
-        The rectangles's anchor point defaults to the (x, y) coordinates,
+        The rectangle's anchor point defaults to the (x, y) coordinates,
         which are at the bottom left.
 
         :Parameters:
@@ -770,7 +874,7 @@ class BorderedRectangle(_ShapeBase):
                  border_color=(100, 100, 100), batch=None, group=None):
         """Create a rectangle or square.
 
-        The rectangles's anchor point defaults to the (x, y) coordinates,
+        The rectangle's anchor point defaults to the (x, y) coordinates,
         which are at the bottom left.
 
         :Parameters:
@@ -782,8 +886,13 @@ class BorderedRectangle(_ShapeBase):
                 The width of the rectangle.
             `height` : float
                 The height of the rectangle.
+            `border` : float
+                The thickness of the border.
             `color` : (int, int, int)
                 The RGB color of the rectangle, specified as
+                a tuple of three ints in the range of 0-255.
+            `border_color` : (int, int, int)
+                The RGB color of the rectangle's border, specified as
                 a tuple of three ints in the range of 0-255.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the rectangle to.
@@ -1081,7 +1190,7 @@ class Star(_ShapeBase):
 
     @property
     def inner_radius(self):
-        """The innter radius of the star."""
+        """The inner radius of the star."""
         return self._inner_radius
 
     @inner_radius.setter
@@ -1248,4 +1357,4 @@ class Polygon(_ShapeBase):
         self._update_position()
 
 
-__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon')
+__all__ = ('Arc', 'Circle', 'Line', 'Rectangle', 'BorderedRectangle', 'Triangle', 'Star', 'Polygon', 'Sector')
