@@ -600,6 +600,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self.view = pyglet.math.Mat4()
 
         self._viewport = 0, 0, *self.get_framebuffer_size()
+        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
@@ -754,7 +755,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         projection based on the same dimensions.
         """
         gl.glViewport(0, 0, *self.get_framebuffer_size())
-        self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def on_close(self):
         """Default on_close handler."""
