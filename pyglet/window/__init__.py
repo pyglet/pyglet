@@ -601,7 +601,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     pass
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
-        elif config.alpha_size != 8:
+        elif config.alpha_size != 8 and self.style == 'transparent':
             config.alpha_size = 8
 
         if not config.is_complete():
