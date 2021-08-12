@@ -595,7 +595,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         if not config:
             for template_config in [gl.Config(double_buffer=True, depth_size=24, alpha_size=8),
-                                    gl.Config(double_buffer=True, depth_size=16, alpha_size=8),
+                                    gl.Config(double_buffer=True, depth_size=16),
                                     None]:
                 try:
                     config = screen.get_best_config(template_config)
