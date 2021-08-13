@@ -88,7 +88,7 @@ class Renderbuffer:
         try:
             glDeleteRenderbuffers(1, self._id)
         # Python interpreter is shutting down:
-        except ImportError:
+        except Exception:
             pass
 
     def __repr__(self):
@@ -139,7 +139,10 @@ class Framebuffer:
             self.unbind()
 
     def delete(self):
-        glDeleteFramebuffers(1, self._id)
+        try:
+            glDeleteFramebuffers(1, self._id)
+        except Exception:
+            pass
 
     @property
     def is_complete(self):
@@ -238,7 +241,7 @@ class Framebuffer:
         try:
             glDeleteFramebuffers(1, self._id)
         # Python interpreter is shutting down:
-        except ImportError:
+        except Exception:
             pass
 
     def __repr__(self):
