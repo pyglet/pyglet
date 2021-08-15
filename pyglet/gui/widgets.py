@@ -42,11 +42,16 @@ from pyglet.event import EventDispatcher
 from pyglet.graphics import Group
 from pyglet.text.caret import Caret
 from pyglet.text.layout import IncrementalTextLayout
+from pyglet.window import mouse
 
 
 class WidgetBase(EventDispatcher):
 
-    def __init__(self, x, y, width, height):
+    def __init__(self,
+                 x: int,
+                 y: int,
+                 width: int,
+                 height: int):
         self._x = x
         self._y = y
         self._width = width
@@ -111,7 +116,7 @@ class WidgetBase(EventDispatcher):
         dispatched when changing this property.
         """
         raise NotImplementedError("Value depends on control type!")
-    
+
     @value.setter
     def value(self, value):
         raise NotImplementedError("Value depends on control type!")
@@ -151,7 +156,14 @@ class PushButton(WidgetBase):
     Triggers the event 'on_release' when the mouse is released.
     """
 
-    def __init__(self, x, y, pressed, depressed, hover=None, batch=None, group=None):
+    def __init__(self,
+                 x: int,
+                 y: int,
+                 pressed: pyglet.image.AbstractImage,
+                 depressed: pyglet.image.AbstractImage,
+                 hover: pyglet.image.AbstractImage = None,
+                 batch: pyglet.graphics.Batch = None,
+                 group: pyglet.graphics.Group = None):
         """Create a push button.
 
         :Parameters:
@@ -186,7 +198,7 @@ class PushButton(WidgetBase):
     @property
     def value(self):
         return self._pressed
-    
+
     @value.setter
     def value(self, value):
         assert type(value) is bool, "This Widget's value must be True or False."
@@ -219,6 +231,10 @@ class PushButton(WidgetBase):
         if not self.enabled or self._pressed:
             return
         self._sprite.image = self._hover_img if self._check_hit(x, y) else self._depressed_img
+
+    def draw(self):
+        self._sprite.draw()
+        # mabe can solve the `draw` method?
 
 
 PushButton.register_event_type('on_press')
@@ -258,7 +274,14 @@ class Slider(WidgetBase):
     scrolling the mouse wheel.
     """
 
-    def __init__(self, x, y, base, knob, edge=0, batch=None, group=None):
+    def __init__(self,
+                 x: int,
+                 y: int,
+                 base: pyglet.image.AbstractImage,
+                 knob: pyglet.image.AbstractImage,
+                 edge: int = 0,
+                 batch: pyglet.graphics.Batch = None,
+                 group: pyglet.graphics.Group = None):
         """Create a slider.
 
         :Parameters:
@@ -293,7 +316,7 @@ class Slider(WidgetBase):
         bg_group = Group(order=0, parent=group)
         fg_group = Group(order=1, parent=group)
         self._base_spr = pyglet.sprite.Sprite(self._base_img, x, y, batch=batch, group=bg_group)
-        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x+edge, y+base.height/2, batch=batch, group=fg_group)
+        self._knob_spr = pyglet.sprite.Sprite(self._knob_img, x + edge, y + base.height / 2, batch=batch, group=fg_group)
 
         self._value = 0
         self._in_update = False
@@ -371,9 +394,16 @@ class TextEntry(WidgetBase):
     Allows the user to enter and submit text.
     """
 
-    def __init__(self, text, x, y, width,
-                 color=(255, 255, 255, 255), text_color=(0, 0, 0, 255), caret_color=(0, 0, 0),
-                 batch=None, group=None):
+    def __init__(self,
+                 text: str,
+                 x: int,
+                 y: int,
+                 width: int,
+                 color=(255, 255, 255, 255),
+                 text_color=(0, 0, 0, 255),
+                 caret_color=(0, 0, 0),
+                 batch: pyglet.graphics.Batch = None,
+                 group: pyglet.graphics.Group = None):
         """Create a text entry widget.
 
         :Parameters:
@@ -407,7 +437,7 @@ class TextEntry(WidgetBase):
 
         # Rectangular outline with 2-pixel pad:
         p = 2
-        self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color[:3], batch, bg_group)
+        self._outline = pyglet.shapes.Rectangle(x - p, y - p, width + p + p, height + p + p, color[:3], batch, bg_group)
         self._outline.opacity = color[3]
 
         # Text and Caret:
@@ -489,3 +519,88 @@ class TextEntry(WidgetBase):
 
 
 TextEntry.register_event_type('on_commit')
+
+
+class DragSprite(WidgetBase):
+    """Instance of a drag button.
+
+    Triggers the event 'on_press' when it is clicked by the mouse.
+    Triggers the event 'on_release' when the mouse is released.
+    Triggers the event 'on_drag' when it is drag by mouse.
+    """
+    # TODO make it More standardized
+    # TODO add group thing again(i don't know how to)
+    # by shenjack
+
+    def __init__(self,
+                 x: int,
+                 y: int,
+                 image: pyglet.image.AbstractImage,
+                 drag_by_all: bool = False,
+                 drag_out_window: bool = False,
+                 batch: pyglet.graphics.Batch = None,
+                 group: pyglet.graphics.Group = None):
+        """Create a draggable sprite.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the push button.
+            `y` : int
+                Y coordinate of the push button.
+            `image` : `~pyglet.image.AbstractImage`
+                Image to display when the sprite is pressed.
+            `drag_by_all` : bool
+                If True then sprite will move whatever witch mouse button drag the sprite,
+                or the sprite will only move when Left mouse button drag.
+            `drag_out_window` : bool
+                If True then sprite will move out of the window with the mouse dragging,
+                or the sprite will only stop on the edge of the window.
+            `batch` : `~pyglet.graphics.Batch`
+                Optional batch to add the sprite to.
+            `group` : `~pyglet.graphics.Group`
+                Optional parent group of the sprite.
+        """
+        super().__init__(x, y, image.width, image.height)
+        self._image = image
+        self._batch = batch or pyglet.graphics.Batch()
+        self._sprite = pyglet.sprite.Sprite(self._image, x, y, batch=batch, group=group)
+        self.drag_by_all = drag_by_all
+        self.drag_out_window = drag_out_window
+        self.dragging = False
+
+    def on_mouse_press(self, x, y, buttons, modifiers):
+        if (buttons == mouse.LEFT) or self.drag_by_all:
+            if self._check_hit(x, y):
+                self.dragging = True
+                self.dispatch_event('on_press', buttons, self.dragging)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self.dragging:
+            # TODO find a way to get window height and width
+            if (x + dx) < 0 and self.drag_out_window:
+                self._sprite.x = 0
+                self._x = 0
+            else:
+                self._sprite.x += dx
+                self._x += dx
+            if (y + dy) < 0 and self.drag_out_window:
+                self._sprite.y = 0
+                self._y = 0
+            else:
+                self._sprite.y += dy
+                self._y += dy
+            self.dispatch_event('on_drag', x, y, dx, dy, buttons, modifiers)
+
+    def draw(self):
+        self._sprite.draw()
+        # just use self.draw can draw
+
+    def on_mouse_release(self, x, y, buttons, modifiers):
+        if self.dragging:
+            self.dragging = not self.dragging
+            self.dispatch_event('on_release', x, y, buttons, modifiers)
+
+
+DragSprite.register_event_type('on_drag')
+DragSprite.register_event_type('on_press')
+DragSprite.register_event_type('on_release')
