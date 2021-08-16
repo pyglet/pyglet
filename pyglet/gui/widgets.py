@@ -577,13 +577,13 @@ class DragSprite(WidgetBase):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.dragging:
             # TODO find a way to get window height and width
-            if (x + dx) < 0 and self.drag_out_window:
+            if (self._x + dx) < 0 and not self.drag_out_window:
                 self._sprite.x = 0
                 self._x = 0
             else:
                 self._sprite.x += dx
                 self._x += dx
-            if (y + dy) < 0 and self.drag_out_window:
+            if (self._y + dy) < 0 and not self.drag_out_window:
                 self._sprite.y = 0
                 self._y = 0
             else:
