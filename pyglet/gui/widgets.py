@@ -234,7 +234,7 @@ class PushButton(WidgetBase):
 
     def draw(self):
         self._sprite.draw()
-        # mabe can solve the `draw` method?
+        # Maybe can solve the `draw` method?
 
 
 PushButton.register_event_type('on_press')
