@@ -1318,7 +1318,7 @@ class Texture(AbstractImage):
     def __del__(self):
         try:
             self._context.delete_texture(self.id)
-        except:
+        except Exception:
             pass
 
     @classmethod

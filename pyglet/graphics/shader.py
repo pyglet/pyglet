@@ -229,7 +229,7 @@ class Shader:
             glDeleteShader(self._id)
             if _debug_gl_shaders:
                 print(f"Destroyed {self.type} Shader '{self._id}'")
-        except (ImportError, AttributeError, ArgumentError):
+        except Exception:
             # Interpreter is shutting down,
             # or Shader failed to compile.
             pass
@@ -331,7 +331,7 @@ class ShaderProgram:
     def __del__(self):
         try:
             glDeleteProgram(self._id)
-        except (ImportError, AttributeError, GLException):
+        except Exception:
             # Interpreter is shutting down,
             # or ShaderProgram failed to link.
             pass
