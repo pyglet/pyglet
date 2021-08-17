@@ -24,7 +24,7 @@ Various shapes can be constructed with a specific position, size, and color::
     square = shapes.Rectangle(x=200, y=200, width=200, height=200, color=(55, 55, 255))
 
 You can also change the color, or set the opacity after creation. The opacity
-can can be set on a scale of 0-255, for various levels of transparency::
+can be set on a scale of 0-255, for various levels of transparency::
 
     circle.opacity = 120
 
