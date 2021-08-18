@@ -816,7 +816,7 @@ class TextureGroup(Group):
 #: The default Shaders
 
 _vertex_source = """#version 330 core
-    in vec4 vertices;
+    in vec3 vertices;
     in vec4 colors;
     in vec2 tex_coords;
     out vec4 vertex_colors;
@@ -830,7 +830,7 @@ _vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vertices;
+        gl_Position = window.projection * window.view * vec4(vertices, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;

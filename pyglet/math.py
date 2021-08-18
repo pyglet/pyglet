@@ -92,7 +92,7 @@ class Vec2(tuple):
 
     def scale(self, value):
         return Vec2(self[0] * value, self[1] * value)
-    
+
     def distance(self, other):
         return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
@@ -171,7 +171,7 @@ class Vec3(tuple):
 
     def scale(self, value):
         return Vec3(self[0] * value, self[1] * value, self[2] * value)
-    
+
     def distance(self, other):
         return _math.sqrt(((other[0] - self[0]) ** 2) +
                           ((other[1] - self[1]) ** 2) +
@@ -248,7 +248,7 @@ class Vec4(tuple):
 
     def scale(self, value):
         return Vec4(self[0] * value, self[1] * value, self[2] * value, self[3] * value)
-    
+
     def distance(self, other):
         return _math.sqrt(((other[0] - self[0]) ** 2) +
                           ((other[1] - self[1]) ** 2) +

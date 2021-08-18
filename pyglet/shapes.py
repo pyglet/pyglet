@@ -85,7 +85,7 @@ from pyglet.graphics import shader, Batch, ShaderGroup
 
 
 vertex_source = """#version 150 core
-    in vec4 position;
+    in vec2 position;
     in vec4 colors;
 
     out vec4 vertex_colors;
@@ -98,7 +98,7 @@ vertex_source = """#version 150 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * position;
+        gl_Position = window.projection * window.view * vec4(position, 0, 1);
         vertex_colors = colors;
     }
 """
@@ -122,7 +122,7 @@ def get_default_shader():
         _default_frag_shader = pyglet.graphics.shader.Shader(fragment_source, 'fragment')
         default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_shapes_default_shader = default_shader_program
-        return pyglet.gl.current_context.pyglet_shapes_default_shader
+        return default_shader_program
 
 
 class _ShapeGroup(ShaderGroup):
