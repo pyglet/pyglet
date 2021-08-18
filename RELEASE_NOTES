@@ -8,6 +8,7 @@ Bugfixes
 --------
 - Ensure that the FFmpegDecoder returns the requested number of bytes.
 - When subclassing EventHandlers, ensure that possible TyperErrors give correct feedback.
+- Fix missing name attribute on FreeTypeMemoryFace object when adding fonts.
 
 Maintenance
 -----------
