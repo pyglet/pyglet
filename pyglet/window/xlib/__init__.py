@@ -232,7 +232,7 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             visual_info = self.config.get_visual_info()
-            depth = 32 if self.style == "transparent" else 24
+            depth = 32 if self.style in ('transparent', 'overlay') else 24
             xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, depth,
                                   xlib.TrueColor, visual_info)
 

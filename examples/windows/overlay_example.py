@@ -1,15 +1,13 @@
-import win32gui
-import win32con
-import win32api
+"""
+Demonstrates creation of a basic overlay window in pyglet
+"""
+
 from pyglet.graphics import Batch
 from pyglet.window import Window
 from pyglet.text import Label
 from pyglet.libs.win32.types import *
 from pyglet.libs.win32 import _gdi32, _dwmapi
 from pyglet.gl import *
-
-NOSIZE = 1
-NOMOVE = 2
 
 
 class DWM_BLURBEHIND(ctypes.Structure):
@@ -37,33 +35,12 @@ def updateTransparency(hwnd):
     _gdi32.DeleteObject(region)
 
 
-# def set_working_transparency(hwnd):
-#     """
-#     This is slow at high resolutions 30fps@4k and appears to be windows-limited
-#     """
-#
-#     window_styles = win32con.WS_EX_LAYERED | win32con.WS_EX_TRANSPARENT
-#
-#     # Setting attribs. for our window to support transparency
-#     win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, window_styles)
-#
-#     win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(0, 0, 0), 254,
-#                                         win32con.LWA_ALPHA)
-#
-#     if topmost:
-#         win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-#                               NOMOVE | NOSIZE)
-
-
 topmost = True
 batch = Batch()
-config = Config(vsync=False, alpha_size=4)
-window = Window(500, 500, style=Window.WINDOW_STYLE_OVERLAY) #, config=config)
+config = Config(vsync=False)
+window = Window(500, 500, style=Window.WINDOW_STYLE_OVERLAY, config=config)
 label1 = Label("Test", x=100, y=250, batch=batch, font_size=72,
                color=(255, 255, 0, 255))
-
-# glEnable(GL_BLEND)
-# glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
 @window.event
@@ -72,5 +49,6 @@ def on_draw():
     batch.draw()
     updateTransparency(window._hwnd)
     glFlush()
+
 
 pyglet.app.run()
