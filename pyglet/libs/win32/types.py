@@ -488,3 +488,11 @@ class PROPVARIANT(ctypes.Structure):
         ('union', _VarTable)
     ]
 
+
+class DWM_BLURBEHIND(ctypes.Structure):
+    _fields_ = [
+        ("dwFlags", DWORD),
+        ("fEnable", BOOL),
+        ("hRgnBlur", HRGN),
+        ("fTransitionOnMaximized", DWORD),
+    ]

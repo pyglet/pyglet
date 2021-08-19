@@ -356,6 +356,16 @@ class Win32Window(BaseWindow):
     def switch_to(self):
         self.context.set_current()
 
+    def update_transparency(self):
+        region = _gdi32.CreateRectRgn(0, 0, -1, -1)
+        bb = DWM_BLURBEHIND()
+        bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION
+        bb.hRgnBlur = region
+        bb.fEnable = True
+
+        _dwmapi.DwmEnableBlurBehindWindow(self._hwnd, ctypes.byref(bb))
+        _gdi32.DeleteObject(region)
+
     def flip(self):
         self.draw_mouse_cursor()
 
@@ -363,6 +373,9 @@ class Win32Window(BaseWindow):
             if self._always_dwm or self._dwm_composition_enabled():
                 if self._interval:
                     _dwmapi.DwmFlush()
+
+        if self.style in ('overlay', 'transparent'):
+            self.update_transparency()
 
         self.context.flip()
 
