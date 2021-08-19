@@ -8,7 +8,7 @@ from pyglet.app import run
 
 
 batch = Batch()
-window = Window(500, 500, style=Window.WINDOW_STYLE_OVERLAY)
+window = Window(500, 500, style=Window.WINDOW_STYLE_TRANSPARENT)
 label1 = Label("Test", x=100, y=250, batch=batch, font_size=72,
                color=(255, 255, 0, 255))
 
