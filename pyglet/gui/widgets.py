@@ -148,6 +148,9 @@ class WidgetBase(EventDispatcher):
     def on_text_motion_select(self, motion):
         pass
 
+    def on_drag(self, x, y, dx, dy, buttons, modifiers):
+        pass
+
 
 class PushButton(WidgetBase):
     """Instance of a push button.

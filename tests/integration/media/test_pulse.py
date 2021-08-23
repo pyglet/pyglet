@@ -71,7 +71,7 @@ def test_context_not_connected(context):
     assert context.is_ready == False
     assert context.is_failed == False
     assert context.is_terminated == False
-    assert context.server == None
+    assert context.Server == None
     assert isinstance(context.protocol_version, numbers.Integral)
     assert context.server_protocol_version == None
     assert context.is_local == None
@@ -82,7 +82,7 @@ def test_context_not_connected(context):
     assert context.is_ready == False
     assert context.is_failed == False
     assert context.is_terminated == False  # Never connected, so state is not set yet
-    assert context.server == None
+    assert context.Server == None
     assert context.protocol_version == None
     assert context.server_protocol_version == None
     assert context.is_local == None
@@ -92,7 +92,7 @@ def test_context_connect(context):
     assert context.is_ready == False
     assert context.is_failed == False
     assert context.is_terminated == False
-    assert context.server == None
+    assert context.Server == None
     assert isinstance(context.protocol_version, numbers.Integral)
     assert context.server_protocol_version == None
     assert context.is_local == None
@@ -102,7 +102,7 @@ def test_context_connect(context):
     assert context.is_ready == True
     assert context.is_failed == False
     assert context.is_terminated == False
-    assert isinstance(context.server, str)
+    assert isinstance(context.Server, str)
     assert isinstance(context.protocol_version, numbers.Integral)
     assert isinstance(context.server_protocol_version, numbers.Integral)
     assert context.is_local == True
@@ -113,7 +113,7 @@ def test_context_connect(context):
     assert context.is_ready == False
     assert context.is_failed == False
     assert context.is_terminated == True
-    assert context.server == None
+    assert context.Server == None
     assert context.protocol_version == None
     assert context.server_protocol_version == None
     assert context.is_local == None
