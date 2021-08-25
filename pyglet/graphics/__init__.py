@@ -816,11 +816,11 @@ class TextureGroup(Group):
 #: The default Shaders
 
 _vertex_source = """#version 330 core
-    in vec3 vertices;
+    in vec3 position;
     in vec4 colors;
-    in vec2 tex_coords;
+    in vec3 tex_coords;
     out vec4 vertex_colors;
-    out vec2 texture_coords;
+    out vec3 texture_coords;
 
     uniform WindowBlock
     {
@@ -830,7 +830,7 @@ _vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(vertices, 1);
+        gl_Position = window.projection * window.view * vec4(position, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -839,13 +839,13 @@ _vertex_source = """#version 330 core
 
 _fragment_source = """#version 330 core
     in vec4 vertex_colors;
-    in vec2 texture_coords;
+    in vec3 texture_coords;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords) + vertex_colors;
+        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
     }
 """
