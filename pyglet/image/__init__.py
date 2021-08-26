@@ -1792,7 +1792,7 @@ class TileableTexture(Texture):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     ('vertices3f', vertices),
+                                     ('position3f', vertices),
                                      ('tex_coords3f', tex_coords))
         glBindTexture(self.target, 0)
 
