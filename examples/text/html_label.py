@@ -37,9 +37,6 @@
 help or introductory screen.
 """
 
-__docformat__ = 'restructuredtext'
-__version__ = '$Id: $'
-
 import os
 import pyglet
 
