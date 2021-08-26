@@ -13,7 +13,7 @@ print("OpenGL Context: {}".format(window.context.get_info().version))
 ##########################################################
 label = pyglet.text.Label("This is a test", x=0, y=180, dpi=200, batch=batch)
 
-vertex_list = pyglet.graphics.vertex_list(3, ('vertices3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
+vertex_list = pyglet.graphics.vertex_list(3, ('position3f', (100, 300, 0,  200, 250, 0,  200, 350, 0)),
                                              ('colors4f', (1, 0, 0, 1,  0, 1, 0, 1,  0.3, 0.3, 1, 1)))
 
 
@@ -22,11 +22,11 @@ def create_quad_vertex_list(x, y, z, width, height):
 
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('vertices3f', create_quad_vertex_list(480, 270, -11, 50, 50)),
+                  ('position3f', create_quad_vertex_list(480, 270, -11, 50, 50)),
                   ('colors4f', (1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1)))
 
 batch.add_indexed(4, GL_TRIANGLES, None, [0, 1, 2, 0, 2, 3],
-                  ('vertices3f', (400, 400, 0, 400+50, 400, 0, 400+50, 400+50, 0, 400, 400+50, 0)),
+                  ('position3f', (400, 400, 0, 400+50, 400, 0, 400+50, 400+50, 0, 400, 400+50, 0)),
                   ('colors4f', (1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1, 1, 0.5, 0.2, 1)))
 
 
@@ -70,11 +70,11 @@ def on_mouse_scroll(x, y, mouse, direction):
 def on_draw():
     window.clear()
 
-    # pyglet.graphics.draw(3, GL_TRIANGLES, ('vertices3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
+    # pyglet.graphics.draw(3, GL_TRIANGLES, ('position3f', (100, 100, 0,  200, 100, 0,  150, 200, 0)),
     #                                       ('colors3f', (1, 0.5, 0.2,  1, 0.5, 0.2,  1, 0.5, 0.2)))
     #
     # pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-    #                              ('vertices2i', (225, 300,   250, 300,   250, 325,   225, 325)),
+    #                              ('position2i', (225, 300,   250, 300,   250, 325,   225, 325)),
     #                              ('colors3f', (0.5, 1, 0.2,  0.5, 0.2, 1,  0.2, 0.5, 1, 1, 0.5, 0.2)))
 
     vertex_list.draw(GL_TRIANGLES)
