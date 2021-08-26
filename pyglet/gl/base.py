@@ -389,7 +389,7 @@ class Context:
 
         .. versionadded:: 2.0
         """
-        if self.object_space is gl.current_context.object_space and False:
+        if gl.current_context and self.object_space is gl.current_context.object_space and False:
             v_id = gl.GLuint(vao_id)
             gl.glDeleteVertexArrays(1, v_id)
         else:
