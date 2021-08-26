@@ -33,59 +33,36 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Demonstrates how to manage OpenGL calls with two independent windows.
+"""Demonstrates how to manage two independent windows.
 """
 
 import pyglet
-from pyglet.gl import *
 
-
-def on_resize(width, height):
-    glViewport(0, 0, int(width * pixel_ratio), int(height * pixel_ratio))
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(60., width / float(height), 1., 100.)
-    glMatrixMode(GL_MODELVIEW)
-
-
-def setup():
-    glClearColor(1, 1, 1, 1)
-    glColor3f(.5, .5, .5)
-
-
-def on_draw():
-    glClear(GL_COLOR_BUFFER_BIT)
-    glLoadIdentity()
-    glTranslatef(0, 0, -5)
-    glRotatef(r, 0, 0, 1)
-    glRectf(-1, -1, 1, 1)
-
-
-r = 0
-
-
-def update(dt):
-    global r
-    r += 1
-    if r > 360:
-        r = 0
-
-
-pyglet.clock.schedule_interval(update, 1 / 20.)
 
 w1 = pyglet.window.Window(200, 200, caption='First window', resizable=True)
-w1.on_resize = on_resize
-w1.on_draw = on_draw
 w1.switch_to()
-setup()
+s1 = pyglet.shapes.Rectangle(100, 100, 100, 100, color=(50, 50, 200))
+s1.anchor_position = 50, 50
+
+
+@w1.event
+def on_draw():
+    w1.clear()
+    s1.rotation -= 0.5
+    s1.draw()
+
 
 w2 = pyglet.window.Window(300, 300, caption='Second window', resizable=True)
-w2.on_resize = on_resize
-w2.on_draw = on_draw
 w2.switch_to()
-setup()
+s2 = pyglet.shapes.Rectangle(150, 150, 150, 150, color=(50, 200, 50))
+s2.anchor_position = 75, 75
 
-# On some platforms the actual framebuffer size is bigger than the window.
-pixel_ratio = w1.get_pixel_ratio()
+
+@w2.event
+def on_draw():
+    w2.clear()
+    s2.rotation += 0.5
+    s2.draw()
+
 
 pyglet.app.run()
