@@ -562,7 +562,7 @@ layout_fragment_source = """#version 330 core
 
     void main()
     {   
-        final_colors = texture(text, texture_coords) * text_colors;
+        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a);
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
