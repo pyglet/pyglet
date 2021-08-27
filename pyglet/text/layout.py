@@ -674,13 +674,14 @@ class TextLayoutGroup(graphics.Group):
 
     def __eq__(self, other):
         return (other.__class__ is self.__class__ and
+                self.parent is other.parent and
                 self.program.id is other.program.id and
                 self.order == other.order and
                 self.texture.target == other.texture.target and
                 self.texture.id == other.texture.id)
 
     def __hash__(self):
-        return hash((self.program.id, self.order, self.texture.target, self.texture.id))
+        return hash((id(self.parent), self.program.id, self.order, self.texture.target, self.texture.id))
 
 
 class ScrollableTextLayoutGroup(graphics.Group):
