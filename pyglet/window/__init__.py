@@ -594,13 +594,16 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.set_visible(True)
             self.activate()
 
+        self._create_projection()
+
+    def _create_projection(self):
         self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
         self.view = pyglet.math.Mat4()
 
         self._viewport = 0, 0, *self.get_framebuffer_size()
-        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, self._width, 0, self._height, -255, 255)
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
