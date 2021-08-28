@@ -658,25 +658,24 @@ class Batch:
 class Group:
     """Group of common OpenGL state.
 
-    Before a vertex list is rendered, its group's OpenGL state is set.
+    Before a VertexList is rendered, its Group's OpenGL state is set.
     This can including binding textures, or setting any other parameters.
     """
     def __init__(self, order=0, parent=None):
-        """Create a group.
+        """Create a Group.
 
         :Parameters:
             `order` : int
                 Set the order to render above or below other Groups.
             `parent` : `~pyglet.graphics.Group`
-                Group to contain this group; its state will be set before this
-                state's.
+                Group to contain this Group; its state will be set before this
+                Group's state.
             `visible` : bool
-                Determines whether this group is visible in any of the batches
-                it is assigned to.
+                Determines whether this Group is visible in any of the Batches
+                it is assigned to. If False, objects in this Group will not
+                be rendered.
             `batches` : list
-                Read Only. A list of which batches this group is a part of.
-                Group to contain this group; its state will be set
-                before this Group's state.
+                Read Only. A list of which Batches this Group is a part of.
         """
         self._order = order
         self.parent = parent
