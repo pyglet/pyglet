@@ -1303,6 +1303,7 @@ class Texture(AbstractImage):
     region_class = None  # Set to TextureRegion after it's defined
     tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     tex_coords_order = (0, 1, 2, 3)
+    colors = (0, 0, 0, 0) * 4
     level = 0
     images = 1
     x = y = z = 0
@@ -1421,7 +1422,8 @@ class Texture(AbstractImage):
 
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                      ('position3f', vertices),
-                                     ('tex_coords3f', self.tex_coords))
+                                     ('tex_coords3f', self.tex_coords),
+                                     ('colors4Bn', self.colors))
 
         glBindTexture(self.target, 0)
 
