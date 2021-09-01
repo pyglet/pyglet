@@ -1114,8 +1114,7 @@ class XlibWindow(BaseWindow):
                     motion = self._event_text_motion(symbol, modifiers)
                     if motion:
                         if modifiers & key.MOD_SHIFT:
-                            self.dispatch_event(
-                                'on_text_motion_select', motion)
+                            self.dispatch_event('on_text_motion_select', motion)
                         else:
                             self.dispatch_event('on_text_motion', motion)
                     elif text and not modifiers_ctrl:
@@ -1165,7 +1164,7 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev):
         x = ev.xmotion.x
-        y = self.height - ev.xmotion.y
+        y = self.height - ev.xmotion.y - 1
 
         if self._mouse_in_window:
             dx = x - self._mouse_x
@@ -1173,8 +1172,7 @@ class XlibWindow(BaseWindow):
         else:
             dx = dy = 0
 
-        if self._applied_mouse_exclusive \
-                and (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
+        if self._applied_mouse_exclusive and (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
             # Ignore events caused by XWarpPointer
             self._mouse_x = x
             self._mouse_y = y
@@ -1225,7 +1223,7 @@ class XlibWindow(BaseWindow):
         if buttons:
             # Drag event
             x = ev.xmotion.x - self._view_x
-            y = self._height - (ev.xmotion.y - self._view_y)
+            y = self._height - (ev.xmotion.y - self._view_y - 1)
 
             if self._mouse_in_window:
                 dx = x - self._mouse_x
