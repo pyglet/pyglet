@@ -914,6 +914,24 @@ class BorderedRectangle(_ShapeBase):
         self._height = value
         self._update_position()
 
+    @property
+    def border_color(self):
+        """The rectangle's border color.
+
+        This property sets the color of the border of a bordered rectangle.
+
+        The color is specified as an RGB tuple of integers '(red, green, blue)'.
+        Each color component must be in the range 0 (dark) to 255 (saturated).
+
+        :type: (int, int, int)
+        """
+        return self._brgb
+
+    @border_color.setter
+    def border_color(self, values):
+        self._brgb = list(map(int, values))
+        self._update_color()
+
 
 class Triangle(_ShapeBase):
     def __init__(self, x, y, x2, y2, x3, y3, color=(255, 255, 255), batch=None, group=None):
