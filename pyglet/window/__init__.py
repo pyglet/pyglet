@@ -235,7 +235,10 @@ class ImageMouseCursor(MouseCursor):
         self.hw_drawable = acceleration
 
     def draw(self, x, y):
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        gl.glDisable(gl.GL_BLEND)
 
 
 def _PlatformEventHandler(data):
