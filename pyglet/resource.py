@@ -232,7 +232,7 @@ def get_data_path(name):
         if 'XDG_DATA_HOME' in os.environ:
             return os.path.join(os.environ['XDG_DATA_HOME'], name)
         else:
-            return os.path.expanduser('~/.config/share/%s' % name)
+            return os.path.expanduser('~/.local/share/%s' % name)
     else:
         return os.path.expanduser('~/.%s' % name)
 
