@@ -188,7 +188,16 @@ def _create_shadow_window():
         return
 
     from pyglet.window import Window
-    _shadow_window = Window(width=1, height=1, visible=False)
+
+    class ShadowWindow(Window):
+        def __init__(self):
+            super().__init__(width=1, height=1, visible=False)
+
+        def _create_projection(self):
+            """Shadow window does not need a projection."""
+            pass
+
+    _shadow_window = ShadowWindow()
     _shadow_window.switch_to()
 
     from pyglet import app

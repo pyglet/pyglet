@@ -797,7 +797,7 @@ class TextureGroup(Group):
         glBindTexture(self.texture.target, self.texture.id)
 
     def unset_state(self):
-        glDisable(self.texture.target)
+        glBindTexture(self.texture.target, 0)
 
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.order, self.parent))

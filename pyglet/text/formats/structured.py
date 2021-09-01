@@ -54,16 +54,16 @@ class ImageElement(pyglet.text.document.InlineElement):
         super(ImageElement, self).__init__(ascent, descent, self.width)
 
     def place(self, layout, x, y):
-        group = pyglet.graphics.TextureGroup(self.image.get_texture(), layout.top_group)
+        group = pyglet.graphics.TextureGroup(self.image.get_texture(), 1)
         x1 = x
         y1 = y + self.descent
         x2 = x + self.width
         y2 = y + self.height + self.descent
         vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES, group,
                                                [0, 1, 2, 0, 2, 3],
-                                               ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
-                                               ('c3B', (255, 255, 255) * 4),
-                                               ('t3f', self.image.tex_coords))
+                                               ('position3i', (x1, y1, 0, x2, y1, 0, x2, y2, 0, x1, y2, 0)),
+                                               ('colors4Bn', (255, 255, 255, 255) * 4),
+                                               ('tex_coords3f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
     def remove(self, layout):
@@ -74,7 +74,7 @@ class ImageElement(pyglet.text.document.InlineElement):
 def _int_to_roman(number):
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
     if not 0 < number < 4000:
-        raise ValueError("Argument must be between 1 and 3999")    
+        raise ValueError("Argument must be between 1 and 3999")
     integers = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
     numerals = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
     result = ""
@@ -229,7 +229,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
         return self.document
 
     def decode_structured(self, text, location):
-        raise NotImplementedError('abstract') 
+        raise NotImplementedError('abstract')
 
     def push_style(self, key, styles):
         old_styles = {}
