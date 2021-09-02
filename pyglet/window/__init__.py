@@ -594,7 +594,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             screen = display.get_default_screen()
 
         if not config:
-            for template_config in [gl.Config(double_buffer=True, depth_size=24, alpha_size=8),
+            for template_config in [gl.Config(double_buffer=True, depth_size=24),
                                     gl.Config(double_buffer=True, depth_size=16),
                                     None]:
                 try:
@@ -605,8 +605,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
 
-        if config.alpha_size != 8 \
-                and (self.style == 'transparent' or self.style == 'overlay'):
+        if self.style in ('transparent', 'overlay'):
             config.alpha_size = 8
 
         if not config.is_complete():
