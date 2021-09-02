@@ -857,6 +857,7 @@ class BorderedRectangle(_ShapeBase):
         self._y = y
         self._width = width
         self._height = height
+        self._rotation = 0
         self._border = border
         self._rgb = color
         self._brgb = border_color
@@ -871,6 +872,44 @@ class BorderedRectangle(_ShapeBase):
     def _update_position(self):
         if not self._visible:
             self._vertex_list.vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        elif self._rotation:
+            b = self._border
+            x = self._x
+            y = self._y
+
+            bx1 = -self._anchor_x
+            by1 = -self._anchor_y
+            bx2 = bx1 + self._width
+            by2 = by1 + self._height
+            ix1 = bx1 + b
+            iy1 = by1 + b
+            ix2 = bx2 - b
+            iy2 = by2 - b
+
+            r = -math.radians(self._rotation)
+            cr = math.cos(r)
+            sr = math.sin(r)
+
+            bax = bx1 * cr - by1 * sr + x
+            bay = bx1 * sr + by1 * cr + y
+            bbx = bx2 * cr - by1 * sr + x
+            bby = bx2 * sr + by1 * cr + y
+            bcx = bx2 * cr - by2 * sr + x
+            bcy = bx2 * sr + by2 * cr + y
+            bdx = bx1 * cr - by2 * sr + x
+            bdy = bx1 * sr + by2 * cr + y
+
+            iax = ix1 * cr - iy1 * sr + x
+            iay = ix1 * sr + iy1 * cr + y
+            ibx = ix2 * cr - iy1 * sr + x
+            iby = ix2 * sr + iy1 * cr + y
+            icx = ix2 * cr - iy2 * sr + x
+            icy = ix2 * sr + iy2 * cr + y
+            idx = ix1 * cr - iy2 * sr + x
+            idy = ix1 * sr + iy2 * cr + y
+
+            self._vertex_list.vertices[:] = (iax, iay, ibx, iby, icx, icy, idx, idy,
+                                             bax, bay, bbx, bby, bcx, bcy, bdx, bdy,)
         else:
             b = self._border
             bx1 = self._x - self._anchor_x
@@ -913,6 +952,40 @@ class BorderedRectangle(_ShapeBase):
     def height(self, value):
         self._height = value
         self._update_position()
+
+    @property
+    def rotation(self):
+        """Clockwise rotation of the rectangle, in degrees.
+
+        The Rectangle will be rotated about its (anchor_x, anchor_y)
+        position.
+
+        :type: float
+        """
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, value):
+        self._rotation = value
+        self._update_position()
+
+    @property
+    def border_color(self):
+        """The rectangle's border color.
+
+        This property sets the color of the border of a bordered rectangle.
+
+        The color is specified as an RGB tuple of integers '(red, green, blue)'.
+        Each color component must be in the range 0 (dark) to 255 (saturated).
+
+        :type: (int, int, int)
+        """
+        return self._brgb
+
+    @border_color.setter
+    def border_color(self, values):
+        self._brgb = list(map(int, values))
+        self._update_color()
 
 
 class Triangle(_ShapeBase):
