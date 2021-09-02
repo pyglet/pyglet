@@ -187,13 +187,20 @@ Windows and Mac OS X 10.4 are shown below.
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
           - .. image:: img/window_xp_tool.png
           - .. image:: img/window_osx_tool.png
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TRANSPARENT`
+          - .. image:: img/window_xp_transparent.png
+          - <Not Implemented>
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_OVERLAY`
+          - .. image:: img/window_xp_overlay.png
+          - <Not Implemented>
 
 Non-resizable variants of these window styles may appear slightly different
 (for example, the maximize button will either be disabled or absent).
 
 Besides the change in appearance, the window styles affect how the window
 behaves.  For example, tool windows do not usually appear in the task bar and
-cannot receive keyboard focus.  Dialog windows cannot be minimized.  Selecting
+cannot receive keyboard focus.  Dialog windows cannot be minimized. Overlay's
+require custom sizing and moving of the respective window.
 the appropriate window style for your windows means your application will
 behave correctly for the platform on which it is running, however that
 behaviour may not be consistent across Windows, Linux and Mac OS X.
