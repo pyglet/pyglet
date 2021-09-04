@@ -59,6 +59,7 @@ class WidgetBase(EventDispatcher):
         self._bg_group = None
         self._fg_group = None
         self.enabled = True
+        self.frame = None
 
     def update_groups(self, order):
         pass

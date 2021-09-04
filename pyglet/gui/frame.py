@@ -73,6 +73,7 @@ class SpatialHash:
             for j in range(min_vec[1], max_vec[1] + 1):
                 self._cells.setdefault((i, j), set()).add(widget)
         widget.update_groups(self._order)
+        widget.frame = self
 
     def remove_widget(self, widget):
         """Remove a Widget from the spatial hash."""
@@ -82,8 +83,8 @@ class SpatialHash:
                 self._cells.get((i, j)).remove(widget)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
-        """Pass the event to any widgets within range of the mouse"""
-        for widget in self._cells.get(self._hash(x, y), set()):
+        """Pass the event to every widgets"""
+        for widget in self._active_widgets:
             widget.on_mouse_press(x, y, buttons, modifiers)
             self._active_widgets.add(widget)
 
@@ -100,13 +101,13 @@ class SpatialHash:
         self._mouse_pos = x, y
 
     def on_mouse_scroll(self, x, y, index, direction):
-        """Pass the event to any widgets within range of the mouse"""
-        for widget in self._cells.get(self._hash(x, y), set()):
+        """Pass the event to every widgets"""
+        for widget in self._active_widgets:
             widget.on_mouse_scroll(x, y, index, direction)
 
     def on_mouse_motion(self, x, y, dx, dy):
-        """Pass the event to any widgets within range of the mouse"""
-        for widget in self._cells.get(self._hash(x, y), set()):
+        """Pass the event to every widgets"""
+        for widget in self._active_widgets:
             widget.on_mouse_motion(x, y, dx, dy)
         self._mouse_pos = x, y
 
