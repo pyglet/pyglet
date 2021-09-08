@@ -1740,7 +1740,8 @@ class ScrollableTextLayout(TextLayout):
 
     def _update_scissor_area(self):
         area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
-        self.default_group_class.scissor_area = area
+        for group in self.groups.values():
+            group.scissor_area = area
 
     # Properties
 
@@ -1883,13 +1884,14 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
 
-        self._update_scissor_area()
         self._update_translation()
         self._update()
+        self._update_scissor_area()
 
     def _update_scissor_area(self):
         area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
-        self.default_group_class.scissor_area = area
+        for group in self.groups.values():
+            group.scissor_area = area
 
     def _init_document(self):
         assert self._document, 'Cannot remove document from IncrementalTextLayout'
@@ -2210,6 +2212,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @position.setter
     def position(self, position):
         self.x, self.y = position
+        self._update_scissor_area()
 
     @property
     def anchor_x(self):
