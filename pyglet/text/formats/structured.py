@@ -96,8 +96,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         y2 = y + self.height + self.descent
         vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES, group,
                                                [0, 1, 2, 0, 2, 3],
-                                               ('position3i', (x1, y1, 0,  x2, y1, 0,  x2, y2, 0,  x1, y2, 0)),
-                                               ('colors4Bn', (255, 255, 255, 255) * 4),
+                                               ('position3f', (x1, y1, 0,  x2, y1, 0,  x2, y2, 0,  x1, y2, 0)),
                                                ('tex_coords3f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
