@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
 from pyglet import gl
 from pyglet.gl import gl_info
 
@@ -241,6 +240,7 @@ class ObjectSpace:
         self.doomed_textures = []
         self.doomed_buffers = []
         self.doomed_vaos = []
+        self.doomed_shader_programs = []
 
 
 class Context:
@@ -321,6 +321,10 @@ class Context:
             vaos = (gl.GLuint * len(vaos))(*vaos)
             gl.glDeleteVertexArrays(len(vaos), vaos)
             self.object_space.doomed_vaos.clear()
+        if self.object_space.doomed_shader_programs:
+            for program_id in self.object_space.doomed_shader_programs:
+                gl.glDeleteProgram(program_id)
+            self.object_space.doomed_shader_programs.clear()
 
     def destroy(self):
         """Release the context.
@@ -394,6 +398,23 @@ class Context:
             gl.glDeleteVertexArrays(1, v_id)
         else:
             self.object_space.doomed_vaos.append(vao_id)
+
+    def delete_shader_program(self, program_id):
+        """Safely delete a Shader Program belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteProgram`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `program_id` : int
+                The OpenGL name of the Shader Program to delete.
+
+        .. versionadded:: 2.0
+        """
+        if gl.current_context is self:
+            gl.glDeleteProgram(program_id)
+        else:
+            self.object_space.doomed_shader_programs.append(program_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.

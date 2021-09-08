@@ -241,7 +241,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    __slots__ = '_id', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
+    __slots__ = '_id', '_context', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
 
     def __init__(self, *shaders):
         """Create an OpenGL ShaderProgram, from multiple Shaders.
@@ -254,6 +254,7 @@ class ShaderProgram:
         """
         assert shaders, "At least one Shader object is required."
         self._id = self._link_program(shaders)
+        self._context = pyglet.gl.current_context
         self._active = False
 
         self._attributes = {}
@@ -330,7 +331,7 @@ class ShaderProgram:
 
     def __del__(self):
         try:
-            glDeleteProgram(self._id)
+            self._context.delete_shader_program(self.id)
         except Exception:
             # Interpreter is shutting down,
             # or ShaderProgram failed to link.
