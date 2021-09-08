@@ -233,8 +233,7 @@ class XlibWindow(BaseWindow):
 
             visual_info = self.config.get_visual_info()
             depth = 32 if self.style in ('transparent', 'overlay') else 24
-            xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, depth,
-                                  xlib.TrueColor, visual_info)
+            xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, depth, xlib.TrueColor, visual_info)
 
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
@@ -372,7 +371,7 @@ class XlibWindow(BaseWindow):
         }
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', (styles[self._style],))
-        elif self._style == self.WINDOW_STYLE_BORDERLESS:
+        elif self._style in (self.WINDOW_STYLE_BORDERLESS, self.WINDOW_STYLE_OVERLAY):
             MWM_HINTS_DECORATIONS = 1 << 1
             PROP_MWM_HINTS_ELEMENTS = 5
             mwmhints = mwmhints_t()
