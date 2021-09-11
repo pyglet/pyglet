@@ -386,10 +386,11 @@ class Caret:
         if update_ideal_x:
             self._ideal_x = x
 
-        # x -= self._layout.top_group.view_x    # From 1.5
-        # y -= self._layout.top_group.view_y    # From 1.5
-        x -= self._layout.view_x
-        y -= self._layout.view_y
+        # x -= self._layout.view_x
+        # y -= self._layout.view_y
+        x += self._layout.x
+        y += self._layout.y + self._layout.content_height
+
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.position[:] = [x, y + font.descent, x, y + font.ascent]
 
@@ -400,6 +401,8 @@ class Caret:
         self._layout.ensure_x_visible(x)
 
     def on_layout_update(self):
+        """Handler for the `IncrementalTextLayout.on_layout_update` event.
+        """
         if self.position > len(self._layout.document.text):
             self.position = len(self._layout.document.text)
         self._update()

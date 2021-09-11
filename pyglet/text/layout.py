@@ -592,7 +592,7 @@ decoration_vertex_source = """#version 330 core
         mat4 translate_mat = mat4(1.0);
         translate_mat[3] = vec4(translation, 1.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0, 0);
+        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0, 1);
 
         vert_position = vec4(position + translation, 0, 1);
         vert_colors = colors;
