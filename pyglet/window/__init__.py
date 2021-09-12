@@ -594,10 +594,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             screen = display.get_default_screen()
 
         if not config:
-            # This appears to be necessary on some platforms:
-            alpha = 8 if style in ('transparent', 'overlay') else None
-            for template_config in [gl.Config(double_buffer=True, depth_size=24, alpha_size=alpha),
-                                    gl.Config(double_buffer=True, depth_size=16, alpha_size=alpha),
+            for template_config in [gl.Config(double_buffer=True, depth_size=24),
+                                    gl.Config(double_buffer=True, depth_size=16),
                                     None]:
                 try:
                     config = screen.get_best_config(template_config)
@@ -606,6 +604,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
                     pass
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
+
+        # Necessary on Windows. More investigation needed:
+        if style in ('transparent', 'overlay'):
+            config.alpha = 8
 
         if not config.is_complete():
             config = screen.get_best_config(config)
