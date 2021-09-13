@@ -584,7 +584,7 @@ class Ellipse(_ShapeBase):
         """
         return self._b
 
-    @a.setter
+    @b.setter
     def b(self, value):
         self._b = value
         self._update_position()
