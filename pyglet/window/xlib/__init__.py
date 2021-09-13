@@ -232,8 +232,8 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             visual_info = self.config.get_visual_info()
-            depth = 32 if self.style in ('transparent', 'overlay') else 24
-            xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, depth, xlib.TrueColor, visual_info)
+            if self.style in ('transparent', 'overlay'):
+                xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
 
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
@@ -247,14 +247,17 @@ class XlibWindow(BaseWindow):
                 window_attributes.colormap = xlib.XDefaultColormap(self._x_display,
                                                                    self._x_screen_id)
             window_attributes.bit_gravity = xlib.StaticGravity
-            window_attributes.border_pixel = 0
-            window_attributes.background_pixel = 0
 
             # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration
             #            unless CWBackPixel is given in mask.  Should have
             #            no effect on other systems, so it's set
             #            unconditionally.
-            mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel | xlib.CWBorderPixel
+            mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
+
+            if self.style in ('transparent', 'overlay'):
+                mask |= xlib.CWBorderPixel
+                window_attributes.border_pixel = 0
+                window_attributes.background_pixel = 0
 
             if self._fullscreen:
                 width, height = self.screen.width, self.screen.height
