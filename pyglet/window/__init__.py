@@ -323,6 +323,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     WINDOW_STYLE_TOOL = 'tool'
     #: A window style without any decoration.
     WINDOW_STYLE_BORDERLESS = 'borderless'
+    #: A window style for transparent, interactable windows
+    WINDOW_STYLE_TRANSPARENT = 'transparent'
+    #: A window style for transparent, topmost, click-through-able overlays
+    WINDOW_STYLE_OVERLAY = 'overlay'
+
 
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
@@ -546,6 +551,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
 
+        # Necessary on Windows. More investigation needed:
+        if style in ('transparent', 'overlay'):
+            config.alpha = 8
+
         if not config.is_complete():
             config = screen.get_best_config(config)
 
@@ -555,6 +564,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # Set these in reverse order to above, to ensure we get user preference
         self._context = context
         self._config = self._context.config
+
         # XXX deprecate config's being screen-specific
         if hasattr(self._config, 'screen'):
             self._screen = self._config.screen

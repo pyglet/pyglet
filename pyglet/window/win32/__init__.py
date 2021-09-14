@@ -148,6 +148,10 @@ class Win32Window(BaseWindow):
                 self.WINDOW_STYLE_TOOL: (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                                          WS_EX_TOOLWINDOW),
                 self.WINDOW_STYLE_BORDERLESS: (WS_POPUP, 0),
+                self.WINDOW_STYLE_TRANSPARENT: (WS_OVERLAPPEDWINDOW,
+                                                WS_EX_LAYERED),
+                self.WINDOW_STYLE_OVERLAY: (WS_POPUP,
+                                            WS_EX_LAYERED | WS_EX_TRANSPARENT)
             }
             self._ws_style, self._ex_ws_style = styles[self._style]
 
@@ -264,6 +268,11 @@ class Win32Window(BaseWindow):
             x, y = self._client_to_window_pos(*factory.get_location())
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  x, y, width, height, SWP_FRAMECHANGED)
+        elif self.style == 'transparent' or self.style == "overlay":
+            _user32.SetLayeredWindowAttributes(self._hwnd, 0, 254, LWA_ALPHA)
+            if self.style == "overlay":
+                _user32.SetWindowPos(self._hwnd, HWND_TOPMOST, 0,
+                                     0, width, height, SWP_NOMOVE | SWP_NOSIZE)
         else:
             _user32.SetWindowPos(self._hwnd, hwnd_after,
                                  0, 0, width, height, SWP_NOMOVE | SWP_FRAMECHANGED)
@@ -344,6 +353,16 @@ class Win32Window(BaseWindow):
     def switch_to(self):
         self.context.set_current()
 
+    def update_transparency(self):
+        region = _gdi32.CreateRectRgn(0, 0, -1, -1)
+        bb = DWM_BLURBEHIND()
+        bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION
+        bb.hRgnBlur = region
+        bb.fEnable = True
+
+        _dwmapi.DwmEnableBlurBehindWindow(self._hwnd, ctypes.byref(bb))
+        _gdi32.DeleteObject(region)
+
     def flip(self):
         self.draw_mouse_cursor()
 
@@ -351,6 +370,9 @@ class Win32Window(BaseWindow):
             if self._always_dwm or self._dwm_composition_enabled():
                 if self._interval:
                     _dwmapi.DwmFlush()
+
+        if self.style in ('overlay', 'transparent'):
+            self.update_transparency()
 
         self.context.flip()
 

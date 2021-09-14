@@ -69,7 +69,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._xa2_driver = xa2_driver
 
         # If cleared, we need to check when it's done clearing.
-        self._clearing = False
+        self._flushing = False
 
         # If deleted, we need to make sure it's done deleting.
         self._deleted = False
@@ -94,7 +94,7 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         # This will be True if the last buffer has already been submitted.
         self.buffer_end_submitted = False
 
-        self._buffers = []
+        self._buffers = []  # Current buffers in queue waiting to be played.
 
         self._xa2_source_voice = self._xa2_driver.get_source_voice(source, self)
 
@@ -126,8 +126,8 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         assert _debug('XAudio2 play')
 
         if not self._playing:
-            if not self._clearing:
-                self._playing = True
+            self._playing = True
+            if not self._flushing:
                 self._xa2_source_voice.play()
 
         assert _debug('return XAudio2 play')
@@ -148,8 +148,11 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         self._play_cursor = 0
         self._write_cursor = 0
         self.buffer_end_submitted = False
-        self._clearing = True
         self._deleted = False
+
+        if self._buffers:
+            self._flushing = True
+
         self._xa2_source_voice.flush()
         self._buffers.clear()
         del self._events[:]
@@ -157,15 +160,16 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
 
     def _restart(self, dt):
         """Prefill audio and attempt to replay audio."""
-        if self._xa2_source_voice:
-            self.prefill_audio()
-            self.play()
+        if self._playing and self._xa2_source_voice:
+            self.refill_source_player()
+            self._xa2_source_voice.play()
 
     def refill_source_player(self):
         """Obtains audio data from the source, puts it into a buffer to submit to the voice.
         Unlike the other drivers this does not carve pieces of audio from the buffer and slowly
         consume it. This submits the buffer retrieved from the decoder in it's entirety.
         """
+
         buffers_queued = self._xa2_source_voice.buffers_queued
 
         # Free any buffers that have ended.
@@ -175,11 +179,14 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._play_cursor += buffer.AudioBytes
             del buffer  # Does this remove AudioData within the buffer? Let GC remove or explicit remove?
 
-        # We have to wait for all of the buffers we are clearing to end before we restart next source.
-        # When we reach 0, schedule restart.
-        if self._clearing:
+        # We have to wait for all of the buffers we are flushing to end before we restart next buffer.
+        # When voice reaches 0 buffers, it is available for re-use.
+        if self._flushing:
             if buffers_queued == 0:
-                self._clearing = False
+                self._flushing = False
+
+                # This is required because the next call to play will come before all flushes are done.
+                # Restart at next available opportunity.
                 pyglet.clock.schedule_once(self._restart, 0)
             return
 
@@ -315,7 +322,9 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
             self._xa2_source_voice.cone_outside_volume = cone_outer_gain
 
     def prefill_audio(self):
-        self.refill_source_player()
+        # Cannot refill during a flush. Schedule will handle it.
+        if not self._flushing:
+            self.refill_source_player()
 
 
 class XAudio2Driver(AbstractAudioDriver):

@@ -34,6 +34,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.star = shapes.Star(600, 375, 50, 30, 5, color=(255, 255, 0), batch=self.batch)
 
+        self.ellipse = shapes.Ellipse(600, 300, a=50, b=30, color=(255, 250, 45), batch=self.batch)
+
     def on_draw(self):
         """Clear the screen and draw shapes"""
         self.clear()
@@ -53,6 +55,7 @@ class ShapesDemo(pyglet.window.Window):
         )
         self.arc.rotation = self.time * 30
         self.star.rotation = self.time * 50
+        self.ellipse.b = abs(math.sin(self.time) * 100)
 
 
 if __name__ == "__main__":
