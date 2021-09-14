@@ -10,15 +10,13 @@ import pyglet
 class TextWidget:
     def __init__(self, text, x, y, width, batch):
         self.document = pyglet.text.document.UnformattedDocument(text)
-        self.document.set_style(0, len(self.document.text), dict(color=(0, 0, 0, 55)))
+        self.document.set_style(0, len(self.document.text), dict(color=(0, 0, 0, 255)))
         font = self.document.get_font()
         height = font.ascent - font.descent
 
         self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, width, height, batch=batch)
-        self.caret = pyglet.text.caret.Caret(self.layout)
-
         self.layout.position = x, y
-
+        self.caret = pyglet.text.caret.Caret(self.layout)
         # Rectangular outline
         pad = 2
         self.rectangle = pyglet.shapes.Rectangle(x - pad, y - pad, width + pad, height + pad, (200, 200, 220), batch)
