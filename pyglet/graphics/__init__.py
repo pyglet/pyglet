@@ -658,25 +658,24 @@ class Batch:
 class Group:
     """Group of common OpenGL state.
 
-    Before a vertex list is rendered, its group's OpenGL state is set.
+    Before a VertexList is rendered, its Group's OpenGL state is set.
     This can including binding textures, or setting any other parameters.
     """
     def __init__(self, order=0, parent=None):
-        """Create a group.
+        """Create a Group.
 
         :Parameters:
             `order` : int
                 Set the order to render above or below other Groups.
             `parent` : `~pyglet.graphics.Group`
-                Group to contain this group; its state will be set before this
-                state's.
+                Group to contain this Group; its state will be set before this
+                Group's state.
             `visible` : bool
-                Determines whether this group is visible in any of the batches
-                it is assigned to.
+                Determines whether this Group is visible in any of the Batches
+                it is assigned to. If False, objects in this Group will not
+                be rendered.
             `batches` : list
-                Read Only. A list of which batches this group is a part of.
-                Group to contain this group; its state will be set
-                before this Group's state.
+                Read Only. A list of which Batches this Group is a part of.
         """
         self._order = order
         self.parent = parent
@@ -797,7 +796,7 @@ class TextureGroup(Group):
         glBindTexture(self.texture.target, self.texture.id)
 
     def unset_state(self):
-        glDisable(self.texture.target)
+        glBindTexture(self.texture.target, 0)
 
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.order, self.parent))
@@ -816,11 +815,11 @@ class TextureGroup(Group):
 #: The default Shaders
 
 _vertex_source = """#version 330 core
-    in vec4 vertices;
+    in vec3 position;
     in vec4 colors;
-    in vec2 tex_coords;
+    in vec3 tex_coords;
     out vec4 vertex_colors;
-    out vec2 texture_coords;
+    out vec3 texture_coords;
 
     uniform WindowBlock
     {
@@ -830,7 +829,7 @@ _vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vertices;
+        gl_Position = window.projection * window.view * vec4(position, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -839,13 +838,13 @@ _vertex_source = """#version 330 core
 
 _fragment_source = """#version 330 core
     in vec4 vertex_colors;
-    in vec2 texture_coords;
+    in vec3 texture_coords;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords) + vertex_colors;
+        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
     }
 """

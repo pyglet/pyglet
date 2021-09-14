@@ -1303,6 +1303,7 @@ class Texture(AbstractImage):
     region_class = None  # Set to TextureRegion after it's defined
     tex_coords = (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)
     tex_coords_order = (0, 1, 2, 3)
+    colors = (0, 0, 0, 0) * 4
     level = 0
     images = 1
     x = y = z = 0
@@ -1318,7 +1319,7 @@ class Texture(AbstractImage):
     def __del__(self):
         try:
             self._context.delete_texture(self.id)
-        except:
+        except Exception:
             pass
 
     @classmethod
@@ -1420,8 +1421,9 @@ class Texture(AbstractImage):
         glBindTexture(self.target, self.id)
 
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     ('vertices3f', vertices),
-                                     ('tex_coords3f', self.tex_coords))
+                                     ('position3f', vertices),
+                                     ('tex_coords3f', self.tex_coords),
+                                     ('colors4Bn', self.colors))
 
         glBindTexture(self.target, 0)
 
@@ -1792,7 +1794,7 @@ class TileableTexture(Texture):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     ('vertices3f', vertices),
+                                     ('position3f', vertices),
                                      ('tex_coords3f', tex_coords))
         glBindTexture(self.target, 0)
 

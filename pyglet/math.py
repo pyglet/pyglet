@@ -92,7 +92,7 @@ class Vec2(tuple):
 
     def scale(self, value):
         return Vec2(self[0] * value, self[1] * value)
-    
+
     def distance(self, other):
         return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
@@ -109,9 +109,12 @@ class Vec2(tuple):
         return self[0] * other[0] + self[1] * other[1]
 
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xy'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xy'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
         return f"Vec2({self[0]}, {self[1]})"
@@ -171,7 +174,7 @@ class Vec3(tuple):
 
     def scale(self, value):
         return Vec3(self[0] * value, self[1] * value, self[2] * value)
-    
+
     def distance(self, other):
         return _math.sqrt(((other[0] - self[0]) ** 2) +
                           ((other[1] - self[1]) ** 2) +
@@ -189,9 +192,12 @@ class Vec3(tuple):
                     clamp(self[2], min_val, max_val))
 
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xyz'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xyz'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
         return f"Vec3({self[0]}, {self[1]}, {self[2]})"
@@ -248,7 +254,7 @@ class Vec4(tuple):
 
     def scale(self, value):
         return Vec4(self[0] * value, self[1] * value, self[2] * value, self[3] * value)
-    
+
     def distance(self, other):
         return _math.sqrt(((other[0] - self[0]) ** 2) +
                           ((other[1] - self[1]) ** 2) +
@@ -271,9 +277,12 @@ class Vec4(tuple):
         return self[0] * other[0] + self[1] * other[1] + self[2] * other[2] + self[3] * other[3]
 
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xyzw'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xyzw'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
         return f"Vec4({self[0]}, {self[1]}, {self[2]}, {self[3]})"

@@ -118,7 +118,7 @@ vertex_source = """#version 150 core
     in vec4 colors;
     in vec3 tex_coords;
     in vec2 scale;
-    in vec4 position;
+    in vec2 position;
     in float rotation;
 
     out vec4 vertex_colors;
@@ -144,7 +144,7 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
+        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * vec4(position, 0, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;

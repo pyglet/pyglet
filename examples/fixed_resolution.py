@@ -32,54 +32,40 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-# $Id:$
-
-'''Demonstrates one way of fixing the display resolution to a certain
+"""Demonstrates one way of fixing the display resolution to a certain
 size, but rendering to the full screen.
 
 The method used in this example is:
 
-1. Set the OpenGL viewport to the fixed resolution
-2. Render the scene using any OpenGL functions (here, just a polygon)
-3. Copy the framebuffer into a texture
-4. Reset the OpenGL viewport to the window (full screen) size
-5. Blit the texture to the framebuffer
-
-Recent video cards could also render the scene directly to the texture
-using EXT_framebuffer_object.  (This is not demonstrated in this example).
-'''
+1. Create a Framebuffer object, and a Texture of the desired resolution
+2. Attach the Texture to the Framebuffer.
+2. Bind the Framebuffer as the current render target.
+3. Render the scene using any OpenGL functions (here, just a shape).
+4. Unbind the Framebuffer, and blit the Texture scaled to fill the screen.
+"""
 
 from pyglet.gl import *
 import pyglet
 
 
 class FixedResolution:
-    def __init__(self, window, width, height, filtered=False):
+    def __init__(self, window, width, height):
         self.window = window
         self.width = width
         self.height = height
-        self._filtered = filtered
-        self._viewport = 0, 0, 0, 0, 0
-        self._calculate_viewport(self.window.width, self.window.height)
-        self._cam_x = 0
-        self._cam_y = 0
-        self.clear_color = 0, 0, 0, 1
 
-        self.texture = pyglet.image.Texture.create(width, height, rectangle=True)
+        self._target_area = 0, 0, 0, 0, 0
 
-        if not filtered:
-            pyglet.image.Texture.default_min_filter = GL_NEAREST
-            pyglet.image.Texture.default_mag_filter = GL_NEAREST
-            glTexParameteri(self.texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-            glTexParameteri(self.texture.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        self.framebuffer = pyglet.image.buffer.Framebuffer()
+        self.texture = pyglet.image.Texture.create(width, height, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
+        self.framebuffer.attach_texture(self.texture)
 
-        def on_resize(w, h):
-            self._calculate_viewport(w, h)
-            self.window_w, self.window_h = w, h
+        self.window.push_handlers(self)
 
-        self.window.on_resize = on_resize
+    def on_resize(self, width, height):
+        self._target_area = self._calculate_area(*self.window.get_framebuffer_size())
 
-    def _calculate_viewport(self, new_screen_width, new_screen_height):
+    def _calculate_area(self, new_screen_width, new_screen_height):
         aspect_ratio = self.width / self.height
         aspect_width = new_screen_width
         aspect_height = aspect_width / aspect_ratio + 0.5
@@ -87,44 +73,19 @@ class FixedResolution:
             aspect_height = new_screen_height
             aspect_width = aspect_height * aspect_ratio + 0.5
 
-        if not self._filtered:
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-
-        self._viewport = (int((new_screen_width / 2) - (aspect_width / 2)),     # x
-                          int((new_screen_height / 2) - (aspect_height / 2)),   # y
-                          0,                                                    # z
-                          int(aspect_width),                                    # width
-                          int(aspect_height))                                   # height
+        return (int((new_screen_width / 2) - (aspect_width / 2)),       # x
+                int((new_screen_height / 2) - (aspect_height / 2)),     # y
+                0,                                                      # z
+                int(aspect_width),                                      # width
+                int(aspect_height))                                     # height
 
     def __enter__(self):
-        glViewport(0, 0, self.width, self.height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, self.width, 0, self.height, -255, 255)
-        glMatrixMode(GL_MODELVIEW)
-        glTranslatef(self._cam_x, self._cam_y, 0)
-
-    def set_camera(self, x=0, y=0):
-        self._cam_x = -x
-        self._cam_y = -y
+        self.framebuffer.bind()
+        self.window.clear()
 
     def __exit__(self, *unused):
-        win = self.window
-        buffer = pyglet.image.get_buffer_manager().get_color_buffer()
-        self.texture.blit_into(buffer, 0, 0, 0)
-
-        glViewport(0, 0, win.width, win.height)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, win.width, 0, win.height, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-
-        glClearColor(*self.clear_color)
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
-
-        self.texture.blit(*self._viewport)
+        self.framebuffer.unbind()
+        self.texture.blit(*self._target_area)
 
     def begin(self):
         self.__enter__()
@@ -138,12 +99,10 @@ class FixedResolution:
 ###################################
 
 window = pyglet.window.Window(960, 540, resizable=True)
-# Use 320x180 fixed resolution to make the effect completely obvious.  You
-# can change this to a more reasonable value such as 960x540 here:
-target_width, target_height = 320, 180
 
-# Create an instance of the FixedResolution class:
-viewport = FixedResolution(window, target_width, target_height, filtered=False)
+# Create an instance of the FixedResolution class. Use
+# 320x180 resolution to make the effect completely obvious:
+viewport = FixedResolution(window, width=320, height=180)
 
 
 def update(dt):
@@ -153,21 +112,20 @@ def update(dt):
 
 @window.event
 def on_draw():
-    # The viewport can be used as
-    # a context manager:
+    window.clear()
+
+    # The viewport can be used as a context manager:
     with viewport:
-        window.clear()
         rectangle.draw()
 
     # # Alternatively, you can do it manually:
     # viewport.begin()
-    # window.clear()
     # rectangle.draw()
     # viewport.end()
 
 
 # Create a simple Rectangle to show the effect
-rectangle = pyglet.shapes.Rectangle(x=target_width/2, y=target_height/2, color=(200, 0, 0), width=100, height=100)
+rectangle = pyglet.shapes.Rectangle(x=160, y=90, color=(200, 50, 50), width=100, height=100)
 rectangle.anchor_position = 50, 50
 
 # Schedule the update function at 60fps

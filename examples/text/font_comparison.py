@@ -46,10 +46,13 @@ Don't include tabs in the text sample (see
 http://pyglet.org/doc-current/programming_guide/text.html#id9 )
 """
 
-from __future__ import print_function, unicode_literals
-
 import pyglet
 import pyglet.font.win32query as wq
+
+
+if pyglet.compat_platform != 'win32':
+    print("This example is only for Windows")
+    exit()
 
 
 # support to generate a sample text good to spot monospace compliance.

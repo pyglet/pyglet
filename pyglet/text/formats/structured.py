@@ -40,6 +40,41 @@ import re
 
 import pyglet
 
+from pyglet.gl import *
+
+
+class _InlineElementGroup(pyglet.graphics.Group):
+    def __init__(self, texture, order=0, parent=None):
+        super().__init__(order, parent)
+        self.program = pyglet.graphics.get_default_shader()
+        self.texture = texture
+
+    def set_state(self):
+        self.program.use()
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(self.texture.target, self.texture.id)
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+        glBindTexture(self.texture.target, 0)
+        self.program.stop()
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self._order == other.order and
+                self.program == other.program and
+                self.parent == other.parent and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id)
+
+    def __hash__(self):
+        return hash((self._order, self.program, self.parent,
+                     self.texture.target, self.texture.id))
+
 
 class ImageElement(pyglet.text.document.InlineElement):
     def __init__(self, image, width=None, height=None):
@@ -51,19 +86,18 @@ class ImageElement(pyglet.text.document.InlineElement):
         anchor_y = self.height // image.height * image.anchor_y
         ascent = max(0, self.height - anchor_y)
         descent = min(0, -anchor_y)
-        super(ImageElement, self).__init__(ascent, descent, self.width)
+        super().__init__(ascent, descent, self.width)
 
     def place(self, layout, x, y):
-        group = pyglet.graphics.TextureGroup(self.image.get_texture(), layout.top_group)
+        group = _InlineElementGroup(self.image.get_texture(), 0, layout._group)
         x1 = x
         y1 = y + self.descent
         x2 = x + self.width
         y2 = y + self.height + self.descent
         vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES, group,
                                                [0, 1, 2, 0, 2, 3],
-                                               ('v2i', (x1, y1, x2, y1, x2, y2, x1, y2)),
-                                               ('c3B', (255, 255, 255) * 4),
-                                               ('t3f', self.image.tex_coords))
+                                               ('position3f', (x1, y1, 0,  x2, y1, 0,  x2, y2, 0,  x1, y2, 0)),
+                                               ('tex_coords3f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
     def remove(self, layout):
@@ -74,7 +108,7 @@ class ImageElement(pyglet.text.document.InlineElement):
 def _int_to_roman(number):
     # From http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81611
     if not 0 < number < 4000:
-        raise ValueError("Argument must be between 1 and 3999")    
+        raise ValueError("Argument must be between 1 and 3999")
     integers = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,   4,  1)
     numerals = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
     result = ""
@@ -229,7 +263,7 @@ class StructuredTextDecoder(pyglet.text.DocumentDecoder):
         return self.document
 
     def decode_structured(self, text, location):
-        raise NotImplementedError('abstract') 
+        raise NotImplementedError('abstract')
 
     def push_style(self, key, styles):
         old_styles = {}

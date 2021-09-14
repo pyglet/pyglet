@@ -235,7 +235,10 @@ class ImageMouseCursor(MouseCursor):
         self.hw_drawable = acceleration
 
     def draw(self, x, y):
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         self.texture.blit(x - self.hot_x, y - self.hot_y, 0)
+        gl.glDisable(gl.GL_BLEND)
 
 
 def _PlatformEventHandler(data):
@@ -320,6 +323,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     WINDOW_STYLE_TOOL = 'tool'
     #: A window style without any decoration.
     WINDOW_STYLE_BORDERLESS = 'borderless'
+    #: A window style for transparent, interactable windows
+    WINDOW_STYLE_TRANSPARENT = 'transparent'
+    #: A window style for transparent, topmost, click-through-able overlays
+    WINDOW_STYLE_OVERLAY = 'overlay'
+
 
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
@@ -543,6 +551,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
 
+        # Necessary on Windows. More investigation needed:
+        if style in ('transparent', 'overlay'):
+            config.alpha = 8
+
         if not config.is_complete():
             config = screen.get_best_config(config)
 
@@ -552,6 +564,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         # Set these in reverse order to above, to ensure we get user preference
         self._context = context
         self._config = self._context.config
+
         # XXX deprecate config's being screen-specific
         if hasattr(self._config, 'screen'):
             self._screen = self._config.screen
@@ -594,12 +607,16 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.set_visible(True)
             self.activate()
 
+        self._create_projection()
+
+    def _create_projection(self):
         self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
         self.view = pyglet.math.Mat4()
 
         self._viewport = 0, 0, *self.get_framebuffer_size()
+        self.projection = Mat4.orthogonal_projection(0, self._width, 0, self._height, -255, 255)
 
     def __del__(self):
         # Always try to clean up the window when it is dereferenced.
@@ -754,7 +771,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         projection based on the same dimensions.
         """
         gl.glViewport(0, 0, *self.get_framebuffer_size())
-        self.projection = pyglet.window.Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
+        self.projection = Mat4.orthogonal_projection(0, width, 0, height, -255, 255)
 
     def on_close(self):
         """Default on_close handler."""

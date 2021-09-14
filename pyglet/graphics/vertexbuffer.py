@@ -244,7 +244,10 @@ class BufferObject(AbstractBuffer):
 
     def delete(self):
         buffer_id = GLuint(self.id)
-        glDeleteBuffers(1, buffer_id)
+        try:
+            glDeleteBuffers(1, buffer_id)
+        except Exception:
+            pass
         self.id = None
 
     def resize(self, size):
