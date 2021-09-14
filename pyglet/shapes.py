@@ -570,7 +570,7 @@ class Ellipse(_ShapeBase):
 
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(self._num_verts, GL_LINES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._num_verts, GL_LINES, self._group, 'position2f', 'colors4Bn')
 
         self._update_position()
         self._update_color()
@@ -604,7 +604,7 @@ class Ellipse(_ShapeBase):
             for i in range(len(points) - 1):
                 line_points = *points[i], *points[i + 1]
                 vertices.extend(line_points)
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_verts

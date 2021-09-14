@@ -27,14 +27,14 @@ class ShapesDemo(pyglet.window.Window):
 
         self.line = shapes.Line(0, 0, 0, 480, width=4, color=(200, 20, 20), batch=self.batch)
 
-        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(10, 255, 10), batch=self.batch)
+        self.triangle = shapes.Triangle(10, 10, 190, 10, 100, 150, color=(55, 255, 255), batch=self.batch)
         self.triangle.opacity = 175
 
         self.arc = shapes.Arc(50, 300, radius=40, segments=25, angle=4, color=(255, 255, 255), batch=self.batch)
 
         self.star = shapes.Star(600, 375, 50, 30, 5, color=(255, 255, 0), batch=self.batch)
 
-        self.ellipse = shapes.Ellipse(600, 300, a=50, b=30, color=(255, 250, 45), batch=self.batch)
+        self.ellipse = shapes.Ellipse(600, 150, a=50, b=30, color=(55, 255, 55), batch=self.batch)
 
     def on_draw(self):
         """Clear the screen and draw shapes"""
