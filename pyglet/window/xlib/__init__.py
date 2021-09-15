@@ -123,8 +123,6 @@ XlibEventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
-
-
 class XlibWindow(BaseWindow):
     _x_display = None               # X display connection
     _x_screen_id = None             # X screen index
@@ -1565,3 +1563,6 @@ class XlibWindow(BaseWindow):
     def _event_unmapnotify(self, ev):
         self._mapped = False
         self.dispatch_event('on_hide')
+
+
+__all__ = ["XlibEventHandler", "XlibWindow"]
