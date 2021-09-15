@@ -141,4 +141,5 @@ class HeadlessWindow(BaseWindow):
 
             self.dispatch_event('on_resize', self._width, self._height)
 
-__all__ = [ "HeadlessWindow" ]
+
+__all__ = ["HeadlessWindow"]
