@@ -1908,4 +1908,5 @@ if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()
 
-__all__ = [ "BaseWindow" ]
+
+__all__ = ["BaseWindow"]
