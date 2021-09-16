@@ -980,7 +980,7 @@ class TextLayout:
         self.update(*position)
 
     def update(self, x, y):
-        """Change both X and Y positions of the sprite at once for faster performance.
+        """Change both X and Y positions of the layout at once for faster performance.
 
         :Parameters:
             `x` : int
