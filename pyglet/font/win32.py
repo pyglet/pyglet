@@ -401,13 +401,13 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
                                   self.font._gdipfont, 
                                   ctypes.byref(rect), 
                                   format,
-                                  ctypes.byref(bbox), 
+                                  ctypes.byref(bbox),
                                   None, 
                                   None)
         lsb = 0
         advance = int(math.ceil(bbox.width))
         width = advance
-        
+
         # This hack bumps up the width if the font is italic;
         # this compensates for some common fonts.  It's also a stupid 
         # waste of texture memory.
@@ -422,16 +422,20 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
             text = '\r'
 
         abc = ABC()
-        # Check if ttf font.         
+        # Check if ttf font.
         if gdi32.GetCharABCWidthsW(self._dc, 
             ord(text), ord(text), byref(abc)):
             
             lsb = abc.abcA
+            width = abc.abcB
             if lsb < 0:
                 # Negative LSB: we shift the layout rect to the right
                 # Otherwise we will cut the left part of the glyph
                 rect.x = -lsb
                 width -= lsb
+            else:
+                width += lsb
+
         # XXX END HACK HACK HACK
 
         # Draw character to bitmap
@@ -460,14 +464,13 @@ class GDIPlusGlyphRenderer(Win32GlyphRenderer):
         # Unlock data
         gdiplus.GdipBitmapUnlockBits(self._bitmap, byref(bitmap_data))
         
-        image = pyglet.image.ImageData(width, height, 
+        image = pyglet.image.ImageData(width, height,
             'BGRA', buffer, -bitmap_data.Stride)
 
         glyph = self.font.create_glyph(image)
         # Only pass negative LSB info
         lsb = min(lsb, 0)
         glyph.set_bearings(-self.font.descent, lsb, advance)
-
         return glyph
 
 FontStyleBold = 1
