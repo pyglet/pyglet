@@ -123,8 +123,6 @@ XlibEventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
-
-
 class XlibWindow(BaseWindow):
     _x_display = None               # X display connection
     _x_screen_id = None             # X screen index
@@ -232,9 +230,8 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             visual_info = self.config.get_visual_info()
-            depth = 32 if self.style in ('transparent', 'overlay') else 24
-            xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, depth,
-                                  xlib.TrueColor, visual_info)
+            if self.style in ('transparent', 'overlay'):
+                xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
 
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
@@ -248,14 +245,17 @@ class XlibWindow(BaseWindow):
                 window_attributes.colormap = xlib.XDefaultColormap(self._x_display,
                                                                    self._x_screen_id)
             window_attributes.bit_gravity = xlib.StaticGravity
-            window_attributes.border_pixel = 0
-            window_attributes.background_pixel = 0
 
             # Issue 287: Compiz on Intel/Mesa doesn't draw window decoration
             #            unless CWBackPixel is given in mask.  Should have
             #            no effect on other systems, so it's set
             #            unconditionally.
-            mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel | xlib.CWBorderPixel
+            mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
+
+            if self.style in ('transparent', 'overlay'):
+                mask |= xlib.CWBorderPixel
+                window_attributes.border_pixel = 0
+                window_attributes.background_pixel = 0
 
             if self._fullscreen:
                 width, height = self.screen.width, self.screen.height
@@ -372,7 +372,7 @@ class XlibWindow(BaseWindow):
         }
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', (styles[self._style],))
-        elif self._style == self.WINDOW_STYLE_BORDERLESS:
+        elif self._style in (self.WINDOW_STYLE_BORDERLESS, self.WINDOW_STYLE_OVERLAY):
             MWM_HINTS_DECORATIONS = 1 << 1
             PROP_MWM_HINTS_ELEMENTS = 5
             mwmhints = mwmhints_t()
@@ -1563,3 +1563,6 @@ class XlibWindow(BaseWindow):
     def _event_unmapnotify(self, ev):
         self._mapped = False
         self.dispatch_event('on_hide')
+
+
+__all__ = ["XlibEventHandler", "XlibWindow"]

@@ -1,3 +1,16 @@
+pyglet 1.5.20
+
+Features
+--------
+- Experimental support for transparent and overlay windows on Linux and Windows.
+- Shapes - Allow rotation and changing of border color for the BorderedRectangle.
+
+Bugfixes
+--------
+- Xlib - Fix the mouse Y position being off by 1-pixel.
+- Windows - Fix gapless audio playback on the XAudio2 backend.
+
+
 pyglet 1.5.19
 
 Features

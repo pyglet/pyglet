@@ -605,8 +605,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             if not config:
                 raise NoSuchConfigException('No standard config is available.')
 
-        if self.style in ('transparent', 'overlay'):
-            config.alpha_size = 8
+        # Necessary on Windows. More investigation needed:
+        if style in ('transparent', 'overlay'):
+            config.alpha = 8
 
         if not config.is_complete():
             config = screen.get_best_config(config)
@@ -1916,3 +1917,6 @@ else:
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()
+
+
+__all__ = ["BaseWindow"]
