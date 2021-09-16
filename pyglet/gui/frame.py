@@ -130,4 +130,6 @@ class SpatialHash:
 
 
 class Frame(SpatialHash):
-    pass
+
+    def __init__(self, window, order=0, modifier='undefined'):
+        super().__init__(window, order=order)
