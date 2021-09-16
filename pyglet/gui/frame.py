@@ -34,15 +34,19 @@
 # ----------------------------------------------------------------------------
 
 
-class SpatialHash:
-    """A 2D spatial hash.
+class Frame:
+    """The base Frame object, implementing a 2D spatial hash.
 
-    `SpatialHash` provides an efficient way to handle dispatching
-    keyboard and mouse events to Widgets.
+    A `Frame` provides an efficient way to handle dispatching
+    keyboard and mouse events to Widgets. This is done by
+    implementing a 2D spatial hash. Only Widgets that are in the
+    vicinity of the mouse pointer will be passed Window events,
+    which can greatly improve efficiency when a large quantity
+    of Widgets are in use.
     """
 
     def __init__(self, window, cell_size=64, order=0):
-        """Create an instance of a Spatial Hash.
+        """Create an instance of a Frame.
 
         :Parameters:
             `window` : `~pyglet.window.Window`
@@ -129,7 +133,45 @@ class SpatialHash:
             widget.on_text_motion_select(motion)
 
 
-class Frame(SpatialHash):
+class MovableFrame(Frame):
+    """A Frame that allows Widget repositioning.
 
-    def __init__(self, window, order=0, modifier='undefined'):
+    When a specified modifier key is held down, Widgets can be
+    repositioned by dragging them. Examples of modifier keys are
+    Ctrl, Alt, Shift. These are defined in the `pyglet.window.key`
+    module, and start witih `MOD_`. For example::
+
+        from pyglet.window.key import MOD_CTRL
+
+        frame = pyglet.gui.frame.MovableFrame(mywindow, modifier=MOD_CTRL)
+
+    For more information, see the `pyglet.window.key` submodule
+    API documentation.
+    """
+
+    def __init__(self, window, order=0, modifier=0):
         super().__init__(window, order=order)
+        self._modifier = modifier
+        self._moving_widgets = set()
+
+    def on_mouse_press(self, x, y, buttons, modifiers):
+        if self._modifier & modifiers > 0:
+            for widget in self._cells.get(self._hash(x, y), set()):
+                if widget._check_hit(x, y):
+                    self._moving_widgets.add(widget)
+            for widget in self._moving_widgets:
+                self.remove_widget(widget)
+        else:
+            super().on_mouse_press(x, y, buttons, modifiers)
+
+    def on_mouse_release(self, x, y, buttons, modifiers):
+        for widget in self._moving_widgets:
+            self.add_widget(widget)
+        self._moving_widgets.clear()
+        super().on_mouse_release(x, y, buttons, modifiers)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        for widget in self._moving_widgets:
+            wx, wy = widget.position
+            widget.position = wx + dx, wy + dy
+        super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
