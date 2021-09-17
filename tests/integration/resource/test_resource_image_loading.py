@@ -1,8 +1,9 @@
 import pytest
 
-from pyglet.gl import *
-from pyglet import image
+import pyglet
+
 from pyglet import resource
+from pyglet.gl import GL_NEAREST
 
 
 # Test image is laid out
@@ -30,26 +31,20 @@ def test_resource_image_loading(event_loop, transforms, result):
 
     img = resource.image('rgbm.png', **transforms)
 
-    w = event_loop.create_window(width=10, height=10)
+    window = event_loop.create_window()
 
-    @w.event
-    def on_draw():
-        # XXX For some reason original on_draw is not called
-        w.clear()
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        img.blit(img.anchor_x, img.anchor_y)
+    # Create a Framebuffer to render into:
+    framebuffer = pyglet.image.buffer.Framebuffer()
+    texture = pyglet.image.Texture.create(width=10, height=10, min_filter=GL_NEAREST, mag_filter=GL_NEAREST)
+    framebuffer.attach_texture(texture)
 
-        event_loop.interrupt_event_loop()
+    # Draw into the Framebuffer:
+    framebuffer.bind()
+    img.blit(img.anchor_x, img.anchor_y)
+    framebuffer.unbind()
 
-    # Need to force multiple draws for platforms that do not support immediate drawing
-    event_loop.run_event_loop()
-    w._legacy_invalid = True
-    event_loop.run_event_loop()
-    w._legacy_invalid = True
-    event_loop.run_event_loop()
-
-    image_data = image.get_buffer_manager().get_color_buffer().get_image_data()
+    # Check the pixels that were drawn:
+    image_data = texture.get_image_data()
     pixels = image_data.get_data('RGBA', image_data.width * 4)
 
     def sample(x, y):

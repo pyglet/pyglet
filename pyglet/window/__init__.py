@@ -613,9 +613,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
-        self.view = pyglet.math.Mat4()
-
         self._viewport = 0, 0, *self.get_framebuffer_size()
+
+        self.view = Mat4()
         self.projection = Mat4.orthogonal_projection(0, self._width, 0, self._height, -255, 255)
 
     def __del__(self):
