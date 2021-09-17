@@ -382,7 +382,7 @@ class Mat3(tuple):
                      sum(map(_mul, r2, c2))))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}{self[0:4]}\n    {self[4:8]}\n    {self[8:12]}\n    {self[12:16]}"
+        return f"{self.__class__.__name__}{self[0:3]}\n    {self[3:6]}\n    {self[6:9]}"
 
 
 class Mat4(tuple):
