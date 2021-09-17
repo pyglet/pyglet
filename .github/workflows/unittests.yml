@@ -1,16 +1,13 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Python application
+name: PyTest
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master pyglet-1.5-maintenance]
   pull_request:
-    branches: [ master ]
+    branches: [ master pyglet-1.5-maintenance]
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
 
@@ -25,6 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest
         sudo apt-get install xvfb
-    - name: Test with pytest
+    - name: Run tests
       run: |
         xvfb-run pytest -v tests/unit
+        xvfb-run pytest -v tests/integration
