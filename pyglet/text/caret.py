@@ -386,10 +386,8 @@ class Caret:
         if update_ideal_x:
             self._ideal_x = x
 
-        # x -= self._layout.view_x
-        # y -= self._layout.view_y
         x += self._layout.x
-        y += self._layout.y + self._layout.content_height
+        y += self._layout.y + self._layout.height
 
         font = self._layout.document.get_font(max(0, self._position - 1))
         self._list.position[:] = [x, y + font.descent, x, y + font.ascent]
