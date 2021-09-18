@@ -1,4 +1,4 @@
-[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io)
+[![pypi](https://badge.fury.io/py/pyglet.svg)](https://pypi.python.org/pypi/pyglet) [![rtd](https://readthedocs.org/projects/pyglet/badge/?version=latest)](https://pyglet.readthedocs.io) [![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
 
 ![logo_large.png](https://bitbucket.org/repo/aejyXX/images/3385888514-logo_large.png)
 
@@ -12,7 +12,6 @@ OpenGL graphics, loading images and videos, and playing sounds and music. *pygle
 > The `pyglet-1.5-maintenance` branch is the current stable release. The `master` branch contains the the development code for the upcoming 2.0 release, and may be unstable. **If you want to do a pull request, please target the `pyglet-1.5-maintenance` branch where appropriate**. 
 
 * pyglet [documentation]
-* pyglet [wiki]
 * pyglet on [PyPI]
 * pyglet [discord] server
 * pyglet [mailing list]
