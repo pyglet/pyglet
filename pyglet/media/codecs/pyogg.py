@@ -1,22 +1,60 @@
 import os.path
 import pyogg
+from abc import abstractmethod
+from pyglet.util import debug_print
 import pyglet
 from ctypes import c_void_p, POINTER, memmove, create_string_buffer, byref, c_int, pointer, cast, c_char, c_char_p, \
-    CFUNCTYPE
+    CFUNCTYPE, c_ubyte
 
 from pyglet.media import StreamingSource
 from pyglet.media.codecs import AudioFormat, AudioData, MediaDecoder, StaticSource
 import warnings
 
-def metadata_callback(self, decoder, metadata, client_data):
-    self.bits_per_sample = metadata.contents.data.stream_info.bits_per_sample  # missing from pyogg
-    self.total_samples = metadata.contents.data.stream_info.total_samples
-    self.channels = metadata.contents.data.stream_info.channels
-    self.frequency = metadata.contents.data.stream_info.sample_rate
+_debug = debug_print('debug_media')
+if _debug:
+    if not pyogg.PYOGG_OGG_AVAIL and not pyogg.PYOGG_VORBIS_AVAIL and not pyogg.PYOGG_VORBIS_FILE_AVAIL:
+        warnings.warn("PyOgg determined the ogg/vorbis libraries were not available.")
+
+    if not pyogg.PYOGG_FLAC_AVAIL:
+        warnings.warn("PyOgg determined the flac library was not available.")
+
+    if not pyogg.PYOGG_OPUS_AVAIL and not pyogg.PYOGG_OPUS_FILE_AVAIL:
+        warnings.warn("PyOgg determined the opus libraries were not available.")
+
+if not (
+        pyogg.PYOGG_OGG_AVAIL and not pyogg.PYOGG_VORBIS_AVAIL and not pyogg.PYOGG_VORBIS_FILE_AVAIL) and (
+        not pyogg.PYOGG_OPUS_AVAIL and not pyogg.PYOGG_OPUS_FILE_AVAIL) and not pyogg.PYOGG_FLAC_AVAIL:
+    raise ImportError("PyOgg determined no supported libraries were found")
+
+# Some monkey patching PyOgg for FLAC.
+if pyogg.PYOGG_FLAC_AVAIL:
+    # Original in PyOgg: FLAC__StreamDecoderEofCallback = CFUNCTYPE(FLAC__bool, POINTER(FLAC__StreamDecoder), c_void_p)
+    # FLAC__bool is not valid for this return type (at least for ctypes). Needs to be an int or an error occurs.
+    FLAC__StreamDecoderEofCallback = CFUNCTYPE(c_int, POINTER(pyogg.flac.FLAC__StreamDecoder), c_void_p)
+
+    # Override explicits with c_void_p, so we can support non-seeking FLAC's (CFUNCTYPE does not accept None).
+    pyogg.flac.libflac.FLAC__stream_decoder_init_stream.restype = pyogg.flac.FLAC__StreamDecoderInitStatus
+    pyogg.flac.libflac.FLAC__stream_decoder_init_stream.argtypes = [POINTER(pyogg.flac.FLAC__StreamDecoder),
+                                                                    pyogg.flac.FLAC__StreamDecoderReadCallback,
+                                                                    c_void_p,  # Seek
+                                                                    c_void_p,  # Tell
+                                                                    c_void_p,  # Length
+                                                                    c_void_p,  # EOF
+                                                                    pyogg.flac.FLAC__StreamDecoderWriteCallback,
+                                                                    pyogg.flac.FLAC__StreamDecoderMetadataCallback,
+                                                                    pyogg.flac.FLAC__StreamDecoderErrorCallback,
+                                                                    c_void_p]
 
 
-# Monkey patch our own function for callback to get the bits per sample.
-pyogg.FlacFileStream.metadata_callback = metadata_callback
+    def metadata_callback(self, decoder, metadata, client_data):
+        self.bits_per_sample = metadata.contents.data.stream_info.bits_per_sample  # missing from pyogg
+        self.total_samples = metadata.contents.data.stream_info.total_samples
+        self.channels = metadata.contents.data.stream_info.channels
+        self.frequency = metadata.contents.data.stream_info.sample_rate
+
+
+    # Monkey patch metadata callback to include bits per sample as FLAC may rarely deviate from 16 bit.
+    pyogg.FlacFileStream.metadata_callback = metadata_callback
 
 
 class MemoryVorbisObject:
@@ -51,14 +89,99 @@ class MemoryVorbisObject:
 class UnclosedVorbisFileStream(pyogg.VorbisFileStream):
     def __del__(self):
         if self.exists:
-            vorbis.ov_clear(ctypes.byref(self.vf))
+            pyogg.vorbis.ov_clear(byref(self.vf))
         self.exists = False
 
     def clean_up(self):
-        """PyOgg calls clean_up on end of data. We may want to loop a sound or replay.
-        Rely on GC to clean up instead.
+        """PyOgg calls clean_up on end of data. We may want to loop a sound or replay. Prevent this.
+        Rely on GC (__del__) to clean up objects instead.
         """
         return
+
+
+class UnclosedOpusFileStream(pyogg.OpusFileStream):
+    def __del__(self):
+        self.ptr.contents.value = self.ptr_init
+
+        del self.ptr
+
+        if self.of:
+            pyogg.opus.op_free(self.of)
+
+    def clean_up(self):
+        pass
+
+
+class MemoryOpusObject:
+    def __init__(self, filename, file):
+        self.file = file
+        self.filename = filename
+
+        def read_func_cb(stream, buffer, size):
+            data = self.file.read(size)
+            read_size = len(data)
+            memmove(buffer, data, read_size)
+            return read_size
+
+        def seek_func_cb(stream, offset, whence):
+            self.file.seek(offset, whence)
+            return 0
+
+        def tell_func_cb(stream):
+            pos = self.file.tell()
+            return pos
+
+        def close_func_cb(stream):
+            return 0
+
+        self.read_func = pyogg.opus.op_read_func(read_func_cb)
+        self.seek_func = pyogg.opus.op_seek_func(seek_func_cb)
+        self.tell_func = pyogg.opus.op_tell_func(tell_func_cb)
+        self.close_func = pyogg.opus.op_close_func(close_func_cb)
+
+        self.callbacks = pyogg.opus.OpusFileCallbacks(self.read_func, self.seek_func, self.tell_func, self.close_func)
+
+
+class MemoryOpusFileStream(UnclosedOpusFileStream):
+    def __init__(self, filename, file):
+        self.file = file
+
+        self.memory_object = MemoryOpusObject(filename, file)
+
+        self._dummy_fileobj = c_void_p()
+
+        error = c_int()
+
+        self.read_buffer = create_string_buffer(pyogg.PYOGG_STREAM_BUFFER_SIZE)
+
+        self.ptr_buffer = cast(self.read_buffer, POINTER(c_ubyte))
+
+        self.of = pyogg.opus.op_open_callbacks(
+            self._dummy_fileobj,
+            byref(self.memory_object.callbacks),
+            self.ptr_buffer,
+            0,  # Start length
+            byref(error)
+        )
+
+        if error.value != 0:
+            raise pyogg.PyOggError(
+                "file-like object: {} couldn't be processed. Error code : {}".format(filename, error.value))
+
+        self.channels = pyogg.opus.op_channel_count(self.of, -1)
+
+        self.pcm_size = pyogg.opus.op_pcm_total(self.of, -1)
+
+        self.frequency = 48000
+
+        self.bfarr_t = pyogg.opus.opus_int16 * (pyogg.PYOGG_STREAM_BUFFER_SIZE * self.channels * 2)
+
+        self.buffer = cast(pointer(self.bfarr_t()), pyogg.opus.opus_int16_p)
+
+        self.ptr = cast(pointer(self.buffer), POINTER(c_void_p))
+
+        self.ptr_init = self.ptr.contents.value
+
 
 class MemoryVorbisFileStream(UnclosedVorbisFileStream):
     def __init__(self, path, file):
@@ -87,29 +210,14 @@ class MemoryVorbisFileStream(UnclosedVorbisFileStream):
         self.exists = True
 
 
-# Some monkey patching PyOgg.
-# Original in PyOgg: FLAC__StreamDecoderEofCallback = CFUNCTYPE(FLAC__bool, POINTER(FLAC__StreamDecoder), c_void_p)
-# FLAC__bool is not valid for this return type (at least for ctypes). Needs to be an int.
-FLAC__StreamDecoderEofCallback = CFUNCTYPE(c_int, POINTER(pyogg.flac.FLAC__StreamDecoder), c_void_p)
-
-# Override explicits with void_p, so we can support non-seeking files as well.
-if pyogg.PYOGG_FLAC_AVAIL:
-    pyogg.flac.libflac.FLAC__stream_decoder_init_stream.restype = pyogg.flac.FLAC__StreamDecoderInitStatus
-    pyogg.flac.libflac.FLAC__stream_decoder_init_stream.argtypes = [POINTER(pyogg.flac.FLAC__StreamDecoder),
-                                                                    pyogg.flac.FLAC__StreamDecoderReadCallback,
-                                                                    c_void_p,  # Seek
-                                                                    c_void_p,  # Tell
-                                                                    c_void_p,  # Length
-                                                                    c_void_p,  # EOF
-                                                                    pyogg.flac.FLAC__StreamDecoderWriteCallback,
-                                                                    pyogg.flac.FLAC__StreamDecoderMetadataCallback,
-                                                                    pyogg.flac.FLAC__StreamDecoderErrorCallback,
-                                                                    c_void_p]
-
 class UnclosedFLACFileStream(pyogg.FlacFileStream):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.seekable = True
+
+    def __del__(self):
+        if self.decoder:
+            pyogg.flac.FLAC__stream_decoder_finish(self.decoder)
 
 
 class MemoryFLACFileStream(UnclosedFLACFileStream):
@@ -223,60 +331,23 @@ class MemoryFLACFileStream(UnclosedFLACFileStream):
 
 
 class PyOggSource(StreamingSource):
-
-    def __init__(self, filename, file=None):
+    def __init__(self, filename, file):
         self.filename = filename
-        self._vorbis = False
-        self._flac = False
+        self.file = file
+        self._stream = None
+        self.sample_size = 16
 
-        name, ext = os.path.splitext(filename)
+        self._load_source()
 
-        if ext == '.ogg':
-            if not pyogg.PYOGG_VORBIS_AVAIL:
-                raise Exception("PyOgg determined that VORBIS is unavailable.")
-            self._vorbis = True
-            if file:
-                self._stream = MemoryVorbisFileStream(filename, file)
-            else:
-                self._stream = UnclosedVorbisFileStream(filename)
-            sample_size = 16
-            self._duration = pyogg.vorbis.libvorbisfile.ov_time_total(byref(self._stream.vf), -1)
-        elif ext == '.flac':
-            if not pyogg.PYOGG_FLAC_AVAIL:
-                raise Exception("PyOgg determined that FLAC is unavailable.")
-
-            self._flac = True
-            if file:
-                self._stream = MemoryFLACFileStream(filename, file)
-            else:
-                self._stream = UnclosedFLACFileStream(filename)
-
-            sample_size = self._stream.bits_per_sample
-            self.get_audio_data = self._get_flac_audio_data  # Assign proper function.
-
-            self._duration = self._stream.total_samples / self._stream.frequency
-
-            # Unknown amount of samples. May occur in some sources.
-            if self._stream.total_samples == 0:
-                warnings.warn(f"Unknown amount of samples found in {filename}. Seeking may be limited.")
-                self._duration_per_frame = 0
-            else:
-                self._duration_per_frame = self._duration / self._stream.total_samples
-
-        else:
-            raise Exception(f"No supported file extension could be found for {filename}.")
-
-        self.audio_format = AudioFormat(channels=self._stream.channels, sample_size=sample_size,
+        self.audio_format = AudioFormat(channels=self._stream.channels, sample_size=self.sample_size,
                                         sample_rate=self._stream.frequency)
 
-    def __del__(self):
-        try:
-            self._stream.clean_up()
-        except:
-            pass
+    @abstractmethod
+    def _load_source(self):
+        pass
 
-    def _get_flac_audio_data(self, num_bytes, compensation_time=0.0):
-        """Flac decoder returns as c_short_array instead of LP_c_char or c_ubyte, cast each buffer."""
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
+        """Data returns as c_short_array instead of LP_c_char or c_ubyte, cast each buffer."""
         data = self._stream.get_buffer()  # Returns buffer, length or None
         if data is not None:
             buff, length = data
@@ -284,6 +355,55 @@ class PyOggSource(StreamingSource):
             return AudioData(buff_char_p[:length], length, 1000, 1000, [])
 
         return None
+
+    def __del__(self):
+        if self._stream:
+            del self._stream
+
+
+class PyOggFLACSource(PyOggSource):
+
+    def _load_source(self):
+        if self.file:
+            self._stream = MemoryFLACFileStream(self.filename, self.file)
+        else:
+            self._stream = UnclosedFLACFileStream(self.filename)
+
+        self.sample_size = self._stream.bits_per_sample
+        self._duration = self._stream.total_samples / self._stream.frequency
+
+        # Unknown amount of samples. May occur in some sources.
+        if self._stream.total_samples == 0:
+            if _debug:
+                warnings.warn(f"Unknown amount of samples found in {self.filename}. Seeking may be limited.")
+            self._duration_per_frame = 0
+        else:
+            self._duration_per_frame = self._duration / self._stream.total_samples
+
+    def seek(self, timestamp):
+        if self._stream.seekable:
+            # Convert sample to seconds.
+            if self._duration_per_frame:
+                timestamp = max(0.0, min(timestamp, self._duration))
+                position = int(timestamp / self._duration_per_frame)
+            else:  # If we have no duration, we cannot reliably seek. However, 0.0 is still required to play and loop.
+                position = 0
+            seek_succeeded = pyogg.flac.FLAC__stream_decoder_seek_absolute(self._stream.decoder, position)
+            if seek_succeeded is False:
+                warnings.warn(f"Failed to seek FLAC file: {self.filename}")
+        else:
+            warnings.warn(f"Stream is not seekable for FLAC file: {self.filename}.")
+
+
+class PyOggVorbisSource(PyOggSource):
+
+    def _load_source(self):
+        if self.file:
+            self._stream = MemoryVorbisFileStream(self.filename, self.file)
+        else:
+            self._stream = UnclosedVorbisFileStream(self.filename)
+
+        self._duration = pyogg.vorbis.libvorbisfile.ov_time_total(byref(self._stream.vf), -1)
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         data = self._stream.get_buffer()  # Returns buffer, length or None
@@ -294,33 +414,60 @@ class PyOggSource(StreamingSource):
         return None
 
     def seek(self, timestamp):
-        if self._vorbis:
-            seek_succeeded = pyogg.vorbis.ov_time_seek(self._stream.vf, timestamp)
-            if seek_succeeded != 0:
+        seek_succeeded = pyogg.vorbis.ov_time_seek(self._stream.vf, timestamp)
+        if seek_succeeded != 0:
+            if _debug:
                 warnings.warn(f"Failed to seek file {filename} - {seek_succeeded}")
 
-        elif self._flac:
-            if self._stream.seekable:
-                # Convert sample to seconds.
-                if self._duration_per_frame:
-                    timestamp = max(0.0, min(timestamp, self._duration))
-                    position = int(timestamp / self._duration_per_frame)
-                else:  # If we have no duration, we cannot seek. However, 0.0 is still required for loops.
-                    position = 0
-                seek_succeeded = pyogg.flac.FLAC__stream_decoder_seek_absolute(self._stream.decoder, position)
-                if seek_succeeded is False:
-                    warnings.warn(f"Failed to seek FLAC file: {self.filename}")
-            else:
-                warnings.warn(f"Stream is not seekable for FLAC file: {self.filename}.")
+
+class PyOggOpusSource(PyOggSource):
+    def _load_source(self):
+        if self.file:
+            self._stream = MemoryOpusFileStream(self.filename, self.file)
+        else:
+            self._stream = UnclosedOpusFileStream(self.filename)
+
+        self._duration = self._stream.pcm_size / self._stream.frequency
+        self._duration_per_frame = self._duration / self._stream.pcm_size
+
+    def seek(self, timestamp):
+        timestamp = max(0.0, min(timestamp, self._duration))
+        position = int(timestamp / self._duration_per_frame)
+        error = pyogg.opus.op_pcm_seek(self._stream.of, position)
+        if error:
+            warnings.warn(f"Opus stream could not seek properly {error}.")
 
 
 class PyOggDecoder(MediaDecoder):
+    vorbis_exts = ('.ogg',) if pyogg.PYOGG_OGG_AVAIL and pyogg.PYOGG_VORBIS_AVAIL \
+                               and pyogg.PYOGG_VORBIS_FILE_AVAIL else ()
+    flac_exts = ('.flac',) if pyogg.PYOGG_FLAC_AVAIL else ()
+    opus_exts = ('.opus',) if pyogg.PYOGG_OPUS_AVAIL and pyogg.PYOGG_OPUS_FILE_AVAIL else ()
+    exts = vorbis_exts + flac_exts + opus_exts
+
     def get_file_extensions(self):
-        return '.ogg', '.flac'
+        return PyOggDecoder.exts
 
     def decode(self, file, filename, streaming=True):
-        if streaming:
-            return PyOggSource(filename, file)
+        name, ext = os.path.splitext(filename)
+        if ext in PyOggDecoder.vorbis_exts:
+            source = PyOggVorbisSource
+        elif ext in PyOggDecoder.flac_exts:
+            source = PyOggFLACSource
+        elif ext in PyOggDecoder.opus_exts:
+            source = PyOggOpusSource
         else:
-            return StaticSource(PyOggSource(filename, file))
+            raise Exception("Decoder could not find a suitable source to use with this filetype.")
 
+        if streaming:
+            return source(filename, file)
+        else:
+            return StaticSource(source(filename, file))
+
+
+def get_decoders():
+    return [PyOggDecoder()]
+
+
+def get_encoders():
+    return []
