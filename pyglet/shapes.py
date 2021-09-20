@@ -567,7 +567,7 @@ class Ellipse(_ShapeBase):
     def a(self):
         """The semi-major axes of the ellipse.
 
-        :type: float
+        :type: int or float
         """
         return self._a
 
@@ -580,7 +580,7 @@ class Ellipse(_ShapeBase):
     def b(self):
         """The semi-minor axes of the ellipse.
 
-        :type: float
+        :type: int or float
         """
         return self._b
 

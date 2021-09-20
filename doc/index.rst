@@ -61,6 +61,7 @@ If this is your first time reading about pyglet, we suggest you start at
    :caption: API Reference
 
    modules/pyglet
+   modules/animation
    modules/app
    modules/canvas
    modules/clock
