@@ -38,8 +38,6 @@
 .. versionadded:: 1.5.22
 """
 
-import math
-
 from pyglet.clock import schedule_once
 
 def out_of_animation_range(num, from_, to):
