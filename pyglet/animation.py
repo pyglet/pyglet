@@ -47,7 +47,7 @@ def out_of_animation_range(num, from_, to):
         if num <= to:
             return True
     else:
-        if num >= from_:
+        if num >= to:
             return True
     return False
 
@@ -118,6 +118,10 @@ class Animation:
 
     def start(self, count=60):
         """Start animation.
+            
+        :Parameters:
+            `count` : int
+                Update objects ``count`` times in 1s.
         """
         self._started = True
         self._count = count
