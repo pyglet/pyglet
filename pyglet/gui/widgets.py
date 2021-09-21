@@ -66,6 +66,11 @@ class WidgetBase(EventDispatcher):
         """
         return self._x
 
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self._update_position()
+
     @property
     def y(self):
         """Y coordinate of the widget.
@@ -73,6 +78,24 @@ class WidgetBase(EventDispatcher):
         :type: int
         """
         return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self._update_position()
+
+    @property
+    def position(self):
+        """The x, y coordinate of the widget as a tuple.
+
+        :type: tuple(int, int)
+        """
+        return self._x, self._y
+
+    @position.setter
+    def position(self, values):
+        self._x, self._y = values
+        self._update_position()
 
     @property
     def width(self):
@@ -118,6 +141,9 @@ class WidgetBase(EventDispatcher):
 
     def _check_hit(self, x, y):
         return self._x < x < self._x + self._width and self._y < y < self._y + self._height
+
+    def _update_position(self):
+        raise NotImplementedError("Unable to reposition this Widget")
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         pass
@@ -182,6 +208,9 @@ class PushButton(WidgetBase):
         self._sprite = pyglet.sprite.Sprite(self._depressed_img, x, y, batch=batch, group=bg_group)
 
         self._pressed = False
+
+    def _update_position(self):
+        self._sprite.position = self._x, self._y
 
     @property
     def value(self):
@@ -406,7 +435,7 @@ class TextEntry(WidgetBase):
         fg_group = Group(order=1, parent=group)
 
         # Rectangular outline with 2-pixel pad:
-        p = 2
+        self._pad = p = 2
         self._outline = pyglet.shapes.Rectangle(x-p, y-p, width+p+p, height+p+p, color[:3], batch, bg_group)
         self._outline.opacity = color[3]
 
@@ -420,6 +449,10 @@ class TextEntry(WidgetBase):
         self._focus = False
 
         super().__init__(x, y, width, height)
+
+    def _update_position(self):
+        self._layout.position = self._x, self._y
+        self._outline.position = self._x - self._pad, self._y - self._pad
 
     @property
     def value(self):

@@ -1,3 +1,17 @@
+pyglet 1.5.21
+
+Features
+--------
+- A new MovableFrame that allows repositioning Widgets when a specified key modifier is held.
+- Text Layouts now have `opacity` and `visible` attributes, similar to Sprites.
+- Add new shapes.Ellipse class.
+
+Bugfixes
+--------
+- Xlib - don't enable certain Window options if transparency is not enabled. (#454)
+- Windows - Fix issue with some fonts where glyphs overhanging their advance would be cut off.
+
+
 pyglet 1.5.20
 
 Features

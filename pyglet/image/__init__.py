@@ -134,9 +134,10 @@ import weakref
 from ctypes import *
 from io import open, BytesIO
 
+import pyglet
+
 from pyglet.gl import *
 from pyglet.gl import gl_info
-from pyglet.window import *
 from pyglet.util import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
