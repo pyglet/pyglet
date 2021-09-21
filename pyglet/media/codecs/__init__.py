@@ -105,6 +105,11 @@ def add_default_media_codecs():
     except ImportError:
         pass
 
+    try:
+        from . import pyogg
+        add_decoders(pyogg)
+    except ImportError:
+        pass
 
 def have_ffmpeg():
     """Check if FFmpeg library is available.
