@@ -1,16 +1,19 @@
-import os.path
 import pyogg
+
+import os.path
+import warnings
+
 from abc import abstractmethod
-from pyglet.util import debug_print
-import pyglet
-from ctypes import c_void_p, POINTER, memmove, create_string_buffer, byref, c_int, pointer, cast, c_char, c_char_p, \
-    CFUNCTYPE, c_ubyte
+from ctypes import c_void_p, POINTER, c_int, pointer, cast, c_char, c_char_p, CFUNCTYPE, c_ubyte
+from ctypes import memmove, create_string_buffer, byref
 
 from pyglet.media import StreamingSource
 from pyglet.media.codecs import AudioFormat, AudioData, MediaDecoder, StaticSource
-import warnings
+from pyglet.util import debug_print
 
-_debug = debug_print('debug_media')
+
+_debug = debug_print('Debug PyOgg codec')
+
 if _debug:
     if not pyogg.PYOGG_OGG_AVAIL and not pyogg.PYOGG_VORBIS_AVAIL and not pyogg.PYOGG_VORBIS_FILE_AVAIL:
         warnings.warn("PyOgg determined the ogg/vorbis libraries were not available.")
@@ -192,7 +195,7 @@ class MemoryVorbisFileStream(UnclosedVorbisFileStream):
 
         error = pyogg.vorbis.libvorbisfile.ov_open_callbacks(buff, self.vf, None, 0, self.memory_object.callbacks)
         if error != 0:
-            raise PyOggError("file couldn't be opened or doesn't exist. Error code : {}".format(error))
+            raise pyogg.PyOggError("file couldn't be opened or doesn't exist. Error code : {}".format(error))
 
         info = pyogg.vorbis.ov_info(byref(self.vf), -1)
 
@@ -279,9 +282,8 @@ class MemoryFLACFileStream(UnclosedFLACFileStream):
         )
 
         if init_status:  # error
-            raise pyogg.PyOggError("An error occurred when trying to open '{}': {}".format(path,
-                                                                                           pyogg.flac.FLAC__StreamDecoderInitStatusEnum[
-                                                                                               init_status]))
+            raise pyogg.PyOggError("An error occurred when trying to open '{}': {}".format(
+                path, pyogg.flac.FLAC__StreamDecoderInitStatusEnum[init_status]))
 
         metadata_status = pyogg.flac.FLAC__stream_decoder_process_until_end_of_metadata(self.decoder)
         if not metadata_status:  # error
@@ -417,7 +419,7 @@ class PyOggVorbisSource(PyOggSource):
         seek_succeeded = pyogg.vorbis.ov_time_seek(self._stream.vf, timestamp)
         if seek_succeeded != 0:
             if _debug:
-                warnings.warn(f"Failed to seek file {filename} - {seek_succeeded}")
+                warnings.warn(f"Failed to seek file {self.filename} - {seek_succeeded}")
 
 
 class PyOggOpusSource(PyOggSource):
@@ -439,8 +441,7 @@ class PyOggOpusSource(PyOggSource):
 
 
 class PyOggDecoder(MediaDecoder):
-    vorbis_exts = ('.ogg',) if pyogg.PYOGG_OGG_AVAIL and pyogg.PYOGG_VORBIS_AVAIL \
-                               and pyogg.PYOGG_VORBIS_FILE_AVAIL else ()
+    vorbis_exts = ('.ogg',) if pyogg.PYOGG_OGG_AVAIL and pyogg.PYOGG_VORBIS_AVAIL and pyogg.PYOGG_VORBIS_FILE_AVAIL else ()
     flac_exts = ('.flac',) if pyogg.PYOGG_FLAC_AVAIL else ()
     opus_exts = ('.opus',) if pyogg.PYOGG_OPUS_AVAIL and pyogg.PYOGG_OPUS_FILE_AVAIL else ()
     exts = vorbis_exts + flac_exts + opus_exts

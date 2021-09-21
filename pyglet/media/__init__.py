@@ -92,6 +92,8 @@ __all__ = (
     'Player',
     'PlayerGroup',
     'SourceGroup',
+    'StaticSource',
+    'StreamingSource',
     'get_encoders',
     'get_decoders',
     'add_encoders',
