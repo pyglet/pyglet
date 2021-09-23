@@ -1790,6 +1790,10 @@ class ScrollableTextLayout(TextLayout):
         for group in self.groups.values():
             group.scissor_area = area
 
+    def _update(self):
+        super()._update()
+        self._update_scissor_area()
+
     # Properties
 
     @property
