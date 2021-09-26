@@ -514,31 +514,34 @@ class UniformBufferObject:
 
         # Query the number of active Uniforms:
         num_active = GLint()
-        indices = (GLuint * num_active.value)()
-        indices_ptr = cast(addressof(indices), POINTER(GLint))
         glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
-        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
 
-        # Create objects and pointers for query values, to be used in the next step:
+        # Query the uniform index order and each uniform's offset:
+        indices = (GLuint * num_active.value)()
         offsets = (GLint * num_active.value)()
-        gl_types = (GLuint * num_active.value)()
-        mat_stride = (GLuint * num_active.value)()
+        indices_ptr = cast(addressof(indices), POINTER(GLint))
         offsets_ptr = cast(addressof(offsets), POINTER(GLint))
+        glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
+
+        # Offsets may be returned in non-ascending order, sort them with the corresponding index:
+        _oi = sorted(zip(offsets, indices), key=lambda x: x[0])
+        offsets = [x[0] for x in _oi] + [self.block.size]
+        indices = (GLuint * num_active.value)(*(x[1] for x in _oi))
+
+        # Query other uniform information:
+        gl_types = (GLint * num_active.value)()
+        mat_stride = (GLint * num_active.value)()
         gl_types_ptr = cast(addressof(gl_types), POINTER(GLint))
         stride_ptr = cast(addressof(mat_stride), POINTER(GLint))
-
-        # Query the indices, offsets, and types uniforms:
-        glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_OFFSET, offsets_ptr)
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_TYPE, gl_types_ptr)
         glGetActiveUniformsiv(p_id, num_active.value, indices, GL_UNIFORM_MATRIX_STRIDE, stride_ptr)
 
-        offsets = offsets[:] + [self.block.size]
         args = []
 
         for i in range(num_active.value):
-            u_name, gl_type, length = self.block.uniforms[i]
-            start = offsets[i]
-            size = offsets[i+1] - start
+            u_name, gl_type, length = self.block.uniforms[indices[i]]
+            size = offsets[i+1] - offsets[i]
             c_type_size = sizeof(gl_type)
             actual_size = c_type_size * length
             padding = size - actual_size
