@@ -1011,18 +1011,8 @@ class TextLayout:
         return self._x, self._y
 
     @position.setter
-    def position(self, position):
-        self.update(*position)
-
-    def update(self, x, y):
-        """Change both X and Y positions of the layout at once for faster performance.
-
-        :Parameters:
-            `x` : int
-                X coordinate of the layout.
-            `y` : int
-                Y coordinate of the layout.
-        """
+    def position(self, values):
+        x, y = values
         if self._boxes:
             self._x = x
             self._y = y
