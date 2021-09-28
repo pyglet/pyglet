@@ -1,6 +1,7 @@
 from ctypes import sizeof
 from io import BytesIO
 import unittest
+import wave
 
 from pyglet.media.synthesis import *
 
@@ -65,9 +66,8 @@ class SynthesisSourceTest:
         source_name = self.source_class.__name__.lower()
         filename = "synthesis_{0}_{1}_{2}_1ch.wav".format(source_name, sample_size, sample_rate)
 
-        with open(get_test_data_file('media', filename), 'rb') as f:
-            # discard the wave header:
-            loaded_bytes = f.read()[44:]
+        with wave.open(get_test_data_file('media', filename)) as f:
+            loaded_bytes = f.readframes(-1)
             source.seek(0)
             generated_data = source.get_audio_data(source._max_offset)
             bytes_buffer = BytesIO(generated_data.data).getvalue()
