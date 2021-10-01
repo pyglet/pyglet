@@ -473,6 +473,17 @@ class Mat4(tuple):
                     vector[0], vector[1], vector[2], 1.0))
 
     @classmethod
+    def from_rotation(cls, angle: float, vector: Vec3) -> 'Mat4':
+        """Create a rotation matrix from an angle and Vec3.
+
+        :Parameters:
+            `angle` : A `float`
+            `vector` : A `Vec3`, or 3 component tuple of float or int
+                Vec3 or tuple with x, y and z translaton values
+        """
+        return cls().rotate(angle, vector)
+
+    @classmethod
     def look_at_direction(cls, direction: Vec3, up: Vec3) -> 'Mat4':
         vec_z = direction.normalize()
         vec_x = direction.cross_product(up).normalize()
@@ -498,21 +509,22 @@ class Mat4(tuple):
         """Get a specific column as a tuple."""
         return self[index::4]
 
-    def scale(self, x=1, y=1, z=1) -> 'Mat4':
+    def scale(self, vector: Vec3) -> 'Mat4':
         """Get a scale Matrix on x, y, or z axis."""
         temp = list(self)
-        temp[0] *= x
-        temp[5] *= y
-        temp[10] *= z
+        temp[0] *= vector[0]
+        temp[5] *= vector[1]
+        temp[10] *= vector[2]
         return Mat4(temp)
 
-    def translate(self, x=0, y=0, z=0) -> 'Mat4':
+    def translate(self, vector: Vec3) -> 'Mat4':
         """Get a translate Matrix along x, y, and z axis."""
-        return Mat4(self) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1))
+        return Mat4(self) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1))
 
-    def rotate(self, angle=0, x=0, y=0, z=0) -> 'Mat4':
+    def rotate(self, angle: float, vector: Vec3) -> 'Mat4':
         """Get a rotation Matrix on x, y, or z axis."""
-        assert all(abs(n) <= 1 for n in (x, y, z)), "x,y,z must be normalized (<=1)"
+        assert all(abs(n) <= 1 for n in vector), "vector must be normalized (<=1)"
+        x, y, z = vector
         c = _math.cos(angle)
         s = _math.sin(angle)
         t = 1 - c

@@ -89,7 +89,7 @@ import pyglet
 from pyglet import gl
 from pyglet import graphics
 from pyglet.gl import current_context
-from pyglet.math import Mat4
+from pyglet.math import Mat4, Vec3
 from pyglet.graphics import shader
 
 from .codecs import ModelDecodeException
@@ -190,8 +190,8 @@ class Model:
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch
-        self._rotation = 0, 0, 0
-        self._translation = 0, 0, 0
+        self._rotation = Vec3()
+        self._translation = Vec3()
 
     @property
     def batch(self):
@@ -279,16 +279,16 @@ class BaseMaterialGroup(graphics.ShaderGroup):
         super().__init__(program, order, parent)
 
         self.material = material
-        self.rotation = 0, 0, 0
-        self.translation = 0, 0, 0
+        self.rotation = Vec3()
+        self.translation = Vec3()
 
     def set_modelview_matrix(self):
         # NOTE: Matrix operations can be optimized later with transform feedback
         view = Mat4()
-        view = view.rotate(radians(self.rotation[2]), z=1)
-        view = view.rotate(radians(self.rotation[1]), y=1)
-        view = view.rotate(radians(self.rotation[0]), x=1)
-        view = view.translate(*self.translation)
+        view = view.rotate(radians(self.rotation[2]), Vec3(0, 0, 1))
+        view = view.rotate(radians(self.rotation[1]), Vec3(0, 1, 0))
+        view = view.rotate(radians(self.rotation[0]), Vec3(1, 0, 0))
+        view = view.translate(self.translation)
 
         # TODO: separate the projection block, and remove this hack
         block = self.program.uniform_blocks['WindowBlock']
