@@ -112,9 +112,10 @@ of the system clock.
 """
 
 import time
+import weakref
 
-from operator import attrgetter
 from heapq import heappush, heappop, heappushpop
+from operator import attrgetter
 from collections import deque
 
 
@@ -271,7 +272,10 @@ class Clock:
                 break
 
             # execute the callback
-            item.func(now - item.last_ts, *item.args, **item.kwargs)
+            try:
+                item.func(now - item.last_ts, *item.args, **item.kwargs)
+            except ReferenceError:
+                pass    # weakly-referenced object no longer exists.
 
             if item.interval:
 
@@ -479,7 +483,7 @@ class Clock:
         """
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + delay
-        item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
+        item = _ScheduledIntervalItem(weakref.proxy(func), 0, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
     def schedule_interval(self, func, interval, *args, **kwargs):
