@@ -312,7 +312,7 @@ class _ShapeBase:
 
     @color.setter
     def color(self, values):
-        self._rgb = list(map(int, values))
+        self._rgb = tuple(map(int, values))
         self._update_color()
 
     @property
@@ -1154,7 +1154,7 @@ class BorderedRectangle(_ShapeBase):
 
     @border_color.setter
     def border_color(self, values):
-        self._brgb = list(map(int, values))
+        self._brgb = tuple(map(int, values))
         self._update_color()
 
 
