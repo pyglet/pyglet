@@ -267,7 +267,7 @@ class _ShapeBase:
 
     @color.setter
     def color(self, values):
-        self._rgb = list(map(int, values))
+        self._rgb = tuple(map(int, values))
         self._update_color()
 
     @property
@@ -559,7 +559,7 @@ class Ellipse(_ShapeBase):
                 line_points = *points[i], *points[i + 1]
                 vertices.extend(line_points)
         self._vertex_list.vertices[:] = vertices
- 
+
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._num_verts
 
@@ -1108,7 +1108,7 @@ class BorderedRectangle(_ShapeBase):
 
     @border_color.setter
     def border_color(self, values):
-        self._brgb = list(map(int, values))
+        self._brgb = tuple(map(int, values))
         self._update_color()
 
 
@@ -1270,8 +1270,8 @@ class Star(_ShapeBase):
                 The desired number of spikes of the star.
             `rotation` : float
                 The rotation of the star in degrees. A rotation of 0 degrees
-                will result in one spike lining up with the X axis in 
-                positive direction. 
+                will result in one spike lining up with the X axis in
+                positive direction.
             `color` : (int, int, int)
                 The RGB color of the star, specified as
                 a tuple of three ints in the range of 0-255.
