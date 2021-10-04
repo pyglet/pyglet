@@ -86,6 +86,31 @@ class Vec2(tuple):
     def __round__(self, ndigits=None):
         return Vec2(*(round(v, ndigits) for v in self))
 
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def heading(self):
+        return _math.atan2(self[1], self[0])
+
+    def set_heading(self, angle):
+        mag = self.__abs__()
+        return Vec2(mag * _math.cos(angle), mag * _math.sin(angle))
+
+    def set_magnitude(self, value):
+        return self.normalize().scale(value)
+
+    def magnitude(self):
+        return self.__abs__()
+
+    def limit(self, value):
+        mag = self.__abs__()
+        if mag > value:
+            return self.set_magnitude(value)
+        return self
+            
     def lerp(self, other, alpha):
         return Vec2(self[0] + (alpha * (other[0] - self[0])),
                     self[1] + (alpha * (other[1] - self[1])))
@@ -158,6 +183,18 @@ class Vec3(tuple):
 
     def __round__(self, ndigits=None):
         return Vec3(*(round(v, ndigits) for v in self))
+
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def set_magnitude(self, value):
+        return self.normalize().scale(value)
+
+    def magnitude(self):
+        return self.__abs__()
 
     def cross(self, other):
         return Vec3((self[1] * other[2]) - (self[2] * other[1]),
@@ -245,6 +282,18 @@ class Vec4(tuple):
 
     def __round__(self, ndigits=None):
         return Vec4(*(round(v, ndigits) for v in self))
+
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def set_magnitude(self, value):
+        return self.normalize().scale(value)
+
+    def magnitude(self):
+        return self.__abs__()
 
     def lerp(self, other, alpha):
         return Vec4(self[0] + (alpha * (other[0] - self[0])),
