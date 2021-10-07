@@ -70,14 +70,14 @@ class Vec2(tuple):
         return super().__new__(Vec2, args or (0, 0))
 
     @staticmethod
-    def from_polar(angle, mag=1):
-        """Create a new vector from the given angle.
+    def from_polar(mag, angle):
+        """Create a new vector from the given polar coodinates.
 
-        :parameters: 
-            `angle` : int or float : 
-                The angle of the vector in radians.
+        :parameters:
             `mag`   : int or float :
                 The magnitude of the vector.
+            `angle` : int or float : 
+                The angle of the vector in radians.
 
         :returns: A new vector with the given angle and magnitude.
         :rtype: Vec2
