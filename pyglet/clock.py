@@ -112,7 +112,6 @@ of the system clock.
 """
 
 import time
-import weakref
 
 from heapq import heappush, heappop, heappushpop
 from operator import attrgetter
@@ -483,7 +482,7 @@ class Clock:
         """
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + delay
-        item = _ScheduledIntervalItem(weakref.proxy(func), 0, last_ts, next_ts, args, kwargs)
+        item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
         heappush(self._schedule_interval_items, item)
 
     def schedule_interval(self, func, interval, *args, **kwargs):
