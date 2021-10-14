@@ -36,6 +36,8 @@ class ShapesDemo(pyglet.window.Window):
 
         self.ellipse = shapes.Ellipse(600, 150, a=50, b=30, color=(55, 255, 55), batch=self.batch)
 
+        self.sector = shapes.Sector(125, 400, 60, angle=0.9, color=(55, 255, 55), batch=self.batch)
+
     def on_draw(self):
         """Clear the screen and draw shapes"""
         self.clear()
@@ -46,7 +48,7 @@ class ShapesDemo(pyglet.window.Window):
         self.time += delta_time
         self.square.rotation = self.time * 15
         self.rectangle.y = 200 + math.sin(self.time) * 190
-        self.circle.radius = 175 + math.sin(self.time * 1.17) * 30
+        self.circle.radius = 175 + math.sin(self.time * 1.17) * 50
         self.line.position = (
             360 + math.sin(self.time * 0.81) * 360,
             0,
@@ -56,6 +58,7 @@ class ShapesDemo(pyglet.window.Window):
         self.arc.rotation = self.time * 30
         self.star.rotation = self.time * 50
         self.ellipse.b = abs(math.sin(self.time) * 100)
+        self.sector.angle = self.time % math.tau
 
 
 if __name__ == "__main__":

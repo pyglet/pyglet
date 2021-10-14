@@ -663,7 +663,7 @@ class Ellipse(_ShapeBase):
 class Sector(_ShapeBase):
     def __init__(self, x, y, radius, segments=None, angle=math.tau, start_angle=0,
                  color=(255, 255, 255), batch=None, group=None):
-        """Create a sector of a circle.
+        """Create a Sector of a circle.
 
                 The sector's anchor point (x, y) defaults to the center of the circle.
 
@@ -705,7 +705,7 @@ class Sector(_ShapeBase):
         self._batch = batch or Batch()
         self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
 
-        self._vertex_list = self._batch.add(self._segments * 3, GL_TRIANGLES, self._group, 'v2f', 'c4B')
+        self._vertex_list = self._batch.add(self._segments * 3, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
         self._update_position()
         self._update_color()
 
@@ -729,14 +729,27 @@ class Sector(_ShapeBase):
                 triangle = x, y, *points[i - 1], *point
                 vertices.extend(triangle)
 
-        self._vertex_list.vertices[:] = vertices
+        self._vertex_list.position[:] = vertices
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * self._segments * 3
 
     @property
+    def angle(self):
+        """The angle of the sector.
+
+        :type: float
+        """
+        return self._angle
+
+    @angle.setter
+    def angle(self, value):
+        self._angle = value
+        self._update_position()
+
+    @property
     def radius(self):
-        """The radius of the circle.
+        """The radius of the sector.
 
         :type: float
         """
