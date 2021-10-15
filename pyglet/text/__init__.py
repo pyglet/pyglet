@@ -312,15 +312,15 @@ class DocumentLabel(layout.TextLayout):
         drawn with fractional opacity, blending with the background.
 
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
-        make the sprite appear translucent.
+        make the label appear semi-translucent.
 
         :type: int
         """
-        return self.color[4]
+        return self.color[3]
 
     @opacity.setter
     def opacity(self, alpha):
-        if alpha != self.color[4]:
+        if alpha != self.color[3]:
             self.color = list(map(int, (*self.color[:3], alpha)))
 
     @property
