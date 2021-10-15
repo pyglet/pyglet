@@ -2,15 +2,6 @@
 Interface is much more simplified, with only a position and zoom implemented, but is easily
 extended to add other features such as autoscroll.
 
-A centered camera class is also provided, where the position of the camera is the center of
-the screen instead of the bottom left.
-
-Demo:
-
-Use arrow keys to move the camera around the scene.
-Note that everything in the window can be added to the same batch, as a group is used to
-seperate things in world space from things in "UI" space.
-
     camera = CameraGroup(x=0, y=0, zoom=1)
 
     world_object = pyglet.some_renderable(batch=batch, group=camera)
@@ -20,6 +11,17 @@ seperate things in world space from things in "UI" space.
     def on_draw():
         window.clear()
         batch.draw()  # Only one batch necessary
+
+A centered camera class is also provided, where the position of the camera is the center of
+the screen instead of the bottom left.
+
+    centered_camera = CenteredCameraGroup(window, x=0, y=0, zoom=1)
+
+Demo:
+
+Use arrow keys to move the camera around the scene.
+Note that everything in the window can be added to the same batch, as a group is used to
+seperate things in world space from things in "UI" space.
 """
 
 import pyglet
