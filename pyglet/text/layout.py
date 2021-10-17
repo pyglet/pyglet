@@ -1239,6 +1239,8 @@ class TextLayout:
     def _get_lines(self):
         len_text = len(self._document.text)
         glyphs = self._get_glyphs()
+        if not glyphs:
+            return []
         owner_runs = runlist.RunList(len_text, None)
         self._get_owner_runs(owner_runs, glyphs, 0, len_text)
         lines = [line for line in self._flow_glyphs(glyphs, owner_runs, 0, len_text)]
