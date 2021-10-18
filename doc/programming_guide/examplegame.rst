@@ -642,7 +642,7 @@ First, load the image in resources.py::
 
 To get the flame to draw behind the player, we need to move the flame image’s
 center of rotation to the right, past the end of the image.
-To do that, we just set its `anchor_x` and `anchor_y` attributes:
+To do that, we just set its `anchor_x` and `anchor_y` attributes::
 
     engine_image.anchor_x = engine_image.width * 1.5
     engine_image.anchor_y = engine_image.height / 2
