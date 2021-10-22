@@ -277,7 +277,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
     def __init__(self, size, target, usage):
         super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
-        self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
+        self.data_ptr = ctypes.addressof(self.data)
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
@@ -320,7 +320,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         data = (ctypes.c_byte * size)()
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data
-        self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
+        self.data_ptr = ctypes.addressof(self.data)
 
         self.size = size
 
