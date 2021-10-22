@@ -232,6 +232,12 @@ class BufferObject(AbstractBuffer):
         ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
+    def map_range(self, start, size, ptr_type):
+        glBindBuffer(self.target, self.id)
+        ptr = ctypes.cast(glMapBufferRange(self.target, start, size, GL_MAP_WRITE_BIT), ptr_type).contents
+        glUnmapBuffer(self.target)
+        return ptr
+
     def unmap(self):
         glUnmapBuffer(self.target)
 
