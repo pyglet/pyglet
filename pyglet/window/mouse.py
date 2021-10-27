@@ -60,10 +60,10 @@ class MouseStateHandler(dict):
 
     def on_mouse_press(self, x, y, button, modifiers):
         self[button] = True
-        
+
     def on_mouse_release(self, x, y, button, modifiers):
         self[button] = False
-        
+
     def on_deactivate(self):
         self.clear()
 
@@ -87,21 +87,21 @@ def buttons_string(buttons):
     """
     button_names = []
     if buttons & LEFT:
-        button_names.append('LEFT')
+        button_names.append("LEFT")
     if buttons & MIDDLE:
-        button_names.append('MIDDLE')
+        button_names.append("MIDDLE")
     if buttons & RIGHT:
-        button_names.append('RIGHT')
-    if buttons & XBUTTON1:
-        button_names.append('XBUTTON1')
-    if buttons & XBUTTON2:
-        button_names.append('XBUTTON2')
-    return '|'.join(button_names)
+        button_names.append("RIGHT")
+    if buttons & MOUSE4:
+        button_names.append("MOUSE4")
+    if buttons & MOUSE5:
+        button_names.append("MOUSE5")
+    return "|".join(button_names)
 
 
 # Symbolic names for the mouse buttons
 LEFT = 1 << 0
 MIDDLE = 1 << 1
 RIGHT = 1 << 2
-XBUTTON1 = 1 << 3
-XBUTTON2 = 1 << 4
+MOUSE4 = 1 << 3
+MOUSE5 = 1 << 4

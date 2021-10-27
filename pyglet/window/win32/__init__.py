@@ -966,9 +966,9 @@ class Win32Window(BaseWindow):
         if wParam & MK_RBUTTON:
             buttons |= mouse.RIGHT
         if wParam & MK_XBUTTON1:
-            buttons |= mouse.XBUTTON1
+            buttons |= mouse.MOUSE4
         if wParam & MK_XBUTTON2:
-            buttons |= mouse.XBUTTON2
+            buttons |= mouse.MOUSE5
 
         if buttons:
             # Drag event
@@ -1044,9 +1044,9 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_XBUTTONDOWN)
     def _event_xbuttondown(self, msg, wParam, lParam):
         if c_short(wParam >> 16).value == 1:
-            button = mouse.XBUTTON1
+            button = mouse.MOUSE4
         if c_short(wParam >> 16).value == 2:
-            button = mouse.XBUTTON2
+            button = mouse.MOUSE5
         return self._event_mousebutton(
             'on_mouse_press', button, lParam)
 
@@ -1054,9 +1054,9 @@ class Win32Window(BaseWindow):
     @Win32EventHandler(WM_XBUTTONUP)
     def _event_xbuttonup(self, msg, wParam, lParam):
         if c_short(wParam >> 16).value == 1:
-            button = mouse.XBUTTON1
+            button = mouse.MOUSE4
         if c_short(wParam >> 16).value == 2:
-            button = mouse.XBUTTON2
+            button = mouse.MOUSE5
         return self._event_mousebutton(
             'on_mouse_release', button, lParam)
 
