@@ -319,7 +319,7 @@ class DocumentLabel(layout.TextLayout):
 
     @opacity.setter
     def opacity(self, alpha):
-        if alpha != self.color[4]:
+        if alpha != self.color[3]:
             self.color = list(map(int, (*self.color[:3], alpha)))
 
     @property
