@@ -219,12 +219,6 @@ class GlyphTextureAtlas(image.Texture):
     y = 0
     line_height = 0
 
-    def apply_blend_state(self):
-        """Set the OpenGL blend state for the glyphs in this texture.
-        """
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_BLEND)
-
     def fit(self, image):
         """Place `image` within this texture.
 

@@ -324,12 +324,12 @@ class _GlyphBox(_AbstractBox):
 
     def place(self, layout, i, x, y, context):
         assert self.glyphs
+
         try:
-            group = layout.groups[self.owner]
+            group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.default_group_class(texture=self.owner, order=1, program=get_default_layout_shader(),
-                                               parent=layout._group)
-            layout.groups[self.owner] = group
+            group = layout.default_group_class(texture=self.owner, order=1, parent=layout.group)
+            layout.group_cache[self.owner] = group
 
         n_glyphs = self.length
         vertices = []
@@ -644,7 +644,7 @@ def get_default_decoration_shader():
 
 
 class TextLayoutGroup(graphics.Group):
-    def __init__(self, texture, order=1, program=None, parent=None):
+    def __init__(self, texture, order=1, parent=None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -652,7 +652,7 @@ class TextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order, parent=parent)
         self.texture = texture
-        self.program = program or get_default_layout_shader()
+        self.program = get_default_layout_shader()
 
     def set_state(self):
         self.program.use()
@@ -732,14 +732,14 @@ class IncrementalTextLayoutGroup(ScrollableTextLayoutGroup):
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0, program=None, parent=None):
+    def __init__(self, order=0, parent=None):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
         super().__init__(order=order, parent=parent)
-        self.program = program or get_default_decoration_shader()
+        self.program = get_default_decoration_shader()
 
     def set_state(self):
         self.program.use()
@@ -756,14 +756,14 @@ class TextDecorationGroup(graphics.Group):
 class ScrollableTextDecorationGroup(graphics.Group):
     scissor_area = 0, 0, 0, 0
 
-    def __init__(self, order=0, program=None, parent=None):
+    def __init__(self, order=0, parent=None):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
         super().__init__(order=order, parent=parent)
-        self.program = program or get_default_decoration_shader()
+        self.program = get_default_decoration_shader()
 
     def set_state(self):
         self.program.use()
@@ -867,12 +867,12 @@ class TextLayout:
         self.content_width = 0
         self.content_height = 0
 
-        self._group = group
+        self._user_group = group
 
-        self.background_decoration_group = TextDecorationGroup(order=0, parent=self._group)
-        self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self._group)
+        self.background_decoration_group = TextDecorationGroup(order=0, parent=self._user_group)
+        self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self._user_group)
 
-        self.groups = {}
+        self.group_cache = {}
 
         if batch is None:
             batch = graphics.Batch()
@@ -891,6 +891,10 @@ class TextLayout:
 
         self._dpi = dpi or 96
         self.document = document
+
+    @property
+    def group(self):
+        return self._user_group
 
     @property
     def dpi(self):
@@ -1021,10 +1025,10 @@ class TextLayout:
             dx = x - self._x
             dy = y - self._y
             for vertex_list in self._vertex_lists:
-                vertices = vertex_list.vertices[:]
+                vertices = vertex_list.position[:]
                 vertices[::2] = [x + dx for x in vertices[::2]]
                 vertices[1::2] = [y + dy for y in vertices[1::2]]
-                vertex_list.vertices[:] = vertices
+                vertex_list.position[:] = vertices
             self._x = x
             self._y = y
 
@@ -1254,9 +1258,9 @@ class TextLayout:
             _vertex_list.delete()
         for box in self._boxes:
             box.delete(self)
-        self._vertex_lists = []
-        self._boxes = []
-        self.groups.clear()
+        self._vertex_lists.clear()
+        self._boxes.clear()
+        # self.group_cache.clear()       # TODO: this shouldn't be cleared because it's the Group Cache
 
         if not self._document or not self._document.text:
             return
@@ -1779,7 +1783,7 @@ class ScrollableTextLayout(TextLayout):
         if not self.document.text:
             return
         area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
-        for group in self.groups.values():
+        for group in self.group_cache.values():
             group.scissor_area = area
 
     def _update(self):
@@ -1935,7 +1939,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         if not self.document.text:
             return
         area = self._get_left(), self._get_bottom(self._get_lines()), self._width, self._height
-        for group in self.groups.values():
+        for group in self.group_cache.values():
             group.scissor_area = area
 
     def _init_document(self):
