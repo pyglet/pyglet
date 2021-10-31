@@ -315,11 +315,11 @@ class DocumentLabel(layout.TextLayout):
 
         :type: int
         """
-        return self.color[4]
+        return self.color[3]
 
     @opacity.setter
     def opacity(self, alpha):
-        if alpha != self.color[4]:
+        if alpha != self.color[3]:
             self.color = list(map(int, (*self.color[:3], alpha)))
 
     @property
