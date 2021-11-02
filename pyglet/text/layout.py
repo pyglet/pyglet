@@ -2272,7 +2272,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def anchor_x(self, anchor_x):
         self._anchor_x = anchor_x
         self._update_scissor_area()
-        self._update()
+        self._init_document()
 
     @property
     def anchor_y(self):
@@ -2282,7 +2282,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     def anchor_y(self, anchor_y):
         self._anchor_y = anchor_y
         self._update_scissor_area()
-        self._update()
+        self._init_document()
 
     @property
     def width(self):
