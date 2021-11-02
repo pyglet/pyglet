@@ -328,7 +328,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.default_group_class(texture=self.owner, order=1, parent=layout.group)
+            group = layout.default_group_class(self.owner, get_default_layout_shader(), order=1, parent=layout.group)
             layout.group_cache[self.owner] = group
 
         n_glyphs = self.length
@@ -644,7 +644,7 @@ def get_default_decoration_shader():
 
 
 class TextLayoutGroup(graphics.Group):
-    def __init__(self, texture, order=1, parent=None):
+    def __init__(self, texture, program, order=1, parent=None):
         """Create a text layout rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
@@ -652,7 +652,7 @@ class TextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order, parent=parent)
         self.texture = texture
-        self.program = get_default_layout_shader()
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -687,7 +687,7 @@ class TextLayoutGroup(graphics.Group):
 class ScrollableTextLayoutGroup(graphics.Group):
     scissor_area = 0, 0, 0, 0
 
-    def __init__(self, texture, order=1, program=None, parent=None):
+    def __init__(self, texture, program, order=1, parent=None):
         """Default rendering group for :py:class:`~pyglet.text.layout.ScrollableTextLayout`.
 
         The group maintains internal state for specifying the viewable
@@ -696,7 +696,7 @@ class ScrollableTextLayoutGroup(graphics.Group):
         """
         super().__init__(order=order, parent=parent)
         self.texture = texture
-        self.program = program or get_default_layout_shader()
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -732,14 +732,14 @@ class IncrementalTextLayoutGroup(ScrollableTextLayoutGroup):
 
 
 class TextDecorationGroup(graphics.Group):
-    def __init__(self, order=0, parent=None):
+    def __init__(self, program, order=0, parent=None):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
         super().__init__(order=order, parent=parent)
-        self.program = get_default_decoration_shader()
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -756,14 +756,14 @@ class TextDecorationGroup(graphics.Group):
 class ScrollableTextDecorationGroup(graphics.Group):
     scissor_area = 0, 0, 0, 0
 
-    def __init__(self, order=0, parent=None):
+    def __init__(self, program, order=0, parent=None):
         """Create a text decoration rendering group.
 
         The group is created internally when a :py:class:`~pyglet.text.Label`
         is created; applications usually do not need to explicitly create it.
         """
         super().__init__(order=order, parent=parent)
-        self.program = get_default_decoration_shader()
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -869,8 +869,9 @@ class TextLayout:
 
         self._user_group = group
 
-        self.background_decoration_group = TextDecorationGroup(order=0, parent=self._user_group)
-        self.foreground_decoration_group = TextDecorationGroup(order=2, parent=self._user_group)
+        decoration_shader = get_default_decoration_shader()
+        self.background_decoration_group = TextDecorationGroup(decoration_shader, order=0, parent=self._user_group)
+        self.foreground_decoration_group = TextDecorationGroup(decoration_shader, order=2, parent=self._user_group)
 
         self.group_cache = {}
 
@@ -1258,9 +1259,9 @@ class TextLayout:
             _vertex_list.delete()
         for box in self._boxes:
             box.delete(self)
-        self._vertex_lists.clear()
-        self._boxes.clear()
-        # self.group_cache.clear()       # TODO: this shouldn't be cleared because it's the Group Cache
+        self._vertex_lists = []
+        self._boxes = []
+        self.group_cache.clear()
 
         if not self._document or not self._document.text:
             return

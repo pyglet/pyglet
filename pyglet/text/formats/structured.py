@@ -89,7 +89,7 @@ class ImageElement(pyglet.text.document.InlineElement):
         super().__init__(ascent, descent, self.width)
 
     def place(self, layout, x, y):
-        group = _InlineElementGroup(self.image.get_texture(), 0, layout._group)
+        group = _InlineElementGroup(self.image.get_texture(), 0, layout.group)
         x1 = x
         y1 = y + self.descent
         x2 = x + self.width
