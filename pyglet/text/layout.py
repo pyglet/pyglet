@@ -328,7 +328,7 @@ class _GlyphBox(_AbstractBox):
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.default_group_class(self.owner, get_default_layout_shader(), order=1, parent=layout.group)
+            group = layout.group_class(self.owner, get_default_layout_shader(), order=1, parent=layout.group)
             layout.group_cache[self.owner] = group
 
         n_glyphs = self.length
@@ -809,7 +809,7 @@ class TextLayout:
             the desired width if word-wrapping failed.
         `content_height` : int
             Calculated height of the text in the layout.
-        `default_group_class` : `~pyglet.graphics.Group`
+        `group_class` : `~pyglet.graphics.Group`
             Top-level rendering group.
         `background_decoration_group` : `~pyglet.graphics.Group`
             Rendering group for background color.
@@ -823,7 +823,8 @@ class TextLayout:
 
     _update_enabled = True
     _own_batch = False
-    default_group_class = TextLayoutGroup
+    group_class = TextLayoutGroup
+    decoration_class = TextDecorationGroup
 
     _x = 0
     _y = 0
@@ -870,8 +871,8 @@ class TextLayout:
         self._user_group = group
 
         decoration_shader = get_default_decoration_shader()
-        self.background_decoration_group = TextDecorationGroup(decoration_shader, order=0, parent=self._user_group)
-        self.foreground_decoration_group = TextDecorationGroup(decoration_shader, order=2, parent=self._user_group)
+        self.background_decoration_group = self.decoration_class(decoration_shader, order=0, parent=self._user_group)
+        self.foreground_decoration_group = self.decoration_class(decoration_shader, order=2, parent=self._user_group)
 
         self.group_cache = {}
 
@@ -1771,7 +1772,8 @@ class ScrollableTextLayout(TextLayout):
     Use `view_x` and `view_y` to scroll the text within the viewport.
     """
 
-    default_group_class = ScrollableTextLayoutGroup
+    group_class = ScrollableTextLayoutGroup
+    decoration_class = ScrollableTextDecorationGroup
 
     _translate_x = 0
     _translate_y = 0
@@ -1911,7 +1913,8 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     _selection_color = [255, 255, 255, 255]
     _selection_background_color = [46, 106, 197, 255]
 
-    default_group_class = IncrementalTextLayoutGroup
+    group_class = IncrementalTextLayoutGroup
+    decoration_class = IncrementalTextDecorationGroup
 
     _translate_x = 0
     _translate_y = 0
