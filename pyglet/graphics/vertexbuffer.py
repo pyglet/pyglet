@@ -232,6 +232,12 @@ class BufferObject(AbstractBuffer):
         ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
+    def map_range(self, start, size, ptr_type):
+        glBindBuffer(self.target, self.id)
+        ptr = ctypes.cast(glMapBufferRange(self.target, start, size, GL_MAP_WRITE_BIT), ptr_type).contents
+        glUnmapBuffer(self.target)
+        return ptr
+
     def unmap(self):
         glUnmapBuffer(self.target)
 
@@ -277,7 +283,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
     def __init__(self, size, target, usage):
         super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
-        self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
+        self.data_ptr = ctypes.addressof(self.data)
         self._dirty_min = sys.maxsize
         self._dirty_max = 0
 
@@ -320,7 +326,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         data = (ctypes.c_byte * size)()
         ctypes.memmove(data, self.data, min(size, self.size))
         self.data = data
-        self.data_ptr = ctypes.cast(self.data, ctypes.c_void_p).value
+        self.data_ptr = ctypes.addressof(self.data)
 
         self.size = size
 

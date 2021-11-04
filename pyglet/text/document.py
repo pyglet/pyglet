@@ -209,12 +209,13 @@ class InlineElement:
         self.advance = advance
         self._position = None
 
-    position = property(lambda self: self._position,
-                        doc="""Position of the element within the
-        document.  Read-only.
+    @property
+    def position(self):
+        """Position of the element within the document.  Read-only.
 
         :type: int
-        """)
+        """
+        return self._position
 
     def place(self, layout, x, y):
         """Construct an instance of the element at the given coordinates.
@@ -269,7 +270,7 @@ class AbstractDocument(event.EventDispatcher):
     _next_paragraph_re = re.compile(u'[\n\u2029]')
 
     def __init__(self, text=''):
-        super(AbstractDocument, self).__init__()
+        super().__init__()
         self._text = u''
         self._elements = []
         if text:
@@ -302,10 +303,9 @@ class AbstractDocument(event.EventDispatcher):
 
         :rtype: int
         """
-        # Tricky special case where the $ in pattern matches before the \n at
-        # the end of the string instead of the end of the string.
-        if (self._text[:pos + 1].endswith('\n') or
-                self._text[:pos + 1].endswith(u'\u2029')):
+        # Tricky special case where the $ in pattern matches before the
+        # \n at the end of the string instead of the end of the string.
+        if self._text[:pos + 1].endswith('\n') or self._text[:pos + 1].endswith(u'\u2029'):
             return pos
 
         m = self._previous_paragraph_re.search(self._text, 0, pos + 1)
@@ -456,8 +456,8 @@ class AbstractDocument(event.EventDispatcher):
     def insert_element(self, position, element, attributes=None):
         """Insert a element into the document.
 
-        See the :py:class:`~pyglet.text.document.InlineElement` class documentation for details of
-        usage.
+        See the :py:class:`~pyglet.text.document.InlineElement` class
+        documentation for details of usage.
 
         :Parameters:
             `position` : int
@@ -582,7 +582,7 @@ class UnformattedDocument(AbstractDocument):
     """
 
     def __init__(self, text=''):
-        super(UnformattedDocument, self).__init__(text)
+        super().__init__(text)
         self.styles = {}
 
     def get_style_runs(self, attribute):
@@ -593,15 +593,13 @@ class UnformattedDocument(AbstractDocument):
         return self.styles.get(attribute)
 
     def set_style(self, start, end, attributes):
-        return super(UnformattedDocument, self).set_style(
-            0, len(self.text), attributes)
+        return super().set_style(0, len(self.text), attributes)
 
     def _set_style(self, start, end, attributes):
         self.styles.update(attributes)
 
     def set_paragraph_style(self, start, end, attributes):
-        return super(UnformattedDocument, self).set_paragraph_style(
-            0, len(self.text), attributes)
+        return super().set_paragraph_style(0, len(self.text), attributes)
 
     def get_font_runs(self, dpi=None):
         ft = self.get_font(dpi=dpi)
@@ -614,8 +612,7 @@ class UnformattedDocument(AbstractDocument):
         bold = self.styles.get('bold', False)
         italic = self.styles.get('italic', False)
         stretch = self.styles.get('stretch', False)
-        return font.load(font_name, font_size,
-                         bold=bold, italic=italic, stretch=stretch, dpi=dpi)
+        return font.load(font_name, font_size, bold=bold, italic=italic, stretch=stretch, dpi=dpi)
 
     def get_element_runs(self):
         return runlist.ConstRunIterator(len(self._text), None)
@@ -630,7 +627,7 @@ class FormattedDocument(AbstractDocument):
 
     def __init__(self, text=''):
         self._style_runs = {}
-        super(FormattedDocument, self).__init__(text)
+        super().__init__(text)
 
     def get_style_runs(self, attribute):
         try:
@@ -670,7 +667,7 @@ class FormattedDocument(AbstractDocument):
         return _ElementIterator(self._elements, len(self._text))
 
     def _insert_text(self, start, text, attributes):
-        super(FormattedDocument, self)._insert_text(start, text, attributes)
+        super()._insert_text(start, text, attributes)
 
         len_text = len(text)
         for runs in self._style_runs.values():
@@ -686,7 +683,7 @@ class FormattedDocument(AbstractDocument):
                 runs.set_run(start, start + len_text, value)
 
     def _delete_text(self, start, end):
-        super(FormattedDocument, self)._delete_text(start, end)
+        super()._delete_text(start, end)
         for runs in self._style_runs.values():
             runs.delete(start, end)
 
@@ -728,7 +725,8 @@ class _FontStyleRunsRangeIterator:
 
 class _NoStyleRangeIterator:
     # XXX subclass runlist
-    def ranges(self, start, end):
+    @staticmethod
+    def ranges(start, end):
         yield start, end, None
 
     def __getitem__(self, index):
