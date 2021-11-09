@@ -1934,9 +1934,7 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
         self.owner_runs = runlist.RunList(0, None)
 
         super().__init__(document, width, height, multiline, dpi, batch, group, wrap_lines)
-
         self._update_translation()
-        self._update()
         self._update_scissor_area()
 
     def _update_scissor_area(self):
@@ -2180,8 +2178,6 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
             if line.y + line.ascent > self._translate_y - self.height:
                 end = max(end, i) + 1
 
-        # print("Visible line start/end:", self.visible_lines.start, self.visible_lines.end)
-
         # Delete newly invisible lines
         for i in range(self.visible_lines.start, min(start, len(self.lines))):
             self.lines[i].delete(self)
@@ -2245,8 +2241,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @x.setter
     def x(self, x):
         self._x = x
-        self.on_insert_text(0, self._document.text)
-        self._update()
+        self._uninit_document()
+        self._init_document()
+        self._update_scissor_area()
 
     @property
     def y(self):
@@ -2255,8 +2252,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
     @y.setter
     def y(self, y):
         self._y = y
-        self.on_insert_text(0, self._document.text)
-        self._update()
+        self._uninit_document()
+        self._init_document()
+        self._update_scissor_area()
 
     @property
     def position(self):
@@ -2264,7 +2262,9 @@ class IncrementalTextLayout(TextLayout, EventDispatcher):
 
     @position.setter
     def position(self, position):
-        self.x, self.y = position
+        self._x, self._y = position
+        self._uninit_document()
+        self._init_document()
         self._update_scissor_area()
 
     @property
