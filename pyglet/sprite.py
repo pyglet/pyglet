@@ -130,21 +130,22 @@ vertex_source = """#version 150 core
         mat4 view;
     } window;
 
-    mat4 m_trans_scale = mat4(1.0);
+    mat4 m_scale = mat4(1.0);
     mat4 m_rotation = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
 
     void main()
     {
-        m_trans_scale[3][0] = translate.x;
-        m_trans_scale[3][1] = translate.y;
-        m_trans_scale[0][0] = scale.x;
-        m_trans_scale[1][1] = scale.y;
+        m_scale[0][0] = scale.x;
+        m_scale[1][1] = scale.y;
+        m_translate[3][0] = translate.x;
+        m_translate[3][1] = translate.y;
         m_rotation[0][0] =  cos(-radians(rotation)); 
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * vec4(position, 0, 1);
+        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 0, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
