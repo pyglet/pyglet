@@ -152,6 +152,7 @@ class EventLoop(event.EventDispatcher):
         for window in app.windows:
             window.switch_to()
             window.dispatch_event('on_draw')
+            window.dispatch_event('on_refresh', dt)
             window.flip()
 
     def run(self, interval=1/60):
