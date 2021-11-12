@@ -162,7 +162,7 @@ class EventLoop(event.EventDispatcher):
         Developers are discouraged from overriding this method, as the
         implementation is platform-specific.
         """
-        self.clock.schedule_interval_soft(self._redraw_windows, interval)
+        self.clock.schedule_interval(self._redraw_windows, interval)
 
         self.has_exit = False
 
