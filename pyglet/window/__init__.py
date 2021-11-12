@@ -602,11 +602,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         self.switch_to()
 
+        self._create_projection()
+
         if visible:
             self.set_visible(True)
             self.activate()
-
-        self._create_projection()
 
     def _create_projection(self):
         self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
