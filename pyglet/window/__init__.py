@@ -602,11 +602,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
 
         self.switch_to()
 
+        self._create_projection()
+
         if visible:
             self.set_visible(True)
             self.activate()
-
-        self._create_projection()
 
     def _create_projection(self):
         self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
@@ -1717,7 +1717,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             :event:
             """
 
-        def on_draw(self):
+        def on_draw(self, dt):
             """The window contents must be redrawn.
 
             The `EventLoop` will dispatch this event when the window
@@ -1733,6 +1733,25 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             invalidated the framebuffer since the last time it was drawn.
 
             .. versionadded:: 1.1
+
+            :event:
+            """
+
+        def on_refresh(self, dt):
+            """The window contents must be redrawn.
+
+            The `EventLoop` will dispatch this event when the window
+            should be redrawn.
+
+            The window will already have the GL context, so there is no
+            need to call `switch_to`.  The window's `flip` method will
+            be called after this event, so your event handler should not.
+
+            You should make no assumptions about the window contents when
+            this event is triggered; a resize or expose event may have
+            invalidated the framebuffer since the last time it was drawn.
+
+            .. versionadded:: 2.0
 
             :event:
             """
@@ -1762,6 +1781,7 @@ BaseWindow.register_event_type('on_context_lost')
 BaseWindow.register_event_type('on_context_state_lost')
 BaseWindow.register_event_type('on_file_drop')
 BaseWindow.register_event_type('on_draw')
+BaseWindow.register_event_type('on_refresh')
 
 
 class FPSDisplay:
