@@ -255,6 +255,8 @@ MOTION_BEGINNING_OF_FILE = 5
 MOTION_END_OF_FILE       = 6
 MOTION_BACKSPACE         = BACKSPACE
 MOTION_DELETE            = DELETE
+MOTION_COPY              = 7
+MOTION_PASTE             = 8
 
 # Number pad
 NUMLOCK       = 0xff7f
