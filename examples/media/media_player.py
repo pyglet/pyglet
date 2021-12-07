@@ -66,14 +66,20 @@ pyglet.options['debug_media'] = False
 from pyglet.media import buffered_logger as bl
 
 
-def draw_rect(x, y, width, height):
-    glBegin(GL_LINE_LOOP)
-    glVertex2f(x, y)
-    glVertex2f(x + width, y)
-    glVertex2f(x + width, y + height)
-    glVertex2f(x, y + height)
-    glEnd()
-
+def draw_rect(x, y, width, height, color=(1, 1, 1, 1)):
+    pyglet.graphics.draw(
+        4,
+        GL_LINE_LOOP,
+        ('position3f',
+            (
+                x, y, 0,
+                x + width, y, 0,
+                x + width, y + height, 0,
+                x, y + height, 0,
+            )
+        ),
+        ('colors4f', color * 4)
+    )
 
 class Control(pyglet.event.EventDispatcher):
     x = y = 0
@@ -99,9 +105,9 @@ class Button(Control):
 
     def draw(self):
         if self.charged:
-            glColor3f(1, 0, 0)
-        draw_rect(self.x, self.y, self.width, self.height)
-        glColor3f(1, 1, 1)
+            draw_rect(self.x, self.y, self.width, self.height)
+        else:
+            draw_rect(self.x, self.y, self.width, self.height, color=(1, 0, 0, 1))
         self.draw_label()
 
     def on_mouse_press(self, x, y, button, modifiers):
