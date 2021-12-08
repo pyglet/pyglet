@@ -25,7 +25,8 @@ def test_first_tick_is_delta_zero():
     """
     Tests that the first tick is dt = 0.
     """
-    dt = clock.tick()
+    pyclock = clock.Clock()
+    dt = pyclock.tick()
     assert dt == 0
 
 
@@ -34,7 +35,8 @@ def test_start_at_zero_fps():
     Tests that the default clock starts
     with zero fps.
     """
-    assert clock.get_fps() == 0
+    pyclock = clock.Clock()
+    assert pyclock.get_fps() == 0
 
 
 @skip_if_continuous_integration()
