@@ -165,6 +165,7 @@ import pyglet
 from pyglet.gl import *
 from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
 from pyglet.graphics.vertexarray import VertexArray
+from pyglet.graphics.vertexbuffer import BufferObject
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
@@ -258,14 +259,24 @@ def draw_indexed(size, mode, indices, *data):
         index_type = GL_UNSIGNED_INT
         index_c_type = ctypes.c_uint
 
+    # With GL 3.3 vertex arrays indices needs to be in a buffer
+    # bound to the ELEMENT_ARRAY slot
     index_array = (index_c_type * len(indices))(*indices)
-    glDrawElements(mode, len(indices), index_type, index_array)
+    index_buffer = BufferObject(
+        ctypes.sizeof(index_array),
+        GL_ELEMENT_ARRAY_BUFFER,
+        GL_DYNAMIC_DRAW,
+    )
+    index_buffer.set_data(index_array)
+
+    glDrawElements(mode, len(indices), index_type, 0)
     glFlush()
 
     # Deactivate shader program:
     group.unset_state()
     # Discard everything after drawing:
     del buffers
+    del index_buffer
     glBindVertexArray(0)
     glDeleteVertexArrays(1, vao_id)
 
