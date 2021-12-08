@@ -70,6 +70,8 @@ _motion_map = {
     (key.END, True): key.MOTION_END_OF_FILE,
     (key.BACKSPACE, False): key.MOTION_BACKSPACE,
     (key.DELETE, False): key.MOTION_DELETE,
+    (key.C, True): key.MOTION_COPY,
+    (key.V, True): key.MOTION_PASTE
 }
 
 
