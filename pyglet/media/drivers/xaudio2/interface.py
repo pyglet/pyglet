@@ -287,7 +287,7 @@ class XAudio2Driver:
         """ Get a source voice from the pool. Source voice creation can be slow to create/destroy. So pooling is
             recommended. We pool based on audio channels as channels must be the same as well as frequency.
             Source voice handles all of the audio playing and state for a single source."""
-        voice_key = (source.audio_format.channels, source.audio_format.sample_size)
+        voice_key = (source.audio_format.channels, source.audio_format.sample_size, source.audio_format.sample_rate)
         if len(self._voice_pool[voice_key]) > 0:
             source_voice = self._voice_pool[voice_key].pop(0)
             source_voice.acquired(player)
@@ -323,7 +323,7 @@ class XAudio2Driver:
     def return_voice(self, voice):
         """Reset a voice and return it to the pool."""
         voice.reset()
-        voice_key = (voice.audio_format.channels, voice.audio_format.sample_size)
+        voice_key = (voice.audio_format.channels, voice.audio_format.sample_size, voice.audio_format.sample_rate)
         self._voice_pool[voice_key].append(voice)
 
         if voice.is_emitter:
