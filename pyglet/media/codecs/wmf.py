@@ -868,7 +868,7 @@ class WMFDecoder(MediaDecoder):
                                ])
 
         if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
-            extensions.extend(['.mkv', '.flac', '.ogg'])
+            extensions.extend(['.flac'])
 
         return extensions
 
