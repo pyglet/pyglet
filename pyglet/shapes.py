@@ -82,6 +82,32 @@ from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisabl
 from pyglet.graphics import Group, Batch
 
 
+def rotate(vertices, angle, x, y):
+    """Rotate the vertices by the angle around x, y.
+
+    :Parameters:
+        `vertices` : list
+            A list of (x, y) tuples, representing each vertex to rotate.
+        `angle` : float
+            The angle of the rotation in degrees.
+        `x` : int or float
+            X coordinate of the center of rotation.
+        `y` : int or float
+            Y coordinate of the center of rotation.
+    """
+    r = -math.radians(angle)
+    cr = math.cos(r)
+    sr = math.sin(r)
+
+    rotated_vertices = []
+    for vertex in vertices:
+        rotated_x = (vertex[0] - x) * cr - (vertex[1] - y) * sr + x
+        rotated_y = (vertex[1] - y) * cr + (vertex[0] - x) * sr + y
+        rotated_vertices.append((rotated_x, rotated_y))
+
+    return rotated_vertices
+
+
 class _ShapeGroup(Group):
     """Shared Shape rendering Group.
 
@@ -543,15 +569,7 @@ class Ellipse(_ShapeBase):
 
             # Rotate all points:
             if self._rotation:
-                r = -math.radians(self._rotation)
-                cr = math.cos(r)
-                sr = math.sin(r)
-                now_points = []
-                for point in points:
-                    now_x = (point[0] - x) * cr - (point[1] - y) * sr + x
-                    now_y = (point[1] - y) * cr + (point[0] - x) * sr + y
-                    now_points.append((now_x, now_y))
-                points = now_points
+                points = rotate(points, self._rotation, x, y)
 
             # Create a list of lines from the points:
             vertices = []
@@ -874,32 +892,20 @@ class Rectangle(_ShapeBase):
     def _update_position(self):
         if not self._visible:
             self._vertex_list.vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        elif self._rotation:
-            x1 = -self._anchor_x
-            y1 = -self._anchor_y
-            x2 = x1 + self._width
-            y2 = y1 + self._height
-            x = self._x
-            y = self._y
-
-            r = -math.radians(self._rotation)
-            cr = math.cos(r)
-            sr = math.sin(r)
-            ax = x1 * cr - y1 * sr + x
-            ay = x1 * sr + y1 * cr + y
-            bx = x2 * cr - y1 * sr + x
-            by = x2 * sr + y1 * cr + y
-            cx = x2 * cr - y2 * sr + x
-            cy = x2 * sr + y2 * cr + y
-            dx = x1 * cr - y2 * sr + x
-            dy = x1 * sr + y2 * cr + y
-            self._vertex_list.vertices = (ax, ay, bx, by, cx, cy, ax, ay, cx, cy, dx, dy)
         else:
             x1 = self._x - self._anchor_x
             y1 = self._y - self._anchor_y
             x2 = x1 + self._width
             y2 = y1 + self._height
-            self._vertex_list.vertices = (x1, y1, x2, y1, x2, y2, x1, y1, x2, y2, x1, y2)
+            x = self._x
+            y = self._y
+
+            vertices = [(x1, y1), (x2, y1), (x2, y2), (x1, y1), (x2, y2), (x1, y2)]
+
+            if self._rotation:
+                vertices = rotate(vertices, self._rotation, x, y)
+
+            self._vertex_list.vertices = tuple(value for vertex in vertices for value in vertex)
 
     def _update_color(self):
         self._vertex_list.colors[:] = [*self._rgb, int(self._opacity)] * 6
@@ -996,13 +1002,13 @@ class BorderedRectangle(_ShapeBase):
     def _update_position(self):
         if not self._visible:
             self._vertex_list.vertices = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        elif self._rotation:
+        else:
             b = self._border
             x = self._x
             y = self._y
 
-            bx1 = -self._anchor_x
-            by1 = -self._anchor_y
+            bx1 = x - self._anchor_x
+            by1 = y - self._anchor_y
             bx2 = bx1 + self._width
             by2 = by1 + self._height
             ix1 = bx1 + b
@@ -1010,42 +1016,14 @@ class BorderedRectangle(_ShapeBase):
             ix2 = bx2 - b
             iy2 = by2 - b
 
-            r = -math.radians(self._rotation)
-            cr = math.cos(r)
-            sr = math.sin(r)
+            vertices = [(ix1, iy1), (ix2, iy1), (ix2, iy2), (ix1, iy2),
+                        (bx1, by1), (bx2, by1), (bx2, by2), (bx1, by2)]
 
-            bax = bx1 * cr - by1 * sr + x
-            bay = bx1 * sr + by1 * cr + y
-            bbx = bx2 * cr - by1 * sr + x
-            bby = bx2 * sr + by1 * cr + y
-            bcx = bx2 * cr - by2 * sr + x
-            bcy = bx2 * sr + by2 * cr + y
-            bdx = bx1 * cr - by2 * sr + x
-            bdy = bx1 * sr + by2 * cr + y
+            if self._rotation:
+                vertices = rotate(vertices, self._rotation, x, y)
 
-            iax = ix1 * cr - iy1 * sr + x
-            iay = ix1 * sr + iy1 * cr + y
-            ibx = ix2 * cr - iy1 * sr + x
-            iby = ix2 * sr + iy1 * cr + y
-            icx = ix2 * cr - iy2 * sr + x
-            icy = ix2 * sr + iy2 * cr + y
-            idx = ix1 * cr - iy2 * sr + x
-            idy = ix1 * sr + iy2 * cr + y
-
-            self._vertex_list.vertices[:] = (iax, iay, ibx, iby, icx, icy, idx, idy,
-                                             bax, bay, bbx, bby, bcx, bcy, bdx, bdy,)
-        else:
-            b = self._border
-            bx1 = self._x - self._anchor_x
-            by1 = self._y - self._anchor_y
-            bx2 = bx1 + self._width
-            by2 = by1 + self._height
-            ix1 = bx1 + b
-            iy1 = by1 + b
-            ix2 = bx2 - b
-            iy2 = by2 - b
-            self._vertex_list.vertices[:] = (ix1, iy1, ix2, iy1, ix2, iy2, ix1, iy2,
-                                             bx1, by1, bx2, by1, bx2, by2, bx1, by2,)
+            # Flattening the list.
+            self._vertex_list.vertices[:] = tuple(value for vertex in vertices for value in vertex)
 
     def _update_color(self):
         opacity = int(self._opacity)
@@ -1406,36 +1384,16 @@ class Polygon(_ShapeBase):
     def _update_position(self):
         if not self._visible:
             self._vertex_list.vertices = tuple([0] * ((len(self._coordinates) - 2) * 6))
-        elif self._rotation:
-            # Adjust all coordinates by the anchor.
-            anchor_x = self._anchor_x
-            anchor_y = self._anchor_y
-            coords = [[x - anchor_x, y - anchor_y] for x, y in self._coordinates]
-
-            # Rotate the polygon around its first vertex.
-            x, y = self._coordinates[0]
-            r = -math.radians(self._rotation)
-            cr = math.cos(r)
-            sr = math.sin(r)
-
-            for i, c in enumerate(coords):
-                c = [c[0] - x, c[1] - y]
-                c = [c[0] * cr - c[1] * sr + x, c[0] * sr + c[1] * cr + y]
-                coords[i] = c
-
-            # Triangulate the convex polygon.
-            triangles = []
-            for n in range(len(coords) - 2):
-                triangles += [coords[0], coords[n + 1], coords[n + 2]]
-
-            # Flattening the list before setting vertices to it.
-            self._vertex_list.vertices = tuple(value for coordinate in triangles for value in coordinate)
-
         else:
             # Adjust all coordinates by the anchor.
             anchor_x = self._anchor_x
             anchor_y = self._anchor_y
             coords = [[x - anchor_x, y - anchor_y] for x, y in self._coordinates]
+
+            if self._rotation:
+                # Rotate the polygon around its first vertex.
+                x, y = self._coordinates[0]
+                coords = rotate(coords, self._rotation, x, y)
 
             # Triangulate the convex polygon.
             triangles = []
