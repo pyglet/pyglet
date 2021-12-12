@@ -1,8 +1,3 @@
-#!/usr/bin/python
-# $Id:$
-
-from __future__ import print_function
-
 import pyglet
 
 window = pyglet.window.Window()
@@ -34,6 +29,7 @@ def on_text(text):
         canvas = tablets[i].open(window)
     except pyglet.input.DeviceException:
         print('Failed to open tablet %d on window' % index)
+        return
 
     print('Opened %s' % name)
 
@@ -46,8 +42,8 @@ def on_text(text):
         print('%s: on_leave(%r)' % (name, cursor))
 
     @canvas.event
-    def on_motion(cursor, x, y, pressure):
-        print('%s: on_motion(%r, %r, %r, %r)' % (name, cursor, x, y, pressure))
+    def on_motion(cursor, x, y, pressure, tilt_x, tilt_y):
+        print('%s: on_motion(%r, %r, %r, %r, %r, %r)' % (name, cursor, x, y, pressure, tilt_x, tilt_y))
 
 
 @window.event

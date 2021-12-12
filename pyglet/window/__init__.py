@@ -398,7 +398,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     #: A window style for transparent, topmost, click-through-able overlays
     WINDOW_STYLE_OVERLAY = 'overlay'
 
-
     #: The default mouse cursor.
     CURSOR_DEFAULT = None
     #: A crosshair mouse cursor.
@@ -1917,6 +1916,3 @@ else:
 if not _is_pyglet_doc_run:
     pyglet.window = sys.modules[__name__]
     gl._create_shadow_window()
-
-
-__all__ = ["BaseWindow"]
