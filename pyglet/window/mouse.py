@@ -37,7 +37,7 @@
 """
 
 
-class MouseStateHandler(dict):
+class MouseStateHandler:
     """Simple handler that tracks the state of buttons from the mouse. If a
     button is pressed then this handler holds a True value for it.
 
@@ -57,25 +57,27 @@ class MouseStateHandler(dict):
     """
 
     def __init__(self):
-        self["x"] = 0
-        self["y"] = 0
+        self.data = {
+            "x": 0,
+            "y": 0,
+        }
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self[button] = True
+        self.data[button] = True
 
     def on_mouse_release(self, x, y, button, modifiers):
-        self[button] = False
+        self.data[button] = False
 
     def on_mouse_motion(self, x, y, dx, dy):
-        self["x"] = x
-        self["y"] = y
+        self.data["x"] = x
+        self.data["y"] = y
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        self["x"] = x
-        self["y"] = y
+        self.data["x"] = x
+        self.data["y"] = y
 
     def __getitem__(self, key):
-        return self.get(key, False)
+        return self.data.get(key, False)
 
 
 def buttons_string(buttons):
