@@ -122,6 +122,10 @@ class XAudio2AudioPlayer(AbstractAudioPlayer):
         if self._xa2_source_voice:
             self._deleted = True
 
+            if not self._buffers:
+                self._xa2_driver.return_voice(self._xa2_source_voice)
+
+
     def play(self):
         assert _debug('XAudio2 play')
 

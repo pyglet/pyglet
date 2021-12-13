@@ -311,7 +311,7 @@ class DocumentLabel(layout.TextLayout):
         drawn with fractional opacity, blending with the background.
 
         An opacity of 255 (the default) has no effect.  An opacity of 128 will
-        make the sprite appear translucent.
+        make the label appear semi-translucent.
 
         :type: int
         """
