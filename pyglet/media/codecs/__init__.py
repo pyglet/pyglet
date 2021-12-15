@@ -111,6 +111,7 @@ def add_default_media_codecs():
     except ImportError:
         pass
 
+
 def have_ffmpeg():
     """Check if FFmpeg library is available.
 
