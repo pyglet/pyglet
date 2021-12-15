@@ -34,14 +34,11 @@ from typing import Optional
 class CameraGroup(Group):
     """ Graphics group emulating the behaviour of a camera in 2D space. """
 
-    def __init__(
-        self,
-        x: float, y: float,
-        zoom: float = 1.0,
-        parent: Optional[Group] = None
-    ):
-        super().__init__(parent)
-        self.x, self.y = x, y
+    def __init__(self, window, x, y, zoom=1.0, order=0, parent=None):
+        super().__init__(order, parent)
+        self._window = window
+        self.x = x
+        self.y = y
         self.zoom = zoom
 
     @property
@@ -56,14 +53,13 @@ class CameraGroup(Group):
 
     def set_state(self):
         """ Apply zoom and camera offset to view matrix. """
-        pyglet.gl.glTranslatef(
-            -self.x * self.zoom,
-            -self.y * self.zoom,
-            0
-        )
 
-        # Scale with zoom
-        pyglet.gl.glScalef(self.zoom, self.zoom, 1)
+        # Translate using the offset.
+        view_matrix = self._window.view.translate(-self.x * self.zoom, -self.y * self.zoom, 0)
+        # Scale by zoom level.
+        view_matrix = view_matrix.scale(self.zoom, self.zoom, 1)
+
+        self._window.view = view_matrix
 
     def unset_state(self):
         """ Revert zoom and camera offset from view matrix. """
@@ -71,13 +67,11 @@ class CameraGroup(Group):
         # it will multiply the current offset every draw update pushing it further and further away.
 
         # Use inverse zoom to reverse zoom
-        pyglet.gl.glScalef(1 / self.zoom, 1 / self.zoom, 1)
-        # Reverse the translation
-        pyglet.gl.glTranslatef(
-            self.x * self.zoom,
-            self.y * self.zoom,
-            0
-        )
+        view_matrix = self._window.view.scale(1 / self.zoom, 1 / self.zoom, 1)
+        # Reverse translate.
+        view_matrix = view_matrix.translate(self.x * self.zoom, self.y * self.zoom, 0)
+
+        self._window.view = view_matrix
 
 
 class CenteredCameraGroup(CameraGroup):
@@ -86,39 +80,23 @@ class CenteredCameraGroup(CameraGroup):
     (0, 0) will be the center of the screen, as opposed to the bottom left.
     """
 
-    def __init__(self, window: pyglet.window.Window, *args, **kwargs):
-        self.window = window
-        super().__init__(*args, **kwargs)
-
     def set_state(self):
-        # Get our center offset, aka half the window dimensions
-        center_offset_x = self.window.width // 2
-        center_offset_y = self.window.height // 2
-
         # Translate almost the same as normal, but add the center offset
-        pyglet.gl.glTranslatef(
-            -self.x * self.zoom + center_offset_x,
-            -self.y * self.zoom + center_offset_y,
-            0
-        )
+        x = -self._window.width // 2 / self.zoom + self.x
+        y = -self._window.height // 2 / self.zoom + self.y
 
-        # Scale like normal
-        pyglet.gl.glScalef(self.zoom, self.zoom, 1)
+        view_matrix = self._window.view.translate((-x * self.zoom, -y * self.zoom, 0))
+        view_matrix = view_matrix.scale((self.zoom, self.zoom, 1))
+        self._window.view = view_matrix
 
     def unset_state(self):
-        # Get our center offset, aka half the window dimensions, because we are reversing the transform
-        # we use the negative dimensions here.
-        center_offset_x = -self.window.width // 2
-        center_offset_y = -self.window.height // 2
 
-        pyglet.gl.glScalef(1 / self.zoom, 1 / self.zoom, 1)
+        x = -self._window.width // 2 / self.zoom + self.x
+        y = -self._window.height // 2 / self.zoom + self.y
 
-        # Reverse the translation including center offset
-        pyglet.gl.glTranslatef(
-            self.x * self.zoom + center_offset_x,
-            self.y * self.zoom + center_offset_y,
-            0
-        )
+        view_matrix = self._window.view.scale((1 / self.zoom, 1 / self.zoom, 1))
+        view_matrix = view_matrix.translate((x * self.zoom, y * self.zoom, 0))
+        self._window.view = view_matrix
 
 
 if __name__ == "__main__":
