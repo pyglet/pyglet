@@ -189,6 +189,7 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         attrs = {}
         for key, value in case_attrs:
             attrs[key.lower()] = value
+        print(attrs)
 
         if element in _metadata_elements:
             self.in_metadata = True
@@ -224,18 +225,17 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                         size = self._font_size_stack[-1] + int(size[1:])
                     elif size.startswith('-'):
                         size = self._font_size_stack[-1] - int(size[1:])
-                    elif size.startswith('~'):
-                        pass
                     else:
                         size = int(size)
                 except ValueError:
                     size = 3
                 self._font_size_stack.append(size)
-                if size in self.font_sizes and not size.startswith('~'):
+                if size in self.font_sizes:
                     style['font_size'] = self.font_sizes.get(size, 3)
-                else:
-                    style['font_size'] = int(size[1:])
-                    print(size[1:])
+            elif 'real_size' in attrs:
+                size = int(attrs['real_size'])
+                self._font_size_stack.append(size)
+                style['font_size'] = size
             else:
                 self._font_size_stack.append(self._font_size_stack[-1])
             if 'color' in attrs:
