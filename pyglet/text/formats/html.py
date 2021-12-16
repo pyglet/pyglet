@@ -189,7 +189,6 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         attrs = {}
         for key, value in case_attrs:
             attrs[key.lower()] = value
-        print(attrs)
 
         if element in _metadata_elements:
             self.in_metadata = True
