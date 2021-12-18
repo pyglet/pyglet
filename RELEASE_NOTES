@@ -536,7 +536,7 @@ Improvements
   existing `scale` attribute sets the overall scaling, and functions as before.
 - Sprites have a new `update` method which allows simultaneous changing of position, scale, and
   rotation. This reduces some overhead when changing multiple attributes at once.
-- The pyglet.resource module now defaults to a 2048x2048 texture for it's internal texture atlas,
+- The pyglet.resource module now defaults to a 2048x2048 texture for its internal texture atlas,
   but will fall back to the maximum available size that the GPU can provide.
 - All modern joysticks and game controllers should now be detected on Linux and Windows.
 - Refactored and reimplemented pyglet.media. Many improvements to stability. Different drivers

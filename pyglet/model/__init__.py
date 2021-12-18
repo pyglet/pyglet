@@ -185,7 +185,7 @@ class Model:
                  a vertex list in `vertex_lists` of the same index.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the model to. If no batch is provided,
-                the model will maintain it's own internal batch.
+                the model will maintain its own internal batch.
         """
         self.vertex_lists = vertex_lists
         self.groups = groups
@@ -199,7 +199,7 @@ class Model:
 
         The Model can be migrated from one batch to another, or removed from
         a batch (for individual drawing). If not part of any batch, the Model
-        will keep it's own internal batch. Note that batch migration can be
+        will keep its own internal batch. Note that batch migration can be
         an expensive operation.
 
         :type: :py:class:`pyglet.graphics.Batch`

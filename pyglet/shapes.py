@@ -355,7 +355,7 @@ class Arc(_ShapeBase):
                  closed=False, color=(255, 255, 255), batch=None, group=None):
         """Create an Arc.
 
-        The Arc's anchor point (x, y) defaults to it's center.
+        The Arc's anchor point (x, y) defaults to its center.
 
         :Parameters:
             `x` : float

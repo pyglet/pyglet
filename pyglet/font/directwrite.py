@@ -1876,7 +1876,7 @@ class Win32DirectWriteFont(base.Font):
                                              create_unicode_buffer(self.locale),
                                              byref(self._text_format))
 
-        # All this work just to get a font face and it's metrics!
+        # All this work just to get a font face and its metrics!
         font_family = IDWriteFontFamily1()
         self._collection.GetFontFamily(self._font_index, byref(font_family))
 
@@ -2096,7 +2096,7 @@ class Win32DirectWriteFont(base.Font):
 
     @classmethod
     def get_collection(cls, font_name):
-        """Returns which collection this font belongs to (system or custom collection), as well as it's index in the
+        """Returns which collection this font belongs to (system or custom collection), as well as its index in the
         collection."""
         if not cls._write_factory:
             cls._initialize_direct_write()

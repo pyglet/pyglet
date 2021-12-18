@@ -217,7 +217,7 @@ def update_active_configuration(modify):
 # validation over modify keys and values is a caller responsibility,
 # here only verified that if key in modify then key in conf
 def update_configuration(pathserv, modify):
-    """The session associated with pathserv gets it's configuration updated
+    """The session associated with pathserv gets its configuration updated
     with the key: values in modify"""
     conf = json_load(pathserv.configuration_filename())
     for k in modify:
