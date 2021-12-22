@@ -123,8 +123,6 @@ XlibEventHandler = _PlatformEventHandler
 ViewEventHandler = _ViewEventHandler
 
 
-
-
 class XlibWindow(BaseWindow):
     _x_display = None               # X display connection
     _x_screen_id = None             # X screen index
@@ -232,6 +230,8 @@ class XlibWindow(BaseWindow):
             root = xlib.XRootWindow(self._x_display, self._x_screen_id)
 
             visual_info = self.config.get_visual_info()
+            if self.style in ('transparent', 'overlay'):
+                xlib.XMatchVisualInfo(self._x_display, self._x_screen_id, 32, xlib.TrueColor, visual_info)
 
             visual = visual_info.visual
             visual_id = xlib.XVisualIDFromVisual(visual)
@@ -251,6 +251,11 @@ class XlibWindow(BaseWindow):
             #            no effect on other systems, so it's set
             #            unconditionally.
             mask = xlib.CWColormap | xlib.CWBitGravity | xlib.CWBackPixel
+
+            if self.style in ('transparent', 'overlay'):
+                mask |= xlib.CWBorderPixel
+                window_attributes.border_pixel = 0
+                window_attributes.background_pixel = 0
 
             if self._fullscreen:
                 width, height = self.screen.width, self.screen.height
@@ -367,7 +372,7 @@ class XlibWindow(BaseWindow):
         }
         if self._style in styles:
             self._set_atoms_property('_NET_WM_WINDOW_TYPE', (styles[self._style],))
-        elif self._style == self.WINDOW_STYLE_BORDERLESS:
+        elif self._style in (self.WINDOW_STYLE_BORDERLESS, self.WINDOW_STYLE_OVERLAY):
             MWM_HINTS_DECORATIONS = 1 << 1
             PROP_MWM_HINTS_ELEMENTS = 5
             mwmhints = mwmhints_t()
@@ -1114,8 +1119,7 @@ class XlibWindow(BaseWindow):
                     motion = self._event_text_motion(symbol, modifiers)
                     if motion:
                         if modifiers & key.MOD_SHIFT:
-                            self.dispatch_event(
-                                'on_text_motion_select', motion)
+                            self.dispatch_event('on_text_motion_select', motion)
                         else:
                             self.dispatch_event('on_text_motion', motion)
                     elif text and not modifiers_ctrl:
@@ -1165,7 +1169,7 @@ class XlibWindow(BaseWindow):
     @XlibEventHandler(xlib.MotionNotify)
     def _event_motionnotify_view(self, ev):
         x = ev.xmotion.x
-        y = self.height - ev.xmotion.y
+        y = self.height - ev.xmotion.y - 1
 
         if self._mouse_in_window:
             dx = x - self._mouse_x
@@ -1173,8 +1177,7 @@ class XlibWindow(BaseWindow):
         else:
             dx = dy = 0
 
-        if self._applied_mouse_exclusive \
-                and (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
+        if self._applied_mouse_exclusive and (ev.xmotion.x, ev.xmotion.y) == self._mouse_exclusive_client:
             # Ignore events caused by XWarpPointer
             self._mouse_x = x
             self._mouse_y = y
@@ -1225,7 +1228,7 @@ class XlibWindow(BaseWindow):
         if buttons:
             # Drag event
             x = ev.xmotion.x - self._view_x
-            y = self._height - (ev.xmotion.y - self._view_y)
+            y = self._height - (ev.xmotion.y - self._view_y - 1)
 
             if self._mouse_in_window:
                 dx = x - self._mouse_x
@@ -1464,6 +1467,10 @@ class XlibWindow(BaseWindow):
                 self.dispatch_event('on_mouse_scroll', x, y, 0, 1)
             elif ev.xbutton.button == 5:
                 self.dispatch_event('on_mouse_scroll', x, y, 0, -1)
+            elif ev.xbutton.button == 6:
+                self.dispatch_event('on_mouse_scroll', x, y, -1, 0)
+            elif ev.xbutton.button == 7:
+                self.dispatch_event('on_mouse_scroll', x, y, 1, 0)
             elif ev.xbutton.button < len(self._mouse_buttons):
                 self._mouse_buttons[ev.xbutton.button] = True
                 self.dispatch_event('on_mouse_press', x, y, button, modifiers)
@@ -1556,3 +1563,6 @@ class XlibWindow(BaseWindow):
     def _event_unmapnotify(self, ev):
         self._mapped = False
         self.dispatch_event('on_hide')
+
+
+__all__ = ["XlibEventHandler", "XlibWindow"]

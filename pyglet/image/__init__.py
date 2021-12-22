@@ -135,9 +135,10 @@ from ctypes import *
 from io import open, BytesIO
 from functools import lru_cache
 
+import pyglet
+
 from pyglet.gl import *
 from pyglet.gl import gl_info
-from pyglet.window import *
 from pyglet.util import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
@@ -956,7 +957,7 @@ class ImageData(AbstractImage):
                 format, type = self._get_gl_format_and_type(data_format)
 
         # Workaround: don't use GL_UNPACK_ROW_LENGTH
-        if gl.current_context._workaround_unpack_row_length:
+        if pyglet.gl.current_context._workaround_unpack_row_length:
             data_pitch = self.width * len(data_format)
 
         # Get data in required format (hopefully will be the same format it's
@@ -1392,7 +1393,7 @@ class Texture(AbstractImage):
         super(Texture, self).__init__(width, height)
         self.target = target
         self.id = id
-        self._context = gl.current_context
+        self._context = pyglet.gl.current_context
 
     def __del__(self):
         try:
@@ -2003,7 +2004,7 @@ def get_buffer_manager():
     
     :rtype: :py:class:`~pyglet.image.BufferManager`
     """
-    context = gl.current_context
+    context = pyglet.gl.current_context
     if not hasattr(context, 'image_buffer_manager'):
         context.image_buffer_manager = BufferManager()
     return context.image_buffer_manager

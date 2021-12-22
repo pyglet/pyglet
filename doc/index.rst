@@ -68,6 +68,7 @@ If this is your first time reading about pyglet, we suggest you start at
    modules/font
    modules/gl
    modules/graphics/index
+   modules/gui
    modules/image/index
    modules/info
    modules/input
