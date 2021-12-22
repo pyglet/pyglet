@@ -836,7 +836,6 @@ class Win32Window(BaseWindow):
     def _event_window_pos_changed(self, msg, wParam, lParam):
         if self._exclusive_mouse:
             self._update_clipped_cursor()
-        return 0
 
     @Win32EventHandler(WM_NCLBUTTONDOWN)
     def _event_ncl_button_down(self, msg, wParam, lParam):
@@ -1134,7 +1133,7 @@ class Win32Window(BaseWindow):
                 return 1
 
     @Win32EventHandler(WM_ENTERSIZEMOVE)
-    def _event_exitsizemove(self, msg, wParam, lParam):
+    def _event_entersizemove(self, msg, wParam, lParam):
         self._moving = True
         from pyglet import app
         if app.event_loop is not None:
