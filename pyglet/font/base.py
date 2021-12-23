@@ -167,9 +167,9 @@ class Glyph(image.TextureRegion):
             `advance` : int
                 Distance to move the horizontal advance to the next glyph.
             `offset_x` : int
-                Distance to move the glyph horizontally from it's default position.
+                Distance to move the glyph horizontally from its default position.
             `offset_y` : int
-                Distance to move the glyph vertically from it's default position.
+                Distance to move the glyph vertically from its default position.
         """
         self.baseline = baseline
         self.lsb = left_side_bearing

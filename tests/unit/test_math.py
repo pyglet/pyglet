@@ -110,7 +110,7 @@ def test_matrix_inversion(mat4):
     inverse_1 = inverse(mat4)
     inverse_2 = ~mat4
     assert round(inverse_1, 9) == round(inverse_2, 9)
-    # Confirm that Matrix @ it's inverse == identity Matrix:
+    # Confirm that Matrix @ its inverse == identity Matrix:
     assert round(mat4 @ inverse_1, 9) == Mat4()
     assert round(mat4 @ inverse_2, 9) == Mat4()
 

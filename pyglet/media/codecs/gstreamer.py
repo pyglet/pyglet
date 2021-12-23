@@ -118,7 +118,7 @@ class _MessageHandler:
 
     def new_sample(self, sink):
         """new-sample callback"""
-        # Pull the sample, and get it's buffer:
+        # Pull the sample, and get its buffer:
         buffer = sink.emit('pull-sample').get_buffer()
         # Extract a copy of the memory in the buffer:
         mem = buffer.extract_dup(0, buffer.get_size())

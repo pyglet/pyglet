@@ -52,7 +52,7 @@ the center::
     # or, set at the same time:
     rectangle.anchor_position = 50, 25
 
-    # The rectangle is then rotated around it's anchor point:
+    # The rectangle is then rotated around its anchor point:
     rectangle.rotation = 45
 
 If you plan to create a large number of shapes, you can optionally set the
