@@ -412,7 +412,7 @@ class XlibWindow(BaseWindow):
 
             xlib.XFlush(self._x_display)
 
-            # Need to set argtypes on this function because it's vararg,
+            # Need to set argtypes on this function because its vararg,
             # and ctypes guesses wrong.
             xlib.XCreateIC.argtypes = [xlib.XIM,
                                        c_char_p, c_int,

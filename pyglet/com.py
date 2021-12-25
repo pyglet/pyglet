@@ -242,7 +242,7 @@ class COMPointer(ctypes.c_void_p, metaclass=COMPointerMeta):
 
     @classmethod
     def from_param(cls, obj):
-        """Allows obj to return ctypes pointers, even if it's base is not a ctype.
+        """Allows obj to return ctypes pointers, even if its base is not a ctype.
            In this case, all we simply want is a ctypes pointer matching the cls interface from the obj.
         """
         if obj is None:
