@@ -294,8 +294,7 @@ class Sprite(event.EventDispatcher):
                  batch=None,
                  group=None,
                  usage='dynamic',
-                 subpixel=False,
-                 program=None):
+                 subpixel=False):
         """Create a sprite.
 
         :Parameters:
@@ -322,8 +321,6 @@ class Sprite(event.EventDispatcher):
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                A custom ShaderProgram.
         """
         self._x = x
         self._y = y
