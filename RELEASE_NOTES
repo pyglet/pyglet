@@ -1,3 +1,50 @@
+pyglet 1.5.21
+
+Features
+--------
+- A new MovableFrame that allows repositioning Widgets when a specified key modifier is held.
+- Text Layouts now have `opacity` and `visible` attributes, similar to Sprites.
+- Add new shapes.Ellipse class.
+
+Bugfixes
+--------
+- Xlib - don't enable certain Window options if transparency is not enabled. (#454)
+- Windows - Fix issue with some fonts where glyphs overhanging their advance would be cut off.
+
+
+pyglet 1.5.20
+
+Features
+--------
+- Experimental support for transparent and overlay windows on Linux and Windows.
+- Shapes - Allow rotation and changing of border color for the BorderedRectangle.
+
+Bugfixes
+--------
+- Xlib - Fix the mouse Y position being off by 1-pixel.
+- Windows - Fix gapless audio playback on the XAudio2 backend.
+
+
+pyglet 1.5.19
+
+Features
+--------
+- Add new 'Sector' class to shapes module, for creating sectors of a circle.
+
+Bugfixes
+--------
+- Ensure that the FFmpegDecoder returns the requested number of bytes.
+- When subclassing EventHandlers, ensure that possible TyperErrors give correct feedback.
+- Fix missing name attribute on FreeTypeMemoryFace object when adding fonts.
+
+Maintenance
+-----------
+- Re-introduce background threads for refilling Player buffers.
+- Allow directly setting Widget values.
+- Add docstrings for gui.widgets.
+- Refresh of experimental/win32priority.py.
+
+
 pyglet 1.5.18
 Bugfix release
 

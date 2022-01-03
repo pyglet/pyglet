@@ -43,7 +43,7 @@ The example demonstrates the most common uses of text rendering:
   parameters.
 * The actual drawing of the text to the screen is done with the
   :py:meth:`pyglet.text.Label.draw` method.  Labels can also be added to a
-  raphics batch; see :ref:`guide_batched-rendering` for details.
+  graphics batch; see :ref:`guide_batched-rendering` for details.
 
 The :py:func:`~pyglet.text.HTMLLabel` class is used similarly, but accepts
 an HTML formatted string instead of parameters describing the style.
