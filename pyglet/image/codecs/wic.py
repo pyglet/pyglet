@@ -172,7 +172,7 @@ class IWICStream(com.pIUnknown):
         ('InitializeFromFilename',
          com.STDMETHOD(LPCWSTR, DWORD)),
         ('InitializeFromMemory',
-         com.STDMETHOD()),
+         com.STDMETHOD(c_void_p, DWORD)),
         ('InitializeFromIStreamRegion',
          com.STDMETHOD()),
     ]
@@ -583,30 +583,19 @@ class WICEncoder(ImageEncoder):
         return [ext for ext in extension_to_container]
 
     def encode(self, image, file, filename):
-        # Close default file handler.file.close()
+        image = image.get_image_data()
+
         stream = IWICStream()
         encoder = IWICBitmapEncoder()
         frame = IWICBitmapFrameEncode()
         property_bag = IPropertyBag2()
 
-        _factory.CreateStream(byref(stream))
-
-        stream.InitializeFromFilename(filename, GENERIC_WRITE)
-        name, ext = os.path.splitext(filename)
+        ext = (filename and os.path.splitext(filename)[1]) or '.png'
 
         # Choose container based on extension. Default to PNG.
         container = extension_to_container.get(ext, GUID_ContainerFormatPng)
 
-        _factory.CreateEncoder(container, None, byref(encoder))
-
-        encoder.Initialize(stream, WICBitmapEncoderNoCache)
-
-        encoder.CreateNewFrame(byref(frame), byref(property_bag))
-
-        frame.Initialize(property_bag)
-
-        frame.SetSize(image.width, image.height)
-
+        _factory.CreateStream(byref(stream))
         # https://docs.microsoft.com/en-us/windows/win32/wic/-wic-codec-native-pixel-formats#native-image-formats
         if container == GUID_ContainerFormatJpeg:
             # Expects BGR, no transparency available. Hard coded.
@@ -621,27 +610,47 @@ class WICEncoder(ImageEncoder):
                 fmt = 'BGRA'
                 default_format = GUID_WICPixelFormat32bppBGRA
 
-        frame.SetPixelFormat(default_format)
-
         pitch = image.width * len(fmt)
-        actual_pitch = -pitch
 
-        image_data = image.get_data(fmt, actual_pitch)
+        image_data = image.get_data(fmt, -pitch)
 
         size = len(image_data)
 
+        if file:
+            buf = create_string_buffer(size)
+
+            stream.InitializeFromMemory(byref(buf), size)
+        else:
+            stream.InitializeFromFilename(filename, GENERIC_WRITE)
+
+        _factory.CreateEncoder(container, None, byref(encoder))
+
+        encoder.Initialize(stream, WICBitmapEncoderNoCache)
+
+        encoder.CreateNewFrame(byref(frame), byref(property_bag))
+
+        frame.Initialize(property_bag)
+
+        frame.SetSize(image.width, image.height)
+
+        frame.SetPixelFormat(default_format)
+
         data = (c_byte * size).from_buffer(bytearray(image_data))
 
-        frame.WritePixels(image.height, pitch, size, data)
+        frame.WritePixels(image.height, abs(image.pitch), size, data)
 
         frame.Commit()
 
         encoder.Commit()
 
+        if file:
+            file.write(buf)
+
         encoder.Release()
         frame.Release()
         property_bag.Release()
         stream.Release()
+
 
 def get_encoders():
     return [WICEncoder()]
