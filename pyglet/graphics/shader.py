@@ -1,6 +1,5 @@
-import ctypes
-from weakref import proxy
 from ctypes import *
+from weakref import proxy
 
 import pyglet
 
@@ -91,7 +90,7 @@ _attribute_types = {
 
 
 class _Attribute:
-    __slots__ = 'program', 'name', 'type', 'size', 'location', 'count', 'format'
+    __slots__ = 'program', 'name', 'type', 'size', 'location', 'count', 'format', 'array'
 
     def __init__(self, program, name, attr_type, size, location):
         self.program = program
@@ -282,7 +281,7 @@ class ShaderProgram:
 
     @property
     def uniforms(self):
-        return self._uniforms.keys()
+        return self._uniforms
 
     @property
     def uniform_blocks(self):
@@ -470,6 +469,78 @@ class ShaderProgram:
         except GLException:
             raise
 
+    def _prepare_attributes(self, kwargs):
+        attributes = self._attributes.copy()
+
+        for name, data in kwargs.items():
+            if isinstance(data, tuple):
+                fmt, array = data
+            else:
+                fmt, array = data, ()
+
+            try:
+                attribute = attributes[name]
+                attribute.format = fmt
+                attribute.array = array
+            except KeyError:
+                raise ValueError(f"The attribute '{name}' was not found in this Shader Program.\n"
+                                 " - Check that the spelling is correct.\n"
+                                 " - Unused attributes are eliminated by OpenGL during compilation.\n"
+                                 f"Valid attributes are: {list(attributes)}")
+        return attributes
+
+    def vertex_list(self, count, mode, batch=None, group=None, **kwargs):
+        """Add a vertex list to the batch.
+
+        :Parameters:
+            `count` : int
+                The number of vertices in the list.
+            `mode` : int
+                OpenGL drawing mode enumeration; for example, one of
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+            `batch` : `~pyglet.graphics.Batch`
+                Batch of the vertex list, or ``None`` a Batch will not be used.
+                It is strongly recommended to use a Batch.
+            `group` : `~pyglet.graphics.Group`
+                Group of the vertex list, or ``None`` if no group is required.
+
+        :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
+        """
+
+        attributes = self._prepare_attributes(kwargs)
+        formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
+
+        batch = batch or pyglet.graphics.get_default_batch()
+        domain = batch._get_domain(False, mode, group, self, formats)
+
+        # Create vertex list and initialize
+        vlist = domain.create(count)
+
+        for attr in attributes.values():
+            if getattr(attr, 'array', None):
+                vlist.set_attribute_data(attr.location, attr.array)
+
+        return vlist
+
+    def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **kwargs):
+
+        attributes = self._prepare_attributes(kwargs)
+        formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
+
+        batch = batch or pyglet.graphics.get_default_batch()
+        domain = batch._get_domain(True, mode, group, self, formats)
+
+        # Create vertex list and initialize
+        vlist = domain.create(count, len(indices))
+        start = vlist.start
+        vlist.set_index_data([i + start for i in indices])
+
+        for attr in attributes.values():
+            if getattr(attr, 'array', None):
+                vlist.set_attribute_data(attr.location, attr.array)
+
+        return vlist
+
     def __repr__(self):
         return "{0}(id={1})".format(self.__class__.__name__, self.id)
 
@@ -557,7 +628,7 @@ class UniformBufferObject:
                 args.append((f'_padding{i}', gl_type * padding_bytes))
 
         # Custom ctypes Structure for Uniform access:
-        class View(ctypes.Structure):
+        class View(Structure):
             _fields_ = args
             __repr__ = lambda self: str(dict(self._fields_))
 
