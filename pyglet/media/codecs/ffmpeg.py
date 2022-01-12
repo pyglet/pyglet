@@ -962,6 +962,7 @@ class FFmpegSource(StreamingSource):
                     self._decode_video_packet(video_packet)
                 if video_packet.image is not None:
                     ts = video_packet.timestamp
+                    self.videoq.appendleft(video_packet)  # put it back
                     break
                 self._get_video_packet()
         else:
