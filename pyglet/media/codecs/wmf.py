@@ -616,7 +616,7 @@ class WMFSource(Source):
 
         imfmedia.Release()
 
-        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
+        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32)
         uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
         uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
 
