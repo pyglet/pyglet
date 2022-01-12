@@ -478,6 +478,11 @@ class Player(pyglet.event.EventDispatcher):
 
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
+        elif ts > time:
+            # update_texture called too early (probably manually!)
+            pyglet.clock.schedule_once(self.update_texture, ts - time)
+            return
+
 
         image = source.get_next_video_frame()
         if image is not None:
