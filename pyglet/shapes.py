@@ -82,7 +82,7 @@ from pyglet.gl import glPushAttrib, glPopAttrib, glBlendFunc, glEnable, glDisabl
 from pyglet.graphics import Group, Batch
 
 
-def rotate(vertices, angle, x, y):
+def _rotate(vertices, angle, x, y):
     """Rotate the vertices by the angle around x, y.
 
     :Parameters:
@@ -569,7 +569,7 @@ class Ellipse(_ShapeBase):
 
             # Rotate all points:
             if self._rotation:
-                points = rotate(points, self._rotation, x, y)
+                points = _rotate(points, self._rotation, x, y)
 
             # Create a list of lines from the points:
             vertices = []
@@ -903,7 +903,7 @@ class Rectangle(_ShapeBase):
             vertices = [(x1, y1), (x2, y1), (x2, y2), (x1, y1), (x2, y2), (x1, y2)]
 
             if self._rotation:
-                vertices = rotate(vertices, self._rotation, x, y)
+                vertices = _rotate(vertices, self._rotation, x, y)
 
             self._vertex_list.vertices = tuple(value for vertex in vertices for value in vertex)
 
@@ -1020,7 +1020,7 @@ class BorderedRectangle(_ShapeBase):
                         (bx1, by1), (bx2, by1), (bx2, by2), (bx1, by2)]
 
             if self._rotation:
-                vertices = rotate(vertices, self._rotation, x, y)
+                vertices = _rotate(vertices, self._rotation, x, y)
 
             # Flattening the list.
             self._vertex_list.vertices[:] = tuple(value for vertex in vertices for value in vertex)
@@ -1393,7 +1393,7 @@ class Polygon(_ShapeBase):
             if self._rotation:
                 # Rotate the polygon around its first vertex.
                 x, y = self._coordinates[0]
-                coords = rotate(coords, self._rotation, x, y)
+                coords = _rotate(coords, self._rotation, x, y)
 
             # Triangulate the convex polygon.
             triangles = []
