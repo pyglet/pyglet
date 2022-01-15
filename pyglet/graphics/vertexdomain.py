@@ -56,24 +56,12 @@ The entire domain can be efficiently drawn in one step with the
 primitives of the same OpenGL primitive mode.
 """
 
-import re
 import ctypes
 
 import pyglet
 
 from pyglet.gl import *
 from pyglet.graphics import allocation, vertexattribute, vertexbuffer
-
-_usage_format_re = re.compile(r"""
-    (?P<attribute>[^/]*)
-    (/ (?P<usage> static|dynamic|stream|none))?
-""", re.VERBOSE)
-
-_gl_usages = {
-    'static': GL_STATIC_DRAW,
-    'dynamic': GL_DYNAMIC_DRAW,
-    'stream': GL_STREAM_DRAW,
-}
 
 
 def _nearest_pow2(v):
@@ -88,38 +76,6 @@ def _nearest_pow2(v):
     return v + 1
 
 
-def create_attribute_usage(shader_program, fmt):
-    """Create an attribute and usage pair from a format string.  The
-    format string is as documented in `pyglet.graphics.vertexattribute`, with
-    the addition of an optional usage component::
-
-        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream') )?
-
-    If the usage is not given it defaults to 'dynamic'.  The usage corresponds
-    to the OpenGL VBO usage hint, and for ``static`` also indicates a
-    preference for interleaved arrays.
-
-    Some examples:
-
-    ``v3f/stream``
-        3D vertex position using floats, for stream usage
-    ``c4b/static``
-        4-byte color attribute, for static usage
-
-    :return: attribute, usage
-    """
-    match = _usage_format_re.match(fmt)
-    attribute_format = match.group('attribute')
-    attribute = vertexattribute.create_attribute(shader_program, attribute_format)
-    usage = match.group('usage')
-    if usage:
-        usage = _gl_usages[usage]
-    else:
-        usage = GL_DYNAMIC_DRAW
-
-    return attribute, usage
-
-
 def create_domain(shader_program, *attribute_usage_formats, indexed):
     """Create a vertex domain covering the given attribute usage formats.
     See documentation for :py:func:`create_attribute_usage` and
@@ -128,12 +84,12 @@ def create_domain(shader_program, *attribute_usage_formats, indexed):
 
     :rtype: :py:class:`VertexDomain`
     """
-    attribute_usages = [create_attribute_usage(shader_program, f) for f in attribute_usage_formats]
+    attributes = [vertexattribute.create_attribute(shader_program, f)for f in attribute_usage_formats]
 
     if indexed:
-        return IndexedVertexDomain(attribute_usages)
+        return IndexedVertexDomain(attributes)
     else:
-        return VertexDomain(attribute_usages)
+        return VertexDomain(attributes)
 
 
 class VertexDomain:
@@ -145,44 +101,23 @@ class VertexDomain:
     version = 0
     _initial_count = 16
 
-    def __init__(self, attribute_usages):
+    def __init__(self, attributes):
         self.allocator = allocation.Allocator(self._initial_count)
 
-        static_attributes = []
-        attributes = []
+        attribute_list = []
         self.buffer_attributes = []  # list of (buffer, attributes)
-        for attribute, usage in attribute_usages:
-
-            if usage == GL_STATIC_DRAW:
-                # Group attributes for interleaved buffer
-                static_attributes.append(attribute)
-                attributes.append(attribute)
-            else:
-                # Create non-interleaved buffer
-                attributes.append(attribute)
-                attribute.buffer = vertexbuffer.create_buffer(
-                    attribute.stride * self.allocator.capacity, usage=usage)
-                attribute.buffer.element_size = attribute.stride
-                attribute.buffer.attributes = (attribute,)
-                self.buffer_attributes.append((attribute.buffer, (attribute,)))
-
-        # Create buffer for interleaved data
-        if static_attributes:
-            vertexattribute.interleave_attributes(static_attributes)
-            stride = static_attributes[0].stride
-            buffer = vertexbuffer.create_buffer(
-                stride * self.allocator.capacity, usage=GL_STATIC_DRAW)
-            buffer.element_size = stride
-            self.buffer_attributes.append((buffer, static_attributes))
-
-            attributes.extend(static_attributes)
-            for attribute in static_attributes:
-                attribute.buffer = buffer
+        for attribute in attributes:
+            # Create non-interleaved buffer
+            attribute_list.append(attribute)
+            attribute.buffer = vertexbuffer.create_buffer(attribute.stride * self.allocator.capacity)
+            attribute.buffer.element_size = attribute.stride
+            attribute.buffer.attributes = (attribute,)
+            self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
         # Create named attributes for each attribute
-        self.attributes = attributes
+        self.attributes = attribute_list
         self.attribute_names = {}
-        for attribute in attributes:
+        for attribute in attribute_list:
             name = attribute.name
             assert name not in self.attributes, 'More than one "%s" attribute given' % name
             self.attribute_names[name] = attribute
@@ -414,8 +349,8 @@ class IndexedVertexDomain(VertexDomain):
     """
     _initial_index_count = 16
 
-    def __init__(self, attribute_usages, index_gl_type=GL_UNSIGNED_INT):
-        super(IndexedVertexDomain, self).__init__(attribute_usages)
+    def __init__(self, attributes, index_gl_type=GL_UNSIGNED_INT):
+        super(IndexedVertexDomain, self).__init__(attributes)
 
         self.index_allocator = allocation.Allocator(self._initial_index_count)
 

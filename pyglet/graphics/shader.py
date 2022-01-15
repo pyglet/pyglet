@@ -90,10 +90,9 @@ _attribute_types = {
 
 
 class _Attribute:
-    __slots__ = 'program', 'name', 'type', 'size', 'location', 'count', 'format', 'array'
+    __slots__ = 'name', 'type', 'size', 'location', 'count', 'format', 'array'
 
-    def __init__(self, program, name, attr_type, size, location):
-        self.program = program
+    def __init__(self, name, attr_type, size, location):
         self.name = name
         self.type = attr_type
         self.size = size
@@ -101,8 +100,7 @@ class _Attribute:
         self.count, self.format = _attribute_types[attr_type]
 
     def __repr__(self):
-        return f"Attribute('{self.name}', program={self.program}, " \
-               f"location={self.location}, count={self.count}, format={self.format})"
+        return f"Attribute('{self.name}', location={self.location}, count={self.count}, format={self.format})"
 
 
 class _Uniform:
@@ -373,7 +371,7 @@ class ShaderProgram:
         for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
             a_name, a_type, a_size = self._query_attribute(index)
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
-            attributes[a_name] = _Attribute(program, a_name, a_type, a_size, loc)
+            attributes[a_name] = _Attribute(a_name, a_type, a_size, loc)
         self._attributes = attributes
 
         if _debug_gl_shaders:
@@ -471,7 +469,6 @@ class ShaderProgram:
 
     def _prepare_attributes(self, kwargs):
         attributes = self._attributes.copy()
-
         for name, data in kwargs.items():
             if isinstance(data, tuple):
                 fmt, array = data
@@ -480,8 +477,10 @@ class ShaderProgram:
 
             try:
                 attribute = attributes[name]
+                attribute = _Attribute(name, attribute.type, attribute.size, attribute.location)
                 attribute.format = fmt
                 attribute.array = array
+                attributes[name] = attribute
             except KeyError:
                 raise ValueError(f"The attribute '{name}' was not found in this Shader Program.\n"
                                  " - Check that the spelling is correct.\n"
@@ -490,7 +489,7 @@ class ShaderProgram:
         return attributes
 
     def vertex_list(self, count, mode, batch=None, group=None, **kwargs):
-        """Add a vertex list to the batch.
+        """Create a VertexList.
 
         :Parameters:
             `count` : int
@@ -499,10 +498,10 @@ class ShaderProgram:
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
             `batch` : `~pyglet.graphics.Batch`
-                Batch of the vertex list, or ``None`` a Batch will not be used.
+                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
                 It is strongly recommended to use a Batch.
             `group` : `~pyglet.graphics.Group`
-                Group of the vertex list, or ``None`` if no group is required.
+                Group to add the VertexList to, or ``None`` if no group is required.
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
@@ -523,6 +522,24 @@ class ShaderProgram:
         return vlist
 
     def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **kwargs):
+        """Create a IndexedVertexList.
+
+        :Parameters:
+            `count` : int
+                The number of vertices in the list.
+            `mode` : int
+                OpenGL drawing mode enumeration; for example, one of
+                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
+            `indices` : sequence
+                Sequence of integers giving indices into the vertex list.
+            `batch` : `~pyglet.graphics.Batch`
+                Batch to add the VertexList to, or ``None`` if a Batch will not be used.
+                It is strongly recommended to use a Batch.
+            `group` : `~pyglet.graphics.Group`
+                Group to add the VertexList to, or ``None`` if no group is required.
+
+        :rtype: :py:class:`~pyglet.graphics.vertexdomain.IndexedVertexList`
+        """
 
         attributes = self._prepare_attributes(kwargs)
         formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
