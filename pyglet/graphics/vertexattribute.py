@@ -222,9 +222,6 @@ def create_attribute(shader_program, fmt):
     normalize = True if match.group('normalize') else False
 
     attribute_meta = shader_program.attributes.get(name, None)
-    assert attribute_meta, f"No '{name}' attribute found in {shader_program}.\n"\
-                           f"Valid attibutes are: {shader_program.attributes}."
-    assert count == attribute_meta.count, f"Invalid count of '{count}' for {attribute_meta}."
 
     return VertexAttribute(name, attribute_meta.location, count, gl_type, normalize)
 

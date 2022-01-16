@@ -421,9 +421,10 @@ class Batch:
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
+        # If not a ShaderGroup, use the default ShaderProgram:
+        shader = getattr(group, 'program', get_default_shader())
         formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(False, mode, group, formats)
-
+        domain = self._get_domain(False, mode, group, shader, formats)
         # Create vertex list and initialize
         vlist = domain.create(count)
         for i, array in initial_arrays:
@@ -451,8 +452,10 @@ class Batch:
 
         :rtype: `IndexedVertexList`
         """
+        # If not a ShaderGroup, use the default ShaderProgram:
+        shader = getattr(group, 'program', get_default_shader())
         formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(True, mode, group, formats)
+        domain = self._get_domain(True, mode, group, shader, formats)
 
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
@@ -486,14 +489,16 @@ class Batch:
                 The batch to migrate to (or the current batch).
 
         """
+        # If not a ShaderGroup, use the default ShaderProgram:
+        shader = getattr(group, 'program', get_default_shader())
         formats = vertex_list.domain.__formats
         if isinstance(vertex_list, vertexdomain.IndexedVertexList):
-            domain = batch._get_domain(True, mode, group, formats)
+            domain = batch._get_domain(True, mode, group, shader, formats)
         else:
-            domain = batch._get_domain(False, mode, group, formats)
+            domain = batch._get_domain(False, mode, group, shader, formats)
         vertex_list.migrate(domain)
 
-    def _get_domain(self, indexed, mode, group, formats):
+    def _get_domain(self, indexed, mode, group, shader, formats):
         if group is None:
             group = get_default_group()
 
@@ -501,17 +506,14 @@ class Batch:
         if group not in self.group_map:
             self._add_group(group)
 
-        # If not a ShaderGroup, use the default ShaderProgram
-        shader_program = getattr(group, 'program', get_default_shader())
-
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (formats, mode, indexed, shader_program.id)
+        key = (indexed, mode, shader.id, formats)
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            domain = vertexdomain.create_domain(shader_program, *formats, indexed=indexed)
+            domain = vertexdomain.create_domain(shader, *formats, indexed=indexed)
             domain.__formats = formats
             domain_map[key] = domain
             self._draw_list_dirty = True

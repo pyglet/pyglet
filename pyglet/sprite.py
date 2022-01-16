@@ -293,7 +293,6 @@ class Sprite(event.EventDispatcher):
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
                  group=None,
-                 usage='dynamic',
                  subpixel=False):
         """Create a sprite.
 
@@ -314,10 +313,6 @@ class Sprite(event.EventDispatcher):
                 Optional batch to add the sprite to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the sprite.
-            `usage` : str
-                Vertex buffer object usage hint, one of ``"none"``,
-                ``"stream"``, ``"dynamic"`` (default) or ``"static"``.  Applies
-                only to vertex data.
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
@@ -341,7 +336,6 @@ class Sprite(event.EventDispatcher):
 
         self._batch = batch or graphics.get_default_batch()
         self._group = SpriteGroup(self._texture, blend_src, blend_dest, program, 0, group)
-        self._usage = usage
         self._subpixel = subpixel
         self._create_vertex_list()
 
@@ -479,15 +473,14 @@ class Sprite(event.EventDispatcher):
         self._texture = texture
 
     def _create_vertex_list(self):
-        usage = self._usage
         self._vertex_list = self._batch.add_indexed(
             4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
-            'position2f/%s' % usage,
-            ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
-            ('translate2f/%s' % usage, (self._x, self._y) * 4),
-            ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
-            ('rotation1f/%s' % usage, (self._rotation,) * 4),
-            ('tex_coords3f/%s' % usage, self._texture.tex_coords))
+            'position2f',
+            ('colors4Bn', (*self._rgb, int(self._opacity)) * 4),
+            ('translate2f', (self._x, self._y) * 4),
+            ('scale2f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+            ('rotation1f', (self._rotation,) * 4),
+            ('tex_coords3f', self._texture.tex_coords))
         self._update_position()
 
     def _update_position(self):

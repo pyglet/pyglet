@@ -111,11 +111,13 @@ Multiple and derived clocks potentially allow you to separate "game-time" and
 of the system clock.
 """
 
-import time
+import time as _time
 
-from heapq import heappush, heappop, heappushpop
-from operator import attrgetter
-from collections import deque
+from heapq import heappop as _heappop
+from heapq import heappush as _heappush
+from heapq import heappushpop as _heappushpop
+from operator import attrgetter as _attrgetter
+from collections import deque as _deque
 
 
 class _ScheduledItem:
@@ -159,7 +161,7 @@ class Clock:
     # If True, a sleep(0) is inserted on every tick.
     _force_sleep = False
 
-    def __init__(self, time_function=time.perf_counter):
+    def __init__(self, time_function=_time.perf_counter):
         """Initialise a Clock, with optional custom time function.
 
         :Parameters:
@@ -175,7 +177,7 @@ class Clock:
         self.last_ts = None
 
         # Used by self.get_fps to show update frequency
-        self.times = deque()
+        self.times = _deque()
         self.cumulative_time = 0
         self.window_size = 60
 
@@ -185,7 +187,7 @@ class Clock:
 
     @staticmethod
     def sleep(microseconds):
-        time.sleep(microseconds * 1e-6)
+        _time.sleep(microseconds * 1e-6)
 
     def update_time(self):
         """Get the elapsed time since the last call to `update_time`.
@@ -257,9 +259,9 @@ class Clock:
             # case it needs to be rescheduled.  it is more efficient
             # to push and pop the heap at once rather than two operations
             if item is None:
-                item = heappop(interval_items)
+                item = _heappop(interval_items)
             else:
-                item = heappushpop(interval_items, item)
+                item = _heappushpop(interval_items, item)
 
             # a scheduled function may try and unschedule itself
             # so we need to keep a reference to the current
@@ -304,7 +306,7 @@ class Clock:
                 self._current_interval_item = item = None
 
         if item is not None:
-            heappush(interval_items, item)
+            _heappush(interval_items, item)
 
         return True
 
@@ -415,7 +417,7 @@ class Clock:
         # and will not always catch smallest value, so sort here.
         # do not remove the sort key...it is faster than relaying comparisons
         # NOTE: do not rewrite as popping from heap, as that is super slow!
-        self._schedule_interval_items.sort(key=attrgetter('next_ts'))
+        self._schedule_interval_items.sort(key=_attrgetter('next_ts'))
 
         # Binary division over interval:
         #
@@ -483,7 +485,7 @@ class Clock:
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + delay
         item = _ScheduledIntervalItem(func, 0, last_ts, next_ts, args, kwargs)
-        heappush(self._schedule_interval_items, item)
+        _heappush(self._schedule_interval_items, item)
 
     def schedule_interval(self, func, interval, *args, **kwargs):
         """Schedule a function to be called every `interval` seconds.
@@ -503,7 +505,7 @@ class Clock:
         last_ts = self._get_nearest_ts()
         next_ts = last_ts + interval
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
-        heappush(self._schedule_interval_items, item)
+        _heappush(self._schedule_interval_items, item)
 
     def schedule_interval_soft(self, func, interval, *args, **kwargs):
         """Schedule a function to be called every ``interval`` seconds.
@@ -537,7 +539,7 @@ class Clock:
         next_ts = self._get_soft_next_ts(self._get_nearest_ts(), interval)
         last_ts = next_ts - interval
         item = _ScheduledIntervalItem(func, interval, last_ts, next_ts, args, kwargs)
-        heappush(self._schedule_interval_items, item)
+        _heappush(self._schedule_interval_items, item)
 
     def unschedule(self, func):
         """Remove a function from the schedule.
