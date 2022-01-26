@@ -52,69 +52,263 @@ def clamp(num, min_val, max_val):
 
 
 class Vec2(tuple):
+    """A two dimensional vector represented as an X Y coordinate pair.
+
+    :parameters:
+        `x` : int or float :
+            The X coordinate of the vector.
+        `y`   : int or float :
+            The Y coordinate of the vector.
+
+    Vectors must be created with either 0 or 2 values. If no arguments are provided a vector with the coordinates 0, 0 is created.
+
+    Vectors are stored as a tuple and therefore immutable and cannot be modified directly
+    """
 
     def __new__(cls, *args):
         assert len(args) in (0, 2), "0 or 2 values are required for Vec2 types."
-        return super().__new__(Vec2, args or (0, 0))
+        return super().__new__(cls, args or (0, 0))
+
+    @staticmethod
+    def from_polar(mag, angle):
+        """Create a new vector from the given polar coodinates.
+
+        :parameters:
+            `mag`   : int or float :
+                The magnitude of the vector.
+            `angle` : int or float :
+                The angle of the vector in radians.
+
+        :returns: A new vector with the given angle and magnitude.
+        :rtype: Vec2
+        """
+        return self.__class__(mag * _math.cos(angle), mag * _math.sin(angle))
 
     @property
     def x(self):
+        """The X coordinate of the vector.
+
+        :type: float
+        """
         return self[0]
 
     @property
     def y(self):
+        """The Y coordinate of the vector.
+
+        :type: float
+        """
         return self[1]
 
+    @property
+    def heading(self):
+        """The angle of the vector in radians.
+
+        :type: float
+        """
+        return _math.atan2(self[1], self[0])
+
+    @property
+    def mag(self):
+        """The magnitude, or length of the vector. The distance between the coordinates and the origin.
+
+        Alias of abs(self).
+
+        :type: float
+        """
+        return self.__abs__()
+
     def __add__(self, other):
-        return Vec2(self[0] + other[0], self[1] + other[1])
+        if isinstance(other, tuple):
+            return self.__class__(self[0] + other[0], self[1] + other[1])
+        else:
+            return self.__class__(self[0] + other, self[1] + other)
 
     def __sub__(self, other):
-        return Vec2(self[0] - other[0], self[1] - other[1])
+        if isinstance(other, tuple):
+            return self.__class__(self[0] - other[0], self[1] - other[1])
+        else:
+            return self.__class__(self[0] - other, self[1] - other)
 
     def __mul__(self, other):
-        return Vec2(self[0] * other[0], self[1] * other[1])
+        if isinstance(other, tuple):
+            return self.__class__(self[0] * other[0], self[1] * other[1])
+        else:
+            return self.__class__(self[0] * other, self[1] * other)
 
     def __truediv__(self, other):
-        return Vec2(self[0] / other[0], self[1] / other[1])
+        if isinstance(other, tuple):
+            return self.__class__(self[0] / other[0], self[1] / other[1])
+        else:
+            return self.__class__(self[0] / other, self[1] / other)
+
+    def __floordiv__(self, other):
+        if isinstance(other, tuple):
+            return self.__class__(self[0] // other[0], self[1] // other[1])
+        else:
+            return self.__class__(self[0] // other, self[1] // other)
 
     def __abs__(self):
         return _math.sqrt(self[0] ** 2 + self[1] ** 2)
 
     def __neg__(self):
-        return Vec2(-self[0], -self[1])
+        return self.__class__(-self[0], -self[1])
 
     def __round__(self, ndigits=None):
-        return Vec2(*(round(v, ndigits) for v in self))
+        return self.__class__(*(round(v, ndigits) for v in self))
+
+    def __radd__(self, other):
+        """Reverse add. Required for functionality with sum()
+        """
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+
+    def from_magnitude(self, magnitude):
+        """Create a new Vector of the given magnitude by normalizing, then scaling the vector. The heading remains unchanged.
+
+        :parameters:
+            `magnitude` : int or float :
+                The magnitude of the new vector.
+
+        :returns: A new vector with the magnitude.
+        :rtype: Vec2
+        """
+        return self.normalize().scale(magnitude)
+
+    def from_heading(self, heading):
+        """Create a new vector of the same magnitude with the given heading. I.e. Rotate the vector to the heading.
+
+        :parameters:
+            `heading` : int or float :
+                The angle of the new vector in radians.
+
+        :returns: A new vector with the given heading.
+        :rtype: Vec2
+        """
+        mag = self.__abs__()
+        return self.__class__(mag * _math.cos(heading), mag * _math.sin(heading))
+
+    def limit(self, max):
+        """Limit the magnitude of the vector to the value used for the max parameter.
+
+        :parameters:
+            `max`  : int or float :
+                The maximum magnitude for the vector.
+
+        :returns: Either self or a new vector with the maximum magnitude.
+        :rtype: Vec2
+        """
+        if self[0] ** 2 + self[1] ** 2 > max * max:
+            return self.from_magnitude(max)
+        return self
 
     def lerp(self, other, alpha):
-        return Vec2(self[0] + (alpha * (other[0] - self[0])),
-                    self[1] + (alpha * (other[1] - self[1])))
+        """Create a new vector lineraly interpolated between this vector and another vector.
+
+        :parameters:
+            `other`  : Vec2 :
+                The vector to be linerly interpolated to.
+            `alpha` : float or int :
+                The amount of interpolation.
+                Some value between 0.0 (this vector) and 1.0 (other vector).
+                0.5 is halfway inbetween.
+
+        :returns: A new interpolated vector.
+        :rtype: Vec2
+        """
+        return self.__class__(self[0] + (alpha * (other[0] - self[0])),
+                              self[1] + (alpha * (other[1] - self[1])))
 
     def scale(self, value):
-        return Vec2(self[0] * value, self[1] * value)
+        """Multiply the vector by a scalar value.
+
+        :parameters:
+            `value`  : int or float :
+                The ammount to be scaled by
+
+        :returns: A new vector scaled by the value.
+        :rtype: Vec2
+        """
+        return self.__class__(self[0] * value, self[1] * value)
+
+    def rotate(self, angle):
+        """Create a new Vector rotated by the angle. The magnitude remains unchanged.
+
+        :parameters:
+            `angle` : int or float :
+                The angle to rotate by
+
+        :returns: A new rotated vector of the same magnitude.
+        :rtype: Vec2
+        """
+        mag = self.mag
+        heading = self.heading
+        return self.__class__(mag * _math.cos(heading + angle), mag * _math.sin(heading + angle))
 
     def distance(self, other):
+        """Calculate the distance between this vector and another 2D vector.
+
+        :parameters:
+            `other`  : Vec2 :
+                The other vector
+
+        :returns: The distance between the two vectors.
+        :rtype: float
+        """
         return _math.sqrt(((other[0] - self[0]) ** 2) + ((other[1] - self[1]) ** 2))
 
     def normalize(self):
+        """Normalize the vector to have a magnitude of 1. i.e. make it a unit vector.
+
+        :returns: A unit vector with the same heading.
+        :rtype: Vec2
+        """
         d = self.__abs__()
         if d:
-            return Vec2(self[0] / d, self[1] / d)
+            return self.__class__(self[0] / d, self[1] / d)
         return self
 
     def clamp(self, min_val, max_val):
-        return Vec2(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val))
+        """Restrict the value of the X and Y components of the vector to be within the given values.
+
+        :parameters:
+            `min_val` : int or float :
+                The minimum value
+            `max_val` : int or float :
+                The maximum value
+
+        :returns: A new vector with clamped X and Y components.
+        :rtype: Vec2
+        """
+        return self.__class__(clamp(self[0], min_val, max_val), clamp(self[1], min_val, max_val))
 
     def dot(self, other):
+        """Calculate the dot product of this vector and another 2D vector.
+
+        :parameters:
+            `other`  : Vec2 :
+                The other vector.
+
+        :returns: The dot product of the two vectors.
+        :rtype: float
+        """
         return self[0] * other[0] + self[1] * other[1]
 
+    def as_type(self, return_type):
+        return self.__class__(return_type(self[0]), return_type(self[1]))
+
     def __getattr__(self, attrs):
-        # Allow swizzed getting of attrs
-        vec_class = {2: Vec2, 3: Vec3, 4: Vec4}.get(len(attrs))
-        return vec_class(*(self['xy'.index(c)] for c in attrs))
+        try:
+            # Allow swizzed getting of attrs
+            vec_class = {2: self.__class__, 3: Vec3, 4: Vec4}.get(len(attrs))
+            return vec_class(*(self['xy'.index(c)] for c in attrs))
+        except Exception:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attrs}'")
 
     def __repr__(self):
-        return f"Vec2({self[0]}, {self[1]})"
+        return f"{self.__class__.__name__}({self[0]}, {self[1]})"
 
 
 class Vec3(tuple):
