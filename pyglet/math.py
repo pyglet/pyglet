@@ -67,7 +67,7 @@ class Vec2(tuple):
 
     def __new__(cls, *args):
         assert len(args) in (0, 2), "0 or 2 values are required for Vec2 types."
-        return super().__new__(cls, args or (0, 0))
+        return tuple.__new__(cls, args or (0, 0))
 
     @staticmethod
     def from_polar(mag, angle):
@@ -226,7 +226,7 @@ class Vec2(tuple):
 
         :parameters:
             `value`  : int or float :
-                The ammount to be scaled by
+                The amount to be scaled by
 
         :returns: A new vector scaled by the value.
         :rtype: Vec2
@@ -297,6 +297,7 @@ class Vec2(tuple):
         return self[0] * other[0] + self[1] * other[1]
 
     def as_type(self, return_type):
+        """Returns this Vec2 with its components cast to the return_type"""
         return self.__class__(return_type(self[0]), return_type(self[1]))
 
     def __getattr__(self, attrs):
