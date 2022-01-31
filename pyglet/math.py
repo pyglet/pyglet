@@ -238,7 +238,7 @@ class Vec2(tuple):
 
         :parameters:
             `angle` : int or float :
-                The angle to rotate by
+                The angle to rotate by in radiants
 
         :returns: A new rotated vector of the same magnitude.
         :rtype: Vec2
