@@ -38,6 +38,7 @@ from ctypes import *
 import pyglet
 from pyglet.window import BaseWindow
 from pyglet.window import MouseCursor, DefaultMouseCursor
+from pyglet.window import WindowException
 from pyglet.event import EventDispatcher
 
 from pyglet.canvas.cocoa import CocoaCanvas
@@ -403,14 +404,15 @@ class CocoaWindow(BaseWindow):
         # Move frame origin down so that top-left corner of window doesn't move.
         window_frame = self._nswindow.frame()
         rect = self._nswindow.contentRectForFrameRect_(window_frame)
-        rect.origin.y += rect.size.height - self._height
-        rect.size.width = self._width
-        rect.size.height = self._height
+        rect.origin.y += rect.size.height - height
+        rect.size.width = width
+        rect.size.height = height
         new_frame = self._nswindow.frameRectForContentRect_(rect)
         # The window background flashes when the frame size changes unless it's
         # animated, but we can set the window's animationResizeTime to zero.
         is_visible = self._nswindow.isVisible()
         self._nswindow.setFrame_display_animate_(new_frame, True, is_visible)
+        self.dispatch_event('on_resize', width, height)
 
     def set_minimum_size(self, width: int, height: int) -> None:
         super().set_minimum_size(width, height)
@@ -437,8 +439,6 @@ class CocoaWindow(BaseWindow):
 
         if self._nswindow is not None:
             if visible:
-                # Not really sure why on_resize needs to be here,
-                # but it's what pyglet wants.
                 self.dispatch_event('on_resize', self._width, self._height)
                 self.dispatch_event('on_show')
                 self.dispatch_event('on_expose')

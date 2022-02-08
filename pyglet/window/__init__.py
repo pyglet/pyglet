@@ -411,6 +411,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _context = None
     _projection_matrix = pyglet.math.Mat4()
     _view_matrix = pyglet.math.Mat4()
+    _viewport = 0, 0, 0, 0
 
     # Used to restore window size and position after fullscreen
     _windowed_size = None
@@ -1669,7 +1670,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             """The window was shown.
 
             This event is triggered when a window is restored after being
-            minimised, or after being displayed for the first time.
+            minimised, hidden, or after being displayed for the first time.
 
             :event:
             """
@@ -1677,8 +1678,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         def on_hide(self):
             """The window was hidden.
 
-            This event is triggered when a window is minimised or (on Mac OS X)
-            hidden by the user.
+            This event is triggered when a window is minimised
+            or hidden by the user.
 
             :event:
             """
