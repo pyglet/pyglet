@@ -94,10 +94,11 @@ class ImageElement(pyglet.text.document.InlineElement):
         y1 = y + self.descent
         x2 = x + self.width
         y2 = y + self.height + self.descent
-        vertex_list = layout.batch.add_indexed(4, pyglet.gl.GL_TRIANGLES, group,
-                                               [0, 1, 2, 0, 2, 3],
-                                               ('position3f', (x1, y1, 0,  x2, y1, 0,  x2, y2, 0,  x1, y2, 0)),
-                                               ('tex_coords3f', self.image.tex_coords))
+        program = pyglet.text.layout.get_default_layout_shader()
+        vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                                  layout.batch, group,
+                                                  position=('f', (x1, y1,  x2, y1,  x2, y2,  x1, y2)),
+                                                  tex_coords=('f', self.image.tex_coords))
         self.vertex_lists[layout] = vertex_list
 
     def remove(self, layout):

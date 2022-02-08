@@ -324,11 +324,12 @@ class _GlyphBox(_AbstractBox):
 
     def place(self, layout, i, x, y, context):
         assert self.glyphs
+        program = get_default_layout_shader()
 
         try:
             group = layout.group_cache[self.owner]
         except KeyError:
-            group = layout.group_class(self.owner, get_default_layout_shader(), order=1, parent=layout.group)
+            group = layout.group_class(self.owner, program, order=1, parent=layout.group)
             layout.group_cache[self.owner] = group
 
         n_glyphs = self.length
@@ -363,12 +364,10 @@ class _GlyphBox(_AbstractBox):
         for i in range(n_glyphs):
             indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
 
-        vertex_list = layout.batch.add_indexed(n_glyphs * 4, GL_TRIANGLES, group,
-                                               indices,
-                                               ('position2f/dynamic', vertices),
-                                               ('colors4Bn/dynamic', colors),
-                                               ('tex_coords3f/dynamic', tex_coords),
-                                               'translation2f/dynamic')
+        vertex_list = program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
+                                                  position=('f', vertices),
+                                                  colors=('Bn', colors),
+                                                  tex_coords=('f', tex_coords))
 
         context.add_list(vertex_list)
 
@@ -402,20 +401,18 @@ class _GlyphBox(_AbstractBox):
             x1 = x2
 
         if background_vertices:
-            background_list = layout.batch.add_indexed(len(background_vertices) // 2,
-                                                       GL_TRIANGLES, layout.background_decoration_group,
-                                                       [0, 1, 2, 0, 2, 3],
-                                                       ('position2f/dynamic', background_vertices),
-                                                       ('colors4Bn/dynamic', background_colors),
-                                                       'translation2f/dynamic')
+            background_list = program.vertex_list_indexed(len(background_vertices) // 2,
+                                                          GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+                                                          layout.batch, layout.background_decoration_group,
+                                                          position=('f', background_vertices),
+                                                          colors=('Bn', background_colors))
             context.add_list(background_list)
 
         if underline_vertices:
-            underline_list = layout.batch.add(len(underline_vertices) // 2,
-                                              GL_LINES, layout.foreground_decoration_group,
-                                              ('position2f/dynamic', underline_vertices),
-                                              ('colors4Bn/dynamic', underline_colors),
-                                              'translation2f/dynamic')
+            underline_list = program.vertex_list(len(underline_vertices) // 2, GL_LINES,
+                                                 layout.batch, layout.foreground_decoration_group,
+                                                 position=('f',underline_vertices),
+                                                 colors=('Bn', underline_colors))
             context.add_list(underline_list)
 
     def delete(self, layout):

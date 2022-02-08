@@ -132,7 +132,7 @@ class _ShapeGroup(ShaderGroup):
     sharing the same parent group and blend parameters.
     """
 
-    def __init__(self, blend_src, blend_dest, parent=None):
+    def __init__(self, blend_src, blend_dest, program, parent=None):
         """Create a Shape group.
 
         The group is created internally. Usually you do not
@@ -148,7 +148,7 @@ class _ShapeGroup(ShaderGroup):
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super().__init__(get_default_shader(), parent=parent)
+        super().__init__(program, parent=parent)
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 
@@ -398,10 +398,10 @@ class Arc(_ShapeBase):
         self._rotation = 0
 
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        program = get_default_shader()
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = self._batch.add(self._num_verts, GL_LINES, self._group, 'position2f', 'colors4Bn')
-
+        self._vertex_list = program.vertex_list(self._num_verts, GL_LINES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -491,10 +491,11 @@ class Circle(_ShapeBase):
         self._segments = segments or max(14, int(radius / 1.25))
         self._rgb = color
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = self._batch.add(self._segments*3, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._vertex_list = program.vertex_list(self._segments*3, GL_TRIANGLES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -568,10 +569,11 @@ class Ellipse(_ShapeBase):
         self._segments = int(max(a, b) / 1.25)
         self._num_verts = self._segments * 2
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(self._num_verts, GL_LINES, self._group, 'position2f', 'colors4Bn')
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
+        self._vertex_list = program.vertex_list(self._num_verts, GL_LINES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -702,10 +704,11 @@ class Sector(_ShapeBase):
         self._start_angle = start_angle
         self._rotation = 0
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = self._batch.add(self._segments * 3, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._vertex_list = program.vertex_list(self._segments*3, GL_TRIANGLES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -825,9 +828,11 @@ class Line(_ShapeBase):
         self._rotation = math.degrees(math.atan2(y2 - y, x2 - x))
         self._rgb = color
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._vertex_list = program.vertex_list(6, GL_TRIANGLES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -937,9 +942,11 @@ class Rectangle(_ShapeBase):
         self._rotation = 0
         self._rgb = color
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(6, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._vertex_list = program.vertex_list(6, GL_TRIANGLES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -1058,10 +1065,13 @@ class BorderedRectangle(_ShapeBase):
         self._rgb = color
         self._brgb = border_color
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
         indices = [0, 1, 2, 0, 2, 3, 0, 4, 3, 4, 7, 3, 0, 1, 5, 0, 5, 4, 1, 2, 5, 5, 2, 6, 6, 2, 3, 6, 3, 7]
-        self._vertex_list = self._batch.add_indexed(8, GL_TRIANGLES, self._group, indices, 'position2f', 'colors4Bn')
+        self._vertex_list = program.vertex_list_indexed(
+            8, GL_TRIANGLES, indices, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -1218,12 +1228,13 @@ class Triangle(_ShapeBase):
         self._x3 = x3
         self._y3 = y3
         self._rotation = 0
-
         self._rgb = color
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
-        self._vertex_list = self._batch.add(3, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
+        self._vertex_list = program.vertex_list(3, GL_TRIANGLES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -1360,10 +1371,11 @@ class Star(_ShapeBase):
         self._rgb = color
         self._rotation = rotation
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
 
-        self._vertex_list = self._batch.add(self._num_spikes*6, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._vertex_list = program.vertex_list(self._num_spikes*6, GL_TRIANGLES, self._batch, self._group, colors='Bn')
         self._update_position()
         self._update_color()
 
@@ -1468,10 +1480,13 @@ class Polygon(_ShapeBase):
 
         self._rgb = color
 
+        program = get_default_shader()
         self._batch = batch or Batch()
-        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, group)
+        self._group = _ShapeGroup(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, program, group)
+
         length = (len(self._coordinates) - 2) * 3
-        self._vertex_list = self._batch.add(length, GL_TRIANGLES, self._group, 'position2f', 'colors4Bn')
+        self._vertex_list = program.vertex_list(length, GL_TRIANGLES, self._batch, self._group, colors='Bn')
+
         self._update_position()
         self._update_color()
 

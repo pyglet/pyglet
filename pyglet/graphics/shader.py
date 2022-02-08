@@ -92,12 +92,14 @@ _attribute_types = {
 class _Attribute:
     __slots__ = 'name', 'type', 'size', 'location', 'count', 'format', 'array'
 
-    def __init__(self, name, attr_type, size, location):
+    def __init__(self, name, attr_type, size, location, count, fmt, array=None):
         self.name = name
         self.type = attr_type
         self.size = size
         self.location = location
-        self.count, self.format = _attribute_types[attr_type]
+        self.count = count
+        self.format = fmt
+        self.array = array
 
     def __repr__(self):
         return f"Attribute('{self.name}', location={self.location}, count={self.count}, format={self.format})"
@@ -371,7 +373,9 @@ class ShaderProgram:
         for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
             a_name, a_type, a_size = self._query_attribute(index)
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
-            attributes[a_name] = _Attribute(a_name, a_type, a_size, loc)
+            count, fmt = _attribute_types[a_type]
+            attributes[a_name] = _Attribute(a_name, a_type, a_size, loc, count, fmt, None)
+            # attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt, array=None)
         self._attributes = attributes
 
         if _debug_gl_shaders:
@@ -384,7 +388,7 @@ class ShaderProgram:
             u_name, u_type, u_size = self._query_uniform(index)
             loc = glGetUniformLocation(prg_id, create_string_buffer(u_name.encode('utf-8')))
 
-            if loc == -1:      # Skip uniforms that may be inside of a Uniform Block
+            if loc == -1:      # Skip uniforms that may be inside a Uniform Block
                 continue
 
             try:
@@ -473,14 +477,11 @@ class ShaderProgram:
             if isinstance(data, tuple):
                 fmt, array = data
             else:
-                fmt, array = data, ()
+                fmt, array = data, None
 
             try:
-                attribute = attributes[name]
-                attribute = _Attribute(name, attribute.type, attribute.size, attribute.location)
-                attribute.format = fmt
-                attribute.array = array
-                attributes[name] = attribute
+                meta = attributes[name]
+                attributes[name] = _Attribute(name, meta.type, meta.size, meta.location, meta.count, fmt, array)
             except KeyError:
                 raise ValueError(f"The attribute '{name}' was not found in this Shader Program.\n"
                                  " - Check that the spelling is correct.\n"
@@ -516,7 +517,7 @@ class ShaderProgram:
         vlist = domain.create(count)
 
         for attr in attributes.values():
-            if getattr(attr, 'array', None):
+            if attr.array:
                 vlist.set_attribute_data(attr.location, attr.array)
 
         return vlist
@@ -543,7 +544,6 @@ class ShaderProgram:
 
         attributes = self._prepare_attributes(kwargs)
         formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
-
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch._get_domain(True, mode, group, self, formats)
 
@@ -553,7 +553,7 @@ class ShaderProgram:
         vlist.set_index_data([i + start for i in indices])
 
         for attr in attributes.values():
-            if getattr(attr, 'array', None):
+            if attr.array:
                 vlist.set_attribute_data(attr.location, attr.array)
 
         return vlist

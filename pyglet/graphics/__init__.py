@@ -324,42 +324,6 @@ def get_default_shader():
         return pyglet.gl.current_context.pyglet_graphics_default_shader
 
 
-def vertex_list(count, *data):
-    """Create a :py:class:`~pyglet.graphics.vertexdomain.VertexList` not associated with a batch, group or mode.
-
-    :Parameters:
-        `count` : int
-            The number of vertices in the list.
-        `data` : data items
-            Attribute formats and initial data for the vertex list.  See the
-            module summary for details.
-
-    :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
-    """
-    # Note that mode=0 because the default batch is never drawn: vertex lists
-    # returned from this function are drawn directly by their draw() method.
-    return get_default_batch().add(count, 0, None, *data)
-
-
-def vertex_list_indexed(count, indices, *data):
-    """Create an `IndexedVertexList` not associated with a batch, group or mode.
-
-    :Parameters:
-        `count` : int
-            The number of vertices in the list.
-        `indices` : sequence
-            Sequence of integers giving indices into the vertex list.
-        `data` : data items
-            Attribute formats and initial data for the vertex list.  See the
-            module summary for details.
-
-    :rtype: `IndexedVertexList`
-    """
-    # Note that mode=0 because the default batch is never drawn: vertex lists
-    # returned from this function are drawn directly by their draw() method.
-    return get_default_batch().add_indexed(count, 0, None, indices, *data)
-
-
 class Batch:
     """Manage a collection of vertex lists for batched rendering.
 
@@ -402,69 +366,6 @@ class Batch:
         .. versionadded:: 1.2
         """
         self._draw_list_dirty = True
-
-    def add(self, count, mode, group, *data):
-        """Add a vertex list to the batch.
-
-        :Parameters:
-            `count` : int
-                The number of vertices in the list.
-            `mode` : int
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                See the module summary for additional information.
-            `group` : `~pyglet.graphics.Group`
-                Group of the vertex list, or ``None`` if no group is required.
-            `data` : data items
-                Attribute formats and initial data for the vertex list.  See
-                the module summary for details.
-
-        :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
-        """
-        # If not a ShaderGroup, use the default ShaderProgram:
-        shader = getattr(group, 'program', get_default_shader())
-        formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(False, mode, group, shader, formats)
-        # Create vertex list and initialize
-        vlist = domain.create(count)
-        for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
-
-        return vlist
-
-    def add_indexed(self, count, mode, group, indices, *data):
-        """Add an indexed vertex list to the batch.
-
-        :Parameters:
-            `count` : int
-                The number of vertices in the list.
-            `mode` : int
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                See the module summary for additional information.
-            `group` : `~pyglet.graphics.Group`
-                Group of the vertex list, or ``None`` if no group is required.
-            `indices` : sequence
-                Sequence of integers giving indices into the vertex list.
-            `data` : data items
-                Attribute formats and initial data for the vertex list.  See
-                the module summary for details.
-
-        :rtype: `IndexedVertexList`
-        """
-        # If not a ShaderGroup, use the default ShaderProgram:
-        shader = getattr(group, 'program', get_default_shader())
-        formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(True, mode, group, shader, formats)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count, len(indices))
-        start = vlist.start
-        vlist.set_index_data([i + start for i in indices])
-        for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
-
-        return vlist
 
     def migrate(self, vertex_list, mode, group, batch):
         """Migrate a vertex list to another batch and/or group.
