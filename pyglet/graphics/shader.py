@@ -89,22 +89,6 @@ _attribute_types = {
 }
 
 
-class _Attribute:
-    __slots__ = 'name', 'type', 'size', 'location', 'count', 'format', 'array'
-
-    def __init__(self, name, attr_type, size, location, count, fmt, array=None):
-        self.name = name
-        self.type = attr_type
-        self.size = size
-        self.location = location
-        self.count = count
-        self.format = fmt
-        self.array = array
-
-    def __repr__(self):
-        return f"Attribute('{self.name}', location={self.location}, count={self.count}, format={self.format})"
-
-
 class _Uniform:
     __slots__ = 'program', 'name', 'type', 'location', 'length', 'count', 'get', 'set'
 
@@ -374,8 +358,7 @@ class ShaderProgram:
             a_name, a_type, a_size = self._query_attribute(index)
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
             count, fmt = _attribute_types[a_type]
-            attributes[a_name] = _Attribute(a_name, a_type, a_size, loc, count, fmt, None)
-            # attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt, array=None)
+            attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt, array=None)
         self._attributes = attributes
 
         if _debug_gl_shaders:
@@ -471,24 +454,6 @@ class ShaderProgram:
         except GLException:
             raise
 
-    def _prepare_attributes(self, kwargs):
-        attributes = self._attributes.copy()
-        for name, data in kwargs.items():
-            if isinstance(data, tuple):
-                fmt, array = data
-            else:
-                fmt, array = data, None
-
-            try:
-                meta = attributes[name]
-                attributes[name] = _Attribute(name, meta.type, meta.size, meta.location, meta.count, fmt, array)
-            except KeyError:
-                raise ValueError(f"The attribute '{name}' was not found in this Shader Program.\n"
-                                 " - Check that the spelling is correct.\n"
-                                 " - Unused attributes are eliminated by OpenGL during compilation.\n"
-                                 f"Valid attributes are: {list(attributes)}")
-        return attributes
-
     def vertex_list(self, count, mode, batch=None, group=None, **kwargs):
         """Create a VertexList.
 
@@ -506,10 +471,15 @@ class ShaderProgram:
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
+        attributes = self._attributes.copy()
+        for name, data in kwargs.items():
+            if isinstance(data, tuple):
+                fmt, array = data
+                attributes[name] = {**self._attributes[name], **{'format': fmt, 'array': array}}
+            else:
+                attributes[name] = {**self._attributes[name], **{'format': data}}
 
-        attributes = self._prepare_attributes(kwargs)
-        formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
-
+        formats = tuple(f"{name}{data['count']}{data['format']}" for (name, data) in attributes.items())
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch._get_domain(False, mode, group, self, formats)
 
@@ -517,8 +487,8 @@ class ShaderProgram:
         vlist = domain.create(count)
 
         for attr in attributes.values():
-            if attr.array:
-                vlist.set_attribute_data(attr.location, attr.array)
+            if attr['array']:
+                vlist.set_attribute_data(attr['location'], attr['array'])
 
         return vlist
 
@@ -541,9 +511,15 @@ class ShaderProgram:
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.IndexedVertexList`
         """
+        attributes = self._attributes.copy()
+        for name, data in kwargs.items():
+            if isinstance(data, tuple):
+                fmt, array = data
+                attributes[name] = {**attributes[name], **{'format': fmt, 'array': array}}
+            else:
+                attributes[name] = {**attributes[name], **{'format': data}}
 
-        attributes = self._prepare_attributes(kwargs)
-        formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
+        formats = tuple(f"{name}{data['count']}{data['format']}" for (name, data) in attributes.items())
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch._get_domain(True, mode, group, self, formats)
 
@@ -553,8 +529,8 @@ class ShaderProgram:
         vlist.set_index_data([i + start for i in indices])
 
         for attr in attributes.values():
-            if attr.array:
-                vlist.set_attribute_data(attr.location, attr.array)
+            if attr['array']:
+                vlist.set_attribute_data(attr['location'], attr['array'])
 
         return vlist
 

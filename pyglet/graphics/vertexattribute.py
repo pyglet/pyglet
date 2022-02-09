@@ -156,49 +156,6 @@ def _align(v, align):
     return ((v - 1) & ~(align - 1)) + align
 
 
-def interleave_attributes(attributes):
-    """Interleave attribute offsets.
-
-    Adjusts the offsets and strides of the given attributes so that
-    they are interleaved.  Alignment constraints are respected.
-
-    :Parameters:
-        `attributes` : sequence of `VertexAttribute`
-            Attributes to interleave in-place.
-
-    """
-    stride = 0
-    max_size = 0
-    for attribute in attributes:
-        stride = _align(stride, attribute.align)
-        attribute.offset = stride
-        stride += attribute.size
-        max_size = max(max_size, attribute.size)
-    stride = _align(stride, max_size)
-    for attribute in attributes:
-        attribute.stride = stride
-
-
-def serialize_attributes(count, attributes):
-    """Serialize attribute offsets.
-    
-    Adjust the offsets of the given attributes so that they are
-    packed serially against each other for `count` vertices.
-
-    :Parameters:
-        `count` : int
-            Number of vertices.
-        `attributes` : sequence of `VertexAttribute`
-            Attributes to serialize in-place.
-
-    """
-    offset = 0
-    for attribute in attributes:
-        offset = _align(offset, attribute.align)
-        attribute.offset = offset
-        offset += count * attribute.stride
-
-
 def create_attribute(shader_program, fmt):
     """Create a vertex attribute description from a format string.
     
@@ -221,9 +178,9 @@ def create_attribute(shader_program, fmt):
     gl_type = _gl_types[match.group('type')]
     normalize = True if match.group('normalize') else False
 
-    attribute_meta = shader_program.attributes.get(name, None)
+    attribute_meta = shader_program.attributes[name]
 
-    return VertexAttribute(name, attribute_meta.location, count, gl_type, normalize)
+    return VertexAttribute(name, attribute_meta['location'], count, gl_type, normalize)
 
 
 class VertexAttribute:

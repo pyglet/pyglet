@@ -281,22 +281,6 @@ def draw_indexed(size, mode, indices, *data):
     glDeleteVertexArrays(1, vao_id)
 
 
-def _parse_data(data):
-    """Given a list of data items, returns (formats, initial_arrays)."""
-    assert data, 'No attribute formats given'
-
-    # Return tuple (formats, initial_arrays).
-    formats = []
-    initial_arrays = []
-    for i, fmt in enumerate(data):
-        if isinstance(fmt, tuple):
-            fmt, array = fmt
-            initial_arrays.append((i, array))
-        formats.append(fmt)
-    formats = tuple(formats)
-    return formats, initial_arrays
-
-
 def get_default_batch():
     try:
         return pyglet.gl.current_context.pyglet_graphics_default_batch
