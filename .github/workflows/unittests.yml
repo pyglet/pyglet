@@ -24,14 +24,4 @@ jobs:
         sudo apt-get install xvfb
     - name: Run tests
       run: |
-        xvfb-run pytest -v tests/unit
-
-        xvfb-run pytest -v tests/integration/app
-        xvfb-run pytest -v tests/integration/font
-        # xvfb-run pytest -v tests/integration/graphics
-        xvfb-run pytest -v tests/integration/image
-        xvfb-run pytest -v tests/integration/model
-        xvfb-run pytest -v tests/integration/platform
-        xvfb-run pytest -v tests/integration/resource
-        xvfb-run pytest -v tests/integration/text
-        xvfb-run pytest -v tests/integration/window
+        xvfb-run pytest tests/unit  tests/integration --ignore=tests/integration/graphics
