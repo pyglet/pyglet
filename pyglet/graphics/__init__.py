@@ -78,7 +78,7 @@ before the car and the boat::
     background = pyglet.sprite.SpriteGroup(0)
     foreground = pyglet.sprite.SpriteGroup(1)
 
-    background = pyglet.sprite.Sprite(background_image, 
+    background = pyglet.sprite.Sprite(background_image,
                                       batch=batch, group=background)
     car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
     boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
@@ -170,7 +170,7 @@ from pyglet.graphics.vertexbuffer import BufferObject
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
 
-def draw(size, mode, *data):
+def draw(size, mode, **kwargs):
     """Draw a primitive immediately.
 
     :Parameters:
@@ -179,9 +179,10 @@ def draw(size, mode, *data):
         `mode` : gl primitive type 
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``, 
             avoiding quotes.
-        `data` : data items
-            Attribute formats and data.  See the module summary for 
-            details.
+        `data` : keyword arguments for passing vertex attribute data
+            keyword arguments with the vertex attribute as the name,
+            followed by a tuple of (format, data). For example:
+            `position=('f', array)`
 
     """
     # Create and bind a throwaway VAO
@@ -189,16 +190,19 @@ def draw(size, mode, *data):
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
     # Activate shader program:
-    group = get_default_group()
-    group.set_state()
+    program = get_default_shader()
+    program.use()
 
     buffers = []
-    for fmt, array in data:
-        attribute = vertexattribute.create_attribute(group.program, fmt)
+    for name, (fmt, array) in kwargs.items():
+        location = program.attributes[name]['location']
+        count = program.attributes[name]['count']
+        gl_type = vertexdomain._gl_types[fmt[0]]
+        normalize = 'n' in fmt
+        attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
-
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -208,14 +212,14 @@ def draw(size, mode, *data):
     glDrawArrays(mode, 0, size)
 
     # Deactivate shader program:
-    group.unset_state()
+    program.stop()
     # Discard everything after drawing:
     del buffers
     glBindVertexArray(0)
     glDeleteVertexArrays(1, vao_id)
 
 
-def draw_indexed(size, mode, indices, *data):
+def draw_indexed(size, mode, indices, **kwargs):
     """Draw a primitive with indexed vertices immediately.
 
     :Parameters:
@@ -225,8 +229,10 @@ def draw_indexed(size, mode, indices, *data):
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``
         `indices` : sequence of int
             Sequence of integers giving indices into the vertex list.
-        `data` : data items
-            Attribute formats and data.  See the module summary for details.
+        `data` : keyword arguments for passing vertex attribute data
+            keyword arguments with the vertex attribute as the name,
+            followed by a tuple of (format, data). For example:
+            `position=('f', array)`
 
     """
     # Create and bind a throwaway VAO
@@ -234,16 +240,19 @@ def draw_indexed(size, mode, indices, *data):
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
     # Activate shader program:
-    group = get_default_group()
-    group.set_state()
+    program = get_default_shader()
+    program.use()
 
     buffers = []
-    for fmt, array in data:
-        attribute = vertexattribute.create_attribute(group.program, fmt)
+    for name, (fmt, array) in kwargs.items():
+        location = program.attributes[name]['location']
+        count = program.attributes[name]['count']
+        gl_type = vertexdomain._gl_types[fmt[0]]
+        normalize = 'n' in fmt
+        attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
         buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
-
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -262,18 +271,14 @@ def draw_indexed(size, mode, indices, *data):
     # With GL 3.3 vertex arrays indices needs to be in a buffer
     # bound to the ELEMENT_ARRAY slot
     index_array = (index_c_type * len(indices))(*indices)
-    index_buffer = BufferObject(
-        ctypes.sizeof(index_array),
-        GL_ELEMENT_ARRAY_BUFFER,
-        GL_DYNAMIC_DRAW,
-    )
+    index_buffer = BufferObject(ctypes.sizeof(index_array), GL_ELEMENT_ARRAY_BUFFER, GL_DYNAMIC_DRAW)
     index_buffer.set_data(index_array)
 
     glDrawElements(mode, len(indices), index_type, 0)
     glFlush()
 
     # Deactivate shader program:
-    group.unset_state()
+    program.stop()
     # Discard everything after drawing:
     del buffers
     del index_buffer

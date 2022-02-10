@@ -454,7 +454,7 @@ class ShaderProgram:
         except GLException:
             raise
 
-    def vertex_list(self, count, mode, batch=None, group=None, **kwargs):
+    def vertex_list(self, count, mode, batch=None, group=None, **data):
         """Create a VertexList.
 
         :Parameters:
@@ -474,7 +474,7 @@ class ShaderProgram:
         attributes = self._attributes.copy()
         initial_arrays = []
 
-        for name, fmt in kwargs.items():
+        for name, fmt in data.items():
             if isinstance(fmt, tuple):
                 fmt, array = fmt
                 initial_arrays.append((attributes[name]['location'], array))
@@ -491,7 +491,7 @@ class ShaderProgram:
 
         return vlist
 
-    def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **kwargs):
+    def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **data):
         """Create a IndexedVertexList.
 
         :Parameters:
@@ -513,7 +513,7 @@ class ShaderProgram:
         attributes = self._attributes.copy()
         initial_arrays = []
 
-        for name, fmt in kwargs.items():
+        for name, fmt in data.items():
             if isinstance(fmt, tuple):
                 fmt, array = fmt
                 initial_arrays.append((attributes[name]['location'], array))
