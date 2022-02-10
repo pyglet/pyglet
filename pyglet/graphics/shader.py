@@ -11,7 +11,7 @@ _debug_gl_shaders = pyglet.options['debug_gl_shaders']
 
 
 # TODO: test other shader types, and update if necessary.
-shader_types = {
+_shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'geometry': GL_GEOMETRY_SHADER,
     'fragment': GL_FRAGMENT_SHADER,
@@ -169,7 +169,7 @@ class Shader:
         """
         self._id = None
 
-        if shader_type not in shader_types:
+        if shader_type not in _shader_types:
             raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
         self.type = shader_type
 
@@ -177,7 +177,7 @@ class Shader:
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
-        shader_id = glCreateShader(shader_types[shader_type])
+        shader_id = glCreateShader(_shader_types[shader_type])
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
@@ -358,7 +358,7 @@ class ShaderProgram:
             a_name, a_type, a_size = self._query_attribute(index)
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
             count, fmt = _attribute_types[a_type]
-            attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt, array=None)
+            attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt)
         self._attributes = attributes
 
         if _debug_gl_shaders:
@@ -472,23 +472,22 @@ class ShaderProgram:
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
         attributes = self._attributes.copy()
-        for name, data in kwargs.items():
-            if isinstance(data, tuple):
-                fmt, array = data
-                attributes[name] = {**self._attributes[name], **{'format': fmt, 'array': array}}
-            else:
-                attributes[name] = {**self._attributes[name], **{'format': data}}
+        initial_arrays = []
 
-        formats = tuple(f"{name}{data['count']}{data['format']}" for (name, data) in attributes.items())
+        for name, fmt in kwargs.items():
+            if isinstance(fmt, tuple):
+                fmt, array = fmt
+                initial_arrays.append((attributes[name]['location'], array))
+            attributes[name] = {**attributes[name], **{'format': fmt}}
+
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch._get_domain(False, mode, group, self, formats)
+        domain = batch.get_domain(False, mode, group, self._id, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count)
 
-        for attr in attributes.values():
-            if attr['array']:
-                vlist.set_attribute_data(attr['location'], attr['array'])
+        for index, array in initial_arrays:
+            vlist.set_attribute_data(index, array)
 
         return vlist
 
@@ -512,25 +511,24 @@ class ShaderProgram:
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.IndexedVertexList`
         """
         attributes = self._attributes.copy()
-        for name, data in kwargs.items():
-            if isinstance(data, tuple):
-                fmt, array = data
-                attributes[name] = {**attributes[name], **{'format': fmt, 'array': array}}
-            else:
-                attributes[name] = {**attributes[name], **{'format': data}}
+        initial_arrays = []
 
-        formats = tuple(f"{name}{data['count']}{data['format']}" for (name, data) in attributes.items())
+        for name, fmt in kwargs.items():
+            if isinstance(fmt, tuple):
+                fmt, array = fmt
+                initial_arrays.append((attributes[name]['location'], array))
+            attributes[name] = {**attributes[name], **{'format': fmt}}
+
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch._get_domain(True, mode, group, self, formats)
+        domain = batch.get_domain(True, mode, group, self._id, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
         start = vlist.start
         vlist.set_index_data([i + start for i in indices])
 
-        for attr in attributes.values():
-            if attr['array']:
-                vlist.set_attribute_data(attr['location'], attr['array'])
+        for index, array in initial_arrays:
+            vlist.set_attribute_data(index, array)
 
         return vlist
 

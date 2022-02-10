@@ -33,89 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Access byte arrays as arrays of vertex attributes.
-
-Use :py:func:`create_attribute` to create an attribute accessor given a
-simple format string.  Alternatively, the classes may be constructed directly.
-
-Attribute format strings
-========================
-
-An attribute format string specifies the format of a vertex attribute.  Format
-strings are accepted by the :py:func:`create_attribute` function as well as most
-methods in the :py:mod:`pyglet.graphics` module.
-
-Format strings have the following (BNF) syntax::
-
-    attribute ::= name count type normalized
-
-``name`` describes the vertex attribute, and can be any valid ascii characters.
-The following single letter constants remain for backwards compatibility, but
-are deprecated:
-
-``v``
-    'vertices' Shader attribute
-``c``
-    'color' Shader attribute
-``t``
-    'tex_coords' Shader attribute
-``n``
-    'normals' Shader attribute
-``e``
-    'edge_flags' Shader attribute
-``f``
-    'fog_coords' Shader attribute
-``s``
-    'secondary_colors' Shader attribute
-
-``count`` gives the number of data components in the attribute.  For
-example, a 3D vertex position has a count of 3.  Some attributes
-constrain the possible counts that can be used; for example, a normal
-vector must have a count of 3.
-
-``type`` gives the data type of each component of the attribute.  The
-following types can be used:
-
-``b``
-    ``GLbyte``
-``B``
-    ``GLubyte``
-``s``
-    ``GLshort``
-``S``
-    ``GLushort``
-``i``
-    ``GLint``
-``I``
-    ``GLuint``
-``f``
-    ``GLfloat``
-``d``
-    ``GLdouble``
-
-``normalized`` indicates if the value should be normalized by OpenGL.
-
-Some attributes constrain the possible data types; for example,
-normal vectors must use one of the signed data types.  The use of
-some data types, while not illegal, may have severe performance
-concerns.  For example, the use of ``GLdouble`` is discouraged,
-and colors should be specified with ``GLubyte``.
-
-Whitespace is prohibited within the format string.
-
-Some examples follow:
-
-``vertices3f``
-    3-float vertex position
-``colors4bn``
-    4-byte color, normalized
-``colors3Bn``
-    3-unsigned byte color, normalized
-``tex_coords3f``
-    3-float texture coordinate
-"""
-
-import re
 import ctypes
 
 from pyglet.gl import *
@@ -132,56 +49,6 @@ _c_types = {
     GL_DOUBLE: ctypes.c_double,
 }
 
-_gl_types = {
-    'b': GL_BYTE,
-    'B': GL_UNSIGNED_BYTE,
-    's': GL_SHORT,
-    'S': GL_UNSIGNED_SHORT,
-    'i': GL_INT,
-    'I': GL_UNSIGNED_INT,
-    'f': GL_FLOAT,
-    'd': GL_DOUBLE,
-}
-
-
-_attribute_format_re = re.compile(r"""
-    (?P<name> .+?(?=[0-9]))
-    (?P<count>[1234])
-    (?P<type>[bBsSiIfd])
-    (?P<normalize>n?)
-""", re.VERBOSE)
-
-
-def _align(v, align):
-    return ((v - 1) & ~(align - 1)) + align
-
-
-def create_attribute(shader_program, fmt):
-    """Create a vertex attribute description from a format string.
-    
-    The initial stride and offset of the attribute will be 0.
-
-    :Parameters:
-        `shader_program_id` : int
-            ID of the Shader Program that this attribute will belong to.
-        `fmt` : str
-            Attribute format string.  See the module summary for details.
-
-    :rtype: `VertexAttribute`
-    """
-
-    match = _attribute_format_re.match(fmt)
-    assert match, 'Invalid attribute format %r' % fmt
-
-    name = match.group('name')
-    count = int(match.group('count'))
-    gl_type = _gl_types[match.group('type')]
-    normalize = True if match.group('normalize') else False
-
-    attribute_meta = shader_program.attributes[name]
-
-    return VertexAttribute(name, attribute_meta['location'], count, gl_type, normalize)
-
 
 class VertexAttribute:
     """Abstract accessor for an attribute in a mapped buffer."""
@@ -193,7 +60,7 @@ class VertexAttribute:
             `name` : str
                 Name of the vertex attribute.
             `location` : int
-                Location of the vertex attribute.
+                Location (index) of the vertex attribute.
             `count` : int
                 Number of components in the attribute.
             `gl_type` : int
@@ -202,7 +69,6 @@ class VertexAttribute:
                 True if OpenGL should normalize the values
 
         """
-        assert count in (1, 2, 3, 4), 'Vertex attribute component count out of range'
         self.name = name
         self.location = location
         self.count = count

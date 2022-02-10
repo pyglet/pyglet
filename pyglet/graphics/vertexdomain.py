@@ -76,20 +76,16 @@ def _nearest_pow2(v):
     return v + 1
 
 
-def create_domain(shader_program, *attribute_usage_formats, indexed):
-    """Create a vertex domain covering the given attribute usage formats.
-    See documentation for :py:func:`create_attribute_usage` and
-    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
-    of these format strings.
-
-    :rtype: :py:class:`VertexDomain`
-    """
-    attributes = [vertexattribute.create_attribute(shader_program, f)for f in attribute_usage_formats]
-
-    if indexed:
-        return IndexedVertexDomain(attributes)
-    else:
-        return VertexDomain(attributes)
+_gl_types = {
+    'b': GL_BYTE,
+    'B': GL_UNSIGNED_BYTE,
+    's': GL_SHORT,
+    'S': GL_UNSIGNED_SHORT,
+    'i': GL_INT,
+    'I': GL_UNSIGNED_INT,
+    'f': GL_FLOAT,
+    'd': GL_DOUBLE,
+}
 
 
 class VertexDomain:
@@ -101,26 +97,29 @@ class VertexDomain:
     version = 0
     _initial_count = 16
 
-    def __init__(self, attributes):
+    def __init__(self, attribute_meta):
         self.allocator = allocation.Allocator(self._initial_count)
 
-        attribute_list = []
+        self.attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
-        for attribute in attributes:
-            # Create non-interleaved buffer
-            attribute_list.append(attribute)
+
+        for name, meta in attribute_meta.items():
+            location = meta['location']
+            count = meta['count']
+            gl_type = _gl_types[meta['format'][0]]
+            normalize = 'n' in meta['format']
+            attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
+            self.attributes.append(attribute)
+            # Create buffer:
             attribute.buffer = vertexbuffer.create_buffer(attribute.stride * self.allocator.capacity)
             attribute.buffer.element_size = attribute.stride
             attribute.buffer.attributes = (attribute,)
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
         # Create named attributes for each attribute
-        self.attributes = attribute_list
         self.attribute_names = {}
-        for attribute in attribute_list:
-            name = attribute.name
-            assert name not in self.attributes, 'More than one "%s" attribute given' % name
-            self.attribute_names[name] = attribute
+        for attribute in self.attributes:
+            self.attribute_names[attribute.name] = attribute
 
     def __del__(self):
         # Break circular refs that Python GC seems to miss even when forced
@@ -349,8 +348,8 @@ class IndexedVertexDomain(VertexDomain):
     """
     _initial_index_count = 16
 
-    def __init__(self, attributes, index_gl_type=GL_UNSIGNED_INT):
-        super(IndexedVertexDomain, self).__init__(attributes)
+    def __init__(self, attribute_meta, index_gl_type=GL_UNSIGNED_INT):
+        super(IndexedVertexDomain, self).__init__(attribute_meta)
 
         self.index_allocator = allocation.Allocator(self._initial_index_count)
 

@@ -376,14 +376,14 @@ class Batch:
         """
         # If not a ShaderGroup, use the default ShaderProgram:
         shader = getattr(group, 'program', get_default_shader())
-        formats = vertex_list.domain.__formats
+        attributes = vertex_list.domain.__attributes
         if isinstance(vertex_list, vertexdomain.IndexedVertexList):
-            domain = batch._get_domain(True, mode, group, shader, formats)
+            domain = batch.get_domain(True, mode, group, shader, attributes)
         else:
-            domain = batch._get_domain(False, mode, group, shader, formats)
+            domain = batch.get_domain(False, mode, group, shader, attributes)
         vertex_list.migrate(domain)
 
-    def _get_domain(self, indexed, mode, group, shader, formats):
+    def get_domain(self, indexed, mode, group, shader, attributes):
         if group is None:
             group = get_default_group()
 
@@ -393,13 +393,16 @@ class Batch:
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (indexed, mode, shader.id, formats)
+        key = (indexed, mode, shader, str(attributes))
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
-            domain = vertexdomain.create_domain(shader, *formats, indexed=indexed)
-            domain.__formats = formats
+            if indexed:
+                domain = vertexdomain.IndexedVertexDomain(attributes)
+            else:
+                domain = vertexdomain.VertexDomain(attributes)
+            domain.__attributes = attributes
             domain_map[key] = domain
             self._draw_list_dirty = True
 
