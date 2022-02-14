@@ -24,4 +24,4 @@ jobs:
         sudo apt-get install xvfb
     - name: Run tests
       run: |
-        xvfb-run pytest tests/unit  tests/integration --ignore=tests/integration/graphics
+        xvfb-run pytest tests/unit
