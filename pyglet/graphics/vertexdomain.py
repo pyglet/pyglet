@@ -61,7 +61,7 @@ import ctypes
 import pyglet
 
 from pyglet.gl import *
-from pyglet.graphics import allocation, vertexattribute, vertexbuffer
+from pyglet.graphics import allocation, vertexattribute, vertexbuffer, vertexarray
 
 
 def _nearest_pow2(v):
@@ -74,6 +74,18 @@ def _nearest_pow2(v):
     v |= v >> 8
     v |= v >> 16
     return v + 1
+
+
+_c_types = {
+    GL_BYTE: ctypes.c_byte,
+    GL_UNSIGNED_BYTE: ctypes.c_ubyte,
+    GL_SHORT: ctypes.c_short,
+    GL_UNSIGNED_SHORT: ctypes.c_ushort,
+    GL_INT: ctypes.c_int,
+    GL_UNSIGNED_INT: ctypes.c_uint,
+    GL_FLOAT: ctypes.c_float,
+    GL_DOUBLE: ctypes.c_double,
+}
 
 
 _gl_types = {
@@ -99,6 +111,7 @@ class VertexDomain:
 
     def __init__(self, attribute_meta):
         self.allocator = allocation.Allocator(self._initial_count)
+        self.vao = vertexarray.VertexArray()
 
         self.attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
@@ -179,6 +192,8 @@ class VertexDomain:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -213,6 +228,8 @@ class VertexDomain:
                 Vertex list to draw.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -251,10 +268,11 @@ class VertexList:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
-        with pyglet.graphics.get_default_batch().vao:
-            pyglet.graphics.get_default_group().set_state()
-            self.domain.draw_subset(mode, self)
-            pyglet.graphics.get_default_group().unset_state()
+        self.domain.vao.bind()
+        # TODO: Reference the shader on the VertexList, so it can be bound here:
+        pyglet.graphics.get_default_group().set_state()
+        self.domain.draw_subset(mode, self)
+        pyglet.graphics.get_default_group().unset_state()
 
     def resize(self, count, index_count=None):
         """Resize this group.
@@ -423,6 +441,8 @@ class IndexedVertexDomain(VertexDomain):
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -461,6 +481,8 @@ class IndexedVertexDomain(VertexDomain):
                 Vertex list to draw.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:

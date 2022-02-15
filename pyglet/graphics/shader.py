@@ -465,9 +465,11 @@ class ShaderProgram:
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
             `batch` : `~pyglet.graphics.Batch`
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                It is strongly recommended to use a Batch.
+                Using a Batch is strongly recommended.
             `group` : `~pyglet.graphics.Group`
                 Group to add the VertexList to, or ``None`` if no group is required.
+            `**data` : str or tuple
+                Attribute formats and initial data for the vertex list.
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
@@ -500,13 +502,15 @@ class ShaderProgram:
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-            `indices` : sequence
+            `indices` : sequence of int
                 Sequence of integers giving indices into the vertex list.
             `batch` : `~pyglet.graphics.Batch`
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                It is strongly recommended to use a Batch.
+                Using a Batch is strongly recommended.
             `group` : `~pyglet.graphics.Group`
                 Group to add the VertexList to, or ``None`` if no group is required.
+            `**data` : str or tuple
+                Attribute formats and initial data for the vertex list.
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.IndexedVertexList`
         """

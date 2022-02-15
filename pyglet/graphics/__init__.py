@@ -179,9 +179,9 @@ def draw(size, mode, **kwargs):
         `mode` : gl primitive type 
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``, 
             avoiding quotes.
-        `data` : keyword arguments for passing vertex attribute data
-            keyword arguments with the vertex attribute as the name,
-            followed by a tuple of (format, data). For example:
+        `**data` : keyword arguments for passing vertex attribute data.
+            The keyword should be the vertex attribute name, and the
+            argument should be a tuple of (format, data). For example:
             `position=('f', array)`
 
     """
@@ -219,7 +219,7 @@ def draw(size, mode, **kwargs):
     glDeleteVertexArrays(1, vao_id)
 
 
-def draw_indexed(size, mode, indices, **kwargs):
+def draw_indexed(size, mode, indices, **data):
     """Draw a primitive with indexed vertices immediately.
 
     :Parameters:
@@ -229,9 +229,9 @@ def draw_indexed(size, mode, indices, **kwargs):
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``
         `indices` : sequence of int
             Sequence of integers giving indices into the vertex list.
-        `data` : keyword arguments for passing vertex attribute data
-            keyword arguments with the vertex attribute as the name,
-            followed by a tuple of (format, data). For example:
+        `**data` : keyword arguments for passing vertex attribute data.
+            The keyword should be the vertex attribute name, and the
+            argument should be a tuple of (format, data). For example:
             `position=('f', array)`
 
     """
@@ -244,7 +244,7 @@ def draw_indexed(size, mode, indices, **kwargs):
     program.use()
 
     buffers = []
-    for name, (fmt, array) in kwargs.items():
+    for name, (fmt, array) in data.items():
         location = program.attributes[name]['location']
         count = program.attributes[name]['count']
         gl_type = vertexdomain._gl_types[fmt[0]]
@@ -339,12 +339,6 @@ class Batch:
 
         self._draw_list = []
         self._draw_list_dirty = False
-
-        # Each Batch encompasses one VAO
-        self.vao = VertexArray()
-
-        if _debug_graphics_batch:
-            print("Batch created. VAO ID: {0}".format(self.vao.id))
 
     def invalidate(self):
         """Force the batch to update the draw list.
@@ -508,7 +502,6 @@ class Batch:
 
     def draw(self):
         """Draw the batch."""
-        self.vao.bind()
 
         if self._draw_list_dirty:
             self._update_draw_list()
@@ -531,8 +524,6 @@ class Batch:
                 Vertex lists to draw.
 
         """
-
-        self.vao.bind()
 
         # Horrendously inefficient.
         def visit(group):
