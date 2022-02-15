@@ -104,10 +104,6 @@ class VertexAttribute:
     def get_region(self, buffer, start, count):
         """Map a buffer region using this attribute as an accessor.
 
-        The returned region can be modified as if the buffer was a contiguous
-        array of this attribute (though it may actually be interleaved or
-        otherwise non-contiguous).
-
         The returned region consists of a contiguous array of component
         data elements.  For example, if this attribute uses 3 floats per
         vertex, and the `count` parameter is 4, the number of floats mapped
@@ -132,14 +128,7 @@ class VertexAttribute:
             ptr_type = ctypes.POINTER(self.c_type * array_count)
             return buffer.get_region(byte_start, byte_size, ptr_type)
         else:
-            # interleaved
-            byte_start += self.offset
-            byte_size -= self.offset
-            elem_stride = self.stride // ctypes.sizeof(self.c_type)
-            elem_offset = self.offset // ctypes.sizeof(self.c_type)
-            ptr_type = ctypes.POINTER(self.c_type * (count * elem_stride - elem_offset))
-            region = buffer.get_region(byte_start, byte_size, ptr_type)
-            return vertexbuffer.IndirectArrayRegion(region, array_count, self.count, elem_stride)
+            raise NotImplementedError("Interleaved VertexAttributes are not supported.")
 
     def set_region(self, buffer, start, count, data):
         """Set the data over a region of the buffer.
@@ -163,9 +152,7 @@ class VertexAttribute:
             data = (self.c_type * array_count)(*data)
             buffer.set_data_region(data, byte_start, byte_size)
         else:
-            # interleaved
-            region = self.get_region(buffer, start, count)
-            region[:] = data
+            raise NotImplementedError("Interleaved VertexAttributes are not supported.")
 
     def __repr__(self):
         return f"VertexAttribute(name='{self.name}', location={self.location}, count={self.count})"
