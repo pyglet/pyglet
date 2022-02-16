@@ -58,11 +58,11 @@ try:
     config = Config(sample_buffers=1, samples=4, depth_size=16, double_buffer=True)
     window = pyglet.window.Window(width=960, height=540, resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
-    # Fall back to no multisampling for old hardware
+    # Fall back to no multisampling if not supported
     window = pyglet.window.Window(resizable=True)
 
 # Change the window projection to 3D:
-window.projection = pyglet.window.Mat4.perspective_projection(0, 960, 0, 540, z_near=0.1, z_far=255)
+window.projection = pyglet.math.Mat4.perspective_projection(0, 960, 0, 540, z_near=0.1, z_far=255)
 
 
 @window.event
@@ -92,7 +92,7 @@ def setup():
     # glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
 
-def create_torus(radius, inner_radius, slices, inner_slices, batch):
+def create_torus(radius, inner_radius, slices, inner_slices, shader, batch):
 
     # Create the vertex and normal arrays.
     vertices = []
@@ -141,18 +141,20 @@ def create_torus(radius, inner_radius, slices, inner_slices, batch):
     material = pyglet.model.Material("custom", diffuse, ambient, specular, emission, shininess)
     group = pyglet.model.MaterialGroup(material=material)
 
-    vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
-                                    ('vertices3f/static', vertices),
-                                    ('normals3f/static', normals),
-                                    ('colors4f/static', material.diffuse * (len(vertices) // 3)))
+    vertex_list = shader.vertex_list_indexed(len(vertices)//3, GL_TRIANGLES, indices, batch, group,
+                                             vertices=('f', vertices),
+                                             normals=('f', normals),
+                                             colors=('f', material.diffuse * (len(vertices) // 3)))
 
     return pyglet.model.Model([vertex_list], [group], batch)
 
 
 setup()
 batch = pyglet.graphics.Batch()
+shader = pyglet.model.get_default_shader()
 
-torus_model = create_torus(1, 0.3, 50, 30, batch=batch)
+
+torus_model = create_torus(1, 0.3, 50, 30, shader, batch)
 torus_model.translation = 0, 0, -4
 
 pyglet.clock.schedule(update)
