@@ -50,27 +50,6 @@ import pyglet
 from pyglet.gl import *
 
 
-def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, mappable=True):
-    """Create a buffer object for vertex or other data.
-
-    :Parameters:
-        `size` : int
-            Size of the buffer, in bytes
-        `target` : int
-            OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
-        `usage` : int
-            OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
-        `mappable` : bool
-            True to create a mappable buffer (defaults to True)
-
-    :rtype: `AbstractBuffer` or `AbstractBuffer` with `AbstractMappable`
-    """
-    if mappable:
-        return MappableBufferObject(size, target, usage)
-    else:
-        return BufferObject(size, target, usage)
-
-
 class AbstractBuffer:
     """Abstract buffer of byte data.
 
@@ -122,7 +101,7 @@ class AbstractBuffer:
         """
         raise NotImplementedError('abstract')
 
-    def map(self, invalidate=False):
+    def map(self):
         """Map the entire buffer into system memory.
 
         The mapped region must be subsequently unmapped with `unmap` before
@@ -198,7 +177,7 @@ class BufferObject(AbstractBuffer):
     that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
-    def __init__(self, size, target, usage):
+    def __init__(self, size, target, usage=GL_DYNAMIC_DRAW):
         self.size = size
         self.target = target
         self.usage = usage
@@ -210,6 +189,9 @@ class BufferObject(AbstractBuffer):
 
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
+
+    def invalidate(self):
+        glBufferData(self.target, self.size, None, self.usage)
 
     def bind(self):
         glBindBuffer(self.target, self.id)
@@ -225,17 +207,14 @@ class BufferObject(AbstractBuffer):
         glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
 
-    def map(self, invalidate=False):
+    def map(self):
         glBindBuffer(self.target, self.id)
-        if invalidate:
-            glBufferData(self.target, self.size, None, self.usage)
         ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
     def map_range(self, start, size, ptr_type):
         glBindBuffer(self.target, self.id)
         ptr = ctypes.cast(glMapBufferRange(self.target, start, size, GL_MAP_WRITE_BIT), ptr_type).contents
-        glUnmapBuffer(self.target)
         return ptr
 
     def unmap(self):
@@ -268,6 +247,9 @@ class BufferObject(AbstractBuffer):
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
+
 
 class MappableBufferObject(BufferObject, AbstractMappable):
     """A buffer with system-memory backed store.
@@ -280,7 +262,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 
     Updates to data via :py:meth:`map` are committed immediately.
     """
-    def __init__(self, size, target, usage):
+    def __init__(self, size, target, usage=GL_DYNAMIC_DRAW):
         super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
@@ -337,29 +319,8 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         self._dirty_max = 0
 
 
-class AbstractBufferRegion:
-    """A mapped region of a buffer.
-
-    Buffer regions are obtained using :py:meth:`~AbstractMappable.get_region`.
-
-    :Ivariables:
-        `array` : ctypes array
-            Array of data, of the type and count requested by
-            :py:meth:`~AbstractMappable.get_region`.
-
-    """
-    def invalidate(self):
-        """Mark this region as changed.
-
-        The buffer may not be updated with the latest contents of the
-        array until this method is called.  (However, it may not be updated
-        until the next time the buffer is used, for efficiency).
-        """
-        pass
-
-
-class BufferObjectRegion(AbstractBufferRegion):
-    """A mapped region of a BufferObject."""
+class BufferObjectRegion:
+    """A mapped region of a MappableBufferObject."""
 
     __slots__ = 'buffer', 'start', 'end', 'array'
 
@@ -370,6 +331,12 @@ class BufferObjectRegion(AbstractBufferRegion):
         self.array = array
 
     def invalidate(self):
+        """Mark this region as changed.
+
+        The buffer may not be updated with the latest contents of the
+        array until this method is called.  (However, it may not be updated
+        until the next time the buffer is used, for efficiency).
+        """
         buffer = self.buffer
         buffer._dirty_min = min(buffer._dirty_min, self.start)
         buffer._dirty_max = max(buffer._dirty_max, self.end)

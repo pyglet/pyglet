@@ -163,7 +163,7 @@ import weakref
 
 import pyglet
 from pyglet.gl import *
-from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
+from pyglet.graphics import vertexattribute, vertexdomain
 from pyglet.graphics.vertexarray import VertexArray
 from pyglet.graphics.vertexbuffer import BufferObject
 
@@ -202,7 +202,7 @@ def draw(size, mode, **kwargs):
         attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
+        buffer = BufferObject(size * attribute.stride, GL_ARRAY_BUFFER)
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -252,7 +252,7 @@ def draw_indexed(size, mode, indices, **data):
         attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
+        buffer = BufferObject(size * attribute.stride, GL_ARRAY_BUFFER)
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -271,7 +271,7 @@ def draw_indexed(size, mode, indices, **data):
     # With GL 3.3 vertex arrays indices needs to be in a buffer
     # bound to the ELEMENT_ARRAY slot
     index_array = (index_c_type * len(indices))(*indices)
-    index_buffer = BufferObject(ctypes.sizeof(index_array), GL_ELEMENT_ARRAY_BUFFER, GL_DYNAMIC_DRAW)
+    index_buffer = BufferObject(ctypes.sizeof(index_array), GL_ELEMENT_ARRAY_BUFFER)
     index_buffer.set_data(index_array)
 
     glDrawElements(mode, len(indices), index_type, 0)
@@ -373,16 +373,15 @@ class Batch:
                 The batch to migrate to (or the current batch).
 
         """
-        # If not a ShaderGroup, use the default ShaderProgram:
-        shader = getattr(group, 'program', get_default_shader())
-        attributes = vertex_list.domain.__attributes
+        program = vertex_list.domain.program
+        attributes = vertex_list.domain.attribute_meta
         if isinstance(vertex_list, vertexdomain.IndexedVertexList):
-            domain = batch.get_domain(True, mode, group, shader, attributes)
+            domain = batch.get_domain(True, mode, group, program, attributes)
         else:
-            domain = batch.get_domain(False, mode, group, shader, attributes)
+            domain = batch.get_domain(False, mode, group, program, attributes)
         vertex_list.migrate(domain)
 
-    def get_domain(self, indexed, mode, group, shader, attributes):
+    def get_domain(self, indexed, mode, group, program, attributes):
         if group is None:
             group = get_default_group()
 
@@ -392,16 +391,15 @@ class Batch:
 
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (indexed, mode, shader, str(attributes))
+        key = (indexed, mode, program, str(attributes))
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.IndexedVertexDomain(attributes)
+                domain = vertexdomain.IndexedVertexDomain(program, attributes)
             else:
-                domain = vertexdomain.VertexDomain(attributes)
-            domain.__attributes = attributes
+                domain = vertexdomain.VertexDomain(program, attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
 

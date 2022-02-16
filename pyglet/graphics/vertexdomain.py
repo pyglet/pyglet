@@ -61,7 +61,8 @@ import ctypes
 import pyglet
 
 from pyglet.gl import *
-from pyglet.graphics import allocation, vertexattribute, vertexbuffer, vertexarray
+from pyglet.graphics import allocation, vertexattribute, vertexarray
+from pyglet.graphics.vertexbuffer import BufferObject, MappableBufferObject
 
 
 def _nearest_pow2(v):
@@ -109,7 +110,9 @@ class VertexDomain:
     version = 0
     _initial_count = 16
 
-    def __init__(self, attribute_meta):
+    def __init__(self, program, attribute_meta):
+        self.program = program
+        self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
         self.vao = vertexarray.VertexArray()
 
@@ -124,7 +127,7 @@ class VertexDomain:
             attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
             self.attributes.append(attribute)
             # Create buffer:
-            attribute.buffer = vertexbuffer.create_buffer(attribute.stride * self.allocator.capacity)
+            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity, GL_ARRAY_BUFFER)
             attribute.buffer.element_size = attribute.stride
             attribute.buffer.attributes = (attribute,)
             self.buffer_attributes.append((attribute.buffer, (attribute,)))
@@ -366,17 +369,16 @@ class IndexedVertexDomain(VertexDomain):
     """
     _initial_index_count = 16
 
-    def __init__(self, attribute_meta, index_gl_type=GL_UNSIGNED_INT):
-        super(IndexedVertexDomain, self).__init__(attribute_meta)
+    def __init__(self, program, attribute_meta, index_gl_type=GL_UNSIGNED_INT):
+        super(IndexedVertexDomain, self).__init__(program, attribute_meta)
 
         self.index_allocator = allocation.Allocator(self._initial_index_count)
 
         self.index_gl_type = index_gl_type
         self.index_c_type = vertexattribute._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = vertexbuffer.create_buffer(
-            self.index_allocator.capacity * self.index_element_size,
-            target=GL_ELEMENT_ARRAY_BUFFER)
+        self.index_buffer = BufferObject(
+            self.index_allocator.capacity * self.index_element_size, GL_ELEMENT_ARRAY_BUFFER)
 
     def safe_index_alloc(self, count):
         """Allocate indices, resizing the buffers if necessary."""
@@ -415,7 +417,7 @@ class IndexedVertexDomain(VertexDomain):
         return IndexedVertexList(self, start, count, index_start, index_count)
 
     def get_index_region(self, start, count):
-        """Get a region of the index buffer.
+        """Get a data from a region of the index buffer.
 
         :Parameters:
             `start` : int
@@ -428,7 +430,18 @@ class IndexedVertexDomain(VertexDomain):
         byte_start = self.index_element_size * start
         byte_count = self.index_element_size * count
         ptr_type = ctypes.POINTER(self.index_c_type * count)
-        return self.index_buffer.get_region(byte_start, byte_count, ptr_type)
+        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
+        data = map_ptr[:]
+        self.index_buffer.unmap()
+        return data
+
+    def set_index_region(self, start, count, data):
+        byte_start = self.index_element_size * start
+        byte_count = self.index_element_size * count
+        ptr_type = ctypes.POINTER(self.index_c_type * count)
+        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
+        map_ptr[:] = data
+        self.index_buffer.unmap()
 
     def draw(self, mode):
         """Draw all vertices in the domain.
@@ -508,7 +521,6 @@ class IndexedVertexList(VertexList):
 
     def __init__(self, domain, start, count, index_start, index_count):
         super().__init__(domain, start, count)
-
         self.index_start = index_start
         self.index_count = index_count
 
@@ -531,15 +543,13 @@ class IndexedVertexList(VertexList):
             self.indices[:] = [i + diff for i in self.indices]
 
         # Resize indices
-        new_start = self.domain.safe_index_realloc(
-            self.index_start, self.index_count, index_count)
+        new_start = self.domain.safe_index_realloc(self.index_start, self.index_count, index_count)
         if new_start != self.index_start:
-            old = self.domain.get_index_region(
-                self.index_start, self.index_count)
-            new = self.domain.get_index_region(
-                self.index_start, self.index_count)
+            old = self.domain.get_index_region(self.index_start, self.index_count)
+            new = self.domain.get_index_region(self.index_start, self.index_count)
             new.array[:] = old.array[:]
             new.invalidate()
+
         self.index_start = new_start
         self.index_count = index_count
         self._indices_cache_version = None
@@ -566,30 +576,22 @@ class IndexedVertexList(VertexList):
         # Note: this code renumber the indices of the *original* domain
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
+            print("NEW start")
             diff = self.start - old_start
-            region = old_domain.get_index_region(self.index_start, self.index_count)
-            old_indices = region.array
-            old_indices[:] = [i + diff for i in old_indices]
-            region.invalidate()
+            old_indices = old_domain.get_index_region(self.index_start, self.index_count)
+            old_domain.set_index_region(self.index_start, self.index_count, [i + diff for i in old_indices])
 
         # copy indices to new domain
-        old = old_domain.get_index_region(self.index_start, self.index_count)
+        old_array = old_domain.get_index_region(self.index_start, self.index_count)
         # must delloc before calling safe_index_alloc or else problems when same
         # batch is migrated to because index_start changes after dealloc
         old_domain.index_allocator.dealloc(self.index_start, self.index_count)
+
         new_start = self.domain.safe_index_alloc(self.index_count)
-        new = self.domain.get_index_region(new_start, self.index_count)
-        new.array[:] = old.array[:]
-        new.invalidate()
+        self.domain.set_index_region(new_start, self.index_count, old_array)
 
         self.index_start = new_start
         self._indices_cache_version = None
-
-    def set_index_data(self, data):
-        # TODO without region
-        region = self.domain.get_index_region(self.index_start, self.index_count)
-        region.array[:] = data
-        region.invalidate()
 
     @property
     def indices(self):
@@ -599,10 +601,8 @@ class IndexedVertexList(VertexList):
             self._indices_cache = domain.get_index_region(self.index_start, self.index_count)
             self._indices_cache_version = domain.version
 
-        region = self._indices_cache
-        region.invalidate()
-        return region.array
+        return self._indices_cache
 
     @indices.setter
     def indices(self, data):
-        self.indices[:] = data
+        self.domain.set_index_region(self.index_start, self.index_count, data)

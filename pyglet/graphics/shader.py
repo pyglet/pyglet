@@ -3,11 +3,15 @@ from weakref import proxy
 
 import pyglet
 
-from pyglet.graphics import vertexbuffer
+from pyglet.graphics.vertexbuffer import BufferObject
 from pyglet.gl import *
 
 
 _debug_gl_shaders = pyglet.options['debug_gl_shaders']
+
+
+class ShaderException(BaseException):
+    pass
 
 
 # TODO: test other shader types, and update if necessary.
@@ -480,7 +484,11 @@ class ShaderProgram:
             if isinstance(fmt, tuple):
                 fmt, array = fmt
                 initial_arrays.append((attributes[name]['location'], array))
-            attributes[name] = {**attributes[name], **{'format': fmt}}
+            try:
+                attributes[name] = {**attributes[name], **{'format': fmt}}
+            except KeyError:
+                raise ShaderException(f"\nThe VertexAttribute `{name}` doesn't exist. "
+                                      f"Valid names are: \n{attributes.keys()}")
 
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch.get_domain(False, mode, group, self._id, attributes)
@@ -521,7 +529,11 @@ class ShaderProgram:
             if isinstance(fmt, tuple):
                 fmt, array = fmt
                 initial_arrays.append((attributes[name]['location'], array))
-            attributes[name] = {**attributes[name], **{'format': fmt}}
+            try:
+                attributes[name] = {**attributes[name], **{'format': fmt}}
+            except KeyError:
+                raise ShaderException(f"\nThe VertexAttribute `{name}` doesn't exist. "
+                                      f"Valid names are: \n{attributes.keys()}")
 
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch.get_domain(True, mode, group, self._id, attributes)
@@ -529,7 +541,7 @@ class ShaderProgram:
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
         start = vlist.start
-        vlist.set_index_data([i + start for i in indices])
+        vlist.indices = [i + start for i in indices]
 
         for index, array in initial_arrays:
             vlist.set_attribute_data(index, array)
@@ -563,7 +575,7 @@ class UniformBufferObject:
     def __init__(self, block, index):
         assert type(block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = block
-        self.buffer = vertexbuffer.create_buffer(self.block.size, target=GL_UNIFORM_BUFFER, mappable=False)
+        self.buffer = BufferObject(self.block.size, GL_UNIFORM_BUFFER)
         self.buffer.bind()
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
