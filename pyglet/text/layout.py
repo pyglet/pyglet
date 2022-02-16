@@ -866,12 +866,8 @@ class TextLayout:
         self.content_height = 0
 
         self._user_group = group
-
-        decoration_shader = get_default_decoration_shader()
-        self.background_decoration_group = self.decoration_class(decoration_shader, order=0, parent=self._user_group)
-        self.foreground_decoration_group = self.decoration_class(decoration_shader, order=2, parent=self._user_group)
-
         self.group_cache = {}
+        self._initialize_groups()
 
         if batch is None:
             batch = graphics.Batch()
@@ -891,9 +887,20 @@ class TextLayout:
         self._dpi = dpi or 96
         self.document = document
 
+    def _initialize_groups(self):
+        decoration_shader = get_default_decoration_shader()
+        self.background_decoration_group = self.decoration_class(decoration_shader, order=0, parent=self._user_group)
+        self.foreground_decoration_group = self.decoration_class(decoration_shader, order=2, parent=self._user_group)
+
     @property
     def group(self):
         return self._user_group
+
+    @group.setter
+    def group(self, group):
+        self._user_group = group
+        self._initialize_groups()
+        self._update()
 
     @property
     def dpi(self):
