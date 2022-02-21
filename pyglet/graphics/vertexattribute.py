@@ -36,7 +36,7 @@
 import ctypes
 
 from pyglet.gl import *
-from pyglet.graphics import vertexbuffer
+
 
 _c_types = {
     GL_BYTE: ctypes.c_byte,
@@ -80,7 +80,6 @@ class VertexAttribute:
         self.align = ctypes.sizeof(self.c_type)
         self.size = count * self.align
         self.stride = self.size
-        self.offset = 0
 
     def enable(self):
         """Enable the attribute."""
@@ -99,7 +98,7 @@ class VertexAttribute:
                 attribute.
 
         """
-        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, self.offset+pointer)
+        glVertexAttribPointer(self.location, self.count, self.gl_type, self.normalize, self.stride, pointer)
 
     def get_region(self, buffer, start, count):
         """Map a buffer region using this attribute as an accessor.
@@ -122,13 +121,8 @@ class VertexAttribute:
         byte_start = self.stride * start
         byte_size = self.stride * count
         array_count = self.count * count
-
-        if self.stride == self.size or not array_count:
-            # non-interleaved
-            ptr_type = ctypes.POINTER(self.c_type * array_count)
-            return buffer.get_region(byte_start, byte_size, ptr_type)
-        else:
-            raise NotImplementedError("Interleaved VertexAttributes are not supported.")
+        ptr_type = ctypes.POINTER(self.c_type * array_count)
+        return buffer.get_region(byte_start, byte_size, ptr_type)
 
     def set_region(self, buffer, start, count, data):
         """Set the data over a region of the buffer.
@@ -144,15 +138,11 @@ class VertexAttribute:
                 Sequence of data components.
 
         """
-        if self.stride == self.size:
-            # non-interleaved
-            byte_start = self.stride * start
-            byte_size = self.stride * count
-            array_count = self.count * count
-            data = (self.c_type * array_count)(*data)
-            buffer.set_data_region(data, byte_start, byte_size)
-        else:
-            raise NotImplementedError("Interleaved VertexAttributes are not supported.")
+        byte_start = self.stride * start
+        byte_size = self.stride * count
+        array_count = self.count * count
+        data = (self.c_type * array_count)(*data)
+        buffer.set_data_region(data, byte_start, byte_size)
 
     def __repr__(self):
         return f"VertexAttribute(name='{self.name}', location={self.location}, count={self.count})"

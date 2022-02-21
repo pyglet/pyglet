@@ -271,11 +271,7 @@ class VertexList:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
-        self.domain.vao.bind()
-        # TODO: Reference the shader on the VertexList, so it can be bound here:
-        pyglet.graphics.get_default_group().set_state()
         self.domain.draw_subset(mode, self)
-        pyglet.graphics.get_default_group().unset_state()
 
     def resize(self, count, index_count=None):
         """Resize this group.
@@ -335,10 +331,7 @@ class VertexList:
 
     def set_attribute_data(self, i, data):
         attribute = self.domain.attributes[i]
-        # TODO without region
-        region = attribute.get_region(attribute.buffer, self.start, self.count)
-        region.array[:] = data
-        region.invalidate()
+        attribute.set_region(attribute.buffer, self.start, self.count, data)
 
     def __getattr__(self, name):
         """dynamic access to vertex attributes, for backwards compatibility.
@@ -576,7 +569,6 @@ class IndexedVertexList(VertexList):
         # Note: this code renumber the indices of the *original* domain
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
-            print("NEW start")
             diff = self.start - old_start
             old_indices = old_domain.get_index_region(self.index_start, self.index_count)
             old_domain.set_index_region(self.index_start, self.index_count, [i + diff for i in old_indices])

@@ -189,8 +189,7 @@ class Config:
         return isinstance(self, CanvasConfig)
 
     def __repr__(self):
-        import pprint
-        return '%s(%s)' % (self.__class__.__name__, pprint.pformat(self.get_gl_attributes()))
+        return f"{self.__class__.__name__}({self.get_gl_attributes()})"
 
 
 class CanvasConfig(Config):
@@ -277,7 +276,7 @@ class Context:
             self.object_space = ObjectSpace()
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
 
     def attach(self, canvas):
         if self.canvas is not None:

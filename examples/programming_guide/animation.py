@@ -63,7 +63,7 @@ else:
 
 sprite = pyglet.sprite.Sprite(animation)
 
-window = pyglet.window.Window(width=sprite.width, height=sprite.height)
+window = pyglet.window.Window(width=animation.get_max_width(), height=animation.get_max_height())
 
 # Set window background color to white.
 pyglet.gl.glClearColor(1, 1, 1, 1)
