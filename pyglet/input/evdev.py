@@ -366,7 +366,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         return self._fileno
 
     def poll(self):
-        return True
+        return False
 
     def select(self):
         if not self._fileno:
