@@ -120,7 +120,7 @@ group = RenderGroup(tex, shader_program)
 indices = (0, 1, 2, 0, 2, 3)
 vertex_positions = create_quad(400, 200, tex)
 
-# count, mode, group, indices, *data
+# count, mode, indices, batch, group, *data
 vertex_list = shader_program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, group,
                                                  position=('f', vertex_positions),
                                                  tex_coords=('f', tex.tex_coords))

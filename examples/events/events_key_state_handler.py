@@ -60,7 +60,7 @@ def on_draw():
     window.clear()
 
 
-pyglet.clock.schedule_interval(update, 1/120.0)
+pyglet.clock.schedule_interval(update, 1/60)
 
 
 if __name__ == '__main__':

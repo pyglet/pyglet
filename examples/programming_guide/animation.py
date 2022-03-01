@@ -61,9 +61,9 @@ else:
     # Load animation from resource (this script's directory).
     animation = pyglet.resource.animation('dinosaur.gif')
 
+window = pyglet.window.Window(width=animation.get_max_width(), height=animation.get_max_height())
 sprite = pyglet.sprite.Sprite(animation)
 
-window = pyglet.window.Window(width=animation.get_max_width(), height=animation.get_max_height())
 
 # Set window background color to white.
 pyglet.gl.glClearColor(1, 1, 1, 1)

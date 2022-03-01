@@ -127,10 +127,11 @@ import sys
 from typing import Tuple
 
 import pyglet
+
 from pyglet import gl
 from pyglet.math import Mat4
 from pyglet.event import EventDispatcher
-from pyglet.window import key
+from pyglet.window import key, event
 from pyglet.util import with_metaclass
 from pyglet.graphics import shader
 

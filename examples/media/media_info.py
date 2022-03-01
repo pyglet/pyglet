@@ -24,7 +24,7 @@ def print_ffmpeg_info():
         from pyglet.media.codecs import ffmpeg
         print('Using FFmpeg version {0}'.format(ffmpeg.get_version()))
     else:
-        print('FFmpeg not available; required for media decoding.')
+        print('FFmpeg not available')
         print('https://www.ffmpeg.org/download.html\n')
 
 
@@ -87,5 +87,6 @@ if __name__ == '__main__':
     try:
         source = pyglet.media.load(filename, streaming=True)
         print_source_info(source)
-    except pyglet.media.MediaException:
-        print('Could not open %s' % filename)
+        del source
+    except pyglet.media.MediaDecodeException:
+        print('Codec not available to open: %s' % filename)

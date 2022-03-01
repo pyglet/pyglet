@@ -70,16 +70,15 @@ def draw_rect(x, y, width, height, color=(1, 1, 1, 1)):
     pyglet.graphics.draw(
         4,
         GL_LINE_LOOP,
-        ('position3f',
-            (
-                x, y, 0,
-                x + width, y, 0,
-                x + width, y + height, 0,
-                x, y + height, 0,
-            )
-        ),
-        ('colors4f', color * 4)
+        position=('f', (x, y, 0,
+                        x + width, y, 0,
+                        x + width, y + height, 0,
+                        x, y + height, 0,
+                        )
+                  ),
+        colors=('f', color * 4)
     )
+
 
 class Control(pyglet.event.EventDispatcher):
     x = y = 0

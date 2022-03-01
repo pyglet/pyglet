@@ -44,10 +44,10 @@ from pyglet.gl import *
 
 
 class _InlineElementGroup(pyglet.graphics.Group):
-    def __init__(self, texture, order=0, parent=None):
+    def __init__(self, texture, program, order=0, parent=None):
         super().__init__(order, parent)
-        self.program = pyglet.graphics.get_default_shader()
         self.texture = texture
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -89,12 +89,12 @@ class ImageElement(pyglet.text.document.InlineElement):
         super().__init__(ascent, descent, self.width)
 
     def place(self, layout, x, y):
-        group = _InlineElementGroup(self.image.get_texture(), 0, layout.group)
+        program = pyglet.text.layout.get_default_layout_shader()
+        group = _InlineElementGroup(self.image.get_texture(), program, 0, layout.group)
         x1 = x
         y1 = y + self.descent
         x2 = x + self.width
         y2 = y + self.height + self.descent
-        program = pyglet.text.layout.get_default_layout_shader()
         vertex_list = program.vertex_list_indexed(4, pyglet.gl.GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
                                                   layout.batch, group,
                                                   position=('f', (x1, y1,  x2, y1,  x2, y2,  x1, y2)),
