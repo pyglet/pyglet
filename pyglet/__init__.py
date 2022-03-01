@@ -156,7 +156,7 @@ options = {
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
     'search_local_libs': True,
-    'advanced_font_features': False,
+    'win32_gdi_font': False,
     'headless': False,
     'headless_device': 0,
 }
@@ -183,7 +183,7 @@ _option_types = {
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
     'search_local_libs': bool,
-    'advanced_font_features': bool,
+    'win32_gdi_font': bool,
     'headless': bool,
     'headless_device': int
 }

@@ -66,13 +66,9 @@ if not getattr(sys, 'is_pyglet_doc_run', False):
 
     elif pyglet.compat_platform in ('win32', 'cygwin'):
         from pyglet.libs.win32.constants import WINDOWS_7_OR_GREATER
-        if WINDOWS_7_OR_GREATER:
-            if pyglet.options["advanced_font_features"] is True:
-                from pyglet.font.directwrite import Win32DirectWriteFont
-                _font_class = Win32DirectWriteFont
-            else:
-                from pyglet.font.win32 import GDIPlusFont
-                _font_class = GDIPlusFont
+        if WINDOWS_7_OR_GREATER and not pyglet.options['win32_gdi_font']:
+            from pyglet.font.directwrite import Win32DirectWriteFont
+            _font_class = Win32DirectWriteFont
         else:
             from pyglet.font.win32 import GDIPlusFont
             _font_class = GDIPlusFont
