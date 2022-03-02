@@ -84,7 +84,7 @@ handlers.
 import sys
 
 from .base import Device, Control, RelativeAxis, AbsoluteAxis
-from .base import Button, Joystick, AppleRemote, Tablet, GameController
+from .base import Button, Joystick, AppleRemote, Tablet, Controller
 from .base import DeviceException, DeviceOpenException, DeviceExclusiveException
 
 
@@ -133,8 +133,8 @@ if _is_pyglet_doc_run:
         :rtype: list of :py:class:`Joystick`
         """
 
-    def get_game_controllers(display=None):
-        """Get a list of attached game controllers.
+    def get_controllers(display=None):
+        """Get a list of attached controllers.
 
         :Parameters:
             display : `~pyglet.canvas.Display`
@@ -142,7 +142,7 @@ if _is_pyglet_doc_run:
                 OS X and Windows.  On Linux, defaults to the default display
                 device.
 
-        :rtype: list of :py:class:`GameController`
+        :rtype: list of :py:class:`Controller`
         """
 
     def get_tablets(display=None):
@@ -174,7 +174,7 @@ else:
         from .x11_xinput import get_devices as xinput_get_devices
         from .evdev import get_devices as evdev_get_devices
         from .evdev import get_joysticks
-        from .evdev import get_game_controllers
+        from .evdev import get_controllers
 
         def get_devices(display=None):
             return evdev_get_devices(display) + xinput_get_devices(display)
@@ -182,7 +182,7 @@ else:
     elif compat_platform in ('cygwin', 'win32'):
         from .directinput import get_devices
         from .directinput import get_joysticks
-        from .directinput import get_game_controllers
+        from .directinput import get_controllers
         try:
             from .wintab import get_tablets
         except:
@@ -192,4 +192,4 @@ else:
         from .darwin_hid import get_devices
         from .darwin_hid import get_joysticks
         from .darwin_hid import get_apple_remote
-        from .darwin_hid import get_game_controllers
+        from .darwin_hid import get_controllers

@@ -41,7 +41,7 @@
 import sys
 
 from pyglet.event import EventDispatcher
-from .gamecontroller import get_mapping
+from .controller import get_mapping
 
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
@@ -115,7 +115,7 @@ class Device:
         Return a string containing a unique device identification
         string. This is generated from the various hardware IDs,
         in the same format as is used by SDL2. This allows reusing
-        the Game Controller mapping strings that have become a
+        the controller mapping strings that have become a
         fairly standard.
 
         :rtype: The GUID, as a string
@@ -302,10 +302,12 @@ Button.register_event_type('on_release')
 
 
 class Joystick(EventDispatcher):
-    """High-level interface for joystick-like devices.  This includes analogue
-    and digital joysticks, gamepads, game controllers, and possibly even
+    """High-level interface for joystick-like devices.  This includes a wide range
+    of analogue and digital joysticks, gamepads, controllers, and possibly even
     steering wheels and other input devices.  There is unfortunately no way to
-    distinguish between these different device types.
+    distinguish between most of these different device types. For console-like
+    game controllers, :py:class:`~pyglet.input.Controller` is also available.
+    Unlike Joysticks, Controllers have strictly defined layouts and inputs.
 
     To use a joystick, first call `open`, then in your game loop examine
     the values of `x`, `y`, and so on.  These values are normalized to the
@@ -340,7 +342,7 @@ class Joystick(EventDispatcher):
             (bottom).
         `z` : float
             Current Z value ranging from -1.0 to 1.0.  On joysticks the Z
-            value is usually the throttle control.  On game controllers the Z
+            value is usually the throttle control.  On controllers the Z
             value is usually the secondary thumb vertical axis.
         `rx` : float
             Current rotational X value ranging from -1.0 to 1.0.
@@ -532,19 +534,19 @@ Joystick.register_event_type('on_joybutton_release')
 Joystick.register_event_type('on_joyhat_motion')
 
 
-class GameController(EventDispatcher):
+class Controller(EventDispatcher):
 
     __slots__ = ('device', 'guid', '_mapping', 'name', 'a', 'b', 'x', 'y',
                  'back', 'start', 'guide', 'leftshoulder', 'rightshoulder',
                  'leftstick', 'rightstick', 'lefttrigger', 'righttrigger',
                  'leftx', 'lefty', 'rightx', 'righty', 'dpup', 'dpdown', 'dpleft',
                  'dpright', '_button_controls', '_axis_controls', '_hat_control',
-                 'hat_x_control', '_hat_y_control')
+                 '_hat_x_control', '_hat_y_control')
 
-    def __init__(self, device):
+    def __init__(self, device, mapping):
         self.device = device
-        self.guid = device.get_guid()
-        self._mapping = get_mapping(self.guid)
+        self._mapping = mapping
+        self.guid = self._mapping['guid']
         self.name = self._mapping['name']
 
         self.a = False
@@ -720,11 +722,11 @@ class GameController(EventDispatcher):
                     #     add_axis(self._hat_x_control, "dpleft")
 
     def open(self, window=None, exclusive=False):
-        """Open the game controller.  See `Device.open`. """
+        """Open the controller.  See `Device.open`. """
         self.device.open(window, exclusive)
 
     def close(self):
-        """Close the game controller.  See `Device.close`. """
+        """Close the controller.  See `Device.close`. """
         self.device.close()
 
     # Rumble (force feedback) methods:
@@ -755,14 +757,14 @@ class GameController(EventDispatcher):
     def rumble_stop_strong(self):
         """Stop playing rumble effects on the strong motor."""
 
-    # Event types:
+    # Input Event types:
 
-    def on_stick_motion(self, gamecontroller, axis, xvalue, yvalue):
-        """The value of a game controller analogue stick changed.
+    def on_stick_motion(self, controller, axis, xvalue, yvalue):
+        """The value of a controller analogue stick changed.
 
         :Parameters:
-            `gamecontroller` : `GameController`
-                The game controller whose analogue stick changed.
+            `controller` : `Controller`
+                The controller whose analogue stick changed.
             `axis` : string
                 The name of the axis that changed.
             `xvalue` : float
@@ -771,12 +773,12 @@ class GameController(EventDispatcher):
                 The current y axis value, normalized to [-1, 1].
         """
 
-    def on_dpad_motion(self, gamecontroller, dpleft, dpright, dpup, dpdown):
-        """The direction pad of the game controller changed.
+    def on_dpad_motion(self, controller, dpleft, dpright, dpup, dpdown):
+        """The direction pad of the controller changed.
 
         :Parameters:
-            `gamecontroller` : `GameController`
-                The game controller whose hat control changed.
+            `controller` : `Controller`
+                The controller whose hat control changed.
             `dpleft` : boolean
                 True if left is pressed on the directional pad.
             `dpright` : boolean
@@ -787,44 +789,44 @@ class GameController(EventDispatcher):
                 True if down is pressed on the directional pad.
         """
 
-    def on_trigger_motion(self, gamecontroller, trigger, value):
-        """The value of a game controller analogue stick changed.
+    def on_trigger_motion(self, controller, trigger, value):
+        """The value of a controller analogue stick changed.
 
         :Parameters:
-            `gamecontroller` : `GameController`
-                The game controller whose analogue stick changed.
+            `controller` : `Controller`
+                The controller whose analogue stick changed.
             `trigger` : string
                 The name of the trigger that changed.
             `value` : float
                 The current value of the trigger, normalized to [-1, 1].
         """
 
-    def on_button_press(self, gamecontroller, button):
-        """A button on the game controller was pressed.
+    def on_button_press(self, controller, button):
+        """A button on the controller was pressed.
 
         :Parameters:
-            `gamecontroller` : `GameController`
-                The game controller whose button was pressed.
+            `controller` : `Controller`
+                The controller whose button was pressed.
             `button` : string
                 The name of the button that was pressed.
         """
 
-    def on_button_release(self, gamecontroller, button):
+    def on_button_release(self, controller, button):
         """A button on the joystick was released.
 
         :Parameters:
-            `gamecontroller` : `GameController`
-                The game controller whose button was released.
+            `controller` : `Controller`
+                The controller whose button was released.
             `button` : string
                 The name of the button that was released.
         """
 
 
-GameController.register_event_type('on_button_press')
-GameController.register_event_type('on_button_release')
-GameController.register_event_type('on_stick_motion')
-GameController.register_event_type('on_dpad_motion')
-GameController.register_event_type('on_trigger_motion')
+Controller.register_event_type('on_button_press')
+Controller.register_event_type('on_button_release')
+Controller.register_event_type('on_stick_motion')
+Controller.register_event_type('on_dpad_motion')
+Controller.register_event_type('on_trigger_motion')
 
 
 class AppleRemote(EventDispatcher):

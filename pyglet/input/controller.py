@@ -51,18 +51,19 @@ Some Joysticks, such as Flight Sticks, etc., do not necessarily fit into the
 layout (and limitations) of GameControllers. For those such devices, it is
 recommended to use the Joystick interface instead.
 
-To query which GameControllers are available, call :py:func:`get_game_controllers`.
+To query which GameControllers are available, call :py:func:`get_controllers`.
 
 .. versionadded:: 2.0
 """
 import os
 
-from .gamecontrollerdb import mapping_list
+from .controller_db import mapping_list
 
 
 env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
 if env_config:
-    mapping_list.append(env_config)
+    # insert at the front of the list
+    mapping_list.insert(0, env_config)
 
 
 class _Relation:
@@ -164,19 +165,6 @@ def _parse_mapping(mapping_string):
     return relations
 
 
-def is_game_controller(device):
-    """Check if the passed device is a GameController.
-
-    :Parameters:
-        `device` : `~pyglet.input.Device`
-            A pyglet input device
-
-    :rtype True if this device is a GameController.
-    """
-    guid = device.get_guid()
-    return any(m.startswith(guid) for m in mapping_list)
-
-
 def get_mapping(guid):
     """Return a mapping for the passed device GUID.
 
@@ -184,7 +172,8 @@ def get_mapping(guid):
         `guid` : str
             A pyglet input device GUID
 
-    :rtype: dict of the Game Controller axis/button mapping relations.
+    :rtype: dict of axis/button mapping relations, or None
+            if no mapping is available for this Controller.
     """
     for mapping in mapping_list:
         if mapping.startswith(guid):

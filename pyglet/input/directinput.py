@@ -40,7 +40,7 @@ from pyglet.input import base
 from pyglet.libs import win32
 from pyglet.libs.win32 import dinput
 from pyglet.libs.win32 import _kernel32
-from .gamecontroller import is_game_controller
+from .controller import get_mapping
 
 # These instance names are not defined anywhere, obtained by experiment.  The
 # GUID names (which seem to be ideally what are needed) are wrong/missing for
@@ -251,16 +251,15 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def _create_game_controller(device):
-    if not is_game_controller(device):
-        return
-    if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
-                        dinput.DI8DEVTYPE_1STPERSON,
-                        dinput.DI8DEVTYPE_GAMEPAD):
-        return base.GameController(device)
+def _create_controller(device):
+    mapping = get_mapping(device.get_guid())
+    if mapping is not None and device._type in (dinput.DI8DEVTYPE_JOYSTICK,
+                                                dinput.DI8DEVTYPE_1STPERSON,
+                                                dinput.DI8DEVTYPE_GAMEPAD):
+        return base.Controller(device, mapping)
 
 
-def get_game_controllers(display=None):
+def get_controllers(display=None):
     return [controller for controller in
-            [_create_game_controller(device) for device in get_devices(display)]
+            [_create_controller(device) for device in get_devices(display)]
             if controller is not None]
