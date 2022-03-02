@@ -579,7 +579,7 @@ class Vec4(tuple):
         return self
 
     def clamp(self, min_val, max_val):
-        return Vec3(clamp(self[0], min_val, max_val),
+        return Vec4(clamp(self[0], min_val, max_val),
                     clamp(self[1], min_val, max_val),
                     clamp(self[2], min_val, max_val),
                     clamp(self[3], min_val, max_val))
