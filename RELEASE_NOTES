@@ -1,3 +1,23 @@
+pyglet 1.5.22
+
+Features
+--------
+- If the PyOgg module is installed, it can be used for loading various Vorbis audio formats.
+- Add a new CameraGroup example, to show implementing a Camera with pyglet's Groups.
+- Add `angle` and `start_angle` property/setter to `shapes.Sector`.
+- Windows - new WMF based encoder for faster saving of common image formats.
+
+Bugfixes
+--------
+- Fix indexing error when setting text.Label.opacity (#481)
+- Windows - Fix shift modifier + exclusive mouse mode (#472)
+- Linux - Prevent non-Tablet devices from being detected as Tablets (#491)
+- Windows - Prevent distortion with multiple XAudio2 audio sources (#515)
+- Fix frame dropping bug with FFMpeg decoder.
+- Windows - Fix Video alpha channel for WMF decoder.
+- Varios documentation and docstring fixes. Thanks everyone!
+
+
 pyglet 1.5.21
 
 Features
