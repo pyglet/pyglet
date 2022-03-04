@@ -467,7 +467,7 @@ def _create_controller(device):
     mapping = get_mapping(device.get_guid())
     # TODO: detect via device types, and use default mapping.
 
-    if not have_button or mapping is None:
+    if have_button is False or mapping is None:
         return
 
     if device.supports_ff():

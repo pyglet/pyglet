@@ -17,7 +17,6 @@ batch = pyglet.graphics.Batch()
 
 text = f"Detected: {controller.name}\nController GUID: {controller.guid}"
 controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multiline=True, width=720, batch=batch)
-print(controller._mapping)
 
 left_trigger = Rectangle(70, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
 right_trigger = Rectangle(610, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
