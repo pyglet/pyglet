@@ -2,7 +2,7 @@ Sound and video
 ===============
 
 pyglet can play many audio and video formats. Audio is played back with
-either OpenAL, DirectSound or Pulseaudio, permitting hardware-accelerated
+either OpenAL, XAudio2, DirectSound, or Pulseaudio, permitting hardware-accelerated
 mixing and surround-sound 3D positioning. Video is played into OpenGL
 textures, and so can be easily manipulated in real-time by applications
 and incorporated into 3D environments.
@@ -23,7 +23,7 @@ distribute FFmpeg.
 Audio drivers
 -------------
 
-pyglet can use OpenAL, DirectSound or Pulseaudio to play back audio. Only one
+pyglet can use OpenAL, XAudio2, DirectSound or Pulseaudio to play back audio. Only one
 of these drivers can be used in an application. In most cases you won't need
 to concern yourself with choosing a driver, but you can manually select one if
 desired. This must be done before the :py:mod:`pyglet.media` module is loaded.
@@ -64,6 +64,8 @@ strings, giving the preference order for each driver:
           - OpenAL
         * - ``directsound``
           - DirectSound
+        * - ``xaudio2``
+          - XAudio2
         * - ``pulse``
           - Pulseaudio
         * - ``silent``
@@ -75,6 +77,15 @@ see :ref:`guide_environment-settings`.
 
 The following sections describe the requirements and limitations of each audio
 driver.
+
+XAudio2
+^^^^^^^^^^^
+XAudio2 is only available on Windows Vista and above and is the replacement of
+DirectSound. This provides hardware accelerated audio support for newer operating
+systems.
+
+Note that in some stripped down versions of Windows 10, XAudio2 may not be available
+until the required DLL's are installed.
 
 DirectSound
 ^^^^^^^^^^^
@@ -106,8 +117,72 @@ is recommended to use OpenAL if positional audio is required.
 Supported media types
 ---------------------
 
-If FFmpeg is not installed, only uncompressed RIFF/WAV files encoded with
-linear PCM can be read.
+Windows and Linux both support a limited amount of compressed audio types, without
+the need for FFmpeg. While FFmpeg supports a large array of formats and codecs, it
+may be an unnecessarily large dependency when simple audio playback is needed on
+these operating systems.
+
+These formats are supported natively under the following systems and codecs:
+
+Windows Media Foundation
+^^^^^^^^^^^^^^^^^^^^^^^^
+Supported on Windows operating systems.
+
+The following are supported on **Windows Vista and above**:
+
+* MP3
+* WMA
+* ASF
+* SAMI/SMI
+
+The following are supported on **Windows 7 and above**:
+
+* 3G2/3GP/3GP2/3GP
+* AAC/ADTS
+* AVI
+* M4A/M4V/MOV/MP4
+
+The following is undocumented but known to work on **Windows 10**:
+
+* FLAC
+
+Please note that any video playback done through WMF is limited in codec
+support and is **not** hardware accelerated. It should only be used for simple
+or small videos. FFmpeg is recommended for all other purposes.
+
+GStreamer
+^^^^^^^^^
+Supported on Linux operating systems.
+
+* MP3
+* FLAC
+* OGG
+* M4A
+
+PyOgg
+^^^^^
+Supported on Windows, Linux, and Mac operating systems.
+
+PyOgg is a lightweight Python library that provides Python bindings for Opus, Vorbis,
+and FLAC codecs.
+
+Pyglet now provides a wrapper to support PyOgg. Since not all operating systems
+can decode the same audio formats natively, it can often be a hassle to choose
+an audio format that is truely cross platform with a small footprint. This wrapper
+was created to help with that issue.
+
+Supports the following formats:
+
+* OGG
+* FLAC
+* OPUS
+
+Refer to their installation guide found here: https://pyogg.readthedocs.io/en/latest/installation.html
+
+FFmpeg
+^^^^^^
+FFmpeg requires an external dependency, please see installation instructions
+in the next section below.
 
 With FFmpeg, many common and less-common formats are supported. Due to the
 large number of combinations of audio and video codecs, options, and container
