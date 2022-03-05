@@ -120,9 +120,10 @@ class Caret:
         from pyglet import gl
         self._layout = layout
         batch = batch or layout.batch
+        group = layout.foreground_decoration_group
         colors = (*color, 255, *color, 255)
-        self._list = batch.add(2, gl.GL_LINES, layout.foreground_decoration_group, 'position2f', ('colors4Bn', colors))
 
+        self._list = group.program.vertex_list(2, gl.GL_LINES, batch, group, colors=('Bn', colors))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}

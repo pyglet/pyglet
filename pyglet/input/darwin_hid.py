@@ -37,9 +37,9 @@ import sys
 
 from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
 
-from .gamecontroller import is_game_controller
+from .controller import get_mapping
 from .base import Device, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, GameController, AppleRemote
+from .base import Joystick, Controller, AppleRemote
 
 from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
 from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf
@@ -689,6 +689,14 @@ def get_apple_remote(display=None):
             return AppleRemote(PygletDevice(display, device, _manager))
 
 
-def get_game_controllers(display=None):
-    return [GameController(PygletDevice(display, device, _manager)) for device in _manager.devices
-            if is_game_controller(device)]
+def _create_controller(device, display):
+    mapping = get_mapping(device.get_guid())
+    if not mapping:
+        return
+    return Controller(PygletDevice(display, device, _manager), mapping)
+
+
+def get_controllers(display=None):
+    return [controller for controller in
+            [_create_controller(device, display) for device in _manager.devices]
+            if controller is not None]

@@ -50,27 +50,6 @@ import pyglet
 from pyglet.gl import *
 
 
-def create_buffer(size, target=GL_ARRAY_BUFFER, usage=GL_DYNAMIC_DRAW, mappable=True):
-    """Create a buffer object for vertex or other data.
-
-    :Parameters:
-        `size` : int
-            Size of the buffer, in bytes
-        `target` : int
-            OpenGL target buffer (defaults to GL_ARRAY_BUFFER)
-        `usage` : int
-            OpenGL usage constant (defaults to GL_DYNAMIC_DRAW)
-        `mappable` : bool
-            True to create a mappable buffer (defaults to True)
-
-    :rtype: `AbstractBuffer` or `AbstractBuffer` with `AbstractMappable`
-    """
-    if mappable:
-        return MappableBufferObject(size, target, usage)
-    else:
-        return BufferObject(size, target, usage)
-
-
 class AbstractBuffer:
     """Abstract buffer of byte data.
 
@@ -122,7 +101,7 @@ class AbstractBuffer:
         """
         raise NotImplementedError('abstract')
 
-    def map(self, invalidate=False):
+    def map(self):
         """Map the entire buffer into system memory.
 
         The mapped region must be subsequently unmapped with `unmap` before
@@ -198,7 +177,7 @@ class BufferObject(AbstractBuffer):
     that does implement :py:meth:`~AbstractMappable.get_region`.
     """
 
-    def __init__(self, size, target, usage):
+    def __init__(self, size, target, usage=GL_DYNAMIC_DRAW):
         self.size = size
         self.target = target
         self.usage = usage
@@ -210,6 +189,9 @@ class BufferObject(AbstractBuffer):
 
         glBindBuffer(target, self.id)
         glBufferData(target, self.size, None, self.usage)
+
+    def invalidate(self):
+        glBufferData(self.target, self.size, None, self.usage)
 
     def bind(self):
         glBindBuffer(self.target, self.id)
@@ -225,17 +207,14 @@ class BufferObject(AbstractBuffer):
         glBindBuffer(self.target, self.id)
         glBufferSubData(self.target, start, length, data)
 
-    def map(self, invalidate=False):
+    def map(self):
         glBindBuffer(self.target, self.id)
-        if invalidate:
-            glBufferData(self.target, self.size, None, self.usage)
         ptr = ctypes.cast(glMapBuffer(self.target, GL_WRITE_ONLY), ctypes.POINTER(ctypes.c_byte * self.size)).contents
         return ptr
 
     def map_range(self, start, size, ptr_type):
         glBindBuffer(self.target, self.id)
         ptr = ctypes.cast(glMapBufferRange(self.target, start, size, GL_MAP_WRITE_BIT), ptr_type).contents
-        glUnmapBuffer(self.target)
         return ptr
 
     def unmap(self):
@@ -268,6 +247,9 @@ class BufferObject(AbstractBuffer):
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
+
 
 class MappableBufferObject(BufferObject, AbstractMappable):
     """A buffer with system-memory backed store.
@@ -280,7 +262,7 @@ class MappableBufferObject(BufferObject, AbstractMappable):
 
     Updates to data via :py:meth:`map` are committed immediately.
     """
-    def __init__(self, size, target, usage):
+    def __init__(self, size, target, usage=GL_DYNAMIC_DRAW):
         super(MappableBufferObject, self).__init__(size, target, usage)
         self.data = (ctypes.c_byte * size)()
         self.data_ptr = ctypes.addressof(self.data)
@@ -337,29 +319,8 @@ class MappableBufferObject(BufferObject, AbstractMappable):
         self._dirty_max = 0
 
 
-class AbstractBufferRegion:
-    """A mapped region of a buffer.
-
-    Buffer regions are obtained using :py:meth:`~AbstractMappable.get_region`.
-
-    :Ivariables:
-        `array` : ctypes array
-            Array of data, of the type and count requested by
-            :py:meth:`~AbstractMappable.get_region`.
-
-    """
-    def invalidate(self):
-        """Mark this region as changed.
-
-        The buffer may not be updated with the latest contents of the
-        array until this method is called.  (However, it may not be updated
-        until the next time the buffer is used, for efficiency).
-        """
-        pass
-
-
-class BufferObjectRegion(AbstractBufferRegion):
-    """A mapped region of a BufferObject."""
+class BufferObjectRegion:
+    """A mapped region of a MappableBufferObject."""
 
     __slots__ = 'buffer', 'start', 'end', 'array'
 
@@ -370,115 +331,12 @@ class BufferObjectRegion(AbstractBufferRegion):
         self.array = array
 
     def invalidate(self):
+        """Mark this region as changed.
+
+        The buffer may not be updated with the latest contents of the
+        array until this method is called.  (However, it may not be updated
+        until the next time the buffer is used, for efficiency).
+        """
         buffer = self.buffer
         buffer._dirty_min = min(buffer._dirty_min, self.start)
         buffer._dirty_max = max(buffer._dirty_max, self.end)
-
-
-class IndirectArrayRegion(AbstractBufferRegion):
-    """A mapped region in which data elements are not necessarily contiguous.
-
-    This region class is used to wrap buffer regions in which the data
-    must be accessed with some stride.  For example, in an interleaved buffer
-    this region can be used to access a single interleaved component as if the
-    data was contiguous.
-    """
-
-    def __init__(self, region, size, component_count, component_stride):
-        """Wrap a buffer region.
-
-        Use the `component_count` and `component_stride` parameters to specify
-        the data layout of the encapsulated region.  For example, if RGBA
-        data is to be accessed as if it were packed RGB, ``component_count``
-        would be set to 3 and ``component_stride`` to 4.  If the region
-        contains 10 RGBA tuples, the ``size`` parameter is ``3 * 10 = 30``.
-
-        :Parameters:
-            `region` : `AbstractBufferRegion`
-                The region with interleaved data
-            `size` : int
-                The number of elements that this region will provide access to.
-            `component_count` : int
-                The number of elements that are contiguous before some must
-                be skipped.
-            `component_stride` : int
-                The number of elements of interleaved data separating
-                the contiguous sections.
-
-        """
-        self.region = region
-        self.size = size
-        self.count = component_count
-        self.stride = component_stride
-        self.array = self
-
-    def __repr__(self):
-        return 'IndirectArrayRegion(size=%d, count=%d, stride=%d)' % (
-            self.size, self.count, self.stride)
-
-    def __getitem__(self, index):
-        count = self.count
-        if not isinstance(index, slice):
-            elem = index // count
-            j = index % count
-            return self.region.array[elem * self.stride + j]
-
-        start = index.start or 0
-        stop = index.stop
-        step = index.step or 1
-        if start < 0:
-            start = self.size + start
-        if stop is None:
-            stop = self.size
-        elif stop < 0:
-            stop = self.size + stop
-
-        assert step == 1 or step % count == 0, 'Step must be multiple of component count'
-
-        data_start = (start // count) * self.stride + start % count
-        data_stop = (stop // count) * self.stride + stop % count
-        data_step = step * self.stride
-
-        #  TODO stepped getitem is probably wrong, see setitem for correct.
-        value_step = step * count
-
-        value = [0] * ((stop - start) // step)
-        stride = self.stride
-        for i in range(count):
-            value[i::value_step] = self.region.array[data_start + i:data_stop + i:data_step]
-        return value
-
-    def __setitem__(self, index, value):
-        count = self.count
-        if not isinstance(index, slice):
-            elem = index // count
-            j = index % count
-            self.region.array[elem * self.stride + j] = value
-            return
-
-        start = index.start or 0
-        stop = index.stop
-        step = index.step or 1
-        if start < 0:
-            start = self.size + start
-        if stop is None:
-            stop = self.size
-        elif stop < 0:
-            stop = self.size + stop
-
-        assert step == 1 or step % count == 0, 'Step must be multiple of component count'
-
-        data_start = (start // count) * self.stride + start % count
-        data_stop = (stop // count) * self.stride + stop % count
-
-        if step == 1:
-            data_step = self.stride
-            value_step = count
-            for i in range(count):
-                self.region.array[data_start + i:data_stop + i:data_step] = value[i::value_step]
-        else:
-            data_step = (step // count) * self.stride
-            self.region.array[data_start:data_stop:data_step] = value
-
-    def invalidate(self):
-        self.region.invalidate()

@@ -24,4 +24,4 @@ jobs:
         sudo apt-get install xvfb
     - name: Run tests
       run: |
-        xvfb-run pytest -v tests/unit
+        xvfb-run pytest tests/unit

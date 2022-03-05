@@ -1,15 +1,12 @@
 """Example of advanced font rendering features. Currently only supported on Windows."""
 
 import pyglet
-pyglet.options["advanced_font_features"] = True
-
 
 if pyglet.compat_platform != 'win32':
     print("This example is only for Windows")
     exit()
 
-
-# On Windows, it's possible to change the font anti-aliasing mode. 
+# On Windows, it's possible to change the font anti-aliasing mode.
 # Uncomment the below lines to set the options:
 #
 # from pyglet.font.directwrite import DirectWriteGlyphRenderer

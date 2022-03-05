@@ -48,7 +48,7 @@ pbufferheight = 1
 pbuffer_attribs = (EGL_WIDTH, pbufferwidth, EGL_HEIGHT, pbufferheight, EGL_NONE)
 pbuffer_attrib_array = (libegl.EGLint * len(pbuffer_attribs))(*pbuffer_attribs)
 surface = libegl.eglCreatePbufferSurface(display_connection, egl_config, pbuffer_attrib_array)
-print("Surface: ", surface)
+print("Surface id: ", surface)
 
 # Bind the API:
 result = libegl.eglBindAPI(libegl.EGL_OPENGL_API)
@@ -58,7 +58,7 @@ assert result == 1, "Failed to bind EGL_OPENGL_API"
 context_attribs = (EGL_CONTEXT_MAJOR_VERSION, 2, EGL_NONE)
 context_attrib_array = (libegl.EGLint * len(context_attribs))(*context_attribs)
 context = libegl.eglCreateContext(display_connection, egl_config, None, context_attrib_array)
-print("Context: ", context)
+print("Context id: ", context)
 
 # Make context current:
 result = libegl.eglMakeCurrent(display_connection, surface, surface, context)

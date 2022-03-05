@@ -287,11 +287,6 @@ def _color_as_bytes(color):
     return bytes(color)
 
 
-def _is_pow2(v):
-    # http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-    return (v & (v - 1)) == 0
-
-
 class ImagePattern:
     """Abstract image creation class."""
 
@@ -396,22 +391,8 @@ class AbstractImage:
     def get_texture(self, rectangle=False):
         """A :py:class:`~pyglet.image.Texture` view of this image.
 
-        By default, textures are created with dimensions that are powers of
-        two.  Smaller images will return a :py:class:`~pyglet.image.TextureRegion` that covers just
-        the image portion of the larger texture.  This restriction is required
-        on older video cards, and for compressed textures, or where texture
-        repeat modes will be used, or where mipmapping is desired.
-
-        If the `rectangle` parameter is ``True``, this restriction is ignored
-        and a texture the size of the image may be created if the driver
-        supports the ``GL_ARB_texture_rectangle`` or
-        ``GL_NV_texture_rectangle`` extensions.  If the extensions are not
-        present, the image already is a texture, or the image has power 2
-        dimensions, the `rectangle` parameter is ignored.
-
-        Examine `Texture.target` to determine if the returned texture is a
-        rectangle (``GL_TEXTURE_RECTANGLE``) or not (``GL_TEXTURE_2D``).
-
+        The Texture target will be (``GL_TEXTURE_RECTANGLE``) if the `rectangle`
+        parameter is ``True``, otherwise it will be (``GL_TEXTURE_2D``).
         Changes to the returned instance may or may not be reflected in this
         image.
 
@@ -428,8 +409,6 @@ class AbstractImage:
 
     def get_mipmapped_texture(self):
         """Retrieve a :py:class:`~pyglet.image.Texture` instance with all mipmap levels filled in.
-
-        Requires that image dimensions be powers of 2.
 
         :rtype: :py:class:`~pyglet.image.Texture`
 
@@ -755,9 +734,6 @@ class ImageData(AbstractImage):
         if level == 0:
             raise ImageException('Cannot set mipmap image at level 0 (it is this image)')
 
-        if not _is_pow2(self.width) or not _is_pow2(self.height):
-            raise ImageException('Image dimensions must be powers of 2 to use mipmaps.')
-
         # Check dimensions of mipmap
         width, height = self.width, self.height
         for i in range(level):
@@ -772,10 +748,6 @@ class ImageData(AbstractImage):
 
     def create_texture(self, cls, rectangle=False):
         """Create a texture containing this image.
-
-        If the image's dimensions are not powers of 2, a TextureRegion of
-        a larger Texture will be returned that matches the dimensions of this
-        image.
 
         :Parameters:
             `cls` : class (subclass of Texture)
@@ -811,17 +783,12 @@ class ImageData(AbstractImage):
         of images defined will be used.  Otherwise, mipmaps will be
         automatically generated.
 
-        The texture dimensions must be powers of 2 to use mipmaps.
-
         :rtype: :py:class:`~pyglet.image.Texture`
 
         .. versionadded:: 1.1
         """
         if self._current_mipmap_texture:
             return self._current_mipmap_texture
-
-        if not _is_pow2(self.width) or not _is_pow2(self.height):
-            raise ImageException('Image dimensions must be powers of 2 to use mipmaps.')
 
         texture = Texture.create(self.width, self.height, GL_TEXTURE_2D, None)
         if self.anchor_x or self.anchor_y:
@@ -1422,9 +1389,9 @@ class Texture(AbstractImage):
         glBindTexture(self.target, self.id)
 
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     ('position3f', vertices),
-                                     ('tex_coords3f', self.tex_coords),
-                                     ('colors4Bn', self.colors))
+                                     position=('f', vertices),
+                                     tex_coords=('f', self.tex_coords),
+                                     colors=('Bn', self.colors))
 
         glBindTexture(self.target, 0)
 
@@ -1758,13 +1725,8 @@ TextureArrayRegion.region_class = TextureArrayRegion
 class TileableTexture(Texture):
     """A texture that can be tiled efficiently.
 
-    Use :py:class:`~pyglet.image.create_for_Image` classmethod to construct.
+    Use :py:class:`~pyglet.image.create_for_image` classmethod to construct.
     """
-
-    def __init__(self, width, height, target, tex_id):
-        if not _is_pow2(width) or not _is_pow2(height):
-            raise ImageException('TileableTexture requires dimensions that are powers of 2')
-        super().__init__(width, height, target, tex_id)
 
     def get_region(self, x, y, width, height):
         raise ImageException('Cannot get region of %r' % self)
@@ -1795,8 +1757,8 @@ class TileableTexture(Texture):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.target, self.id)
         pyglet.graphics.draw_indexed(4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
-                                     ('position3f', vertices),
-                                     ('tex_coords3f', tex_coords))
+                                     position=('f', vertices),
+                                     tex_coords=('f', tex_coords))
         glBindTexture(self.target, 0)
 
     @classmethod
@@ -2207,8 +2169,6 @@ class DepthBufferImage(BufferImage):
 
     def get_texture(self, rectangle=False):
         assert rectangle is False, 'Depth textures cannot be rectangular'
-        if not _is_pow2(self.width) or not _is_pow2(self.height):
-            raise ImageException('Depth texture requires that buffer dimensions be powers of 2')
 
         texture = DepthTexture.create(self.width, self.height, GL_TEXTURE_2D, None)
         if self.anchor_x or self.anchor_y:

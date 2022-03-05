@@ -3,15 +3,19 @@ from weakref import proxy
 
 import pyglet
 
-from pyglet.graphics import vertexbuffer
+from pyglet.graphics.vertexbuffer import BufferObject
 from pyglet.gl import *
 
 
 _debug_gl_shaders = pyglet.options['debug_gl_shaders']
 
 
+class ShaderException(BaseException):
+    pass
+
+
 # TODO: test other shader types, and update if necessary.
-shader_types = {
+_shader_types = {
     'vertex': GL_VERTEX_SHADER,
     'geometry': GL_GEOMETRY_SHADER,
     'fragment': GL_FRAGMENT_SHADER,
@@ -87,20 +91,6 @@ _attribute_types = {
     GL_DOUBLE_VEC3: (3, 'd'),
     GL_DOUBLE_VEC4: (4, 'd'),
 }
-
-
-class _Attribute:
-    __slots__ = 'name', 'type', 'size', 'location', 'count', 'format', 'array'
-
-    def __init__(self, name, attr_type, size, location):
-        self.name = name
-        self.type = attr_type
-        self.size = size
-        self.location = location
-        self.count, self.format = _attribute_types[attr_type]
-
-    def __repr__(self):
-        return f"Attribute('{self.name}', location={self.location}, count={self.count}, format={self.format})"
 
 
 class _Uniform:
@@ -183,7 +173,7 @@ class Shader:
         """
         self._id = None
 
-        if shader_type not in shader_types:
+        if shader_type not in _shader_types:
             raise TypeError("The `shader_type` '{}' is not yet supported".format(shader_type))
         self.type = shader_type
 
@@ -191,7 +181,7 @@ class Shader:
         source_buffer_pointer = cast(c_char_p(shader_source_utf8), POINTER(c_char))
         source_length = c_int(len(shader_source_utf8))
 
-        shader_id = glCreateShader(shader_types[shader_type])
+        shader_id = glCreateShader(_shader_types[shader_type])
         glShaderSource(shader_id, 1, byref(source_buffer_pointer), source_length)
         glCompileShader(shader_id)
 
@@ -371,7 +361,8 @@ class ShaderProgram:
         for index in range(self._get_number(GL_ACTIVE_ATTRIBUTES)):
             a_name, a_type, a_size = self._query_attribute(index)
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
-            attributes[a_name] = _Attribute(a_name, a_type, a_size, loc)
+            count, fmt = _attribute_types[a_type]
+            attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt)
         self._attributes = attributes
 
         if _debug_gl_shaders:
@@ -384,7 +375,7 @@ class ShaderProgram:
             u_name, u_type, u_size = self._query_uniform(index)
             loc = glGetUniformLocation(prg_id, create_string_buffer(u_name.encode('utf-8')))
 
-            if loc == -1:      # Skip uniforms that may be inside of a Uniform Block
+            if loc == -1:      # Skip uniforms that may be inside a Uniform Block
                 continue
 
             try:
@@ -467,28 +458,7 @@ class ShaderProgram:
         except GLException:
             raise
 
-    def _prepare_attributes(self, kwargs):
-        attributes = self._attributes.copy()
-        for name, data in kwargs.items():
-            if isinstance(data, tuple):
-                fmt, array = data
-            else:
-                fmt, array = data, ()
-
-            try:
-                attribute = attributes[name]
-                attribute = _Attribute(name, attribute.type, attribute.size, attribute.location)
-                attribute.format = fmt
-                attribute.array = array
-                attributes[name] = attribute
-            except KeyError:
-                raise ValueError(f"The attribute '{name}' was not found in this Shader Program.\n"
-                                 " - Check that the spelling is correct.\n"
-                                 " - Unused attributes are eliminated by OpenGL during compilation.\n"
-                                 f"Valid attributes are: {list(attributes)}")
-        return attributes
-
-    def vertex_list(self, count, mode, batch=None, group=None, **kwargs):
+    def vertex_list(self, count, mode, batch=None, group=None, **data):
         """Create a VertexList.
 
         :Parameters:
@@ -499,29 +469,38 @@ class ShaderProgram:
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
             `batch` : `~pyglet.graphics.Batch`
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                It is strongly recommended to use a Batch.
+                Using a Batch is strongly recommended.
             `group` : `~pyglet.graphics.Group`
                 Group to add the VertexList to, or ``None`` if no group is required.
+            `**data` : str or tuple
+                Attribute formats and initial data for the vertex list.
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
         """
+        attributes = self._attributes.copy()
+        initial_arrays = []
 
-        attributes = self._prepare_attributes(kwargs)
-        formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
+        for name, fmt in data.items():
+            try:
+                if isinstance(fmt, tuple):
+                    fmt, array = fmt
+                    initial_arrays.append((attributes[name]['location'], array))
+                attributes[name] = {**attributes[name], **{'format': fmt}}
+            except KeyError:
+                raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{attributes.keys()}")
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch._get_domain(False, mode, group, self, formats)
+        domain = batch.get_domain(False, mode, group, self._id, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count)
 
-        for attr in attributes.values():
-            if getattr(attr, 'array', None):
-                vlist.set_attribute_data(attr.location, attr.array)
+        for index, array in initial_arrays:
+            vlist.set_attribute_data(index, array)
 
         return vlist
 
-    def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **kwargs):
+    def vertex_list_indexed(self, count, mode, indices, batch=None, group=None, **data):
         """Create a IndexedVertexList.
 
         :Parameters:
@@ -530,31 +509,40 @@ class ShaderProgram:
             `mode` : int
                 OpenGL drawing mode enumeration; for example, one of
                 ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-            `indices` : sequence
+            `indices` : sequence of int
                 Sequence of integers giving indices into the vertex list.
             `batch` : `~pyglet.graphics.Batch`
                 Batch to add the VertexList to, or ``None`` if a Batch will not be used.
-                It is strongly recommended to use a Batch.
+                Using a Batch is strongly recommended.
             `group` : `~pyglet.graphics.Group`
                 Group to add the VertexList to, or ``None`` if no group is required.
+            `**data` : str or tuple
+                Attribute formats and initial data for the vertex list.
 
         :rtype: :py:class:`~pyglet.graphics.vertexdomain.IndexedVertexList`
         """
+        attributes = self._attributes.copy()
+        initial_arrays = []
 
-        attributes = self._prepare_attributes(kwargs)
-        formats = tuple(f"{attr.name}{attr.count}{attr.format}" for attr in attributes.values())
+        for name, fmt in data.items():
+            try:
+                if isinstance(fmt, tuple):
+                    fmt, array = fmt
+                    initial_arrays.append((attributes[name]['location'], array))
+                attributes[name] = {**attributes[name], **{'format': fmt}}
+            except KeyError:
+                raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
-        domain = batch._get_domain(True, mode, group, self, formats)
+        domain = batch.get_domain(True, mode, group, self._id, attributes)
 
         # Create vertex list and initialize
         vlist = domain.create(count, len(indices))
         start = vlist.start
-        vlist.set_index_data([i + start for i in indices])
+        vlist.indices = [i + start for i in indices]
 
-        for attr in attributes.values():
-            if getattr(attr, 'array', None):
-                vlist.set_attribute_data(attr.location, attr.array)
+        for index, array in initial_arrays:
+            vlist.set_attribute_data(index, array)
 
         return vlist
 
@@ -585,7 +573,7 @@ class UniformBufferObject:
     def __init__(self, block, index):
         assert type(block) == UniformBlock, "Must be a UniformBlock instance"
         self.block = block
-        self.buffer = vertexbuffer.create_buffer(self.block.size, target=GL_UNIFORM_BUFFER, mappable=False)
+        self.buffer = BufferObject(self.block.size, GL_UNIFORM_BUFFER)
         self.buffer.bind()
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)

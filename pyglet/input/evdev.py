@@ -42,10 +42,10 @@ import ctypes
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
-from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, GameController
+from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from .base import DeviceOpenException
 from .evdev_constants import *
-from .gamecontroller import is_game_controller
+from .controller import get_mapping
 
 c = pyglet.lib.load_library('c')
 
@@ -366,7 +366,7 @@ class EvdevDevice(XlibSelectDevice, Device):
         return self._fileno
 
     def poll(self):
-        return True
+        return False
 
     def select(self):
         if not self._fileno:
@@ -386,7 +386,7 @@ class EvdevDevice(XlibSelectDevice, Device):
                 pass
 
 
-class EvdevGameController(GameController):
+class EvdevController(Controller):
 
     _rumble_weak = -1
     _rumble_strong = -1
@@ -455,31 +455,28 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def _create_game_controller(device):
-    # Look for something with an ABS X and ABS Y axis, and a joystick 0 button
-    have_x = False
-    have_y = False
+def _create_controller(device):
+    # Look for something with an ABS X and ABS Y axis, and BTN_GAMEPAD
     have_button = False
-    if not is_game_controller(device):
-        return
+
     device.controls.sort(key=lambda ctrl: ctrl._event_code)
     for control in device.controls:
-        if control._event_type == EV_ABS and control._event_code == ABS_X:
-            have_x = True
-        elif control._event_type == EV_ABS and control._event_code == ABS_Y:
-            have_y = True
-        elif control._event_type == EV_KEY and control._event_code in (BTN_JOYSTICK, BTN_GAMEPAD):
+        if control._event_type == EV_KEY and control._event_code == BTN_GAMEPAD:
             have_button = True
-    if not (have_x and have_y and have_button):
+
+    mapping = get_mapping(device.get_guid())
+    # TODO: detect via device types, and use default mapping.
+
+    if have_button is False or mapping is None:
         return
 
     if device.supports_ff():
-        return EvdevGameController(device)
+        return EvdevController(device, mapping)
     else:
-        return GameController(device)
+        return Controller(device, mapping)
 
 
-def get_game_controllers(display=None):
+def get_controllers(display=None):
     return [controller for controller in
-            [_create_game_controller(device) for device in get_devices(display)]
+            [_create_controller(device) for device in get_devices(display)]
             if controller is not None]

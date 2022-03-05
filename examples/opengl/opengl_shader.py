@@ -60,13 +60,13 @@ shader_program = ShaderProgram(vert_shader, frag_shader)
 # Define a custom `Group` to encapsulate OpenGL state
 #####################################################
 class RenderGroup(Group):
-    """A group that enables and binds a Texture and ShaderProgram.
+    """A Group that enables and binds a Texture and ShaderProgram.
 
-    RenderGroups are equal if their textures' targets and names are equal,
-    and the ShaderProgram is equal.
+    RenderGroups are equal if their Texture and ShaderProgram
+    are equal.
     """
     def __init__(self, texture, program, order=0, parent=None):
-        """Create a texture group.
+        """Create a RenderGroup.
 
         :Parameters:
             `texture` : `~pyglet.image.Texture`
@@ -104,9 +104,9 @@ class RenderGroup(Group):
                 self.parent == other.parent)
 
 
-##########################################################
-# Create vertex data, load a Texture, and add to the Batch
-##########################################################
+#########################################################
+# Load a Texture, and create a VertexList from the Shader
+#########################################################
 
 
 def create_quad(x, y, texture):
@@ -120,10 +120,10 @@ group = RenderGroup(tex, shader_program)
 indices = (0, 1, 2, 0, 2, 3)
 vertex_positions = create_quad(400, 200, tex)
 
-# count, mode, group, indices, *data
-batch.add_indexed(4, GL_TRIANGLES, group, indices,
-                  ('position2f', vertex_positions),
-                  ('tex_coords3f', tex.tex_coords))
+# count, mode, indices, batch, group, *data
+vertex_list = shader_program.vertex_list_indexed(4, GL_TRIANGLES, indices, batch, group,
+                                                 position=('f', vertex_positions),
+                                                 tex_coords=('f', tex.tex_coords))
 
 
 #####################

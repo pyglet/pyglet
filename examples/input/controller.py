@@ -3,7 +3,7 @@ import pyglet
 from pyglet.shapes import Circle, Rectangle, Arc
 
 # pyglet.input.gamecontroller.add_mappings_from_file("gamecontrollerdb.txt")
-controllers = pyglet.input.get_game_controllers()
+controllers = pyglet.input.get_controllers()
 
 if not controllers:
     print("No Game Controllers were detected.")
@@ -17,7 +17,6 @@ batch = pyglet.graphics.Batch()
 
 text = f"Detected: {controller.name}\nController GUID: {controller.guid}"
 controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multiline=True, width=720, batch=batch)
-
 
 left_trigger = Rectangle(70, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
 right_trigger = Rectangle(610, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)

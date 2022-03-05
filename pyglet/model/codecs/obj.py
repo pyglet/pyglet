@@ -243,25 +243,23 @@ class OBJModelDecoder(ModelDecoder):
 
         for mesh in mesh_list:
             material = mesh.material
+            count = len(mesh.vertices) // 3
             if material.texture_name:
                 texture = pyglet.resource.texture(material.texture_name)
                 group = TexturedMaterialGroup(material, texture)
-                vertex_lists.append(batch.add(len(mesh.vertices) // 3,
-                                              GL_TRIANGLES,
-                                              group,
-                                              ('vertices3f', mesh.vertices),
-                                              ('normals3f', mesh.normals),
-                                              ('tex_coords2f', mesh.tex_coords),
-                                              ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
+                program = pyglet.model.get_default_textured_shader()
+                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, group,
+                                                        vertices=('f', mesh.vertices),
+                                                        normals=('f', mesh.normals),
+                                                        tex_coords=('f', mesh.tex_coords),
+                                                        colors=('f', material.diffuse * count)))
             else:
                 group = MaterialGroup(material)
-                vertex_lists.append(batch.add(len(mesh.vertices) // 3,
-                                              GL_TRIANGLES,
-                                              group,
-                                              ('vertices3f', mesh.vertices),
-                                              ('normals3f', mesh.normals),
-                                              ('colors4f', material.diffuse * (len(mesh.vertices) // 3))))
-
+                program = pyglet.model.get_default_shader()
+                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, group,
+                                                        vertices=('f', mesh.vertices),
+                                                        normals=('f', mesh.normals),
+                                                        colors=('f', material.diffuse * count)))
             groups.append(group)
 
         return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)

@@ -19,7 +19,7 @@ raw = urlopen(DB_URL).read().decode('ascii')
 # Format the output directory for the pyglet module:
 script_dir = os.path.abspath(os.path.dirname(__file__))
 output_dir = os.path.join(script_dir, os.path.pardir, 'pyglet', 'input')
-output_file = os.path.join(output_dir, 'gamecontrollerdb.py')
+output_file = os.path.join(output_dir, 'controller_db.py')
 
 # Parse the Windows section:
 win_string = '#if SDL_JOYSTICK_DINPUT'
@@ -80,4 +80,4 @@ with open(output_file, 'w+') as f:
 
     f.write("else:\n    mapping_list = []\n")
 
-print("Saved 'pyglet/input/gamecontrollerdb.py'")
+print("Saved 'pyglet/input/controller_db.py'")

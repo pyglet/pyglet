@@ -345,7 +345,6 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
     except UnicodeDecodeError:
         name = lf.lfFaceName.decode('ANSI')
 
-
     # detect font type (vector|raster) and format (ttf)
     # [ ] use Windows constant TRUETYPE_FONTTYPE
     if fonttype & 4:
