@@ -36,14 +36,19 @@
 """Matrix and Vector math.
 
 This module provides Vector and Matrix objects, include Vec2, Vec3, Vec4,
-Mat3 and Mat4. Most common operations are supported, and many helper
-methods are included for rotating, scaling, and transforming.
-The :py:class:`~pyglet.matrix.Mat4` includes class methods
-for creating orthographic and perspective projection matrixes.
+Mat3, and Mat4. Most common operations are supported, and many helper
+methods are included for rotating, scaling, and transforming. The
+:py:class:`~pyglet.matrix.Mat4` includes class methods for creating
+orthographic and perspective projection matrixes.
+
+:note: For performance, these objects' subclass the `tuple` type. They
+are therefore immutable - all operations return a new object; the
+object is not updated in-place.
 """
 
 import math as _math
 import warnings as _warnings
+
 from operator import mul as _mul
 
 
@@ -52,7 +57,7 @@ def clamp(num, min_val, max_val):
 
 
 class Vec2(tuple):
-    """A two dimensional vector represented as an X Y coordinate pair.
+    """A two-dimensional vector represented as an X Y coordinate pair.
 
     :parameters: 
         `x` : int or float : 
@@ -60,7 +65,8 @@ class Vec2(tuple):
         `y`   : int or float :
             The Y coordinate of the vector.
     
-    Vectors must be created with either 0 or 2 values. If no arguments are provided a vector with the coordinates 0, 0 is created.
+    Vectors must be created with either 0 or 2 values. If no
+    arguments are provided a vector with the coordinates 0, 0 is created.
 
     Vectors are stored as a tuple and therefore immutable and cannot be modified directly
     """
@@ -148,7 +154,8 @@ class Vec2(tuple):
             return self.__add__(other)
 
     def from_magnitude(self, magnitude):
-        """Create a new Vector of the given magnitude by normalizing, then scaling the vector. The heading remains unchanged.
+        """Create a new Vector of the given magnitude by normalizing,
+        then scaling the vector. The heading remains unchanged.
 
         :parameters: 
             `magnitude` : int or float : 
@@ -172,18 +179,18 @@ class Vec2(tuple):
         mag = self.__abs__()
         return Vec2(mag * _math.cos(heading), mag * _math.sin(heading))
 
-    def limit(self, max):
+    def limit(self, maximum):
         """Limit the magnitude of the vector to the value used for the max parameter.
 
         :parameters: 
-            `max`  : int or float :
+            `maximum`  : int or float :
                 The maximum magnitude for the vector.
         
         :returns: Either self or a new vector with the maximum magnitude.
         :rtype: Vec2
         """
-        if self[0] ** 2 + self[1] ** 2 > max * max:
-            return self.from_magnitude(max)
+        if self[0] ** 2 + self[1] ** 2 > maximum * maximum:
+            return self.from_magnitude(maximum)
         return self
             
     def lerp(self, other, alpha):
@@ -291,7 +298,7 @@ class Vec2(tuple):
 
 
 class Vec3(tuple):
-    """A three dimensional vector represented as a X Y Z coordinates.
+    """A three-dimensional vector represented as X Y Z coordinates.
 
     :parameters: 
         `x` : int or float : 
@@ -301,7 +308,8 @@ class Vec3(tuple):
         `z`   : int or float :
             The Z coordinate of the vector.
     
-    3D Vectors must be created with either 0 or 3 values. If no arguments are provided a vector with the coordinates 0, 0, 0 is created.
+    3D Vectors must be created with either 0 or 3 values. If no arguments
+    are provided, a vector with the coordinates 0, 0, 0 is created.
 
     Vectors are stored as a tuple and therefore immutable and cannot be modified directly
     """
@@ -374,7 +382,8 @@ class Vec3(tuple):
             return self.__add__(other)
 
     def from_magnitude(self, magnitude):
-        """Create a new Vector of the given magnitude by normalizing, then scaling the vector. The rotation remains unchanged.
+        """Create a new Vector of the given magnitude by normalizing,
+        then scaling the vector. The rotation remains unchanged.
 
         :parameters: 
             `magnitude` : int or float : 
@@ -385,17 +394,17 @@ class Vec3(tuple):
         """
         return self.normalize().scale(magnitude)
 
-    def limit(self, max):
+    def limit(self, maximum):
         """Limit the magnitude of the vector to the value used for the max parameter.
 
         :parameters: 
-            `max`  : int or float :
+            `maximum`  : int or float :
                 The maximum magnitude for the vector.
         
         :returns: Either self or a new vector with the maximum magnitude.
         :rtype: Vec3
         """
-        if self[0] ** 2 + self[1] ** 2 + self[2] **2 > max * max * max:
+        if self[0] ** 2 + self[1] ** 2 + self[2] ** 2 > maximum * maximum * maximum:
             return self.from_magnitude(max)
         return self
 
@@ -829,7 +838,7 @@ class Mat4(tuple):
         return Mat4(temp)
 
     def translate(self, vector: Vec3) -> 'Mat4':
-        """Get a translate Matrix along x, y, and z axis."""
+        """Get a translation Matrix along x, y, and z axis."""
         return Mat4(self) @ Mat4((1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, *vector, 1))
 
     def rotate(self, angle: float, vector: Vec3) -> 'Mat4':

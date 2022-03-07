@@ -331,7 +331,9 @@ class ShaderProgram:
         try:
             uniform = self._uniforms[key]
         except KeyError:
-            raise Exception("Uniform with the name `{0}` was not found.".format(key))
+            raise Exception(f"A Uniform with the name `{key}` was not found.\n"
+                            f"The spelling may be incorrect, or if not in use it "
+                            f"may have been optimized out by the OpenGL driver.")
 
         try:
             uniform.set(value)
