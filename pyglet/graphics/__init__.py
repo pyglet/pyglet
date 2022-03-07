@@ -170,7 +170,7 @@ from pyglet.graphics.vertexbuffer import BufferObject
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
 
-def draw(size, mode, **kwargs):
+def draw(size, mode, **data):
     """Draw a primitive immediately.
 
     :Parameters:
@@ -194,7 +194,7 @@ def draw(size, mode, **kwargs):
     program.use()
 
     buffers = []
-    for name, (fmt, array) in kwargs.items():
+    for name, (fmt, array) in data.items():
         location = program.attributes[name]['location']
         count = program.attributes[name]['count']
         gl_type = vertexdomain._gl_types[fmt[0]]
@@ -339,6 +339,8 @@ class Batch:
 
         self._draw_list = []
         self._draw_list_dirty = False
+
+        self._context = pyglet.gl.current_context
 
     def invalidate(self):
         """Force the batch to update the draw list.
@@ -554,7 +556,7 @@ class Group:
     """Group of common OpenGL state.
 
     Before a VertexList is rendered, its Group's OpenGL state is set.
-    This can including binding textures, or setting any other parameters.
+    This includes binding textures, shaders, or setting any other parameters.
     """
     def __init__(self, order=0, parent=None):
         """Create a Group.
@@ -565,6 +567,8 @@ class Group:
             `parent` : `~pyglet.graphics.Group`
                 Group to contain this Group; its state will be set before this
                 Group's state.
+
+        :Ivariables:
             `visible` : bool
                 Determines whether this Group is visible in any of the Batches
                 it is assigned to. If False, objects in this Group will not

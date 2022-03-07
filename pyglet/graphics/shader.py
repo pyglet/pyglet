@@ -487,7 +487,7 @@ class ShaderProgram:
                     initial_arrays.append((name, array))
                 attributes[name] = {**attributes[name], **{'format': fmt}}
             except KeyError:
-                raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{attributes.keys()}")
+                raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
 
         batch = batch or pyglet.graphics.get_default_batch()
         domain = batch.get_domain(False, mode, group, self._id, attributes)
