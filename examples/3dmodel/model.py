@@ -5,10 +5,14 @@ from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 
 
 window = pyglet.window.Window(width=720, height=480)
-window.projection = pyglet.window.Mat4.perspective_projection(0, 720, 0, 480, z_near=0.1, z_far=255)
-
 batch = pyglet.graphics.Batch()
 time = 0
+
+
+@window.event
+def on_resize(width, height):
+    window.projection = pyglet.window.Mat4.perspective_projection(0, width, 0, height, z_near=0.1, z_far=255)
+    return pyglet.event.EVENT_HANDLED
 
 
 @window.event
