@@ -329,8 +329,8 @@ class VertexList:
         for version in self._cache_versions:
             self._cache_versions[version] = None
 
-    def set_attribute_data(self, i, data):
-        attribute = self.domain.attributes[i]
+    def set_attribute_data(self, name, data):
+        attribute = self.domain.attribute_names[name]
         attribute.set_region(attribute.buffer, self.start, self.count, data)
 
     def __getattr__(self, name):

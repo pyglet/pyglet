@@ -484,7 +484,7 @@ class ShaderProgram:
             try:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt
-                    initial_arrays.append((attributes[name]['location'], array))
+                    initial_arrays.append((name, array))
                 attributes[name] = {**attributes[name], **{'format': fmt}}
             except KeyError:
                 raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{attributes.keys()}")
@@ -495,8 +495,8 @@ class ShaderProgram:
         # Create vertex list and initialize
         vlist = domain.create(count)
 
-        for index, array in initial_arrays:
-            vlist.set_attribute_data(index, array)
+        for name, array in initial_arrays:
+            vlist.set_attribute_data(name, array)
 
         return vlist
 
@@ -528,7 +528,7 @@ class ShaderProgram:
             try:
                 if isinstance(fmt, tuple):
                     fmt, array = fmt
-                    initial_arrays.append((attributes[name]['location'], array))
+                    initial_arrays.append((name, array))
                 attributes[name] = {**attributes[name], **{'format': fmt}}
             except KeyError:
                 raise ShaderException(f"\nThe attribute `{name}` doesn't exist. Valid names: \n{list(attributes)}")
@@ -541,8 +541,8 @@ class ShaderProgram:
         start = vlist.start
         vlist.indices = [i + start for i in indices]
 
-        for index, array in initial_arrays:
-            vlist.set_attribute_data(index, array)
+        for name, array in initial_arrays:
+            vlist.set_attribute_data(name, array)
 
         return vlist
 
