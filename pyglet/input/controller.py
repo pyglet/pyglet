@@ -81,15 +81,15 @@ class _Relation:
 def _map_pair(raw_relation):
     inverted = False
     relation_string = raw_relation.split(":")[1]
-    if relation_string.startswith("+"):
-        relation_string = relation_string[1:]
+    if "+" in relation_string:
+        relation_string = relation_string.strip('+')
         inverted = False
-    elif relation_string.startswith("-"):
-        relation_string = relation_string[1:]
+    elif "-" in relation_string:
+        relation_string = relation_string.strip('-')
         inverted = True
     if "~" in relation_string:
-        # TODO: handle this
-        return None
+        relation_string = relation_string.strip('~')
+        inverted = True
     if relation_string.startswith("b"):     # Button
         return _Relation("button", int(relation_string[1:]), inverted)
     elif relation_string.startswith("a"):   # Axis
@@ -189,7 +189,6 @@ def add_mappings_from_file(filename) -> None:
         `filename` : str
             A file path.
     """
-    assert os.path.exists(filename), f"Invalid path: {filename}"
     with open(filename) as f:
         add_mappings_from_string(f.read())
 
