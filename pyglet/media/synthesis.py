@@ -219,7 +219,7 @@ class SynthesisSource(Source):
     def _generate_data(self, num_bytes):
         """Generate `num_bytes` bytes of data.
 
-        Return data as ctypes array or string.
+        Return data as ctypes array or bytes.
         """
         raise NotImplementedError('abstract')
 
@@ -451,6 +451,8 @@ class Encoder(SynthesisSource):
     def __init__(self, duration, generator, **kwargs):
         super().__init__(duration, **kwargs)
         self._generator = generator
+        self._total = int(duration * self.audio_format.sample_rate)
+        self._consumed = 0
 
     def _generate_data(self, num_bytes):
         envelope = self._envelope_generator

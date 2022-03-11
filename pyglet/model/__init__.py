@@ -290,12 +290,7 @@ class BaseMaterialGroup(graphics.ShaderGroup):
         view = view.rotate(radians(self.rotation[0]), Vec3(1, 0, 0))
         view = view.translate(self.translation)
 
-        # TODO: separate the projection block, and remove this hack
-        block = self.program.uniform_blocks['WindowBlock']
-        ubo = block.create_ubo(0)
-        with ubo as window_block:
-            window_block.projection[:] = pyglet.math.Mat4.perspective_projection(0, 720, 0, 480, z_near=0.1, z_far=255)
-            window_block.view[:] = view
+        self.program['mview'] = view
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -316,12 +311,13 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
+    uniform mat4 mview;
 
     void main()
     {
-        vec4 pos = window.view * vec4(vertices, 1.0);
+        vec4 pos = mview * vec4(vertices, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
+        mat3 normal_matrix = transpose(inverse(mat3(mview)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -387,11 +383,13 @@ class MaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
+    uniform mat4 mview;
+
     void main()
     {
-        vec4 pos = window.view * vec4(vertices, 1.0);
+        vec4 pos = mview * vec4(vertices, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(window.view)));
+        mat3 normal_matrix = transpose(inverse(mat3(mview)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;

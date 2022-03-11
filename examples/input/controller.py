@@ -20,14 +20,26 @@ controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multil
 
 left_trigger = Rectangle(70, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
 right_trigger = Rectangle(610, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
-d_pad = Rectangle(280, 190, 10, 10, batch=batch)
-left_stick = Arc(180, 240, 20, batch=batch)
-right_stick = Arc(540, 240, 20, batch=batch)
+d_pad = Rectangle(280, 185, 10, 10, batch=batch)
+left_stick = Circle(180, 240, 20, batch=batch)
+right_stick = Circle(540, 240, 20, batch=batch)
 
-buttons = {'a': Circle(440, 170, 9, color=(50, 255, 50), batch=batch),
-           'b': Circle(460, 190, 9, color=(255, 50, 50), batch=batch),
-           'x': Circle(420, 190, 9, color=(50, 50, 255), batch=batch),
-           'y': Circle(440, 210, 9, color=(255, 255, 50), batch=batch),
+l_outline1 = Arc(180, 240, 75, color=(44, 44, 44), batch=batch)
+l_outline2 = Arc(285, 190, 35, color=(44, 44, 44), batch=batch)
+r_outline1 = Arc(540, 240, 75, color=(44, 44, 44), batch=batch)
+r_outline2 = Arc(435, 190, 35, color=(44, 44, 44), batch=batch)
+
+
+# Triangle (64, 226, 160)
+# Circle (255, 102, 102)
+# Cross (124, 178, 232)
+# Square (255, 105, 248)
+
+
+buttons = {'a': Circle(435, 170, 9, color=(124, 178, 232), batch=batch),
+           'b': Circle(455, 190, 9, color=(255, 102, 102), batch=batch),
+           'x': Circle(415, 190, 9, color=(255, 105, 248), batch=batch),
+           'y': Circle(435, 210, 9, color=(64, 226, 160), batch=batch),
            'leftshoulder': Rectangle(70, 290, 40, 10, batch=batch),
            'rightshoulder': Rectangle(610, 290, 40, 10, batch=batch),
            'start': Circle(390, 240, 9, batch=batch),
@@ -61,7 +73,7 @@ def on_button_release(controller, button_name):
 @controller.event
 def on_dpad_motion(controller, dpleft, dpright, dpup, dpdown):
     global d_pad
-    position = [280, 190]
+    position = [280, 185]
     if dpup:
         position[1] += 25
     if dpdown:
