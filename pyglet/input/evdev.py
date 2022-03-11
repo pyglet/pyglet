@@ -35,7 +35,6 @@
 
 import os
 import fcntl
-import struct
 import ctypes
 
 from ctypes import c_uint16 as _u16
@@ -443,9 +442,11 @@ class EvdevDevice(XlibSelectDevice, Device):
         if not self._fileno:
             return
 
-        events = (InputEvent * 64)()
-        bytes_read = os.readv(self._fileno, events)
-        if bytes_read < 0:
+        try:
+            events = (InputEvent * 64)()
+            bytes_read = os.readv(self._fileno, events)
+        except OSError:
+            self.close()
             return
 
         n_events = bytes_read // ctypes.sizeof(InputEvent)
