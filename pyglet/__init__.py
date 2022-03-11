@@ -165,6 +165,7 @@ options = {
     'advanced_font_features': False,
     'headless': False,
     'headless_device': 0,
+    'win32_disable_shaping': False,
 }
 
 _option_types = {
@@ -190,7 +191,8 @@ _option_types = {
     'xlib_fullscreen_override_redirect': bool,
     'advanced_font_features': bool,
     'headless': bool,
-    'headless_device': int
+    'headless_device': int,
+    'win32_disable_shaping': bool
 }
 
 
