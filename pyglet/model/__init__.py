@@ -81,7 +81,7 @@ instance when loading the Model::
 
 .. versionadded:: 1.4
 """
-from math import radians
+
 from io import BytesIO
 
 import pyglet
@@ -226,7 +226,7 @@ class Model:
     def matrix(self, matrix):
         self._modelview_matrix = matrix
         for group in self.groups:
-            group.modelview_matrix = matrix
+            group.matrix = matrix
 
     def draw(self):
         """Draw the model.
@@ -263,7 +263,7 @@ class Material:
 class BaseMaterialGroup(graphics.ShaderGroup):
     default_vert_src = None
     default_frag_src = None
-    modelview_matrix = Mat4()
+    matrix = Mat4()
 
     def __init__(self, material, program, order=0, parent=None):
         super().__init__(program, order, parent)
@@ -288,13 +288,13 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
-    uniform mat4 modelview;
+    uniform mat4 model;
 
     void main()
     {
-        vec4 pos = window.view * modelview * vec4(vertices, 1.0);
+        vec4 pos = window.view * model * vec4(vertices, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(modelview)));
+        mat3 normal_matrix = transpose(inverse(mat3(model)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -326,7 +326,7 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
-        self.program['modelview'] = self.modelview_matrix
+        self.program['model'] = self.matrix
 
     def unset_state(self):
         gl.glBindTexture(self.texture.target, 0)
@@ -360,13 +360,13 @@ class MaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
-    uniform mat4 modelview;
+    uniform mat4 model;
 
     void main()
     {
-        vec4 pos = window.view * modelview * vec4(vertices, 1.0);
+        vec4 pos = window.view * model * vec4(vertices, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(modelview)));
+        mat3 normal_matrix = transpose(inverse(mat3(model)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -388,7 +388,7 @@ class MaterialGroup(BaseMaterialGroup):
 
     def set_state(self):
         self.program.use()
-        self.program['modelview'] = self.modelview_matrix
+        self.program['model'] = self.matrix
 
 
 add_default_model_codecs()
