@@ -1938,24 +1938,28 @@ class Win32DirectWriteFont(base.Font):
         # Create the text format this font will use permanently.
         # Could technically be recreated, but will keep to be inline with other font objects.
         self._text_format = IDWriteTextFormat()
-        self._write_factory.CreateTextFormat(self._name,
-                                             self._collection,
-                                             self._weight,
-                                             self._style,
-                                             self._stretch,
-                                             self._real_size,
-                                             create_unicode_buffer(self.locale),
-                                             byref(self._text_format))
+        self._write_factory.CreateTextFormat(
+            self._name,
+            self._collection,
+            self._weight,
+            self._style,
+            self._stretch,
+            self._real_size,
+            create_unicode_buffer(self.locale),
+            byref(self._text_format)
+        )
 
         # All this work just to get a font face and it's metrics!
         font_family = IDWriteFontFamily1()
         self._collection.GetFontFamily(self._font_index, byref(font_family))
 
         write_font = IDWriteFont()
-        font_family.GetFirstMatchingFont(self._weight,
-                                         self._stretch,
-                                         self._style,
-                                         byref(write_font))
+        font_family.GetFirstMatchingFont(
+            self._weight,
+            self._stretch,
+            self._style,
+            byref(write_font)
+        )
 
         font_face = IDWriteFontFace()
         write_font.CreateFontFace(byref(font_face))
@@ -1974,8 +1978,13 @@ class Win32DirectWriteFont(base.Font):
         self.max_glyph_height = (self._font_metrics.ascent + self._font_metrics.descent) * self.font_scale_ratio
         self.line_gap = self._font_metrics.lineGap * self.font_scale_ratio
 
-        self._fallback = IDWriteFontFallback()
-        self._write_factory.GetSystemFontFallback(byref(self._fallback))
+        self._fallback = None
+        if WINDOWS_8_1_OR_GREATER:
+            self._fallback = IDWriteFontFallback()
+            self._write_factory.GetSystemFontFallback(byref(self._fallback))
+        else:
+            assert _debug_font("Windows 8.1+ is required for font fallback. Colored glyphs cannot be omitted.")
+
 
     @property
     def name(self):
@@ -2002,11 +2011,13 @@ class Win32DirectWriteFont(base.Font):
         """This takes the existing glyph texture and puts it into a new Glyph with a new advance.
         Texture memory is shared between both glyphs."""
         new_glyph = base.Glyph(glyph.x, glyph.y, glyph.z, glyph.width, glyph.height, glyph.owner)
-        new_glyph.set_bearings(glyph.baseline,
-                               glyph.lsb,
-                               advance * self.font_scale_ratio,
-                               offset.advanceOffset * self.font_scale_ratio,
-                               offset.ascenderOffset * self.font_scale_ratio)
+        new_glyph.set_bearings(
+            glyph.baseline,
+            glyph.lsb,
+            advance * self.font_scale_ratio,
+            offset.advanceOffset * self.font_scale_ratio,
+            offset.ascenderOffset * self.font_scale_ratio
+        )
         return new_glyph
 
     def _render_layout_glyph(self, text_buffer, i, clusters, check_color=True):
@@ -2045,40 +2056,43 @@ class Win32DirectWriteFont(base.Font):
         new_advance = (FLOAT * 1)(100)  # dummy
         offset = (DWRITE_GLYPH_OFFSET * 1)()
 
-        run = self._glyph_renderer._get_single_glyph_run(font_face,
-                                         self._real_size,
-                                         new_indice,  # indice,
-                                         new_advance,  # advance,
-                                         offset,  # offset,
-                                         False,
-                                         False)
+        run = self._glyph_renderer._get_single_glyph_run(
+            font_face,
+            self._real_size,
+            new_indice,  # indice,
+            new_advance,  # advance,
+            offset,  # offset,
+            False,
+            False
+        )
 
         return self._glyph_renderer.is_color_run(run)
 
     def _get_fallback_font_face(self, text_index, text_length):
-        out_length = UINT32()
-        fb_font = IDWriteFont()
-        scale = FLOAT()
+        if WINDOWS_8_1_OR_GREATER:
+            out_length = UINT32()
+            fb_font = IDWriteFont()
+            scale = FLOAT()
 
-        self._fallback.MapCharacters(
-            self._glyph_renderer._text_analysis,
-            text_index,
-            text_length,
-            None,
-            None,
-            self._weight,
-            self._style,
-            self._stretch,
-            byref(out_length),
-            byref(fb_font),
-            byref(scale)
-        )
+            self._fallback.MapCharacters(
+                self._glyph_renderer._text_analysis,
+                text_index,
+                text_length,
+                None,
+                None,
+                self._weight,
+                self._style,
+                self._stretch,
+                byref(out_length),
+                byref(fb_font),
+                byref(scale)
+            )
 
-        if fb_font:
-            fb_font_face = IDWriteFontFace()
-            fb_font.CreateFontFace(byref(fb_font_face))
+            if fb_font:
+                fb_font_face = IDWriteFontFace()
+                fb_font.CreateFontFace(byref(fb_font_face))
 
-            return fb_font_face
+                return fb_font_face
 
         return None
 
