@@ -21,8 +21,8 @@ controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multil
 left_trigger = Rectangle(70, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
 right_trigger = Rectangle(610, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
 d_pad = Rectangle(280, 185, 10, 10, batch=batch)
-left_stick = Circle(180, 240, 20, batch=batch)
-right_stick = Circle(540, 240, 20, batch=batch)
+left_stick = Arc(180, 240, 20, batch=batch)
+right_stick = Arc(540, 240, 20, batch=batch)
 
 l_outline1 = Arc(180, 240, 75, color=(44, 44, 44), batch=batch)
 l_outline2 = Arc(285, 190, 35, color=(44, 44, 44), batch=batch)

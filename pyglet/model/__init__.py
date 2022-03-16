@@ -190,8 +190,7 @@ class Model:
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch
-        self._rotation = Vec3()
-        self._translation = Vec3()
+        self._modelview_matrix = Mat4()
 
     @property
     def batch(self):
@@ -220,24 +219,14 @@ class Model:
         self._batch = batch
 
     @property
-    def rotation(self):
-        return self._rotation
+    def matrix(self):
+        return self._modelview_matrix
 
-    @rotation.setter
-    def rotation(self, values):
-        self._rotation = values
+    @matrix.setter
+    def matrix(self, matrix):
+        self._modelview_matrix = matrix
         for group in self.groups:
-            group.rotation = values
-
-    @property
-    def translation(self):
-        return self._translation
-
-    @translation.setter
-    def translation(self, values):
-        self._translation = values
-        for group in self.groups:
-            group.translation = values
+            group.modelview_matrix = matrix
 
     def draw(self):
         """Draw the model.
@@ -274,23 +263,11 @@ class Material:
 class BaseMaterialGroup(graphics.ShaderGroup):
     default_vert_src = None
     default_frag_src = None
+    modelview_matrix = Mat4()
 
     def __init__(self, material, program, order=0, parent=None):
         super().__init__(program, order, parent)
-
         self.material = material
-        self.rotation = Vec3()
-        self.translation = Vec3()
-
-    def set_modelview_matrix(self):
-        # NOTE: Matrix operations can be optimized later with transform feedback
-        view = Mat4()
-        view = view.rotate(radians(self.rotation[2]), Vec3(0, 0, 1))
-        view = view.rotate(radians(self.rotation[1]), Vec3(0, 1, 0))
-        view = view.rotate(radians(self.rotation[0]), Vec3(1, 0, 0))
-        view = view.translate(self.translation)
-
-        self.program['mview'] = view
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -311,13 +288,13 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
-    uniform mat4 mview;
+    uniform mat4 modelview;
 
     void main()
     {
-        vec4 pos = mview * vec4(vertices, 1.0);
+        vec4 pos = window.view * modelview * vec4(vertices, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(mview)));
+        mat3 normal_matrix = transpose(inverse(mat3(modelview)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -341,15 +318,15 @@ class TexturedMaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def __init__(self, material, texture):
-        super().__init__(material, get_default_textured_shader())
+    def __init__(self, material, program, texture, order=0, parent=None):
+        super().__init__(material, program, order, parent)
         self.texture = texture
 
     def set_state(self):
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
-        self.set_modelview_matrix()
+        self.program['modelview'] = self.modelview_matrix
 
     def unset_state(self):
         gl.glBindTexture(self.texture.target, 0)
@@ -383,13 +360,13 @@ class MaterialGroup(BaseMaterialGroup):
         mat4 view;
     } window;
 
-    uniform mat4 mview;
+    uniform mat4 modelview;
 
     void main()
     {
-        vec4 pos = mview * vec4(vertices, 1.0);
+        vec4 pos = window.view * modelview * vec4(vertices, 1.0);
         gl_Position = window.projection * pos;
-        mat3 normal_matrix = transpose(inverse(mat3(mview)));
+        mat3 normal_matrix = transpose(inverse(mat3(modelview)));
 
         vertex_position = pos.xyz;
         vertex_colors = colors;
@@ -409,12 +386,9 @@ class MaterialGroup(BaseMaterialGroup):
     }
     """
 
-    def __init__(self, material):
-        super().__init__(material, get_default_shader())
-
     def set_state(self):
         self.program.use()
-        self.set_modelview_matrix()
+        self.program['modelview'] = self.modelview_matrix
 
 
 add_default_model_codecs()
