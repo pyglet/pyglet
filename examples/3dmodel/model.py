@@ -1,6 +1,3 @@
-import math
-from math import radians
-
 import pyglet
 
 from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE

@@ -28,41 +28,39 @@ _uniform_getters = {
 }
 
 _uniform_setters = {
-    # uniform type: (gl_type, setter, length, count)
-    GL_BOOL:      (GLint, glUniform1iv, 1, 1),
-    GL_BOOL_VEC2: (GLint, glUniform1iv, 2, 1),
-    GL_BOOL_VEC3: (GLint, glUniform1iv, 3, 1),
-    GL_BOOL_VEC4: (GLint, glUniform1iv, 4, 1),
+    # uniform:    (gl_type, setter, nobind_setter, length, count)
+    GL_BOOL:      (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_BOOL_VEC2: (GLint, glUniform1iv, glProgramUniform1iv, 2, 1),
+    GL_BOOL_VEC3: (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
+    GL_BOOL_VEC4: (GLint, glUniform1iv, glProgramUniform1iv, 4, 1),
 
-    GL_INT:      (GLint, glUniform1iv, 1, 1),
-    GL_INT_VEC2: (GLint, glUniform2iv, 2, 1),
-    GL_INT_VEC3: (GLint, glUniform3iv, 3, 1),
-    GL_INT_VEC4: (GLint, glUniform4iv, 4, 1),
+    GL_INT:      (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_INT_VEC2: (GLint, glUniform2iv, glProgramUniform2iv, 2, 1),
+    GL_INT_VEC3: (GLint, glUniform3iv, glProgramUniform3iv, 3, 1),
+    GL_INT_VEC4: (GLint, glUniform4iv, glProgramUniform4iv, 4, 1),
 
-    GL_FLOAT:      (GLfloat, glUniform1fv, 1, 1),
-    GL_FLOAT_VEC2: (GLfloat, glUniform2fv, 2, 1),
-    GL_FLOAT_VEC3: (GLfloat, glUniform3fv, 3, 1),
-    GL_FLOAT_VEC4: (GLfloat, glUniform4fv, 4, 1),
+    GL_FLOAT:      (GLfloat, glUniform1fv, glProgramUniform1fv, 1, 1),
+    GL_FLOAT_VEC2: (GLfloat, glUniform2fv, glProgramUniform2fv, 2, 1),
+    GL_FLOAT_VEC3: (GLfloat, glUniform3fv, glProgramUniform3fv, 3, 1),
+    GL_FLOAT_VEC4: (GLfloat, glUniform4fv, glProgramUniform4fv, 4, 1),
 
-    GL_SAMPLER_1D:       (GLint, glUniform1iv, 1, 1),
-    GL_SAMPLER_2D:       (GLint, glUniform1iv, 1, 1),
-    GL_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, 1, 1),
+    GL_SAMPLER_1D:       (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_SAMPLER_2D:       (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
+    GL_SAMPLER_2D_ARRAY: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
         
-    GL_SAMPLER_3D: (GLint, glUniform1iv, 1, 1),
+    GL_SAMPLER_3D: (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
 
-    GL_FLOAT_MAT2: (GLfloat, glUniformMatrix2fv, 4, 1),
-    GL_FLOAT_MAT3: (GLfloat, glUniformMatrix3fv, 6, 1),
-    GL_FLOAT_MAT4: (GLfloat, glUniformMatrix4fv, 16, 1),
+    GL_FLOAT_MAT2: (GLfloat, glUniformMatrix2fv, glProgramUniformMatrix2fv, 4, 1),
+    GL_FLOAT_MAT3: (GLfloat, glUniformMatrix3fv, glProgramUniformMatrix3fv, 6, 1),
+    GL_FLOAT_MAT4: (GLfloat, glUniformMatrix4fv, glProgramUniformMatrix4fv, 16, 1),
 
     # TODO: test/implement these:
-    # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv,
-    # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv,
-    #
-    # GL_FLOAT_MAT3x2: glUniformMatrix3x2fv,
-    # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv,
-    #
-    # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv,
-    # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv,
+    # GL_FLOAT_MAT2x3: glUniformMatrix2x3fv, glProgramUniformMatrix2x3fv,
+    # GL_FLOAT_MAT2x4: glUniformMatrix2x4fv, glProgramUniformMatrix2x4fv,
+    # GL_FLOAT_MAT3x2: glUniformMatrix3x2fv, glProgramUniformMatrix3x2fv,
+    # GL_FLOAT_MAT3x4: glUniformMatrix3x4fv, glProgramUniformMatrix3x4fv,
+    # GL_FLOAT_MAT4x2: glUniformMatrix4x2fv, glProgramUniformMatrix4x2fv,
+    # GL_FLOAT_MAT4x3: glUniformMatrix4x3fv, glProgramUniformMatrix4x3fv,
 }
 
 _attribute_types = {
@@ -96,11 +94,16 @@ _attribute_types = {
 class _Uniform:
     __slots__ = 'program', 'name', 'type', 'location', 'length', 'count', 'get', 'set'
 
-    def __init__(self, program, name, uniform_type, gl_type, location, length, count, gl_setter, gl_getter):
+    def __init__(self, program, name, uniform_type, location, dsa):
         self.program = program
         self.name = name
         self.type = uniform_type
         self.location = location
+
+        gl_type, gl_setter_legacy, gl_setter_dsa, length, count = _uniform_setters[uniform_type]
+        gl_setter = gl_setter_dsa if dsa else gl_setter_legacy
+        gl_getter = _uniform_getters[gl_type]
+
         self.length = length
         self.count = count
 
@@ -112,45 +115,66 @@ class _Uniform:
         ptr = cast(c_array, POINTER(gl_type))
 
         self.get = self._create_getter_func(program, location, gl_getter, c_array, length)
-        self.set = self._create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix)
+        self.set = self._create_setter_func(program, location, gl_setter, c_array, length, count, ptr, is_matrix, dsa)
 
     @staticmethod
-    def _create_getter_func(program_id, location, gl_getter, c_array, length):
+    def _create_getter_func(program, location, gl_getter, c_array, length):
         """Factory function for creating simplified Uniform getters"""
 
         if length == 1:
             def getter_func():
-                gl_getter(program_id, location, c_array)
+                gl_getter(program, location, c_array)
                 return c_array[0]
         else:
             def getter_func():
-                gl_getter(program_id, location, c_array)
+                gl_getter(program, location, c_array)
                 return c_array[:]
 
         return getter_func
 
     @staticmethod
-    def _create_setter_func(location, gl_setter, c_array, length, count, ptr, is_matrix):
+    def _create_setter_func(program, location, gl_setter, c_array, length, count, ptr, is_matrix, dsa):
         """Factory function for creating simplified Uniform setters"""
+        if dsa:     # Bindless updates:
 
-        if is_matrix:
-            def setter_func(value):
-                c_array[:] = value
-                gl_setter(location, count, GL_FALSE, ptr)
+            if is_matrix:
+                def setter_func(value):
+                    c_array[:] = value
+                    gl_setter(program, location, count, GL_FALSE, ptr)
+            elif length == 1 and count == 1:
+                def setter_func(value):
+                    c_array[0] = value
+                    gl_setter(program, location, count, ptr)
+            elif length > 1 and count == 1:
+                def setter_func(values):
+                    c_array[:] = values
+                    gl_setter(program, location, count, ptr)
+            else:
+                raise NotImplementedError("Uniform type not yet supported.")
 
-        elif length == 1 and count == 1:
-            def setter_func(value):
-                c_array[0] = value
-                gl_setter(location, count, ptr)
-        elif length > 1 and count == 1:
-            def setter_func(values):
-                c_array[:] = values
-                gl_setter(location, count, ptr)
+            return setter_func
 
         else:
-            raise NotImplementedError("Uniform type not yet supported.")
 
-        return setter_func
+            if is_matrix:
+                def setter_func(value):
+                    glUseProgram(program)
+                    c_array[:] = value
+                    gl_setter(location, count, GL_FALSE, ptr)
+            elif length == 1 and count == 1:
+                def setter_func(value):
+                    glUseProgram(program)
+                    c_array[0] = value
+                    gl_setter(location, count, ptr)
+            elif length > 1 and count == 1:
+                def setter_func(values):
+                    glUseProgram(program)
+                    c_array[:] = values
+                    gl_setter(location, count, ptr)
+            else:
+                raise NotImplementedError("Uniform type not yet supported.")
+
+            return setter_func
 
     def __repr__(self):
         return f"Uniform('{self.name}', location={self.location}, length={self.length}, count={self.count})"
@@ -228,7 +252,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    __slots__ = '_id', '_context', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__'
+    __slots__ = '_id', '_context', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__', '_dsa'
 
     def __init__(self, *shaders):
         """Create an OpenGL ShaderProgram, from multiple Shaders.
@@ -243,6 +267,9 @@ class ShaderProgram:
         self._id = self._link_program(shaders)
         self._context = pyglet.gl.current_context
         self._active = False
+
+        # Query if Direct State Access is available:
+        self._dsa = gl_info.have_version(4, 1) or gl_info.have_extension("GL_ARB_separate_shader_objects")
 
         self._attributes = {}
         self._uniforms = {}
@@ -380,18 +407,10 @@ class ShaderProgram:
             if loc == -1:      # Skip uniforms that may be inside a Uniform Block
                 continue
 
-            try:
-                gl_type, gl_setter, length, count = _uniform_setters[u_type]
-                gl_getter = _uniform_getters[gl_type]
+            self._uniforms[u_name] = _Uniform(prg_id, u_name, u_type, loc, self._dsa)
 
-                if _debug_gl_shaders:
-                    print("Found uniform: {0}, type: {1}, size: {2}, location: {3}, length: {4},"
-                          " count: {5}".format(u_name, u_type, u_size, loc, length, count))
-
-            except KeyError:
-                raise GLException("Unsupported Uniform type {0}".format(u_type))
-
-            self._uniforms[u_name] = _Uniform(prg_id, u_name, u_type, gl_type, loc, length, count, gl_setter, gl_getter)
+            if _debug_gl_shaders:
+                print(f"Found uniform: {self._uniforms[u_name]}")
 
     def _introspect_uniform_blocks(self):
         p_id = self._id
@@ -422,7 +441,7 @@ class ShaderProgram:
                 except ValueError:
                     pass
                 
-                gl_type, _, length, _ = _uniform_setters[u_type]
+                gl_type, _, _, length, _ = _uniform_setters[u_type]
                 
                 uniform_blocks[name][i] = (uniform_name, gl_type, length)
 
