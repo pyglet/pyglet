@@ -28,7 +28,7 @@ _uniform_getters = {
 }
 
 _uniform_setters = {
-    # uniform:    (gl_type, setter, nobind_setter, length, count)
+    # uniform:    gl_type, legacy_setter, setter, length, count
     GL_BOOL:      (GLint, glUniform1iv, glProgramUniform1iv, 1, 1),
     GL_BOOL_VEC2: (GLint, glUniform1iv, glProgramUniform1iv, 2, 1),
     GL_BOOL_VEC3: (GLint, glUniform1iv, glProgramUniform1iv, 3, 1),
@@ -64,27 +64,27 @@ _uniform_setters = {
 }
 
 _attribute_types = {
-    GL_BOOL: (1, '?'),
+    GL_BOOL:      (1, '?'),
     GL_BOOL_VEC2: (2, '?'),
     GL_BOOL_VEC3: (3, '?'),
     GL_BOOL_VEC4: (4, '?'),
 
-    GL_INT: (1, 'i'),
+    GL_INT:      (1, 'i'),
     GL_INT_VEC2: (2, 'i'),
     GL_INT_VEC3: (3, 'i'),
     GL_INT_VEC4: (4, 'i'),
 
-    GL_UNSIGNED_INT: (1, 'I'),
+    GL_UNSIGNED_INT:      (1, 'I'),
     GL_UNSIGNED_INT_VEC2: (2, 'I'),
     GL_UNSIGNED_INT_VEC3: (3, 'I'),
     GL_UNSIGNED_INT_VEC4: (4, 'I'),
 
-    GL_FLOAT: (1, 'f'),
+    GL_FLOAT:      (1, 'f'),
     GL_FLOAT_VEC2: (2, 'f'),
     GL_FLOAT_VEC3: (3, 'f'),
     GL_FLOAT_VEC4: (4, 'f'),
 
-    GL_DOUBLE: (1, 'd'),
+    GL_DOUBLE:      (1, 'd'),
     GL_DOUBLE_VEC2: (2, 'd'),
     GL_DOUBLE_VEC3: (3, 'd'),
     GL_DOUBLE_VEC4: (4, 'd'),
@@ -191,9 +191,9 @@ class Shader:
 
         :Parameters:
             `source_string` : str
-                A string containing the Shader code.
+                A string containing the Shader source code.
             `shader_type` : str
-                The Shader type, such as "vertex" or "fragment".
+                The Shader type, such as "vertex", "fragment", "geometry", etc.
         """
         self._id = None
 
@@ -252,7 +252,7 @@ class Shader:
 class ShaderProgram:
     """OpenGL Shader Program"""
 
-    __slots__ = '_id', '_context', '_active', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__', '_dsa'
+    __slots__ = '_id', '_context', '_attributes', '_uniforms', '_uniform_blocks', '__weakref__', '_dsa'
 
     def __init__(self, *shaders):
         """Create an OpenGL ShaderProgram, from multiple Shaders.
@@ -266,18 +266,13 @@ class ShaderProgram:
         assert shaders, "At least one Shader object is required."
         self._id = self._link_program(shaders)
         self._context = pyglet.gl.current_context
-        self._active = False
 
         # Query if Direct State Access is available:
         self._dsa = gl_info.have_version(4, 1) or gl_info.have_extension("GL_ARB_separate_shader_objects")
 
-        self._attributes = {}
-        self._uniforms = {}
-        self._uniform_blocks = {}
-
-        self._introspect_attributes()
-        self._introspect_uniforms()
-        self._introspect_uniform_blocks()
+        self._attributes = self._introspect_attributes()
+        self._uniforms = self._introspect_uniforms()
+        self._uniform_blocks = self._introspect_uniform_blocks()
 
         if _debug_gl_shaders:
             print(self._get_program_log())
@@ -285,10 +280,6 @@ class ShaderProgram:
     @property
     def id(self):
         return self._id
-
-    @property
-    def is_active(self):
-        return self._active
 
     @property
     def attributes(self):
@@ -301,10 +292,6 @@ class ShaderProgram:
     @property
     def uniform_blocks(self):
         return self._uniform_blocks
-
-    @property
-    def formats(self):
-        return tuple(f"{atr.name}{atr.count}{atr.format}" for atr in self._attributes.values())
 
     def _get_program_log(self):
         result = c_int(0)
@@ -329,11 +316,9 @@ class ShaderProgram:
 
     def use(self):
         glUseProgram(self._id)
-        self._active = True
 
     def stop(self):
         glUseProgram(0)
-        self._active = False
 
     __enter__ = use
     bind = use
@@ -341,7 +326,6 @@ class ShaderProgram:
 
     def __exit__(self, *_):
         glUseProgram(0)
-        self._active = False
 
     def __del__(self):
         try:
@@ -352,9 +336,6 @@ class ShaderProgram:
             pass
 
     def __setitem__(self, key, value):
-        if not self._active:
-            raise Exception("Shader Program is not active.")
-
         try:
             uniform = self._uniforms[key]
         except KeyError:
@@ -392,60 +373,62 @@ class ShaderProgram:
             loc = glGetAttribLocation(program, create_string_buffer(a_name.encode('utf-8')))
             count, fmt = _attribute_types[a_type]
             attributes[a_name] = dict(type=a_type, size=a_size, location=loc, count=count, format=fmt)
-        self._attributes = attributes
 
         if _debug_gl_shaders:
             for attribute in attributes.values():
                 print(f"Found attribute: {attribute}")
 
+        return attributes
+
     def _introspect_uniforms(self):
-        prg_id = self._id
+        program = self._id
+        uniforms = {}
         for index in range(self._get_number(GL_ACTIVE_UNIFORMS)):
             u_name, u_type, u_size = self._query_uniform(index)
-            loc = glGetUniformLocation(prg_id, create_string_buffer(u_name.encode('utf-8')))
-
+            loc = glGetUniformLocation(program, create_string_buffer(u_name.encode('utf-8')))
             if loc == -1:      # Skip uniforms that may be inside a Uniform Block
                 continue
+            uniforms[u_name] = _Uniform(program, u_name, u_type, loc, self._dsa)
 
-            self._uniforms[u_name] = _Uniform(prg_id, u_name, u_type, loc, self._dsa)
+        if _debug_gl_shaders:
+            for uniform in self._uniforms.values():
+                print(f"Found uniform: {uniform}")
 
-            if _debug_gl_shaders:
-                print(f"Found uniform: {self._uniforms[u_name]}")
+        return uniforms
 
     def _introspect_uniform_blocks(self):
-        p_id = self._id
-
+        program = self._id
         uniform_blocks = {}
-
         for index in range(self._get_number(GL_ACTIVE_UNIFORM_BLOCKS)):
             name = self._get_uniform_block_name(index)
 
-            uniform_blocks[name] = {}
-            
             num_active = GLint()
             block_data_size = GLint()
 
-            glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
-            glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
+            glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_DATA_SIZE, block_data_size)
+            glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, num_active)
             
             indices = (GLuint * num_active.value)()
             indices_ptr = cast(addressof(indices), POINTER(GLint))
-            glGetActiveUniformBlockiv(p_id, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
-            
+            glGetActiveUniformBlockiv(program, index, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, indices_ptr)
+
+            uniforms = {}
+
             for i in range(num_active.value):
                 uniform_name, u_type, u_size = self._query_uniform(indices[i])
-                
+
                 # Separate uniform name from block name (Only if instance name is provided on the Uniform Block)
                 try:
                     _, uniform_name = uniform_name.split(".")
                 except ValueError:
                     pass
-                
-                gl_type, _, _, length, _ = _uniform_setters[u_type]
-                
-                uniform_blocks[name][i] = (uniform_name, gl_type, length)
 
-            self._uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, uniform_blocks[name])
+                gl_type, _, _, length, _ = _uniform_setters[u_type]
+                uniforms[i] = (uniform_name, gl_type, length)
+
+            uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, uniforms)
+
+        return uniform_blocks
 
     def _get_uniform_block_name(self, index):
         buf_size = 128
@@ -599,7 +582,6 @@ class UniformBufferObject:
         self.view = self._introspect_uniforms()
         self._view_ptr = pointer(self.view)
         self.index = index
-        # glUniformBlockBinding(self.block.program.id, self.block.index, self.index)
 
     @property
     def id(self):
