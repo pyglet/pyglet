@@ -801,6 +801,7 @@ class TextLayout:
     _anchor_y = 'bottom'
     _content_valign = 'top'
     _multiline = False
+    _visible = True
 
     def __init__(self, document, width=None, height=None,
                  multiline=False, dpi=None, batch=None, group=None,
@@ -976,9 +977,49 @@ class TextLayout:
 
     @position.setter
     def position(self, position):
-        x, y = position
-        self._set_x(x)
-        self._set_y(y)
+        self.update(*position)
+
+    def update(self, x, y):
+        """Change both X and Y positions of the layout at once for faster performance.
+
+        :Parameters:
+            `x` : int
+                X coordinate of the layout.
+            `y` : int
+                Y coordinate of the layout.
+        """
+        if self._boxes:
+            self._x = x
+            self._y = y
+            self._update()
+        else:
+            dx = x - self._x
+            dy = y - self._y
+            for vertex_list in self._vertex_lists:
+                vertices = vertex_list.vertices[:]
+                vertices[::2] = [x + dx for x in vertices[::2]]
+                vertices[1::2] = [y + dy for y in vertices[1::2]]
+                vertex_list.vertices[:] = vertices
+            self._x = x
+            self._y = y
+
+    @property
+    def visible(self):
+        """True if the layout will be drawn.
+
+        :type: bool
+        """
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        if value != self._visible:
+            self._visible = value
+
+            if value:
+                self._update()
+            else:
+                self.delete()
 
     @property
     def width(self):
@@ -1303,7 +1344,12 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        self._init_document()
+        if self._visible:
+            self._init_document()
+        else:
+            if self.document.text:
+                # Update content width and height, since text may change while hidden.
+                self._get_lines()
 
     def on_delete_text(self, start, end):
         """Event handler for `AbstractDocument.on_delete_text`.
@@ -1311,7 +1357,8 @@ class TextLayout:
         The event handler is bound by the text layout; there is no need for
         applications to interact with this method.
         """
-        self._init_document()
+        if self._visible:
+            self._init_document()
 
     def on_style_text(self, start, end, attributes):
         """Event handler for `AbstractDocument.on_style_text`.

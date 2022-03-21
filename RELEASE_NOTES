@@ -1,3 +1,83 @@
+pyglet 1.5.23
+
+Features
+--------
+- Windows - Add `win32_disable_shaping` option. This can improve font performance when shaping isn't required.
+- Backport the latest pyglet.math module changes from the development branch.
+
+Bugfixes
+--------
+- Linux - Fix crash when Gstreamer Gst bindings are not installed.
+- Fix math.Vec4.clamp method.
+
+
+pyglet 1.5.22
+
+Features
+--------
+- If the PyOgg module is installed, it can be used for loading various Vorbis audio formats.
+- Add a new CameraGroup example, to show implementing a Camera with pyglet's Groups.
+- Add `angle` and `start_angle` property/setter to `shapes.Sector`.
+- Windows - new WMF based encoder for faster saving of common image formats.
+
+Bugfixes
+--------
+- Fix indexing error when setting text.Label.opacity (#481)
+- Windows - Fix shift modifier + exclusive mouse mode (#472)
+- Linux - Prevent non-Tablet devices from being detected as Tablets (#491)
+- Windows - Prevent distortion with multiple XAudio2 audio sources (#515)
+- Fix frame dropping bug with FFMpeg decoder.
+- Windows - Fix Video alpha channel for WMF decoder.
+- Varios documentation and docstring fixes. Thanks everyone!
+
+
+pyglet 1.5.21
+
+Features
+--------
+- A new MovableFrame that allows repositioning Widgets when a specified key modifier is held.
+- Text Layouts now have `opacity` and `visible` attributes, similar to Sprites.
+- Add new shapes.Ellipse class.
+
+Bugfixes
+--------
+- Xlib - don't enable certain Window options if transparency is not enabled. (#454)
+- Windows - Fix issue with some fonts where glyphs overhanging their advance would be cut off.
+
+
+pyglet 1.5.20
+
+Features
+--------
+- Experimental support for transparent and overlay windows on Linux and Windows.
+- Shapes - Allow rotation and changing of border color for the BorderedRectangle.
+
+Bugfixes
+--------
+- Xlib - Fix the mouse Y position being off by 1-pixel.
+- Windows - Fix gapless audio playback on the XAudio2 backend.
+
+
+pyglet 1.5.19
+
+Features
+--------
+- Add new 'Sector' class to shapes module, for creating sectors of a circle.
+
+Bugfixes
+--------
+- Ensure that the FFmpegDecoder returns the requested number of bytes.
+- When subclassing EventHandlers, ensure that possible TyperErrors give correct feedback.
+- Fix missing name attribute on FreeTypeMemoryFace object when adding fonts.
+
+Maintenance
+-----------
+- Re-introduce background threads for refilling Player buffers.
+- Allow directly setting Widget values.
+- Add docstrings for gui.widgets.
+- Refresh of experimental/win32priority.py.
+
+
 pyglet 1.5.18
 Bugfix release
 

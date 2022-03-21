@@ -251,6 +251,10 @@ class FreeTypeFace:
             return cls.from_file(match.file)
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def family_name(self):
         return asstr(self.ft_face.contents.family_name)
 
@@ -324,7 +328,7 @@ class FreeTypeFace:
                                    descent=-ascent // 4)  # arbitrary.
 
     def _get_best_name(self):
-        self._name = self.family_name
+        self._name = asstr(self.ft_face.contents.family_name)
         self._get_font_family_from_ttf
 
     def _get_font_family_from_ttf(self):

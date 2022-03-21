@@ -122,6 +122,9 @@ class HeadlessWindow(BaseWindow):
         while self._event_queue:
             EventDispatcher.dispatch_event(self, *self._event_queue.pop(0))
 
+    def dispatch_pending_events(self):
+        pass
+
     def _create(self):
         self._egl_display_connection = self.display._display_connection
 
@@ -137,3 +140,6 @@ class HeadlessWindow(BaseWindow):
             self.context.attach(self.canvas)
 
             self.dispatch_event('on_resize', self._width, self._height)
+
+
+__all__ = ["HeadlessWindow"]

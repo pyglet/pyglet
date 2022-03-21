@@ -46,9 +46,12 @@ from ..exceptions import MediaDecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 
-import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GLib
+try:
+    import gi
+    gi.require_version('Gst', '1.0')
+    from gi.repository import Gst, GLib
+except (ValueError, ImportError) as e:
+    raise ImportError(e)
 
 
 class GStreamerDecodeException(MediaDecodeException):

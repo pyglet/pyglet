@@ -52,8 +52,8 @@ _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 #: The release version of this pyglet installation.
 #:
 #: Valid only if pyglet was installed from a source or binary distribution
-#: (i.e. not in a checked-out copy from SVN).
-version = '1.5.18'
+#: (i.e. not cloned from Git).
+version = '1.5.23'
 
 
 if sys.version_info < (3, 6):
@@ -165,6 +165,7 @@ options = {
     'advanced_font_features': False,
     'headless': False,
     'headless_device': 0,
+    'win32_disable_shaping': False,
 }
 
 _option_types = {
@@ -190,7 +191,8 @@ _option_types = {
     'xlib_fullscreen_override_redirect': bool,
     'advanced_font_features': bool,
     'headless': bool,
-    'headless_device': int
+    'headless_device': int,
+    'win32_disable_shaping': bool
 }
 
 
