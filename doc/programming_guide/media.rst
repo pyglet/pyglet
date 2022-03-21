@@ -152,7 +152,9 @@ or small videos. FFmpeg is recommended for all other purposes.
 
 GStreamer
 ^^^^^^^^^
-Supported on Linux operating systems.
+Supported on Linux operating systems that have the GStreamer installed. Please note that the
+associated Python packages for gobject & gst are also required. This varies by distribution,
+but will often already be installed along with GStreamer.
 
 * MP3
 * FLAC
