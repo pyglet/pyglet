@@ -1,3 +1,16 @@
+pyglet 1.5.23
+
+Features
+--------
+- Windows - Add `win32_disable_shaping` option. This can improve font performance when shaping isn't required.
+- Backport the latest pyglet.math module changes from the development branch.
+
+Bugfixes
+--------
+- Linux - Fix crash when Gstreamer Gst bindings are not installed.
+- Fix math.Vec4.clamp method.
+
+
 pyglet 1.5.22
 
 Features
