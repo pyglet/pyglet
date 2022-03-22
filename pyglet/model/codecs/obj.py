@@ -245,17 +245,17 @@ class OBJModelDecoder(ModelDecoder):
             material = mesh.material
             count = len(mesh.vertices) // 3
             if material.texture_name:
-                texture = pyglet.resource.texture(material.texture_name)
-                group = TexturedMaterialGroup(material, texture)
                 program = pyglet.model.get_default_textured_shader()
+                texture = pyglet.resource.texture(material.texture_name)
+                group = TexturedMaterialGroup(material, program, texture)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, group,
                                                         vertices=('f', mesh.vertices),
                                                         normals=('f', mesh.normals),
                                                         tex_coords=('f', mesh.tex_coords),
                                                         colors=('f', material.diffuse * count)))
             else:
-                group = MaterialGroup(material)
                 program = pyglet.model.get_default_shader()
+                group = MaterialGroup(material, program)
                 vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, group,
                                                         vertices=('f', mesh.vertices),
                                                         normals=('f', mesh.normals),
