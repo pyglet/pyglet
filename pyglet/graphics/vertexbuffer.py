@@ -188,7 +188,8 @@ class BufferObject(AbstractBuffer):
         self.id = buffer_id.value
 
         glBindBuffer(target, self.id)
-        glBufferData(target, self.size, None, self.usage)
+        data = (GLubyte * self.size)()
+        glBufferData(target, self.size, data, self.usage)
 
     def invalidate(self):
         glBufferData(self.target, self.size, None, self.usage)
