@@ -55,6 +55,17 @@ if 'sphinx' in sys.modules:
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
 
+#: The release version of this pyglet installation.
+#:
+#: Valid only if pyglet was installed from a source or binary distribution
+#: (i.e. not cloned from Git).
+version = '1.5.22'
+
+
+if sys.version_info < (3, 6):
+    raise Exception('pyglet %s requires Python 3.6 or newer.' % version)
+
+
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
 if "bsd" in compat_platform:
@@ -159,6 +170,7 @@ options = {
     'win32_gdi_font': False,
     'headless': False,
     'headless_device': 0,
+    'win32_disable_shaping': False,
 }
 
 _option_types = {
@@ -185,7 +197,8 @@ _option_types = {
     'search_local_libs': bool,
     'win32_gdi_font': bool,
     'headless': bool,
-    'headless_device': int
+    'headless_device': int,
+    'win32_disable_shaping': bool
 }
 
 
