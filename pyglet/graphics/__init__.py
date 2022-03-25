@@ -647,6 +647,8 @@ class Group:
             self.parent.unset_state_recursive()
 
 
+# Example Groups.
+
 class ShaderGroup(Group):
     def __init__(self, program, order=0, parent=None):
         super().__init__(order, parent)
@@ -674,8 +676,6 @@ class TextureGroup(Group):
     Texture groups are equal if their textures' targets and names are equal.
     """
 
-    # Don't use this, create your own group classes that are more specific.
-    # This is just an example.
     def __init__(self, texture, order=0, parent=None):
         """Create a texture group.
 
@@ -687,7 +687,7 @@ class TextureGroup(Group):
             `parent` : `~pyglet.graphics.Group`
                 Parent group.
         """
-        super(TextureGroup, self).__init__(order, parent)
+        super().__init__(order, parent)
         self.texture = texture
 
     def set_state(self):
@@ -711,7 +711,7 @@ class TextureGroup(Group):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
 
-#: The default Shaders
+# The default Shader source:
 
 _vertex_source = """#version 330 core
     in vec3 position;

@@ -260,14 +260,15 @@ class Material:
                 self.texture_name == other.texture_name)
 
 
-class BaseMaterialGroup(graphics.ShaderGroup):
+class BaseMaterialGroup(graphics.Group):
     default_vert_src = None
     default_frag_src = None
     matrix = Mat4()
 
     def __init__(self, material, program, order=0, parent=None):
-        super().__init__(program, order, parent)
+        super().__init__(order, parent)
         self.material = material
+        self.program = program
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
