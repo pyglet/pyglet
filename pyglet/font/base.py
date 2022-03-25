@@ -349,7 +349,7 @@ class Font:
             self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
 
         glyph = self.texture_bin.add(
-            image, self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter)
+            image, self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter, border=1)
 
         return glyph
 
