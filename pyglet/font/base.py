@@ -181,30 +181,6 @@ class Glyph(image.TextureRegion):
             left_side_bearing + self.width + x_offset,
             -baseline + self.height + y_offset)
 
-    # def draw(self):
-    #     """Debug method.
-    #
-    #     Use the higher level APIs for performance and kerning.
-    #     """
-    #     glBindTexture(GL_TEXTURE_2D, self.owner.id)
-    #     glBegin(GL_QUADS)
-    #     self.draw_quad_vertices()
-    #     glEnd()
-    #
-    # def draw_quad_vertices(self):
-    #     """Debug method.
-    #
-    #     Use the higher level APIs for performance and kerning.
-    #     """
-    #     glTexCoord3f(*self.tex_coords[:3])
-    #     glVertex2f(self.vertices[0], self.vertices[1])
-    #     glTexCoord3f(*self.tex_coords[3:6])
-    #     glVertex2f(self.vertices[2], self.vertices[1])
-    #     glTexCoord3f(*self.tex_coords[6:9])
-    #     glVertex2f(self.vertices[2], self.vertices[3])
-    #     glTexCoord3f(*self.tex_coords[9:12])
-    #     glVertex2f(self.vertices[0], self.vertices[3])
-
     def get_kerning_pair(self, right_glyph):
         """Not implemented.
         """
@@ -231,7 +207,7 @@ class GlyphTextureBin(image.atlas.TextureBin):
         for atlas in list(self.atlases):
             try:
                 return atlas.add(img, border)
-            except AllocatorException:
+            except image.atlas.AllocatorException:
                 # Remove atlases that are no longer useful (so that their textures
                 # can later be freed if the images inside them get collected).
                 if img.width < 64 and img.height < 64:
