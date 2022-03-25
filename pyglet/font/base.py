@@ -345,7 +345,7 @@ class Font:
         """
         if self.texture_bin is None:
             if self.optimize_fit:
-                self.texture_width = self.texture_height = self._get_optimal_atlas_size(image)
+                self.texture_width, self.texture_height = self._get_optimal_atlas_size(image)
             self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
 
         glyph = self.texture_bin.add(
@@ -362,15 +362,20 @@ class Font:
         atlas_size = None
 
         # Just a fast check to get the smallest atlas size possible to fit.
+        i = 0
         while not atlas_size:
             fit = ((aw - (image_data.width + 2)) // (image_data.width + 2) + 1) * (
                         (ah - (image_data.height + 2)) // (image_data.height + 2) + 1)
 
             if fit >= self.glyph_fit:
-                atlas_size = aw
+                atlas_size = (aw, ah)
 
-            aw *= 2
-            ah *= 2
+            if i % 2:
+                aw *= 2
+            else:
+                ah *= 2
+
+            i += 1
 
         return atlas_size
 
