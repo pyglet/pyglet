@@ -1877,6 +1877,7 @@ class Win32DirectWriteFont(base.Font):
     _default_name = 'Segoe UI'  # Default font for Win7/10.
 
     _glyph_renderer = None
+    _empty_glyph = None
 
     glyph_renderer_class = DirectWriteGlyphRenderer
     texture_internalformat = pyglet.gl.GL_RGBA
@@ -2041,6 +2042,8 @@ class Win32DirectWriteFont(base.Font):
                     fb_ff = self._get_fallback_font_face(text_index, text_length)
                     if fb_ff:
                         glyph.colored = self.is_fallback_str_colored(fb_ff, actual_text)
+            else:
+                glyph = self._empty_glyph
 
             self.glyphs[actual_text] = glyph
 
@@ -2102,6 +2105,7 @@ class Win32DirectWriteFont(base.Font):
         wanted and you can get away with this."""
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
+            self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
 
         glyphs = []
         for c in text:
@@ -2110,15 +2114,17 @@ class Win32DirectWriteFont(base.Font):
 
             if c not in self.glyphs:
                 self.glyphs[c] = self._glyph_renderer.render_using_layout(c)
+                if not self.glyphs[c]:
+                    self.glyphs[c] = self._empty_glyph
 
-            if self.glyphs[c]:
-                glyphs.append(self.glyphs[c])
+            glyphs.append(self.glyphs[c])
 
         return glyphs
 
     def get_glyphs(self, text):
         if not self._glyph_renderer:
             self._glyph_renderer = self.glyph_renderer_class(self)
+            self._empty_glyph = self._glyph_renderer.render_using_layout(" ")
 
         text_buffer, actual_count, indices, advances, offsets, clusters = self._glyph_renderer.get_string_info(text, self.font_face)
 
@@ -2132,8 +2138,7 @@ class Win32DirectWriteFont(base.Font):
                 # the built in text layout from MS. Which depending on version can use fallback fonts and other tricks
                 # to possibly get something of use.
                 glyph = self._render_layout_glyph(text_buffer, i, clusters)
-                if glyph:
-                    glyphs.append(glyph)
+                glyphs.append(glyph)
             else:
                 # Glyphs can vary depending on shaping. We will cache it by indice, advance, and offset.
                 # Possible to just cache without offset and set them each time. This may be faster?
