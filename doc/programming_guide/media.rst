@@ -18,7 +18,7 @@ distribute FFmpeg.
 
 .. _FFmpeg: https://www.ffmpeg.org/download.html
 
-.. _openal.org: http://www.openal.org/downloads.html
+.. _openal.org: https://www.openal.org/downloads
 
 Audio drivers
 -------------
@@ -112,7 +112,7 @@ is recommended to use OpenAL if positional audio is required.
 
 .. [#openalf] OpenAL is not installed by default on Windows, nor in many Linux
     distributions. It can be downloaded separately from your audio device
-    manufacturer or `openal.org <http://www.openal.org/downloads.html>`_
+    manufacturer or `openal.org <https://www.openal.org/downloads>`_
 
 Supported media types
 ---------------------
