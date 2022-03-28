@@ -357,12 +357,14 @@ class _GlyphBox(_AbstractBox):
         for start, end, color in context.colors_iter.ranges(i, i + n_glyphs):
             if color is None:
                 color = (0, 0, 0, 255)
+            if len(color) != 4:
+                raise ValueError("Color requires 4 values (R, G, B, A). Value received: {}".format(color))
             colors.extend(color * ((end - start) * 4))
 
         indices = []
         # Create indices for each glyph quad:
-        for i in range(n_glyphs):
-            indices.extend([element + (i * 4) for element in [0, 1, 2, 0, 2, 3]])
+        for glyph_idx in range(n_glyphs):
+            indices.extend([element + (glyph_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
 
         vertex_list = program.vertex_list_indexed(n_glyphs * 4, GL_TRIANGLES, indices, layout.batch, group,
                                                   position=('f', vertices),
@@ -384,6 +386,7 @@ class _GlyphBox(_AbstractBox):
         y1 = y + self.descent + baseline
         y2 = y + self.ascent + baseline
         x1 = x
+
         for start, end, decoration in context.decoration_iter.ranges(i, i + n_glyphs):
             bg, underline = decoration
             x2 = x1
@@ -391,18 +394,28 @@ class _GlyphBox(_AbstractBox):
                 x2 += glyph.advance + kern
 
             if bg is not None:
+                if len(bg) != 4:
+                    raise ValueError("Background color requires 4 values (R, G, B, A). Value received: {}".format(bg))
+
                 background_vertices.extend([x1, y1, x2, y1, x2, y2, x1, y2])
                 background_colors.extend(bg * 4)
 
             if underline is not None:
+                if len(underline) != 4:
+                    raise ValueError("Underline color requires 4 values (R, G, B, A). Value received: {}".format(underline))
+
                 underline_vertices.extend([x1, y + baseline - 2, x2, y + baseline - 2])
                 underline_colors.extend(underline * 2)
 
             x1 = x2
 
         if background_vertices:
-            background_list = program.vertex_list_indexed(len(background_vertices) // 2,
-                                                          GL_TRIANGLES, [0, 1, 2, 0, 2, 3],
+            background_indices = []
+            bg_count = len(background_vertices) // 2
+            for glyph_idx in range(bg_count):
+                background_indices.extend([element + (glyph_idx * 4) for element in [0, 1, 2, 0, 2, 3]])
+
+            background_list = program.vertex_list_indexed(bg_count, GL_TRIANGLES, background_indices,
                                                           layout.batch, layout.background_decoration_group,
                                                           position=('f', background_vertices),
                                                           colors=('Bn', background_colors))
