@@ -738,6 +738,7 @@ class FFmpegSource(StreamingSource):
 
         while len(data) < num_bytes:
             if not self.audioq:
+                data = None
                 break
             audio_packet = self._get_audio_packet()
             buffer, timestamp, duration = self._decode_audio_packet(audio_packet, compensation_time)
@@ -745,7 +746,7 @@ class FFmpegSource(StreamingSource):
                 break
             data += buffer
 
-        if not data:
+        if data is None:
             return None
 
         audio_data = AudioData(data, len(data), timestamp, duration, [])
