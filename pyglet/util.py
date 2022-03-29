@@ -134,7 +134,7 @@ def debug_print(enabled_or_option='debug'):
     return _debug_print
 
 
-class Codecs:
+class CodecRegistry:
     """Utility class for handling adding and querying of codecs."""
 
     def __init__(self):
@@ -154,20 +154,19 @@ class Codecs:
         return self._encoders
 
     def get_decoders(self, filename=None):
-        """Get an ordered list of all decoders. If a `filename` is provided,
-        decoders supporting that extension will be ordered first in the list.
+        """Get a list of all decoders. If a `filename` is provided, only
+        decoders supporting that extension will be returned. An empty list
+        will be return if no encoders for that extension are available.
         """
-        decoders = []
         if filename:
             extension = os.path.splitext(filename)[1].lower()
-            decoders += self._decoder_extensions.get(extension, [])
-        decoders += [e for e in self._decoders if e not in decoders]
-        return decoders
+            return self._decoder_extensions.get(extension, [])
+        return self._decoders
 
     def add_decoders(self, module):
         """Add a decoder module.  The module must define `get_decoders`.  Once
         added, the appropriate decoders defined in the codec will be returned by
-        Codecs.get_decoders.
+        CodecRegistry.get_decoders.
         """
         for decoder in module.get_decoders():
             self._decoders.append(decoder)
@@ -179,7 +178,7 @@ class Codecs:
     def add_encoders(self, module):
         """Add an encoder module.  The module must define `get_encoders`.  Once
         added, the appropriate encoders defined in the codec will be returned by
-        Codecs.get_encoders.
+        CodecRegistry.get_encoders.
         """
         for encoder in module.get_encoders():
             self._encoders.append(encoder)
@@ -187,6 +186,31 @@ class Codecs:
                 if extension not in self._encoder_extensions:
                     self._encoder_extensions[extension] = []
                 self._encoder_extensions[extension].append(encoder)
+
+    def decode(self, file, filename, **kwargs):
+        """Attempt to decode a file, using the available registered decoders.
+        Any decoders that match the file extension will be tried first. If no
+        decoders match the extension, all decoders will then be tried in order.
+        """
+        first_exception = None
+
+        for decoder in self.get_decoders(filename):
+            try:
+                return decoder.decode(file, filename, **kwargs)
+            except DecodeException as e:
+                if not first_exception:
+                    first_exception = e
+                file.seek(0)
+
+        for decoder in self.get_decoders():
+            try:
+                return decoder.decode(file, filename, **kwargs)
+            except DecodeException:
+                file.seek(0)
+
+        if not first_exception:
+            raise DecodeException(f"No decoders available for this file type: {filename}")
+        raise first_exception
 
 
 class Decoder:
@@ -239,8 +263,8 @@ class Encoder:
 
 
 class DecodeException(Exception):
-    exception_priority = 10
+    __module__ = "CodecRegistry"
 
 
 class EncodeException(Exception):
-    pass
+    __module__ = "CodecRegistry"

@@ -47,7 +47,7 @@ class CannotSeekException(MediaException):
 
 
 class MediaDecodeException(MediaException):
-    exception_priority = 10
+    pass
 
 
 class MediaEncodeException(MediaException):

@@ -143,6 +143,8 @@ from pyglet.util import asbytes
 from .codecs import ImageEncodeException, ImageDecodeException
 from .codecs import add_default_image_codecs, add_decoders, add_encoders
 from .codecs import get_animation_decoders, get_decoders, get_encoders
+from .codecs import decode as _decode
+from .codecs import decode_animation as _decode_animation
 from .animation import Animation, AnimationFrame
 from .buffer import *
 from . import atlas
@@ -186,19 +188,7 @@ def load(filename, file=None, decoder=None):
         if decoder:
             return decoder.decode(file, filename)
         else:
-            first_exception = None
-            for decoder in get_decoders(filename):
-                try:
-                    image = decoder.decode(file, filename)
-                    return image
-                except ImageDecodeException as e:
-                    if not first_exception or first_exception.exception_priority < e.exception_priority:
-                        first_exception = e
-                    file.seek(0)
-
-            if not first_exception:
-                raise ImageDecodeException('No image decoders are available')
-            raise first_exception
+            return _decode(file, filename)
     finally:
         if opened_file:
             opened_file.close()
@@ -224,24 +214,21 @@ def load_animation(filename, file=None, decoder=None):
     """
     if not file:
         file = open(filename, 'rb')
+        opened_file = file
+    else:
+        opened_file = None
+
     if not hasattr(file, 'seek'):
         file = BytesIO(file.read())
 
-    if decoder:
-        return decoder.decode_animation(file, filename)
-    else:
-        first_exception = None
-        for decoder in get_animation_decoders(filename):
-            try:
-                image = decoder.decode_animation(file, filename)
-                return image
-            except ImageDecodeException as e:
-                first_exception = first_exception or e
-                file.seek(0)
-
-        if not first_exception:
-            raise ImageDecodeException('No image decoders are available')
-        raise first_exception
+    try:
+        if decoder:
+            return decoder.decode_animation(file, filename)
+        else:
+            return _decode_animation(file, filename)
+    finally:
+        if opened_file:
+            opened_file.close()
 
 
 def create(width, height, pattern=None):

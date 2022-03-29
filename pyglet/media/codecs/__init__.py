@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.util import Codecs, Decoder, Encoder
+from pyglet.util import CodecRegistry, Decoder, Encoder
 from .base import *
 
 import pyglet
@@ -41,12 +41,13 @@ import pyglet
 
 _debug = pyglet.options['debug_media']
 
-_codecs = Codecs()
+_codecs = CodecRegistry()
 
 add_decoders = _codecs.add_decoders
 get_decoders = _codecs.get_decoders
 add_encoders = _codecs.add_encoders
 get_encoders = _codecs.get_encoders
+decode = _codecs.decode
 
 
 class MediaDecoder(Decoder):

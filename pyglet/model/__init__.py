@@ -95,9 +95,10 @@ from pyglet.graphics import shader
 from .codecs import ModelDecodeException
 from .codecs import add_encoders, add_decoders, add_default_model_codecs
 from .codecs import get_encoders, get_decoders
+from .codecs import decode as _decode
 
 
-def load(filename, file=None, decoder=None, batch=None):
+def load(filename, file=None, decoder=None, batch=None, group=None):
     """Load a 3D model from a file.
 
     :Parameters:
@@ -112,36 +113,29 @@ def load(filename, file=None, decoder=None, batch=None):
             registered for the file extension, or if decoding fails.
         `batch` : Batch or None
             An optional Batch instance to add this model to.
+        `group` : Group or None
+            An optional top level Group.
 
     :rtype: :py:mod:`~pyglet.model.Model`
     """
 
     if not file:
         file = open(filename, 'rb')
+        opened_file = file
+    else:
+        opened_file = None
 
     if not hasattr(file, 'seek'):
         file = BytesIO(file.read())
 
     try:
         if decoder:
-            return decoder.decode(file, filename, batch)
+            return decoder.decode(file, filename, batch=batch, group=group)
         else:
-            first_exception = None
-            for decoder in get_decoders(filename):
-                try:
-                    model = decoder.decode(file, filename, batch)
-                    return model
-                except ModelDecodeException as e:
-                    if (not first_exception or
-                            first_exception.exception_priority < e.exception_priority):
-                        first_exception = e
-                    file.seek(0)
-
-            if not first_exception:
-                raise ModelDecodeException('No decoders are available for this model format.')
-            raise first_exception
+            return _decode(file, filename, batch=batch, group=group)
     finally:
-        file.close()
+        if opened_file:
+            opened_file.close()
 
 
 def get_default_shader():

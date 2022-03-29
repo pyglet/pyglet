@@ -33,15 +33,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.util import Codecs, Decoder, Encoder, DecodeException, EncodeException
+from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
 
 
-_codecs = Codecs()
+_codecs = CodecRegistry()
 
 add_decoders = _codecs.add_decoders
 get_decoders = _codecs.get_decoders
 add_encoders = _codecs.add_encoders
 get_encoders = _codecs.get_encoders
+decode = _codecs.decode
 
 
 class ModelDecodeException(DecodeException):
@@ -53,7 +54,7 @@ class ModelEncodeException(EncodeException):
 
 
 class ModelDecoder(Decoder):
-    def decode(self, file, filename, batch):
+    def decode(self, file, filename, batch, group):
         """Decode the given file object and return an instance of `Model`.
         Throws ModelDecodeException if there is an error.  filename
         can be a file type hint.
