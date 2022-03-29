@@ -1,6 +1,6 @@
 import warnings
 
-from pyglet.util import CodecRegistry, Decoder, Encoder
+from pyglet.util import Codecs, Decoder, Encoder
 from .base import *
 
 import pyglet
