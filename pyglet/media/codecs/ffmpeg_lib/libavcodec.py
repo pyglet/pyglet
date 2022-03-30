@@ -440,7 +440,7 @@ avcodec.avcodec_free_context.argtypes = [POINTER(POINTER(AVCodecContext))]
 avcodec.av_packet_alloc.restype = POINTER(AVPacket)
 avcodec.av_init_packet.argtypes = [POINTER(AVPacket)]
 
-avcodec.avcodec_receive_frame.restype = int
+avcodec.avcodec_receive_frame.restype = c_int
 avcodec.avcodec_receive_frame.argtypes = [POINTER(AVCodecContext), POINTER(AVFrame)]
 
 avcodec.avcodec_send_packet.restype = c_int
