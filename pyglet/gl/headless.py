@@ -72,7 +72,7 @@ class HeadlessConfig(Config):
         if self.opengl_api == "OPENGL":
             attrs.extend([EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT])
         elif self.opengl_api == "OPENGL_ES":
-            attrs.extent([EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT])
+            attrs.extend([EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT])
         attrs.extend([EGL_NONE])
         attrs_list = (egl.EGLint * len(attrs))(*attrs)
 
