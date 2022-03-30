@@ -34,19 +34,35 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libswscale/swscale.h
 """
-from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
-from ctypes import c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p
-from ctypes import c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union
-from ctypes import create_string_buffer, memmove
+from ctypes import POINTER, Structure
+from ctypes import c_int
+from ctypes import c_uint8, c_double
 
-import pyglet
 import pyglet.lib
+from pyglet.util import debug_print
+from . import compat
 
-swscale = pyglet.lib.load_library(
-    'swscale',
-    win32='swscale-5',
-    darwin='swscale.5'
-)
+_debug = debug_print('debug_media')
+
+try:
+    swscale = pyglet.lib.load_library(
+        'swscale',
+        win32='swscale-6',
+        darwin='swscale.6'
+    )
+    version = 6
+except ImportError:
+    if _debug:
+        print("Failed to load: swscale-6. Trying older version.")
+
+    swscale = pyglet.lib.load_library(
+        'swscale',
+        win32='swscale-5',
+        darwin='swscale.5'
+    )
+    version = 5
+
+compat.set_version('swscale', version)
 
 SWS_FAST_BILINEAR = 1
 

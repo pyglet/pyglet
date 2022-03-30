@@ -125,23 +125,10 @@ def load(filename, file=None, streaming=True, decoder=None):
 
     :rtype: StreamingSource or Source
     """
-    if not file:
-        file = open(filename, 'rb')
-        opened_file = file
+    if decoder:
+        return decoder.decode(file, filename, streaming=streaming)
     else:
-        opened_file = None
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode(file, filename, streaming=streaming)
-        else:
-            return _decode(file, filename, streaming=streaming)
-    finally:
-        if opened_file:
-            opened_file.close()
+        return _decode(file, filename, streaming=streaming)
 
 
 add_default_media_codecs()
