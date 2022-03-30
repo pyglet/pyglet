@@ -59,7 +59,8 @@ context::
 from ctypes import c_char_p, cast, c_int
 import warnings
 
-from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
+from pyglet.gl.gl import (GL_EXTENSIONS, GL_RENDERER, GL_VENDOR,
+                          GL_VERSION, GL_MAJOR_VERSION, GL_MINOR_VERSION)
 from pyglet.util import asstr
 
 
