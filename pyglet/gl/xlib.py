@@ -36,7 +36,7 @@
 import warnings
 from ctypes import *
 
-from .base import Config, CanvasConfig, Context
+from .base import Config, CanvasConfig, Context, OpenGLAPI
 from pyglet.canvas.xlib import XlibCanvas
 from pyglet.gl import glx
 from pyglet.gl import glxext_arb
@@ -395,6 +395,11 @@ class XlibContextARB(XlibContext13):
             flags |= glxext_arb.GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
         if self.config.debug:
             flags |= glxext_arb.GLX_CONTEXT_DEBUG_BIT_ARB
+
+        if self.config.opengl_api == "OPENGL":
+            flags |= glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB
+        elif self.config.opengl_api == "OPENGL":
+            flags |= glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT
         if flags:
             attribs.extend([glxext_arb.GLX_CONTEXT_FLAGS_ARB, flags])
         attribs.append(0)

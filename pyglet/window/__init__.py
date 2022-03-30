@@ -456,6 +456,22 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         }
     """
 
+    _default_vertex_source_es = """#version 300 es
+        in vec4 position;
+
+        uniform WindowBlock
+        {
+            mat4 projection;
+            mat4 view;
+        } window;
+
+        void main()
+        {
+            gl_Position = window.projection * window.view * position;
+        }
+    """
+
+
     def __init__(self,
                  width=None,
                  height=None,
@@ -611,7 +627,11 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.activate()
 
     def _create_projection(self):
-        self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
+        if self._config.opengl_api == "OPENGL":
+            self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))        
+        elif self._config.opengl_api == "OPENGL_ES":
+            self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source_es, 'vertex'))
+
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
         self._viewport = 0, 0, *self.get_framebuffer_size()

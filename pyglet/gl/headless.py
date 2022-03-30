@@ -69,7 +69,10 @@ class HeadlessConfig(Config):
             if attr and value is not None:
                 attrs.extend([attr, int(value)])
         attrs.extend([EGL_SURFACE_TYPE, EGL_PBUFFER_BIT])
-        attrs.extend([EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT])
+        if self.opengl_api == "OPENGL":
+            attrs.extend([EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT])
+        elif self.opengl_api == "OPENGL_ES":
+            attrs.extent([EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT])
         attrs.extend([EGL_NONE])
         attrs_list = (egl.EGLint * len(attrs))(*attrs)
 
@@ -139,7 +142,10 @@ class HeadlessContext(Context):
         else:
             share_context = None
 
-        egl.eglBindAPI(egl.EGL_OPENGL_API)
+        if self.config.opengl_api == "OPENGL":
+            egl.eglBindApi(egl.EGL_OPENGL_API)
+        elif self.config.opengl_api == "OPENGL_ES":
+            egl.eglBindAPI(egl.EGL_OPENGL_ES_API)
         return egl.eglCreateContext(self.config.canvas.display._display_connection,
                                     self.config._egl_config, share_context,
                                     self.config._context_attrib_array)
