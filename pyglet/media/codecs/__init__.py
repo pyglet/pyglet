@@ -41,13 +41,7 @@ import pyglet
 
 _debug = pyglet.options['debug_media']
 
-_codecs = CodecRegistry()
-
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
-decode = _codecs.decode
+registry = CodecRegistry()
 
 
 class MediaDecoder(Decoder):
@@ -72,21 +66,21 @@ class MediaEncoder(Encoder):
         raise NotImplementedError()
 
 
-def add_default_media_codecs():
+def add_default_codecs():
     # Add all bundled codecs. These should be listed in order of
     # preference.  This is called automatically by pyglet.media.
 
     try:
         from . import wave
-        add_decoders(wave)
-        add_encoders(wave)
+        registry.add_decoders(wave)
+        registry.add_encoders(wave)
     except ImportError:
         pass
 
     if pyglet.compat_platform.startswith('linux'):
         try:
             from . import gstreamer
-            add_decoders(gstreamer)
+            registry.add_decoders(gstreamer)
         except ImportError:
             pass
 
@@ -95,20 +89,20 @@ def add_default_media_codecs():
             from pyglet.libs.win32.constants import WINDOWS_VISTA_OR_GREATER
             if WINDOWS_VISTA_OR_GREATER:  # Supports Vista and above.
                 from . import wmf
-                add_decoders(wmf)
+                registry.add_decoders(wmf)
     except ImportError:
         pass
 
     try:
         if have_ffmpeg():
             from . import ffmpeg
-            add_decoders(ffmpeg)
+            registry.add_decoders(ffmpeg)
     except ImportError:
         pass
 
     try:
         from . import pyogg
-        add_decoders(pyogg)
+        registry.add_decoders(pyogg)
     except ImportError:
         pass
 

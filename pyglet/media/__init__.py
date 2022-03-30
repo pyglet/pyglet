@@ -75,32 +75,17 @@ the application performance can be delayed.
 The player provides a :py:meth:`Player.delete` method that can be used to
 release resources immediately.
 """
-from io import BytesIO
-
 from .drivers import get_audio_driver
 from .exceptions import MediaDecodeException
 from .player import Player, PlayerGroup
-from .codecs import get_decoders, get_encoders, add_decoders, add_encoders
-from .codecs import add_default_media_codecs, have_ffmpeg
-from .codecs import Source, StaticSource, StreamingSource, SourceGroup
-from .codecs import decode as _decode
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
+from .codecs import Source, StaticSource, StreamingSource, SourceGroup, have_ffmpeg
 
 from . import synthesis
 
 
-__all__ = (
-    'load',
-    'get_audio_driver',
-    'Player',
-    'PlayerGroup',
-    'SourceGroup',
-    'StaticSource',
-    'StreamingSource',
-    'get_encoders',
-    'get_decoders',
-    'add_encoders',
-    'add_decoders',
-)
+__all__ = 'load', 'get_audio_driver', 'Player', 'PlayerGroup', 'SourceGroup', 'StaticSource', 'StreamingSource'
 
 
 def load(filename, file=None, streaming=True, decoder=None):
@@ -125,23 +110,10 @@ def load(filename, file=None, streaming=True, decoder=None):
 
     :rtype: StreamingSource or Source
     """
-    if not file:
-        file = open(filename, 'rb')
-        opened_file = file
+    if decoder:
+        return decoder.decode(file, filename, streaming=streaming)
     else:
-        opened_file = None
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode(file, filename, streaming=streaming)
-        else:
-            return _decode(file, filename, streaming=streaming)
-    finally:
-        if opened_file:
-            opened_file.close()
+        return _codec_registry.decode(file, filename, streaming=streaming)
 
 
-add_default_media_codecs()
+_add_default_codecs()

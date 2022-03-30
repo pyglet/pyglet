@@ -36,6 +36,7 @@
 """Various utility functions used internally by pyglet
 """
 
+import io
 import os
 import sys
 
@@ -192,25 +193,40 @@ class CodecRegistry:
         Any decoders that match the file extension will be tried first. If no
         decoders match the extension, all decoders will then be tried in order.
         """
-        first_exception = None
 
-        for decoder in self.get_decoders(filename):
-            try:
-                return decoder.decode(file, filename, **kwargs)
-            except DecodeException as e:
-                if not first_exception:
-                    first_exception = e
-                file.seek(0)
+        if not file:
+            file = open(filename, 'rb')
+            opened_file = file
+        else:
+            opened_file = None
 
-        for decoder in self.get_decoders():
-            try:
-                return decoder.decode(file, filename, **kwargs)
-            except DecodeException:
-                file.seek(0)
+        if not hasattr(file, 'seek'):
+            file = io.BytesIO(file.read())
 
-        if not first_exception:
-            raise DecodeException(f"No decoders available for this file type: {filename}")
-        raise first_exception
+        try:
+            first_exception = None
+
+            for decoder in self.get_decoders(filename):
+                try:
+                    return decoder.decode(file, filename, **kwargs)
+                except DecodeException as e:
+                    if not first_exception:
+                        first_exception = e
+                    file.seek(0)
+
+            for decoder in self.get_decoders():
+                try:
+                    return decoder.decode(file, filename, **kwargs)
+                except DecodeException:
+                    file.seek(0)
+
+            if not first_exception:
+                raise DecodeException(f"No decoders available for this file type: {filename}")
+            raise first_exception
+
+        finally:
+            if opened_file:
+                opened_file.close()
 
 
 class Decoder:

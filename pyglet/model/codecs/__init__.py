@@ -36,13 +36,7 @@
 from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
 
 
-_codecs = CodecRegistry()
-
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
-decode = _codecs.decode
+registry = CodecRegistry()
 
 
 class ModelDecodeException(DecodeException):
@@ -73,13 +67,13 @@ class ModelEncoder(Encoder):
         raise NotImplementedError()
 
 
-def add_default_model_codecs():
+def add_default_codecs():
     # Add all bundled codecs. These should be listed in order of
     # preference. This is called automatically by pyglet.model.
 
     try:
         from pyglet.model.codecs import obj
-        add_decoders(obj)
+        registry.add_decoders(obj)
     except ImportError:
         pass
 

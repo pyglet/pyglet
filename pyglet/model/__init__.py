@@ -82,8 +82,6 @@ instance when loading the Model::
 .. versionadded:: 1.4
 """
 
-from io import BytesIO
-
 import pyglet
 
 from pyglet import gl
@@ -92,10 +90,8 @@ from pyglet.gl import current_context
 from pyglet.math import Mat4, Vec3
 from pyglet.graphics import shader
 
-from .codecs import ModelDecodeException
-from .codecs import add_encoders, add_decoders, add_default_model_codecs
-from .codecs import get_encoders, get_decoders
-from .codecs import decode as _decode
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
 
 
 def load(filename, file=None, decoder=None, batch=None, group=None):
@@ -118,24 +114,10 @@ def load(filename, file=None, decoder=None, batch=None, group=None):
 
     :rtype: :py:mod:`~pyglet.model.Model`
     """
-
-    if not file:
-        file = open(filename, 'rb')
-        opened_file = file
+    if decoder:
+        return decoder.decode(file, filename, batch=batch, group=group)
     else:
-        opened_file = None
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode(file, filename, batch=batch, group=group)
-        else:
-            return _decode(file, filename, batch=batch, group=group)
-    finally:
-        if opened_file:
-            opened_file.close()
+        return _codec_registry.decode(file, filename, batch=batch, group=group)
 
 
 def get_default_shader():
@@ -386,4 +368,4 @@ class MaterialGroup(BaseMaterialGroup):
         self.program['model'] = self.matrix
 
 
-add_default_model_codecs()
+_add_default_codecs()

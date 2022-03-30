@@ -141,10 +141,9 @@ from pyglet.gl import gl_info
 from pyglet.util import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
-from .codecs import add_default_image_codecs, add_decoders, add_encoders
-from .codecs import get_animation_decoders, get_decoders, get_encoders
-from .codecs import decode as _decode
-from .codecs import decode_animation as _decode_animation
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
+
 from .animation import Animation, AnimationFrame
 from .buffer import *
 from . import atlas
@@ -188,7 +187,7 @@ def load(filename, file=None, decoder=None):
         if decoder:
             return decoder.decode(file, filename)
         else:
-            return _decode(file, filename)
+            return _codec_registry.decode(file, filename)
     finally:
         if opened_file:
             opened_file.close()
@@ -225,7 +224,7 @@ def load_animation(filename, file=None, decoder=None):
         if decoder:
             return decoder.decode_animation(file, filename)
         else:
-            return _decode_animation(file, filename)
+            return _codec_registry.decode_animation(file, filename)
     finally:
         if opened_file:
             opened_file.close()
@@ -1979,7 +1978,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
 
 # Initialise default codecs
-add_default_image_codecs()
+_add_default_codecs()
 
 # Default Framebuffer classes:
 ###############################################################

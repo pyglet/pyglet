@@ -94,7 +94,7 @@ class _ImageCodecRegistry(CodecRegistry):
                     first_exception = e
                 file.seek(0)
 
-        for decoder in self.get_animation_decoders():
+        for decoder in self.get_animation_decoders():   # Try ALL codecs
             try:
                 return decoder.decode_animation(file, filename, **kwargs)
             except DecodeException:
@@ -105,15 +105,7 @@ class _ImageCodecRegistry(CodecRegistry):
         raise first_exception
 
 
-_codecs = _ImageCodecRegistry()
-
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
-get_animation_decoders = _codecs.get_animation_decoders
-decode = _codecs.decode
-decode_animation = _codecs.decode_animation
+registry = _ImageCodecRegistry()
 
 
 class ImageDecodeException(DecodeException):
@@ -164,15 +156,15 @@ class ImageEncoder(Encoder):
         return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
 
 
-def add_default_image_codecs():
+def add_default_codecs():
     # Add the codecs we know about.  These should be listed in order of
     # preference.  This is called automatically by pyglet.image.
 
     # Compressed texture in DDS format
     try:
         from pyglet.image.codecs import dds
-        add_encoders(dds)
-        add_decoders(dds)
+        registry.add_encoders(dds)
+        registry.add_decoders(dds)
     except ImportError:
         pass
 
@@ -180,8 +172,8 @@ def add_default_image_codecs():
     if compat_platform == 'darwin':
         try:
             from pyglet.image.codecs import quartz
-            add_encoders(quartz)
-            add_decoders(quartz)
+            registry.add_encoders(quartz)
+            registry.add_decoders(quartz)
         except ImportError:
             pass
 
@@ -191,8 +183,8 @@ def add_default_image_codecs():
         if WINDOWS_7_OR_GREATER:  # Supports Vista and above.
             try:
                 from pyglet.image.codecs import wic
-                add_encoders(wic)
-                add_decoders(wic)
+                registry.add_encoders(wic)
+                registry.add_decoders(wic)
             except ImportError:
                 pass
 
@@ -200,8 +192,8 @@ def add_default_image_codecs():
     if compat_platform in ('win32', 'cygwin'):
         try:
             from pyglet.image.codecs import gdiplus
-            add_encoders(gdiplus)
-            add_decoders(gdiplus)
+            registry.add_encoders(gdiplus)
+            registry.add_decoders(gdiplus)
         except ImportError:
             pass
 
@@ -209,31 +201,31 @@ def add_default_image_codecs():
     if compat_platform.startswith('linux'):
         try:
             from pyglet.image.codecs import gdkpixbuf2
-            add_encoders(gdkpixbuf2)
-            add_decoders(gdkpixbuf2)
+            registry.add_encoders(gdkpixbuf2)
+            registry.add_decoders(gdkpixbuf2)
         except ImportError:
             pass
 
     # Fallback: PIL
     try:
         from pyglet.image.codecs import pil
-        add_encoders(pil)
-        add_decoders(pil)
+        registry.add_encoders(pil)
+        registry.add_decoders(pil)
     except ImportError:
         pass
 
     # Fallback: PNG loader (slow)
     try:
         from pyglet.image.codecs import png
-        add_encoders(png)
-        add_decoders(png)
+        registry.add_encoders(png)
+        registry.add_decoders(png)
     except ImportError:
         pass
 
     # Fallback: BMP loader (slow)
     try:
         from pyglet.image.codecs import bmp
-        add_encoders(bmp)
-        add_decoders(bmp)
+        registry.add_encoders(bmp)
+        registry.add_decoders(bmp)
     except ImportError:
         pass
