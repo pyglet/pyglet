@@ -20,7 +20,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-from opengl_registry import RegistryReader, Registry
+from opengl_registry import Registry, RegistryReader
 
 REPO_ROOT = Path(__file__).parent.parent.resolve()
 DEST_PATH = REPO_ROOT / "pyglet" / "gl"
@@ -56,11 +56,19 @@ def main():
         version="4.6",
         extensions=extensions,
     )
+    es_profile = registry.get_profile(
+        api="gles2",
+        profile="core",
+        version="3.2",
+        extensions=extensions,
+    )
 
     core_writer = PygletGLWriter(registry=core_profile, out_file=DEST_PATH / "gl.py")
     core_writer.run()
     compat_writer = PygletGLWriter(registry=compat_profile, out_file=DEST_PATH / "gl_compat.py")
     compat_writer.run()
+    es_writer = PygletGLWriter(registry=es_profile, out_file=DEST_PATH / "gl_es.py")
+    es_writer.run()
 
 
 def parse_args(args):
@@ -70,7 +78,7 @@ def parse_args(args):
 
 
 class PygletGLWriter:
-    """Writes gl.py and gl_compat.py"""
+    """Writes gl.py, gl_compat.py, and gl_es.py"""
 
     # All gl types manually matched to ctypes.
     # Inspect registry.types
