@@ -592,8 +592,6 @@ class FFmpegSource(StreamingSource):
                 self._video_stream = stream
                 self._video_stream_index = i
 
-                print(self.video_format, info.sample_aspect_num, info.frame_rate_num, info.frame_rate_den)
-
             elif isinstance(info, StreamAudioInfo) and info.sample_bits in (8, 16, 24) and self._audio_stream is None:
                 stream = ffmpeg_open_stream(self._file, i)
 
