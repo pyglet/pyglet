@@ -36,12 +36,12 @@
 import warnings
 from ctypes import *
 
-from .base import Config, CanvasConfig, Context
+from pyglet import gl
 from pyglet.canvas.headless import HeadlessCanvas
 from pyglet.libs.egl import egl
 from pyglet.libs.egl.egl import *
-from pyglet import gl
 
+from .base import CanvasConfig, Config, Context
 
 _fake_gl_attributes = {
     'double_buffer': 0,
@@ -143,7 +143,7 @@ class HeadlessContext(Context):
             share_context = None
 
         if self.config.opengl_api == "OPENGL":
-            egl.eglBindApi(egl.EGL_OPENGL_API)
+            egl.eglBindAPI(egl.EGL_OPENGL_API)
         elif self.config.opengl_api == "OPENGL_ES":
             egl.eglBindAPI(egl.EGL_OPENGL_ES_API)
         return egl.eglCreateContext(self.config.canvas.display._display_connection,
