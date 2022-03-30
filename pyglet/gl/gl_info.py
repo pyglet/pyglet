@@ -56,7 +56,7 @@ context::
 
 """
 
-from ctypes import c_char_p, cast
+from ctypes import c_char_p, cast, c_int
 import warnings
 
 from pyglet.gl.gl import GL_EXTENSIONS, GL_RENDERER, GL_VENDOR, GL_VERSION
@@ -92,6 +92,12 @@ class GLInfo:
         if not self._have_info:
             self.vendor = asstr(cast(glGetString(GL_VENDOR), c_char_p).value)
             self.renderer = asstr(cast(glGetString(GL_RENDERER), c_char_p).value)
+            major_version = c_int()
+            glGetIntegerv(GL_MAJOR_VERSION, major_version)
+            self.major_version = major_version.value
+            minor_version = c_int()
+            glGetIntegerv(GL_MINOR_VERSION, minor_version)
+            self.minor_version = minor_version.value
             self.version = asstr(cast(glGetString(GL_VERSION), c_char_p).value)
             num_extensions = GLint()
             glGetIntegerv(GL_NUM_EXTENSIONS, num_extensions)
@@ -154,13 +160,12 @@ class GLInfo:
 
         if not self.have_context:
             warnings.warn('No GL context created yet.')
-        if not self.version or 'None' in self.version:
+        if not self.major_version and not self.minor_version:
             return False
-        ver = '%s.0' % self.version.split(' ', 1)[0]
-        imajor, iminor = [int(v) for v in ver.split('.', 3)[:2]]
-        return (imajor > major or
-                (imajor == major and iminor >= minor) or
-                (imajor == major and iminor == minor))
+
+        return (self.major_version > major or
+                (self.major_version == major and self.minor_version >= minor) or
+                (self.major_version == major and self.minor_version == minor))
 
     def get_renderer(self):
         """Determine the renderer string of the OpenGL context.
