@@ -444,7 +444,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _default_vertex_source = """#version 150 core
         in vec4 position;
 
-        uniform WindowBlock
+        layout uniform WindowBlock
         {
             mat4 projection;
             mat4 view;
@@ -468,6 +468,15 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         void main()
         {
             gl_Position = window.projection * window.view * position;
+        }
+    """
+
+    _default_fragment_source_es = """#version 300 es
+        layout(location = 0) out vec4 color;
+
+        void main()
+        {
+            color = (1.0, 0.0, 0.0, 1.0);
         }
     """
 
@@ -630,7 +639,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
         if self._config.opengl_api == "OPENGL":
             self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))        
         elif self._config.opengl_api == "OPENGL_ES":
-            self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source_es, 'vertex'))
+            self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source_es, 'vertex'), shader.Shader(self._default_fragment_source_es, 'fragment'))
 
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
