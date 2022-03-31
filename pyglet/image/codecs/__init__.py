@@ -83,12 +83,12 @@ class _ImageCodecRegistry(CodecRegistry):
             return self._decoder_animation_extensions.get(extension, [])
         return self._decoders
 
-    def decode_animation(self, file, filename, **kwargs):
+    def decode_animation(self, filename, file, **kwargs):
         first_exception = None
 
         for decoder in self.get_animation_decoders(filename):
             try:
-                return decoder.decode_animation(file, filename, **kwargs)
+                return decoder.decode_animation(filename, file, **kwargs)
             except DecodeException as e:
                 if not first_exception:
                     first_exception = e
@@ -96,7 +96,7 @@ class _ImageCodecRegistry(CodecRegistry):
 
         for decoder in self.get_animation_decoders():   # Try ALL codecs
             try:
-                return decoder.decode_animation(file, filename, **kwargs)
+                return decoder.decode_animation(filename, file, **kwargs)
             except DecodeException:
                 file.seek(0)
 
@@ -124,14 +124,14 @@ class ImageDecoder(Decoder):
         """
         return []
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
         """Decode the given file object and return an instance of `Image`.
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
         """
         raise NotImplementedError()
 
-    def decode_animation(self, file, filename):
+    def decode_animation(self, filename, file):
         """Decode the given file object and return an instance of :py:class:`~pyglet.image.Animation`.
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
@@ -146,7 +146,7 @@ class ImageDecoder(Decoder):
 
 class ImageEncoder(Encoder):
 
-    def encode(self, image, file, filename):
+    def encode(self, image, filename, file):
         """Encode the given image to the given file.  filename
         provides a hint to the file format desired.
         """

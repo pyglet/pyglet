@@ -352,13 +352,13 @@ class Source:
             file = open(filename, 'wb')
 
         if encoder:
-            encoder.encode(self, file, filename)
+            encoder.encode(self, filename, file)
         else:
             first_exception = None
             for encoder in pyglet.media.get_encoders(filename):
 
                 try:
-                    encoder.encode(self, file, filename)
+                    encoder.encode(self, filename, file)
                     return
                 except MediaEncodeException as e:
                     first_exception = first_exception or e

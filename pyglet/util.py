@@ -188,7 +188,7 @@ class CodecRegistry:
                     self._encoder_extensions[extension] = []
                 self._encoder_extensions[extension].append(encoder)
 
-    def decode(self, file, filename, **kwargs):
+    def decode(self, filename, file, **kwargs):
         """Attempt to decode a file, using the available registered decoders.
         Any decoders that match the file extension will be tried first. If no
         decoders match the extension, all decoders will then be tried in order.
@@ -208,7 +208,7 @@ class CodecRegistry:
 
             for decoder in self.get_decoders(filename):
                 try:
-                    return decoder.decode(file, filename, **kwargs)
+                    return decoder.decode(filename, file, **kwargs)
                 except DecodeException as e:
                     if not first_exception:
                         first_exception = e
@@ -216,7 +216,7 @@ class CodecRegistry:
 
             for decoder in self.get_decoders():
                 try:
-                    return decoder.decode(file, filename, **kwargs)
+                    return decoder.decode(filename, file, **kwargs)
                 except DecodeException:
                     file.seek(0)
 
@@ -260,7 +260,7 @@ class Encoder:
         """
         raise NotImplementedError()
 
-    def encode(self, media, file, filename):
+    def encode(self, media, filename, file):
         """Encode the given media type to the given file.  `filename`
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or

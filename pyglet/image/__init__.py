@@ -173,24 +173,10 @@ def load(filename, file=None, decoder=None):
 
     :rtype: AbstractImage
     """
-
-    if not file:
-        file = open(filename, 'rb')
-        opened_file = file
+    if decoder:
+        return decoder.decode(filename, file)
     else:
-        opened_file = None
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode(file, filename)
-        else:
-            return _codec_registry.decode(file, filename)
-    finally:
-        if opened_file:
-            opened_file.close()
+        return _codec_registry.decode(filename, file)
 
 
 def load_animation(filename, file=None, decoder=None):
@@ -211,23 +197,10 @@ def load_animation(filename, file=None, decoder=None):
 
     :rtype: Animation
     """
-    if not file:
-        file = open(filename, 'rb')
-        opened_file = file
+    if decoder:
+        return decoder.decode_animation(filename, file)
     else:
-        opened_file = None
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode_animation(file, filename)
-        else:
-            return _codec_registry.decode_animation(file, filename)
-    finally:
-        if opened_file:
-            opened_file.close()
+        return _codec_registry.decode_animation(filename, file)
 
 
 def create(width, height, pattern=None):
@@ -438,12 +411,12 @@ class AbstractImage:
             file = open(filename, 'wb')
 
         if encoder:
-            encoder.encode(self, file, filename)
+            encoder.encode(self, filename, file)
         else:
             first_exception = None
             for encoder in _codec_registry.get_encoders(filename):
                 try:
-                    return encoder.encode(self, file, filename)
+                    return encoder.encode(self, filename, file)
                 except ImageEncodeException as e:
                     first_exception = first_exception or e
                     file.seek(0)

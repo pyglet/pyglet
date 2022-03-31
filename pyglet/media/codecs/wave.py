@@ -100,7 +100,7 @@ class WaveDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.wav', '.wave', '.riff'
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return WaveSource(filename, file)
         else:
@@ -112,7 +112,7 @@ class WaveEncoder(MediaEncoder):
     def get_file_extensions(self):
         return '.wav', '.wave', '.riff'
 
-    def encode(self, source, file, filename):
+    def encode(self, source, filename, file):
         """Save the Source to disk as a standard RIFF Wave.
 
         A standard RIFF wave header will be added to the raw PCM

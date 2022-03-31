@@ -149,7 +149,7 @@ class BMPImageDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.bmp']
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
         if not file:
             file = open(filename, 'rb')
         bytes = file.read()

@@ -46,7 +46,7 @@ registry = CodecRegistry()
 
 class MediaDecoder(Decoder):
 
-    def decode(self, file, filename, streaming):
+    def decode(self, filename, file, streaming):
         """Read the given file object and return an instance of `Source`
         or `StreamingSource`. 
         Throws MediaDecodeException if there is an error.  `filename`
@@ -57,7 +57,7 @@ class MediaDecoder(Decoder):
 
 class MediaEncoder(Encoder):
 
-    def encode(self, source, file, filename):
+    def encode(self, source, filename, file):
         """Encode the given source to the given file.  `filename`
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or

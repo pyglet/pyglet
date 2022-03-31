@@ -111,9 +111,9 @@ def load(filename, file=None, streaming=True, decoder=None):
     :rtype: StreamingSource or Source
     """
     if decoder:
-        return decoder.decode(file, filename, streaming=streaming)
+        return decoder.decode(filename, file, streaming=streaming)
     else:
-        return _codec_registry.decode(file, filename, streaming=streaming)
+        return _codec_registry.decode(filename, file, streaming=streaming)
 
 
 _add_default_codecs()

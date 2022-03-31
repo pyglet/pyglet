@@ -115,9 +115,9 @@ def load(filename, file=None, decoder=None, batch=None, group=None):
     :rtype: :py:mod:`~pyglet.model.Model`
     """
     if decoder:
-        return decoder.decode(file, filename, batch=batch, group=group)
+        return decoder.decode(filename, file, batch=batch, group=group)
     else:
-        return _codec_registry.decode(file, filename, batch=batch, group=group)
+        return _codec_registry.decode(filename, file, batch=batch, group=group)
 
 
 def get_default_shader():

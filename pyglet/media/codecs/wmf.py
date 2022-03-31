@@ -875,7 +875,7 @@ class WMFDecoder(MediaDecoder):
     def get_file_extensions(self):
         return self.extensions
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return WMFSource(filename, file)
         else:

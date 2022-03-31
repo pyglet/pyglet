@@ -49,7 +49,10 @@ class PNGImageDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.png']
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+
         try:
             reader = pypng.Reader(file=file)
             width, height, pixels, metadata = reader.asDirect()
@@ -76,7 +79,7 @@ class PNGImageEncoder(ImageEncoder):
     def get_file_extensions(self):
         return ['.png']
 
-    def encode(self, image, file, filename):
+    def encode(self, image, filename, file):
         image = image.get_image_data()
 
         has_alpha = 'A' in image.format

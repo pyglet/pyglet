@@ -92,9 +92,9 @@ class GdkPixBufLoader:
     """
     Wrapper around GdkPixBufLoader object.
     """
-    def __init__(self, file_, filename):
+    def __init__(self, filename, file):
         self.closed = False
-        self._file = file_
+        self._file = file
         self._filename = filename
         self._loader = gdkpixbuf.gdk_pixbuf_loader_new()
         if self._loader is None:
@@ -108,7 +108,6 @@ class GdkPixBufLoader:
             gdk.g_object_unref(self._loader)
 
     def _load_file(self):
-        assert self._file is not None
         self._file.seek(0)
         data = self._file.read()
         self.write(data)
@@ -305,12 +304,16 @@ class GdkPixbuf2ImageDecoder(ImageDecoder):
     def get_animation_file_extensions(self):
         return ['.gif', '.ani']
 
-    def decode(self, file, filename):
-        loader = GdkPixBufLoader(file, filename)
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        loader = GdkPixBufLoader(filename, file)
         return loader.get_pixbuf().to_image()
 
-    def decode_animation(self, file, filename):
-        loader = GdkPixBufLoader(file, filename)
+    def decode_animation(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        loader = GdkPixBufLoader(filename, file)
         return loader.get_animation().to_animation()
 
 
@@ -325,5 +328,5 @@ def get_encoders():
 def init():
     gdk.g_type_init()
 
-init()
 
+init()

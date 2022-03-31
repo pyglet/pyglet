@@ -48,7 +48,7 @@ class ModelEncodeException(EncodeException):
 
 
 class ModelDecoder(Decoder):
-    def decode(self, file, filename, batch, group):
+    def decode(self, filename, file, batch, group):
         """Decode the given file object and return an instance of `Model`.
         Throws ModelDecodeException if there is an error.  filename
         can be a file type hint.
@@ -58,7 +58,7 @@ class ModelDecoder(Decoder):
 
 class ModelEncoder(Encoder):
 
-    def encode(self, model, file, filename):
+    def encode(self, model, filename, file):
         """Encode the given model to the given file.  filename
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or

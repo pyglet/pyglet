@@ -152,7 +152,10 @@ class DDSImageDecoder(codecs.ImageDecoder):
     def get_file_extensions(self):
         return ['.dds']
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+
         header = file.read(DDSURFACEDESC2.get_size())
         desc = DDSURFACEDESC2(header)
         if desc.dwMagic != b'DDS ' or desc.dwSize != 124:
