@@ -44,7 +44,7 @@ import sys
 from typing import TYPE_CHECKING
 
 #: The release version
-version = '2.0.a2'
+version = '2.0.a3'
 __version__ = version
 
 if sys.version_info < (3, 6):
@@ -53,18 +53,6 @@ if sys.version_info < (3, 6):
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
-
-
-#: The release version of this pyglet installation.
-#:
-#: Valid only if pyglet was installed from a source or binary distribution
-#: (i.e. not cloned from Git).
-version = '1.5.22'
-
-
-if sys.version_info < (3, 6):
-    raise Exception('pyglet %s requires Python 3.6 or newer.' % version)
-
 
 # pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
