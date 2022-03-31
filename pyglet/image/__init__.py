@@ -441,10 +441,9 @@ class AbstractImage:
             encoder.encode(self, file, filename)
         else:
             first_exception = None
-            for encoder in get_encoders(filename):
+            for encoder in _codec_registry.get_encoders(filename):
                 try:
-                    encoder.encode(self, file, filename)
-                    return
+                    return encoder.encode(self, file, filename)
                 except ImageEncodeException as e:
                     first_exception = first_exception or e
                     file.seek(0)
