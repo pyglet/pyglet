@@ -293,11 +293,11 @@ class PlayerTestCase(unittest.TestCase):
         on playlist exhausted and on player eos and on player next source.
         """
         on_eos_mock = mock.MagicMock(return_value=None)
-        self.player.event('on_eos')(on_eos_mock)
         on_player_eos_mock = mock.MagicMock(return_value=None)
-        self.player.event('on_player_eos')(on_player_eos_mock)
         on_player_next_source_mock = mock.MagicMock(return_value=None)
-        self.player.event('on_player_next_source')(on_player_next_source_mock)
+        self.player.push_handlers(
+            on_eos=on_eos_mock, on_player_eos=on_player_eos_mock,
+            on_player_next_source=on_player_next_source_mock)
 
         def reset_eos_mocks():
             on_eos_mock.reset_mock()
