@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,8 @@
 """Various utility functions used internally by pyglet
 """
 
+import io
+import os
 import sys
 
 import pyglet
@@ -131,3 +133,154 @@ def debug_print(enabled_or_option='debug'):
             return True
 
     return _debug_print
+
+
+class CodecRegistry:
+    """Utility class for handling adding and querying of codecs."""
+
+    def __init__(self):
+        self._decoders = []
+        self._encoders = []
+        self._decoder_extensions = {}   # Map str -> list of matching ImageDecoders
+        self._encoder_extensions = {}   # Map str -> list of matching ImageEncoders
+
+    def get_encoders(self, filename=None):
+        """Get a list of all encoders. If a `filename` is provided, only
+        encoders supporting that extension will be returned. An empty list
+        will be return if no encoders for that extension are available.
+        """
+        if filename:
+            extension = os.path.splitext(filename)[1].lower()
+            return self._encoder_extensions.get(extension, [])
+        return self._encoders
+
+    def get_decoders(self, filename=None):
+        """Get a list of all decoders. If a `filename` is provided, only
+        decoders supporting that extension will be returned. An empty list
+        will be return if no encoders for that extension are available.
+        """
+        if filename:
+            extension = os.path.splitext(filename)[1].lower()
+            return self._decoder_extensions.get(extension, [])
+        return self._decoders
+
+    def add_decoders(self, module):
+        """Add a decoder module.  The module must define `get_decoders`.  Once
+        added, the appropriate decoders defined in the codec will be returned by
+        CodecRegistry.get_decoders.
+        """
+        for decoder in module.get_decoders():
+            self._decoders.append(decoder)
+            for extension in decoder.get_file_extensions():
+                if extension not in self._decoder_extensions:
+                    self._decoder_extensions[extension] = []
+                self._decoder_extensions[extension].append(decoder)
+
+    def add_encoders(self, module):
+        """Add an encoder module.  The module must define `get_encoders`.  Once
+        added, the appropriate encoders defined in the codec will be returned by
+        CodecRegistry.get_encoders.
+        """
+        for encoder in module.get_encoders():
+            self._encoders.append(encoder)
+            for extension in encoder.get_file_extensions():
+                if extension not in self._encoder_extensions:
+                    self._encoder_extensions[extension] = []
+                self._encoder_extensions[extension].append(encoder)
+
+    def decode(self, filename, file, **kwargs):
+        """Attempt to decode a file, using the available registered decoders.
+        Any decoders that match the file extension will be tried first. If no
+        decoders match the extension, all decoders will then be tried in order.
+        """
+
+        if not file:
+            file = open(filename, 'rb')
+            opened_file = file
+        else:
+            opened_file = None
+
+        if not hasattr(file, 'seek'):
+            file = io.BytesIO(file.read())
+
+        try:
+            first_exception = None
+
+            for decoder in self.get_decoders(filename):
+                try:
+                    return decoder.decode(filename, file, **kwargs)
+                except DecodeException as e:
+                    if not first_exception:
+                        first_exception = e
+                    file.seek(0)
+
+            for decoder in self.get_decoders():
+                try:
+                    return decoder.decode(filename, file, **kwargs)
+                except DecodeException:
+                    file.seek(0)
+
+            if not first_exception:
+                raise DecodeException(f"No decoders available for this file type: {filename}")
+            raise first_exception
+
+        finally:
+            if opened_file:
+                opened_file.close()
+
+
+class Decoder:
+    def get_file_extensions(self):
+        """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
+        Lower-case only.
+        """
+        raise NotImplementedError()
+
+    def decode(self, *args, **kwargs):
+        """Read and decode the given file object and return an approprite
+        pyglet object. Throws DecodeException if there is an error.
+        `filename` can be a file type hint.
+        """
+        raise NotImplementedError()
+
+    def __hash__(self):
+        return hash(self.__class__.__name__)
+
+    def __eq__(self, other):
+        return self.__class__.__name__ == other.__class__.__name__
+
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
+
+
+class Encoder:
+    def get_file_extensions(self):
+        """Return a list or tuple of accepted file extensions, e.g. ['.wav', '.ogg']
+        Lower-case only.
+        """
+        raise NotImplementedError()
+
+    def encode(self, media, filename, file):
+        """Encode the given media type to the given file.  `filename`
+        provides a hint to the file format desired.  options are
+        encoder-specific, and unknown options should be ignored or
+        issue warnings.
+        """
+        raise NotImplementedError()
+
+    def __hash__(self):
+        return hash(self.__class__.__name__)
+
+    def __eq__(self, other):
+        return self.__class__.__name__ == other.__class__.__name__
+
+    def __repr__(self):
+        return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
+
+
+class DecodeException(Exception):
+    __module__ = "CodecRegistry"
+
+
+class EncodeException(Exception):
+    __module__ = "CodecRegistry"

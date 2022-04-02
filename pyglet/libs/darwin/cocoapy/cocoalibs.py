@@ -7,8 +7,13 @@ from .cocoatypes import *
 ######################################################################
 
 # CORE FOUNDATION
+lib = util.find_library('CoreFoundation')
 
-cf = cdll.LoadLibrary(util.find_library('CoreFoundation'))
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation'
+
+cf = cdll.LoadLibrary(lib)
 
 kCFStringEncodingUTF8 = 0x08000100
 
@@ -192,7 +197,13 @@ cf.CFRunLoopGetMain.argtypes = []
 
 # Even though we don't use this directly, it must be loaded so that
 # we can find the NSApplication, NSWindow, and NSView classes.
-appkit = cdll.LoadLibrary(util.find_library('AppKit'))
+lib = util.find_library('AppKit')
+
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/System/Library/Frameworks/AppKit.framework/AppKit'
+
+appkit = cdll.LoadLibrary(lib)
 
 NSDefaultRunLoopMode = c_void_p.in_dll(appkit, 'NSDefaultRunLoopMode')
 NSEventTrackingRunLoopMode = c_void_p.in_dll(appkit, 'NSEventTrackingRunLoopMode')
@@ -330,8 +341,13 @@ NSApplicationActivationPolicyProhibited = 2
 ######################################################################
 
 # QUARTZ / COREGRAPHICS
+lib = util.find_library('Quartz')
 
-quartz = cdll.LoadLibrary(util.find_library('quartz'))
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/System/Library/Frameworks/Quartz.framework/Quartz'
+
+quartz = cdll.LoadLibrary(lib)
 
 CGDirectDisplayID = c_uint32     # CGDirectDisplay.h
 CGError = c_int32                # CGError.h
@@ -480,7 +496,13 @@ quartz.CGContextSetShouldAntialias.argtypes = [c_void_p, c_bool]
 ######################################################################
 
 # CORETEXT
-ct = cdll.LoadLibrary(util.find_library('CoreText'))
+lib = util.find_library('CoreText')
+
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/System/Library/Frameworks/CoreText.framework/CoreText'
+
+ct = cdll.LoadLibrary(lib)
 
 # Types
 CTFontOrientation = c_uint32      # CTFontDescriptor.h
@@ -539,8 +561,13 @@ ct.CTFontDescriptorCreateWithAttributes.argtypes = [c_void_p]
 ######################################################################
 
 # FOUNDATION
+lib = util.find_library('Foundation')
 
-foundation = cdll.LoadLibrary(util.find_library('Foundation'))
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/System/Library/Frameworks/Foundation.framework/Foundation'
+
+foundation = cdll.LoadLibrary(lib)
 
 foundation.NSMouseInRect.restype = c_bool
 foundation.NSMouseInRect.argtypes = [NSPoint, NSRect, c_bool]

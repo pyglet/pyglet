@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.com import IUnknown
+from pyglet.com import pIUnknown
 from pyglet.image import *
 from pyglet.image.codecs import *
 from pyglet.libs.win32.constants import *
@@ -190,15 +190,14 @@ gdiplus.GdiplusStartup.argtypes = [c_void_p, c_void_p, c_void_p]
 
 class GDIPlusDecoder(ImageDecoder):
     def get_file_extensions(self):
-        return ['.bmp', '.gif', '.jpg', '.jpeg', '.exif', '.png', '.tif', 
-                '.tiff']
+        return ['.bmp', '.gif', '.jpg', '.jpeg', '.exif', '.png', '.tif', '.tiff']
 
     def get_animation_file_extensions(self):
         # TIFF also supported as a multi-page image; but that's not really an
         # animation, is it?
         return ['.gif']
 
-    def _load_bitmap(self, file, filename):
+    def _load_bitmap(self, filename, file):
         data = file.read()
 
         # Create a HGLOBAL with image data
@@ -208,7 +207,7 @@ class GDIPlusDecoder(ImageDecoder):
         kernel32.GlobalUnlock(hglob)
 
         # Create IStream for the HGLOBAL
-        self.stream = IUnknown()
+        self.stream = pIUnknown()
         ole32.CreateStreamOnHGlobal(hglob, True, byref(self.stream))
 
         # Load image from stream
@@ -272,14 +271,18 @@ class GDIPlusDecoder(ImageDecoder):
         gdiplus.GdipDisposeImage(bitmap)
         self.stream.Release()
 
-    def decode(self, file, filename):
-        bitmap = self._load_bitmap(file, filename)
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        bitmap = self._load_bitmap(filename, file)
         image = self._get_image(bitmap)
         self._delete_bitmap(bitmap)
         return image
 
-    def decode_animation(self, file, filename):
-        bitmap = self._load_bitmap(file, filename)
+    def decode_animation(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        bitmap = self._load_bitmap(filename, file)
         
         dimension_count = c_uint()
         gdiplus.GdipImageGetFrameDimensionsCount(bitmap, byref(dimension_count))

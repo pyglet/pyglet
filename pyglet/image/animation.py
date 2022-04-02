@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,8 +46,8 @@ frame. You can load Animations from disk, such as from GIF files::
 Alternatively, you can create your own Animations from a sequence of images
 by using the :py:meth:`~Animation.from_image_sequence` method::
 
-    images = [pyglet.resource.image('walk_a.png')
-              pyglet.resource.image('walk_b.png')
+    images = [pyglet.resource.image('walk_a.png'),
+              pyglet.resource.image('walk_b.png'),
               pyglet.resource.image('walk_c.png')]
 
     ani = pyglet.image.Animation.from_image_sequence(images, duration=0.1, loop=True)
@@ -100,7 +100,7 @@ class Animation:
         assert len(frames)
         self.frames = frames
 
-    def add_to_texture_bin(self, texture_bin):
+    def add_to_texture_bin(self, texture_bin, border=0):
         """Add the images of the animation to a :py:class:`~pyglet.image.atlas.TextureBin`.
 
         The animation frames are modified in-place to refer to the texture bin
@@ -109,10 +109,13 @@ class Animation:
         :Parameters:
             `texture_bin` : `~pyglet.image.atlas.TextureBin`
                 Texture bin to upload animation frames into.
+            `border` : int
+                Leaves specified pixels of blank space around
+                each image frame when adding to the TextureBin.
 
         """
         for frame in self.frames:
-            frame.image = texture_bin.add(frame.image)
+            frame.image = texture_bin.add(frame.image, border)
 
     def get_transform(self, flip_x=False, flip_y=False, rotate=0):
         """Create a copy of this animation applying a simple transformation.

@@ -1,6 +1,7 @@
 from ctypes import sizeof
 from io import BytesIO
 import unittest
+import wave
 
 from pyglet.media.synthesis import *
 
@@ -18,7 +19,7 @@ def get_test_data_file(*file_parts):
     return os.path.join(test_data_path, *file_parts)
 
 
-class SynthesisSourceTest(object):
+class SynthesisSourceTest:
     """Simple test to check if synthesized sources provide data."""
     source_class = None
 
@@ -45,10 +46,7 @@ class SynthesisSourceTest(object):
         self.assertAlmostEqual(expected_duration, data.duration)
 
         self.assertIsNotNone(data.data)
-        if isinstance(data.data, (bytes, str)):
-            self.assertAlmostEqual(expected_bytes, len(data.data), delta=20)
-        else:
-            self.assertAlmostEqual(expected_bytes, sizeof(data.data), delta=20)
+        self.assertAlmostEqual(expected_bytes, len(data.data), delta=20)
 
         # Should now be out of data
         last_data = source.get_audio_data(100)
@@ -68,9 +66,8 @@ class SynthesisSourceTest(object):
         source_name = self.source_class.__name__.lower()
         filename = "synthesis_{0}_{1}_{2}_1ch.wav".format(source_name, sample_size, sample_rate)
 
-        with open(get_test_data_file('media', filename), 'rb') as f:
-            # discard the wave header:
-            loaded_bytes = f.read()[44:]
+        with wave.open(get_test_data_file('media', filename)) as f:
+            loaded_bytes = f.readframes(-1)
             source.seek(0)
             generated_data = source.get_audio_data(source._max_offset)
             bytes_buffer = BytesIO(generated_data.data).getvalue()
@@ -104,4 +101,4 @@ class SquareTest(SynthesisSourceTest, unittest.TestCase):
 
 
 class FMTest(SynthesisSourceTest, unittest.TestCase):
-    source_class = FM
+    source_class = SimpleFM

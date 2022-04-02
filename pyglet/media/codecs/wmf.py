@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -161,7 +161,7 @@ def timestamp_to_wmf(timestamp):  # 100-nanoseconds
     return int(timestamp * 10000000)
 
 
-class IMFAttributes(com.IUnknown):
+class IMFAttributes(com.pIUnknown):
     _methods_ = [
         ('GetItem',
          com.STDMETHOD()),
@@ -212,7 +212,7 @@ class IMFAttributes(com.IUnknown):
         ('SetBlob',
          com.STDMETHOD()),
         ('SetUnknown',
-         com.STDMETHOD(com.REFIID, com.IUnknown)),
+         com.STDMETHOD(com.REFIID, com.pIUnknown)),
         ('LockStore',
          com.STDMETHOD()),
         ('UnlockStore',
@@ -226,7 +226,7 @@ class IMFAttributes(com.IUnknown):
     ]
 
 
-class IMFMediaBuffer(com.IUnknown):
+class IMFMediaBuffer(com.pIUnknown):
     _methods_ = [
         ('Lock',
          com.STDMETHOD(POINTER(POINTER(BYTE)), POINTER(DWORD), POINTER(DWORD))),
@@ -241,7 +241,7 @@ class IMFMediaBuffer(com.IUnknown):
     ]
 
 
-class IMFSample(IMFAttributes, com.IUnknown):
+class IMFSample(IMFAttributes, com.pIUnknown):
     _methods_ = [
         ('GetSampleFlags',
          com.STDMETHOD()),
@@ -274,7 +274,7 @@ class IMFSample(IMFAttributes, com.IUnknown):
     ]
 
 
-class IMFMediaType(IMFAttributes, com.IUnknown):
+class IMFMediaType(IMFAttributes, com.pIUnknown):
     _methods_ = [
         ('GetMajorType',
          com.STDMETHOD()),
@@ -289,7 +289,7 @@ class IMFMediaType(IMFAttributes, com.IUnknown):
     ]
 
 
-class IMFByteStream(com.IUnknown):
+class IMFByteStream(com.pIUnknown):
     _methods_ = [
         ('GetCapabilities',
          com.STDMETHOD()),
@@ -324,7 +324,7 @@ class IMFByteStream(com.IUnknown):
     ]
 
 
-class IMFSourceReader(com.IUnknown):
+class IMFSourceReader(com.pIUnknown):
     _methods_ = [
         ('GetStreamSelection',
          com.STDMETHOD(DWORD, POINTER(BOOL))),  # in, out
@@ -337,7 +337,7 @@ class IMFSourceReader(com.IUnknown):
         ('SetCurrentMediaType',
          com.STDMETHOD(DWORD, POINTER(DWORD), IMFMediaType)),
         ('SetCurrentPosition',
-         com.STDMETHOD(com.REFIID, PROPVARIANT)),
+         com.STDMETHOD(com.REFIID, POINTER(PROPVARIANT))),
         ('ReadSample',
          com.STDMETHOD(DWORD, DWORD, POINTER(DWORD), POINTER(DWORD), POINTER(c_longlong), POINTER(IMFSample))),
         ('Flush',
@@ -463,7 +463,7 @@ class WMFSource(Source):
                 kernel32.GlobalUnlock(hglob)
 
                 # Create IStream
-                self._stream_obj = com.IUnknown()
+                self._stream_obj = com.pIUnknown()
                 ole32.CreateStreamOnHGlobal(hglob, True, ctypes.byref(self._stream_obj))
 
                 # MFCreateMFByteStreamOnStreamEx for future async operations exists, however Windows 8+ only. Requires new interface
@@ -616,7 +616,7 @@ class WMFSource(Source):
 
         imfmedia.Release()
 
-        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32)
+        uncompressed_mt.SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32)
         uncompressed_mt.SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive)
         uncompressed_mt.SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
 
@@ -678,11 +678,13 @@ class WMFSource(Source):
             # Convert to single buffer as a sample could potentially(rarely) have multiple buffers.
             self._current_audio_sample.ConvertToContiguousBuffer(ctypes.byref(self._current_audio_buffer))
 
-            audio_data = POINTER(BYTE)()
+            audio_data_ptr = POINTER(BYTE)()
 
-            self._current_audio_buffer.Lock(ctypes.byref(audio_data), None, ctypes.byref(audio_data_length))
-
+            self._current_audio_buffer.Lock(ctypes.byref(audio_data_ptr), None, ctypes.byref(audio_data_length))
             self._current_audio_buffer.Unlock()
+
+            audio_data = create_string_buffer(audio_data_length.value)
+            memmove(audio_data, audio_data_ptr, audio_data_length.value)
 
             return AudioData(audio_data,
                              audio_data_length.value,
@@ -750,7 +752,7 @@ class WMFSource(Source):
 
             # This is made with the assumption that the video frame will be blitted into the player texture immediately
             # after, and then cleared next frame attempt.
-            return image.ImageData(width, height, 'RGBA', video_data, self._stride)
+            return image.ImageData(width, height, 'BGRA', video_data, self._stride)
 
         return None
 
@@ -767,8 +769,8 @@ class WMFSource(Source):
         pos_com = com.GUID(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         try:
             self._source_reader.SetCurrentPosition(pos_com, prop)
-        except OSError as e:
-            warnings.warn(e)
+        except OSError as err:
+            warnings.warn(str(err))
 
         ole32.PropVariantClear(ctypes.byref(prop))
 
@@ -833,7 +835,7 @@ class WMFDecoder(MediaDecoder):
             # Coinitialize supposed to be called for COMs?
             ole32.CoInitializeEx(None, COINIT_MULTITHREADED)
         except OSError as err:
-            warnings.warn('WMF failed to initialize threading:', err.strerror)
+            warnings.warn(str(err))
 
         try:
             MFStartup(MF_VERSION, 0)
@@ -866,14 +868,14 @@ class WMFDecoder(MediaDecoder):
                                ])
 
         if WINDOWS_10_ANNIVERSARY_UPDATE_OR_GREATER:
-            extensions.extend(['.mkv', '.flac', '.ogg'])
+            extensions.extend(['.flac'])
 
         return extensions
 
     def get_file_extensions(self):
         return self.extensions
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return WMFSource(filename, file)
         else:

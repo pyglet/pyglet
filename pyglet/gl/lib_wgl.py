@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,19 +40,17 @@ import pyglet
 from pyglet.gl.lib import missing_function, decorate_function
 from pyglet.util import asbytes
 
-__all__ = ['link_GL', 'link_GLU', 'link_WGL']
+__all__ = ['link_GL', 'link_WGL']
 
 _debug_trace = pyglet.options['debug_trace']
 
 gl_lib = ctypes.windll.opengl32
-glu_lib = ctypes.windll.glu32
 wgl_lib = gl_lib
 
 if _debug_trace:
     from pyglet.lib import _TraceLibrary
 
     gl_lib = _TraceLibrary(gl_lib)
-    glu_lib = _TraceLibrary(glu_lib)
     wgl_lib = _TraceLibrary(wgl_lib)
 
 try:
@@ -112,35 +110,6 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         return func
     except AttributeError:
         # Not in opengl32.dll. Try and get a pointer from WGL.
-        try:
-            fargs = (restype,) + tuple(argtypes)
-            ftype = ctypes.WINFUNCTYPE(*fargs)
-            if _have_get_proc_address:
-                from pyglet.gl import gl_info
-                if gl_info.have_context():
-                    address = wglGetProcAddress(name)
-                    if address:
-                        func = cast(address, ftype)
-                        decorate_function(func, name)
-                        return func
-                else:
-                    # Insert proxy until we have a context
-                    return WGLFunctionProxy(name, ftype, requires, suggestions)
-        except:
-            pass
-
-        return missing_function(name, requires, suggestions)
-
-
-def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
-    try:
-        func = getattr(glu_lib, name)
-        func.restype = restype
-        func.argtypes = argtypes
-        decorate_function(func, name)
-        return func
-    except AttributeError:
-        # Not in glu32.dll. Try and get a pointer from WGL.
         try:
             fargs = (restype,) + tuple(argtypes)
             ftype = ctypes.WINFUNCTYPE(*fargs)

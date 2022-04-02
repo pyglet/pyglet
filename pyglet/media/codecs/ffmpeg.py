@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,7 @@ def ffmpeg_get_audio_buffer_size(audio_format):
 
     Buffer size can accomodate 1 sec of audio data.
     """
-    return audio_format.bytes_per_second
+    return audio_format.bytes_per_second + FF_INPUT_BUFFER_PADDING_SIZE
 
 
 def ffmpeg_init():
@@ -175,15 +175,9 @@ def ffmpeg_file_info(file):
     if entry:
         info.title = asstr(entry.contents.value)
 
-    entry = avutil.av_dict_get(file.context.contents.metadata,
-                               asbytes('artist'),
-                               None,
-                               0) \
+    entry = avutil.av_dict_get(file.context.contents.metadata, asbytes('artist'), None, 0) \
             or \
-            avutil.av_dict_get(file.context.contents.metadata,
-                               asbytes('album_artist'),
-                               None,
-                               0)
+            avutil.av_dict_get(file.context.contents.metadata, asbytes('album_artist'), None, 0)
     if entry:
         info.author = asstr(entry.contents.value)
 
@@ -223,8 +217,7 @@ def ffmpeg_stream_info(file, stream_index):
         if _debug:
             print("codec_type=", context.codec_type)
             print(" codec_id=", context.codec_id)
-            codec_name = avcodec.avcodec_get_name(context.codec_id).decode('utf-8')
-            print(" codec name=", codec_name)
+            print(" codec name=", avcodec.avcodec_get_name(context.codec_id).decode('utf-8'))
             print(" codec_tag=", context.codec_tag)
             print(" extradata=", context.extradata)
             print(" extradata_size=", context.extradata_size)
@@ -286,8 +279,7 @@ def ffmpeg_stream_info(file, stream_index):
 
 def ffmpeg_open_stream(file, index):
     if not 0 <= index < file.context.contents.nb_streams:
-        raise FFmpegException('index out of range. '
-                              'Only {} streams.'.format(file.context.contents.nb_streams))
+        raise FFmpegException('index out of range. Only {} streams.'.format(file.context.contents.nb_streams))
     codec_context = avcodec.avcodec_alloc_context3(None)
     if not codec_context:
         raise MemoryError('Could not allocate Codec Context.')
@@ -429,7 +421,8 @@ class _Packet:
         self.timestamp = timestamp
 
     def __del__(self):
-        ffmpeg_unref_packet(self.packet)
+        if ffmpeg_unref_packet is not None:
+            ffmpeg_unref_packet(self.packet)
 
 
 class VideoPacket(_Packet):
@@ -472,8 +465,8 @@ class FFmpegSource(StreamingSource):
         self._audio_stream_index = None
         self._audio_format = None
 
-        self._img_convert_ctx = POINTER(SwsContext)()
-        self._audio_convert_ctx = POINTER(SwrContext)()
+        self.img_convert_ctx = POINTER(SwsContext)()
+        self.audio_convert_ctx = POINTER(SwrContext)()
 
         file_info = ffmpeg_file_info(self._file)
 
@@ -499,13 +492,16 @@ class FFmpegSource(StreamingSource):
                     width=info.width,
                     height=info.height)
                 if info.sample_aspect_num != 0:
-                    self.video_format.sample_aspect = (float(info.sample_aspect_num) / info.sample_aspect_den)
-                self.video_format.frame_rate = (float(info.frame_rate_num) / info.frame_rate_den)
+                    self.video_format.sample_aspect = (
+                            float(info.sample_aspect_num) /
+                            info.sample_aspect_den)
+                self.video_format.frame_rate = (
+                        float(info.frame_rate_num) /
+                        info.frame_rate_den)
                 self._video_stream = stream
                 self._video_stream_index = i
 
-            elif isinstance(info, StreamAudioInfo) and info.sample_bits in (8, 16) and self._audio_stream is None:
-
+            elif isinstance(info, StreamAudioInfo) and info.sample_bits in (8, 16, 24) and self._audio_stream is None:
                 stream = ffmpeg_open_stream(self._file, i)
 
                 self.audio_format = AudioFormat(
@@ -522,38 +518,39 @@ class FFmpegSource(StreamingSource):
                 sample_rate = stream.codec_context.contents.sample_rate
                 sample_format = stream.codec_context.contents.sample_fmt
                 if sample_format in (AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_U8P):
-                    self._tgt_format = AV_SAMPLE_FMT_U8
+                    self.tgt_format = AV_SAMPLE_FMT_U8
                 elif sample_format in (AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16P):
-                    self._tgt_format = AV_SAMPLE_FMT_S16
+                    self.tgt_format = AV_SAMPLE_FMT_S16
                 elif sample_format in (AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S32P):
-                    self._tgt_format = AV_SAMPLE_FMT_S32
+                    self.tgt_format = AV_SAMPLE_FMT_S32
                 elif sample_format in (AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP):
-                    self._tgt_format = AV_SAMPLE_FMT_S16
+                    self.tgt_format = AV_SAMPLE_FMT_S16
                 else:
                     raise FFmpegException('Audio format not supported.')
 
-                self._audio_convert_ctx = swresample.swr_alloc_set_opts(None,
-                                                                        channel_output,
-                                                                        self._tgt_format, sample_rate,
-                                                                        channel_input, sample_format,
-                                                                        sample_rate,
-                                                                        0, None)
-                if (not self._audio_convert_ctx or
-                        swresample.swr_init(self._audio_convert_ctx) < 0):
-                    swresample.swr_free(self._audio_convert_ctx)
+                self.audio_convert_ctx = swresample.swr_alloc_set_opts(None,
+                                                                       channel_output,
+                                                                       self.tgt_format, sample_rate,
+                                                                       channel_input, sample_format,
+                                                                       sample_rate,
+                                                                       0, None)
+                if (not self.audio_convert_ctx or
+                        swresample.swr_init(self.audio_convert_ctx) < 0):
+                    swresample.swr_free(self.audio_convert_ctx)
                     raise FFmpegException('Cannot create sample rate converter.')
 
         self._packet = ffmpeg_init_packet()
         self._events = []  # They don't seem to be used!
 
-        self._audioq = deque()
+        self.audioq = deque()
         # Make queue big enough to accomodate 1.2 sec?
         self._max_len_audioq = 50  # Need to figure out a correct amount
         if self.audio_format:
             # Buffer 1 sec worth of audio
-            self._audio_buffer = (c_uint8 * ffmpeg_get_audio_buffer_size(self.audio_format))()
+            nbytes = ffmpeg_get_audio_buffer_size(self.audio_format)
+            self._audio_buffer = (c_uint8 * nbytes)()
 
-        self._videoq = deque()
+        self.videoq = deque()
         self._max_len_videoq = 50  # Need to figure out a correct amount
 
         self.start_time = self._get_start_time()
@@ -573,15 +570,15 @@ class FFmpegSource(StreamingSource):
     def __del__(self):
         if hasattr(self, '_tempfile'):
             self._tempfile.close()
-        if self._packet:
+        if self._packet and ffmpeg_free_packet is not None:
             ffmpeg_free_packet(self._packet)
-        if self._video_stream:
-            swscale.sws_freeContext(self._img_convert_ctx)
+        if self._video_stream and swscale is not None:
+            swscale.sws_freeContext(self.img_convert_ctx)
             ffmpeg_close_stream(self._video_stream)
         if self._audio_stream:
-            swresample.swr_free(self._audio_convert_ctx)
+            swresample.swr_free(self.audio_convert_ctx)
             ffmpeg_close_stream(self._audio_stream)
-        if self._file:
+        if self._file and ffmpeg_close_file is not None:
             ffmpeg_close_file(self._file)
 
     def seek(self, timestamp):
@@ -598,33 +595,33 @@ class FFmpegSource(StreamingSource):
         # Consume video and audio packets until we arrive at the correct
         # timestamp location
         if not self.audio_format:
-            while len(self._videoq) > 1:
+            while len(self.videoq) > 1:
                 # We only advance if there is at least 2 packets in the queue
                 # The queue is only left with 1 packet if we have reached the
                 #  end of the stream.
-                if timestamp < self._videoq[1].timestamp:
+                if timestamp < self.videoq[1].timestamp:
                     break
                 else:
                     self.get_next_video_frame(skip_empty_frame=False)
 
         elif not self.video_format:
-            while len(self._audioq) > 1:
+            while len(self.audioq) > 1:
                 # We only advance if there is at least 2 packets in the queue
                 # The queue is only left with 1 packet if we have reached the
                 #  end of the stream.
-                if timestamp < self._audioq[1].timestamp:
+                if timestamp < self.audioq[1].timestamp:
                     break
                 else:
                     self._get_audio_packet()
 
         else:
-            while len(self._audioq) > 1 and len(self._videoq) > 1:
+            while len(self.audioq) > 1 and len(self.videoq) > 1:
                 # We only advance if there is at least 2 packets in the queue
                 # The queue is only left with 1 packet if we have reached the
                 #  end of the stream.
-                audioq_is_first = self._audioq[0].timestamp < self._videoq[0].timestamp
-                correct_audio_pos = timestamp < self._audioq[1].timestamp
-                correct_video_pos = timestamp < self._videoq[1].timestamp
+                audioq_is_first = self.audioq[0].timestamp < self.videoq[0].timestamp
+                correct_audio_pos = timestamp < self.audioq[1].timestamp
+                correct_video_pos = timestamp < self.videoq[1].timestamp
                 if audioq_is_first and not correct_audio_pos:
                     self._get_audio_packet()
 
@@ -635,12 +632,12 @@ class FFmpegSource(StreamingSource):
                     break
 
     def _append_audio_data(self, audio_data):
-        self._audioq.append(audio_data)
-        assert len(self._audioq) <= self._max_len_audioq
+        self.audioq.append(audio_data)
+        assert len(self.audioq) <= self._max_len_audioq
 
     def _append_video_packet(self, video_packet):
-        self._videoq.append(video_packet)
-        assert len(self._videoq) <= self._max_len_audioq
+        self.videoq.append(video_packet)
+        assert len(self.videoq) <= self._max_len_audioq
 
     def _get_audio_packet(self):
         """Take an audio packet from the queue.
@@ -649,7 +646,7 @@ class FFmpegSource(StreamingSource):
         the queues if space is available. Multiple calls to this method will
         only result in one scheduled call to `_fillq`.
         """
-        audio_data = self._audioq.popleft()
+        audio_data = self.audioq.popleft()
         low_lvl = self._check_low_level()
         if not low_lvl and not self._fillq_scheduled:
             pyglet.clock.schedule_once(lambda dt: self._fillq(), 0)
@@ -663,7 +660,9 @@ class FFmpegSource(StreamingSource):
         the queues if space is available. Multiple calls to this method will
         only result in one scheduled call to `_fillq`.
         """
-        video_packet = self._videoq.popleft()
+        if not self.videoq:
+            return None
+        video_packet = self.videoq.popleft()
         low_lvl = self._check_low_level()
         if not low_lvl and not self._fillq_scheduled:
             pyglet.clock.schedule_once(lambda dt: self._fillq(), 0)
@@ -671,16 +670,16 @@ class FFmpegSource(StreamingSource):
         return video_packet
 
     def _clear_video_audio_queues(self):
-        "Empty both audio and video queues."
-        self._audioq.clear()
-        self._videoq.clear()
+        """Empty both audio and video queues."""
+        self.audioq.clear()
+        self.videoq.clear()
 
     def _fillq(self):
-        "Fill up both Audio and Video queues if space is available in both"
+        """Fill up both Audio and Video queues if space is available in both"""
         # We clear our flag.
         self._fillq_scheduled = False
-        while (len(self._audioq) < self._max_len_audioq and
-               len(self._videoq) < self._max_len_videoq):
+        while (len(self.audioq) < self._max_len_audioq and
+               len(self.videoq) < self._max_len_videoq):
             if self._get_packet():
                 self._process_packet()
             else:
@@ -698,9 +697,8 @@ class FFmpegSource(StreamingSource):
         This would normally happens only during seek operations where we
         consume many packets to find the correct timestamp.
         """
-        if len(self._audioq) < 2 or len(self._videoq) < 2:
-            if (len(self._audioq) < self._max_len_audioq and
-                    len(self._videoq) < self._max_len_videoq):
+        if len(self.audioq) < 2 or len(self.videoq) < 2:
+            if len(self.audioq) < self._max_len_audioq and len(self.videoq) < self._max_len_videoq:
                 self._fillq()
             return True
         return False
@@ -724,45 +722,45 @@ class FFmpegSource(StreamingSource):
             video_packet = VideoPacket(self._packet, timestamp)
 
             if _debug:
-                print('Created and queued packet %d (%f)' % \
-                      (video_packet.id, video_packet.timestamp))
+                print('Created and queued packet %d (%f)' % (video_packet.id, video_packet.timestamp))
 
             self._append_video_packet(video_packet)
             return video_packet
 
-        elif (self.audio_format and
-              self._packet.contents.stream_index == self._audio_stream_index):
+        elif self.audio_format and self._packet.contents.stream_index == self._audio_stream_index:
             audio_packet = AudioPacket(self._packet, timestamp)
             self._append_audio_data(audio_packet)
             return audio_packet
 
-    def get_audio_data(self, nbytes, compensation_time=0.0):
-        if self._audioq:
+    def get_audio_data(self, num_bytes, compensation_time=0.0):
+        data = b''
+        timestamp = duration = 0
+
+        while len(data) < num_bytes:
+            if not self.audioq:
+                data = None
+                break
             audio_packet = self._get_audio_packet()
-            audio_data = self._decode_audio_packet(audio_packet, compensation_time)
-            audio_data_timeend = audio_data.timestamp + audio_data.duration
-        else:
-            audio_data = None
-            audio_data_timeend = None
+            buffer, timestamp, duration = self._decode_audio_packet(audio_packet, compensation_time)
+            if not buffer:
+                break
+            data += buffer
 
-        if _debug:
-            print('get_audio_data')
-
-        if audio_data is None:
-            if _debug:
-                print('No more audio data. get_audio_data returning None')
+        if data is None:
             return None
 
-        while self._events and self._events[0].timestamp <= audio_data_timeend:
+        audio_data = AudioData(data, len(data), timestamp, duration, [])
+
+        while self._events and self._events[0].timestamp <= (timestamp + duration):
             event = self._events.pop(0)
-            if event.timestamp >= audio_data.timestamp:
-                event.timestamp -= audio_data.timestamp
+            if event.timestamp >= timestamp:
+                event.timestamp -= timestamp
                 audio_data.events.append(event)
 
         if _debug:
-            print('get_audio_data returning ts {0} with events {1}'.format(
-                audio_data.timestamp, audio_data.events))
+            print('get_audio_data returning ts {0} with events {1}'.format(audio_data.timestamp, audio_data.events))
             print('remaining events are', self._events)
+
         return audio_data
 
     def _decode_audio_packet(self, audio_packet, compensation_time):
@@ -786,9 +784,10 @@ class FFmpegSource(StreamingSource):
             duration = float(len(buffer)) / self.audio_format.bytes_per_second
             timestamp = ffmpeg_get_frame_ts(self._audio_stream)
             timestamp = timestamp_from_ffmpeg(timestamp)
-            return AudioData(buffer, len(buffer), timestamp, duration, [])
 
-        return AudioData(b"", 0, 0, 0, [])
+            return buffer, timestamp, duration
+
+        return None, 0, 0
 
     def _ffmpeg_decode_audio(self, packet, data_out, compensation_time):
         stream = self._audio_stream
@@ -807,7 +806,8 @@ class FFmpegSource(StreamingSource):
             buf = create_string_buffer(128)
             avutil.av_strerror(bytes_used, buf, 128)
             descr = buf.value
-            raise FFmpegException('Error occured while decoding audio. ' + descr.decode())
+            raise FFmpegException('Error occured while decoding audio. ' +
+                                  descr.decode())
         plane_size = c_int(0)
         if got_frame:
             data_size = avutil.av_samples_get_buffer_size(
@@ -823,18 +823,18 @@ class FFmpegSource(StreamingSource):
 
             nb_samples = stream.frame.contents.nb_samples
             sample_rate = stream.codec_context.contents.sample_rate
-            bytes_per_sample = avutil.av_get_bytes_per_sample(self._tgt_format)
+            bytes_per_sample = avutil.av_get_bytes_per_sample(self.tgt_format)
             channels_out = min(2, self.audio_format.channels)
 
             wanted_nb_samples = nb_samples + compensation_time * sample_rate
-            min_nb_samples = (nb_samples * (100 - self._SAMPLE_CORRECTION_PERCENT_MAX) / 100)
-            max_nb_samples = (nb_samples * (100 + self._SAMPLE_CORRECTION_PERCENT_MAX) / 100)
+            min_nb_samples = (nb_samples * (100 - self.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
+            max_nb_samples = (nb_samples * (100 + self.SAMPLE_CORRECTION_PERCENT_MAX) / 100)
             wanted_nb_samples = min(max(wanted_nb_samples, min_nb_samples), max_nb_samples)
             wanted_nb_samples = int(wanted_nb_samples)
 
             if wanted_nb_samples != nb_samples:
                 res = swresample.swr_set_compensation(
-                    self._audio_convert_ctx,
+                    self.audio_convert_ctx,
                     (wanted_nb_samples - nb_samples),
                     wanted_nb_samples
                 )
@@ -844,8 +844,8 @@ class FFmpegSource(StreamingSource):
             data_in = stream.frame.contents.extended_data
             p_data_out = cast(data_out, POINTER(c_uint8))
 
-            out_samples = swresample.swr_get_out_samples(self._audio_convert_ctx, nb_samples)
-            total_samples_out = swresample.swr_convert(self._audio_convert_ctx,
+            out_samples = swresample.swr_get_out_samples(self.audio_convert_ctx, nb_samples)
+            total_samples_out = swresample.swr_convert(self.audio_convert_ctx,
                                                        byref(p_data_out), out_samples,
                                                        data_in, nb_samples)
             while True:
@@ -856,7 +856,7 @@ class FFmpegSource(StreamingSource):
                     addressof(p_data_out.contents) + offset,
                     POINTER(c_uint8)
                 )
-                samples_out = swresample.swr_convert(self._audio_convert_ctx,
+                samples_out = swresample.swr_convert(self.audio_convert_ctx,
                                                      byref(p_data_offset),
                                                      out_samples - total_samples_out, None, 0)
                 if samples_out == 0:
@@ -879,9 +879,12 @@ class FFmpegSource(StreamingSource):
         width = self.video_format.width
         height = self.video_format.height
         pitch = width * 4
-        buffer = (c_uint8 * (pitch * height))()
+        # https://ffmpeg.org/doxygen/3.3/group__lavc__decoding.html#ga8f5b632a03ce83ac8e025894b1fc307a
+        nbytes = (pitch * height + FF_INPUT_BUFFER_PADDING_SIZE)
+        buffer = (c_uint8 * nbytes)()
         try:
-            result = self._ffmpeg_decode_video(video_packet.packet, buffer)
+            result = self._ffmpeg_decode_video(video_packet.packet,
+                                               buffer)
         except FFmpegException:
             image_data = None
         else:
@@ -926,13 +929,13 @@ class FFmpegSource(StreamingSource):
         avutil.av_image_fill_arrays(rgba_ptrs, rgba_stride, data_out,
                                     AV_PIX_FMT_RGBA, width, height, 1)
 
-        self._img_convert_ctx = swscale.sws_getCachedContext(
-            self._img_convert_ctx,
+        self.img_convert_ctx = swscale.sws_getCachedContext(
+            self.img_convert_ctx,
             width, height, stream.codec_context.contents.pix_fmt,
             width, height, AV_PIX_FMT_RGBA,
             SWS_FAST_BILINEAR, None, None, None)
 
-        swscale.sws_scale(self._img_convert_ctx,
+        swscale.sws_scale(self.img_convert_ctx,
                           cast(stream.frame.contents.data,
                                POINTER(POINTER(c_uint8))),
                           stream.frame.contents.linesize,
@@ -946,18 +949,23 @@ class FFmpegSource(StreamingSource):
         if not self.video_format:
             return
 
-        if self._videoq:
+        ts = None
+
+        if self.videoq:
             while True:
                 # We skip video packets which are not video frames
                 # This happens in mkv files for the first few frames.
-                video_packet = self._videoq[0]
+                try:
+                    video_packet = self.videoq.popleft()
+                except IndexError:
+                    break
                 if video_packet.image == 0:
                     self._decode_video_packet(video_packet)
                 if video_packet.image is not None:
+                    ts = video_packet.timestamp
+                    self.videoq.appendleft(video_packet)  # put it back
                     break
                 self._get_video_packet()
-
-            ts = video_packet.timestamp
         else:
             ts = None
 
@@ -1014,7 +1022,7 @@ class FFmpegSource(StreamingSource):
     def audio_format(self, value):
         self._audio_format = value
         if value is None:
-            self._audioq.clear()
+            self.audioq.clear()
 
 
 ffmpeg_init()
@@ -1034,7 +1042,7 @@ class FFmpegDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.mp3', '.ogg'
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return FFmpegSource(filename, file)
         else:

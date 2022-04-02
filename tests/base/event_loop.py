@@ -21,7 +21,6 @@ def event_loop(request):
 
 
 class EventLoopFixture(InteractiveFixture):
-
     question = '\n\n(P)ass/(F)ail/(S)kip/(Q)uit?'
     key_pass = key.P
     key_fail = key.F
@@ -29,12 +28,12 @@ class EventLoopFixture(InteractiveFixture):
     key_quit = key.Q
     clear_color = 1, 1, 1, 1
     base_options = {
-            'width': 300,
-            'height': 300,
-            }
+        'width': 300,
+        'height': 300,
+    }
 
     def __init__(self, request):
-        super(EventLoopFixture, self).__init__(request)
+        super().__init__(request)
         self._request = request
         self.window = None
         self.text_batch = None
@@ -65,13 +64,12 @@ class EventLoopFixture(InteractiveFixture):
         self.text_batch = Batch()
         self.text_document = FormattedDocument()
         layout = TextLayout(self.text_document, self.window.width, self.window.height,
-                multiline=True, wrap_lines=True, batch=self.text_batch)
+                            multiline=True, wrap_lines=True, batch=self.text_batch)
         layout.content_valign = 'bottom'
 
     def add_text(self, text):
         self.get_document()
         self.text_document.insert_text(len(self.text_document.text), text)
-        self.window._legacy_invalid = True
 
     def ask_question(self, description=None, screenshot=True):
         """Ask a question inside the test window. By default takes a screenshot and validates
@@ -120,7 +118,7 @@ class EventLoopFixture(InteractiveFixture):
     def ask_question_no_window(self, description=None):
         """Ask a question to verify the current test result. Uses the console or an external gui
         as no window is available."""
-        super(EventLoopFixture, self).ask_question(description)
+        super().ask_question(description)
 
     def run_event_loop(self, duration=None):
         if duration:
@@ -155,19 +153,18 @@ class EventLoopFixture(InteractiveFixture):
         return True
 
 
-
 def test_question_pass(event_loop):
     event_loop.create_window()
     event_loop.ask_question('If you read this text, you should let the test pass.')
+
 
 def test_question_fail(event_loop):
     event_loop.create_window()
     with pytest.raises(pytest.fail.Exception):
         event_loop.ask_question('Please press F to fail this test.')
 
+
 def test_question_skip(event_loop):
     event_loop.create_window()
     event_loop.ask_question('Please press S to skip the rest of this test.')
     pytest.fail('You should have pressed S')
-
-

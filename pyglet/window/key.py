@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,7 @@ Usage::
 from pyglet import compat_platform
 
 
-class KeyStateHandler(dict):
+class KeyStateHandler:
     """Simple handler that tracks the state of keys on the keyboard. If a
     key is pressed then this handler holds a True value for it.
 
@@ -82,14 +82,17 @@ class KeyStateHandler(dict):
         False
 
     """
+    def __init__(self):
+        self.data = {}
+
     def on_key_press(self, symbol, modifiers):
-        self[symbol] = True
+        self.data[symbol] = True
 
     def on_key_release(self, symbol, modifiers):
-        self[symbol] = False
+        self.data[symbol] = False
 
     def __getitem__(self, key):
-        return self.get(key, False)
+        return self.data.get(key, False)
 
 
 def modifiers_string(modifiers):
@@ -255,6 +258,8 @@ MOTION_BEGINNING_OF_FILE = 5
 MOTION_END_OF_FILE       = 6
 MOTION_BACKSPACE         = BACKSPACE
 MOTION_DELETE            = DELETE
+MOTION_COPY              = 7
+MOTION_PASTE             = 8
 
 # Number pad
 NUMLOCK       = 0xff7f

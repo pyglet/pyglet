@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""OpenGL and GLU interface.
+"""OpenGL interface.
 
-This package imports all OpenGL, GLU and registered OpenGL extension
+This package imports all OpenGL and registered OpenGL extension
 functions.  Functions have identical signatures to their C counterparts.
 
 OpenGL is documented in full at the `OpenGL Reference Pages`_.
@@ -52,8 +52,6 @@ The following subpackages are imported into this "mega" package already
 
 ``pyglet.gl.gl``
     OpenGL
-``pyglet.gl.glu``
-    GLU
 ``pyglet.gl.gl.glext_arb``
     ARB registered OpenGL extension functions
 
@@ -81,11 +79,10 @@ The information modules are provided for convenience, and are documented below.
 """
 import pyglet as _pyglet
 
-from pyglet.gl.lib import GLException
 from pyglet.gl.gl import *
-from pyglet.gl.glu import *
-from pyglet.gl.glext_arb import *
+from pyglet.gl.lib import GLException
 from pyglet.gl import gl_info
+from pyglet.gl.gl_compat import GL_LUMINANCE, GL_INTENSITY
 
 from pyglet import compat_platform
 from .base import ObjectSpace, CanvasConfig, Context
@@ -167,8 +164,7 @@ if _pyglet.options['debug_texture']:
         size = (width + 2 * border) * (height + 2 * border) * depth
         _debug_texture_alloc(_debug_texture, size)
 
-        return _glTexImage2D(target, level, internalformat, width, height,
-                             border, format, type, pixels)
+        return _glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
 
 
     _glDeleteTextures = glDeleteTextures
@@ -192,7 +188,16 @@ def _create_shadow_window():
         return
 
     from pyglet.window import Window
-    _shadow_window = Window(width=1, height=1, visible=False)
+
+    class ShadowWindow(Window):
+        def __init__(self):
+            super().__init__(width=1, height=1, visible=False)
+
+        def _create_projection(self):
+            """Shadow window does not need a projection."""
+            pass
+
+    _shadow_window = ShadowWindow()
     _shadow_window.switch_to()
 
     from pyglet import app
@@ -201,21 +206,21 @@ def _create_shadow_window():
 
 if _is_pyglet_doc_run:
     from .base import Config
+
+elif _pyglet.options['headless']:
+    from .headless import HeadlessConfig as Config
 elif compat_platform in ('win32', 'cygwin'):
     from .win32 import Win32Config as Config
 elif compat_platform.startswith('linux'):
     from .xlib import XlibConfig as Config
 elif compat_platform == 'darwin':
     from .cocoa import CocoaConfig as Config
-del base
 
 
-# XXX remove
 _shadow_window = None
 
-# Import pyglet.window now if it isn't currently being imported (this creates
-# the shadow window).
+# Import pyglet.window now if it isn't currently being imported (this creates the shadow window).
 if not _is_pyglet_doc_run and 'pyglet.window' not in _sys.modules and _pyglet.options['shadow_window']:
-    # trickery is for circular import 
+    # trickery is for circular import
     _pyglet.gl = _sys.modules[__name__]
     import pyglet.window

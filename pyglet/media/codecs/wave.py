@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -71,7 +71,8 @@ class WaveSource(StreamingSource):
         self._wave.rewind()
 
     def __del__(self):
-        self._file.close()
+        if hasattr(self, '_file'):
+            self._file.close()
 
     def get_audio_data(self, num_bytes, compensation_time=0.0):
         num_frames = max(1, num_bytes // self._bytes_per_frame)
@@ -99,7 +100,7 @@ class WaveDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.wav', '.wave', '.riff'
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return WaveSource(filename, file)
         else:
@@ -111,7 +112,7 @@ class WaveEncoder(MediaEncoder):
     def get_file_extensions(self):
         return '.wav', '.wave', '.riff'
 
-    def encode(self, source, file, filename):
+    def encode(self, source, filename, file):
         """Save the Source to disk as a standard RIFF Wave.
 
         A standard RIFF wave header will be added to the raw PCM

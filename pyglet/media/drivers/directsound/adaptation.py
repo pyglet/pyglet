@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,13 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import ctypes
 import math
+import ctypes
 
-import pyglet
 from . import interface
 from pyglet.util import debug_print
 from pyglet.media.events import MediaEvent
+from pyglet.media.mediathreads import PlayerWorkerThread
 from pyglet.media.drivers.base import AbstractAudioDriver, AbstractAudioPlayer
 from pyglet.media.drivers.listener import AbstractListener
 
@@ -56,12 +56,12 @@ def _gain2db(gain):
     Convert linear gain in range [0.0, 1.0] to 100ths of dB.
 
     Power gain = P1/P2
-    dB = 10 log(P1/P2)
+    dB = 2 log(P1/P2)
     dB * 100 = 1000 * log(power gain)
     """
     if gain <= 0:
         return -10000
-    return max(-10000, min(int(1000 * math.log10(min(gain, 1))), 0))
+    return max(-10000, min(int(1000 * math.log2(min(gain, 1))), 0))
 
 
 def _db2gain(db):
@@ -133,11 +133,11 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self.driver._ds_driver._native_dsound.Release()
 
     def delete(self):
-        pyglet.clock.unschedule(self._check_refill)
+        self.driver.worker.remove(self)
 
     def play(self):
         assert _debug('DirectSound play')
-        pyglet.clock.schedule_interval(self._check_refill, 0.1)
+        self.driver.worker.add(self)
 
         if not self._playing:
             self._get_audiodata()  # prebuffer if needed
@@ -148,7 +148,7 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
 
     def stop(self):
         assert _debug('DirectSound stop')
-        pyglet.clock.unschedule(self._check_refill)
+        self.driver.worker.remove(self)
 
         if self._playing:
             self._playing = False
@@ -166,11 +166,6 @@ class DirectSoundAudioPlayer(AbstractAudioPlayer):
         self._audiodata_buffer = None
         del self._events[:]
         del self._timestamps[:]
-
-    def _check_refill(self, dt):
-        write_size = self.get_write_size()
-        if write_size > self.min_buffer_size:
-            self.refill(write_size)
 
     def refill(self, write_size):
         while write_size > 0:
@@ -385,6 +380,9 @@ class DirectSoundDriver(AbstractAudioDriver):
         assert self._ds_driver is not None
         assert self._ds_listener is not None
 
+        self.worker = PlayerWorkerThread()
+        self.worker.start()
+
     def __del__(self):
         self.delete()
 
@@ -403,6 +401,7 @@ class DirectSoundDriver(AbstractAudioDriver):
 
     def delete(self):
         # Make sure the _ds_listener is deleted before the _ds_driver
+        self.worker.stop()
         self._ds_listener = None
 
 

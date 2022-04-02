@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -82,18 +82,19 @@ instance when loading the Model::
 .. versionadded:: 1.4
 """
 
-from io import BytesIO
+import pyglet
 
-from pyglet.graphics.shader import Shader, ShaderProgram
-from pyglet.gl import *
+from pyglet import gl
 from pyglet import graphics
+from pyglet.gl import current_context
+from pyglet.math import Mat4, Vec3
+from pyglet.graphics import shader
 
-from .codecs import ModelDecodeException
-from .codecs import add_encoders, add_decoders, add_default_model_codecs
-from .codecs import get_encoders, get_decoders
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
 
 
-def load(filename, file=None, decoder=None, batch=None):
+def load(filename, file=None, decoder=None, batch=None, group=None):
     """Load a 3D model from a file.
 
     :Parameters:
@@ -108,36 +109,37 @@ def load(filename, file=None, decoder=None, batch=None):
             registered for the file extension, or if decoding fails.
         `batch` : Batch or None
             An optional Batch instance to add this model to.
+        `group` : Group or None
+            An optional top level Group.
 
     :rtype: :py:mod:`~pyglet.model.Model`
     """
+    if decoder:
+        return decoder.decode(filename, file, batch=batch, group=group)
+    else:
+        return _codec_registry.decode(filename, file, batch=batch, group=group)
 
-    if not file:
-        file = open(filename, 'rb')
 
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
+def get_default_shader():
     try:
-        if decoder:
-            return decoder.decode(file, filename, batch)
-        else:
-            first_exception = None
-            for decoder in get_decoders(filename):
-                try:
-                    model = decoder.decode(file, filename, batch)
-                    return model
-                except ModelDecodeException as e:
-                    if (not first_exception or
-                            first_exception.exception_priority < e.exception_priority):
-                        first_exception = e
-                    file.seek(0)
+        return pyglet.gl.current_context.model_default_plain_shader
+    except AttributeError:
+        vert_shader = shader.Shader(MaterialGroup.default_vert_src, 'vertex')
+        frag_shader = shader.Shader(MaterialGroup.default_frag_src, 'fragment')
+        default_shader_program = shader.ShaderProgram(vert_shader, frag_shader)
+        pyglet.gl.current_context.model_default_plain_shader = default_shader_program
+        return pyglet.gl.current_context.model_default_plain_shader
 
-            if not first_exception:
-                raise ModelDecodeException('No decoders are available for this model format.')
-            raise first_exception
-    finally:
-        file.close()
+
+def get_default_textured_shader():
+    try:
+        return pyglet.gl.current_context.model_default_textured_shader
+    except AttributeError:
+        vert_shader = shader.Shader(TexturedMaterialGroup.default_vert_src, 'vertex')
+        frag_shader = shader.Shader(TexturedMaterialGroup.default_frag_src, 'fragment')
+        default_shader_program = shader.ShaderProgram(vert_shader, frag_shader)
+        pyglet.gl.current_context.model_default_textured_shader = default_shader_program
+        return current_context.model_default_textured_shader
 
 
 class Model:
@@ -159,13 +161,12 @@ class Model:
                  a vertex list in `vertex_lists` of the same index.
             `batch` : `~pyglet.graphics.Batch`
                 Optional batch to add the model to. If no batch is provided,
-                the model will maintain it's own internal batch.
+                the model will maintain its own internal batch.
         """
         self.vertex_lists = vertex_lists
         self.groups = groups
         self._batch = batch
-        self._rotation = 0, 0, 0
-        self._translation = 0, 0, 0
+        self._modelview_matrix = Mat4()
 
     @property
     def batch(self):
@@ -173,7 +174,7 @@ class Model:
 
         The Model can be migrated from one batch to another, or removed from
         a batch (for individual drawing). If not part of any batch, the Model
-        will keep it's own internal batch. Note that batch migration can be
+        will keep its own internal batch. Note that batch migration can be
         an expensive operation.
 
         :type: :py:class:`pyglet.graphics.Batch`
@@ -189,29 +190,19 @@ class Model:
             batch = graphics.Batch()
 
         for group, vlist in zip(self.groups, self.vertex_lists):
-            self._batch.migrate(vlist, GL_TRIANGLES, group, batch)
+            self._batch.migrate(vlist, gl.GL_TRIANGLES, group, batch)
 
         self._batch = batch
 
     @property
-    def rotation(self):
-        return self._rotation
+    def matrix(self):
+        return self._modelview_matrix
 
-    @rotation.setter
-    def rotation(self, values):
-        self._rotation = values
+    @matrix.setter
+    def matrix(self, matrix):
+        self._modelview_matrix = matrix
         for group in self.groups:
-            group.rotation = values
-
-    @property
-    def translation(self):
-        return self._translation
-
-    @translation.setter
-    def translation(self, values):
-        self._translation = values
-        for group in self.groups:
-            group.translation = values
+            group.matrix = matrix
 
     def draw(self):
         """Draw the model.
@@ -219,6 +210,7 @@ class Model:
         This is not recommended. See the module documentation
         for information on efficient drawing of multiple models.
         """
+        gl.current_context.window_block.bind(0)
         self._batch.draw_subset(self.vertex_lists)
 
 
@@ -234,134 +226,146 @@ class Material:
         self.shininess = shininess
         self.texture_name = texture_name
 
+    def __eq__(self, other):
+        return (self.name == other.name and
+                self.diffuse == other.diffuse and
+                self.ambient == other.ambient and
+                self.specular == other.specular and
+                self.emission == other.emission and
+                self.shininess == other.shininess and
+                self.texture_name == other.texture_name)
 
-vertex_source = """#version 330 core
-    in vec4 vertices;
-    in vec4 normals;
-    in vec4 colors;
+
+class BaseMaterialGroup(graphics.Group):
+    default_vert_src = None
+    default_frag_src = None
+    matrix = Mat4()
+
+    def __init__(self, material, program, order=0, parent=None):
+        super().__init__(order, parent)
+        self.material = material
+        self.program = program
+
+
+class TexturedMaterialGroup(BaseMaterialGroup):
+    default_vert_src = """#version 330 core
+    in vec3 vertices;
+    in vec3 normals;
     in vec2 tex_coords;
-    out vec4 vertex_colors;
-    out vec4 vertex_normals;
-    out vec2 texture_coords;
+    in vec4 colors;
 
-    uniform vec3 rotation;
-    uniform vec3 translation;
+    out vec4 vertex_colors;
+    out vec3 vertex_normals;
+    out vec2 texture_coords;
+    out vec3 vertex_position;
 
     uniform WindowBlock
     {
         mat4 projection;
         mat4 view;
-    } window;  
+    } window;
 
-    mat4 m_translation = mat4(1.0);
-    mat4 m_rotation_x = mat4(1.0);
-    mat4 m_rotation_y = mat4(1.0);
-    mat4 m_rotation_z = mat4(1.0);
+    uniform mat4 model;
 
     void main()
     {
-        m_rotation_x[1][1] =  cos(-radians(rotation.x)); 
-        m_rotation_x[1][2] =  sin(-radians(rotation.x));
-        m_rotation_x[2][1] = -sin(-radians(rotation.x));
-        m_rotation_x[2][2] =  cos(-radians(rotation.x));
-        vec4 vertices_rx = m_rotation_x * vertices;
+        vec4 pos = window.view * model * vec4(vertices, 1.0);
+        gl_Position = window.projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(model)));
 
-        m_rotation_y[0][0] =  cos(-radians(rotation.y)); 
-        m_rotation_y[0][2] = -sin(-radians(rotation.y));    
-        m_rotation_y[2][0] =  sin(-radians(rotation.y)); 
-        m_rotation_y[2][2] =  cos(-radians(rotation.y));
-        vec4 vertices_rxy = m_rotation_y * vertices_rx;
-
-        m_rotation_z[0][0] =  cos(-radians(rotation.z)); 
-        m_rotation_z[0][1] =  sin(-radians(rotation.z));
-        m_rotation_z[1][0] = -sin(-radians(rotation.z));
-        m_rotation_z[1][1] =  cos(-radians(rotation.z));
-        vec4 vertices_rxyz = m_rotation_z * vertices_rxy;
-
-        m_translation[3][0] = translation.x;
-        m_translation[3][1] = translation.y;
-        m_translation[3][2] = translation.z;
-        vec4 vertices_final = m_translation * vertices_rxyz;
-
-        gl_Position = window.projection * window.view * vertices_final;
-
+        vertex_position = pos.xyz;
         vertex_colors = colors;
-        vertex_normals = normals;
         texture_coords = tex_coords;
+        vertex_normals = normal_matrix * normals;
     }
-"""
-
-fragment_source = """#version 330 core
+    """
+    default_frag_src = """#version 330 core
     in vec4 vertex_colors;
-    in vec4 vertex_normals;
+    in vec3 vertex_normals;
     in vec2 texture_coords;
+    in vec3 vertex_position;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        // TODO: implement lighting, and do something with normals and materials.
-        vec4 nothing = vertex_normals - vec4(1.0, 1.0, 1.0, 1.0);
-        final_colors = texture(our_texture, texture_coords) + vertex_colors * nothing;
+        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
+        final_colors = (texture(our_texture, texture_coords) * vertex_colors) * l * 1.2;
     }
-"""
+    """
 
-_default_vert_shader = Shader(vertex_source, 'vertex')
-_default_frag_shader = Shader(fragment_source, 'fragment')
-default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-
-
-class TexturedMaterialGroup(graphics.Group):
-
-    def __init__(self, material, texture):
-        super().__init__()
-        self.material = material
+    def __init__(self, material, program, texture, order=0, parent=None):
+        super().__init__(material, program, order, parent)
         self.texture = texture
-        self.program = default_shader_program
-        self.rotation = 0, 0, 0
-        self.translation = 0, 0, 0
 
     def set_state(self):
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(self.texture.target, self.texture.id)
         self.program.use()
-        self.program['rotation'] = self.rotation
-        self.program['translation'] = self.translation
+        self.program['model'] = self.matrix
 
     def unset_state(self):
-        glBindTexture(self.texture.target, 0)
-        self.program.stop()
-
-    def __eq__(self, other):
-        return False
+        gl.glBindTexture(self.texture.target, 0)
 
     def __hash__(self):
-        return hash((id(self.parent), self.texture.id, self.texture.target))
+        return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
+
+    def __eq__(self, other):
+        return (self.__class__ is other.__class__ and
+                self.material == other.material and
+                self.texture.target == other.texture.target and
+                self.texture.id == other.texture.id and
+                self.program == other.program and
+                self.order == other.order and
+                self.parent == other.parent)
 
 
-class MaterialGroup(graphics.Group):
+class MaterialGroup(BaseMaterialGroup):
+    default_vert_src = """#version 330 core
+    in vec3 vertices;
+    in vec3 normals;
+    in vec4 colors;
 
-    def __init__(self, material):
-        super(MaterialGroup, self).__init__()
-        self.material = material
-        self.program = default_shader_program
-        self.rotation = 0, 0, 0
-        self.translation = 0, 0, 0
+    out vec4 vertex_colors;
+    out vec3 vertex_normals;
+    out vec3 vertex_position;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    uniform mat4 model;
+
+    void main()
+    {
+        vec4 pos = window.view * model * vec4(vertices, 1.0);
+        gl_Position = window.projection * pos;
+        mat3 normal_matrix = transpose(inverse(mat3(model)));
+
+        vertex_position = pos.xyz;
+        vertex_colors = colors;
+        vertex_normals = normal_matrix * normals;
+    }
+    """
+    default_frag_src = """#version 330 core
+    in vec4 vertex_colors;
+    in vec3 vertex_normals;
+    in vec3 vertex_position;
+    out vec4 final_colors;
+
+    void main()
+    {
+        float l = dot(normalize(-vertex_position), normalize(vertex_normals));
+        final_colors = vertex_colors * l * 1.2;
+    }
+    """
 
     def set_state(self):
         self.program.use()
-        self.program['rotation'] = self.rotation
-        self.program['translation'] = self.translation
-
-    def unset_state(self):
-        self.program.stop()
-
-    def __eq__(self, other):
-        return False
-
-    def __hash__(self):
-        return hash((id(self.parent)))
+        self.program['model'] = self.matrix
 
 
-add_default_model_codecs()
+_add_default_codecs()

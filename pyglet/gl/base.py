@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,17 +32,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
-
-from pyglet import gl, compat_platform
+from pyglet import gl
 from pyglet.gl import gl_info
-from pyglet.gl import glu_info
 
 
 class Config:
     """Graphics configuration.
 
     A Config stores the preferences for OpenGL attributes such as the
-    number of auxilliary buffers, size of the colour and depth buffers,
+    number of auxiliary buffers, size of the colour and depth buffers,
     double buffering, stencilling, multi- and super-sampling, and so on.
 
     Different platforms support a different set of attributes, so these
@@ -56,7 +54,7 @@ class Config:
         `buffer_size` : int
             Total bits per sample per color buffer.
         `aux_buffers` : int
-            The number of auxilliary color buffers.
+            The number of auxiliary color buffers.
         `sample_buffers` : int
             The number of multisample buffers.
         `samples` : int
@@ -131,6 +129,7 @@ class Config:
                 setattr(self, name, None)
 
     def requires_gl_3(self):
+        # TODO: remove deprecated
         if self.major_version is not None and self.major_version >= 3:
             return True
         if self.forward_compatible or self.debug:
@@ -171,9 +170,8 @@ class Config:
         :rtype: `Context`
         :return: The new context.
         """
-        raise gl.ConfigException(
-            'This config cannot be used to create contexts.  '
-            'Use Config.match to created a CanvasConfig')
+        raise gl.ConfigException('This config cannot be used to create contexts.  '
+                                 'Use Config.match to created a CanvasConfig')
 
     def is_complete(self):
         """Determine if this config is complete and able to create a context.
@@ -191,8 +189,7 @@ class Config:
         return isinstance(self, CanvasConfig)
 
     def __repr__(self):
-        import pprint
-        return '%s(%s)' % (self.__class__.__name__, pprint.pformat(self.get_gl_attributes()))
+        return f"{self.__class__.__name__}({self.get_gl_attributes()})"
 
 
 class CanvasConfig(Config):
@@ -207,6 +204,7 @@ class CanvasConfig(Config):
             The canvas this config is valid on.
 
     """
+
     def __init__(self, canvas, base_config):
         self.canvas = canvas
 
@@ -236,10 +234,12 @@ class CanvasConfig(Config):
 
 class ObjectSpace:
     def __init__(self):
-        # Textures and buffers scheduled for deletion the next time
-        # this object space is active.
+        # Textures and buffers scheduled for deletion
+        # the next time this object space is active.
         self.doomed_textures = []
         self.doomed_buffers = []
+        self.doomed_vaos = []
+        self.doomed_shader_programs = []
 
 
 class Context:
@@ -276,7 +276,7 @@ class Context:
             self.object_space = ObjectSpace()
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return f"{self.__class__.__name__}(id={id(self)}, share={self.context_share})"
 
     def attach(self, canvas):
         if self.canvas is not None:
@@ -297,26 +297,33 @@ class Context:
 
         # XXX
         gl_info.set_active_context()
-        glu_info.set_active_context()
 
         if not self._info:
             self._info = gl_info.GLInfo()
             self._info.set_active_context()
 
-        # Release textures and buffers on this context scheduled for deletion.
-        # Note that the garbage collector may introduce a race condition,
-        # so operate on a copy of the textures/buffers and remove the deleted
-        # items using list slicing (which is an atomic operation)
+        # Release Textures, Buffers, and VAOs on this context scheduled for
+        # deletion. Note that the garbage collector may introduce a race
+        # condition, so operate on a copy, and clear the list afterwards.
         if self.object_space.doomed_textures:
             textures = self.object_space.doomed_textures[:]
             textures = (gl.GLuint * len(textures))(*textures)
             gl.glDeleteTextures(len(textures), textures)
-            self.object_space.doomed_textures[0:len(textures)] = []
+            self.object_space.doomed_textures.clear()
         if self.object_space.doomed_buffers:
             buffers = self.object_space.doomed_buffers[:]
             buffers = (gl.GLuint * len(buffers))(*buffers)
             gl.glDeleteBuffers(len(buffers), buffers)
-            self.object_space.doomed_buffers[0:len(buffers)] = []
+            self.object_space.doomed_buffers.clear()
+        if self.object_space.doomed_vaos:
+            vaos = self.object_space.doomed_vaos[:]
+            vaos = (gl.GLuint * len(vaos))(*vaos)
+            gl.glDeleteVertexArrays(len(vaos), vaos)
+            self.object_space.doomed_vaos.clear()
+        if self.object_space.doomed_shader_programs:
+            for program_id in self.object_space.doomed_shader_programs:
+                gl.glDeleteProgram(program_id)
+            self.object_space.doomed_shader_programs.clear()
 
     def destroy(self):
         """Release the context.
@@ -337,16 +344,16 @@ class Context:
                 gl._shadow_window.switch_to()
 
     def delete_texture(self, texture_id):
-        """Safely delete a texture belonging to this context.
+        """Safely delete a Texture belonging to this context.
 
-        Usually, the texture is released immediately using
+        Usually, the Texture is released immediately using
         ``glDeleteTextures``, however if another context that does not share
         this context's object space is currently active, the deletion will
         be deferred until an appropriate context is activated.
 
         :Parameters:
             `texture_id` : int
-                The OpenGL name of the texture to delete.
+                The OpenGL name of the Texture to delete.
 
         """
         if self.object_space is gl.current_context.object_space:
@@ -356,7 +363,7 @@ class Context:
             self.object_space.doomed_textures.append(texture_id)
 
     def delete_buffer(self, buffer_id):
-        """Safely delete a buffer object belonging to this context.
+        """Safely delete a Buffer object belonging to this context.
 
         This method behaves similarly to `delete_texture`, though for
         ``glDeleteBuffers`` instead of ``glDeleteTextures``.
@@ -372,6 +379,41 @@ class Context:
             gl.glDeleteBuffers(1, buf_id)
         else:
             self.object_space.doomed_buffers.append(buffer_id)
+
+    def delete_vao(self, vao_id):
+        """Safely delete a Vertex Array Object belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteVertexArrays`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `vao_id` : int
+                The OpenGL name of the Vertex Array to delete.
+
+        .. versionadded:: 2.0
+        """
+        if gl.current_context and self.object_space is gl.current_context.object_space and False:
+            v_id = gl.GLuint(vao_id)
+            gl.glDeleteVertexArrays(1, v_id)
+        else:
+            self.object_space.doomed_vaos.append(vao_id)
+
+    def delete_shader_program(self, program_id):
+        """Safely delete a Shader Program belonging to this context.
+
+        This method behaves similarly to `delete_texture`, though for
+        ``glDeleteProgram`` instead of ``glDeleteTextures``.
+
+        :Parameters:
+            `program_id` : int
+                The OpenGL name of the Shader Program to delete.
+
+        .. versionadded:: 2.0
+        """
+        if gl.current_context is self:
+            gl.glDeleteProgram(program_id)
+        else:
+            self.object_space.doomed_shader_programs.append(program_id)
 
     def get_info(self):
         """Get the OpenGL information for this context.

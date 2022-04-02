@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,13 @@
 """
 
 
-class MouseStateHandler(dict):
+class MouseStateHandler:
     """Simple handler that tracks the state of buttons from the mouse. If a
     button is pressed then this handler holds a True value for it.
 
     For example::
 
-        >>> win = window.Window
+        >>> win = window.Window()
         >>> mousebuttons = mouse.MouseStateHandler()
         >>> win.push_handlers(mousebuttons)
 
@@ -55,23 +55,29 @@ class MouseStateHandler(dict):
         False
 
     """
-    
+
     def __init__(self):
-        self["x"] = 0
-        self["y"] = 0
-    
+        self.data = {
+            "x": 0,
+            "y": 0,
+        }
+
     def on_mouse_press(self, x, y, button, modifiers):
-        self[button] = True
-        
+        self.data[button] = True
+
     def on_mouse_release(self, x, y, button, modifiers):
-        self[button] = False
-    
+        self.data[button] = False
+
     def on_mouse_motion(self, x, y, dx, dy):
-        self["x"] = x
-        self["y"] = y
-        
+        self.data["x"] = x
+        self.data["y"] = y
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        self.data["x"] = x
+        self.data["y"] = y
+
     def __getitem__(self, key):
-        return self.get(key, False)
+        return self.data.get(key, False)
 
 
 def buttons_string(buttons):

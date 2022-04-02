@@ -11,7 +11,7 @@ Displays, screens, configs and contexts
 
 .. figure:: img/context_flow.png
 
-    Flow of construction, from the singleton Platform to a newly
+    Flow of construction, from the abstract Canvas to a newly
     created Window with its Context.
 
 Contexts and configs
@@ -222,11 +222,11 @@ created based on the values of these properties:
         If you require an accumulation buffer, specify ``8`` for each
         of these attributes (the alpha component is optional, of course).
     ``aux_buffers``
-        Each auxilliary buffer is configured the same as the colour buffer.
-        Up to four auxilliary buffers can typically be created.  Specify ``0``
-        if you do not require any auxilliary buffers.
+        Each auxiliary buffer is configured the same as the colour buffer.
+        Up to four auxiliary buffers can typically be created.  Specify ``0``
+        if you do not require any auxiliary buffers.
 
-        Like the accumulation buffer, auxilliary buffers are used less often
+        Like the accumulation buffer, auxiliary buffers are used less often
         nowadays as more efficient techniques such as render-to-texture are
         available.  They are almost universally available on older hardware,
         though, where the newer techniques are not possible.
@@ -234,7 +234,7 @@ created based on the values of these properties:
 If you wish to work with OpenGL directly, you can request a higher level
 context. This is required if you wish to work with the modern OpenGL
 programmable pipeline. Please note, however, that pyglet currently uses
-legacy OpenGL functionality for many of it's internal modules (such as
+legacy OpenGL functionality for many of its internal modules (such as
 the text, graphics, and sprite modules). Requesting a higher version
 context will currently prevent usage of these modules.
 
@@ -250,7 +250,8 @@ context will currently prevent usage of these modules.
 .. note::
    To request a higher higher version OpenGL context on Mac OSX, it is necessary
    to disable the pyglet shadow context. To do this, set the pyglet option
-   ``pyglet.options['shadow_window']`` to ``False`` before creating a Window.
+   ``pyglet.options['shadow_window']`` to ``False`` `before` creating a Window,
+   or importing ``pyglet.window``.
 
 The default configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -293,8 +294,7 @@ the :class:`~pyglet.window.Window` constructor do this for you.  In this case
 use :meth:`~pyglet.canvas.Screen.get_best_config` to obtain a "complete"
 config, which you can then use to create the context::
 
-    platform = pyglet.window.get_platform()
-    display = platform.get_default_display()
+    display = pyglet.canvas.get_display()
     screen = display.get_default_screen()
 
     template = pyglet.gl.Config(alpha_size=8)
@@ -317,7 +317,7 @@ You can use this to support newer hardware features where available, but also
 accept a lesser config if necessary.  For example, the following code creates
 a window with multisampling if possible, otherwise leaves multisampling off::
 
-    template = gl.Config(sample_buffers=1, samples=4)
+    template = pyglet.gl.Config(sample_buffers=1, samples=4)
     try:
         config = screen.get_best_config(template)
     except pyglet.window.NoSuchConfigException:
@@ -338,16 +338,15 @@ template as a minimum specification, but you can supply an "empty" template
 (one with no attributes set) to get a list of all configurations supported by
 the screen.
 
-In the following example, all configurations with either an auxilliary buffer
+In the following example, all configurations with either an auxiliary buffer
 or an accumulation buffer are printed::
 
-    platform = pyglet.window.get_platform()
-    display = platform.get_default_display()
+    display = pyglet.canvas.get_display()
     screen = display.get_default_screen()
 
     for config in screen.get_matching_configs(gl.Config()):
         if config.aux_buffers or config.accum_red_size:
-            print config
+            print(config)
 
 As well as supporting more complex configuration selection algorithms,
 enumeration allows you to efficiently find the maximum value of an attribute
@@ -417,7 +416,7 @@ In the following example, an attribute is set on the object space indicating
 that game objects have been loaded.  This way, if the context is recreated,
 you can check for this attribute to determine if you need to load them again::
 
-    context = pyglet.gl.get_current_context()
+    context = pyglet.gl.current_context
     object_space = context.object_space
     object_space.my_game_objects_loaded = True
 

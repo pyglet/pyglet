@@ -630,7 +630,7 @@ A framebuffer consists of
   :py:class:`~pyglet.image.DepthBufferImage`
 * An optional stencil buffer, with each bit represented by
   :py:class:`~pyglet.image.BufferImageMask`
-* Any number of auxilliary buffers, also represented by
+* Any number of auxiliary buffers, also represented by
   :py:class:`~pyglet.image.ColorBufferImage`
 
 You cannot create the buffer images directly; instead you must obtain
@@ -658,9 +658,9 @@ When a depth buffer is converted to a texture, the class used will be a
 :py:class:`~pyglet.image.DepthTexture`, suitable for use with shadow map
 techniques.
 
-The auxilliary buffers and stencil bits are obtained by requesting one, which
+The auxiliary buffers and stencil bits are obtained by requesting one, which
 will then be marked as "in-use".  This permits multiple libraries and your
-application to work together without clashes in stencil bits or auxilliary
+application to work together without clashes in stencil bits or auxiliary
 buffer names.  For example, to obtain a free stencil bit::
 
     mask = buffers.get_buffer_mask()
@@ -669,11 +669,11 @@ The buffer manager maintains a weak reference to the buffer mask, so that when
 you release all references to it, it will be returned to the pool of available
 masks.
 
-Similarly, a free auxilliary buffer is obtained::
+Similarly, a free auxiliary buffer is obtained::
 
     aux_buffer = buffers.get_aux_buffer()
 
-When using the stencil or auxilliary buffers, make sure you explicitly request
+When using the stencil or auxiliary buffers, make sure you explicitly request
 these when creating the window.  See `OpenGL configuration options` for
 details.
 
@@ -755,7 +755,7 @@ draw order::
         batch.draw()
 
 For best performance, you should use as few batches and groups as required.
-(See the :ref:`programming-guide-graphics` section for more details on batch
+(See the :ref:`guide_graphics` section for more details on batch
 and group rendering). This will reduce the number of internal and OpenGL
 operations for drawing each frame.
 

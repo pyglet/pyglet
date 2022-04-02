@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -56,24 +56,13 @@ The entire domain can be efficiently drawn in one step with the
 primitives of the same OpenGL primitive mode.
 """
 
-import re
 import ctypes
 
 import pyglet
 
 from pyglet.gl import *
-from pyglet.graphics import allocation, vertexattribute, vertexbuffer
-
-_usage_format_re = re.compile(r"""
-    (?P<attribute>[^/]*)
-    (/ (?P<usage> static|dynamic|stream|none))?
-""", re.VERBOSE)
-
-_gl_usages = {
-    'static': GL_STATIC_DRAW,
-    'dynamic': GL_DYNAMIC_DRAW,
-    'stream': GL_STREAM_DRAW,
-}
+from pyglet.graphics import allocation, vertexattribute, vertexarray
+from pyglet.graphics.vertexbuffer import BufferObject, MappableBufferObject
 
 
 def _nearest_pow2(v):
@@ -88,62 +77,28 @@ def _nearest_pow2(v):
     return v + 1
 
 
-def create_attribute_usage(shader_program_id, fmt):
-    """Create an attribute and usage pair from a format string.  The
-    format string is as documented in `pyglet.graphics.vertexattribute`, with
-    the addition of an optional usage component::
-
-        usage ::= attribute ( '/' ('static' | 'dynamic' | 'stream') )?
-
-    If the usage is not given it defaults to 'dynamic'.  The usage corresponds
-    to the OpenGL VBO usage hint, and for ``static`` also indicates a
-    preference for interleaved arrays.
-
-    Some examples:
-
-    ``v3f/stream``
-        3D vertex position using floats, for stream usage
-    ``c4b/static``
-        4-byte color attribute, for static usage
-
-    :return: attribute, usage
-    """
-    match = _usage_format_re.match(fmt)
-    attribute_format = match.group('attribute')
-    attribute = vertexattribute.create_attribute(shader_program_id, attribute_format)
-    usage = match.group('usage')
-    if usage:
-        usage = _gl_usages[usage]
-    else:
-        usage = GL_DYNAMIC_DRAW
-
-    return attribute, usage
+_c_types = {
+    GL_BYTE: ctypes.c_byte,
+    GL_UNSIGNED_BYTE: ctypes.c_ubyte,
+    GL_SHORT: ctypes.c_short,
+    GL_UNSIGNED_SHORT: ctypes.c_ushort,
+    GL_INT: ctypes.c_int,
+    GL_UNSIGNED_INT: ctypes.c_uint,
+    GL_FLOAT: ctypes.c_float,
+    GL_DOUBLE: ctypes.c_double,
+}
 
 
-def create_domain(shader_program_id, *attribute_usage_formats):
-    """Create a vertex domain covering the given attribute usage formats.
-    See documentation for :py:func:`create_attribute_usage` and
-    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
-    of these format strings.
-
-    :rtype: :py:class:`VertexDomain`
-    """
-    attribute_usages = [create_attribute_usage(shader_program_id, f)
-                        for f in attribute_usage_formats]
-    return VertexDomain(attribute_usages)
-
-
-def create_indexed_domain(shader_program_id, *attribute_usage_formats):
-    """Create an indexed vertex domain covering the given attribute usage
-    formats.  See documentation for :py:class:`create_attribute_usage` and
-    :py:func:`pyglet.graphics.vertexattribute.create_attribute` for the grammar
-    of these format strings.
-
-    :rtype: :py:class:`VertexDomain`
-    """
-    attribute_usages = [create_attribute_usage(shader_program_id, f)
-                        for f in attribute_usage_formats]
-    return IndexedVertexDomain(attribute_usages)
+_gl_types = {
+    'b': GL_BYTE,
+    'B': GL_UNSIGNED_BYTE,
+    's': GL_SHORT,
+    'S': GL_UNSIGNED_SHORT,
+    'i': GL_INT,
+    'I': GL_UNSIGNED_INT,
+    'f': GL_FLOAT,
+    'd': GL_DOUBLE,
+}
 
 
 class VertexDomain:
@@ -155,47 +110,32 @@ class VertexDomain:
     version = 0
     _initial_count = 16
 
-    def __init__(self, attribute_usages):
+    def __init__(self, program, attribute_meta):
+        self.program = program
+        self.attribute_meta = attribute_meta
         self.allocator = allocation.Allocator(self._initial_count)
+        self.vao = vertexarray.VertexArray()
 
-        static_attributes = []
-        attributes = []
+        self.attributes = []
         self.buffer_attributes = []  # list of (buffer, attributes)
-        for attribute, usage in attribute_usages:
 
-            if usage == GL_STATIC_DRAW:
-                # Group attributes for interleaved buffer
-                static_attributes.append(attribute)
-                attributes.append(attribute)
-            else:
-                # Create non-interleaved buffer
-                attributes.append(attribute)
-                attribute.buffer = vertexbuffer.create_buffer(
-                    attribute.stride * self.allocator.capacity, usage=usage)
-                attribute.buffer.element_size = attribute.stride
-                attribute.buffer.attributes = (attribute,)
-                self.buffer_attributes.append((attribute.buffer, (attribute,)))
-
-        # Create buffer for interleaved data
-        if static_attributes:
-            vertexattribute.interleave_attributes(static_attributes)
-            stride = static_attributes[0].stride
-            buffer = vertexbuffer.create_buffer(
-                stride * self.allocator.capacity, usage=GL_STATIC_DRAW)
-            buffer.element_size = stride
-            self.buffer_attributes.append((buffer, static_attributes))
-
-            attributes.extend(static_attributes)
-            for attribute in static_attributes:
-                attribute.buffer = buffer
+        for name, meta in attribute_meta.items():
+            location = meta['location']
+            count = meta['count']
+            gl_type = _gl_types[meta['format'][0]]
+            normalize = 'n' in meta['format']
+            attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
+            self.attributes.append(attribute)
+            # Create buffer:
+            attribute.buffer = MappableBufferObject(attribute.stride * self.allocator.capacity, GL_ARRAY_BUFFER)
+            attribute.buffer.element_size = attribute.stride
+            attribute.buffer.attributes = (attribute,)
+            self.buffer_attributes.append((attribute.buffer, (attribute,)))
 
         # Create named attributes for each attribute
-        self.attributes = attributes
         self.attribute_names = {}
-        for attribute in attributes:
-            name = attribute.name
-            assert name not in self.attributes, 'More than one "%s" attribute given' % name
-            self.attribute_names[name] = attribute
+        for attribute in self.attributes:
+            self.attribute_names[attribute.name] = attribute
 
     def __del__(self):
         # Break circular refs that Python GC seems to miss even when forced
@@ -255,6 +195,8 @@ class VertexDomain:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -289,6 +231,8 @@ class VertexDomain:
                 Vertex list to draw.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -327,10 +271,7 @@ class VertexList:
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
-        with pyglet.graphics.get_default_batch().vao:
-            pyglet.graphics.get_default_group().set_state()
-            self.domain.draw_subset(mode, self)
-            pyglet.graphics.get_default_group().unset_state()
+        self.domain.draw_subset(mode, self)
 
     def resize(self, count, index_count=None):
         """Resize this group.
@@ -388,12 +329,9 @@ class VertexList:
         for version in self._cache_versions:
             self._cache_versions[version] = None
 
-    def set_attribute_data(self, i, data):
-        attribute = self.domain.attributes[i]
-        # TODO without region
-        region = attribute.get_region(attribute.buffer, self.start, self.count)
-        region.array[:] = data
-        region.invalidate()
+    def set_attribute_data(self, name, data):
+        attribute = self.domain.attribute_names[name]
+        attribute.set_region(attribute.buffer, self.start, self.count, data)
 
     def __getattr__(self, name):
         """dynamic access to vertex attributes, for backwards compatibility.
@@ -408,26 +346,32 @@ class VertexList:
         region.invalidate()
         return region.array
 
+    def __setattr__(self, name, value):
+        # Allow setting vertex attributes directly without overwriting them:
+        if 'domain' in self.__dict__ and name in self.__dict__['domain'].attribute_names:
+            getattr(self, name)[:] = value
+            return
+        super().__setattr__(name, value)
+
 
 class IndexedVertexDomain(VertexDomain):
     """Management of a set of indexed vertex lists.
 
     Construction of an indexed vertex domain is usually done with the
-    `create_indexed_domain` function.
+    :py:func:`create_domain` function.
     """
     _initial_index_count = 16
 
-    def __init__(self, attribute_usages, index_gl_type=GL_UNSIGNED_INT):
-        super(IndexedVertexDomain, self).__init__(attribute_usages)
+    def __init__(self, program, attribute_meta, index_gl_type=GL_UNSIGNED_INT):
+        super(IndexedVertexDomain, self).__init__(program, attribute_meta)
 
         self.index_allocator = allocation.Allocator(self._initial_index_count)
 
         self.index_gl_type = index_gl_type
         self.index_c_type = vertexattribute._c_types[index_gl_type]
         self.index_element_size = ctypes.sizeof(self.index_c_type)
-        self.index_buffer = vertexbuffer.create_buffer(
-            self.index_allocator.capacity * self.index_element_size,
-            target=GL_ELEMENT_ARRAY_BUFFER)
+        self.index_buffer = BufferObject(
+            self.index_allocator.capacity * self.index_element_size, GL_ELEMENT_ARRAY_BUFFER)
 
     def safe_index_alloc(self, count):
         """Allocate indices, resizing the buffers if necessary."""
@@ -466,7 +410,7 @@ class IndexedVertexDomain(VertexDomain):
         return IndexedVertexList(self, start, count, index_start, index_count)
 
     def get_index_region(self, start, count):
-        """Get a region of the index buffer.
+        """Get a data from a region of the index buffer.
 
         :Parameters:
             `start` : int
@@ -479,7 +423,18 @@ class IndexedVertexDomain(VertexDomain):
         byte_start = self.index_element_size * start
         byte_count = self.index_element_size * count
         ptr_type = ctypes.POINTER(self.index_c_type * count)
-        return self.index_buffer.get_region(byte_start, byte_count, ptr_type)
+        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
+        data = map_ptr[:]
+        self.index_buffer.unmap()
+        return data
+
+    def set_index_region(self, start, count, data):
+        byte_start = self.index_element_size * start
+        byte_count = self.index_element_size * count
+        ptr_type = ctypes.POINTER(self.index_c_type * count)
+        map_ptr = self.index_buffer.map_range(byte_start, byte_count, ptr_type)
+        map_ptr[:] = data
+        self.index_buffer.unmap()
 
     def draw(self, mode):
         """Draw all vertices in the domain.
@@ -492,6 +447,8 @@ class IndexedVertexDomain(VertexDomain):
                 OpenGL drawing mode, e.g. ``GL_POINTS``, ``GL_LINES``, etc.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -530,6 +487,8 @@ class IndexedVertexDomain(VertexDomain):
                 Vertex list to draw.
 
         """
+        self.vao.bind()
+
         for buffer, attributes in self.buffer_attributes:
             buffer.bind()
             for attribute in attributes:
@@ -554,8 +513,7 @@ class IndexedVertexList(VertexList):
     _indices_cache_version = None
 
     def __init__(self, domain, start, count, index_start, index_count):
-        super(IndexedVertexList, self).__init__(domain, start, count)
-
+        super().__init__(domain, start, count)
         self.index_start = index_start
         self.index_count = index_count
 
@@ -570,7 +528,7 @@ class IndexedVertexList(VertexList):
 
         """
         old_start = self.start
-        super(IndexedVertexList, self).resize(count)
+        super().resize(count)
 
         # Change indices (because vertices moved)
         if old_start != self.start:
@@ -578,22 +536,20 @@ class IndexedVertexList(VertexList):
             self.indices[:] = [i + diff for i in self.indices]
 
         # Resize indices
-        new_start = self.domain.safe_index_realloc(
-            self.index_start, self.index_count, index_count)
+        new_start = self.domain.safe_index_realloc(self.index_start, self.index_count, index_count)
         if new_start != self.index_start:
-            old = self.domain.get_index_region(
-                self.index_start, self.index_count)
-            new = self.domain.get_index_region(
-                self.index_start, self.index_count)
+            old = self.domain.get_index_region(self.index_start, self.index_count)
+            new = self.domain.get_index_region(self.index_start, self.index_count)
             new.array[:] = old.array[:]
             new.invalidate()
+
         self.index_start = new_start
         self.index_count = index_count
         self._indices_cache_version = None
 
     def delete(self):
         """Delete this group."""
-        super(IndexedVertexList, self).delete()
+        super().delete()
         self.domain.index_allocator.dealloc(self.index_start, self.index_count)
 
     def migrate(self, domain):
@@ -608,35 +564,26 @@ class IndexedVertexList(VertexList):
         """
         old_start = self.start
         old_domain = self.domain
-        super(IndexedVertexList, self).migrate(domain)
+        super().migrate(domain)
 
         # Note: this code renumber the indices of the *original* domain
         # because the vertices are in a new position in the new domain
         if old_start != self.start:
             diff = self.start - old_start
-            region = old_domain.get_index_region(self.index_start, self.index_count)
-            old_indices = region.array
-            old_indices[:] = [i + diff for i in old_indices]
-            region.invalidate()
+            old_indices = old_domain.get_index_region(self.index_start, self.index_count)
+            old_domain.set_index_region(self.index_start, self.index_count, [i + diff for i in old_indices])
 
         # copy indices to new domain
-        old = old_domain.get_index_region(self.index_start, self.index_count)
+        old_array = old_domain.get_index_region(self.index_start, self.index_count)
         # must delloc before calling safe_index_alloc or else problems when same
         # batch is migrated to because index_start changes after dealloc
         old_domain.index_allocator.dealloc(self.index_start, self.index_count)
+
         new_start = self.domain.safe_index_alloc(self.index_count)
-        new = self.domain.get_index_region(new_start, self.index_count)
-        new.array[:] = old.array[:]
-        new.invalidate()
+        self.domain.set_index_region(new_start, self.index_count, old_array)
 
         self.index_start = new_start
         self._indices_cache_version = None
-
-    def set_index_data(self, data):
-        # TODO without region
-        region = self.domain.get_index_region(self.index_start, self.index_count)
-        region.array[:] = data
-        region.invalidate()
 
     @property
     def indices(self):
@@ -646,10 +593,8 @@ class IndexedVertexList(VertexList):
             self._indices_cache = domain.get_index_region(self.index_start, self.index_count)
             self._indices_cache_version = domain.version
 
-        region = self._indices_cache
-        region.invalidate()
-        return region.array
+        return self._indices_cache
 
     @indices.setter
     def indices(self, data):
-        self.indices[:] = data
+        self.domain.set_index_region(self.index_start, self.index_count, data)

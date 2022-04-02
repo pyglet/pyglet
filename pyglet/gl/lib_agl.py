@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,10 +38,10 @@ from ctypes import *
 import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function
 
-__all__ = ['link_GL', 'link_GLU', 'link_AGL']
+__all__ = ['link_GL', 'link_AGL']
 
-gl_lib = pyglet.lib.load_library(framework='/System/Library/Frameworks/OpenGL.framework')
-agl_lib = pyglet.lib.load_library(framework='/System/Library/Frameworks/AGL.framework')
+gl_lib = pyglet.lib.load_library(framework='OpenGL')
+agl_lib = pyglet.lib.load_library(framework='AGL')
 
 
 def link_GL(name, restype, argtypes, requires=None, suggestions=None):
@@ -53,9 +53,6 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
         return func
     except AttributeError:
         return missing_function(name, requires, suggestions)
-
-
-link_GLU = link_GL
 
 
 def link_AGL(name, restype, argtypes, requires=None, suggestions=None):

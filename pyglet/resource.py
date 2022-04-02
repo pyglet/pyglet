@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -100,7 +100,7 @@ class ResourceNotFoundException(Exception):
 
     def __init__(self, name):
         message = ("Resource '{}' was not found on the path.  "
-                   "Ensure that the filename has the correct captialisation.".format(name))
+                   "Ensure that the filename has the correct capitalisation.".format(name))
         Exception.__init__(self, message)
 
 
@@ -192,6 +192,47 @@ def get_settings_path(name):
             return os.path.join(os.environ['XDG_CONFIG_HOME'], name)
         else:
             return os.path.expanduser('~/.config/%s' % name)
+    else:
+        return os.path.expanduser('~/.%s' % name)
+
+
+def get_data_path(name):
+    """Get a directory to save user data.
+
+    For a Posix or Linux based system many distributions have a separate
+    directory to store user data for a specific application and this 
+    function returns the path to that location.  Note that the returned 
+    path may not exist: applications should use ``os.makedirs`` to 
+    construct it if desired.
+
+    On Linux, a directory `name` in the user's data directory is returned 
+    (usually under ``~/.local/share``).
+
+    On Windows (including under Cygwin) the `name` directory in the user's
+    ``Application Settings`` directory is returned.
+
+    On Mac OS X the `name` directory under ``~/Library/Application Support``
+    is returned.
+
+    :Parameters:
+        `name` : str
+            The name of the application.
+
+    :rtype: str
+    """
+
+    if pyglet.compat_platform in ('cygwin', 'win32'):
+        if 'APPDATA' in os.environ:
+            return os.path.join(os.environ['APPDATA'], name)
+        else:
+            return os.path.expanduser('~/%s' % name)
+    elif pyglet.compat_platform == 'darwin':
+        return os.path.expanduser('~/Library/Application Support/%s' % name)
+    elif pyglet.compat_platform.startswith('linux'):
+        if 'XDG_DATA_HOME' in os.environ:
+            return os.path.join(os.environ['XDG_DATA_HOME'], name)
+        else:
+            return os.path.expanduser('~/.local/share/%s' % name)
     else:
         return os.path.expanduser('~/.%s' % name)
 
@@ -508,7 +549,7 @@ class Loader:
         file = self.file(name)
         font.add_file(file)
 
-    def _alloc_image(self, name, atlas=True):
+    def _alloc_image(self, name, atlas, border):
         file = self.file(name)
         try:
             img = pyglet.image.load(name, file=file)
@@ -519,20 +560,20 @@ class Loader:
             return img.get_texture()
 
         # find an atlas suitable for the image
-        bin = self._get_texture_atlas_bin(img.width, img.height)
+        bin = self._get_texture_atlas_bin(img.width, img.height, border)
         if bin is None:
             return img.get_texture()
 
-        return bin.add(img)
+        return bin.add(img, border)
 
-    def _get_texture_atlas_bin(self, width, height):
+    def _get_texture_atlas_bin(self, width, height, border):
         """A heuristic for determining the atlas bin to use for a given image
         size.  Returns None if the image should not be placed in an atlas (too
         big), otherwise the bin (a list of TextureAtlas).
         """
         # Large images are not placed in an atlas
         max_texture_size = pyglet.image.get_max_texture_size()
-        max_size = min(2048, max_texture_size)
+        max_size = min(2048, max_texture_size) - border
         if width > max_size or height > max_size:
             return None
 
@@ -545,12 +586,12 @@ class Loader:
         try:
             texture_bin = self._texture_atlas_bins[bin_size]
         except KeyError:
-            texture_bin = pyglet.image.atlas.TextureBin(border=True)
+            texture_bin = pyglet.image.atlas.TextureBin()
             self._texture_atlas_bins[bin_size] = texture_bin
 
         return texture_bin
 
-    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True):
+    def image(self, name, flip_x=False, flip_y=False, rotate=0, atlas=True, border=1):
         """Load an image with optional transformation.
 
         This is similar to `texture`, except the resulting image will be
@@ -572,6 +613,9 @@ class Loader:
                 pyglet. If atlas loading is not appropriate for specific
                 texturing reasons (e.g. border control is required) then set
                 this argument to False.
+            `border` : int
+                Leaves specified pixels of blank space around each image in
+                an atlas, which may help reduce texture bleeding.
 
         :rtype: `Texture`
         :return: A complete texture if the image is large or not in an atlas,
@@ -581,14 +625,14 @@ class Loader:
         if name in self._cached_images:
             identity = self._cached_images[name]
         else:
-            identity = self._cached_images[name] = self._alloc_image(name, atlas=atlas)
+            identity = self._cached_images[name] = self._alloc_image(name, atlas, border)
 
         if not rotate and not flip_x and not flip_y:
             return identity
 
         return identity.get_transform(flip_x, flip_y, rotate)
 
-    def animation(self, name, flip_x=False, flip_y=False, rotate=0):
+    def animation(self, name, flip_x=False, flip_y=False, rotate=0, border=1):
         """Load an animation with optional transformation.
 
         Animations loaded from the same source but with different
@@ -604,7 +648,10 @@ class Loader:
             `rotate` : int
                 The returned image will be rotated clockwise by the given
                 number of degrees (a multiple of 90).
-
+            `border` : int
+                Leaves specified pixels of blank space around each image in
+                an atlas, which may help reduce texture bleeding.
+                
         :rtype: :py:class:`~pyglet.image.Animation`
         """
         self._require_index()
@@ -613,9 +660,10 @@ class Loader:
         except KeyError:
             animation = pyglet.image.load_animation(name, self.file(name))
             bin = self._get_texture_atlas_bin(animation.get_max_width(),
-                                              animation.get_max_height())
+                                              animation.get_max_height(),
+                                              border)
             if bin:
-                animation.add_to_texture_bin(bin)
+                animation.add_to_texture_bin(bin, border)
 
             identity = self._cached_animations[name] = animation
 

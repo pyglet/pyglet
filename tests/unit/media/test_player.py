@@ -2,7 +2,7 @@ from tests import mock
 import random
 import unittest
 
-from pyglet.gl import GL_TEXTURE_RECTANGLE
+from pyglet.gl import GL_TEXTURE_2D
 from pyglet.media.player import Player, PlayerGroup
 from pyglet.media.codecs.base import AudioFormat, VideoFormat, Source
 
@@ -133,7 +133,7 @@ class PlayerTestCase(unittest.TestCase):
         source.get_queue_source.return_value.seek.assert_called_once_with(time)
 
     def assert_new_texture_created(self, video_format):
-        self.mock_texture_create.assert_called_once_with(video_format.width, video_format.height, GL_TEXTURE_RECTANGLE)
+        self.mock_texture_create.assert_called_once_with(video_format.width, video_format.height, GL_TEXTURE_2D)
 
     def assert_no_new_texture_created(self):
         self.assertFalse(self.mock_texture_create.called)

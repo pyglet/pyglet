@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
 
 import ctypes
 import pyglet
-from pyglet.input.base import Device, DeviceException, DeviceOpenException
-from pyglet.input.base import Control, Button, RelativeAxis, AbsoluteAxis
+from pyglet.input.base import Device, DeviceOpenException
+from pyglet.input.base import Button, RelativeAxis, AbsoluteAxis
 from pyglet.libs.x11 import xlib
 from pyglet.util import asstr
 

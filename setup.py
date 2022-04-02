@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 # Parse version number from pyglet/__init__.py:
 with open('pyglet/__init__.py') as f:
     info = {}
-    for line in f.readlines():
+    for line in f:
         if line.startswith('version'):
             exec(line, info)
             break
@@ -38,10 +38,10 @@ setup_info = dict(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],

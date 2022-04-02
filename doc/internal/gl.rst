@@ -17,7 +17,7 @@ imports linker functions for the appropriate platform: one of
 On any platform, the following steps are taken to link each function during
 import:
 
-1. Look in the appropriate library (e.g. libGL.so, libGLU.so, opengl32.dll,
+1. Look in the appropriate library (e.g. libGL.so, opengl32.dll,
    etc.) using ``cdll`` or ``windll``.
 
 2. If not found, call ``wglGetProcAddress`` or ``glxGetProcAddress`` to try to
@@ -34,26 +34,19 @@ import:
    the function is replaced with ``MissingFunction`` (defined in
    ``pyglet.gl.lib``), which raises an exception.  The exception message
    details the name of the function, and optionally the name of the extension
-   it requires and any alternative functions that can be used.
+   or OpenGL version it requires.
 
-   The extension required is currently guessed by ``gengl.py`` based on nearby
-   ``#ifndef`` declarations, it is occasionally wrong.
+   We currently include all functions and enums from OpenGL 4.6 in separate
+   modules. ``gl.g`` exposes the core api and ``gl_compat.py`` exposes the
+   compatibility profile (no deprecation).
 
-   The suggestion list is not currently used, but is intended to be
-   implemented such that calling, for example, ``glCreateShader`` on an
-   older driver suggests ``glCreateShaderObjectARB``, etc.
+   What extensions are included can be found in ``gengl.py``.
 
 To access the linking function, import ``pyglet.gl.lib`` and use one of
-``link_AGL``, ``link_GLX``, ``link_WGL``, ``link_GL`` or ``link_GLU``.  This
+``link_AGL``, ``link_GLX``, ``link_WGL`` or ``link_GL``.  This
 is what the generated modules do.
 
 Missing extensions
 ==================
 
-The latest ``glext.h`` on opengl.org and nvidia does not include some recent
-extensions listed on the registry.  These must be hand coded into
-``pyglet.gl.glext_missing``.  They should be removed when ``glext.h`` is
-updated.
-
-
-
+Missing extensions can be added to the ``extensions`` list in ``gengl.py``.

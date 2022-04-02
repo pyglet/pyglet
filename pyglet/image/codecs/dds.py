@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -152,7 +152,10 @@ class DDSImageDecoder(codecs.ImageDecoder):
     def get_file_extensions(self):
         return ['.dds']
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+
         header = file.read(DDSURFACEDESC2.get_size())
         desc = DDSURFACEDESC2(header)
         if desc.dwMagic != b'DDS ' or desc.dwSize != 124:

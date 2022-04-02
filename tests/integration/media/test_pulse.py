@@ -130,7 +130,7 @@ def stream(context):
 
 @pytest.fixture
 def audio_source():
-    return Silence(10.0, 44100, 16)
+    return Silence(10.0, 44100)
 
 
 @pytest.fixture

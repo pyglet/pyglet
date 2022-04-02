@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -102,6 +102,8 @@ sprites within batches.
 
 import sys
 
+import pyglet
+
 from pyglet.gl import *
 from pyglet import clock
 from pyglet import event
@@ -116,7 +118,7 @@ vertex_source = """#version 150 core
     in vec4 colors;
     in vec3 tex_coords;
     in vec2 scale;
-    in vec4 position;
+    in vec2 position;
     in float rotation;
 
     out vec4 vertex_colors;
@@ -128,21 +130,22 @@ vertex_source = """#version 150 core
         mat4 view;
     } window;
 
-    mat4 m_trans_scale = mat4(1.0);
+    mat4 m_scale = mat4(1.0);
     mat4 m_rotation = mat4(1.0);
+    mat4 m_translate = mat4(1.0);
 
     void main()
     {
-        m_trans_scale[3][0] = translate.x;
-        m_trans_scale[3][1] = translate.y;
-        m_trans_scale[0][0] = scale.x;
-        m_trans_scale[1][1] = scale.y;
+        m_scale[0][0] = scale.x;
+        m_scale[1][1] = scale.y;
+        m_translate[3][0] = translate.x;
+        m_translate[3][1] = translate.y;
         m_rotation[0][0] =  cos(-radians(rotation)); 
         m_rotation[0][1] =  sin(-radians(rotation));
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_trans_scale * m_rotation * position;
+        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 0, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -176,12 +179,26 @@ fragment_array_source = """#version 150 core
 """
 
 
-_default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
-_default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
-_default_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+def get_default_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_sprite_default_shader
+    except AttributeError:
+        _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+        _default_frag_shader = graphics.shader.Shader(fragment_source, 'fragment')
+        default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        pyglet.gl.current_context.pyglet_sprite_default_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_sprite_default_shader
 
-_default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
-_default_array_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
+
+def get_default_array_shader():
+    try:
+        return pyglet.gl.current_context.pyglet_sprite_default_array_shader
+    except AttributeError:
+        _default_vert_shader = graphics.shader.Shader(vertex_source, 'vertex')
+        _default_array_frag_shader = graphics.shader.Shader(fragment_array_source, 'fragment')
+        default_shader_program = graphics.shader.ShaderProgram(_default_vert_shader, _default_array_frag_shader)
+        pyglet.gl.current_context.pyglet_sprite_default_array_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_sprite_default_array_shader
 
 
 class SpriteGroup(graphics.Group):
@@ -191,7 +208,7 @@ class SpriteGroup(graphics.Group):
     same parent group, texture and blend parameters.
     """
 
-    def __init__(self, texture, blend_src, blend_dest, program=None, order=0, parent=None):
+    def __init__(self, texture, blend_src, blend_dest, program, order=0, parent=None):
         """Create a sprite group.
 
         The group is created internally when a :py:class:`~pyglet.sprite.Sprite`
@@ -217,7 +234,7 @@ class SpriteGroup(graphics.Group):
         self.texture = texture
         self.blend_src = blend_src
         self.blend_dest = blend_dest
-        self.program = program or _default_program
+        self.program = program
 
     def set_state(self):
         self.program.use()
@@ -259,6 +276,8 @@ class Sprite(event.EventDispatcher):
 
     _batch = None
     _animation = None
+    _frame_index = 0
+    _paused = False
     _rotation = 0
     _opacity = 255
     _rgb = (255, 255, 255)
@@ -274,9 +293,7 @@ class Sprite(event.EventDispatcher):
                  blend_dest=GL_ONE_MINUS_SRC_ALPHA,
                  batch=None,
                  group=None,
-                 usage='dynamic',
-                 subpixel=False,
-                 program=None):
+                 subpixel=False):
         """Create a sprite.
 
         :Parameters:
@@ -296,22 +313,15 @@ class Sprite(event.EventDispatcher):
                 Optional batch to add the sprite to.
             `group` : `~pyglet.graphics.Group`
                 Optional parent group of the sprite.
-            `usage` : str
-                Vertex buffer object usage hint, one of ``"none"``,
-                ``"stream"``, ``"dynamic"`` (default) or ``"static"``.  Applies
-                only to vertex data.
             `subpixel` : bool
                 Allow floating-point coordinates for the sprite. By default,
                 coordinates are restricted to integer values.
-            `program` : `~pyglet.graphics.shader.ShaderProgram`
-                A custom ShaderProgram.
         """
         self._x = x
         self._y = y
 
         if isinstance(img, image.Animation):
             self._animation = img
-            self._frame_index = 0
             self._texture = img.frames[0].image.get_texture()
             self._next_dt = img.frames[0].duration
             if self._next_dt:
@@ -320,13 +330,12 @@ class Sprite(event.EventDispatcher):
             self._texture = img.get_texture()
 
         if isinstance(img, image.TextureArrayRegion):
-            program = _default_array_program
+            self.program = get_default_array_shader()
         else:
-            program = _default_program
+            self.program = get_default_shader()
 
         self._batch = batch or graphics.get_default_batch()
-        self._group = SpriteGroup(self._texture, blend_src, blend_dest, program, 0, group)
-        self._usage = usage
+        self._group = SpriteGroup(self._texture, blend_src, blend_dest, self.program, 0, group)
         self._subpixel = subpixel
         self._create_vertex_list()
 
@@ -450,7 +459,12 @@ class Sprite(event.EventDispatcher):
 
     def _set_texture(self, texture):
         if texture.id is not self._texture.id:
-            self._group = self._group.__class__(texture, self._group.blend_src, self._group.blend_dest)
+            self._group = self._group.__class__(texture,
+                                                self._group.blend_src,
+                                                self._group.blend_dest,
+                                                self._group.program,
+                                                0,
+                                                self._group.parent)
             self._vertex_list.delete()
             self._texture = texture
             self._create_vertex_list()
@@ -459,15 +473,13 @@ class Sprite(event.EventDispatcher):
         self._texture = texture
 
     def _create_vertex_list(self):
-        usage = self._usage
-        self._vertex_list = self._batch.add_indexed(
-            4, GL_TRIANGLES, self._group, [0, 1, 2, 0, 2, 3],
-            'position2f/%s' % usage,
-            ('colors4Bn/%s' % usage, (*self._rgb, int(self._opacity)) * 4),
-            ('translate2f/%s' % usage, (self._x, self._y) * 4),
-            ('scale2f/%s' % usage, (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
-            ('rotation1f/%s' % usage, (self._rotation,) * 4),
-            ('tex_coords3f/%s' % usage, self._texture.tex_coords))
+        self._vertex_list = self.program.vertex_list_indexed(
+            4, GL_TRIANGLES, [0, 1, 2, 0, 2, 3], self._batch, self._group,
+            colors=('Bn', (*self._rgb, int(self._opacity)) * 4),
+            translate=('f', (self._x, self._y) * 4),
+            scale=('f', (self._scale*self._scale_x, self._scale*self._scale_y) * 4),
+            rotation=('f', (self._rotation,) * 4),
+            tex_coords=('f', self._texture.tex_coords))
         self._update_position()
 
     def _update_position(self):
@@ -499,9 +511,9 @@ class Sprite(event.EventDispatcher):
         return self._x, self._y
 
     @position.setter
-    def position(self, pos):
-        self._x, self._y = pos
-        self._vertex_list.translate[:] = (pos[0], pos[1]) * 4
+    def position(self, position):
+        self._x, self._y = position
+        self._vertex_list.translate[:] = (position[0], position[1]) * 4
 
     @property
     def x(self):
@@ -596,9 +608,8 @@ class Sprite(event.EventDispatcher):
     def update(self, x=None, y=None, rotation=None, scale=None, scale_x=None, scale_y=None):
         """Simultaneously change the position, rotation or scale.
 
-        This method is provided for convenience. As of pyglet
-        2.0, there is no performance benefit to updating multiple
-        Sprite attributes at once.
+        This method is provided for convenience. There is not much
+        performance benefit to updating multiple Sprite attributes at once.
 
         :Parameters:
             `x` : int
@@ -710,6 +721,51 @@ class Sprite(event.EventDispatcher):
     def visible(self, visible):
         self._visible = visible
         self._update_position()
+
+    @property
+    def paused(self):
+        """Pause/resume the Sprite's Animation
+
+        If `Sprite.image` is an Animation, you can pause or resume
+        the animation by setting this property to True or False.
+        If not an Animation, this has no effect.
+
+        :type: bool
+        """
+        return self._paused
+
+    @paused.setter
+    def paused(self, pause):
+        if not hasattr(self, '_animation') or pause == self._paused:
+            return
+        if pause is True:
+            clock.unschedule(self._animate)
+        else:
+            frame = self._animation.frames[self._frame_index]
+            self._next_dt = frame.duration
+            if self._next_dt:
+                clock.schedule_once(self._animate, self._next_dt)
+        self._paused = pause
+
+    @property
+    def frame_index(self):
+        """The current Animation frame.
+
+        If the `Sprite.image` is an `Animation`,
+        you can query or set the current frame.
+        If not an Animation, this will always
+        be 0.
+
+        :type: int
+        """
+        return self._frame_index
+
+    @frame_index.setter
+    def frame_index(self, index):
+        # Bound to available number of frames
+        if self._animation is None:
+            return
+        self._frame_index = max(0, min(index, len(self._animation.frames)-1))
 
     def draw(self):
         """Draw the sprite at its current position.

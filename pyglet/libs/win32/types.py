@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -334,15 +334,8 @@ class MONITORINFOEX(Structure):
     __slots__ = [f[0] for f in _fields_]
 
 
-class DEVMODE(Structure):
+class _DUMMYSTRUCTNAME(Structure):
     _fields_ = [
-        ('dmDeviceName', BCHAR * CCHDEVICENAME),
-        ('dmSpecVersion', WORD),
-        ('dmDriverVersion', WORD),
-        ('dmSize', WORD),
-        ('dmDriverExtra', WORD),
-        ('dmFields', DWORD),
-        # Just using largest union member here
         ('dmOrientation', c_short),
         ('dmPaperSize', c_short),
         ('dmPaperLength', c_short),
@@ -351,6 +344,34 @@ class DEVMODE(Structure):
         ('dmCopies', c_short),
         ('dmDefaultSource', c_short),
         ('dmPrintQuality', c_short),
+    ]
+
+class _DUMMYSTRUCTNAME2(Structure):
+    _fields_ = [
+        ('dmPosition', POINTL),
+        ('dmDisplayOrientation', DWORD),
+        ('dmDisplayFixedOutput', DWORD)
+    ]
+
+class _DUMMYDEVUNION(Union):
+    _anonymous_ = ('_dummystruct1', '_dummystruct2')
+    _fields_ = [
+        ('_dummystruct1', _DUMMYSTRUCTNAME),
+        ('dmPosition', POINTL),
+        ('_dummystruct2', _DUMMYSTRUCTNAME2),
+    ]
+
+class DEVMODE(Structure):
+    _anonymous_ = ('_dummyUnion',)
+    _fields_ = [
+        ('dmDeviceName', BCHAR * CCHDEVICENAME),
+        ('dmSpecVersion', WORD),
+        ('dmDriverVersion', WORD),
+        ('dmSize', WORD),
+        ('dmDriverExtra', WORD),
+        ('dmFields', DWORD),
+        # Just using largest union member here
+        ('_dummyUnion', _DUMMYDEVUNION),
         # End union
         ('dmColor', c_short),
         ('dmDuplex', c_short),
@@ -469,12 +490,30 @@ class RAWINPUT(Structure):
 
 
 # PROPVARIANT wrapper, doesn't require InitPropVariantFromInt64 this way.
+class _VarTable(ctypes.Union):
+    """Must be in an anonymous union or values will not work across various VT's."""
+    _fields_ = [
+        ('llVal', ctypes.c_longlong),
+        ('pwszVal', LPWSTR)
+    ]
+
+
 class PROPVARIANT(ctypes.Structure):
+    _anonymous_ = ['union']
+
     _fields_ = [
         ('vt', ctypes.c_ushort),
         ('wReserved1', ctypes.c_ubyte),
         ('wReserved2', ctypes.c_ubyte),
         ('wReserved3', ctypes.c_ulong),
-        ('llVal', ctypes.c_longlong),
+        ('union', _VarTable)
     ]
 
+
+class DWM_BLURBEHIND(ctypes.Structure):
+    _fields_ = [
+        ("dwFlags", DWORD),
+        ("fEnable", BOOL),
+        ("hRgnBlur", HRGN),
+        ("fTransitionOnMaximized", DWORD),
+    ]

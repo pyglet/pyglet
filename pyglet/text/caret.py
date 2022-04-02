@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -120,9 +120,10 @@ class Caret:
         from pyglet import gl
         self._layout = layout
         batch = batch or layout.batch
+        group = layout.foreground_decoration_group
         colors = (*color, 255, *color, 255)
-        self._list = batch.add(2, gl.GL_LINES, layout.foreground_decoration_group, 'vertices2f', ('colors4Bn', colors))
 
+        self._list = group.program.vertex_list(2, gl.GL_LINES, batch, group, colors=('Bn', colors))
         self._ideal_x = None
         self._ideal_line = None
         self._next_attributes = {}
@@ -343,7 +344,7 @@ class Caret:
         """
         line = self._layout.get_line_from_point(x, y)
         p = self._layout.get_position_on_line(line, x)
-        m1 = self._previous_word_re.search(self._layout.document.text, 0, p + 1)
+        m1 = self._previous_word_re.search(self._layout.document.text, 0, p+1)
         if not m1:
             m1 = 0
         else:
@@ -386,12 +387,11 @@ class Caret:
         if update_ideal_x:
             self._ideal_x = x
 
-        x -= self._layout.view_x
-        y -= self._layout.view_y
-        font = self._layout.document.get_font(max(0, self._position - 1))
-        self._list.vertices[:] = [x, y + font.descent, x, y + font.ascent]
+        x += self._layout.x
+        y += self._layout.y + self._layout.height
 
-        print("Caret Vertices:", self._list.vertices[:])
+        font = self._layout.document.get_font(max(0, self._position - 1))
+        self._list.position[:] = [x, y + font.descent, x, y + font.ascent]
 
         if self._mark is not None:
             self._layout.set_selection(min(self._position, self._mark), max(self._position, self._mark))
@@ -400,6 +400,8 @@ class Caret:
         self._layout.ensure_x_visible(x)
 
     def on_layout_update(self):
+        """Handler for the `IncrementalTextLayout.on_layout_update` event.
+        """
         if self.position > len(self._layout.document.text):
             self.position = len(self._layout.document.text)
         self._update()

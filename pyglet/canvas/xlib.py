@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -148,7 +148,7 @@ class XlibDisplay(XlibSelectDevice, Display):
                     self._enable_xsync = True
 
         # Add to event loop select list.  Assume we never go away.
-        app.platform_event_loop._select_devices.add(self)
+        app.platform_event_loop.select_devices.add(self)
 
     def get_screens(self):
         if self._screens:

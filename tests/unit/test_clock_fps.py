@@ -11,30 +11,32 @@ from ..annotations import skip_if_continuous_integration
 
 def sleep(seconds):
     """Busy sleep on the CPU which is very precise"""
-    pyclock = clock.get_default()
-    start = pyclock.time()
-    while pyclock.time() - start < seconds:
+    start = time.perf_counter()
+    while time.perf_counter() - start < seconds:
         pass
 
 
-# since clock is global, we initialize a new clock on every test
-clock.set_default(clock.Clock())
+@pytest.fixture
+def newclock():
+    clock.set_default(clock.Clock())
+    yield clock
 
 
-def test_first_tick_is_delta_zero():
+def test_first_tick_is_delta_zero(newclock):
     """
     Tests that the first tick is dt = 0.
     """
-    dt = clock.tick()
+    dt = newclock.tick()
     assert dt == 0
 
 
-def test_start_at_zero_fps():
+def test_start_at_zero_fps(newclock):
     """
     Tests that the default clock starts
     with zero fps.
     """
-    assert clock.get_fps() == 0
+    fps = newclock.get_fps()
+    assert fps == 0
 
 
 @skip_if_continuous_integration()

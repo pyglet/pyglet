@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -74,8 +74,11 @@ class DirectSoundDriver:
         self.primary_buffer = self._buffer_factory.create_primary_buffer()
 
     def __del__(self):
-        self.primary_buffer = None
-        self._native_dsound.Release()
+        try:
+            self.primary_buffer = None
+            self._native_dsound.Release()
+        except ValueError:
+            pass
 
     def create_buffer(self, audio_format):
         return self._buffer_factory.create_buffer(audio_format)
@@ -151,6 +154,7 @@ class DirectSoundBufferFactory:
 
         return buffer_desc
 
+
 class DirectSoundBuffer:
     def __init__(self, native_buffer, audio_format, buffer_size):
         self.audio_format = audio_format
@@ -166,7 +170,10 @@ class DirectSoundBuffer:
             self._native_buffer3d = None
 
     def __del__(self):
-        self.delete()
+        try:
+            self.delete()
+        except OSError:
+            pass
 
     def delete(self):
         if self._native_buffer is not None:
@@ -453,5 +460,3 @@ class DirectSoundListener:
         _check(
             self._native_listener.SetOrientation(*(list(orientation) + [lib.DS3D_IMMEDIATE]))
         )
-
-

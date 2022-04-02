@@ -130,7 +130,7 @@ in the constructor.  If you do this, you may also want to handle the
 
     @window.event
     def on_resize(width, height):
-        print 'The window was resized to %dx%d' % (width, height)
+        print('The window was resized to %dx%d' % (width, height))
 
 You can specify a minimum and maximum size that the window can be resized to
 by the user with the :py:meth:`~pyglet.window.Window.set_minimum_size` and
@@ -187,13 +187,20 @@ Windows and Mac OS X 10.4 are shown below.
         * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TOOL`
           - .. image:: img/window_xp_tool.png
           - .. image:: img/window_osx_tool.png
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_TRANSPARENT`
+          - .. image:: img/window_xp_transparent.png
+          - <Not Implemented>
+        * - :py:attr:`~pyglet.window.Window.WINDOW_STYLE_OVERLAY`
+          - .. image:: img/window_xp_overlay.png
+          - <Not Implemented>
 
 Non-resizable variants of these window styles may appear slightly different
 (for example, the maximize button will either be disabled or absent).
 
 Besides the change in appearance, the window styles affect how the window
 behaves.  For example, tool windows do not usually appear in the task bar and
-cannot receive keyboard focus.  Dialog windows cannot be minimized.  Selecting
+cannot receive keyboard focus.  Dialog windows cannot be minimized. Overlay's
+require custom sizing and moving of the respective window.
 the appropriate window style for your windows means your application will
 behave correctly for the platform on which it is running, however that
 behaviour may not be consistent across Windows, Linux and Mac OS X.
@@ -210,7 +217,7 @@ You can specify the style of the window in the
 :py:class:`~pyglet.window.Window` constructor.
 Once created, the window style cannot be altered::
 
-    window = pyglet.window.Window(style=window.Window.WINDOW_STYLE_DIALOG)
+    window = pyglet.window.Window(style=pyglet.window.Window.WINDOW_STYLE_DIALOG)
 
 Caption
 ^^^^^^^

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,27 +33,25 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+import sys
+
+from ctypes import CFUNCTYPE, byref, c_void_p, c_int, c_ubyte, c_bool, c_uint32, c_uint64
+
+from .controller import get_mapping
+from .base import Device, AbsoluteAxis, RelativeAxis, Button
+from .base import Joystick, Controller, AppleRemote
+
+from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, known_cftypes
+from pyglet.libs.darwin.cocoapy import kCFRunLoopDefaultMode, CFAllocatorRef, cf
+from pyglet.libs.darwin.cocoapy import cfset_to_set, cftype_to_value, cfarray_to_list
+from pyglet.lib import load_library
+
+
+__LP64__ = (sys.maxsize > 2 ** 32)
+
 # Uses the HID API introduced in Mac OS X version 10.5
 # http://developer.apple.com/library/mac/#technotes/tn2007/tn2187.html
-
-import sys
-__LP64__ = (sys.maxsize > 2**32)
-
-from pyglet.libs.darwin.cocoapy import CFSTR, CFIndex, CFTypeID, \
-    kCFRunLoopDefaultMode, CFAllocatorRef, known_cftypes, cf, \
-    cfset_to_set, cftype_to_value, cfarray_to_list
-
-from ctypes import *
-from ctypes import util
-
-from .base import Device, Control, AbsoluteAxis, RelativeAxis, Button
-from .base import Joystick, GameController, AppleRemote
-from .base import DeviceExclusiveException
-from .gamecontroller import is_game_controller
-
-
-# Load iokit framework
-iokit = cdll.LoadLibrary(util.find_library('IOKit'))
+iokit = load_library(framework='IOKit')
 
 # IOKit constants from
 # /System/Library/Frameworks/IOKit.framework/Headers/hid/IOHIDKeys.h
@@ -386,9 +384,9 @@ class HIDDevice:
         # Remove self from device lookup table.
         del _device_lookup[sender]
         # Remove device elements from lookup table.
-        for key, value in _element_lookup.items():
-            if value in self.elements:
-                del _element_lookup[key]
+        to_remove = [k for k, v in _element_lookup.items() if v in self.elements]
+        for key in to_remove:
+            del _element_lookup[key]
 
     def _register_removal_callback(self):
         removal_callback = HIDDeviceCallback(self.py_removal_callback)
@@ -679,6 +677,7 @@ _manager = HIDManager()
 def get_devices(display=None):
     return [PygletDevice(display, device, _manager) for device in _manager.devices]
 
+
 def get_joysticks(display=None):
     return [Joystick(PygletDevice(display, device, _manager)) for device in _manager.devices
             if device.is_joystick() or device.is_gamepad() or device.is_multi_axis()]
@@ -690,6 +689,14 @@ def get_apple_remote(display=None):
             return AppleRemote(PygletDevice(display, device, _manager))
 
 
-def get_game_controllers(display=None):
-    return [GameController(PygletDevice(display, device, _manager)) for device in _manager.devices
-            if is_game_controller(device)]
+def _create_controller(device, display):
+    mapping = get_mapping(device.get_guid())
+    if not mapping:
+        return
+    return Controller(PygletDevice(display, device, _manager), mapping)
+
+
+def get_controllers(display=None):
+    return [controller for controller in
+            [_create_controller(device, display) for device in _manager.devices]
+            if controller is not None]

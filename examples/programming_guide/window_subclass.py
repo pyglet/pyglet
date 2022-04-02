@@ -41,8 +41,10 @@ import pyglet
 
 class HelloWorldWindow(pyglet.window.Window):
     def __init__(self):
-        super(HelloWorldWindow, self).__init__()
-        self.label = pyglet.text.Label('Hello, world!', x=10, y=10)
+        super().__init__()
+        self.label = pyglet.text.Label('Hello, world!', font_size=36,
+                                       x=self.width//2, y=self.height//2,
+                                       anchor_x='center')
 
     def on_draw(self):
         self.clear()

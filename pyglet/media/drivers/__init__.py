@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -67,22 +67,33 @@ def get_audio_driver():
                 from . import pulse
                 _audio_driver = pulse.create_audio_driver()
                 break
-            elif driver_name == 'openal':
-                from . import openal
-                _audio_driver = openal.create_audio_driver()
-                break
+            elif driver_name == 'xaudio2':
+                from pyglet.libs.win32.constants import WINDOWS_8_OR_GREATER
+                if WINDOWS_8_OR_GREATER:
+                    from . import xaudio2
+                    _audio_driver = xaudio2.create_audio_driver()
+                    break
             elif driver_name == 'directsound':
                 from . import directsound
                 _audio_driver = directsound.create_audio_driver()
                 break
+            elif driver_name == 'openal':
+                from . import openal
+                _audio_driver = openal.create_audio_driver()
+                break
             elif driver_name == 'silent':
-                _audio_driver = None
+                from . import silent
+                _audio_driver = silent.create_audio_driver()
                 break
         except Exception:
             if _debug:
                 print('Error importing driver %s:' % driver_name)
                 import traceback
                 traceback.print_exc()
+    else:
+        from . import silent
+        _audio_driver = silent.create_audio_driver()
+
     return _audio_driver
 
 

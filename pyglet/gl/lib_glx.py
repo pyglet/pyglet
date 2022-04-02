@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,16 +34,16 @@
 # ----------------------------------------------------------------------------
 
 from ctypes import *
+from typing import Any, Callable
 
 import pyglet.lib
 from pyglet.gl.lib import missing_function, decorate_function
 
 from pyglet.util import asbytes
 
-__all__ = ['link_GL', 'link_GLU', 'link_GLX']
+__all__ = ['link_GL', 'link_GLX']
 
 gl_lib = pyglet.lib.load_library('GL')
-glu_lib = pyglet.lib.load_library('GLU')
 
 # Look for glXGetProcAddressARB extension, use it as fallback (for ATI fglrx and DRI drivers).
 try:
@@ -55,7 +55,7 @@ except AttributeError:
     _have_getprocaddress = False
 
 
-def link_GL(name, restype, argtypes, requires=None, suggestions=None):
+def link_GL(name, restype, argtypes, requires=None, suggestions=None) -> Callable[..., Any]:
     try:
         func = getattr(gl_lib, name)
         func.restype = restype
@@ -77,14 +77,3 @@ def link_GL(name, restype, argtypes, requires=None, suggestions=None):
 
 
 link_GLX = link_GL
-
-
-def link_GLU(name, restype, argtypes, requires=None, suggestions=None):
-    try:
-        func = getattr(glu_lib, name)
-        func.restype = restype
-        func.argtypes = argtypes
-        decorate_function(func, name)
-        return func
-    except AttributeError:
-        return missing_function(name, requires, suggestions)

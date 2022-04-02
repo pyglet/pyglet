@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ import time
 from collections import deque
 
 import pyglet
-from pyglet.gl import GL_TEXTURE_RECTANGLE
+from pyglet.gl import GL_TEXTURE_2D
 from pyglet.media import buffered_logger as bl
 from pyglet.media.drivers import get_audio_driver
 from pyglet.media.codecs.base import Source, SourceGroup
@@ -221,6 +221,7 @@ class Player(pyglet.event.EventDispatcher):
             if self._audio_player is None and source.video_format is None:
                 pyglet.clock.schedule_once(lambda dt: self.dispatch_event("on_eos"), source.duration)
 
+
         else:
             if self._audio_player:
                 self._audio_player.stop()
@@ -260,6 +261,8 @@ class Player(pyglet.event.EventDispatcher):
 
         The internal audio player and the texture will be deleted.
         """
+        if self._source:
+            self.source.is_player_source = False
         if self._audio_player:
             self._audio_player.delete()
             self._audio_player = None
@@ -390,7 +393,7 @@ class Player(pyglet.event.EventDispatcher):
 
     def _create_texture(self):
         video_format = self.source.video_format
-        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height, GL_TEXTURE_RECTANGLE)
+        self._texture = pyglet.image.Texture.create(video_format.width, video_format.height, GL_TEXTURE_2D)
         self._texture = self._texture.get_transform(flip_y=True)
         # After flipping the texture along the y axis, the anchor_y is set
         # to the top of the image. We want to keep it at the bottom.
@@ -475,6 +478,11 @@ class Player(pyglet.event.EventDispatcher):
 
             pyglet.clock.schedule_once(self._video_finished, 0)
             return
+        elif ts > time:
+            # update_texture called too early (probably manually!)
+            pyglet.clock.schedule_once(self.update_texture, ts - time)
+            return
+
 
         image = source.get_next_video_frame()
         if image is not None:
@@ -606,7 +614,8 @@ class Player(pyglet.event.EventDispatcher):
             if self.source:
                 # Reset source to the beginning
                 self.seek(0.0)
-            self._audio_player.clear()
+            if self._audio_player:
+                self._audio_player.clear()
             self._set_playing(was_playing)
 
         else:
@@ -622,10 +631,31 @@ class Player(pyglet.event.EventDispatcher):
         """
         pass
 
+    def on_driver_reset(self):
+        """The audio driver has been reset, by default this will kill the current audio player and create a new one,
+        and requeue the buffers. Any buffers that may have been queued in a player will be resubmitted.  It will
+        continue from from the last buffers submitted, not played and may cause sync issues if using video.
+
+        :event:
+        """
+        if self._audio_player:
+            self._audio_player.on_driver_reset()
+
+            # Voice has been changed, will need to reset all options on the voice.
+            for attr in ('volume', 'min_distance', 'max_distance', 'position',
+                         'pitch', 'cone_orientation', 'cone_inner_angle',
+                         'cone_outer_angle', 'cone_outer_gain'):
+                value = getattr(self, attr)
+                setattr(self, attr, value)
+
+            if self._playing:
+                self._audio_player.play()
+
 
 Player.register_event_type('on_eos')
 Player.register_event_type('on_player_eos')
 Player.register_event_type('on_player_next_source')
+Player.register_event_type('on_driver_reset')
 
 
 def _one_item_playlist(source):

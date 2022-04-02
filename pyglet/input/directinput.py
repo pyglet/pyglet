@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@ from pyglet.input import base
 from pyglet.libs import win32
 from pyglet.libs.win32 import dinput
 from pyglet.libs.win32 import _kernel32
-from .gamecontroller import is_game_controller
+from .controller import get_mapping
 
 # These instance names are not defined anywhere, obtained by experiment.  The
 # GUID names (which seem to be ideally what are needed) are wrong/missing for
@@ -103,11 +103,9 @@ class DirectInputDevice(base.Device):
 
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
-        # "byte swap" the product id guid string:
-        swapped_guid = (self.id_product_guid[6:8] + self.id_product_guid[4:6] +
-                        self.id_product_guid[2:4] + self.id_product_guid[0:2])
-        # A string to be formatted into the final guid:
-        return "{0}000000000000504944564944".format(swapped_guid)
+        first = self.id_product_guid[6:8] + self.id_product_guid[4:6]
+        second = self.id_product_guid[2:4] + self.id_product_guid[0:2]
+        return f"03000000{first}0000{second}000000000000"
 
     def _init_controls(self):
         self.controls = []
@@ -152,17 +150,18 @@ class DirectInputDevice(base.Device):
             return
 
         if window is None:
-            if not pyglet.app.windows:
-                return
-            # Pick any open window
-            window = pyglet.app.windows[0]
+            # Pick any open window, or the shadow window if no windows
+            # have been created yet.
+            window = pyglet.gl._shadow_window
+            for window in pyglet.app.windows:
+                break
 
         flags = dinput.DISCL_BACKGROUND
         if exclusive:
             flags |= dinput.DISCL_EXCLUSIVE
         else:
             flags |= dinput.DISCL_NONEXCLUSIVE
-        
+
         self._wait_object = _kernel32.CreateEventW(None, False, False, None)
         self._device.SetEventNotification(self._wait_object)
         pyglet.app.platform_event_loop.add_wait_object(self._wait_object, self._dispatch_events)
@@ -241,7 +240,8 @@ def get_devices(display=None):
 def _create_joystick(device):
     if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
                         dinput.DI8DEVTYPE_1STPERSON,
-                        dinput.DI8DEVTYPE_GAMEPAD):
+                        dinput.DI8DEVTYPE_GAMEPAD,
+                        dinput.DI8DEVTYPE_SUPPLEMENTAL):
         return base.Joystick(device)
 
 
@@ -251,16 +251,15 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def _create_game_controller(device):
-    if not is_game_controller(device):
-        return
-    if device._type in (dinput.DI8DEVTYPE_JOYSTICK,
-                        dinput.DI8DEVTYPE_1STPERSON,
-                        dinput.DI8DEVTYPE_GAMEPAD):
-        return base.GameController(device)
+def _create_controller(device):
+    mapping = get_mapping(device.get_guid())
+    if mapping is not None and device._type in (dinput.DI8DEVTYPE_JOYSTICK,
+                                                dinput.DI8DEVTYPE_1STPERSON,
+                                                dinput.DI8DEVTYPE_GAMEPAD):
+        return base.Controller(device, mapping)
 
 
-def get_game_controllers(display=None):
+def get_controllers(display=None):
     return [controller for controller in
-            [_create_game_controller(device) for device in get_devices(display)]
+            [_create_controller(device) for device in get_devices(display)]
             if controller is not None]

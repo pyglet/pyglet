@@ -40,6 +40,7 @@ from .cocoatypes import *
 
 __LP64__ = (8*struct.calcsize("P") == 64)
 __i386__ = (platform.machine() == 'i386')
+__arm64__ = (platform.machine() == 'arm64')
 
 if sizeof(c_void_p) == 4:
     c_ptrdiff_t = c_int32
@@ -48,7 +49,13 @@ elif sizeof(c_void_p) == 8:
 
 ######################################################################
 
-objc = cdll.LoadLibrary(util.find_library('objc'))
+lib = util.find_library('objc')
+
+# Hack for compatibility with macOS > 11.0
+if lib is None:
+    lib = '/usr/lib/libobjc.dylib'
+
+objc = cdll.LoadLibrary(lib)
 
 ######################################################################
 
@@ -129,9 +136,11 @@ objc.class_getIvarLayout.argtypes = [c_void_p]
 objc.class_getMethodImplementation.restype = c_void_p
 objc.class_getMethodImplementation.argtypes = [c_void_p, c_void_p]
 
-# IMP class_getMethodImplementation_stret(Class cls, SEL name)
-objc.class_getMethodImplementation_stret.restype = c_void_p
-objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
+# The function is marked as OBJC_ARM64_UNAVAILABLE.
+if not __arm64__:
+    # IMP class_getMethodImplementation_stret(Class cls, SEL name)
+    objc.class_getMethodImplementation_stret.restype = c_void_p
+    objc.class_getMethodImplementation_stret.argtypes = [c_void_p, c_void_p]
 
 # const char * class_getName(Class cls)
 objc.class_getName.restype = c_char_p
@@ -278,14 +287,18 @@ objc.objc_getProtocol.argtypes = [c_char_p]
 # id objc_msgSend(id theReceiver, SEL theSelector, ...)
 # id objc_msgSendSuper(struct objc_super *super, SEL op,  ...)
 
-# void objc_msgSendSuper_stret(struct objc_super *super, SEL op, ...)
-objc.objc_msgSendSuper_stret.restype = None
+# The function is marked as OBJC_ARM64_UNAVAILABLE.
+if not __arm64__:
+    # void objc_msgSendSuper_stret(struct objc_super *super, SEL op, ...)
+    objc.objc_msgSendSuper_stret.restype = None
 
 # double objc_msgSend_fpret(id self, SEL op, ...)
 # objc.objc_msgSend_fpret.restype = c_double
 
-# void objc_msgSend_stret(void * stretAddr, id theReceiver, SEL theSelector,  ...)
-objc.objc_msgSend_stret.restype = None
+# The function is marked as OBJC_ARM64_UNAVAILABLE.
+if not __arm64__:
+    # void objc_msgSend_stret(void * stretAddr, id theReceiver, SEL theSelector,  ...)
+    objc.objc_msgSend_stret.restype = None
 
 # void objc_registerClassPair(Class cls)
 objc.objc_registerClassPair.restype = None
@@ -457,7 +470,7 @@ def send_message(receiver, selName, *args, **kwargs):
         receiver = get_class(receiver)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
-    #print 'send_message', receiver, selName, args, kwargs
+    #print('send_message', receiver, selName, args, kwargs)
     argtypes = kwargs.get('argtypes', [])
     # Choose the correct version of objc_msgSend based on return type.
     if should_use_fpret(restype):
@@ -481,14 +494,19 @@ class OBJC_SUPER(Structure):
 
 OBJC_SUPER_PTR = POINTER(OBJC_SUPER)
 
-#http://stackoverflow.com/questions/3095360/what-exactly-is-super-in-objective-c
-def send_super(receiver, selName, *args, **kwargs):
+# http://stackoverflow.com/questions/3095360/what-exactly-is-super-in-objective-c
+#
+# `superclass_name` is optional and can be used to force finding the superclass
+# by name. It is used to circumvent a bug in which the superclass was resolved
+# incorrectly which lead to an infinite recursion:
+# https://github.com/pyglet/pyglet/issues/5
+def send_super(receiver, selName, *args, superclass_name=None, **kwargs):
     if hasattr(receiver, '_as_parameter_'):
         receiver = receiver._as_parameter_
-    superclass = get_superclass_of_object(receiver)
-    superclass_ptr = c_void_p(objc.class_getSuperclass(superclass))
-    if superclass_ptr.value is not None:
-        superclass = superclass_ptr
+    if superclass_name is None:
+        superclass = get_superclass_of_object(receiver)
+    else:
+        superclass = get_class(superclass_name)
     super_struct = OBJC_SUPER(receiver, superclass)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
@@ -688,7 +706,7 @@ class ObjCMethod:
         try:
             self.argtypes = [self.ctype_for_encoding(t) for t in self.argument_types]
         except:
-            #print 'no argtypes encoding for %s (%s)' % (self.name, self.argument_types)
+            #print('no argtypes encoding for %s (%s)' % (self.name, self.argument_types))
             self.argtypes = None
         # Get types for the return type.
         try:
@@ -699,7 +717,7 @@ class ObjCMethod:
             else:
                 self.restype = self.ctype_for_encoding(self.return_type)
         except:
-            #print 'no restype encoding for %s (%s)' % (self.name, self.return_type)
+            #print('no restype encoding for %s (%s)' % (self.name, self.return_type))
             self.restype = None
         self.func = None
 

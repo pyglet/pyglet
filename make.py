@@ -15,11 +15,12 @@ GENDIST_TOOL = op.join(THIS_DIR, 'tools', 'gendist.sh')
 
 def clean():
     """Clean up all build artifacts, including generated documentation."""
-    dirs = [op.join(DOC_DIR, '_build'),
-            op.join(DOC_DIR, 'api'),
-            DIST_DIR,
+    dirs = [DIST_DIR,
             op.join(THIS_DIR, '_build'),
-            op.join(THIS_DIR, 'pyglet.egg-info')]
+            op.join(THIS_DIR, 'pyglet.egg-info'),
+            op.join(THIS_DIR, '.pytest_cache'),
+            op.join(DOC_DIR, '_build'),
+            op.join(DOC_DIR, 'api')]
     files = [op.join(DOC_DIR, 'internal', 'build.rst')]
     for d in dirs:
         print('   Removing:', d)
@@ -61,7 +62,7 @@ def _print_usage():
 if __name__ == '__main__':
     avail_cmds = dict(clean=clean, dist=dist, docs=docs)
     try:
-        cmd = avail_cmds[sys.argv[1]]
+        command = avail_cmds[sys.argv[1]]
     except IndexError:
         # Invalid number of arguments, just print help
         _print_usage()
@@ -70,4 +71,4 @@ if __name__ == '__main__':
         print()
         _print_usage()
     else:
-        cmd()
+        command()

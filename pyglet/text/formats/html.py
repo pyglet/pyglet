@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -123,6 +123,8 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
         'font_name': 'Times New Roman',
         'font_size': 12,
         'margin_bottom': '12pt',
+        'bold': False,
+        'italic': False,
     }
 
     #: Map HTML font sizes to actual font sizes, in points.

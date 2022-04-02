@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@ import struct
 import pyglet
 from . import constants
 from .types import *
+from pyglet import com
 
 IS64 = struct.calcsize("P") == 8
 
@@ -154,7 +155,7 @@ _kernel32.GlobalLock.argtypes = [HGLOBAL]
 _kernel32.GlobalUnlock.restype = BOOL
 _kernel32.GlobalUnlock.argtypes = [HGLOBAL]
 _kernel32.SetLastError.restype = DWORD
-_kernel32.SetLastError.argtypes = []
+_kernel32.SetLastError.argtypes = [DWORD]
 _kernel32.SetWaitableTimer.restype = BOOL
 _kernel32.SetWaitableTimer.argtypes = [HANDLE, POINTER(LARGE_INTEGER), LONG, LPVOID, LPVOID, BOOL]  # TIMERAPCPROC
 _kernel32.WaitForSingleObject.restype = DWORD
@@ -297,3 +298,5 @@ _ole32.CoUninitialize.restype = HRESULT
 _ole32.CoUninitialize.argtypes = []
 _ole32.PropVariantClear.restype = HRESULT
 _ole32.PropVariantClear.argtypes = [c_void_p]
+_ole32.CoCreateInstance.restype = HRESULT
+_ole32.CoCreateInstance.argtypes = [com.REFIID, c_void_p, DWORD, com.REFIID, c_void_p]

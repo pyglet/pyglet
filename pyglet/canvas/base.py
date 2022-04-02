@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -158,7 +158,7 @@ class Screen:
         """Height of the screen, in pixels."""
 
     def __repr__(self):
-        return '%s(x=%d, y=%d, width=%d, height=%d)' % self.__class__.__name__, self.x, self.y, self.width, self.height
+        return '{}(x={}, y={}, width={}, height={})'.format(self.__class__.__name__, self.x, self.y, self.width, self.height)
 
     def get_best_config(self, template=None):
         """Get the best available GL config.

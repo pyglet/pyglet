@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -90,7 +90,9 @@ class QuartzImageDecoder(ImageDecoder):
         pitch = bytesPerRow
         return ImageData(width, height, format, buffer, -pitch)
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
         file_bytes = file.read()
         data = c_void_p(cf.CFDataCreate(None, file_bytes, len(file_bytes)))
         # Second argument is an options dictionary.  It might be a good idea to provide
@@ -103,7 +105,9 @@ class QuartzImageDecoder(ImageDecoder):
 
         return image
 
-    def decode_animation(self, file, filename):
+    def decode_animation(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
         # If file is not an animated GIF, it will be loaded as a single-frame animation.
         file_bytes = file.read()
         data = c_void_p(cf.CFDataCreate(None, file_bytes, len(file_bytes)))

@@ -3,8 +3,6 @@
 
 import pytest
 import types
-import sys
-import pyglet
 from tests import mock
 from pyglet.event import EVENT_HANDLED, EVENT_UNHANDLED, EventException
 
@@ -298,7 +296,6 @@ class DummyHandler:
         return True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 4), reason="requires python3.4")
 def test_weakref_to_instance_method(dispatcher):
     import weakref
     dispatcher.register_event_type('mock_event')
@@ -310,7 +307,6 @@ def test_weakref_to_instance_method(dispatcher):
     assert watcher.called
 
 
-@pytest.mark.skipif(sys.version_info < (3, 4), reason="requires python3.4")
 def test_weakref_to_instance(dispatcher):
     import weakref
     dispatcher.register_event_type('mock_event')
@@ -322,7 +318,6 @@ def test_weakref_to_instance(dispatcher):
     assert watcher.called
 
 
-@pytest.mark.skipif(sys.version_info < (3, 4), reason="requires python3.4")
 def test_weakref_deleted_when_instance_is_deleted(dispatcher):
     dispatcher.register_event_type('mock_event')
     handler = DummyHandler()

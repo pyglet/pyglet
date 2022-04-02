@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -88,6 +88,8 @@ class LinearDecayEnvelope(_Envelope):
         total_bytes = int(sample_rate * duration)
         for i in range(total_bytes):
             yield (total_bytes - i) / total_bytes * peak
+        while True:
+            yield 0
 
 
 class ADSREnvelope(_Envelope):
@@ -133,6 +135,8 @@ class ADSREnvelope(_Envelope):
             yield sustain_amplitude
         for i in range(1, release_bytes + 1):
             yield sustain_amplitude - (i * release_step)
+        while True:
+            yield 0
 
 
 class TremoloEnvelope(_Envelope):
@@ -168,6 +172,8 @@ class TremoloEnvelope(_Envelope):
         for i in range(total_bytes):
             value = math.sin(step * i)
             yield value * (max_amplitude - min_amplitude) + min_amplitude
+        while True:
+            yield 0
 
 
 # Source classes:
@@ -213,7 +219,7 @@ class SynthesisSource(Source):
     def _generate_data(self, num_bytes):
         """Generate `num_bytes` bytes of data.
 
-        Return data as ctypes array or string.
+        Return data as ctypes array or bytes.
         """
         raise NotImplementedError('abstract')
 
@@ -267,7 +273,7 @@ class Sine(SynthesisSource):
         envelope = self._envelope_generator
         for i in range(samples):
             data[i] = int(math.sin(step * i) * amplitude * next(envelope))
-        return data
+        return bytes(data)
 
 
 class Triangle(SynthesisSource):
@@ -303,7 +309,7 @@ class Triangle(SynthesisSource):
                 value = minimum - (value - minimum)
                 step = -step
             data[i] = int(value * next(envelope))
-        return data
+        return bytes(data)
 
 
 class Sawtooth(SynthesisSource):
@@ -335,7 +341,7 @@ class Sawtooth(SynthesisSource):
             if value > maximum:
                 value = minimum + (value % maximum)
             data[i] = int(value * next(envelope))
-        return data
+        return bytes(data)
 
 
 class Square(SynthesisSource):
@@ -368,10 +374,10 @@ class Square(SynthesisSource):
                 count %= half_period
             count += 1
             data[i] = int(value * amplitude * next(envelope))
-        return data
+        return bytes(data)
 
 
-class FM(SynthesisSource):
+class SimpleFM(SynthesisSource):
     """A simple FM waveform.
 
     This is a simplistic frequency modulated waveform, based on the
@@ -393,7 +399,7 @@ class FM(SynthesisSource):
     """
 
     def __init__(self, duration, carrier=440, modulator=440, mod_index=1, **kwargs):
-        super(FM, self).__init__(duration, **kwargs)
+        super().__init__(duration, **kwargs)
         self.carrier = carrier
         self.modulator = modulator
         self.mod_index = mod_index
@@ -413,3 +419,48 @@ class FM(SynthesisSource):
             increment = i / sample_rate
             data.append(int(sin(c_step * increment + m_index * sin(m_step * increment)) * amplitude * next(envelope)))
         return struct.pack(str(samples) + 'h', *data)
+
+
+#############################################
+#   Experimental multi-operator FM synthesis:
+#############################################
+
+
+def operator(samplerate=44800, frequency=440, index=1, modulator=None, envelope=None):
+    # A sine generator that can be optionally modulated with another generator.
+    # FM equation:  sin((i * 2 * pi * carrier_frequency) + sin(i * 2 * pi * modulator_frequency))
+    sin = math.sin
+    step = 2 * math.pi * frequency / samplerate
+    i = 0
+    envelope = envelope or FlatEnvelope(1).get_generator(samplerate, duration=None)
+    if modulator:
+        while True:
+            yield sin(i * step + index * next(modulator)) * next(envelope)
+            i += 1
+    else:
+        while True:
+            yield math.sin(i * step) * next(envelope)
+            i += 1
+
+
+def composite_generator(*operators):
+    return (sum(samples) / len(samples) for samples in zip(*operators))
+
+
+class Encoder(SynthesisSource):
+    def __init__(self, duration, generator, **kwargs):
+        super().__init__(duration, **kwargs)
+        self._generator = generator
+        self._total = int(duration * self.audio_format.sample_rate)
+        self._consumed = 0
+
+    def _generate_data(self, num_bytes):
+        envelope = self._envelope_generator
+        generator = self._generator
+
+        samples = num_bytes >> 1
+        amplitude = 32767
+
+        data = (int(next(generator) * amplitude * next(envelope)) for i in range(samples))
+
+        return struct.pack(f"{samples}h", *data)

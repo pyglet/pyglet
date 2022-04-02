@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,9 @@ split_16byte = re.compile('.' * 16, flags=re.DOTALL)
 class PackedImageData(AbstractImage):
     _current_texture = None
 
-    def __init__(self, width, height, format, packed_format, data):
-        super(PackedImageData, self).__init__(width, height)
-        self.format = format
+    def __init__(self, width, height, fmt, packed_format, data):
+        super().__init__(width, height)
+        self.format = fmt
         self.packed_format = packed_format
         self.data = data
 

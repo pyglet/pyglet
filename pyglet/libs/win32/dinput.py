@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -337,7 +337,7 @@ class DIPROPDWORD(ctypes.Structure):
 
 # IDirect* interfaces are all Unicode (e.g. IDirectInputDevice8W).
 
-class IDirectInputDevice8(com.IUnknown):
+class IDirectInputDevice8(com.pIUnknown):
     _methods_ = [
         ('GetCapabilities',
          com.STDMETHOD()),
@@ -399,7 +399,7 @@ class IDirectInputDevice8(com.IUnknown):
          com.STDMETHOD()),
      ]
 
-class IDirectInput8(com.IUnknown):
+class IDirectInput8(com.pIUnknown):
     _methods_ = [
         ('CreateDevice',
          com.STDMETHOD(ctypes.POINTER(com.GUID), 

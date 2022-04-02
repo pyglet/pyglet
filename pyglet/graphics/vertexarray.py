@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
+
+import pyglet
+
 from pyglet.gl import GLuint, glGenVertexArrays, glDeleteVertexArrays, glBindVertexArray
 
 
@@ -43,6 +46,7 @@ class VertexArray:
 
     def __init__(self):
         """Create an instance of a Vertex Array object."""
+        self._context = pyglet.gl.current_context
         self._id = GLuint()
         glGenVertexArrays(1, self._id)
 
@@ -58,7 +62,10 @@ class VertexArray:
         glBindVertexArray(0)
 
     def delete(self):
-        glDeleteVertexArrays(1, self._id)
+        try:
+            glDeleteVertexArrays(1, self._id)
+        except Exception:
+            pass
 
     __enter__ = bind
 
@@ -67,7 +74,7 @@ class VertexArray:
 
     def __del__(self):
         try:
-            glDeleteVertexArrays(1, self._id)
+            self._context.delete_vao(self.id)
         # Python interpreter is shutting down:
         except ImportError:
             pass

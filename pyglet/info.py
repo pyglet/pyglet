@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -126,17 +126,6 @@ def dump_gl(context=None):
         print('  ', name)
 
 
-def dump_glu():
-    """Dump GLU info."""
-    from pyglet.gl import glu_info
-    print('glu_info.get_version():', glu_info.get_version())
-    print('glu_info.get_extensions():')
-    extensions = list(glu_info.get_extensions())
-    extensions.sort()
-    for name in extensions:
-        print('  ', name)
-
-
 def dump_glx():
     """Dump GLX info."""
     try:
@@ -234,7 +223,6 @@ def dump():
     _try_dump('Python', dump_python)
     _try_dump('pyglet', dump_pyglet)
     _try_dump('pyglet.window', dump_window)
-    _try_dump('pyglet.gl.glu_info', dump_glu)
     _try_dump('pyglet.gl.glx_info', dump_glx)
     _try_dump('pyglet.media', dump_media)
     _try_dump('pyglet.media.ffmpeg', dump_ffmpeg)

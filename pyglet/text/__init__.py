@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -303,6 +303,26 @@ class DocumentLabel(layout.TextLayout):
         self.document.set_style(0, len(self.document.text), {'color': color})
 
     @property
+    def opacity(self):
+        """Blend opacity.
+
+        This property sets the alpha component of the colour of the label's
+        vertices.  With the default blend mode, this allows the layout to be
+        drawn with fractional opacity, blending with the background.
+
+        An opacity of 255 (the default) has no effect.  An opacity of 128 will
+        make the label appear semi-translucent.
+
+        :type: int
+        """
+        return self.color[3]
+
+    @opacity.setter
+    def opacity(self, alpha):
+        if alpha != self.color[3]:
+            self.color = list(map(int, (*self.color[:3], alpha)))
+
+    @property
     def font_name(self):
         """Font family name.
 
@@ -390,7 +410,7 @@ class Label(DocumentLabel):
     """
 
     def __init__(self, text='',
-                 font_name=None, font_size=None, bold=False, italic=False,
+                 font_name=None, font_size=None, bold=False, italic=False, stretch=False,
                  color=(255, 255, 255, 255),
                  x=0, y=0, width=None, height=None,
                  anchor_x='left', anchor_y='baseline',
@@ -406,10 +426,12 @@ class Label(DocumentLabel):
                 first matching name is used.
             `font_size` : float
                 Font size, in points.
-            `bold` : bool
+            `bold` : bool/str
                 Bold font style.
-            `italic` : bool
+            `italic` : bool/str
                 Italic font style.
+            `stretch` : bool/str
+                 Stretch font style.
             `color` : (int, int, int, int)
                 Font colour, as RGBA components in range [0, 255].
             `x` : int
@@ -451,6 +473,7 @@ class Label(DocumentLabel):
             'font_size': font_size,
             'bold': bold,
             'italic': italic,
+            'stretch': stretch,
             'color': color,
             'align': align,
         })
@@ -519,3 +542,4 @@ class HTMLLabel(DocumentLabel):
     def text(self, text):
         self._text = text
         self.document = decode_html(text, self._location)
+

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -97,8 +97,12 @@ def get_display():
 if _is_pyglet_doc_run:
     from pyglet.canvas.base import Display, Screen, Canvas, ScreenMode
 else:
-    from pyglet import compat_platform
-    if compat_platform == 'darwin':
+    from pyglet import compat_platform, options
+    if options['headless']:
+        from pyglet.canvas.headless import HeadlessDisplay as Display
+        from pyglet.canvas.headless import HeadlessScreen as Screen
+        from pyglet.canvas.headless import HeadlessCanvas as Canvas
+    elif compat_platform == 'darwin':
         from pyglet.canvas.cocoa import CocoaDisplay as Display
         from pyglet.canvas.cocoa import CocoaScreen as Screen
         from pyglet.canvas.cocoa import CocoaCanvas as Canvas

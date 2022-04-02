@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 # TODO Tiger and later: need to set kWindowApplicationScaledAttribute for DPI independence?
 
 import math
+import warnings
 from ctypes import c_void_p, c_int32, byref, c_byte
 
 from pyglet.font import base
@@ -50,7 +51,7 @@ quartz = cocoapy.quartz
 
 class QuartzGlyphRenderer(base.GlyphRenderer):
     def __init__(self, font):
-        super(QuartzGlyphRenderer, self).__init__(font)
+        super().__init__(font)
         self.font = font
 
     def render(self, text):
@@ -194,13 +195,19 @@ class QuartzFont(base.Font):
         cf.CFRelease(attributes)
         return descriptor
 
-    def __init__(self, name, size, bold=False, italic=False, dpi=None):
-        super(QuartzFont, self).__init__()
+    def __init__(self, name, size, bold=False, italic=False, stretch=False, dpi=None):
+        # assert type(bold) is bool, "Only a boolean value is supported for bold in the current font renderer."
+        # assert type(italic) is bool, "Only a boolean value is supported for bold in the current font renderer."
 
-        if not name: name = 'Helvetica'
+        if stretch:
+            warnings.warn("The current font render does not support stretching.")
+
+        super().__init__()
+
+        name = name or 'Helvetica'
 
         # I don't know what is the right thing to do here.
-        if dpi is None: dpi = 96
+        dpi = dpi or 96
         size = size * dpi / 72.0
 
         # Construct traits value.
@@ -224,8 +231,16 @@ class QuartzFont(base.Font):
             cf.CFRelease(descriptor)
             assert self.ctFont, "Couldn't load font: " + name
 
+        string = c_void_p(ct.CTFontCopyFamilyName(self.ctFont))
+        self._family_name = str(cocoapy.cfstring_to_string(string))
+        cf.CFRelease(string)
+
         self.ascent = int(math.ceil(ct.CTFontGetAscent(self.ctFont)))
         self.descent = -int(math.ceil(ct.CTFontGetDescent(self.ctFont)))
+
+    @property
+    def name(self):
+        return self._family_name
 
     def __del__(self):
         cf.CFRelease(self.ctFont)

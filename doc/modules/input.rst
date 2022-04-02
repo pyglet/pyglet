@@ -46,6 +46,24 @@ Classes
 
   .. autoattribute:: value
 
+
+.. autoclass:: Controller
+  :show-inheritance:
+
+  .. rubric:: Methods
+
+  .. automethod:: open
+  .. automethod:: close
+
+  .. rubric:: Events
+
+  .. automethod:: on_stick_motion
+  .. automethod:: on_dpad_motion
+  .. automethod:: on_trigger_motion
+  .. automethod:: on_button_press
+  .. automethod:: on_button_release
+
+
 .. autoclass:: Joystick
   :show-inheritance:
 
@@ -60,6 +78,7 @@ Classes
   .. automethod:: on_joyhat_motion
   .. automethod:: on_joybutton_press
   .. automethod:: on_joybutton_release
+
 
 .. autoclass:: AppleRemote
   :show-inheritance:
@@ -84,6 +103,7 @@ Functions
 
 .. autofunction:: get_apple_remote
 .. autofunction:: get_devices
+.. autofunction:: get_controllers
 .. autofunction:: get_joysticks
 .. autofunction:: get_tablets
 

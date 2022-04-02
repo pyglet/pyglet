@@ -7,8 +7,6 @@
 __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
-import math
-import random
 import re
 import os.path
 import pyglet

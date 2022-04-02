@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,28 +34,27 @@
 # ----------------------------------------------------------------------------
 
 import os
-import errno
+import fcntl
 import ctypes
+
+from ctypes import c_uint16 as _u16
+from ctypes import c_int16 as _s16
+from ctypes import c_uint32 as _u32
+from ctypes import c_int32 as _s32
+from ctypes import c_int64 as _s64
 
 import pyglet
 
 from pyglet.app.xlib import XlibSelectDevice
-from .base import Device, Control, RelativeAxis, AbsoluteAxis, Button, Joystick, GameController
+from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from .base import DeviceOpenException
 from .evdev_constants import *
-from .gamecontroller import is_game_controller
-
-c = pyglet.lib.load_library('c')
+from .controller import get_mapping
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
 _IOC_SIZEBITS = 14
 _IOC_DIRBITS = 2
-
-_IOC_NRMASK = ((1 << _IOC_NRBITS) - 1)
-_IOC_TYPEMASK = ((1 << _IOC_TYPEBITS) - 1)
-_IOC_SIZEMASK = ((1 << _IOC_SIZEBITS) - 1)
-_IOC_DIRMASK = ((1 << _IOC_DIRBITS) - 1)
 
 _IOC_NRSHIFT = 0
 _IOC_TYPESHIFT = (_IOC_NRSHIFT + _IOC_NRBITS)
@@ -79,9 +78,7 @@ def _IOR(type, nr, struct):
 
     def f(fileno):
         buffer = struct()
-        if c.ioctl(fileno, request, ctypes.byref(buffer)) < 0:
-            err = ctypes.c_int.in_dll(c, 'errno').value
-            raise OSError(err, errno.errorcode[err])
+        fcntl.ioctl(fileno, request, buffer)
         return buffer
 
     return f
@@ -90,9 +87,7 @@ def _IOR(type, nr, struct):
 def _IOR_len(type, nr):
     def f(fileno, buffer):
         request = _IOC(_IOC_READ, ord(type), nr, ctypes.sizeof(buffer))
-        if c.ioctl(fileno, request, ctypes.byref(buffer)) < 0:
-            err = ctypes.c_int.in_dll(c, 'errno').value
-            raise OSError(err, errno.errorcode[err])
+        fcntl.ioctl(fileno, request, buffer)
         return buffer
 
     return f
@@ -101,56 +96,154 @@ def _IOR_len(type, nr):
 def _IOR_str(type, nr):
     g = _IOR_len(type, nr)
 
-    def f(fileno, len=256):
-        return g(fileno, ctypes.create_string_buffer(len)).value
+    def f(fileno, length=256):
+        return g(fileno, ctypes.create_string_buffer(length)).value
 
     return f
 
 
-time_t = ctypes.c_long
-suseconds_t = ctypes.c_long
+def _IOW(type, nr):
+
+    def f(fileno, buffer):
+        request = _IOC(_IOC_WRITE, ord(type), nr, ctypes.sizeof(buffer))
+        fcntl.ioctl(fileno, request, buffer)
+
+    return f
 
 
-class timeval(ctypes.Structure):
+# Structures from /linux/blob/master/include/uapi/linux/input.h
+
+class Timeval(ctypes.Structure):
     _fields_ = (
-        ('tv_sec', time_t),
-        ('tv_usec', suseconds_t)
+        ('tv_sec', _s64),
+        ('tv_usec', _s64)
     )
 
 
-class input_event(ctypes.Structure):
+class InputEvent(ctypes.Structure):
     _fields_ = (
-        ('time', timeval),
-        ('type', ctypes.c_uint16),
-        ('code', ctypes.c_uint16),
-        ('value', ctypes.c_int32)
+        ('time', Timeval),
+        ('type', _u16),
+        ('code', _u16),
+        ('value', _s32)
     )
 
 
-class input_id(ctypes.Structure):
+class InputID(ctypes.Structure):
     _fields_ = (
-        ('bustype', ctypes.c_uint16),
-        ('vendor', ctypes.c_uint16),
-        ('product', ctypes.c_uint16),
-        ('version', ctypes.c_uint16),
+        ('bustype', _u16),
+        ('vendor', _u16),
+        ('product', _u16),
+        ('version', _u16),
     )
 
 
-class input_absinfo(ctypes.Structure):
+class InputABSInfo(ctypes.Structure):
     _fields_ = (
-        ('value', ctypes.c_int32),
-        ('minimum', ctypes.c_int32),
-        ('maximum', ctypes.c_int32),
-        ('fuzz', ctypes.c_int32),
-        ('flat', ctypes.c_int32),
+        ('value', _s32),
+        ('minimum', _s32),
+        ('maximum', _s32),
+        ('fuzz', _s32),
+        ('flat', _s32),
+    )
+
+
+class FFReplay(ctypes.Structure):
+    _fields_ = (
+        ('length', _u16),
+        ('delay', _u16)
+    )
+
+
+class FFTrigger(ctypes.Structure):
+    _fields_ = (
+        ('button', _u16),
+        ('interval', _u16)
+    )
+
+
+class FFEnvelope(ctypes.Structure):
+    _fields_ = [
+        ('attack_length', _u16),
+        ('attack_level', _u16),
+        ('fade_length', _u16),
+        ('fade_level', _u16),
+    ]
+
+
+class FFConstantEffect(ctypes.Structure):
+    _fields_ = [
+        ('level', _s16),
+        ('ff_envelope', FFEnvelope),
+    ]
+
+
+class FFRampEffect(ctypes.Structure):
+    _fields_ = [
+        ('start_level', _s16),
+        ('end_level', _s16),
+        ('ff_envelope', FFEnvelope),
+    ]
+
+
+class FFConditionEffect(ctypes.Structure):
+    _fields_ = [
+        ('right_saturation', _u16),
+        ('left_saturation', _u16),
+        ('right_coeff', _s16),
+        ('left_coeff', _s16),
+        ('deadband', _u16),
+        ('center', _s16),
+    ]
+
+
+class FFPeriodicEffect(ctypes.Structure):
+    _fields_ = [
+        ('waveform', _u16),
+        ('period', _u16),
+        ('magnitude', _s16),
+        ('offset', _s16),
+        ('phase', _u16),
+        ('envelope', FFEnvelope),
+        ('custom_len', _u32),
+        ('custom_data', ctypes.POINTER(_s16)),
+    ]
+
+
+class FFRumbleEffect(ctypes.Structure):
+    _fields_ = (
+        ('strong_magnitude', _u16),
+        ('weak_magnitude', _u16)
+    )
+
+
+class FFEffectType(ctypes.Union):
+    _fields_ = (
+        ('ff_constant_effect', FFConstantEffect),
+        ('ff_ramp_effect', FFRampEffect),
+        ('ff_periodic_effect', FFPeriodicEffect),
+        ('ff_condition_effect', FFConditionEffect * 2),
+        ('ff_rumble_effect', FFRumbleEffect),
+    )
+
+
+class FFEvent(ctypes.Structure):
+    _fields_ = (
+        ('type', _u16),
+        ('id', _s16),
+        ('direction', _u16),
+        ('ff_trigger', FFTrigger),
+        ('ff_replay', FFReplay),
+        ('u', FFEffectType)
     )
 
 
 EVIOCGVERSION = _IOR('E', 0x01, ctypes.c_int)
-EVIOCGID = _IOR('E', 0x02, input_id)
+EVIOCGID = _IOR('E', 0x02, InputID)
 EVIOCGNAME = _IOR_str('E', 0x06)
 EVIOCGPHYS = _IOR_str('E', 0x07)
 EVIOCGUNIQ = _IOR_str('E', 0x08)
+EVIOCSFF = _IOW('E', 0x80)
 
 
 def EVIOCGBIT(fileno, ev, buffer):
@@ -158,14 +251,14 @@ def EVIOCGBIT(fileno, ev, buffer):
 
 
 def EVIOCGABS(fileno, abs):
-    buffer = input_absinfo()
+    buffer = InputABSInfo()
     return _IOR_len('E', 0x40 + abs)(fileno, buffer)
 
 
-def get_set_bits(bytes):
+def get_set_bits(bytestring):
     bits = set()
     j = 0
-    for byte in bytes:
+    for byte in bytestring:
         for i in range(8):
             if byte & 1:
                 bits.add(j + i)
@@ -206,7 +299,6 @@ def _create_control(fileno, event_type, event_code):
         maximum = absinfo.maximum
         control = AbsoluteAxis(name, minimum, maximum, raw_name)
         control.value = value
-
         if name == 'hat_y':
             control.inverted = True
     elif event_type == EV_REL:
@@ -233,6 +325,7 @@ event_types = {
     EV_MSC: MSC_MAX,
     EV_LED: LED_MAX,
     EV_SND: SND_MAX,
+    EV_FF: FF_MAX,
 }
 
 
@@ -271,6 +364,7 @@ class EvdevDevice(XlibSelectDevice, Device):
 
         self.controls = []
         self.control_map = {}
+        self.ff_types = []
 
         event_types_bits = (ctypes.c_byte * 4)()
         EVIOCGBIT(fileno, 0, event_types_bits)
@@ -281,15 +375,18 @@ class EvdevDevice(XlibSelectDevice, Device):
             nbytes = max_code // 8 + 1
             event_codes_bits = (ctypes.c_byte * nbytes)()
             EVIOCGBIT(fileno, event_type, event_codes_bits)
-            for event_code in get_set_bits(event_codes_bits):
-                control = _create_control(fileno, event_type, event_code)
-                if control:
-                    self.control_map[(event_type, event_code)] = control
-                    self.controls.append(control)
+            if event_type == EV_FF:
+                self.ff_types.extend(get_set_bits(event_codes_bits))
+            else:
+                for event_code in get_set_bits(event_codes_bits):
+                    control = _create_control(fileno, event_type, event_code)
+                    if control:
+                        self.control_map[(event_type, event_code)] = control
+                        self.controls.append(control)
 
         os.close(fileno)
 
-        super(EvdevDevice, self).__init__(display, name)
+        super().__init__(display, name)
 
     def get_guid(self):
         """Generate an SDL2 style GUID from the device ID"""
@@ -306,27 +403,32 @@ class EvdevDevice(XlibSelectDevice, Device):
                            hex_product, shifted_product, hex_version, shifted_version)
 
     def open(self, window=None, exclusive=False):
-        super(EvdevDevice, self).open(window, exclusive)
+        super().open(window, exclusive)
 
         try:
-            self._fileno = os.open(self._filename, os.O_RDONLY | os.O_NONBLOCK)
+            self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
         except OSError as e:
             raise DeviceOpenException(e)
 
-        pyglet.app.platform_event_loop._select_devices.add(self)
+        pyglet.app.platform_event_loop.select_devices.add(self)
 
     def close(self):
-        super(EvdevDevice, self).close()
+        super().close()
 
         if not self._fileno:
             return
 
-        pyglet.app.platform_event_loop._select_devices.remove(self)
+        pyglet.app.platform_event_loop.select_devices.remove(self)
         os.close(self._fileno)
         self._fileno = None
 
     def get_controls(self):
         return self.controls
+
+    # Force Feedback methods
+
+    def ff_upload_effect(self, structure):
+        os.write(self._fileno, structure)
 
     # XlibSelectDevice interface
 
@@ -334,25 +436,76 @@ class EvdevDevice(XlibSelectDevice, Device):
         return self._fileno
 
     def poll(self):
-        # TODO
         return False
 
     def select(self):
         if not self._fileno:
             return
 
-        events = (input_event * 64)()
-        bytes_read = c.read(self._fileno, events, ctypes.sizeof(events))
-        if bytes_read < 0:
+        try:
+            events = (InputEvent * 64)()
+            bytes_read = os.readv(self._fileno, events)
+        except OSError:
+            self.close()
             return
 
-        n_events = bytes_read // ctypes.sizeof(input_event)
+        n_events = bytes_read // ctypes.sizeof(InputEvent)
         for event in events[:n_events]:
             try:
                 control = self.control_map[(event.type, event.code)]
                 control.value = event.value
             except KeyError:
                 pass
+
+
+class FFController(Controller):
+    """Controller that supports force-feedback"""
+    _fileno = None
+    _weak_effect = None
+    _play_weak_event = None
+    _stop_weak_event = None
+    _strong_effect = None
+    _play_strong_event = None
+    _stop_strong_event = None
+
+    def open(self, window=None, exclusive=False):
+        super().open(window, exclusive)
+        self._fileno = self.device.fileno()
+        # Create Force Feedback effects & events when opened:
+        # https://www.kernel.org/doc/html/latest/input/ff.html
+        self._weak_effect = self._create_effect()
+        self._play_weak_event = InputEvent(Timeval(), EV_FF, self._weak_effect.id, 1)
+        self._stop_weak_event = InputEvent(Timeval(), EV_FF, self._weak_effect.id, 0)
+        self._strong_effect = self._create_effect()
+        self._play_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 1)
+        self._stop_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 0)
+
+    def _create_effect(self):
+        event = FFEvent(FF_RUMBLE, -1)
+        EVIOCSFF(self._fileno, event)
+        return event
+
+    def rumble_play_weak(self, strength=1.0, duration=0.5):
+        effect = self._weak_effect
+        effect.u.ff_rumble_effect.weak_magnitude = int(max(min(1.0, strength), 0) * 0xFFFF)
+        effect.ff_replay.length = int(duration * 1000)
+        EVIOCSFF(self._fileno, effect)
+        self.device.ff_upload_effect(self._play_weak_event)
+
+    def rumble_play_strong(self, strength=1.0, duration=0.5):
+        effect = self._strong_effect
+        effect.u.ff_rumble_effect.strong_magnitude = int(max(min(1.0, strength), 0) * 0xFFFF)
+        effect.ff_replay.length = int(duration * 1000)
+        EVIOCSFF(self._fileno, effect)
+        self.device.ff_upload_effect(self._play_strong_event)
+
+    def rumble_stop_weak(self):
+        """Stop playing rumble effects on the weak motor."""
+        self.device.ff_upload_effect(self._stop_weak_event)
+
+    def rumble_stop_strong(self):
+        """Stop playing rumble effects on the strong motor."""
+        self.device.ff_upload_effect(self._stop_strong_event)
 
 
 def get_devices(display=None):
@@ -396,28 +549,28 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def _create_game_controller(device):
-    # Look for something with an ABS X and ABS Y axis, and a joystick 0 button
-    have_x = False
-    have_y = False
+def _create_controller(device):
+    # Look for something with an ABS X and ABS Y axis, and BTN_GAMEPAD
     have_button = False
-    if not is_game_controller(device):
-        return
+
     device.controls.sort(key=lambda ctrl: ctrl._event_code)
     for control in device.controls:
-        if control._event_type == EV_ABS and control._event_code == ABS_X:
-            have_x = True
-        elif control._event_type == EV_ABS and control._event_code == ABS_Y:
-            have_y = True
-        elif control._event_type == EV_KEY and control._event_code in (BTN_JOYSTICK, BTN_GAMEPAD):
+        if control._event_type == EV_KEY and control._event_code == BTN_GAMEPAD:
             have_button = True
-    if not (have_x and have_y and have_button):
+
+    mapping = get_mapping(device.get_guid())
+    # TODO: detect via device types, and use default mapping.
+
+    if have_button is False or mapping is None:
         return
 
-    return GameController(device)
+    if FF_RUMBLE in device.ff_types:
+        return FFController(device, mapping)
+    else:
+        return Controller(device, mapping)
 
 
-def get_game_controllers(display=None):
+def get_controllers(display=None):
     return [controller for controller in
-            [_create_game_controller(device) for device in get_devices(display)]
+            [_create_controller(device) for device in get_devices(display)]
             if controller is not None]

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from io import BytesIO
+import io
 
 import pyglet
+
 from pyglet.media.exceptions import MediaException, CannotSeekException, MediaEncodeException
 
 
@@ -74,7 +75,8 @@ class AudioFormat:
 
     def __repr__(self):
         return '%s(channels=%d, sample_size=%d, sample_rate=%d)' % (
-            self.__class__.__name__, self.channels, self.sample_size, self.sample_rate)
+            self.__class__.__name__, self.channels, self.sample_size,
+            self.sample_rate)
 
 
 class VideoFormat:
@@ -119,7 +121,7 @@ class AudioData:
     This class is used internally by pyglet.
 
     Args:
-        data (bytes or ctypes array or pointer): Sample data.
+        data (str or ctypes array or pointer): Sample data.
         length (int): Size of sample data, in bytes.
         timestamp (float): Time of the first sample, in seconds.
         duration (float): Total data duration, in seconds.
@@ -160,21 +162,21 @@ class AudioData:
             self.data = None
             self.length = 0
             self.timestamp += self.duration
-            self.duration = 0
+            self.duration = 0.
             return
         elif num_bytes == 0:
             return
 
         self.data = self.data[num_bytes:]
         self.length -= num_bytes
-        self.duration -= num_bytes / float(audio_format.bytes_per_second)
-        self.timestamp += num_bytes / float(audio_format.bytes_per_second)
+        self.duration -= num_bytes / audio_format.bytes_per_second
+        self.timestamp += num_bytes / audio_format.bytes_per_second
 
     def get_string_data(self):
-        """Return data as raw bytes.
+        """Return data as a bytestring.
 
         Returns:
-            bytes: data as raw bytes.
+            bytes: Data as a (byte)string.
         """
         if self.data is None:
             return b''
@@ -331,7 +333,7 @@ class Source:
         """
         pass
 
-    def save(self, filename=None, file=None, encoder=None):
+    def save(self, filename, file=None, encoder=None):
         """Save this Source to a file.
 
         :Parameters:
@@ -350,20 +352,23 @@ class Source:
             file = open(filename, 'wb')
 
         if encoder:
-            encoder.encode(self, file, filename)
+            encoder.encode(self, filename, file)
         else:
             first_exception = None
             for encoder in pyglet.media.get_encoders(filename):
+
                 try:
-                    encoder.encode(self, file, filename)
+                    encoder.encode(self, filename, file)
                     return
                 except MediaEncodeException as e:
                     first_exception = first_exception or e
                     file.seek(0)
 
             if not first_exception:
-                raise MediaEncodeException('No media encoders are available')
+                raise MediaEncodeException(f"No Encoders are available for this extension: '{filename}'")
             raise first_exception
+
+        file.close()
 
     # Internal methods that Player calls on the source:
 
@@ -404,18 +409,6 @@ class StreamingSource(Source):
     The source can only be played once at a time on any
     :class:`~pyglet.media.player.Player`.
     """
-
-    @property
-    def is_queued(self):
-        """
-        bool: Determine if this source is a player current source.
-
-        Check on a :py:class:`~pyglet.media.player.Player` if this source
-        is the current source.
-
-        :deprecated: Use :attr:`is_player_source` instead.
-        """
-        return self.is_player_source
 
     def get_queue_source(self):
         """Return the ``Source`` to be used as the source for a player.
@@ -464,7 +457,7 @@ class StaticSource(Source):
 
         # Naive implementation.  Driver-specific implementations may override
         # to load static audio data into device (or at least driver) memory.
-        data = BytesIO()
+        data = io.BytesIO()
         while True:
             audio_data = source.get_audio_data(buffer_size)
             if not audio_data:
@@ -505,7 +498,7 @@ class StaticMemorySource(StaticSource):
 
     def __init__(self, data, audio_format):
         """Construct a memory source over the given data buffer."""
-        self._file = BytesIO(data)
+        self._file = io.BytesIO(data)
         self._max_offset = len(data)
         self.audio_format = audio_format
         self._duration = len(data) / float(audio_format.bytes_per_second)

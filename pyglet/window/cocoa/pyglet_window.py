@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,9 @@ class PygletWindow_Implementation:
                 app.event_loop.idle()
 
         event = send_super(self, 'nextEventMatchingMask:untilDate:inMode:dequeue:',
-                           mask, date, mode, dequeue, argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
+                           mask, date, mode, dequeue,
+                           superclass_name='NSWindow',
+                           argtypes=[NSUInteger, c_void_p, c_void_p, c_bool])
 
         if event.value is None:
             return 0

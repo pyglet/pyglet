@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ import pyglet.lib
 
 _lib = pyglet.lib.load_library('openal',
                                win32='openal32',
-                               framework='/System/Library/Frameworks/OpenAL.framework')
+                               framework='OpenAL')
 
 _int_types = (c_int16, c_int32)
 if hasattr(ctypes, 'c_int64'):

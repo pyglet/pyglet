@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,7 @@ This module provides an efficient low-level abstraction over OpenGL.  It gives
 very good performance for rendering OpenGL primitives. The module is used
 internally by other areas of pyglet.
 
-See the :ref:`programming-guide-graphics` for details on how to use this
-graphics API.
+See the :ref:`guide_graphics` for details on how to use this graphics API.
 
 Batches and groups
 ==================
@@ -79,7 +78,7 @@ before the car and the boat::
     background = pyglet.sprite.SpriteGroup(0)
     foreground = pyglet.sprite.SpriteGroup(1)
 
-    background = pyglet.sprite.Sprite(background_image, 
+    background = pyglet.sprite.Sprite(background_image,
                                       batch=batch, group=background)
     car = pyglet.sprite.Sprite(car_image, batch=batch, group=foreground)
     boat = pyglet.sprite.Sprite(boat_image, batch=batch, group=foreground)
@@ -160,17 +159,18 @@ video drivers, and requires indexed vertex lists.
 """
 
 import ctypes
+import weakref
 
 import pyglet
 from pyglet.gl import *
-from pyglet.graphics import vertexbuffer, vertexattribute, vertexdomain
-from pyglet.graphics.shader import Shader, ShaderProgram, UniformBufferObject
+from pyglet.graphics import vertexattribute, vertexdomain
 from pyglet.graphics.vertexarray import VertexArray
+from pyglet.graphics.vertexbuffer import BufferObject
 
 _debug_graphics_batch = pyglet.options['debug_graphics_batch']
 
 
-def draw(size, mode, *data):
+def draw(size, mode, **data):
     """Draw a primitive immediately.
 
     :Parameters:
@@ -179,9 +179,10 @@ def draw(size, mode, *data):
         `mode` : gl primitive type 
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``, 
             avoiding quotes.
-        `data` : data items
-            Attribute formats and data.  See the module summary for 
-            details.
+        `**data` : keyword arguments for passing vertex attribute data.
+            The keyword should be the vertex attribute name, and the
+            argument should be a tuple of (format, data). For example:
+            `position=('f', array)`
 
     """
     # Create and bind a throwaway VAO
@@ -189,16 +190,19 @@ def draw(size, mode, *data):
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
     # Activate shader program:
-    group = get_default_group()
-    group.set_state()
+    program = get_default_shader()
+    program.use()
 
     buffers = []
-    for fmt, array in data:
-        attribute = vertexattribute.create_attribute(group.program.id, fmt)
+    for name, (fmt, array) in data.items():
+        location = program.attributes[name]['location']
+        count = program.attributes[name]['count']
+        gl_type = vertexdomain._gl_types[fmt[0]]
+        normalize = 'n' in fmt
+        attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
-
+        buffer = BufferObject(size * attribute.stride, GL_ARRAY_BUFFER)
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -208,14 +212,14 @@ def draw(size, mode, *data):
     glDrawArrays(mode, 0, size)
 
     # Deactivate shader program:
-    group.unset_state()
+    program.stop()
     # Discard everything after drawing:
     del buffers
     glBindVertexArray(0)
     glDeleteVertexArrays(1, vao_id)
 
 
-def draw_indexed(size, mode, indices, *data):
+def draw_indexed(size, mode, indices, **data):
     """Draw a primitive with indexed vertices immediately.
 
     :Parameters:
@@ -225,8 +229,10 @@ def draw_indexed(size, mode, indices, *data):
             OpenGL drawing mode, e.g. ``GL_TRIANGLES``
         `indices` : sequence of int
             Sequence of integers giving indices into the vertex list.
-        `data` : data items
-            Attribute formats and data.  See the module summary for details.
+        `**data` : keyword arguments for passing vertex attribute data.
+            The keyword should be the vertex attribute name, and the
+            argument should be a tuple of (format, data). For example:
+            `position=('f', array)`
 
     """
     # Create and bind a throwaway VAO
@@ -234,16 +240,19 @@ def draw_indexed(size, mode, indices, *data):
     glGenVertexArrays(1, vao_id)
     glBindVertexArray(vao_id)
     # Activate shader program:
-    group = get_default_group()
-    group.set_state()
+    program = get_default_shader()
+    program.use()
 
     buffers = []
-    for fmt, array in data:
-        attribute = vertexattribute.create_attribute(group.program.id, fmt)
+    for name, (fmt, array) in data.items():
+        location = program.attributes[name]['location']
+        count = program.attributes[name]['count']
+        gl_type = vertexdomain._gl_types[fmt[0]]
+        normalize = 'n' in fmt
+        attribute = vertexattribute.VertexAttribute(name, location, count, gl_type, normalize)
         assert size == len(array) // attribute.count, 'Data for %s is incorrect length' % fmt
 
-        buffer = vertexbuffer.create_buffer(size * attribute.stride, mappable=False)
-
+        buffer = BufferObject(size * attribute.stride, GL_ARRAY_BUFFER)
         attribute.set_region(buffer, 0, size, array)
         attribute.enable()
         attribute.set_pointer(buffer.ptr)
@@ -259,93 +268,49 @@ def draw_indexed(size, mode, indices, *data):
         index_type = GL_UNSIGNED_INT
         index_c_type = ctypes.c_uint
 
+    # With GL 3.3 vertex arrays indices needs to be in a buffer
+    # bound to the ELEMENT_ARRAY slot
     index_array = (index_c_type * len(indices))(*indices)
-    glDrawElements(mode, len(indices), index_type, index_array)
+    index_buffer = BufferObject(ctypes.sizeof(index_array), GL_ELEMENT_ARRAY_BUFFER)
+    index_buffer.set_data(index_array)
+
+    glDrawElements(mode, len(indices), index_type, 0)
     glFlush()
 
     # Deactivate shader program:
-    group.unset_state()
+    program.stop()
     # Discard everything after drawing:
     del buffers
+    del index_buffer
     glBindVertexArray(0)
     glDeleteVertexArrays(1, vao_id)
 
 
-def _parse_data(data):
-    """Given a list of data items, returns (formats, initial_arrays)."""
-    assert data, 'No attribute formats given'
-
-    # Return tuple (formats, initial_arrays).
-    formats = []
-    initial_arrays = []
-    for i, fmt in enumerate(data):
-        if isinstance(fmt, tuple):
-            fmt, array = fmt
-            initial_arrays.append((i, array))
-        formats.append(fmt)
-    formats = tuple(formats)
-    return formats, initial_arrays
-
-
 def get_default_batch():
     try:
-        return current_context.object_space.pyglet_graphics_default_batch
+        return pyglet.gl.current_context.pyglet_graphics_default_batch
     except AttributeError:
-        current_context.object_space.pyglet_graphics_default_batch = Batch()
-        return current_context.object_space.pyglet_graphics_default_batch
+        pyglet.gl.current_context.pyglet_graphics_default_batch = Batch()
+        return pyglet.gl.current_context.pyglet_graphics_default_batch
 
 
 def get_default_group():
     try:
-        return current_context.object_space.pyglet_graphics_default_group
+        return pyglet.gl.current_context.pyglet_graphics_default_group
     except AttributeError:
-        current_context.object_space.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
-        return current_context.object_space.pyglet_graphics_default_group
+        pyglet.gl.current_context.pyglet_graphics_default_group = ShaderGroup(get_default_shader())
+        return pyglet.gl.current_context.pyglet_graphics_default_group
 
 
 def get_default_shader():
     try:
-        return current_context.object_space.pyglet_graphics_default_shader
+        return pyglet.gl.current_context.pyglet_graphics_default_shader
     except AttributeError:
-        default_shader_program = ShaderProgram(_default_vert_shader, _default_frag_shader)
-        current_context.object_space.pyglet_graphics_default_shader = default_shader_program
-        return current_context.object_space.pyglet_graphics_default_shader
-
-
-def vertex_list(count, *data):
-    """Create a :py:class:`~pyglet.graphics.vertexdomain.VertexList` not associated with a batch, group or mode.
-
-    :Parameters:
-        `count` : int
-            The number of vertices in the list.
-        `data` : data items
-            Attribute formats and initial data for the vertex list.  See the
-            module summary for details.
-
-    :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
-    """
-    # Note that mode=0 because the default batch is never drawn: vertex lists
-    # returned from this function are drawn directly by their draw() method.
-    return get_default_batch().add(count, 0, None, *data)
-
-
-def vertex_list_indexed(count, indices, *data):
-    """Create an `IndexedVertexList` not associated with a batch, group or mode.
-
-    :Parameters:
-        `count` : int
-            The number of vertices in the list.
-        `indices` : sequence
-            Sequence of integers giving indices into the vertex list.
-        `data` : data items
-            Attribute formats and initial data for the vertex list.  See the
-            module summary for details.
-
-    :rtype: `IndexedVertexList`
-    """
-    # Note that mode=0 because the default batch is never drawn: vertex lists
-    # returned from this function are drawn directly by their draw() method.
-    return get_default_batch().add_indexed(count, 0, None, indices, *data)
+        _default_vert_shader = pyglet.graphics.shader.Shader(_vertex_source, 'vertex')
+        _default_frag_shader = pyglet.graphics.shader.Shader(_fragment_source, 'fragment')
+        default_shader_program = pyglet.graphics.shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
+        pyglet.gl.current_context.pyglet_graphics_default_shader = default_shader_program
+        return pyglet.gl.current_context.pyglet_graphics_default_shader
 
 
 class Batch:
@@ -375,11 +340,7 @@ class Batch:
         self._draw_list = []
         self._draw_list_dirty = False
 
-        # Each Batch encompasses one VAO
-        self.vao = VertexArray()
-
-        if _debug_graphics_batch:
-            print("Batch created. VAO ID: {0}".format(self.vao.id))
+        self._context = pyglet.gl.current_context
 
     def invalidate(self):
         """Force the batch to update the draw list.
@@ -390,66 +351,6 @@ class Batch:
         .. versionadded:: 1.2
         """
         self._draw_list_dirty = True
-
-    def add(self, count, mode, group, *data):
-        """Add a vertex list to the batch.
-
-        :Parameters:
-            `count` : int
-                The number of vertices in the list.
-            `mode` : int
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                See the module summary for additional information.
-            `group` : `~pyglet.graphics.Group`
-                Group of the vertex list, or ``None`` if no group is required.
-            `data` : data items
-                Attribute formats and initial data for the vertex list.  See
-                the module summary for details.
-
-        :rtype: :py:class:`~pyglet.graphics.vertexdomain.VertexList`
-        """
-        formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(False, mode, group, formats)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count)
-        for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
-
-        return vlist
-
-    def add_indexed(self, count, mode, group, indices, *data):
-        """Add an indexed vertex list to the batch.
-
-        :Parameters:
-            `count` : int
-                The number of vertices in the list.
-            `mode` : int
-                OpenGL drawing mode enumeration; for example, one of
-                ``GL_POINTS``, ``GL_LINES``, ``GL_TRIANGLES``, etc.
-                See the module summary for additional information.
-            `group` : `~pyglet.graphics.Group`
-                Group of the vertex list, or ``None`` if no group is required.
-            `indices` : sequence
-                Sequence of integers giving indices into the vertex list.
-            `data` : data items
-                Attribute formats and initial data for the vertex list.  See
-                the module summary for details.
-
-        :rtype: `IndexedVertexList`
-        """
-        formats, initial_arrays = _parse_data(data)
-        domain = self._get_domain(True, mode, group, formats)
-
-        # Create vertex list and initialize
-        vlist = domain.create(count, len(indices))
-        start = vlist.start
-        vlist.set_index_data([i + start for i in indices])
-        for i, array in initial_arrays:
-            vlist.set_attribute_data(i, array)
-
-        return vlist
 
     def migrate(self, vertex_list, mode, group, batch):
         """Migrate a vertex list to another batch and/or group.
@@ -474,14 +375,15 @@ class Batch:
                 The batch to migrate to (or the current batch).
 
         """
-        formats = vertex_list.domain.__formats
+        program = vertex_list.domain.program
+        attributes = vertex_list.domain.attribute_meta
         if isinstance(vertex_list, vertexdomain.IndexedVertexList):
-            domain = batch._get_domain(True, mode, group, formats)
+            domain = batch.get_domain(True, mode, group, program, attributes)
         else:
-            domain = batch._get_domain(False, mode, group, formats)
+            domain = batch.get_domain(False, mode, group, program, attributes)
         vertex_list.migrate(domain)
 
-    def _get_domain(self, indexed, mode, group, formats):
+    def get_domain(self, indexed, mode, group, program, attributes):
         if group is None:
             group = get_default_group()
 
@@ -489,21 +391,17 @@ class Batch:
         if group not in self.group_map:
             self._add_group(group)
 
-        # If not a ShaderGroup, use the default ShaderProgram
-        shader_program = getattr(group, 'program', get_default_shader())
-
         # Find domain given formats, indices and mode
         domain_map = self.group_map[group]
-        key = (formats, mode, indexed, shader_program.id)
+        key = (indexed, mode, program, str(attributes))
         try:
             domain = domain_map[key]
         except KeyError:
             # Create domain
             if indexed:
-                domain = vertexdomain.create_indexed_domain(shader_program.id, *formats)
+                domain = vertexdomain.IndexedVertexDomain(program, attributes)
             else:
-                domain = vertexdomain.create_domain(shader_program.id, *formats)
-            domain.__formats = formats
+                domain = vertexdomain.VertexDomain(program, attributes)
             domain_map[key] = domain
             self._draw_list_dirty = True
 
@@ -519,6 +417,8 @@ class Batch:
             if group.parent not in self.group_children:
                 self.group_children[group.parent] = []
             self.group_children[group.parent].append(group)
+
+        group._assigned_batches.add(self)
         self._draw_list_dirty = True
 
     def _update_draw_list(self):
@@ -543,13 +443,15 @@ class Batch:
             if children:
                 children.sort()
                 for child in list(children):
-                    draw_list.extend(visit(child))
+                    if child.visible:
+                        draw_list.extend(visit(child))
 
             if children or domain_map:
                 return [group.set_state] + draw_list + [group.unset_state]
             else:
                 # Remove unused group from batch
                 del self.group_map[group]
+                group._assigned_batches.remove(self)
                 if group.parent:
                     self.group_children[group.parent].remove(group)
                 try:
@@ -560,13 +462,15 @@ class Batch:
                     self.top_groups.remove(group)
                 except ValueError:
                     pass
+
                 return []
 
         self._draw_list = []
 
         self.top_groups.sort()
         for group in list(self.top_groups):
-            self._draw_list.extend(visit(group))
+            if group.visible:
+                self._draw_list.extend(visit(group))
 
         self._draw_list_dirty = False
 
@@ -598,7 +502,6 @@ class Batch:
 
     def draw(self):
         """Draw the batch."""
-        self.vao.bind()
 
         if self._draw_list_dirty:
             self._update_draw_list()
@@ -622,8 +525,6 @@ class Batch:
 
         """
 
-        self.vao.bind()
-
         # Horrendously inefficient.
         def visit(group):
             group.set_state()
@@ -640,43 +541,72 @@ class Batch:
             if children:
                 children.sort()
                 for child in children:
-                    visit(child)
+                    if child.visible:
+                        visit(child)
 
             group.unset_state()
 
         self.top_groups.sort()
         for group in self.top_groups:
-            visit(group)
+            if group.visible:
+                visit(group)
 
 
 class Group:
     """Group of common OpenGL state.
 
-    Before a vertex list is rendered, its group's OpenGL state is set.
-    This can including binding textures, or setting any other parameters.
+    Before a VertexList is rendered, its Group's OpenGL state is set.
+    This includes binding textures, shaders, or setting any other parameters.
     """
     def __init__(self, order=0, parent=None):
-        """Create a group.
+        """Create a Group.
 
         :Parameters:
             `order` : int
                 Set the order to render above or below other Groups.
             `parent` : `~pyglet.graphics.Group`
-                Group to contain this group; its state will be set
-                before this Group's state.
+                Group to contain this Group; its state will be set before this
+                Group's state.
+
+        :Ivariables:
+            `visible` : bool
+                Determines whether this Group is visible in any of the Batches
+                it is assigned to. If False, objects in this Group will not
+                be rendered.
+            `batches` : list
+                Read Only. A list of which Batches this Group is a part of.
         """
         self._order = order
         self.parent = parent
+        self._visible = True
+        self._assigned_batches = weakref.WeakSet()
 
     @property
     def order(self):
         return self._order
 
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        self._visible = value
+
+        for batch in self._assigned_batches:
+            batch.invalidate()
+
+    @property
+    def batches(self):
+        return [batch for batch in self._assigned_batches]
+
     def __lt__(self, other):
         return self._order < other.order
 
     def __eq__(self, other):
-        return self.__class__ is other.__class__ and self._order == other.order
+        return (self.__class__ is other.__class__ and
+                self._order == other.order and
+                self.parent == other.parent)
 
     def __hash__(self):
         return hash((self._order, self.parent))
@@ -717,6 +647,8 @@ class Group:
             self.parent.unset_state_recursive()
 
 
+# Example Groups.
+
 class ShaderGroup(Group):
     def __init__(self, program, order=0, parent=None):
         super().__init__(order, parent)
@@ -729,7 +661,10 @@ class ShaderGroup(Group):
         self.program.stop()
 
     def __eq__(self, other):
-        return self.__class__ is other.__class__ and self._order == other.order and self.program == other.program
+        return (self.__class__ is other.__class__ and
+                self._order == other.order and
+                self.program == other.program and
+                self.parent == other.parent)
 
     def __hash__(self):
         return hash((self._order, self.parent, self.program))
@@ -741,8 +676,6 @@ class TextureGroup(Group):
     Texture groups are equal if their textures' targets and names are equal.
     """
 
-    # Don't use this, create your own group classes that are more specific.
-    # This is just an example.
     def __init__(self, texture, order=0, parent=None):
         """Create a texture group.
 
@@ -754,7 +687,7 @@ class TextureGroup(Group):
             `parent` : `~pyglet.graphics.Group`
                 Parent group.
         """
-        super(TextureGroup, self).__init__(order, parent)
+        super().__init__(order, parent)
         self.texture = texture
 
     def set_state(self):
@@ -762,7 +695,7 @@ class TextureGroup(Group):
         glBindTexture(self.texture.target, self.texture.id)
 
     def unset_state(self):
-        glDisable(self.texture.target)
+        glBindTexture(self.texture.target, 0)
 
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.order, self.parent))
@@ -778,14 +711,14 @@ class TextureGroup(Group):
         return '%s(id=%d)' % (self.__class__.__name__, self.texture.id)
 
 
-#: The default Shaders
+# The default Shader source:
 
 _vertex_source = """#version 330 core
-    in vec4 vertices;
+    in vec3 position;
     in vec4 colors;
-    in vec2 tex_coords;
+    in vec3 tex_coords;
     out vec4 vertex_colors;
-    out vec2 texture_coords;
+    out vec3 texture_coords;
 
     uniform WindowBlock
     {
@@ -793,10 +726,9 @@ _vertex_source = """#version 330 core
         mat4 view;
     } window;  
 
-
     void main()
     {
-        gl_Position = window.projection * window.view * vertices;
+        gl_Position = window.projection * window.view * vec4(position, 1);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
@@ -805,16 +737,13 @@ _vertex_source = """#version 330 core
 
 _fragment_source = """#version 330 core
     in vec4 vertex_colors;
-    in vec2 texture_coords;
+    in vec3 texture_coords;
     out vec4 final_colors;
 
     uniform sampler2D our_texture;
 
     void main()
     {
-        final_colors = texture(our_texture, texture_coords) + vertex_colors;
+        final_colors = texture(our_texture, texture_coords.xy) + vertex_colors;
     }
 """
-
-_default_vert_shader = Shader(_vertex_source, 'vertex')
-_default_frag_shader = Shader(_fragment_source, 'fragment')

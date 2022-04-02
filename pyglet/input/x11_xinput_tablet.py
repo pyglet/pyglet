@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -113,7 +113,7 @@ class XInputTabletCursor(TabletCursor):
 def get_tablets(display=None):
     # Each cursor appears as a separate xinput device; find devices that look
     # like Wacom tablet cursors and amalgamate them into a single tablet. 
-    valid_names = ('stylus', 'cursor', 'eraser', 'wacom', 'pen', 'pad')
+    valid_names = ('stylus', 'cursor', 'eraser', 'pen', 'pad')
     cursors = []
     devices = get_devices(display)
     for device in devices:

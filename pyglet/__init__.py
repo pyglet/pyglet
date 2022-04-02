@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner
-# Copyright (c) 2008-2020 pyglet contributors
+# Copyright (c) 2008-2021 pyglet contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,18 +41,20 @@ More information is available at http://www.pyglet.org
 import os
 import sys
 
-#: The release version
-version = '2.0.dev0'
+from typing import TYPE_CHECKING
 
-if sys.version_info < (3, 5):
-    raise Exception('pyglet %s requires Python 3.5 or newer.' % version)
+#: The release version
+version = '2.0.a3'
+__version__ = version
+
+if sys.version_info < (3, 6):
+    raise Exception('pyglet %s requires Python 3.6 or newer.' % version)
 
 if 'sphinx' in sys.modules:
     setattr(sys, 'is_pyglet_doc_run', True)
 _is_pyglet_doc_run = hasattr(sys, "is_pyglet_doc_run") and sys.is_pyglet_doc_run
 
-
-# Pyglet platform treats *BSD systems as Linux
+# pyglet platform treats *BSD systems as Linux
 compat_platform = sys.platform
 if "bsd" in compat_platform:
     compat_platform = "linux-compat"
@@ -81,6 +83,7 @@ if getattr(sys, 'frozen', None):
 #:     A sequence of the names of audio modules to attempt to load, in
 #:     order of preference.  Valid driver names are:
 #:
+#:     * xaudio2, the Windows Xaudio2 audio module (Windows only)
 #:     * directsound, the Windows DirectSound audio module (Windows only)
 #:     * pulse, the PulseAudio module (Linux only)
 #:     * openal, the OpenAL audio module
@@ -131,7 +134,7 @@ if getattr(sys, 'frozen', None):
 #:     .. versionadded:: 1.2
 #:
 options = {
-    'audio': ('directsound', 'openal', 'pulse', 'silent'),
+    'audio': ('xaudio2', 'directsound', 'openal', 'pulse', 'silent'),
     'debug_font': False,
     'debug_gl': not _enable_optimisations,
     'debug_gl_trace': False,
@@ -152,6 +155,10 @@ options = {
     'xsync': True,
     'xlib_fullscreen_override_redirect': False,
     'search_local_libs': True,
+    'win32_gdi_font': False,
+    'headless': False,
+    'headless_device': 0,
+    'win32_disable_shaping': False,
 }
 
 _option_types = {
@@ -171,18 +178,22 @@ _option_types = {
     'debug_trace_flush': bool,
     'debug_win32': bool,
     'debug_x11': bool,
-    'ffmpeg_libs_win': tuple,
     'shadow_window': bool,
     'vsync': bool,
     'xsync': bool,
     'xlib_fullscreen_override_redirect': bool,
     'search_local_libs': bool,
+    'win32_gdi_font': bool,
+    'headless': bool,
+    'headless_device': int,
+    'win32_disable_shaping': bool
 }
 
 
 def _read_environment():
     """Read defaults for options from environment"""
     for key in options:
+        assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
         env = 'PYGLET_%s' % key.upper()
         try:
             value = os.environ[env]
@@ -344,30 +355,9 @@ class _ModuleProxy:
             setattr(module, name, value)
 
 
-if True:
-    app = _ModuleProxy('app')
-    canvas = _ModuleProxy('canvas')
-    clock = _ModuleProxy('clock')
-    com = _ModuleProxy('com')
-    event = _ModuleProxy('event')
-    font = _ModuleProxy('font')
-    gl = _ModuleProxy('gl')
-    graphics = _ModuleProxy('graphics')
-    image = _ModuleProxy('image')
-    input = _ModuleProxy('input')
-    lib = _ModuleProxy('lib')
-    media = _ModuleProxy('media')
-    model = _ModuleProxy('model')
-    resource = _ModuleProxy('resource')
-    sprite = _ModuleProxy('sprite')
-    shapes = _ModuleProxy('shapes')
-    text = _ModuleProxy('text')
-    window = _ModuleProxy('window')
-    matrix = _ModuleProxy('matrix')
-
-# Fool py2exe, py2app into including all top-level modules
-# (doesn't understand lazy loading)
-if False:
+# Lazily load all modules, except if performing
+# type checking or code inspection.
+if TYPE_CHECKING:
     from . import app
     from . import canvas
     from . import clock
@@ -376,9 +366,11 @@ if False:
     from . import font
     from . import gl
     from . import graphics
+    from . import gui
     from . import input
     from . import image
     from . import lib
+    from . import math
     from . import media
     from . import model
     from . import resource
@@ -386,4 +378,24 @@ if False:
     from . import shapes
     from . import text
     from . import window
-    from . import matrix
+else:
+    app = _ModuleProxy('app')
+    canvas = _ModuleProxy('canvas')
+    clock = _ModuleProxy('clock')
+    com = _ModuleProxy('com')
+    event = _ModuleProxy('event')
+    font = _ModuleProxy('font')
+    gl = _ModuleProxy('gl')
+    graphics = _ModuleProxy('graphics')
+    gui = _ModuleProxy('gui')
+    image = _ModuleProxy('image')
+    input = _ModuleProxy('input')
+    lib = _ModuleProxy('lib')
+    math = _ModuleProxy('math')
+    media = _ModuleProxy('media')
+    model = _ModuleProxy('model')
+    resource = _ModuleProxy('resource')
+    sprite = _ModuleProxy('sprite')
+    shapes = _ModuleProxy('shapes')
+    text = _ModuleProxy('text')
+    window = _ModuleProxy('window')
