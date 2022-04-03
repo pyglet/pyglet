@@ -457,6 +457,8 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     """
 
     _default_vertex_source_es = """#version 300 es
+        precision mediump float;
+        
         in vec4 position;
 
         uniform WindowBlock
@@ -472,11 +474,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     """
 
     _default_fragment_source_es = """#version 300 es
-        layout(location = 0) out vec4 color;
+        precision mediump float;
 
+        out vec4 color;
+        
         void main()
         {
-            color = (1.0, 0.0, 0.0, 1.0);
+            color = vec4(1.0, 0.0, 0.0, 1.0);
         }
     """
 
