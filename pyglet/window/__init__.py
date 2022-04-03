@@ -640,9 +640,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.activate()
 
     def _create_projection(self):
-        if self._config.opengl_api == "OPENGL":
+        if self._config.opengl_api == "gl":
             self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))        
-        elif self._config.opengl_api == "OPENGL_ES":
+        elif self._config.opengl_api == "gles":
             self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source_es, 'vertex'), shader.Shader(self._default_fragment_source_es, 'fragment'))
 
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()

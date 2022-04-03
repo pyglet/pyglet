@@ -391,9 +391,9 @@ class XlibContextARB(XlibContext13):
             attribs.extend([glxext_arb.GLX_CONTEXT_MINOR_VERSION_ARB,
                             self.config.minor_version])
 
-        if self.config.opengl_api == "OPENGL":
+        if self.config.opengl_api == "gl":
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_CORE_PROFILE_BIT_ARB])
-        elif self.config.opengl_api == "OPENGL_ES":
+        elif self.config.opengl_api == "gles":
             attribs.extend([glxext_arb.GLX_CONTEXT_PROFILE_MASK_ARB, glxext_arb.GLX_CONTEXT_ES2_PROFILE_BIT_EXT])
 
         flags = 0
