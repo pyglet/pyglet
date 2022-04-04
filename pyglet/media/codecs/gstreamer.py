@@ -42,7 +42,7 @@ import tempfile
 
 from threading import Event, Thread
 
-from ..exceptions import MediaDecodeException
+from pyglet.util import DecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 
@@ -54,7 +54,7 @@ except (ValueError, ImportError) as e:
     raise ImportError(e)
 
 
-class GStreamerDecodeException(MediaDecodeException):
+class GStreamerDecodeException(DecodeException):
     pass
 
 

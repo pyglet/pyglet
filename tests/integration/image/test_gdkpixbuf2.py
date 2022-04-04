@@ -13,7 +13,7 @@ class GdkPixBufTest(PygletTestCase):
     def test_load_image(self):
         filename = self.get_test_data_file('images', '8bpp.gif')
         with open(filename, 'rb') as f:
-            loader = gdkpixbuf2.GdkPixBufLoader(f, filename)
+            loader = gdkpixbuf2.GdkPixBufLoader(filename, f)
             pixbuf = loader.get_pixbuf()
             assert pixbuf is not None
             assert pixbuf.height == 257
@@ -30,7 +30,7 @@ class GdkPixBufTest(PygletTestCase):
         to read and parse all data."""
         filename = self.get_test_data_file('images', 'gdk_close.png')
         with open(filename, 'rb') as f:
-            loader = gdkpixbuf2.GdkPixBufLoader(f, filename)
+            loader = gdkpixbuf2.GdkPixBufLoader(filename, f)
             pixbuf = loader.get_pixbuf()
             assert pixbuf is not None
             assert pixbuf.height == 200
@@ -45,7 +45,7 @@ class GdkPixBufTest(PygletTestCase):
     def test_load_animation(self):
         filename = self.get_test_data_file('images', 'dinosaur.gif')
         with open(filename, 'rb') as f:
-            loader = gdkpixbuf2.GdkPixBufLoader(f, filename)
+            loader = gdkpixbuf2.GdkPixBufLoader(filename, f)
             gdk_anim = loader.get_animation()
             assert gdk_anim is not None
             anim = gdk_anim.to_animation()
@@ -62,5 +62,5 @@ class GdkPixBufTest(PygletTestCase):
         """Start loading a file and stop. Should clean up correctly."""
         filename = self.get_test_data_file('images', 'gdk_close.png')
         with open(filename, 'rb') as f:
-            loader = gdkpixbuf2.GdkPixBufLoader(f, filename)
+            loader = gdkpixbuf2.GdkPixBufLoader(filename, f)
             del loader

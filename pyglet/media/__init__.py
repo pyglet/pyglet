@@ -76,7 +76,6 @@ The player provides a :py:meth:`Player.delete` method that can be used to
 release resources immediately.
 """
 from .drivers import get_audio_driver
-from .exceptions import MediaDecodeException
 from .player import Player, PlayerGroup
 from .codecs import registry as _codec_registry
 from .codecs import add_default_codecs as _add_default_codecs

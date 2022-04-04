@@ -38,12 +38,12 @@
 
 import wave
 
-from ..exceptions import MediaDecodeException
+from pyglet.util import DecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 
 
-class WAVEDecodeException(MediaDecodeException):
+class WAVEDecodeException(DecodeException):
     pass
 
 
@@ -51,8 +51,7 @@ class WaveSource(StreamingSource):
     def __init__(self, filename, file=None):
         if file is None:
             file = open(filename, 'rb')
-
-        self._file = file
+            self._file = file
 
         try:
             self._wave = wave.open(file)
@@ -123,6 +122,11 @@ class WaveEncoder(MediaEncoder):
                 The file name to save as.
 
         """
+        opened_file = None
+        if file is None:
+            file = open(filename, 'wb')
+            opened_file = True
+
         source.seek(0)
         wave_writer = wave.open(file, mode='wb')
         wave_writer.setnchannels(source.audio_format.channels)
@@ -134,6 +138,9 @@ class WaveEncoder(MediaEncoder):
         while audiodata:
             wave_writer.writeframes(audiodata.data)
             audiodata = source.get_audio_data(chunksize)
+        else:
+            if opened_file:
+                file.close()
 
 
 def get_decoders():

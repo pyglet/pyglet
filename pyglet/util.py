@@ -228,6 +228,24 @@ class CodecRegistry:
             if opened_file:
                 opened_file.close()
 
+    def encode(self, media, filename, file=None, **kwargs):
+        """Attempt to encode a pyglet object to a specified format. All registered
+        encoders that advertise support for the specific file extension will be tried.
+        If no encoders are available, an EncodeException will be raised.
+        """
+
+        first_exception = None
+        for encoder in self.get_encoders(filename):
+
+            try:
+                return encoder.encode(media, filename, file, **kwargs)
+            except EncodeException as e:
+                first_exception = first_exception or e
+
+        if not first_exception:
+            raise EncodeException(f"No Encoders are available for this extension: '{filename}'")
+        raise first_exception
+
 
 class Decoder:
     def get_file_extensions(self):
