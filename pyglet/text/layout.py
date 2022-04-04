@@ -623,7 +623,7 @@ layout_fragment_source_es = """#version 300 es
     out vec4 final_colors;
 
     uniform sampler2D text;
-    uniform bool scissor = false;
+    uniform bool scissor;
     uniform vec4 scissor_area;
 
     void main()
@@ -723,7 +723,7 @@ decoration_fragment_source_es = """#version 300 es
 
     out vec4 final_colors;
 
-    uniform bool scissor = false;
+    uniform bool scissor;
     uniform vec4 scissor_area;
 
     void main()
