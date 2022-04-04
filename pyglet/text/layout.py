@@ -559,7 +559,63 @@ layout_vertex_source = """#version 330 core
     }
 """
 
+layout_vertex_source_es = """#version 300 es
+    precision mediump float;
+
+    in vec2 position;
+    in vec4 colors;
+    in vec3 tex_coords;
+    in vec2 translation;
+
+    out vec4 text_colors;
+    out vec2 texture_coords;
+    out vec4 vert_position;
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        mat4 translate_mat = mat4(1.0);
+        translate_mat[3] = vec4(translation, 1.0, 1.0);
+
+        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0.0, 1.0);
+
+        vert_position = vec4(position + translation, 0.0, 1.0);
+        text_colors = colors;
+        texture_coords = tex_coords.xy;
+    }
+"""
+
 layout_fragment_source = """#version 330 core
+    in vec4 text_colors;
+    in vec2 texture_coords;
+    in vec4 vert_position;
+
+    out vec4 final_colors;
+
+    uniform sampler2D text;
+    uniform bool scissor = false;
+    uniform vec4 scissor_area;
+
+    void main()
+    {   
+        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
+    }
+"""
+
+layout_fragment_source_es = """#version 300 es
+    precision mediump float;
+
     in vec4 text_colors;
     in vec2 texture_coords;
     in vec4 vert_position;
@@ -609,7 +665,59 @@ decoration_vertex_source = """#version 330 core
     }
 """
 
+decoration_vertex_source_es = """#version 300 es
+    precision mediump float;
+
+    in vec2 position;
+    in vec4 colors;
+    in vec2 translation;
+
+    out vec4 vert_colors;
+    out vec4 vert_position;
+
+
+    uniform WindowBlock
+    {
+        mat4 projection;
+        mat4 view;
+    } window;
+
+    void main()
+    {
+        mat4 translate_mat = mat4(1.0);
+        translate_mat[3] = vec4(translation, 1.0, 1.0);
+
+        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0.0, 1.0);
+
+        vert_position = vec4(position + translation, 0.0, 1.0);
+        vert_colors = colors;
+    }
+"""
+
 decoration_fragment_source = """#version 330 core
+    in vec4 vert_colors;
+    in vec4 vert_position;
+
+    out vec4 final_colors;
+
+    uniform bool scissor = false;
+    uniform vec4 scissor_area;
+
+    void main()
+    {   
+        final_colors = vert_colors;
+        if (scissor == true) {
+            if (vert_position.x < scissor_area[0]) discard;                     // left
+            if (vert_position.y < scissor_area[1]) discard;                     // bottom
+            if (vert_position.x > scissor_area[0] + scissor_area[2]) discard;   // right
+            if (vert_position.y > scissor_area[1] + scissor_area[3]) discard;   // top
+        }
+    }
+"""
+
+decoration_fragment_source_es = """#version 300 es
+    precision mediump float;
+
     in vec4 vert_colors;
     in vec4 vert_position;
 
@@ -635,8 +743,12 @@ def get_default_layout_shader():
     try:
         return pyglet.gl.current_context.pyglet_text_layout_shader
     except AttributeError:
-        _default_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
-        _default_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
+        if pyglet.gl.current_context.opengl_api == "gles":
+            _default_vert_shader = shader.Shader(layour_vertex_source_es, 'vertex')
+            _default_frag_shader = shader.Shader(layout_fragment_source_es, 'fragment')
+        else:
+            _default_vert_shader = shader.Shader(layout_vertex_source, 'vertex')
+            _default_frag_shader = shader.Shader(layout_fragment_source, 'fragment')
         default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_text_layout_shader = default_shader_program
         return pyglet.gl.current_context.pyglet_text_layout_shader
@@ -646,8 +758,12 @@ def get_default_decoration_shader():
     try:
         return pyglet.gl.current_context.pyglet_text_decoration_shader
     except AttributeError:
-        _default_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
-        _default_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
+        if pyglet.gl.current_context.opengl_api == "gles":
+            _default_vert_shader = shader.Shader(decoration_vertex_source_es, 'vertex')
+            _default_frag_shader = shader.Shader(decoration_fragment_source_es, 'fragment')
+        else:
+            _default_vert_shader = shader.Shader(decoration_vertex_source, 'vertex')
+            _default_frag_shader = shader.Shader(decoration_fragment_source, 'fragment')
         default_shader_program = shader.ShaderProgram(_default_vert_shader, _default_frag_shader)
         pyglet.gl.current_context.pyglet_text_decoration_shader = default_shader_program
         return pyglet.gl.current_context.pyglet_text_decoration_shader
