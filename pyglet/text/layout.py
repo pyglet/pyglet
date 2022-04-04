@@ -743,7 +743,7 @@ def get_default_layout_shader():
     try:
         return pyglet.gl.current_context.pyglet_text_layout_shader
     except AttributeError:
-        if pyglet.gl.current_context.opengl_api == "gles":
+        if pyglet.gl.current_context.config.opengl_api == "gles":
             _default_vert_shader = shader.Shader(layour_vertex_source_es, 'vertex')
             _default_frag_shader = shader.Shader(layout_fragment_source_es, 'fragment')
         else:
@@ -758,7 +758,7 @@ def get_default_decoration_shader():
     try:
         return pyglet.gl.current_context.pyglet_text_decoration_shader
     except AttributeError:
-        if pyglet.gl.current_context.opengl_api == "gles":
+        if pyglet.gl.current_context.config.opengl_api == "gles":
             _default_vert_shader = shader.Shader(decoration_vertex_source_es, 'vertex')
             _default_frag_shader = shader.Shader(decoration_fragment_source_es, 'fragment')
         else:
