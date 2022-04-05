@@ -1317,8 +1317,8 @@ class Texture(AbstractImage):
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
-        fmt = 'BGRA'
-        gl_format = GL_BGRA
+        fmt = 'RGBA'
+        gl_format = GL_RGBA
 
         fbo = c_uint()
         glGenFramebuffers(1, fbo)
