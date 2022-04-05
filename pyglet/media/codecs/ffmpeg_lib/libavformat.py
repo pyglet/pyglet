@@ -34,31 +34,50 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libavformat/avformat.h
 """
-from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
-from ctypes import c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p
-from ctypes import c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union
-from ctypes import create_string_buffer, memmove
+from ctypes import c_int, c_int64
+from ctypes import c_uint8, c_uint, c_double, c_ubyte, c_size_t, c_char, c_char_p
+from ctypes import c_void_p, POINTER, CFUNCTYPE, Structure, sizeof
 
-import pyglet
 import pyglet.lib
+from pyglet.util import debug_print
+from . import compat
 from . import libavcodec
 from . import libavutil
 
-avformat = pyglet.lib.load_library(
-    'avformat',
-    win32='avformat-58',
-    darwin='avformat.58'
-)
+_debug = debug_print('debug_media')
+
+try:
+    avformat = pyglet.lib.load_library(
+        'avformat',
+        win32='avformat-59',
+        darwin='avformat.59'
+    )
+    version = 59
+except ImportError:
+    if _debug:
+        print("Failed to load: avformat-59. Trying older version.")
+
+    avformat = pyglet.lib.load_library(
+        'avformat',
+        win32='avformat-58',
+        darwin='avformat.58'
+    )
+    version = 58
+
+compat.set_version('avformat', version)
 
 AVSEEK_FLAG_BACKWARD = 1  # ///< seek backward
 AVSEEK_FLAG_BYTE = 2  # ///< seeking based on position in bytes
 AVSEEK_FLAG_ANY = 4  # ///< seek to any frame, even non-keyframes
 AVSEEK_FLAG_FRAME = 8  # ///< seeking based on frame number
+AVSEEK_SIZE = 0x10000
+AVFMT_FLAG_CUSTOM_IO = 0x0080
 
 MAX_REORDER_DELAY = 16
 
 
-class AVPacketList(Structure): pass
+class AVPacketList(Structure):
+    pass
 
 
 class AVInputFormat(Structure):
@@ -131,13 +150,18 @@ AVCodecParameters = libavcodec.AVCodecParameters
 AVRational = libavutil.AVRational
 AVDictionary = libavutil.AVDictionary
 AVFrame = libavutil.AVFrame
+AVClass = libavutil.AVClass
+AVCodec = libavcodec.AVCodec
+
 
 
 class AVStream(Structure):
-    _fields_ = [
+    pass
+
+AVStream_Fields = [
         ('index', c_int),
         ('id', c_int),
-        ('codec', POINTER(AVCodecContext)),
+        ('codec', POINTER(AVCodecContext)),  # Deprecated. Removed in 59.
         ('priv_data', c_void_p),
         ('time_base', AVRational),
         ('start_time', c_int64),
@@ -153,47 +177,16 @@ class AVStream(Structure):
         ('nb_side_data', c_int),
         ('event_flags', c_int),
         ('r_frame_rate', AVRational),
-        ('recommended_encoder_configuration', c_char_p),
+        ('recommended_encoder_configuration', c_char_p),  # Deprecated. Removed in 59.
         ('codecpar', POINTER(AVCodecParameters)),
-        ('info', POINTER(AVStreamInfo)),
+        ('info', POINTER(AVStreamInfo)),  # Deprecated. Removed in 59.
         ('pts_wrap_bits', c_int),
-        ('first_dts', c_int64),
-        ('cur_dts', c_int64),
-        ('last_IP_pts', c_int64),
-        ('last_IP_duration', c_int),
-        ('probe_packets', c_int),
-        ('codec_info_nb_frames', c_int),
-        ('need_parsing', c_int),
-        ('parser', POINTER(AVCodecParserContext)),
-        ('last_in_packet_buffer', POINTER(AVPacketList)),
-        ('probe_data', AVProbeData),
-        ('pts_buffer', c_int64 * (MAX_REORDER_DELAY + 1)),
-        ('index_entries', POINTER(AVIndexEntry)),
-        ('nb_index_entries', c_int),
-        ('index_entries_allocated_size', c_uint),
-        ('stream_identifier', c_int),
-        ('interleaver_chunk_size', c_int64),
-        ('interleaver_chunk_duration', c_int64),
-        ('request_probe', c_int),
-        ('skip_to_keyframe', c_int),
-        ('skip_samples', c_int),
-        ('start_skip_samples', c_int64),
-        ('first_discard_sample', c_int64),
-        ('last_discard_sample', c_int64),
-        ('nb_decoded_frames', c_int),
-        ('mux_ts_offset', c_int64),
-        ('pts_wrap_reference', c_int64),
-        ('pts_wrap_behavior', c_int),
-        ('update_initial_durations_done', c_int),
-        ('pts_reorder_error', c_int64 * (MAX_REORDER_DELAY + 1)),
-        ('pts_reorder_error_count', c_uint8 * (MAX_REORDER_DELAY + 1)),
-        ('last_dts_for_order_check', c_int64),
-        ('dts_ordered', c_uint8),
-        ('dts_misordered', c_uint8),
-        ('inject_global_side_data', c_int),
-        ('display_aspect_ratio', AVRational),
-        ('internal', POINTER(AVStreamInternal))
     ]
+
+compat.add_version_changes('avformat', 58, AVStream, AVStream_Fields, removals=None)
+
+compat.add_version_changes('avformat', 59, AVStream, AVStream_Fields,
+                           removals=('codec', 'recommended_encoder_configuration', 'info'))
 
 
 class AVProgram(Structure):
@@ -215,15 +208,11 @@ class AVIOInterruptCB(Structure):
     ]
 
 
-AVClass = libavutil.AVClass
-AVCodec = libavcodec.AVCodec
-
-
 class AVFormatContext(Structure):
     pass
 
 
-AVFormatContext._fields_ = [
+AVFormatContext_Fields = [
     ('av_class', POINTER(AVClass)),
     ('iformat', POINTER(AVInputFormat)),
     ('oformat', POINTER(AVOutputFormat)),
@@ -232,7 +221,7 @@ AVFormatContext._fields_ = [
     ('ctx_flags', c_int),
     ('nb_streams', c_uint),
     ('streams', POINTER(POINTER(AVStream))),
-    ('filename', c_char * 1024),  # Deprecated
+    ('filename', c_char * 1024),  # Deprecated. Removed in 59
     ('url', c_char_p),
     ('start_time', c_int64),
     ('duration', c_int64),
@@ -279,7 +268,7 @@ AVFormatContext._fields_ = [
     ('format_probesize', c_int),
     ('codec_whitelist', c_char_p),
     ('format_whitelist', c_char_p),
-    ('internal', POINTER(AVFormatInternal)),
+    ('internal', POINTER(AVFormatInternal)),  # Deprecated. Removed in 59
     ('io_repositioned', c_int),
     ('video_codec', POINTER(AVCodec)),
     ('audio_codec', POINTER(AVCodec)),
@@ -293,7 +282,6 @@ AVFormatContext._fields_ = [
     ('output_ts_offset', c_int64),
     ('dump_separator', POINTER(c_uint8)),
     ('data_codec_id', c_int),
-    # ! one more in here?
     ('protocol_whitelist', c_char_p),
     ('io_open', CFUNCTYPE(c_int,
                           POINTER(AVFormatContext),
@@ -303,10 +291,19 @@ AVFormatContext._fields_ = [
     ('io_close', CFUNCTYPE(None,
                            POINTER(AVFormatContext), POINTER(AVIOContext))),
     ('protocol_blacklist', c_char_p),
-    ('max_streams', c_int)
+    ('max_streams', c_int),
+    ('skip_estimate_duration_from_pts', c_int),  # Added in 59.
+    ('max_probe_packets', c_int), # Added in 59.
+    ('io_close2', CFUNCTYPE(c_int, POINTER(AVFormatContext), POINTER(AVIOContext))) # Added in 59.
 ]
 
-avformat.av_register_all.restype = None
+compat.add_version_changes('avformat', 58, AVFormatContext, AVFormatContext_Fields,
+                           removals=('skip_estimate_duration_from_pts', 'max_probe_packets', 'io_close2'))
+
+compat.add_version_changes('avformat', 59, AVFormatContext, AVFormatContext_Fields,
+                           removals=('filename', 'internal'))
+
+
 avformat.av_find_input_format.restype = c_int
 avformat.av_find_input_format.argtypes = [c_int]
 avformat.avformat_open_input.restype = c_int
@@ -334,6 +331,19 @@ avformat.avformat_seek_file.argtypes = [POINTER(AVFormatContext),
 avformat.av_guess_frame_rate.restype = AVRational
 avformat.av_guess_frame_rate.argtypes = [POINTER(AVFormatContext),
                                          POINTER(AVStream), POINTER(AVFrame)]
+
+ffmpeg_read_func = CFUNCTYPE(c_int, c_void_p, POINTER(c_char), c_int)
+ffmpeg_write_func = CFUNCTYPE(c_int, c_void_p, POINTER(c_char), c_int)
+ffmpeg_seek_func = CFUNCTYPE(c_int64, c_void_p, c_int64, c_int)
+
+avformat.avio_alloc_context.restype = POINTER(AVIOContext)
+avformat.avio_alloc_context.argtypes = [c_char_p, c_int, c_int, c_void_p, ffmpeg_read_func, c_void_p, ffmpeg_seek_func]
+
+avformat.avformat_alloc_context.restype = POINTER(AVFormatContext)
+avformat.avformat_alloc_context.argtypes = []
+
+avformat.avformat_free_context.restype = c_void_p
+avformat.avformat_free_context.argtypes = [POINTER(AVFormatContext)]
 
 __all__ = [
     'avformat',
