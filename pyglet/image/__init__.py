@@ -1317,8 +1317,8 @@ class Texture(AbstractImage):
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
-        fmt = 'RGBA'
-        gl_format = GL_RGBA
+        fmt = 'BGRA'
+        gl_format = GL_BGRA
 
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
