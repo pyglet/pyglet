@@ -1320,7 +1320,7 @@ class Texture(AbstractImage):
         fmt = 'RGBA'
         gl_format = GL_RGBA
 
-        fbo = ctypes.c_int()
+        fbo = c_int()
         glGenFramebuffers(1, fbo)
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
         glFrameBufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.target, 0)
