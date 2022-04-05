@@ -156,6 +156,8 @@ document; they will be ignored by the built-in text classes.
 import re
 import sys
 
+from PIL import Image
+
 import pyglet
 
 from pyglet import graphics
