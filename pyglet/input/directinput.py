@@ -101,6 +101,9 @@ class DirectInputDevice(base.Device):
         self.id_name = device_instance.tszProductName
         self.id_product_guid = format(device_instance.guidProduct.Data1, "08x")
 
+    def __del__(self):
+        self._device.Release()
+
     def get_guid(self):
         """Generate an SDL2 style GUID from the product guid."""
         first = self.id_product_guid[6:8] + self.id_product_guid[4:6]
