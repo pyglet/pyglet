@@ -201,13 +201,15 @@ class CodecRegistry:
             except DecodeException as e:
                 if not first_exception:
                     first_exception = e
-                file.seek(0)
+                if file:
+                    file.seek(0)
 
         for decoder in self.get_decoders():
             try:
                 return decoder.decode(filename, file, **kwargs)
             except DecodeException:
-                file.seek(0)
+                if file:
+                    file.seek(0)
 
         if not first_exception:
             raise DecodeException(f"No decoders available for this file type: {filename}")

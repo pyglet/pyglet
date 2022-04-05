@@ -153,7 +153,7 @@ class Frame(object):
         return chunks
 
     def _pad_pixels(self, cel):
-        """For cels that dont fill the entire frame, pad with zeros."""
+        """For cels that don't fill the entire frame, pad with zeros."""
         fileobj = io.BytesIO(cel.pixel_data)
 
         padding = b'\x00\x00\x00\x00'
@@ -331,8 +331,8 @@ class AsepriteImageDecoder(ImageDecoder):
     def get_animation_file_extensions(self):
         return ['.ase', '.aseprite']
 
-    def decode(self, file, filename):
-        header, frames, layers, pitch = self._parse_file(file, filename)
+    def decode(self, filename, file):
+        header, frames, layers, pitch = self._parse_file(filename, file)
         pixel_data = frames[0].get_pixel_array(layers=layers)
         return ImageData(header.width, header.height, 'RGBA', pixel_data, -pitch)
 
@@ -346,7 +346,7 @@ class AsepriteImageDecoder(ImageDecoder):
         return Animation(animation_frames)
 
     @staticmethod
-    def _parse_file(file, filename):
+    def _parse_file(filename, file):
         if not file:
             file = open(filename, 'rb')
 
