@@ -106,6 +106,11 @@ class _ImageCodecRegistry(CodecRegistry):
 
 
 registry = _ImageCodecRegistry()
+add_decoders = registry.add_decoders
+add_encoders = registry.add_encoders
+get_animation_decoders = registry.get_animation_decoders
+get_decoders = registry.get_decoders
+get_encoders = registry.get_encoders
 
 
 class ImageDecodeException(DecodeException):

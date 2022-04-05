@@ -37,6 +37,10 @@ from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, Encode
 
 
 registry = CodecRegistry()
+add_decoders = registry.add_decoders
+add_encoders = registry.add_encoders
+get_decoders = registry.get_decoders
+get_encoders = registry.get_encoders
 
 
 class ModelDecodeException(DecodeException):

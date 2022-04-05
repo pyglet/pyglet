@@ -42,6 +42,10 @@ import pyglet
 _debug = pyglet.options['debug_media']
 
 registry = CodecRegistry()
+add_decoders = registry.add_decoders
+add_encoders = registry.add_encoders
+get_decoders = registry.get_decoders
+get_encoders = registry.get_encoders
 
 
 class MediaDecoder(Decoder):
