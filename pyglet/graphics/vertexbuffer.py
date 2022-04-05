@@ -243,7 +243,7 @@ class BufferObject(AbstractBuffer):
         glGetBufferParameteriv(self.target, GL_BUFFER_SIZE, current_buffer_size)
 
         glBindBuffer(self.target, self.id)
-        data = glMapBufferRange(self.target, 0, current_buffer_size, GL_MAP_READ_BIT)
+        data = glMapBufferRange(self.target, 0, current_buffer_size.value, GL_MAP_READ_BIT)
         ctypes.memmove(temp, data, min(size, self.size))
         glUnmapBuffer(self.target)
 
