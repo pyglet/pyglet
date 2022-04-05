@@ -1765,6 +1765,10 @@ class TextLayout:
 
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
+            data = owner.get_image_data()
+            image = Image.new('RGBA', (owner.width, owner.height))
+            image.putdata(data)
+            image.save('dump.png')
             if owner_accum_commit:
                 line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
             if owner_accum:
