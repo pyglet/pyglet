@@ -855,7 +855,7 @@ class ImageData(AbstractImage):
             glTexSubImage2D(target, level,
                             x, y,
                             self.width, self.height,
-                            fmt, gl_type,
+                            GL_BGRA, gl_type,
                             data)
 
         # Unset GL_UNPACK_ROW_LENGTH:
