@@ -1317,12 +1317,21 @@ class Texture(AbstractImage):
 
         # Always extract complete RGBA data.  Could check internalformat
         # to only extract used channels. XXX
-        fmt = 'BGRA'
-        gl_format = GL_BGRA
+        fmt = 'RGBA'
+        gl_format = GL_RGBA
 
-        glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        fbo = ctypes.c_int()
+        glGenFramebuffers(1, fbo)
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
+        glFrameBufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.target, 0)
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
-        glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
+        glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf) 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glDeleteFramebuffer(1, fbo.value)
+
+        #glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        #buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
+        #glGetTexImage(self.target, self.level, gl_format, GL_UNSIGNED_BYTE, buf)
 
         data = ImageData(self.width, self.height, fmt, buf)
         if self.images > 1:
