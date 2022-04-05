@@ -239,11 +239,9 @@ class BufferObject(AbstractBuffer):
     def resize(self, size):
         # Map, create a copy, then reinitialize.
         temp = (ctypes.c_byte * size)()
-        current_buffer_size = ctypes.c_int()
-        glGetBufferParameteriv(self.target, GL_BUFFER_SIZE, current_buffer_size)
 
         glBindBuffer(self.target, self.id)
-        data = glMapBufferRange(self.target, 0, current_buffer_size.value, GL_MAP_READ_BIT)
+        data = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
         ctypes.memmove(temp, data, min(size, self.size))
         glUnmapBuffer(self.target)
 
