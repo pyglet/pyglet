@@ -1329,7 +1329,7 @@ class Texture(AbstractImage):
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
         glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf) 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glDeleteFramebuffers(1, fbo.value)
+        glDeleteFramebuffers(1, fbo)
 
         #glPixelStorei(GL_PACK_ALIGNMENT, 1)
         #buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
