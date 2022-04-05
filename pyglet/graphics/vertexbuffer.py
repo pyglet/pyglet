@@ -243,14 +243,12 @@ class BufferObject(AbstractBuffer):
         self.size = size
         glBufferData(self.target, self.size, temp, self.usage)
 
-        debug_buffer_size = ctypes.c_int()
-        glGetBufferParameteriv(self.target, GL_BUFFER_SIZE, debug_buffer_size)
-        print(debug_buffer_size.value)
-
         glBindBuffer(self.target, self.id)
         data = glMapBufferRange(self.target, 0, self.size, GL_MAP_READ_BIT)
         ctypes.memmove(temp, data, self.size)
         glUnmapBuffer(self.target)
+
+        glBufferData(self.target, self.size, temp, self.usage)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, size={self.size})"
