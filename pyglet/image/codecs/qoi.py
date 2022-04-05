@@ -58,7 +58,7 @@ class QOImageDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.qoi']
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
         if not file:
             file = open(filename, 'rb')
 
@@ -78,7 +78,7 @@ class QOImageEncoder(ImageEncoder):
     def get_file_extensions(self):
         return ['.qoi']
 
-    def encode(self, image, file, filename):
+    def encode(self, image, filename, file):
         image = image.get_image_data()
 
         has_alpha = 'A' in image.format

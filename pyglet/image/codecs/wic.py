@@ -451,7 +451,7 @@ class WICDecoder(ImageDecoder):
     def get_file_extensions(self):
         return ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.ico', '.jxr', '.hdp', '.wdp']
 
-    def _load_bitmap_decoder(self, file, filename):
+    def _load_bitmap_decoder(self, filename, file):
         data = file.read()
 
         # Create a HGLOBAL with image data
@@ -536,8 +536,10 @@ class WICDecoder(ImageDecoder):
         bitmap_decoder.Release()
         stream.Release()
 
-    def decode(self, file, filename):
-        bitmap_decoder, stream = self._load_bitmap_decoder(file, filename)
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+        bitmap_decoder, stream = self._load_bitmap_decoder(filename, file)
         bitmap = self._get_bitmap_frame(bitmap_decoder, 0)
         image = self.get_image(bitmap)
         self._delete_bitmap_decoder(bitmap_decoder, stream)
@@ -582,7 +584,7 @@ class WICEncoder(ImageEncoder):
     def get_file_extensions(self):
         return [ext for ext in extension_to_container]
 
-    def encode(self, image, file, filename):
+    def encode(self, image, filename, file):
         image = image.get_image_data()
 
         stream = IWICStream()

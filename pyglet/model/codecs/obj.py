@@ -231,7 +231,7 @@ class OBJModelDecoder(ModelDecoder):
     def get_file_extensions(self):
         return ['.obj']
 
-    def decode(self, file, filename, batch, group):
+    def decode(self, filename, file, batch, group=None):
 
         if not batch:
             batch = pyglet.graphics.Batch()

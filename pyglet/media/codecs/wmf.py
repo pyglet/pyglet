@@ -37,12 +37,12 @@ import platform
 import warnings
 
 from pyglet import com, image
-from pyglet.util import debug_print
+from pyglet.util import debug_print, DecodeException
 from pyglet.libs.win32 import _kernel32 as kernel32
 from pyglet.libs.win32 import _ole32 as ole32
 from pyglet.libs.win32.constants import *
 from pyglet.libs.win32.types import *
-from pyglet.media import Source, MediaDecodeException
+from pyglet.media import Source
 from pyglet.media.codecs import AudioFormat, AudioData, VideoFormat, MediaDecoder, StaticSource
 
 _debug = debug_print('debug_media')
@@ -484,18 +484,18 @@ class WMFSource(Source):
                 self._imf_bytestream.SetCurrentPosition(0)
 
                 if wrote_length.value != data_len:
-                    raise MediaDecodeException("Could not write all of the data to the bytestream file.")
+                    raise DecodeException("Could not write all of the data to the bytestream file.")
 
             try:
                 MFCreateSourceReaderFromByteStream(self._imf_bytestream, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
-                raise MediaDecodeException(err) from None
+                raise DecodeException(err) from None
         else:
             # We can just load from filename if no file object specified..
             try:
                 MFCreateSourceReaderFromURL(filename, self._attributes, ctypes.byref(self._source_reader))
             except OSError as err:
-                raise MediaDecodeException(err) from None
+                raise DecodeException(err) from None
 
         if self.decode_audio:
             self._load_audio()
@@ -568,7 +568,7 @@ class WMFSource(Source):
                 try:
                     self._source_reader.SetCurrentMediaType(self._audio_stream_index, None, mf_mediatype)
                 except OSError as err:  # Can't decode codec.
-                    raise MediaDecodeException(err) from None
+                    raise DecodeException(err) from None
 
             # Current media type should now be properly decoded at this point.
             decoded_media_type = IMFMediaType()  # Maybe reusing older IMFMediaType will work?
@@ -623,7 +623,7 @@ class WMFSource(Source):
         try:
             self._source_reader.SetCurrentMediaType(self._video_stream_index, None, uncompressed_mt)
         except OSError as err:  # Can't decode codec.
-            raise MediaDecodeException(err) from None
+            raise DecodeException(err) from None
 
         height, width = self._get_attribute_size(uncompressed_mt, MF_MT_FRAME_SIZE)
 
@@ -875,7 +875,7 @@ class WMFDecoder(MediaDecoder):
     def get_file_extensions(self):
         return self.extensions
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         if streaming:
             return WMFSource(filename, file)
         else:

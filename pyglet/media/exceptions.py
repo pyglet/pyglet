@@ -44,11 +44,3 @@ class MediaFormatException(MediaException):
 
 class CannotSeekException(MediaException):
     pass
-
-
-class MediaDecodeException(MediaException):
-    pass
-
-
-class MediaEncodeException(MediaException):
-    pass

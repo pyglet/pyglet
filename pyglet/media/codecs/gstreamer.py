@@ -42,7 +42,7 @@ import tempfile
 
 from threading import Event, Thread
 
-from ..exceptions import MediaDecodeException
+from pyglet.util import DecodeException
 from .base import StreamingSource, AudioData, AudioFormat, StaticSource
 from . import MediaEncoder, MediaDecoder
 
@@ -54,7 +54,7 @@ except (ValueError, ImportError) as e:
     raise ImportError(e)
 
 
-class GStreamerDecodeException(MediaDecodeException):
+class GStreamerDecodeException(DecodeException):
     pass
 
 
@@ -281,7 +281,7 @@ class GStreamerDecoder(MediaDecoder):
     def get_file_extensions(self):
         return '.mp3', '.flac', '.ogg', '.m4a'
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
 
         if not any(filename.endswith(ext) for ext in self.get_file_extensions()):
             # Refuse to decode anything not specifically listed in the supported

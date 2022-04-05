@@ -22,7 +22,7 @@ Some of the features of pyglet are:
   use it for both commercial and other open-source projects with very little
   restriction.
 
-Please join our `Discord` server, or join us on the `mailing list`_!
+Please join our `Discord`_ server, or join us on the `mailing list`_!
 
 .. _Discord: https://discord.gg/QXyegWe
 .. _mailing list: http://groups.google.com/group/pyglet-users

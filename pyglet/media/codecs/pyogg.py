@@ -9,7 +9,7 @@ from ctypes import memmove, create_string_buffer, byref
 
 from pyglet.media import StreamingSource
 from pyglet.media.codecs import AudioFormat, AudioData, MediaDecoder, StaticSource
-from pyglet.util import debug_print
+from pyglet.util import debug_print, DecodeException
 
 
 _debug = debug_print('Debug PyOgg codec')
@@ -168,7 +168,7 @@ class MemoryOpusFileStream(UnclosedOpusFileStream):
         )
 
         if error.value != 0:
-            raise pyogg.PyOggError(
+            raise DecodeException(
                 "file-like object: {} couldn't be processed. Error code : {}".format(filename, error.value))
 
         self.channels = pyogg.opus.op_channel_count(self.of, -1)
@@ -195,7 +195,7 @@ class MemoryVorbisFileStream(UnclosedVorbisFileStream):
 
         error = pyogg.vorbis.libvorbisfile.ov_open_callbacks(buff, self.vf, None, 0, self.memory_object.callbacks)
         if error != 0:
-            raise pyogg.PyOggError("file couldn't be opened or doesn't exist. Error code : {}".format(error))
+            raise DecodeException("file couldn't be opened or doesn't exist. Error code : {}".format(error))
 
         info = pyogg.vorbis.ov_info(byref(self.vf), -1)
 
@@ -282,12 +282,12 @@ class MemoryFLACFileStream(UnclosedFLACFileStream):
         )
 
         if init_status:  # error
-            raise pyogg.PyOggError("An error occurred when trying to open '{}': {}".format(
+            raise DecodeException("An error occurred when trying to open '{}': {}".format(
                 path, pyogg.flac.FLAC__StreamDecoderInitStatusEnum[init_status]))
 
         metadata_status = pyogg.flac.FLAC__stream_decoder_process_until_end_of_metadata(self.decoder)
         if not metadata_status:  # error
-            raise pyogg.PyOggError("An error occured when trying to decode the metadata of {}".format(path))
+            raise DecodeException("An error occured when trying to decode the metadata of {}".format(path))
 
     def read_callback(self, decoder, buffer, size, data):
         chunk = size.contents.value
@@ -449,7 +449,7 @@ class PyOggDecoder(MediaDecoder):
     def get_file_extensions(self):
         return PyOggDecoder.exts
 
-    def decode(self, file, filename, streaming=True):
+    def decode(self, filename, file, streaming=True):
         name, ext = os.path.splitext(filename)
         if ext in PyOggDecoder.vorbis_exts:
             source = PyOggVorbisSource
@@ -458,7 +458,7 @@ class PyOggDecoder(MediaDecoder):
         elif ext in PyOggDecoder.opus_exts:
             source = PyOggOpusSource
         else:
-            raise Exception("Decoder could not find a suitable source to use with this filetype.")
+            raise DecodeException("Decoder could not find a suitable source to use with this filetype.")
 
         if streaming:
             return source(filename, file)
