@@ -1324,6 +1324,7 @@ class Texture(AbstractImage):
         glGenFramebuffers(1, fbo)
         glBindFramebuffer(GL_FRAMEBUFFER, fbo.value)
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        glCheckFramebufferStatus(GL_FRAMEBUFFER)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.target, self.level)
         buf = (GLubyte * (self.width * self.height * self.images * len(fmt)))()
         glReadPixels(0, 0, self.width, self.height, gl_format, GL_UNSIGNED_BYTE, buf) 
