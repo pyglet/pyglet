@@ -193,40 +193,25 @@ class CodecRegistry:
         Any decoders that match the file extension will be tried first. If no
         decoders match the extension, all decoders will then be tried in order.
         """
+        first_exception = None
 
-        if not file:
-            file = open(filename, 'rb')
-            opened_file = file
-        else:
-            opened_file = None
+        for decoder in self.get_decoders(filename):
+            try:
+                return decoder.decode(filename, file, **kwargs)
+            except DecodeException as e:
+                if not first_exception:
+                    first_exception = e
+                file.seek(0)
 
-        if not hasattr(file, 'seek'):
-            file = io.BytesIO(file.read())
+        for decoder in self.get_decoders():
+            try:
+                return decoder.decode(filename, file, **kwargs)
+            except DecodeException:
+                file.seek(0)
 
-        try:
-            first_exception = None
-
-            for decoder in self.get_decoders(filename):
-                try:
-                    return decoder.decode(filename, file, **kwargs)
-                except DecodeException as e:
-                    if not first_exception:
-                        first_exception = e
-                    file.seek(0)
-
-            for decoder in self.get_decoders():
-                try:
-                    return decoder.decode(filename, file, **kwargs)
-                except DecodeException:
-                    file.seek(0)
-
-            if not first_exception:
-                raise DecodeException(f"No decoders available for this file type: {filename}")
-            raise first_exception
-
-        finally:
-            if opened_file:
-                opened_file.close()
+        if not first_exception:
+            raise DecodeException(f"No decoders available for this file type: {filename}")
+        raise first_exception
 
     def encode(self, media, filename, file=None, **kwargs):
         """Attempt to encode a pyglet object to a specified format. All registered
