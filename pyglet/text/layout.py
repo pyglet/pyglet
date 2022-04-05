@@ -156,8 +156,6 @@ document; they will be ignored by the built-in text classes.
 import re
 import sys
 
-from PIL import Image
-
 import pyglet
 
 from pyglet import graphics
@@ -630,7 +628,7 @@ layout_fragment_source_es = """#version 300 es
 
     void main()
     {   
-        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
+        final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a) * vec4(0.5);
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
@@ -730,7 +728,7 @@ decoration_fragment_source_es = """#version 300 es
 
     void main()
     {   
-        final_colors = vert_colors;
+        final_colors = vert_colors * vec4(0.5);
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
             if (vert_position.y < scissor_area[1]) discard;                     // bottom
@@ -1767,10 +1765,6 @@ class TextLayout:
 
             # The owner run is finished; create GlyphBoxes for the committed
             # and pending glyphs.
-            data = owner.get_image_data()
-            image = Image.new('RGBA', (owner.width, owner.height))
-            image.putdata(data)
-            image.save('dump.png')
             if owner_accum_commit:
                 line.add_box(_GlyphBox(owner, font, owner_accum_commit, owner_accum_commit_width))
             if owner_accum:
