@@ -82,8 +82,6 @@ instance when loading the Model::
 .. versionadded:: 1.4
 """
 
-from io import BytesIO
-
 import pyglet
 
 from pyglet import gl
@@ -92,12 +90,11 @@ from pyglet.gl import current_context
 from pyglet.math import Mat4, Vec3
 from pyglet.graphics import shader
 
-from .codecs import ModelDecodeException
-from .codecs import add_encoders, add_decoders, add_default_model_codecs
-from .codecs import get_encoders, get_decoders
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
 
 
-def load(filename, file=None, decoder=None, batch=None):
+def load(filename, file=None, decoder=None, batch=None, group=None):
     """Load a 3D model from a file.
 
     :Parameters:
@@ -112,36 +109,15 @@ def load(filename, file=None, decoder=None, batch=None):
             registered for the file extension, or if decoding fails.
         `batch` : Batch or None
             An optional Batch instance to add this model to.
+        `group` : Group or None
+            An optional top level Group.
 
     :rtype: :py:mod:`~pyglet.model.Model`
     """
-
-    if not file:
-        file = open(filename, 'rb')
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode(file, filename, batch)
-        else:
-            first_exception = None
-            for decoder in get_decoders(filename):
-                try:
-                    model = decoder.decode(file, filename, batch)
-                    return model
-                except ModelDecodeException as e:
-                    if (not first_exception or
-                            first_exception.exception_priority < e.exception_priority):
-                        first_exception = e
-                    file.seek(0)
-
-            if not first_exception:
-                raise ModelDecodeException('No decoders are available for this model format.')
-            raise first_exception
-    finally:
-        file.close()
+    if decoder:
+        return decoder.decode(filename, file, batch=batch, group=group)
+    else:
+        return _codec_registry.decode(filename, file, batch=batch, group=group)
 
 
 def get_default_shader():
@@ -260,14 +236,15 @@ class Material:
                 self.texture_name == other.texture_name)
 
 
-class BaseMaterialGroup(graphics.ShaderGroup):
+class BaseMaterialGroup(graphics.Group):
     default_vert_src = None
     default_frag_src = None
     matrix = Mat4()
 
     def __init__(self, material, program, order=0, parent=None):
-        super().__init__(program, order, parent)
+        super().__init__(order, parent)
         self.material = material
+        self.program = program
 
 
 class TexturedMaterialGroup(BaseMaterialGroup):
@@ -391,4 +368,4 @@ class MaterialGroup(BaseMaterialGroup):
         self.program['model'] = self.matrix
 
 
-add_default_model_codecs()
+_add_default_codecs()

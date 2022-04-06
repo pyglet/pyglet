@@ -33,15 +33,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from pyglet.util import Codecs, Decoder, Encoder, DecodeException, EncodeException
+from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
 
 
-_codecs = Codecs()
-
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
+registry = CodecRegistry()
+add_decoders = registry.add_decoders
+add_encoders = registry.add_encoders
+get_decoders = registry.get_decoders
+get_encoders = registry.get_encoders
 
 
 class ModelDecodeException(DecodeException):
@@ -53,7 +52,7 @@ class ModelEncodeException(EncodeException):
 
 
 class ModelDecoder(Decoder):
-    def decode(self, file, filename, batch):
+    def decode(self, filename, file, batch, group):
         """Decode the given file object and return an instance of `Model`.
         Throws ModelDecodeException if there is an error.  filename
         can be a file type hint.
@@ -63,7 +62,7 @@ class ModelDecoder(Decoder):
 
 class ModelEncoder(Encoder):
 
-    def encode(self, model, file, filename):
+    def encode(self, model, filename, file):
         """Encode the given model to the given file.  filename
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
@@ -72,13 +71,13 @@ class ModelEncoder(Encoder):
         raise NotImplementedError()
 
 
-def add_default_model_codecs():
+def add_default_codecs():
     # Add all bundled codecs. These should be listed in order of
     # preference. This is called automatically by pyglet.model.
 
     try:
         from pyglet.model.codecs import obj
-        add_decoders(obj)
+        registry.add_decoders(obj)
     except ImportError:
         pass
 

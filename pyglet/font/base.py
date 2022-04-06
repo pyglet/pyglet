@@ -47,7 +47,7 @@ from pyglet import image
 
 _other_grapheme_extend = list(map(chr, [0x09be, 0x09d7, 0x0be3, 0x0b57, 0x0bbe, 0x0bd7, 0x0cc2,
                                         0x0cd5, 0x0cd6, 0x0d3e, 0x0d57, 0x0dcf, 0x0ddf, 0x200c,
-                                        0x200d, 0xff9e, 0xff9f])) # skip codepoints above U+10000
+                                        0x200d, 0xff9e, 0xff9f]))  # skip codepoints above U+10000
 _logical_order_exception = list(map(chr, list(range(0xe40, 0xe45)) + list(range(0xec0, 0xec4))))
 
 _grapheme_extend = lambda c, cc: cc in ('Me', 'Mn') or c in _other_grapheme_extend
@@ -57,7 +57,7 @@ _LF = u'\u000a'
 _control = lambda c, cc: cc in ('ZI', 'Zp', 'Cc', 'Cf') and not \
     c in list(map(chr, [0x000d, 0x000a, 0x200c, 0x200d]))
 _extend = lambda c, cc: _grapheme_extend(c, cc) or \
-    c in list(map(chr, [0xe30, 0xe32, 0xe33, 0xe45, 0xeb0, 0xeb2, 0xeb3]))
+                        c in list(map(chr, [0xe30, 0xe32, 0xe33, 0xe45, 0xeb0, 0xeb2, 0xeb3]))
 _prepend = lambda c, cc: c in _logical_order_exception
 _spacing_mark = lambda c, cc: cc == 'Mc' and c not in _other_grapheme_extend
 
@@ -72,7 +72,7 @@ def grapheme_break(left, right):
     # GB3
     if left == _CR and right == _LF:
         return False
-    
+
     left_cc = unicodedata.category(left)
 
     # GB4
@@ -98,7 +98,7 @@ def grapheme_break(left, right):
     # GB9b
     if _prepend(left, left_cc):
         return False
-    
+
     # GB10
     return True
 
@@ -148,12 +148,16 @@ class Glyph(image.TextureRegion):
         `vertices` : (int, int, int, int)
             The vertices of this glyph, with (0,0) originating at the
             left-side bearing at the baseline.
+        `colored` : bool
+            If a glyph is colored by the font renderer, such as an emoji, it may
+            be treated differently by pyglet. For example, being omitted from text color shaders.
 
     """
     baseline = 0
     lsb = 0
     advance = 0
     vertices = (0, 0, 0, 0)
+    colored = False
 
     def set_bearings(self, baseline, left_side_bearing, advance, x_offset=0, y_offset=0):
         """Set metrics for this glyph.
@@ -181,77 +185,47 @@ class Glyph(image.TextureRegion):
             left_side_bearing + self.width + x_offset,
             -baseline + self.height + y_offset)
 
-    # def draw(self):
-    #     """Debug method.
-    #
-    #     Use the higher level APIs for performance and kerning.
-    #     """
-    #     glBindTexture(GL_TEXTURE_2D, self.owner.id)
-    #     glBegin(GL_QUADS)
-    #     self.draw_quad_vertices()
-    #     glEnd()
-    #
-    # def draw_quad_vertices(self):
-    #     """Debug method.
-    #
-    #     Use the higher level APIs for performance and kerning.
-    #     """
-    #     glTexCoord3f(*self.tex_coords[:3])
-    #     glVertex2f(self.vertices[0], self.vertices[1])
-    #     glTexCoord3f(*self.tex_coords[3:6])
-    #     glVertex2f(self.vertices[2], self.vertices[1])
-    #     glTexCoord3f(*self.tex_coords[6:9])
-    #     glVertex2f(self.vertices[2], self.vertices[3])
-    #     glTexCoord3f(*self.tex_coords[9:12])
-    #     glVertex2f(self.vertices[0], self.vertices[3])
-
     def get_kerning_pair(self, right_glyph):
         """Not implemented.
         """
         return 0
 
 
-class GlyphTextureAtlas(image.Texture):
-    """A texture within which glyphs can be drawn.
-    """
+class GlyphTexture(image.Texture):
     region_class = Glyph
-    x = 0
-    y = 0
-    line_height = 0
 
-    def fit(self, image):
-        """Place `image` within this texture.
 
-        :Parameters:
-            `image` : `pyglet.image.AbstractImage`
-                Image to place within the texture.
+class GlyphTextureAtlas(image.atlas.TextureAtlas):
+    """A texture atlas containing glyphs."""
+    texture_class = GlyphTexture
 
-        :rtype: `Glyph`
-        :return: The glyph representing the image from this texture, or None
-            if the image doesn't fit.
-        """
-        if image.width > self.width or image.height > self.height:
-            return None
+    def __init__(self, width=2048, height=2048, fmt=GL_RGBA, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
+        self.texture = self.texture_class.create(width, height, GL_TEXTURE_2D, fmt, min_filter, mag_filter)
+        self.allocator = image.atlas.Allocator(width, height)
 
-        if self.x + image.width > self.width:
-            self.x = 0
-            self.y += self.line_height + 1
-            self.line_height = 0
-        if self.y + image.height > self.height:
-            return None
 
-        self.line_height = max(self.line_height, image.height)
-        region = self.get_region(
-            self.x, self.y, image.width, image.height)
-        if image.width > 0:
-            region.blit_into(image, 0, 0, 0)
-            self.x += image.width + 1
-        return region
+class GlyphTextureBin(image.atlas.TextureBin):
+    """Same as a TextureBin but allows you to specify filter of Glyphs."""
+
+    def add(self, img, fmt=GL_RGBA, min_filter=GL_LINEAR, mag_filter=GL_LINEAR, border=0):
+        for atlas in list(self.atlases):
+            try:
+                return atlas.add(img, border)
+            except image.atlas.AllocatorException:
+                # Remove atlases that are no longer useful (so that their textures
+                # can later be freed if the images inside them get collected).
+                if img.width < 64 and img.height < 64:
+                    self.atlases.remove(atlas)
+
+        atlas = GlyphTextureAtlas(self.texture_width, self.texture_height, fmt, min_filter, mag_filter)
+        self.atlases.append(atlas)
+        return atlas.add(img, border)
 
 
 class GlyphRenderer:
     """Abstract class for creating glyph images.
     """
+
     def __init__(self, font):
         pass
 
@@ -282,7 +256,10 @@ class Font:
     """
     texture_width = 512
     texture_height = 512
-    # TODO: rewrite text.layout._default_shader_program to use GL_R8 or GL_RED
+
+    optimize_fit = True
+    glyph_fit = 100
+
     texture_internalformat = GL_RGBA
     texture_min_filter = GL_LINEAR
     texture_mag_filter = GL_LINEAR
@@ -292,10 +269,10 @@ class Font:
     descent = 0
 
     glyph_renderer_class = GlyphRenderer
-    texture_class = GlyphTextureAtlas
+    texture_class = GlyphTextureBin
 
     def __init__(self):
-        self.textures = []
+        self.texture_bin = None
         self.glyphs = {}
 
     @property
@@ -346,27 +323,41 @@ class Font:
 
         :rtype: `Glyph`
         """
-        glyph = None
-        self._adapt_texture_size(image)
-        for texture in self.textures:
-            glyph = texture.fit(image)
-            if glyph:
-                break
-        if not glyph:
-            texture = self.texture_class.create(self.texture_width,
-                                                self.texture_height,
-                                                GL_TEXTURE_2D,
-                                                self.texture_internalformat,
-                                                self.texture_min_filter,
-                                                self.texture_mag_filter)
-            self.textures.insert(0, texture)
-            glyph = texture.fit(image)
+        if self.texture_bin is None:
+            if self.optimize_fit:
+                self.texture_width, self.texture_height = self._get_optimal_atlas_size(image)
+            self.texture_bin = GlyphTextureBin(self.texture_width, self.texture_height)
+
+        glyph = self.texture_bin.add(
+            image, self.texture_internalformat, self.texture_min_filter, self.texture_mag_filter, border=1)
+
         return glyph
 
-    def _adapt_texture_size(self, image):
-        if image.width > self.texture_width or image.height > self.texture_height:
-            largest_dimension = max(image.width, image.height)
-            self.texture_height = self.texture_width = largest_dimension * 4
+    def _get_optimal_atlas_size(self, image_data):
+        """Return the smallest size of atlas that can fit around 100 glyphs based on the image_data provided."""
+        # A texture glyph sheet should be able to handle all standard keyboard characters in one sheet.
+        # 26 Alpha upper, 26 lower, 10 numbers, 33 symbols, space = around 96 characters. (Glyph Fit)
+        aw, ah = self.texture_width, self.texture_height
+
+        atlas_size = None
+
+        # Just a fast check to get the smallest atlas size possible to fit.
+        i = 0
+        while not atlas_size:
+            fit = ((aw - (image_data.width + 2)) // (image_data.width + 2) + 1) * (
+                        (ah - (image_data.height + 2)) // (image_data.height + 2) + 1)
+
+            if fit >= self.glyph_fit:
+                atlas_size = (aw, ah)
+
+            if i % 2:
+                aw *= 2
+            else:
+                ah *= 2
+
+            i += 1
+
+        return atlas_size
 
     def get_glyphs(self, text):
         """Create and return a list of Glyphs for `text`.
@@ -381,7 +372,7 @@ class Font:
         :rtype: list of `Glyph`
         """
         glyph_renderer = None
-        glyphs = []         # glyphs that are committed.
+        glyphs = []  # glyphs that are committed.
         for c in get_grapheme_clusters(str(text)):
             # Get the glyph for 'c'.  Hide tabs (Windows and Linux render
             # boxes)
@@ -420,8 +411,8 @@ class Font:
         :see: `GlyphString`
         """
         glyph_renderer = None
-        glyph_buffer = []   # next glyphs to be added, as soon as a BP is found
-        glyphs = []         # glyphs that are committed.
+        glyph_buffer = []  # next glyphs to be added, as soon as a BP is found
+        glyphs = []  # glyphs that are committed.
         for c in text:
             if c == '\n':
                 glyphs += glyph_buffer
@@ -433,11 +424,11 @@ class Font:
                     glyph_renderer = self.glyph_renderer_class(self)
                 self.glyphs[c] = glyph_renderer.render(c)
             glyph = self.glyphs[c]
-            
+
             # Add to holding buffer and measure
             glyph_buffer.append(glyph)
             width -= glyph.advance
-            
+
             # If over width and have some committed glyphs, finish.
             if width <= 0 < len(glyphs):
                 break

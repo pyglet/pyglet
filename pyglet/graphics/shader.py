@@ -216,7 +216,7 @@ class Shader:
             raise GLException("The {0} shader failed to compile. "
                               "\n{1}".format(self.type, self._get_shader_log(shader_id)))
         elif _debug_gl_shaders:
-            print(f"Shader '{shader_id}' compilation log: '{self._get_shader_log(shader_id)}'")
+            print(self._get_shader_log(shader_id))
 
         self._id = shader_id
 
@@ -233,7 +233,7 @@ class Shader:
             return ("OpenGL returned the following message when compiling the {0} shader: "
                     "\n{1}".format(self.type, result_str.value.decode('utf8')))
         else:
-            return "Compiled {0} shader successfully.".format(self.type)
+            return f"{self.type.capitalize()} Shader '{shader_id}' compiled successfully."
 
     def __del__(self):
         try:
@@ -265,17 +265,15 @@ class ShaderProgram:
         """
         assert shaders, "At least one Shader object is required."
         self._id = self._link_program(shaders)
+        if _debug_gl_shaders:
+            print(self._get_program_log())
         self._context = pyglet.gl.current_context
-
         # Query if Direct State Access is available:
         self._dsa = gl_info.have_version(4, 1) or gl_info.have_extension("GL_ARB_separate_shader_objects")
 
         self._attributes = self._introspect_attributes()
         self._uniforms = self._introspect_uniforms()
         self._uniform_blocks = self._introspect_uniform_blocks()
-
-        if _debug_gl_shaders:
-            print(self._get_program_log())
 
     @property
     def id(self):
@@ -342,7 +340,6 @@ class ShaderProgram:
             raise Exception(f"A Uniform with the name `{key}` was not found.\n"
                             f"The spelling may be incorrect, or if not in use it "
                             f"may have been optimized out by the OpenGL driver.")
-
         try:
             uniform.set(value)
         except GLException:
@@ -352,8 +349,9 @@ class ShaderProgram:
         try:
             uniform = self._uniforms[item]
         except KeyError:
-            raise Exception("Uniform with the name `{0}` was not found.".format(item))
-
+            raise Exception(f"A Uniform with the name `{item}` was not found.\n"
+                            f"The spelling may be incorrect, or if not in use it "
+                            f"may have been optimized out by the OpenGL driver.")
         try:
             return uniform.get()
         except GLException:
@@ -376,7 +374,7 @@ class ShaderProgram:
 
         if _debug_gl_shaders:
             for attribute in attributes.values():
-                print(f"Found attribute: {attribute}")
+                print(f" Found attribute: {attribute}")
 
         return attributes
 
@@ -391,8 +389,8 @@ class ShaderProgram:
             uniforms[u_name] = _Uniform(program, u_name, u_type, loc, self._dsa)
 
         if _debug_gl_shaders:
-            for uniform in self._uniforms.values():
-                print(f"Found uniform: {uniform}")
+            for uniform in uniforms.values():
+                print(f" Found uniform: {uniform}")
 
         return uniforms
 
@@ -427,6 +425,10 @@ class ShaderProgram:
                 uniforms[i] = (uniform_name, gl_type, length)
 
             uniform_blocks[name] = UniformBlock(self, name, index, block_data_size.value, uniforms)
+
+            if _debug_gl_shaders:
+                for block in uniform_blocks.values():
+                    print(f" Found uniform block: {block}")
 
         return uniform_blocks
 

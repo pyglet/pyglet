@@ -38,10 +38,7 @@ import os.path
 from pyglet.image import *
 from pyglet.image.codecs import *
 
-try:
-    import Image
-except ImportError:
-    from PIL import Image
+from PIL import Image
 
 
 class PILImageDecoder(ImageDecoder):
@@ -53,12 +50,14 @@ class PILImageDecoder(ImageDecoder):
     # def get_animation_file_extensions(self):
     #     return ['.gif', '.ani']
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
+        if not file:
+            file = open(filename, 'rb')
+
         try:
             image = Image.open(file)
         except Exception as e:
-            raise ImageDecodeException(
-                'PIL cannot read %r: %s' % (filename or file, e))
+            raise ImageDecodeException('PIL cannot read %r: %s' % (filename or file, e))
 
         try:
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -73,43 +72,7 @@ class PILImageDecoder(ImageDecoder):
             raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
         width, height = image.size
 
-        # tostring is deprecated, replaced by tobytes in Pillow (PIL fork)
-        # (1.1.7) PIL still uses it
-        try:
-            image_data_fn = getattr(image, "tobytes")
-        except AttributeError:
-            image_data_fn = getattr(image, "tostring")
-        return ImageData(width, height, image.mode, image_data_fn())
-
-    # def decode_animation(self, file, filename):
-    #     try:
-    #         image = Image.open(file)
-    #     except Exception as e:
-    #         raise ImageDecodeException('PIL cannot read %r: %s' % (filename or file, e))
-    #
-    #     frames = []
-    #
-    #     for image in ImageSequence.Iterator(image):
-    #         try:
-    #             image = image.transpose(Image.FLIP_TOP_BOTTOM)
-    #         except Exception as e:
-    #             raise ImageDecodeException('PIL failed to transpose %r: %s' % (filename or file, e))
-    #
-    #         # Convert bitmap and palette images to component
-    #         if image.mode in ('1', 'P'):
-    #             image = image.convert()
-    #
-    #         if image.mode not in ('L', 'LA', 'RGB', 'RGBA'):
-    #             raise ImageDecodeException('Unsupported mode "%s"' % image.mode)
-    #
-    #         duration = None if image.info['duration'] == 0 else image.info['duration']
-    #         # Follow Firefox/Mac behaviour: use 100ms delay for any delay less than 10ms.
-    #         if duration <= 10:
-    #             duration = 100
-    #
-    #         frames.append(AnimationFrame(ImageData(*image.size, image.mode, image.tobytes()), duration / 1000))
-    #
-    #     return Animation(frames)
+        return ImageData(width, height, image.mode, image.tobytes())
 
 
 class PILImageEncoder(ImageEncoder):
@@ -118,9 +81,8 @@ class PILImageEncoder(ImageEncoder):
         return ['.bmp', '.eps', '.gif', '.jpg', '.jpeg',
                 '.pcx', '.png', '.ppm', '.tiff', '.xbm']
 
-    def encode(self, image, file, filename):
-        # File format is guessed from filename extension, otherwise defaults
-        # to PNG.
+    def encode(self, image, filename, file):
+        # File format is guessed from filename extension, otherwise defaults to PNG.
         pil_format = (filename and os.path.splitext(filename)[1][1:]) or 'png'
 
         if pil_format.lower() == 'jpg':

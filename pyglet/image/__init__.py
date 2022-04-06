@@ -141,8 +141,9 @@ from pyglet.gl import gl_info
 from pyglet.util import asbytes
 
 from .codecs import ImageEncodeException, ImageDecodeException
-from .codecs import add_default_image_codecs, add_decoders, add_encoders
-from .codecs import get_animation_decoders, get_decoders, get_encoders
+from .codecs import registry as _codec_registry
+from .codecs import add_default_codecs as _add_default_codecs
+
 from .animation import Animation, AnimationFrame
 from .buffer import *
 from . import atlas
@@ -172,36 +173,10 @@ def load(filename, file=None, decoder=None):
 
     :rtype: AbstractImage
     """
-
-    if not file:
-        file = open(filename, 'rb')
-        opened_file = file
+    if decoder:
+        return decoder.decode(filename, file)
     else:
-        opened_file = None
-
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
-    try:
-        if decoder:
-            return decoder.decode(file, filename)
-        else:
-            first_exception = None
-            for decoder in get_decoders(filename):
-                try:
-                    image = decoder.decode(file, filename)
-                    return image
-                except ImageDecodeException as e:
-                    if not first_exception or first_exception.exception_priority < e.exception_priority:
-                        first_exception = e
-                    file.seek(0)
-
-            if not first_exception:
-                raise ImageDecodeException('No image decoders are available')
-            raise first_exception
-    finally:
-        if opened_file:
-            opened_file.close()
+        return _codec_registry.decode(filename, file)
 
 
 def load_animation(filename, file=None, decoder=None):
@@ -222,26 +197,10 @@ def load_animation(filename, file=None, decoder=None):
 
     :rtype: Animation
     """
-    if not file:
-        file = open(filename, 'rb')
-    if not hasattr(file, 'seek'):
-        file = BytesIO(file.read())
-
     if decoder:
-        return decoder.decode_animation(file, filename)
+        return decoder.decode_animation(filename, file)
     else:
-        first_exception = None
-        for decoder in get_animation_decoders(filename):
-            try:
-                image = decoder.decode_animation(file, filename)
-                return image
-            except ImageDecodeException as e:
-                first_exception = first_exception or e
-                file.seek(0)
-
-        if not first_exception:
-            raise ImageDecodeException('No image decoders are available')
-        raise first_exception
+        return _codec_registry.decode_animation(filename, file)
 
 
 def create(width, height, pattern=None):
@@ -452,13 +411,12 @@ class AbstractImage:
             file = open(filename, 'wb')
 
         if encoder:
-            encoder.encode(self, file, filename)
+            encoder.encode(self, filename, file)
         else:
             first_exception = None
-            for encoder in get_encoders(filename):
+            for encoder in _codec_registry.get_encoders(filename):
                 try:
-                    encoder.encode(self, file, filename)
-                    return
+                    return encoder.encode(self, filename, file)
                 except ImageEncodeException as e:
                     first_exception = first_exception or e
                     file.seek(0)
@@ -1992,7 +1950,7 @@ class TextureGrid(TextureRegion, UniformTextureSequence):
 
 
 # Initialise default codecs
-add_default_image_codecs()
+_add_default_codecs()
 
 # Default Framebuffer classes:
 ###############################################################

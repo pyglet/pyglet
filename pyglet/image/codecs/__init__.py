@@ -52,12 +52,12 @@ Modules must also implement the two functions::
 
 import os.path
 
-from pyglet.util import Codecs, Decoder, Encoder, DecodeException, EncodeException
+from pyglet.util import CodecRegistry, Decoder, Encoder, DecodeException, EncodeException
 from pyglet import compat_platform
 
 
-class _ImageCodecs(Codecs):
-    """Subclass of Codecs that adds support for animation methods."""
+class _ImageCodecRegistry(CodecRegistry):
+    """Subclass of CodecRegistry that adds support for animation methods."""
 
     def __init__(self):
         self._decoder_animation_extensions = {}
@@ -74,25 +74,43 @@ class _ImageCodecs(Codecs):
                 self._decoder_animation_extensions[extension].append(decoder)
 
     def get_animation_decoders(self, filename=None):
-        """Get an ordered list of all animation decoders. If a `filename` is
-        provided, decoders supporting that extension will be ordered first
-        in the list.
+        """Get a list of animation decoders. If a `filename` is provided, only
+           decoders supporting that extension will be returned. An empty list
+           will be return if no encoders for that extension are available.
         """
-        decoders = []
         if filename:
             extension = os.path.splitext(filename)[1].lower()
-            decoders += self._decoder_animation_extensions.get(extension, [])
-        decoders += [e for e in self._decoders if e not in decoders]
-        return decoders
+            return self._decoder_animation_extensions.get(extension, [])
+        return self._decoders
+
+    def decode_animation(self, filename, file, **kwargs):
+        first_exception = None
+
+        for decoder in self.get_animation_decoders(filename):
+            try:
+                return decoder.decode_animation(filename, file, **kwargs)
+            except DecodeException as e:
+                if not first_exception:
+                    first_exception = e
+                file.seek(0)
+
+        for decoder in self.get_animation_decoders():   # Try ALL codecs
+            try:
+                return decoder.decode_animation(filename, file, **kwargs)
+            except DecodeException:
+                file.seek(0)
+
+        if not first_exception:
+            raise DecodeException(f"No decoders available for this file type: {filename}")
+        raise first_exception
 
 
-_codecs = _ImageCodecs()
-
-add_decoders = _codecs.add_decoders
-get_decoders = _codecs.get_decoders
-add_encoders = _codecs.add_encoders
-get_encoders = _codecs.get_encoders
-get_animation_decoders = _codecs.get_animation_decoders
+registry = _ImageCodecRegistry()
+add_decoders = registry.add_decoders
+add_encoders = registry.add_encoders
+get_animation_decoders = registry.get_animation_decoders
+get_decoders = registry.get_decoders
+get_encoders = registry.get_encoders
 
 
 class ImageDecodeException(DecodeException):
@@ -111,14 +129,14 @@ class ImageDecoder(Decoder):
         """
         return []
 
-    def decode(self, file, filename):
+    def decode(self, filename, file):
         """Decode the given file object and return an instance of `Image`.
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
         """
         raise NotImplementedError()
 
-    def decode_animation(self, file, filename):
+    def decode_animation(self, filename, file):
         """Decode the given file object and return an instance of :py:class:`~pyglet.image.Animation`.
         Throws ImageDecodeException if there is an error.  filename
         can be a file type hint.
@@ -133,7 +151,7 @@ class ImageDecoder(Decoder):
 
 class ImageEncoder(Encoder):
 
-    def encode(self, image, file, filename):
+    def encode(self, image, filename, file):
         """Encode the given image to the given file.  filename
         provides a hint to the file format desired.
         """
@@ -143,15 +161,15 @@ class ImageEncoder(Encoder):
         return "{0}{1}".format(self.__class__.__name__, self.get_file_extensions())
 
 
-def add_default_image_codecs():
+def add_default_codecs():
     # Add the codecs we know about.  These should be listed in order of
     # preference.  This is called automatically by pyglet.image.
 
     # Compressed texture in DDS format
     try:
         from pyglet.image.codecs import dds
-        add_encoders(dds)
-        add_decoders(dds)
+        registry.add_encoders(dds)
+        registry.add_decoders(dds)
     except ImportError:
         pass
 
@@ -159,8 +177,8 @@ def add_default_image_codecs():
     if compat_platform == 'darwin':
         try:
             from pyglet.image.codecs import quartz
-            add_encoders(quartz)
-            add_decoders(quartz)
+            registry.add_encoders(quartz)
+            registry.add_decoders(quartz)
         except ImportError:
             pass
 
@@ -170,8 +188,8 @@ def add_default_image_codecs():
         if WINDOWS_7_OR_GREATER:  # Supports Vista and above.
             try:
                 from pyglet.image.codecs import wic
-                add_encoders(wic)
-                add_decoders(wic)
+                registry.add_encoders(wic)
+                registry.add_decoders(wic)
             except ImportError:
                 pass
 
@@ -179,8 +197,8 @@ def add_default_image_codecs():
     if compat_platform in ('win32', 'cygwin'):
         try:
             from pyglet.image.codecs import gdiplus
-            add_encoders(gdiplus)
-            add_decoders(gdiplus)
+            registry.add_encoders(gdiplus)
+            registry.add_decoders(gdiplus)
         except ImportError:
             pass
 
@@ -188,31 +206,31 @@ def add_default_image_codecs():
     if compat_platform.startswith('linux'):
         try:
             from pyglet.image.codecs import gdkpixbuf2
-            add_encoders(gdkpixbuf2)
-            add_decoders(gdkpixbuf2)
+            registry.add_encoders(gdkpixbuf2)
+            registry.add_decoders(gdkpixbuf2)
         except ImportError:
             pass
 
     # Fallback: PIL
     try:
         from pyglet.image.codecs import pil
-        add_encoders(pil)
-        add_decoders(pil)
+        registry.add_encoders(pil)
+        registry.add_decoders(pil)
     except ImportError:
         pass
 
     # Fallback: PNG loader (slow)
     try:
         from pyglet.image.codecs import png
-        add_encoders(png)
-        add_decoders(png)
+        registry.add_encoders(png)
+        registry.add_decoders(png)
     except ImportError:
         pass
 
     # Fallback: BMP loader (slow)
     try:
         from pyglet.image.codecs import bmp
-        add_encoders(bmp)
-        add_decoders(bmp)
+        registry.add_encoders(bmp)
+        registry.add_decoders(bmp)
     except ImportError:
         pass

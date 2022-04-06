@@ -33,51 +33,50 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-"""Encoder and decoder for PNG files, using PyPNG (png.py).
+"""Encoder and decoder for the QOI image format.
 """
 
-import array
-import itertools
+from ctypes import Structure, BigEndianStructure
+from ctypes import c_uint8, c_uint32, c_char
 
 from pyglet.image import ImageData, ImageDecodeException
 from pyglet.image.codecs import ImageDecoder, ImageEncoder
 
-import pyglet.extlibs.png as pypng
+
+class Header(BigEndianStructure):
+    _pack_ = 1
+    _fields_ = (
+        ('magic', c_char * 4),      # char magic[4];       // magic bytes "qoif"
+        ('width', c_uint32),        # uint32_t width;      // image width in pixels (BE)
+        ('height', c_uint32),       # uint32_t height;     // image height in pixels (BE)
+        ('channels', c_uint8),      # uint8_t channels;    // 3 = RGB, 4 = RGBA
+        ('colorspace', c_uint8)     # uint8_t colorspace;  // 0 = sRGB with linear alpha, 1 = all channels linear
+    )
 
 
-class PNGImageDecoder(ImageDecoder):
+class QOImageDecoder(ImageDecoder):
     def get_file_extensions(self):
-        return ['.png']
+        return ['.qoi']
 
     def decode(self, filename, file):
         if not file:
             file = open(filename, 'rb')
 
-        try:
-            reader = pypng.Reader(file=file)
-            width, height, pixels, metadata = reader.asDirect()
-        except Exception as e:
-            raise ImageDecodeException('PyPNG cannot read %r: %s' % (filename or file, e))
+        header = Header()
+        file.readinto(header)
 
-        if metadata['greyscale']:
-            if metadata['alpha']:
-                fmt = 'LA'
-            else:
-                fmt = 'L'
-        else:
-            if metadata['alpha']:
-                fmt = 'RGBA'
-            else:
-                fmt = 'RGB'
-        pitch = len(fmt) * width
+        if header.magic != b'qoif':
+            raise ImageDecodeException('Invalid QOI header.')
 
-        pixels = array.array('BH'[metadata['bitdepth'] > 8], itertools.chain(*pixels))
-        return ImageData(width, height, fmt, pixels.tobytes(), -pitch)
+        # TODO: finish
+
+        # pixels = array.array('BH'[metadata['bitdepth'] > 8], itertools.chain(*pixels))
+        # return ImageData(width, height, fmt, pixels.tobytes(), -pitch)
 
 
-class PNGImageEncoder(ImageEncoder):
+class QOImageEncoder(ImageEncoder):
     def get_file_extensions(self):
-        return ['.png']
+        return ['.qoi']
 
     def encode(self, image, filename, file):
         image = image.get_image_data()
@@ -96,18 +95,12 @@ class PNGImageEncoder(ImageEncoder):
                 image.format = 'RGB'
 
         image.pitch = -(image.width * len(image.format))
-
-        writer = pypng.Writer(image.width, image.height, greyscale=greyscale, alpha=has_alpha)
-
-        data = array.array('B')
-        data.frombytes(image.get_data(image.format, image.pitch))
-
-        writer.write_array(file, data)
+        # TODO: finish
 
 
 def get_decoders():
-    return [PNGImageDecoder()]
+    return [QOImageDecoder()]
 
 
 def get_encoders():
-    return [PNGImageEncoder()]
+    return [QOImageEncoder()]

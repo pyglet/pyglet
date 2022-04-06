@@ -34,19 +34,37 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libswresample/swresample.h
 """
-from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
-from ctypes import c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p
-from ctypes import c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union
-from ctypes import create_string_buffer, memmove
+from ctypes import c_int, c_int64
+from ctypes import c_uint8
+from ctypes import c_void_p, POINTER, Structure
 
-import pyglet
 import pyglet.lib
+from pyglet.util import debug_print
+from . import compat
 
-swresample = pyglet.lib.load_library(
-    'swresample',
-    win32='swresample-3',
-    darwin='swresample.3'
-)
+_debug = debug_print('debug_media')
+
+
+try:
+    swresample = pyglet.lib.load_library(
+        'swresample',
+        win32='swresample-4',
+        darwin='swresample.4'
+    )
+    version = 4
+
+except ImportError:
+    if _debug:
+        print("Failed to load: swresample-4. Trying older version.")
+
+    swresample = pyglet.lib.load_library(
+        'swresample',
+        win32='swresample-3',
+        darwin='swresample.3'
+    )
+    version = 3
+
+compat.set_version('swresample', version)
 
 SWR_CH_MAX = 32
 

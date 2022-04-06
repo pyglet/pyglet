@@ -52,9 +52,9 @@ split_16byte = re.compile('.' * 16, flags=re.DOTALL)
 class PackedImageData(AbstractImage):
     _current_texture = None
 
-    def __init__(self, width, height, format, packed_format, data):
-        super(PackedImageData, self).__init__(width, height)
-        self.format = format
+    def __init__(self, width, height, fmt, packed_format, data):
+        super().__init__(width, height)
+        self.format = fmt
         self.packed_format = packed_format
         self.data = data
 

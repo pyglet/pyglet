@@ -231,7 +231,7 @@ class OBJModelDecoder(ModelDecoder):
     def get_file_extensions(self):
         return ['.obj']
 
-    def decode(self, file, filename, batch):
+    def decode(self, filename, file, batch, group=None):
 
         if not batch:
             batch = pyglet.graphics.Batch()
@@ -247,20 +247,20 @@ class OBJModelDecoder(ModelDecoder):
             if material.texture_name:
                 program = pyglet.model.get_default_textured_shader()
                 texture = pyglet.resource.texture(material.texture_name)
-                group = TexturedMaterialGroup(material, program, texture)
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, group,
+                matgroup = TexturedMaterialGroup(material, program, texture, parent=group)
+                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
                                                         vertices=('f', mesh.vertices),
                                                         normals=('f', mesh.normals),
                                                         tex_coords=('f', mesh.tex_coords),
                                                         colors=('f', material.diffuse * count)))
             else:
                 program = pyglet.model.get_default_shader()
-                group = MaterialGroup(material, program)
-                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, group,
+                matgroup = MaterialGroup(material, program, parent=group)
+                vertex_lists.append(program.vertex_list(count, GL_TRIANGLES, batch, matgroup,
                                                         vertices=('f', mesh.vertices),
                                                         normals=('f', mesh.normals),
                                                         colors=('f', material.diffuse * count)))
-            groups.append(group)
+            groups.append(matgroup)
 
         return Model(vertex_lists=vertex_lists, groups=groups, batch=batch)
 

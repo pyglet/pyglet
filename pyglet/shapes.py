@@ -81,7 +81,7 @@ import pyglet
 from pyglet.gl import GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
 from pyglet.gl import GL_TRIANGLES, GL_LINES, GL_BLEND
 from pyglet.gl import glBlendFunc, glEnable, glDisable
-from pyglet.graphics import shader, Batch, ShaderGroup
+from pyglet.graphics import shader, Batch, Group
 
 
 vertex_source = """#version 150 core
@@ -151,7 +151,7 @@ def _rotate(vertices, angle, x, y):
     return rotated_vertices
 
 
-class _ShapeGroup(ShaderGroup):
+class _ShapeGroup(Group):
     """Shared Shape rendering Group.
 
     The group is automatically coalesced with other shape groups
@@ -171,10 +171,13 @@ class _ShapeGroup(ShaderGroup):
             `blend_dest` : int
                 OpenGL blend destination mode; for example,
                 ``GL_ONE_MINUS_SRC_ALPHA``.
+            `program` : `~pyglet.graphics.shader.ShaderProgram`
+                The ShaderProgram to use.
             `parent` : `~pyglet.graphics.Group`
                 Optional parent group.
         """
-        super().__init__(program, parent=parent)
+        super().__init__(parent=parent)
+        self.program = program
         self.blend_src = blend_src
         self.blend_dest = blend_dest
 

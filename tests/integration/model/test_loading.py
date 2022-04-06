@@ -4,7 +4,7 @@ import os
 import pytest
 import pyglet
 
-from pyglet.model import ModelDecodeException
+from pyglet.util import DecodeException
 
 test_data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
@@ -43,7 +43,7 @@ def test_no_decoders_available():
     # This is NOT a valid model file:
     file_path = get_test_data_file('media', 'alert.wav')
 
-    with pytest.raises(ModelDecodeException) as e:
+    with pytest.raises(DecodeException) as e:
         model = pyglet.model.load(file_path)
 
 

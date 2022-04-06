@@ -34,19 +34,35 @@
 # ----------------------------------------------------------------------------
 """Wrapper for include/libavutil/avutil.h
 """
-from ctypes import c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64
-from ctypes import c_uint8, c_int8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char
-from ctypes import c_char_p, c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure
-from ctypes import Union, create_string_buffer, memmove
+from ctypes import c_char_p, c_void_p, POINTER, Structure
+from ctypes import c_int, c_int64, c_uint64
+from ctypes import c_uint8, c_int8, c_uint, c_size_t
 
-import pyglet
 import pyglet.lib
+from pyglet.util import debug_print
+from . import compat
 
-avutil = pyglet.lib.load_library(
-    'avutil',
-    win32='avutil-56',
-    darwin='avutil.56'
-)
+_debug = debug_print('debug_media')
+
+try:
+    avutil = pyglet.lib.load_library(
+        'avutil',
+        win32='avutil-57',
+        darwin='avutil.57'
+    )
+    version = 57
+except ImportError:
+    if _debug:
+        print("Failed to load: avutil-57. Trying older version.")
+
+    avutil = pyglet.lib.load_library(
+        'avutil',
+        win32='avutil-56',
+        darwin='avutil.56'
+    )
+    version = 56
+
+compat.set_version('avutil', version)
 
 AVMEDIA_TYPE_UNKNOWN = -1
 AVMEDIA_TYPE_VIDEO = 0
@@ -75,7 +91,13 @@ AV_PIX_FMT_RGB24 = 2
 AV_PIX_FMT_ARGB = 25
 AV_PIX_FMT_RGBA = 26
 
-
+AVChannelOrder = c_int
+class AVChannelLayout(Structure):
+    _fields_ = [
+        ('order', c_int),
+        ('nb_channels', c_int),
+        # .. more
+    ]
 class AVBuffer(Structure):
     _fields_ = [
         ('data', POINTER(c_uint8)),
@@ -122,64 +144,72 @@ class AVFrameSideData(Structure):
 
 
 class AVFrame(Structure):
-    _fields_ = [
-        ('data', POINTER(c_uint8) * AV_NUM_DATA_POINTERS),
-        ('linesize', c_int * AV_NUM_DATA_POINTERS),
-        ('extended_data', POINTER(POINTER(c_uint8))),
-        ('width', c_int),
-        ('height', c_int),
-        ('nb_samples', c_int),
-        ('format', c_int),
-        ('key_frame', c_int),
-        ('pict_type', c_int),
-        ('sample_aspect_ratio', AVRational),
-        ('pts', c_int64),
-        ('pkt_pts', c_int64),  # Deprecated
-        ('pkt_dts', c_int64),
-        ('coded_picture_number', c_int),
-        ('display_picture_number', c_int),
-        ('quality', c_int),
-        ('opaque', c_void_p),
-        ('error', c_uint64 * AV_NUM_DATA_POINTERS),  # Deprecated
-        ('repeat_pict', c_int),
-        ('interlaced_frame', c_int),
-        ('top_field_first', c_int),
-        ('palette_has_changed', c_int),
-        ('reordered_opaque', c_int64),
-        ('sample_rate', c_int),
-        ('channel_layout', c_uint64),
-        ('buf', POINTER(AVBufferRef) * AV_NUM_DATA_POINTERS),
-        ('extended_buf', POINTER(POINTER(AVBufferRef))),
-        ('nb_extended_buf', c_int),
-        ('side_data', POINTER(POINTER(AVFrameSideData))),
-        ('nb_side_data', c_int),
-        ('flags', c_int),
-        ('color_range', c_int),
-        ('color_primaries', c_int),
-        ('color_trc', c_int),
-        ('colorspace', c_int),
-        ('chroma_location', c_int),
-        ('best_effort_timestamp', c_int64),
-        ('pkt_pos', c_int64),
-        ('pkt_duration', c_int64),
-        # !
-        ('metadata', POINTER(AVDictionary)),
-        ('decode_error_flags', c_int),
-        ('channels', c_int),
-        ('pkt_size', c_int),
-        ('qscale_table', POINTER(c_int8)),  # Deprecated
-        ('qstride', c_int),  # Deprecated
-        ('qscale_type', c_int),  # Deprecated
-        ('qp_table_buf', POINTER(AVBufferRef)),  # Deprecated
-        ('hw_frames_ctx', POINTER(AVBufferRef)),
-        ('opaque_ref', POINTER(AVBufferRef)),
-        ('crop_top', c_size_t),  # video frames only
-        ('crop_bottom', c_size_t),  # video frames only
-        ('crop_left', c_size_t),  # video frames only
-        ('crop_right', c_size_t),  # video frames only
-        ('private_ref', POINTER(AVBufferRef)),
-    ]
+    pass
 
+AVFrame_Fields = [
+    ('data', POINTER(c_uint8) * AV_NUM_DATA_POINTERS),
+    ('linesize', c_int * AV_NUM_DATA_POINTERS),
+    ('extended_data', POINTER(POINTER(c_uint8))),
+    ('width', c_int),
+    ('height', c_int),
+    ('nb_samples', c_int),
+    ('format', c_int),
+    ('key_frame', c_int),
+    ('pict_type', c_int),
+    ('sample_aspect_ratio', AVRational),
+    ('pts', c_int64),
+    ('pkt_pts', c_int64),  # Deprecated. Removed in 57.
+    ('pkt_dts', c_int64),
+    ('time_base', AVRational),  # (5.x)
+    ('coded_picture_number', c_int),
+    ('display_picture_number', c_int),
+    ('quality', c_int),
+    ('opaque', c_void_p),
+    ('error', c_uint64 * AV_NUM_DATA_POINTERS),  # Deprecated. Removed in 57.
+    ('repeat_pict', c_int),
+    ('interlaced_frame', c_int),
+    ('top_field_first', c_int),
+    ('palette_has_changed', c_int),
+    ('reordered_opaque', c_int64),
+    ('sample_rate', c_int),
+    ('channel_layout', c_uint64),
+    ('buf', POINTER(AVBufferRef) * AV_NUM_DATA_POINTERS),
+    ('extended_buf', POINTER(POINTER(AVBufferRef))),
+    ('nb_extended_buf', c_int),
+    ('side_data', POINTER(POINTER(AVFrameSideData))),
+    ('nb_side_data', c_int),
+    ('flags', c_int),
+    ('color_range', c_int),
+    ('color_primaries', c_int),
+    ('color_trc', c_int),
+    ('colorspace', c_int),
+    ('chroma_location', c_int),
+    ('best_effort_timestamp', c_int64),
+    ('pkt_pos', c_int64),
+    ('pkt_duration', c_int64),
+    # !
+    ('metadata', POINTER(AVDictionary)),
+    ('decode_error_flags', c_int),
+    ('channels', c_int),
+    ('pkt_size', c_int),
+    ('qscale_table', POINTER(c_int8)),  # Deprecated. Removed in 57.
+    ('qstride', c_int),  # Deprecated. Removed in 57.
+    ('qscale_type', c_int),  # Deprecated. Removed in 57.
+    ('qp_table_buf', POINTER(AVBufferRef)),  # Deprecated. Removed in 57.
+    ('hw_frames_ctx', POINTER(AVBufferRef)),
+    ('opaque_ref', POINTER(AVBufferRef)),
+    ('crop_top', c_size_t),  # video frames only
+    ('crop_bottom', c_size_t),  # video frames only
+    ('crop_left', c_size_t),  # video frames only
+    ('crop_right', c_size_t),  # video frames only
+    ('private_ref', POINTER(AVBufferRef)),
+]
+
+compat.add_version_changes('avutil', 56, AVFrame, AVFrame_Fields,
+                           removals=('time_base',))
+
+compat.add_version_changes('avutil', 57, AVFrame, AVFrame_Fields,
+                           removals=('pkt_pts', 'error', 'qscale_table', 'qstride', 'qscale_type', 'qp_table_buf'))
 
 AV_NOPTS_VALUE = -0x8000000000000000
 AV_TIME_BASE = 1000000
@@ -203,8 +233,7 @@ avutil.av_get_bytes_per_sample.restype = c_int
 avutil.av_get_bytes_per_sample.argtypes = [c_int]
 avutil.av_strerror.restype = c_int
 avutil.av_strerror.argtypes = [c_int, c_char_p, c_size_t]
-avutil.av_frame_get_best_effort_timestamp.restype = c_int64
-avutil.av_frame_get_best_effort_timestamp.argtypes = [POINTER(AVFrame)]
+
 avutil.av_image_fill_arrays.restype = c_int
 avutil.av_image_fill_arrays.argtypes = [POINTER(c_uint8) * 4, c_int * 4,
                                         POINTER(c_uint8), c_int, c_int, c_int, c_int]
@@ -214,6 +243,10 @@ avutil.av_dict_set.argtypes = [POINTER(POINTER(AVDictionary)),
 avutil.av_dict_free.argtypes = [POINTER(POINTER(AVDictionary))]
 avutil.av_log_set_level.restype = c_int
 avutil.av_log_set_level.argtypes = [c_uint]
+avutil.av_malloc.restype = c_void_p
+avutil.av_malloc.argtypes = [c_int]
+avutil.av_freep.restype = c_void_p
+avutil.av_freep.argtypes = [c_void_p]
 
 __all__ = [
     'avutil',

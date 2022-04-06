@@ -36,6 +36,7 @@
 """Various utility functions used internally by pyglet
 """
 
+import io
 import os
 import sys
 
@@ -134,7 +135,7 @@ def debug_print(enabled_or_option='debug'):
     return _debug_print
 
 
-class Codecs:
+class CodecRegistry:
     """Utility class for handling adding and querying of codecs."""
 
     def __init__(self):
@@ -154,20 +155,19 @@ class Codecs:
         return self._encoders
 
     def get_decoders(self, filename=None):
-        """Get an ordered list of all decoders. If a `filename` is provided,
-        decoders supporting that extension will be ordered first in the list.
+        """Get a list of all decoders. If a `filename` is provided, only
+        decoders supporting that extension will be returned. An empty list
+        will be return if no encoders for that extension are available.
         """
-        decoders = []
         if filename:
             extension = os.path.splitext(filename)[1].lower()
-            decoders += self._decoder_extensions.get(extension, [])
-        decoders += [e for e in self._decoders if e not in decoders]
-        return decoders
+            return self._decoder_extensions.get(extension, [])
+        return self._decoders
 
     def add_decoders(self, module):
         """Add a decoder module.  The module must define `get_decoders`.  Once
         added, the appropriate decoders defined in the codec will be returned by
-        Codecs.get_decoders.
+        CodecRegistry.get_decoders.
         """
         for decoder in module.get_decoders():
             self._decoders.append(decoder)
@@ -179,7 +179,7 @@ class Codecs:
     def add_encoders(self, module):
         """Add an encoder module.  The module must define `get_encoders`.  Once
         added, the appropriate encoders defined in the codec will be returned by
-        Codecs.get_encoders.
+        CodecRegistry.get_encoders.
         """
         for encoder in module.get_encoders():
             self._encoders.append(encoder)
@@ -187,6 +187,51 @@ class Codecs:
                 if extension not in self._encoder_extensions:
                     self._encoder_extensions[extension] = []
                 self._encoder_extensions[extension].append(encoder)
+
+    def decode(self, filename, file, **kwargs):
+        """Attempt to decode a file, using the available registered decoders.
+        Any decoders that match the file extension will be tried first. If no
+        decoders match the extension, all decoders will then be tried in order.
+        """
+        first_exception = None
+
+        for decoder in self.get_decoders(filename):
+            try:
+                return decoder.decode(filename, file, **kwargs)
+            except DecodeException as e:
+                if not first_exception:
+                    first_exception = e
+                if file:
+                    file.seek(0)
+
+        for decoder in self.get_decoders():
+            try:
+                return decoder.decode(filename, file, **kwargs)
+            except DecodeException:
+                if file:
+                    file.seek(0)
+
+        if not first_exception:
+            raise DecodeException(f"No decoders available for this file type: {filename}")
+        raise first_exception
+
+    def encode(self, media, filename, file=None, **kwargs):
+        """Attempt to encode a pyglet object to a specified format. All registered
+        encoders that advertise support for the specific file extension will be tried.
+        If no encoders are available, an EncodeException will be raised.
+        """
+
+        first_exception = None
+        for encoder in self.get_encoders(filename):
+
+            try:
+                return encoder.encode(media, filename, file, **kwargs)
+            except EncodeException as e:
+                first_exception = first_exception or e
+
+        if not first_exception:
+            raise EncodeException(f"No Encoders are available for this extension: '{filename}'")
+        raise first_exception
 
 
 class Decoder:
@@ -220,7 +265,7 @@ class Encoder:
         """
         raise NotImplementedError()
 
-    def encode(self, media, file, filename):
+    def encode(self, media, filename, file):
         """Encode the given media type to the given file.  `filename`
         provides a hint to the file format desired.  options are
         encoder-specific, and unknown options should be ignored or
@@ -239,8 +284,8 @@ class Encoder:
 
 
 class DecodeException(Exception):
-    exception_priority = 10
+    __module__ = "CodecRegistry"
 
 
 class EncodeException(Exception):
-    pass
+    __module__ = "CodecRegistry"

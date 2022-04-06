@@ -147,4 +147,3 @@ def test_audio_player_time(driver, player):
 
     finally:
         audio_player.delete()
-
