@@ -36,24 +36,19 @@
 """Use ffmpeg to decode audio and video media.
 """
 
-import tempfile
-from ctypes import (c_int, c_uint16, c_int32, c_int64, c_uint32, c_uint64,
-                    c_uint8, c_uint, c_double, c_float, c_ubyte, c_size_t, c_char, c_char_p,
-                    c_void_p, addressof, byref, cast, POINTER, CFUNCTYPE, Structure, Union,
-                    create_string_buffer, memmove, pointer)
 from collections import deque
+from ctypes import (c_int, c_int32, c_uint8, c_char_p,
+                    addressof, byref, cast, POINTER, Structure, create_string_buffer, memmove)
 
 import pyglet
 import pyglet.lib
-
 from pyglet import image
 from pyglet.util import asbytes, asbytes_filename, asstr
-from ..events import MediaEvent
-from ..exceptions import MediaFormatException
-from .base import StreamingSource, VideoFormat, AudioFormat
+from . import MediaDecoder
 from .base import AudioData, SourceInfo, StaticSource
+from .base import StreamingSource, VideoFormat, AudioFormat
 from .ffmpeg_lib import *
-from . import MediaEncoder, MediaDecoder
+from ..exceptions import MediaFormatException
 
 
 class FileInfo:
