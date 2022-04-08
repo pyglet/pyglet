@@ -13,6 +13,8 @@ class TextWidget:
         self.document.set_style(0, len(self.document.text), dict(color=(0, 0, 0, 255)))
         font = self.document.get_font()
         height = font.ascent - font.descent
+        print(height, font.size, font.ascent, font.descent)
+        height = 20
 
         self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, width, height, batch=batch)
         self.layout.position = x, y
@@ -28,12 +30,12 @@ class TextWidget:
 
 class Window(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
-        super(Window, self).__init__(400, 140, caption='Text entry', *args, **kwargs)
+        super(Window, self).__init__(400, 240, caption='Text entry', *args, **kwargs)
 
         self.batch = pyglet.graphics.Batch()
         self.labels = [
             pyglet.text.Label('Name', x=10, y=100, anchor_y='bottom',
-                              color=(0, 0, 0, 255), batch=self.batch),
+                              color=(0, 0, 0, 255), batch=self.batch, multiline=True, width=30),
             pyglet.text.Label('Species', x=10, y=60, anchor_y='bottom',
                               color=(0, 0, 0, 255), batch=self.batch),
             pyglet.text.Label('Special abilities', x=10, y=20,
