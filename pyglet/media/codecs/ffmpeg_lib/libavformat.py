@@ -36,7 +36,7 @@
 """
 from ctypes import c_int, c_int64
 from ctypes import c_uint8, c_uint, c_double, c_ubyte, c_size_t, c_char, c_char_p
-from ctypes import c_void_p, POINTER, CFUNCTYPE, Structure, sizeof
+from ctypes import c_void_p, POINTER, CFUNCTYPE, Structure
 
 import pyglet.lib
 from pyglet.util import debug_print
@@ -46,25 +46,15 @@ from . import libavutil
 
 _debug = debug_print('debug_media')
 
-try:
-    avformat = pyglet.lib.load_library(
-        'avformat',
-        win32='avformat-59',
-        darwin='avformat.59'
-    )
-    version = 59
-except ImportError:
-    if _debug:
-        print("Failed to load: avformat-59. Trying older version.")
+avformat = pyglet.lib.load_library(
+    'avformat',
+    win32=('avformat-59', 'avformat-58'),
+    darwin=('avformat.59', 'avformat.58')
+)
 
-    avformat = pyglet.lib.load_library(
-        'avformat',
-        win32='avformat-58',
-        darwin='avformat.58'
-    )
-    version = 58
+avformat.avformat_version.restype = c_int
 
-compat.set_version('avformat', version)
+compat.set_version('avformat', avformat.avformat_version() >> 16)
 
 AVSEEK_FLAG_BACKWARD = 1  # ///< seek backward
 AVSEEK_FLAG_BYTE = 2  # ///< seeking based on position in bytes

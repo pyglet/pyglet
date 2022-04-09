@@ -34,9 +34,6 @@
 # ----------------------------------------------------------------------------
 
 from collections import namedtuple
-from pyglet.util import debug_print
-
-_debug = debug_print('debug_media')
 
 CustomField = namedtuple("CustomField", "fields removals")
 
@@ -60,7 +57,7 @@ _version_changes = {
     'avcodec': {},
     'avformat': {},
     'avutil': {},
-    'swresample':{},
+    'swresample': {},
     'swscale': {}
 }
 
@@ -75,8 +72,8 @@ def add_version_changes(library, version, structure, fields, removals):
 
     if structure in _version_changes[library][version]:
         raise Exception("Structure: {} from: {} has already been added for version {}.".format(structure,
-                                                                                            library,
-                                                                                            version)
+                                                                                               library,
+                                                                                               version)
                         )
 
     _version_changes[library][version][structure] = CustomField(fields, removals)
@@ -87,9 +84,6 @@ def apply_version_changes():
        Field data can vary from version to version, however assigning _fields_ automatically assigns memory.
        _fields_ can also not be re-assigned. Use a temporary list that can be manipulated before setting the
        _fields_ of the Structure."""
-
-    if _debug:
-        print("FFmpeg Loaded Versions:", versions)
 
     for library, data in _version_changes.items():
         for version in data:
@@ -102,5 +96,3 @@ def apply_version_changes():
                                     cf_data.fields.remove(field)
 
                     structure._fields_ = cf_data.fields
-
-

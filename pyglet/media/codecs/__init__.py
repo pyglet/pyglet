@@ -122,7 +122,7 @@ def have_ffmpeg():
     try:
         from . import ffmpeg_lib
         if _debug:
-            print('FFmpeg available, using to load media files.')
+            print('FFmpeg available, using to load media files. Versions: {}'.format(ffmpeg_lib.compat.versions))
         return True
 
     except (ImportError, FileNotFoundError, AttributeError):
