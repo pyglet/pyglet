@@ -832,11 +832,6 @@ class Win32Window(BaseWindow):
         else:
             return None
 
-    @Win32EventHandler(WM_WINDOWPOSCHANGED)
-    def _event_window_pos_changed(self, msg, wParam, lParam):
-        if self._exclusive_mouse:
-            self._update_clipped_cursor()
-
     @Win32EventHandler(WM_NCLBUTTONDOWN)
     def _event_ncl_button_down(self, msg, wParam, lParam):
         self._in_title_bar = True
@@ -1097,6 +1092,10 @@ class Win32Window(BaseWindow):
         if not self._fullscreen:
             self._width, self._height = w, h
         self._update_view_location(self._width, self._height)
+
+        if self._exclusive_mouse:
+            self._update_clipped_cursor()
+
         self.switch_to()
         self.dispatch_event('on_resize', self._width, self._height)
         return 0
