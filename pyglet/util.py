@@ -36,7 +36,6 @@
 """Various utility functions used internally by pyglet
 """
 
-import io
 import os
 import sys
 
@@ -141,8 +140,8 @@ class CodecRegistry:
     def __init__(self):
         self._decoders = []
         self._encoders = []
-        self._decoder_extensions = {}   # Map str -> list of matching ImageDecoders
-        self._encoder_extensions = {}   # Map str -> list of matching ImageEncoders
+        self._decoder_extensions = {}   # Map str -> list of matching Decoders
+        self._encoder_extensions = {}   # Map str -> list of matching Encoders
 
     def get_encoders(self, filename=None):
         """Get a list of all encoders. If a `filename` is provided, only

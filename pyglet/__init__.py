@@ -190,24 +190,21 @@ _option_types = {
 }
 
 
-def _read_environment():
+for key in options:
     """Read defaults for options from environment"""
-    for key in options:
-        assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
-        env = 'PYGLET_%s' % key.upper()
-        try:
-            value = os.environ[env]
-            if _option_types[key] is tuple:
-                options[key] = value.split(',')
-            elif _option_types[key] is bool:
-                options[key] = value in ('true', 'TRUE', 'True', '1')
-            elif _option_types[key] is int:
-                options[key] = int(value)
-        except KeyError:
-            pass
+    assert key in _option_types, f"Option '{key}' must have a type set in _option_types."
+    env = 'PYGLET_%s' % key.upper()
+    try:
+        value = os.environ[env]
+        if _option_types[key] is tuple:
+            options[key] = value.split(',')
+        elif _option_types[key] is bool:
+            options[key] = value in ('true', 'TRUE', 'True', '1')
+        elif _option_types[key] is int:
+            options[key] = int(value)
+    except KeyError:
+        pass
 
-
-_read_environment()
 
 if compat_platform == 'cygwin':
     # This hack pretends that the posix-like ctypes provides windows
