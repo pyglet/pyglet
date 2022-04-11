@@ -1,7 +1,7 @@
 Working with the mouse
 ======================
 
-All pyglet windows can recieve input from a 3 button mouse with a
+All pyglet windows can receive input from a 3 button mouse with a
 2 dimensional scroll wheel.  The mouse pointer is typically drawn by the
 operating system, but you can override this and request either a different
 cursor shape or provide your own image or animation.
