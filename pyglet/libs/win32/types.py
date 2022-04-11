@@ -267,6 +267,25 @@ class LOGFONT(Structure):
     ]
 
 
+class LOGFONTW(Structure):
+    _fields_ = [
+        ('lfHeight', LONG),
+        ('lfWidth', LONG),
+        ('lfEscapement', LONG),
+        ('lfOrientation', LONG),
+        ('lfWeight', LONG),
+        ('lfItalic', BYTE),
+        ('lfUnderline', BYTE),
+        ('lfStrikeOut', BYTE),
+        ('lfCharSet', BYTE),
+        ('lfOutPrecision', BYTE),
+        ('lfClipPrecision', BYTE),
+        ('lfQuality', BYTE),
+        ('lfPitchAndFamily', BYTE),
+        ('lfFaceName', (WCHAR * LF_FACESIZE))
+    ]
+
+
 class TRACKMOUSEEVENT(Structure):
     _fields_ = [
         ('cbSize', DWORD),

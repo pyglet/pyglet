@@ -153,6 +153,7 @@ but the same code using GDI+ rendered 16,600 glyphs per second.
 
 import ctypes
 from ctypes import wintypes
+from pyglet.libs.win32 import LOGFONT, LOGFONTW
 
 user32 = ctypes.windll.user32
 gdi32 = ctypes.windll.gdi32
@@ -209,62 +210,6 @@ FF_SCRIPT = 4  # handwritten
 FF_DECORATIVE = 5  # novelty
 
 
-class LOGFONT(ctypes.Structure):
-    # EnumFontFamiliesEx examines only 3 fields:
-    #  - lfCharSet
-    #  - lfFaceName  - empty string enumerates one font in each available
-    #                  typeface name, valid typeface name gets all fonts
-    #                  with that name
-    #  - lfPitchAndFamily - must be set to 0 [ ]
-    _fields_ = [
-        ('lfHeight', wintypes.LONG),
-        # value > 0  specifies the largest size of *char cell* to match
-        #            char cell = char height + internal leading
-        # value = 0  makes matched use default height for search
-        # value < 0  specifies the largest size of *char height* to match
-        ('lfWidth', wintypes.LONG),
-        # average width also in *logical units*, which are pixels in
-        # default _mapping mode_ (MM_TEXT) for device
-        ('lfEscapement', wintypes.LONG),
-        # string baseline rotation in tenths of degrees
-        ('lfOrientation', wintypes.LONG),
-        # character rotation in tenths of degrees
-        ('lfWeight', wintypes.LONG),
-        # 0 through 1000  400 is normal, 700 is bold, 0 is default
-        ('lfItalic', BYTE),
-        ('lfUnderline', BYTE),
-        ('lfStrikeOut', BYTE),
-        ('lfCharSet', BYTE),
-        # ANSI_CHARSET, BALTIC_CHARSET, ... - see *_CHARSET constants above
-        ('lfOutPrecision', BYTE),
-        # many constants how the output must match height, width, pitch etc.
-        # OUT_DEFAULT_PRECIS
-        # [ ] TODO
-        ('lfClipPrecision', BYTE),
-        # how to clip characters, no useful properties, leave default value
-        # CLIP_DEFAULT_PRECIS
-        ('lfQuality', BYTE),
-        # ANTIALIASED_QUALITY
-        # CLEARTYPE_QUALITY
-        # DEFAULT_QUALITY
-        # DRAFT_QUALITY
-        # NONANTIALIASED_QUALITY
-        # PROOF_QUALITY
-        ('lfPitchAndFamily', BYTE),
-        # DEFAULT_PITCH
-        # FIXED_PITCH      - authoritative for monospace
-        # VARIABLE_PITCH
-        #    stacked with any of
-        # FF_DECORATIVE   - novelty
-        # FF_DONTCARE     - default font
-        # FF_MODERN       - stroke width ('pen width') near constant
-        # FF_ROMAN        - proportional (variable char width) with serifs
-        # FF_SCRIPT       - handwritten
-        # FF_SWISS        - proportional without serifs
-        ('lfFaceName', TCHAR * 32)]
-    # typeface name of the font - null-terminated string
-
-
 class FONTSIGNATURE(ctypes.Structure):
     # supported code pages and Unicode subranges for the font
     # needed for NEWTEXTMETRICEX structure
@@ -302,6 +247,32 @@ class NEWTEXTMETRIC(ctypes.Structure):
         ('ntmCellHeight', wintypes.UINT),
         ('ntmAvgWidth', wintypes.UINT)]
 
+class NEWTEXTMETRICW(ctypes.Structure):
+    _fields_ = [
+        ('tmHeight', wintypes.LONG),
+        ('tmAscent', wintypes.LONG),
+        ('tmDescent', wintypes.LONG),
+        ('tmInternalLeading', wintypes.LONG),
+        ('tmExternalLeading', wintypes.LONG),
+        ('tmAveCharWidth', wintypes.LONG),
+        ('tmMaxCharWidth', wintypes.LONG),
+        ('tmWeight', wintypes.LONG),
+        ('tmOverhang', wintypes.LONG),
+        ('tmDigitizedAspectX', wintypes.LONG),
+        ('tmDigitizedAspectY', wintypes.LONG),
+        ('mFirstChar', wintypes.WCHAR),
+        ('mLastChar', wintypes.WCHAR),
+        ('mDefaultChar', wintypes.WCHAR),
+        ('mBreakChar', wintypes.WCHAR),
+        ('tmItalic', BYTE),
+        ('tmUnderlined', BYTE),
+        ('tmStruckOut', BYTE),
+        ('tmPitchAndFamily', BYTE),
+        ('tmCharSet', BYTE),
+        ('tmFlags', wintypes.DWORD),
+        ('ntmSizeEM', wintypes.UINT),
+        ('ntmCellHeight', wintypes.UINT),
+        ('ntmAvgWidth', wintypes.UINT)]
 
 class NEWTEXTMETRICEX(ctypes.Structure):
     # physical font attributes for True Type fonts
@@ -310,6 +281,10 @@ class NEWTEXTMETRICEX(ctypes.Structure):
         ('ntmTm', NEWTEXTMETRIC),
         ('ntmFontSig', FONTSIGNATURE)]
 
+class NEWTEXTMETRICEXW(ctypes.Structure):
+    _fields_ = [
+        ('ntmTm', NEWTEXTMETRICW),
+        ('ntmFontSig', FONTSIGNATURE)]
 
 # type for a function that is called by the system for
 # each font during execution of EnumFontFamiliesEx
@@ -324,6 +299,15 @@ FONTENUMPROC = ctypes.WINFUNCTYPE(
     wintypes.LPARAM
 )
 
+FONTENUMPROCW = ctypes.WINFUNCTYPE(
+    ctypes.c_int,  # return non-0 to continue enumeration, 0 to stop
+    ctypes.POINTER(LOGFONTW),
+    ctypes.POINTER(NEWTEXTMETRICEXW),
+    wintypes.DWORD,
+    wintypes.LPARAM
+)
+
+
 # When running 64 bit windows, some types are not 32 bit, so Python/ctypes guesses wrong
 gdi32.EnumFontFamiliesExA.argtypes = [
     wintypes.HDC,
@@ -333,6 +317,13 @@ gdi32.EnumFontFamiliesExA.argtypes = [
     wintypes.DWORD]
 
 
+gdi32.EnumFontFamiliesExW.argtypes = [
+    wintypes.HDC,
+    ctypes.POINTER(LOGFONTW),
+    FONTENUMPROCW,
+    wintypes.LPARAM,
+    wintypes.DWORD]
+
 def _enum_font_names(logfont, textmetricex, fonttype, param):
     """callback function to be executed during EnumFontFamiliesEx
        call for each font name. it stores names in global variable
@@ -340,7 +331,7 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
     global FONTDB
 
     lf = logfont.contents
-    name = lf.lfFaceName.decode('utf-8')
+    name = lf.lfFaceName
 
     # detect font type (vector|raster) and format (ttf)
     # [ ] use Windows constant TRUETYPE_FONTTYPE
@@ -406,7 +397,7 @@ def _enum_font_names(logfont, textmetricex, fonttype, param):
     return 1  # non-0 to continue enumeration
 
 
-enum_font_names = FONTENUMPROC(_enum_font_names)
+enum_font_names = FONTENUMPROCW(_enum_font_names)
 
 
 # --- /define
@@ -445,9 +436,9 @@ def query(charset=DEFAULT_CHARSET):
     #      - enumerate all available charsets for a single font
     #      - other params?
 
-    logfont = LOGFONT(0, 0, 0, 0, 0, 0, 0, 0, charset, 0, 0, 0, 0, b'\0')
+    logfont = LOGFONTW(0, 0, 0, 0, 0, 0, 0, 0, charset, 0, 0, 0, 0, '')
     FONTDB = []  # clear cached FONTDB for enum_font_names callback
-    res = gdi32.EnumFontFamiliesExA(
+    res = gdi32.EnumFontFamiliesExW(
         hdc,  # handle to device context
         ctypes.byref(logfont),
         enum_font_names,  # pointer to callback function
