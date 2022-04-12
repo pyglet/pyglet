@@ -98,7 +98,7 @@ vertex_source = """#version 150 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position, 0, 1);
+        gl_Position = window.projection * window.view * vec4(position, 0.0, 1.0);
         vertex_colors = colors;
     }
 """

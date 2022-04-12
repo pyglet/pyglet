@@ -728,7 +728,7 @@ _vertex_source = """#version 330 core
 
     void main()
     {
-        gl_Position = window.projection * window.view * vec4(position, 1);
+        gl_Position = window.projection * window.view * vec4(position, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;
