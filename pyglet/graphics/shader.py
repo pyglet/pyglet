@@ -303,11 +303,22 @@ class ShaderProgram:
 
     @staticmethod
     def _link_program(shaders):
-        # TODO: catch exceptions when linking Program:
         program_id = glCreateProgram()
         for shader in shaders:
             glAttachShader(program_id, shader.id)
         glLinkProgram(program_id)
+
+        # Check the link status of program
+        status = c_int()
+        glGetProgramiv(program_id, GL_LINK_STATUS, status)
+        if not status.value:
+            length = c_int()
+            glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, length)
+            log = c_buffer(length.value)
+            glGetProgramInfoLog(program_id, len(log), None, log)
+            raise ShaderException("Error linking shader program:\n{}".format(log.value.decode()))
+
+        # Shader objects no longer needed
         for shader in shaders:
             glDetachShader(program_id, shader.id)
         return program_id
