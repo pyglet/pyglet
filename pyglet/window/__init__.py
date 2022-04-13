@@ -455,7 +455,13 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             gl_Position = window.projection * window.view * position;
         }
     """
+    _default_fragment_source = """#version 150 core
+    out vec4 fragColor;
 
+    void main() {
+        fragColor = vec4(1.0);
+    }
+    """
     def __init__(self,
                  width=None,
                  height=None,
@@ -611,7 +617,10 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.activate()
 
     def _create_projection(self):
-        self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))
+        self._default_program = shader.ShaderProgram(
+            shader.Shader(self._default_vertex_source, 'vertex'),
+            shader.Shader(self._default_fragment_source, 'fragment'),
+        )
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
         self._viewport = 0, 0, *self.get_framebuffer_size()

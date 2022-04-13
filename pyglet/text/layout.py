@@ -548,12 +548,9 @@ layout_vertex_source = """#version 330 core
 
     void main()
     {
-        mat4 translate_mat = mat4(1.0);
-        translate_mat[3] = vec4(translation, 1.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(position + translation, 0.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0, 1);
-
-        vert_position = vec4(position + translation, 0, 1);
+        vert_position = vec4(position + translation, 0.0, 1.0);
         text_colors = colors;
         texture_coords = tex_coords.xy;
     }
@@ -571,7 +568,7 @@ layout_fragment_source = """#version 330 core
     uniform vec4 scissor_area;
 
     void main()
-    {   
+    {
         final_colors = vec4(text_colors.rgb, texture(text, texture_coords).a * text_colors.a);
         if (scissor == true) {
             if (vert_position.x < scissor_area[0]) discard;                     // left
@@ -590,7 +587,6 @@ decoration_vertex_source = """#version 330 core
     out vec4 vert_colors;
     out vec4 vert_position;
 
-
     uniform WindowBlock
     {
         mat4 projection;
@@ -599,12 +595,9 @@ decoration_vertex_source = """#version 330 core
 
     void main()
     {
-        mat4 translate_mat = mat4(1.0);
-        translate_mat[3] = vec4(translation, 1.0, 1.0);
+        gl_Position = window.projection * window.view * vec4(position + translation, 0.0, 1.0);
 
-        gl_Position = window.projection * window.view * translate_mat * vec4(position, 0, 1);
-
-        vert_position = vec4(position + translation, 0, 1);
+        vert_position = vec4(position + translation, 0.0, 1.0);
         vert_colors = colors;
     }
 """
