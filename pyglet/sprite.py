@@ -145,7 +145,7 @@ vertex_source = """#version 150 core
         m_rotation[1][0] = -sin(-radians(rotation));
         m_rotation[1][1] =  cos(-radians(rotation));
 
-        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 0, 1);
+        gl_Position = window.projection * window.view * m_translate * m_rotation * m_scale * vec4(position, 0.0, 1.0);
 
         vertex_colors = colors;
         texture_coords = tex_coords;

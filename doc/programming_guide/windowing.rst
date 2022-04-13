@@ -17,7 +17,7 @@ arguments, defaults will be assumed for all parameters::
 
 The default parameters used are:
 
-* The window will have a size of 640x480, and not be resizable.
+* The window will have a size of 960x540, and not be resizable.
 * A default context will be created using template config described in
   :ref:`guide_glconfig`.
 * The window caption will be the name of the executing Python script
@@ -31,8 +31,8 @@ example shows how to create and display a window in two steps::
     # ... perform some additional initialisation
     window.set_visible()
 
-Context configuration
-^^^^^^^^^^^^^^^^^^^^^
+OpenGL Context configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The context of a window cannot be changed once created.  There are several
 ways to control the context that is created:
@@ -321,7 +321,7 @@ in :ref:`quickstart`, using a subclass of :py:class:`~pyglet.window.Window`::
 
     class HelloWorldWindow(pyglet.window.Window):
         def __init__(self):
-            super(HelloWorldWindow, self).__init__()
+            super().__init__()
 
             self.label = pyglet.text.Label('Hello, world!')
 
@@ -395,7 +395,3 @@ example:
 * If you cannot afford for your application to block.  If your application run
   loop needs to quickly poll a hardware device, for example, you may want to
   avoid blocking with vsync.
-
-Note that some older video cards do not support the required extensions to
-implement vsync; this will appear as a warning on the console but is otherwise
-ignored.

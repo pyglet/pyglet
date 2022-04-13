@@ -42,8 +42,8 @@ methods are included for rotating, scaling, and transforming. The
 orthographic and perspective projection matrixes.
 
 :note: For performance, these objects' subclass the `tuple` type. They
-are therefore immutable - all operations return a new object; the
-object is not updated in-place.
+    are therefore immutable - all operations return a new object; the
+    object is not updated in-place.
 """
 
 import math as _math
@@ -797,8 +797,9 @@ class Mat4(tuple):
         """Create a rotation matrix from an angle and Vec3.
 
         :Parameters:
-            `angle` : A `float`
-            `vector` : A `Vec3`, or 3 component tuple of float or int
+            `angle` : A `float` :
+                The angle as a float.
+            `vector` : A `Vec3`, or 3 component tuple of float or int :
                 Vec3 or tuple with x, y and z translaton values
         """
         return cls().rotate(angle, vector)

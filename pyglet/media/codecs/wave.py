@@ -120,6 +120,8 @@ class WaveEncoder(MediaEncoder):
         :Parameters:
             `filename` : str
                 The file name to save as.
+            `file` : file-like object
+                A file-like object, opened with mode 'wb'.
 
         """
         opened_file = None
@@ -139,6 +141,7 @@ class WaveEncoder(MediaEncoder):
             wave_writer.writeframes(audiodata.data)
             audiodata = source.get_audio_data(chunksize)
         else:
+            wave_writer.close()
             if opened_file:
                 file.close()
 

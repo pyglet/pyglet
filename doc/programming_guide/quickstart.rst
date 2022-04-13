@@ -12,7 +12,7 @@ Hello, World
 ------------
 
 We'll begin with the requisite "Hello, World" introduction. This program will
-open a window with some text in it and wait to be closed. You can find the
+open a window with some text in it, and wait to be closed. You can find the
 entire program in the `examples/programming_guide/hello_world.py` file.
 
 Begin by importing the :mod:`pyglet` package::
@@ -21,7 +21,7 @@ Begin by importing the :mod:`pyglet` package::
 
 Create a :class:`pyglet.window.Window` by calling its default constructor.
 The  window will be visible as soon as it's created, and will have reasonable
-default  values for all its parameters::
+default values for all its parameters::
 
     window = pyglet.window.Window()
 
@@ -34,17 +34,17 @@ arguments are used to set the font, position and anchorage of the label::
                               x=window.width//2, y=window.height//2,
                               anchor_x='center', anchor_y='center')
 
-An :meth:`~pyglet.window.Window.on_draw` event is dispatched to the window
-to give it a chance to redraw its contents.  pyglet provides several ways to
-attach event handlers to objects; a simple way is to use a decorator::
+The Window dispatches an :meth:`~pyglet.window.Window.on_draw` event whenever
+it's ready to redraw its contents. pyglet provides several ways to attach event
+handlers to objects; a simple way is to use a decorator::
 
     @window.event
     def on_draw():
         window.clear()
         label.draw()
 
-Within the :meth:`~pyglet.window.Window.on_draw` handler the window is cleared
-to the default background color (black), and the label is drawn.
+Within the above :meth:`~pyglet.window.Window.on_draw` handler, the window is
+cleared to the default background color (black), and the label is drawn.
 
 Finally, call::
 
@@ -58,7 +58,7 @@ windows have been closed.
 
 If you are coming from another library, you may be used to writing your
 own event loop. This is possible to do with pyglet as well, but it is
-generally discouraged; see :ref:`programming-guide-eventloop` for details.
+generally not necessary; see :ref:`programming-guide-eventloop` for details.
 
 Image viewer
 ------------
@@ -190,8 +190,7 @@ The `examples/media_player.py` example demonstrates playback of streaming
 audio and video using pyglet.  The `examples/noisy/noisy.py` example
 demonstrates playing many short audio samples simultaneously, as in a game.
 
-.. [#mp3] MP3 and other compressed audio formats require FFmpeg to be
-          installed.
+.. [#mp3] MP3 and other compressed audio formats require FFmpeg to be installed.
           Uncompressed WAV files can be played without FFmpeg.
 
 Where to next?
@@ -211,7 +210,7 @@ You can find an example of a 2D game in the :ref:`programming-guide-game`
 section.
 
 To write advanced 3D applications or achieve optimal performance in your 2D
-applications, you'll need to work with OpenGL directly.  If you only want to
+applications, you can also work with OpenGL directly.  If you only want to
 work with OpenGL primitives, but want something slightly higher-level, have a
 look at the :ref:`guide_graphics` module.
 

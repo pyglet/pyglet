@@ -101,6 +101,9 @@ if _is_pyglet_doc_run:
         def __call__(self, *args, **kwargs):
             return LibraryMock()
 
+        def __rshift__(self, other):
+            return 0
+
 
 class LibraryLoader:
 
