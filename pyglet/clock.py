@@ -722,7 +722,7 @@ def schedule_interval_soft(func, interval, *args, **kwargs):
 def schedule_once(func, delay, *args, **kwargs):
     """Schedule ``func`` to be called once after ``delay`` seconds.
 
-    This function uses the fefault clock. ``delay`` can be a float. The
+    This function uses the default clock. ``delay`` can be a float. The
     arguments passed to ``func`` are ``dt`` (time since last function call),
     followed by any ``*args`` and ``**kwargs`` given here.
 
