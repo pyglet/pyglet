@@ -570,15 +570,18 @@ def _detect_controller_mapping(device):
     hat_controls = [control for control in device.controls if control.name in ('hat_x', 'hat_y')]
 
     for i, control in enumerate(button_controls):
-        if name := _aliases.get(control._event_code):
+        name = _aliases.get(control._event_code)
+        if name:
             mapping[name] = Relation('button', i)
 
     for i, control in enumerate(axis_controls):
-        if name := _aliases.get(control._event_code):
+        name = _aliases.get(control._event_code)
+        if name:
             mapping[name] = Relation('axis', i)
 
     for i, control in enumerate(hat_controls):
-        if name := _aliases.get(control._event_code):
+        name = _aliases.get(control._event_code)
+        if name:
             index = 1 + i << 1
             mapping[name] = Relation('hat0', index)
 
@@ -592,7 +595,8 @@ def _create_controller(device):
     else:
         return None     # Game Controllers must have a BTN_GAMEPAD
 
-    if not (mapping := get_mapping(device.get_guid())):
+    mapping = get_mapping(device.get_guid())
+    if not mapping:
         mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:
