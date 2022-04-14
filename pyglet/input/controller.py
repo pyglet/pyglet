@@ -60,10 +60,10 @@ import os
 from .controller_db import mapping_list
 
 
-env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
-if env_config:
+_env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
+if _env_config:
     # insert at the front of the list
-    mapping_list.insert(0, env_config)
+    mapping_list.insert(0, _env_config)
 
 
 class Relation:
