@@ -178,16 +178,15 @@ class Control(EventDispatcher):
         else:
             return f"{self.__class__.__name__}(raw_name={self.raw_name})"
 
-    if _is_pyglet_doc_run:
-        def on_change(self, value):
-            """The value changed.
+    def on_change(self, value):
+        """The value changed.
 
-            :Parameters:
-                `value` : float
-                    Current value of the control.
+        :Parameters:
+            `value` : float
+                Current value of the control.
 
-            :event:
-            """
+        :event:
+        """
 
 
 Control.register_event_type('on_change')
@@ -770,11 +769,10 @@ class Controller(EventDispatcher):
                         add_axis(self._hat_y_control, "dpup")
                     elif relation.index == 2:     # 2 == RIGHT
                         add_axis(self._hat_x_control, "dpright")
-                    # TODO: figure out a more elegent way to handle direction pairs
-                    # elif relation.index == 4:     # 4 == DOWN
-                    #     add_axis(self._hat_y_control, "dpdown")
-                    # elif relation.index == 8:     # 8 == LEFT
-                    #     add_axis(self._hat_x_control, "dpleft")
+                    elif relation.index == 4:     # 4 == DOWN
+                        add_axis(self._hat_y_control, "dpdown")
+                    elif relation.index == 8:     # 8 == LEFT
+                        add_axis(self._hat_x_control, "dpleft")
 
     def open(self, window=None, exclusive=False):
         """Open the controller.  See `Device.open`. """

@@ -66,7 +66,7 @@ if env_config:
     mapping_list.insert(0, env_config)
 
 
-class _Relation:
+class Relation:
     __slots__ = 'control_type', 'index', 'inverted'
 
     def __init__(self, control_type, index, inverted=False):
@@ -120,11 +120,11 @@ def _parse_mapping(mapping_string):
 
         # All relations will be one of (Button, Axis, or Hat).
         if relation_string.startswith("b"):  # Button
-            relations[key] = _Relation("button", int(relation_string[1:]), inverted)
+            relations[key] = Relation("button", int(relation_string[1:]), inverted)
         elif relation_string.startswith("a"):  # Axis
-            relations[key] = _Relation("axis", int(relation_string[1:]), inverted)
+            relations[key] = Relation("axis", int(relation_string[1:]), inverted)
         elif relation_string.startswith("h0"):  # Hat
-            relations[key] = _Relation("hat0", int(relation_string.split(".")[1]), inverted)
+            relations[key] = Relation("hat0", int(relation_string.split(".")[1]), inverted)
 
     return relations
 
