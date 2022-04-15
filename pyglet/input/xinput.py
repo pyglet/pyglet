@@ -215,18 +215,18 @@ class XInputManager:
         self._thread = threading.Thread(target=self._check_state, daemon=True)
         self._thread.start()
 
-        # TODO: update the available IDs based on actual available devices
-        self._available_ids = [3, 2, 1, 0]
+        self._available_idx = []
         self._open_devices = set()
+        self._devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
 
     def create_device(self):
-        if not self._available_ids:
-            # TODO: some better exception, etc.
-            raise Exception('No available devices')
         with self._dev_lock:
-            index = self._available_ids.pop()
-            device = XInputDevice(index, self)
-        return device
+            try:
+                index = self._available_idx.pop(0)
+                device = self._devices[index]
+                return device
+            except IndexError:
+                raise IndexError('No available devices')
 
     def open(self, device):
         with self._dev_lock:
@@ -236,19 +236,21 @@ class XInputManager:
         with self._dev_lock:
             if device in self._open_devices:
                 self._open_devices.remove(device)
-        self._available_ids.append(device.index)
 
     def _check_state(self):
         while not self._exit.is_set():
             self._dev_lock.acquire()
-            for controller in self._open_devices:
 
+            for i in range(XUSER_MAX_COUNT):
+                controller = self._devices[i]
                 controller.current_state = XINPUT_STATE()
 
-                result = XInputGetState(controller.index, byref(controller.current_state))
+                result = XInputGetState(i, byref(controller.current_state))
                 if result == ERROR_DEVICE_NOT_CONNECTED:
                     if controller.connected:
                         print(f"Controller #{controller} was disconnected.")
+                        if i in self._available_idx:
+                            self._available_idx.remove(i)
                         controller.connected = False
                         continue
 
@@ -260,8 +262,10 @@ class XInputManager:
 
                         # Just testing
                         capabilities = XINPUT_CAPABILITIES_EX()
-                        result = XInputGetCapabilitiesEx(1, controller.index, 0, byref(capabilities))
+                        result = XInputGetCapabilitiesEx(1, i, 0, byref(capabilities))
                         print(capabilities.vendorId, capabilities.revisionId, capabilities.productId)
+
+                    # TODO: skip not-open devices
 
                     for button, name in controller_api_to_pyglet.items():
                         controller.controls[name].value = controller.current_state.Gamepad.wButtons & button
@@ -274,7 +278,7 @@ class XInputManager:
                     controller.controls['righty'].value = controller.current_state.Gamepad.sThumbRY
 
             self._dev_lock.release()
-            time.sleep(0.0016)
+            time.sleep(0.016)
 
 
 class XInputDevice(Device):
@@ -299,17 +303,17 @@ class XInputDevice(Device):
             'leftstick': Button('leftstick'),
             'rightstick': Button('rightstick'),
 
-            'leftx': AbsoluteAxis('leftx', -32768, 32768),
-            'lefty': AbsoluteAxis('lefty', -32768, 32768),
-            'rightx': AbsoluteAxis('rightx', -32768, 32768),
-            'righty': AbsoluteAxis('righty', -32768, 32768),
-            'lefttrigger': AbsoluteAxis('lefttrigger', -32768, 32768),
-            'righttrigger': AbsoluteAxis('righttrigger', -32768, 32768),
+            'leftx': AbsoluteAxis('x', -32768, 32768),
+            'lefty': AbsoluteAxis('y', -32768, 32768),
+            'rightx': AbsoluteAxis('rx', -32768, 32768),
+            'righty': AbsoluteAxis('ry', -32768, 32768),
+            'lefttrigger': AbsoluteAxis('z', -32768, 32768),
+            'righttrigger': AbsoluteAxis('rz', -32768, 32768),
 
-            'dpup': bool,
-            'dpdown': bool,
-            'dpleft': bool,
-            'dpright': bool
+            'dpup': Button('dpup'),
+            'dpdown': Button('dpdown'),
+            'dpleft': Button('dpleft'),
+            'dpright': Button('dpright')
         }
 
     def open(self, window=None, exclusive=False):
