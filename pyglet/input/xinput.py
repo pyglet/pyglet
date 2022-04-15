@@ -1,11 +1,12 @@
 import time
 import ctypes
+import weakref
 import threading
 
 import pyglet
 
 from pyglet.libs.win32.types import *
-from base import Device, Button, AbsoluteAxis
+from pyglet.input.base import Device, Button, AbsoluteAxis
 
 
 lib = pyglet.lib.load_library('xinput1_4')
@@ -209,10 +210,10 @@ controller_api_to_pyglet = {
 class XInputManager:
 
     def __init__(self):
-        self._thread = threading.Thread(target=self._check_state, daemon=True)
-        self._thread.start()
         self._exit = threading.Event()
         self._dev_lock = threading.Lock()
+        self._thread = threading.Thread(target=self._check_state, daemon=True)
+        self._thread.start()
 
         # TODO: update the available IDs based on actual available devices
         self._available_ids = [3, 2, 1, 0]
@@ -240,8 +241,6 @@ class XInputManager:
     def _check_state(self):
         while not self._exit.is_set():
             self._dev_lock.acquire()
-            time.sleep(0.0016)
-
             for controller in self._open_devices:
 
                 controller.current_state = XINPUT_STATE()
@@ -252,8 +251,6 @@ class XInputManager:
                         print(f"Controller #{controller} was disconnected.")
                         controller.connected = False
                         continue
-
-                    time.sleep(0.5)
 
                 elif result == ERROR_SUCCESS:
                     # No errors.
@@ -274,77 +271,57 @@ class XInputManager:
 
                         if current_state_buttons != last_state_buttons:
                             difference = current_state_buttons ^ last_state_buttons
-                            for button, property in controller_api_to_pyglet.items():
+                            for button, name in controller_api_to_pyglet.items():
                                 # Check all flags for button changes/
                                 # Factor in XINPUT_GAMEPAD_TRIGGER_THRESHOLD?
                                 if difference & button:
-                                    if difference & button & current_state_buttons:
-                                        controller.dispatch_event('on_button_press', controller, property)
-                                    else:
-                                        controller.dispatch_event('on_button_release', controller, property)
 
-                        if controller.current_state.Gamepad.bLeftTrigger != controller.last_state.Gamepad.bLeftTrigger:
-                            # Take threshhold/deadzone into account somehow?
-                            normalized_value = controller.current_state.Gamepad.bLeftTrigger
-                            controller.dispatch_event('on_trigger_motion', controller, "lefttrigger", normalized_value)
+                                    controller.controls[name].value = difference
+                                    # if difference & button & current_state_buttons:
+                                    #     controller.dispatch_event('on_button_press', controller, name)
+                                    # else:
+                                    #     controller.dispatch_event('on_button_release', controller, name)
 
-                        if controller.current_state.Gamepad.bRightTrigger != controller.last_state.Gamepad.bRightTrigger:
-                            # Take threshhold/deadzone into account somehow?
-                            normalized_value = controller.current_state.Gamepad.bRightTrigger
-                            controller.dispatch_event('on_trigger_motion', controller, "righttrigger", normalized_value)
+                        controller.controls['lefttrigger'].value = controller.current_state.Gamepad.bLeftTrigger
+                        controller.controls['righttrigger'].value = controller.current_state.Gamepad.bRightTrigger
+                        controller.controls['leftx'].value = controller.current_state.Gamepad.sThumbLX
+                        controller.controls['lefty'].value = controller.current_state.Gamepad.sThumbLY
+                        controller.controls['rightx'].value = controller.current_state.Gamepad.sThumbRX
+                        controller.controls['righty'].value = controller.current_state.Gamepad.sThumbRY
 
-                        last_thumb_lx = controller.last_state.Gamepad.sThumbLX
-                        last_thumb_ly = controller.last_state.Gamepad.sThumbLY
-                        current_thumb_lx = controller.current_state.Gamepad.sThumbLX
-                        current_thumb_ly = controller.current_state.Gamepad.sThumbLX
-                        if last_thumb_lx != current_thumb_lx or last_thumb_ly != current_thumb_ly:
-                            # Factor in XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE?
-                            controller.dispatch_event('on_stick_motion', controller, "leftstick", current_thumb_lx,
-                                                      current_thumb_ly)
-
-                        last_thumb_rx = controller.last_state.Gamepad.sThumbRX
-                        last_thumb_ry = controller.last_state.Gamepad.sThumbRY
-                        current_thumb_rx = controller.current_state.Gamepad.sThumbRX
-                        current_thumb_ry = controller.current_state.Gamepad.sThumbRX
-                        if last_thumb_rx != current_thumb_rx or last_thumb_ry != current_thumb_ry:
-                            # Factor in XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE?
-                            controller.dispatch_event('on_stick_motion', controller, "rightstick", current_thumb_rx,
-                                                      current_thumb_ry)
-
-                controller.last_state = controller.current_state
-
-                self._dev_lock.release()
+            self._dev_lock.release()
+            time.sleep(0.0016)
 
 
 class XInputDevice(Device):
 
     def __init__(self, index, manager, display=None):
         super().__init__(display, f'XInput Controller {index}')
-        self._manager = manager
+        self._manager = weakref.proxy(manager)
         self.index = index
         self.last_state = None
         self.current_state = None
         self.connected = False
 
         self.controls = {
-            'a': bool,
-            'b': bool,
-            'x': bool,
-            'y': bool,
-            'back': bool,
-            'start': bool,
-            'guide': bool,
-            'leftshoulder': bool,
-            'rightshoulder': bool,
-            'leftstick': bool,
-            'rightstick': bool,
+            'a': Button('a'),
+            'b': Button('b'),
+            'x': Button('x'),
+            'y': Button('y'),
+            'back': Button('back'),
+            'start': Button('start'),
+            # 'guide': Button('guide'),    # Captured by the OS on Windows?
+            'leftshoulder': Button('leftshoulder'),
+            'rightshoulder': Button('rightshoulder'),
+            'leftstick': Button('leftstick'),
+            'rightstick': Button('rightstick'),
 
-            'leftx': bool,
-            'lefty': bool,
-            'rightx': bool,
-            'righty': bool,
-            'lefttrigger': bool,
-            'righttrigger': bool,
+            'leftx': AbsoluteAxis('leftx', -32768, 32768),
+            'lefty': AbsoluteAxis('lefty', -32768, 32768),
+            'rightx': AbsoluteAxis('rightx', -32768, 32768),
+            'righty': AbsoluteAxis('righty', -32768, 32768),
+            'lefttrigger': AbsoluteAxis('lefttrigger', -32768, 32768),
+            'righttrigger': AbsoluteAxis('righttrigger', -32768, 32768),
 
             'dpup': bool,
             'dpdown': bool,
