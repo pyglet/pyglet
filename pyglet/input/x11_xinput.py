@@ -116,7 +116,7 @@ class XInputDevice(DeviceResponder, Device):
                 for i in range(num_axes):
                     axis = axes[i]
                     if mode == xi.Absolute:
-                        self.axes.append(AbsoluteAxis('axis%d' % i, min=axis.min_value, max=axis.max_value))
+                        self.axes.append(AbsoluteAxis('axis%d' % i, axis.min_value, axis.max_value))
                     elif mode == xi.Relative:
                         self.axes.append(RelativeAxis('axis%d' % i))
 

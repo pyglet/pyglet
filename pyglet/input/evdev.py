@@ -49,7 +49,7 @@ from pyglet.app.xlib import XlibSelectDevice
 from .base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
 from .base import DeviceOpenException
 from .evdev_constants import *
-from .controller import get_mapping
+from .controller import get_mapping, Relation
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -473,17 +473,15 @@ class FFController(Controller):
         self._fileno = self.device.fileno()
         # Create Force Feedback effects & events when opened:
         # https://www.kernel.org/doc/html/latest/input/ff.html
-        self._weak_effect = self._create_effect()
+        self._weak_effect = FFEvent(FF_RUMBLE, -1)
+        EVIOCSFF(self._fileno, self._weak_effect)
         self._play_weak_event = InputEvent(Timeval(), EV_FF, self._weak_effect.id, 1)
         self._stop_weak_event = InputEvent(Timeval(), EV_FF, self._weak_effect.id, 0)
-        self._strong_effect = self._create_effect()
+
+        self._strong_effect = FFEvent(FF_RUMBLE, -1)
+        EVIOCSFF(self._fileno, self._strong_effect)
         self._play_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 1)
         self._stop_strong_event = InputEvent(Timeval(), EV_FF, self._strong_effect.id, 0)
-
-    def _create_effect(self):
-        event = FFEvent(FF_RUMBLE, -1)
-        EVIOCSFF(self._fileno, event)
-        return event
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
         effect = self._weak_effect
@@ -549,20 +547,57 @@ def get_joysticks(display=None):
             if joystick is not None]
 
 
-def _create_controller(device):
-    # Look for something with an ABS X and ABS Y axis, and BTN_GAMEPAD
-    have_button = False
+def _detect_controller_mapping(device):
+    # detect Controller mapping from the Linux gamepad specification:
+    # https://www.kernel.org/doc/html/v4.13/input/gamepad.html
+    mapping = dict(guid=device.get_guid(), name=device.name)
 
-    device.controls.sort(key=lambda ctrl: ctrl._event_code)
+    _aliases = {BTN_MODE: 'guide', BTN_SELECT: 'back', BTN_START: 'start',
+                BTN_SOUTH: 'a', BTN_EAST: 'b', BTN_WEST: 'x', BTN_NORTH: 'y',
+                BTN_TL: 'leftshoulder', BTN_TR: 'rightshoulder',
+                BTN_TL2: 'lefttrigger', BTN_TR2: 'righttrigger',
+                BTN_THUMBL: 'leftstick', BTN_THUMBR: 'rightstick',
+                BTN_DPAD_UP: 'dpup', BTN_DPAD_DOWN: 'dpdown',
+                BTN_DPAD_LEFT: 'dpleft', BTN_DPAD_RIGHT: 'dpright',
+
+                ABS_HAT0X: 'dpleft',  # 'dpright',
+                ABS_HAT0Y: 'dpup',    # 'dpdown',
+                ABS_Z: 'lefttrigger', ABS_RZ: 'righttrigger',
+                ABS_X: 'leftx', ABS_Y: 'lefty', ABS_RX: 'rightx', ABS_RY: 'righty'}
+
+    button_controls = [control for control in device.controls if isinstance(control, Button)]
+    axis_controls = [control for control in device.controls if isinstance(control, AbsoluteAxis)]
+    hat_controls = [control for control in device.controls if control.name in ('hat_x', 'hat_y')]
+
+    for i, control in enumerate(button_controls):
+        name = _aliases.get(control._event_code)
+        if name:
+            mapping[name] = Relation('button', i)
+
+    for i, control in enumerate(axis_controls):
+        name = _aliases.get(control._event_code)
+        if name:
+            mapping[name] = Relation('axis', i)
+
+    for i, control in enumerate(hat_controls):
+        name = _aliases.get(control._event_code)
+        if name:
+            index = 1 + i << 1
+            mapping[name] = Relation('hat0', index)
+
+    return mapping
+
+
+def _create_controller(device):
     for control in device.controls:
         if control._event_type == EV_KEY and control._event_code == BTN_GAMEPAD:
-            have_button = True
+            break
+    else:
+        return None     # Game Controllers must have a BTN_GAMEPAD
 
     mapping = get_mapping(device.get_guid())
-    # TODO: detect via device types, and use default mapping.
-
-    if have_button is False or mapping is None:
-        return
+    if not mapping:
+        mapping = _detect_controller_mapping(device)
 
     if FF_RUMBLE in device.ff_types:
         return FFController(device, mapping)

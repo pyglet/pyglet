@@ -60,13 +60,13 @@ import os
 from .controller_db import mapping_list
 
 
-env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
-if env_config:
+_env_config = os.environ.get('SDL_GAMECONTROLLERCONFIG')
+if _env_config:
     # insert at the front of the list
-    mapping_list.insert(0, env_config)
+    mapping_list.insert(0, _env_config)
 
 
-class _Relation:
+class Relation:
     __slots__ = 'control_type', 'index', 'inverted'
 
     def __init__(self, control_type, index, inverted=False):
@@ -78,26 +78,6 @@ class _Relation:
         return f"Relation(type={self.control_type}, index={self.index}, inverted={self.inverted})"
 
 
-def _map_pair(raw_relation):
-    inverted = False
-    relation_string = raw_relation.split(":")[1]
-    if "+" in relation_string:
-        relation_string = relation_string.strip('+')
-        inverted = False
-    elif "-" in relation_string:
-        relation_string = relation_string.strip('-')
-        inverted = True
-    if "~" in relation_string:
-        relation_string = relation_string.strip('~')
-        inverted = True
-    if relation_string.startswith("b"):     # Button
-        return _Relation("button", int(relation_string[1:]), inverted)
-    elif relation_string.startswith("a"):   # Axis
-        return _Relation("axis", int(relation_string[1:]), inverted)
-    elif relation_string.startswith("h0"):  # Hat
-        return _Relation("hat0", int(relation_string.split(".")[1]), inverted)
-
-
 def _parse_mapping(mapping_string):
     """Parse a SDL2 style GameController mapping string.
 
@@ -107,60 +87,44 @@ def _parse_mapping(mapping_string):
 
     :rtype: A dict containing axis/button mapping relations.
     """
-    relations = dict(guid=None, name=None, guide=None, a=None, b=None,
-                     x=None, y=None, leftshoulder=None, leftstick=None,
-                     rightshoulder=None, rightstick=None, back=None,
-                     start=None, dpup=None, dpdown=None, dpleft=None,
-                     dpright=None, lefttrigger=None, righttrigger=None,
-                     leftx=None, lefty=None, rightx=None, righty=None)
+
+    valid_keys = ['guide', 'back', 'start', 'a', 'b', 'x', 'y',
+                  'leftshoulder', 'leftstick', 'rightshoulder', 'rightstick',
+                  'dpup', 'dpdown', 'dpleft', 'dpright',
+                  'lefttrigger', 'righttrigger', 'leftx', 'lefty', 'rightx', 'righty']
 
     split_mapping = mapping_string.strip().split(",")
+    relations = dict(guid=split_mapping[0], name=split_mapping[1])
 
-    relations["guid"] = split_mapping[0]
-    relations["name"] = split_mapping[1]
-    for item in split_mapping:
-        if item.startswith("guide:"):
-            relations["guide"] = _map_pair(item)
-        elif item.startswith("a:"):
-            relations["a"] = _map_pair(item)
-        elif item.startswith("b:"):
-            relations["b"] = _map_pair(item)
-        elif item.startswith("x:"):
-            relations["x"] = _map_pair(item)
-        elif item.startswith("y:"):
-            relations["y"] = _map_pair(item)
-        elif item.startswith("leftshoulder:"):
-            relations["leftshoulder"] = _map_pair(item)
-        elif item.startswith("leftstick:"):
-            relations["leftstick"] = _map_pair(item)
-        elif item.startswith("rightshoulder:"):
-            relations["rightshoulder"] = _map_pair(item)
-        elif item.startswith("rightstick:"):
-            relations["rightstick"] = _map_pair(item)
-        elif item.startswith("back:"):
-            relations["back"] = _map_pair(item)
-        elif item.startswith("start:"):
-            relations["start"] = _map_pair(item)
-        elif item.startswith("lefttrigger:"):
-            relations["lefttrigger"] = _map_pair(item)
-        elif item.startswith("righttrigger:"):
-            relations["righttrigger"] = _map_pair(item)
-        elif item.startswith("dpup"):
-            relations["dpup"] = _map_pair(item)
-        elif item.startswith("dpdown"):
-            relations["dpdown"] = _map_pair(item)
-        elif item.startswith("dpleft"):
-            relations["dpleft"] = _map_pair(item)
-        elif item.startswith("dpright"):
-            relations["dpright"] = _map_pair(item)
-        elif item.startswith("leftx"):
-            relations["leftx"] = _map_pair(item)
-        elif item.startswith("lefty"):
-            relations["lefty"] = _map_pair(item)
-        elif item.startswith("rightx"):
-            relations["rightx"] = _map_pair(item)
-        elif item.startswith("righty"):
-            relations["righty"] = _map_pair(item)
+    for item in split_mapping[2:]:
+        # looking for items like: a:b0, b:b1, etc.
+        if ':' not in item:
+            continue
+
+        key, relation_string = item.split(':')
+
+        if key not in valid_keys:
+            continue
+
+        inverted = False
+        # Look for specific flags to signify inverted axis:
+        if "+" in relation_string:
+            relation_string = relation_string.strip('+')
+            inverted = False
+        elif "-" in relation_string:
+            relation_string = relation_string.strip('-')
+            inverted = True
+        if "~" in relation_string:
+            relation_string = relation_string.strip('~')
+            inverted = True
+
+        # All relations will be one of (Button, Axis, or Hat).
+        if relation_string.startswith("b"):  # Button
+            relations[key] = Relation("button", int(relation_string[1:]), inverted)
+        elif relation_string.startswith("a"):  # Axis
+            relations[key] = Relation("axis", int(relation_string[1:]), inverted)
+        elif relation_string.startswith("h0"):  # Hat
+            relations[key] = Relation("hat0", int(relation_string.split(".")[1]), inverted)
 
     return relations
 
