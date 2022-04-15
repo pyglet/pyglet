@@ -206,16 +206,16 @@ controller_api_to_pyglet = {
 }
 
 
-class XinputManager:
+class XInputManager:
 
     def __init__(self):
         self._thread = threading.Thread(target=self._check_state, daemon=True)
+        self._thread.start()
         self._exit = threading.Event()
         self._dev_lock = threading.Lock()
 
         # TODO: update the available IDs based on actual available devices
-        self._available_ids = [0, 1, 2, 3]
-        self._devices = set()
+        self._available_ids = [3, 2, 1, 0]
         self._open_devices = set()
 
     def create_device(self):
@@ -223,37 +223,37 @@ class XinputManager:
             # TODO: some better exception, etc.
             raise Exception('No available devices')
         with self._dev_lock:
-            dev_id = self._available_ids.pop()
-            device = XinputDevice(dev_id, self)
-            self._devices.add(device)
+            index = self._available_ids.pop()
+            device = XInputDevice(index, self)
+        return device
 
     def open(self, device):
         with self._dev_lock:
-            self._devices.remove(device)
             self._open_devices.add(device)
 
     def close(self, device):
         with self._dev_lock:
-            if device in self._devices:
-                self._devices.remove(device)
             if device in self._open_devices:
                 self._open_devices.remove(device)
-
         self._available_ids.append(device.index)
 
     def _check_state(self):
         while not self._exit.is_set():
             self._dev_lock.acquire()
+            time.sleep(0.0016)
 
             for controller in self._open_devices:
-                time.sleep(0.0016)
+
                 controller.current_state = XINPUT_STATE()
+
                 result = XInputGetState(controller.index, byref(controller.current_state))
                 if result == ERROR_DEVICE_NOT_CONNECTED:
                     if controller.connected:
                         print(f"Controller #{controller} was disconnected.")
                         controller.connected = False
                         continue
+
+                    time.sleep(0.5)
 
                 elif result == ERROR_SUCCESS:
                     # No errors.
@@ -316,12 +316,12 @@ class XinputManager:
                 self._dev_lock.release()
 
 
-class XinputDevice(Device):
+class XInputDevice(Device):
 
     def __init__(self, index, manager, display=None):
         super().__init__(display, f'XInput Controller {index}')
         self._manager = manager
-        self.user_idx = index
+        self.index = index
         self.last_state = None
         self.current_state = None
         self.connected = False
