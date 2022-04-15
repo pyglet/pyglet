@@ -223,8 +223,7 @@ class XInputManager:
         with self._dev_lock:
             try:
                 index = self._available_idx.pop(0)
-                device = self._devices[index]
-                return device
+                return self._devices[index]
             except IndexError:
                 raise IndexError('No available devices')
 
@@ -256,7 +255,7 @@ class XInputManager:
                         continue
 
                 elif result == ERROR_SUCCESS:
-                    if i in self._available_idx:
+                    if i not in self._available_idx:
                         self._available_idx.append(i)
 
                     if not controller.connected:
