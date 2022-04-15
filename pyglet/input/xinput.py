@@ -263,31 +263,15 @@ class XInputManager:
                         result = XInputGetCapabilitiesEx(1, controller.index, 0, byref(capabilities))
                         print(capabilities.vendorId, capabilities.revisionId, capabilities.productId)
 
-                    # Check for any changes on controller
-                    if controller.last_state:
-                        # Verify buttons haven't changed.
-                        current_state_buttons = controller.current_state.Gamepad.wButtons
-                        last_state_buttons = controller.last_state.Gamepad.wButtons
+                    for button, name in controller_api_to_pyglet.items():
+                        controller.controls[name].value = controller.current_state.Gamepad.wButtons & button
 
-                        if current_state_buttons != last_state_buttons:
-                            difference = current_state_buttons ^ last_state_buttons
-                            for button, name in controller_api_to_pyglet.items():
-                                # Check all flags for button changes/
-                                # Factor in XINPUT_GAMEPAD_TRIGGER_THRESHOLD?
-                                if difference & button:
-
-                                    controller.controls[name].value = difference
-                                    # if difference & button & current_state_buttons:
-                                    #     controller.dispatch_event('on_button_press', controller, name)
-                                    # else:
-                                    #     controller.dispatch_event('on_button_release', controller, name)
-
-                        controller.controls['lefttrigger'].value = controller.current_state.Gamepad.bLeftTrigger
-                        controller.controls['righttrigger'].value = controller.current_state.Gamepad.bRightTrigger
-                        controller.controls['leftx'].value = controller.current_state.Gamepad.sThumbLX
-                        controller.controls['lefty'].value = controller.current_state.Gamepad.sThumbLY
-                        controller.controls['rightx'].value = controller.current_state.Gamepad.sThumbRX
-                        controller.controls['righty'].value = controller.current_state.Gamepad.sThumbRY
+                    controller.controls['lefttrigger'].value = controller.current_state.Gamepad.bLeftTrigger
+                    controller.controls['righttrigger'].value = controller.current_state.Gamepad.bRightTrigger
+                    controller.controls['leftx'].value = controller.current_state.Gamepad.sThumbLX
+                    controller.controls['lefty'].value = controller.current_state.Gamepad.sThumbLY
+                    controller.controls['rightx'].value = controller.current_state.Gamepad.sThumbRX
+                    controller.controls['righty'].value = controller.current_state.Gamepad.sThumbRY
 
             self._dev_lock.release()
             time.sleep(0.0016)
@@ -299,7 +283,6 @@ class XInputDevice(Device):
         super().__init__(display, f'XInput Controller {index}')
         self._manager = weakref.proxy(manager)
         self.index = index
-        self.last_state = None
         self.current_state = None
         self.connected = False
 
