@@ -210,14 +210,14 @@ controller_api_to_pyglet = {
 class XInputManager:
 
     def __init__(self):
+        self._available_idx = []
+        self._open_devices = set()
+        self._devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
+
         self._exit = threading.Event()
         self._dev_lock = threading.Lock()
         self._thread = threading.Thread(target=self._check_state, daemon=True)
         self._thread.start()
-
-        self._available_idx = []
-        self._open_devices = set()
-        self._devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
 
     def create_device(self):
         with self._dev_lock:
@@ -246,16 +246,19 @@ class XInputManager:
                 controller.current_state = XINPUT_STATE()
 
                 result = XInputGetState(i, byref(controller.current_state))
+
                 if result == ERROR_DEVICE_NOT_CONNECTED:
+                    if i in self._available_idx:
+                        self._available_idx.remove(i)
                     if controller.connected:
                         print(f"Controller #{controller} was disconnected.")
-                        if i in self._available_idx:
-                            self._available_idx.remove(i)
                         controller.connected = False
                         continue
 
                 elif result == ERROR_SUCCESS:
-                    # No errors.
+                    if i in self._available_idx:
+                        self._available_idx.append(i)
+
                     if not controller.connected:
                         controller.connected = True
                         print(f"Controller #{controller} was connected.")
@@ -297,23 +300,21 @@ class XInputDevice(Device):
             'y': Button('y'),
             'back': Button('back'),
             'start': Button('start'),
-            # 'guide': Button('guide'),    # Captured by the OS on Windows?
             'leftshoulder': Button('leftshoulder'),
             'rightshoulder': Button('rightshoulder'),
             'leftstick': Button('leftstick'),
             'rightstick': Button('rightstick'),
-
-            'leftx': AbsoluteAxis('x', -32768, 32768),
-            'lefty': AbsoluteAxis('y', -32768, 32768),
-            'rightx': AbsoluteAxis('rx', -32768, 32768),
-            'righty': AbsoluteAxis('ry', -32768, 32768),
-            'lefttrigger': AbsoluteAxis('z', -32768, 32768),
-            'righttrigger': AbsoluteAxis('rz', -32768, 32768),
-
             'dpup': Button('dpup'),
             'dpdown': Button('dpdown'),
             'dpleft': Button('dpleft'),
-            'dpright': Button('dpright')
+            'dpright': Button('dpright'),
+
+            'leftx': AbsoluteAxis('leftx', -32768, 32768),
+            'lefty': AbsoluteAxis('lefty', -32768, 32768),
+            'rightx': AbsoluteAxis('rightx', -32768, 32768),
+            'righty': AbsoluteAxis('righty', -32768, 32768),
+            'lefttrigger': AbsoluteAxis('lefttrigger', -32768, 32768),
+            'righttrigger': AbsoluteAxis('righttrigger', -32768, 32768)
         }
 
     def open(self, window=None, exclusive=False):
