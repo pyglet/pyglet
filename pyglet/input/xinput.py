@@ -4,12 +4,21 @@ import weakref
 import threading
 
 import pyglet
-
+from pyglet import com
 from pyglet.libs.win32.types import *
+from pyglet.libs.win32 import _ole32 as ole32, _oleaut32 as oleaut32
+from pyglet.libs.win32.constants import CLSCTX_INPROC_SERVER
 from pyglet.input.base import Device, Button, AbsoluteAxis
+
+# Incase you want to force DirectInput on all devices for whatever reason.
+if pyglet.options["xinput_controllers"] is not True:
+    raise ImportError("Not available.")
 
 
 lib = pyglet.lib.load_library('xinput1_4')
+# TODO Add: xinput1_3 and xinput9_1_0 support
+
+library_name = lib._name
 
 
 XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE = 7849
@@ -90,21 +99,9 @@ VK_PAD_RTHUMB_UPRIGHT = 0x5835
 VK_PAD_RTHUMB_DOWNRIGHT = 0x5836
 VK_PAD_RTHUMB_DOWNLEFT = 0x5837
 
-# /*
-#  * How many joysticks can be used with this library. Games that
-#  * use the xinput library will not go over this number.
-#  */
-
-XUSER_MAX_COUNT = 4
+XUSER_MAX_COUNT = 4  # Cannot go over this number.
 XUSER_INDEX_ANY = 0x000000FF
 
-
-# define XUSER_INDEX_ANY                 0x000000FF
-
-# define XINPUT_CAPS_FFB_SUPPORTED       0x0001
-# define XINPUT_CAPS_WIRELESS            0x0002
-# define XINPUT_CAPS_PMD_SUPPORTED       0x0008
-# define XINPUT_CAPS_NO_NAVIGATION       0x0010
 
 ERROR_DEVICE_NOT_CONNECTED = 1167
 ERROR_EMPTY = 4306
@@ -182,10 +179,169 @@ XInputGetCapabilitiesEx.restype = DWORD
 XInputGetCapabilitiesEx.argtypes = [DWORD, DWORD, DWORD, POINTER(XINPUT_CAPABILITIES_EX)]
 
 # Only available for 1.4+
-XInputGetBatteryInformation = lib.XInputGetBatteryInformation
-XInputGetBatteryInformation.argtypes = [DWORD, BYTE, POINTER(XINPUT_BATTERY_INFORMATION)]
-XInputGetBatteryInformation.restype = DWORD
+if library_name == "xinput1_4":
+    XInputGetBatteryInformation = lib.XInputGetBatteryInformation
+    XInputGetBatteryInformation.argtypes = [DWORD, BYTE, POINTER(XINPUT_BATTERY_INFORMATION)]
+    XInputGetBatteryInformation.restype = DWORD
+else:
+    XInputGetBatteryInformation = None
 
+# wbemcli #################################################
+
+LONG = ctypes.wintypes.LONG
+ULONG = ctypes.wintypes.ULONG
+BSTR = LPCWSTR
+IWbemContext = c_void_p
+
+RPC_C_AUTHN_WINNT = 10
+RPC_C_AUTHZ_NONE = 0
+RPC_C_AUTHN_LEVEL_CALL = 0x03
+RPC_C_IMP_LEVEL_IMPERSONATE = 3
+EOAC_NONE = 0
+VT_BSTR = 8
+
+CLSID_WbemLocator = com.GUID(0x4590f811, 0x1d3a, 0x11d0, 0x89, 0x1f, 0x00, 0xaa, 0x00, 0x4b, 0x2e, 0x24)
+IID_IWbemLocator = com.GUID(0xdc12a687, 0x737f, 0x11cf, 0x88, 0x4d, 0x00, 0xaa, 0x00, 0x4b, 0x2e, 0x24)
+
+
+
+class IWbemClassObject(com.pIUnknown):
+    _methods_ = [
+        ('GetQualifierSet',
+         com.STDMETHOD()),
+        ('Get',
+         com.STDMETHOD(BSTR, LONG, POINTER(VARIANT), c_void_p, c_void_p))
+        # ... long, unneeded
+    ]
+
+
+class IEnumWbemClassObject(com.pIUnknown):
+    _methods_ = [
+        ('Reset',
+         com.STDMETHOD()),
+        ('Next',
+         com.STDMETHOD(LONG, ULONG, POINTER(IWbemClassObject), POINTER(ULONG))),
+        ('NextAsync',
+         com.STDMETHOD()),
+        ('Clone',
+         com.STDMETHOD()),
+        ('Skip',
+         com.STDMETHOD())
+    ]
+
+
+class IWbemServices(com.pIUnknown):
+    _methods_ = [
+        ('OpenNamespace',
+         com.STDMETHOD()),
+        ('CancelAsyncCall',
+         com.STDMETHOD()),
+        ('QueryObjectSink',
+         com.STDMETHOD()),
+        ('GetObject',
+         com.STDMETHOD()),
+        ('GetObjectAsync',
+         com.STDMETHOD()),
+        ('PutClass',
+         com.STDMETHOD()),
+        ('PutClassAsync',
+         com.STDMETHOD()),
+        ('DeleteClass',
+         com.STDMETHOD()),
+        ('DeleteClassAsync',
+         com.STDMETHOD()),
+        ('CreateClassEnum',
+         com.STDMETHOD()),
+        ('CreateClassEnumAsync',
+         com.STDMETHOD()),
+        ('PutInstance',
+         com.STDMETHOD()),
+        ('PutInstanceAsync',
+         com.STDMETHOD()),
+        ('DeleteInstance',
+         com.STDMETHOD()),
+        ('DeleteInstanceAsync',
+         com.STDMETHOD()),
+        ('CreateInstanceEnum',
+         com.STDMETHOD(BSTR, LONG, IWbemContext, POINTER(IEnumWbemClassObject))),
+        ('CreateInstanceEnumAsync',
+         com.STDMETHOD()),
+        # ... much more.
+    ]
+
+
+class IWbemLocator(com.pIUnknown):
+    _methods_ = [
+        ('ConnectServer',
+         com.STDMETHOD(BSTR, BSTR, BSTR, LONG, LONG, BSTR, IWbemContext, POINTER(IWbemServices))),
+    ]
+
+def get_xinput_guids():
+    """We iterate over all devices in the system looking for IG_ in the device ID, which indicates it's an
+    XInput device. Returns a list of strings containing pid/vid.
+    Monstrosity found at: https://docs.microsoft.com/en-us/windows/win32/xinput/xinput-and-directinput
+    """
+    ole32.CoInitialize(None)
+
+    guids_found = []
+
+    locator = IWbemLocator()
+    services = IWbemServices()
+    enum_devices = IEnumWbemClassObject()
+    devices = (IWbemClassObject * 20)()
+
+    ole32.CoCreateInstance(CLSID_WbemLocator, None, CLSCTX_INPROC_SERVER, IID_IWbemLocator, byref(locator))
+
+    name_space = BSTR("\\\\.\\root\\cimv2")
+    class_name = BSTR("Win32_PNPEntity")
+    device_id = BSTR("DeviceID")
+
+    # Connect to WMI
+    hr = locator.ConnectServer(name_space, None, None, 0, 0, None, None, byref(services))
+    if hr != 0:
+        return guids_found
+
+    # Switch security level to IMPERSONATE.
+    hr = ole32.CoSetProxyBlanket(services, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, None, RPC_C_AUTHN_LEVEL_CALL,
+                                 RPC_C_IMP_LEVEL_IMPERSONATE, None, EOAC_NONE)
+
+    if hr != 0:
+        return guids_found
+
+    hr = services.CreateInstanceEnum(class_name, 0, None, byref(enum_devices))
+
+    if hr != 0:
+        return guids_found
+
+    var = VARIANT()
+    oleaut32.VariantInit(byref(var))
+
+    while True:
+        returned = ULONG()
+        hr = enum_devices.Next(10000, len(devices), devices, byref(returned))
+        if returned.value == 0:
+            break
+        for i in range(returned.value):
+            result = devices[i].Get(device_id, 0, byref(var), None, None)
+            if result == 0:
+                if var.vt == VT_BSTR and var.bstrVal != "":
+                    if 'IG_' in var.bstrVal:
+                        guid = var.bstrVal
+
+                        pid_start = guid.index("PID_") + 4
+                        dev_pid = guid[pid_start:pid_start + 4]
+
+                        vid_start = guid.index("VID_") + 4
+                        dev_vid = guid[vid_start:vid_start + 4]
+
+                        sdl_guid = f"{dev_pid}{dev_vid}".lower()
+
+                        if sdl_guid not in guids_found:
+                            guids_found.append(sdl_guid)
+
+    oleaut32.VariantClear(var)
+    ole32.CoUninitialize()
+    return guids_found
 
 # #########################################################
 
@@ -267,6 +423,7 @@ class XInputManager:
                         result = XInputGetCapabilitiesEx(1, i, 0, byref(capabilities))
                         print(capabilities.vendorId, capabilities.revisionId, capabilities.productId)
 
+
                     # TODO: skip not-open devices
 
                     for button, name in controller_api_to_pyglet.items():
@@ -312,8 +469,8 @@ class XInputDevice(Device):
             'lefty': AbsoluteAxis('lefty', -32768, 32768),
             'rightx': AbsoluteAxis('rightx', -32768, 32768),
             'righty': AbsoluteAxis('righty', -32768, 32768),
-            'lefttrigger': AbsoluteAxis('lefttrigger', -32768, 32768),
-            'righttrigger': AbsoluteAxis('righttrigger', -32768, 32768)
+            'lefttrigger': AbsoluteAxis('lefttrigger', 0, 255),
+            'righttrigger': AbsoluteAxis('righttrigger', 0, 255)
         }
 
     def open(self, window=None, exclusive=False):
