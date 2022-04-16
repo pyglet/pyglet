@@ -509,6 +509,23 @@ class PROPVARIANT(ctypes.Structure):
         ('union', _VarTable)
     ]
 
+class _VarTableVariant(ctypes.Union):
+    """Must be in an anonymous union or values will not work across various VT's."""
+    _fields_ = [
+        ('bstrVal', LPCWSTR)
+    ]
+
+
+class VARIANT(ctypes.Structure):
+    _anonymous_ = ['union']
+
+    _fields_ = [
+        ('vt', ctypes.c_ushort),
+        ('wReserved1', WORD),
+        ('wReserved2', WORD),
+        ('wReserved3', WORD),
+        ('union', _VarTableVariant)
+    ]
 
 class DWM_BLURBEHIND(ctypes.Structure):
     _fields_ = [
