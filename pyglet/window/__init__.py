@@ -444,23 +444,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
     _default_vertex_source = """#version 150 core
         in vec4 position;
 
-        layout uniform WindowBlock
-        {
-            mat4 projection;
-            mat4 view;
-        } window;
-
-        void main()
-        {
-            gl_Position = window.projection * window.view * position;
-        }
-    """
-
-    _default_vertex_source_es = """#version 300 es
-        precision mediump float;
-        
-        in vec4 position;
-
         uniform WindowBlock
         {
             mat4 projection;
@@ -472,10 +455,7 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             gl_Position = window.projection * window.view * position;
         }
     """
-
-    _default_fragment_source_es = """#version 300 es
-        precision mediump float;
-
+    _default_fragment_source = """#version 150 core
         out vec4 color;
         
         void main()
@@ -483,7 +463,6 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             color = vec4(1.0, 0.0, 0.0, 1.0);
         }
     """
-
 
     def __init__(self,
                  width=None,
@@ -640,10 +619,9 @@ class BaseWindow(with_metaclass(_WindowMetaclass, EventDispatcher)):
             self.activate()
 
     def _create_projection(self):
-        if self._config.opengl_api == "gl":
-            self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source, 'vertex'))        
-        elif self._config.opengl_api == "gles":
-            self._default_program = shader.ShaderProgram(shader.Shader(self._default_vertex_source_es, 'vertex'), shader.Shader(self._default_fragment_source_es, 'fragment'))
+        self._default_program = shader.ShaderProgram(
+            shader.Shader(self._default_vertex_source, 'vertex'),
+            shader.Shader(self._default_fragment_source, 'fragment'))
 
         self.ubo = self._default_program.uniform_blocks['WindowBlock'].create_ubo()
 
