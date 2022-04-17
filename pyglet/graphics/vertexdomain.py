@@ -380,7 +380,6 @@ class IndexedVertexDomain(VertexDomain):
         except allocation.AllocatorMemoryException as e:
             capacity = _nearest_pow2(e.requested_capacity)
             self.version += 1
-            print(capacity * self.index_element_size)
             self.index_buffer.resize(capacity * self.index_element_size)
             self.index_allocator.set_capacity(capacity)
             return self.index_allocator.alloc(count)
