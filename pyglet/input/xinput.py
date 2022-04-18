@@ -393,6 +393,7 @@ class XInputDevice(Device):
             'y': Button('y'),
             'back': Button('back'),
             'start': Button('start'),
+            'guide': Button('guide'),
             'leftshoulder': Button('leftshoulder'),
             'rightshoulder': Button('rightshoulder'),
             'leftstick': Button('leftstick'),
