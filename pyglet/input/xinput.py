@@ -454,7 +454,7 @@ class XInputDeviceManager(EventDispatcher):
                 # Only check if not currently connected:
                 for i in xuser_max_count - self._connected_devices:
                     device = self._devices[i]
-                    if XInputGetState(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
+                    if XInputGetStateEx(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
                         continue
 
                     # Found a new connection:
@@ -468,7 +468,7 @@ class XInputDeviceManager(EventDispatcher):
             # opened devices. Skip unopened devices to save CPU:
             for i in self._connected_devices.copy():
                 device = self._devices[i]
-                result = XInputGetState(i, byref(device.xinput_state))
+                result = XInputGetStateEx(i, byref(device.xinput_state))
 
                 if result == ERROR_DEVICE_NOT_CONNECTED:
                     # Newly disconnected device:
