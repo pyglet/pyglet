@@ -77,6 +77,10 @@ class Device:
         self.manufacturer = None
         self._is_open = False
 
+    @property
+    def is_open(self):
+        return self._is_open
+
     def open(self, window=None, exclusive=False):
         """Open the device to begin receiving input from it.
 

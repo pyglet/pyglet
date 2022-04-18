@@ -398,14 +398,6 @@ class XInputDevice(Device):
             'righttrigger': AbsoluteAxis('righttrigger', 0, 255)
         }
 
-    def open(self, window=None, exclusive=False):
-        super().open(window, exclusive)
-        self._manager.open(self)
-
-    def close(self):
-        self._manager.close(self)
-        super().close()
-
     def get_controls(self):
         return list(self.controls.values())
 
@@ -417,7 +409,6 @@ class XInputDeviceManager(EventDispatcher):
 
     def __init__(self):
         self._devices = [XInputDevice(i, self) for i in range(XUSER_MAX_COUNT)]
-        self._open_devices = set()
         self._connected_devices = set()
 
         self._polling_rate = 0.016
@@ -430,71 +421,50 @@ class XInputDeviceManager(EventDispatcher):
     def get_devices(self):
         return [dev for dev in self._devices if dev.connected]
 
-    def open(self, device):
-        with self._dev_lock:
-            self._open_devices.add(device)
-
-    def close(self, device):
-        with self._dev_lock:
-            if device in self._open_devices:
-                self._open_devices.remove(device)
-
     def _check_state(self):
-        elapsed = 0.0
         polling_rate = self._polling_rate
         detect_rate = self._detection_rate
-        xuser_max_count = set(range(XUSER_MAX_COUNT))     # {1, 2, 3, 4}
+        elapsed = detect_rate
+        xuser_max_count = set(range(XUSER_MAX_COUNT))     # {0, 1, 2, 3}
 
         while not self._exit.is_set():
             self._dev_lock.acquire()
             elapsed += polling_rate
 
+            # Every few seconds check for new connections:
             if elapsed >= detect_rate:
-                # Check all non-connected devices to
-                # see if any of them have connected:
+                # Only check if not currently connected:
                 for i in xuser_max_count - self._connected_devices:
                     device = self._devices[i]
                     if XInputGetState(i, byref(device.current_state)) == ERROR_DEVICE_NOT_CONNECTED:
                         continue
-                    # Found a new connection:
-                    self._connected_devices.add(i)
-                    device.connected = True
 
-                    # TODO: Removed debug:
-                    print(f"Controller #{device} was connected.")
-                    # Just testing
-                    capabilities = XINPUT_CAPABILITIES_EX()
-                    result = XInputGetCapabilitiesEx(1, i, 0, byref(capabilities))
-                    print(capabilities.vendorId, capabilities.revisionId, capabilities.productId)
+                    # Found a new connection:
+                    device.connected = True
+                    self._connected_devices.add(i)
+                    self.dispatch_event('on_connect', device)
 
                 elapsed = 0.0
 
-            for i in self._connected_devices:
+            # At the set polling rate, update all connected and
+            # opened devices. Skip unopened devices to save CPU:
+            for i in self._connected_devices.copy():
                 device = self._devices[i]
                 result = XInputGetState(i, byref(device.current_state))
 
                 if result == ERROR_DEVICE_NOT_CONNECTED:
-
+                    # Newly disconnected device:
                     if device.connected:
-                        self._connected_devices.remove(i)
-
-                        # TODO: Removed debug:
-                        print(f"Controller #{device} was disconnected.")
                         device.connected = False
+                        self._connected_devices.remove(i)
+                        self.dispatch_event('on_disconnect', device)
                         continue
 
-                elif result == ERROR_SUCCESS:
+                elif result == ERROR_SUCCESS and device.is_open:
 
                     # Don't update the Control values if XInput has no new input:
                     if device.current_state.dwPacketNumber == device.packet_number:
                         continue
-
-                    # TODO: add this later after testing:
-                    # # If the Device isn't opened, skip it:
-                    # if device not in self._open_devices:
-                    #     continue
-
-                    device.packet_number = device.current_state.dwPacketNumber
 
                     for button, name in controller_api_to_pyglet.items():
                         device.controls[name].value = device.current_state.Gamepad.wButtons & button
@@ -505,6 +475,8 @@ class XInputDeviceManager(EventDispatcher):
                     device.controls['lefty'].value = device.current_state.Gamepad.sThumbLY
                     device.controls['rightx'].value = device.current_state.Gamepad.sThumbRX
                     device.controls['righty'].value = device.current_state.Gamepad.sThumbRY
+
+                    device.packet_number = device.current_state.dwPacketNumber
 
             self._dev_lock.release()
             time.sleep(polling_rate)
