@@ -49,6 +49,7 @@ XINPUT_GAMEPAD_LEFT_THUMB = 0x0040
 XINPUT_GAMEPAD_RIGHT_THUMB = 0x0080
 XINPUT_GAMEPAD_LEFT_SHOULDER = 0x0100
 XINPUT_GAMEPAD_RIGHT_SHOULDER = 0x0200
+XINPUT_GAMEPAD_GUIDE = 0x0400
 XINPUT_GAMEPAD_A = 0x1000
 XINPUT_GAMEPAD_B = 0x2000
 XINPUT_GAMEPAD_X = 0x4000
@@ -358,6 +359,7 @@ controller_api_to_pyglet = {
     XINPUT_GAMEPAD_DPAD_RIGHT: "dpright",
     XINPUT_GAMEPAD_START: "start",
     XINPUT_GAMEPAD_BACK: "back",
+    XINPUT_GAMEPAD_GUIDE: "guide",
     XINPUT_GAMEPAD_LEFT_THUMB: "leftstick",
     XINPUT_GAMEPAD_RIGHT_THUMB: "rightstick",
     XINPUT_GAMEPAD_LEFT_SHOULDER: "leftshoulder",
@@ -477,6 +479,20 @@ class XInputDeviceManager(EventDispatcher):
 
                 elif result == ERROR_SUCCESS and device.is_open:
 
+                    # Stop Rumble effects if a duration is set:
+                    if device.weak_duration:
+                        device.weak_duration -= polling_rate
+                        if device.weak_duration <= 0:
+                            device.weak_duration = None
+                            device.vibration.wRightMotorSpeed = 0
+                            device.set_rumble_state()
+                    if device.strong_duration:
+                        device.strong_duration -= polling_rate
+                        if device.strong_duration <= 0:
+                            device.strong_duration = None
+                            device.vibration.wLeftMotorSpeed = 0
+                            device.set_rumble_state()
+
                     # Don't update the Control values if XInput has no new input:
                     if device.xinput_state.dwPacketNumber == device.packet_number:
                         continue
@@ -492,20 +508,6 @@ class XInputDeviceManager(EventDispatcher):
                     device.controls['righty'].value = device.xinput_state.Gamepad.sThumbRY
 
                     device.packet_number = device.xinput_state.dwPacketNumber
-
-                if device.weak_duration:
-                    device.weak_duration -= polling_rate
-                    if device.weak_duration < 0:
-                        device.weak_duration = None
-                        device.vibration.wRightMotorSpeed = 0
-                        device.set_rumble_state()
-
-                if device.strong_duration:
-                    device.strong_duration -= polling_rate
-                    if device.strong_duration < 0:
-                        device.strong_duration = None
-                        device.vibration.wLeftMotorSpeed = 0
-                        device.set_rumble_state()
 
             self._dev_lock.release()
             self._ready.set()
