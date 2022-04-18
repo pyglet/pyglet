@@ -97,13 +97,12 @@ def on_stick_motion(controller, axis, xvalue, yvalue):
 @controller.event
 def on_trigger_motion(controller, trigger, value):
     global left_trigger, right_trigger
-    rumble_strength = (value + 1) / 2
     if trigger == "lefttrigger":
         left_trigger.position = left_trigger.position[0], 360 + (value*50)
-        controller.rumble_play_weak(rumble_strength, duration=5)
+        controller.rumble_play_weak(value, duration=5)
     elif trigger == "righttrigger":
         right_trigger.position = right_trigger.position[0], 360 + (value*50)
-        controller.rumble_play_strong(rumble_strength, duration=5)
+        controller.rumble_play_strong(value, duration=5)
 
 
 @window.event

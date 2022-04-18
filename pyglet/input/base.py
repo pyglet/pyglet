@@ -618,8 +618,8 @@ class Controller(EventDispatcher):
         self.rightshoulder = False
         self.leftstick = False          # stick press button
         self.rightstick = False         # stick press button
-        self.lefttrigger = -1           # default to rest position
-        self.righttrigger = -1          # default to rest position
+        self.lefttrigger = 0
+        self.righttrigger = 0
         self.leftx = 0
         self.lefty = 0
         self.rightx = 0
@@ -636,6 +636,7 @@ class Controller(EventDispatcher):
         self._hat_y_control = None
 
         def add_axis(control, axis_name):
+            tscale = 1.0 / (control.max - control.min)
             scale = 2.0 / (control.max - control.min)
             bias = -1.0 - control.min * scale
             if control.inverted:
@@ -669,7 +670,7 @@ class Controller(EventDispatcher):
             elif axis_name in ("lefttrigger", "righttrigger"):
                 @control.event
                 def on_change(value):
-                    normalized_value = value * scale + bias
+                    normalized_value = value * tscale
                     setattr(self, axis_name, normalized_value)
                     self.dispatch_event('on_trigger_motion', self, axis_name, normalized_value)
 
@@ -739,6 +740,7 @@ class Controller(EventDispatcher):
             """Categorize the various control types"""
             if isinstance(control, Button):
                 self._button_controls.append(control)
+
             elif isinstance(control, AbsoluteAxis):
                 if control.name in ('x', 'y', 'z', 'rx', 'ry', 'rz'):
                     self._axis_controls.append(control)
