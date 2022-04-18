@@ -166,6 +166,10 @@ XInputGetState = lib.XInputGetState
 XInputGetState.restype = DWORD
 XInputGetState.argtypes = [DWORD, POINTER(XINPUT_STATE)]
 
+XInputGetStateEx = lib[100]
+XInputGetStateEx.restype = DWORD
+XInputGetStateEx.argtypes = [DWORD, POINTER(XINPUT_STATE)]
+
 XInputSetState = lib.XInputSetState
 XInputSetState.argtypes = [DWORD, POINTER(XINPUT_VIBRATION)]
 XInputSetState.restype = DWORD
@@ -369,6 +373,7 @@ class XInputDevice(Device):
 
     def __init__(self, index, manager):
         super().__init__(None, f'XInput Controller {index}')
+        self.index = index
         self._manager = weakref.proxy(manager)
         self.current_state = XINPUT_STATE()
         self.packet_number = 0
@@ -500,6 +505,10 @@ _manager = XInputDeviceManager()
 
 class XInputController(Controller):
 
+    def __init__(self, device, mapping):
+        super().__init__(device, mapping)
+        self.vibration = XINPUT_VIBRATION()
+
     def _initialize_controls(self):
 
         for button_name in controller_api_to_pyglet.values():
@@ -559,18 +568,22 @@ class XInputController(Controller):
                 self.dispatch_event('on_button_release', self, name)
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
-        pass
+        self.vibration.wRightMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
+        XInputSetState(self.device.index, byref(self.vibration))
 
     def rumble_play_strong(self, strength=1.0, duration=0.5):
-        pass
+        self.vibration.wLeftMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
+        XInputSetState(self.device.index, byref(self.vibration))
 
     def rumble_stop_weak(self):
         """Stop playing rumble effects on the weak motor."""
-        pass
+        self.vibration.wRightMotorSpeed = 0
+        XInputSetState(self.device.index, byref(self.vibration))
 
     def rumble_stop_strong(self):
         """Stop playing rumble effects on the strong motor."""
-        pass
+        self.vibration.wLeftMotorSpeed = 0
+        XInputSetState(self.device.index, byref(self.vibration))
 
 
 def get_devices():
