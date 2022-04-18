@@ -4,14 +4,15 @@ from pyglet.gl import glEnable, GL_DEPTH_TEST, GL_CULL_FACE
 from pyglet.math import Mat4, Vec3
 
 
-window = pyglet.window.Window(width=720, height=480)
+window = pyglet.window.Window(width=720, height=480, resizable=True)
 batch = pyglet.graphics.Batch()
 time = 0
 
 
 @window.event
 def on_resize(width, height):
-    window.projection = pyglet.window.Mat4.perspective_projection(0, width, 0, height, z_near=0.1, z_far=255)
+    window.on_resize(width, height)
+    window.projection = Mat4.perspective_projection(0, width, 0, height, z_near=0.1, z_far=255)
     return pyglet.event.EVENT_HANDLED
 
 
@@ -34,7 +35,7 @@ def animate(dt):
     rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
     rot_y = Mat4.from_rotation(time/3, Vec3(0, 1, 0))
     rot_z = Mat4.from_rotation(time/2, Vec3(0, 0, 1))
-    trans = Mat4.from_translation((-1.75, 0, 0))
+    trans = Mat4.from_translation(Vec3(-1.75, 0, 0))
     model_box.matrix = rot_x @ rot_y @ rot_z @ trans
 
 
@@ -48,5 +49,5 @@ if __name__ == "__main__":
     # Set the application wide view matrix to "zoom out" (camera):
     window.view = Mat4.from_translation(Vec3(0, 0, -5))
 
-    pyglet.clock.schedule_interval(animate, 1/60)
+    pyglet.clock.schedule_interval(animate, 1 / 60)
     pyglet.app.run()
