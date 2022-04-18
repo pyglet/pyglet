@@ -231,6 +231,10 @@ class HTMLDecoder(HTMLParser, structured.StructuredTextDecoder):
                 self._font_size_stack.append(size)
                 if size in self.font_sizes:
                     style['font_size'] = self.font_sizes.get(size, 3)
+            elif 'real_size' in attrs:
+                size = int(attrs['real_size'])
+                self._font_size_stack.append(size)
+                style['font_size'] = size
             else:
                 self._font_size_stack.append(self._font_size_stack[-1])
             if 'color' in attrs:

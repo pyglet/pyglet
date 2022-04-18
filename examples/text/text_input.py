@@ -28,7 +28,7 @@ class TextWidget:
 
 class Window(pyglet.window.Window):
     def __init__(self, *args, **kwargs):
-        super(Window, self).__init__(400, 140, caption='Text entry')
+        super(Window, self).__init__(400, 140, caption='Text entry', *args, **kwargs)
 
         self.batch = pyglet.graphics.Batch()
         self.labels = [
