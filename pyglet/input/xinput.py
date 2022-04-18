@@ -375,9 +375,14 @@ class XInputDevice(Device):
         super().__init__(None, f'XInput Controller {index}')
         self.index = index
         self._manager = weakref.proxy(manager)
-        self.current_state = XINPUT_STATE()
-        self.packet_number = 0
         self.connected = False
+
+        self.xinput_state = XINPUT_STATE()
+        self.packet_number = 0
+
+        self.vibration = XINPUT_VIBRATION()
+        self.weak_duration = None
+        self.strong_duration = None
 
         self.controls = {
             'a': Button('a'),
@@ -402,6 +407,9 @@ class XInputDevice(Device):
             'lefttrigger': AbsoluteAxis('lefttrigger', 0, 255),
             'righttrigger': AbsoluteAxis('righttrigger', 0, 255)
         }
+
+    def set_rumble_state(self):
+        XInputSetState(self.index, byref(self.vibration))
 
     def get_controls(self):
         return list(self.controls.values())
@@ -443,7 +451,7 @@ class XInputDeviceManager(EventDispatcher):
                 # Only check if not currently connected:
                 for i in xuser_max_count - self._connected_devices:
                     device = self._devices[i]
-                    if XInputGetState(i, byref(device.current_state)) == ERROR_DEVICE_NOT_CONNECTED:
+                    if XInputGetState(i, byref(device.xinput_state)) == ERROR_DEVICE_NOT_CONNECTED:
                         continue
 
                     # Found a new connection:
@@ -457,7 +465,7 @@ class XInputDeviceManager(EventDispatcher):
             # opened devices. Skip unopened devices to save CPU:
             for i in self._connected_devices.copy():
                 device = self._devices[i]
-                result = XInputGetState(i, byref(device.current_state))
+                result = XInputGetState(i, byref(device.xinput_state))
 
                 if result == ERROR_DEVICE_NOT_CONNECTED:
                     # Newly disconnected device:
@@ -470,20 +478,34 @@ class XInputDeviceManager(EventDispatcher):
                 elif result == ERROR_SUCCESS and device.is_open:
 
                     # Don't update the Control values if XInput has no new input:
-                    if device.current_state.dwPacketNumber == device.packet_number:
+                    if device.xinput_state.dwPacketNumber == device.packet_number:
                         continue
 
                     for button, name in controller_api_to_pyglet.items():
-                        device.controls[name].value = device.current_state.Gamepad.wButtons & button
+                        device.controls[name].value = device.xinput_state.Gamepad.wButtons & button
 
-                    device.controls['lefttrigger'].value = device.current_state.Gamepad.bLeftTrigger
-                    device.controls['righttrigger'].value = device.current_state.Gamepad.bRightTrigger
-                    device.controls['leftx'].value = device.current_state.Gamepad.sThumbLX
-                    device.controls['lefty'].value = device.current_state.Gamepad.sThumbLY
-                    device.controls['rightx'].value = device.current_state.Gamepad.sThumbRX
-                    device.controls['righty'].value = device.current_state.Gamepad.sThumbRY
+                    device.controls['lefttrigger'].value = device.xinput_state.Gamepad.bLeftTrigger
+                    device.controls['righttrigger'].value = device.xinput_state.Gamepad.bRightTrigger
+                    device.controls['leftx'].value = device.xinput_state.Gamepad.sThumbLX
+                    device.controls['lefty'].value = device.xinput_state.Gamepad.sThumbLY
+                    device.controls['rightx'].value = device.xinput_state.Gamepad.sThumbRX
+                    device.controls['righty'].value = device.xinput_state.Gamepad.sThumbRY
 
-                    device.packet_number = device.current_state.dwPacketNumber
+                    device.packet_number = device.xinput_state.dwPacketNumber
+
+                if device.weak_duration:
+                    device.weak_duration -= polling_rate
+                    if device.weak_duration < 0:
+                        device.weak_duration = None
+                        device.vibration.wRightMotorSpeed = 0
+                        device.set_rumble_state()
+
+                if device.strong_duration:
+                    device.strong_duration -= polling_rate
+                    if device.strong_duration < 0:
+                        device.strong_duration = None
+                        device.vibration.wLeftMotorSpeed = 0
+                        device.set_rumble_state()
 
             self._dev_lock.release()
             self._ready.set()
@@ -504,10 +526,6 @@ _manager = XInputDeviceManager()
 
 
 class XInputController(Controller):
-
-    def __init__(self, device, mapping):
-        super().__init__(device, mapping)
-        self.vibration = XINPUT_VIBRATION()
 
     def _initialize_controls(self):
 
@@ -568,22 +586,24 @@ class XInputController(Controller):
                 self.dispatch_event('on_button_release', self, name)
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
-        self.vibration.wRightMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
-        XInputSetState(self.device.index, byref(self.vibration))
+        self.device.vibration.wRightMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
+        self.device.weak_duration = duration
+        self.device.set_rumble_state()
 
     def rumble_play_strong(self, strength=1.0, duration=0.5):
-        self.vibration.wLeftMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
-        XInputSetState(self.device.index, byref(self.vibration))
+        self.device.vibration.wLeftMotorSpeed = int(max(min(1.0, strength), 0) * 0xFFFF)
+        self.device.strong_duration = duration
+        self.device.set_rumble_state()
 
     def rumble_stop_weak(self):
         """Stop playing rumble effects on the weak motor."""
-        self.vibration.wRightMotorSpeed = 0
-        XInputSetState(self.device.index, byref(self.vibration))
+        self.device.vibration.wRightMotorSpeed = 0
+        self.device.set_rumble_state()
 
     def rumble_stop_strong(self):
         """Stop playing rumble effects on the strong motor."""
-        self.vibration.wLeftMotorSpeed = 0
-        XInputSetState(self.device.index, byref(self.vibration))
+        self.device.vibration.wLeftMotorSpeed = 0
+        self.device.set_rumble_state()
 
 
 def get_devices():
