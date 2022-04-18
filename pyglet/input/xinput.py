@@ -432,14 +432,14 @@ class XInputDeviceManager(EventDispatcher):
         self._exit = threading.Event()
         self._ready = threading.Event()
         self._dev_lock = threading.Lock()
-        self._thread = threading.Thread(target=self._check_state, daemon=True)
+        self._thread = threading.Thread(target=self._get_state, daemon=True)
         self._thread.start()
         self._ready.wait(1)
 
     def get_devices(self):
         return [dev for dev in self._devices if dev.connected]
 
-    def _check_state(self):
+    def _get_state(self):
         polling_rate = self._polling_rate
         detect_rate = self._detection_rate
         elapsed = detect_rate
@@ -599,12 +599,10 @@ class XInputController(Controller):
         self.device.set_rumble_state()
 
     def rumble_stop_weak(self):
-        """Stop playing rumble effects on the weak motor."""
         self.device.vibration.wRightMotorSpeed = 0
         self.device.set_rumble_state()
 
     def rumble_stop_strong(self):
-        """Stop playing rumble effects on the strong motor."""
         self.device.vibration.wLeftMotorSpeed = 0
         self.device.set_rumble_state()
 
