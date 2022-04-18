@@ -21,44 +21,31 @@ def on_draw():
     batch.draw()
 
 
-@window.event
-def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
-
-    matrix = model.matrix
-    model.matrix = matrix.rotate(0.01, Vec3(dx, dy, 0).normalize())
-
-    matrix = model2.matrix
-    model2.matrix = matrix.rotate(0.01, Vec3(-dx, -dy, 0).normalize())
-
-
 def animate(dt):
     global time
     time += dt
 
-    matrix = model.matrix
-    matrix = matrix.rotate(dt/2, Vec3(0, 0, 1))
-    matrix = matrix.rotate(dt/2, Vec3(0, 1, 0))
-    matrix = matrix.rotate(dt/2, Vec3(1, 0, 0))
-    model.matrix = matrix
+    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
+    rot_y = Mat4.from_rotation(time/2, Vec3(0, 1, 0))
+    rot_z = Mat4.from_rotation(time/3, Vec3(0, 0, 1))
+    trans = Mat4.from_translation((1.25, 0, 2))
+    model_logo.matrix = rot_x @ rot_y @ rot_z @ trans
 
-    matrix = model2.matrix
-    matrix = matrix.rotate(dt*2, Vec3(0, 0, 1))
-    matrix = matrix.rotate(dt*2, Vec3(0, 1, 0))
-    matrix = matrix.rotate(dt*2, Vec3(1, 0, 0))
-    model2.matrix = matrix
+    rot_x = Mat4.from_rotation(time, Vec3(1, 0, 0))
+    rot_y = Mat4.from_rotation(time/3, Vec3(0, 1, 0))
+    rot_z = Mat4.from_rotation(time/2, Vec3(0, 0, 1))
+    trans = Mat4.from_translation((-1.75, 0, 0))
+    model_box.matrix = rot_x @ rot_y @ rot_z @ trans
 
 
 if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
 
-    model = pyglet.resource.model("logo3d.obj", batch=batch)
-    model.matrix = Mat4.from_translation(Vec3(3, 0, 0))
+    model_logo = pyglet.resource.model("logo3d.obj", batch=batch)
+    model_box = pyglet.resource.model("box.obj", batch=batch)
 
-    model2 = pyglet.resource.model("box.obj", batch=batch)
-    model2.matrix = Mat4.from_translation(Vec3(-3, 0, 0))
-
-    # Set the application wide view matrix to "zoom out":
+    # Set the application wide view matrix to "zoom out" (camera):
     window.view = Mat4.from_translation(Vec3(0, 0, -5))
 
     pyglet.clock.schedule_interval(animate, 1/60)
