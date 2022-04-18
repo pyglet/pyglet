@@ -414,9 +414,11 @@ class XInputDeviceManager(EventDispatcher):
         self._polling_rate = 0.016
         self._detection_rate = 2.0
         self._exit = threading.Event()
+        self._ready = threading.Event()
         self._dev_lock = threading.Lock()
         self._thread = threading.Thread(target=self._check_state, daemon=True)
         self._thread.start()
+        self._ready.wait(1)
 
     def get_devices(self):
         return [dev for dev in self._devices if dev.connected]
@@ -479,6 +481,7 @@ class XInputDeviceManager(EventDispatcher):
                     device.packet_number = device.current_state.dwPacketNumber
 
             self._dev_lock.release()
+            self._ready.set()
             time.sleep(polling_rate)
 
     def on_connect(self, device):
@@ -499,6 +502,28 @@ class XInputController(Controller):
 
     def __init__(self, device):
         super().__init__(device, {'name': device.name, 'guid': device.get_guid()})
+
+        for button_name in controller_api_to_pyglet.values():
+            control = device._controls[button_name]
+
+            if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
+                @control.event
+                def on_change(value):
+                    setattr(self, button_name, value)
+                    self.dispatch_event('on_dpad_motion', self,
+                                        self.dpleft, self.dpright, self.dpup, self.dpdown)
+            else:
+                @control.event
+                def on_change(value):
+                    setattr(self, button_name, value)
+
+                @control.event
+                def on_press():
+                    self.dispatch_event('on_button_press', self, button_name)
+
+                @control.event
+                def on_release():
+                    self.dispatch_event('on_button_release', self, button_name)
 
     def rumble_play_weak(self, strength=1.0, duration=0.5):
         pass
