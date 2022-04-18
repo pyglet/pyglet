@@ -390,12 +390,12 @@ class XInputDevice(Device):
             'dpleft': Button('dpleft'),
             'dpright': Button('dpright'),
 
-            'leftx': AbsoluteAxis('x', -32768, 32768, 'leftx'),
-            'lefty': AbsoluteAxis('y', -32768, 32768, 'lefty'),
-            'rightx': AbsoluteAxis('rx', -32768, 32768, 'rightx'),
-            'righty': AbsoluteAxis('ry', -32768, 32768, 'righty'),
-            'lefttrigger': AbsoluteAxis('z', 0, 255, 'lefttrigger'),
-            'righttrigger': AbsoluteAxis('rz', 0, 255, 'righttrigger')
+            'leftx': AbsoluteAxis('leftx', -32768, 32768),
+            'lefty': AbsoluteAxis('lefty', -32768, 32768),
+            'rightx': AbsoluteAxis('rightx', -32768, 32768),
+            'righty': AbsoluteAxis('righty', -32768, 32768),
+            'lefttrigger': AbsoluteAxis('lefttrigger', 0, 255),
+            'righttrigger': AbsoluteAxis('righttrigger', 0, 255)
         }
 
     def get_controls(self):
@@ -500,11 +500,12 @@ _manager = XInputDeviceManager()
 
 class XInputController(Controller):
 
-    def __init__(self, device):
-        super().__init__(device, {'name': device.name, 'guid': device.get_guid()})
+    def _initialize_controls(self):
+
+        device = self.device
 
         for button_name in controller_api_to_pyglet.values():
-            control = device._controls[button_name]
+            control = device.controls[button_name]
 
             if button_name in ("dpleft", "dpright", "dpup", "dpdown"):
                 @control.event
@@ -545,4 +546,4 @@ def get_devices():
 
 
 def get_controllers():
-    return [XInputController(device) for device in get_devices()]
+    return [XInputController(device, {'name': device.name, 'guid': device.get_guid()}) for device in get_devices()]

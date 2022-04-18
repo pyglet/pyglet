@@ -604,8 +604,8 @@ class Controller(EventDispatcher):
         self.device = device
         self._mapping = mapping
 
-        self.name = mapping['name']
-        self.guid = mapping['guid']
+        self.name = mapping.get('name')
+        self.guid = mapping.get('guid')
 
         self.a = False
         self.b = False
@@ -634,6 +634,10 @@ class Controller(EventDispatcher):
         self._hat_control = None
         self._hat_x_control = None
         self._hat_y_control = None
+
+        self._initialize_controls()
+
+    def _initialize_controls(self):
 
         def add_axis(control, axis_name):
             tscale = 1.0 / (control.max - control.min)
@@ -736,7 +740,7 @@ class Controller(EventDispatcher):
                 self.dispatch_event('on_dpad_motion', self,
                                     self.dpleft, self.dpright, self.dpup, self.dpdown)
 
-        for control in device.get_controls():
+        for control in self.device.get_controls():
             """Categorize the various control types"""
             if isinstance(control, Button):
                 self._button_controls.append(control)
