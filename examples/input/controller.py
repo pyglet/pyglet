@@ -18,8 +18,8 @@ batch = pyglet.graphics.Batch()
 text = f"Detected: {controller.name}\nController GUID: {controller.guid}"
 controller_label = pyglet.text.Label(text=text, x=10, y=window.height-20, multiline=True, width=720, batch=batch)
 
-left_trigger = Rectangle(70, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
-right_trigger = Rectangle(610, 360 + (controller.lefttrigger * 50), 40, 10, batch=batch)
+left_trigger = Rectangle(70, 310 + (controller.lefttrigger * 50), 40, 10, batch=batch)
+right_trigger = Rectangle(610, 310 + (controller.lefttrigger * 50), 40, 10, batch=batch)
 d_pad = Rectangle(280, 185, 10, 10, batch=batch)
 left_stick = Arc(180, 240, 20, batch=batch)
 right_stick = Arc(540, 240, 20, batch=batch)
@@ -98,10 +98,10 @@ def on_stick_motion(controller, axis, xvalue, yvalue):
 def on_trigger_motion(controller, trigger, value):
     global left_trigger, right_trigger
     if trigger == "lefttrigger":
-        left_trigger.position = left_trigger.position[0], 360 + (value*50)
+        left_trigger.position = left_trigger.position[0], 310 + (value*50)
         controller.rumble_play_weak(value, duration=5)
     elif trigger == "righttrigger":
-        right_trigger.position = right_trigger.position[0], 360 + (value*50)
+        right_trigger.position = right_trigger.position[0], 310 + (value*50)
         controller.rumble_play_strong(value, duration=5)
 
 
