@@ -600,8 +600,8 @@ class Controller(EventDispatcher):
         self.device = device
         self._mapping = mapping
 
-        self.name = self._mapping['name']
-        self.guid = self._mapping['guid']
+        self.name = mapping['name']
+        self.guid = mapping['guid']
 
         self.a = False
         self.b = False

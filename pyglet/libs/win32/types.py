@@ -82,6 +82,7 @@ def POINTER_(obj):
 
 c_void_p = POINTER_(c_void)
 INT = c_int
+UBYTE = c_ubyte
 LPVOID = c_void_p
 HCURSOR = HANDLE
 LRESULT = LPARAM

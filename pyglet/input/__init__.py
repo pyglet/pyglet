@@ -171,22 +171,30 @@ else:
 
     if compat_platform.startswith('linux'):
         from .x11_xinput_tablet import get_tablets
-        from .x11_xinput import get_devices as xinput_get_devices
+        from .x11_xinput import get_devices as x11xinput_get_devices
         from .evdev import get_devices as evdev_get_devices
         from .evdev import get_joysticks
         from .evdev import get_controllers
 
         def get_devices(display=None):
-            return evdev_get_devices(display) + xinput_get_devices(display)
+            return evdev_get_devices(display) + x11xinput_get_devices(display)
 
     elif compat_platform in ('cygwin', 'win32'):
-        from .directinput import get_devices
+        from .directinput import get_devices as dinput_get_devices
+        from .directinput import get_controllers as dinput_get_controllers
         from .directinput import get_joysticks
-        from .directinput import get_controllers
         try:
             from .wintab import get_tablets
         except:
             pass
+        from .xinput import get_devices as xinput_get_devices
+        from .xinput import get_controllers as xinput_get_controllers
+
+        def get_devices(display=None):
+            return xinput_get_devices() + dinput_get_devices(display)
+
+        def get_controllers(display=None):
+            return xinput_get_controllers() + dinput_get_controllers(display)
 
     elif compat_platform == 'darwin':
         from .darwin_hid import get_devices
