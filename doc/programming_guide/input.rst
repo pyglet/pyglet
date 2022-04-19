@@ -1,11 +1,280 @@
 Working with other input devices
 ================================
 
-Pyglet's :py:mod:`~pyglet.input` module allows you to accept input
-from any USB human interface device (HID).  High level interfaces
-are provided for working with joysticks and with the Apple Remote.
+pyglet's :py:mod:`~pyglet.input` module allows you to accept input
+from any USB human interface device (HID). It's possible to access
+these devices directly, but high-level interfaces are provided for
+working with game controllers, joysticks, and the Apple Remote.
+The game controller interface is suited for modern gamepads, such as
+are found on modern video game consoles. These types of controllers
+have a strictly defined set of inputs. The joystick interface is more
+generalized, and works with devices with an arbitrary number of buttons,
+axis, and hats. This includes devices like steering wheels, joysticks
+used for flight simulators, and just about anything else. For most
+games, the Controller interface is usually the better choice. For the
+high-level interfaces, pyglet normalizes input values to a range of -1, 1.
 
-Using joysticks
+
+The :py:mod:`~pyglet.input` module provides several methods for querying
+devices::
+
+    # get a list of all low-level devices:
+    devices = pyglet.input.get_devices()
+
+    # get a list of all controllers:
+    controllers = pyglet.input.get_controllers()
+
+    # get a list of all joysticks:
+    joysticks = pyglet.input.get_controllers()
+
+    # get a list of tablets:
+    tablets = pyglet.input.get_tablets()
+
+    # get an Apple Remote, if available:
+    remote = pyglet.input.get_apple_remote()
+
+
+Using Devices
+-------------
+
+It's usually easier to use the high-level interfaces but, for specialized
+hardware, the low-level device can be accessed directly. You can query the
+list of all devices, and check the `name` attribute to find the correct
+device::
+
+    for device in pyglet.input.get_devices():
+        print(device.name)
+
+After identifying the Device you wish to use, you must first open it::
+
+    device.open()
+
+Devices contain a list of :py:class:`~pyglet.input.Control` objects.
+There are three types of controls: :py:class:`~pyglet.input.Button`,
+:py:class:`~pyglet.input.AbsoluteAxis`, and :py:class:`~pyglet.input.RelativeAxis`.
+For helping identify individual controls, each control has at least a
+`name`, and optionally a `raw_name` attribute. Control values can by
+queried at any time by checking the `Control.value` property. In addition,
+every control is also a subclass of :py:class:`~pyglet.event.EventDispatcher`,
+so you can add handlers to receive changes as well. All Controls dispatch the
+`on_change` event. Buttons also dispatch `on_press` and `on_release` events.::
+
+    # All controls:
+
+    @control.event
+    def on_change(value):
+        print("value:", value)
+
+    # Buttons:
+
+    @control.event
+    def on_press():
+        print("button pressed")
+
+    @control.event
+    def on_release():
+        print("button release")
+
+
+Using Controllers
+-----------------
+
+Controllers have a strictly defined set of inputs that mimic the
+layout of popular video game console Controllers. This includes two
+analog sticks, a directional pad (dpad), face and shoulder buttons,
+as well as start/back/guide and stick press buttons. Many controllers
+also include the ability to play rumble effects (vibration).
+
+Before using a controller, you must find it and open it.
+To get a list of all controllers currently connected to your computer,
+call pyglet.input.get_controllers()::
+
+    controllers = pyglet.input.get_controllers()
+
+Then choose a controller from the list and call `Controller.open()` to open it::
+
+    if controllers:
+        controller = controllers[0]
+
+    controller.open()
+
+Once opened, you will want to read the values of the inputs.
+A variety of analog and digital :py:class:`~pyglet.input.Control` types
+are defined, which are automatically normalized to consistent ranges. The
+following analog controls are available:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Name
+          - type
+          - range
+
+        * - leftx
+          - float
+          - -1,1
+
+        * - lefty
+          - float
+          - -1,1
+
+        * - lefttrigger
+          - float
+          - 0,1
+
+        * - lefttrigger
+          - float
+          - 0,1
+
+The following digital controls are available:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Name
+          - notes
+        * - a
+          - the "south" face button
+        * - b
+          - the "east" face button
+        * - x
+          - the "west" face button
+        * - y
+          - the "north" face button
+        * - leftshoulder
+          -
+        * - rightshoulder
+          -
+        * - start
+          - called "options" on some controllers
+        * - back
+          - called "select" or "share" on some controllers
+        * - guide
+          - usually in the center, with a company logo
+        * - leftstick
+          - pressing in the left analog stick
+        * - rightstick
+          - pressing in the right analog stick
+        * - dpleft
+          -
+        * - dpright
+          -
+        * - dpup
+          -
+        * - dpdown
+          -
+
+These values can be read in two ways. All controls listed above are properties
+on the controller instance, so they can be manually queried in your game loop::
+
+    controller_instance.a       # boolean
+    controller_instance.leftx   # float
+
+
+Alternatively, since controllers are a subclass of :py:class:`~pyglet.event.EventDispatcher`,
+events will be dispatched when any of the values change. This is generally the
+recommended way to handle input, since it reduces the change of "missed" button
+presses due to slow polling. The different controls are grouped into the following
+event types:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - Event
+          - Arguments
+          - types
+
+        * - on_button_press
+          - controller, button_name
+          - :py:class:`~pyglet.input.Controller`, `str`
+
+        * - on_button_release
+          - controller, button_name
+          - :py:class:`~pyglet.input.Controller`, `str`
+
+        * - on_stick_motion
+          - controller, stick_name, x_value, y_value
+          - :py:class:`~pyglet.input.Controller`, `str`, `float`, `float`
+
+        * - on_dpad_motion
+          - controller, left, right, up, down
+          - :py:class:`~pyglet.input.Controller`, `bool`, `bool`, `bool`, `bool`
+
+        * - on_trigger_motion
+          - controller, trigger_name, value
+          - :py:class:`~pyglet.input.Controller`, `str`, `float`
+
+
+Here is how you would handle the analog events::
+
+    @controller.event
+    def on_stick_motion(controller, name, x_value, y_value):
+        # Optionally enforce a "deadzone"
+
+        if name == "leftstick":
+            # Do something with the x/y_values
+        elif name == "rightstick":
+            # Do something with the x/y_values
+
+    @controller.event
+    def on_trigger_motion(controller, name, value):
+
+        if name == "lefttrigger":
+            # Do something with the value
+        elif name == "righttrigger":
+            # Do something with the value
+
+Here is how you would handle the digital events::
+
+    @controller.event
+    def on_button_press(controller, button_name):
+        if button_name == 'a':
+            # start firing
+        elif button_name == 'b':
+            # do something else
+
+
+    @controller.event
+    def on_button_release(controller, button_name):
+        if button_name == 'a':
+            # stop firing
+        elif button_name == 'b':
+            # do something else
+
+Finally, the directional pad event can be handled like this::
+
+    @controller.event
+    def on_dpad_motion(controller, dpleft, dpright, dpup, dpdown):
+        if dpup:
+            # move up
+        if dpdown:
+            # move down
+        if dpleft:
+            # move left
+        if dpright:
+            # move right
+
+Rumble
+^^^^^^
+
+Many controllers also support playing rumble (vibration) effects. There
+are both strong and weak effects, which can be played independently::
+
+    controller.rumble_play_weak(strength, duration=0.5)
+    controller.rumble_play_strong(strength, duration=0.5)
+
+The `strength` parameter should be on a scale of 0-1. Values outside of
+this range will be clamped. The optional `duration` parameter is in seconds.
+The maximum duration can vary from platform to platform, but is usually
+at least 5 seconds. If you call play again while an existing effect is
+still playing, it will replace the current one. You can also stop
+playback of a rumble effect at any time::
+
+    controller.rumble_stop_weak()
+    controller.rumble_stop_strong()
+
+
+Using Joysticks
 ---------------
 
 Before using a joystick, you must find it and open it.  To get a list
