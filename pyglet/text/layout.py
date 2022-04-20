@@ -347,7 +347,7 @@ class _GlyphBox(_AbstractBox):
                 v2 += x1
                 v1 += y + baseline
                 v3 += y + baseline
-                vertices.extend(map(int, [v0, v1, v2, v1, v2, v3, v0, v3]))
+                vertices.extend(map(round, [v0, v1, v2, v1, v2, v3, v0, v3]))
                 t = glyph.tex_coords
                 tex_coords.extend(t)
                 x1 += glyph.advance
