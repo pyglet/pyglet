@@ -35,6 +35,7 @@
 
 import sys
 import ctypes
+from pyglet import com
 from ctypes import *
 from ctypes.wintypes import *
 
@@ -516,4 +517,46 @@ class DWM_BLURBEHIND(ctypes.Structure):
         ("fEnable", BOOL),
         ("hRgnBlur", HRGN),
         ("fTransitionOnMaximized", DWORD),
+    ]
+
+
+class STATSTG(ctypes.Structure):
+    _fields_ = [
+        ('pwcsName', LPOLESTR),
+        ('type', DWORD),
+        ('cbSize', ULARGE_INTEGER),
+        ('mtime', FILETIME),
+        ('ctime', FILETIME),
+        ('atime', FILETIME),
+        ('grfMode', DWORD),
+        ('grfLocksSupported', DWORD),
+        ('clsid', DWORD),
+        ('grfStateBits', DWORD),
+        ('reserved', DWORD),
+    ]
+
+class IStream(com.pIUnknown):
+    _methods_ = [
+        ('Read',
+         com.STDMETHOD(c_void_p, ULONG, POINTER(ULONG))),
+        ('Write',
+         com.STDMETHOD()),
+        ('Seek',
+         com.STDMETHOD(LARGE_INTEGER, DWORD, POINTER(ULARGE_INTEGER))),
+        ('SetSize',
+         com.STDMETHOD()),
+        ('CopyTo',
+         com.STDMETHOD()),
+        ('Commit',
+         com.STDMETHOD()),
+        ('Revert',
+         com.STDMETHOD()),
+        ('LockRegion',
+         com.STDMETHOD()),
+        ('UnlockRegion',
+         com.STDMETHOD()),
+        ('Stat',
+         com.STDMETHOD(POINTER(STATSTG), UINT)),
+        ('Clone',
+         com.STDMETHOD()),
     ]
