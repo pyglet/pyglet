@@ -60,7 +60,6 @@ class _InlineElementGroup(pyglet.graphics.Group):
 
     def unset_state(self):
         glDisable(GL_BLEND)
-        glBindTexture(self.texture.target, 0)
         self.program.stop()
 
     def __eq__(self, other):
