@@ -694,9 +694,6 @@ class TextureGroup(Group):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(self.texture.target, self.texture.id)
 
-    def unset_state(self):
-        glBindTexture(self.texture.target, 0)
-
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.order, self.parent))
 
