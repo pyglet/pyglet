@@ -162,7 +162,8 @@ class LibraryLoader:
                     except OSError:
                         pass
                 elif self.platform == "win32" and o.winerror != 126:
-                    raise ImportError("Unexpected error loading library %s: %s" % (name, str(o)))
+                    if _debug_lib:
+                        print(f"Unexpected error loading library {name}: {str(o)}")
 
         raise ImportError('Library "%s" not found.' % names[0])
 

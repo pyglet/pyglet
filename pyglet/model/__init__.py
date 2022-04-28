@@ -305,9 +305,6 @@ class TexturedMaterialGroup(BaseMaterialGroup):
         self.program.use()
         self.program['model'] = self.matrix
 
-    def unset_state(self):
-        gl.glBindTexture(self.texture.target, 0)
-
     def __hash__(self):
         return hash((self.texture.target, self.texture.id, self.program, self.order, self.parent))
 

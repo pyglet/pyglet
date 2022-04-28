@@ -3,17 +3,15 @@ Working with other input devices
 
 pyglet's :py:mod:`~pyglet.input` module allows you to accept input
 from any USB human interface device (HID). It's possible to access
-these devices directly, but high-level interfaces are provided for
+these devices directly, but high-level abstractions are provided for
 working with game controllers, joysticks, and the Apple Remote.
-The game controller interface is suited for modern gamepads, such as
-are found on modern video game consoles. These types of controllers
-have a strictly defined set of inputs. The joystick interface is more
+The game controller abstraction is suited for modern gamepads, such as
+are found on home video game consoles. These types of controllers
+have a strictly defined set of inputs. The joystick abstraction is more
 generalized, and works with devices with an arbitrary number of buttons,
 axis, and hats. This includes devices like steering wheels, joysticks
-used for flight simulators, and just about anything else. For most
-games, the Controller interface is usually the better choice. For the
-high-level interfaces, pyglet normalizes input values to a range of -1, 1.
-
+used for flight simulators, and just about anything else. For most types
+of games, the Controller abstraction is usually the better choice.
 
 The :py:mod:`~pyglet.input` module provides several methods for querying
 devices::
@@ -84,6 +82,26 @@ layout of popular video game console Controllers. This includes two
 analog sticks, a directional pad (dpad), face and shoulder buttons,
 as well as start/back/guide and stick press buttons. Many controllers
 also include the ability to play rumble effects (vibration).
+The following platform interfaces are used for Controller support:
+
+    .. list-table::
+        :header-rows: 1
+
+        * - platform
+          - interface
+          - notes
+
+        * - Linux
+          - evdev
+          -
+
+        * - Windows
+          - DirectInput & Xinput
+          - rumble not implemented on DirectInput
+
+        * - MacOSX
+          - IOKit
+          - rumble not yet implemented
 
 Before using a controller, you must find it and open it.
 To get a list of all controllers currently connected to your computer,
@@ -98,7 +116,7 @@ Then choose a controller from the list and call `Controller.open()` to open it::
 
     controller.open()
 
-Once opened, you will want to read the values of the inputs.
+Once opened, you you can start receiving data from the the inputs.
 A variety of analog and digital :py:class:`~pyglet.input.Control` types
 are defined, which are automatically normalized to consistent ranges. The
 following analog controls are available:
@@ -106,7 +124,7 @@ following analog controls are available:
     .. list-table::
         :header-rows: 1
 
-        * - Name
+        * - name
           - type
           - range
 
@@ -115,6 +133,14 @@ following analog controls are available:
           - -1,1
 
         * - lefty
+          - float
+          - -1,1
+
+        * - rightx
+          - float
+          - -1,1
+
+        * - righty
           - float
           - -1,1
 
@@ -173,7 +199,7 @@ on the controller instance, so they can be manually queried in your game loop::
 
 Alternatively, since controllers are a subclass of :py:class:`~pyglet.event.EventDispatcher`,
 events will be dispatched when any of the values change. This is generally the
-recommended way to handle input, since it reduces the change of "missed" button
+recommended way to handle input, since it reduces the chance of "missed" button
 presses due to slow polling. The different controls are grouped into the following
 event types:
 
