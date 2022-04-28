@@ -1165,7 +1165,7 @@ class ControllerManager(EventDispatcher):
     .. versionadded:: 1.2
     """
 
-    def get_controllers(self) -> list[Controller]:
+    def get_controllers(self):
         """Get a list of all connected Controllers
 
         :rtype: list of :py:class:`Controller`
